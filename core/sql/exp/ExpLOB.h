@@ -298,6 +298,8 @@ public:
   virtual Lng32 initClause();
   void setLobMaxSize(Int64 maxsize) { lobMaxSize_ = maxsize;}
   Int64 getLobMaxSize() { return lobMaxSize_;}
+  void setLobMaxChunkMemSize(Int64 maxsize) { lobMaxChunkMemSize_ = maxsize;}
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
  protected:
   typedef enum
   {
@@ -335,16 +337,12 @@ public:
     char  filler1_;
     Lng32 lobNum_;
     Int64 objUID_;
-    //    Int64 lobLen_;
     Int64 descSyskey_;
     Int64 descPartnkey_;
-    char  filler_[30];
-    //    short numChunks_;
+    char  filler_[30];  
     short schNameLen_;
     char  schName_;
-    // char schName_[schNameLen_]
-    // short inlinedLOBlen_;
-    // char inlinedLOB_[inlinedLOBlen_]
+   
   };
 
   Lng32 checkLobOperStatus();
@@ -384,6 +382,7 @@ protected:
   char  descSchName_[510];
   
   Int64 lobMaxSize_;
+  Int64 lobMaxChunkMemSize_;
   //  NABasicPtr lobStorageLocation_;
 }
 ;

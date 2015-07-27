@@ -299,7 +299,7 @@ Ex_Lob_Error ExLob::putDesc(ExLobDesc &desc, Int64 descNum)
     return err;
 }
 
-Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int64 size, Int64 &operLen)
+Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operLen)
 { 
     Ex_Lob_Error err;
      if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
@@ -527,7 +527,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
 
 
 
- Ex_Lob_Error ExLob::readSourceFile(char *srcfile, char *&fileData, int &size)
+Ex_Lob_Error ExLob::readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset)
  {
    Ex_Lob_Error lobErr = LOB_OPER_OK;
    // check if the source file is a hdfs file or from local file system.
@@ -535,22 +535,22 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
    LobInputOutputFileType srcType = fileType(srcfile);
    if (srcType == HDFS_FILE)
      {
-       lobErr = readHdfsSourceFile(srcfile, fileData, size);
+       lobErr = readHdfsSourceFile(srcfile, fileData, size, offset);
      }
    else if (srcType == LOCAL_FILE)
      {
-       lobErr = readLocalSourceFile(srcfile, fileData, size);
+       lobErr = readLocalSourceFile(srcfile, fileData, size, offset);
      }
    else if(srcType == CURL_FILE)
      {
-       lobErr = readExternalSourceFile((char *)srcfile, fileData, size);
+       lobErr = readExternalSourceFile((char *)srcfile, fileData, size, offset);
      }
    else
      return LOB_SOURCE_FILE_OPEN_ERROR;
   
   return lobErr;
  }
- Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, int &size)
+Ex_Lob_Error ExLob::readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset)
  {
     
      int openFlags = O_RDONLY;
@@ -565,7 +565,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
        return LOB_SOURCE_DATA_ALLOC_ERROR;
      }
 
-     if (hdfsRead(fs_,fdSrcFile, fileData, size) == -1) {
+     if (hdfsPread(fs_,fdSrcFile, offset,fileData, size) == -1) {
        hdfsCloseFile(fs_,fdSrcFile);
        getLobGlobalHeap()->deallocateMemory(fileData);
        fileData = NULL;
@@ -577,7 +577,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
      
      return LOB_OPER_OK;
  }
-   Ex_Lob_Error ExLob::readLocalSourceFile(char *srcfile, char *&fileData, int &size)
+Ex_Lob_Error ExLob::readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset)
    {  
      int openFlags = O_RDONLY;
      int fdSrcFile = open(srcfile, openFlags);
@@ -594,14 +594,14 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
        return LOB_SOURCE_FILE_STAT_ERROR;
      }
 
-     size = statbuf.st_size;
+     //size = statbuf.st_size;
 
      fileData = (char *) (getLobGlobalHeap())->allocateMemory(size);
      if (fileData == (char *)-1) {
        return LOB_SOURCE_DATA_ALLOC_ERROR;
      }
 
-     if (pread(fdSrcFile, fileData, size, 0) == -1) {
+     if (pread(fdSrcFile, fileData, size, offset) == -1) {
        close(fdSrcFile);
        getLobGlobalHeap()->deallocateMemory(fileData);
        fileData = NULL;
@@ -614,7 +614,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
      return LOB_OPER_OK ;
    }
 
-Ex_Lob_Error ExLob::readExternalSourceFile(char *srcfile, char *&fileData, int &size)
+Ex_Lob_Error ExLob::readExternalSourceFile(char *srcfile, char *&fileData, Int32 &size,Int64 offset)
 {
     CURL *curl;
     CURLcode res;
@@ -676,7 +676,7 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
 }
 
 Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subOperation, 
-                          Int64 descNumIn, Int64 &operLen)
+				 Int64 descNumIn, Int64 &operLen, Int64 lobMaxChunkMemSize)
 {
     Int64 dataOffset;
     Ex_Lob_Error err; 
@@ -698,36 +698,51 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
        return LOB_SOURCE_DATA_ERROR;
     }
 
-    char *memAddr =  NULL;
-    int memSize = desc.getSize();
-
-    if (subOperation == Lob_File) 
+    char *inputAddr = source;
+    Int64 inputSize = desc.getSize();
+    Int64 writeOffset = desc.getOffset();
+    Int64 readOffset = 0;
+    Int32 allocMemSize = 0;
+    while(inputSize > 0)
       {
-	err = readSourceFile(source, memAddr, memSize);
-	if (err != LOB_OPER_OK)
-	  return err;     
-      } 
+        allocMemSize = MINOF(lobMaxChunkMemSize, inputSize);
+	if (subOperation == Lob_File) 
+	  {
+	    err = readSourceFile(source, inputAddr, allocMemSize, readOffset);
+	    if (err != LOB_OPER_OK)
+	      return err;     
+	  } 
    
-    else 
-      { // in memory
-	memAddr = source;
-	memSize = sourceLen;
+	else 
+	  { // in memory
+	   
+	  }
+	err = writeData(writeOffset, inputAddr, allocMemSize, operLen);
+	if (err != LOB_OPER_OK)
+	  {
+	    //handle errors that happen in one of the chunks.
+	   return err;
+	  }
+	if (subOperation == Lob_File) {
+	  writeOffset = writeOffset+allocMemSize;
+	  readOffset = readOffset+allocMemSize;
+	  inputSize = inputSize-lobMaxChunkMemSize;
+	  getLobGlobalHeap()->deallocateMemory(inputAddr);
+	}
+	else
+	  {
+	    writeOffset = writeOffset+allocMemSize;
+	    inputSize = inputSize-lobMaxChunkMemSize;
+	    inputAddr = inputAddr+allocMemSize;
+	  }
       }
-    err = writeData(NULL, memAddr, memSize, operLen);
+	
     hdfsCloseFile(fs_, fdData_);
     fdData_=NULL;
-
-      
-    
-    if (subOperation == Lob_File) {
-      getLobGlobalHeap()->deallocateMemory(memAddr);
-      
-    } 
-
     return err;
 }
 
-Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size,  Int64 &operLen)
+Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size, Int64 offset, Int64 &operLen)
 {
    Ex_Lob_Error err = LOB_OPER_OK; 
 
@@ -748,7 +763,7 @@ Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size,  Int64 &operLen)
      return LOB_DATA_FILE_OPEN_ERROR;
      }*/
    
-   err = readDataToMem(memAddr, 0 /*offset*/, size, operLen);
+   err = readDataToMem(memAddr, offset, size, operLen);
 
    return err;
 }
@@ -771,7 +786,7 @@ LobInputOutputFileType ExLob::fileType(char *ioFileName)
       
     }      
     else if (((found = fileTgt.find(fileDirStr)) != std::string::npos) &&(found == 0))
-      return CURL_FILE;
+      return LOCAL_FILE;
       
      
     else if (((found = fileTgt.find(httpStr)) != std::string::npos) && (found == 0))
@@ -780,26 +795,28 @@ LobInputOutputFileType ExLob::fileType(char *ioFileName)
     else
       return LOCAL_FILE;
 }
-Ex_Lob_Error ExLob::readToFile(char *tgtFileName, Int64 offset, Int64 &operLen)
+Ex_Lob_Error ExLob::readToFile(char *tgtFileName, Int64 offset, Int64 &operLen, Int64 lobMaxChunkMemLen, Int32 fileflags)
 {
   Ex_Lob_Error err; 
  
   LobInputOutputFileType tgtType = fileType(tgtFileName);
   if (tgtType == HDFS_FILE)
     {
-      err = readDataToHdfsFile(tgtFileName,  0 /*offset*/, operLen);
+      err = readDataToHdfsFile(tgtFileName,  0 /*offset*/, operLen, lobMaxChunkMemLen, fileflags);
       if (err != LOB_OPER_OK)
 	return err;
     }
   else if(tgtType == CURL_FILE)
     {
-      err = readDataToExternalFile(tgtFileName, 0, operLen);
+      err = readDataToExternalFile(tgtFileName, 0, operLen, lobMaxChunkMemLen, fileflags);
       if (err != LOB_OPER_OK)
 	return err;
     }
   else if (tgtType == LOCAL_FILE)
     {
-      //TBD
+      err = readDataToLocalFile(tgtFileName,0 /*offset */,operLen, lobMaxChunkMemLen, fileflags);
+      if (err != LOB_OPER_OK)
+	return err;
     }
   else
     return LOB_TARGET_FILE_OPEN_ERROR; //unknown format
@@ -1599,200 +1616,189 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
  
 
 
-      if (!fdData_ || (openFlags_ != O_RDONLY)) 
-	{
-	  hdfsCloseFile(fs_, fdData_);
-	  fdData_=NULL;
-	  openFlags_ = O_RDONLY;
-	  fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-	  if (!fdData_) {
-	    openFlags_ = -1;
-	    return LOB_DATA_FILE_OPEN_ERROR;
-	  }
-	}
-     
-      if (!multipleChunks)
-	{
-	  if ((bytesRead = hdfsPread(fs_, fdData_, desc.getOffset() + offset, 
-				     memAddr, sizeToRead)) == -1) {
-	  
-	    return LOB_DATA_READ_ERROR;
-	  }
-
-      
-	  operLen = bytesRead;
-	  return LOB_OPER_OK;
-	}
-      else
-	{
-	  //handle reading the multiple chunks like a cursor
-	  err = readCursor(memAddr,size, getRequest()->getHandleIn(),
-			   getRequest()->getHandleInLen(), operLen);
-	 
-	 
-	  if (err==LOB_OPER_OK)
-	    closeCursor(getRequest()->getHandleIn(), 
-			getRequest()->getHandleInLen());
-	  else
-	    return err;
-	}
-      return LOB_OPER_OK;
-}
-/*
-Ex_Lob_Error ExLob::readDataFromFile(char *memAddr, Int64 len, Int64 &operLen)
-{
-   int bytesRead;
-
-#ifdef SQ_USE_HDFS
-   if (!fdData_ || (openFlags_ != O_RDONLY)) 
-   {
+  if (!fdData_ || (openFlags_ != O_RDONLY)) 
+    {
       hdfsCloseFile(fs_, fdData_);
       fdData_=NULL;
       openFlags_ = O_RDONLY;
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
       if (!fdData_) {
-         openFlags_ = -1;
-         return LOB_DATA_FILE_OPEN_ERROR;
+	openFlags_ = -1;
+	return LOB_DATA_FILE_OPEN_ERROR;
       }
-   }
-   bytesRead = hdfsPread(fs_, fdData_, 0, memAddr, len);
-#else
-   bytesRead = pread(fdData_, memAddr, len, 0); 
-#endif
-
-   if (bytesRead == -1) {
-      operLen = 0;
-      return LOB_DATA_READ_ERROR;
-   } else {
-      operLen = bytesRead;
-   }
-
-   return LOB_OPER_OK;
-}
-
-*/
-Ex_Lob_Error ExLob::readDataToLocalFile(char *fileName,  Int64 offset, Int64 &operLen)
-{ 
-    Ex_Lob_Error err;
-
-    ExLobDesc desc;
-    err = getDesc(desc);
-    if (err != LOB_OPER_OK)
-      return err;
-
-    if (offset > desc.getSize())
+    }
+     
+  if (!multipleChunks)
     {
-      operLen = 0;
+      if ((bytesRead = hdfsPread(fs_, fdData_, desc.getOffset() + offset, 
+				 memAddr, sizeToRead)) == -1) {
+	  
+	return LOB_DATA_READ_ERROR;
+      }
+
+      
+      operLen = bytesRead;
       return LOB_OPER_OK;
     }
-
-    char *data = (char *)memalign(512, desc.getSize());
-    if (data == NULL) {
-      return LOB_SOURCE_DATA_ALLOC_ERROR;
+  else
+    {
+      //handle reading the multiple chunks like a cursor
+      err = readCursor(memAddr,size, getRequest()->getHandleIn(),
+		       getRequest()->getHandleInLen(), operLen);
+	 
+	 
+      if (err==LOB_OPER_OK)
+	closeCursor(getRequest()->getHandleIn(), 
+		    getRequest()->getHandleInLen());
+      else
+	return err;
     }
-
-#ifdef SQ_USE_HDFS
-    // tbd
-#else
-    if (pread(fdData_, data, desc.getSize(), desc.getOffset()) == -1) {
-      free(data);
-      return LOB_DATA_READ_ERROR;
-    }
-#endif
-
-    int openFlags = O_CREAT | O_RDWR ; // O_DIRECT needs mem alignment
-    int filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-
-    int fdDestFile = open(fileName, openFlags, filePerms);
-    if (fdDestFile == -1) {
-      return LOB_DEST_FILE_OPEN_ERROR;
-    }
-
-    if (pwrite(fdDestFile, data, desc.getSize(), 0) == -1) {
-      free(data);
-      close(fdDestFile);
-      return LOB_DATA_WRITE_ERROR;
-    }
-
-    operLen = desc.getSize();
-   
-    free(data);
-    close(fdDestFile);
-
-    return LOB_OPER_OK;
+  return LOB_OPER_OK;
 }
-Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 &operLen)
+
+ 
+Ex_Lob_Error ExLob::readDataToLocalFile(char *fileName,  Int64 offset, Int64 &writeOperLen, Int64 lobMaxChunkMemSize, Int32 fileflags)
 { 
     Ex_Lob_Error err;
-
+    Int64 operLen = 0;
     ExLobDesc desc;
     err = getDesc(desc);
     if (err != LOB_OPER_OK)
       return err;
 
-    if (desc.getSize() <=0 )
+    if (desc.getSize() <= 0)
       {
 	return LOB_SOURCE_FILE_READ_ERROR;
       }
-    char *lobData = (char *) (getLobGlobalHeap())->allocateMemory(desc.getSize());
-    if (lobData == NULL) {
-      return LOB_SOURCE_DATA_ALLOC_ERROR;
-    }
-    err = readToMem(lobData, desc.getSize(),operLen);
-    if (err != LOB_OPER_OK)
-      return err;
-    // open and write to the target file
-    int openFlags = O_WRONLY|O_CREAT;
-    hdfsFile fdTgtFile = hdfsOpenFile(fs_,tgtFileName, openFlags, 0,0,0);
-    if (fdTgtFile == NULL) {
-       return LOB_TARGET_FILE_OPEN_ERROR;
-     }
-    operLen = hdfsWrite(fs_,fdTgtFile,lobData, desc.getSize());
-    if (operLen <= 0)
-      return LOB_TARGET_FILE_WRITE_ERROR;
-	
-    if (hdfsFlush(fs_, fdTgtFile)) 
-      return LOB_DATA_FLUSH_ERROR;
-	  
-    hdfsCloseFile(fs_, fdTgtFile);
-    
-    getLobGlobalHeap()->deallocateMemory(lobData);
-    fdTgtFile = NULL;
-    /*
-#ifdef SQ_USE_HDFS
-    // tbd
-#else
-    if (pread(fdData_, data, desc.getSize(), desc.getOffset()) == -1) {
-      free(data);
-      return LOB_DATA_READ_ERROR;
-    }
-#endif
+    Int64 srcLen = desc.getSize();
+    Int64 srcOffset = offset;
+    Int64 tgtOffset = 0;
+    char *lobData = 0;
+    Int64 chunkSize = 0;
+    while ( srcLen > 0)
+      {
+	chunkSize = MINOF(srcLen, lobMaxChunkMemSize);
+	lobData = (char *) (getLobGlobalHeap())->allocateMemory(chunkSize);
 
-    int openFlags = O_CREAT | O_RDWR ; // O_DIRECT needs mem alignment
-    int filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+	if (lobData == NULL) 
+	  {
+	    return LOB_SOURCE_DATA_ALLOC_ERROR;
+	  }
 
-    int fdDestFile = open(fileName, openFlags, filePerms);
-    if (fdDestFile == -1) {
-      return LOB_DEST_FILE_OPEN_ERROR;
-    }
+	err = readToMem(lobData, chunkSize, srcOffset,operLen);
+	if (err != LOB_OPER_OK)
+	  {
+	    getLobGlobalHeap()->deallocateMemory(lobData);
+	    return err;
+	  }
+       
 
-    if (pwrite(fdDestFile, data, desc.getSize(), 0) == -1) {
-      free(data);
-      close(fdDestFile);
-      return LOB_DATA_WRITE_ERROR;
-    }
+	int filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+	int openFlags = O_RDWR ; // O_DIRECT needs mem alignment
+	if (((LobTgtFileFlags)fileflags == Lob_Append_Or_Error ) ||
+	    (LobTgtFileFlags)fileflags == Lob_Append_Or_Create )
+	  openFlags |= O_APPEND;
+	else
+	  openFlags |= O_TRUNC;
+	int fdDestFile = open(fileName, openFlags, filePerms);
+	if (fdDestFile == -1) 
+	  {
+	    if (((LobTgtFileFlags)fileflags == Lob_Append_Or_Error) ||
+		((LobTgtFileFlags)fileflags == Lob_Truncate_Or_Error))
+	      {		
+		getLobGlobalHeap()->deallocateMemory(lobData);
+		return LOB_TARGET_FILE_OPEN_ERROR;
+	      }
+	    else
+	      {
+		openFlags = O_CREAT | O_RDWR ;
+	    	fdDestFile = open(fileName, openFlags, filePerms);
+		if (fdDestFile == -1)
+		  {
+		    getLobGlobalHeap()->deallocateMemory(lobData);
+		    return LOB_TARGET_FILE_OPEN_ERROR; 
+		  }
+	      }
+	  }
 
-    operLen = desc.getSize();
-    descNum = desc.getNextDescNum();
-
-    free(data);
-    close(fdDestFile);
-    */
+	writeOperLen += pwrite(fdDestFile, lobData, chunkSize, tgtOffset) ; 
+	if (writeOperLen <= 0)
+	  {
+	    getLobGlobalHeap()->deallocateMemory(lobData);
+	    return LOB_TARGET_FILE_WRITE_ERROR;
+	  }
+     
+	close(fdDestFile);
+	getLobGlobalHeap()->deallocateMemory(lobData);
+	srcLen -= chunkSize;
+	srcOffset += chunkSize;
+	tgtOffset += chunkSize;
+      }
     return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 &operLen)
+Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 &writeOperLen, Int64 lobMaxChunkMemLen, Int32 fileflags)
 { 
+  Ex_Lob_Error err;
+  Int64 operLen = 0;
+  ExLobDesc desc;
+  err = getDesc(desc);
+  if (err != LOB_OPER_OK)
+    return err;
+
+  if (desc.getSize() <=0 )
+    {
+      return LOB_SOURCE_FILE_READ_ERROR;
+    }
+  Int64 srcLen = desc.getSize();
+  Int64 srcOffset = offset;
+  Int64 tgtOffset = 0;
+  char *lobData = 0;
+  Int64 chunkSize = 0;
+  while (srcLen >0 )
+    {
+      chunkSize = MINOF(srcLen,lobMaxChunkMemLen);
+      lobData = (char *) (getLobGlobalHeap())->allocateMemory(chunkSize);
+      if (lobData == NULL) {
+	return LOB_SOURCE_DATA_ALLOC_ERROR;
+      }
+      err = readToMem(lobData, chunkSize,offset,operLen);
+      if (err != LOB_OPER_OK)
+	{
+	  getLobGlobalHeap()->deallocateMemory(lobData);
+	  return err;
+	}
+      // open and write to the target file
+      int openFlags = O_WRONLY|O_CREAT;
+      hdfsFile fdTgtFile = hdfsOpenFile(fs_,tgtFileName, openFlags, 0,0,0);
+      if (fdTgtFile == NULL) {
+	getLobGlobalHeap()->deallocateMemory(lobData);
+	return LOB_TARGET_FILE_OPEN_ERROR;
+      }
+      writeOperLen += hdfsWrite(fs_,fdTgtFile,lobData, chunkSize);
+      if (writeOperLen <= 0)
+	return LOB_TARGET_FILE_WRITE_ERROR;
+	
+      if (hdfsFlush(fs_, fdTgtFile)) 
+	{
+	  getLobGlobalHeap()->deallocateMemory(lobData);
+	  return LOB_DATA_FLUSH_ERROR;
+	} 
+      hdfsCloseFile(fs_, fdTgtFile);
+    
+      getLobGlobalHeap()->deallocateMemory(lobData);
+      fdTgtFile = NULL;
+      srcLen -= chunkSize;
+      srcOffset += chunkSize;
+      tgtOffset += chunkSize;
+    }
+   
+  return LOB_OPER_OK;
+}
+
+Ex_Lob_Error ExLob::readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 &operLen,Int64 lobMaxChunkMemLen,Int32 fileflags)
+{ 
+  //TBD
   return LOB_OPER_OK;
 }
 Ex_Lob_Error ExLob::closeFile()
@@ -2498,6 +2504,7 @@ Ex_Lob_Error ExLobsOper (
     void        *blackBox,         // black box to be sent to cli
     Int64       blackBoxLen,       // length of black box
     Int64       lobMaxSize,
+    Int64       lobMaxChunkMemSize,
     int         bufferSize ,
     short       replication ,
     int         blockSize,
@@ -2582,7 +2589,6 @@ Ex_Lob_Error ExLobsOper (
 	// get current transaction
    
 	int transIdErr = ms_transid_get(false, false, &transIdBig, &transStartId);
-
 	// set the pass thru request object values in the lob
     
 	lobPtr->getRequest()->setValues(lobPtr->getDescFileName(),
@@ -2600,7 +2606,7 @@ Ex_Lob_Error ExLobsOper (
         break;
 
       case Lob_InsertData:
-        err = lobPtr->writeLobData(source, sourceLen, subOperation, descNumIn, retOperLen);
+        err = lobPtr->writeLobData(source, sourceLen, subOperation, descNumIn, retOperLen, lobMaxChunkMemSize);
         break;
 
       case Lob_InsertDataSimple:
@@ -2610,9 +2616,9 @@ Ex_Lob_Error ExLobsOper (
 
       case Lob_Read:
         if (subOperation == Lob_Memory)
-          err = lobPtr->readToMem(source, sourceLen, retOperLen);
+          err = lobPtr->readToMem(source, sourceLen, 0,retOperLen);
         else if (subOperation == Lob_File)
-          err = lobPtr->readToFile(source, 0 /*offset */, retOperLen);
+          err = lobPtr->readToFile(source, 0 /*offset */, retOperLen, lobMaxChunkMemSize,  openType);
         else  
           err = LOB_SUBOPER_ERROR;
         break;

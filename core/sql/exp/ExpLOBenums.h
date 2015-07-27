@@ -268,4 +268,11 @@ typedef enum {
    Lob_Cursor_Simple
 } LobsCursorType;
 
+typedef enum { 
+  Lob_Append_Or_Error =0,
+  Lob_Truncate_Or_Error,
+  Lob_Truncate_Or_Create,
+  Lob_Append_Or_Create
+     
+} LobTgtFileFlags;
 #endif

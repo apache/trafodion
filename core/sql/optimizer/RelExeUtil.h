@@ -1886,7 +1886,7 @@ public:
     intParam_(intParam),
     intParam2_(intParam2),
     handleInStringFormat_(TRUE),
-    withCreate_(FALSE)
+    withCreate_(TRUE)
     {
       if (stringParam)
 	stringParam_ = stringParam;

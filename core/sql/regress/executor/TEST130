@@ -73,7 +73,7 @@ select * from t130lob2;
 
 select lobtostring(c2,10) from t130lob2;
 select lobtostring(c2,2) from t130lob2;
-select c1,lobtostring(c2) from t130lob2;
+select c1,lobtostring(c2,100) from t130lob2;
 
 
 obey TEST130(dml_join);
@@ -109,8 +109,8 @@ obey TEST130(dml_update_append);
 ?section dml_update_append
 
 update t130lob2 set c2=stringtolob('appended row21a',append) where c1=1;
-select c1, lobtostring(c2) from t130lob2;
-select c1, lobtostring(c2) from t130lob2 where c1=1;
+select c1, lobtostring(c2,100) from t130lob2;
+select c1, lobtostring(c2,100) from t130lob2 where c1=1;
 
 
 update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);

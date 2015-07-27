@@ -2704,7 +2704,8 @@ public:
    obj_(obj),
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
-   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE))
+   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)),
+   lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE))
    {}
 
  // copyTopNode method
@@ -2732,6 +2733,7 @@ public:
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
   Int64 getLobMaxSize() {return lobMaxSize_*1024*1024; }
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
   
  protected:
   ObjectType obj_;
@@ -2739,7 +2741,8 @@ public:
   short lobNum_;
   LobsStorage lobStorageType_;
   NAString lobStorageLocation_;
-  Int64 lobMaxSize_; // In MB units
+  Int32 lobMaxSize_; // In MB units
+  Int32 lobMaxChunkMemSize_; //In MB Units
   
 }; // LOBoper
 

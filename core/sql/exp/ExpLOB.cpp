@@ -253,6 +253,7 @@ ExpLOBoper::ExpLOBoper(OperatorTypeEnum oper_type,
   lobHdfsPort_ = 0;
   descSchName_[0] = 0;
   lobMaxSize_ = 0;
+  lobMaxChunkMemSize_ = 0;
 };
 
 
@@ -710,7 +711,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
      &cliError,
      so,
      waitedOp,
-     lobData, lobLen, getLobMaxSize());
+     lobData, lobLen, getLobMaxSize(), getLobMaxChunkMemSize());
   
   if (rc == LOB_ACCESS_PREEMPT)
     {
@@ -861,7 +862,7 @@ LobsOper lo ;
 				 so,
 				 waitedOp,				 
 				 lobData,
-				 lobLen);
+				 lobLen,getLobMaxSize(), getLobMaxChunkMemSize());
     }
 
   if (rc == LOB_ACCESS_PREEMPT)
@@ -1381,7 +1382,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,
 
-				 descKey, lobLen, lobLen, tgtFileName);
+				 descKey, lobLen, lobLen, tgtFileName,getLobMaxChunkMemSize());
     }
   else if (toString())
     {
@@ -1406,7 +1407,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,
 
-				 descKey, lobLen, lobLen, lobData);
+				 descKey, lobLen, lobLen, lobData,getLobMaxChunkMemSize());
 
       if (rc == LOB_ACCESS_PREEMPT)
 	{

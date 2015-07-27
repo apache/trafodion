@@ -2049,9 +2049,12 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
- 
-  // default size is 1 G  (1000 M)
-  DDint__(LOB_MAX_SIZE,                         "1000"),
+   
+   // Size of memoryin bytes  used to perform I/O to lob data file 
+  // default size is 512MB   (1000 M) . Change to adjust memory usage. 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "536870912"), 
+  // default size is 10 G  (10000 M)
+  DDint__(LOB_MAX_SIZE,                         "10000"),
   // default size is 32000. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
@@ -6879,6 +6882,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     break;
 
     case LOB_OUTPUT_SIZE:
+      if (tok >=0  && tok <= 512000)
+	isValid = TRUE;
+      break;
+
+    case LOB_MAX_CHUNK_MEM_SIZE:
       if (tok >=0  && tok <= 512000)
 	isValid = TRUE;
       break;

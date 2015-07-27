@@ -2832,6 +2832,7 @@ short LOBinsert::codeGen(Generator * generator)
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
   li->setLobMaxSize(getLobMaxSize());
+  li->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
   generator->getExpGenerator()->linkClause(this, li);
   
   return 0;
@@ -2898,6 +2899,7 @@ short LOBupdate::codeGen(Generator * generator)
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
   lu->setLobMaxSize(getLobMaxSize());
+  lu->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;

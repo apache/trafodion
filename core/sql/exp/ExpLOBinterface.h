@@ -67,6 +67,12 @@ class HdfsFileInfo
 
 #define LOB_ACCESS_SUCCESS 0
 #define LOB_ACCESS_PREEMPT 1
+enum ExpLOBinterfaceInputFlags
+  {
+    TRUNCATE_TGT_FILE_ =        0x0001,
+    CREATE_TGT_FILE_   =        0x0002,
+    ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
+  };
 
 Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE);
 
@@ -144,8 +150,8 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 
 			    char * srcLobData = NULL, 
 			    Int64  srcLobLen  = 0,
-			    Int64 lobMaxSize = 2000*1024*1024,
-			    
+			    Int64 lobMaxSize = 0,
+			    Int64 lobMaxChunkMemSize = 0,
 			    int    bufferSize = 0,
 			    short  replication =0,
 			    int    blocksize=0
@@ -235,7 +241,9 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 waited,
 
 			    Int64 offset, Int64 inLen, 
-			    Int64 &outLen, char * lobData);
+			    Int64 &outLen, char * lobData,
+			    Int64 lobMaxChunkMemlen,
+			    Int32 inputFlags=0);
 
 Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob, 
 				  char * lobName, 

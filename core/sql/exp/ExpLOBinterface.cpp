@@ -322,6 +322,7 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 			    char * srcLobData, 
 			    Int64  srcLobLen,
 			    Int64 lobMaxSize,
+			    Int64 lobMaxChunkMemSize,
 			    int   bufferSize ,
 			    short replication ,
 			    int   blockSize)
@@ -365,6 +366,7 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 		   xnId, 
 		   blackBox, blackBoxLen,
 		   lobMaxSize,
+		   lobMaxChunkMemSize,
 		   bufferSize,
 		   replication,
 		   blockSize
@@ -688,7 +690,10 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 waitedOp,
 
 			    Int64 srcOffset, Int64 inLen, 
-			    Int64 &outLen, char * lobData)
+			    Int64 &outLen, char * lobData,
+			    Int64 lobMaxMemChunkLen,
+			    Int32 inputFlags
+			    )
 {
   Ex_Lob_Error err;
 
@@ -728,7 +733,10 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
                    waitedOp, 
 		   lobGlob,
 		   xnId, 
-		   NULL, 0
+		   NULL, 0,
+		   0,
+		   lobMaxMemChunkLen,
+		   0,0,0,inputFlags
 		   );
 
   if ((err == LOB_OPER_OK) &&
@@ -834,7 +842,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                    waitedOp,
 		   lobGlob,
 		   0,
-		   NULL, 0,0,0,0,0,
+		   NULL, 0,0,0,0,0,0,
                    openType
 		   );
 
