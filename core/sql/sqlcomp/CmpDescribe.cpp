@@ -2290,7 +2290,7 @@ static short cmpDisplayColumn(const NAColumn *nac,
   if ((nac->getNATable()->isSQLMXAlignedTable()) || 
       (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY))
     colFam = "";
-  else
+  else if (nac->getNATable()->isSeabaseTable())
     {
       int index = 0;
       CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);

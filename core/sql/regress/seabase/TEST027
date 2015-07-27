@@ -5,6 +5,8 @@ set schema trafodion.sch027;
 
 drop table if exists t027t01;
 drop table if exists t027t011;
+drop table t027t02;
+drop table t027t03;
 
 log LOG027 clear;
 
@@ -79,12 +81,60 @@ create table t027t011("cf".a, "cf2".b, cf3.c, "cf4".e, "cf2".d) as select * from
 invoke t027t011;
 showddl t027t011;
 
+create volatile table t027t03 ("cf1".a int, "cf2".b int, c int);
+invoke t027t03;
+showddl t027t03;
+
+drop volatile table t027t03;
+create volatile table t027t03 ("cf1".a int, "cf2".b int, c int) attribute default column family 'cf';
+invoke t027t03;
+showddl t027t03;
+
+drop table if exists t027t02;
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int) attribute default column family 'cf';
+
+
 -- negative tests
+drop table if exists t027t02;
+
+-- cannot have 3 part col name
 create table t027t02 (a.a.a  int);
+
+-- cannot have col fam for aligned format tables
 create table t027t02 ("cf".a int) attribute aligned format;
+
+-- cannot specify col fam for dropped cols
 alter table t027t01 drop column "cf2".d;
+
+-- cannot create a different col fam for an index col
 create index t027t01i2 on t027t01("cf2".b);
+
+-- cannot use col fam in dml stmts 
 select * from t027t01 where "cf".a = 1;
+
+-- cannot have > 32 col families
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int, a31.a31 int, a32.a32 int not null primary key);
+
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int, a31.a31 int);
+
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int, a31.a31 int) attribute default column family 'cf';
+
 
 -- cleanup
 drop table if exists t027t01;

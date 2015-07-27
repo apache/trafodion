@@ -555,6 +555,8 @@ void CmpSeabaseDDL::createSeabaseIndex(
       CollIndex idx = naTable->allColFams().index(indexColFam);
       genTrafColFam(idx, trafColFam);
     }
+  else
+    trafColFam = indexColFam;
 
   // Verify that current user has authority to create an index
   // The user must own the base table or have the ALTER_TABLE privilege or
@@ -873,8 +875,6 @@ void CmpSeabaseDDL::createSeabaseIndex(
   }
   tableInfo->hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
 
-  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-
   NABoolean xnWasStartedHere = FALSE;
   Int64 objUID = -1;
   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
@@ -903,7 +903,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
   if (createHbaseTable(ehi, &hbaseIndex, trafColFam.data(),
-                       &hbaseCreateOptions, hbaseCreateOptionsArray, 
+                       &hbaseCreateOptions,
                        numSplits, keyLength, 
                        encodedKeysBuffer) == -1)
     {

@@ -1830,15 +1830,11 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
     }
 
-
-  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
   if (createHbaseTable(ehi, &hbaseTable, trafColFamVec,
                        &hbaseCreateOptions, 
-                       hbaseCreateOptionsArray,
                        numSplits, keyLength,
                        encodedKeysBuffer) == -1)
     {
@@ -4243,14 +4239,20 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
 
   NABoolean addFam = FALSE;
   NAString trafColFam;
-  CollIndex idx = naTable->allColFams().index(colFamily);
-  if (idx == NULL_COLL_INDEX) // doesnt exist, add it
-    {
-      idx = naTable->allColFams().entries();
-      addFam = TRUE;
-    }
 
-  genTrafColFam(idx, trafColFam);
+  if (colFamily == SEABASE_DEFAULT_COL_FAMILY)
+    trafColFam = colFamily;
+  else
+    {
+      CollIndex idx = naTable->allColFams().index(colFamily);
+      if (idx == NULL_COLL_INDEX) // doesnt exist, add it
+        {
+          idx = naTable->allColFams().entries();
+          addFam = TRUE;
+        }
+      
+      genTrafColFam(idx, trafColFam);
+    }
 
   const NAColumn * nacol = nacolArr.getColumn(colName);
   if (nacol)
@@ -5873,11 +5875,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       if (j < (ringCols.entries() - 1))
         ringColListForValidation += ", ";
 
-      ringNullList += "or ";
+      ringNullList += "and ";
       ringNullList += "\"";
       ringNullList += colName;
       ringNullList += "\"";
-      ringNullList += " is null ";
+      ringNullList += " is not null ";
     }
 
   if (constraintErrorChecks(&cliInterface,
@@ -7472,14 +7474,12 @@ void CmpSeabaseDDL::createNativeHbaseTable(
       return;
     }
   
-  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)objectNamePart.data();
   hbaseTable.len = objectNamePart.length();
 
   if (createHbaseTable(ehi, &hbaseTable, colFamVec, 
-                       &hbaseCreateOptions, hbaseCreateOptionsArray) == -1)
+                       &hbaseCreateOptions) == -1)
     {
       deallocEHI(ehi); 
       

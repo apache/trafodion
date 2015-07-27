@@ -2283,7 +2283,6 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                                       HbaseStr *table,
                                       std::vector<NAString> &colFamVec,
                                       NAList<HbaseCreateOption*> * hbaseCreateOptions,
-                                      NAText *hbaseCreateOptionsArray,
                                       const int numSplits,
                                       const int keyLength,
                                       char** encodedKeysBuffer,
@@ -2343,8 +2342,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
       return -1;
     }
 
-  //  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-
+  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
   if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
                                 hbaseCreateOptions) < 0)
     {
@@ -2404,7 +2402,6 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                                       HbaseStr *table,
                                       const char * cf1, 
                                       NAList<HbaseCreateOption*> * inHbaseCreateOptions,
-                                      NAText *inHbaseCreateOptionsArray,
                                       const int numSplits,
                                       const int keyLength,
                                       char** encodedKeysBuffer,
@@ -2423,12 +2420,8 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   if (! inHbaseCreateOptions)
     hbaseCreateOptions = &lHbaseCreateOptions;
 
-  NAText * hbaseCreateOptionsArray = inHbaseCreateOptionsArray;
-  if (! inHbaseCreateOptionsArray)
-    hbaseCreateOptionsArray = lHbaseCreateOptionsArray;
-
   return createHbaseTable(ehi, table, colFamVec, hbaseCreateOptions,
-                          hbaseCreateOptionsArray, numSplits, keyLength,
+                          numSplits, keyLength,
                           encodedKeysBuffer, doRetry);
 }
 
@@ -5261,6 +5254,10 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
   return;
 }
 
+// user created traf stored col fam is of the form:  #<1-byte-num>
+//  1-byte-num is character '2' through '9', or 'a' through 'x'.
+// This allows for 32 column families and
+// is the index of user specified col family stored in naTable.allColFam().
 short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
 {
   trafColFamily = "#";
@@ -5269,7 +5266,7 @@ short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
   if (index >= 0 && index <= 7)
     v = (unsigned char)('2' + index);
   else if (index >= 8 && index <= 32)
-    v = (unsigned char)('a' + index);
+    v = (unsigned char)('a' + (index - 8));
   else
     return -1; // error
   
@@ -5280,16 +5277,12 @@ short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
 
 short CmpSeabaseDDL::extractTrafColFam(const NAString &trafColFam, int &index)
 {
-  // user created traf stored col fam is of the form:  #<1-byte-num>
-  //  1-byte-num is character '2' through '9', or 'a' through 'x'.
-  // This allows for 32 column families and
-  // is the index of user specified col family stored in naTable.allColFam().
   unsigned char v = (unsigned char)trafColFam.data()[1];
   index = 0;
   if (v >= '2' && v <= '9')
     index = v - '2';
   else if (v >= 'a' && v <= 'x')
-    index = (v - 'a') + 8;
+    index = ((v - 'a') + 8);
   else
     return -1;
  
@@ -7854,9 +7847,8 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
                        &userColFamVec, &trafColFamVec);
     } // for
   
-  NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
   retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
-                             hbaseCreateOptions, hbaseCreateOptionsArray,
+                             hbaseCreateOptions,
                              numSplits, keyLength, 
                              encodedKeysBuffer);
   if (retcode == -1)
@@ -7901,9 +7893,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               return;
             }
           
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, 
-                                     NULL, 0, 0,
-                                     NULL);
+          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY);
           if (retcode == -1)
             {
               deallocEHI(ehi); 
