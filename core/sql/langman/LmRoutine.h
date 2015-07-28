@@ -108,10 +108,11 @@ public:
   
   virtual const char *getParentQid() { return parentQid_; }
 
-  virtual void setRuntimeInfo(
+  virtual LmResult setRuntimeInfo(
        const char   *parentQid,
        int           numTotalInstances,
-       int           myInstanceNum);
+       int           myInstanceNum,
+       ComDiagsArea *da);
 
   // Main routine invocation method
   virtual LmResult invokeRoutine(void *inputRow,
@@ -141,6 +142,10 @@ public:
          /* IN */     Int32         planNum,
          /* OUT */    Int32        *planInfoLenOut,
          /* IN/OUT */ ComDiagsArea *da);
+
+  virtual LmResult setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                   SQLUDR_EmitRow emitRowPtr,
+                                   ComDiagsArea *da);
 
   ComRoutineLanguage getLanguage() const { return language_; }
   ComRoutineParamStyle getParamStyle() const { return paramStyle_; }

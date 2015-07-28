@@ -122,6 +122,10 @@ public:
     long                    inputDescParamOffset;
     struct SQLCLI_QUAD_FIELDS *batchQuadField;
 
+    // Rowsets and SPJ control variables
+    SQLSTMT_ID      *callStmtId;     // If this is an SPJ result set, then its CALL statement
+    Int32           resultSetIndex;
+
     // +++ T2_REPO
     char                    sqlUniqueQueryID[MAX_QUERY_NAME_LEN + 1];
     SQL_QUERY_COST_INFO     cost_info;

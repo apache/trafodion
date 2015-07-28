@@ -766,6 +766,8 @@ public:
     const char *udrSerInvocationInfo,
     ComUInt32 udrSerPlanInfoLen,
     const char *udrSerPlanInfo,
+    Int32 javaDebugPort,
+    Int32 javaDebugTimeout,
     ComUInt32 instanceNum,
     ComUInt32 numInstances);
 
@@ -846,6 +848,9 @@ public:
   inline ComUInt32 getUDRSerPlanInfoLen()       { return udrSerPlanInfoLen_; }
   inline const char *getUDRSerPlanInfo()           { return udrSerPlanInfo_; }
 
+  // debugging Java UDRs (works for Trafodion user or debug build only)
+  inline Int32 getUdrJavaDebugPort() const       { return udrJavaDebugPort_; }
+  inline Int32 getUdrJavaDebugTimeout() const { return udrJavaDebugTimeout_; }
   // Redefine pack/unpack methods from IpcMessageObj
   IpcMessageObjSize packedLength();
   IpcMessageObjSize packObjIntoMessage(IpcMessageBufferPtr buffer);
@@ -903,6 +908,8 @@ protected:
   const char *udrSerInvocationInfo_;
   ComUInt32 udrSerPlanInfoLen_;
   const char *udrSerPlanInfo_;
+  Int32 udrJavaDebugPort_;           // port for Java debugger
+  Int32 udrJavaDebugTimeout_;        // timeout to wait for Java debugger
 
 
 private:

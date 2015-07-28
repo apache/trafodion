@@ -1,7 +1,7 @@
 /*************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,14 +28,25 @@
 #ifndef _SRVRKDS_DEFINED
 #define _SRVRKDS_DEFINED
 
+extern bool g_bSqlMessageSet;
+
 extern void kdsCreateSQLDescSeq(SQLItemDescList_def *SQLDesc, short numEntries);
 extern void kdsCreateEmptySQLDescSeq(SQLItemDescList_def *SQLDesc);
+
 extern void kdsCreateSQLErrorException(	odbc_SQLSvc_SQLError *SQLError, 
-								long numConditions);
+								long numConditions, bool &bSQLMessageSet = g_bSqlMessageSet);
+
 extern void kdsCopySQLErrorException(odbc_SQLSvc_SQLError *SQLError, 
 								char *msg_buf,
 								long sqlcode,
 								char *sqlState);
+
+extern void kdsCopySQLErrorExceptionAndRowCount(
+							odbc_SQLSvc_SQLError *SQLError, 
+							char *msg_buf,
+							long sqlcode,
+							char *sqlState,
+							long currentRowCount);
 
 extern void kdsCopyToSQLValueSeq(SQLValueList_def *SQLValueList,
 							 long dataType, 
@@ -43,6 +54,7 @@ extern void kdsCopyToSQLValueSeq(SQLValueList_def *SQLValueList,
 							 void *varPtr, 
 							 long allocLength,
 							 long Charset);
+
 long kdsCopyToSMDSQLValueSeq(SQLValueList_def *SQLValueList,
 							 long dataType, 
 							 short indValue, 

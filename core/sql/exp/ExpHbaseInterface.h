@@ -238,8 +238,8 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,
 				  const int64_t timestamp);
 
@@ -326,8 +326,8 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,				
                                  
 				  const int64_t timestamp,
@@ -541,8 +541,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,     
 				  const int64_t timestamp);
 
@@ -628,8 +628,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-				  const Text& columnToCheck,
-				  const Text& colValToCheck,
+				  HbaseStr& columnToCheck,
+				  HbaseStr& colValToCheck,
                                   NABoolean noXn,			
 				  const int64_t timestamp,
                                   NABoolean asyncOperation);

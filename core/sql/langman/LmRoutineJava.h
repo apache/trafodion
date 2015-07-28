@@ -118,7 +118,7 @@ protected:
   inline ComBoolean isInternalSPJ() const
     { return udrForInternalSPJ_; }
 
-  virtual ComBoolean isValid();
+  virtual ComBoolean isValid() const;
 
   // This method invokes a static Java method that returns void. In
   // the future if we need to support Java methods that return a value

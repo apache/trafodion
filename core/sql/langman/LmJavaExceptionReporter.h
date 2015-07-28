@@ -98,6 +98,13 @@ public:
 
   LmResult checkJVMException(ComDiagsArea *da, LmHandle jt = NULL);
 
+  void processJavaObjException(LmHandle returnInfoObj,
+                               int returnStatus,
+                               int callPhase,
+                               const char *errText,
+                               const char *udrName,
+                               ComDiagsArea *da);
+
 private:
   LmResult loadThrowable(ComDiagsArea *diags);
 
@@ -126,7 +133,7 @@ private:
   LmHandle exErrorCodeId_;         // getErrorCode method
   LmHandle exNextExceptionId_;     // getNextException method
 
-  LmHandle exMetValFailedClass_;   // com.tandem.sqlmx.
+  LmHandle exMetValFailedClass_;   // org.trafodion.sql.udr.
                                    //  MethodValidationFailedException
   LmHandle exGetMethodName_;       // getMethodName
   LmHandle exGetSignature_;        // getSignature

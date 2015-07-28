@@ -233,6 +233,10 @@ public:
   NABoolean jdbcRSVerMismatch() const 
     { return jdbcSPJRSVer_ > JDBC_SPJRS_VERSION; }
 
+  LmHandle getUdrQueueStateField() const { return udrQueueStateField_; }
+  LmHandle getReturnInfoSQLStateField() const { return returnInfoSQLStateField_; }
+  LmHandle getReturnInfoMessageField() const { return returnInfoMessageField_; }
+
 private:
 
   // Helper function that does all the work of the constructor. Should
@@ -329,7 +333,6 @@ private:
   void processJavaOptions(const LmJavaOptions &userOptions,
                           LmJavaOptions &jvmOptions);
 
-private:
   static char *sysClassPath_;       // JVM's class path.
   static char *classPath_;          // class path used by ClassLoader.
   LmContainerManager *contManager_; // LMJ's CM.
@@ -391,11 +394,16 @@ private:
 
   LmHandle lmObjMethodInvokeClass_;   // LmUDRObjMethodInvoke class
   LmHandle makeNewObjId_;             // make a new LmUDRObjMethodInvoke object
+  LmHandle setRuntimeInfoId_;         // set run-time info in UDRInvocationInfo
   LmHandle routineMethodInvokeId_;    // invoke method of tmudr::UDR object
   LmHandle routineReturnInfoClass_;   // nested class for return info
   LmHandle returnInfoStatusField_;    // return status field id
+  LmHandle returnInfoSQLStateField_;  // SQLSTATE from thrown UDRException, if any
+  LmHandle returnInfoMessageField_;   // message from thrown UDRException, if any
   LmHandle returnInfoRIIField_;       // returned invocation info field id
   LmHandle returnInfoRPIField_;       // returned plan info field id
+  LmHandle udrClass_;                 // org.trafodion.sql.udr.UDR class
+  LmHandle udrQueueStateField_;       // UDR$QueueStateInfo.queueState_
 
   LmHandle lmCharsetClass_;
   LmHandle bytesToUnicodeId_;    // conversion going into JVM

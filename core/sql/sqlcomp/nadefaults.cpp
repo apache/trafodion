@@ -1320,6 +1320,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  SDDui___(EXE_MEMORY_FOR_PARTIALHGB_IN_MB,	"100"),
 
+ SDDui___(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,	"100"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
@@ -3387,6 +3388,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui___(UDR_DEBUG_FLAGS,                      "0"), // see sqludr/sqludr.h for values
  SDD_____(UDR_JAVA_OPTIONS,                     "OFF"),
   DD_____(UDR_JAVA_OPTION_DELIMITERS,           " "),
+ XDDui___(UDR_JVM_DEBUG_PORT,                   "0"),
+ XDDui___(UDR_JVM_DEBUG_TIMEOUT,                "0"),
 
   DDkwd__(UNAVAILABLE_PARTITION,		"STOP"),	// "?" used?
  DDkwd__(UNC_PROCESS,				"OFF"),
@@ -3520,6 +3523,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
+  DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation (in GB) feasible with NAHEAP.
  XDDui1__(USTAT_NECESSARY_SAMPLE_MAX,           "5000000"), // Maximum sample size with NECESSARY
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
  XDDpct__(USTAT_OBSOLETE_PERCENT_ROWCOUNT,      "15"),
@@ -3538,7 +3542,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
-  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
+  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST,       "OFF"),  // TEMP FOR TESTING -- SHOULD REMOVE
   DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "ON"), // use IS when no histograms exist for the column
@@ -4299,25 +4303,23 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
         #define DEFAULT_ESPS_PER_NODE 2
 
         Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-        Lng32 coresPerNode = 1;
-        if(!OSIM_isNSKbehavior())
-        {
+        Lng32 coresPerNode = 1;        
           // Make sure the gpClusterInfo points at an NAClusterLinux object.
           // In osim simulation mode, the pointer can point at a NAClusterNSK
           // object, for which the method numTSEsForPOS() is not defined.
-          NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
+        NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
 
           // number of POS TSE
-          Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
+        Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
 
           // cluster nodes
-          Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
+        Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
 
           // TSEs per node
-          Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
+        Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
 
           // cores per node
-          coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
+        coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
 
           // For Linux/nt, we conservatively allocate ESPs per node as follows
           // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
@@ -4330,24 +4332,24 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
           // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
           // in this case we only consider cpu cores
-          if ((coresPerNode <= TSEsPerNode) || (TSEsPerNode == 0))
-          {
-             if (coresPerNode > 1)
+        if ((coresPerNode <= TSEsPerNode) || (TSEsPerNode == 0))
+        {
+            if (coresPerNode > 1)
                 numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
-          }
-          else if (coresPerNode > (TSEsPerNode*2))
-          {
-             numESPsPerNode = TSEsPerNode;
-          }
-          else if (TSEsPerNode > 1)
-          {
-             numESPsPerNode = TSEsPerNode/2;
-          }
-          else // not really needed since numESPsPerNode is set to 1 from above
-          {
-             numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-          }
         }
+        else if (coresPerNode > (TSEsPerNode*2))
+        {
+             numESPsPerNode = TSEsPerNode;
+        }
+        else if (TSEsPerNode > 1)
+        {
+             numESPsPerNode = TSEsPerNode/2;
+        }
+        else // not really needed since numESPsPerNode is set to 1 from above
+        {
+             numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+        }
+        
 
         ftoa_((float)(numESPsPerNode)/(float)(coresPerNode), valuestr);
         strcpy(newValue, valuestr);
@@ -4359,13 +4361,9 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
       break;
 
     case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
-      if(OSIM_isLinuxbehavior())
-      {
-        utoa_(((NAClusterInfoLinux*)gpClusterInfo)->numLinuxNodes(), valuestr);
-        strcpy(newValue, valuestr);
-      }
-      else
-        strcpy(newValue, "16");
+
+      utoa_(((NAClusterInfoLinux*)gpClusterInfo)->numLinuxNodes(), valuestr);
+      strcpy(newValue, valuestr);
 
       if(reInit)
         ActiveSchemaDB()->
@@ -4910,8 +4908,7 @@ float NADefaults::getNumOfESPsPerNodeInFloat() const
    double maxEspPerCpuPerOp = getAsDouble(MAX_ESPS_PER_CPU_PER_OP);
 
    CollIndex cores =
-     (OSIM_isNSKbehavior() || 
-      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
+     ( (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
      ) ?  
         getAsLong(DEF_NUM_SMP_CPUS) :
         gpClusterInfo->numberOfCpusPerSMP();
@@ -4932,9 +4929,7 @@ ULng32 NADefaults::getTotalNumOfESPsInCluster(NABoolean& fakeEnv) const
 
    CollIndex numOfNodes = gpClusterInfo->numOfSMPs();
 
-   if (OSIM_isNSKbehavior() ||
-      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())) {
-
+   if ( (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())) {
      fakeEnv = TRUE;
      numOfNodes = getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
    }

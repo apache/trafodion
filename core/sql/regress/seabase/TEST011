@@ -44,6 +44,8 @@ drop table t011t5;
 drop table t011t6a;
 drop table t011t6b;
 
+drop table t011t7;
+
 -- delete explain for statement explstmt from repository
 set parserflags 131072;
 delete from trafodion."_REPOS_".metric_query_table
@@ -549,4 +551,24 @@ select count(*) from t011t6b;
 
 drop table t011t6a ;
 drop table t011t6b ;
+
+-- tests for alter column
+create table t011t7(a int not null, b varchar(2), 
+   c varchar(4) character set utf8 not null);
+invoke t011t7;
+alter table t011t7 alter column b varchar(3);
+invoke t011t7;
+alter table t011t7 alter column c varchar(5) character set utf8;
+invoke t011t7;
+
+-- negative tests for alter column
+alter table t011t7 alter column a largeint;
+alter table t011t7 alter column b int;
+alter table t011t7 alter column b varchar(4) character set utf8;
+alter table t011t7 alter column c varchar(6);
+alter table t011t7 alter column b varchar(2);
+alter table t011t7 alter column c varchar(4) character set utf8;
+
+
+
 

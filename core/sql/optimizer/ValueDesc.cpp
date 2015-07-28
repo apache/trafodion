@@ -1272,7 +1272,14 @@ OrderComparison ValueIdList::satisfiesReqdOrder(const ValueIdList & reqdOrder,
   if (entries() < numCols)
     return DIFFERENT_ORDER;
 
-  if (!OSIM_isNTbehavior() || (OSIM_isNTbehavior() && OSIM_runningSimulation()))
+  //Orignal condition: if (!OSIM_isNTbehavior() || (OSIM_isNTbehavior() && OSIM_runningSimulation()))
+  //For new OSIM, there won't be OSIM_isNTbehavior(), OSIM_isLinuxbehavior() or OSIM_isNSKbehavior(),
+  //we will assume OSIM_isLinuxbehavior() is always TRUE.
+  //
+  //The else block below never gets executed, 
+  //if it is to be executed under certain conditions, 
+  //please separate it from this if-conditon.
+  if (TRUE)
   {
   ItemExpr *ie = (*this)[0].getItemExpr();
   ItemExpr * reqdExpr = reqdOrder[0].getItemExpr();

@@ -6271,8 +6271,11 @@ void CmpSeabaseDDL::initSeabaseMD()
   deallocEHI(ehi); 
   ehi = NULL;
 
+  // Note that this is not an existing jar file, the class
+  // loader will attempt to load the class from the CLASSPATH if
+  // it can't find this jar
   NAString installJar(getenv("MY_SQROOT"));
-  installJar += "/export/lib/trafodion-UDR-0.7.0.jar";
+  installJar += "/export/lib/trafodion-sql-currversion.jar";
 
   if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
     goto label_error;
@@ -8327,6 +8330,14 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
              ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption();
            
            alterSeabaseTableAlterIdentityColumn(alterIdentityColNode, 
+                                                currCatName, currSchName);
+        }
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)
+         {
+           StmtDDLAlterTableAlterColumnDatatype * alterColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnDatatype();
+           
+           alterSeabaseTableAlterColumnDatatype(alterColNode, 
                                                 currCatName, currSchName);
         }
        else if (ddlNode->getOperatorType() ==  DDL_CLEANUP_OBJECTS)

@@ -2851,7 +2851,7 @@ short CmpDescribeSeabaseTable (
                   BaseColumn *bc = (BaseColumn *) saltCols[k].getItemExpr();
                   if (k > 0)
                     sc += ", ";
-                  sc += bc->getColName();
+                  sc += ANSI_ID(bc->getColName().data());
                 }
               sc += ")";
               outputShortLine(space, sc.data());

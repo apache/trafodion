@@ -3117,32 +3117,34 @@ ConstValue * BiArith::castToConstValue (NABoolean & negate_it)
 
   if ((op == ITM_MINUS) || (op == ITM_PLUS))
   {
-    if (op == ITM_MINUS)
-      negate_it = TRUE;
-    else
-      negate_it = FALSE;
-
-    NABoolean neg = FALSE;
-    ConstValue * lhs = child(0)->castToConstValue(neg);
-    ConstValue * rhs = child(1)->castToConstValue(neg);
+    NABoolean neg0 = FALSE;
+    NABoolean neg1 = FALSE;
+    ConstValue * lhs = child(0)->castToConstValue(neg0);
+    ConstValue * rhs = child(1)->castToConstValue(neg1);
 
     if (lhs && rhs)
     {
-      NormValue lhsVal = NormValue(lhs);
-      if (lhsVal.getValue() == 0)
-	return (rhs);
+      Lng32 scale0 = 0;
+      if (lhs->canGetExactNumericValue() &&
+          lhs->getExactNumericValue(scale0) == 0)
+        {
+          if (op == ITM_MINUS)
+            negate_it = (!neg1);
+          else
+            negate_it = neg1;
+          return (rhs);
+        }
       else
       {
-	NormValue rhsVal = NormValue (rhs);
-	if (rhsVal.getValue() == 0)
-	  return (lhs);
+        Lng32 scale1 = 0;
+        if (rhs->canGetExactNumericValue() &&
+            rhs->getExactNumericValue(scale1) == 0)
+          {
+            negate_it = neg0;
+            return (lhs);
+          }
       }
     }
-
-
-
-
-
   }
   return NULL;
 }

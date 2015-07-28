@@ -791,7 +791,9 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap)
   udrSerInvocationInfoLen_(0),
   udrSerInvocationInfo_(NULL),
   udrSerPlanInfoLen_(0),
-  udrSerPlanInfo_(NULL)
+  udrSerPlanInfo_(NULL),
+  udrJavaDebugPort_(-1),
+  udrJavaDebugTimeout_(0)
 {
 }
 
@@ -822,6 +824,8 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap,
                        const char *udrSerInvocationInfo,
                        ComUInt32 udrSerPlanInfoLen,
                        const char *udrSerPlanInfo,
+                       Int32 javaDebugPort,
+                       Int32 javaDebugTimeout,
 		       ComUInt32 instanceNum,
 		       ComUInt32 numInstances
 		       )
@@ -846,7 +850,9 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap,
   udrSerPlanInfoLen_(udrSerPlanInfoLen),
   udrSerPlanInfo_(udrSerPlanInfo),
   instanceNum_(instanceNum),
-  numInstances_(numInstances)
+  numInstances_(numInstances),
+  udrJavaDebugPort_(javaDebugPort),
+  udrJavaDebugTimeout_(javaDebugTimeout)
 {
   sqlName_ = allocateString(sqlName);
   routineName_ = allocateString(routineName);
@@ -1086,6 +1092,8 @@ IpcMessageObjSize UdrLoadMsg::packedLength()
   result += sizeof(udrFlags_);
   result += sizeof(routineOwnerId_);
   result += packedStringLength(parentQid_);
+  result += sizeof(udrJavaDebugPort_);
+  result += sizeof(udrJavaDebugTimeout_);
   result += sizeof(numInputTables_);
   result += sizeof(numInstances_);
   result += sizeof(instanceNum_);
@@ -1154,6 +1162,8 @@ IpcMessageObjSize UdrLoadMsg::packObjIntoMessage(IpcMessageBufferPtr buffer)
   result += packIntoBuffer(buffer, udrFlags_);
   result += packIntoBuffer(buffer, routineOwnerId_);
   result += packCharStarIntoBuffer(buffer, parentQid_);
+  result += packIntoBuffer(buffer, udrJavaDebugPort_);
+  result += packIntoBuffer(buffer, udrJavaDebugTimeout_);
   result += packIntoBuffer(buffer, numInstances_);
   result += packIntoBuffer(buffer, instanceNum_);
 
@@ -1227,6 +1237,8 @@ void UdrLoadMsg::unpackObj(IpcMessageObjType objType,
   unpackBuffer(buffer, udrFlags_);
   unpackBuffer(buffer, routineOwnerId_);
   unpackBuffer(buffer, parentQid_, getHeap());
+  unpackBuffer(buffer, udrJavaDebugPort_);
+  unpackBuffer(buffer, udrJavaDebugTimeout_);
   unpackBuffer(buffer, numInstances_);
   unpackBuffer(buffer, instanceNum_);
   allocateParamInfo();

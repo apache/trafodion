@@ -165,8 +165,8 @@ Lng32 ExpHbaseInterface::checkAndUpdateRow(
 					   HbaseStr &tblName,
 					   HbaseStr &rowID, 
 					   HbaseStr &row,
-					   const Text& columnToCheck,
-					   const Text& colValToCheck,
+					   HbaseStr& columnToCheck,
+					   HbaseStr& colValToCheck,
                                            NABoolean noXn,
 					   const int64_t timestamp,
                                            NABoolean asyncOperation)
@@ -196,8 +196,8 @@ Lng32 ExpHbaseInterface::checkAndUpdateRow(
 Lng32 ExpHbaseInterface::checkAndDeleteRow(
 					   HbaseStr &tblName,
 					   HbaseStr &rowID, 
-					   const Text& columnToCheck,
-					   const Text& colValToCheck,
+					   HbaseStr& columnToCheck,
+					   HbaseStr& colValToCheck,
                                            NABoolean noXn,
 					   const int64_t timestamp)
 {
@@ -866,8 +866,8 @@ Lng32 ExpHbaseInterface_JNI::deleteRows(
 Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
 	  HbaseStr &tblName,
 	  HbaseStr& row, 
-	  const Text& columnToCheck,
-	  const Text& colValToCheck,
+	  HbaseStr& columnToCheck,
+	  HbaseStr& colValToCheck,
 	  NABoolean noXn,
 	  const int64_t timestamp)
 
@@ -1344,8 +1344,8 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
 	  HbaseStr &tblName,
 	  HbaseStr &rowID, 
 	  HbaseStr &row,
-	  const Text& columnToCheck,
-	  const Text& colValToCheck,
+	  HbaseStr& columnToCheck,
+	  HbaseStr& colValToCheck,
           NABoolean noXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)

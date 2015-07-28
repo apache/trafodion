@@ -245,7 +245,7 @@
 1257 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1258 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
-1260 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused as of 05/7/12 ---
+1260 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Debugging of UDRs is only allowed for the DB__ROOT user. Connect as DB__ROOT, preferably using the sqlci tool, and try again.
 1261 ZZZZZ 99999 BEGINNER MAJOR DIALOUT ADVANCED MAJOR DIALOUT Error $0~int0 was returned by the SQL CLI while processing the UDR_JAVA_OPTIONS setting '$1~string0'.
 1262 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The command cannot be executed because $0~string0 is in progress for $1~string1.
 1263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object names that start with $0~String0 are reserved for SQL metadata.
@@ -388,8 +388,9 @@
 1401 ZZZZZ 99999 BEGINNER MINOR DBADMIN The default value of column $0~ColumnName contains characters that cannot be converted to character set $1~String0.
 1402 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created with the DIVISION LIKE TABLE option. Only non-unique indexes are supported with this option.
 1403 ZZZZZ 99999 BEGINNER MINOR DBADMIN This ALTER command is not allowed on a reserved system schema object.
-1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is part of the table's primary key.
-1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is used in the secondary index $1~TableName.
+1404 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be altered. Reason: $0~string0
+1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is part of the table's primary key.
+1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is used in the secondary index $1~TableName.
 1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
 1423 ZZZZZ 99999 BEGINNER MINOR DBADMIN Insert into metadata table $0~string0 failed.
 1424 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as that would leave the table with no user defined columns.
