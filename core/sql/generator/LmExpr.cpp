@@ -101,6 +101,7 @@ static Lng32 GetDisplayLength(const NAType &t)
 static ItemExpr *CreateLmString(ItemExpr &source,
                                 const NAType &sourceType,
                                 ComRoutineLanguage language,
+                                ComRoutineParamStyle style,
                                 CmpContext *cmpContext)
 {
   //
@@ -120,7 +121,7 @@ static ItemExpr *CreateLmString(ItemExpr &source,
   sprintf(buf, "%d", maxLength);
 
   NAString *s = new (h) NAString("cast (@A1 as ", h);
-  if (language == COM_LANGUAGE_JAVA)
+  if (style == COM_STYLE_JAVA_CALL)
     (*s) += "VARCHAR(";
   else
     (*s) += "CHAR(";
@@ -225,7 +226,7 @@ LmExprResult CreateLmInputExpr(const NAType &formalType,
     }
     else
     {
-      newExpr = CreateLmString(actualValue, formalType, language, cmpContext);
+      newExpr = CreateLmString(actualValue, formalType, language, style, cmpContext);
     }
   }
   else
@@ -276,7 +277,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
   if (isString &&
       (formalType.getTypeQualifier() != NA_CHARACTER_TYPE))
   {
-    if (isResultSet || language != COM_LANGUAGE_JAVA)
+    if (isResultSet || style != COM_STYLE_JAVA_CALL)
     {
       Lng32 maxLength = GetDisplayLength(formalType);
       replyType = new (h) SQLChar(maxLength);

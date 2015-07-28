@@ -41,6 +41,9 @@ package org.trafodion.sql.udr;
  **/
 class MethodValidationFailedException extends Exception
 {
+  //  Used for the Serializable base class
+  private static final long serialVersionUID = 1L;
+
   private String methodName_;
   private String methodSignature_;
   private String className_;

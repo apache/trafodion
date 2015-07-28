@@ -3744,6 +3744,9 @@ enum DefaultConstants
 
   EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,
 
+  UDR_JVM_DEBUG_PORT,
+  UDR_JVM_DEBUG_TIMEOUT,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

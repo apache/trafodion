@@ -1911,6 +1911,8 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
         udrTdb.udrSerInvocationInfo_,
         udrTdb.udrSerPlanInfoLen_,
         udrTdb.udrSerPlanInfo_,
+        udrTdb.getJavaDebugPort(),
+        udrTdb.getJavaDebugTimeout(),
 	instanceNum,
 	numInstances
         );

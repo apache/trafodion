@@ -312,6 +312,16 @@ public:
   {
     return udrChildTableDescInfo_[i];
   }
+
+  inline Int32 getJavaDebugPort() const
+  {
+    return javaDebugPort_;
+  }
+
+  inline Int32 getJavaDebugTimeout() const
+  {
+    return javaDebugTimeout_;
+  }
  
   
  

@@ -680,7 +680,7 @@ void LmRoutineJava::deleteLmResultSetsOverMax(ComDiagsArea *diagsArea)
 }
 
 // check validity of the object after calling the constructor
-ComBoolean LmRoutineJava::isValid()
+ComBoolean LmRoutineJava::isValid() const
 {
   if (retType_ > LmJavaType::JT_NONE &&
       retType_ <= LmJavaType::JT_LAST)

@@ -54,7 +54,7 @@ public class LmCharsetCoder
    static CharsetDecoder utf8Decoder_;
    static CharsetEncoder utf8Encoder_;
 
-   static HashMap charsetHashMap_;
+   static HashMap<String, Integer> charsetHashMap_;
 
    static
    {
@@ -112,11 +112,11 @@ public class LmCharsetCoder
       utf8Encoder_.onUnmappableCharacter(CodingErrorAction.REPORT);
 
       // A map for charset name to an integer
-      charsetHashMap_ = new HashMap(4);
-      charsetHashMap_.put("ISO88591", new Integer(1));
-      charsetHashMap_.put("UCS2", new Integer(2));
-      charsetHashMap_.put("SJIS", new Integer(3));
-      charsetHashMap_.put("UTF8", new Integer(4));
+      charsetHashMap_ = new HashMap<String, Integer>(4);
+      charsetHashMap_.put("ISO88591", 1);
+      charsetHashMap_.put("UCS2", 2);
+      charsetHashMap_.put("SJIS", 3);
+      charsetHashMap_.put("UTF8", 4);
 
       reset_ = System.getProperty("os.name").equals("Linux");
    }
@@ -143,7 +143,7 @@ public class LmCharsetCoder
     CharBuffer cBuffer = null;
 
     // call proper decoder to decode the bytes
-    switch (((Integer)charsetHashMap_.get(fromCharset)).intValue())
+    switch (charsetHashMap_.get(fromCharset))
     {
       case 1:
         cBuffer = iso88591Decoder_.decode(bBuffer);

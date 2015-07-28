@@ -407,8 +407,8 @@ for i in $prettyfiles; do
      fi
 
      if [ $BUILD_FLAVOR = "RELEASE" ]; then
-          if [ "$seabase" -ne 0 -a -r "$REGRTSTDIR/EXPECTED$tnum.SB.RELEASE" ]; then
-             exp="EXPECTED$tnum.SB.RELEASE"
+          if [ "$seabase" -ne 0 -a -r "$REGRTSTDIR/EXPECTED$tnum.RELEASE" ]; then
+             exp="EXPECTED$tnum.RELEASE"
           elif [ -r "$REGRTSTDIR/EXPECTED$tnum.LINUX.RELEASE" ]; then
              exp="EXPECTED$tnum.LINUX.RELEASE"
           fi

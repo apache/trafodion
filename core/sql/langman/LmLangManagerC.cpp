@@ -333,7 +333,7 @@ LmResult LmLanguageManagerC::getObjRoutine(
       *da << DgSqlCode(-LME_FACTORY_METHOD)
           << DgString0(externalName)
           << DgString1(containerName)
-          << DgString2(e.getText().data());
+          << DgString2(e.getMessage().data());
       result = LM_ERR;
     }
   catch (...)

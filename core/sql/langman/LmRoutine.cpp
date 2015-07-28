@@ -131,12 +131,14 @@ LmResult LmRoutine::invokeRoutineMethod(
   return LM_ERR;
 }
 
-void LmRoutine::setRuntimeInfo(
+LmResult LmRoutine::setRuntimeInfo(
        const char   *parentQid,
        int           totalNumInstances,
-       int           instanceNum)
+       int           instanceNum,
+       ComDiagsArea *da)
 {
   LM_ASSERT(0); // should not call this method on the base class
+  return LM_ERR;
 }
 
 LmResult LmRoutine::getRoutineInvocationInfo
@@ -149,6 +151,14 @@ LmResult LmRoutine::getRoutineInvocationInfo
      /* IN */     Int32         planNum,
      /* OUT */    Int32        *planInfoLenOut,
      /* IN/OUT */ ComDiagsArea *da)
+{
+  LM_ASSERT(0); // should not call this method on the base class
+  return LM_ERR;
+}
+
+LmResult LmRoutine::setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                    SQLUDR_EmitRow emitRowPtr,
+                                    ComDiagsArea *da)
 {
   LM_ASSERT(0); // should not call this method on the base class
   return LM_ERR;

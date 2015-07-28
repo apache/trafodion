@@ -835,6 +835,10 @@ public:
 
    UInt32 getMaxErrorRows() const{ return maxErrorRows_; }
    void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
+  
+   void setDeletePreCondExpr(ExExprPtr exprPtr) {
+        deletePreCondExpr_ = exprPtr;
+   }
 
  protected:
   enum
@@ -900,7 +904,7 @@ public:
   UInt32 mergeInsertRowLen_;
   UInt32 returnFetchedRowLen_;
   UInt32 returnUpdatedRowLen_;
-
+  
   UInt32 rowIdLen_;
   UInt32 outputRowLen_;
   UInt32 rowIdAsciiRowLen_;
@@ -930,6 +934,7 @@ public:
   ExExprPtr encodedKeyExpr_;
 
   ExExprPtr keyColValExpr_;
+  ExExprPtr deletePreCondExpr_;
   ExExprPtr hbaseFilterExpr_;
 
   ExCriDescPtr workCriDesc_;      

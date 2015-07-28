@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@
 /* ************************************************************************
  * Used in SqlInterface.cpp by EXECDIRECT, PREPARE_FROM_MODULE and PREPARE.
  * ************************************************************************ */
+
+bool g_bSqlMessageSet = false;
 
 void kdsCreateSQLDescSeq(SQLItemDescList_def *SQLDesc, short numEntries)
 {
@@ -79,7 +81,7 @@ void kdsCreateEmptySQLDescSeq(SQLItemDescList_def *SQLDesc)
  * ************************************************************************ */
 
 void kdsCreateSQLErrorException(odbc_SQLSvc_SQLError *SQLError,
-								long numConditions)
+								long numConditions, bool &bSQLMessageSet)
 {
 	FUNCTION_ENTRY("kdsCreateSQLErrorException",("SQLError=0x%08x,numConditions=%ld",SQLError,numConditions));
 	DEBUG_ASSERT(SQLError!=NULL,("SQLError is NULL"));
@@ -93,6 +95,7 @@ void kdsCreateSQLErrorException(odbc_SQLSvc_SQLError *SQLError,
 	}
 	else
 	{
+		bSQLMessageSet = true;
 		MEMORY_ALLOC_ARRAY(SQLError->errorList._buffer, ERROR_DESC_def, numConditions);
 		memset(SQLError->errorList._buffer,0,numConditions*sizeof(ERROR_DESC_def));
 		SQLError->errorList._length = 0;
@@ -193,3 +196,46 @@ void kdsCopyToSQLValueSeq(SQLValueList_def *SQLValueList,
 	SQLValueList->_length++;
 	FUNCTION_RETURN_VOID((NULL));
 }
+
+void kdsCopySQLErrorExceptionAndRowCount(
+							odbc_SQLSvc_SQLError *SQLError, 
+							char *msg_buf,
+							long sqlcode,
+							char *sqlState,
+							long currentRowCount)
+{
+	SRVRTRACE_ENTER(FILE_KDS+6);
+	ERROR_DESC_def *SqlErrorDesc;
+	size_t	len;
+
+	len = strlen(msg_buf);
+	// Allocate String Buffer
+	
+	SqlErrorDesc = (ERROR_DESC_def *)SQLError->errorList._buffer + SQLError->errorList._length;
+	if (msg_buf)
+	{
+        MEMORY_ALLOC_ARRAY(SqlErrorDesc->errorText, char, strlen(msg_buf)+1);
+        strcpy(SqlErrorDesc->errorText, msg_buf);
+    }
+    else
+        SqlErrorDesc->errorText = NULL;
+	
+    SqlErrorDesc->sqlcode = sqlcode;
+	strcpy(SqlErrorDesc->sqlstate, sqlState);
+	SqlErrorDesc->errorCodeType = SQLERRWARN;
+	SqlErrorDesc->Param1 = NULL;
+	SqlErrorDesc->Param2 = NULL;
+	SqlErrorDesc->Param3 = NULL;
+	SqlErrorDesc->Param4 = NULL;
+	SqlErrorDesc->Param5 = NULL;
+	SqlErrorDesc->Param6 = NULL;
+	SqlErrorDesc->Param7 = NULL;
+	SqlErrorDesc->rowId = currentRowCount;
+	SqlErrorDesc->errorDiagnosticId = 0;
+	SqlErrorDesc->operationAbortId = 1;
+	SQLError->errorList._length++;
+
+	SRVRTRACE_EXIT(FILE_KDS+6);
+	return;
+}
+

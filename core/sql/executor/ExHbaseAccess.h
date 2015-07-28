@@ -229,6 +229,9 @@ protected:
   inline ex_expr *keyColValExpr() const 
     { return hbaseAccessTdb().keyColValExpr_; }
 
+  inline ex_expr *deletePreCondExpr() const
+    { return hbaseAccessTdb().deletePreCondExpr_; }
+
   inline ex_expr *hbaseFilterValExpr() const 
     { return hbaseAccessTdb().hbaseFilterExpr_; }
 
@@ -291,7 +294,8 @@ protected:
 		  char * tuppRow = NULL);
   void setupPrevRowId();
   short extractColFamilyAndName(char * input, Text &colFam, Text &colName);
-  short evalKeyColValExpr(Text &columnToCheck, Text &colValToCheck);
+  short evalKeyColValExpr(HbaseStr &columnToCheck, HbaseStr &colValToCheck);
+  short evalDeletePreCondExpr();
   short evalEncodedKeyExpr();
   short evalRowIdExpr(NABoolean noVarchar = FALSE);
   short evalRowIdAsciiExpr(NABoolean noVarchar = FALSE);
@@ -1033,6 +1037,8 @@ public:
  protected:
   NABoolean rowUpdated_;
   Int64 latestRowTimestamp_;
+  HbaseStr columnToCheck_;
+  HbaseStr colValToCheck_;
 };
 
 // UMD: unique UpdMergeDel on native Hbase table

@@ -46,12 +46,21 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
             parType_ = val;
         }
           
-        public int SpecialDegreeOfParallelism() {
+        public int getSpecialDegreeOfParallelism() {
             return parType_;
         }
     };
 
    // Functions for use by UDR writer, both at compile and at run time
+    /**
+     *  Get a unique id for a given plan within a UDR invocation.
+     *
+     *  @return Plan number for this object, relative to the invocation.
+     */
+    int getPlanNum() {
+        return planNum_;
+    }
+
     /**
      *  Retreive cost per row
      *  @return costPerRow
@@ -224,36 +233,37 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
      *
      *  @see UDRInvocationInfo.DebugFlags#PRINT_INVOCATION_INFO_AT_RUN_TIME
      */
-    public void print()
+    public void print() throws UDRException
     {
-        System.out.print("\nUDRPlanInfo\n-----------------------\n");
-        System.out.print("Cost per row               : ");
-        System.out.print(String.format("%ld\n", costPerRow_));
-        System.out.print("Degree of parallelism      : ");
-        System.out.print(String.format("%d\n", degreeOfParallelism_));
-        try {
-        if (getUDRWriterCompileTimeData() != null)
+        System.out.println("\nUDRPlanInfo\n-----------------------");
+        System.out.println(String.format("Plan number                : %d", planNum_));
+        System.out.println(String.format("Cost per row               : %d", costPerRow_));
+        System.out.println(String.format("Degree of parallelism      : %d", degreeOfParallelism_));
+
+        if (udrWriterCompileTimeData_ != null)
         {
             System.out.print("UDR Writer comp. time data : ");
             getUDRWriterCompileTimeData().print();
             System.out.print("\n");
-        }}
-        catch (UDRException e1) 
-            {System.out.print("Exception while printing UDRWriterCompileTimeData\n");}
+        }
+
         System.out.print("UDF Writer plan data length: ");
         System.out.print(String.format("%d\n", (planData_ != null) ? planData_.length : 0));
     }
     
     // UDR writers can ignore these methods
     public static short getCurrentVersion() { return 1; }
+    @Override
     public int serializedLength() throws UDRException {
       int result = super.serializedLength() +
                    serializedLengthOfLong() +
-                   serializedLengthOfInt();
+                   serializedLengthOfInt() +
+                   serializedLengthOfBinary(planData_.length);
 
       return result;
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException {
       
       int origPos = outputBuffer.position();
@@ -276,6 +286,7 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException {
       int origPos = inputBuffer.position();
 
@@ -296,14 +307,16 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
     }
     
 
-    UDRPlanInfo(UDRInvocationInfo invocationInfo) {
+    UDRPlanInfo(UDRInvocationInfo invocationInfo, int planNum) {
         super(TMUDRObjectType.UDR_PLAN_INFO_OBJ,getCurrentVersion());
         invocationInfo_ = invocationInfo;
-        costPerRow_ = 0;
-        degreeOfParallelism_ = SpecialDegreeOfParallelism.ANY_DEGREE_OF_PARALLELISM.SpecialDegreeOfParallelism();
+        planNum_ = planNum;
+        costPerRow_ = -1;
+        degreeOfParallelism_ = SpecialDegreeOfParallelism.ANY_DEGREE_OF_PARALLELISM.getSpecialDegreeOfParallelism();
     }
 
     private UDRInvocationInfo invocationInfo_;
+    private int planNum_;
     private long costPerRow_;
     private int degreeOfParallelism_;
     private UDRWriterCompileTimeData udrWriterCompileTimeData_;

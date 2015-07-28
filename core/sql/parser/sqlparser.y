@@ -32580,6 +32580,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_CONTROL
                       | TOK_COPY
                       | TOK_COST
+                      | TOK_CPP
                       | TOK_CPU
                       | TOK_CREATE_LIBRARY
                       | TOK_CREATE_MV

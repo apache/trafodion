@@ -50,10 +50,11 @@ public:
 
   tmudr::UDRInvocationInfo *getInvocationInfo() { return invocationInfo_; }
   virtual const char *getParentQid();
-  virtual void setRuntimeInfo(
+  virtual LmResult setRuntimeInfo(
        const char   *parentQid,
        int           totalNumInstances,
-       int           myInstanceNum);
+       int           myInstanceNum,
+       ComDiagsArea *da);
   virtual LmResult invokeRoutine(
        void         *inputRow,
        void         *outputRow,
@@ -81,8 +82,9 @@ public:
        /* IN */     Int32         planNum,
        /* OUT */    Int32        *planInfoLenOut,
        /* IN/OUT */ ComDiagsArea *da);
-  void setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
-                       SQLUDR_EmitRow emitRowPtr);
+  virtual LmResult setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                   SQLUDR_EmitRow emitRowPtr,
+                                   ComDiagsArea *da);
   LmResult validateWall(char *userBuf,
                         int userBufLen,
                         ComDiagsArea *da,
