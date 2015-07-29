@@ -333,6 +333,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
     encodedKeyExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (keyColValExpr())
     keyColValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (deletePreCondExpr())
+    deletePreCondExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (hbaseFilterValExpr())
     hbaseFilterValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   

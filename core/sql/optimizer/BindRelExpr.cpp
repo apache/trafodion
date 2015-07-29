@@ -12814,9 +12814,19 @@ RelExpr *LeafDelete::bindNode(BindWA *bindWA)
     if (GU_DEBUG) cerr << "\nLeafDelete " << getUpdTableNameText() << endl;
   #endif
 
+  if (getPreconditionTree()) {
+    ValueIdSet pc;
+
+    getPreconditionTree()->convertToValueIdSet(pc, bindWA, ITM_AND);
+    if (bindWA->errStatus())
+      return this;
+
+    setPreconditionTree(NULL);
+    setPrecondition(pc);
+  }
+
   RelExpr *boundExpr = GenericUpdate::bindNode(bindWA);
   if (bindWA->errStatus()) return boundExpr;
-
 
   //Set the beginKeyPred
   if (TriggersTempTable *tempTableObj = getTrigTemp())

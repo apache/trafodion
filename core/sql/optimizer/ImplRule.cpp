@@ -719,6 +719,7 @@ void copyCommonDeleteFields(Delete *result,
   result->mergeInsertRecExprArray()     = bef->mergeInsertRecExprArray();
 
   result->csl() = bef->csl();
+  result->setPrecondition(bef->getPrecondition());
 }
 
 // -----------------------------------------------------------------------
@@ -2653,6 +2654,16 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
   result = new(CmpCommon::statementHeap()) 
     HbaseInsert(bef->getTableName(),bef->getTableDesc());
 
+  result->setInsertType(bef->getInsertType());
+
+  DefaultToken vsbbTok = CmpCommon::getDefault(INSERT_VSBB);
+  if ((numberOfRowsToBeInserted > 1) &&
+      (vsbbTok != DF_OFF) &&
+      (result->getInsertType() != Insert::UPSERT_LOAD))
+    {
+      result->setInsertType(Insert::VSBB_INSERT_USER);
+    }
+
   copyCommonGenericUpdateFields(result, bef);
 
   result->setPartKey(skey);
@@ -2669,16 +2680,6 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
 
   if (result->getGroupAttr()->isEmbeddedInsert())
     result->executorPred() += bef->selectionPred();
-
-  result->setInsertType(bef->getInsertType());
-
-  DefaultToken vsbbTok = CmpCommon::getDefault(INSERT_VSBB);
-  if ((numberOfRowsToBeInserted > 1) &&
-      (vsbbTok != DF_OFF) &&
-      (result->getInsertType() != Insert::UPSERT_LOAD))
-    {
-      result->setInsertType(Insert::VSBB_INSERT_USER);
-    }
 
   return result;
 }

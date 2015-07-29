@@ -12530,6 +12530,9 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
   // QSTUFF ?? again need to understand details 
   ValueIdSet localExprs(newRecExpr());
 
+  if (setOfValuesReqdByParent)
+    localExprs += *setOfValuesReqdByParent;
+
   // QSTUFF
   localExprs.insertList(newRecBeforeExpr());
   // QSTUFF
@@ -12545,6 +12548,8 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
   localExprs.insertList(updateToSelectMap().getBottomValues());
   if (setOfValuesReqdByParent)
     localExprs += *setOfValuesReqdByParent ;
+  localExprs += exprsInDerivedClasses_;
+
   // ---------------------------------------------------------------------
   // Check which expressions can be evaluated by my child.
   // Modify the Group Attributes of those children who inherit some of
@@ -12808,7 +12813,8 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
     isFastDelete_(FALSE),
-    csl_(csl),estRowsAccessed_(0)
+    csl_(csl),estRowsAccessed_(0),
+    preconditionTree_(NULL)
 {
   setCacheableNode(CmpMain::BIND);
 }
@@ -12840,8 +12846,27 @@ RelExpr * Delete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->isFastDelete_       = isFastDelete_;
   result->csl() = csl();
   result->setEstRowsAccessed(getEstRowsAccessed());
+  if (preconditionTree_)
+    result->preconditionTree_ = preconditionTree_->copyTree(outHeap)->castToItemExpr();
+  result->setPrecondition(precondition_);
+  result->exprsInDerivedClasses_ = exprsInDerivedClasses_;
 
   return GenericUpdate::copyTopNode(result, outHeap);
+}
+
+void Delete::addLocalExpr(LIST(ExprNode *) &xlist,
+                          LIST(NAString) &llist) const
+{
+  if (preconditionTree_ != NULL OR
+      precondition_.entries() > 0)
+    {
+      if (preconditionTree_ != NULL)
+        xlist.insert(preconditionTree_);
+      else
+        xlist.insert(precondition_.rebuildExprTree(ITM_AND));
+      llist.insert("precondition");
+    }
+  GenericUpdate::addLocalExpr(xlist, llist);
 }
 
 // -----------------------------------------------------------------------

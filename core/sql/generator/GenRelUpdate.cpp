@@ -777,6 +777,7 @@ short HbaseDelete::codeGen(Generator * generator)
   ex_expr *proj_expr = 0;
   ex_expr *convert_expr = NULL;
   ex_expr * keyColValExpr = NULL;
+  ex_expr *preCondExpr = NULL;
 
   ex_cri_desc * givenDesc 
     = generator->getCriDesc(Generator::DOWN);
@@ -825,6 +826,13 @@ short HbaseDelete::codeGen(Generator * generator)
 			  (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE));
 
   const CollIndex numColumns = columnList.entries();
+
+  if (! getPrecondition().isEmpty())
+    {
+      ItemExpr * preCondTree = getPrecondition().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(preCondTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			   &preCondExpr);
+    }
 
   // build key information
   keyRangeGen * keyInfo = 0;
@@ -1331,6 +1339,9 @@ short HbaseDelete::codeGen(Generator * generator)
       hbasescan_tdb->setPertableStatsTdbId((UInt16)generator->
 					   getPertableStatsTdbId());
     }
+
+  if (preCondExpr)
+    hbasescan_tdb->setDeletePreCondExpr(preCondExpr);
 
   if (generator->isTransactionNeeded())
     setTransactionRequired(generator);

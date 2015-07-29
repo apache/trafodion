@@ -6421,6 +6421,7 @@ void GenericUpdate::recomputeOuterReferences()
   allMyExpr += executorPred();
   allMyExpr += usedColumns();
   allMyExpr += getSelectionPred();
+  allMyExpr += exprsInDerivedClasses_;
 
   ValueIdSet beginKeyPredSet(beginKeyPred());
   allMyExpr += beginKeyPredSet;
@@ -6525,6 +6526,17 @@ RelExpr * Insert::normalizeNode(NormWA & normWARef)
   // ON STATEMENT MV source table
 
   return normalizedThis;
+}
+
+void Delete::rewriteNode(NormWA &normWARef)
+{
+  precondition_.normalizeNode(normWARef);
+
+  // these are no longer used in the following phases,
+  // so remove them instead of rewriting them
+  exprsInDerivedClasses_.clear();
+
+  GenericUpdate::rewriteNode(normWARef);
 }
 
 // ***********************************************************************

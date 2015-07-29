@@ -4527,6 +4527,28 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
   return this;
 } // UpdateCursor::preCodeGen()
 
+RelExpr * Delete::preCodeGen(Generator * generator,
+                             const ValueIdSet & externalInputs,
+                             ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+  
+  if (! GenericUpdate::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  ValueIdSet availableValues;
+  getInputValuesFromParentAndChildren(availableValues);
+
+  precondition_.replaceVEGExpressions
+                        (availableValues,
+			 getGroupAttr()->getCharacteristicInputs());
+
+  markAsPreCodeGenned();
+
+  return this;
+}
+
 RelExpr * MergeDelete::preCodeGen(Generator * generator,
 				  const ValueIdSet & externalInputs,
 				  ValueIdSet &pulledNewInputs)
@@ -4793,7 +4815,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
            listOfDelSubsetRows_))
     return NULL;
 
-  if (! GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs))
+  if (! Delete::preCodeGen(generator, externalInputs, pulledNewInputs))
     return NULL;
 
   if (((getTableDesc()->getNATable()->isHbaseRowTable()) ||

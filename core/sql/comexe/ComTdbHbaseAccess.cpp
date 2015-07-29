@@ -308,7 +308,7 @@ ComTdbHbaseAccess::~ComTdbHbaseAccess()
 Int32
 ComTdbHbaseAccess::numExpressions() const
 {
-  return(15);
+  return(16);
 }
  
 // Return the expression names of the explain TDB based on some 
@@ -348,6 +348,8 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
       return "keyColValExpr";
     case 14:
       return "hbaseFilterExpr";
+    case 15:
+      return "deletePreCondExpr";
     default:
       return 0;
     }  
@@ -390,6 +392,8 @@ ComTdbHbaseAccess::getExpressionNode(Int32 expNum)
       return keyColValExpr_;
     case 14:
       return hbaseFilterExpr_;
+    case 15:
+      return deletePreCondExpr_;
     default:
       return NULL;
     }  
@@ -410,6 +414,7 @@ Long ComTdbHbaseAccess::pack(void * space)
   rowIdExpr_.pack(space);
   encodedKeyExpr_.pack(space);
   keyColValExpr_.pack(space);
+  deletePreCondExpr_.pack(space);
   hbaseFilterExpr_.pack(space);
   colFamNameList_.pack(space);
   workCriDesc_.pack(space);
@@ -477,6 +482,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(rowIdExpr_.unpack(base, reallocator)) return -1;
   if(encodedKeyExpr_.unpack(base, reallocator)) return -1;
   if(keyColValExpr_.unpack(base, reallocator)) return -1;
+  if(deletePreCondExpr_.unpack(base, reallocator)) return -1;
   if(hbaseFilterExpr_.unpack(base, reallocator)) return -1;
   if(colFamNameList_.unpack(base, reallocator)) return -1;
   if(workCriDesc_.unpack(base, reallocator)) return -1;
