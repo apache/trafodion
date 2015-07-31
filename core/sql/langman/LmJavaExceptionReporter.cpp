@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -792,3 +795,89 @@ LmJavaExceptionReporter::reportInternalSPJException(LmHandle jt,
 
 }
 // LCOV_EXCL_STOP
+
+//
+// reportJavaObjException(): populates the diags for
+// a return status returned in an LmUDRObjMethodInvoke.ReturnInfo
+// object used in the Java object interface
+void
+LmJavaExceptionReporter::processJavaObjException(
+     LmHandle returnInfoObj,
+     int returnStatus,
+     int callPhase,
+     const char *errText,
+     const char *udrName,
+     ComDiagsArea *da)
+{
+  if (da)
+    {
+      JNIEnv *jni = (JNIEnv*)jniEnv_;
+      const char *sqlState = NULL;
+      const char *message = NULL;
+      jobject jniResult = (jobject) returnInfoObj;
+      jstring returnedSQLState =
+        static_cast<jstring>(jni->GetObjectField(
+           jniResult, 
+           (jfieldID) langMan_->getReturnInfoSQLStateField()));
+      jstring returnedMessage =
+        static_cast<jstring>(jni->GetObjectField(
+           jniResult, 
+           (jfieldID) langMan_->getReturnInfoMessageField()));
+
+      if (returnedSQLState != NULL)
+        sqlState = jni->GetStringUTFChars(returnedSQLState, NULL);
+      if (returnedMessage != NULL)
+        message = jni->GetStringUTFChars(returnedMessage, NULL);
+
+      if (sqlState || message)
+        {
+          const char *diagsMessage =
+            (message ? message : "no message provided");
+          const char *diagsSQLState =
+            (sqlState ? sqlState : "no SQLSTATE provided");
+
+          // Check the returned SQLSTATE value and raise appropriate
+          // SQL code. Valid SQLSTATE values begin with "38" except "38000"
+          if (sqlState &&
+              (strncmp(diagsSQLState, "38", 2) == 0) &&
+              (strncmp(diagsSQLState, "38000", 5) != 0))
+            {
+              *da << DgSqlCode(-LME_CUSTOM_ERROR)
+                  << DgString0(diagsMessage)
+                  << DgString1(diagsSQLState);
+              *da << DgCustomSQLState(diagsSQLState);
+            }
+          else
+            {
+              *da << DgSqlCode(-LME_UDF_ERROR)
+                  << DgString0(udrName)
+                  << DgString1(diagsSQLState)
+                  << DgString2(diagsMessage);
+            }
+        }
+      else
+        {
+          // Report the return status as an internal error, since
+          // we didn't get a UDRException. This should be rare, since
+          // Java exceptions are caught above.
+          char buf1[4];
+          snprintf(buf1, sizeof(buf1), "%d", callPhase);
+          char buf2[80];
+          snprintf(buf2, sizeof(buf2), "Return status %d from JNI call", returnStatus);
+
+          *da << DgSqlCode(-LME_OBJECT_INTERFACE_ERROR)
+              << DgString0(udrName)
+              << DgString1(buf1)
+              << DgString2(errText)
+              << DgString3(buf2);
+        }
+      if (sqlState)
+        jni->ReleaseStringUTFChars(returnedSQLState, sqlState);
+      if (message)
+        jni->ReleaseStringUTFChars(returnedMessage, message);
+      if (returnedSQLState)
+        jni->DeleteLocalRef(returnedSQLState);
+      if (returnedMessage)
+        jni->DeleteLocalRef(returnedMessage);
+    }
+}

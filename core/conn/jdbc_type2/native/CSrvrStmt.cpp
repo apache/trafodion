@@ -126,6 +126,10 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     sqlUniqueQueryIDLen = 0;
     sqlPlan = NULL;
     //
+    // Rowsets
+    callStmtId     = NULL;
+    resultSetIndex = 0;
+
     FUNCTION_RETURN_VOID((NULL));
 }
 

@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -81,6 +84,12 @@ public class PartitionInfo
         type_ = PartitionTypeCode.UNKNOWN;
     }
 
+    // copy constructor for internal use
+    public  PartitionInfo(PartitionInfo p) {
+        type_ = p.type_;
+        partCols_ = new Vector<Integer>(p.partCols_);
+    }
+
     /**
      *  Get the partitioning type
      *  @return Partition type enum
@@ -98,7 +107,10 @@ public class PartitionInfo
      *  @return Number of partitioning key columns (could be zero)
      */
     public int getNumEntries() {
-        return partCols_.size();
+        if (partCols_ != null)
+            return partCols_.size();
+        else
+            return 0;
     }
 
     /**
@@ -109,11 +121,11 @@ public class PartitionInfo
      *  @throws UDRException
      */
     public int getColumnNum(int i) throws UDRException {
-        if (i < 0 || i >= partCols_.size())
+        if (i < 0 || i >= getNumEntries())
             throw new UDRException(
                                    38900,
                                    "Trying to access colnum entry %d of a PartitionInfo object with %d entries",
-                                   i, partCols_.size());
+                                   i, getNumEntries());
 
         return partCols_.get(i).intValue();
     }
@@ -138,35 +150,30 @@ public class PartitionInfo
      *  @throws UDRException
      */
     public void addEntry(int colNum) throws UDRException{
-        // don't allow duplicates
-        for (int i=0; i<partCols_.size(); i++)
-            if (partCols_.get(i).intValue() == colNum)
-                throw new UDRException(
-                                   38900,
-                                   "Trying to add column number %d more than once to a PartitionInfo object",
-                                   colNum);
+        if (partCols_ == null)
+        {
+            partCols_ = new Vector<Integer>();
+        }
+        else
+        {
+            // don't allow duplicates
+            for (int i=0; i<partCols_.size(); i++)
+                if (partCols_.get(i).intValue() == colNum)
+                    throw new UDRException(
+                                           38900,
+                                           "Trying to add column number %d more than once to a PartitionInfo object",
+                                           colNum);
+        }
         
         partCols_.add(Integer.valueOf(colNum));
     }
 
+    // UDR writers can ignore these methods
     void clear()
     {
       type_ = PartitionTypeCode.UNKNOWN;
-      partCols_.clear();
-    }
-
-    public void mapColumnNumbers(Vector<Integer> map) throws UDRException {
-        for (int i=0; i<partCols_.size(); i++)
-        {
-            int colNum = partCols_.get(i).intValue();
-            
-            if (map.get(colNum).intValue() < 0)
-                throw new UDRException(
-                                       38900,
-                                       "Invalid mapping for PARTITION BY column %d",
-                                       colNum);
-            partCols_.add(i, map.get(colNum));
-        }
+      if (partCols_ != null)
+          partCols_.clear();
     }
 
     public Vector<Integer> getPartCols() {

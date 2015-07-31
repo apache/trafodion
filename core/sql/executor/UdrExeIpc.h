@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -766,6 +769,8 @@ public:
     const char *udrSerInvocationInfo,
     ComUInt32 udrSerPlanInfoLen,
     const char *udrSerPlanInfo,
+    Int32 javaDebugPort,
+    Int32 javaDebugTimeout,
     ComUInt32 instanceNum,
     ComUInt32 numInstances);
 
@@ -846,6 +851,9 @@ public:
   inline ComUInt32 getUDRSerPlanInfoLen()       { return udrSerPlanInfoLen_; }
   inline const char *getUDRSerPlanInfo()           { return udrSerPlanInfo_; }
 
+  // debugging Java UDRs (works for Trafodion user or debug build only)
+  inline Int32 getUdrJavaDebugPort() const       { return udrJavaDebugPort_; }
+  inline Int32 getUdrJavaDebugTimeout() const { return udrJavaDebugTimeout_; }
   // Redefine pack/unpack methods from IpcMessageObj
   IpcMessageObjSize packedLength();
   IpcMessageObjSize packObjIntoMessage(IpcMessageBufferPtr buffer);
@@ -903,6 +911,8 @@ protected:
   const char *udrSerInvocationInfo_;
   ComUInt32 udrSerPlanInfoLen_;
   const char *udrSerPlanInfo_;
+  Int32 udrJavaDebugPort_;           // port for Java debugger
+  Int32 udrJavaDebugTimeout_;        // timeout to wait for Java debugger
 
 
 private:

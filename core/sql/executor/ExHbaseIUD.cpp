@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -1716,6 +1719,10 @@ ExHbaseUMDtrafUniqueTaskTcb::ExHbaseUMDtrafUniqueTaskTcb
   , step_(NOT_STARTED)
 {
   latestRowTimestamp_ = -1;
+  columnToCheck_.val = (char *)(new (tcb->getHeap()) BYTE[MAX_COLNAME_LEN]);
+  columnToCheck_.len = MAX_COLNAME_LEN;
+  colValToCheck_.val = (char *)(new (tcb->getHeap()) BYTE[tcb->hbaseAccessTdb().getRowIDLen()]);
+  colValToCheck_.len = tcb->hbaseAccessTdb().getRowIDLen();
 }
 
 void ExHbaseUMDtrafUniqueTaskTcb::init() 
@@ -2044,9 +2051,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case CHECK_AND_UPDATE_ROW:
 	  {
-	    Text columnToCheck;
-	    Text colValToCheck;
-	    rc = tcb_->evalKeyColValExpr(columnToCheck, colValToCheck);
+	    rc = tcb_->evalKeyColValExpr(columnToCheck_, colValToCheck_);
 	    if (rc == -1)
 	      {
 		step_ = HANDLE_ERROR;
@@ -2056,9 +2061,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    retcode =  tcb_->ehi_->checkAndUpdateRow(tcb_->table_,
                                                      tcb_->rowIds_[tcb_->currRowidIdx_],
 						     tcb_->row_,
-						     columnToCheck,
-						     colValToCheck,
-
+						     columnToCheck_,
+						     colValToCheck_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
 						     -1, //colTS_
                                                      FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
@@ -2164,6 +2168,16 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
+            rc = tcb_->evalDeletePreCondExpr();
+	    if (rc == -1) {
+                step_ = HANDLE_ERROR;
+                break;
+	    }
+            if (rc == 0) { // No need to delete
+               tcb_->currRowidIdx_++;
+               step_ = GET_NEXT_ROWID;
+               break;
+	    }
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
                                              NULL,
@@ -2194,9 +2208,18 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case CHECK_AND_DELETE_ROW:
 	  {
-	    Text columnToCheck;
-	    Text colValToCheck;
-	    rc = tcb_->evalKeyColValExpr(columnToCheck, colValToCheck);
+            rc = tcb_->evalDeletePreCondExpr();
+	    if (rc == -1) {
+                step_ = HANDLE_ERROR;
+                break;
+	    }
+            if (rc == 0) { // donot delete
+               tcb_->currRowidIdx_++;
+               step_ = GET_NEXT_ROWID;
+               break;
+	    }
+               
+	    rc = tcb_->evalKeyColValExpr(columnToCheck_, colValToCheck_);
 	    if (rc == -1)
 	      {
 		step_ = HANDLE_ERROR;
@@ -2205,13 +2228,11 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	    retcode =  tcb_->ehi_->checkAndDeleteRow(tcb_->table_,
                                                      tcb_->rowIds_[tcb_->currRowidIdx_],
-						     columnToCheck, 
-						     colValToCheck,
+						     columnToCheck_, 
+						     colValToCheck_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
 						     -1 //colTS_
 						     );
-
-
 
 	    if (retcode == HBASE_ROW_NOTFOUND_ERROR)
 	      {
@@ -2220,7 +2241,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
+	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::checkAndDeleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;

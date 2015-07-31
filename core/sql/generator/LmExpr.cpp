@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -101,6 +104,7 @@ static Lng32 GetDisplayLength(const NAType &t)
 static ItemExpr *CreateLmString(ItemExpr &source,
                                 const NAType &sourceType,
                                 ComRoutineLanguage language,
+                                ComRoutineParamStyle style,
                                 CmpContext *cmpContext)
 {
   //
@@ -120,7 +124,7 @@ static ItemExpr *CreateLmString(ItemExpr &source,
   sprintf(buf, "%d", maxLength);
 
   NAString *s = new (h) NAString("cast (@A1 as ", h);
-  if (language == COM_LANGUAGE_JAVA)
+  if (style == COM_STYLE_JAVA_CALL)
     (*s) += "VARCHAR(";
   else
     (*s) += "CHAR(";
@@ -225,7 +229,7 @@ LmExprResult CreateLmInputExpr(const NAType &formalType,
     }
     else
     {
-      newExpr = CreateLmString(actualValue, formalType, language, cmpContext);
+      newExpr = CreateLmString(actualValue, formalType, language, style, cmpContext);
     }
   }
   else
@@ -276,7 +280,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
   if (isString &&
       (formalType.getTypeQualifier() != NA_CHARACTER_TYPE))
   {
-    if (isResultSet || language != COM_LANGUAGE_JAVA)
+    if (isResultSet || style != COM_STYLE_JAVA_CALL)
     {
       Lng32 maxLength = GetDisplayLength(formalType);
       replyType = new (h) SQLChar(maxLength);

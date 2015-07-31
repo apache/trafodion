@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -127,6 +130,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(returnMergeInsertExpr),
   encodedKeyExpr_(encodedKeyExpr),
   keyColValExpr_(keyColValExpr),
+  deletePreCondExpr_(NULL),
   hbaseFilterExpr_(hbaseFilterExpr),
 
   asciiRowLen_(asciiRowLen),
@@ -234,6 +238,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(NULL),
   encodedKeyExpr_(NULL),
   keyColValExpr_(NULL),
+  deletePreCondExpr_(NULL),
   hbaseFilterExpr_(NULL),
 
   asciiRowLen_(0),
@@ -306,7 +311,7 @@ ComTdbHbaseAccess::~ComTdbHbaseAccess()
 Int32
 ComTdbHbaseAccess::numExpressions() const
 {
-  return(15);
+  return(16);
 }
  
 // Return the expression names of the explain TDB based on some 
@@ -346,6 +351,8 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
       return "keyColValExpr";
     case 14:
       return "hbaseFilterExpr";
+    case 15:
+      return "deletePreCondExpr";
     default:
       return 0;
     }  
@@ -388,6 +395,8 @@ ComTdbHbaseAccess::getExpressionNode(Int32 expNum)
       return keyColValExpr_;
     case 14:
       return hbaseFilterExpr_;
+    case 15:
+      return deletePreCondExpr_;
     default:
       return NULL;
     }  
@@ -408,6 +417,7 @@ Long ComTdbHbaseAccess::pack(void * space)
   rowIdExpr_.pack(space);
   encodedKeyExpr_.pack(space);
   keyColValExpr_.pack(space);
+  deletePreCondExpr_.pack(space);
   hbaseFilterExpr_.pack(space);
   colFamNameList_.pack(space);
   workCriDesc_.pack(space);
@@ -475,6 +485,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(rowIdExpr_.unpack(base, reallocator)) return -1;
   if(encodedKeyExpr_.unpack(base, reallocator)) return -1;
   if(keyColValExpr_.unpack(base, reallocator)) return -1;
+  if(deletePreCondExpr_.unpack(base, reallocator)) return -1;
   if(hbaseFilterExpr_.unpack(base, reallocator)) return -1;
   if(colFamNameList_.unpack(base, reallocator)) return -1;
   if(workCriDesc_.unpack(base, reallocator)) return -1;

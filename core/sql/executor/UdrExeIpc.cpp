@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -791,7 +794,9 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap)
   udrSerInvocationInfoLen_(0),
   udrSerInvocationInfo_(NULL),
   udrSerPlanInfoLen_(0),
-  udrSerPlanInfo_(NULL)
+  udrSerPlanInfo_(NULL),
+  udrJavaDebugPort_(-1),
+  udrJavaDebugTimeout_(0)
 {
 }
 
@@ -822,6 +827,8 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap,
                        const char *udrSerInvocationInfo,
                        ComUInt32 udrSerPlanInfoLen,
                        const char *udrSerPlanInfo,
+                       Int32 javaDebugPort,
+                       Int32 javaDebugTimeout,
 		       ComUInt32 instanceNum,
 		       ComUInt32 numInstances
 		       )
@@ -846,7 +853,9 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap,
   udrSerPlanInfoLen_(udrSerPlanInfoLen),
   udrSerPlanInfo_(udrSerPlanInfo),
   instanceNum_(instanceNum),
-  numInstances_(numInstances)
+  numInstances_(numInstances),
+  udrJavaDebugPort_(javaDebugPort),
+  udrJavaDebugTimeout_(javaDebugTimeout)
 {
   sqlName_ = allocateString(sqlName);
   routineName_ = allocateString(routineName);
@@ -1086,6 +1095,8 @@ IpcMessageObjSize UdrLoadMsg::packedLength()
   result += sizeof(udrFlags_);
   result += sizeof(routineOwnerId_);
   result += packedStringLength(parentQid_);
+  result += sizeof(udrJavaDebugPort_);
+  result += sizeof(udrJavaDebugTimeout_);
   result += sizeof(numInputTables_);
   result += sizeof(numInstances_);
   result += sizeof(instanceNum_);
@@ -1154,6 +1165,8 @@ IpcMessageObjSize UdrLoadMsg::packObjIntoMessage(IpcMessageBufferPtr buffer)
   result += packIntoBuffer(buffer, udrFlags_);
   result += packIntoBuffer(buffer, routineOwnerId_);
   result += packCharStarIntoBuffer(buffer, parentQid_);
+  result += packIntoBuffer(buffer, udrJavaDebugPort_);
+  result += packIntoBuffer(buffer, udrJavaDebugTimeout_);
   result += packIntoBuffer(buffer, numInstances_);
   result += packIntoBuffer(buffer, instanceNum_);
 
@@ -1227,6 +1240,8 @@ void UdrLoadMsg::unpackObj(IpcMessageObjType objType,
   unpackBuffer(buffer, udrFlags_);
   unpackBuffer(buffer, routineOwnerId_);
   unpackBuffer(buffer, parentQid_, getHeap());
+  unpackBuffer(buffer, udrJavaDebugPort_);
+  unpackBuffer(buffer, udrJavaDebugTimeout_);
   unpackBuffer(buffer, numInstances_);
   unpackBuffer(buffer, instanceNum_);
   allocateParamInfo();

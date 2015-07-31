@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -36,9 +39,9 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.io.*;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.lang.reflect.Field;
 import java.lang.Class;
+@SuppressWarnings("rawtypes")
 
 /**
  * Utility class of Language Manager for Java.
@@ -252,7 +255,7 @@ public class LmUtility {
                                          boolean returnAllParams)
     throws ClassNotFoundException
     {
-        ArrayList param = new ArrayList();
+        ArrayList<Class> param = new ArrayList<Class>();
         boolean outMode = false;
 
         for(int index=0; index < signature.length(); index++)
@@ -433,7 +436,7 @@ public class LmUtility {
  
         retParam = new Class[paramCount];
         for(int i=0; i < paramCount; i++)
-            retParam[i] = (Class)param.get(i);
+            retParam[i] = param.get(i);
 
         return retParam;
 
@@ -464,7 +467,8 @@ public class LmUtility {
             Class [] paramArray;
             boolean optSig = false;
             paramArray = getParamArray(signature, numParam, optSig);
-            Method m = targetClass.getMethod(methodName, paramArray);
+            @SuppressWarnings("unchecked")
+			Method m = targetClass.getMethod(methodName, paramArray);
 
             // Check if return type is void. getMethod() doesn't consider
             // the return type. Currently only return type 'void' is supported.
@@ -654,13 +658,13 @@ public class LmUtility {
      * @param  exact   Exact match flag
      * @returns        A list of candidate method objects
      **/
-    private static ArrayList matchMethods(String name,
-                                          Method[] methods,
-                                          Class[] spt,
-                                          int mrs,
-                                          boolean exact)
+    private static ArrayList<Method> matchMethods(String name,
+    		                                     Method[] methods,
+    		                                     Class[] spt,
+    		                                     int mrs,
+    		                                     boolean exact)
     {
-        ArrayList list = new ArrayList();
+        ArrayList<Method> list = new ArrayList<Method>();
         
         for (int i=0; i < methods.length; i++)
         {
@@ -1191,7 +1195,8 @@ public class LmUtility {
      *          supports SPJ RS.
      *
      **/
-     public static boolean initT4RS()
+    @SuppressWarnings({"unchecked", "cast"})
+	public static boolean initT4RS()
        throws Exception
      {
        try
@@ -1233,7 +1238,8 @@ public class LmUtility {
      *          supports SPJ RS.
      *
      **/
-     public static boolean initRS( long[] rsInfoVer )
+    @SuppressWarnings("unchecked")
+	public static boolean initRS( long[] rsInfoVer )
        throws Exception
      {
 

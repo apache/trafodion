@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -62,7 +65,94 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         private static FuncType[] allValues = values();
         public static FuncType fromOrdinal(int n) {return allValues[n];}
 
-      };
+    };
+
+    /**
+     *  Type of SQL operations done in the UDF
+     */
+    public enum SQLAccessType
+    {
+        /** The UDR contains no SQL operations that use the
+         *  default connection to Trafodion. Note that it
+         *  may still connect to other JDBC data sources,
+         *  including Trafodion with a user id and password. */
+        CONTAINS_NO_SQL,
+        /** Does read-only SQL operations, implying that
+         *  the UDF has no side-effects on the database
+         *  through its SQL operations.
+         *  NOTE: Currently not supported for Java TMUDFs! */
+        READS_SQL,
+        /** Potentially modifies SQL tables as a side-effect.
+         *  NOTE: Currently not supported for Java TMUDFs! */
+        MODIFIES_SQL;
+
+        private static SQLAccessType[] allValues = values();
+        public static SQLAccessType fromOrdinal(int n) {return allValues[n];}
+
+    };
+
+    /**
+     *  Indicates whether the UDF needs a transaction and
+     *  possibly which type of transaction.
+     */
+    public enum SQLTransactionType
+    {
+        /** The UDR requires no transaction, typically because
+         *  it performs no SQL operations that require one. */
+        REQUIRES_NO_TRANSACTION,
+        /** The SQL operations done in the UDR may require a
+         *  transaction. */
+        REQUIRES_SQL_TRANSACTION;
+
+        private static SQLTransactionType[] allValues = values();
+        public static SQLTransactionType fromOrdinal(int n) {return allValues[n];}
+
+    };
+
+    /**
+     *  Indicates what the effective user id for SQL operations
+     *  performed by the UDR.
+     */
+    public enum SQLRightsType
+    {
+        /** SQL operations are done with the user id of the
+         *  invoker of the UDR.
+         *  NOTE: Currently not supported for Java TMUDFs! */
+        INVOKERS_RIGHTS,
+        /** SQL operations are done with the user id of the
+         *  invoker of the UDR.
+         *  NOTE: Currently not supported for Java TMUDFs! */
+        DEFINERS_RIGHTS;
+
+        private static SQLRightsType[] allValues = values();
+        public static SQLRightsType fromOrdinal(int n) {return allValues[n];}
+
+    };
+
+    /**
+     *  Indicates the level of trust the system has in the UDR.
+     */
+    public enum IsolationType
+    {
+        /** The UDR is not trusted to run in the same process
+         *  and with the same user id as the Trafodion engine,
+         *  it runs in a separate process and with a different,
+         *  less powerful user id.
+         *  NOTE: Currently not supported for Java TMUDFs! */
+        ISOLATED,
+        /** The UDR is fully trusted and can run in processes
+         *  of the engine, using the same user id as the engine.
+         *  Note that this potentially allows the UDR to break
+         *  any SQL security rule, to see any Trafodion users's
+         *  data, to corrupt internal data structures and
+         *  possibly to read, write and corrupt HDFS and HBase
+         *  data, even data that does not belong to Trafodion. */
+        TRUSTED;
+
+        private static IsolationType[] allValues = values();
+        public static IsolationType fromOrdinal(int n) {return allValues[n];}
+
+    };
 
     /**
      *  Call phase for the UDR interface
@@ -488,12 +578,11 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         for (int c=startInputColNum; c<=endInputColNum; c++)
          {
              // make a copy of the input column
-             ColumnInfo newCol = new ColumnInfo(in(inputTableNum).getColumn(c));
+             outputTableInfo_.addColumn(in(inputTableNum).getColumn(c));
              
              // change the provenance info of the column
-             newCol.setProvenance(new ProvenanceInfo(inputTableNum, c));
-             
-             outputTableInfo_.addColumn(newCol);
+             outputTableInfo_.getColumn(outputTableInfo_.getNumColumns()-1).
+                 setProvenance(new ProvenanceInfo(inputTableNum, c));
          }
     }
     
@@ -546,7 +635,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
             throw new UDRException(38900, 
                                    "Invalid child table number %d", inputTableNum);
 
-        inputTableInfo_[inputTableNum].setQueryPartitioning(partInfo);
+        inputTableInfo_[inputTableNum].setQueryPartitioning(new PartitionInfo(partInfo));
     }
     /**
      *  Set the ORDER BY info for a table-valued input.
@@ -572,7 +661,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
          if (inputTableNum < 0 || inputTableNum >= numTableInputs_)
              throw new UDRException(38900, 
                                     "Invalid child table number %d", inputTableNum);
-         inputTableInfo_[inputTableNum].setQueryOrdering(orderInfo);
+         inputTableInfo_[inputTableNum].setQueryOrdering(new OrderInfo(orderInfo));
     }
     
     /**
@@ -934,8 +1023,11 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
                 case TIMESTAMP_TYPE:
                 case LOB_SUB_CLASS:
                 {
-                    int strLen = 0;
-                    String str = new String(in(it).getRaw(ic));
+                    // In the C++ version we use getRaw(), because in C++,
+                    // the UDF sees characters in the encoding used by SQL.
+                    // In Java the UDF sees only Unicode characters, so we
+                    // use getString() here, to do the conversion.
+                    String str = in(it).getString(ic);
                     
                     if (in(it).wasNull())
                         out().setNull(oc);
@@ -1045,16 +1137,19 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
 
     /**
      *  Print the object, for use in debugging.
+     *  @throws UDRException 
      *
      *  @see UDR#debugLoop()
      *  @see UDRInvocationInfo.DebugFlags#PRINT_INVOCATION_INFO_AT_RUN_TIME
      */
     // Functions for debugging
-    public void print() {
+    public void print() throws UDRException {
+        CallPhase savedCallPhase = callPhase_;
+        callPhase_ = CallPhase.UNKNOWN_CALL_PHASE; // we may call methods that would otherwise fail the check
         System.out.print(String.format("\nUDRInvocationInfo\n-----------------\n"));
         System.out.print(String.format("UDR Name                   : %s\n", getUDRName()));
         System.out.print(String.format("Num of table-valued inputs : %d\n", getNumTableInputs()));
-        System.out.print(String.format("Call phase                 : %s\n", callPhaseToString(callPhase_)));
+        System.out.print(String.format("Call phase                 : %s\n", callPhaseToString(savedCallPhase)));
         System.out.print(String.format("Debug flags                : 0x%x\n", getDebugFlags()));
         System.out.print(String.format("Function type              : %s\n", (funcType_ == FuncType.GENERIC ? "GENERIC" :
                                                                       (funcType_ == FuncType.MAPPER ? "MAPPER" :
@@ -1072,8 +1167,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         {   
             if (needsComma)
                 System.out.print(String.format(", "));
-            try {System.out.print(String.format("%s", getFormalParameters().getColumn(p).toString()));}
-            catch (UDRException e1) {System.out.print("Exception while printing parameter " + p);}
+            System.out.print(String.format("%s", getFormalParameters().getColumn(p).toString()));
             needsComma = true;
         }
         System.out.print(String.format(")\n"));
@@ -1088,11 +1182,10 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
             if (needsComma)
                 System.out.print(String.format(", "));
 
-            try {
-                if (pli.isAvailable(p))
+            if (pli.isAvailable(p))
                 {
                     String strVal = pli.getString(p);
-                    
+
                     if (pli.wasNull())
                         System.out.print(String.format("NULL"));
                     else
@@ -1105,8 +1198,6 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
                     System.out.print(String.format("\n        "));
                     System.out.print(buf);
                 }
-            }
-            catch (UDRException e1) {System.out.print("Error while printing parameter " + p);}
             needsComma = true;
         }
         System.out.print(String.format(")\n"));
@@ -1119,23 +1210,19 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         }
         
         if (isRunTime()) {
-            try {
             System.out.print(String.format("Instance number            : %d of %d\n",
                                            getMyInstanceNum(),
-                                           getNumParallelInstances())); }
-            catch (UDRException e1) {System.out.print("Exception while printing instance number");}
+                                           getNumParallelInstances()));
         }
         
         for (int c=0; c<getNumTableInputs(); c++)
         {
             System.out.print(String.format("\nInput TableInfo %d\n-----------------\n", c));
-            try {in(c).print();}
-            catch (UDRException e1) {System.out.print("Exception while printing input table " + c);}
+            in(c).print();
         }
         System.out.print(String.format("\nOutput TableInfo\n----------------\n"));
         outputTableInfo_.print();
         
-        try {
         if (getNumPredicates() > 0)
         {
             System.out.print(String.format("\nPredicates\n----------\n"));
@@ -1162,8 +1249,8 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
                 }
                 System.out.print(String.format("    %s\n", predString));
             }
-        }}
-        catch (UDRException e1) {System.out.print("Exception while printing predicate info");}
+        }
+        callPhase_ = savedCallPhase;
     }
 
     // UDR writers can ignore these methods
@@ -1175,7 +1262,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
               serializedLengthOfString(sessionUser_) +
               serializedLengthOfString(currentRole_) +
               serializedLengthOfString(queryId_) +
-              5*serializedLengthOfInt();
+              9*serializedLengthOfInt();
 
       int i;
 
@@ -1203,6 +1290,18 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
 
       serializeString(name_,
                       outputBuffer);
+
+      serializeInt(sqlAccessType_.ordinal(),
+                   outputBuffer);
+
+      serializeInt(sqlTransactionType_.ordinal(),
+                   outputBuffer);
+
+      serializeInt(sqlRights_.ordinal(),
+                   outputBuffer);
+
+      serializeInt(isolationType_.ordinal(),
+                   outputBuffer);
 
       serializeInt(debugFlags_,
                    outputBuffer);
@@ -1261,10 +1360,21 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
 
       name_ = deserializeString(inputBuffer);
 
+      tempInt = deserializeInt(inputBuffer);
+      sqlAccessType_ = SQLAccessType.fromOrdinal(tempInt);
+
+      tempInt = deserializeInt(inputBuffer);
+      sqlTransactionType_ = SQLTransactionType.fromOrdinal(tempInt);
+
+      tempInt = deserializeInt(inputBuffer);
+      sqlRights_ = SQLRightsType.fromOrdinal(tempInt);
+
+      tempInt = deserializeInt(inputBuffer);
+      isolationType_ = IsolationType.fromOrdinal(tempInt);
+
       debugFlags_ = deserializeInt(inputBuffer);
 
       tempInt = deserializeInt(inputBuffer);
-
       funcType_ = FuncType.fromOrdinal(tempInt);
 
       tempInt = deserializeInt(inputBuffer);
@@ -1300,6 +1410,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
       actualParameterInfo_.deserialize(inputBuffer);
 
       tempInt = deserializeInt(inputBuffer);
+      predicates_.clear();
 
       for (int p=0; p<tempInt; p++)
       {
@@ -1340,6 +1451,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         totalNumInstances_ = 0;
         myInstanceNum_ = 0;
         inputTableInfo_ = new TableInfo[MAX_INPUT_TABLES];
+        predicates_ = new Vector<PredicateInfo>();
     }
     public void validateCallPhase(CallPhase start,
                                   CallPhase end,
@@ -1384,9 +1496,23 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         }
     }
 
+    public void setRuntimeInfo(String qid,
+                               int totalNumInstances,
+                               int myInstanceNum)
+    {
+        // set information that is not yet known at compile time
+        queryId_ = qid;
+        totalNumInstances_ = totalNumInstances;
+        myInstanceNum_ = myInstanceNum;
+    }
+
     private static final int MAX_INPUT_TABLES = 2;
 
     private String name_;
+    private SQLAccessType sqlAccessType_;
+    private SQLTransactionType sqlTransactionType_;
+    private SQLRightsType sqlRights_;
+    private IsolationType isolationType_;
     private int numTableInputs_;
     private CallPhase callPhase_;
     private String currentUser_;

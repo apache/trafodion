@@ -1,23 +1,25 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
 package org.trafodion.sql.udr;
-import java.util.Vector;
 import java.nio.ByteBuffer;
 
 
@@ -164,7 +166,7 @@ public class TypeInfo extends TMUDRSerializableObject {
             intervalCode_ = val;
         }
           
-        public int SQLIntervalCode() {
+        public int getSQLIntervalCode() {
             return intervalCode_;
         }
     }
@@ -248,14 +250,20 @@ public class TypeInfo extends TMUDRSerializableObject {
         {
         case SMALLINT:
             length_ = 2;
+            precision_ = 0;
+            scale_ = 0;
             break;
 
         case INT:
             length_ = 4;
+            precision_ = 0;
+            scale_ = 0;
             break;
             
         case LARGEINT:
             length_ = 8;
+            precision_ = 0;
+            scale_ = 0;
             break;
             
         case NUMERIC:
@@ -281,10 +289,14 @@ public class TypeInfo extends TMUDRSerializableObject {
             
         case SMALLINT_UNSIGNED:
             length_ = 2;
+            precision_ = 0;
+            scale_ = 0;
             break;
             
         case INT_UNSIGNED:
             length_ = 4;
+            precision_ = 0;
+            scale_ = 0;
             break;
             
         case NUMERIC_UNSIGNED:
@@ -319,13 +331,18 @@ public class TypeInfo extends TMUDRSerializableObject {
         case CHAR:
             if (charset_ == SQLCharsetCode.UNDEFINED_CHARSET.ordinal())
                 throw new UDRException(38900,"Charset must be specified for CHAR type in TypeInfo::TypeInfo");
+            // length is the length in characters, but length_ is
+            // the byte length, multiply by min bytes per char
+            length_ = length * minBytesPerChar();
+            if (collation_ == SQLCollationCode.UNDEFINED_COLLATION.ordinal())
+                throw new UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
             break;
             
         case VARCHAR:
             if (charset_ == SQLCharsetCode.UNDEFINED_CHARSET.ordinal())
-                throw new UDRException(38900,"Charset must be specified for CHAR type in TypeInfo::TypeInfo");
+                throw new UDRException(38900,"Charset must be specified for VARCHAR type in TypeInfo::TypeInfo");
             if (collation_ == SQLCollationCode.UNDEFINED_COLLATION.ordinal())
-                throw new UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
+                throw new UDRException(38900,"Collation must be specified for VARCHAR type in TypeInfo::TypeInfo");
             // length is the length in characters, but length_ is
             // the byte length, multiply by min bytes per char
             length_ = length * minBytesPerChar();
@@ -353,7 +370,6 @@ public class TypeInfo extends TMUDRSerializableObject {
         case TIME:
             // string hh:mm:ss
             length_ = 8;
-            scale_ = 0;
             if (scale > 0)
                 length_ += scale+1;
             if (scale < 0 || scale > 6)
@@ -375,7 +391,7 @@ public class TypeInfo extends TMUDRSerializableObject {
           int totalPrecision = 0;
           boolean allowScale = false;
           
-          if (intervalCode_ == SQLIntervalCode.UNDEFINED_INTERVAL_CODE.SQLIntervalCode())
+          if (intervalCode_ == SQLIntervalCode.UNDEFINED_INTERVAL_CODE.getSQLIntervalCode())
               throw new UDRException(38900,"Interval code in TypeInfo::TypeInfo is undefined");
         if (scale < 0 || scale > 6)
             throw new UDRException(38900,"Scale %d of interval in TypeInfo::TypeInfo is outside the allowed range of 0-6", sqlType);
@@ -1015,7 +1031,7 @@ public class TypeInfo extends TMUDRSerializableObject {
         switch (getSQLTypeClass())
         {
         case CHARACTER_TYPE:
-            return length_ * minBytesPerChar();
+            return length_ / minBytesPerChar();
         case NUMERIC_TYPE:
             return 0;
         case DATETIME_TYPE:
@@ -1030,6 +1046,19 @@ public class TypeInfo extends TMUDRSerializableObject {
                                    "Called TypeInfo::getMaxCharLength() on an unsupported type: %d",
                                    sqlType_);
         }
+    }
+
+    /**
+     *  Set the nullable attribute of a type
+     *
+     *  Use this method to set types created locally in the UDF
+     *  to be nullable or not nullable.
+     *
+     *  @param nullable true to set the type to nullable, false
+     *                  to give the type the NOT NULL attibute.
+     */
+    public void setNullable(boolean nullable) {
+        nullable_ = (nullable ? 1 : 0 );
     }
 
     // UDR writers can ignore these methods
@@ -1150,9 +1179,11 @@ public class TypeInfo extends TMUDRSerializableObject {
             break;
         case TIME:
             sb.append("TIME");
+            if (scale_ > 0)
+                sb.append(String.format("(%d)", scale_));
             break;
         case TIMESTAMP:
-            sb.append(String.format("TIMESTAMP(%d)",getPrecision()));
+            sb.append(String.format("TIMESTAMP(%d)",scale_));
             break;
         case INTERVAL:
             switch (getIntervalCode())
@@ -1234,18 +1265,98 @@ public class TypeInfo extends TMUDRSerializableObject {
         return sb.toString();
     }
 
+    public void putEncodedStringIntoByteBuffer(ByteBuffer tgt, ByteBuffer src) throws UDRException
+    {
+        // Copy the byte buffer with encoded characters into the target buffer.
+        // For fixed-length strings, remove or add trailing blanks as necessary.
+        // For variable length strings, set the varLen indicator.
+        int trimmedLen = src.limit();
+        int minBytesPerChar = minBytesPerChar();
+        boolean isFixedChar = (vcLenIndOffset_ < 0); // fixed chars can be trimmed
+        boolean okToTrim = true;
+
+        if (trimmedLen > length_)
+            {
+                if (isFixedChar)
+                    if (minBytesPerChar == 1)
+                        {
+                            // are all the extra characters blanks?
+                            for (int i=length_; i<trimmedLen; i++)
+                                if (src.get(i) != (byte) ' ')
+                                    okToTrim = false;
+                        }
+                    else if (getCharset() == SQLCharsetCode.CHARSET_UCS2)
+                        {
+                            // are all the extra bytes little-endian UCS-2 blanks?
+                            for (int i=length_/2; i<trimmedLen/2; i++)
+                                if (src.get(2*i) != (byte) ' ' ||
+                                    src.get(2*i+1) != 0)
+                                    okToTrim = false;
+                            if (okToTrim)
+                                trimmedLen = length_;
+                        }
+                    else
+                        // don't know how to trim this charset
+                        okToTrim = false;
+                else
+                    // not allowed to trim varchars
+                    okToTrim = false;
+
+                if (okToTrim)
+                    trimmedLen = length_;
+                else
+                    throw new UDRException(38900,
+                                           "String overflow, trying to assign a string with an encoded length of %d bytes (charset %d) into a target type %d bytes wide",
+                                           trimmedLen,
+                                           charset_,
+                                           length_);
+            }
+
+        // transfer "trimmedLen" bytes from the beginning of src into tgt,
+        // starting at dataOffset_
+        src.limit(trimmedLen);
+        src.rewind();
+        tgt.position(dataOffset_);
+        tgt.put(src);
+
+        if (isFixedChar)
+            if (minBytesPerChar == 1)
+                while (trimmedLen < length_)
+                    {
+                        tgt.put((byte) ' ');
+                        trimmedLen++;
+                    }
+            else
+               while (trimmedLen < length_)
+                    {
+                        tgt.putShort((short) ' ');
+                        trimmedLen += 2;
+                    }
+        else
+            {
+                // set the varchar length indicator
+                if ((flags_ & TYPE_FLAG_4_BYTE_VC_LEN) == 1)
+                    tgt.putInt(vcLenIndOffset_,trimmedLen);
+                else
+                    tgt.putShort(vcLenIndOffset_,(short) trimmedLen);
+            }
+    }
+
     public static short getCurrentVersion() { return 1; }
 
+    @Override
     public int serializedLength() throws UDRException{
-        return super.serializedLength() +  (16 * serializedLengthOfInt());
+        return super.serializedLength() +  (17 * serializedLengthOfInt());
     }
         
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException{
 
       int origPos = outputBuffer.position();
 
       super.serialize(outputBuffer);
       
+      serializeInt(64, outputBuffer);
       serializeInt(sqlType_, outputBuffer);
       serializeInt(nullable_, outputBuffer);
       serializeInt(scale_, outputBuffer);
@@ -1270,6 +1381,7 @@ public class TypeInfo extends TMUDRSerializableObject {
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();

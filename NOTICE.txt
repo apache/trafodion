@@ -1,0 +1,8 @@
+Apache Trafodion
+Copyright 2015 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+In addition, this product includes software developed by
+Hewlett-Packard Development Company, L.P.

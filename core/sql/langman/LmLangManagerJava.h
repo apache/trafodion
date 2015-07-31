@@ -11,19 +11,22 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -233,6 +236,10 @@ public:
   NABoolean jdbcRSVerMismatch() const 
     { return jdbcSPJRSVer_ > JDBC_SPJRS_VERSION; }
 
+  LmHandle getUdrQueueStateField() const { return udrQueueStateField_; }
+  LmHandle getReturnInfoSQLStateField() const { return returnInfoSQLStateField_; }
+  LmHandle getReturnInfoMessageField() const { return returnInfoMessageField_; }
+
 private:
 
   // Helper function that does all the work of the constructor. Should
@@ -329,7 +336,6 @@ private:
   void processJavaOptions(const LmJavaOptions &userOptions,
                           LmJavaOptions &jvmOptions);
 
-private:
   static char *sysClassPath_;       // JVM's class path.
   static char *classPath_;          // class path used by ClassLoader.
   LmContainerManager *contManager_; // LMJ's CM.
@@ -391,11 +397,16 @@ private:
 
   LmHandle lmObjMethodInvokeClass_;   // LmUDRObjMethodInvoke class
   LmHandle makeNewObjId_;             // make a new LmUDRObjMethodInvoke object
+  LmHandle setRuntimeInfoId_;         // set run-time info in UDRInvocationInfo
   LmHandle routineMethodInvokeId_;    // invoke method of tmudr::UDR object
   LmHandle routineReturnInfoClass_;   // nested class for return info
   LmHandle returnInfoStatusField_;    // return status field id
+  LmHandle returnInfoSQLStateField_;  // SQLSTATE from thrown UDRException, if any
+  LmHandle returnInfoMessageField_;   // message from thrown UDRException, if any
   LmHandle returnInfoRIIField_;       // returned invocation info field id
   LmHandle returnInfoRPIField_;       // returned plan info field id
+  LmHandle udrClass_;                 // org.trafodion.sql.udr.UDR class
+  LmHandle udrQueueStateField_;       // UDR$QueueStateInfo.queueState_
 
   LmHandle lmCharsetClass_;
   LmHandle bytesToUnicodeId_;    // conversion going into JVM
