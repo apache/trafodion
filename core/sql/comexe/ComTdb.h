@@ -996,7 +996,7 @@ class ComTdbVirtTableIndexInfo : public ComTdbVirtTableBase
   Lng32 nonKeyColCount;
   const char * hbaseCreateOptions;
   Lng32 numSaltPartns; // num of salted partitions this index was created with.
-
+  Lng32 rowFormat; 
   const ComTdbVirtTableKeyInfo * keyInfoArray;
   const ComTdbVirtTableKeyInfo * nonKeyInfoArray;
 };

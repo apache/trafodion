@@ -69,6 +69,13 @@ enum FileOrganizationEnum
   KEY_SEQUENCED_FILE,
   HASH_FILE
 };
+
+enum RowFormatEnum {
+  SQLMX_UNKNOWN_FORMAT,
+  SQLMX_ROW_FORMAT,
+  SQLMX_ALIGNED_ROW_FORMAT,
+  SQLMX_HBASE_FORMAT
+};
   
 // -----------------------------------------------------------------------
 // A NAFileSet object describes common attributes of a set of files
@@ -272,6 +279,11 @@ public:
   //For NATable caching, prepare for use by a statement.
   void setupForStatement();
 
+  NABoolean isSqlmxRowFormat() { return rowFormat_ == SQLMX_ROW_FORMAT; }
+  NABoolean isSqlmxAlignedRowFormat() { return rowFormat_ == SQLMX_ALIGNED_ROW_FORMAT; }
+
+  void setRowFormat(RowFormatEnum rowFormat) { rowFormat_ = rowFormat; }
+
 private:
 
   // ---------------------------------------------------------------------
@@ -454,6 +466,8 @@ private:
     // if this index was explicitly created by user and not internally
     // created to implement a unique constraint.
     IS_EXPLICIT_INDEX = 0x00010
+    
+      
   };
   ULng32 bitFlags_;
 
@@ -472,6 +486,8 @@ private:
   Lng32 numMaxVersions_;
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions_;
+
+  RowFormatEnum rowFormat_; 
   
 };
 

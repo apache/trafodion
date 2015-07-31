@@ -573,7 +573,17 @@ public:
   }
 
   NABoolean isSQLMXAlignedTable() const
-  {  return (flags_ & SQLMX_ALIGNED_ROW_FORMAT) != 0; }
+  {
+    NABoolean alignedTable;
+
+    if (getIndexList().entries() != 0)
+       alignedTable = isSQLMXAlignedTable((char *)getIndexList()[0]->getFileSetName().getQualifiedNameAsAnsiString().data());
+    else
+       alignedTable = isSQLMXAlignedTable((char *)getTableName().getQualifiedNameAsAnsiString().data());
+    return alignedTable;
+  }
+ 
+  NABoolean isSQLMXAlignedTable(char *objectName) const;
 
 // LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
@@ -805,6 +815,9 @@ public:
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
 private:
+  NABoolean getSQLMXAlignedTable() const
+  {  return (flags_ & SQLMX_ALIGNED_ROW_FORMAT) != 0; }
+
   // copy ctor
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
 

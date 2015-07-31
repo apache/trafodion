@@ -2011,6 +2011,8 @@ desc_struct * Generator::createVirtualTableDesc(
           curr_index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
           curr_index_desc->body.indexes_desc.numSaltPartns = 
             indexInfo[i].numSaltPartns;
+          curr_index_desc->body.indexes_desc.rowFormat = 
+            (ComRowFormat)indexInfo[i].rowFormat;
           if (indexInfo[i].hbaseCreateOptions)
           {
             curr_index_desc->body.indexes_desc.hbaseCreateOptions  = 

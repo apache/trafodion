@@ -199,6 +199,7 @@ struct indexes_desc_struct {
   // Partitioning key columns -- used by NonStop SQL/MX to accommodate
   // independent partitioning and clustering keys
   desc_struct *partitioning_keys_desc;
+  ComRowFormat rowFormat;
 #ifdef NA_LITTLE_ENDIAN
   void encode() {}
 #endif

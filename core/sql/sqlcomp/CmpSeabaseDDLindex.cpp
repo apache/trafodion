@@ -600,6 +600,16 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   NABoolean alignedFormat = FALSE;
+  if (CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON) {
+     if (naTable->hasSerializedColumn())
+        alignedFormat = FALSE;
+     else
+     if (isSeabaseReservedSchema(tableName))
+        alignedFormat = FALSE;
+     else
+        alignedFormat = TRUE;
+  }
+  else
   if (naTable->isSQLMXAlignedTable())
     alignedFormat = TRUE;
 

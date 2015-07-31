@@ -3681,6 +3681,23 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       NABoolean isNotAvailable =
 	indexes_desc->body.indexes_desc.notAvailable;
 
+      RowFormatEnum rowFormat;
+      switch (indexes_desc->body.indexes_desc.rowFormat)
+      {
+        case COM_PACKED_FORMAT_TYPE:
+           rowFormat = SQLMX_ROW_FORMAT;
+           break;
+        case COM_ALIGNED_FORMAT_TYPE:
+           rowFormat = SQLMX_ALIGNED_ROW_FORMAT;
+           break;
+        case COM_HBASE_FORMAT_TYPE:
+           rowFormat = SQLMX_HBASE_FORMAT;
+           break;
+        default:
+           rowFormat = SQLMX_UNKNOWN_FORMAT;
+      }
+
+
       ItemExprList hbaseSaltColumnList(CmpCommon::statementHeap());
       Int64 numOfSaltedPartitions = 0;
 
@@ -4196,6 +4213,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       if (isNotAvailable)
 	newIndex->setNotAvailable(TRUE);
 
+      newIndex->setRowFormat(rowFormat);
       // Mark each NAColumn in the list
       indexKeyColumns.setIndexKey();
       if ((table->isHbaseTable()) && (indexes_desc->body.indexes_desc.keytag != 0))
@@ -7591,6 +7609,19 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
   }
   return TRUE;
 
+}
+
+NABoolean NATable::isSQLMXAlignedTable(char *objectName) const 
+{
+  if (qualifiedName_.getText().compareTo(objectName, NAString::exact) == 0)
+     return getSQLMXAlignedTable();
+  else {
+     for (CollIndex i = 0; i < indexes_.entries(); i++) {
+         if (indexes_[i]->getFileSetName().getQualifiedNameAsAnsiString().compareTo(objectName, NAString::exact) == 0)
+            return indexes_[i]->isSqlmxAlignedRowFormat();
+     }  
+  }
+  return getSQLMXAlignedTable();
 }
 
 // get details of this NATable cache entry

@@ -3288,8 +3288,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
-
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
   DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
