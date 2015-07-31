@@ -1874,7 +1874,7 @@ short HbaseUpdate::codeGen(Generator * generator)
       ExpTupleDesc * returnedUpdatedTupleDesc = NULL;
       ValueIdList tgtConvValueIdList;
 
-     if (getTableDesc()->getNATable()->hasSerializedColumn())
+     if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  // if serialized columns are present, then create a new row with
 	  // deserialized columns before returning it.
@@ -1948,7 +1948,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 	  ExpTupleDesc * returnedMergeInsertedTupleDesc = NULL;
 	  ValueIdList tgtConvValueIdList;
 
-	  if (getTableDesc()->getNATable()->hasSerializedColumn())
+	  if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	    {
 	      // if serialized columns are present, then create a new row with
 	      // deserialized columns before returning it.
@@ -2473,7 +2473,7 @@ short HbaseInsert::codeGen(Generator *generator)
       ItemExpr *constrTree = 
 	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	constrTree = generator->addCompDecodeForDerialization(constrTree);
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
@@ -2569,7 +2569,7 @@ short HbaseInsert::codeGen(Generator *generator)
   ExpTupleDesc * projRowTupleDesc   = 0;
   if (returnRow)
     {
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  ValueIdList deserColVIDList;
 

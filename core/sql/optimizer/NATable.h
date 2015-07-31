@@ -673,6 +673,12 @@ public:
   NABoolean hasLobColumn() const
   {  return (flags_ & LOB_COLUMN) != 0; }
 
+  void setHasSerializedEncodedColumn( NABoolean value )
+  {  value ? flags_ |= SERIALIZED_ENCODED_COLUMN : flags_ &= ~SERIALIZED_ENCODED_COLUMN; }
+
+  NABoolean hasSerializedEncodedColumn() const
+  {  return (flags_ & SERIALIZED_ENCODED_COLUMN) != 0; }
+
   void setHasSerializedColumn( NABoolean value )
   {  value ? flags_ |= SERIALIZED_COLUMN : flags_ &= ~SERIALIZED_COLUMN; }
 
@@ -883,7 +889,8 @@ private:
     DROPPABLE                 = 0x00004000,
     LOB_COLUMN                = 0x00008000,
     REMOVE_FROM_CACHE_BNC     = 0x00010000,  // Remove from NATable Cache Before Next Compilation
-    SERIALIZED_COLUMN    = 0x00020000
+    SERIALIZED_ENCODED_COLUMN  = 0x00020000,
+    SERIALIZED_COLUMN          = 0x00040000
   };
     
   UInt32 flags_;

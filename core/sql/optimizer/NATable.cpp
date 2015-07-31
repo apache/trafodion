@@ -3393,6 +3393,9 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 	    table->setHasLobColumn(TRUE);
 
 	  if (CmpSeabaseDDL::isEncodingNeededForSerialization(newColumn))
+	    table->setHasSerializedEncodedColumn(TRUE);
+
+          if (CmpSeabaseDDL::isSerialized(newColumn->getHbaseColFlags()))
 	    table->setHasSerializedColumn(TRUE);
 	}
 
