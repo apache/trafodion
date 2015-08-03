@@ -599,7 +599,7 @@ parameters</primary><secondary>presetting on Linux or UNIX</secondary>
 </indexterm>
 <para>To preset the optional launch parameters for each session, use
 an alias in the shell command. For example:</para>
-<programlisting>alias trafci='trafci.sh -h 16.123.456.78:37800 -u user1 -p xxxxxx'</programlisting>
+<programlisting>alias trafci='trafci.sh -h 16.123.456.78:23400 -u user1 -p xxxxxx'</programlisting>
 <para>You can add the alias, <literal>trafci</literal>, to the user
 profile, or you can enter it at a command prompt. For more information
 about the optional launch parameters, see <xref linkend="i1005070"
@@ -646,7 +646,7 @@ name:</para>
 the domain of the client workstation. </para></listitem>
 <listitem><indexterm><primary>Port number, default</primary></indexterm>
 <para>If you do not specify a port number, TrafCI uses the default
-port number, which is 37800.</para></listitem>
+port number, which is 23400.</para></listitem>
 </itemizedlist>
 <indexterm><primary>IP address</primary></indexterm><para>Or enter
 an IP address:</para>
@@ -718,12 +718,12 @@ role</phrase>.</para>
 <programlisting>cd <replaceable>trafci‑installation‑directory</replaceable
 >\Trafodion Command Interface\bin
 
-trafci.cmd -h 16.123.456.78:37800 -u user1 ‑p xxxxxx</programlisting>
+trafci.cmd -h 16.123.456.78:23400 -u user1 ‑p xxxxxx</programlisting>
 <para>For example, on Linux or UNIX, in the terminal window, enter:</para>
 <programlisting>cd <replaceable>trafci‑installation‑directory</replaceable
 >/trafci/bin
 
-./trafci.sh -h 16.123.456.78:37800 -u user1 -p xxxxxx</programlisting>
+./trafci.sh -h 16.123.456.78:23400 -u user1 -p xxxxxx</programlisting>
 <para>TrafCI launches and prompts you to enter an SQL statement or
 an interface command:</para>
 <programlisting>Welcome to Trafodion Command Interface 
@@ -879,7 +879,7 @@ of the database platform to which you want the client to connect.
 The <replaceable>host-name</replaceable> should include the domain
 name of the database platform if it is different from the domain of
 the client workstation. If you do not specify a port number, TrafCI
-uses the default port number, which is <phrase>37800</phrase>. For
+uses the default port number, which is <phrase>23400</phrase>. For
 an example, see <xref linkend="log_param" role="select:quotedtitle page"
 />.</entry></row>
 <row><entry><indexterm><primary>-u parameter</primary></indexterm
@@ -1019,7 +1019,7 @@ you to log in by default (if you did not specify <literal>‑h</literal
 >, <literal>‑u</literal>, and <literal>‑p</literal><phrase
 condition="hidden">, and <literal>‑dsn</literal></phrase> on the command
 line), runs the SQL statement, and then returns to the command prompt:</para>
-<programlisting>Host Name/IP Address: 16.123.456.78:37800
+<programlisting>Host Name/IP Address: 16.123.456.78:23400
 User Name: user1
 Password:
 
@@ -1113,7 +1113,7 @@ file:</para>
 <programlisting>Welcome to Trafodion Command Interface 
 Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
 
-Host Name/IP Address: 16.123.456.78:37800
+Host Name/IP Address: 16.123.456.78:23400
 User Name: user1
 Password:
 
@@ -1378,7 +1378,7 @@ LOG OPTIONS     APPEND,CMDTEXT ON
 MARKUP          RAW
 PROMPT          SQL>
 SCHEMA          SEABASE
-SERVER          sqws135.houston.hp.com:37800
+SERVER          sqws135.houston.hp.com:23400
 SQLTERMINATOR   ;
 STATISTICS      OFF
 TIME            OFF
@@ -2774,7 +2774,7 @@ use Session;
 $sess = Session->new();
  
 # connect to the database
-$sess->connect("user1","password","16.123.456.78","37800");
+$sess->connect("user1","password","16.123.456.78","23400");
  
 $retval=$sess->execute(" set schema TRAFODION.CI_SAMPLE ");
 print $retval;
@@ -2799,7 +2799,7 @@ import Session
 sess = Session.Session()
 
 # Connect to the database
-x=sess.__connect__("user1","password","16.123.456.78","37800")
+x=sess.__connect__("user1","password","16.123.456.78","23400")
 
 # Execute sample queries
 #    __execute takes the query string as argument
@@ -3889,7 +3889,7 @@ LOG OPTIONS     APPEND,CMDTEXT ON
 MARKUP          RAW
 PROMPT          SQL>
 SCHEMA          SEABASE
-SERVER          sqws135.houston.hp.com:37800
+SERVER          sqws135.houston.hp.com:23400
 SQLTERMINATOR   ;
 STATISTICS      OFF
 TIME            OFF
@@ -3909,7 +3909,7 @@ LOG             OFF
 MARKUP          RAW
 PROMPT          SQL>
 SCHEMA          SEABASE
-SERVER          sqws135.houston.hp.com:37800
+SERVER          sqws135.houston.hp.com:23400
 SQLTERMINATOR   ;
 STATISTICS      OFF
 TIME            OFF
@@ -8767,7 +8767,7 @@ LOG OPTIONS     APPEND,CMDTEXT ON
 MARKUP          RAW
 PROMPT          SQL>
 SCHEMA          SEABASE
-SERVER          sqws135.houston.hp.com:37800
+SERVER          sqws135.houston.hp.com:23400
 SQLTERMINATOR   ;
 STATISTICS      OFF
 TIME            OFF
@@ -8787,7 +8787,7 @@ LOG             OFF
 MARKUP          RAW
 PROMPT          SQL>
 SCHEMA          SEABASE
-SERVER          sqws135.houston.hp.com:37800
+SERVER          sqws135.houston.hp.com:23400
 SQLTERMINATOR   ;
 STATISTICS      OFF
 TIME            OFF

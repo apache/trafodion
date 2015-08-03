@@ -822,7 +822,7 @@ public abstract class BaseTest {
     protected static Connection getConnection() throws Exception {
         Connection conn = null;
         try {
-            String propFile = System.getProperty("hpjdbc.properties");
+            String propFile = System.getProperty("trafjdbc.properties");
             assertNotNull(propFile);
             FileInputStream fs = new FileInputStream(new File(propFile));
             Properties props = new Properties();
