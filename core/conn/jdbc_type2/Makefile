@@ -1,18 +1,21 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -56,9 +59,10 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/type2version.o
 
 OBJS = $(COMMON_OBJS) $(T2_OBJS)
+MXODIR = $(SQ_HOME)/../conn/odbc/src/odbc
 
-INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/include -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/linux -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../sql/common -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc
-COMMON_DEFINES = -DTRAFODION_JDBCT2_VER_MAJOR=$(TRAFODION_VER_MAJOR) -DTRAFODION_JDBCT2_VER_MINOR=$(TRAFODION_VER_MINOR) -D_LP64 -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DDISABLE_NOWAIT -D_FASTPATH -DTODO -D_SQ64 -w
+INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(MXODIR)/Krypton/generated_incs -I$(MXODIR)/dependencies/include -I$(MXODIR)/dependencies/linux -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../sql/common -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc
+COMMON_DEFINES = -DTRAFODION_JDBCT2_VER_MAJOR=$(TRAFODION_VER_MAJOR) -DTRAFODION_JDBCT2_VER_MINOR=$(TRAFODION_VER_MINOR) -D_LP64 -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DDISABLE_NOWAIT -D_FASTPATH -DTODO -D_SQ64 -w
 
 DEFINES =  $(COMMON_DEFINES)
 

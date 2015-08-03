@@ -1,19 +1,22 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -73,12 +76,21 @@ struct SRVR_SESSION_HDL {
 #define FETCH_EXCEPTION         6
 #define TRANSACTION_EXCEPTION   7
 
+// For Hash support.
+#define STREAMING_MODE                0x40000000    //(2^30)
+#define STREAMING_DELAYEDERROR_MODE   0x20000000    //(2^29)
+#define CHARSET		                  0x10000000    //(2^28) // For charset changes compatibility
+#define ROWWISE_ROWSET                0x8000000     //(2^27)
+#define PASSWORD_SECURITY             0x4000000     //(2^26)
+#define MXO_SPECIAL_1_MODE            0x1000        // Compatibility mode
+
 // Following are the global variables
 #define             NO_OF_DESC_ITEMS        16
+#define             TIMEBUFSIZE             22
 
 extern SRVR_GLOBAL_Def      *srvrGlobal;
-//extern ODBCMXEventMsg     *srvrEventLogger;
 extern __thread SQLDESC_ITEM        gDescItems[];
+extern __thread SQLMODULE_ID		nullModule;
 extern __thread char                CatalogNm[MAX_ANSI_NAME_LEN+1];
 extern __thread char                SchemaNm[MAX_ANSI_NAME_LEN+1];
 extern __thread char                TableNm[MAX_ANSI_NAME_LEN+1];
@@ -96,14 +108,9 @@ extern int initSqlCore(int argc, char *argv[]);
 extern SRVR_STMT_HDL *getSrvrStmt(long dialogueId,
                                   long stmtId,
                                   long *retcode = NULL);
-//End of Soln. No.: 10-100202-7923
-/**
-extern SRVR_STMT_HDL *getSrvrStmt(long dialogueId,
-                                  char *stmtLabel,
-                                  long  *sqlcode = NULL,
-                                  const char *moduleName = NULL);
 
-                                  **/
+extern SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId, const char* stmtLabel, long* retcode = NULL);
+
 extern void removeSrvrStmt(long dialogueId, long stmtId);
 extern SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                                      const char *stmtLabel,
@@ -114,7 +121,10 @@ extern SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                                      short sqlStmtType = TYPE_UNKNOWN,
                                      BOOL useDefaultDesc = FALSE,
                                      BOOL internalStmt = FALSE,
-                                     long stmtId = 0);
+                                     long stmtId = 0,
+									 short sqlQueryType = SQL_UNKNOWN,
+									 Int32  resultSetIndex = 0,
+									 SQLSTMT_ID* callStmtId = NULL);
 
 extern SRVR_STMT_HDL *createSrvrStmtForMFC(long dialogueId,
                                            const char *stmtLabel,
@@ -267,6 +277,14 @@ extern short do_ExecFetchAppend(
 , /* Out   */ long *stmtId
 );
 
+extern "C" void 
+GETMXCSWARNINGORERROR(
+        /* In    */ Int32 sqlcode
+        , /* In    */ char *sqlState
+        , /* In    */ char *msg_buf
+        , /* Out   */ Int32 *MXCSWarningOrErrorLength
+        , /* Out   */ BYTE *&MXCSWarningOrError);
+
 void appendOutputValueList(SQLValueList_def *targ, SQLValueList_def *src, bool free_src);
 void freeOutputValueList(SQLValueList_def *ovl);
 
@@ -280,6 +298,10 @@ extern short abortTransaction (void);
 extern short beginTransaction (long *transTag);
 extern short resumeTransaction (long transTag);
 extern short endTransaction (void);
+
+// Add for new Rowsets logic
+extern char* strcpyUTF8(char *dest, const char *src, size_t destSize, size_t copySize=0);
+extern int getAllocLength(int DataType, int Length);
 
 // +++ T2_REPO
 void getCurrentTime(char* timestamp);

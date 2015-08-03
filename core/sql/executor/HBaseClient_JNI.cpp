@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -3527,10 +3530,10 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
-	    const Text &columnToCheck, const Text &colValToCheck,
+	    HbaseStr &columnToCheck, HbaseStr &colValToCheck,
 	    Int64 timestamp)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s, %s, %s) called.", rowID.val, columnToCheck.data(), colValToCheck.data());
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s) called.", rowID.val);
 
   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
     getExceptionDetails();
@@ -3545,7 +3548,7 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
-  int len = columnToCheck.size();
+  int len = columnToCheck.len;
   jbyteArray jba_columntocheck = jenv_->NewByteArray(len);
   if (jba_columntocheck == NULL) 
   {
@@ -3553,9 +3556,9 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
     jenv_->PopLocalFrame(NULL);
     return HTC_ERROR_CHECKANDDELETEROW_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_columntocheck, 0, len, (const jbyte*)columnToCheck.data());
+  jenv_->SetByteArrayRegion(jba_columntocheck, 0, len, (const jbyte*)columnToCheck.val);
 
-  len = colValToCheck.size();
+  len = colValToCheck.len;
   jbyteArray jba_colvaltocheck = jenv_->NewByteArray(len);
   if (jba_colvaltocheck == NULL) 
   {
@@ -3564,7 +3567,7 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
     return HTC_ERROR_CHECKANDDELETEROW_PARAM;
   }
   jenv_->SetByteArrayRegion(jba_colvaltocheck, 0, len, 
-			    (const jbyte*)colValToCheck.data());
+			    (const jbyte*)colValToCheck.val);
  
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
@@ -3582,7 +3585,8 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
   if (hbs_)
     hbs_->getTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_CHECKANDDELETE].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CHECKANDDELETE].methodID, j_tid, jba_rowID, jba_columntocheck, jba_colvaltocheck, j_ts);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CHECKANDDELETE].methodID, j_tid, 
+                  jba_rowID, jba_columntocheck, jba_colvaltocheck, j_ts);
   if (hbs_)
     {
       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
@@ -3967,7 +3971,7 @@ HbaseStr &row, Int64 timestamp, bool asyncOperation)
 
 HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
             HbaseStr &row,
-	    const Text &columnToCheck, const Text &colValToCheck, 
+	    HbaseStr &columnToCheck,  HbaseStr &colValToCheck, 
             Int64 timestamp,
             bool asyncOperation)
 {
@@ -3994,7 +3998,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
     return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
   }
   
-  int len = columnToCheck.size();
+  int len = columnToCheck.len;
   jbyteArray jba_columntocheck = jenv_->NewByteArray(len);
   if (jba_columntocheck == NULL) 
   {
@@ -4003,9 +4007,9 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
     return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
   }
   jenv_->SetByteArrayRegion(jba_columntocheck, 0, len, 
-			    (const jbyte*)columnToCheck.data());
+			    (const jbyte*)columnToCheck.val);
  
-  len = colValToCheck.size();
+  len = colValToCheck.len;
   jbyteArray jba_colvaltocheck = jenv_->NewByteArray(len);
   if (jba_colvaltocheck == NULL) 
   {
@@ -4014,7 +4018,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
     return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
   }
   jenv_->SetByteArrayRegion(jba_colvaltocheck, 0, len, 
-			    (const jbyte*)colValToCheck.data());
+			    (const jbyte*)colValToCheck.val);
  
   jlong j_tid = transID;  
   jlong j_ts = timestamp;

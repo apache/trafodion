@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1869,9 +1872,10 @@ static RelExpr *createIMNode(BindWA *bindWA,
 			     CorrName &tableCorrName,
 			     const CorrName &indexCorrName,
 			     IndexDesc *index,
-			     NABoolean isInsert,
+			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
-                           NABoolean isMerge)
+                             NABoolean isForUpdate,
+                             NABoolean isForMerge)
 {
    
  // See createOldAndNewCorrelationNames() for info on OLDCorr/NEWCorr
@@ -1886,13 +1890,14 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // key belonging to a different row). Hence in this case, it is better to always
   // match not only the index key but also remaining columns in the index table
   // that correspond to the base table. Hence we introduce robustDelete below. 
-  NABoolean robustDelete = isMerge && index->isUniqueIndex();
+  NABoolean robustDelete = isForMerge && index->isUniqueIndex();
 
-  tableCorrName.setCorrName((isInsert || robustDelete)? NEWCorr : OLDCorr);
+  tableCorrName.setCorrName((isIMInsert || robustDelete)? NEWCorr : OLDCorr);
   
   ItemExprList *colRefList = new(bindWA->wHeap()) ItemExprList(bindWA->wHeap());
 
-  const ValueIdList &indexColVids = ((isInsert || robustDelete)? index->getIndexColumns() : index->getIndexKey());
+  const ValueIdList &indexColVids = ((isIMInsert || robustDelete)? index->getIndexColumns() : index->getIndexKey());
+  ItemExpr *preCond = NULL; // pre-condition for delete, if any
   
   for (CollIndex i=0; i < indexColVids.entries(); i++) {
 
@@ -1911,11 +1916,51 @@ static RelExpr *createIMNode(BindWA *bindWA,
     colRefList->insert(colRef);
   }
 
+  if (!isIMInsert && isForUpdate)
+    {
+      // For delete nodes that are part of an update, generate a
+      // comparison expression between old and new index column values
+      // and suppress the delete if no columns change. This avoids the
+      // situation where we delete and then re-insert the same index
+      // row within one millisecond and get the same HBase timestamp
+      // value assigned. In that case, the delete will win out over
+      // the insert, even though the insert happens later in time. The
+      // HBase-trx folks are also working on a change to avoid that.
+
+      CorrName newValues(tableCorrName);
+
+      newValues.setCorrName(NEWCorr);
+
+      for (CollIndex cc=0; cc<colRefList->entries(); cc++)
+        {
+          ColReference *oldColRef = static_cast<ColReference *>((*colRefList)[cc]);
+
+          // create a predicate OLD@.<col> = NEW@.<col>
+          BiRelat *comp1Col = new (bindWA->wHeap())
+            BiRelat(ITM_EQUAL,
+                    oldColRef,
+                    new (bindWA->wHeap()) ColReference(
+                         new (bindWA->wHeap()) ColRefName(
+                              oldColRef->getColRefNameObj().getColName(),
+                              newValues,
+                              bindWA->wHeap())),
+                    TRUE); // special NULLs, treat NULL == NULL as true
+
+          if (preCond == NULL)
+            preCond = comp1Col;
+          else
+            preCond = new (bindWA->wHeap()) BiLogic(ITM_AND, preCond, comp1Col);
+        }
+
+      // the actual condition is that the values are NOT the same
+      preCond = new (bindWA->wHeap()) UnLogic(ITM_NOT, preCond);
+    }
+
   // NULL tableDesc here, like all Insert/Update/Delete ctors in SqlParser,
   // because the LeafXxx::bindNode will call GenericUpdate::bindNode
   // which will do the appropriate createTableDesc.
   GenericUpdate *imNode;
-  if (isInsert)
+  if (isIMInsert)
     {
       if (!bindWA->isTrafLoadPrep())
       {
@@ -1924,7 +1969,13 @@ static RelExpr *createIMNode(BindWA *bindWA,
         if (arrayWA && arrayWA->hasHostArraysInTuple()) {
           if (arrayWA->getTolerateNonFatalError() == TRUE)
             imNode->setTolerateNonFatalError(RelExpr::NOT_ATOMIC_);    
-        }	
+        }
+        // For index maintenance on non-unique HBase indexes we can use a put.
+        // In fact we must use a put, otherwise we'll get a uniqueness constraint
+        // violation for those rows that didn't change and therefore didn't get
+        // deleted, due to the precondition (see below).
+        if (!index->isUniqueIndex())
+          imNode->setNoCheck(TRUE);
       } // regular insert
       else {
         imNode = new (bindWA->wHeap()) Insert(indexCorrName,
@@ -1938,10 +1989,15 @@ static RelExpr *createIMNode(BindWA *bindWA,
       } // traf load prep
     }
   else
-    imNode = new (bindWA->wHeap()) LeafDelete(indexCorrName,
-                                        NULL,
-                                        colRefList,
-                                        (robustDelete)?TRUE:FALSE);
+    {
+      imNode = new (bindWA->wHeap()) LeafDelete(indexCorrName,
+                                                NULL,
+                                                colRefList,
+                                                (robustDelete)?TRUE:FALSE,
+                                                REL_LEAF_DELETE,
+                                                preCond,
+                                                bindWA->wHeap());
+    }
 
    // The base table's rowsAffected() will get set in ImplRule.cpp,
   // but we don't want any of these indexes' rowsAffected to be computed
@@ -1977,6 +2033,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
     indexCorrName.setIsVolatile(TRUE);
 
   RelExpr *indexInsert = NULL, *indexDelete = NULL, *indexOp = NULL;
+  NABoolean isForUpdate = (getOperatorType() == REL_UNARY_UPDATE ||
+                           isMergeUpdate());
 
   if (indexCorrName.getUgivenName().isNull())
     {
@@ -1994,7 +2052,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 index, 
 					 TRUE, 
 					 useInternalSyskey,
-                                      isMerge());
+                                         isForUpdate,
+                                         isMerge());
 
   // Create a list of base columns ColReferences for
   // ONLY the index KEY columns as BEFORE/OLD columns.
@@ -2006,7 +2065,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 					 index, 
 					 FALSE,
     			       		 useInternalSyskey,
-                                      isMerge());
+                                         isForUpdate,
+                                         isMerge());
 
   if (getOperatorType() == REL_UNARY_UPDATE) {
     indexOp = new (bindWA->wHeap()) Union(indexDelete, indexInsert, 

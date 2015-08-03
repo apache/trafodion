@@ -11,19 +11,22 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -46,6 +49,12 @@ friend class LmLanguageManagerJava;
 friend class LmJavaExceptionReporter;
 
 public:
+
+  virtual LmResult setRuntimeInfo(
+       const char   *parentQid,
+       int           totalNumInstances,
+       int           myInstanceNum,
+       ComDiagsArea *da);
 
   virtual LmResult invokeRoutineMethod(
        /* IN */     tmudr::UDRInvocationInfo::CallPhase phase,
@@ -71,6 +80,14 @@ public:
        /* IN */     Int32         planNum,
        /* OUT */    Int32        *planInfoLenOut,
        /* IN/OUT */ ComDiagsArea *da);
+
+  virtual LmResult setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                   SQLUDR_EmitRow emitRowPtr,
+                                   ComDiagsArea *da);
+  void setJNIFunctionPtrs(void *jniGetNextRowPtr,
+                          void *jniEmitRowPtr);
+  void setRowLengths(int inputRowLen,
+                     int outputRowLen);
 
 protected:
 
@@ -112,6 +129,17 @@ protected:
   jbyteArray returnedPIL_;
   jsize iiLen_;
   jsize piLen_;
-}; // class LmRoutineJava
+
+  // lengths of input and output rows, these are stored here
+  // to avoid unpacking the UDRInvocationInfo object on the
+  // C++ side
+  int inputRowLen_;
+  int outputRowLen_;
+
+  // function pointers for JNI and to emit result rows and EOD
+  SQLUDR_EmitRow      emitRowPtr_;
+  void *jniGetNextRowPtr_;
+  void *jniEmitRowPtr_;
+}; // class LmRoutineJavaObj
 
 #endif

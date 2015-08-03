@@ -1,19 +1,22 @@
 /************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -57,6 +60,7 @@
 
 SRVR_GLOBAL_Def     *srvrGlobal = NULL;
 long                *TestPointArray = NULL;
+__thread SQLMODULE_ID       nullModule;
 __thread SQLDESC_ITEM       gDescItems[NO_OF_DESC_ITEMS];
 __thread char               CatalogNm[MAX_ANSI_NAME_LEN+1];
 __thread char               SchemaNm[MAX_ANSI_NAME_LEN+1];
@@ -256,7 +260,7 @@ int initSqlCore(int argc, char *argv[])
 #endif
 
     gDescItems[0].item_id = SQLDESC_TYPE;
-    gDescItems[1].item_id = SQLDESC_LENGTH;
+    gDescItems[1].item_id = SQLDESC_OCTET_LENGTH;
     gDescItems[2].item_id = SQLDESC_PRECISION;
     gDescItems[3].item_id = SQLDESC_SCALE;
     gDescItems[4].item_id = SQLDESC_NULLABLE;
@@ -310,7 +314,6 @@ int initSqlCore(int argc, char *argv[])
     // Make sure you change NO_OF_DESC_ITEMS if you add any more items
     FUNCTION_RETURN_NUMERIC(retcode,(NULL));
 }
-
 
 
 
@@ -372,6 +375,63 @@ SRVR_STMT_HDL *getSrvrStmt(long dialogueId,
     FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
 }
 
+SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId,
+		const char* stmtLabel,
+		long* sqlcode)
+{
+	FUNCTION_ENTRY("getInternalSrvrStmt",("dialogueId=0x%08x, stmtLabel=0x%08x, sqlcode=0x%08x",
+				dialogueId,
+				stmtLabel,
+				sqlcode));
+
+	SQLRETURN rc;
+	SRVR_STMT_HDL *pSrvrStmt=NULL;
+
+	SRVR_CONNECT_HDL *pConnect=NULL;
+
+	if (dialogueId == 0)
+	{
+		*sqlcode = DIALOGUE_ID_NULL_ERROR;
+		FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+	}
+	if (stmtLabel == NULL)
+	{
+		*sqlcode = STMT_ID_NULL_ERROR;
+		FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+	}
+
+	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
+	pSrvrStmt = pConnect->getInternalSrvrStmt(dialogueId, stmtLabel, sqlcode);
+	if(pSrvrStmt != NULL)
+	{
+		if (pSrvrStmt->dialogueId != dialogueId)
+		{
+			*sqlcode = STMT_ID_MISMATCH_ERROR;
+			FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+		}
+	}
+    else
+    {
+        FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+    }
+
+	rc = pConnect->switchContext(sqlcode);
+	switch (rc)
+	{
+		case SQL_SUCCESS:
+		case SQL_SUCCESS_WITH_INFO:
+			break;
+		default:
+			FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
+	}
+
+	if(pSrvrStmt != NULL)
+	{
+		pConnect->setCurrentStmt(pSrvrStmt);
+	}
+	FUNCTION_RETURN_PTR(pSrvrStmt,(NULL));
+}
+
 SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                               const char *stmtLabel,
                               long  *sqlcode,
@@ -381,7 +441,10 @@ SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                               short sqlStmtType,
                               BOOL  useDefaultDesc,
                               BOOL    internalStmt,
-                              long stmtId)
+                              long stmtId,
+							  short sqlQueryType,
+							  Int32  resultSetIndex,
+							  SQLSTMT_ID* callStmtId)
 {
     FUNCTION_ENTRY("createSrvrStmt",(""));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  dialogueId=%ld, stmtLabel=%s",
@@ -418,7 +481,7 @@ SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
         FUNCTION_RETURN_PTR(NULL,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
     }
     pSrvrStmt = pConnect->createSrvrStmt(stmtLabel, sqlcode, moduleName, moduleVersion, moduleTimestamp,
-        sqlStmtType, useDefaultDesc,internalStmt,stmtId);
+        sqlStmtType, useDefaultDesc,internalStmt,stmtId, sqlQueryType, resultSetIndex, callStmtId);
     FUNCTION_RETURN_PTR(pSrvrStmt,("sqlcode=%s",CliDebugSqlError(*sqlcode)));
 }
 
@@ -2210,3 +2273,108 @@ void print_outputValueList(SQLValueList_def *oVL, long colCount, const char * fc
     fflush(stdout);
 }
 #endif
+
+// DO NOT call this function using pSrvrStmt->sqlWarningOrErrorLength and pSrvrStmt->sqlWarningOrError,
+// Since the WarningOrError is static and pSrvrStmt->sqlWarningOrError will deallocate this memory. 
+extern "C" void GETMXCSWARNINGORERROR(
+          /* In    */ Int32 sqlcode
+        , /* In    */ char *sqlState
+        , /* In    */ char *msg_buf
+        , /* Out   */ Int32 *MXCSWarningOrErrorLength
+        , /* Out   */ BYTE *&MXCSWarningOrError)
+{
+    Int32 total_conds = 1;
+    Int32 buf_len;
+    Int32 curr_cond = 1;
+    Int32 msg_buf_len = strlen(msg_buf)+1;
+    Int32 time_and_msg_buf_len = 0;
+    Int32 msg_total_len = 0;
+    Int32 rowId = 0; // use this for rowset recovery.
+    char tsqlState[6];
+    BYTE WarningOrError[1024];
+    char  strNow[TIMEBUFSIZE + 1];
+    char* time_and_msg_buf = NULL;
+
+    memset(tsqlState,0,sizeof(tsqlState));
+    memcpy(tsqlState,sqlState,sizeof(tsqlState)-1);
+
+    bzero(WarningOrError,sizeof(WarningOrError));
+
+    *MXCSWarningOrErrorLength = 0;
+    MXCSWarningOrError = WarningOrError; // Size of internally generated message should be enough
+
+    *(Int32 *)(WarningOrError+msg_total_len) = total_conds;
+    msg_total_len += sizeof(total_conds);
+    *(Int32 *)(WarningOrError+msg_total_len) = rowId;
+    msg_total_len += sizeof(rowId);
+    *(Int32 *)(WarningOrError+msg_total_len) = sqlcode;
+    msg_total_len += sizeof(sqlcode);
+    time_and_msg_buf_len   = msg_buf_len + TIMEBUFSIZE;
+    *(Int32 *)(WarningOrError+msg_total_len) = time_and_msg_buf_len;
+    msg_total_len += sizeof(time_and_msg_buf_len);
+    //Get the timetsamp
+        time_and_msg_buf = new char[time_and_msg_buf_len];
+    strncpy(time_and_msg_buf, msg_buf, msg_buf_len);
+    time_t  now = time(NULL);
+    bzero(strNow, sizeof(strNow));
+    strftime(strNow, sizeof(strNow), " [%Y-%m-%d %H:%M:%S]", localtime(&now));
+    strcat(time_and_msg_buf, strNow);
+    memcpy(WarningOrError+msg_total_len, time_and_msg_buf, time_and_msg_buf_len);
+    msg_total_len += time_and_msg_buf_len;
+    delete time_and_msg_buf;
+    memcpy(WarningOrError+msg_total_len, tsqlState, sizeof(tsqlState));
+    msg_total_len += sizeof(tsqlState);
+
+    memcpy(MXCSWarningOrError, WarningOrError, sizeof(WarningOrError));
+    *MXCSWarningOrErrorLength = msg_total_len;
+    return;
+}
+
+char* strcpyUTF8(char *dest, const char *src, size_t destSize, size_t copySize)
+{
+    char c;
+    size_t len;
+
+    if (copySize == 0)
+        len = strlen(src);
+    else
+        len = copySize;
+
+    if (len >= destSize)
+        len = destSize-1; // truncation
+
+    while (len > 0)
+    {
+        c = src[len-1];
+        if (c < 0x80 || c > 0xbf)
+            break;
+        len--; // in second, third, or fourth byte of a multi-byte sequence
+    }
+    strncpy((char*)dest, (const char*)src, len);
+    dest[len] = 0;
+
+    return dest;
+}
+
+int getAllocLength(int DataType, int Length)
+{
+    int AllocLength;
+
+    switch (DataType) {
+        case SQLTYPECODE_CHAR:
+        //case SQLTYPECODE_CHAR_UP: // sqlcli doesn't support anymore
+        case SQLTYPECODE_VARCHAR:
+            AllocLength = Length+1; 
+            break;
+        case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+        //case SQLTYPECODE_VARCHAR_UP: // sqlcli doesn't support anymore
+        case SQLTYPECODE_VARCHAR_LONG:
+            AllocLength = Length+3;
+            break;
+        default:
+            AllocLength = Length;
+            break;
+    }
+    return AllocLength;
+}
+

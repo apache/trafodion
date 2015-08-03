@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -21,8 +24,6 @@
 package org.trafodion.sql.udr;
 import org.trafodion.sql.udr.UDRException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.HashMap;
 
   // Class to help with serialization, note that it is not required
   // to inherit from this class in order to participate in serialization.
@@ -104,16 +105,16 @@ public class TMUDRSerializableObject
   objectType_  = objectType.value_;
   totalLength_ = -1; // will be set when we serialize the object
   version_     = version;
-  //endianness_  = endianness;
+  // this class is serialized as little-endian
+  endianness_  = (short) Endianness.IS_LITTLE_ENDIAN.ordinal();
   flags_       = 0;
   filler_      = 0;
-  size_        = sizeOf();
   }
 
   public int sizeOf()
   {
     return  SIZEOF_INT + SIZEOF_INT + SIZEOF_SHORT +
-            SIZEOF_SHORT + SIZEOF_INT + SIZEOF_INT + SIZEOF_INT;
+            SIZEOF_SHORT + SIZEOF_INT + SIZEOF_INT;
   }
 
   public TMUDRObjectType getObjectType()
@@ -210,13 +211,12 @@ public class TMUDRSerializableObject
                              objectType_,
                              bufSize);
 
+    outputBuffer.putInt(objectType_);
     outputBuffer.putInt(totalLength_);
     outputBuffer.putShort(version_);
     outputBuffer.putShort(endianness_);
     outputBuffer.putInt(flags_);
     outputBuffer.putInt(filler_);
-    // outputBuffer = Arrays.copyOf(tempBuffer.array(), sizeOf());
-    // System.arraycopy(tempBuffer.array(), 0, outputBuffer, 0, sizeOf());
     int allocatedBytes = bufSize - (outputBuffer.limit() - outputBuffer.position());
     return allocatedBytes;
   }
@@ -236,6 +236,14 @@ public class TMUDRSerializableObject
     endianness_ = inputBuffer.getShort();
     flags_ = inputBuffer.getInt();
     filler_ = inputBuffer.getInt();
+
+    if (bufSize < totalLength_)
+        throw new UDRException(
+           38900,
+           "not enough data to deserialize object of type %d, need %d, got %d bytes",
+           objectType_,
+           totalLength_,
+           bufSize);
 
     int retrievedBytes = bufSize - (inputBuffer.limit() - inputBuffer.position());
 
@@ -292,15 +300,6 @@ public class TMUDRSerializableObject
     return (SIZEOF_INT + s.length);
   }
 
-/*
-  //  TO DO
-  //  do we need this method, if we do should we convert to UTF8?
-  public int serializedLengthOfString(char[] s) throws UDRException
-  {
-    return serializedLengthOfString(String.valueOf(s));
-  }
-*/
-
   public int serializedLengthOfString(int stringLength)
   {
     return SIZEOF_INT + stringLength;
@@ -308,10 +307,6 @@ public class TMUDRSerializableObject
 
   public int serializedLengthOfString(String s) throws UDRException
   {
-    //utf8Charset.encode(s).array().length;
-    // s.getBytes("UTF-8").length;
-    // s.getBytes(Charset,forName("UTF-8")).length;
-
     byte[] temp;
     try {
       temp = s.getBytes("UTF8");
@@ -511,14 +506,11 @@ public class TMUDRSerializableObject
   private static final int SIZEOF_INT=4;
   private static final int SIZEOF_SHORT=2;
   private static final int SIZEOF_LONG=8;
-  private static final Charset utf8Charset = Charset.forName("UTF-8");
-
   private int objectType_;
   private int totalLength_;
   private short version_;
   private short endianness_;
   private int flags_;
   private int filler_;
-  private int size_;
 }
 

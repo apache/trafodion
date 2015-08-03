@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -39,14 +42,14 @@ public class UniqueConstraintInfo extends ConstraintInfo
      */
     public UniqueConstraintInfo() {
         super(ConstraintTypeCode.UNIQUE, getCurrentVersion());
-        
+        uniqueColumns_ = new Vector<Integer>();
     }
 
     public UniqueConstraintInfo(UniqueConstraintInfo constraint) throws UDRException {
         super(ConstraintTypeCode.UNIQUE, getCurrentVersion());
         uniqueColumns_ = new Vector<Integer>();
         for (int i=0; i<constraint.getNumUniqueColumns(); i++) 
-                uniqueColumns_.add(Integer.valueOf(getUniqueColumn(i)));
+                uniqueColumns_.add(Integer.valueOf(constraint.getUniqueColumn(i)));
     }
     /**
      *  Get the number of columns that form the unique key.
@@ -102,26 +105,28 @@ public class UniqueConstraintInfo extends ConstraintInfo
     }
                
     // UDR writers can ignore these methods
-    public String toString(TableInfo ti) {
+    @Override
+    public String toString(TableInfo ti) throws UDRException {
         String s = "unique(";
         for (int c=0; c<uniqueColumns_.size(); c++)
         {
             if (c>0)
                 s +=  ", ";
             
-            // s += ti.getColumn(c).getColName();
+            s += ti.getColumn(uniqueColumns_.get(c)).getColName();
         }
         s += ")";
         return s;
     }
     public static short getCurrentVersion() { return 1; }
 
+    @Override
     public int serializedLength() throws UDRException {
       return super.serializedLength() +
-              serializedLengthOfInt() +
               serializedLengthOfBinary(uniqueColumns_.size() * 4);
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException {
 
       int origPos = outputBuffer.position();
@@ -129,7 +134,8 @@ public class UniqueConstraintInfo extends ConstraintInfo
       super.serialize(outputBuffer);
       int numCols = uniqueColumns_.size();
 
-      serializeInt(uniqueColumns_.size(),
+      // add the binary length of the following array
+      serializeInt(numCols * 4,
                    outputBuffer);
 
       for (int u=0; u<numCols; u++)
@@ -142,6 +148,7 @@ public class UniqueConstraintInfo extends ConstraintInfo
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException {
       int numCols = 0;
 
@@ -150,15 +157,7 @@ public class UniqueConstraintInfo extends ConstraintInfo
       super.deserialize(inputBuffer);
       validateObjectType(TMUDRObjectType.UNIQUE_CONSTRAINT_INFO_OBJ);
 
-      numCols = deserializeInt(inputBuffer);
-
-   //  TO DO check if inpuBuffer has as many bytes as numCols * 4
-  /*
-  if (binaryLength != numCols * (int))
-    throw UDRException(
-         38900,
-         "Inconsistent lengths for unique column list in constraint");
-  */
+      numCols = deserializeInt(inputBuffer) /  4;
 
       for (int u=0; u<numCols; u++) {
         uniqueColumns_.add(deserializeInt(inputBuffer));
@@ -173,5 +172,3 @@ public class UniqueConstraintInfo extends ConstraintInfo
 
     private Vector<Integer> uniqueColumns_;
 }
-
-

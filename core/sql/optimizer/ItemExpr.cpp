@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -3117,32 +3120,34 @@ ConstValue * BiArith::castToConstValue (NABoolean & negate_it)
 
   if ((op == ITM_MINUS) || (op == ITM_PLUS))
   {
-    if (op == ITM_MINUS)
-      negate_it = TRUE;
-    else
-      negate_it = FALSE;
-
-    NABoolean neg = FALSE;
-    ConstValue * lhs = child(0)->castToConstValue(neg);
-    ConstValue * rhs = child(1)->castToConstValue(neg);
+    NABoolean neg0 = FALSE;
+    NABoolean neg1 = FALSE;
+    ConstValue * lhs = child(0)->castToConstValue(neg0);
+    ConstValue * rhs = child(1)->castToConstValue(neg1);
 
     if (lhs && rhs)
     {
-      NormValue lhsVal = NormValue(lhs);
-      if (lhsVal.getValue() == 0)
-	return (rhs);
+      Lng32 scale0 = 0;
+      if (lhs->canGetExactNumericValue() &&
+          lhs->getExactNumericValue(scale0) == 0)
+        {
+          if (op == ITM_MINUS)
+            negate_it = (!neg1);
+          else
+            negate_it = neg1;
+          return (rhs);
+        }
       else
       {
-	NormValue rhsVal = NormValue (rhs);
-	if (rhsVal.getValue() == 0)
-	  return (lhs);
+        Lng32 scale1 = 0;
+        if (rhs->canGetExactNumericValue() &&
+            rhs->getExactNumericValue(scale1) == 0)
+          {
+            negate_it = neg0;
+            return (lhs);
+          }
       }
     }
-
-
-
-
-
   }
   return NULL;
 }

@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -61,7 +64,7 @@ public class CardinalityConstraintInfo extends ConstraintInfo
         if (minNumRows < 0)
             throw new UDRException(
                                    38900,
-                                   "Invalid lower bound for cardinality constraint: %ld",
+                                   "Invalid lower bound for cardinality constraint: %d",
                                    minNumRows);
     }
 
@@ -88,7 +91,7 @@ public class CardinalityConstraintInfo extends ConstraintInfo
             maxNumRows >= 0 && minNumRows > maxNumRows)
             throw new UDRException(
                                    38900,
-                                   "Invalid lower/upper bound for cardinality constraint: (%ld, %ld)",
+                                   "Invalid lower/upper bound for cardinality constraint: (%d, %d)",
                                    minNumRows, maxNumRows);
     }
 
@@ -116,17 +119,20 @@ public class CardinalityConstraintInfo extends ConstraintInfo
     }  
 
     // UDR writers can ignore these methods
+    @Override
     public String toString(TableInfo ti) {
-        return String.format("cardinality constraint(min=%ld, max=%ld)",
+        return String.format("cardinality constraint(min=%d, max=%d)",
                              minNumRows_, maxNumRows_);
     }
 
     public static short getCurrentVersion() { return 1; }
 
+    @Override
     public int serializedLength() throws UDRException{
       return super.serializedLength() + 2 * serializedLengthOfLong();
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException{
 
       int origPos = outputBuffer.position();
@@ -146,6 +152,7 @@ public class CardinalityConstraintInfo extends ConstraintInfo
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();

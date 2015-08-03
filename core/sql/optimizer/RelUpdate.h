@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -530,6 +533,11 @@ GenericUpdate(const CorrName &name,
                                  return FALSE; 
                             }
 protected:
+
+  // Here, derived classes can register expressions that are used by
+  // them, so that the computation of characteristic inputs can make
+  // sure these expressions get the inputs they need.
+  ValueIdSet exprsInDerivedClasses_;
   
 private:
 
@@ -1019,7 +1027,7 @@ public:
 	if (insType == UPSERT_LOAD)
 	  insertType_ = insType;
 
-	isUpsert_ = TRUE;
+        isUpsert_ = TRUE;
       }
     else
       insertType_ = insType; 
@@ -1453,6 +1461,12 @@ public:
   // a virtual function for performing name binding within the query tree
   virtual RelExpr *bindNode(BindWA *bindWA);
 
+  virtual void rewriteNode(NormWA &normWARef);
+
+  virtual RelExpr *preCodeGen(Generator * generator,
+                              const ValueIdSet & externalInputs,
+                              ValueIdSet &pulledNewInputs);
+
   // method to do code generation
   virtual short codeGen(Generator *);
 
@@ -1461,6 +1475,9 @@ public:
 
   // is this entire expression cacheable after this phase?
   virtual NABoolean isCacheableExpr(CacheWA& cwa);
+
+  virtual void addLocalExpr(LIST(ExprNode *) &xlist,
+                            LIST(NAString) &llist) const;
 
   // get a printable string that identifies the operator
   virtual const NAString getText() const;
@@ -1492,7 +1509,7 @@ public:
     return isFastDelete_;
   }
   
-  ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
+  // ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
 
   ConstStringList* &csl() { return csl_; }
 
@@ -1501,14 +1518,24 @@ public:
 
   inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
 
+  inline ItemExpr * getPreconditionTree() const { return preconditionTree_; }
+  inline const ValueIdSet getPrecondition() const { return precondition_; }
+  inline void setPreconditionTree(ItemExpr *pc) { preconditionTree_ = pc; }
+  inline void setPrecondition(const ValueIdSet pc)
+           { precondition_ = pc; exprsInDerivedClasses_ += precondition_; }
+
 private:
   NABoolean isFastDelete_;
 
-  ValueIdList  lobDeleteExpr_;
+  // ValueIdList  lobDeleteExpr_;
 
   ConstStringList * csl_;
   // Estimated number of rows accessed by Delete operator.
   CostScalar estRowsAccessed_;
+
+  // predicate evaluated before doing the delete, only delete if TRUE
+  ItemExpr *preconditionTree_;
+  ValueIdSet precondition_;
 };
 
 // -----------------------------------------------------------------------
@@ -1580,12 +1607,13 @@ public:
              ItemExprList *beforeColumns,
 	     NABoolean isUndoUniqueIndex = FALSE,
              OperatorTypeEnum otype = REL_LEAF_DELETE,
+             ItemExpr *preconditionTree = NULL,
              CollHeap *oHeap = CmpCommon::statementHeap())
     : Delete(name, tabId, otype, NULL, NULL, NULL, NULL, oHeap),
     baseColRefs_(beforeColumns),
     isUndoUniqueIndex_(isUndoUniqueIndex)
     
-  {trigTemp_ = NULL;}
+  {trigTemp_ = NULL; setPreconditionTree(preconditionTree); }
 
   // copy ctor
   LeafDelete (const LeafDelete &) ; // not written

@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -283,7 +286,7 @@ public abstract class UDR
          throws UDRException
     {
         if (info.getNumTableInputs() == 1)
-            plan.setDesiredDegreeOfParallelism(UDRPlanInfo.SpecialDegreeOfParallelism.ANY_DEGREE_OF_PARALLELISM.SpecialDegreeOfParallelism());
+            plan.setDesiredDegreeOfParallelism(UDRPlanInfo.SpecialDegreeOfParallelism.ANY_DEGREE_OF_PARALLELISM.getSpecialDegreeOfParallelism());
         else
             plan.setDesiredDegreeOfParallelism(1); // serial execution
     };
@@ -341,10 +344,35 @@ public abstract class UDR
 
     // methods to be called from the run time interface for UDRs:
 
+    // these match the SQLUDR_Q_STATE enum in file core/sqludr/sqludr.h
+    public final int SQLUDR_Q_MORE   = 1;
+    public final int SQLUDR_Q_EOD    = 2;
+    public final int SQLUDR_Q_CANCEL = 3;
+    
+    public static class QueueStateInfo
+    {
+        public int queueState_; // one of the three values above
+
+        QueueStateInfo(int v)
+        {
+            queueState_ = v;
+        }
+    }
+
+    // native methods used by these calls
+    // use this command to regenerate the C headers:
+    // javah -d $MY_SQROOT/../sql/langman org.trafodion.sql.udr.UDR 
+    private native void SpInfoGetNextRowJava(byte[] rowData,
+                                             int tableIndex,
+                                             QueueStateInfo queueState);
+    private native void SpInfoEmitRowJava(byte[] rowData,
+                                          int tableIndex,
+                                          QueueStateInfo queueState);
+
     // read a row from an input table
 
     /**
-     *  Read a row of a table-value input.
+     *  Read a row of the first table-value input.
      *  <p>
      *  This method can only be called from within processData().
      *  
@@ -353,7 +381,37 @@ public abstract class UDR
      *  @throws UDRException If an exception occured in the UDR
      */
     public final boolean getNextRow(UDRInvocationInfo info) throws UDRException
-    { return true; }
+    {
+        QueueStateInfo qs = new QueueStateInfo(SQLUDR_Q_MORE);
+        int tableIndex = 0; // for now
+
+        SpInfoGetNextRowJava(info.in(tableIndex).getRow().array(), tableIndex, qs);
+
+        // trace rows, if enabled
+        if ((info.getDebugFlags() & UDRInvocationInfo.DebugFlags.TRACE_ROWS.flagVal()) != 0)
+          switch (qs.queueState_)
+            {
+            case SQLUDR_Q_MORE:
+                traceRow(info, info.in(tableIndex), tableIndex, "(%d) Input row from table %d: %s\n");
+                break;
+              
+            case SQLUDR_Q_EOD:
+                System.out.printf("(%d) Input table %d reached EOD\n",
+                                  info.getMyInstanceNum(), tableIndex);
+                break;
+                
+            case SQLUDR_Q_CANCEL:
+                System.out.printf("(%d) Cancel request from input table %d\n",
+                                  info.getMyInstanceNum(), tableIndex);
+                break;
+                
+            default:
+                System.out.printf("(%d) Invalid queue state %d from input table %d\n",
+                                  info.getMyInstanceNum(), qs.queueState_, tableIndex);
+            }
+
+        return (qs.queueState_ == SQLUDR_Q_MORE);
+    }
 
     // produce a result row
     
@@ -368,8 +426,15 @@ public abstract class UDR
      */
     public final void emitRow(UDRInvocationInfo info) throws UDRException
     { 
-        String row = info.out().getRow().asCharBuffer().toString();
-        System.out.println(row);
+        QueueStateInfo qs = new QueueStateInfo(SQLUDR_Q_MORE);
+
+        // trace rows, if enabled
+        if ((info.getDebugFlags() & UDRInvocationInfo.DebugFlags.TRACE_ROWS.flagVal()) != 0)
+            traceRow(info, info.out(), 0, "(%1$d) Emitting row: %3$s\n");
+
+        SpInfoEmitRowJava(info.out().getRow().array(),
+                          0,
+                          qs);
     }
 
     // methods for debugging
@@ -403,6 +468,34 @@ public abstract class UDR
             debugLoop = 1-debugLoop;
         
     };
+
+    public void traceRow(UDRInvocationInfo info,
+                         TupleInfo ti,
+                         int tableIndex,
+                         String formattedMsg) throws UDRException
+    {
+        String row = ti.getDelimitedRow('|',true, '"', 0, -1);
+        int numHexChars = 0;
+        
+        // replace any control characters with escape sequences
+        for (int c=0; c<row.length(); c++)
+            if (row.charAt(c) < ' ')
+                numHexChars++;
+
+        if (numHexChars > 0)
+            {
+                // each char below 32 gets replaced by 4 characters \xnn
+                StringBuilder sb =  new StringBuilder(row.length() + 3*numHexChars);
+                for (int i=0; i<row.length(); i++)
+                    if (row.charAt(i) < ' ')
+                        sb.append(String.format("\\x%02x", (byte) row.charAt(i)));
+                    else
+                        sb.append(row.charAt(i));
+                row = sb.toString();
+            }
+        System.out.printf(formattedMsg,
+                          info.getMyInstanceNum(), tableIndex, row);
+    }
 
     // methods for versioning of this interface
     public final int getCurrentVersion() { return 1; }

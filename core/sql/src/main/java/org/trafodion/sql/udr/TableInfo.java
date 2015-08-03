@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -27,7 +30,11 @@ public class TableInfo extends TupleInfo {
 
     public TableInfo() {
         super(TMUDRObjectType.TABLE_INFO_OBJ, getCurrentVersion());
-        numRows_ = -1;
+        estimatedNumRows_ = -1;
+        estimatedNumPartitions_ = -1;
+        queryPartitioning_ = new PartitionInfo();
+        queryOrdering_ = new OrderInfo();
+        constraints_ = new Vector<ConstraintInfo>();
     }
     
     // Functions for use by UDR writer, both at compile and at run time
@@ -35,12 +42,25 @@ public class TableInfo extends TupleInfo {
     /**
      *  Get the estimated number of rows of this table.
      *
-     *  @see TableInfo#setNumRows(long)
+     *  @see TableInfo#setEstimatedNumRows(long)
+     *  @see TableInfo#getEstimatedNumPartitions()
      *
      *  @return Estimated number of rows.
      */
-    public long getNumRows() {
-        return numRows_;
+    public long getEstimatedNumRows() {
+        return estimatedNumRows_;
+    }
+
+    /**
+     *  Get the estimated number of rows of this table.
+     *
+     *  @see TableInfo#getEstimatedNumRows()
+     *
+     *  @return Estimated number of partitions, if the table
+     *          has a PARTITION BY clause, -1 otherwise.
+     */
+    public long getEstimatedNumPartitions() {
+        return estimatedNumPartitions_;
     }
 
     /**
@@ -127,8 +147,8 @@ public class TableInfo extends TupleInfo {
  *  </ul>
  *  @param rows Estimated number of rows for this table.
  */
-    public void setNumRows(long rows) {
-        numRows_ = rows ;
+    public void setEstimatedNumRows(long rows) {
+        estimatedNumRows_ = rows ;
     }
 
     /**
@@ -182,10 +202,11 @@ public class TableInfo extends TupleInfo {
      *  @see UDR#debugLoop()
      *  @see UDRInvocationInfo.DebugFlags#PRINT_INVOCATION_INFO_AT_RUN_TIME
      */
-    public void print() {
+    @Override
+    public void print() throws UDRException {
         super.print();
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("    Estimated number of rows : %ld\n", getNumRows()));
+        sb.append(String.format("    Estimated number of rows : %d\n", getEstimatedNumRows()));
         sb.append("    Partitioning             : ");
         switch (getQueryPartitioning().getType())
         {
@@ -211,6 +232,7 @@ public class TableInfo extends TupleInfo {
                 needsComma = true;
             }
             sb.append(")\n");
+            sb.append(String.format("    Estimated # of partitions: %d\n", getEstimatedNumPartitions()));
             break;
         case REPLICATE:
             sb.append("replicate\n");
@@ -220,7 +242,8 @@ public class TableInfo extends TupleInfo {
             break;
         }
         sb.append("    Ordering                 : ");
-        if (getQueryOrdering().getNumEntries() > 0)
+        if (getQueryOrdering() != null &&
+            getQueryOrdering().getNumEntries() > 0)
         {
             sb.append("(");
             for (int o=0; o<getQueryOrdering().getNumEntries(); o++)
@@ -247,7 +270,7 @@ public class TableInfo extends TupleInfo {
             sb.append("    Constraints              :\n");
             
             for (int c=0; c<constraints_.size(); c++)
-                sb.append(constraints_.elementAt(c).toString());
+                sb.append("        " + constraints_.elementAt(c).toString(this));
         }
         System.out.print(sb.toString());
     }
@@ -266,9 +289,10 @@ public class TableInfo extends TupleInfo {
     }
     
     public static short getCurrentVersion() { return 1; }
+    @Override
     public int serializedLength() throws UDRException{
       int result = super.serializedLength() +
-                   serializedLengthOfLong() +
+                   2 * serializedLengthOfLong() +
                    4 * serializedLengthOfInt() +
                    serializedLengthOfBinary((getQueryPartitioning().getNumEntries() +
                    2 * getQueryOrdering().getNumEntries()) * 4);
@@ -279,6 +303,7 @@ public class TableInfo extends TupleInfo {
       return result;
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException {
 
       int origPos = outputBuffer.position();
@@ -289,7 +314,10 @@ public class TableInfo extends TupleInfo {
       int numConstraints = constraints_.size();
       int c;
 
-      serializeLong(numRows_,
+      serializeLong(estimatedNumRows_,
+                    outputBuffer);
+
+      serializeLong(estimatedNumPartitions_,
                     outputBuffer);
 
       serializeInt(numPartCols,
@@ -299,6 +327,10 @@ public class TableInfo extends TupleInfo {
                    outputBuffer);
 
       serializeInt(queryPartitioning_.getType().ordinal(),
+                   outputBuffer);
+
+      // the length, in bytes, of the integer array that follows
+      serializeInt((numPartCols + 2*numOrderCols) * 4,
                    outputBuffer);
 
       for (c=0; c<numPartCols; c++)
@@ -322,6 +354,7 @@ public class TableInfo extends TupleInfo {
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
@@ -329,15 +362,16 @@ public class TableInfo extends TupleInfo {
       super.deserialize(inputBuffer);
 
       validateObjectType(TMUDRObjectType.TABLE_INFO_OBJ);
-      int numCols = 0;
       int numPartCols = 0;
       int numOrderCols = 0;
       int numConstraints = 0;
       int partType = 0;
-      int binarySize = 0;
       int c;
+      int tempInt;
 
-      numRows_ = deserializeLong(inputBuffer);
+      estimatedNumRows_ = deserializeLong(inputBuffer);
+
+      estimatedNumPartitions_ = deserializeLong(inputBuffer);
 
       numPartCols = deserializeInt(inputBuffer);
 
@@ -345,18 +379,27 @@ public class TableInfo extends TupleInfo {
 
       partType = deserializeInt(inputBuffer);
 
-      if (queryPartitioning_ == null)
-         queryPartitioning_ = new PartitionInfo();
+      tempInt = deserializeInt(inputBuffer);
+
+      if (tempInt != (numPartCols + 2*numOrderCols) * 4 ||
+          numPartCols < 0 || numOrderCols < 0)
+          throw new UDRException(38900,
+                                 "Invalid int array size in TableInfo, got %d, expected %d",
+                                 tempInt,
+                                 (numPartCols + 2*numOrderCols) * 4);
+
+      queryPartitioning_.clear();
       queryPartitioning_.setType(PartitionInfo.PartitionTypeCode.fromOrdinal(partType));
-      // TO DO some error checking ???
       for (c=0; c<numPartCols; c++)
         queryPartitioning_.addEntry(deserializeInt(inputBuffer));
 
+      queryOrdering_.clear();
       for (c=0; c<numOrderCols; c++)
         queryOrdering_.addEntry(deserializeInt(inputBuffer),
                                 OrderInfo.OrderTypeCode.fromOrdinal(deserializeInt(inputBuffer)));
 
       numConstraints = deserializeInt(inputBuffer);
+      constraints_.clear();
       for (c=0; c<numConstraints; c++)
       {
         ConstraintInfo constr = null;
@@ -379,11 +422,12 @@ public class TableInfo extends TupleInfo {
       }
 
       int bytesDeserialized = inputBuffer.position() - origPos;
-      validateSerializedLength(bytesDeserialized);
+      validateDeserializedLength(bytesDeserialized);
       return bytesDeserialized;
     }
 
-    private long                          numRows_;
+    private long                          estimatedNumRows_;
+    private long                          estimatedNumPartitions_;
     private PartitionInfo                 queryPartitioning_;
     private OrderInfo                     queryOrdering_;
     private Vector<ConstraintInfo>        constraints_;
