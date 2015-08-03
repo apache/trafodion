@@ -245,7 +245,7 @@
 1257 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1258 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
-1260 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused as of 05/7/12 ---
+1260 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Debugging of UDRs is only allowed for the DB__ROOT user. Connect as DB__ROOT, preferably using the sqlci tool, and try again.
 1261 ZZZZZ 99999 BEGINNER MAJOR DIALOUT ADVANCED MAJOR DIALOUT Error $0~int0 was returned by the SQL CLI while processing the UDR_JAVA_OPTIONS setting '$1~string0'.
 1262 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The command cannot be executed because $0~string0 is in progress for $1~string1.
 1263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object names that start with $0~String0 are reserved for SQL metadata.

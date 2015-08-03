@@ -961,6 +961,7 @@ CONTROL QUERY DEFAULT
 Current DEFAULTS
   STREAM_TIMEOUT                	-1
   TIMEOUT                       	4567
+  UDR_JVM_DEBUG_TIMEOUT         	0
 
 --- SQL operation complete.
 >>				-- 4567
@@ -970,7 +971,7 @@ Current DEFAULTS
 >>#ifLINUX
 >>select TESTABORT;
 
-*** ERROR[2006] Internal error: assertion failure (EHBreakException) in file ../sqlcomp/CmpMain.cpp at line 257.
+*** ERROR[2005] Internal error: from compilation, no errors in diagnostics yet for statement: select TESTABORT;
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1024,6 +1025,7 @@ CONTROL QUERY DEFAULT
 Current DEFAULTS
   STREAM_TIMEOUT                	-1
   TIMEOUT                       	4567
+  UDR_JVM_DEBUG_TIMEOUT         	0
 
 --- SQL operation complete.
 >>				-- still 4567
@@ -1086,6 +1088,7 @@ No CONTROL QUERY DEFAULT TIMEOUT settings are in effect.
 Current DEFAULTS
   STREAM_TIMEOUT                	-1
   TIMEOUT                       	6000
+  UDR_JVM_DEBUG_TIMEOUT         	0
 
 --- SQL operation complete.
 >>                            -- back to 6000

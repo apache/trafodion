@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -333,6 +336,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
     encodedKeyExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (keyColValExpr())
     keyColValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (deletePreCondExpr())
+    deletePreCondExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (hbaseFilterValExpr())
     hbaseFilterValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   
@@ -1704,7 +1709,7 @@ short ExHbaseAccessTcb::extractColFamilyAndName(char * input,
 							      colFam, colName);
 }
 
-short ExHbaseAccessTcb::evalKeyColValExpr(Text &columnToCheck, Text &colValToCheck)
+short ExHbaseAccessTcb::evalKeyColValExpr(HbaseStr &columnToCheck, HbaseStr &colValToCheck)
 {
   if (! keyColValExpr())
     return -1;
@@ -1724,12 +1729,14 @@ short ExHbaseAccessTcb::evalKeyColValExpr(Text &columnToCheck, Text &colValToChe
       return -1;
     }
   
-  colValToCheck.assign(keyColValRow_, hbaseAccessTdb().keyColValLen_);
+  memcpy(colValToCheck.val, keyColValRow_, hbaseAccessTdb().keyColValLen_);
+  colValToCheck.len = hbaseAccessTdb().keyColValLen_;
 
   char * keyColNamePtr = hbaseAccessTdb().keyColName();
   short nameLen = *(short*)keyColNamePtr;
   char * keyColName = &keyColNamePtr[sizeof(short)];
-  columnToCheck.assign(keyColName, nameLen);
+  memcpy(columnToCheck.val, keyColName, nameLen);
+  columnToCheck.len = nameLen;
 
   return 0;
 }
@@ -1790,6 +1797,31 @@ short ExHbaseAccessTcb::evalRowIdExpr(NABoolean noVarchar)
     
   return 0;
 }
+
+short ExHbaseAccessTcb::evalDeletePreCondExpr()
+{
+  if (! deletePreCondExpr()) {
+     return 1;
+  }
+
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+  
+  exprRetCode =
+    deletePreCondExpr()->eval(pentry_down->getAtp(), workAtp_);
+
+  switch (exprRetCode) {
+     case ex_expr::EXPR_FALSE:
+        return 0;
+     case ex_expr::EXPR_TRUE:
+        return 1;
+     default:
+        return -1;
+  }
+  return 0; 
+}
+
 
 short ExHbaseAccessTcb::evalRowIdAsciiExpr(const char * inputRowIdVals,
 					   char * rowIdBuf, // input: buffer where rowid is created

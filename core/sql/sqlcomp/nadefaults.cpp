@@ -1,19 +1,22 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *****************************************************************************
@@ -3387,6 +3390,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui___(UDR_DEBUG_FLAGS,                      "0"), // see sqludr/sqludr.h for values
  SDD_____(UDR_JAVA_OPTIONS,                     "OFF"),
   DD_____(UDR_JAVA_OPTION_DELIMITERS,           " "),
+ XDDui___(UDR_JVM_DEBUG_PORT,                   "0"),
+ XDDui___(UDR_JVM_DEBUG_TIMEOUT,                "0"),
 
   DDkwd__(UNAVAILABLE_PARTITION,		"STOP"),	// "?" used?
  DDkwd__(UNC_PROCESS,				"OFF"),
@@ -3520,6 +3525,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
   DDflt0_(USTAT_MODIFY_DEFAULT_UEC,             "0.05"),
+  DDflt0_(USTAT_NAHEAP_ESTIMATED_MAX,           "1.3"),  // estimated max memory allocation (in GB) feasible with NAHEAP.
  XDDui1__(USTAT_NECESSARY_SAMPLE_MAX,           "5000000"), // Maximum sample size with NECESSARY
   DDui1__(USTAT_NUM_MC_GROUPS_FOR_KEYS,         "10"),
  XDDpct__(USTAT_OBSOLETE_PERCENT_ROWCOUNT,      "15"),
@@ -3538,7 +3544,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
-  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
+  DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST,       "OFF"),  // TEMP FOR TESTING -- SHOULD REMOVE
   DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "ON"), // use IS when no histograms exist for the column

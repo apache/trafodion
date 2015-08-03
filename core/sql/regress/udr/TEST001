@@ -1,18 +1,21 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
 --
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
+--   http://www.apache.org/licenses/LICENSE-2.0
 --
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 --
 -- @@@ END COPYRIGHT @@@
 
@@ -22,6 +25,7 @@ obey TEST001(clean_up);
 log LOG001 clear;
 sh rm -f LOG001-SECONDARY;
 obey TEST001(compile_libs);
+obey TEST001(java_compile);
 obey TEST001(create_tables);
 obey TEST001(register_functions);
 obey TEST001(tests);
@@ -38,6 +42,9 @@ drop table_mapping function sessionize_dynamic_shared;
 drop table_mapping function sessionize_err;
 drop table_mapping function fibonacci;
 drop library TEST001;
+drop table_mapping function sessionize_java;
+drop table_mapping function fibonacci_java;
+drop library TEST001_Java;
 
 ?section compile_libs
 --------------------------------------------------------------------------
@@ -46,6 +53,17 @@ sh rm -f ./TEST001.dll;
 sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST001.cpp
   2>&1 | tee LOG001-SECONDARY;
 set pattern $$DLL$$ TEST001.dll;
+log LOG001;
+
+?section java_compile
+--------------------------------------------------------------------------
+-- To compile Java code we invoke a script from regress/tools that uses
+-- environment variables to determine the source and target directories
+--------------------------------------------------------------------------
+log;
+sh sh $$scriptsdir$$/tools/java-compile.ksh TEST001_Sessionize.java 2>> LOG001-SECONDARY | tee -a LOG001;
+sh sh $$scriptsdir$$/tools/java-compile.ksh TEST001_Fibonacci.java 2>> LOG001-SECONDARY | tee -a LOG001;
+sh sh $$scriptsdir$$/tools/java-archive.ksh TEST001.jar TEST001_Sessionize.class 'TEST001_Sessionize$InternalColumns.class' TEST001_Fibonacci.class 2>> LOG001-SECONDARY | tee -a LOG001;
 log LOG001;
 
 ?section create_tables
@@ -169,6 +187,16 @@ external name 'SESSIONIZE_DYNAMIC'
 language cpp
 library TEST001;
 
+-- create the equivalent Java library and TMUDF
+create library TEST001_Java file $$QUOTE$$ $$REGRRUNDIR$$/TEST001.jar $$QUOTE$$;
+
+create table_mapping function sessionize_java(user_colname char(10),
+                                              ts_colname char(20),
+                                              timeintval int)
+external name 'TEST001_Sessionize'
+language java
+library TEST001_Java;
+
 -- negative test case, the entry point SESSIONIZE_ERR does not exist
 create table_mapping function sessionize_err(dummy char(10))
 returns (session_id largeint)
@@ -185,6 +213,13 @@ external name 'Fibonacci'
 language cpp
 library TEST001;
 
+-- same in Java
+create table_mapping function fibonacci_java(start_row int, num_rows int)
+returns (ordinal int, fibonacci_number largeint)
+external name 'TEST001_Fibonacci'
+language java
+library TEST001_Java;
+
 ?section tests
 --------------------------------------------------------------------------
 --cqd attempt_esp_parallelism 'off' ;
@@ -192,6 +227,10 @@ library TEST001;
 get table_mapping functions for library TEST001 ;
 
 showddl table_mapping function sessionize_dynamic;
+
+get table_mapping functions for library TEST001_Java ;
+
+showddl table_mapping function sessionize_java;
 
 SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
 FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
@@ -203,17 +242,16 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                             'TS',
                             60000000));
 
--- meant to call sessionize_dynamic_shared, but sharing DLLs
--- is not yet working, getting an error so far
+-- call sessionize_dynamic_shared, sharing the same DLL
 SELECT *
-FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
-                                         JULIANTIMESTAMP(ts) as TS,
-                                         ipAddr
-                                  FROM clicks
-                                  PARTITION BY ipaddr ORDER BY ts),
-                            'IPADDR',
-                            cast('TS' as char(2)),
-                            60000000)) XO;
+FROM UDF(sessionize_dynamic_shared(TABLE(SELECT userid,
+                                                JULIANTIMESTAMP(ts) as TS,
+                                                ipAddr
+                                         FROM clicks
+                                         PARTITION BY ipaddr ORDER BY ts),
+                                   'IPADDR',
+                                   cast('TS' as char(2)),
+                                   60000000)) XO;
 
 -- uniqueness constraint avoids a groupby
 explain options 'f'
@@ -247,6 +285,50 @@ where operator = 'TMUDF'
   and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
 execute s;
 
+-- now test Java UDFs in a similar way
+SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
+FROM UDF(sessionize_java(TABLE(SELECT userid,
+                                      JULIANTIMESTAMP(ts) as TS,
+                                      ipAddr
+                               FROM clicks
+                               PARTITION BY 1 ORDER BY 2),
+                         'USERID',
+                         'TS',
+                         60000000));
+
+-- uniqueness constraint avoids a groupby
+prepare s from
+SELECT distinct ipaddr, session_id, sequence_no
+FROM UDF(sessionize_java(TABLE(SELECT userid,
+                                      JULIANTIMESTAMP(ts) as TS,
+                                      ipAddr
+                               FROM clicks
+                               PARTITION BY ipaddr ORDER BY ts),
+                         'IPADDR',
+                         cast('TS' as char(2)),
+                         60000000)) XO
+where session_id < 10;
+explain options 'f' s;
+execute s;
+
+-- predicate on IPADDR is evaluated in child,
+-- predicate on SESSION_ID is evaluated in the UDF
+prepare s from
+SELECT *
+FROM UDF(sessionize_java(TABLE(SELECT userid,
+                                      JULIANTIMESTAMP(ts) as TS,
+                                      ipAddr
+                               FROM clicks
+                               PARTITION BY ipaddr ORDER BY ts),
+                         'IPADDR',
+                         cast('TS' as char(2)),
+                         60000000)) XO
+where SESSION_ID < 2 and
+      IPADDR = '12.345.567.345';
+select count(*) from table(explain(null,'S'))
+where operator = 'TMUDF'
+  and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
+execute s;
 
 select *
 from UDF(fibonacci(1,10)) XO
@@ -255,9 +337,40 @@ order by 1;
 select sum(fibonacci_number)
 from UDF(fibonacci(50,10)) XO;
 
+select *
+from UDF(fibonacci_java(1,10)) XO
+order by 1;
+
+select sum(fibonacci_number)
+from UDF(fibonacci_java(50,10)) XO;
+
+select *
+from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
+
+select *
+from UDF(fibonacci(1,10)) cpp1 natural join
+     UDF(fibonacci_java(1,10)) java1 natural join
+     UDF(fibonacci_java(1,10)) java2;
+
 prepare s from
 select * from udf(sessionize_dynamic(table(select * from t001_Datatypes),
                                      'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60));
+execute s;
+execute s;
+
+prepare s from
+select * from udf(sessionize_java(table(select * from t001_Datatypes),
+                                  'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60));
+execute s;
+execute s;
+
+prepare s from
+select * 
+from udf(sessionize_dynamic(table(select * from t001_Datatypes),
+                            'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60)) cpp
+     natural join
+     udf(sessionize_java(table(select * from t001_Datatypes),
+                         'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60)) java;
 execute s;
 execute s;
 

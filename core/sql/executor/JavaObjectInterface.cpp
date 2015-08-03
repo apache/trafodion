@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -21,6 +24,7 @@
 #include "JavaObjectInterface.h"
 #include "QRLogger.h"
 #include "Globals.h"
+#include "ComUser.h"
 
 // Changed the default to 512 to limit java heap size used by SQL processes.
 #define DEFAULT_JVM_MAX_HEAP_SIZE 512
@@ -147,19 +151,29 @@ int JavaObjectInterface::createJVM()
     }
   }
 
-#ifdef _DEBUG
   int debugPort = 0;
   const char *debugPortStr = getenv("JVM_DEBUG_PORT");
   if (debugPortStr != NULL)
      debugPort = atoi(debugPortStr);
-  const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
-  if (debugTimeoutStr != NULL)
-     debugTimeout_ = atoi(debugTimeoutStr);
-  const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
-  char debugOptions[300];
-  if (debugPort > 0)
+  if (debugPort > 0
+#ifdef NDEBUG
+      // in a release build, only DB__ROOT can debug a process
+      && ComUser::isRootUserID()
+#endif
+     )
   {
-     debugPort_ = debugPort + (GetCliGlobals()->myPin() % 1000);
+     const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
+     if (debugTimeoutStr != NULL)
+       debugTimeout_ = atoi(debugTimeoutStr);
+     const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
+     char debugOptions[300];
+
+     debugPort_ = debugPort;
+     // to allow debugging multiple processes at the same time,
+     // specify a port that is a multiple of 1000 and the code will
+     // add pid mod 1000 to the port number to use
+     if (debugPort_ % 1000 == 0)
+       debugPort_ += (GetCliGlobals()->myPin() % 1000);
      sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d",
             debugPort_,   debugTimeout_);
      if (suspendOnDebug != NULL)
@@ -167,12 +181,12 @@ int JavaObjectInterface::createJVM()
      else
         strcat(debugOptions, ",suspend=n");
      jvm_options[numJVMOptions].optionString = debugOptions;
-     QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                     "Debug options: %s", 
+     QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_WARN,
+                     "Debugging JVM with options: %s", 
                      jvm_options[numJVMOptions].optionString);
      numJVMOptions++;
   }
-#endif 
+
   const char *oomOption = "-XX:+HeapDumpOnOutOfMemoryError";
   jvm_options[numJVMOptions].optionString = (char *)oomOption;
   numJVMOptions++;

@@ -6,19 +6,22 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *
@@ -58,7 +61,8 @@ using namespace tmudr;
 // ------------------------------------------------------------------------
 
 /**
- *  @brief Constructor with an integer value for SQLSTATE
+ *  Constructor with an integer value for SQLSTATE
+ *
  *  @param sqlState ISO/ANSI SQLSTATE value to produce for this error.
  *                  According to the standard, this must be a value in
  *                  the range of 38000 - 38999 (note that since we use
@@ -84,7 +88,8 @@ UDRException::UDRException(int sqlState, const char *printf_format, ...)
 }
 
 /**
- *  @brief Constructor with a string value for SQLSTATE
+ *  Constructor with a string value for SQLSTATE
+ *
  *  @param sqlState ISO/ANSI SQLSTATE value to produce for this error.
  *                  According to the standard, this must be a value of
  *                  the form 38xxx, with the xxx being digits or upper
@@ -110,7 +115,8 @@ UDRException::UDRException(const char *sqlState, const char *printf_format, ...)
 }
 
 /**
- *  @brief  Get the SQSTATE value for this exception
+ *  Get the SQSTATE value for this exception
+ *
  *  @return A string, representing the SQLSTATE. Note that
  *          this is a pointer to a data member, the buffer
  *          lives only as long as the UDRException object.
@@ -121,12 +127,26 @@ const char * UDRException::getSQLState() const
 }
 
 /**
- *  @brief  Get the error message associated with this exception
+ *  Get the error message associated with this exception
+ *
  *  @return A string, representing the error message, including
  *          any substituted text with the additional arguments
  *          in the constructor. Note that this is a reference to
  *          a data member, it lives only as long as the
  *          UDRException object.
+ */
+const std::string & UDRException::getMessage() const
+{
+  return text_;
+}
+
+/**
+ *  Get the error message associated with this exception
+ *
+ *  @return Same as getMessage().
+ *
+ *  @deprecated Use getMessage() instead, in Java that is the
+ *              standard method.
  */
 const std::string & UDRException::getText() const
 {
@@ -533,7 +553,7 @@ TypeInfo::TypeInfo(const TypeInfo &type) :
 }
 
 /**
- *  @brief               Default constructor, with optional arguments
+ *  Default constructor, with optional arguments
  *
  *  Construct a TypeInfo object from an SQL type, with several optional
  *  arguments (including the SQL type). This is mostly used to create
@@ -846,7 +866,8 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
 }
 
 /**
- *  @brief Get the SQL type.
+ *  Get the SQL type.
+ *
  *  @return SQL type enum.
  */
 TypeInfo::SQLTypeCode TypeInfo::getSQLType() const
@@ -855,7 +876,8 @@ TypeInfo::SQLTypeCode TypeInfo::getSQLType() const
 }
 
 /**
- *  @brief Get the SQL type class.
+ *  Get the SQL type class.
+ *
  *  Determine whether this is a numeric character, datetime or interval type.
  *  @return SQL type class enum.
  */
@@ -900,7 +922,8 @@ TypeInfo::SQLTypeClassCode TypeInfo::getSQLTypeClass() const
 }
 
 /**
- *  @brief Get the SQL type subclass.
+ *  Get the SQL type subclass.
+ *
  *  This goes to one more level of detail beyond the type class,
  *  like exact/approximate numeric, char/varchar, etc.
  *  @return SQL type subclass enum.
@@ -971,7 +994,8 @@ TypeInfo::SQLTypeSubClassCode TypeInfo::getSQLTypeSubClass() const
 }
 
 /**
- *  @brief Get whether the type is nullable.
+ *  Get whether the type is nullable.
+ *
  *  @return True for nullable types, false for non-nullable types.
  */
 bool TypeInfo::getIsNullable() const
@@ -980,7 +1004,7 @@ bool TypeInfo::getIsNullable() const
 }
 
 /**
- *  @brief Get the scale of the data type.
+ *  Get the scale of the data type.
  *
  *  For integer, largeint, etc. types the scale is 0, since these are
  *  integer data types. For NUMERIC and DECIMAL types, a scale can
@@ -999,7 +1023,8 @@ int TypeInfo::getScale() const
 }
 
 /**
- *  @brief Get the character set of the data type.
+ *  Get the character set of the data type.
+ *
  *  @return Character set enum.
  */
 TypeInfo::SQLCharsetCode TypeInfo::getCharset() const
@@ -1008,7 +1033,8 @@ TypeInfo::SQLCharsetCode TypeInfo::getCharset() const
 }
 
 /**
- *  @brief Get the interval code for start/end fields.
+ *  Get the interval code for start/end fields.
+ *
  *  @return Interval code enum, indicating start and end fields of an interval type.
  */
 TypeInfo::SQLIntervalCode TypeInfo::getIntervalCode() const
@@ -1017,7 +1043,7 @@ TypeInfo::SQLIntervalCode TypeInfo::getIntervalCode() const
 }
 
 /**
- *  @brief Get the precision (max. number of significant digits).
+ *  Get the precision (max. number of significant digits).
  *
  *  The precision is the maximum number of digits before the decimal
  *  point a value can have. For interval types, this is the "leading
@@ -1037,7 +1063,7 @@ int TypeInfo::getPrecision() const
 }
 
 /**
- *  @brief Get the collation for char/varchar data types.
+ *  Get the collation for char/varchar data types.
  *
  *  Note that, currently, only one collation is supported.
  *  This default collation is a binary collation, except that
@@ -1051,7 +1077,7 @@ TypeInfo::SQLCollationCode TypeInfo::getCollation() const
 }
 
 /**
- *  @brief Get the length of a value of the type.
+ *  Get the length of a value of the type.
  *
  *  Getting the length is useful for CHAR/VARCHAR data types
  *  but probably not as useful for other types that may have
@@ -1068,7 +1094,7 @@ int TypeInfo::getByteLength() const
 }
 
 /**
- *  @brief Get the maximum number of characters that can be stored in this type.
+ *  Get the maximum number of characters that can be stored in this type.
  *
  *  This method should be used only for character types that
  *  have a fixed-width encoding. For variable-length encoding, like
@@ -1108,7 +1134,7 @@ int TypeInfo::getMaxCharLength() const
 }
 
 /**
- *  @brief Set the nullable attribute of a type
+ *  Set the nullable attribute of a type
  *
  *  Use this method to set types created locally in the UDF
  *  to be nullable or not nullable.
@@ -1269,7 +1295,7 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
         if (dresult < LONG_MIN || dresult > LONG_MAX)
             throw UDRException(
                  38900, 
-                 "Under or overflow in getInt() or getLong(), float value %g does not fit in a long",
+                 "Overflow in getInt() or getLong(), float value %g does not fit in a long",
                  dresult);
         result = static_cast<long>(dresult);
       }
@@ -1764,6 +1790,11 @@ void TypeInfo::setDouble(double val, char *row) const
   switch (d_.sqlType_)
     {
     case REAL:
+      // we are not testing for underflow at this point
+      if (val > FLT_MAX || val < -FLT_MAX)
+        throw UDRException(
+             38900,
+             "Overflow when assigining to REAL type");
       *(reinterpret_cast<float *>(row + d_.dataOffset_)) = val;
       break;
 
@@ -1896,13 +1927,6 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
   char *data = row + d_.dataOffset_;
   bool isApproxNumeric = false;
 
-  // a string overflow will raise an exception
-  if (stringLen > d_.length_)
-    throw UDRException(38900,
-                       "setString() with a string of length %d on a column with length %d",
-                       stringLen,
-                       d_.length_);
-
   switch (d_.sqlType_)
     {
     case CHAR:
@@ -1912,6 +1936,16 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
     case TIMESTAMP:
     case BLOB:
     case CLOB:
+      // a string overflow will raise an exception
+      if (stringLen > d_.length_)
+        // should probably check whether this is a CHAR or datetime
+        // and the excess characters are all blanks
+        throw UDRException(
+             38900,
+             "setString() with a string of length %d on a column with length %d",
+             stringLen,
+             d_.length_);
+
       // for these types, copy the string and pad with blanks
       // of the appropriate charset for fixed-length strings
       memcpy(data, val, stringLen);
@@ -2489,7 +2523,7 @@ void TypeInfo::setOffsets(int indOffset, int vcOffset, int dataOffset)
 // ------------------------------------------------------------------------
 
 /**
- * @brief   Default constructor, generates unspecified provenance.
+ * Default constructor, generates unspecified provenance.
  */
 ProvenanceInfo::ProvenanceInfo() :
      inputTableNum_(-1),
@@ -2497,7 +2531,7 @@ ProvenanceInfo::ProvenanceInfo() :
 {}
 
 /**
- *  @brief Constructor to link an output column to a specific input column
+ *  Constructor to link an output column to a specific input column
  *
  *  This constructor can be used to produce a "passthru column". An easier
  *  way to do this is the UDRInvocationInfo::addPassThruColumns() method.
@@ -2515,7 +2549,8 @@ ProvenanceInfo::ProvenanceInfo(int inputTableNum,
 {}
 
 /**
- *  @brief  Get the input table number.
+ *  Get the input table number.
+ *
  *  @return Input table number.
  */
 int ProvenanceInfo::getInputTableNum() const
@@ -2524,7 +2559,8 @@ int ProvenanceInfo::getInputTableNum() const
 }
 
 /**
- *  @brief  Get the input column number.
+ *  Get the input column number.
+ *
  *  @return Input column number.
  */
 int ProvenanceInfo::getInputColumnNum() const
@@ -2533,7 +2569,8 @@ int ProvenanceInfo::getInputColumnNum() const
 }
 
 /**
- *  @brief  Test whether the column comes from any or from a specific table-valued input.
+ *  Test whether the column comes from any or from a specific table-valued input.
+ *
  *  @param  inputTableNum -1 to test for any table-valued input, or a specific
  *          input table number.
  *  @return true if the provenance indicates a column that comes from the
@@ -2551,7 +2588,7 @@ bool ProvenanceInfo::isFromInputTable(int inputTableNum) const
 // ------------------------------------------------------------------------
 
 /**
- *  @brief  Default constructor
+ *  Default constructor
  */
 ColumnInfo::ColumnInfo() :
      TMUDRSerializableObject(COLUMN_INFO_OBJ,
@@ -2561,7 +2598,7 @@ ColumnInfo::ColumnInfo() :
 {}
 
 /**
- *  @brief  Constructor, specifying a name and a type
+ *  Constructor, specifying a name and a type
  */
 ColumnInfo::ColumnInfo(const char *name,
                        const TypeInfo &type) :
@@ -2574,7 +2611,8 @@ ColumnInfo::ColumnInfo(const char *name,
 {}
   
 /**
- *  @brief  Get the name of the column.
+ *  Get the name of the column.
+ *
  *  @return Name of the column in UTF-8.
  */
 const std::string &ColumnInfo::getColName() const
@@ -2583,7 +2621,8 @@ const std::string &ColumnInfo::getColName() const
 }
 
 /**
- *  @brief  Get the type of the column.
+ *  Get the type of the column.
+ *
  *  @return Type of the column.
  */
 const TypeInfo &ColumnInfo::getType() const
@@ -2592,7 +2631,8 @@ const TypeInfo &ColumnInfo::getType() const
 }
 
 /**
- *  @brief  Non-const method to get the type.
+ *  Non-const method to get the type.
+ *
  *  @return Non-const type of the column. Note that the
  *          types of parameters and output columns can only
  *          be changed from the
@@ -2604,7 +2644,7 @@ TypeInfo & ColumnInfo::getType()
 }
 
 /**
- *  @brief  Get the estimated number of unique entries.
+ *  Get the estimated number of unique entries.
  *
  *  This returns an estimate for the number of unique values
  *  for this column in the table. For example, a column containing
@@ -2624,7 +2664,7 @@ long ColumnInfo::getEstimatedUniqueEntries() const
 }
 
 /**
- *  @brief  Get the usage of an input or output column.
+ *  Get the usage of an input or output column.
  *
  *  This usage may be set in the
  *  UDR::describeDataflowAndPredicates() method,
@@ -2638,7 +2678,8 @@ ColumnInfo::ColumnUseCode ColumnInfo::getUsage() const        {
 }
 
 /**
- *  @brief  Get provenance info for an output column.
+ *  Get provenance info for an output column.
+ *
  *  @return Provenance of the column.
  */
 const ProvenanceInfo &ColumnInfo::getProvenance() const
@@ -2647,7 +2688,8 @@ const ProvenanceInfo &ColumnInfo::getProvenance() const
 }
 
 /**
- *  @brief Set the name of the column.
+ *  Set the name of the column.
+ *
  *  @param colName Name of the column (in UTF-8). There is a length
  *         limit of 256 bytes for the column name.
  */
@@ -2657,7 +2699,7 @@ void ColumnInfo::setColName(const char *colName)
 }
 
 /**
- *  @brief  Set the type of the column.
+ *  Set the type of the column.
  *
  *  This is done by constructing a TypeInfo object and passing it to this method.
  *
@@ -2669,7 +2711,7 @@ void ColumnInfo::setType(TypeInfo &type)
 }
 
 /**
- *  @brief  Provide an estimate for the number of unique values of a column.
+ *  Provide an estimate for the number of unique values of a column.
  *
  *  Only use this method from within the following methods:
  *  @arg UDR::describeParamsAndColumns()
@@ -2688,7 +2730,7 @@ void ColumnInfo::setEstimatedUniqueEntries(long uniqueEntries)
 }
 
 /**
- *  @brief  Set the usage of the column.
+ *  Set the usage of the column.
  *
  *  See the ColumnInfo::COLUMN_USE enum for different options.
  *
@@ -2703,7 +2745,7 @@ void ColumnInfo::setUsage(ColumnUseCode usage)
 }
 
 /**
- *  @brief Set the provenance of an output column.
+ *  Set the provenance of an output column.
  *
  *  This defines a relationship between an output column and
  *  a column of a table-valued input from which the output value
@@ -2870,7 +2912,7 @@ ConstraintInfo::ConstraintInfo(ConstraintTypeCode constraintType,
 }
 
 /**
- *  @brief  Get the type of the constraint.
+ *  Get the type of the constraint.
  *
  *  This allows safe casting to derived classes, based on the type.
  *
@@ -2920,7 +2962,7 @@ int ConstraintInfo::deserialize(ConstBytes &inputBuffer,
 // ------------------------------------------------------------------------
 
 /**
- *  @brief Construct a new cardinality constraint.
+ *  Construct a new cardinality constraint.
  *
  *  A cardinality constraint allows to specify a lower and/or an upper
  *  limit for the number of rows in a table.
@@ -2948,7 +2990,8 @@ CardinalityConstraintInfo::CardinalityConstraintInfo(long minNumRows,
 }
 
 /**
- *  @brief Return the minimum number of rows in a table.
+ *  Return the minimum number of rows in a table.
+ *
  *  @return Minimum number of rows (0 or a positive number).
  */
 long CardinalityConstraintInfo::getMinNumRows() const
@@ -2957,7 +3000,8 @@ long CardinalityConstraintInfo::getMinNumRows() const
 }
 
 /**
- *  @brief Return the maximum number of rows in a table.
+ *  Return the maximum number of rows in a table.
+ *
  *  @return Maximum number of rows or -1 if there is no upper bound.
  */
 long CardinalityConstraintInfo::getMaxNumRows() const
@@ -3026,7 +3070,7 @@ int CardinalityConstraintInfo::deserialize(ConstBytes &inputBuffer,
 // ------------------------------------------------------------------------
 
 /**
- *  @brief Default constructor for an empty uniqueness constraint.
+ *  Default constructor for an empty uniqueness constraint.
  *
  *  Use method addColumn() to add columns.
  */
@@ -3036,7 +3080,8 @@ UniqueConstraintInfo::UniqueConstraintInfo() :
 {}
 
 /**
- *  @brief Get the number of columns that form the unique key.
+ *  Get the number of columns that form the unique key.
+ *
  *  @return Number of columns in the uniqueness constraint.
  */
 int UniqueConstraintInfo::getNumUniqueColumns() const
@@ -3045,7 +3090,7 @@ int UniqueConstraintInfo::getNumUniqueColumns() const
 }
 
 /**
- *  @brief Get a column of the uniqueness constraint by iterator.
+ *  Get a column of the uniqueness constraint by iterator.
  *
  *  Like in other methods, we use an integer to iterate over the
  *  columns in the set. Note that the columns form a set, so this
@@ -3066,7 +3111,7 @@ int UniqueConstraintInfo::getUniqueColumn(int i) const
 }
 
 /**
- *  @brief Add a column to a uniqueness constraint.
+ *  Add a column to a uniqueness constraint.
  *
  *  @param c Column number/ordinal of one of the unique columns in the
  *           constraint.
@@ -3104,7 +3149,6 @@ void UniqueConstraintInfo::toString(const TableInfo &ti, std::string &s)
 int UniqueConstraintInfo::serializedLength()
 {
   return ConstraintInfo::serializedLength() +
-    serializedLengthOfInt() +
     serializedLengthOfBinary(uniqueColumns_.size() * sizeof(int));
 }
 
@@ -3116,10 +3160,6 @@ int UniqueConstraintInfo::serialize(Bytes &outputBuffer,
                               outputBufferLength);
   int numCols = uniqueColumns_.size();
   int *cols = new int[numCols];
-
-  result += serializeInt(numCols,
-                         outputBuffer,
-                         outputBufferLength);
 
   for (int u=0; u<numCols; u++)
     cols[u] = uniqueColumns_[u];
@@ -3140,25 +3180,18 @@ int UniqueConstraintInfo::deserialize(ConstBytes &inputBuffer,
 {
   int result =
     ConstraintInfo::deserialize(inputBuffer, inputBufferLength);
-  int numCols = 0;
+  int numCols;
   int *cols;
   int binaryLength;
 
   validateObjectType(UNIQUE_CONSTRAINT_INFO_OBJ);
-
-  result += deserializeInt(numCols,
-                           inputBuffer,
-                           inputBufferLength);
 
   result += deserializeBinary((const void **)&cols,
                               binaryLength,
                               false,
                               inputBuffer,
                               inputBufferLength);
-  if (binaryLength != numCols * sizeof(int))
-    throw UDRException(
-         38900,
-         "Inconsistent lengths for unique column list in constraint");
+  numCols = binaryLength / sizeof(int);
   for (int u=0; u<numCols; u++)
     uniqueColumns_.push_back(cols[u]);
 
@@ -3179,7 +3212,8 @@ PredicateInfo::PredicateInfo(TMUDRObjectType t) :
 {}
 
 /**
- *  @brief Get evaluation code for a predicate.
+ *  Get evaluation code for a predicate.
+ *
  *  @return Evaluation code.
  *  @throws UDRException
  */
@@ -3189,7 +3223,8 @@ PredicateInfo::EvaluationCode PredicateInfo::getEvaluationCode() const
 }
 
 /**
- *  @brief Get operator code for a predicate.
+ *  Get operator code for a predicate.
+ *
  *  @return Operator code.
  *  @throws UDRException
  */
@@ -3199,7 +3234,7 @@ PredicateInfo::PredOperator PredicateInfo::getOperator() const
 }
 
 /**
- *  @brief Check whether this predicate is a comparison predicate.
+ *  Check whether this predicate is a comparison predicate.
  *
  *  Use this method to determine  whether it is safe to cast the object
  *  to class ComparisonPredicateInfo.
@@ -3287,7 +3322,7 @@ ComparisonPredicateInfo::ComparisonPredicateInfo() :
 {}
 
 /**
- *  @brief Get the column number of the column in this comparison predicate.
+ *  Get the column number of the column in this comparison predicate.
  *
  *  @return Column number.
  */
@@ -3297,7 +3332,7 @@ int ComparisonPredicateInfo::getColumnNumber() const
 }
 
 /**
- *  @brief Return whether this comparison value involves a constant.
+ *  Return whether this comparison value involves a constant.
  *
  *  The method returns whether the comparison predicate is of the form
  *  "column" "op" "constant". If it returns false, the predicate
@@ -3315,7 +3350,7 @@ bool ComparisonPredicateInfo::hasAConstantValue() const
 }
 
 /**
- *  @brief Return the value, as a string, of the constant in this predicate.
+ *  Return the value, as a string, of the constant in this predicate.
  *
  *  This returns the value, using SQL syntax, of the constant involved
  *  in the comparison predicate. It throws an exception if method
@@ -3443,7 +3478,7 @@ int ComparisonPredicateInfo::deserialize(ConstBytes &inputBuffer,
 // ------------------------------------------------------------------------
 
 /**
- *  @brief Default constructor
+ *  Default constructor
  *
  *  Use this constructor to generate an object to be passed
  *  to UDRInvocationInfo::setChildPartitioning().
@@ -3452,7 +3487,8 @@ PartitionInfo::PartitionInfo() : type_(UNKNOWN)
 {}
 
 /**
- *  @brief  Get the partitioning type.
+ *  Get the partitioning type.
+ *
  *  @return Partition type enum.
  */
 PartitionInfo::PartitionTypeCode PartitionInfo::getType() const
@@ -3461,7 +3497,7 @@ PartitionInfo::PartitionTypeCode PartitionInfo::getType() const
 }
 
 /**
- *  @brief Get the number of columns that form the partitioning key
+ *  Get the number of columns that form the partitioning key
  *
  *  Returns the number of columns in the list of partitioning keys
  *  or zero if there are no such columns.
@@ -3474,7 +3510,7 @@ int PartitionInfo::getNumEntries() const
 }
 
 /**
- *  @brief Get the number/ordinal of the ith partitioning column.
+ *  Get the number/ordinal of the ith partitioning column.
  *
  *  @return Number/ordinal (0-based) of the ith partitioning column in
  *          the list of partitioning columns.
@@ -3491,7 +3527,8 @@ int PartitionInfo::getColumnNum(int i) const
 }
 
 /**
- *  @brief  Set the partitioning type.
+ *  Set the partitioning type.
+ *
  *  @param type Partition type enum.
  */
 void PartitionInfo::setType(PartitionTypeCode type)
@@ -3500,7 +3537,7 @@ void PartitionInfo::setType(PartitionTypeCode type)
 }
 
 /**
- *  @brief  Add a new column to the list of partitioning columns
+ *  Add a new column to the list of partitioning columns
  *
  *  Add a new column to the list of column numbers that form the
  *  partitioning key. Use this only if the type of the partitioning
@@ -3555,7 +3592,8 @@ void PartitionInfo::mapColumnNumbers(const std::vector<int> &map)
 // ------------------------------------------------------------------------
 
 /**
- *  @brief  Get the number of entries (columns) in the ordering.
+ *  Get the number of entries (columns) in the ordering.
+ *
  *  @return Number of entries/columns that make up the ordering.
  */
 int OrderInfo::getNumEntries() const
@@ -3564,7 +3602,7 @@ int OrderInfo::getNumEntries() const
 }
 
 /**
- *  @brief  Get the column number of an entry of the ordering.
+ *  Get the column number of an entry of the ordering.
  *
  *  @param i the position (0-based) of the ordering, 0 meaning the leading position.
  *  @return The column number of the n-th entry of the ordering (both are 0-based).
@@ -3582,7 +3620,7 @@ int OrderInfo::getColumnNum(int i) const
 }
 
 /**
- *  @brief  Get the order type of an entry of the ordering.
+ *  Get the order type of an entry of the ordering.
  *
  *  @param i the position (0-based) of the ordering, 0 meaning the leading position.
  *  @return The order type of the n-th entry of the ordering (0-based).
@@ -3600,7 +3638,8 @@ OrderInfo::OrderTypeCode OrderInfo::getOrderType(int i) const
 }
 
 /**
- *  @brief Append an entry to the ordering.
+ *  Append an entry to the ordering.
+ *
  *  @param colNum Column number to append to the ordering.
  *  @param orderType Order type (ascending or descending) to use.
  */
@@ -3611,7 +3650,7 @@ void OrderInfo::addEntry(int colNum, OrderTypeCode orderType)
 }
 
 /**
- *  @brief Insert an entry at any position of the ordering.
+ *  Insert an entry at any position of the ordering.
  *
  *  A quick example to illustrate this: Let's say we have a table
  *  with columns (a,b,c). Their column numbers are 0, 1, and 2.
@@ -3693,7 +3732,8 @@ TupleInfo::~TupleInfo()
 }
 
 /**
- *  @brief  Get the number of columns or parameters.
+ *  Get the number of columns or parameters.
+ *
  *  @return Number of columns/parameters.
  */
 int TupleInfo::getNumColumns() const
@@ -3702,7 +3742,8 @@ int TupleInfo::getNumColumns() const
 }
 
 /**
- *  @brief  Look up a column/parameter number by name.
+ *  Look up a column/parameter number by name.
+ *
  *  @param colName Name of an existing column.
  *  @return Column/parameter number.
  *  @throws UDRException
@@ -3720,7 +3761,8 @@ int TupleInfo::getColNum(const char *colName) const
 }
 
 /**
- *  @brief  Look up a column/parameter number by name.
+ *  Look up a column/parameter number by name.
+ *
  *  @param colName Name of an existing column.
  *  @return Column/parameter number.
  *  @throws UDRException
@@ -3731,7 +3773,8 @@ int TupleInfo::getColNum(const std::string &colName) const
 }
 
 /**
- *  @brief  Get the column info for a column identified by its ordinal.
+ *  Get the column info for a column identified by its ordinal.
+ *
  *  @param colNum Column number.
  *  @return Column info.
  *  @throws UDRException
@@ -3748,7 +3791,8 @@ const ColumnInfo &TupleInfo::getColumn(int colNum) const
 }
 
 /**
- *  @brief  Get the column info for a column identified by its name.
+ *  Get the column info for a column identified by its name.
+ *
  *  @param colName Name of an existing column.
  *  @return Column info.
  *  @throws UDRException
@@ -3759,7 +3803,8 @@ const ColumnInfo &TupleInfo::getColumn(const std::string &colName) const
 }
 
 /**
- *  @brief  Get the non-const column info for a column identified by its ordinal.
+ *  Get the non-const column info for a column identified by its ordinal.
+ *
  *  @param colNum Column number.
  *  @return Column info.
  *  @throws UDRException
@@ -3776,7 +3821,8 @@ ColumnInfo &TupleInfo::getColumn(int colNum)
 }
 
 /**
- *  @brief  Get the non-const column info for a column identified by its name.
+ *  Get the non-const column info for a column identified by its name.
+ *
  *  @param colName Name of an existing column.
  *  @return Column info.
  *  @throws UDRException
@@ -3787,7 +3833,8 @@ ColumnInfo &TupleInfo::getColumn(const std::string &colName)
 }
 
 /**
- *  @brief Get the type of a column.
+ *  Get the type of a column.
+ *
  *  @param colNum Column number.
  *  @return Type of the column.
  *  @throws UDRException
@@ -3798,7 +3845,8 @@ const TypeInfo &TupleInfo::getType(int colNum) const
 }
 
 /**
- *  @brief Get the SQL type class.
+ *  Get the SQL type class.
+ *
  *  Determine whether this is a numeric character, datetime or interval type.
  *  @param colNum Column number.
  *  @return SQL type class enum.
@@ -3810,7 +3858,7 @@ TypeInfo::SQLTypeClassCode TupleInfo::getSQLTypeClass(int colNum) const
 }
 
 /**
- *  @brief Add a new column.
+ *  Add a new column.
  *
  *  Only use this method from within the following method:
  *  @arg UDR::describeParamsAndColumns()
@@ -3826,7 +3874,7 @@ void TupleInfo::addColumn(const ColumnInfo &column)
 }
 
 /**
- *  @brief Get an integer value of a column or parameter
+ *  Get an integer value of a column or parameter
  *
  *  This method is modeled after the JDBC interface.
  *
@@ -3850,7 +3898,7 @@ int TupleInfo::getInt(int colNum) const
 }
 
 /**
- *  @brief Get an integer value for a column identified by name.
+ *  Get an integer value for a column identified by name.
  *
  *  @see TupleInfo::getInt(int) const
  *
@@ -3867,7 +3915,7 @@ int TupleInfo::getInt(const std::string &colName) const
 }
 
 /**
- *  @brief Get a long value of a column or parameter
+ *  Get a long value of a column or parameter
  *
  *  This method is modeled after the JDBC interface.
  *
@@ -3891,7 +3939,7 @@ long TupleInfo::getLong(int colNum) const
 }
 
 /**
- *  @brief Get a long value for a column identified by name.
+ *  Get a long value for a column identified by name.
  *
  *  @see TupleInfo::getLong(int) const
  *
@@ -3905,7 +3953,7 @@ long TupleInfo::getLong(const std::string &colName) const
 }
 
 /**
- *  @brief Get a double value of a column or parameter
+ *  Get a double value of a column or parameter
  *
  *  This method is modeled after the JDBC interface.
  *
@@ -3926,7 +3974,7 @@ double TupleInfo::getDouble(int colNum) const
 }
 
 /**
- *  @brief Get double value of a column/parameter identified by name.
+ *  Get double value of a column/parameter identified by name.
  *
  *  @see TupleInfo::getDouble(int colNum) const
  *
@@ -3940,7 +3988,7 @@ double TupleInfo::getDouble(const std::string &colName) const
 }
 
 /**
- *  @brief Get a pointer to the raw data value of a column.
+ *  Get a pointer to the raw data value of a column.
  *
  *  Using this method requires knowledge of the data layout
  *  for the different types used in UDRs. This method can be
@@ -3969,7 +4017,7 @@ const char * TupleInfo::getRaw(int colNum, int &byteLen) const
 }
 
 /**
- *  @brief Get a datetime or interval column value as time_t
+ *  Get a datetime or interval column value as time_t
  *
  *  This method can be used to convert column values with
  *  a datetime type or a day-second interval type to the
@@ -3993,7 +4041,7 @@ time_t TupleInfo::getTime(int colNum) const
 }
 
 /**
- *  @brief Check whether a parameter is available at compile-time.
+ *  Check whether a parameter is available at compile-time.
  *
  *  Use this method to check in the compiler interfaces whether
  *  an actual parameter is a constant value that can be read
@@ -4012,7 +4060,7 @@ bool TupleInfo::isAvailable(int colNum) const
 }
 
 /**
- *  @brief Get columns of a row as a delimited string.
+ *  Get columns of a row as a delimited string.
  *
  *  This method is useful to interface with tools that take a delimited
  *  record format. It is also useful for printing rows
@@ -4106,7 +4154,7 @@ void TupleInfo::getDelimitedRow(std::string &row,
 }
 
 /**
- *  @brief Get a string value of a column or parameter
+ *  Get a string value of a column or parameter
  *
  *  This method is modeled after the JDBC interface.
  *
@@ -4291,7 +4339,7 @@ std::string TupleInfo::getString(int colNum) const
 }
 
 /**
- *  @brief Get a string value of a column or parameter identified by name.
+ *  Get a string value of a column or parameter identified by name.
  *
  *  This method is modeled after the JDBC interface.
  *
@@ -4312,7 +4360,7 @@ std::string TupleInfo::getString(const std::string &colName) const
 }
 
 /**
- *  @brief Check whether the last value returned from a getInt() etc. method was NULL.
+ *  Check whether the last value returned from a getInt() etc. method was NULL.
  *
  *  This method is modeled after the JDBC interface.
  *
@@ -4325,7 +4373,7 @@ bool TupleInfo::wasNull() const
 }
 
 /**
- *  @brief Set an output column to a specified integer value.
+ *  Set an output column to a specified integer value.
  *
  *  Use this method at runtime.
  *
@@ -4339,7 +4387,7 @@ void TupleInfo::setInt(int colNum, int val) const
 }
 
 /**
- *  @brief Set an output column to a specified long value.
+ *  Set an output column to a specified long value.
  *
  *  Use this method at runtime.
  *
@@ -4353,7 +4401,7 @@ void TupleInfo::setLong(int colNum, long val) const
 }
 
 /**
- *  @brief Set an output column to a specified double value.
+ *  Set an output column to a specified double value.
  *
  *  Use this method at runtime.
  *
@@ -4367,7 +4415,7 @@ void TupleInfo::setDouble(int colNum, double val) const
 }
 
 /**
- *  @brief Set an output column to a specified string value.
+ *  Set an output column to a specified string value.
  *
  *  Use this method at runtime. The length of the string is determined
  *  by calling strlen().
@@ -4383,7 +4431,7 @@ void TupleInfo::setString(int colNum, const char *val) const
 }
 
 /**
- *  @brief Set an output column to a specified string value.
+ *  Set an output column to a specified string value.
  *
  *  Use this method at runtime.
  *
@@ -4399,7 +4447,7 @@ void TupleInfo::setString(int colNum, const char *val, int stringLen) const
 }
 
 /**
- *  @brief Set an output column to a specified string value.
+ *  Set an output column to a specified string value.
  *
  *  Use this method at runtime.
  *
@@ -4413,7 +4461,7 @@ void TupleInfo::setString(int colNum, const std::string &val) const
 }
 
 /**
- *  @brief Set a datetime or interval output column to a value specified as time_t
+ *  Set a datetime or interval output column to a value specified as time_t
  *
  *  This method cannot be used with year-month intervals or data types that
  *  are not datetime or interval types. It is not possible to set fractional
@@ -4431,7 +4479,7 @@ void TupleInfo::setTime(int colNum, time_t val) const
 }
 
 /**
- *  @brief Set the result row from a string with delimited field values.
+ *  Set the result row from a string with delimited field values.
  *
  *  This method can be used to read delimited text files and
  *  conveniently produce a result table from them. For example,
@@ -4614,7 +4662,7 @@ const char * TupleInfo::setFromDelimitedRow(const char *row,
 }
 
 /**
- *  @brief Set an output column to a NULL value.
+ *  Set an output column to a NULL value.
  *
  *  Use this method at runtime.
  *
@@ -4627,7 +4675,7 @@ void TupleInfo::setNull(int colNum) const
 }
 
 /**
- *  @brief Add an integer output column.
+ *  Add an integer output column.
  *
  *  The new column is added at the end.
  *
@@ -4649,7 +4697,7 @@ void TupleInfo::addIntColumn(const char *colName, bool isNullable)
 }
 
 /**
- *  @brief Add a long output column.
+ *  Add a long output column.
  *
  *  The new column is added at the end.
  *
@@ -4671,7 +4719,7 @@ void TupleInfo::addLongColumn(const char *colName, bool isNullable)
 }
 
 /**
- *  @brief Add a fixed character output column.
+ *  Add a fixed character output column.
  *
  *  The new column is added at the end.
  *
@@ -4711,7 +4759,7 @@ void TupleInfo::addCharColumn(const char *colName,
 }
 
 /**
- *  @brief Add a VARCHAR output column.
+ *  Add a VARCHAR output column.
  *
  *  The new column is added at the end.
  *
@@ -4751,7 +4799,7 @@ void TupleInfo::addVarCharColumn(const char *colName,
 }
 
 /**
- *  @brief Add multiple columns to the table-valued output.
+ *  Add multiple columns to the table-valued output.
  *
  *  Only use this method from within the
  *  UDR::describeParamsAndColumns() method.
@@ -4768,7 +4816,7 @@ void TupleInfo::addColumns(const std::vector<ColumnInfo *> &columns)
 }
 
 /**
- *  @brief Add a new column at a specified position.
+ *  Add a new column at a specified position.
  *
  *  Only use this method from within the
  *  UDR::describeParamsAndColumns() method.
@@ -4787,7 +4835,7 @@ void TupleInfo::addColumnAt(const ColumnInfo &column, int position)
 }
 
 /**
- *  @brief Delete a column of the table-valued output.
+ *  Delete a column of the table-valued output.
  *
  *  Only use this method from within the
  *  UDR::describeParamsAndColumns() method.
@@ -4809,7 +4857,7 @@ void TupleInfo::deleteColumn(int i)
 }
 
 /**
- *  @brief Delete a column with a specified column name.
+ *  Delete a column with a specified column name.
  *
  *  The first column that matches the specified column name
  *  will be deleted.
@@ -4823,7 +4871,7 @@ void TupleInfo::deleteColumn(const std::string &name)
 }
 
 /**
- *  @brief Print the object, for use in debugging.
+ *  Print the object, for use in debugging.
  *
  *  @see UDR::debugLoop()
  *  @see UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME
@@ -4977,7 +5025,7 @@ TableInfo::~TableInfo()
 }
 
 /**
- *  @brief Get the estimated number of rows of this table.
+ *  Get the estimated number of rows of this table.
  *
  *  @see setEstimatedNumRows()
  *  @see getEstimatedNumPartitions()
@@ -5003,7 +5051,7 @@ long TableInfo::getEstimatedNumPartitions() const
 }
 
 /**
- *  @brief Get the PARTITION BY clause for this input table.
+ *  Get the PARTITION BY clause for this input table.
  *
  *  This returns either the PARTITION BY clause specified in the
  *  SQL query, or the updated partitioning information, set by
@@ -5024,7 +5072,7 @@ PartitionInfo &TableInfo::getQueryPartitioning()
 }
 
 /**
- *  @brief Get the ORDER BY clause for this input table.
+ *  Get the ORDER BY clause for this input table.
  *
  *  This returns either the ORDER BY clause specified in the
  *  SQL query, or the updated ordering information, set by
@@ -5045,7 +5093,7 @@ OrderInfo &TableInfo::getQueryOrdering()
 }
 
 /**
- *  @brief Returns whether the UDF result is treated as a continuous stream.
+ *  Returns whether the UDF result is treated as a continuous stream.
  *
  *  Note: This is currently not supported. The method always returns false
  *  for now.
@@ -5058,7 +5106,7 @@ bool TableInfo::isStream() const
 }
 
 /**
- *  @brief Get the number of constraints defined on this table.
+ *  Get the number of constraints defined on this table.
  *
  *  @return Number of constraints defined on this table.
  */
@@ -5068,7 +5116,7 @@ int TableInfo::getNumConstraints() const
 }
 
 /**
- *  @brief Get a constraint by index/ordinal number.
+ *  Get a constraint by index/ordinal number.
  *
  *  @param i index/ordinal (0-based) of the constraint.
  *  @return Constraint for a given index/ordinal.
@@ -5086,7 +5134,7 @@ const ConstraintInfo &TableInfo::getConstraint(int i) const
 }
 
 /**
- *  @brief Set the estimated number of rows for a UDF table-valued result.
+ *  Set the estimated number of rows for a UDF table-valued result.
  *
  *  Setting this value can help the Trafodion optimizer generate a better
  *  plan for queries containing table-valued UDFs. Note that this is only
@@ -5107,7 +5155,7 @@ void TableInfo::setEstimatedNumRows(long rows)
 }
 
 /**
- *  @brief Add a cardinality constraint to the UDF table-valued output.
+ *  Add a cardinality constraint to the UDF table-valued output.
  *
  *  Only use this method from within the following methods:
  *  @arg UDR::describeParamsAndColumns()
@@ -5127,7 +5175,7 @@ void TableInfo::addCardinalityConstraint(
 }
 
 /**
- *  @brief Add a uniqueness constraint to the UDF table-valued output.
+ *  Add a uniqueness constraint to the UDF table-valued output.
  *
  *  Only use this method from within the following methods:
  *  @arg UDR::describeParamsAndColumns()
@@ -5147,7 +5195,7 @@ void TableInfo::addUniquenessConstraint(
 }
 
 /**
- *  @brief Set whether a table should be treated as a stream.
+ *  Set whether a table should be treated as a stream.
  *
  *  This method is not yet supported.
  *
@@ -5161,7 +5209,7 @@ void TableInfo::setIsStream(bool stream)
 }
 
 /**
- *  @brief Print the object, for use in debugging.
+ *  Print the object, for use in debugging.
  *
  *  @see UDR::debugLoop()
  *  @see UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME
@@ -5478,7 +5526,7 @@ int ParameterListInfo::deserialize(ConstBytes &inputBuffer,
 // ------------------------------------------------------------------------
 
 /**
- *  @brief Default constructor.
+ *  Default constructor.
  *
  *  UDR writers can derive from this class to store state between
  *  the calls of the compiler interface.
@@ -5487,7 +5535,7 @@ UDRWriterCompileTimeData::UDRWriterCompileTimeData()
 {}
 
 /**
- *  @brief Virtual destructor.
+ *  Virtual destructor.
  *
  *  Override the virtual destructor in derived classes to clean up any
  *  resources owned by the UDR writer once the compile phase of a
@@ -5497,7 +5545,7 @@ UDRWriterCompileTimeData::~UDRWriterCompileTimeData()
 {}
 
 /**
- *  @brief Print the object, for use in debugging.
+ *  Print the object, for use in debugging.
  *
  *  @see UDR::debugLoop()
  *  @see UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME
@@ -5541,7 +5589,7 @@ UDRInvocationInfo::~UDRInvocationInfo()
 }
 
 /**
- *  @brief Get the UDR name.
+ *  Get the UDR name.
  *
  *  @return Fully qualified name (catalog.schema.name) of the UDR.
  */
@@ -5551,7 +5599,7 @@ const std::string &UDRInvocationInfo::getUDRName() const
 }
 
 /**
- *  @brief Get number of table-valued inputs provided.
+ *  Get number of table-valued inputs provided.
  *
  *  @return Number of table-valued inputs provided.
  */
@@ -5561,7 +5609,7 @@ int UDRInvocationInfo::getNumTableInputs() const
 }
 
 /**
- *  @brief Get description of a table-valued input.
+ *  Get description of a table-valued input.
  *
  *  @return TableInfo reference for the table-valued input.
  *  @throws UDRException
@@ -5575,7 +5623,8 @@ const TableInfo &UDRInvocationInfo::in(int childNum) const
 }
 
 /**
- *  @brief Get description of the table-valued result.
+ *  Get description of the table-valued result.
+ *
  *  @return TableInfo reference for the table-valued output.
  */
 const TableInfo &UDRInvocationInfo::out() const
@@ -5584,7 +5633,8 @@ const TableInfo &UDRInvocationInfo::out() const
 }
 
 /**
- *  @brief Non-const method to get description of the table-valued result.
+ *  Non-const method to get description of the table-valued result.
+ *
  *  @return Non-const TableInfo reference for the table-valued output.
  */
 TableInfo &UDRInvocationInfo::out()
@@ -5593,7 +5643,7 @@ TableInfo &UDRInvocationInfo::out()
 }
 
 /**
- *  @brief Get call phase.
+ *  Get call phase.
  *
  *  This call is not normally needed, since we know which method
  *  of UDR we are in. However, in some cases where the UDR
@@ -5608,7 +5658,7 @@ UDRInvocationInfo::CallPhase UDRInvocationInfo::getCallPhase() const
 }
 
 /**
- *  @brief Get current user.
+ *  Get current user.
  *
  *  Get the id of the current user, which is the effective
  *  user id at the time. This is usually the same as
@@ -5626,7 +5676,7 @@ const std::string &UDRInvocationInfo::getCurrentUser() const
 }
 
 /**
- *  @brief Get session user.
+ *  Get session user.
  *
  *  Get the id of the session user, which is the user who
  *  connected to the database. This is usually the same as
@@ -5644,7 +5694,8 @@ const std::string &UDRInvocationInfo::getSessionUser() const
 }
 
 /**
- *  @brief Get current role.
+ *  Get current role.
+ *
  *  @return Current role.
  */
 const std::string &UDRInvocationInfo::getCurrentRole() const
@@ -5653,7 +5704,7 @@ const std::string &UDRInvocationInfo::getCurrentRole() const
 }
 
 /**
- *  @brief Get query id.
+ *  Get query id.
  *
  *  The query id is only available at runtime. It is an empty
  *  string at compile time.
@@ -5690,7 +5741,8 @@ UDRInvocationInfo::IsolationType UDRInvocationInfo::getIsolationType() const
 }
 
 /**
- *  @brief Check whether we are in the compile time interface.
+ *  Check whether we are in the compile time interface.
+ *
  *  @return true at compile time, false at run-time.
  */
 bool UDRInvocationInfo::isCompileTime() const
@@ -5700,7 +5752,8 @@ bool UDRInvocationInfo::isCompileTime() const
 }
 
 /**
- *  @brief Check whether we are in the run-time interface.
+ *  Check whether we are in the run-time interface.
+ *
  *  @return false at compile time, true at run-time.
  */
 bool UDRInvocationInfo::isRunTime() const
@@ -5709,7 +5762,7 @@ bool UDRInvocationInfo::isRunTime() const
 }
 
 /**
- *  @brief Get debugging flags, set via CONTROL QUERY DEFAULT.
+ *  Get debugging flags, set via CONTROL QUERY DEFAULT.
  *
  *  Debug flags are set via the UDR_DEBUG_FLAGS CONTROL QUERY DEFAULT
  *  at compile time. This returns the value of this CQD. Usually not
@@ -5723,7 +5776,7 @@ int UDRInvocationInfo::getDebugFlags() const
 }
 
 /**
- *  @brief Get the function type of this UDR invocation.
+ *  Get the function type of this UDR invocation.
  *
  *  Returns the function type that can be set by the UDR writer
  *  with the setFuncType() method.
@@ -5738,7 +5791,7 @@ UDRInvocationInfo::FuncType UDRInvocationInfo::getFuncType() const
 }
 
 /**
- *  @brief Get the formal parameters of the UDR invocation.
+ *  Get the formal parameters of the UDR invocation.
  *
  *  Formal parameters are available only at compile time.
  *  They are either defined in the CREATE FUNCTION DDL or through
@@ -5754,7 +5807,7 @@ const ParameterListInfo &UDRInvocationInfo::getFormalParameters() const
 }
 
 /**
- *  @brief Get parameters of the UDR invocation.
+ *  Get parameters of the UDR invocation.
  *
  *  These are the actual parameters. At compile time, if a constant
  *  has been used, the value of this constant is available, using
@@ -5780,7 +5833,7 @@ ParameterListInfo &UDRInvocationInfo::nonConstActualParameters()
 }
 
 /**
- *  @brief Return number of predicates to be applied in the context of this UDF.
+ *  Return number of predicates to be applied in the context of this UDF.
  *
  *  Don't use this method from within UDR::describeParamsAndColumns(),
  *  since the predicates are not yet set up in that phase.
@@ -5796,7 +5849,7 @@ int UDRInvocationInfo::getNumPredicates() const
 }
 
 /**
- *  @brief Get the description of a predicate to be applied.
+ *  Get the description of a predicate to be applied.
  *
  *  @return Description of the predicate.
  *
@@ -5815,7 +5868,7 @@ const PredicateInfo &UDRInvocationInfo::getPredicate(int i) const
 }
 
 /**
- *  @brief Check whether a given predicate is a comparison predicate.
+ *  Check whether a given predicate is a comparison predicate.
  *
  *  This returns whether it is safe to use method getComparisonPredicate().
  *
@@ -5831,7 +5884,7 @@ bool UDRInvocationInfo::isAComparisonPredicate(int i) const
 }
 
 /**
- *  @brief Get a comparison predicate
+ *  Get a comparison predicate
  *
  *  Note: This will throw an exception if predicate i is not a
  *  comparison predicate. Use method isAComparisonPredicate() to
@@ -5857,7 +5910,7 @@ const ComparisonPredicateInfo &UDRInvocationInfo::getComparisonPredicate(
 }
 
 /**
- *  @brief Add a formal parameter to match an actual parameter.
+ *  Add a formal parameter to match an actual parameter.
  *
  *  Only use this method from within the
  *  UDR::describeParamsAndColumns() method.
@@ -5877,7 +5930,7 @@ void UDRInvocationInfo::addFormalParameter(const ColumnInfo &param)
 }
 
 /**
- *  @brief Set the function type of this UDR invocation.
+ *  Set the function type of this UDR invocation.
  *
  *  Use this simple method with some caution, since it has an effect
  *  on how predicates are pushed down through TMUDFs with table-valued
@@ -5912,7 +5965,7 @@ void UDRInvocationInfo::setFuncType(FuncType type)
 }
 
 /**
- *  @brief Add columns of table-valued inputs as output columns.
+ *  Add columns of table-valued inputs as output columns.
  *
  *  Many TMUDFs make the column values of their table-valued inputs available
  *  as output columns. Such columns are called "pass-thru" columns. This
@@ -5974,7 +6027,7 @@ void UDRInvocationInfo::addPassThruColumns(int inputTableNum,
 }
 
 /**
- *  @brief Set the PARTITION BY info for a table-valued input.
+ *  Set the PARTITION BY info for a table-valued input.
  *
  *  This method allows the UDR writer to override the
  *  PARTITION BY syntax specified for a table-valued input
@@ -6002,7 +6055,7 @@ void UDRInvocationInfo::setChildPartitioning(int inputTableNum,
 }
 
 /**
- *  @brief Set the ORDER BY info for a table-valued input.
+ *  Set the ORDER BY info for a table-valued input.
  *
  *  This method allows the UDR writer to override the
  *  ORDER BY syntax specified for a table-valued input
@@ -6029,7 +6082,7 @@ void UDRInvocationInfo::setChildOrdering(int inputTableNum,
 }
 
 /**
- *  @brief Set the usage information for a column of a table-valued input
+ *  Set the usage information for a column of a table-valued input
  *
  *  This method allows the UDR writer to specify whether a given
  *  child column is needed or not.
@@ -6054,7 +6107,7 @@ void UDRInvocationInfo::setChildColumnUsage(int inputTableNum,
 }
 
 /**
- *  @brief Mark any passthru columns that are not needed as unused.
+ *  Mark any passthru columns that are not needed as unused.
  *
  *  For any passthru columns that are marked as NOT_USED or NOT_PRODUCED in
  *  the table-valued result, set the corresponding input columns
@@ -6099,7 +6152,7 @@ void UDRInvocationInfo::setUnusedPassthruColumns()
 }
 
 /**
- *  @brief Decide where to evaluate a predicate.
+ *  Decide where to evaluate a predicate.
  *
  *  Only use this method from within the
  *  UDR::describeDataflowAndPredicates() method.
@@ -6132,7 +6185,7 @@ void UDRInvocationInfo::setPredicateEvaluationCode(int predicateNum,
 }
 
 /**
- *  @brief Push predicates on pass-thru columns to the table-valued input.
+ *  Push predicates on pass-thru columns to the table-valued input.
  *
  *  Push one or more predicates to their corresponding table-valued input,
  *  if they reference only columns from that input, otherwise leave the
@@ -6175,7 +6228,7 @@ void UDRInvocationInfo::pushPredicatesOnPassthruColumns(int startPredNum,
 }
 
 /**
- *  @brief Propagate constraints for UDFs that return one result row for
+ *  Propagate constraints for UDFs that return one result row for
  *         every input row.
  *
  *  Use this method only if the UDF returns no more than one result row for
@@ -6254,7 +6307,7 @@ void UDRInvocationInfo::propagateConstraintsFor1To1UDFs(
 }
 
 /**
- *  @brief Get data to persist between calls of the compile-time interface
+ *  Get data to persist between calls of the compile-time interface
  *
  *  The UDR writer must use a static or dynamic cast to get a pointer
  *  to the derived class.
@@ -6275,7 +6328,7 @@ UDRWriterCompileTimeData *UDRInvocationInfo::getUDRWriterCompileTimeData()
 }
 
 /**
- *  @brief Set data to persist between calls of the compile-time interface
+ *  Set data to persist between calls of the compile-time interface
  *
  *  This call can be used to attach an object derived from class
  *  UDRWriterCompileTimeData to the UDRInvocationInfo object. Once
@@ -6309,7 +6362,7 @@ void UDRInvocationInfo::setUDRWriterCompileTimeData(
 }
 
 /**
- *  @brief Copy values of pass-thru columns from the input to the output table.
+ *  Copy values of pass-thru columns from the input to the output table.
  *
  *  This method is an easy way to set the values of the table-valued result
  *  row from their corresponding values in the table-valued inputs.
@@ -6417,7 +6470,7 @@ void UDRInvocationInfo::copyPassThruData(int inputTableNum,
 }
 
 /**
- *  @brief Get the number of parallel instances working on this UDR invocation.
+ *  Get the number of parallel instances working on this UDR invocation.
  *
  *  Use this method to find out how many parallel instances are
  *  executing this UDR.
@@ -6437,7 +6490,7 @@ int UDRInvocationInfo::getNumParallelInstances() const
 }
 
 /**
- *  @brief Get the instance number of this runtime process.
+ *  Get the instance number of this runtime process.
  *
  *  Use this method to find out which of the parallel instances
  *  executing a UDR this process is.
@@ -6457,7 +6510,7 @@ int UDRInvocationInfo::getMyInstanceNum() const
 }
 
 /**
- *  @brief Print the object, for use in debugging.
+ *  Print the object, for use in debugging.
  *
  *  @see UDR::debugLoop()
  *  @see UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME
@@ -6966,7 +7019,7 @@ long UDRPlanInfo::getCostPerRow() const
 }
 
 /**
- *  @brief Return the desired degree of parallelism for this plan.
+ *  Return the desired degree of parallelism for this plan.
  *
  *  @see setDesiredDegreeOfParallelism()
  *  @return Degree of parallelism to be used for this plan alternative
@@ -6979,7 +7032,7 @@ int UDRPlanInfo::getDesiredDegreeOfParallelism() const
 }
 
 /**
- *  @brief Set the desired degree of parallelism.
+ *  Set the desired degree of parallelism.
  *
  *  Only use this method from within the
  *  UDR::describeDesiredDegreeOfParallelism() method.
@@ -7059,7 +7112,7 @@ void UDRPlanInfo::setCostPerRow(long nanoseconds)
 }
 
 /**
- *  @brief Get data to persist between calls of the optimizer interface
+ *  Get data to persist between calls of the optimizer interface
  *
  *  @see setUDRWriterCompileTimeData()
  *  @return UDR writer-specific data that was previously attached or NULL.
@@ -7075,7 +7128,7 @@ UDRWriterCompileTimeData *UDRPlanInfo::getUDRWriterCompileTimeData()
 }
 
 /**
- *  @brief Set data to persist between calls of the optimizer interface
+ *  Set data to persist between calls of the optimizer interface
  *
  *  This call can be used to attach an object derived from class
  *  UDRWriterCompileTimeData to the UDRPlanInfo object. Once
@@ -7116,7 +7169,7 @@ void UDRPlanInfo::setUDRWriterCompileTimeData(
 }
 
 /**
- *  @brief Attach a byte array to the plan to be sent to the runtime instances.
+ *  Attach a byte array to the plan to be sent to the runtime instances.
  *
  *  Compile time and runtime interfaces of the UDR can be called from
  *  different processes, since UDRs can be executed in parallel and on
@@ -7169,7 +7222,7 @@ void UDRPlanInfo::addPlanData(const char *planData,
 }
 
 /**
- *  @brief Retrieve plan data attached to the UDR invocation and plan.
+ *  Retrieve plan data attached to the UDR invocation and plan.
  *
  *  This method can be called at runtime to get state generated at compile time.
  *
@@ -7186,7 +7239,7 @@ const char *UDRPlanInfo::getPlanData(int &planDataLength)
 }
 
 /**
- *  @brief Print the object, for use in debugging.
+ *  Print the object, for use in debugging.
  *
  *  @see UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME
  */
@@ -7299,7 +7352,7 @@ int UDRPlanInfo::deserialize(ConstBytes &inputBuffer,
 // ------------------------------------------------------------------------
 
 /**
- *  @brief Default constructor.
+ *  Default constructor.
  *
  *  Use this in the constructor of a derived class.
  */
@@ -7309,7 +7362,7 @@ UDR::UDR() :
 {}
 
 /**
- *  @brief Virtual Destructor.
+ *  Virtual Destructor.
  *
  *  Override this destructor and deallocate any resources of a derived
  *  class, if necessary. Note that a UDR object may be used
@@ -7329,7 +7382,7 @@ UDR::UDR() :
 UDR::~UDR() {}
 
 /**
- *  @brief First method of the compiler interface (optional).
+ *  First method of the compiler interface (optional).
  *
  *  Describe the output columns of a TMUDF, based on a description of
  *  its parameters (including parameter values that are specified as a
@@ -7387,7 +7440,7 @@ void UDR::describeParamsAndColumns(UDRInvocationInfo &info)
 }
 
 /**
- *  @brief Second method of the compiler interface (optional).
+ *  Second method of the compiler interface (optional).
  *
  *  Eliminate unneeded columns and decide where to execute predicates.
  *
@@ -7519,7 +7572,7 @@ void UDR::describeDataflowAndPredicates(UDRInvocationInfo &info)
 }
 
 /**
- *  @brief Third method of the compiler interface (optional).
+ *  Third method of the compiler interface (optional).
  *
  *  Set up logical constraints on the UDF result table.
  *
@@ -7542,7 +7595,7 @@ void UDR::describeConstraints(UDRInvocationInfo &info)
 }
 
 /**
- *  @brief Fourth method of the compiler interface (optional).
+ *  Fourth method of the compiler interface (optional).
  *
  *  Set up statistics for the table-valued result.
  *
@@ -7583,7 +7636,7 @@ void UDR::describeStatistics(UDRInvocationInfo &info)
 }
 
 /**
- *  @brief Fifth method of the compiler interface (optional).
+ *  Fifth method of the compiler interface (optional).
  *
  *  Describe the desired parallelism of a UDR.
  *
@@ -7630,7 +7683,7 @@ void UDR::describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
 }
 
 /**
- *  @brief Sixth method of the compiler interface (optional).
+ *  Sixth method of the compiler interface (optional).
  *
  *  The query optimizer calls this method once for every plan alternative
  *  considered for a UDR invocation. It provides the required partitioning
@@ -7652,7 +7705,7 @@ void UDR::describePlanProperties(UDRInvocationInfo &info,
 }
 
 /**
- *  @brief Seventh and final method of the compiler interface for TMUDFs (optional).
+ *  Seventh and final method of the compiler interface for TMUDFs (optional).
  *
  *  This final compile time call gives the UDF writer the opportunity
  *  to examine the chosen query plan, to pass information on to the
@@ -7676,7 +7729,7 @@ void UDR::completeDescription(UDRInvocationInfo &info,
 }
 
 /**
- *  @brief Runtime code for UDRs (required).
+ *  Runtime code for UDRs (required).
  *
  *  This is the only method that is mandatory in the implementation
  *  of a UDR (in addition to the factory method).
@@ -7704,7 +7757,7 @@ void UDR::processData(UDRInvocationInfo &info,
 }
 
 /**
- *  @brief Debugging hook for UDRs.
+ *  Debugging hook for UDRs.
  *
  *  This method is called in debug Trafodion builds when certain
  *  flags are set in the UDR_DEBUG_FLAGS CQD (CONTROL QUERY DEFAULT).
@@ -7732,7 +7785,7 @@ void UDR::debugLoop()
 }
 
 /**
- *  @brief Read a row of a table-value input.
+ *  Read a row of a table-value input.
  *
  *  This method can only be called from within processData().
  *
@@ -7749,7 +7802,6 @@ bool UDR::getNextRow(UDRInvocationInfo &info, int tableIndex)
                     tableIndex,
                     &qstate);
 
-#ifndef NDEBUG
   if (info.getDebugFlags() & UDRInvocationInfo::TRACE_ROWS)
     switch (qstate)
       {
@@ -7787,13 +7839,12 @@ bool UDR::getNextRow(UDRInvocationInfo &info, int tableIndex)
         printf("(%d) Invalid queue state %d from input table %d\n",
                info.getMyInstanceNum(), qstate, tableIndex);
       }
-#endif
 
   return (qstate == SQLUDR_Q_MORE);
 }
 
 /**
- *  @brief Emit a row of the table-valued result.
+ *  Emit a row of the table-valued result.
  *
  *  This method can only be called from within processData().
  *
@@ -7804,7 +7855,6 @@ void UDR::emitRow(UDRInvocationInfo &info)
 {
   SQLUDR_Q_STATE qstate = SQLUDR_Q_MORE;
 
-#ifndef NDEBUG
   if (info.getDebugFlags() & UDRInvocationInfo::TRACE_ROWS)
     {
       std::string row;
@@ -7823,7 +7873,6 @@ void UDR::emitRow(UDRInvocationInfo &info)
       printf("(%d) Emitting row: %s\n",
              info.getMyInstanceNum(), row.c_str());
     }
-#endif
 
   (*emitRowPtr_)(info.out().getRowPtr(),
                  0,
@@ -7831,7 +7880,7 @@ void UDR::emitRow(UDRInvocationInfo &info)
 }
 
 /**
- *  @brief For versioning, return features supported by the UDR writer.
+ *  For versioning, return features supported by the UDR writer.
  *
  *  This method can be used in the future to facilitate changes in
  *  the UDR interface. UDR writers will be able to indicte through this

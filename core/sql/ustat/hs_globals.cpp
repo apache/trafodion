@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -2737,6 +2740,8 @@ void HSHistogram::maintainEndIntervalForIUS(float avgRCPerInterval, Lng32 intNum
 // Hash function used for jitLogThresholdHash.
 static ULng32 hashString(const NAString& str) { return str.hash(); }
 
+THREAD_P NABoolean HSGlobalsClass::performISForMC_ = FALSE;
+
 HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
   : catSch(new(STMTHEAP) NAString(STMTHEAP)),
     isHbaseTable(FALSE),
@@ -2800,6 +2805,8 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
         jitLogThresholdHash = new(CTXTHEAP) JitLogHashType(hashString, 77, TRUE, CTXTHEAP);
         initJITLogData();
       }
+
+    performISForMC_ = FALSE;
   }
 
 HSGlobalsClass::~HSGlobalsClass()
@@ -4896,7 +4903,7 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
 // on the amount of memory allocated to hold their values.
 //
 // Note: row count may be adjusted up if DP2 sampling and heavy amount of varchars.
-Int64 HSGlobalsClass::getInternalSortMemoryRequirements()
+Int64 HSGlobalsClass::getInternalSortMemoryRequirements(NABoolean performISForMC)
 {
   HSLogMan *LM = HSLogMan::Instance();
   Int64 rows;
@@ -4908,7 +4915,7 @@ Int64 HSGlobalsClass::getInternalSortMemoryRequirements()
   // get memory requirements for single column groups first
   getMemoryRequirements(singleGroup, rows);
 
-  if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+  if ( performISForMC ) 
   {
      // now get memory requirements for multi-column groups
      getMCMemoryRequirements(multiGroup, rows);
@@ -5364,9 +5371,31 @@ Lng32 HSGlobalsClass::CollectStatistics()
         //
         ISMemPercentage_ = (float)CmpCommon::getDefaultNumeric(USTAT_IS_MEMORY_FRACTION);
 
-        NABoolean trySampleTableBypassForIS = useSampling && multiGroup == NULL &&
-                                              externalSampleTable == FALSE;
-            // Don't bypass sampling for internal sort when MC stats requested.
+        NABoolean trySampleTableBypassForIS = useSampling && externalSampleTable == FALSE;
+
+        mapInternalSortTypes(singleGroup);
+        Int64 maxRowsToRead = getInternalSortMemoryRequirements(TRUE); 
+          // row count may be adjusted up if DP2 sampling and heavy amount of varchars.
+
+        if (trySampleTableBypassForIS && multiGroup ) {
+
+              if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON &&
+                  allGroupsFitInMemory()) 
+              {
+                // if both single and MC groups can fit in memory, turn on
+                // performing MC in memory flag.
+                //
+                // Do not have to set the flag for next call to this function 
+                // (HSGlobalsClass::CollectStatistics()) since it is not static and
+                // therefore a new HSGlobalsClass object will be constructed.
+                // In HSGlobalsClass::HSGlobalsClass(), the flag is set to FALSE.
+                setPerformISForMC(TRUE);
+
+              } else {
+                // othereise, don't bypass sampling for internal sort.
+                trySampleTableBypassForIS = FALSE;
+              } 
+         }
 
         if (useSampling && sampleRowCount <= getMinRowCountForSample())
           internalSortWhenBetter = FALSE;                              // always use internal sort.
@@ -5395,7 +5424,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         HSColGroupStruct* s_group_back[singleGroupCount];
         HSColumnStruct   *col;
 
-        if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+        if ( performISForMC() ) 
         {
            while (mgroup != NULL)
            {
@@ -5424,16 +5453,12 @@ Lng32 HSGlobalsClass::CollectStatistics()
            sgroup = NULL;
         }
 
-        mapInternalSortTypes(singleGroup);
-        Int64 maxRowsToRead = getInternalSortMemoryRequirements(); 
-          // row count may be adjusted up if DP2 sampling and heavy amount of varchars.
-        
         if (internalSortWhenBetter)
           getPreviousUECRatios(singleGroup);  // used to decide when to use IS
 
 
         
-        if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+        if ( performISForMC() ) 
         {
            // reorder the single group columns if any MC group can be computed in memory
            orderMCGroups(s_group_back);
@@ -5443,6 +5468,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         numColsToProcess = getColsToProcess(maxRowsToRead,
                                               internalSortWhenBetter,
                                               trySampleTableBypassForIS);
+
         if (trySampleTableBypassForIS && numColsToProcess == singleGroupCount)
           {
               // This is not performed when there are MC stats to process.
@@ -5504,15 +5530,14 @@ Lng32 HSGlobalsClass::CollectStatistics()
             HSHandleError(retcode);
             LM->StopTimer();
 
-            if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) &&
+            if ( performISForMC() &&
                 !allMCGroupsProcessed(TRUE)
                )
             {
                LM->StartTimer("MC: Compute MC stats using Internal Sort");
                retcode = ComputeMCStatistics(TRUE);
                LM->StopTimer();
-               if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP) == DF_ON) &&
-                   !allMCGroupsProcessed(TRUE)
+               if ( performISForMC() && !allMCGroupsProcessed(TRUE)
                   )
                {
                   if (LM->LogNeeded())
@@ -6900,13 +6925,13 @@ Lng32 HSGlobalsClass::selectIUSBatch(Int64 currentRows, Int64 futureRows, NABool
 
   // Now allocate memory for singleGroup, inMemDelete and inMemInsert table, 
   // for each column in PENDING state.
-   allocateMemoryForColumns(singleGroup, futureRows);
+   allocateMemoryForColumns(singleGroup, futureRows, NULL);
 
    allocateMemoryForColumns(iusSampleDeletedInMem->getColumns(), 
-                            iusSampleDeletedInMem->getNumRows());
+                            iusSampleDeletedInMem->getNumRows(), NULL);
 
    allocateMemoryForColumns(iusSampleInsertedInMem->getColumns(), 
-                            iusSampleInsertedInMem->getNumRows());
+                            iusSampleInsertedInMem->getNumRows(), NULL);
 
    if (LM->LogNeeded())
     {
@@ -8378,7 +8403,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
           mgroup->skewedValuesCollected = collectMCSkewedValues; 
         }
 
-        if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) && usingIS)
+        if ( performISForMC() && usingIS)
         {
           // check if the data needed by all columns in the MC is already in
           // memory so IS can be used
@@ -8501,7 +8526,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
 
                // temporary CQD used for testing to make sure that fast path stats computation is
                // correct - should remove after validation
-               if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST) == DF_ON)
+               if ( performISForMC() )
                   computeMCISuec (mgroup, tempData, samplingUsed, numRows, intCount);
                else
                {
@@ -9841,7 +9866,7 @@ void processNullsForColumn(HSColGroupStruct *group, Lng32 rowsRead, T* dummyPtr)
   T     *frontData, *backData;
 
   // copy data for MC
-  if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) && (group->mcs_usingme > 0) &&
+  if ( HSGlobalsClass::performISForMC() && (group->mcs_usingme > 0) &&
       (group->ISdatatype != REC_BYTE_F_ASCII) && 
       (group->ISdatatype != REC_BYTE_F_DOUBLE) &&
       (group->ISdatatype != REC_BYTE_V_ASCII) && 
@@ -10068,18 +10093,25 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 Int64 HSGlobalsClass::getMaxMemory()
 {
     // the NAHeap will never exceed around 1.3GB.
-    const Int64 NAHEAP_ESTIMATED_MAX = (const Int64)(1.3 * 1024 * 1024 * 1024);
     Int64       mem;
     HSLogMan   *LM = HSLogMan::Instance();
+
+    mem = Int64(sysconf(_SC_AVPHYS_PAGES)) * Int64(sysconf(_SC_PAGE_SIZE));
 
     if (LM->LogNeeded())
       {
         LM->Log("Entering getMaxMemory()");
-        sprintf(LM->msg, "Will use up to %.7f percent of available physical memory",
+        sprintf(LM->msg, "The amount of physical memory currently available is %ld", mem);
+        LM->Log(LM->msg);
+
+        sprintf(LM->msg, "Will use up to %.7f percent of the min of the available physical memory, and CQD USTAT_NAHEAP_ESTIMATED_MAX",
                          ISMemPercentage_ * 100);
         LM->Log(LM->msg);
       }
-  mem = Int64(sysconf(_SC_AVPHYS_PAGES)) * Int64(sysconf(_SC_PAGE_SIZE));
+
+  Int64 NAHEAP_ESTIMATED_MAX = (Int64)
+                (CmpCommon::getDefaultNumeric(USTAT_NAHEAP_ESTIMATED_MAX) *
+                1024 * 1024 * 1024);
 
   // Limit the amount of assumed available memory by the estimated max heap size.
   if (mem > NAHEAP_ESTIMATED_MAX)
@@ -10274,6 +10306,44 @@ NABoolean isInternalSortEfficient(HSColGroupStruct *group)
   return returnVal;
 }
 
+NABoolean HSGlobalsClass::allGroupsFitInMemory()
+{
+  Int64 memLeft = getMaxMemory();
+
+  // account for at least one multi-column memory if MC IS is used
+   HSColGroupStruct *mgroup = multiGroup;
+   while (mgroup && memLeft > 0)
+   {
+      memLeft -= mgroup->memNeeded;
+      mgroup = mgroup->next;
+   }
+  
+  Int32 count = 0;
+  HSColGroupStruct *group = singleGroup;
+  while (group && memLeft > 0)
+    {
+      if (group->memNeeded > 0 &&        // was set to 0 if exceeds address space
+          group->memNeeded < memLeft &&
+          isInternalSortType(group->colSet[0]) &&
+          isInternalSortEfficient(group))  
+        {
+          count++;
+          memLeft -= group->memNeeded;
+        }
+      group = group->next;
+    }
+
+  HSLogMan *LM = HSLogMan::Instance();
+  if (LM->LogNeeded())
+    {
+      sprintf(LM->msg, 
+         "HSGlobalsClass::allGroupsFitInMemory(): count of single groups that fit =%d, total single count=%d", count, singleGroupCount);
+      LM->Log(LM->msg);
+    }
+
+  return count == singleGroupCount;
+}
+
 // Determines a set of columns to process with internal sort, based on
 // available memory. selectSortBatch() is called in a loop, which will
 // typically be executed only once. However, when the call to
@@ -10352,7 +10422,7 @@ Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
   Int64 mcMemUsed = 0;
 
   // account for at least one multi-column memory if MC IS is used
-  if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+  if ( performISForMC() )
   {
      HSColGroupStruct *mgroup = multiGroup;
      while (mgroup)
@@ -10429,8 +10499,7 @@ Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
           group = group->next;
       }
 
-      if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON) &&
-          (mcMemUsed > 0))
+      if (performISForMC() && (mcMemUsed > 0))
       {
          sprintf(LM->msg, "    multi-column groups (" PFSZ " bytes)", multiGroup->memNeeded);
          LM->Log(LM->msg);
@@ -10492,7 +10561,7 @@ void HSGlobalsClass::memRecover(HSColGroupStruct* failedGroup,
 
           // if MC in memory is enabled, we should also mark all MCs using this
           // column as DONT_TRY since we won't be able to compute them in memory
-          if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+          if (performISForMC())
           {
               HSColGroupStruct* mgroup = mgr;
 
@@ -10722,7 +10791,7 @@ Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
   if (retcode < 0) HSHandleError(retcode) else retcode=0; // Set to 0 for warnings.
 
   // some post-reading to memory processing to support MC in-memory computation
-  if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
+  if ( performISForMC() )
   {
       HSColGroupStruct* group = singleGroup;
      do
@@ -11375,8 +11444,7 @@ Lng32 HSGlobalsClass::createStatsForColumn(HSColGroupStruct *group, Int64 rowsAl
     // of memory for possibly long times, so we free it as soon as possible.
     // If MC IS is ON and there are MCs using this column, then keep this
     // column in memory until all MCs using it are properly computed
-    if ((CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_OFF) ||
-         group->mcs_usingme == 0)
+    if ( !HSGlobalsClass::performISForMC() || group->mcs_usingme == 0)
     {
        group->freeISMemory(TRUE,(group->mcs_usingme==0));
     }

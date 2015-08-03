@@ -1,19 +1,22 @@
 /*************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -36,6 +39,8 @@ char *_i64toa( long long value, char *string, int radix );
 #include <string>
 #include <cstring>
 #include "tip.h"
+#include "sqlcli.h"
+#include "idltype.h"
 
 // +++ T2_REPO
 #include <PubQueryStats.h>
@@ -53,6 +58,13 @@ char *_i64toa( long long value, char *string, int radix );
 #define MAX_DESC_NAME_LEN       512
 #define MAX_MODULE_NAME_LEN     368 //(128+128+128+2)
 
+/* **Rowsets **/
+#define MAX_SQLDESC_NAME_LEN    512
+#define MAX_ERROR_MSG_LEN       1024
+#define MAX_INTERNAL_STMT_LEN   512
+#define MAX_PARAMETER_NAME_LEN      512
+#define MAX_ANSI_NAME_LEN           512
+#define MAX_FETCH_BUFFER_SIZE   0x80000
 
 // +++ T2_REPO
 #define MAX_USERNAME_LEN            128
@@ -332,6 +344,14 @@ typedef enum SRVR_STATE
     SRVR_STOP_WHEN_DISCONNECTED
 } SRVR_STATE;
 
+struct VERSION_t {
+    IDL_short componentId;
+    IDL_short majorVersion;
+    IDL_short minorVersion;
+    char pad_to_offset_8_[2];
+    IDL_unsigned_long buildId;
+};
+typedef VERSION_t VERSION_def;
 
 typedef struct _SRVR_GLOBAL_Def
 {
@@ -390,6 +410,16 @@ typedef struct _SRVR_GLOBAL_Def
     char    QSRoleName[MAX_ROLE_LEN + 1];
     char    ClientComputerName[MAX_COMPUTER_NAME_LEN + 1];
     char    ApplicationName[MAX_APPLICATION_NAME_LEN + 1];
+    
+    // Used by rowsets logic - need to be initialized
+    long                m_FetchBufferSize;
+    bool                fetchAhead;
+    VERSION_def         srvrVersion;
+    VERSION_def         sqlVersion;
+    VERSION_def         drvrVersion;
+    VERSION_def         appVersion;
+    Int64               maxRowsFetched; // Not sure will this be useful in the future, just keep it.
+    bool                enableLongVarchar;
 //
 } SRVR_GLOBAL_Def ;
 

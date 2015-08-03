@@ -135,3 +135,28 @@ find-absolute-dlls:
 
 check-copyrights:
 	python ./updateCopyrightCheck.py
+
+eclipse: rest/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
+	@echo
+	@echo
+	@echo "  Now you can import 5 projects in Eclipse:"
+	@echo "      $^"
+	@echo
+	@echo "  File->Import->General->Existing Projects into Workspace"
+	@echo "  Select root directory $(@D)"
+	@echo "  Search for nested projects"
+	@echo "  Select all or only those you want"
+	@echo
+
+rest/.project:
+	cd rest && $(MAVEN) eclipse:eclipse
+
+sql/.project:
+	cd sql  && $(MAVEN) eclipse:eclipse
+
+sqf/src/seatrans/hbase-trx/.project:
+	cd sqf/src/seatrans/hbase-trx && $(MAVEN) eclipse:eclipse
+
+.project:
+	cp sqf/export/limited-support-tools/eclipse.project .project
+	cp sqf/export/limited-support-tools/eclipse.cproject .cproject

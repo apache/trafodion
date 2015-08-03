@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1547,6 +1550,9 @@ public:
     void startJitLogging(const char* checkPointName, Int64 elapsedSeconds);
 
     
+    static void setPerformISForMC(NABoolean x) { performISForMC_ = x; }
+    static NABoolean performISForMC() { return performISForMC_; }
+
                                               /*==============================*/
                                               /*     OBJECT INFORMATION       */
                                               /*==============================*/
@@ -1662,7 +1668,7 @@ private:
     //
     // When performing internal sort, determines the amount of memory required
     // for each column that will be read into memory.
-    Int64 getInternalSortMemoryRequirements();
+    Int64 getInternalSortMemoryRequirements(NABoolean performISForMC);
 
     // Get maximum amount of memory to use for internal sort.
     Int64 getMaxMemory();
@@ -1694,6 +1700,10 @@ private:
     // IUS in this batch.
     Lng32 selectIUSBatch(Int64 currentRows, Int64 futureRows,NABoolean& ranOut, Int32& colsSelected);
 
+    // Determine if all groups (both single and MC) can fit in memory for internal sort.
+    // No space is actually allocated and no state is set for each group.
+    NABoolean allGroupsFitInMemory();
+
     // Determine the next batch of columns to be processed with internal sort
     // by calling selectSortBatch() and ensuring that adequate memory can be
     // allocated for those columns.
@@ -1704,7 +1714,8 @@ private:
     // When a memory allocation fails, return any memory already allocated for
     // the group for internal sort, and set any PENDING columns back to
     // UNPROCESSED state.  This function cannot fail.
-    static void memRecover(HSColGroupStruct* group, NABoolean firstFailed, Int64 rows, HSColGroupStruct* mgroup);
+    static void memRecover(HSColGroupStruct* group, NABoolean firstFailed, Int64 rows, 
+                           HSColGroupStruct* mgroup);
 
     // Allocate memory for the columns selected for an internal sort batch.
     //Int32 allocateMemoryForColumns(Int64 rows);
@@ -1888,6 +1899,8 @@ private:
     double jitLogThreshold;
     Int64 stmtStartTime;
     NABoolean jitLogOn;
+
+    static THREAD_P NABoolean performISForMC_;
 
   };  // class HSGlobalsClass
 

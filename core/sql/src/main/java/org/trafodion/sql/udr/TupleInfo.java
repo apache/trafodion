@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -20,7 +23,13 @@ package org.trafodion.sql.udr;
 import java.util.Vector;
 import java.util.Iterator;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.CharacterCodingException;
 import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -54,7 +63,7 @@ public class TupleInfo extends TMUDRSerializableObject {
         int result = 0;
         Iterator<ColumnInfo> it = columns_.iterator();
         while (it.hasNext()) {
-            if (it.next().getColName() == colName)
+            if (colName.equals(it.next().getColName()))
                 return result;
             result++;
         }
@@ -134,7 +143,7 @@ public class TupleInfo extends TMUDRSerializableObject {
         if (result < Integer.MIN_VALUE || result > Integer.MAX_VALUE)
             throw new UDRException(
                                    38900, 
-                                   "Under or overflow in getInt(), %ld does not fit in an int",
+                                   "Under or overflow in getInt(), %d does not fit in an int",
                                    result);
         
         return (int) result;
@@ -183,7 +192,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                                    38900,
                                    "Offset for column not set, getLong() or related method not available");
         
-        if (t.isAvailable() &&
+        if (t.getIsNullable() &&
             row_.getShort(t.getIndOffset()) != 0)
             {
                 wasNull_ = true;
@@ -246,12 +255,13 @@ public class TupleInfo extends TMUDRSerializableObject {
                 boolean isNegative = false;
                 boolean overflow = false;
                 int dataLen = t.getByteLength();
-                int data = t.getDataOffset();
                 byte byteStr[] = new byte[dataLen];
                 row_.position(t.getDataOffset());
                 row_.get(byteStr);
-                String buf = isoCharset.decode(ByteBuffer.wrap(byteStr)).toString();
-                    
+                String buf = decode(t, byteStr);
+
+                buf = buf.trim();
+
                 if (t.getScale() == 0)
                 {
                     try { result = Long.parseLong(buf);
@@ -318,7 +328,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                 if (dresult < Long.MIN_VALUE || dresult > Long.MAX_VALUE)
                     throw new UDRException(
                                            38900, 
-                                           "Under or overflow in getInt() or getLong(), float value %g does not fit in a long",
+                                           "Overflow in getInt() or getLong(), float value %g does not fit in a long",
                                            dresult);
                 result = (long) dresult;
             }
@@ -400,6 +410,10 @@ public class TupleInfo extends TMUDRSerializableObject {
         case DECIMAL_UNSIGNED:
         case INTERVAL:
             result = (double)getLong(colNum);
+            // for numbers with a scale, ensure that the decimal
+            // point is at the right place for floating point results
+            for (int s=0; s<t.getScale(); s++)
+                result /= 10;
             break;
             
         default:
@@ -442,70 +456,26 @@ public class TupleInfo extends TMUDRSerializableObject {
     public String getString(int colNum) throws UDRException {
         TypeInfo t = getType(colNum);
         TypeInfo.SQLTypeCode sqlType = t.getSQLType();
-        
+
         switch (sqlType)
         {
         case DECIMAL_LSE:
         case DECIMAL_UNSIGNED:
+        case CHAR:
+        case VARCHAR:
         case DATE:
         case TIME:
         case TIMESTAMP:
-        case BLOB:  
-        {
-            // these types are stored as strings
-            byte[] buf;
-            buf = getRaw(colNum);
-            if (buf != null) {
-                String result;
-                try {result = new String(buf, "ISO-8859-1"); }
-                catch (Exception e1) {
-                    throw new UDRException(
-                                           38900,
-                                           "Could not convert binary data of type %d to string", 
-                                           sqlType.ordinal()); }
-                return result;
-            }
-            else
-                return "";
-        }
-         
-        case CHAR:
-        case VARCHAR:
+        case BLOB:
         case CLOB:
         {
-            byte[] buf;
-            buf = getRaw(colNum);
-            if (buf != null) {
-                String result;
-                try {
-                    switch (t.getCharset())
-                    {
-                    case CHARSET_ISO88591:
-                        result = new String(buf, "ISO-8859-1"); 
-                        break ;
-                    case CHARSET_UTF8:
-                        result = new String(buf, "UTF8"); 
-                        break ; 
-                    case CHARSET_UCS2:
-                        result = new String(buf, "UTF16"); 
-                        break ; 
-                    default:
-                         throw new UDRException(
-                                           38900,
-                                           "Could not convert binary data of type %d with charset %d to string", 
-                                           sqlType.ordinal(), t.getCharset().ordinal());
-                    }
-                }
-                catch (Exception e1) {
-                    throw new UDRException(
-                                           38900,
-                                           "Could not convert binary data of type %d with charset %d to string", 
-                                           sqlType.ordinal(), t.getCharset().ordinal()); }
-                    return result;
-            }
+            byte[] buf = getRaw(colNum);
+
+            if (buf != null)
+                return decode(t, buf);
             else
                 return "";
-            
+
         }
         case SMALLINT:
         case INT:
@@ -534,8 +504,10 @@ public class TupleInfo extends TMUDRSerializableObject {
                 numSignificantDigits = 7;
             if (wasNull_)
                 return "";
-            
-            return String.format("%*lf", numSignificantDigits, num);
+
+            // create a format "%<numSignificantDigits>f"
+            String fmt = String.format("%%%df", numSignificantDigits);
+            return String.format(fmt, num);
         }
 
         case INTERVAL:
@@ -548,7 +520,8 @@ public class TupleInfo extends TMUDRSerializableObject {
             int scale          = typ.getScale();
             String sign   = "";
             String dot    = (scale == 0 ? "" : ".");
-            
+            String fmt;
+
             if (wasNull_)
                 return "";
             
@@ -572,59 +545,64 @@ public class TupleInfo extends TMUDRSerializableObject {
             case INTERVAL_DAY:
             case INTERVAL_HOUR:
             case INTERVAL_MINUTE:
-                // Example: "59"
-                return String.format("%s%*ld", sign, precision, longVal);
+                // Example: "59", create a format "%s%<precision>d"
+                fmt = String.format("%%s%%%dd", precision);
+                return String.format(fmt, sign, longVal);
 
             case INTERVAL_SECOND:
-                // Example: "99999.000001"
-                return String.format("%s%*ld%s%0*ld", sign, precision, longVal,
-                                     dot, scale, fractionalVal);
+                // Example: "99999.000001", create a format "%s%<precision>d%s%0<scale>d"
+                fmt = String.format("%%s%%%dd%%s%%0%dd", precision, scale);
+                return String.format(fmt, sign, longVal, dot, fractionalVal);
 
             case INTERVAL_YEAR_MONTH:
-                // Example: "100-01"
-                return String.format("%s%*ld-%02d", sign, precision, (long) (longVal/12),
-                                     (int)  (longVal%12));
+                // Example: "100-01", create a format "%s%<precision>d-%02d"
+                fmt = String.format("%%s%%%dd-%%02d", precision);
+                return String.format(fmt, sign, longVal/12, longVal%12);
 
             case INTERVAL_DAY_HOUR:
-                // Example: "365 06"
-                return String.format("%s%*ld %02d", sign, precision, (long) (longVal/24),
-                                     (int)  (longVal%24));
+                // Example: "365 06", create a format "%s%<precision>d %02d"
+                fmt = String.format("%%s%%%dd %%02d", precision);
+                return String.format(fmt, sign, longVal/24, longVal%24);
                 
             case INTERVAL_DAY_MINUTE:
-                // Example: "365:05:49"
-                return String.format("%s%*ld %02d:%02d", sign, precision, 
-                                     (long) (longVal/1440),
-                                     (int)  (longVal%1440/60),
-                                     (int)  (longVal%60));
+                // Example: "365:05:49", create a format "%s%<precision>d %02d:%02d"
+                fmt = String.format("%%s%%%dd %%02d:%%02d", precision);
+                return String.format(fmt, sign, 
+                                     longVal/1440,
+                                     longVal%1440/60,
+                                     longVal%60);
 
             case INTERVAL_DAY_SECOND:
-                // Example: "365:05:49:12.00"
-                return String.format("%s%*ld %02d:%02d:%02d%s%0*ld", sign, precision,
-                                     (long) (longVal/86400),
-                                     (int)  (longVal%86400/3600),
-                                     (int)  (longVal%3600/60),
-                                     (int)  (longVal%60),
-                                     dot, scale, fractionalVal);
+                // Example: "365:05:49:12.00", create a format "%s%<precision>d %02d:%02d:%02d%s%0<scale>d"
+                fmt = String.format("%%s%%%dd %%02d:%%02d:%%02d%%s%%0%dd", precision, scale);
+                return String.format(fmt, sign,
+                                     longVal/86400,
+                                     longVal%86400/3600,
+                                     longVal%3600/60,
+                                     longVal%60,
+                                     dot, fractionalVal);
 
             case INTERVAL_HOUR_MINUTE:
-                // Example: "12:00"
-                return String.format("%s%*ld:%02d", sign, precision, (long) (longVal/60),
-                                     (int)  (longVal%60));
+                // Example: "12:00", create a format "%s%<precision>d:%02d"
+                fmt = String.format("%%s%%%dd:%%02d", precision);
+                return String.format(fmt, sign, longVal/60, longVal%60);
 
             case INTERVAL_HOUR_SECOND:
-                // Example: "100:00:00"
-                return String.format("%s%*ld:%02d:%02d%s%0*ld", sign, precision,
-                                     (long) (longVal/3600),
-                                     (int)  (longVal%3600/60),
-                                     (int)  (longVal%60),
-                                     dot, scale, fractionalVal);
+                // Example: "100:00:00", create a format "%s%<precision>d:%02d:%02d%s%0<scale>d"
+                fmt = String.format("%%s%%%dd:%%02d:%%02d%%s%%0%dd", precision, scale);
+                return String.format(fmt, sign,
+                                     longVal/3600,
+                                     longVal%3600/60,
+                                     longVal%60,
+                                     dot, fractionalVal);
 
             case INTERVAL_MINUTE_SECOND:
-                // Example: "3600:00.000000"
-                return String.format("%s%*ld:%02d%s%0*ld", sign, precision,
-                                     (long) (longVal/60),
-                                     (int)  (longVal%60),
-                                     dot, scale, fractionalVal);
+                // Example: "3600:00.000000", create a format "%s%<precision>d:%02d%s%0<scale>d"
+                fmt = String.format("%%s%%%dd:%%02d%%s%%0%dd", precision, scale);
+                return String.format(fmt, sign,
+                                     longVal/60,
+                                     longVal%60,
+                                     dot, fractionalVal);
             default:
                 throw new UDRException(
                                    38900,
@@ -690,7 +668,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                                    38900,
                                    "Offset for column not set, getRaw() method not available");
         
-        if (t.isAvailable() &&
+        if (t.getIsNullable() &&
             row_.getShort(t.getIndOffset()) != 0)
             {
                 wasNull_ = true;
@@ -875,7 +853,7 @@ public class TupleInfo extends TMUDRSerializableObject {
             if ( resultDate == null ) {
                 throw new UDRException(
                                        38900,
-                                       "Unable to parse datetime string %s for conversion to Date",
+                                       "Unable to parse datetime string %s for conversion to Java Date",
                                        val);
                 }
         }
@@ -1120,14 +1098,10 @@ public class TupleInfo extends TMUDRSerializableObject {
         case DECIMAL_LSE:
         case DECIMAL_UNSIGNED:
         {
-            boolean overflow = false;
-            boolean isNegative = false;
             int remainingLength = t.getByteLength();
             int neededLengthWithoutSign = t.getPrecision() + (t.getScale() > 0 ? 1 : 0);
-            byte buf[] = new byte[19];
-            int remainingBufLength = buf.length;
-            int bufIndex = 0;
-            
+            StringBuilder buf = new StringBuilder(20);
+
             final long maxvals[] = {9L,
                                     99L,
                                     999L,
@@ -1146,20 +1120,20 @@ public class TupleInfo extends TMUDRSerializableObject {
                                     9999999999999999L,
                                     99999999999999999L,
                                     999999999999999999L};
-            
+
             if (t.getPrecision() < 1 || t.getPrecision() > 18 ||
                 t.getScale() < 0 || t.getScale() > t.getPrecision())
                 throw new UDRException(
                                        38900, "Invalid precision (%d) or scale (%d) for a decimal data type",
                                        t.getPrecision(), t.getScale());
-            
+
             // right now precision is limited to 18, but may need to use this code for BigNum
             // so we add a check for this future case
-            if (t.getByteLength() > remainingBufLength)
+            if (t.getPrecision() > maxvals.length)
                 throw new UDRException(
                                        38900, "Decimal precision %d is not supported by setLong(), limit is %d",
-                                       t.getPrecision(), remainingBufLength);
-            
+                                       t.getPrecision(), maxvals.length);
+
             if (val < 0)
             {
                 if (tempSQLType == TypeInfo.SQLTypeCode.DECIMAL_UNSIGNED)
@@ -1167,20 +1141,15 @@ public class TupleInfo extends TMUDRSerializableObject {
                                            38900,
                                            "Trying to assign a negative value to a DECIMAL UNSIGNED type");
                 val = -val;
-                isNegative = true;
-                buf[bufIndex] = 0x2D; // ascii for '-'
-                bufIndex++;
+                buf.append('-');
                 remainingLength--;
-                remainingBufLength--;
             }
 
             // add enough blanks to print the number right-adjusted
             while (neededLengthWithoutSign < remainingLength)
             {
-                buf[bufIndex] = 0x20 ; // ascii for ' '
-                bufIndex++;
+                buf.append(' ');
                 remainingLength--;
-                remainingBufLength--;
             }
 
             // sanity check, t.getByteLength() should have enough space for sign,
@@ -1195,17 +1164,21 @@ public class TupleInfo extends TMUDRSerializableObject {
             if (val > maxvals[t.getPrecision()-1])
                 throw new UDRException(
                                        38900,
-                                       "Overflow occurred while converting value %ld to a DECIMAL(%d, %d)",
+                                       "Overflow occurred while converting value %d to a DECIMAL(%d, %d)",
                                        val, t.getPrecision(), t.getScale());
             String s;
             if (t.getScale() == 0)
             {
-                s = String.format("%0*ld", t.getPrecision(), val);
+                // create a "%0<precision>d" format
+                String format = String.format("%%0%dd", t.getPrecision());
+                s = String.format(format, val);
             }
             else
             {
                 long fractionalValue = 0;
                 long multiplier = 1;
+                // create a "%0<magnitude>d.%0<scale>d" format
+                String fmt = String.format("%%0%dd.%%0%dd", t.getPrecision()-t.getScale(), t.getScale());
                 
                 for (int i=0; i<t.getScale(); i++)
                 {
@@ -1213,16 +1186,13 @@ public class TupleInfo extends TMUDRSerializableObject {
                     val /= 10;
                     multiplier *= 10;
                 }
-                s = String.format("%0*ld.%0*ld",
-                                  t.getPrecision()-t.getScale(),
-                                  val,
-                                  t.getScale(),
-                                  fractionalValue);
+                s = String.format(fmt, val, fractionalValue);
             }
-            
-            ByteBuffer bb = isoCharset.encode(s.substring(0,remainingBufLength));
+
+            buf.append(s);
+            ByteBuffer bb = ByteBuffer.wrap(buf.toString().getBytes(encAndDec_.get().isoCharset_));
             row_.position(t.getDataOffset());
-            row_.put(buf,0,bufIndex).put(bb);
+            row_.put(bb);
         }
         break;
 
@@ -1262,10 +1232,11 @@ public class TupleInfo extends TMUDRSerializableObject {
         switch (sqlType)
             {
             case REAL:
-                if (val > Float.MAX_VALUE || val < Float.MIN_VALUE)
+                // we are not testing for underflow at this point
+                if (val > Float.MAX_VALUE || val < -Float.MAX_VALUE)
                 throw new UDRException(
                                        38900,
-                                       "Overflow/Underflow when assigining to REAL type");
+                                       "Overflow when assigining to REAL type");
                 row_.putFloat(t.getDataOffset(), (float) val);
                 break;
                 
@@ -1309,100 +1280,27 @@ public class TupleInfo extends TMUDRSerializableObject {
         }
 
         TypeInfo.SQLTypeCode sqlType = t.getSQLType();
-        boolean isApproxNumeric = false;
-        int stringLen = val.length();
         ByteBuffer bb;
-        
-        // a string overflow will raise an exception
-        if (stringLen > t.getByteLength())
-            throw new UDRException(38900,
-                                   "setString() with a string of length %d on a column with length %d",
-                                   stringLen,
-                                   t.getByteLength());
-        
+
         switch (sqlType)
         {
         case DATE:
         case TIME:
         case TIMESTAMP:
-        case BLOB:
-            if ((stringLen != t.getByteLength()) && (sqlType != TypeInfo.SQLTypeCode.BLOB))
+            val = val.trim();
+            if ((val.length() != t.getByteLength()))
                 throw new UDRException(38900,
-                                       "setString() with a string of length %d on a column with length %d",
-                                       stringLen,
+                                       "setString() with a string of length %d on a datetime column with length %d",
+                                       val.length(),
                                        t.getByteLength());
-            bb = isoCharset.encode(val);
-            row_.position(t.getDataOffset());
-            row_.put(bb);
-            if (sqlType == TypeInfo.SQLTypeCode.BLOB)
-            {
-                // set the varchar length indicator
-                if (t.getVcLenIndOffset() < 0)
-                    throw new UDRException(38900,
-                                           "Internal error, BLOB without length indicator");
-                
-                if ((t.getFlags() & TypeInfo.TYPE_FLAG_4_BYTE_VC_LEN) == 1)
-                    row_.putInt(t.getVcLenIndOffset(),stringLen);
-                else
-                    row_.putShort(t.getVcLenIndOffset(),(short)stringLen);
-            }
-            break ;
+            // fall through to next case
+
         case CHAR:
         case VARCHAR:
+        case BLOB:
         case CLOB:
-            // for these types, copy the string and pad with blanks
-            // of the appropriate charset for fixed-length strings
-            row_.position(t.getDataOffset());
-
-            if (sqlType == TypeInfo.SQLTypeCode.VARCHAR ||
-                sqlType == TypeInfo.SQLTypeCode.CLOB)
-            {
-                // set the varchar length indicator
-                if (t.getVcLenIndOffset() < 0)
-                    throw new UDRException(38900,
-                                           "Internal error, VARCHAR/CLOB without length indicator");
-                
-                if ((t.getFlags() & TypeInfo.TYPE_FLAG_4_BYTE_VC_LEN) == 1)
-                    row_.putInt(t.getVcLenIndOffset(),stringLen);
-                else
-                    row_.putShort(t.getVcLenIndOffset(),(short) stringLen);
-            }
-            row_.position(t.getDataOffset());
-                // fill fixed character value with blanks of the appropriate
-                // character set
-                switch (t.getCharset())
-                {
-                case CHARSET_ISO88591:
-                    bb = isoCharset.encode(val);
-                    row_.put(bb);
-                    for (int i = 0; (sqlType == TypeInfo.SQLTypeCode.CHAR && (i < t.getByteLength() - stringLen)); i++)
-                        row_.put(t.getDataOffset()+stringLen+i, (byte)0x20); // space
-                    break;
-                case CHARSET_UTF8:
-                    bb = utf8Charset.encode(val);
-                    row_.put(bb);
-                    stringLen = bb.capacity();
-                    for (int i = 0; (sqlType == TypeInfo.SQLTypeCode.CHAR && (i < t.getByteLength() - stringLen)); i++)
-                        row_.put(t.getDataOffset()+stringLen+i, (byte)0x20); // space
-                    break;
-                case CHARSET_UCS2:
-                    row_.asCharBuffer().put(val);
-                    int paddedLen = stringLen*2;
-                    
-                    // pad with little-endian UCS-2 blanks
-                    while (sqlType == TypeInfo.SQLTypeCode.CHAR && paddedLen+1 < t.getByteLength())
-                    {
-                        row_.putChar(' ');
-                        paddedLen += 2;
-                    }
-                    break;
-                default:
-                    throw new UDRException(
-                                           38900,
-                                           "Unsupported character set in TupleInfo::setString(): %d",
-                                           t.getCharset().ordinal());
-                }
-
+            bb = encode(t, val);
+            t.putEncodedStringIntoByteBuffer(row_, bb);
             break;
 
         case REAL:
@@ -1441,7 +1339,7 @@ public class TupleInfo extends TMUDRSerializableObject {
         case INTERVAL:
         {
             String trimmedval = val.trim(); // remove leading and trailing blanks
-            long years, months, days, hours, minutes, seconds, singleField;
+            long years, months, days, hours, minutes, seconds;
             long result = 0;
             long fractionalVal = 0;
             boolean isNegative = false;
@@ -1549,7 +1447,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                 throw new UDRException(
                                        38900,
                                        "Error in setString(), \"%s\" is not an interval value for interval code %d",
-                                       trimmedval, t.getIntervalCode().SQLIntervalCode());
+                                       trimmedval, t.getIntervalCode().getSQLIntervalCode());
             }
             // if the fractional seconds are not 0, complain if fraction
             // precision is 0.
@@ -1573,7 +1471,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                 if (fractionOverflowTest != 0)
                     throw new UDRException(
                                            38900,
-                                           "Fractional value %ld exceeds allowed range for interval fraction precision %d",
+                                           "Fractional value %d exceeds allowed range for interval fraction precision %d",
                                            fractionalVal, t.getScale());
                 
                 // add whole and fractional seconds (could overflow in extreme cases)
@@ -2200,7 +2098,7 @@ public class TupleInfo extends TMUDRSerializableObject {
      *  @see UDR#debugLoop()
      *  @see UDRInvocationInfo.DebugFlags#PRINT_INVOCATION_INFO_AT_RUN_TIME
      */
-    public void print() {
+    public void print() throws UDRException {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("    Number of columns        : %d\n", getNumColumns()));
         sb.append(String.format("    Columns                  : \n"));
@@ -2226,6 +2124,7 @@ public class TupleInfo extends TMUDRSerializableObject {
     
     public static short getCurrentVersion() { return 1; }
 
+    @Override
     public int serializedLength() throws UDRException {
       int result = super.serializedLength() +
         2 * serializedLengthOfInt();
@@ -2236,6 +2135,7 @@ public class TupleInfo extends TMUDRSerializableObject {
       return result;
     }
 
+    @Override
     public int serialize(ByteBuffer outputBuffer) throws UDRException{
       int origPos = outputBuffer.position();
 
@@ -2258,6 +2158,7 @@ public class TupleInfo extends TMUDRSerializableObject {
       return bytesSerialized;
     }
 
+    @Override
     public int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
@@ -2296,19 +2197,187 @@ public class TupleInfo extends TMUDRSerializableObject {
         return recordLength_;
     }
 
-
-    protected void setRecordLength(int len) {
-        recordLength_ = len;
-    }
-    protected void setRow(byte[] rowByteArr) {
+    public void setRow(byte[] rowByteArr) throws UDRException {
         row_ = ByteBuffer.wrap(rowByteArr);
+        row_.order(ByteOrder.LITTLE_ENDIAN);
+
+        // make sure the row matches the record length
+        // recorded already
+        if (recordLength_ != rowByteArr.length)
+            throw new UDRException(38900,
+                                   "Mismatched input parameter data length, expected %d, got %d",
+                                   recordLength_,
+                                   rowByteArr.length);
+    }
+
+    public ByteBuffer encode(TypeInfo t, String val) throws UDRException
+    {
+        CharsetEncoder encoder;
+        ByteBuffer result;
+        EncAndDec x = encAndDec_.get();
+
+        switch (t.getSQLType())
+        {
+        case DECIMAL_LSE:
+        case DECIMAL_UNSIGNED:
+        case DATE:
+        case TIME:
+        case TIMESTAMP:
+        case BLOB:
+            encoder = x.isoEncoder_;
+            break;
+
+        case CHAR:
+        case VARCHAR:
+        case CLOB:
+            switch (t.getCharset())
+            {
+            case CHARSET_ISO88591:
+                encoder = x.isoEncoder_;
+                break;
+            case CHARSET_UTF8:
+                encoder = x.utf8Encoder_;
+                break;
+            case CHARSET_UCS2:
+                encoder = x.ucs2Encoder_;
+                break;
+            default:
+                throw new UDRException(
+                                       38900,
+                                       "Invalid character set %d for encoding", 
+                                       t.getCharset().ordinal());
+            }
+            break;
+        default:
+            throw new UDRException(38900,
+                                   "Invalid data type for TupleInfo.encode()");
+        }
+
+        try {
+            result = encoder.encode(CharBuffer.wrap(val));
+        }
+        catch (CharacterCodingException cce) {
+            throw new UDRException(38900,
+                                   "Error encoding value of type %d into charset %d: %s",
+                                   t.getSQLType().ordinal(),
+                                   t.getCharset().ordinal(),
+                                   cce.getMessage());
+        }
+
+        return result;
+    }
+
+    public String decode(TypeInfo t, byte[] buf) throws UDRException
+    {
+        CharsetDecoder decoder;
+        String result;
+        EncAndDec x = encAndDec_.get();
+
+        switch (t.getSQLType())
+        {
+        case DECIMAL_LSE:
+        case DECIMAL_UNSIGNED:
+        case DATE:
+        case TIME:
+        case TIMESTAMP:
+        case BLOB:
+            decoder = x.isoDecoder_;
+            break;
+
+        case CHAR:
+        case VARCHAR:
+        case CLOB:
+            switch (t.getCharset())
+            {
+            case CHARSET_ISO88591:
+                decoder = x.isoDecoder_;
+                break;
+            case CHARSET_UTF8:
+                decoder = x.utf8Decoder_;
+                break;
+            case CHARSET_UCS2:
+                decoder = x.ucs2Decoder_;
+                break;
+            default:
+                throw new UDRException(
+                                       38900,
+                                       "Invalid character set %d for decoding", 
+                                       t.getCharset().ordinal());
+            }
+            break;
+
+        default:
+            throw new UDRException(38900,
+                                   "Invalid data type for TupleInfo.getDecoder()");
+        }
+
+        try {
+            result = decoder.decode(ByteBuffer.wrap(buf)).toString();
+        }
+        catch (CharacterCodingException cce) {
+            throw new UDRException(
+                                   38900,
+                                   "Could not convert binary data of type %d with charset %d to string: %s", 
+                                   t.getSQLType().ordinal(),
+                                   t.getCharset().ordinal(),
+                                   cce.getMessage());
+        }
+        return result;
     }
 
     private Vector<ColumnInfo>  columns_;
     private int recordLength_;
     private ByteBuffer row_;
     private boolean wasNull_;
-    private static final Charset isoCharset = Charset.forName("ISO-8859-1");
-    private static final Charset utf8Charset = Charset.forName("UTF-8");
-    
+
+    // create encoders and decoders that throw an exception on errors
+    // (the default encoders and decoders may or may not do that),
+    // this is similar to class LmCharsetCoder
+    static class EncAndDec
+    {
+
+        EncAndDec()
+        {
+            isoCharset_  = Charset.forName("ISO-8859-1");
+            utf8Charset_ = Charset.forName("UTF-8");
+            ucs2Charset_ = Charset.forName("UTF-16LE");
+            isoEncoder_  = isoCharset_.newEncoder().
+                onMalformedInput(CodingErrorAction.REPORT).
+                onUnmappableCharacter(CodingErrorAction.REPORT);
+            isoDecoder_  = isoCharset_.newDecoder().
+                onMalformedInput(CodingErrorAction.REPORT).
+                onUnmappableCharacter(CodingErrorAction.REPORT);
+            utf8Encoder_ = utf8Charset_.newEncoder().
+                onMalformedInput(CodingErrorAction.REPORT).
+                onUnmappableCharacter(CodingErrorAction.REPORT);
+            utf8Decoder_ = utf8Charset_.newDecoder().
+                onMalformedInput(CodingErrorAction.REPORT).
+                onUnmappableCharacter(CodingErrorAction.REPORT);
+            ucs2Encoder_ = ucs2Charset_.newEncoder().
+                onMalformedInput(CodingErrorAction.REPORT).
+                onUnmappableCharacter(CodingErrorAction.REPORT);
+            ucs2Decoder_ = ucs2Charset_.newDecoder().
+                onMalformedInput(CodingErrorAction.REPORT).
+                onUnmappableCharacter(CodingErrorAction.REPORT);
+        }
+
+        private final Charset isoCharset_;
+        private final Charset utf8Charset_;
+        private final Charset ucs2Charset_;
+        private final CharsetEncoder isoEncoder_;
+        private final CharsetDecoder isoDecoder_;
+        private final CharsetEncoder utf8Encoder_;
+        private final CharsetDecoder utf8Decoder_;
+        private final CharsetEncoder ucs2Encoder_;
+        private final CharsetDecoder ucs2Decoder_;
+    };
+
+    // each thread gets its own set of encoders and decoders, since
+    // these are not thread safe
+    private static final ThreadLocal<EncAndDec> encAndDec_ =
+        new ThreadLocal<EncAndDec>() {
+        @Override protected EncAndDec initialValue() {
+            return new EncAndDec();
+        }
+    };
 }

@@ -1,19 +1,22 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **************************************************************************/
@@ -4440,3 +4443,54 @@ void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *
 		}
 	}
 }
+
+SQLRETURN COMMIT_ROWSET(long dialogueId, bool& bSQLMessageSet, odbc_SQLSvc_SQLError* SQLError, Int32 currentRowCount)
+{
+    SQLRETURN retcode;
+    long      sqlcode;
+    SQLValueList_def inValueList;
+    inValueList._buffer = NULL;
+    inValueList._length = 0;
+
+    SRVR_STMT_HDL *CmwSrvrStmt = getInternalSrvrStmt(dialogueId, "STMT_COMMIT_1", &sqlcode);
+    /* Should process the error here if CmwSrvrStmt is NULL */
+    if(!CmwSrvrStmt || sqlcode == SQL_INVALID_HANDLE)
+    {
+        kdsCreateSQLErrorException(SQLError, 1, bSQLMessageSet);
+        kdsCopySQLErrorExceptionAndRowCount(SQLError,
+                "Internal Error: From Commit Rowsets, getInternalSrvrStmt() failed to get the prepared \"STMT_COMMIT_1\" statement",
+                sqlcode,
+                "HY000",
+                currentRowCount+1);
+    }
+
+    // This should be changed to use the rowsets Execute() function once the code is checked in
+    retcode = CmwSrvrStmt->Execute(NULL,1,TYPE_UNKNOWN,&inValueList,SQL_ASYNC_ENABLE_OFF,0, /* */NULL);
+    if (retcode == SQL_ERROR)
+    {
+        ERROR_DESC_def *error_desc_def = CmwSrvrStmt->sqlError.errorList._buffer;
+        if (CmwSrvrStmt->sqlError.errorList._length != 0 )
+        {
+            if(error_desc_def->sqlcode != -8605 )
+            {
+                kdsCreateSQLErrorException(SQLError, 1, bSQLMessageSet);
+                kdsCopySQLErrorExceptionAndRowCount(SQLError, error_desc_def->errorText, error_desc_def->sqlcode, error_desc_def->sqlstate, currentRowCount+1);
+            }
+            else
+                retcode = SQL_SUCCESS;
+        }
+        else
+        {
+            kdsCreateSQLErrorException(SQLError, 1, bSQLMessageSet);
+            kdsCopySQLErrorExceptionAndRowCount(SQLError, "Internal Error: From Commit Rowsets ", retcode, "", currentRowCount+1);
+        }
+    }
+    else if (retcode != SQL_SUCCESS)
+    {
+        kdsCreateSQLErrorException(SQLError, 1, bSQLMessageSet);
+        kdsCopySQLErrorExceptionAndRowCount(SQLError, "Internal Error: From Commit Rowsets ", retcode, "", currentRowCount+1);
+    }
+
+    return retcode;
+}
+
