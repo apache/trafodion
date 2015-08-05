@@ -66,6 +66,9 @@ foundation: dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 
 jdbc_jar: verhdr
 	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	mvn install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
+	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
+	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
 	cd conn/odbc/src/odbc && $(MAKE) ndcs        2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
@@ -78,8 +81,11 @@ trafci: jdbc_jar
 jdbc_type2_jar: ndcs
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
+	mvn install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
+	    -DgroupId=org.trafodion.jdbc.t2.T2Driver -DartifactId=t2driver -Dversion="$$TRAFODION_VER" \
+	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBC_TYPE2)/";exit $${PIPESTATUS[0]}
 
-rest: verhdr
+rest: verhdr jdbc_jar
 	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
 
 odb: ndcs
