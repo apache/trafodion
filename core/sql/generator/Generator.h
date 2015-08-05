@@ -1521,11 +1521,12 @@ public:
   //
   // Return the ExpTupleDesc enum value that corresponds to the row
   // format in the NATable object passed in.
-  ExpTupleDesc::TupleDataFormat getTableDataFormat( const NATable *tbl )
+  ExpTupleDesc::TupleDataFormat getTableDataFormat( const NATable *tbl, const IndexDesc *indexDesc = NULL )
   {
-    ExpTupleDesc::TupleDataFormat tdf = ExpTupleDesc::UNINITIALIZED_FORMAT;
 
-    if ( tbl->isSQLMXAlignedTable() )
+    ExpTupleDesc::TupleDataFormat tdf = ExpTupleDesc::UNINITIALIZED_FORMAT;
+    NABoolean isAlignedFormat = tbl->isAlignedFormat(indexDesc);
+    if (isAlignedFormat)
       tdf = ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
     else 
       tdf = ExpTupleDesc::SQLMX_FORMAT;
