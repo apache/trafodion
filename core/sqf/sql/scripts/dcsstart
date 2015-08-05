@@ -22,21 +22,29 @@
 # @@@ END COPYRIGHT @@@
 #
 
-DCS_START_CMD=${DCS_INSTALL_DIR}/bin/start-dcs.sh
+#Check if Trafodion is up and running
+sqcheck -f
+sq_stat=$?
+if [[ $sq_stat == 0 ]]; then
+   DCS_START_CMD=${DCS_INSTALL_DIR}/bin/start-dcs.sh
 
-if [ -z ${DCS_INSTALL_DIR} ]; then
-   echo "DCS Install dir location not set via the env variable DCS_INSTALL_DIR."
-   exit 1;
+   if [ -z ${DCS_INSTALL_DIR} ]; then
+      echo "DCS Install dir location not set via the env variable DCS_INSTALL_DIR."
+      exit 1;
+   fi
+
+   if [ -e ${DCS_START_CMD} ]; then
+     echo "${DCS_START_CMD} found."
+   else 
+     echo "${DCS_START_CMD} not found."
+     exit 1;
+   fi
+
+   echo "Starting the DCS environment now"
+   cd ${DCS_INSTALL_DIR}
+   ${DCS_START_CMD}
+   cds
+else
+   echo "DCS is not started. Please start Trafodion ..."
+   exit 1
 fi
-
-if [ -e ${DCS_START_CMD} ]; then
-   echo "${DCS_START_CMD} found."
-else 
-   echo "${DCS_START_CMD} not found."
-   exit 1;
-fi
-
-echo "Starting the DCS environment now"
-cd ${DCS_INSTALL_DIR}
-${DCS_START_CMD}
-cds

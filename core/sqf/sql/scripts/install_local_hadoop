@@ -445,11 +445,11 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   # hbase.rest.port
   MY_HBASE_REST_PORT_NUM=8080
   # dcs.master.port (range of port numbers, one per server)
-  MY_DCS_MASTER_PORT=37800
+  MY_DCS_MASTER_PORT=23400
   # dcs.master.info.port
-  MY_DCS_MASTER_INFO_PORT=40010
+  MY_DCS_MASTER_INFO_PORT=24400
   # dcs.server.info.port
-  MY_DCS_SERVER_INFO_PORT=40030
+  MY_DCS_SERVER_INFO_PORT=24410
   # trafodion.rest.port
   MY_REST_SERVER_PORT=4200
   # trafodion.rest.https.port
@@ -1659,7 +1659,7 @@ TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
 if [[ -f $TRAFCI_BIN_DIR/trafci ]]
 then
   mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
-  sed -e "s@localhost:37800@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
+  sed -e "s@localhost:23400@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   echo "Modified trafci port number to $MY_DCS_MASTER_PORT" | tee -a ${MY_LOG_FILE}
 else

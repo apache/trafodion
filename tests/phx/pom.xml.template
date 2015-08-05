@@ -225,7 +225,7 @@
         <configuration>
 
           <systemPropertyVariables>
-            <hpjdbc.properties>jdbcprop</hpjdbc.properties>
+            <trafjdbc.properties>jdbcprop</trafjdbc.properties>
             <user.timezone>UTC</user.timezone>
             <buildDirectory>${project.build.directory}</buildDirectory>
           </systemPropertyVariables>

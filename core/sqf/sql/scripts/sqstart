@@ -547,6 +547,8 @@ lobstart
 reststart
 
 echo
+dcscheck | tee -a $SQMON_LOG
+echo
 echo "You can monitor the SQ shell log file : $SQMON_LOG"
 echo
 

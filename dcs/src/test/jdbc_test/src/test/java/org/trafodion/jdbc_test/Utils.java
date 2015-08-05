@@ -34,7 +34,7 @@ import java.net.*;
 public class Utils
 {
 	public static String url;
-    public static String hpjdbc_version;
+    public static String trafjdbc_version;
     public static String usr;
     public static String pwd;
     public static String catalog;
@@ -46,7 +46,7 @@ public class Utils
     {
     	try
         {
-            String propFile = System.getProperty("hpjdbc.properties");
+            String propFile = System.getProperty("trafjdbc.properties");
             if (propFile != null)
             {
                 FileInputStream fs = new FileInputStream(new File(propFile));
@@ -63,8 +63,8 @@ public class Utils
                 System.out.println("catalog: " + catalog);
                 schema = props.getProperty("schema");
                 System.out.println("schema: " + schema);
-                hpjdbc_version=props.getProperty("hpjdbc_version");
-                System.out.println("hpjdbc_version : " + hpjdbc_version);
+                trafjdbc_version=props.getProperty("trafjdbc_version");
+                System.out.println("trafjdbc_version : " + trafjdbc_version);
             } else {
                 System.out.println("Error: prop is not set. Exiting.");
                 System.exit(0);
@@ -78,7 +78,7 @@ public class Utils
 
         try
         {
-        	Class.forName(hpjdbc_version.trim());
+        	Class.forName(trafjdbc_version.trim());
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
