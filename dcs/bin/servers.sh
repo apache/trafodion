@@ -57,10 +57,10 @@ do
     eval $"${@// /\\ } $instance $count" 2>&1 | sed "s/^/$server: /" &
   else
     if ${DCS_SLAVE_PARALLEL:-true}; then
-      ssh -n $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count"\
+      ssh -q -n $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count"\
         2>&1 | sed "s/^/$server: /" &
     else # run each command serially
-      ssh -n $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count" \
+      ssh -q -n $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count" \
         2>&1 | sed "s/^/$server: /" &
     fi
   fi

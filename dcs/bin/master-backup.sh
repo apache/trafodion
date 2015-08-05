@@ -66,10 +66,10 @@ if [ -f $HOSTLIST ]; then
       eval $"$args $instance" 2>&1 | sed "s/^/$master: /" &
     else
       if ${DCS_SLAVE_PARALLEL:-true}; then
-        ssh -n $DCS_SSH_OPTS $master $"$args $instance"\
+        ssh -q -n $DCS_SSH_OPTS $master $"$args $instance"\
           2>&1 | sed "s/^/$master: /" &
       else # run each command serially
-        ssh -n $DCS_SSH_OPTS $master $"$args $instance" \
+        ssh -q -n $DCS_SSH_OPTS $master $"$args $instance" \
           2>&1 | sed "s/^/$master: /" &
       fi
     fi

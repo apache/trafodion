@@ -62,7 +62,7 @@ if [ "$master" == "" ] || [ "$master" == "$(hostname -f)" ] ; then
   "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" stop master 
 else
     remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} stop master"
-    ssh -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
+    ssh -q -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
 fi
 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_SERVERS}" stop server 

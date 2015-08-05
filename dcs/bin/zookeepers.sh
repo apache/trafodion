@@ -70,7 +70,7 @@ if [ "$DCS_MANAGES_ZK" = "true" ]; then
     if [ "$zookeeper" == "localhost" ] || [ "$zookeeper" == "$HOSTNAME" ] ; then
       eval $cmd $instance 2>&1 | sed "s/^/$zookeeper: /" &
     else 
-      ssh -n $DCS_SSH_OPTS $zookeeper $cmd $instance 2>&1 | sed "s/^/$zookeeper: /" &
+      ssh -q -n $DCS_SSH_OPTS $zookeeper $cmd $instance 2>&1 | sed "s/^/$zookeeper: /" &
     fi
     
     let instance++
