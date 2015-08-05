@@ -2172,8 +2172,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 
-  ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
-    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  ExpTupleDesc::TupleDataFormat hbaseRowFormat ;
   ValueIdList asciiVids;
   ValueIdList executorPredCastVids;
   ValueIdList convertExprCastVids;
@@ -2182,6 +2181,17 @@ short HbaseAccess::codeGen(Generator * generator)
   NABoolean hasAddedColumns = FALSE;
   if (getTableDesc()->getNATable()->hasAddedColumn())
     hasAddedColumns = TRUE;
+
+  NABoolean alignedFormatTable = 
+    getTableDesc()->getNATable()->isSQLMXAlignedTable();
+
+  // If CIF is not OFF use aligned format, except when table is
+  // not aligned and it has added columns. Support for added columns
+  // in not aligned tables is doable, but is turned off now due to
+  // this case causing a regression failure.
+  hbaseRowFormat = ((hasAddedColumns && !alignedFormatTable) || 
+		    (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_OFF )) ? 
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT : ExpTupleDesc::SQLMX_ALIGNED_FORMAT ;
 
   // build key information
   keyRangeGen * keyInfo = 0;
@@ -2571,7 +2581,7 @@ short HbaseAccess::codeGen(Generator * generator)
 					 FALSE,                                // [IN] add convert nodes?
 					 work_atp,                            // [IN] target atp number
 					 hbaseFilterValTuppIndex,    // [IN] target tupp index
-					 hbaseRowFormat,                        // [IN] target tuple format
+					 asciiRowFormat,                        // [IN] target tuple format
 					 hbaseFilterValRowLen,             // [OUT] target tuple length
 					 &hbaseFilterValExpr,                // [OUT] move expression
 					 &hbaseFilterValTupleDesc,                     // [optional OUT] target tuple desc
@@ -2855,12 +2865,16 @@ short HbaseAccess::codeGen(Generator * generator)
   if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
     hbasescan_tdb->setRowwiseFormat(TRUE);
 
+  hbasescan_tdb->setUseCif(hbaseRowFormat == 
+			   ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
+
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
       if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
-        hbasescan_tdb->setAlignedFormat(TRUE);
+	hbasescan_tdb->setAlignedFormat(TRUE);
+
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());

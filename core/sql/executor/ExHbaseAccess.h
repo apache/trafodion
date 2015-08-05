@@ -391,6 +391,7 @@ protected:
 
   char * asciiRow_;
   char * convertRow_;
+  UInt32 convertRowLen_;
   char * updateRow_;
   char * mergeInsertRow_;
   char * rowIdRow_;

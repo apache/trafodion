@@ -701,6 +701,10 @@ public:
   {(v ? flags_ |= ASYNC_OPERATIONS : flags_ &= ~ASYNC_OPERATIONS); };
   NABoolean asyncOperations() { return (flags_ & ASYNC_OPERATIONS) != 0; };
 
+  void setUseCif(NABoolean v)
+        {(v ? flags2_ |= USE_CIF : flags_ &= ~USE_CIF); };
+  NABoolean getUseCif() { return (flags_ & USE_CIF) != 0; };
+
   void setCanAdjustTrafParams(NABoolean v)
    {(v ? flags2_ |= TRAF_UPSERT_ADJUST_PARAMS : flags2_ &= ~TRAF_UPSERT_ADJUST_PARAMS); };
    NABoolean getCanAdjustTrafParams() { return (flags2_ & TRAF_UPSERT_ADJUST_PARAMS) != 0; };
@@ -858,7 +862,8 @@ public:
     UPDEL_COLNAME_IS_STR             = 0x1000,
     USE_HBASE_XN                     = 0x2000,
     ALIGNED_FORMAT                   = 0x4000,
-    ASYNC_OPERATIONS                 = 0x8000
+    ASYNC_OPERATIONS                 = 0x8000,
+    USE_CIF                          = 0x10000
   };
 
   enum
