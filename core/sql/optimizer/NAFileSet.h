@@ -73,13 +73,6 @@ enum FileOrganizationEnum
   HASH_FILE
 };
 
-enum RowFormatEnum {
-  SQLMX_UNKNOWN_FORMAT,
-  SQLMX_ROW_FORMAT,
-  SQLMX_ALIGNED_ROW_FORMAT,
-  SQLMX_HBASE_FORMAT
-};
-  
 // -----------------------------------------------------------------------
 // A NAFileSet object describes common attributes of a set of files
 // that are used for implementing a base table, a single-table or a
@@ -282,10 +275,10 @@ public:
   //For NATable caching, prepare for use by a statement.
   void setupForStatement();
 
-  NABoolean isSqlmxRowFormat() { return rowFormat_ == SQLMX_ROW_FORMAT; }
-  NABoolean isSqlmxAlignedRowFormat() { return rowFormat_ == SQLMX_ALIGNED_ROW_FORMAT; }
+  NABoolean isSqlmxRowFormat() { return rowFormat_ == COM_PACKED_FORMAT_TYPE; }
+  NABoolean isSqlmxAlignedRowFormat() const { return rowFormat_ == COM_ALIGNED_FORMAT_TYPE; }
 
-  void setRowFormat(RowFormatEnum rowFormat) { rowFormat_ = rowFormat; }
+  void setRowFormat(ComRowFormat rowFormat) { rowFormat_ = rowFormat; }
 
 private:
 
@@ -490,7 +483,7 @@ private:
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions_;
 
-  RowFormatEnum rowFormat_; 
+  ComRowFormat rowFormat_; 
   
 };
 

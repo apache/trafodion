@@ -2207,6 +2207,8 @@ short HbaseAccess::codeGen(Generator * generator)
   // primary access if it is trafodion table.
   char * tablename = NULL;
   char * snapshotName = NULL;
+
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
       (getTableDesc()->getNATable()->isHbaseCellTable()))
@@ -2233,16 +2235,14 @@ short HbaseAccess::codeGen(Generator * generator)
       }
     }
 
-  if (! tablename)
-    tablename =
-      space->AllocateAndCopyToAlignedSpace(
+  if (! tablename) 
+     tablename =
+        space->AllocateAndCopyToAlignedSpace(
                                            GenGetQualifiedName(getTableName()), 0);
-
-  NABoolean isAlignedTable = getTableDesc()->getNATable()->isSQLMXAlignedTable(tablename);
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (NOT isAlignedTable))
+      (NOT isAlignedFormat))
     sortValues(retColumnList, columnList,
 	       (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
   else
@@ -2305,7 +2305,7 @@ short HbaseAccess::codeGen(Generator * generator)
 				     givenType,         // [IN] Actual type of HDFS column
 				     asciiValue,         // [OUT] Returned expression for ascii rep.
 				     castValue,        // [OUT] Returned expression for binary rep.
-                                     isAlignedTable
+                                     isAlignedFormat
 				     );
      
      GenAssert(res == 1 && castValue != NULL,
@@ -2351,7 +2351,7 @@ short HbaseAccess::codeGen(Generator * generator)
   ValueIdList encodedKeyExprVids(encodedKeyExprVidArr);
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (isAlignedTable ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
 
@@ -2487,7 +2487,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   Queue * listOfFetchedColNames = NULL;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (isAlignedTable))
+      (isAlignedFormat))
     {
       listOfFetchedColNames = new(space) Queue(space);
 
@@ -2862,7 +2862,7 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (isAlignedTable)
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(

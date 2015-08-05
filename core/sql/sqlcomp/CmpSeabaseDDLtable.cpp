@@ -1645,7 +1645,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   tableInfo->schemaOwnerID = schemaOwnerID;
 
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
-  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
 
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
@@ -8359,7 +8359,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       Lng32 nonKeyColCount = *(Lng32*)vi->get(7);
       Lng32 idxNumSaltPartns = *(Lng32*)vi->get(8);
       char * format = vi->get(9);
-      Lng32 idxRowFormat;
+      ComRowFormat idxRowFormat;
 
       if (memcmp(format, COM_ALIGNED_FORMAT_LIT, 2) == 0)
          idxRowFormat = COM_ALIGNED_FORMAT_TYPE;
@@ -8419,7 +8419,6 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
         (idxHbaseCreateOptions->isNull() ? NULL : idxHbaseCreateOptions->data());
       indexInfoArray[idx].numSaltPartns = idxNumSaltPartns;
       indexInfoArray[idx].rowFormat = idxRowFormat;
-
       Queue * keyInfoQueue = NULL;
       str_sprintf(query, "select column_name, column_number, keyseq_number, ordering, nonkeycol  from %s.\"%s\".%s where object_uid = %Ld for read committed access order by keyseq_number",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
@@ -8811,7 +8810,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   tableInfo->numSaltPartns = numSaltPartns;
   tableInfo->hbaseCreateOptions = 
     (hbaseCreateOptions->isNull() ? NULL : hbaseCreateOptions->data());
-  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
 
   tableDesc =
     Generator::createVirtualTableDesc

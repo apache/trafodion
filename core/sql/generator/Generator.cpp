@@ -1837,8 +1837,8 @@ desc_struct * Generator::createVirtualTableDesc(
 
   if (tableInfo)
     table_desc->body.table_desc.rowFormat =
-      (tableInfo->rowFormat == 1 ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
-  
+      tableInfo->rowFormat ;
+
   if (CmpCommon::context()->sqlSession()->validateVolatileName(tableName))
     table_desc->body.table_desc.isVolatile = 1;
   else
@@ -1965,6 +1965,7 @@ desc_struct * Generator::createVirtualTableDesc(
   index_desc->body.indexes_desc.isVolatile = table_desc->body.table_desc.isVolatile;
   index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
   index_desc->body.indexes_desc.numSaltPartns = 0;
+  index_desc->body.indexes_desc.rowFormat = table_desc->body.table_desc.rowFormat;
   if (tableInfo)
   {
       index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
@@ -2015,7 +2016,7 @@ desc_struct * Generator::createVirtualTableDesc(
           curr_index_desc->body.indexes_desc.numSaltPartns = 
             indexInfo[i].numSaltPartns;
           curr_index_desc->body.indexes_desc.rowFormat = 
-            (ComRowFormat)indexInfo[i].rowFormat;
+            indexInfo[i].rowFormat;
           if (indexInfo[i].hbaseCreateOptions)
           {
             curr_index_desc->body.indexes_desc.hbaseCreateOptions  = 

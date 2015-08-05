@@ -563,31 +563,38 @@ public:
   {  return (flags_ & IS_INSERTABLE) != 0; }
 
   void setSQLMXTable( NABoolean value )
-  {  value ? flags_ |= SQLMX_ROW_FORMAT : flags_ &= ~SQLMX_ROW_FORMAT; }
+  {  value ? flags_ |= SQLMX_ROW_TABLE : flags_ &= ~SQLMX_ROW_TABLE; }
 
   NABoolean isSQLMXTable() const
-  {  return (flags_ & SQLMX_ROW_FORMAT) != 0; }
+  {  return (flags_ & SQLMX_ROW_TABLE) != 0; }
 
   void setSQLMXAlignedTable( NABoolean value )
   {
     (value
-     ? flags_ |= SQLMX_ALIGNED_ROW_FORMAT
-     : flags_ &= ~SQLMX_ALIGNED_ROW_FORMAT);
+     ? flags_ |= SQLMX_ALIGNED_ROW_TABLE
+     : flags_ &= ~SQLMX_ALIGNED_ROW_TABLE);
   }
 
   NABoolean isSQLMXAlignedTable() const
   {
-    NABoolean alignedTable;
-
-    if (getIndexList().entries() != 0)
-       alignedTable = isSQLMXAlignedTable((char *)getIndexList()[0]->getFileSetName().getQualifiedNameAsAnsiString().data());
+    if (getClusteringIndex() != NULL)
+       return getClusteringIndex()->isSqlmxAlignedRowFormat();
     else
-       alignedTable = isSQLMXAlignedTable((char *)getTableName().getQualifiedNameAsAnsiString().data());
-    return alignedTable;
+       return getSQLMXAlignedTable();
+  }
+
+  NABoolean isAlignedFormat(const IndexDesc *indexDesc) const
+  {
+    NABoolean isAlignedFormat;
+
+    if (isHbaseRowTable()||
+      isHbaseCellTable() || (indexDesc == NULL))
+      isAlignedFormat  = isSQLMXAlignedTable();
+    else
+      isAlignedFormat = indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat();
+    return isAlignedFormat;
   }
  
-  NABoolean isSQLMXAlignedTable(char *objectName) const;
-
 // LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
   {  value ? flags_ |= IS_VERTICAL_PARTITION : flags_ &= ~IS_VERTICAL_PARTITION;}
@@ -825,7 +832,7 @@ public:
 
 private:
   NABoolean getSQLMXAlignedTable() const
-  {  return (flags_ & SQLMX_ALIGNED_ROW_FORMAT) != 0; }
+  {  return (flags_ & SQLMX_ALIGNED_ROW_TABLE) != 0; }
 
   // copy ctor
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
@@ -877,8 +884,8 @@ private:
   // Bitfield flags to be used instead of numerous NABoolean fields
   enum Flags {
     UNUSED                    = 0x00000000,
-    SQLMX_ROW_FORMAT          = 0x00000004,
-    SQLMX_ALIGNED_ROW_FORMAT  = 0x00000008,
+    SQLMX_ROW_TABLE           = 0x00000004,
+    SQLMX_ALIGNED_ROW_TABLE   = 0x00000008,
     IS_INSERTABLE             = 0x00000010,
     IS_UPDATABLE              = 0x00000020,
     IS_VERTICAL_PARTITION     = 0x00000040,

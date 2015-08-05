@@ -1782,7 +1782,6 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    StrVec columns;
 	    retcode =  tcb_->ehi_->getRowOpen( tcb_->table_,  
 					       tcb_->rowIds_[tcb_->currRowidIdx_],
 					       tcb_->columns_, -1);
