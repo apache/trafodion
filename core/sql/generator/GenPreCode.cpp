@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -4527,6 +4530,28 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
   return this;
 } // UpdateCursor::preCodeGen()
 
+RelExpr * Delete::preCodeGen(Generator * generator,
+                             const ValueIdSet & externalInputs,
+                             ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+  
+  if (! GenericUpdate::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  ValueIdSet availableValues;
+  getInputValuesFromParentAndChildren(availableValues);
+
+  precondition_.replaceVEGExpressions
+                        (availableValues,
+			 getGroupAttr()->getCharacteristicInputs());
+
+  markAsPreCodeGenned();
+
+  return this;
+}
+
 RelExpr * MergeDelete::preCodeGen(Generator * generator,
 				  const ValueIdSet & externalInputs,
 				  ValueIdSet &pulledNewInputs)
@@ -4793,7 +4818,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
            listOfDelSubsetRows_))
     return NULL;
 
-  if (! GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs))
+  if (! Delete::preCodeGen(generator, externalInputs, pulledNewInputs))
     return NULL;
 
   if (((getTableDesc()->getNATable()->isHbaseRowTable()) ||
@@ -4806,6 +4831,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
                           << DgString0("Reason: Cannot return values from an hbase insert, update or delete.");
       GenExit();
     }
+   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
   if  (producesOutputs())
     {
@@ -4834,9 +4860,10 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
             }
         } // index_table
 
+
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-          (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+           isAlignedFormat)
 	{
 	  for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
 	    {
@@ -4866,7 +4893,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 
       if (NOT ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
                (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-               (getTableDesc()->getNATable()->isSQLMXAlignedTable())))
+               (isAlignedFormat)))
         {
           // add all the key columns. If values are missing in hbase, then atleast the key
           // value is needed to retrieve a row. 
@@ -4911,7 +4938,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	    {
 	      if ((CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON) &&
 		  (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
-                  (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+                  (NOT isAlignedFormat))
 	      canDoCheckAndUpdel() = TRUE;
 	    }
 	}
@@ -4989,7 +5016,9 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
     return NULL;
 
   CollIndex totalColCount = getTableDesc()->getColumnList().entries();
-  if ((getTableDesc()->getNATable()->isSQLMXAlignedTable()) &&
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
+  if (isAlignedFormat &&
       (newRecExprArray().entries() > 0) &&
       (newRecExprArray().entries() <  totalColCount))
     {
@@ -5085,7 +5114,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
-          (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+          (isAlignedFormat))
 	{
 	  for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
 	    {
@@ -5169,7 +5198,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 		   (listOfUpdUniqueRows_.entries() == 0))
 	    {
 	      if ((CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON) &&
-                  (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+                  (NOT isAlignedFormat))
 		canDoCheckAndUpdel() = TRUE;
 	    }
 	}
@@ -11138,18 +11167,18 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
   return found;
 }
 
-short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
+short HbaseAccess::extractHbaseFilterPreds(Generator * generator, 
 					   ValueIdSet &preds, ValueIdSet &newExePreds)
 {
-  if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
+   if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
     return 0;
+   // cannot push preds for aligned format row
+   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-  // cannot push preds for aligned format row
-  if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
-    return 0;
- 
-  for (ValueId vid = preds.init(); 
+   if (isAlignedFormat)
+     return 0;
+  
+   for (ValueId vid = preds.init(); 
        (preds.next(vid)); 
        preds.advance(vid))
     {

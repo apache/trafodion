@@ -2219,7 +2219,7 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
        314           0              3               1
        314           2              1               0
        422           2              1               1
-       454           2              2               3
+       471           2              2               3
        492           0              2               1
        492           1              2               1
        619           1              1              14
@@ -2307,7 +2307,7 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
        314           0              3               1
        314           2              1               0
        422           2              1               1
-       454           2              2               3
+       471           2              2               3
        492           0              2               1
        492           1              2               1
        619           1              1              14
