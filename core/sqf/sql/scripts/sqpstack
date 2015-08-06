@@ -1,5 +1,4 @@
 #!/bin/sh
-#
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -21,6 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 #
+#
 if [ $# -lt 1 ]; then
 	prog=monitor
 elif [ "$1" = "--help" ]; then
@@ -38,7 +38,7 @@ if [ -n "$MY_NODES" ];then
 fi
 
 if [ -e $SQ_PDSH ]; then
-	hosts=`$SQ_PDSH $MY_NODES_PRM hostname|awk '{ print $2 }'|sort`
+	hosts=`$PDSH $MY_NODES_PRM $PDSH_SSH_CMD hostname|awk '{ print $2 }'|sort`
 else
 	hosts=`hostname`
 fi
@@ -51,7 +51,7 @@ else
 fi
 for host in $hosts; do
 	if [ -e $SQ_PDSH ]; then
-		ssh="ssh $host"
+		ssh="ssh -q $host"
 	fi
 	for prog in $proglist; do
 		pids=`$ssh ps -ef|grep -v 'ps -ef'|grep -vw $0|grep -w $w|grep -w $prog|grep -vw mpirun|grep -vw grep|awk '{ print $2 }'`

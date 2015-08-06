@@ -20,7 +20,6 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
 # Perform an SQ shutdown 
 
@@ -189,7 +188,7 @@ echoLog
 shutdownmsg="SQ Shutdown ($shutdowntype) from $PWD Successful"
 
 if [ -e $SQ_PDSH ]; then
-   L_PDSH="$SQ_PDSH $MY_NODES"
+   L_PDSH="$PDSH $MY_NODES $PDSH_SSH_CMD"
 else
    L_PDSH=
 fi
