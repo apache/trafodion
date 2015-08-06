@@ -3934,11 +3934,19 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
 	    rowIds_.clear();
 	    retcode = setupUniqueKeyAndCols(FALSE);
-	    if (retcode == -1)
-	      {
+	    if (retcode == -1) {
 		step_ = HANDLE_ERROR;
 		break;
-	      }
+	    }
+            rc = evalDeletePreCondExpr();
+            if (rc == -1) {
+                step_ = HANDLE_ERROR;
+                break;
+            }
+            if (rc == 0) { // No need to delete
+               step_ = NEXT_ROW;
+               break;
+            }
 
 	    copyRowIDToDirectBuffer(rowIds_[0]);
 
