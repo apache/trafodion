@@ -22,21 +22,29 @@
 # @@@ END COPYRIGHT @@@
 #
 
-REST_START_CMD=${REST_INSTALL_DIR}/bin/start-rest.sh
+#Check if Trafodion is up and running
+sqcheck -f
+sq_stat=$?
+if [[ $sq_stat == 0 ]]; then
+   REST_START_CMD=${REST_INSTALL_DIR}/bin/start-rest.sh
 
-if [ -z ${REST_INSTALL_DIR} ]; then
-   echo "REST Install dir location not set via the env variable REST_INSTALL_DIR."
-   exit 1;
+   if [ -z ${REST_INSTALL_DIR} ]; then
+      echo "REST Install dir location not set via the env variable REST_INSTALL_DIR."
+      exit 1;
+   fi
+
+   if [ -e ${REST_START_CMD} ]; then
+      echo "${REST_START_CMD} found."
+   else 
+      echo "${REST_START_CMD} not found."
+      exit 1;
+   fi
+
+   echo "Starting the REST environment now"
+   cd ${REST_INSTALL_DIR}
+   ${REST_START_CMD}
+   cds
+else
+   echo "REST Server is not started. Please start Trafodion first..."
+   exit 1
 fi
-
-if [ -e ${REST_START_CMD} ]; then
-   echo "${REST_START_CMD} found."
-else 
-   echo "${REST_START_CMD} not found."
-   exit 1;
-fi
-
-echo "Starting the REST environment now"
-cd ${REST_INSTALL_DIR}
-${REST_START_CMD}
-cds

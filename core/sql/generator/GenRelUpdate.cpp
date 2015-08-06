@@ -167,7 +167,7 @@ static short genUpdExpr(
   ExpGenerator * expGen = generator->getExpGenerator();
 
   ExpTupleDesc::TupleDataFormat tupleFormat = 
-                   generator->getTableDataFormat( tableDesc->getNATable() );
+                   generator->getTableDataFormat( tableDesc->getNATable(), indexDesc);
   NABoolean alignedFormat = tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
 
   // Generate the update expression that will create the updated row
@@ -331,7 +331,7 @@ static short genMergeInsertExpr(
     return 0;
 
   ExpTupleDesc::TupleDataFormat tupleFormat = 
-                   generator->getTableDataFormat( tableDesc->getNATable() );
+                   generator->getTableDataFormat( tableDesc->getNATable(), indexDesc);
 
   NABoolean alignedFormat = (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
   
@@ -451,7 +451,8 @@ static short genHbaseUpdOrInsertExpr(
   ValueIdList updRowVidList;
 
   NABoolean isAligned = FALSE;
-  if (indexDesc->getPrimaryTableDesc()->getNATable()->isSQLMXAlignedTable())
+
+  if (indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat())
     isAligned = TRUE;
 
   ExpTupleDesc::TupleDataFormat tupleFormat;
@@ -804,8 +805,10 @@ short HbaseDelete::codeGen(Generator * generator)
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
 
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (getTableDesc()->getNATable()->isSQLMXAlignedTable() ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
   ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
@@ -898,7 +901,7 @@ short HbaseDelete::codeGen(Generator * generator)
 						    givenType,         // [IN] Actual type of HDFS column
 						    asciiValue,         // [OUT] Returned expression for ascii rep.
 						    castValue,        // [OUT] Returned expression for binary rep.
-                                                    getTableDesc()->getNATable()->isSQLMXAlignedTable()
+                                                    isAlignedFormat 
 						    );
       
       GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
@@ -1081,15 +1084,7 @@ short HbaseDelete::codeGen(Generator * generator)
     }
   
   Queue * listOfFetchedColNames = NULL;
-  if (NOT getTableDesc()->getNATable()->isSeabaseTable())
-    {
-      // for hbase cell/row tables, the listoffetchedcols is not the columns that are
-      // part of the virtual cell/row tables.
-      // This list will come from the predicate and selected items used. TBD.
-      // For now, do not create a list.
-    }
-  else if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-           (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+  if (isAlignedFormat)
     {
       listOfFetchedColNames = new(space) Queue(space);
       
@@ -1293,7 +1288,7 @@ short HbaseDelete::codeGen(Generator * generator)
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
       if ((CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
@@ -1415,9 +1410,11 @@ short HbaseUpdate::codeGen(Generator * generator)
  
   const Int16 returnedFetchedTuppIndex = (Int16)(returnedDesc->noTuples()-2);
   const Int16 returnedUpdatedTuppIndex = (Int16)(returnedFetchedTuppIndex + 1);
+
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (getTableDesc()->getNATable()->isSQLMXAlignedTable() ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
 
@@ -1503,7 +1500,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 						   givenType,         // [IN] Actual type of HDFS column
 						   asciiValue,         // [OUT] Returned expression for ascii rep.
 						   castValue,        // [OUT] Returned expression for binary rep.
-                                                   getTableDesc()->getNATable()->isSQLMXAlignedTable()
+                                                   isAlignedFormat
 						   );
       
       GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
@@ -1721,8 +1718,8 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
   
   Queue * listOfFetchedColNames = NULL;
-  if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+
+  if (isAlignedFormat)
     {
       listOfFetchedColNames = new(space) Queue(space);
       
@@ -1888,7 +1885,7 @@ short HbaseUpdate::codeGen(Generator * generator)
       ExpTupleDesc * returnedUpdatedTupleDesc = NULL;
       ValueIdList tgtConvValueIdList;
 
-     if (getTableDesc()->getNATable()->hasSerializedColumn())
+     if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  // if serialized columns are present, then create a new row with
 	  // deserialized columns before returning it.
@@ -1962,7 +1959,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 	  ExpTupleDesc * returnedMergeInsertedTupleDesc = NULL;
 	  ValueIdList tgtConvValueIdList;
 
-	  if (getTableDesc()->getNATable()->hasSerializedColumn())
+	  if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	    {
 	      // if serialized columns are present, then create a new row with
 	      // deserialized columns before returning it.
@@ -2120,7 +2117,7 @@ short HbaseUpdate::codeGen(Generator * generator)
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
@@ -2290,8 +2287,9 @@ short HbaseInsert::codeGen(Generator *generator)
   ULng32 insertRowLen    = 0;
   ExpTupleDesc * tupleDesc   = 0;
   ExpTupleDesc::TupleDataFormat tupleFormat;
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-  if (naTable->isSQLMXAlignedTable())
+  if (isAlignedFormat)
     tupleFormat = ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
   else
     tupleFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
@@ -2487,7 +2485,7 @@ short HbaseInsert::codeGen(Generator *generator)
       ItemExpr *constrTree = 
 	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	constrTree = generator->addCompDecodeForDerialization(constrTree);
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
@@ -2505,7 +2503,7 @@ short HbaseInsert::codeGen(Generator *generator)
   listOfUpdatedColNames = new(space) Queue(space);
   std::vector<NAString> columNamesVec;
 
-  if (NOT naTable->isSQLMXAlignedTable())
+  if (NOT isAlignedFormat)
     {
       for (CollIndex c = 0; c < colArray.entries(); c++)
         {
@@ -2583,7 +2581,7 @@ short HbaseInsert::codeGen(Generator *generator)
   ExpTupleDesc * projRowTupleDesc   = 0;
   if (returnRow)
     {
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  ValueIdList deserColVIDList;
 
@@ -2769,7 +2767,7 @@ short HbaseInsert::codeGen(Generator *generator)
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (naTable->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)

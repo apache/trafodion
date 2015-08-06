@@ -3396,6 +3396,9 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 	    table->setHasLobColumn(TRUE);
 
 	  if (CmpSeabaseDDL::isEncodingNeededForSerialization(newColumn))
+	    table->setHasSerializedEncodedColumn(TRUE);
+
+          if (CmpSeabaseDDL::isSerialized(newColumn->getHbaseColFlags()))
 	    table->setHasSerializedColumn(TRUE);
 	}
 
@@ -3683,6 +3686,24 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 
       NABoolean isNotAvailable =
 	indexes_desc->body.indexes_desc.notAvailable;
+/*
+      RowFormatEnum rowFormat;
+      switch (indexes_desc->body.indexes_desc.rowFormat)
+      {
+        case COM_PACKED_FORMAT_TYPE:
+           rowFormat = SQLMX_ROW_FORMAT;
+           break;
+        case COM_ALIGNED_FORMAT_TYPE:
+           rowFormat = SQLMX_ALIGNED_ROW_FORMAT;
+           break;
+        case COM_HBASE_FORMAT_TYPE:
+           rowFormat = SQLMX_HBASE_FORMAT;
+           break;
+        default:
+           rowFormat = SQLMX_UNKNOWN_FORMAT;
+      }
+*/
+
 
       ItemExprList hbaseSaltColumnList(CmpCommon::statementHeap());
       Int64 numOfSaltedPartitions = 0;
@@ -4199,6 +4220,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       if (isNotAvailable)
 	newIndex->setNotAvailable(TRUE);
 
+      newIndex->setRowFormat(indexes_desc->body.indexes_desc.rowFormat);
       // Mark each NAColumn in the list
       indexKeyColumns.setIndexKey();
       if ((table->isHbaseTable()) && (indexes_desc->body.indexes_desc.keytag != 0))
@@ -4861,6 +4883,9 @@ NATable::NATable(BindWA *bindWA,
       break;
     case COM_ALIGNED_FORMAT_TYPE:
       setSQLMXAlignedTable(TRUE);
+      break;
+    case COM_HBASE_FORMAT_TYPE:
+    case COM_UNKNOWN_FORMAT_TYPE:
       break;
     }
 
