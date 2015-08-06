@@ -384,9 +384,10 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
       latestVersionNumForCols_ = new(glob->getDefaultHeap()) 
 	long[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()] ;
     }
-
-  if (hbaseAccessTdb.convertRowLen_ > 0)
-    convertRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen_];
+  
+  convertRowLen_ = hbaseAccessTdb.convertRowLen();
+  if (hbaseAccessTdb.convertRowLen() > 0)
+    convertRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen()];
 
   if (hbaseAccessTdb.updateRowLen_ > 0)
     updateRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.updateRowLen_];
@@ -404,8 +405,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
       endRowIdRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.rowIdLen_ + 2];
     }
       
-  if (hbaseAccessTdb.convertRowLen_ > 0)
-    rowwiseRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen_];
+  if (hbaseAccessTdb.convertRowLen() > 0)
+    rowwiseRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.convertRowLen()];
   if (hbaseAccessTdb.rowIdAsciiRowLen_ > 0)
     rowIdAsciiRow_ = new(glob->getDefaultHeap()) char[hbaseAccessTdb.rowIdAsciiRowLen_];
 
@@ -880,7 +881,7 @@ short ExHbaseAccessTcb::copyCell()
     Lng32 neededLen = 
       sizeof(colNameLen) + colNameLen + sizeof(colValueLen) + colValueLen;
 
-    if (rowwiseRowLen_ + neededLen > hbaseAccessTdb().convertRowLen_)
+    if (rowwiseRowLen_ + neededLen > hbaseAccessTdb().convertRowLen())
       {
         // not enough space. Return error.
         return -HBASE_COPY_ERROR;
@@ -1196,12 +1197,16 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
 
   if (convertExpr())
     {
+      convertRowLen_ = hbaseAccessTdb().convertRowLen();
+      UInt32 rowLen = convertRowLen_;
       ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_, 0, -1, &rowLen);
       if (evalRetCode == ex_expr::EXPR_ERROR)
 	{
 	  return -1;
 	}
+      if (hbaseAccessTdb().getUseCif() && rowLen < convertRowLen_)
+        convertRowLen_= rowLen;
     }
 
   return 0;
@@ -1650,12 +1655,18 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat(Int64 *latestRowTimestamp)
   
   if (convertExpr())
     {
+      convertRowLen_ = hbaseAccessTdb().convertRowLen();
+      UInt32 rowLen = convertRowLen_;
       ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, asciiRowLen);
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, 
+			    asciiRowLen, &rowLen);
       if (evalRetCode == ex_expr::EXPR_ERROR)
 	{
 	  return -1;
 	}
+      if (hbaseAccessTdb().getUseCif() &&
+      rowLen < convertRowLen_)
+        convertRowLen_=rowLen;
     }
 
   return 0;

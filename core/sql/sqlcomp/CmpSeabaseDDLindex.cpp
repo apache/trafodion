@@ -614,6 +614,16 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   NABoolean alignedFormat = FALSE;
+  if (CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON) {
+     if (naTable->hasSerializedColumn())
+        alignedFormat = FALSE;
+     else
+     if (isSeabaseReservedSchema(tableName))
+        alignedFormat = FALSE;
+     else
+        alignedFormat = TRUE;
+  }
+  else
   if (naTable->isSQLMXAlignedTable())
     alignedFormat = TRUE;
 
@@ -847,7 +857,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo->validDef = 0;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
-  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
 
   ComTdbVirtTableIndexInfo * ii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
   ii->baseTableName = (char*)extTableName.data();

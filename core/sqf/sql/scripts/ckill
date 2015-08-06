@@ -1,5 +1,4 @@
 #!/bin/bash
-#
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +19,6 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
 MY_NODES_PRM=" -a "
 if [ -n "$MY_NODES" ];then
@@ -28,7 +26,7 @@ if [ -n "$MY_NODES" ];then
 fi
 
 if [ -e $SQ_PDSH ]; then
-	$SQ_PDSH $MY_NODES_PRM $MY_SQROOT/sql/scripts/traf_pkill $*
+	$PDSH $MY_NODES_PRM $PDSH_SSH_CMD $MY_SQROOT/sql/scripts/traf_pkill $*
 else
 	$MY_SQROOT/sql/scripts/traf_pkill $*
 fi

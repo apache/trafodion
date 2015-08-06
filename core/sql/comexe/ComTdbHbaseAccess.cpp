@@ -735,7 +735,7 @@ ComTdbHbaseAccess::getNodeName() const
           case INSERT_:
             {
               if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
-                return ("EX_TRAF_VSBB_INSERT");
+                return ("EX_TRAF_VSBB_UPSERT");
               else
                 return ("EX_TRAF_INSERT");
             }
@@ -762,15 +762,15 @@ ComTdbHbaseAccess::getNodeName() const
             break;
 
           case UPDATE_:
-            return (rowsetOper()? "EX_TRAF_ROWSET_UPDATE": "EX_TRAF_UPDATE");
+            return (rowsetOper()? "EX_TRAF_VSBB_UPDATE": "EX_TRAF_UPDATE");
             break;
 
           case MERGE_:
-            return (rowsetOper()? "EX_TRAF_ROWSET_MERGE": "EX_TRAF_MERGE");
+            return (rowsetOper()? "EX_TRAF_VSBB_MERGE": "EX_TRAF_MERGE");
             break;
 
           case DELETE_:
-            return (rowsetOper()? "EX_TRAF_ROWSET_DELETE": "EX_TRAF_DELETE");
+            return (rowsetOper()? "EX_TRAF_VSBB_DELETE": "EX_TRAF_DELETE");
             break;
 
           case COPROC_:
@@ -831,15 +831,15 @@ ComTdbHbaseAccess::getNodeName() const
         break;
 
       case UPDATE_:
-        return (rowsetOper()? "EX_HBASE_ROWSET_UPDATE": "EX_HBASE_UPDATE");
+        return (rowsetOper()? "EX_HBASE_VSBB_UPDATE": "EX_HBASE_UPDATE");
         break;
 
       case MERGE_:
-        return (rowsetOper()? "EX_HBASE_ROWSET_MERGE": "EX_HBASE_MERGE");
+        return (rowsetOper()? "EX_HBASE_VSBB_MERGE": "EX_HBASE_MERGE");
         break;
 
       case DELETE_:
-        return (rowsetOper()? "EX_HBASE_ROWSET_DELETE": "EX_HBASE_DELETE");
+        return (rowsetOper()? "EX_HBASE_VSBB_DELETE": "EX_HBASE_DELETE");
         break;
 
       case COPROC_:

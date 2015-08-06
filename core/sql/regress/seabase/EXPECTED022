@@ -426,7 +426,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Wed Nov 19 08:50:56 2014
+-- Definition current  Mon Jul 27 15:00:54 2015
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -444,7 +444,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Wed Nov 19 08:50:56 2014
+-- Definition current  Mon Jul 27 15:00:54 2015
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -463,7 +463,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Wed Nov 19 08:50:56 2014
+-- Definition current  Mon Jul 27 15:00:54 2015
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -481,7 +481,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Wed Nov 19 08:50:56 2014
+-- Definition current  Mon Jul 27 15:00:54 2015
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -549,7 +549,7 @@ ROW_ID      (EXPR)
 (EXPR)    
 ----------
 
-    100010
+    100000
      80022
 
 --- 2 row(s) selected.

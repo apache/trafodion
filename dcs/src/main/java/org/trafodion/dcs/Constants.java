@@ -69,7 +69,7 @@ public final class Constants {
     public static final String DCS_MASTER_PORT = "dcs.master.port";
 
     /** Default value for DCS master port */
-    public static final int DEFAULT_DCS_MASTER_PORT = 37800;
+    public static final int DEFAULT_DCS_MASTER_PORT = 23400;
 
     /** Configuration key for DCS master port range */
     public static final String DCS_MASTER_PORT_RANGE = "dcs.master.port.range";
@@ -333,7 +333,7 @@ public final class Constants {
     /** Configuration key for DCS master info port */
     public static final String DCS_MASTER_INFO_PORT = "dcs.master.info.port";
     /** Default value for DCS master info port */
-    public static final int DEFAULT_DCS_MASTER_INFO_PORT = 40010;
+    public static final int DEFAULT_DCS_MASTER_INFO_PORT = 24400;
 
     /** Configuration key for server Listener selector timeout */
     public static final String DCS_SERVER_LISTENER_SELECTOR_TIMEOUT = "dcs.server.listener.selector.timeout";

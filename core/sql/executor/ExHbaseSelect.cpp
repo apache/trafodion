@@ -580,8 +580,8 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case RETURN_ROW:
 	  {
-	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->hbaseAccessTdb().convertRowLen(), 
-				 &rc, FALSE))
+	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->convertRowLen_, 
+				       &rc, FALSE))
 	      return 1;
 	    
 	    if (tcb_->getHbaseAccessStats())

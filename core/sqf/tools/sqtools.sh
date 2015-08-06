@@ -27,7 +27,7 @@ function setup_sqpdsh {
 	if [ -z "$MY_NODES" ]; then
 	    export SQPDSHA="$SQ_PDSH -a"
 	else
-	    export SQPDSHA="$SQ_PDSH $MY_NODES"
+	    export SQPDSHA="$PDSH $MY_NODES $PDSH_SSH_CMD"
 	fi
     else
 	export SQPDSHA="eval"

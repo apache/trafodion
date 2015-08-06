@@ -691,7 +691,7 @@ fi
 #Reserve DCS Ports
 
 echo "***INFO: Reserving DCS ports"
-trafodion_ports=${DCS_MASTER_PORT:-37800},${DCS_MASTER_INFO_PORT:-40010}
+trafodion_ports=${DCS_MASTER_PORT:-23400},${DCS_MASTER_INFO_PORT:-24400}
 reservedTrafodionPorts="net.ipv4.ip_local_reserved_ports = ${trafodion_ports}"
 
 for node in $NODE_LIST
@@ -710,7 +710,7 @@ do
    ssh $node -n 'sudo chmod 644 /etc/sysctl.conf'
    ssh $node -n 'sudo /sbin/sysctl -p'
    else
-      echo "***ERROR: Unable to reserve DCS ports (37800 and 40010)."
+      echo "***ERROR: Unable to reserve DCS ports (${trafodion_ports})."
       exit -1
    fi
 done

@@ -19,6 +19,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+#
 # @@@ END COPYRIGHT @@@
 #
 
@@ -29,7 +30,7 @@ function perform_work {
     echo "In perform_work: $lv_host"
 
     if [ -e $SQ_PDSH ]; then
-	ssh="ssh $lv_host"
+	ssh="ssh -q $lv_host"
     fi
     
     echo "remove shared memory ids on host $lv_host"
@@ -65,7 +66,7 @@ function perform_work {
 w=`whoami`
 if [ -e $SQ_PDSH ]; then
 	setup_sqpdsh
-	hosts=`eval "$SQPDSHA hostname" |awk '{ print $2 }'|sort`
+	hosts=`eval "$PDSH $MY_NODES $PDSH_SSH_CMD hostname" |awk '{ print $2 }'|sort`
 else
 	hosts=`hostname`
 fi
