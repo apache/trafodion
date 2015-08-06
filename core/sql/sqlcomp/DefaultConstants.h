@@ -3744,8 +3744,6 @@ enum DefaultConstants
 
   TRAF_MULTI_COL_FAM,
 
-  EXE_MEMORY_FOR_PROBE_CACHE_IN_MB,
-
   // estimated max naheap memory, used as a limit for update stats utility
   USTAT_NAHEAP_ESTIMATED_MAX,
 
