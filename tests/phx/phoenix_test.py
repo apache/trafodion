@@ -440,7 +440,7 @@ def prog_parse_args():
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
     DEFAULT_RESULTS_DIR = os.path.join(gvars.my_ROOT, 'results')
-    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/jdbcT4.jar'
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/jdbcT4.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
 
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -478,7 +478,7 @@ def prog_parse_args():
         optparse.make_option('', '--jdbccp', action='store', type='string',
                              dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
                              help="jdbc classpath, defaulted to " +
-                                  "'${project.basedir}/lib/hp/tr/jdbcT4.jar', \t\t "
+                                  "'${project.basedir}/lib/jdbcT4.jar', \t\t "
                                   "<test_root> is where this program is"),
         optparse.make_option('', '--resultdir', action='store', type='string',
                              dest='resultdir', default=DEFAULT_RESULTS_DIR,
@@ -828,7 +828,7 @@ else:
 
     # generate command to run tests without Maven
     gvars.my_RUN_CMD = (os.path.join(ArgList._javahome, 'bin/java') + ' -cp ' + myclasspath +
-                        ' ' + myoptions + ' -Duser.timezone=GMT -Dhpjdbc.properties=' +
+                        ' ' + myoptions + ' -Duser.timezone=GMT -Dtrafjdbc.properties=' +
                         ArgList._prop_file + ' org.junit.runner.JUnitCore ' +
                         'test.java.com.hp.phoenix.end2end.')
 

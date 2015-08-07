@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1834,8 +1837,8 @@ desc_struct * Generator::createVirtualTableDesc(
 
   if (tableInfo)
     table_desc->body.table_desc.rowFormat =
-      (tableInfo->rowFormat == 1 ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
-  
+      tableInfo->rowFormat ;
+
   if (CmpCommon::context()->sqlSession()->validateVolatileName(tableName))
     table_desc->body.table_desc.isVolatile = 1;
   else
@@ -1962,6 +1965,7 @@ desc_struct * Generator::createVirtualTableDesc(
   index_desc->body.indexes_desc.isVolatile = table_desc->body.table_desc.isVolatile;
   index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
   index_desc->body.indexes_desc.numSaltPartns = 0;
+  index_desc->body.indexes_desc.rowFormat = table_desc->body.table_desc.rowFormat;
   if (tableInfo)
   {
       index_desc->body.indexes_desc.numSaltPartns = tableInfo->numSaltPartns;
@@ -2011,6 +2015,8 @@ desc_struct * Generator::createVirtualTableDesc(
           curr_index_desc->body.indexes_desc.hbaseCreateOptions  = NULL;
           curr_index_desc->body.indexes_desc.numSaltPartns = 
             indexInfo[i].numSaltPartns;
+          curr_index_desc->body.indexes_desc.rowFormat = 
+            indexInfo[i].rowFormat;
           if (indexInfo[i].hbaseCreateOptions)
           {
             curr_index_desc->body.indexes_desc.hbaseCreateOptions  = 

@@ -38,7 +38,7 @@ public class PropTest
         Connection conn = null;
         try {
             // The option -Dproperties=propFile can be used to instead of System.setProperty()
-            System.setProperty("properties", System.getProperty("hpjdbc.properties"));
+            System.setProperty("properties", System.getProperty("trafjdbc.properties"));
 
             conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
             System.out.println("Catalog : " + conn.getCatalog());

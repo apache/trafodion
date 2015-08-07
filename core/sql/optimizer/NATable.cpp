@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -3393,6 +3396,9 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 	    table->setHasLobColumn(TRUE);
 
 	  if (CmpSeabaseDDL::isEncodingNeededForSerialization(newColumn))
+	    table->setHasSerializedEncodedColumn(TRUE);
+
+          if (CmpSeabaseDDL::isSerialized(newColumn->getHbaseColFlags()))
 	    table->setHasSerializedColumn(TRUE);
 	}
 
@@ -3680,6 +3686,24 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 
       NABoolean isNotAvailable =
 	indexes_desc->body.indexes_desc.notAvailable;
+/*
+      RowFormatEnum rowFormat;
+      switch (indexes_desc->body.indexes_desc.rowFormat)
+      {
+        case COM_PACKED_FORMAT_TYPE:
+           rowFormat = SQLMX_ROW_FORMAT;
+           break;
+        case COM_ALIGNED_FORMAT_TYPE:
+           rowFormat = SQLMX_ALIGNED_ROW_FORMAT;
+           break;
+        case COM_HBASE_FORMAT_TYPE:
+           rowFormat = SQLMX_HBASE_FORMAT;
+           break;
+        default:
+           rowFormat = SQLMX_UNKNOWN_FORMAT;
+      }
+*/
+
 
       ItemExprList hbaseSaltColumnList(CmpCommon::statementHeap());
       Int64 numOfSaltedPartitions = 0;
@@ -4196,6 +4220,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       if (isNotAvailable)
 	newIndex->setNotAvailable(TRUE);
 
+      newIndex->setRowFormat(indexes_desc->body.indexes_desc.rowFormat);
       // Mark each NAColumn in the list
       indexKeyColumns.setIndexKey();
       if ((table->isHbaseTable()) && (indexes_desc->body.indexes_desc.keytag != 0))
@@ -4858,6 +4883,9 @@ NATable::NATable(BindWA *bindWA,
       break;
     case COM_ALIGNED_FORMAT_TYPE:
       setSQLMXAlignedTable(TRUE);
+      break;
+    case COM_HBASE_FORMAT_TYPE:
+    case COM_UNKNOWN_FORMAT_TYPE:
       break;
     }
 

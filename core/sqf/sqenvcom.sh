@@ -1,21 +1,23 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
 ##############################################################
 # Set / Calculate standard environmental values
@@ -115,7 +117,10 @@ fi
 
 
 export SQ_PDSH=/usr/bin/pdsh
+export PDSH="$SQ_PDSH -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
 export SQ_PDCP=/usr/bin/pdcp
+export PDCP="$SQ_PDCP -R ssh"
 export TAR_DOWNLOAD_ROOT=$HOME/sqllogs
 export CACERTS_DIR=$HOME/cacerts
 
@@ -123,8 +128,11 @@ export CACERTS_DIR=$HOME/cacerts
 # Examples:
 # Red Hat Enterprise Linux Server release 6.3 (Santiago)
 # CentOS release 6.5 (Final)
-export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-release)
-
+if [[ "$SUSE_LINUX" == "false" ]]; then
+   export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-release)
+else
+   export RH_MAJ_VERS=6
+fi
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
@@ -767,3 +775,5 @@ if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo $CLASSPATH | sed -e's/:/ /g' | fmt -w2 | xargs printf '\t%s\n'
   echo
 fi
+export DCS_INSTALL_DIR=/home/trafodion/trafodion-20150801_0830/dcs-1.2.0
+export REST_INSTALL_DIR=/home/trafodion/trafodion-20150801_0830/rest-1.2.0

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -2172,8 +2175,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 
-  ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
-    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  ExpTupleDesc::TupleDataFormat hbaseRowFormat ;
   ValueIdList asciiVids;
   ValueIdList executorPredCastVids;
   ValueIdList convertExprCastVids;
@@ -2182,6 +2184,16 @@ short HbaseAccess::codeGen(Generator * generator)
   NABoolean hasAddedColumns = FALSE;
   if (getTableDesc()->getNATable()->hasAddedColumn())
     hasAddedColumns = TRUE;
+
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
+  // If CIF is not OFF use aligned format, except when table is
+  // not aligned and it has added columns. Support for added columns
+  // in not aligned tables is doable, but is turned off now due to
+  // this case causing a regression failure.
+  hbaseRowFormat = ((hasAddedColumns && !isAlignedFormat) || 
+		    (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_OFF )) ? 
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT : ExpTupleDesc::SQLMX_ALIGNED_FORMAT ;
 
   // build key information
   keyRangeGen * keyInfo = 0;
@@ -2200,10 +2212,44 @@ short HbaseAccess::codeGen(Generator * generator)
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   const ValueIdList &retColumnList = retColRefSet_; 
+  // Always get the index name -- it will be the base tablename for
+  // primary access if it is trafodion table.
+  char * tablename = NULL;
+  char * snapshotName = NULL;
+  LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
+  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
+    {
+      tablename =
+        space->AllocateAndCopyToAlignedSpace(
+                                             GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
+      latestSnpSupport = latest_snp_not_trafodion_table;
+    }
+  else
+    {
+      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+      {
+         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+         if (getIndexDesc()->isClusteringIndex())
+         {
+            //base table
+            snapshotName = (char*)getTableDesc()->getNATable()->getSnapshotName() ;
+           if (snapshotName == NULL)
+             latestSnpSupport = latest_snp_no_snapshot_available;
+          }
+          else
+            latestSnpSupport = latest_snp_index_table;
+      }
+    }
+
+  if (! tablename) 
+     tablename =
+        space->AllocateAndCopyToAlignedSpace(
+                                           GenGetQualifiedName(getTableName()), 0);
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+      (NOT isAlignedFormat))
     sortValues(retColumnList, columnList,
 	       (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
   else
@@ -2266,7 +2312,7 @@ short HbaseAccess::codeGen(Generator * generator)
 				     givenType,         // [IN] Actual type of HDFS column
 				     asciiValue,         // [OUT] Returned expression for ascii rep.
 				     castValue,        // [OUT] Returned expression for binary rep.
-                                     getTableDesc()->getNATable()->isSQLMXAlignedTable()
+                                     isAlignedFormat
 				     );
      
      GenAssert(res == 1 && castValue != NULL,
@@ -2312,7 +2358,7 @@ short HbaseAccess::codeGen(Generator * generator)
   ValueIdList encodedKeyExprVids(encodedKeyExprVidArr);
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
-    (getTableDesc()->getNATable()->isSQLMXAlignedTable() ?
+    (isAlignedFormat ?
      ExpTupleDesc::SQLMX_ALIGNED_FORMAT :
      ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
 
@@ -2448,7 +2494,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
   Queue * listOfFetchedColNames = NULL;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+      (isAlignedFormat))
     {
       listOfFetchedColNames = new(space) Queue(space);
 
@@ -2571,7 +2617,7 @@ short HbaseAccess::codeGen(Generator * generator)
 					 FALSE,                                // [IN] add convert nodes?
 					 work_atp,                            // [IN] target atp number
 					 hbaseFilterValTuppIndex,    // [IN] target tupp index
-					 hbaseRowFormat,                        // [IN] target tuple format
+					 asciiRowFormat,                        // [IN] target tuple format
 					 hbaseFilterValRowLen,             // [OUT] target tuple length
 					 &hbaseFilterValExpr,                // [OUT] move expression
 					 &hbaseFilterValTupleDesc,                     // [optional OUT] target tuple desc
@@ -2659,42 +2705,6 @@ short HbaseAccess::codeGen(Generator * generator)
   //
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
 
-
-  // Always get the index name -- it will be the base tablename for
-  // primary access.
-  char * tablename = NULL;
-  char * snapshotName = NULL;
-  LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
-  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
-    {
-      tablename = 
-	space->AllocateAndCopyToAlignedSpace(
-					     GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
-      latestSnpSupport = latest_snp_not_trafodion_table;
-    }
-  else
-    {
-      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-      {
-         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
-         if (getIndexDesc()->isClusteringIndex())
-         {
-            //base table
-            snapshotName = (char*)getTableDesc()->getNATable()->getSnapshotName() ;
-           if (snapshotName == NULL)
-             latestSnpSupport = latest_snp_no_snapshot_available;
-          }
-          else
-            latestSnpSupport = latest_snp_index_table;
-      }
-    }
-
-  if (! tablename)
-    tablename = 
-      space->AllocateAndCopyToAlignedSpace(
-					   GenGetQualifiedName(getTableName()), 0);
-  
   Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
   if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <
                 getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD)*1024*1024)
@@ -2855,12 +2865,16 @@ short HbaseAccess::codeGen(Generator * generator)
   if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
     hbasescan_tdb->setRowwiseFormat(TRUE);
 
+  hbasescan_tdb->setUseCif(hbaseRowFormat == 
+			   ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
+
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
 
-      if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
+      if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
+
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());

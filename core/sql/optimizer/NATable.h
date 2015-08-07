@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -560,21 +563,38 @@ public:
   {  return (flags_ & IS_INSERTABLE) != 0; }
 
   void setSQLMXTable( NABoolean value )
-  {  value ? flags_ |= SQLMX_ROW_FORMAT : flags_ &= ~SQLMX_ROW_FORMAT; }
+  {  value ? flags_ |= SQLMX_ROW_TABLE : flags_ &= ~SQLMX_ROW_TABLE; }
 
   NABoolean isSQLMXTable() const
-  {  return (flags_ & SQLMX_ROW_FORMAT) != 0; }
+  {  return (flags_ & SQLMX_ROW_TABLE) != 0; }
 
   void setSQLMXAlignedTable( NABoolean value )
   {
     (value
-     ? flags_ |= SQLMX_ALIGNED_ROW_FORMAT
-     : flags_ &= ~SQLMX_ALIGNED_ROW_FORMAT);
+     ? flags_ |= SQLMX_ALIGNED_ROW_TABLE
+     : flags_ &= ~SQLMX_ALIGNED_ROW_TABLE);
   }
 
   NABoolean isSQLMXAlignedTable() const
-  {  return (flags_ & SQLMX_ALIGNED_ROW_FORMAT) != 0; }
+  {
+    if (getClusteringIndex() != NULL)
+       return getClusteringIndex()->isSqlmxAlignedRowFormat();
+    else
+       return getSQLMXAlignedTable();
+  }
 
+  NABoolean isAlignedFormat(const IndexDesc *indexDesc) const
+  {
+    NABoolean isAlignedFormat;
+
+    if (isHbaseRowTable()||
+      isHbaseCellTable() || (indexDesc == NULL))
+      isAlignedFormat  = isSQLMXAlignedTable();
+    else
+      isAlignedFormat = indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat();
+    return isAlignedFormat;
+  }
+ 
 // LCOV_EXCL_START :cnu
   void setVerticalPartitions( NABoolean value )
   {  value ? flags_ |= IS_VERTICAL_PARTITION : flags_ &= ~IS_VERTICAL_PARTITION;}
@@ -662,6 +682,12 @@ public:
 
   NABoolean hasLobColumn() const
   {  return (flags_ & LOB_COLUMN) != 0; }
+
+  void setHasSerializedEncodedColumn( NABoolean value )
+  {  value ? flags_ |= SERIALIZED_ENCODED_COLUMN : flags_ &= ~SERIALIZED_ENCODED_COLUMN; }
+
+  NABoolean hasSerializedEncodedColumn() const
+  {  return (flags_ & SERIALIZED_ENCODED_COLUMN) != 0; }
 
   void setHasSerializedColumn( NABoolean value )
   {  value ? flags_ |= SERIALIZED_COLUMN : flags_ &= ~SERIALIZED_COLUMN; }
@@ -805,6 +831,9 @@ public:
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
 private:
+  NABoolean getSQLMXAlignedTable() const
+  {  return (flags_ & SQLMX_ALIGNED_ROW_TABLE) != 0; }
+
   // copy ctor
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
 
@@ -855,8 +884,8 @@ private:
   // Bitfield flags to be used instead of numerous NABoolean fields
   enum Flags {
     UNUSED                    = 0x00000000,
-    SQLMX_ROW_FORMAT          = 0x00000004,
-    SQLMX_ALIGNED_ROW_FORMAT  = 0x00000008,
+    SQLMX_ROW_TABLE           = 0x00000004,
+    SQLMX_ALIGNED_ROW_TABLE   = 0x00000008,
     IS_INSERTABLE             = 0x00000010,
     IS_UPDATABLE              = 0x00000020,
     IS_VERTICAL_PARTITION     = 0x00000040,
@@ -870,7 +899,8 @@ private:
     DROPPABLE                 = 0x00004000,
     LOB_COLUMN                = 0x00008000,
     REMOVE_FROM_CACHE_BNC     = 0x00010000,  // Remove from NATable Cache Before Next Compilation
-    SERIALIZED_COLUMN    = 0x00020000
+    SERIALIZED_ENCODED_COLUMN  = 0x00020000,
+    SERIALIZED_COLUMN          = 0x00040000
   };
     
   UInt32 flags_;

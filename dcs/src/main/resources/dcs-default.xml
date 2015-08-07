@@ -55,7 +55,7 @@
   </property>
   <property>
     <name>dcs.master.port</name>
-    <value>37800</value>
+    <value>23400</value>
     <description>
         Default DCS port.
     </description>
@@ -69,7 +69,7 @@
   </property>  
   <property>
     <name>dcs.master.info.port</name>
-    <value>40010</value>
+    <value>24400</value>
     <description>The port for the Dcs Master web UI.
     Set to -1 if you do not want a UI instance run.
     </description>

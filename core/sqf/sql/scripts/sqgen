@@ -1,20 +1,23 @@
 #!/bin/bash
-#
+
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -127,21 +130,22 @@ mkdir -p $MPI_TMPDIR
 # mkdir a dir for CBF data used by SQL IUS feature
 mkdir -p $HOME/cbfs
 
+#If pdsh exists
 if [ -e $SQ_PDSH ]; then
     echo
     echo "Creating directories on cluster nodes"
 
-    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQETC_DIR "
-    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQETC_DIR
+    echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQETC_DIR "
+    $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQETC_DIR
     
-    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQLOG_DIR "
-    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQLOG_DIR
+    echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQLOG_DIR "
+    $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $SQLOG_DIR
 
-    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $MPI_TMPDIR "
-    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $MPI_TMPDIR
+    echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR "
+    $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $MPI_TMPDIR
 
-    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $PWD "
-    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $PWD
+    echo "$PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $PWD "
+    $PDSH -w ${ExNodeList[@]} -x `uname -n` $PDSH_SSH_CMD mkdir -p $PWD
 
 fi
 
@@ -209,38 +213,38 @@ if [ -e $SQ_PDCP ]; then
     echo "Copying the generated files to all the nodes in the cluster"
     echo
     echo "Copying $SQCLUSTERCONF_FILE to $MPI_TMPDIR of all the nodes"
-    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR"
-    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR"
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR
 
 
     echo
     echo "Copying $SQETC_DIR/ms.env to $SQETC_DIR of all the nodes"
-    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR "
-    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR
 
     echo
     echo "Copying $SQETC_DIR/seamonster.env to $SQETC_DIR of all the nodes"
-    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR "
-    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR
 
     if [[ $sq_seamonster == 1 ]]; then 
         if [ -f $SQESPENV_FILE ]; then
             echo
             echo "Copying $SQESPENV_FILE to $MY_SQROOT/sql/scripts of all the nodes"
-            echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts "
-            $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts
+            echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts "
+            $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts
         fi
     fi
 
     echo
     echo "Copying rest of the generated files to $PWD"
 
-    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD "
-    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD
 
 
-    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "
-    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD
 
 
     echo
