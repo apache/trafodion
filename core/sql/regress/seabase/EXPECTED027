@@ -12,7 +12,7 @@
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:15:57 2015
+-- Definition current  Fri Aug  7 13:32:06 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -39,7 +39,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:01 2015
+-- Definition current  Fri Aug  7 13:32:16 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -67,7 +67,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:09 2015
+-- Definition current  Fri Aug  7 13:32:23 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -98,7 +98,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:16 2015
+-- Definition current  Fri Aug  7 13:32:32 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -127,7 +127,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:20 2015
+-- Definition current  Fri Aug  7 13:32:37 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -191,7 +191,7 @@ A            B            C
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:23 2015
+-- Definition current  Fri Aug  7 13:32:40 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -228,7 +228,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:29 2015
+-- Definition current  Fri Aug  7 13:32:46 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -267,7 +267,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:31 2015
+-- Definition current  Fri Aug  7 13:32:52 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -304,7 +304,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Mon Jul 20 01:16:32 2015
+-- Definition current  Fri Aug  7 13:32:54 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -343,7 +343,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Mon Jul 20 01:16:41 2015
+-- Definition current  Fri Aug  7 13:33:03 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -387,7 +387,7 @@ A            B            C            E            D
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Mon Jul 20 01:16:45 2015
+-- Definition current  Fri Aug  7 13:33:08 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -426,7 +426,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Mon Jul 20 01:16:52 2015
+-- Definition current  Fri Aug  7 13:33:16 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -460,7 +460,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Mon Jul 20 01:16:56 2015
+-- Definition current  Fri Aug  7 13:33:19 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -491,7 +491,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Mon Jul 20 01:17:01 2015
+-- Definition current  Fri Aug  7 13:33:24 2015
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -522,7 +522,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Mon Jul 20 01:17:15 2015
+-- Definition current  Fri Aug  7 13:33:38 2015
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -556,6 +556,41 @@ CREATE VOLATILE TABLE T027T03
 
 --- SQL operation complete.
 >>
+>>drop table if exists t027t03;
+
+--- SQL operation complete.
+>>create table t027t03("cf1".a int not null, "cf2".b int not null, c int not null, d int not null, 
++> primary key (a, b));
+
+--- SQL operation complete.
+>>invoke t027t03;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T03
+-- Definition current  Fri Aug  7 13:33:56 2015
+
+  (
+    "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>insert into t027t03 values (1,1,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t027t03 values (1,2,2,2);
+
+--- 1 row(s) inserted.
+>>select * from t027t03;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            1            1            1
+          1            2            2            2
+
+--- 2 row(s) selected.
 >>
 >>-- negative tests
 >>drop table if exists t027t02;
@@ -647,6 +682,9 @@ create index t027t01i2 on t027t01("cf2".b);
 
 --- SQL operation complete.
 >>drop table if exists t027t011;
+
+--- SQL operation complete.
+>>drop table if exists t027t03;
 
 --- SQL operation complete.
 >>

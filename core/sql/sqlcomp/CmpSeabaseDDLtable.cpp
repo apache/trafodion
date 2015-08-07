@@ -1710,7 +1710,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
       return -1;
     }
 
-  // update TEXT table with column families
+  // update TEXT table with column families.
+  // Column families are stored separated by a blank space character.
   NAString allColFams;
   NABoolean addToTextTab = FALSE;
   if (defaultColFam != SEABASE_DEFAULT_COL_FAMILY)
@@ -4325,14 +4326,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
     }
 
   // if column family of added col doesnt exist in the table, add it
-  //  CollIndex idx = naTable->allColFams().index(colFamily);
-  //  if (idx == NULL_COLL_INDEX) // doesnt exist, add it
   if (addFam)
     {
-      // col family doesnt exist. Add it to the table.
-      //      NAString trafColFam;
-      //      genTrafColFam(naTable->allColFams().entries(), trafColFam);
-
       NAString currColFams;
       if (getTextFromMD(&cliInterface, objUID, COM_HBASE_COL_FAMILY_TEXT, 
                         0, currColFams))
@@ -4367,7 +4362,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           return;
         }
 
-      HbaseCreateOption hbco("NAME", trafColFam.data()); //colFamily.data());
+      HbaseCreateOption hbco("NAME", trafColFam.data()); 
       NAList<HbaseCreateOption*> hbcol;
       hbcol.insert(&hbco);
       ElemDDLHbaseOptions edhbo(&hbcol, STMTHEAP);

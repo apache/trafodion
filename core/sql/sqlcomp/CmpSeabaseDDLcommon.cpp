@@ -2298,12 +2298,6 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   HBASE_NAMELIST colFamList;
   HbaseStr colFam;
 
-  if (! hbaseCreateOptions)
-    {
-      //      *CmpCommon::diags() << DgSqlCode(-9999);
-      //      return -1;
-    } 
-
   retcode = -1;
   Lng32 numTries = 0;
   Lng32 delaySecs = 500; // 5 secs to start with
@@ -4119,7 +4113,6 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
       Lng32 cliRC = deleteFromTextTable(cliInterface, objectUID, textType, textSubID);
       if (cliRC < 0)
         {
-          //          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           result = -1;
         }
       else
@@ -5261,6 +5254,9 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
 //  1-byte-num is character '2' through '9', or 'a' through 'x'.
 // This allows for 32 column families and
 // is the index of user specified col family stored in naTable.allColFam().
+//
+// Family "#1" is reserved for system default column family name. This is also
+// the name that was used priori to multi-col fam support.
 short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
 {
   trafColFamily = "#";
@@ -5292,8 +5288,12 @@ short CmpSeabaseDDL::extractTrafColFam(const NAString &trafColFam, int &index)
   return 0;
 }
 
+// inColFamily:       user specified column family
+// trafColFamily:     col fam stored in traf tables 
+// userColFamVec:  unique array of user col families
+// trafColFamVec:   unique array of traf col families 
 short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
-                                      NAString &outColFamily,
+                                      NAString &trafColFamily,
                                       std::vector<NAString> *userColFamVec,
                                       std::vector<NAString> *trafColFamVec)
 {
@@ -5302,7 +5302,7 @@ short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
   
   if (! userColFamVec)
     {
-      outColFamily = inColFamily;
+      trafColFamily = inColFamily;
       return 0;
     }
 
@@ -5319,20 +5319,37 @@ short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
         i++;
     }
 
+  // add this user col fam to user fam array if not already there.
   if (NOT found)
     {
       userColFamVec->push_back(inColFamily);
     }
 
   if (inColFamily == SEABASE_DEFAULT_COL_FAMILY)
-    outColFamily = SEABASE_DEFAULT_COL_FAMILY;
+    trafColFamily = SEABASE_DEFAULT_COL_FAMILY;
   else
     {
-      genTrafColFam(i, outColFamily);
+      genTrafColFam(i, trafColFamily);
     }
 
   if (trafColFamVec)
-    trafColFamVec->push_back(outColFamily);
+    {
+      found = FALSE;
+      i = 0;
+      while ((NOT found) && (i < trafColFamVec->size()))
+        {
+          NAString &nas = (*trafColFamVec)[i];
+          if (nas == trafColFamily)
+            {
+              found = TRUE;
+            }
+          else
+            i++;
+        }
+
+      if (not found)
+        trafColFamVec->push_back(trafColFamily);
+    }
 
   return 0;
 }

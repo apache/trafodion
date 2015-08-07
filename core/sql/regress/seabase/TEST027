@@ -97,6 +97,13 @@ create table t027t02 (
      a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
     a30.a30 int) attribute default column family 'cf';
 
+drop table if exists t027t03;
+create table t027t03("cf1".a int not null, "cf2".b int not null, c int not null, d int not null, 
+ primary key (a, b));
+invoke t027t03;
+insert into t027t03 values (1,1,1,1);
+insert into t027t03 values (1,2,2,2);
+select * from t027t03;
 
 -- negative tests
 drop table if exists t027t02;
@@ -140,5 +147,6 @@ create table t027t02 (
 drop table if exists t027t01;
 drop table if exists t027t02;
 drop table if exists t027t011;
+drop table if exists t027t03;
 
 log;
