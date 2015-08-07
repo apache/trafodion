@@ -29,16 +29,15 @@ sudo /sbin/service cloudera-scm-agent hard_stop
 
 #==============================================
 echo "***INFO: Uninstall packages"
-sudo yum --assumeyes remove cloudera-manager-* 
-sudo yum --assumeyes remove hadoop 
-sudo yum --assumeyes remove hue-common 
-sudo yum --assumeyes remove bigtop-* 
-sudo yum --assumeyes remove sqoop2-client
-sudo yum --assumeyes clean all
+sudo zypper remove -y cloudera-manager-* 
+sudo zypper remove -y hadoop 
+sudo zypper remove -y hue-common 
+sudo zypper remove -y bigtop-* 
+sudo zypper remove -y sqoop2-client
 
 #==============================================
 echo "***INFO: Remove Cloudera Manager and CDH data"
-sudo rm -Rf /usr/share/cmf /var/lib/cloudera* /var/cache/yum/cloudera* /var/log/cloudera* /var/run/cloudera* /opt/cloudera* /tmp/scm_prepare_node*  /etc/cloudera*
+sudo rm -Rf /usr/share/cmf /var/lib/cloudera* /var/log/cloudera* /var/run/cloudera* /opt/cloudera* /tmp/scm_prepare_node*  /etc/cloudera*
 
 sudo rm -Rf /var/lib/flume-ng /var/lib/hadoop* /var/lib/hue /var/lib/oozie /var/lib/solr /var/lib/sqoop* /var/lib/zookeeper*
 
@@ -92,7 +91,6 @@ sudo pkill -f cloudera-scm
 
 sudo umount /var/run/cloudera-scm-agent/process
 
-sudo yum-complete-transaction
 #==============================================
 echo "***INFO: Removing any remaining Cloudera RPM's"
 
@@ -100,21 +98,21 @@ listRPM=`rpm -qa | grep hadoop`
 
 for i in ${listRPM[@]}; do
     sudo rpm -e $i 2>/dev/null
-    sudo yum -y remove $i 2>/dev/null
+    sudo zypper remove -y $i 2>/dev/null
 done
 
 listRPM=`rpm -qa | grep cloudera`
 
 for i in ${listRPM[@]}; do 
     sudo rpm -e $i 2>/dev/null
-    sudo yum remove $i 2>/dev/null
+    sudo zypper remove -y $i 2>/dev/null
 done
 
 listRPM=`rpm -qa | grep hbase`
 
 for i in ${listRPM[@]}; do
     sudo rpm -e $i 2>/dev/null
-    sudo yum -y remove $i 2>/dev/null
+    sudo zypper remove -y $i 2>/dev/null
 done
 
 #==============================================
@@ -142,7 +140,5 @@ if [[ -f /cloudera-scm-server-db ]]; then
 fi
 #============================================
 echo "***INFO: Performing additional clean up"
-sudo rm -rf /var/cache/yum/x86_64/6/cloudera*
-sudo yum clean all
 sudo rpm --rebuilddb
 
