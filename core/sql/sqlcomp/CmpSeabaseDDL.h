@@ -1167,8 +1167,6 @@ class CmpSeabaseDDL
      StmtDDLGiveSchema * giveSchemaNode,
      NAString          & currentCatalogName);
 
-  desc_struct * assembleRegionDescs(ByteArrayList* bal, desc_nodetype format);
-
   void glueQueryFragments(Lng32 queryArraySize,
 			  const QString * queryArray,
 			  char * &gluedQuery,
@@ -1246,5 +1244,8 @@ class CmpSeabaseDDL
 
   NABoolean cmpSwitched_;
 };
+
+desc_struct* assembleDescs(ByteArrayList* bal, populateFuncT func, NAMemory* heap);
+
 
 #endif // _CMP_SEABASE_DDL_H_

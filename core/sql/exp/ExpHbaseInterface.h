@@ -360,7 +360,9 @@ class ExpHbaseInterface : public NABasicObject
 		      const Text& tblName,
 		      const std::vector<Text> & actionCodes) = 0;
 
-  virtual ByteArrayList* getRegionInfo(const char*) = 0;
+  virtual ByteArrayList* getRegionBeginKeys(const char*) = 0;
+  virtual ByteArrayList* getRegionEndKeys(const char*) = 0;
+
   virtual Lng32 flushTable() = 0;
   static Lng32 flushAllTables();
 
@@ -663,7 +665,9 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
   		      const std::vector<Text> & actionCodes);
 
 
-  virtual ByteArrayList* getRegionInfo(const char*);
+  virtual ByteArrayList* getRegionBeginKeys(const char*);
+  virtual ByteArrayList* getRegionEndKeys(const char*);
+
   virtual Lng32 flushTable();
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,

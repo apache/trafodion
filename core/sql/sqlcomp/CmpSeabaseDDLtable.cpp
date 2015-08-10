@@ -8094,6 +8094,27 @@ desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
   return tableDesc;
 }
 
+void populateRegionDescForEndKey(char* buf, Int32 len, struct desc_struct* target)
+{
+   target->body.hbase_region_desc.beginKey = NULL;
+   target->body.hbase_region_desc.beginKeyLen = 0;
+   target->body.hbase_region_desc.endKey = buf;
+   target->body.hbase_region_desc.endKeyLen = len;
+}
+
+void populateRegionDescAsHASH2(char* buf, Int32 len, struct desc_struct* target, NAMemory*)
+{
+   target->header.nodetype = DESC_HBASE_HASH2_REGION_TYPE;
+   populateRegionDescForEndKey(buf, len, target);
+}
+
+void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*)
+{
+   target->header.nodetype = DESC_HBASE_RANGE_REGION_TYPE;
+   populateRegionDescForEndKey(buf, len, target);
+}
+
+
 desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName, 
                                                      const NAString &schName, 
                                                      const NAString &objName,
@@ -8836,17 +8857,17 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
        // request the default
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
-      ByteArrayList* bal = ehi->getRegionInfo(extNameForHbase);
+      ByteArrayList* bal = ehi->getRegionEndKeys(extNameForHbase);
 
       // Set the header.nodetype to either HASH2 or RANGE based on whether
       // the table is salted or not.  
       if (tableIsSalted && CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_ON) 
         ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-          assembleRegionDescs(bal, DESC_HBASE_HASH2_REGION_TYPE);
+          assembleDescs(bal, populateRegionDescAsHASH2, STMTHEAP);
       else
        if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_ON ) 
          ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-            assembleRegionDescs(bal, DESC_HBASE_RANGE_REGION_TYPE);
+            assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
       delete bal;
 
       // if this is base table or index and hbase object doesn't exist, then this object
@@ -8993,7 +9014,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
 // Generator::createVirtualTableDesc() call make before this one that
 // uses STMTPHEAP througout.
 //
-desc_struct* CmpSeabaseDDL::assembleRegionDescs(ByteArrayList* bal, desc_nodetype format)
+desc_struct* assembleDescs(ByteArrayList* bal, populateFuncT func, NAMemory* heap)
 {
    if ( !bal )
      return NULL;
@@ -9013,25 +9034,21 @@ desc_struct* CmpSeabaseDDL::assembleRegionDescs(ByteArrayList* bal, desc_nodetyp
    
       if ( len > 0 ) {
    
-         buf = new (STMTHEAP) char[len];
+         buf = new (heap) char[len];
          Int32 datalen;
   
          if ( !bal->getEntry(i, buf, len, datalen) || datalen != len ) {
             return NULL;
          }
-      }
+      } else
+         buf = NULL;
 
       desc_struct* wrapper = NULL;
-      wrapper = new (STMTHEAP) desc_struct();
+      wrapper = new (heap) desc_struct();
       wrapper->header.OSV = 0; // TBD
       wrapper->header.OFV = 0; // TBD
 
-      wrapper->header.nodetype = format;
-
-      wrapper->body.hbase_region_desc.beginKey = NULL;
-      wrapper->body.hbase_region_desc.beginKeyLen = 0;
-      wrapper->body.hbase_region_desc.endKey = buf;
-      wrapper->body.hbase_region_desc.endKeyLen = len;
+      (*func)(buf, len, wrapper, heap);
 
       wrapper->header.next = result;
       result = wrapper;

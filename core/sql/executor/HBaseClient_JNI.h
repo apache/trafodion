@@ -345,6 +345,7 @@ public:
   // Get the error description.
   virtual char* getErrorText(HTC_RetCode errEnum);
 
+  ByteArrayList* getBeginKeys();
   ByteArrayList* getEndKeys();
 
   HTC_RetCode flushTable(); 
@@ -378,6 +379,8 @@ public:
 
 private:
   NAString getLastJavaError();
+  ByteArrayList* getKeys(Int32 funcIndex);
+
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_GET_ERROR 
@@ -401,6 +404,7 @@ private:
    ,JM_FETCH_ROWS
    ,JM_DIRECT_GET_ROWS
    ,JM_COMPLETE_PUT
+   ,JM_GETBEGINKEYS
    ,JM_LAST
   };
   char *tableName_; 

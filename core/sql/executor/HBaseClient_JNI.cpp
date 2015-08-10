@@ -3018,6 +3018,8 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_DIRECT_GET_ROWS ].jm_signature = "(JSLjava/lang/Object;[Ljava/lang/Object;)I";
     JavaMethods_[JM_COMPLETE_PUT ].jm_name      = "completeAsyncOperation";
     JavaMethods_[JM_COMPLETE_PUT ].jm_signature = "(I[Z)Z";
+    JavaMethods_[JM_GETBEGINKEYS ].jm_name      = "getStartKeys";
+    JavaMethods_[JM_GETBEGINKEYS ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/ByteArrayList;";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -4223,7 +4225,17 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
   return HTC_OK;
 }
 
+ByteArrayList* HTableClient_JNI::getBeginKeys()
+{
+   return HTableClient_JNI::getKeys(JM_GETBEGINKEYS);
+}
+
 ByteArrayList* HTableClient_JNI::getEndKeys()
+{
+   return HTableClient_JNI::getKeys(JM_GETENDKEYS);
+}
+
+ByteArrayList* HTableClient_JNI::getKeys(Int32 funcIndex)
 {
 
   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
@@ -4231,7 +4243,7 @@ ByteArrayList* HTableClient_JNI::getEndKeys()
     return NULL;
   }
   jobject jByteArrayList = 
-     jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GETENDKEYS].methodID);
+     jenv_->CallObjectMethod(javaObj_, JavaMethods_[funcIndex].methodID);
 
   if (jenv_->ExceptionCheck())
   {
@@ -4246,16 +4258,16 @@ ByteArrayList* HTableClient_JNI::getEndKeys()
     return NULL;
   }
 
-  ByteArrayList* endKeys = new (heap_) ByteArrayList(heap_, jByteArrayList);
+  ByteArrayList* keys = new (heap_) ByteArrayList(heap_, jByteArrayList);
   jenv_->DeleteLocalRef(jByteArrayList);
-  if (endKeys->init() != BAL_OK)
+  if (keys->init() != BAL_OK)
   {
-     NADELETE(endKeys, ByteArrayList, heap_);
+     NADELETE(keys, ByteArrayList, heap_);
      jenv_->PopLocalFrame(NULL);
      return NULL;
   }
   jenv_->PopLocalFrame(NULL);
-  return endKeys;
+  return keys;
 
 }
 
