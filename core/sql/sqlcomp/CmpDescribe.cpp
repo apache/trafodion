@@ -2287,18 +2287,40 @@ static short cmpDisplayColumn(const NAColumn *nac,
   identityCol = FALSE;
   
   const NAString &colName = nac->getColName();
-  
+  NATable * naTable = (NATable*)nac->getNATable();
+
+  NAString colFam;
+  if ((nac->getNATable()->isSQLMXAlignedTable()) || 
+      (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY))
+    colFam = "";
+  else if (nac->getNATable()->isSeabaseTable())
+    {
+      int index = 0;
+      CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);
+
+      if (index >= naTable->allColFams().entries())
+        return -1;
+
+      colFam = ANSI_ID(naTable->allColFams()[index].data());
+      
+      colFam += ".";
+    }
+
   if (type == 3)
     {
       NAString quotedColName = "\"";
       quotedColName += colName.data(); 
       quotedColName += "\"";
-      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+      sprintf(buf, "%s%-*s ", 
+              colFam.data(),
+              CM_SIM_NAME_LEN,
               quotedColName.data());
     }
   else
     {
-      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+      sprintf(buf, "%s%-*s ", 
+              colFam.data(),
+              CM_SIM_NAME_LEN-(int)colFam.length(),
               ANSI_ID(colName.data()));
     }
   
@@ -2908,16 +2930,22 @@ short CmpDescribeSeabaseTable (
         }
 
       NABoolean attributesSet = FALSE;
-      if ((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned)))
+      if (((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned))) ||
+          (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY))
         {
-          char attrs[200];
+          char attrs[2000];
           strcpy(attrs, " ATTRIBUTES ");
 
           if (NOT isAudited)
-            strcat(attrs, "NO AUDIT");
+            strcat(attrs, "NO AUDIT ");
           if (isAligned)
-            strcat(attrs, "ALIGNED FORMAT");
-          
+            strcat(attrs, "ALIGNED FORMAT ");
+          if (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY)
+            {
+              strcat(attrs, "DEFAULT COLUMN FAMILY '");
+              strcat(attrs, naTable->defaultColFam());
+              strcat(attrs, "'");
+            }
           outputShortLine(space, attrs);
         }
 

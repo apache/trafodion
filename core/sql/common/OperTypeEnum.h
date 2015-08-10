@@ -1031,6 +1031,9 @@ enum OperatorTypeEnum {
 
                         //ROW FORMAT
                         ELM_FILE_ATTR_ROW_FORMAT_ELEM,
+  
+                       // default column family for columns specified in CREATE stmt
+                        ELM_FILE_ATTR_COL_FAM_ELEM,
 
                         ELM_GRANTEE_ELEM,
                         ELM_KEY_VALUE_ELEM,

@@ -1269,6 +1269,7 @@ $1~String1 --------------------------------
 4222 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 feature is not supported in this software version.
 4223 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 not supported in this software version.
 4224 42000 99999 BEGINNER MAJOR DBADMIN The directory $0~String0 is not a valid Hive location.
+4225 42000 99999 BEGINNER MAJOR DBADMIN Number of column families cannot exceed 32.
 4240 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expression $0~string0 in the DIVISION BY clause references columns other than clustering key columns.
 4241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The value $0~string0 is not supported at this place in the DIVISION BY clause, only constants are allowed.
 4242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The value $0~string0 is not supported at this place in the DIVISION BY clause, only key columns are allowed.

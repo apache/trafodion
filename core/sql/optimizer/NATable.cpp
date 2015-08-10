@@ -4953,6 +4953,24 @@ NATable::NATable(BindWA *bindWA,
       strcpy(snapshotName_, table_desc->body.table_desc.snapshotName);
     }
 
+  if (table_desc->body.table_desc.default_col_fam)
+    defaultColFam_ = table_desc->body.table_desc.default_col_fam;
+
+  if (table_desc->body.table_desc.all_col_fams)
+    {
+      // Space delimited col families.
+      
+      string buf; // Have a buffer string
+      stringstream ss(table_desc->body.table_desc.all_col_fams); // Insert the string into a stream
+      
+      while (ss >> buf)
+        {
+          allColFams_.insert(buf.c_str());
+        }
+    }
+  else
+    allColFams_.insert(defaultColFam_);
+
   desc_struct * files_desc = table_desc->body.table_desc.files_desc;
 
   // Some objects don't have a file_desc set up (e.g. views)

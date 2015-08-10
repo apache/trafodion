@@ -428,6 +428,13 @@ ElemDDLNode::castToElemDDLFileAttrRowFormat()
 {
   return NULL;
 }
+
+ElemDDLFileAttrColFam *
+ElemDDLNode::castToElemDDLFileAttrColFam()
+{
+  return NULL;
+}
+
 //++ MV
 ElemDDLFileAttrRangeLog *
 ElemDDLNode::castToElemDDLFileAttrRangeLog()

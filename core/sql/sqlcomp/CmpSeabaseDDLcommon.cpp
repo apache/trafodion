@@ -549,7 +549,8 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
       if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
-                            &colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
+                            &colArray, colInfoArray, FALSE, FALSE, NULL, NULL, NULL, NULL, 
+                            CTXTHEAP))
         {
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
@@ -623,11 +624,12 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
       NAList<NAString> selColList;
-      
+      NAString defaultColFam(SEABASE_DEFAULT_COL_FAMILY);
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
                                          FALSE, // no syskey
                                          FALSE, // not alignedFormat
+                                         defaultColFam,
                                          btNAColArray, btNAKeyArr,
                                          numIndexKeys, numIndexNonKeys, numIndexCols,
                                          indexColInfoArray, indexKeyInfoArray,
@@ -2090,6 +2092,9 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
   NAText * hbaseCreateOptionsArray,
   NAList<HbaseCreateOption*> * hbaseCreateOptions)
 {
+  if (! hbaseCreateOptions)
+    return 0;
+
   for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
     {
       HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
@@ -2104,16 +2109,18 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
           s = s.substr( startpos, endpos-startpos+1 );
         }
           
-      // upcase value, save original (now trimmed)
+      // upcase value, save original (now trimmed).
       valInOrigCase = s;
-      std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+
+      // Do not upcase column family name as fam name is case sensitive
+      if (hbaseOption->key() != "NAME")
+        std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 
       NABoolean isError = FALSE;
       if (hbaseOption->key() == "NAME")
         {
           hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
         }
-          
       else if (hbaseOption->key() == "MAX_VERSIONS")
         {
           if (str_atoi(hbaseOption->val().data(), 
@@ -2277,9 +2284,7 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
 
 short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
                                       HbaseStr *table,
-                                      const char * cf1, 
-                                      const char * cf2, 
-                                      const char * cf3,
+                                      std::vector<NAString> &colFamVec,
                                       NAList<HbaseCreateOption*> * hbaseCreateOptions,
                                       const int numSplits,
                                       const int keyLength,
@@ -2290,10 +2295,9 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   // metadata. It creates the corresponding hbase table.
   short retcode = 0;
 
-  // create HBASE_MD table.
   HBASE_NAMELIST colFamList;
   HbaseStr colFam;
-  
+
   retcode = -1;
   Lng32 numTries = 0;
   Lng32 delaySecs = 500; // 5 secs to start with
@@ -2336,74 +2340,46 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
     }
 
   NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-  if (hbaseCreateOptions)
+  if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
+                                hbaseCreateOptions) < 0)
     {
-      if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
-                                    hbaseCreateOptions) < 0)
-        {
-          // diags already set             
-          return -1;
-        }   
+      // diags already set             
+      return -1;
     }
-  else
+
+  if (NOT hbaseCreateOptionsArray[HBASE_NAME].empty())
     {
-      colFamList.clear();
-      char cfName[1000];
+      short retcode = -HBASE_CREATE_OPTIONS_ERROR;
+      *CmpCommon::diags() << DgSqlCode(-8448)
+                          << DgString0((char*)"CmpSeabaseDDL::generateHbaseOptionsArray()")
+                          << DgString1(getHbaseErrStr(-retcode))
+                          << DgInt0(-retcode)
+                          << DgString2((char*)"NAME");
       
-      if (cf1)
-        {
-          strcpy(cfName, cf1);
-          colFam.val = cfName;
-          colFam.len = strlen(cfName);
-          
-          colFamList.insert(colFam);
-        }
-      
-      char cfName2[1000];
-      
-      if (cf2)
-        {
-          strcpy(cfName2, cf2);
-          colFam.val = cfName2;
-          colFam.len = strlen(cfName2);
-          
-          colFamList.insert(colFam);
-        }
-      
-      char cfName3[1000];
-      
-      if (cf3)
-        {
-          strcpy(cfName3, cf3);
-          colFam.val = cfName3;
-          colFam.len = strlen(cfName3);
-          
-          colFamList.insert(colFam);
-        }
+      return -1;
     }
 
   NABoolean isMVCC = true;
   if (CmpCommon::getDefault(TRAF_TRANS_TYPE) == DF_SSCC)
     isMVCC = false;
 
-  if (hbaseCreateOptions || (numSplits > 0) )
+  NAString colFamNames;
+  for (int i = 0; i < colFamVec.size(); i++)
     {
-      if (hbaseCreateOptionsArray[HBASE_NAME].empty())
-        hbaseCreateOptionsArray[HBASE_NAME] = SEABASE_DEFAULT_COL_FAMILY;
-
-      NABoolean noXn =
-                (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-
-      retcode = ehi->create(*table, hbaseCreateOptionsArray,
-                            numSplits, keyLength,
-                            (const char **)encodedKeysBuffer,
-                            noXn,
-                            isMVCC);
+      colFamNames += colFamVec[i];
+      colFamNames += " ";
     }
-  else
-    {
-      retcode = ehi->create(*table, colFamList, isMVCC);
-    }
+
+  hbaseCreateOptionsArray[HBASE_NAME] = colFamNames.data();
+
+  NABoolean noXn =
+    (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+  
+  retcode = ehi->create(*table, hbaseCreateOptionsArray,
+                        numSplits, keyLength,
+                        (const char **)encodedKeysBuffer,
+                        noXn,
+                        isMVCC);
 
   if (retcode < 0)
     {
@@ -2419,8 +2395,36 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   return 0;
 }
 
+short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
+                                      HbaseStr *table,
+                                      const char * cf1, 
+                                      NAList<HbaseCreateOption*> * inHbaseCreateOptions,
+                                      const int numSplits,
+                                      const int keyLength,
+                                      char** encodedKeysBuffer,
+                                      NABoolean doRetry)
+{
+  if (! cf1)
+    return -1;
+
+  std::vector<NAString> colFamVec;
+  colFamVec.push_back(cf1);
+
+  NAList<HbaseCreateOption*> lHbaseCreateOptions;
+  NAText lHbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions = inHbaseCreateOptions;
+  if (! inHbaseCreateOptions)
+    hbaseCreateOptions = &lHbaseCreateOptions;
+
+  return createHbaseTable(ehi, table, colFamVec, hbaseCreateOptions,
+                          numSplits, keyLength,
+                          encodedKeysBuffer, doRetry);
+}
+
 short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
                                      HbaseStr *table,
+                                     NAList<NAString> &allColFams,
                                      NAList<HbaseCreateOption*> * hbaseCreateOptions)
 {
   short retcode = 0;
@@ -2436,19 +2440,36 @@ short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
     {
       NABoolean noXn =
         (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-               
-      retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+         
+      retcode = 0;
+
+      // if col family name passed in, change attrs for that family.
+      // Otherwise change it for all user specified families.
+      if (hbaseCreateOptionsArray[HBASE_NAME].empty())
+        {
+          for (int i = 0; ((retcode != -1) && (i < allColFams.entries())); i++)
+            {
+              NAString colFam = allColFams[i];
+              
+              hbaseCreateOptionsArray[HBASE_NAME] = colFam;
+              retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+            } // for
+        } // if
+      else
+        {
+          retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+        }
 
       if (retcode < 0)
         {
-           *CmpCommon::diags() << DgSqlCode(-8448)
-                          << DgString0((char*)"ExpHbaseInterface::alter()")
-                          << DgString1(getHbaseErrStr(-retcode))
-                          << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-           retcode = -1;
-        } 
-    }
+          *CmpCommon::diags() << DgSqlCode(-8448)
+                              << DgString0((char*)"ExpHbaseInterface::alter()")
+                              << DgString1(getHbaseErrStr(-retcode))
+                              << DgInt0(-retcode)
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+          retcode = -1;
+        } // if
+    } // else
 
   return retcode;
 }
@@ -2741,6 +2762,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 }
 
 short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode, 
+                                NAString &colFamily,
                                 NAString &colName,
                                 NABoolean alignedFormat,
 				Lng32 &datatype,
@@ -2765,6 +2787,7 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   hbaseColFlags = 0;
   colFlags = 0;
 
+  colFamily = colNode->getColumnFamily();
   colName = colNode->getColumnName();
 
   if (colNode->isHeadingSpecified())
@@ -4087,16 +4110,9 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
       // possible that the metadata text could shrink and take fewer
       // rows in its new form than the old. So we do the simple thing
       // to avoid such complications.
- 
-      char buf[2000];
-      str_sprintf(buf, 
-                  "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objectUID, textType, textSubID);
-      Lng32 cliRC = cliInterface->executeImmediate(buf);
+      Lng32 cliRC = deleteFromTextTable(cliInterface, objectUID, textType, textSubID);
       if (cliRC < 0)
         {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           result = -1;
         }
       else
@@ -5234,13 +5250,120 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
   return;
 }
 
+// user created traf stored col fam is of the form:  #<1-byte-num>
+//  1-byte-num is character '2' through '9', or 'a' through 'x'.
+// This allows for 32 column families and
+// is the index of user specified col family stored in naTable.allColFam().
+//
+// Family "#1" is reserved for system default column family name. This is also
+// the name that was used priori to multi-col fam support.
+short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
+{
+  trafColFamily = "#";
+  unsigned char v;
+  
+  if (index >= 0 && index <= 7)
+    v = (unsigned char)('2' + index);
+  else if (index >= 8 && index <= 32)
+    v = (unsigned char)('a' + (index - 8));
+  else
+    return -1; // error
+  
+  trafColFamily.append((char*)&v, 1);
+
+  return 0;
+}
+
+short CmpSeabaseDDL::extractTrafColFam(const NAString &trafColFam, int &index)
+{
+  unsigned char v = (unsigned char)trafColFam.data()[1];
+  index = 0;
+  if (v >= '2' && v <= '9')
+    index = v - '2';
+  else if (v >= 'a' && v <= 'x')
+    index = ((v - 'a') + 8);
+  else
+    return -1;
+ 
+  return 0;
+}
+
+// inColFamily:       user specified column family
+// trafColFamily:     col fam stored in traf tables 
+// userColFamVec:  unique array of user col families
+// trafColFamVec:   unique array of traf col families 
+short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
+                                      NAString &trafColFamily,
+                                      std::vector<NAString> *userColFamVec,
+                                      std::vector<NAString> *trafColFamVec)
+{
+  if (inColFamily.isNull())
+    return 0;
+  
+  if (! userColFamVec)
+    {
+      trafColFamily = inColFamily;
+      return 0;
+    }
+
+  int i = 0;
+  NABoolean found = FALSE;
+  while ((NOT found) && (i < userColFamVec->size()))
+    {
+      NAString &nas = (*userColFamVec)[i];
+      if (nas == inColFamily)
+        {
+          found = TRUE;
+        }
+      else
+        i++;
+    }
+
+  // add this user col fam to user fam array if not already there.
+  if (NOT found)
+    {
+      userColFamVec->push_back(inColFamily);
+    }
+
+  if (inColFamily == SEABASE_DEFAULT_COL_FAMILY)
+    trafColFamily = SEABASE_DEFAULT_COL_FAMILY;
+  else
+    {
+      genTrafColFam(i, trafColFamily);
+    }
+
+  if (trafColFamVec)
+    {
+      found = FALSE;
+      i = 0;
+      while ((NOT found) && (i < trafColFamVec->size()))
+        {
+          NAString &nas = (*trafColFamVec)[i];
+          if (nas == trafColFamily)
+            {
+              found = TRUE;
+            }
+          else
+            i++;
+        }
+
+      if (not found)
+        trafColFamVec->push_back(trafColFamily);
+    }
+
+  return 0;
+}
+
 short CmpSeabaseDDL::buildColInfoArray(
                                        ComObjectType objType,
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
                                        NABoolean alignedFormat,
-                                       Lng32 *identityColPos,
+                                       Lng32 *identityColPos, // IN_OUT
+                                       std::vector<NAString> *userColFamVec, // IN_OUT
+                                       std::vector<NAString> *trafColFamVec, // IN_OUT
+                                       const char * inColFam, // IN
                                        NAMemory * heap)
 {
   std::vector<NAString> myvector;
@@ -5248,11 +5371,15 @@ short CmpSeabaseDDL::buildColInfoArray(
   if (identityColPos)
     *identityColPos = -1;
 
+  NAString defaultColFam = (inColFam ? inColFam : SEABASE_DEFAULT_COL_FAMILY);
+
+  NABoolean nullColFamFound = FALSE;
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
     {
       ElemDDLColDef *colNode = (*colArray)[index];
       
+      NAString colFamily;
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
       ComColumnClass colClass;
@@ -5263,6 +5390,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(colNode,
+                     colFamily,
                      colName,
                      alignedFormat,
                      datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
@@ -5324,9 +5452,31 @@ short CmpSeabaseDDL::buildColInfoArray(
           colInfoArray[index].colHeading = head_val;
         }
 
+      if (colFamily.isNull())
+        {
+          colFamily = defaultColFam;
+
+          nullColFamFound = TRUE;
+        }
+      else 
+        {
+          if (alignedFormat)
+            {
+              *CmpCommon::diags() << DgSqlCode(-4223)
+                                  << DgString0("Column Family specification on columns of an aligned format table is");
+              return -1;
+            }
+
+          if (userColFamVec)
+            userColFamVec->push_back(colFamily);
+        }
+
+      NAString storedColFamily;
+      processColFamily(colFamily, storedColFamily, userColFamVec, trafColFamVec);
+
       colInfoArray[index].hbaseColFam = 
-        new((heap ? heap : STMTHEAP)) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)SEABASE_DEFAULT_COL_FAMILY);
+        new((heap ? heap : STMTHEAP)) char[storedColFamily.length() +1];
+      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)storedColFamily.data());
 
       char idxNumStr[40];
       str_itoa(index+1, idxNumStr);
@@ -5354,6 +5504,13 @@ short CmpSeabaseDDL::buildColInfoArray(
         }
     }
 
+  if (userColFamVec && (userColFamVec->size() > 32))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4225);
+
+      return -1;
+    }
+
   return 0;
 }
 
@@ -5366,9 +5523,11 @@ short CmpSeabaseDDL::buildColInfoArray(
   for (index = 0; index < paramArray->entries(); index++)
     {
       ElemDDLParamDef *paramNode = (*paramArray)[index];
-      ElemDDLColDef colNode(paramNode->getParamName(), 
+      ElemDDLColDef colNode(NULL, &paramNode->getParamName(), 
                             paramNode->getParamDataType(),
                             NULL, NULL, STMTHEAP);
+
+      NAString colFamily;
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
       ComColumnClass colClass;
@@ -5379,6 +5538,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(&colNode,
+                     colFamily,
                      colName,
                      FALSE,
                      datatype, length, precision, scale, dt_start, dt_end, 
@@ -5535,6 +5695,28 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
         }
 
       currPos += TEXTLEN;
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
+                                         Int64 objUID, 
+                                         Lng32 textType, 
+                                         Lng32 subID)
+{
+  Lng32 cliRC = 0;
+
+  char buf[1000];
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID, textType, subID);
+  cliRC = cliInterface->executeImmediate(buf);
+  
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
     }
 
   return 0;
@@ -6260,7 +6442,7 @@ void CmpSeabaseDDL::initSeabaseMD()
       hbaseObjectStr += mdti.newName;
       hbaseObject.val = (char*)hbaseObjectStr.data();
       hbaseObject.len = hbaseObjectStr.length();
-      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
+      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL) == -1)
         {
           deallocEHI(ehi); 
           return;
@@ -7679,9 +7861,18 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
   
-  retcode = createHbaseTable(ehi, &hbaseTable, SEABASE_DEFAULT_COL_FAMILY, 
-                             NULL, NULL,
-                             hbaseCreateOptions, numSplits, keyLength, 
+  std::vector<NAString> userColFamVec;
+  std::vector<NAString> trafColFamVec;
+  NAString outColFam;
+  for (int i = 0; i < naTable->allColFams().entries(); i++)
+    {
+      processColFamily(naTable->allColFams()[i], outColFam,
+                       &userColFamVec, &trafColFamVec);
+    } // for
+  
+  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
+                             hbaseCreateOptions,
+                             numSplits, keyLength, 
                              encodedKeysBuffer);
   if (retcode == -1)
     {
@@ -7725,10 +7916,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               return;
             }
           
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, 
-                                     NULL, NULL,
-                                     NULL, 0, 0,
-                                     NULL);
+          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY);
           if (retcode == -1)
             {
               deallocEHI(ehi); 

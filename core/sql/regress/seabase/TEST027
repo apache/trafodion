@@ -1,0 +1,152 @@
+-- tests for support of multiple column families
+
+create schema trafodion.sch027;
+set schema trafodion.sch027;
+
+drop table if exists t027t01;
+drop table if exists t027t011;
+drop table t027t02;
+drop table t027t03;
+
+log LOG027 clear;
+
+cqd TRAF_MULTI_COL_FAM 'ON';
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key);
+invoke t027t01;
+showddl t027t01;
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key) attribute default column family 'cf';
+invoke t027t01;
+showddl t027t01;
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key, "cf2".b int) attribute default column family 'cf';
+invoke t027t01;
+showddl t027t01;
+
+drop table if exists t027t01;
+create table t027t01 (a int not null primary key, "cf2".b int, cf3.c int) 
+       attribute default column family 'cf';
+invoke t027t01;
+showddl t027t01;
+
+create index t027t01i1 on t027t01(b);
+invoke t027t01;
+showddl t027t01;
+
+insert into t027t01 values (1,2,3);
+select * from t027t01;
+update t027t01 set c = 33 where a = 1;
+select * from t027t01;
+delete from t027t01;
+select * from t027t01;
+
+alter table t027t01 add column "cf2".d int;
+invoke t027t01;
+showddl t027t01;
+
+alter table t027t01 add column "cf4".e int;
+invoke t027t01;
+showddl t027t01;
+
+alter table t027t01 drop column d;
+invoke t027t01;
+showddl t027t01;
+
+alter table t027t01 add column "cf2".d int;
+invoke t027t01;
+showddl t027t01;
+
+create table t027t011 like t027t01;
+invoke t027t011;
+showddl t027t011;
+
+insert into t027t011 values (1, 2, 3, 4, 5);
+select * from t027t011;
+purgedata t027t011;
+invoke t027t011;
+showddl t027t011;
+select * from t027t011;
+
+drop table t027t011;
+create table t027t011 as select * from t027t01;
+invoke t027t011;
+showddl t027t011;
+
+drop table t027t011;
+create table t027t011("cf".a, "cf2".b, cf3.c, "cf4".e, "cf2".d) as select * from t027t01;
+invoke t027t011;
+showddl t027t011;
+
+create volatile table t027t03 ("cf1".a int, "cf2".b int, c int);
+invoke t027t03;
+showddl t027t03;
+
+drop volatile table t027t03;
+create volatile table t027t03 ("cf1".a int, "cf2".b int, c int) attribute default column family 'cf';
+invoke t027t03;
+showddl t027t03;
+
+drop table if exists t027t02;
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int) attribute default column family 'cf';
+
+drop table if exists t027t03;
+create table t027t03("cf1".a int not null, "cf2".b int not null, c int not null, d int not null, 
+ primary key (a, b));
+invoke t027t03;
+insert into t027t03 values (1,1,1,1);
+insert into t027t03 values (1,2,2,2);
+select * from t027t03;
+
+-- negative tests
+drop table if exists t027t02;
+
+-- cannot have 3 part col name
+create table t027t02 (a.a.a  int);
+
+-- cannot have col fam for aligned format tables
+create table t027t02 ("cf".a int) attribute aligned format;
+
+-- cannot specify col fam for dropped cols
+alter table t027t01 drop column "cf2".d;
+
+-- cannot create a different col fam for an index col
+create index t027t01i2 on t027t01("cf2".b);
+
+-- cannot use col fam in dml stmts 
+select * from t027t01 where "cf".a = 1;
+
+-- cannot have > 32 col families
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int, a31.a31 int, a32.a32 int not null primary key);
+
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int, a31.a31 int);
+
+create table t027t02 (
+     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
+     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
+     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
+    a30.a30 int, a31.a31 int) attribute default column family 'cf';
+
+
+-- cleanup
+drop table if exists t027t01;
+drop table if exists t027t02;
+drop table if exists t027t011;
+drop table if exists t027t03;
+
+log;
