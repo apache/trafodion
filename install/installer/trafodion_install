@@ -231,6 +231,7 @@ else
       echo "***ERROR: unable to copy $USER_CONFIG to $TRAF_CONFIG"
       exit -1
    fi
+   $LOCAL_WORKDIR/traf_getHadoopNodes | tee -a $INSTALL_LOG
    sudo chmod 777 $TRAF_CONFIG
 fi
 
@@ -251,6 +252,7 @@ source $TRAF_CONFIG
 #Check if doing an upgrade
 
 if [[ $CONFIG_COMPLETE ]]; then
+   userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
    if [[ "$userForTrafodion" == "0" ]]; then
       UPGRADE_TRAF=false;
    else
@@ -416,25 +418,6 @@ if [[ -n "$USER_CONFIG" ]]; then
          echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
       fi
    fi
-fi
-
-#=============================================
-#Check if doing an upgrade
-
-userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
-if [[ $CONFIG_COMPLETE ]]; then
-   if [[ "$userForTrafodion" == "0" ]]; then
-      UPGRADE_TRAF=false;
-   else
-      UPGRADE_TRAF=true;
-   fi
-
-   #Add upgrade variable to config file
-   sudo chmod 777 $TRAF_CONFIG
-   sed -i '/UPGRADE_TRAF\=/d' $TRAF_CONFIG
-   echo "export UPGRADE_TRAF=\"$UPGRADE_TRAF\"" >> $TRAF_CONFIG
-   sudo chmod 777 $TRAF_CONFIG
-   source $TRAF_CONFIG
 fi
 
 #==============================================

@@ -66,7 +66,7 @@ done
 sudo mkdir -p /var/log/trafodion
 sudo chmod 777 /var/log/trafodion
 
-linuxInstalled=$(grep -cr SUSE /proc/version)
+SUSE_Installed=$(grep -cr SUSE /proc/version)
 
  
 echo "***INFO: Log file located /var/log/trafodion"
@@ -80,7 +80,7 @@ if [[ $AMBARI -eq 0 ]]; then
    echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete" | tee -a $SETUP_LOG
 
    sudo rm -rf ambari.repo* 2>/dev/null
-   if [[ "$linuxInstalled" -eq "1" ]]; then
+   if [[ "$SUSE_Installed" -eq "1" ]]; then
       wget http://public-repo-1.hortonworks.com/ambari/suse11/2.x/updates/2.0.0/ambari.repo
    else
       wget http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.0.0/ambari.repo
@@ -93,7 +93,7 @@ if [[ $AMBARI -eq 0 ]]; then
       exit -1
    fi
    
-   if [[ "$linuxInstalled" -eq "1" ]]; then
+   if [[ "$SUSE_Installed" -eq "1" ]]; then
       sudo cp ambari.repo /etc/zypp/repos.d
       sudo zypper install ambari-server
    else
