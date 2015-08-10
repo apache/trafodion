@@ -5740,11 +5740,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       if (j < (ringCols.entries() - 1))
         ringColListForValidation += ", ";
 
-      ringNullList += "or ";
+      ringNullList += "and ";
       ringNullList += "\"";
       ringNullList += colName;
       ringNullList += "\"";
-      ringNullList += " is null ";
+      ringNullList += " is not null ";
     }
 
   if (constraintErrorChecks(&cliInterface,

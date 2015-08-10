@@ -408,10 +408,7 @@ ATEST        BTEST        CTEST        DTEST
 >>
 >>alter table TEST020T29 add constraint TEST020T29CNT2 foreign key (a) references TEST020T28(a);
 
-*** ERROR[1143] Validation of constraint TRAFODION.SCH.TEST020T29CNT2 failed; incompatible data exists in referencing base table TEST020T29 and referenced base table TEST020T28.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T29" where not (("A") in (select "A" from "TRAFODION"."SCH"."TEST020T28")) or "A" is null ;
-
---- SQL operation failed with errors.
->>-- expecting error reported
+--- SQL operation complete.
 >>
 >>select * from TEST020T29;
 
@@ -455,7 +452,7 @@ A
 >>--this alter should fail
 >>alter table TEST020T31 add constraint C44B FOREIGN KEY (ssnum) references TEST020T30(ssnum);
 
-*** ERROR[1143] Validation of constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T31" where not (("SSNUM") in (select "SSNUM" from "TRAFODION"."SCH"."TEST020T30")) or "SSNUM" is null ;
+*** ERROR[1143] Validation of constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T31" where not (("SSNUM") in (select "SSNUM" from "TRAFODION"."SCH"."TEST020T30")) and "SSNUM" is not null ;
 
 --- SQL operation failed with errors.
 >>
