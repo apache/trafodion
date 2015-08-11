@@ -77,6 +77,7 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
 
+import java.util.concurrent.ExecutionException;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -1419,6 +1420,80 @@ public class HBaseClient {
                         throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       return htc.startGet(transID, rowIDs, columns, timestamp);
+  }
+
+  public boolean insertRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
+                         Object row,
+                         long timestamp,
+                         boolean checkAndPut,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.putRow(transID, rowID, row, null, null,
+                                checkAndPut, asyncOperation);
+      if (asyncOperation == false)
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean checkAndUpdateRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
+                         Object columnsToUpdate,
+                         byte[] columnToCheck, byte[] columnValToCheck,
+                         long timestamp,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+      boolean checkAndPut = true;
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
+                                checkAndPut, asyncOperation);
+      if (asyncOperation == false)
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean insertRows(long jniObject, String tblName, boolean useTRex, long transID, 
+			 short rowIDLen,
+                         Object rowIDs,
+                         Object rows,
+                         long timestamp,
+                         boolean autoFlush,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.putRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush, asyncOperation);
+      if (asyncOperation == false)
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean deleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
+                                 byte[] rowID,
+                                 Object[] columns,
+                                 long timestamp, boolean asyncOperation) throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp);
+      if (asyncOperation == false)
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean deleteRows(long jniObject, String tblName, boolean useTRex, long transID, short rowIDLen, Object rowIDs,
+                      long timestamp, 
+                      boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.deleteRows(transID, rowIDLen, rowIDs, timestamp);
+      if (asyncOperation == false)
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean checkAndDeleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
+                                 byte[] rowID,
+                                 byte[] columnToCheck, byte[] colValToCheck,
+                                 long timestamp, boolean asyncOperation) throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp);
+      if (asyncOperation == false)
+         releaseHTableClient(htc);
+      return ret;
   }
 
   public boolean  createCounterTable(String tabName,  String famName) throws IOException, MasterNotRunningException

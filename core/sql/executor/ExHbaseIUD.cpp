@@ -3886,8 +3886,8 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 				columns_);
 
 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_) {
-	        retcode = ehi_->getHTable(table_);
-	        if (setupError(retcode, "ExpHbaseInterface::getHTable")) {
+	        retcode = ehi_->getHTableClient(table_);
+	        if (setupError(retcode, "ExpHbaseInterface::getHTableClient")) {
 	           step_ = HANDLE_ERROR;
 		   break;
 	        }
@@ -4079,7 +4079,8 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
            if (numRowsInDirectBuffer() > 0) {
               short numRowsInBuffer = patchDirectRowIDBuffers();
-	      retcode = ehi_->getRows(hbaseAccessTdb().getRowIDLen(),
+	      retcode = ehi_->getRows(
+                            hbaseAccessTdb().getRowIDLen(),
                             rowIDs_, 
                             columns_);
               currRowNum_ = 0;

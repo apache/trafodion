@@ -156,30 +156,9 @@ typedef enum {
  ,HTC_ERROR_SCANOPEN_EXCEPTION
  ,HTC_ERROR_FETCHROWS_EXCEPTION
  ,HTC_ERROR_SCANCLOSE_EXCEPTION
- ,HTC_ERROR_GETROWOPEN_PARAM
- ,HTC_ERROR_GETROWOPEN_EXCEPTION
- ,HTC_ERROR_GETROWSOPEN_PARAM
- ,HTC_ERROR_GETROWSOPEN_EXCEPTION
  ,HTC_ERROR_GETCLOSE_EXCEPTION
  ,HTC_ERROR_DELETEROW_PARAM
  ,HTC_ERROR_DELETEROW_EXCEPTION
- ,HTC_ERROR_DELETEROWS_PARAM
- ,HTC_ERROR_DELETEROWS_EXCEPTION
- ,HTC_ERROR_CHECKANDDELETEROW_PARAM
- ,HTC_ERROR_CHECKANDDELETEROW_EXCEPTION
- ,HTC_ERROR_CHECKANDDELETE_ROW_NOTFOUND
- ,HTC_ERROR_INSERTROW_PARAM
- ,HTC_ERROR_INSERTROW_EXCEPTION
- ,HTC_ERROR_INSERTROWS_PARAM
- ,HTC_ERROR_INSERTROWS_EXCEPTION
- ,HTC_ERROR_CHECKANDINSERTROW_PARAM
- ,HTC_ERROR_CHECKANDINSERTROW_EXCEPTION
- ,HTC_ERROR_CHECKANDINSERT_DUP_ROWID
- ,HTC_ERROR_CHECKANDINSERT_NOTRANS
- ,HTC_ERROR_CHECKANDUPDATEROW_PARAM
- ,HTC_ERROR_CHECKANDUPDATEROW_EXCEPTION
- ,HTC_ERROR_CHECKANDUPDATE_ROW_NOTFOUND
- ,HTC_ERROR_CHECKANDUPDATE_NOTRANS
  ,HTC_ERROR_CREATE_PARAM
  ,HTC_ERROR_CREATE_EXCEPTION
  ,HTC_ERROR_DROP_PARAM
@@ -205,6 +184,8 @@ typedef enum {
  ,HTC_ERROR_GETROWS_EXCEPTION
  ,HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION
  ,HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE
+ ,HTC_ERROR_WRITETOWAL_EXCEPTION
+ ,HTC_ERROR_WRITEBUFFERSIZE_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -278,24 +259,10 @@ public:
 			char * tmpLoc = NULL,
 			Lng32 espNum = 0,
                         Lng32 versions = 0);
-  HTC_RetCode startGet(Int64 transID, const HbaseStr& rowID, const LIST(HbaseStr) & cols, 
-		Int64 timestamp);
-  HTC_RetCode startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, const LIST(HbaseStr) & cols, 
-		Int64 timestamp);
   HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr) *columns, Int64 timestamp);
-  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
-  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, HbaseStr &columnToCheck, HbaseStr &colValToCheck, Int64 timestamp);
-  HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       Int64 timestamp, bool asyncOperation);
-  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, 
-       bool autoFlush, bool asyncOperation);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp,
-                                                         bool asyncOperation);
-  HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       HbaseStr &columnToCheck, HbaseStr &colValToCheck, Int64 timestamp, bool asyncOperation);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 
@@ -382,11 +349,7 @@ private:
     JM_CTOR = 0
    ,JM_GET_ERROR 
    ,JM_SCAN_OPEN 
-   ,JM_GET_OPEN  
-   ,JM_GETS_OPEN 
    ,JM_DELETE    
-   ,JM_CHECKANDDELETE
-   ,JM_CHECKANDUPDATE
    ,JM_COPROC_AGGR
    ,JM_GET_NAME
    ,JM_GET_HTNAME
@@ -394,10 +357,6 @@ private:
    ,JM_FLUSHT
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
-   ,JM_DIRECT_INSERT
-   ,JM_DIRECT_CHECKANDINSERT
-   ,JM_DIRECT_INSERT_ROWS
-   ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
    ,JM_DIRECT_GET_ROWS
    ,JM_COMPLETE_PUT
@@ -501,6 +460,21 @@ typedef enum {
  ,HBC_ERROR_CREATE_COUNTER_EXCEPTION
  ,HBC_ERROR_INCR_COUNTER_PARAM
  ,HBC_ERROR_INCR_COUNTER_EXCEPTION
+ ,HBC_ERROR_INSERTROW_PARAM
+ ,HBC_ERROR_INSERTROW_EXCEPTION
+ ,HBC_ERROR_INSERTROW_DUP_ROWID
+ ,HBC_ERROR_INSERTROWS_PARAM
+ ,HBC_ERROR_INSERTROWS_EXCEPTION
+ ,HBC_ERROR_CHECKANDUPDATEROW_PARAM
+ ,HBC_ERROR_CHECKANDUPDATEROW_EXCEPTION
+ ,HBC_ERROR_CHECKANDUPDATEROW_NOTFOUND
+ ,HBC_ERROR_DELETEROW_PARAM
+ ,HBC_ERROR_DELETEROW_EXCEPTION
+ ,HBC_ERROR_DELETEROWS_PARAM
+ ,HBC_ERROR_DELETEROWS_EXCEPTION
+ ,HBC_ERROR_CHECKANDDELETEROW_PARAM
+ ,HBC_ERROR_CHECKANDDELETEROW_EXCEPTION
+ ,HBC_ERROR_CHECKANDDELETEROW_NOTFOUND
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -576,6 +550,30 @@ public:
   HBC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, 
                  const char * qualName , Int64 incr, Int64 & count);
   HBC_RetCode createCounterTable( const char * tabName,  const char * famName);
+  HBC_RetCode insertRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
+      HbaseStr row, Int64 timestamp,bool checkAndPut, bool asyncOperation,
+      HTableClient_JNI **outHtc);
+  HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
+      HbaseStr rows, Int64 timestamp, bool autoFlush, bool asyncOperation,
+      HTableClient_JNI **outHtc);
+  HBC_RetCode checkAndUpdateRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
+      HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
+       Int64 timestamp, bool asyncOperation,
+      HTableClient_JNI **outHtc);
+  HBC_RetCode deleteRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, const LIST(HbaseStr) *cols, 
+      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  HBC_RetCode deleteRows(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs, 
+      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  HBC_RetCode checkAndDeleteRow(NAHeap *heap, const char *tableName,
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+      HbaseStr columnToCheck, HbaseStr columnValToCheck,
+      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
@@ -616,6 +614,12 @@ private:
    ,JM_CREATE_COUNTER_TABLE  
    ,JM_INCR_COUNTER
    ,JM_GET_REGN_NODES
+   ,JM_HBC_DIRECT_INSERT_ROW
+   ,JM_HBC_DIRECT_INSERT_ROWS
+   ,JM_HBC_DIRECT_CHECKANDUPDATE_ROW
+   ,JM_HBC_DELETE_ROW
+   ,JM_HBC_DIRECT_DELETE_ROWS
+   ,JM_HBC_CHECKANDDELETE_ROW
    ,JM_LAST
   };
   static jclass          javaClass_; 
