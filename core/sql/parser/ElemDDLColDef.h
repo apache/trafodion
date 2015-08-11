@@ -76,11 +76,13 @@ public:
                                  DEFAULT_CLAUSE_SPEC = 2};
   
   // default constructor
-  ElemDDLColDef(const NAString & columnName,
-                NAType * pColumnDataType,
-                ElemDDLNode * pColDefaultValue = NULL,
-                ElemDDLNode * pColAttrList = NULL,
-                CollHeap * heap = PARSERHEAP());
+  ElemDDLColDef(
+       const NAString * columnFamily,
+       const NAString * columnName,
+       NAType * pColumnDataType,
+       ElemDDLNode * pColDefaultValue = NULL,
+       ElemDDLNode * pColAttrList = NULL,
+       CollHeap * heap = PARSERHEAP());
 
   // copy ctor
   ElemDDLColDef (const ElemDDLColDef & orig, CollHeap * h=0) ; // not written
@@ -99,6 +101,7 @@ public:
   virtual ExprNode * getChild(Lng32 index);
 
   inline NAType * getColumnDataType() const;
+  inline const NAString & getColumnFamily() const;
   inline const NAString & getColumnName() const;
 
   inline const ElemDDLConstraintArray & getConstraintArray() const;
@@ -218,6 +221,7 @@ private:
   // private data members
   // ---------------------------------------------------------------------
 
+  NAString columnFamily_;
   NAString columnName_;
   NAType * columnDataType_;
 
@@ -343,6 +347,12 @@ inline NAType *
 ElemDDLColDef::getColumnDataType() const
 {
   return columnDataType_;
+}
+
+inline const NAString &
+ElemDDLColDef::getColumnFamily() const
+{
+  return columnFamily_;
 }
 
 inline const NAString &

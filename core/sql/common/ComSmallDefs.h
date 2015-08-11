@@ -620,7 +620,8 @@ enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_CHECK_CONSTR_TEXT = 1,
                   COM_HBASE_OPTIONS_TEXT = 2,
                   COM_TABLE_COMMENT_TEXT = 3,
-                  COM_COMPUTED_COL_TEXT = 4
+                  COM_COMPUTED_COL_TEXT = 4,
+                  COM_HBASE_COL_FAMILY_TEXT = 5
 };
 
 enum ComColumnDirection { COM_UNKNOWN_DIRECTION

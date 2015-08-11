@@ -174,4 +174,44 @@ private:
   
 }; // class ElemDDLFileAttrRowFormat
 
+class ElemDDLFileAttrColFam : public ElemDDLFileAttr
+{
+
+public:
+
+  ElemDDLFileAttrColFam(NAString &colFam)
+       : ElemDDLFileAttr(ELM_FILE_ATTR_COL_FAM_ELEM),
+         colFam_(colFam)
+  {
+  }
+
+  // virtual destructor
+  virtual ~ElemDDLFileAttrColFam()
+  {
+  };
+
+  // cast
+  virtual ElemDDLFileAttrColFam * castToElemDDLFileAttrColFam()
+  {
+    return this; 
+  }
+
+  // accessors
+  NAString &getColFam() 
+  { 
+    return colFam_; 
+  }
+
+  // method for building text
+  virtual NAString getSyntax() const
+  {
+    return "";
+  }
+
+private:
+
+  NAString colFam_;
+  
+}; // class ElemDDLFileAttrColFam
+
 #endif // ELEMDDLFILEATTR_H

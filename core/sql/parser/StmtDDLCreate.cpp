@@ -4733,6 +4733,9 @@ StmtDDLCreateTable::synthesize()
   //
   getFileAttributes().setDefaultValueForBuffered();
 
+  // if default column family is not specified, then set it to traf default
+  getFileAttributes().setDefaultValueForColFam();
+
   // ---------------------------------------------------------------------
   // Creates or updates parse node representing primary partition
   // ---------------------------------------------------------------------

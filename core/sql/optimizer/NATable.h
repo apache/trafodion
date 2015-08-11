@@ -834,6 +834,9 @@ public:
 
   static ByteArrayList* getRegionsBeginKey(const char* extHBaseName);
 
+  NAString &defaultColFam() { return defaultColFam_; }
+  NAList<NAString> &allColFams() { return allColFams_; }
+
 private:
   NABoolean getSQLMXAlignedTable() const
   {  return (flags_ & SQLMX_ALIGNED_ROW_TABLE) != 0; }
@@ -1124,6 +1127,9 @@ private:
   // keeps track of these new columnsa allowing us to 
   // destroy them when NATable is destroyed.
   NAColumnArray newColumns_;
+
+  NAString defaultColFam_;
+  NAList<NAString> allColFams_;
 }; // class NATable
 
 #pragma warn(1506)  // warning elimination 

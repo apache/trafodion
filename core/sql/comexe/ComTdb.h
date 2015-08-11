@@ -897,7 +897,11 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
   Int32 schemaOwnerID;
   const char * hbaseCreateOptions;
   Lng32 numSaltPartns; // num of salted partitions this table was created with.
+
   ComRowFormat rowFormat; 
+
+  const char * defaultColFam;
+  const char * allColFams;
 };
 
 class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase

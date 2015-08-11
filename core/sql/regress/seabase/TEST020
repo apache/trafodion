@@ -253,7 +253,6 @@ alter table TEST020T29 drop constraint TEST020T29CNT1;
 insert into TEST020T29 values (1),(null), (3);
         
 alter table TEST020T29 add constraint TEST020T29CNT2 foreign key (a) references TEST020T28(a);
--- expecting error reported
         
 select * from TEST020T29;
 

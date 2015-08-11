@@ -73,6 +73,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      NABoolean isUnique,
      NABoolean hasSyskey,
      NABoolean alignedFormat,
+     NAString &defaultColFam,
      const NAColumnArray &baseTableNAColArray,
      const NAColumnArray &baseTableKeyArr,
      Lng32 &keyColCount,
@@ -199,8 +200,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
        }
 
      colInfoArray[i].hbaseColFam = 
-	new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+       new(heap) char[strlen(defaultColFam.data()) +1];
+     strcpy((char*)colInfoArray[i].hbaseColFam, defaultColFam.data());
 
       char idxNumStr[40];
       idxNumStr[0] = '@';
@@ -224,8 +225,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 
      keyInfoArray[i].nonKeyCol = 0;
 
-     keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
-     strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+     keyInfoArray[i].hbaseColFam = new(heap) char[strlen(defaultColFam.data()) + 1];
+     strcpy((char*)keyInfoArray[i].hbaseColFam, defaultColFam.data());
      
      char qualNumStr[40];
      str_sprintf(qualNumStr, "@%d", keyInfoArray[i].keySeqNum);
@@ -340,8 +341,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 	}
       
      colInfoArray[i].hbaseColFam = 
-       new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+       new(heap) char[strlen(defaultColFam.data()) +1];
+     strcpy((char*)colInfoArray[i].hbaseColFam, defaultColFam.data());
      
       char idxNumStr[40];
       idxNumStr[0] = '@';
@@ -369,8 +370,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
         keyLength += naType->getEncodedKeyLength();
       }
 
-      keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
-      strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+      keyInfoArray[i].hbaseColFam = new(heap) char[strlen(defaultColFam.data()) + 1];
+      strcpy((char*)keyInfoArray[i].hbaseColFam, defaultColFam);
       
       char qualNumStr[40];
       str_sprintf(qualNumStr, "@%d", keyInfoArray[i].keySeqNum);
@@ -549,6 +550,16 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
       return;
     }
+
+  NAString &indexColFam = naTable->defaultColFam();
+  NAString trafColFam;
+  if (indexColFam != SEABASE_DEFAULT_COL_FAMILY)
+    {
+      CollIndex idx = naTable->allColFams().index(indexColFam);
+      genTrafColFam(idx, trafColFam);
+    }
+  else
+    trafColFam = indexColFam;
 
   // Verify that current user has authority to create an index
   // The user must own the base table or have the ALTER_TABLE privilege or
@@ -788,6 +799,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 				     createIndexNode->isUniqueSpecified(),
 				     naTable->getClusteringIndex()->hasSyskey(),
                                      alignedFormat,
+                                     trafColFam,
 				     naColArray,
 				     baseTableKeyArr,
 				     keyColCount,
@@ -903,8 +915,9 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
-  if (createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, NULL, 
-                       NULL, &hbaseCreateOptions, numSplits, keyLength, 
+  if (createHbaseTable(ehi, &hbaseIndex, trafColFam.data(),
+                       &hbaseCreateOptions,
+                       numSplits, keyLength, 
                        encodedKeysBuffer) == -1)
     {
       goto label_error_drop_index;
@@ -2062,11 +2075,14 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
 
   // tell HBase to change the options
 
+  NAList<NAString> nal;
+  nal.insert(naTable->defaultColFam());
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
   result = alterHbaseTable(ehi,
                            &hbaseTable,
+                           nal,
                            &(edhbo->getHbaseOptions()));
   if (result < 0)
     {
