@@ -19,7 +19,7 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-**********************************************************************/
+/**********************************************************************/
 /* -*-C++-*-
 **************************************************************************
 *
@@ -13997,15 +13997,271 @@ CostMethodFastExtract::computeOperatorCostInternal(RelExpr* op,
 /**********************************************************************/
 
 //<pb>
-// ----QUICKSEARCH FOR DP2Insert........................................
+// ----QUICKSEARCH FOR HbaseInsert........................................
 
 /**********************************************************************/
 /*                                                                    */
-/*                      CostMethodDP2Insert                           */
+/*                      CostMethodHbaseInsert                         */
 /*                                                                    */
 /**********************************************************************/
 
-#pragma nowarn(262)   // warning elimination
+// -----------------------------------------------------------------------
+// CostMethodHbaseInsert::cacheParameters()
+// -----------------------------------------------------------------------
+void CostMethodHbaseInsert::cacheParameters(RelExpr* op, const Context * myContext)
+{
+  CostMethod::cacheParameters(op, myContext);
+
+  HbaseInsert* insOp = (HbaseInsert *)op;
+
+  CMPASSERT(partFunc_ != NULL);
+  NodeMap * nodeMap = (NodeMap *)partFunc_->getNodeMap();
+  if (nodeMap)
+    activePartitions_ = (CostScalar)nodeMap->getNumActivePartitions();
+  else
+    // Occasionally (e.g., regress/fullstack2/test023, the insert/select
+    // from t023t1 into t023t2 using a transpose operator), we get
+    // a ReplicateNoBroadcastPartitioningFunction lacking a node map.
+    // In this case we'll just use the number of partitions from the
+    // partitioning function itself -- which is probably an ESP count.
+    activePartitions_ = (CostScalar)partFunc_->getCountOfPartitions();
+
+  // The number of asynchronous streams is USUALLY the # of active parts.
+  countOfAsynchronousStreams_ = activePartitions_;
+} // CostMethodHbaseInsert::cacheParameters()
+
+
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseInsert::computeOperatorCostInternal()
+// -----------------------------------------------------------------------
+Cost* CostMethodHbaseInsert::computeOperatorCostInternal(RelExpr* op,
+  const Context* myContext,
+  Lng32& countOfStreams)
+{
+  cacheParameters(op, myContext);
+  estimateDegreeOfParallelism();
+
+  const InputPhysicalProperty* ippForMe =
+    myContext->getInputPhysicalProperty();
+
+  // ------------------------------------------------------
+  // Save off our current estimated degree of parallelism.
+  // in the 'out' parameter; we might revise it below
+  // ------------------------------------------------------
+  countOfStreams = countOfStreams_;
+
+  HbaseInsert* insOp = (HbaseInsert *)op;   // downcast
+
+  if (ippForMe != NULL)  // input physical properties exist?
+    {
+      // ----------------------------------------------------------
+      // This long block of code is devoted to figuring out
+      // if there are constraints to parallelism. For example,
+      // if a layer of ESPs is doing the inserts, and the
+      // degree of parallelism (DoP) at that layer is less 
+      // than the number of partitions in the table, and the
+      // inserts arrive in partition order, then the regions
+      // accessed by a given ESP are accessed serially. In
+      // that case, we want to reduce the returned "countOfStreams"
+      // to be the ESP layer DoP rather than the number of
+      // partitions.
+      // ---------------------------------------------------------- 
+
+      // See if the probes are in order.
+
+      // For insert, a partial order is of no help and so we can't use it.
+      NABoolean partiallyInOrderOK = FALSE;
+      NABoolean probesForceSynchronousAccess = FALSE;
+      IndexDesc * CIDesc = (IndexDesc *)insOp->getIndexDesc();
+      ValueIdList targetSortKey = CIDesc->getOrderOfKeyValues();
+      ValueIdSet sourceCharInputs =
+        insOp->getGroupAttr()->getCharacteristicInputs();
+
+      ValueIdSet targetCharInputs;
+      // The char inputs are still in terms of the source. Map them to the target.
+      // Note: The source char outputs in the ipp have already been mapped to
+      // the target. CharOutputs are a set, meaning they do not have duplicates
+      // But we could have cases where two columns of the target are matched to the
+      // same source column, for example, if we have
+      // INSERT INTO b6table1
+      //                  ( SELECT f, h_to_f, f, 8.4
+      //            FROM btre211
+      //            );
+      // Hence we use lists here instead of sets.
+      // Check to see if there are any duplicates in the source Characteristics inputs
+      // if no, we shall perform set operations, as these are faster
+
+      ValueIdList bottomValues = insOp->updateToSelectMap().getBottomValues();
+      ValueIdSet bottomValuesSet(bottomValues);
+      NABoolean useListInsteadOfSet = FALSE;
+
+      CascadesGroup* group1 = (*CURRSTMT_OPTGLOBALS->memo)[insOp->getGroupId()];
+
+      GenericUpdate* upOperator = (GenericUpdate *)group1->getFirstLogExpr();
+
+      if (((upOperator->getTableName().getSpecialType() == ExtendedQualName::NORMAL_TABLE) || (upOperator->getTableName().getSpecialType() == ExtendedQualName::GHOST_TABLE)) &&
+          (bottomValuesSet.entries() != bottomValues.entries()))
+        {
+
+          ValueIdList targetInputList;
+          // from here get all the bottom values that appear in the sourceCharInputs
+          bottomValues.findCommonElements(sourceCharInputs);
+          bottomValuesSet = bottomValues;
+
+          // we can use the bottomValues only if these contain some duplicate columns of
+          // characteristics inputs, otherwise we shall use the characteristics inputs.
+          if (bottomValuesSet == sourceCharInputs)
+            {
+              useListInsteadOfSet = TRUE;
+              insOp->updateToSelectMap().rewriteValueIdListUpWithIndex(
+                                                                       targetInputList,
+                                                                       bottomValues);
+              targetCharInputs = targetInputList;
+            }
+        }
+
+      if (!useListInsteadOfSet)
+        {
+          insOp->updateToSelectMap().rewriteValueIdSetUp(
+                                                         targetCharInputs,
+                                                         sourceCharInputs);
+        }
+
+      // If a target key column is covered by a constant on the source side,
+      // then we need to remove that column from the target sort key
+      removeConstantsFromTargetSortKey(&targetSortKey,
+                                       &(insOp->updateToSelectMap()));
+      NABoolean orderedNJ = TRUE;
+      // Don't call ordersMatch if njOuterOrder_ is null.
+      if (ippForMe->getAssumeSortedForCosting())
+        orderedNJ = FALSE;
+      else
+        // if leading keys are not same then don't try ordered NJ.
+        orderedNJ =
+          isOrderedNJFeasible(*(ippForMe->getNjOuterOrder()), targetSortKey);
+
+      if (orderedNJ AND
+          ordersMatch(ippForMe,
+                      CIDesc,
+                      &targetSortKey,
+                      targetCharInputs,
+                      partiallyInOrderOK,
+                      probesForceSynchronousAccess))
+        {
+          if (probesForceSynchronousAccess)
+            {
+              // The probes form a complete order across all partitions and
+              // the clustering key and partitioning key are the same. So, the
+              // only asynchronous I/O we will see will be due to ESPs. So,
+              // limit the count of streams by the count of streams in ESP.
+
+              // Get the logPhysPartitioningFunction, which we will use
+              // to get the logical partitioning function. If it's NULL,
+              // it means the table was not partitioned at all, so we don't
+              // need to limit anything since there already is no asynch I/O.
+              const LogPhysPartitioningFunction* lppf =
+                partFunc_->castToLogPhysPartitioningFunction();
+              if (lppf != NULL)
+                {
+                  PartitioningFunction* logPartFunc =
+                    lppf->getLogPartitioningFunction();
+                  // Get the number of ESPs:
+                  CostScalar numParts = logPartFunc->getCountOfPartitions();
+
+                  countOfAsynchronousStreams_ = MINOF(numParts,
+                                                      countOfAsynchronousStreams_);
+                } // lppf != NULL
+            } // probesForceSynchronousAccess
+        } // probes are in order
+    } // if input physical properties exist
+
+  CostScalar currentCpus =
+    (CostScalar)myContext->getPlan()->getPhysicalProperty()->getCurrentCountOfCPUs();
+  activeCpus_ = MINOF(countOfAsynchronousStreams_, currentCpus);
+
+  // update count of streams; the caller of the method uses this value
+  if ((countOfAsynchronousStreams_ > 0) &&
+      (countOfAsynchronousStreams_ < countOfStreams)
+      )
+    countOfStreams = (Lng32)countOfAsynchronousStreams_.getValue();
+
+
+  streamsPerCpu_ =
+    (countOfAsynchronousStreams_ / activeCpus_).getCeiling();
+
+  CostScalar noOfProbesPerPartition(csOne);
+
+  // Determine the number of probes per stream. Use this number as
+  // the number of rows to insert (this is "per-stream" costing).
+
+  noOfProbesPerPartition =
+    (noOfProbes_ / countOfAsynchronousStreams_).minCsOne();
+
+  // ************************************************************
+  // Compute the write/read cost for the insert
+  //
+  // ************************************************************
+
+  // ---------------------------------------------------------------------
+  // Synthesize the cost vectors.
+  // ---------------------------------------------------------------------
+  SimpleCostVector cvFR;
+  SimpleCostVector cvLR;
+
+  // we don't bother to estimate CPU time, I/O time, transfer time or idle 
+  // time, since we really are only supporting the new cost model
+
+  cvFR.setNumProbes(noOfProbesPerPartition);
+  cvLR.setNumProbes(noOfProbesPerPartition);
+
+  // ---------------------------------------------------------------------
+  // Synthesize and return cost object.
+  // ---------------------------------------------------------------------
+
+  Cost *costPtr = new STMTHEAP
+    Cost(&cvFR
+         , &cvLR
+         , NULL
+         , Lng32(activeCpus_.getValue())
+         , Lng32(streamsPerCpu_.getValue())
+         );
+
+#ifndef NDEBUG
+  if (CmpCommon::getDefault(OPTIMIZER_PRINT_COST) == DF_ON)
+    {
+      pfp = stdout;
+      fprintf(pfp, "HbaseInsert elapsed time: ");
+      fprintf(pfp, "%f", costPtr->
+              convertToElapsedTime(
+                                   myContext->getReqdPhysicalProperty()).
+              value());
+      fprintf(pfp, "\n");
+    }
+#endif
+
+  return costPtr;
+} // CostMethodHbaseInsert::computeOperatorCostInternal
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseInsert::cleanUp()
+//
+// The method cleans up cached parameters which need deallocation and
+// should be called after a costing session is done.
+// -----------------------------------------------------------------------
+void CostMethodHbaseInsert::cleanUp()
+{
+  activePartitions_ = csOne;
+  activeCpus_ = csOne;
+  streamsPerCpu_ = csOne;
+  countOfAsynchronousStreams_ = csOne;
+
+  // Clean up fields in base class
+  CostMethod::cleanUp();
+
+}  // CostMethodHbaseInsert::cleanUp().
+
+//<pb>
 
 
 

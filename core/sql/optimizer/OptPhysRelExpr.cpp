@@ -16653,6 +16653,18 @@ HiveInsert::synthPhysicalProperty(const Context* myContext,
 
 } // HiveInsert::synthPhysicalProperty()
 
+
+CostMethod *
+HbaseInsert::costMethod() const
+{
+  static THREAD_P CostMethodHbaseInsert *m = NULL;
+  if (m == NULL)
+    m = new (GetCliGlobals()->exCollHeap()) CostMethodHbaseInsert();
+  // return m;  TODO: uncomment this line
+  return RelExpr::costMethod();  // TODO: remove this testing line
+} // HbaseInsert::costMethod()
+
+
 PhysicalProperty*
 HbaseInsert::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber,
