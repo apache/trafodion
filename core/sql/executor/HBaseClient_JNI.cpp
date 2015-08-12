@@ -2883,7 +2883,7 @@ HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
   HTableClient_JNI *htc = NULL;
 
   if (asyncOperation) {
-     HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
+     htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
      if (htc->init() != HTC_OK) {
          NADELETE(htc, HTableClient_JNI, heap);
          return HBC_ERROR_INSERTROW_EXCEPTION;
@@ -2974,7 +2974,7 @@ HBC_RetCode HBaseClient_JNI::insertRows(NAHeap *heap, const char *tableName,
   HTableClient_JNI *htc = NULL;
 
   if (asyncOperation) {
-     HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
+     htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
      if (htc->init() != HTC_OK) {
          NADELETE(htc, HTableClient_JNI, heap);
          return HBC_ERROR_INSERTROWS_EXCEPTION;
@@ -3067,7 +3067,7 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
   HTableClient_JNI *htc = NULL;
 
   if (asyncOperation) {
-     HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
+     htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
      if (htc->init() != HTC_OK) {
          NADELETE(htc, HTableClient_JNI, heap);
          return HBC_ERROR_CHECKANDUPDATEROW_EXCEPTION;
@@ -3179,7 +3179,7 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
   HTableClient_JNI *htc = NULL;
 
   if (asyncOperation) {
-     HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
+     htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
      if (htc->init() != HTC_OK) {
          NADELETE(htc, HTableClient_JNI, heap);
          return HBC_ERROR_DELETEROW_EXCEPTION;
@@ -3193,7 +3193,7 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
   }
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_INSERTROWS_PARAM));
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DELETEROW_PARAM));
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
     jenv_->PopLocalFrame(NULL);
@@ -3274,7 +3274,7 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
   HTableClient_JNI *htc = NULL;
 
   if (asyncOperation) {
-     HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
+      htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
      if (htc->init() != HTC_OK) {
          NADELETE(htc, HTableClient_JNI, heap);
          return HBC_ERROR_DELETEROWS_EXCEPTION;
@@ -3288,7 +3288,7 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
   }
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_INSERTROWS_PARAM));
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DELETEROWS_PARAM));
     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
     jenv_->PopLocalFrame(NULL);
@@ -3356,7 +3356,7 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
   HTableClient_JNI *htc = NULL;
 
   if (asyncOperation) {
-     HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
+     htc = new (heap) HTableClient_JNI(heap, (jobject)-1);
      if (htc->init() != HTC_OK) {
          NADELETE(htc, HTableClient_JNI, heap);
          return HBC_ERROR_CHECKANDDELETEROW_EXCEPTION;

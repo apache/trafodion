@@ -1431,7 +1431,9 @@ public class HBaseClient {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, row, null, null,
                                 checkAndPut, asyncOperation);
-      if (asyncOperation == false)
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
          releaseHTableClient(htc);
       return ret;
   }
@@ -1445,7 +1447,9 @@ public class HBaseClient {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
                                 checkAndPut, asyncOperation);
-      if (asyncOperation == false)
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
          releaseHTableClient(htc);
       return ret;
   }
@@ -1459,7 +1463,9 @@ public class HBaseClient {
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush, asyncOperation);
-      if (asyncOperation == false)
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
          releaseHTableClient(htc);
       return ret;
   }
@@ -1470,7 +1476,9 @@ public class HBaseClient {
                                  long timestamp, boolean asyncOperation) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.deleteRow(transID, rowID, columns, timestamp);
-      if (asyncOperation == false)
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
          releaseHTableClient(htc);
       return ret;
   }
@@ -1480,7 +1488,9 @@ public class HBaseClient {
                       boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.deleteRows(transID, rowIDLen, rowIDs, timestamp);
-      if (asyncOperation == false)
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
          releaseHTableClient(htc);
       return ret;
   }
@@ -1491,7 +1501,9 @@ public class HBaseClient {
                                  long timestamp, boolean asyncOperation) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp);
-      if (asyncOperation == false)
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
          releaseHTableClient(htc);
       return ret;
   }

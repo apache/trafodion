@@ -1297,7 +1297,7 @@ public class HTableClient {
 
    private native void cleanup(long jniObject);
 
-   private native int setJavaObject(long jniObject);
+   protected native int setJavaObject(long jniObject);
  
    static {
      executorService = Executors.newCachedThreadPool();
