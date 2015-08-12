@@ -639,7 +639,7 @@ do
    ssh -q -n $node 'sudo chmod 644 /etc/sysctl.conf'
    ssh -q -n $node 'sudo /sbin/sysctl -p' 2>&1 > /dev/null
    else
-      echo "***ERROR: Unable to reserve DCS ports (37800 and 40010)."
+      echo "***ERROR: Unable to reserve DCS ports (${trafodion_ports})."
       exit -1
    fi
 done
