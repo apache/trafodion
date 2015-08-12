@@ -62,6 +62,8 @@ class NATableDB;
 struct desc_struct;
 class HbaseCreateOption;
 class PrivMgrUserPrivs;
+class ExpHbaseInterface;
+class ByteArrayList;
 
 typedef QualifiedName* QualifiedNamePtr;
 typedef ULng32 (*HashFunctionPtr)(const QualifiedName&);
@@ -830,6 +832,11 @@ public:
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
+  static ByteArrayList* getRegionsBeginKey(const char* extHBaseName);
+
+  NAString &defaultColFam() { return defaultColFam_; }
+  NAList<NAString> &allColFams() { return allColFams_; }
+
 private:
   NABoolean getSQLMXAlignedTable() const
   {  return (flags_ & SQLMX_ALIGNED_ROW_TABLE) != 0; }
@@ -839,6 +846,9 @@ private:
 
   void setRecordLength(Int32 recordLength) { recordLength_ = recordLength; }
   void setupPrivInfo();
+
+  ExpHbaseInterface* getHBaseInterface() const;
+  static ExpHbaseInterface* getHBaseInterfaceRaw();
 
   //size of All NATable related data after construction
   //this is used when NATables are cached and only then
@@ -1117,6 +1127,9 @@ private:
   // keeps track of these new columnsa allowing us to 
   // destroy them when NATable is destroyed.
   NAColumnArray newColumns_;
+
+  NAString defaultColFam_;
+  NAList<NAString> allColFams_;
 }; // class NATable
 
 #pragma warn(1506)  // warning elimination 

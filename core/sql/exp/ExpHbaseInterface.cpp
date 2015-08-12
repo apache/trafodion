@@ -1322,7 +1322,20 @@ Lng32 ExpHbaseInterface_JNI::revoke(
     return HBASE_ACCESS_SUCCESS;
 }
 
-ByteArrayList* ExpHbaseInterface_JNI::getRegionInfo(const char* tblName)
+ByteArrayList* ExpHbaseInterface_JNI::getRegionBeginKeys(const char* tblName)
+{ 
+  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName, useTRex_, hbs_);
+  if (htc_ == NULL)
+  {
+    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
+    return NULL;
+  }
+
+   ByteArrayList* bal = htc_->getBeginKeys();
+   return bal;
+}
+
+ByteArrayList* ExpHbaseInterface_JNI::getRegionEndKeys(const char* tblName)
 { 
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName, useTRex_, hbs_);
   if (htc_ == NULL)

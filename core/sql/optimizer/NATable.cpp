@@ -2155,7 +2155,7 @@ static PartitioningFunction * createHash2PartitioningFunction
 
 
 static 
-NodeMap* createNodeMapForHbase(desc_struct* desc, NAMemory* heap)
+NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table, NAMemory* heap)
 {
    Int32 partns = 0;
    desc_struct* hrk = desc;
@@ -2167,21 +2167,6 @@ NodeMap* createNodeMapForHbase(desc_struct* desc, NAMemory* heap)
 
    NodeMap* nodeMap = new (heap) 
        NodeMap(heap, partns, NodeMapEntry::ACTIVE, NodeMap::HBASE);
-
-   return nodeMap;
-}
-
-static 
-PartitioningFunction*
-createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
-                                        NAMemory* heap)
-{
-
-   desc_struct* hrk = desc;
- 
-   NodeMap* nodeMap = createNodeMapForHbase(desc, heap);
-
-   Int32 partns = nodeMap->getNumEntries();
 
    // get nodeNames of region servers by making a JNI call
    // do it only for multiple partition table
@@ -2200,6 +2185,21 @@ createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table
        }
      }
    }
+
+   return nodeMap;
+}
+
+static 
+PartitioningFunction*
+createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
+                                        NAMemory* heap)
+{
+
+   desc_struct* hrk = desc;
+ 
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+
+   Int32 partns = nodeMap->getNumEntries();
 
    PartitioningFunction* partFunc;
    if ( partns > 1 )
@@ -2444,6 +2444,7 @@ createRangePartitioningFunctionForSingleRegionHBase(
         tail->header.next = new (heap) struct desc_struct;
         tail = tail->header.next;
      }
+     tail->header.next = NULL;
 
      NAString firstkey('(');
      for ( Int32 i=0; i<keys; i++ ) {
@@ -2490,40 +2491,12 @@ createRangePartitioningFunctionForSingleRegionHBase(
                                  heap);
 }
 
-static 
-PartitioningFunction*
-createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
-                                        desc_struct* desc, 
-			                const NAColumnArray & partKeyColArray,
-                                        NAMemory* heap)
+void
+populatePartnDescOnEncodingKey( struct desc_struct* prevEndKey,
+                               struct desc_struct* tail, 
+                               struct desc_struct* hrk, 
+                               NAMemory* heap)
 {
-   desc_struct* hrk = desc;
-   desc_struct* prevEndKey = NULL;
- 
-   NodeMap* nodeMap = createNodeMapForHbase(desc, heap);
-
-   struct desc_struct* head = NULL;
-   struct desc_struct* tail = NULL;
-
-   Int32 i=0;
-   while ( hrk ) {
-
-     struct desc_struct *newNode = new (heap) struct desc_struct;
-     memset(&newNode->header, 0, sizeof(newNode->header));
-     memset(&newNode->body.partns_desc, 0, sizeof(tail->body.partns_desc));
-     newNode->header.nodetype = DESC_PARTNS_TYPE;
-
-     if ( tail == NULL ) {
-        head = tail = newNode;
-
-        // to satisfy createRangePartitionBoundaries() in NATable.cpp
-        tail->body.partns_desc.primarypartition = 1;
-
-     } else {
-        tail->header.next = newNode;
-        tail = tail->header.next;
-     }
-
      if (!prevEndKey) {
        // the start key of the first partitions has all zeroes in it
        Int32 len = hrk->body.hbase_region_desc.endKeyLen;
@@ -2546,18 +2519,98 @@ createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
        memcpy(tail->body.partns_desc.encodedkey, 
               prevEndKey->body.hbase_region_desc.endKey, len);
      }
+}
+
+void
+populatePartnDescOnFirstKey( struct desc_struct* ,
+                             struct desc_struct* tail, 
+                             struct desc_struct* hrk,
+                             NAMemory* heap)
+{
+   char* buf = hrk->body.hbase_region_desc.beginKey;
+   Int32 len = hrk->body.hbase_region_desc.beginKeyLen;
+
+   NAString firstkey('(');
+   firstkey.append('\'');
+   firstkey.append(buf, len);
+   firstkey.append('\'');
+   firstkey.append(')');
+
+   Int32 keyLen = firstkey.length();
+   tail->body.partns_desc.firstkeylen = keyLen;
+   tail->body.partns_desc.firstkey = new (heap) char[keyLen];
+   memcpy(tail->body.partns_desc.firstkey, firstkey.data(), keyLen);
+
+   tail->body.partns_desc.encodedkeylen = keyLen;
+   tail->body.partns_desc.encodedkey = new (heap) char[keyLen];
+   memcpy(tail->body.partns_desc.encodedkey, firstkey.data(), keyLen);
+}
+
+typedef void (*populatePartnDescT)( struct desc_struct* prevEndKey,
+                                    struct desc_struct* tail, 
+                                    struct desc_struct* hrk,
+                                    NAMemory* heap);
+static struct desc_struct*
+convertRangeDescToPartnsDesc(desc_struct* desc, populatePartnDescT funcPtr, NAMemory* heap)
+{
+   desc_struct* hrk = desc;
+   desc_struct* prevEndKey = NULL;
+ 
+   struct desc_struct* head = NULL;
+   struct desc_struct* tail = NULL;
+
+   Int32 i=0;
+   while ( hrk ) {
+
+     struct desc_struct *newNode = new (heap) struct desc_struct;
+     memset(&newNode->header, 0, sizeof(newNode->header));
+     memset(&newNode->body.partns_desc, 0, sizeof(tail->body.partns_desc));
+     newNode->header.nodetype = DESC_PARTNS_TYPE;
+
+     if ( tail == NULL ) {
+        head = tail = newNode;
+
+        // to satisfy createRangePartitionBoundaries() in NATable.cpp
+        tail->body.partns_desc.primarypartition = 1;
+
+     } else {
+        tail->header.next = newNode;
+        tail = tail->header.next;
+     }
+
+     (*funcPtr)(prevEndKey, tail, hrk, heap);
 
      prevEndKey = hrk;
      hrk     = hrk->header.next;
    }
 
+   return head;
+}
+
+
+static 
+PartitioningFunction*
+createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
+                                        desc_struct* desc, 
+                                        const NATable* table, 
+			                const NAColumnArray & partKeyColArray,
+                                        NAMemory* heap)
+{
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+
+   struct desc_struct* 
+      partns_desc = ( table->isHbaseCellTable() || table->isHbaseRowTable()) ?
+         convertRangeDescToPartnsDesc(desc, populatePartnDescOnFirstKey, heap)
+             :
+         convertRangeDescToPartnsDesc(desc, populatePartnDescOnEncodingKey, heap);
+
+
    return createRangePartitioningFunction
-                                (head,
+                                (partns_desc,
                                  partKeyColArray,
                                  nodeMap,
                                  heap);
 }
-
 
 Int32 findDescEntries(desc_struct* desc)
 {
@@ -2577,7 +2630,8 @@ Int32 findDescEntries(desc_struct* desc)
 static 
 PartitioningFunction*
 createRangePartitioningFunctionForHBase(desc_struct* desc, 
-			                const NAColumnArray & partKeyColArray,
+			                const NATable* table,
+                                        const NAColumnArray & partKeyColArray,
                                         NAMemory* heap)
 {
 
@@ -2590,7 +2644,7 @@ createRangePartitioningFunctionForHBase(desc_struct* desc,
 
    return (partns > 1) ?
       createRangePartitioningFunctionForMultiRegionHBase(partns,
-                                    desc, partKeyColArray, heap)
+                                    desc, table, partKeyColArray, heap)
        :
       createRangePartitioningFunctionForSingleRegionHBase(
                                     partKeyColArray, heap);
@@ -4060,6 +4114,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                 (hbd && hbd->header.nodetype == DESC_HBASE_RANGE_REGION_TYPE))
 	           partFunc = createRangePartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
+                      table,
 	    	      partitioningKeyColumns,
 		      heap);
               else {
@@ -4952,6 +5007,24 @@ NATable::NATable(BindWA *bindWA,
         new(heap_) char[strlen(table_desc->body.table_desc.snapshotName) + 1];
       strcpy(snapshotName_, table_desc->body.table_desc.snapshotName);
     }
+
+  if (table_desc->body.table_desc.default_col_fam)
+    defaultColFam_ = table_desc->body.table_desc.default_col_fam;
+
+  if (table_desc->body.table_desc.all_col_fams)
+    {
+      // Space delimited col families.
+      
+      string buf; // Have a buffer string
+      stringstream ss(table_desc->body.table_desc.all_col_fams); // Insert the string into a stream
+      
+      while (ss >> buf)
+        {
+          allColFams_.insert(buf.c_str());
+        }
+    }
+  else
+    allColFams_.insert(defaultColFam_);
 
   desc_struct * files_desc = table_desc->body.table_desc.files_desc;
 
@@ -7473,31 +7546,9 @@ Int32 NATable::computeHBaseRowSizeFromMetaData() const
 // other considerations).
 Int64 NATable::estimateHBaseRowCount() const
 {
-  if (!isHbaseTable() || isSeabaseMDTable() ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME)
-    return ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
-
-  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
-  const char* server = defs->getValue(HBASE_SERVER);
-  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
-  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-                           (STMTHEAP, server, zkPort);
-
-  Int64 estRowCount;
-  Lng32 retcode = ehi->init(NULL);
-  if (retcode < 0)
-    {
-      *CmpCommon::diags()
-                << DgSqlCode(-8448)
-                << DgString0((char*)"ExpHbaseInterface::init()")
-                << DgString1(getHbaseErrStr(-retcode))
-                << DgInt0(-retcode)
-                << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-      delete ehi;
-      estRowCount = 0;
-    }
-  else
+  Int64 estRowCount = 0;
+  ExpHbaseInterface* ehi = getHBaseInterface();
+  if (ehi)
     {
       HbaseStr fqTblName;
       NAString tblName = getTableName().getQualifiedNameAsString();
@@ -7507,7 +7558,7 @@ Int64 NATable::estimateHBaseRowCount() const
       fqTblName.val[fqTblName.len] = '\0';
 
       Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
-      retcode = ehi->estimateRowCount(fqTblName,
+      Lng32 retcode = ehi->estimateRowCount(fqTblName,
                                       partialRowSize,
                                       colcount_,
                                       estRowCount);
@@ -7526,14 +7577,19 @@ Int64 NATable::estimateHBaseRowCount() const
 }
 
 // Method to get hbase regions servers node names
-NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
+ExpHbaseInterface* NATable::getHBaseInterface() const
 {
   if (!isHbaseTable() || isSeabaseMDTable() ||
       getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
       getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
       getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
-    return FALSE;
+    return NULL;
 
+   return NATable::getHBaseInterfaceRaw();
+}
+
+ExpHbaseInterface* NATable::getHBaseInterfaceRaw() 
+{
   NADefaults* defs = &ActiveSchemaDB()->getDefaults();
   const char* server = defs->getValue(HBASE_SERVER);
   const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
@@ -7550,18 +7606,52 @@ NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNa
               << DgInt0(-retcode)
               << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
     delete ehi;
-    return FALSE;
+    return NULL;
   }
+
+  return ehi;
+}
+
+ByteArrayList* NATable::getRegionsBeginKey(const char* hbaseName) 
+{
+  ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
+  ByteArrayList* bal = NULL;
+
+  if (!ehi)
+    return NULL;
+  else
+  {
+    bal = ehi->getRegionBeginKeys(hbaseName);
+
+    delete ehi;
+  }
+  return bal;
+}
+
+
+NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
+{
+  ExpHbaseInterface* ehi = getHBaseInterface();
+
+  if (!ehi)
+    return FALSE;
   else
   {
     HbaseStr fqTblName;
-    NAString tblName = getTableName().getQualifiedNameAsString();
+
+    CorrName corrName(getTableName());
+
+    NAString tblName = (corrName.isHbaseCell() || corrName.isHbaseRow()) ?
+       corrName.getQualifiedNameObj().getObjectName()
+                :
+       getTableName().getQualifiedNameAsString();
+
     fqTblName.len = tblName.length();
     fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
     strncpy(fqTblName.val, tblName.data(), fqTblName.len);
     fqTblName.val[fqTblName.len] = '\0';
 
-    retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
+    Lng32 retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
 
     NADELETEBASIC(fqTblName.val, STMTHEAP);
     delete ehi;
@@ -7575,30 +7665,10 @@ NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNa
 // Method to get hbase table index levels and block size
 NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const
 {
-  if (!isHbaseTable() || isSeabaseMDTable() ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
-      getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
-    return FALSE;
+  ExpHbaseInterface* ehi = getHBaseInterface();
 
-  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
-  const char* server = defs->getValue(HBASE_SERVER);
-  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
-  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-                           (STMTHEAP, server, zkPort);
-
-  Lng32 retcode = ehi->init(NULL);
-  if (retcode < 0)
-  {
-    *CmpCommon::diags()
-              << DgSqlCode(-8448)
-              << DgString0((char*)"ExpHbaseInterface::init()")
-              << DgString1(getHbaseErrStr(-retcode))
-              << DgInt0(-retcode)
-              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-    delete ehi;
+  if (!ehi)
     return FALSE;
-  }
   else
   {
     HbaseStr fqTblName;
@@ -7608,7 +7678,7 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
     strncpy(fqTblName.val, tblName.data(), fqTblName.len);
     fqTblName.val[fqTblName.len] = '\0';
 
-    retcode = ehi->getHbaseTableInfo(fqTblName,
+    Lng32 retcode = ehi->getHbaseTableInfo(fqTblName,
                                      hbtIndexLevels,
                                      hbtBlockSize);
 
@@ -7618,7 +7688,6 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
       return FALSE;
   }
   return TRUE;
-
 }
 
 // get details of this NATable cache entry
@@ -7824,7 +7893,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       NABoolean isHbaseRow = corrName.isHbaseRow();
       if (isHbaseCell || isHbaseRow)// explicit cell or row format specification
 	{
-	  if (cmpSBD.existsInHbase(corrName.getQualifiedNameObj().getObjectName()) != 1)
+	  const char* extHBaseName = corrName.getQualifiedNameObj().getObjectName();
+	  if (cmpSBD.existsInHbase(extHBaseName) != 1)
 	    {
 	      *CmpCommon::diags()
 		<< DgSqlCode(-1389)
@@ -7834,11 +7904,17 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	      return NULL;
 	    }
 
+          ByteArrayList* bal = NATable::getRegionsBeginKey(extHBaseName);
+
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell);
+	     isHbaseRow, isHbaseCell, bal);
+
+          delete bal;
+
 	  isSeabase = FALSE;
+
 	}
       else if (corrName.isSeabaseMD())
 	{

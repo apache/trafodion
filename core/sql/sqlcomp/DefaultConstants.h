@@ -3742,6 +3742,8 @@ enum DefaultConstants
   //control lob output size when converting to string/memory 
   LOB_OUTPUT_SIZE,
 
+  TRAF_MULTI_COL_FAM,
+
   // estimated max naheap memory, used as a limit for update stats utility
   USTAT_NAHEAP_ESTIMATED_MAX,
 

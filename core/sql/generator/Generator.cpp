@@ -1854,6 +1854,20 @@ desc_struct * Generator::createVirtualTableDesc(
   table_desc->body.table_desc.owner = (tableInfo ? tableInfo->objOwnerID : SUPER_USER);
   table_desc->body.table_desc.schemaOwner = (tableInfo ? tableInfo->schemaOwnerID : SUPER_USER);
 
+  if (tableInfo && tableInfo->defaultColFam)
+    {
+      table_desc->body.table_desc.default_col_fam = 
+        new HEAP char[strlen(tableInfo->defaultColFam)+1];
+      strcpy(table_desc->body.table_desc.default_col_fam, tableInfo->defaultColFam);
+    }
+
+  if (tableInfo && tableInfo->allColFams)
+    {
+      table_desc->body.table_desc.all_col_fams = 
+        new HEAP char[strlen(tableInfo->allColFams)+1];
+      strcpy(table_desc->body.table_desc.all_col_fams, tableInfo->allColFams);
+    }
+
   desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
   //  files_desc->body.files_desc.audit = -1; // audited table
   files_desc->body.files_desc.audit = (tableInfo ? tableInfo->isAudited : -1);

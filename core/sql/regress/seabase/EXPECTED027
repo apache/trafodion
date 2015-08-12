@@ -1,0 +1,691 @@
+>>
+>>cqd TRAF_MULTI_COL_FAM 'ON';
+
+--- SQL operation complete.
+>>
+>>drop table if exists t027t01;
+
+--- SQL operation complete.
+>>create table t027t01 (a int not null primary key);
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:06 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t027t01;
+
+--- SQL operation complete.
+>>create table t027t01 (a int not null primary key) attribute default column family 'cf';
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:16 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t027t01;
+
+--- SQL operation complete.
+>>create table t027t01 (a int not null primary key, "cf2".b int) attribute default column family 'cf';
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:23 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t027t01;
+
+--- SQL operation complete.
+>>create table t027t01 (a int not null primary key, "cf2".b int, cf3.c int) 
++>       attribute default column family 'cf';
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:32 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+--- SQL operation complete.
+>>
+>>create index t027t01i1 on t027t01(b);
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:37 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
+  (
+    B ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>insert into t027t01 values (1,2,3);
+
+--- 1 row(s) inserted.
+>>select * from t027t01;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2            3
+
+--- 1 row(s) selected.
+>>update t027t01 set c = 33 where a = 1;
+
+--- 1 row(s) updated.
+>>select * from t027t01;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2           33
+
+--- 1 row(s) selected.
+>>delete from t027t01;
+
+--- 1 row(s) deleted.
+>>select * from t027t01;
+
+--- 0 row(s) selected.
+>>
+>>alter table t027t01 add column "cf2".d int;
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:40 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL /* added col */
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL /* added col */
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
+  (
+    B ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>alter table t027t01 add column "cf4".e int;
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:46 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL /* added col */
+  , "cf4".E                          INT DEFAULT NULL /* added col */
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL /* added col */
+  , "cf4".E                          INT DEFAULT NULL /* added col */
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
+  (
+    B ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>alter table t027t01 drop column d;
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:52 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL /* added col */
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL /* added col */
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
+  (
+    B ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>alter table t027t01 add column "cf2".d int;
+
+--- SQL operation complete.
+>>invoke t027t01;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T01
+-- Definition current  Fri Aug  7 13:32:54 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL /* added col */
+  , "cf2".D                          INT DEFAULT NULL /* added col */
+  )
+
+--- SQL operation complete.
+>>showddl t027t01;
+
+CREATE TABLE TRAFODION.SCH027.T027T01
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL /* added col */
+  , "cf2".D                          INT DEFAULT NULL /* added col */
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
+  (
+    B ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create table t027t011 like t027t01;
+
+--- SQL operation complete.
+>>invoke t027t011;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T011
+-- Definition current  Fri Aug  7 13:33:03 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t011;
+
+CREATE TABLE TRAFODION.SCH027.T027T011
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+--- SQL operation complete.
+>>
+>>insert into t027t011 values (1, 2, 3, 4, 5);
+
+--- 1 row(s) inserted.
+>>select * from t027t011;
+
+A            B            C            E            D          
+-----------  -----------  -----------  -----------  -----------
+
+          1            2            3            4            5
+
+--- 1 row(s) selected.
+>>purgedata t027t011;
+
+--- SQL operation complete.
+>>invoke t027t011;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T011
+-- Definition current  Fri Aug  7 13:33:08 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t011;
+
+CREATE TABLE TRAFODION.SCH027.T027T011
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+--- SQL operation complete.
+>>select * from t027t011;
+
+--- 0 row(s) selected.
+>>
+>>drop table t027t011;
+
+--- SQL operation complete.
+>>create table t027t011 as select * from t027t01;
+
+--- 0 row(s) inserted.
+>>invoke t027t011;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T011
+-- Definition current  Fri Aug  7 13:33:16 2015
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , E                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t011;
+
+CREATE TABLE TRAFODION.SCH027.T027T011
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , E                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>
+>>drop table t027t011;
+
+--- SQL operation complete.
+>>create table t027t011("cf".a, "cf2".b, cf3.c, "cf4".e, "cf2".d) as select * from t027t01;
+
+--- 0 row(s) inserted.
+>>invoke t027t011;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T011
+-- Definition current  Fri Aug  7 13:33:19 2015
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t011;
+
+CREATE TABLE TRAFODION.SCH027.T027T011
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , CF3.C                            INT DEFAULT NULL
+  , "cf4".E                          INT DEFAULT NULL
+  , "cf2".D                          INT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>
+>>create volatile table t027t03 ("cf1".a int, "cf2".b int, c int);
+
+--- SQL operation complete.
+>>invoke t027t03;
+
+-- Definition of Trafodion volatile table T027T03
+-- Definition current  Fri Aug  7 13:33:24 2015
+
+  (
+    "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t03;
+
+CREATE VOLATILE TABLE T027T03
+  (
+    "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>drop volatile table t027t03;
+
+--- SQL operation complete.
+>>create volatile table t027t03 ("cf1".a int, "cf2".b int, c int) attribute default column family 'cf';
+
+--- SQL operation complete.
+>>invoke t027t03;
+
+-- Definition of Trafodion volatile table T027T03
+-- Definition current  Fri Aug  7 13:33:38 2015
+
+  (
+    "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , "cf".C                           INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>showddl t027t03;
+
+CREATE VOLATILE TABLE T027T03
+  (
+    "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT DEFAULT NULL
+  , "cf".C                           INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES DEFAULT COLUMN FAMILY 'cf'
+;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t027t02;
+
+--- SQL operation complete.
+>>create table t027t02 (
++>     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
++>     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
++>     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
++>    a30.a30 int) attribute default column family 'cf';
+
+--- SQL operation complete.
+>>
+>>drop table if exists t027t03;
+
+--- SQL operation complete.
+>>create table t027t03("cf1".a int not null, "cf2".b int not null, c int not null, d int not null, 
++> primary key (a, b));
+
+--- SQL operation complete.
+>>invoke t027t03;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T03
+-- Definition current  Fri Aug  7 13:33:56 2015
+
+  (
+    "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf2".B                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>insert into t027t03 values (1,1,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t027t03 values (1,2,2,2);
+
+--- 1 row(s) inserted.
+>>select * from t027t03;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            1            1            1
+          1            2            2            2
+
+--- 2 row(s) selected.
+>>
+>>-- negative tests
+>>drop table if exists t027t02;
+
+--- SQL operation complete.
+>>
+>>-- cannot have 3 part col name
+>>create table t027t02 (a.a.a  int);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table t027t02 (a.a.a  int);
+                                ^ (33 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot have col fam for aligned format tables
+>>create table t027t02 ("cf".a int) attribute aligned format;
+
+*** ERROR[4223] Column Family specification on columns of an aligned format table is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot specify col fam for dropped cols
+>>alter table t027t01 drop column "cf2".d;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter table t027t01 drop column "cf2".d;
+                                     ^ (38 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot create a different col fam for an index col
+>>create index t027t01i2 on t027t01("cf2".b);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create index t027t01i2 on t027t01("cf2".b);
+                                       ^ (40 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot use col fam in dml stmts 
+>>select * from t027t01 where "cf".a = 1;
+
+*** ERROR[4002] Column "cf".A is not found.  Table "cf" not exposed.  Tables in scope: TRAFODION.SCH027.T027T01.  Default schema: TRAFODION.SCH027.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot have > 32 col families
+>>create table t027t02 (
++>     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
++>     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
++>     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
++>    a30.a30 int, a31.a31 int, a32.a32 int not null primary key);
+
+*** ERROR[4225] Number of column families cannot exceed 32.
+
+--- SQL operation failed with errors.
+>>
+>>create table t027t02 (
++>     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
++>     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
++>     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
++>    a30.a30 int, a31.a31 int);
+
+*** ERROR[4225] Number of column families cannot exceed 32.
+
+--- SQL operation failed with errors.
+>>
+>>create table t027t02 (
++>     a0.a0 int, a1.a1 int, a2.a2 int, a3.a3 int, a4.a4 int, a5.a5 int, a6.a6 int, a7.a7 int, a8.a8 int, a9.a9 int,
++>     a10.a10 int, a11.a11 int, a12.a12 int, a13.a13 int, a14.a14 int, a15.a15 int, a16.a16 int, a17.a17 int, a18.a18 int, a19.a19 int,
++>     a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
++>    a30.a30 int, a31.a31 int) attribute default column family 'cf';
+
+*** ERROR[4225] Number of column families cannot exceed 32.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>-- cleanup
+>>drop table if exists t027t01;
+
+--- SQL operation complete.
+>>drop table if exists t027t02;
+
+--- SQL operation complete.
+>>drop table if exists t027t011;
+
+--- SQL operation complete.
+>>drop table if exists t027t03;
+
+--- SQL operation complete.
+>>
+>>log;

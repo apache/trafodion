@@ -4472,6 +4472,14 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 			      continue;
 			    }
 			  
+                          if (NOT colDefNode->castToElemDDLColDef()->getColumnFamily().isNull())
+                            {
+                              colDef +=
+                                ToAnsiIdentifier(colDefNode->castToElemDDLColDef()->
+                                                 getColumnFamily());
+                              colDef += ".";
+                            }
+
 			  colDef += 
 			    ToAnsiIdentifier(colDefNode->castToElemDDLColDef()->
 					     getColumnName());

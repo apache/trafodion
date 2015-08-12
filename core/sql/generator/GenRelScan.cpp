@@ -1266,8 +1266,19 @@ NABoolean HbaseAccess::validateVirtualTableDesc(NATable * naTable)
   return TRUE;
 }
 
+void populateRangeDescForBeginKey(char* buf, Int32 len, struct desc_struct* target, NAMemory* heap)
+{  
+   target->header.nodetype = DESC_HBASE_RANGE_REGION_TYPE;
+   target->body.hbase_region_desc.beginKey = buf;
+   target->body.hbase_region_desc.beginKeyLen = len;
+   target->body.hbase_region_desc.endKey = NULL;
+   target->body.hbase_region_desc.endKeyLen = 0;   
+}
+
+void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*);
+
 desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
-						 NABoolean isRW, NABoolean isCW)
+						 NABoolean isRW, NABoolean isCW, ByteArrayList* beginKeys)
 {
   desc_struct * table_desc = NULL;
 
@@ -1289,6 +1300,10 @@ desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
 
   if (table_desc)
     {
+       struct desc_struct* head = assembleDescs(beginKeys, populateRangeDescForBeginKey, STMTHEAP);
+
+      ((table_desc_struct*)table_desc)->hbase_regionkey_desc = head;
+
       Lng32 v1 = 
 	(Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH);
       Lng32 v2 = 

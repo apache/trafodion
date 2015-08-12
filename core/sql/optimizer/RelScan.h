@@ -86,6 +86,7 @@ class QRDescGenerator;
 class RangeSpecRef;
 
 class MVMatch;
+class ByteArrayList;
 
 
 /*************************
@@ -1269,7 +1270,8 @@ public:
   //  virtual desc_struct *createVirtualTableDesc();
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NABoolean isRW = FALSE,
-					     NABoolean isCW = FALSE);
+					     NABoolean isCW = FALSE, 
+                                             ByteArrayList* hbaseKeys = NULL);
 
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NAList<char*> &colNameList,

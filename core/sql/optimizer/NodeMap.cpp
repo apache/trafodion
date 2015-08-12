@@ -1294,7 +1294,9 @@ NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
   for (Lng32 index = beginPos; index < endPos; index++) {
     CMPASSERT(map_.getUsage(index) != UNUSED_COLL_ENTRY);
     Lng32 currNodeNum = getNodeNumber(index);
-    nodes[currNodeNum] += 1; // keep count regions node number
+
+    if ( currNodeNum != ANY_NODE )
+      nodes[currNodeNum] += 1; // keep count regions node number
   }
 
   Lng32 nodeFrequency = 0; 

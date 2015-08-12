@@ -124,6 +124,8 @@ struct table_desc_struct {
   void * secKeySet;
   ComBoolean isInsertOnly;
   char * snapshotName;
+  char * default_col_fam;
+  char * all_col_fams;
   desc_struct *columns_desc;
   desc_struct *indexes_desc;
   desc_struct *constrnts_desc;
@@ -470,6 +472,12 @@ struct desc_struct {
   void pack(char *buffer);
   Lng32 getLength(void);
 };
+
+// Used by assembleDescs() to populate the fields of each new desc_struct.
+// // buf and len describe the new data extracted from the source (usually from JNI)
+// // target is the new desc_struct object to populate with.
+// // h is the heap from which memory allocation can be done.
+typedef void (*populateFuncT)(char* buf, Int32 len, desc_struct* target, NAMemory* h);
 
 // uses HEAP of CmpCommon!
 desc_struct *readtabledef_allocate_desc(desc_nodetype nodetype);

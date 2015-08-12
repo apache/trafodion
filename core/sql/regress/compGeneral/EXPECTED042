@@ -1,9 +1,9 @@
 >>showstats for table t042_orderline on ol_o_id detail;
 
 Detailed Histogram data for Table TRAFODION.ORDERENTRY.T042_ORDERLINE
-Table ID: 81131396424401604
+Table ID: 1920296324439117037
 
-Hist ID:    1093341032
+Hist ID:    1006656791
 Column(s):  OL_O_ID
 Total Rows: 10
 Total UEC:  4
@@ -1793,10 +1793,10 @@ HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 ,
 
 --- SQL command prepared.
 
-Start Time             2015/05/18 11:00:13.693893
-End Time               2015/05/18 11:00:13.694554
-Elapsed Time                      00:00:00.000661
-Compile Time                      00:00:00.000661
+Start Time             2015/08/12 18:56:56.329350
+End Time               2015/08/12 18:56:56.330890
+Elapsed Time                      00:00:00.001540
+Compile Time                      00:00:00.001540
 Execution Time                    00:00:00.000000
 
 
@@ -1827,10 +1827,10 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- SQL command prepared.
 
-Start Time             2015/05/18 11:00:13.738658
-End Time               2015/05/18 11:00:13.739190
-Elapsed Time                      00:00:00.000532
-Compile Time                      00:00:00.000532
+Start Time             2015/08/12 18:56:56.396446
+End Time               2015/08/12 18:56:56.397857
+Elapsed Time                      00:00:00.001411
+Compile Time                      00:00:00.001411
 Execution Time                    00:00:00.000000
 
 
@@ -1976,23 +1976,23 @@ NUM_HITS    NUM_PARAMS
 NUM_HITS    NUM_PARAMS
 ----------  ----------
 
-         0           3
-         0           1
          0           2
          0           5
-         1           3
-         1           3
-         1           2
+         0           3
+         0           1
          1           3
          1           2
          1           1
+         1           2
          1           1
          1           5
-         2           1
          2           3
+         2           1
          2           2
          2           1
          2           1
+         2           3
+         3           3
         10           4
 
 --- 18 row(s) selected.
@@ -2068,33 +2068,33 @@ NUM_HITS    NUM_PARAMS
          0           0
          0           0
          0           0
-         1           5
+         1           2
+         1           1
+         1           9
          1           3
          1           1
          1           2
-         1           3
-         1           9
+         1           1
+         1           5
          1           1
          1           1
-         1           3
+         1           1
+         1           1
+         1           4
          1           2
          1           1
          1           0
          1           1
          1           1
          1           1
-         1           2
-         1           4
          1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         2           1
+         2           3
          2           2
+         2           1
          2           3
          2           1
          2           1
+         3           3
          5           1
         10           4
 
@@ -2208,8 +2208,8 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
        134           0              1               0
        134           1              1               0
        134           2              1               0
-       150           1              3               0
-       150           1              3               0
+       150           2              3               0
+       150           3              3               0
        179           0              4               0
        200           0              5               0
        200           0              5               0
@@ -2296,8 +2296,8 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
        134           0              1               0
        134           1              1               0
        134           2              1               0
-       150           1              3               0
-       150           1              3               0
+       150           2              3               0
+       150           3              3               0
        179           0              4               0
        200           0              5               0
        200           0              5               0

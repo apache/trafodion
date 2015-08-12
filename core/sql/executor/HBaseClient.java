@@ -486,21 +486,30 @@ public class HBaseClient {
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            HColumnDescriptor colDesc = new 
-		HColumnDescriptor((String)tableOptions[HBASE_NAME]);
+
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
             else
                 defaultVersionsValue = DtmConst.SSCC_MAX_VERSION;
 
-            // change the descriptors based on the tableOptions; note that
-            // the tableOptions effect only the first column family, as
-            // Trafodion at present only uses one column family for its
-            // SQL columns
-            setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+            // column family names are space delimited list of names.
+            // extract all family names and add to table descriptor.
+            // All other default and specified options remain the same for all families.
+            String colFamsStr = (String)tableOptions[HBASE_NAME];
+            String[] colFamsArr = colFamsStr.split("\\s+"); 
 
-            desc.addFamily(colDesc);
+            for (int i = 0; i < colFamsArr.length; i++){            
+                String colFam = colFamsArr[i];
+
+                HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
+
+                // change the descriptors based on the tableOptions; 
+                setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+                
+                desc.addFamily(colDesc);
+            }
+
             HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
             if (isMVCC)
               metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
@@ -586,11 +595,46 @@ public class HBaseClient {
         HBaseAdmin admin = new HBaseAdmin(config);
         HTableDescriptor htblDesc = admin.getTableDescriptor(tblName.getBytes());       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
-        HColumnDescriptor colDesc = families[0];  // Trafodion keeps SQL columns only in first column family
-        int defaultVersionsValue = colDesc.getMaxVersions(); 
 
-        ChangeFlags status = 
-            setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+        String colFam = (String)tableOptions[HBASE_NAME];
+        if (colFam == null)
+            return true; // must have col fam name
+
+        // if the only option specified is col fam name and this family doesnt already
+        // exist, then add it.
+        boolean onlyColFamOptionSpecified = true;
+        for (int i = 0; (onlyColFamOptionSpecified && (i < tableOptions.length)); i++) {
+            if (i == HBASE_NAME)	
+                continue ;
+
+            if (((String)tableOptions[i]).length() != 0)
+                {
+                    onlyColFamOptionSpecified = false;
+                }
+        }
+
+        HColumnDescriptor colDesc = htblDesc.getFamily(colFam.getBytes());
+
+        ChangeFlags status = new ChangeFlags();
+        if (onlyColFamOptionSpecified) {
+            if (colDesc == null) {
+                colDesc = new HColumnDescriptor(colFam);
+                
+                htblDesc.addFamily(colDesc);
+                
+                status.setTableDescriptorChanged();
+            } else
+                return true; // col fam already exists
+        }
+        else {
+            if (colDesc == null)
+                return true; // colDesc must exist
+
+            int defaultVersionsValue = colDesc.getMaxVersions(); 
+
+            status = 
+                setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+        }
 
         try {
             if (transID != 0) {

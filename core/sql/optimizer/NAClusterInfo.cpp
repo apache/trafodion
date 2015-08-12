@@ -364,6 +364,17 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
           size_t pos = key_nodeName->index('.');
           if (pos && pos != NA_NPOS)
             key_nodeName->remove(pos);
+#ifdef _DEBUG
+          else {
+             // The node names for virtual nodes seen with workstations are of
+             // format <nodeName>:0, <nodeName>:1 etc. In debug mode, we work with
+             // such node names by removing all substrings starting at ':' and 
+             // insert the node name into the nodeIdToNodeNameMap_.
+             pos = key_nodeName->index(':');
+             if (pos && pos != NA_NPOS)
+               key_nodeName->remove(pos);
+          }
+#endif
 
           Int32 *val_nodeId = new Int32(nodeInfo[i].nid);
           nodeNameToNodeIdMap_->insert(key_nodeName, val_nodeId);
