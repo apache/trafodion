@@ -1,23 +1,24 @@
 #!/bin/bash
-
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
-
 
 #==============================================
 #  Trafodion installation script. Setup Trafodion
@@ -54,7 +55,7 @@ EOF
 #Parse input
 USER_CONFIG=""
 ACCEPT_LICENSE="N"
-RUN_SCANNER="Y"
+RUN_SCANNER="N"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -126,7 +127,9 @@ export TRAF_CONFIG="/etc/trafodion/trafodion_config"
 export TRAF_CONFIG_DIR=$(dirname $TRAF_CONFIG)
 export TRAF_CONFIG_FILE=$(basename $TRAF_CONFIG)
 export TRAF_USER="trafodion"
-
+export PDSH="pdsh -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
+export PDCP="pdcp -R ssh"
 #==============================================
 #Prechecks 
 
@@ -184,7 +187,7 @@ if [[ "$userForTrafodion" != "0" ]]; then
          echo "***ERROR: Change to trafodion userid then do a 'sqstop'"
          exit -1
       else
-         if [[ ${answer^} == "Y" ]]; then
+         if [[ "${answer}" =~ ^[Yy]$ ]]; then
             echo "***INFO: Stopping Trafodion instance."
             sudo su $TRAF_USER --login --command "sqstop"
             sudo su $TRAF_USER --login --command "ckillall"
@@ -228,20 +231,8 @@ else
       echo "***ERROR: unable to copy $USER_CONFIG to $TRAF_CONFIG"
       exit -1
    fi
+   $LOCAL_WORKDIR/traf_getHadoopNodes | tee -a $INSTALL_LOG
    sudo chmod 777 $TRAF_CONFIG
-
-   #Check if install_features file exists
-   install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
-
-   if [[ ! -z $install_features_path ]]; then
-      tar -xzf $TRAF_BUILD $install_features_path
-      source $install_features_path
-      echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
-   else
-      CDH_5_3_HDP_2_2_SUPPORT="N"
-      echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
-   fi
-
 fi
 
 source $TRAF_CONFIG
@@ -250,126 +241,79 @@ if [ $? -ne 0 ]; then
    exit -1
 fi
 
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/INSTALL_LOG\=/d' $TRAF_CONFIG
+echo "export INSTALL_LOG=\"$INSTALL_LOG\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
+
+#==============================================
+#Check if doing an upgrade
+
+if [[ $CONFIG_COMPLETE ]]; then
+   userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
+   if [[ "$userForTrafodion" == "0" ]]; then
+      UPGRADE_TRAF=false;
+   else
+      UPGRADE_TRAF=true;
+   fi
+
+   #Add upgrade variable to config file
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/UPGRADE_TRAF\=/d' $TRAF_CONFIG
+   echo "export UPGRADE_TRAF=\"$UPGRADE_TRAF\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+   source $TRAF_CONFIG
+fi
 
 #==============================================
 #Run Trafodion scanner
 
-if [[ "$RUN_SCANNER" == "Y" ]]; then
-   echo "***INFO: Running Trafodion Scanner"
-   $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -t $TRAF_CONFIG \
-   -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
-
-   returnCode=${PIPESTATUS[0]}
-
-   case $returnCode in
-
-      2|1)
-      echo "***ERROR: Error while running trafodion_scanner."
-      echo "***ERROR: Please review logs and fix listed issue(s)."
-      exit -1
-      ;;
-      3|0)
-      echo "***INFO: Trafodion scanner ran without error. Install will continue..."
-      ;;
-      *)
-      echo "***ERROR: Error while running trafodion_scanner."
-      exit -1
-      ;;
-   esac
-else
+if [[ $UPGRADE_TRAF == "true" ]]; then
    echo "***INFO: Trafodion scanner will not be run."
+else 
+   if [[ "$RUN_SCANNER" == "Y" ]]; then
+      echo "***INFO: Running Trafodion Scanner"
+      $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -t $TRAF_CONFIG \
+      -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
+
+      returnCode=${PIPESTATUS[0]}
+
+      case $returnCode in
+
+         2|1)
+         echo "***ERROR: Error while running trafodion_scanner."
+         echo "***ERROR: Please review logs and fix listed issue(s)."
+         exit -1
+         ;;
+         3|0)
+         echo "***INFO: Trafodion scanner ran without error. Install will continue..."
+         ;;
+         *)
+         echo "***ERROR: Error while running trafodion_scanner."
+         exit -1
+         ;;
+      esac
+   else
+      echo "***INFO: Trafodion scanner will not be run."
+   fi
 fi
 
 #=============================================
 
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
+    TRAF_PDCP=""
 else
-    TRAF_PDSH="pdsh -S $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
+    TRAF_PDCP="pdcp -R ssh $MY_NODES"
 fi
 
 sed -i '/ACCEPT_LICENSE\=/d' $TRAF_CONFIG
 echo "export ACCEPT_LICENSE=\"$ACCEPT_LICENSE\"" >> $TRAF_CONFIG
 
 #==============================================
-#Check that Hadoop nodes match Trafodion nodes
-
-curlRC=0
-if [[ $HADOOP_TYPE == "cloudera" ]]; then
-   curl -su $ADMIN:$PASSWORD http://$URL/api/v6/cm/deployment > tempFile
-   curlRC=$?
-   numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
-   grep -r "hostname" tempFile > tempFile2
-fi
-
-if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-   curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
-   curlRC=$?
-   numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
-   grep -r "host_name" tempFile > tempFile2
-fi
-
-if [ $curlRC != 0 ]; then
-   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
-   echo "***ERROR: curl command failed."
-   exit -1
-fi
-
-# in most cases curl does not return an error
-# so curl's actual output needs to be checked, too
-curl_error=$(grep TITLE tempFile | grep Error | wc -l)
-
-if [ $curl_error -ne 0 ]; then
-   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE"
-   cat tempFile
-   exit -1
-fi
-
-if [[ $numberHadoopNodes != $node_count ]]; then
-   echo "***ERROR: Number of Trafodion nodes ($node_count) must match number of $HADOOP_TYPE nodes ($numberHadoopNodes)"
-   cat tempFile
-   echo "***ERROR: Exiting..."
-   rm tempFile
-   rm tempFile2
-   exit -1
-fi
-
-#Get list of all hadoop nodes
-hadoopNodes=""
-while read line
-do
-   hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
-   hadoopNodes="$hadoopNodes $hostName"
-done < tempFile2
-rm tempFile
-rm tempFile2
-
-#Check to see that each Hadoop node is in the Trafodion list of nodes
-for node in $hadoopNodes
-do
-   if [[ $node_count -eq "1" ]]; then
-      #In the case that someone uses "localhost"
-      if [[ $(hostname -s) != *$node* ]]; then
-         echo "***ERROR: Trafodion must be installed on all $HADOOP_TYPE nodes"
-         echo "***ERROR: $HADOOP_TYPE Nodes: $hadoopNodes"
-         echo "***ERROR: Trafodion Nodes: $NODE_LIST"
-         echo "***ERROR: Please rerun trafodion_install with correct set of nodes"
-         echo "***ERROR: Exiting..."
-         exit -1
-      fi
-   else
-      if [[ $NODE_LIST != *$node* ]]; then
-         echo "***ERROR: Trafodion must be installed on all $HADOOP_TYPE nodes"
-         echo "***ERROR: $HADOOP_TYPE Nodes: $hadoopNodes"
-         echo "***ERROR: Trafodion Nodes: $NODE_LIST"
-         echo "***ERROR: Please rerun trafodion_install with correct set of nodes"
-         echo "***ERROR: Exiting..."
-         exit -1
-      fi
-   fi
-done
-
-#=============================================
 # untar package and files into /usr/lib/trafodion (the new TRAF_WORKDIR)
 # This will be a global location that all tar files are untarred into
 
@@ -457,78 +401,78 @@ sed -i '/UNTAR_DIR\=/d' $TRAF_CONFIG
 echo "export UNTAR_DIR=\"$UNTAR_DIR\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
 
-#=============================================
-#Check if doing an upgrade
+#============================================
+#If user supplied a config file must now check if install_features file 
+#exists
 
-userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
-if [[ $CONFIG_COMPLETE ]]; then
-   if [[ "$userForTrafodion" == "0" ]]; then
-      UPGRADE_TRAF=false;
-   else
-      UPGRADE_TRAF=true;
+if [[ -n "$USER_CONFIG" ]]; then
+   #Check if install_features file exists
+   if [[ -z $CDH_5_3_HDP_2_2_SUPPORT ]]; then
+       install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
+      if [[ ! -z $install_features_path ]]; then
+         tar -xzf $TRAF_BUILD $install_features_path
+         source $install_features_path
+         echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
+      else
+         CDH_5_3_HDP_2_2_SUPPORT="N"
+         echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
+      fi
    fi
-
-   #Add upgrade variable to config file
-   sudo chmod 777 $TRAF_CONFIG
-   sed -i '/UPGRADE_TRAF\=/d' $TRAF_CONFIG
-   echo "export UPGRADE_TRAF=\"$UPGRADE_TRAF\"" >> $TRAF_CONFIG
-   sudo chmod 777 $TRAF_CONFIG
-   source $TRAF_CONFIG
 fi
 
 #==============================================
-#Check to make sure HBase Version is the correct version and the same
-#on all nodes
+#Check to make sure HBase Version is the correct version
 
-for node in $NODE_LIST;
+
+for node in $HADOOP_NODES;
 do
-   ssh $node -n 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
-   hbaseInstalled=$(ssh -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l)
-   if [[ $hbaseInstalled -eq "0" ]]; then
-      echo "***ERROR: Hbase version could not be determined on $node"
-      echo "***ERROR: Please check that HBase is installed on all nodes."
-      exit -1
-   fi
+   ssh -q -n $node 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
+   hbaseInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l)
+   if [[ $hbaseInstalled -eq "1" ]]; then
 
-   version=$(ssh -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+      version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 
-   if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-      if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-         supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
-         if [[ $supportedHBase -eq "0" ]]; then
-            echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
-            exit -1
-         fi
-      else
-         supportedHBase=$(echo $version | grep "0.98.4" | wc -l)
-         if [[ $supportedHBase -eq "0" ]]; then
-            echo "***ERROR: HBase installed must be 0.98.4 on node $node"
-            exit -1
+      if [[ $HADOOP_TYPE == "hortonworks" ]]; then
+         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+            supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
+               exit -1
+            fi
+         else
+            supportedHBase=$(echo $version | grep "0.98.4" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 0.98.4 on node $node"
+               exit -1
+            fi
          fi
       fi
-   fi
-   if [[ $HADOOP_TYPE == "cloudera" ]]; then
-      if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-         supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
-         if [[ $supportedHBase -eq "0" ]]; then
-            echo "***ERROR: HBase installed must be 0.98.1 on node $node"
-            exit -1
-         fi
-      else
-        supportedHBase=$(echo $version | grep "0.98.6" | wc -l)
-         if [[ $supportedHBase -eq "0" ]]; then
-            echo "***ERROR: HBase installed must be 0.98.6 on node $node"
-            exit -1
+      if [[ $HADOOP_TYPE == "cloudera" ]]; then
+         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+            supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 0.98.1 on node $node"
+               exit -1
+            fi
+         else
+            supportedHBase=$(echo $version | grep "0.98.6" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 0.98.6 on node $node"
+               exit -1
+            fi
          fi
       fi
+      hbaseVersion=$(echo "${version#*.}"| cut -f1 -d".")
+      if [[ $hbaseVersion -lt "98" ]]; then
+         echo "***ERROR: HBase installed must be 0.98"
+         exit -1
+      fi
+      hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+      break
    fi
-   hbaseVersion=$(echo "${version#*.}"| cut -f1 -d".")
-   if [[ $hbaseVersion -lt "98" ]]; then
-      echo "***ERROR: HBase installed must be 0.98"
-      exit -1
-   fi
+
 done
-hbaseVersion=$(grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+
 HBASE=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 
@@ -546,7 +490,6 @@ echo "***DEBUG: trafodionFullName=$trafodionFullName"
 trafodionVersion=$(echo $trafodionFullName | sed 's/trafodion_server-//' | sed 's/-debug//' | sed 's/.tgz//')
 
 echo "***INFO: Trafodion version = $trafodionVersion"
-
 #==============================================
 # Determine Trafodion version by parsing it
 # from the trafodion_server tar file.
@@ -571,21 +514,32 @@ traf_version=$(sudo ls $UNTAR_DIR | \
 TRAF_VERSION=$(echo $traf_version | sed -e 's@\([0-9*].*\)-debug@\1@')
 
 # Detect java version
-java_exec=$(ps -C java --noheader -o pid,user,cmd \
-   | grep --max-count=1 " hbase" \
-   | awk '{print $3}' )
-echo "***DEBUG: HBase's java_exec=$java_exec"
-if [ -z $java_exec ]; then
-   echo "***ERROR: Unable to determine HBase's Java version"
-   echo "***ERROR: Check that HBase is up on node $HOSTNAME"
-   exit -1
-fi
 
-JAVA_VERSION=$($java_exec -version 2>&1)
-JAVA_VERSION=$(echo $JAVA_VERSION \
-   | grep version \
-   | awk '{print $3}' \
-   | sed -e 's@"@@g')
+for node in $HADOOP_NODES
+do
+   java_exec=$(ssh -q -n $node ps -C java --noheader -o pid,user,cmd \
+      | grep --max-count=1 " hbase" \
+      | awk '{print $3}' )
+   echo "***DEBUG: HBase's java_exec=$java_exec"
+   if [ ! -z $java_exec ]; then
+      JAVA_VERSION=$(ssh -q -n $node $java_exec -version 2>&1)
+      break;
+      echo "***ERROR: Unable to determine HBase's Java version"
+      echo "***ERROR: Check that HBase is up on node $HOSTNAME"
+      exit -1
+   fi
+done 
+
+if [[ -z $JAVA_VERSION ]]; then
+   echo "***ERROR: Unable to determine HBase's Java version"
+   echo "***ERROR: Check that HBase is up on $CLUSTER_NAME"
+   exit -1
+else
+   JAVA_VERSION=$(echo $JAVA_VERSION \
+      | grep version \
+      | awk '{print $3}' \
+      | sed -e 's@"@@g')
+fi
 
 # test for java 1.7
 java_17=$(echo $JAVA_VERSION | grep "1.7." | wc -l)
@@ -611,7 +565,6 @@ echo "export TRAF_VERSION=\"$TRAF_VERSION\"" >> $TRAF_CONFIG
 sed -i '/JAVA_VERSION\=/d' $TRAF_CONFIG
 echo "export JAVA_VERSION=\"$JAVA_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-
 #==============================================
 # Run trafodion_setup
 echo
@@ -621,35 +574,12 @@ echo "******************************"
 echo
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
+
    echo "***INFO: $TRAF_USER username has already been installed." | tee -a $INSTALL_LOG
    echo "***INFO: Skipping Trafodion setup..." | tee -a $INSTALL_LOG
 
-   trafodionRunning=$(sudo su $TRAF_USER --login --command "cstat --no-header | wc -l")
-
-   if [[ "$trafodionRunning" -ne "0" ]]; then
-      echo "***ERROR: Trafodion is still running."
-      echo -n "Stop Trafodion (Y/N), default is N: "
-      read answer
-
-      if [ -z $answer ]; then
-         echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-         echo "***ERROR: Change to $TRAF_USER userid then do a 'sqstop'"
-         exit -1
-      else
-         if [[ ${answer^} == "Y" ]]; then
-            echo "***INFO: Stopping Trafodion instance."
-            sudo su $TRAF_USER --login --command "sqstop"
-            sudo su $TRAF_USER --login --command "ckillall"
-         else
-            echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-            echo "***ERROR: Change to $TRAF_USER user id then do a 'sqstop'"
-            exit -1
-         fi
-      fi
-
-   fi
 else
-   $TRAF_WORKDIR/installer/traf_setup | tee -a $INSTALL_LOG
+   $LOCAL_WORKDIR/traf_setup | tee -a $INSTALL_LOG
 
    if [ ${PIPESTATUS[0]} != "0" ]; then
       echo "***ERROR: Error while running traf_setup." | tee -a $INSTALL_LOG
@@ -670,7 +600,7 @@ $TRAF_PDSH sudo chmod 777 $LOCAL_WORKDIR
 # copy config file to all nodes
 if [ $node_count -ne 1 ]; then
    cp $TRAF_CONFIG $LOCAL_WORKDIR
-   pdcp $MY_NODES $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $LOCAL_WORKDIR
+   $TRAF_PDCP $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $LOCAL_WORKDIR
    $TRAF_PDSH sudo mkdir -p $TRAF_CONFIG_DIR
    $TRAF_PDSH sudo cp $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
    $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
@@ -680,14 +610,13 @@ fi
 #Create sqconfig file if it does not exist
 
 if [[ ! -f $HOME_DIR/$TRAF_USER/sqconfig ]]; then
-   $TRAF_WORKDIR/installer/traf_sqconfig
+   $LOCAL_WORKDIR/traf_sqconfig
    if [ $? != 0 ]; then
       echo "***ERROR: traf_sqconfig script failed."
       echo "***ERROR: sqconfig file not created."
       exit -1
    fi
 fi
-
 #Reserve DCS Ports
 
 echo "***INFO: Reserving DCS ports"
@@ -696,19 +625,19 @@ reservedTrafodionPorts="net.ipv4.ip_local_reserved_ports = ${trafodion_ports}"
 
 for node in $NODE_LIST
 do
-   redhatSystem=$(ssh $node -n '/sbin/sysctl net.ipv4.ip_local_reserved_ports | wc -l')
+   redhatSystem=$(ssh -q -n $node '/sbin/sysctl net.ipv4.ip_local_reserved_ports | wc -l')
    if [[ "$redhatSystem" -ge "1" ]]; then
-      reserved_ports=$(ssh $node -n '/sbin/sysctl net.ipv4.ip_local_reserved_ports' | awk -F'=' '{print $2;}' | sed 's/^ //')
-      ssh $node -n 'sudo chmod 777 /etc/sysctl.conf'
-      ssh $node -n 'sudo sed -i '/net.ipv4.ip_local_reserved_ports""\=*/d' /etc/sysctl.conf'
+      reserved_ports=$(ssh -q -n $node '/sbin/sysctl net.ipv4.ip_local_reserved_ports' | awk -F'=' '{print $2;}' | sed 's/^ //')
+      ssh -q -n $node 'sudo chmod 777 /etc/sysctl.conf'
+      ssh -q -n $node 'sudo sed -i '/net.ipv4.ip_local_reserved_ports""\=*/d' /etc/sysctl.conf'
 
    if [[ -z "${reserved_ports}" ]]; then
-      ssh $node -n 'sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf'
+      ssh -q -n $node "sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf"
    else
-      ssh $node -n "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf"
+      ssh -q -n $node "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf"
    fi
-   ssh $node -n 'sudo chmod 644 /etc/sysctl.conf'
-   ssh $node -n 'sudo /sbin/sysctl -p'
+   ssh -q -n $node 'sudo chmod 644 /etc/sysctl.conf'
+   ssh -q -n $node 'sudo /sbin/sysctl -p' 2>&1 > /dev/null
    else
       echo "***ERROR: Unable to reserve DCS ports (${trafodion_ports})."
       exit -1
@@ -716,9 +645,10 @@ do
 done
 
 
-#>>> we don't really need to copy all this to the trafodion userid's home dir
 #Create install directory
-pdsh -S $MY_NODES sudo mkdir -p /$HOME_DIR/$TRAF_USER/installer &> /dev/null
+if [[ "$node_count" -ne "1" ]]; then
+   $TRAF_PDSH sudo mkdir -p /$HOME_DIR/$TRAF_USER/installer &> /dev/null
+fi
 
 #Copy over traf_authentication_config file to all nodes
 if [[ "$LDAP_SECURITY" == "Y" ]]; then
@@ -735,16 +665,16 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
          sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
       fi
    else
-      pdcp $MY_NODES $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME
-      pdsh $MY_NODES sudo cp -r $HOME/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
-      pdsh $MY_NODES sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-      pdsh $MY_NODES sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
+      $TRAF_PDCP $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME
+      $TRAF_PDSH sudo cp -r $HOME/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
+      $TRAF_PDSH sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
+      $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
       if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
          echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
-         pdcp $MY_NODES $LDAP_CERT $HOME
-         pdsh $MY_NODES sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
-         pdsh $MY_NODES sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
-         pdsh $MY_NODES sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+         $TRAF_PCP $LDAP_CERT $HOME
+         $TRAF_PDSH sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
+         $TRAF_PDSH sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+         $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
       fi
    fi
 fi
@@ -756,10 +686,9 @@ echo "******************************"
 echo " TRAFODION MODS"
 echo "******************************"
 echo
-
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
    echo "***INFO: Cloudera installed will run traf_cloudera_mods98" 2>&1 | tee -a $INSTALL_LOG
-   $TRAF_WORKDIR/installer/traf_cloudera_mods98 2>&1 | tee -a $INSTALL_LOG
+   $LOCAL_WORKDIR/traf_cloudera_mods98 2>&1 | tee -a $INSTALL_LOG
    if [ ${PIPESTATUS[0]} != "0" ]; then
       echo "***ERROR: traf_cloudera_mods98 exited with error." | tee -a $INSTALL_LOG
       echo "***ERROR: Please check log files." | tee -a $INSTALL_LOG
@@ -770,7 +699,7 @@ fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    echo "***INFO: Hortonworks installed will run traf_hortonworks_mods98" 2>&1 | tee -a $INSTALL_LOG
-   $TRAF_WORKDIR/installer/traf_hortonworks_mods98 2>&1 | tee -a $INSTALL_LOG
+   $LOCAL_WORKDIR/traf_hortonworks_mods98 2>&1 | tee -a $INSTALL_LOG
    if [ ${PIPESTATUS[0]}  != "0" ]; then
       echo "***ERROR: traf_hortonworks_mods98 exited with error." | tee -a $INSTALL_LOG
       echo "***ERROR: Please check log files." | tee -a $INSTALL_LOG
@@ -790,6 +719,8 @@ echo "******************************"
 echo
 sudo mkdir -p $SQ_ROOT
 sudo chown $TRAF_USER.trafodion $SQ_ROOT
+/bin/cp -rf $LOCAL_WORKDIR/traf_start $TRAF_WORKDIR/installer/traf_start
+
 sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
 
 if [ ${PIPESTATUS[0]} != "0" ]; then

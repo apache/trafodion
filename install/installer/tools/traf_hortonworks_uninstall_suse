@@ -45,56 +45,55 @@ sudo su -l  hbase -c "/usr/lib/hbase/bin/hbase-daemon.sh --config /etc/hbase/con
 
 /usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop namenode
 sudo python /usr/lib/python2.6/site-packages/ambari_agent/HostCleanup.py --silent 
-sudo yum --assumeyes install pdsh
+sudo zypper install -y pdsh
 
 #==============================================
 #Erase all packages
-echo "***INFO: Erasing yum packages"
-sudo yum --assumeyes erase epel-release
-sudo yum --assumeyes erase ganglia-gmond
-sudo yum --assumeyes erase ganglia-web
-sudo yum --assumeyes erase hadoop*
-sudo yum --assumeyes erase libconfuse
-sudo yum --assumeyes erase libganglia
-sudo yum --assumeyes erase lzo
-sudo yum --assumeyes erase lzo-devel
-sudo yum --assumeyes erase ambari-agent
-sudo yum --assumeyes erase ambari-log4j
-sudo yum --assumeyes erase ambari-server
-sudo yum --assumeyes erase perl-rrdtool
-sudo yum --assumeyes erase perl-Crypt-DES
-sudo yum --assumeyes erase perl-Net-SNMP
-sudo yum --assumeyes erase perl-Digest-SHA1
-sudo yum --assumeyes erase perl-Digest-HMAC
-sudo yum --assumeyes erase nagios*
-sudo yum --assumeyes erase fping
-sudo yum --assumeyes erase python-rrdtool
-sudo yum --assumeyes erase rrdtool
-sudo yum --assumeyes erase snappy-devel
-sudo yum --assumeyes erase webhcat-tar-hive
-sudo yum --assumeyes erase extjs
-sudo yum --assumeyes erase webhcat-tar-pig
-sudo yum --assumeyes erase zookeeper
-sudo yum --assumeyes erase snappy
-sudo yum --assumeyes erase oozie
-sudo yum --assumeyes erase oozie-client
-sudo yum --assumeyes erase jdk.x86_84
+echo "***INFO: Erasing rpm packages"
+sudo zypper remove -y epel-release
+sudo zypper remove -y ganglia-gmond
+sudo zypper remove -y ganglia-web
+sudo zypper remove -y hadoop*
+sudo zypper remove -y libconfuse
+sudo zypper remove -y libganglia
+sudo zypper remove -y lzo
+sudo zypper remove -y lzo-devel
+sudo zypper remove -y ambari-agent
+sudo zypper remove -y ambari-log4j
+sudo zypper remove -y ambari-server
+sudo zypper remove -y perl-rrdtool
+sudo zypper remove -y perl-Crypt-DES
+sudo zypper remove -y perl-Net-SNMP
+sudo zypper remove -y perl-Digest-SHA1
+sudo zypper remove -y perl-Digest-HMAC
+sudo zypper remove -y nagios*
+sudo zypper remove -y fping
+sudo zypper remove -y python-rrdtool
+sudo zypper remove -y rrdtool
+sudo zypper remove -y snappy-devel
+sudo zypper remove -y webhcat-tar-hive
+sudo zypper remove -y extjs
+sudo zypper remove -y webhcat-tar-pig
+sudo zypper remove -y zookeeper
+sudo zypper remove -y snappy
+sudo zypper remove -y oozie
+sudo zypper remove -y oozie-client
+sudo zypper remove -y jdk.x86_84
 
 #==============================================
 #Remove all directories
 echo "***INFO: Removing directories"
-sudo yum --assumeyes remove hcatalog\*
-sudo yum --assumeyes remove hive\*
-sudo yum --assumeyes remove tez
-sudo yum --assumeyes remove hbase\*
-sudo yum --assumeyes remove zookeeper\*
-sudo yum --assumeyes remove pig\*
-sudo yum --assumeyes remove snappy\*
-sudo yum --assumeyes remove hadoop-lzo\*
-sudo yum --assumeyes remove hadoop\*
-sudo yum --assumeyes remove extjs-2.2-1 mysql-connector-java-5.0.8-1\*
+sudo zypper remove -y hcatalog\*
+sudo zypper remove -y hive\*
+sudo zypper remove -y tez
+sudo zypper remove -y hbase\*
+sudo zypper remove -y zookeeper\*
+sudo zypper remove -y pig\*
+sudo zypper remove -y snappy\*
+sudo zypper remove -y hadoop-lzo\*
+sudo zypper remove -y hadoop\*
+sudo zypper remove -y extjs-2.2-1 mysql-connector-java-5.0.8-1\*
 sudo rm -rf /var/cache/yum/x86_64/6/*ambari*
-sudo yum clean all 
 
 sudo rm -rf /usr/sbin/ambari*
 sudo rm -rf /usr/lib/hcatalog
