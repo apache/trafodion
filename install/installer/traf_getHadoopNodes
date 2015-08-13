@@ -58,8 +58,13 @@ fi
 
 echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
 
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_NODES\=/d' $TRAF_CONFIG
 echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HADOOP_NODES\=/d' $TRAF_CONFIG
 echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
 
 hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
 
