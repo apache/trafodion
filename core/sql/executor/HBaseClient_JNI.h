@@ -180,8 +180,6 @@ typedef enum {
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
  ,HTC_NEXTCELL_EXCEPTION
- ,HTC_ERROR_GETROWS_PARAM
- ,HTC_ERROR_GETROWS_EXCEPTION
  ,HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION
  ,HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE
  ,HTC_ERROR_WRITETOWAL_EXCEPTION
@@ -259,7 +257,6 @@ public:
 			char * tmpLoc = NULL,
 			Lng32 espNum = 0,
                         Lng32 versions = 0);
-  HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr) *columns, Int64 timestamp);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
@@ -361,7 +358,6 @@ private:
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
    ,JM_FETCH_ROWS
-   ,JM_DIRECT_GET_ROWS
    ,JM_COMPLETE_PUT
    ,JM_GETBEGINKEYS
    ,JM_LAST
@@ -549,7 +545,8 @@ public:
             ExHbaseAccessStats *hbs, Int64 transID, const HbaseStr& rowID, 
             const LIST(HbaseStr) & cols, Int64 timestamp);
   HTableClient_JNI *startGets(NAHeap *heap, const char* tableName, bool useTRex, 
-            ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr)& rowIDs, 
+            ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr) *rowIDs, 
+            short rowIDLen, const HbaseStr *rowIDsInDB, 
             const LIST(HbaseStr) & cols, Int64 timestamp);
   HBC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, 
                  const char * qualName , Int64 incr, Int64 & count);
@@ -614,6 +611,7 @@ private:
    ,JM_SET_ARC_PERMS
    ,JM_START_GET
    ,JM_START_GETS
+   ,JM_START_DIRECT_GETS
    ,JM_GET_HBTI
    ,JM_CREATE_COUNTER_TABLE  
    ,JM_INCR_COUNTER

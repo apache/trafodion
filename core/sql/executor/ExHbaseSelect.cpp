@@ -754,7 +754,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
-		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
+		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, &tcb_->rowIds_,
 					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
@@ -938,7 +938,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
-		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
+		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, &tcb_->rowIds_,
 					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
@@ -1114,7 +1114,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
-		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
+		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, &tcb_->rowIds_,
 					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;

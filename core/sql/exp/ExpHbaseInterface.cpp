@@ -688,16 +688,6 @@ Lng32 ExpHbaseInterface_JNI::scanClose()
   return HBASE_ACCESS_SUCCESS;
 }
 
-Lng32 ExpHbaseInterface_JNI::getHTableClient(HbaseStr &tblName)
-{
-  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
-  if (htc_ == NULL) {
-    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
-    return HBASE_OPEN_ERROR;
-  }
-  return HBASE_ACCESS_SUCCESS;
-}
-
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::getRowOpen(
 	HbaseStr &tblName,
@@ -719,13 +709,13 @@ Lng32 ExpHbaseInterface_JNI::getRowOpen(
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::getRowsOpen(
 	HbaseStr &tblName,
-	const LIST(HbaseStr) & rows, 
+	const LIST(HbaseStr) *rows, 
 	const LIST(HbaseStr) & columns,
 	const int64_t timestamp)
 {
   Int64 transID = getTransactionIDFromContext();
   htc_ = client_->startGets((NAHeap *)heap_, (char *)tblName.val, useTRex_, hbs_, 
-                       transID, rows, columns, timestamp);
+                       transID, rows, 0, NULL, columns, timestamp);
   if (htc_ == NULL) {
     retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
     return HBASE_OPEN_ERROR;
@@ -880,21 +870,21 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
 }
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::getRows(
+Lng32 ExpHbaseInterface_JNI::getRowsOpen(
+          HbaseStr tblName,
           short rowIDLen,
-          HbaseStr &rowIDs,
+          HbaseStr rowIDs,
 	  const LIST(HbaseStr) & columns)
 {
-  ex_assert(htc_ != NULL, "htc_ is null");
   Int64 transID;
   transID = getTransactionIDFromContext();
-  retCode_ = htc_->getRows(transID, rowIDLen, rowIDs, columns);
-
-
-  if (retCode_ != HBC_OK)
-    return -HBASE_ACCESS_ERROR;
-  else
-    return HBASE_ACCESS_SUCCESS;
+  htc_ = client_->startGets((NAHeap *)heap_, (char *)tblName.val, useTRex_, hbs_,
+                       transID, NULL, rowIDLen, &rowIDs, columns, -1);
+  if (htc_ == NULL) {
+    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
+    return HBASE_OPEN_ERROR;
+  }
+  return HBASE_ACCESS_SUCCESS;
 }
 
 Lng32 ExpHbaseInterface_JNI::setWriteBufferSize(
