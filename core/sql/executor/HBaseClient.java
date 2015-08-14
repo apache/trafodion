@@ -1466,6 +1466,13 @@ public class HBaseClient {
       return htc.startGet(transID, rowIDs, columns, timestamp);
   }
 
+  public int startGet(long jniObject, String tblName, boolean useTRex, long transID, short rowIDLen, Object rowIDs,
+                        Object[] columns)
+                        throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      return htc.getRows(transID, rowIDLen, rowIDs, columns);
+  }
+
   public boolean insertRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
                          Object row,
                          long timestamp,

@@ -164,8 +164,6 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 scanClose() = 0;
 
-  virtual Lng32 getHTableClient(HbaseStr &tblName) = 0;
-
   Lng32 fetchAllRows(
 		     HbaseStr &tblName,
 		     Lng32 numCols,
@@ -187,7 +185,7 @@ class ExpHbaseInterface : public NABasicObject
 
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
-		const LIST(HbaseStr) & rows, 
+		const LIST(HbaseStr) *rows, 
 		const LIST(HbaseStr) & columns,
 		const int64_t timestamp) = 0;
 
@@ -255,9 +253,10 @@ class ExpHbaseInterface : public NABasicObject
 		  const int64_t timestamp,
                   NABoolean asyncOperation) = 0;
 
- virtual Lng32 getRows(
+ virtual Lng32 getRowsOpen(
+          HbaseStr tblName,
           short rowIDLen,
-          HbaseStr &rowIDs,
+          HbaseStr rowIDs,
           const LIST(HbaseStr) & columns) = 0;
 
  virtual Lng32 insertRows(
@@ -474,8 +473,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 scanClose();
 
-  virtual Lng32 getHTableClient(HbaseStr &tblName);
-
   // return 1 if table is empty, 0 if not empty. -ve num in case of error
   virtual Lng32 isEmpty(HbaseStr &tblName);
 
@@ -487,7 +484,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
  
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
-		const LIST(HbaseStr) & rows, 
+		const LIST(HbaseStr) *rows, 
 		const LIST(HbaseStr) & columns,
 		const int64_t timestamp);
 
@@ -553,9 +550,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  const int64_t timestamp,
                   NABoolean asyncOperation);
 
- virtual Lng32 getRows(
+ virtual Lng32 getRowsOpen(
+          HbaseStr tblName,
           short rowIDLen,
-          HbaseStr &rowIDs,
+          HbaseStr rowIDs,
           const LIST(HbaseStr) & columns);
 
  virtual Lng32 insertRows(
