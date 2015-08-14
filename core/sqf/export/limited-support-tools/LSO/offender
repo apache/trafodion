@@ -43,10 +43,12 @@ function usage()
                           mem_offender
                           wm_mem_offender
                           dead
+                          active
                           inactive
-                          unmonitored
                           in_sql
                           in_client
+                          dead
+                          unmonitored
 
    -t|--time   Optional Default $DEFAULT_TIME
                values: 0 < <time> < $MAX_TIME_P1 
@@ -171,6 +173,10 @@ case $SCRIPT in
    inactive)
      PREAMBLE="set param ?filter 'INACTIVE_QUERIES=$TIME$NODE'; "
      QUERY_FILE="$LSO_DIR/inactive_queries.sql"
+     ;;
+   active)
+     PREAMBLE="set param ?filter 'ACTIVE_QUERIES=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/active_queries.sql"
      ;;
    unmonitored)
      PREAMBLE="set param ?filter 'UNMONITORED_QUERIES=$TIME$NODE'; "
