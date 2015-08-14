@@ -10126,13 +10126,14 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
 
-  if (getTableDesc()->getNATable()->hasSerializedColumn())
+   if (getTableDesc()->getNATable()->hasSerializedColumn())
   {
     *CmpCommon::diags() << DgSqlCode(-3241) 
                         << DgString0(" upsert on a serialzed table with indexes is not allowed.");
     bindWA->setErrStatus();
     return NULL;
-  }
+  } 
+
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
 
@@ -10222,13 +10223,18 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   ValueIdSet debugSet;
   if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
   {
+    RelExpr * mu = re;
+    
     re = new(bindWA->wHeap()) Join
       (child(0), re, REL_TSJ_FLOW, NULL);
     ((Join*)re)->doNotTransformToTSJ();
     ((Join*)re)->setTSJForMerge(TRUE);	
     ((Join*)re)->setTSJForMergeWithInsert(TRUE);
     ((Join*)re)->setTSJForWrite(TRUE);
-    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+    if (bindWA->hasDynamicRowsetsInQuery())
+      mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+    else
+      re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
   } 
   
   re = re->bindNode(bindWA);
