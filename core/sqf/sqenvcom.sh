@@ -820,5 +820,3 @@ if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo $CLASSPATH | sed -e's/:/ /g' | fmt -w2 | xargs printf '\t%s\n'
   echo
 fi
-export DCS_INSTALL_DIR=/home/trafodion/trafodion-20150807_0830/dcs-1.2.0
-export REST_INSTALL_DIR=/home/trafodion/trafodion-20150807_0830/rest-1.2.0
