@@ -64,7 +64,7 @@ limitations under the License.
 
   <ciManagement>
     <system>Jenkins</system>
-    <url>https://jenkins02.trafodion.org</url>
+    <url>https://jenkins.esgyn.com</url>
   </ciManagement>
 
   <mailingLists>
@@ -250,6 +250,12 @@ limitations under the License.
         <role>Committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Steve Varnau</name>
+      <email>svarnau at apache dot org</email>
+      <timezone>-8</timezone>
+      <organization>Esgyn Corp</organization>
+    </developer>
   </developers>
 
   <contributors>
@@ -293,12 +299,6 @@ limitations under the License.
       <name>Pierre Smits</name>
       <email>pierre dot smits at gmail dot com</email>
       <timezone>+2</timezone>
-    </contributor>
-    <contributor>
-      <name>Steve Varnau</name>
-      <email>steve dot varnau at esgyn dot com</email>
-      <timezone>-8</timezone>
-      <organization>Esgyn Corp</organization>
     </contributor>
   </contributors>
 
