@@ -4033,7 +4033,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
 
   // get the text from the metadata
 
-  Lng32 textType = 2;  // to get text containing HBASE_OPTIONS=>
+  ComTextType textType = COM_HBASE_OPTIONS_TEXT;  // to get text containing HBASE_OPTIONS=>
   Lng32 textSubID = 0; // meaning, the text pertains to the object as a whole
   NAString metadataText(STMTHEAP);
   result = getTextFromMD(cliInterface,
@@ -4117,21 +4117,13 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
         }
       else
         {
-          // double any quotes in the text, since we are going to use it
-          // as a literal an an INSERT statement shortly 
-
-          NAString doubledQuoteMetadataText;
-          ToQuotedString(doubledQuoteMetadataText /* out */,
-                         metadataText,
-                         FALSE /* don't surround with quotes */);
-
-          // insert the edited text back into the metadata
+          // insert the text back into the metadata
 
           result = updateTextTable(cliInterface,
                                    objectUID,
                                    textType,
                                    textSubID,
-                                   doubledQuoteMetadataText);
+                                   metadataText);
         }
     }
 
@@ -4443,19 +4435,20 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                 }
             }
 
-           ToQuotedString(quotedDefVal, defVal, FALSE);
-
            if (colInfo->defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
                colInfo->defaultClass == COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT)
              {
-               computedColumnDefinition = quotedDefVal;
-               quotedDefVal = "";
+               computedColumnDefinition = defVal;
+               // quotedDefVal = "";
                isComputedColumn = TRUE;
              }
            else if (useRWRS)
              {
                quotedDefVal = defVal; // outer quotes not needed when inserting using rowsets
              }
+           else
+             ToQuotedString(quotedDefVal, defVal, FALSE);
+
         } // colInfo->defVal
 
       const char *colClassLit = NULL;
@@ -5659,33 +5652,41 @@ short CmpSeabaseDDL::buildKeyInfoArray(
   return 0;
 }
 
-// textType:   0, view text.  1, constraint text.  2, computed col text.
 // subID: 0, for text that belongs to table. colNumber, for column based text.
 short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
                                      Int64 objUID, 
-                                     Lng32 textType, 
+                                     ComTextType textType, 
                                      Lng32 subID, 
                                      NAString &text)
 {
   Lng32 cliRC = 0;
-
-  char * buf = new(STMTHEAP) char[400+TEXTLEN];
   Lng32 textLen = text.length();
+  Lng32 bufLen = (textLen>TEXTLEN ? TEXTLEN : textLen) + 1000;
+  char * buf = new(STMTHEAP) char[bufLen];
   Lng32 numRows = (textLen / TEXTLEN) + 1;
   Lng32 currPos = 0;
   for (Lng32 i = 0; i < numRows; i++)
     {
-      NAString temp = 
-        (i < numRows-1 ? text(currPos, TEXTLEN)
-         : text(currPos, (textLen - currPos)));
+      NAString temp;
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, '%s')",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objUID,
-                  textType,
-                  subID,
-                  i,
-                  temp.data());
+      if (i < numRows-1)
+        ToQuotedString(temp, text(currPos, TEXTLEN));
+      else
+        ToQuotedString(temp, text(currPos, (textLen - currPos)));
+
+      if (snprintf(buf, bufLen, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, %s)",
+                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                   objUID,
+                   textType,
+                   subID,
+                   i,
+                   temp.data()) >= bufLen)
+        {
+          // we left room in buf for a few hundred quotes, but using
+          // too many could get us here
+          *CmpCommon::diags() << DgSqlCode(-1207);
+          return -1;
+        }
       cliRC = cliInterface->executeImmediate(buf);
       
       if (cliRC < 0)
@@ -5702,7 +5703,7 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
 
 short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
                                          Int64 objUID, 
-                                         Lng32 textType, 
+                                         ComTextType textType, 
                                          Lng32 subID)
 {
   Lng32 cliRC = 0;
@@ -5710,7 +5711,7 @@ short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
   char buf[1000];
   str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-              objUID, textType, subID);
+              objUID, static_cast<int>(textType), subID);
   cliRC = cliInterface->executeImmediate(buf);
   
   if (cliRC < 0)
@@ -6137,53 +6138,82 @@ short CmpSeabaseDDL::validateDivisionByExprForDDL(ItemExpr *divExpr)
 }
 
 short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
+                                             int &numSplits,
                                              desc_struct * colDescs, 
                                              desc_struct * keyDescs,
-                                             Lng32 numSplits, Lng32 numKeys, 
-                                             Lng32 keyLength, NABoolean isIndex)
+                                             int numSaltPartitions,
+                                             Lng32 numSaltSplits,
+                                             NAString *splitByClause,
+                                             Lng32 numKeys, 
+                                             Lng32 keyLength,
+                                             NABoolean isIndex)
 {
   encodedKeysBuffer = NULL;
-  
-  if (numSplits <= 0)
+  numSplits = 0;
+
+  if (numSaltSplits <= 0)
     return 0;
 
-    NAString ** inArray = createInArrayForLowOrHighKeys(colDescs, 
-                                                        keyDescs,
-                                                        numKeys,
-                                                        FALSE,
-                                                        isIndex,
-                                                        STMTHEAP ); 
+  // make a list of NAStrings with the default values for start keys
+  NAString ** defaultSplits = createInArrayForLowOrHighKeys(
+       colDescs,
+       keyDescs,
+       numKeys,
+       FALSE,
+       isIndex,
+       STMTHEAP );
+  NAString **splitValuesAsText = new(STMTHEAP) NAString *[numKeys];
+  ElemDDLPartitionList * pPartitionList = NULL;
+  ElemDDLPartitionRange *pPartitionRange = NULL;
 
-    char splitNumCharStr[5];
-    NAString splitNumString;
+      numSplits = numSaltSplits;
 
-    /* HBase creates 1 more split than
-       the number of rows in the split array. In the example below we have a 
-       salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
-       encodedKeysBuffer will have 4 elements, each of length 8. When this
-       buffer is given to HBase through the Java API we get a table with 5 
-       splits and begin/end keys as shown below
-       
-       Start Key                                                     End Key
-       \x00\x00\x00\x01\x00\x00\x00\x00
-       \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00   
-       \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
-       \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00   
-       \x00\x00\x00\x04\x00\x00\x00\x00 
-    */
-    encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
-    for(int i =0; i < numSplits; i++)
-      encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+      // for salt splits, only the first key column value
+      // is variable, the rest use the default values
+      for (int k=1; k<numKeys; k++)
+        splitValuesAsText[k] = defaultSplits[k];
 
-    inArray[0] = &splitNumString;
-    short retVal = 0;
-    
-    for(Int32 i =0; i < numSplits; i++) {
-      sprintf(splitNumCharStr, "%d", i+1);
-      splitNumString = splitNumCharStr;
+  // allocate the result buffers, numSplits buffers of length keyLength
+  encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
+  for(int i =0; i < numSplits; i++)
+    encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+
+  char splitNumCharStr[10];
+  NAString splitNumString;
+
+  // loop over the splits, HBase will create 1 more region than the
+  // number of rows in the split array
+  for(Int32 i =0; i < numSplits; i++)
+    {
+          /* We are splitting along salt partitions. In the example below we have a 
+             salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
+             encodedKeysBuffer will have 4 elements, each of length 8. When this
+             buffer is given to HBase through the Java API we get a table with 5 
+             regions (4 splits) and begin/end keys as shown below
+
+             Start Key                             End Key
+                                                   \x00\x00\x00\x01\x00\x00\x00\x00
+             \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00   
+             \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
+             \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00   
+             \x00\x00\x00\x04\x00\x00\x00\x00
+
+             When we have more salt partitions than regions, the salt values
+             will be distributed across the regions as evenly as possible
+          */
+
+          snprintf(splitNumCharStr, sizeof(splitNumCharStr), "%d",
+                  ((i+1)*numSaltPartitions)/(numSaltSplits+1));
+          splitNumString = splitNumCharStr;
+          splitValuesAsText[0] = &splitNumString;
+
+      short retVal = 0;
+
+      // convert the array of NAStrings with textual values into
+      // an encoded binary key buffer
       retVal = encodeKeyValues(colDescs,
                                keyDescs,
-                               inArray, // INPUT
+                               splitValuesAsText, // INPUT
                                isIndex,
                                encodedKeysBuffer[i],  // OUTPUT
                                STMTHEAP,
@@ -6191,7 +6221,19 @@ short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
 
       if (retVal)
         return -1;
-    }
+
+      // check whether the encoded keys are ascending
+      if (i > 0 &&
+          memcmp(encodedKeysBuffer[i-1],
+                 encodedKeysBuffer[i],
+                 keyLength) >= 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1211)
+                              << DgInt0(i+1);
+          return -1;
+        }
+
+    } // loop over splits
 
   return 0;
 }
@@ -7841,8 +7883,9 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   NAFileSet * naf = naTable->getClusteringIndex();
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions = naTable->hbaseCreateOptions();
-  Lng32 numSaltedPartitions = naTable->numSaltPartns();
-  Lng32 numSplits = (numSaltedPartitions ? numSaltedPartitions - 1 : 0);
+  Lng32 numSaltPartns = naf->numSaltPartns();
+  Lng32 numSaltSplits = numSaltPartns - 1;
+  Lng32 numSplits = 0;
   Lng32 numKeys = naf->getIndexKeyColumns().entries();
   Lng32 keyLength = naf->getKeyLength();
   char ** encodedKeysBuffer = NULL;
@@ -7850,9 +7893,16 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   const desc_struct * tableDesc = naTable->getTableDesc();
   desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
   desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
-  if (createEncodedKeysBuffer(encodedKeysBuffer,
-                              colDescs, keyDescs, numSplits, numKeys, 
-                              keyLength, FALSE))
+
+  if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                              numSplits/*out*/,
+                              colDescs, keyDescs,
+                              numSaltPartns,
+                              numSaltSplits,
+                              NULL,
+                              numKeys, 
+                              keyLength,
+                              FALSE))
     {
       deallocEHI(ehi); 
 
@@ -9879,9 +9929,9 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
         compressionOptionSpecified = TRUE;
       
       hbaseOptionsStr += hbaseOption->key();
-      hbaseOptionsStr += "=''";
+      hbaseOptionsStr += "='";
       hbaseOptionsStr += hbaseOption->val();
-      hbaseOptionsStr += "''";
+      hbaseOptionsStr += "'";
 
       hbaseOptionsStr += "|";
     }
@@ -9921,7 +9971,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
                HBASE_SALTED_TABLE_MAX_FILE_SIZE) == TRUE)
       {
         numHbaseOptions += 1;
-        snprintf(fileSizeOption,100,"MAX_FILESIZE=''%ld''|", maxFileSizeInt);
+        snprintf(fileSizeOption,100,"MAX_FILESIZE='%ld'|", maxFileSizeInt);
         hbaseOptionsStr += fileSizeOption;
       }
     }
@@ -9938,9 +9988,9 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
                HBASE_SALTED_TABLE_SET_SPLIT_POLICY) == TRUE)
       {
         numHbaseOptions += 1;
-        hbaseOptionsStr += "SPLIT_POLICY=''";
+        hbaseOptionsStr += "SPLIT_POLICY='";
         hbaseOptionsStr += saltedTableSplitPolicy;
-        hbaseOptionsStr += "''|";
+        hbaseOptionsStr += "'|";
       }
     }  
   }
@@ -9962,7 +10012,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_DATA_BLOCK_ENCODING_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "DATA_BLOCK_ENCODING=''%s''|", dataBlockEncoding.data());
+          sprintf(optionStr, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -9977,7 +10027,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_COMPRESSION_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "COMPRESSION=''%s''|", compression.data());
+          sprintf(optionStr, "COMPRESSION='%s'|", compression.data());
           hbaseOptionsStr += optionStr;
         }
     }

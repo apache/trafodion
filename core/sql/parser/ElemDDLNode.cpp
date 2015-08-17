@@ -2214,7 +2214,7 @@ ElemDDLKeyValue::getText() const
 // virtual
 NAString ElemDDLKeyValue::getSyntax() const
 {
-  return keyValue_->getConstStr();
+  return keyValue_->getConstStr(FALSE);
 
 
 } // getSyntax()

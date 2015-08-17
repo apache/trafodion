@@ -645,7 +645,6 @@ Lng32 ConstValue::getSize() const
 {
   return (Lng32)(sizeof(*this) + getStorageSize() + 
     (text_ ? text_->length() : 0) +
-    (wtext_ ? wtext_->length() : 0) + 
     (locale_strval ? locale_strval->length() : 0) +
     (locale_wstrval ? locale_wstrval->length() : 0));
 }

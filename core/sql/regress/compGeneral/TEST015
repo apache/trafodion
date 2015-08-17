@@ -85,11 +85,11 @@ create table t9abc
  c int not null not droppable, d char(10)) no partition store by(a,b,c);
 create table t11
            (a int not null, b int not null, c int not null,
-            PRIMARY KEY (a,b) not droppable)
-            location $$partition$$ NAME p0
-              HASH2 PARTITION(add location $$partition1$$ name p1,
-                              add location $$partition2$$ name p2,
-                              add location $$partition3$$ name p3);
+            PRIMARY KEY (a,b) not droppable);
+--            location $$partition$$ NAME p0
+--              HASH2 PARTITION(add location $$partition1$$ name p1,
+--                              add location $$partition2$$ name p2,
+--                              add location $$partition3$$ name p3);
 
 
 create table cube2

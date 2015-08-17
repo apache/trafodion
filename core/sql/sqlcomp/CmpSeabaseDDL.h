@@ -102,6 +102,7 @@ class StmtDDLAddConstraintCheck;
 class ElemDDLColDefArray;
 class ElemDDLColRefArray;
 class ElemDDLParamDefArray;
+class ElemDDLPartitionClause;
 
 class DDLExpr;
 class DDLNode;
@@ -177,6 +178,14 @@ class CmpSeabaseDDL
                                            const NAString &catName,
                                            const NAString &schName);
  
+  static short getTextFromMD(
+       const char *catalogName,
+       ExeCliInterface * cliInterface,
+       Int64 constrUID,
+       ComTextType textType,
+       Lng32 textSubID,
+       NAString &constrText);
+  
   NABoolean isAuthorizationEnabled();
 
   short existsInHbase(const NAString &objName,
@@ -692,17 +701,16 @@ class CmpSeabaseDDL
 			    NABoolean audited,
                             const NAString& objType);
 
-  // textType:   0, view text.  1, constraint text.  2, computed col text.
   // subID: 0, for text that belongs to table. colNumber, for column based text.
   short updateTextTable(ExeCliInterface *cliInterface,
                         Int64 objUID, 
-                        Lng32 textType, 
+                        ComTextType textType, 
                         Lng32 subID, 
                         NAString &text);
 
   short deleteFromTextTable(ExeCliInterface *cliInterface,
                             Int64 objUID, 
-                            Lng32 textType, 
+                            ComTextType textType, 
                             Lng32 subID);
 
   ItemExpr * bindDivisionExprAtDDLTime(ItemExpr *expr,
@@ -711,8 +719,12 @@ class CmpSeabaseDDL
   short validateDivisionByExprForDDL(ItemExpr *divExpr);
 
   short createEncodedKeysBuffer(char** &encodedKeysBuffer,
+                                int &numSplits,
 				desc_struct * colDescs, desc_struct * keyDescs,
-				Lng32 numSplits, Lng32 numKeys, 
+				int numSaltPartitions,
+                                Lng32 numSaltSplits,
+                                NAString *splitByClause,
+                                Lng32 numKeys,
                                 Lng32 keyLength, NABoolean isIndex);
 
   short validateRoutine( 
@@ -987,7 +999,7 @@ class CmpSeabaseDDL
   short getTextFromMD(
        ExeCliInterface * cliInterface,
        Int64 constrUID,
-       Lng32 textType,
+       ComTextType textType,
        Lng32 textSubID,
        NAString &constrText);
   

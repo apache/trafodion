@@ -1766,6 +1766,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(HBASE_RANGE_PARTITIONING,	        "ON"),
   DDkwd__(HBASE_RANGE_PARTITIONING_MC_SPLIT,	"ON"),
+  DDkwd__(HBASE_RANGE_PARTITIONING_PARTIAL_COLS,"ON"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
@@ -6887,6 +6888,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;
     break;
+
+    case HBASE_RANGE_PARTITIONING_PARTIAL_COLS:
+      if (tok == DF_OFF || tok == DF_MINIMUM ||
+          tok == DF_MEDIUM || tok == DF_MAXIMUM || tok == DF_ON)
+        isValid = TRUE;
 
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.

@@ -116,14 +116,14 @@ void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct(
   column_desc->body.columns_desc.colnumber = colInfo->colNumber;
   column_desc->body.columns_desc.datatype  = colInfo->datatype;
   column_desc->body.columns_desc.length    = colInfo->length;
-  if (!(DFS2REC::isInterval(colInfo->datatype) || DFS2REC::isDateTime(colInfo->datatype)))
+  if (!(DFS2REC::isInterval(colInfo->datatype)))
     column_desc->body.columns_desc.scale     = colInfo->scale;
   else
     column_desc->body.columns_desc.scale = 0;
   column_desc->body.columns_desc.precision = colInfo->precision;
   column_desc->body.columns_desc.datetimestart = (rec_datetime_field) colInfo->dtStart;
   column_desc->body.columns_desc.datetimeend = (rec_datetime_field) colInfo->dtEnd;
-  if (DFS2REC::isDateTime(colInfo->datatype))
+  if (DFS2REC::isDateTime(colInfo->datatype) || DFS2REC::isInterval(colInfo->datatype))
     column_desc->body.columns_desc.datetimefractprec = colInfo->scale;
   else
     column_desc->body.columns_desc.datetimefractprec = 0;
@@ -1255,7 +1255,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
       return -1;
     }
 
-  int numSplits = 0;
+  int numSaltPartns = 0; // # of "_SALT_" values
+  int numSplits = 0;     // # of initial region splits
 
   Lng32 numSaltPartnsFromCQD = 
     CmpCommon::getDefaultNumeric(TRAF_NUM_OF_SALT_PARTNS);
@@ -1339,7 +1340,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
             }
         }
 
-      Lng32 numSaltPartns =
+      numSaltPartns =
         (saltOptions ? saltOptions->getNumPartitions() : numSaltPartnsFromCQD);
       saltExprText += " FOR ";
       sprintf(numSaltPartnsStr,"%d", numSaltPartns);
@@ -1596,8 +1597,13 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                                 colInfoArray,
                                                 numKeys) ;
 
-    if (createEncodedKeysBuffer(encodedKeysBuffer,
-                                colDescs, keyDescs, numSplits, numKeys, 
+    if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                                numSplits /*out*/,
+                                colDescs, keyDescs,
+                                numSaltPartns,
+                                numSplits,
+                                NULL,
+                                numKeys, 
                                 keyLength, FALSE))
       {
         processReturn();
@@ -6342,10 +6348,32 @@ short CmpSeabaseDDL::getCheckConstraintText(StmtDDLAddConstraintCheck *addCheckN
   return 0;
 }
 
+// nonstatic method, calling two member functions
 short CmpSeabaseDDL::getTextFromMD(
                                    ExeCliInterface * cliInterface,
                                    Int64 textUID,
-                                   Lng32 textType,
+                                   ComTextType textType,
+                                   Lng32 textSubID,
+                                   NAString &outText)
+{
+  short retcode = getTextFromMD(getSystemCatalog(),
+                                cliInterface,
+                                textUID,
+                                textType,
+                                textSubID,
+                                outText);
+
+  if (retcode)
+    processReturn();
+
+  return retcode;
+}
+
+// static version of this method
+short CmpSeabaseDDL::getTextFromMD(const char * catalogName,
+                                   ExeCliInterface * cliInterface,
+                                   Int64 textUID,
+                                   ComTextType textType,
                                    Lng32 textSubID,
                                    NAString &outText)
 {
@@ -6354,16 +6382,14 @@ short CmpSeabaseDDL::getTextFromMD(
   char query[1000];
 
   str_sprintf(query, "select text from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d for read committed access order by seq_num",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-              textUID, textType, textSubID);
+              catalogName, SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              textUID, static_cast<int>(textType), textSubID);
   
   Queue * textQueue = NULL;
   cliRC = cliInterface->fetchAllRows(textQueue, query, 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
 
       return -1;
     }
@@ -6511,14 +6537,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
     }
   
   // get check text
-  NAString origCheckConstrText;
-  if (getCheckConstraintText(alterAddCheckNode, origCheckConstrText))
+  NAString checkConstrText;
+  if (getCheckConstraintText(alterAddCheckNode, checkConstrText))
     {
       return;
     }
-
-  NAString checkConstrText;
-  ToQuotedString(checkConstrText, origCheckConstrText, FALSE);
 
   if (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_OFF)
     {
@@ -6532,7 +6555,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
                   tableName.getCatalogNamePart().getInternalName().data(),
                   tableName.getSchemaNamePart().getInternalName().data(),
                   tableName.getObjectNamePart().getInternalName().data(),
-                  origCheckConstrText.data());
+                  checkConstrText.data());
       
       Lng32 len = 0;
       Int64 rowCount = 0;
@@ -7459,7 +7482,6 @@ void CmpSeabaseDDL::createNativeHbaseTable(
       colFamVec.push_back(nas->data());
     }
 
-  NAText hbaseOptionsStr;
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
   retcode = setupHbaseOptions(createTableNode->getHbaseOptionsClause(), 
@@ -7607,6 +7629,7 @@ short CmpSeabaseDDL::getSpecialTableInfo
       tableInfo->objOwnerID = objectOwner;
       tableInfo->schemaOwnerID = schemaOwner;
       tableInfo->hbaseCreateOptions = NULL;
+      tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
     }
 
   return 0;

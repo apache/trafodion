@@ -1140,46 +1140,74 @@ NAString* CharType::getKey(CollHeap* h) const
   return new (h) NAString(getTypeSQLname(), h);
 }
 
-
-// -- Min and max permissible values for a CHAR string
-// ## These too will need to be changed to handle different collating sequences
-// ## and character sets and multibyte chars and such ...
-
-void SQLChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
-				    NAString ** stringLiteral,
-				    CollHeap* h) const
+void CharType::minMaxRepresentableValue(void* bufPtr,
+                                        Lng32* bufLen,
+                                        NAString ** stringLiteral,
+                                        NABoolean isMax,
+                                        CollHeap* h) const
 {
-// 2/19/98: checked for unicode. No need to add Unicode case.
-  ComASSERT(*bufLen >= getNominalSize());
+  Int32 i;
+  Int32 vcLenHdrSize = getVarLenHdrSize();
+  char *valPtr       = reinterpret_cast<char *>(bufPtr) + vcLenHdrSize;
+  Int32 valBufLen    = getNominalSize();
+  Int32 valLen       = valBufLen; // output length of min/max value
+  char minmax_char;
+  wchar_t minmax_wchar;
 
-  Lng32 i = 0;
-  Lng32 bufCnt = *bufLen;
-  char min_char;
-  wchar_t min_wchar;
+  ComASSERT(*bufLen >= vcLenHdrSize + valBufLen);
 
-  if (getCharSet() == CharInfo::ISO88591 ||
-      getCharSet() == CharInfo::UTF8 ||
-      (getCharSet() == CharInfo::SJIS && getEncodingCharSet() == CharInfo::SJIS))
+  switch (getCharSet())
   {
-      min_char = (char)getMinSingleCharacterValue();
-      for ( ;i < bufCnt; i++)
-         ((char *)bufPtr)[i] = min_char;
-  }
-  else if (getCharSet() == CharInfo::UCS2 ||
-           getBytesPerChar() == SQL_DBCHAR_SIZE /* same as SQL_SJIS_CHAR_MAXSIZE - so be careful */)
-  {
-      min_wchar = (wchar_t)getMinSingleCharacterValue();
+  case CharInfo::ISO88591:
+  case CharInfo::SJIS:
+    if (isMax)
+      minmax_char = (char)getMaxSingleCharacterValue();
+    else
+      minmax_char = (char)getMinSingleCharacterValue();
+    memset(valPtr, minmax_char, valBufLen);
+    break;
+
+  case CharInfo::UTF8:
+    if (isMax)
+      valLen = fillWithMaxUTF8Chars(valPtr,
+                                    valBufLen,
+                                    getPrecisionOrMaxNumChars());
+    else
+      valLen = fillWithMinUTF8Chars(valPtr,
+                                    valBufLen,
+                                    getPrecisionOrMaxNumChars());
+    break;
+
+  case CharInfo::UCS2:
+    if (isMax)
+      minmax_wchar = (wchar_t)getMaxSingleCharacterValue();
+    else
+      minmax_wchar = (wchar_t)getMinSingleCharacterValue();
 #ifdef NA_LITTLE_ENDIAN
-      wc_swap_bytes(&min_wchar, 1);
+    wc_swap_bytes(&minmax_wchar, 1);
 #endif // NA_LITTLE_ENDIAN
-      bufCnt = bufCnt / SQL_DBCHAR_SIZE;
-      for ( ;i < bufCnt; i++)
-         ((wchar_t *)bufPtr)[i] = min_wchar;
+    valBufLen /= SQL_DBCHAR_SIZE;
+    for (i=0 ;i < valBufLen; i++)
+      ((wchar_t *)valPtr)[i] = minmax_wchar;
+    break;
 
-      i = i * SQL_DBCHAR_SIZE; // For proper NAString construction
+  default:
+    ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi -- no other CharSets are supported yet.
   }
+
+  // copy the output value length into the varchar len header
+  if (vcLenHdrSize == sizeof(short))
+    {
+      short vc_len = (short) valLen;
+      str_cpy_all((char *)bufPtr, (char *)&vc_len, vcLenHdrSize);
+    }
+  else if (vcLenHdrSize == sizeof(Int32))
+    {
+      Int32 vc_len = (Int32) valLen;
+      str_cpy_all((char *)bufPtr, (char *)&vc_len, vcLenHdrSize);
+    }
   else
-      ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi -- no other CharSets are supported yet.
+    ComASSERT(vcLenHdrSize == 0);
 
   if (stringLiteral)
     {
@@ -1189,51 +1217,22 @@ void SQLChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
     }
 }
 
+// -- Min and max permissible values for a CHAR string
+// ## These too will need to be changed to handle different collating sequences
+// ## and character sets and multibyte chars and such ...
+
+void SQLChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
+				    NAString ** stringLiteral,
+				    CollHeap* h) const
+{
+  minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, FALSE, h);
+}
+
 void SQLChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 				    NAString ** stringLiteral,
 				    CollHeap* h) const
 {
-// 2/19/98: checked for unicode
-  ComASSERT(*bufLen >= getNominalSize());
-
-  Lng32 i = 0;
-  Lng32 bufCnt = *bufLen;
-  char max_char;
-  wchar_t max_wchar;
-
-  if (getCharSet() == CharInfo::ISO88591 ||
-      (getCharSet() == CharInfo::SJIS && getEncodingCharSet() == CharInfo::SJIS))
-  {
-      max_char = (char)getMaxSingleCharacterValue();
-      for ( ;i < bufCnt; i++)
-         ((char *)bufPtr)[i] = max_char;
-  }
-  else if (getCharSet() == CharInfo::UTF8)
-  {
-    fillWithMaxUTF8Chars((char *)bufPtr,bufCnt,getPrecisionOrMaxNumChars());
-  }
-  else if (getCharSet() == CharInfo::UCS2 ||
-           getBytesPerChar() == SQL_DBCHAR_SIZE /* same as SQL_SJIS_CHAR_MAXSIZE - so be careful */)
-  {
-      max_wchar = (wchar_t)getMaxSingleCharacterValue();
-#ifdef NA_LITTLE_ENDIAN
-      wc_swap_bytes(&max_wchar, 1);
-#endif // NA_LITTLE_ENDIAN
-      bufCnt = bufCnt / SQL_DBCHAR_SIZE;
-      for ( ;i < bufCnt; i++)
-         ((wchar_t *)bufPtr)[i] = max_wchar;
-
-      i = i * SQL_DBCHAR_SIZE; // For proper NAString construction
-  }
-  else
-      ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi -- no other CharSets are supported yet.
-
-  if (stringLiteral)
-    {
-      NABoolean isNull = FALSE;
-      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
-      assert(res);
-    }
+  minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, TRUE, h);
 }
 
 //  encoding of the max char value
@@ -1281,130 +1280,15 @@ void SQLVarChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 				       NAString ** stringLiteral,
 				       CollHeap* h) const
 {
-  ComASSERT(*bufLen >= getNominalSize() + getVarLenHdrSize());
-
-  // copy the max length into the varchar len header
-  if (getVarLenHdrSize() == sizeof(short))
-    {
-      short vc_len = (short)getNominalSize();
-      str_cpy_all((char *)bufPtr, (char *)&vc_len, getVarLenHdrSize());
-    }
-  else  if (getVarLenHdrSize() == sizeof(Lng32))
-    {
-      Lng32 vc_len = (Lng32)getNominalSize();
-      str_cpy_all((char *)bufPtr, (char *)&vc_len, getVarLenHdrSize());
-    }
-  else
-    ComASSERT(0);
-
-  Lng32 i = getVarLenHdrSize();
-  Lng32 bufCnt = getVarLenHdrSize() + getNominalSize();
-  char min_char;
-  wchar_t min_wchar;
-
-  switch (getBytesPerChar())
-  {
-    case 4: // sames SQL_UTF8_CHAR_MAXSIZE
-      if (getCharSet() != CharInfo::UTF8)
-        ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi -- no CharSet other than UTF8 has 4-byte chars
-      // fall through
-    case 1:
-      min_char = (char)getMinSingleCharacterValue();
-      for ( ;i < bufCnt; i++)
-         ((char *)bufPtr)[i] = min_char;
-      break;
-    case SQL_DBCHAR_SIZE: // same as BYTES_PER_NAWCHAR and SQL_SJIS_CHAR_MAXSIZE
-#if 0 /* SJIS NOT SUPPORTED YET */
-      if (getCharSet() == CharInfo::SJIS &&
-          getEncodingCharSet() == CharInfo::SJIS)
-      {
-        min_char = (char)getMinSingleCharacterValue();
-        for ( ;i < bufCnt; i++)
-           ((char *)bufPtr)[i] = min_char;
-        break;
-      }
-#endif
-      // else getCharSet() == CharInfo::UCS2
-      min_wchar = (wchar_t)getMinSingleCharacterValue();
-#ifdef NA_LITTLE_ENDIAN
-      wc_swap_bytes(&min_wchar, 1);
-#endif // NA_LITTLE_ENDIAN
-      bufCnt = bufCnt / SQL_DBCHAR_SIZE;
-      for (i = i / SQL_DBCHAR_SIZE; i < bufCnt; i++)
-         ((wchar_t *)bufPtr)[i] = min_wchar;
-
-      i = i * SQL_DBCHAR_SIZE; // For proper NAString construction
-      break;
-    default:
-      ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi  -- no values other than 1,2, & 4 are possible
-  }
-  if (stringLiteral)
-    {
-      NABoolean isNull = FALSE;
-      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
-      assert(res);
-    }
-} // minRepresentableValue()
+  minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, FALSE, h);
+}
 
 void SQLVarChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 				       NAString ** stringLiteral,
 				       CollHeap* h) const
 {
-  ComASSERT(*bufLen >= getNominalSize() + getVarLenHdrSize());
-
-  // copy the max length into the varchar len header
-  if (getVarLenHdrSize() == sizeof(short))
-    {
-      short vc_len = (short)getNominalSize();
-      str_cpy_all((char *)bufPtr, (char *)&vc_len, getVarLenHdrSize());
-    }
-  else  if (getVarLenHdrSize() == sizeof(Lng32))
-    {
-      Lng32 vc_len = (Lng32)getNominalSize();
-      str_cpy_all((char *)bufPtr, (char *)&vc_len, getVarLenHdrSize());
-    }
-  else
-    ComASSERT(0);
-
-  Lng32 i = getVarLenHdrSize();
-  Lng32 bufCnt = getVarLenHdrSize() + getNominalSize();
-  char max_char;
-  wchar_t max_wchar;
-
-  switch (getBytesPerChar())
-  {
-    case 4: // sames SQL_UTF8_CHAR_MAXSIZE
-      ComASSERT(getCharSet() == CharInfo::UTF8);
-      fillWithMaxUTF8Chars(&((char *)bufPtr)[i],bufCnt-i,getPrecisionOrMaxNumChars());
-      break;
-    case 1:
-      max_char = (char)getMaxSingleCharacterValue();
-      for ( ;i < bufCnt; i++)
-         ((char *)bufPtr)[i] = max_char;
-      break;
-    case SQL_DBCHAR_SIZE: // same as BYTES_PER_NAWCHAR and SQL_SJIS_CHAR_MAXSIZE
-      {
-        max_wchar = (wchar_t)getMaxSingleCharacterValue();
-#ifdef NA_LITTLE_ENDIAN
-        wc_swap_bytes(&max_wchar, 1);
-#endif // NA_LITTLE_ENDIAN
-        wchar_t *wBufPtr = (wchar_t *) (((char *) bufPtr) + getVarLenHdrSize());
-        Int32 wBufCnt = getNominalSize() / SQL_DBCHAR_SIZE;
-        for (i=0; i < wBufCnt; i++)
-          wBufPtr[i] = max_wchar;
-
-        break;
-      }
-    default:
-      ComASSERT(FALSE); //LCOV_EXCL_LINE :rfi -- No values other than 1,2, & 4 are possible.
-  }
-  if (stringLiteral)
-    {
-      NABoolean isNull = FALSE;
-      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
-      assert(res);
-    }
-} // maxRepresentableValue()
+  minMaxRepresentableValue(bufPtr, bufLen, stringLiteral, TRUE, h);
+}
 
 //LCOV_EXCL_START : cnu -- As of 8/30/2011, needed to link successfully, but not actually called.
 double SQLVarChar::encode (void *bufPtr) const

@@ -1181,6 +1181,27 @@ int lightValidateUTF8StrAndPad(char *bufr,
 }
 #endif /* Not currently called anywhere.*/
 
+int fillWithMinUTF8Chars(char *bufr,
+                         int in_len,
+                         int max_chars)
+{
+  int i;
+
+  if (max_chars <= 0)
+    max_chars = in_len;
+
+  // fill with minimum characters (NUL), up to the
+  // limit of characters
+  memset(bufr, 0, max_chars);
+
+  // fill up the remainder with blanks, which is the
+  // convention for UTF-8 strings with a character limit
+  if (in_len > max_chars)
+    memset(&bufr[max_chars], ' ', in_len-max_chars);
+
+  return max_chars;
+}
+
 int fillWithMaxUTF8Chars(char *bufr,
                          int in_len,
                          int max_chars)

@@ -322,6 +322,13 @@ public:
   virtual void maxRepresentableValue(void*, Lng32*,
 				     NAString ** stringLiteral = NULL,
 				     CollHeap * h=0) const;
+  inline void minMaxRepresentableValue(void* buf,
+                                       Lng32* bufLen,
+                                       NABoolean isMax,
+                                       NAString ** stringLiteral = NULL,
+                                       CollHeap * h=0) const
+  { if (isMax) maxRepresentableValue(buf, bufLen, stringLiteral, h);
+    else       minRepresentableValue(buf, bufLen, stringLiteral, h); }
 
   virtual double getMinValue() const { return 0; };
   virtual double getMaxValue() const { return 0; };

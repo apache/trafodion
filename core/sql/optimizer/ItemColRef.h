@@ -448,9 +448,6 @@ public:
   // has been transformed (i.e., all \0 chars become "\0").
   NAString getConstStr(NABoolean transformNeeded = TRUE) const;
     
-  NAWString getConstWStr();
-  // returns the Unicode-encoded string form of column default values
-    
   short isNull() const			 { return isNull_ ? -1 : 0; }
   NABoolean isNullWasDefaultSpec() const { return isNull_==IS_NULL_WAS_DEFAULT;}
   void setWasDefaultSpec()		 { if (isNull_)
@@ -598,9 +595,6 @@ private:
             enum CharInfo::CharSet strLitPrefixCharSet = CharInfo::UnknownCharSet
          );
 
-   void init_wtext_field(enum CharInfo::CharSet strLitPrefixCharSet
-                         = CharInfo::UnknownCharSet);
-
 private:
 
   // this indicates whether the constant is a NULL constant
@@ -625,10 +619,6 @@ private:
   // is an invalid SQL literal, it just means we are keeping the older
   // code that doesn't always store valid literals.
   NABoolean textIsValidatedSQLLiteralInUTF8_;
-
-  // wtext_ is used to hold and return (via getConstWStr())
-  // a column default's string value.
-  NAWString *wtext_;  
 
   NABoolean rebindNeeded_; // TRUE if the string const value is originally
                            // set with an unknown charset value.

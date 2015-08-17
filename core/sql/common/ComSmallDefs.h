@@ -615,13 +615,16 @@ enum ComParamDefaultClass { COM_CURRENT_PARAM_DEFAULT        = COM_CURRENT_DEFAU
 #define COM_ALWAYS_COMPUTE_COMPUTED_PARAM_DEFAULT_LIT "AC"
 #define COM_ALWAYS_DEFAULT_COMPUTED_PARAM_DEFAULT_LIT "AD"
 
-// represent the kind of string value stored in TEXT table
+// Represents the kind of string value stored in TEXT table.  Note
+// that changing existing values will require an UPGRADE of the
+// metadata.
 enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_CHECK_CONSTR_TEXT = 1,
                   COM_HBASE_OPTIONS_TEXT = 2,
                   COM_TABLE_COMMENT_TEXT = 3,
                   COM_COMPUTED_COL_TEXT = 4,
-                  COM_HBASE_COL_FAMILY_TEXT = 5
+                  COM_HBASE_COL_FAMILY_TEXT = 5,
+                  COM_HBASE_SPLIT_TEXT = 6
 };
 
 enum ComColumnDirection { COM_UNKNOWN_DIRECTION
