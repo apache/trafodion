@@ -83,6 +83,10 @@ fi
 timestamp=$(date +%F-%H-%M-%S)
 logsdir="/var/log/trafodion"
 logfile="$logsdir/uninstall_$timestamp.log"
+export PDSH="pdsh -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
+export PDCP="pdcp -R ssh"
+
 
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
@@ -90,7 +94,7 @@ else
     # use the -S option to cause pdsh to return largest of
     # the remote command return values so we can tell if one
     # or more of the remote commands failed
-    TRAF_PDSH="pdsh -S $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
 fi
 
 #Check sudo access which is required for "--all" option
@@ -116,10 +120,10 @@ if [ $node_count -eq 1 ]; then
    sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null
    sudo rm /usr/hdp/current/hbase-regionserver/lib/$HBASE_TRX 2>/dev/null
 else
-   pdsh $MY_NODES "sudo rm /etc/security/limits.d/trafodion.conf 2>/dev/null"
-   pdsh $MY_NODES "sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null"
-   pdsh $MY_NODES "sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null"
-   pdsh $MY_NODES "sudo rm /usr/hdp/current/hbase-regionserver/lib/$HBASE_TRX 2>/dev/null" 
+   $TRAF_PDSH "sudo rm /etc/security/limits.d/trafodion.conf 2>/dev/null"
+   $TRAF_PDSH "sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null"
+   $TRAF_PDSH "sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null"
+   $TRAF_PDSH "sudo rm /usr/hdp/current/hbase-regionserver/lib/$HBASE_TRX 2>/dev/null" 
 fi
 
 echo "***INFO remove the Trafodion userid and group"

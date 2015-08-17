@@ -12,6 +12,12 @@ if [[ $HADOOP_TYPE == "cloudera" ]]; then
    curlRC=$?
    numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
    grep -r "hostname" tempFile > tempFile2
+
+   if [[ -d /opt/cloudera/parcels/CDH ]]; then
+      HADOOP_PATH="/opt/cloudera/parcles/CDH/lib/hbase/lib"
+   else
+      HADOOP_PATH="/usr/lib/hbase/lib"
+   fi
 fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
@@ -19,6 +25,12 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    curlRC=$?
    numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
    grep -r "host_name" tempFile > tempFile2
+
+   if [[ -d /usr/lib/hbase/lib ]]; then
+      HADOOP_PATH="/usr/lib/hbase/lib"
+   else
+      HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
+   fi
 fi
 
 if [ $curlRC != 0 ]; then
@@ -65,6 +77,10 @@ sudo chmod 777 $TRAF_CONFIG
 sed -i '/MY_HADOOP_NODES\=/d' $TRAF_CONFIG
 echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
+echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
 
 hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
 

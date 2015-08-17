@@ -128,18 +128,24 @@ if [[ $SUSE_LINUX == "false" ]]; then
       echo "***INFO: ... EPEL rpm"
       if [[ "$EPEL_RPM" != "" ]]; then
          if [ $node_count -ne 1 ]; then
-            $TRAF_PDCP $EPEL_RPM $TRAF_WORKDIR
+            for node in $NODE_LIST
+            do
+               scp -q $EPEL_RPM $(whoami)@$node:$HOME
+            done
          else
-            cp -rf $EPEL_RPM $TRAF_WORKDIR
+            cp -rf $EPEL_RPM $HOME
          fi
       else
          if [[ $internetAccess == "true" ]]; then
             epel_rpm="epel-release-6-8.noarch.rpm"
             wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
             if [ $node_count -ne 1 ]; then
-               $TRAF_PDCP $epel_rpm $TRAF_WORKDIR
+               for node in $NODE_LIST
+               do
+                  scp -q $LOCAL_WORKDIR/$epel_rpm $(whoami)@$node:$HOME
+               done
             else
-               cp -rf $epel_rpm $TRAF_WORKDIR
+               cp -rf $epel_rpm $HOME
             fi
 
             if [ $? != 0 ]; then
@@ -160,7 +166,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
    do
      EPEL_INSTALLED=$( ssh -q -n $node rpm -qa | grep epel | wc -l)
      if [[ $EPEL_INSTALLED == 0 ]]; then
-        ssh -q -n $node sudo rpm -Uvh $TRAF_WORKDIR/epel* 2>> $YUM_LOG >> $YUM_LOG
+        ssh -q -n $node sudo rpm -Uvh $HOME/epel* 2>> $YUM_LOG >> $YUM_LOG
         if [ $? != 0 ]; then
            echo "***ERROR: Can't install EPEL rpm $EPEL_RPM"
            exit -1
@@ -180,13 +186,7 @@ else
    sleep 10
 fi
 
-# first install pdsh on each node so we can use it to install
-# everything else.  don't need pdsh if only a single node
-
-$TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
-$TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
-
-
+#install pdsh if not on SUSE Linux
 if [[ $SUSE_LINUX == "false" ]]; then
    if [ $node_count -ne 1 ]; then
       for node in $NODE_LIST
@@ -218,6 +218,9 @@ if [[ $SUSE_LINUX == "false" ]]; then
 
    fi
 fi
+
+$TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
+$TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
 
 if [[ $SUSE_LINUX == "false" ]]; then
    # to handle the case where the EPEL rpm was already

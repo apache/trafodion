@@ -712,6 +712,7 @@ do
                exit -1
             fi
             nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.*)
+            HADOOP_PATH="/usr/lib/hbase/lib"
          else
             nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
          fi
@@ -728,6 +729,7 @@ do
                exit -1
             fi
          fi
+         HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
       fi
 
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
@@ -757,19 +759,20 @@ do
                exit -1
             fi
          fi
+         HADOOP_PATH="/usr/lib/hbase/lib"
          #Check for Cloudera parcels of packages.
          parcelsInstalled=$(ssh -q -n $node sudo ls /opt/cloudera/parcels/ | wc -l)
          if [[ $parcelsInstalled -gt "0" ]]; then
-            echo "***ERROR: Cloudera parcels installed"
-            echo "***ERROR: Trafodion only supports Cloudera packages at this time."
-            exit -1
+            HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
          fi
       fi
       echo "***INFO: nameOfVersion=$nameOfVersion"
+      echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
       break;
    fi
 done
 
+echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $LOCAL_TRAF_CONFIG
 
 
 
