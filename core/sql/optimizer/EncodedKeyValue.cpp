@@ -390,6 +390,7 @@ short encodeKeyValues(desc_struct   * column_descs,
 
   atp_struct * workAtp = keyEncodeExpr->getWorkAtp();
   workAtp->getTupp(keyAtpIndex).setDataPointer(encodedKeyBuffer);
+  workAtp->setDiagsArea(diagsArea);
   
   if (keyEncodeExpr->getExpr()->eval(workAtp, 0, space) == ex_expr::EXPR_ERROR)
     error = -1;

@@ -726,15 +726,6 @@ void CmpSeabaseDDL::createSeabaseView(
   NAString viewText(STMTHEAP);
   buildViewText(createViewNode, viewText);
 
-  NAString newViewText(STMTHEAP);
-  for (Lng32 i = 0; i < viewText.length(); i++)
-    {
-      if (viewText.data()[i] == '\'')
-	newViewText += "''";
-      else
-	newViewText += viewText.data()[i];
-    }
-
   ElemDDLColDefArray colDefArray(STMTHEAP);
   if (buildViewColInfo(createViewNode, &colDefArray))
     {
@@ -840,7 +831,7 @@ void CmpSeabaseDDL::createSeabaseView(
     }
 
 
-  query = new(STMTHEAP) char[newViewText.length() + 1000];
+  query = new(STMTHEAP) char[1000];
   str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
@@ -865,7 +856,7 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
-  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, newViewText))
+  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, viewText))
     {
       deallocEHI(ehi); 
       processReturn();

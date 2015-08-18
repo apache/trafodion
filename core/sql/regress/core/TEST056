@@ -78,30 +78,22 @@ create table T056t10 (swallow int default 121 not null ,
                       barnowl int default 1000 not null);
 
 create unique index T056in5 on T056t10 (barnowl) 
-#ifMX
        location $$partition$$ 
        range partition (
         add first key 150 location $$partition$$,
         add first key 180 location $$partition$$)
-#ifMX
 ; 
 
 create table T056t11 (wren int not null , 
   junco int not null ,
-  blackbird int
-#ifMP
-not null
-#ifMP
-,
+  blackbird int,
   primary key(wren,junco) )
-#ifMX
       location $$partition2$$
       range partition (
         add first key (30)  location $$partition2$$,
         add first key (170) location $$partition2$$,
         add first key (190) location $$partition2$$,
         add first key (300) location $$partition2$$)
-#ifMX
 ;
 
 insert into T056t11 values (1,11,111),(3,13,113),(5,15,115)

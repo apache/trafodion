@@ -2830,7 +2830,7 @@ short CmpDescribeSeabaseTable (
       if ((isSalted) && !withoutSalt)
         {
           Lng32 currPartitions = naf->getCountOfPartitions();
-          Lng32 numPartitions = naTable->numSaltPartns();
+          Lng32 numPartitions = naf->numSaltPartns();
 
           if (numPartitions != currPartitions)
             sprintf(buf,  "  SALT USING %d PARTITIONS /* ACTUAL PARTITIONS %d */", numPartitions, currPartitions);

@@ -777,7 +777,6 @@ public:
   NABoolean insertMissingStatsWarning(CollIndexSet colsSet) const;
 
   const desc_struct * getTableDesc() const { return tableDesc_; }
-  Lng32 numSaltPartns() { return clusteringIndex_->numSaltPartns(); }
   NAList<HbaseCreateOption*> * hbaseCreateOptions()
     { return clusteringIndex_->hbaseCreateOptions();}
 
