@@ -10304,17 +10304,17 @@ NABoolean ZZZBinderFunction::isPadWithSpace (ExprValueId& padExpr, CharInfo::Cha
      NABoolean foundSingleQuote = FALSE;
      for (const char *s = padString.data(); *s; s++)
      {
-       i++;  // 0x27 is the single quote character '
-       if ((!foundSingleQuote)&&(*s != 0x27)) // loop through 
+       i++;
+       if ((!foundSingleQuote)&&(*s != '\'')) // loop through 
          continue;  // the prefix _UCS2 or _ISO88591
        else if ((!foundSingleQuote))
        {
         foundSingleQuote = TRUE; // found the leading single quote.
         continue;
        }
-       if ((i == (padString.length())) && (*s == 0x27)) // trailing single quote
+       if ((i == (padString.length())) && (*s == '\'')) // trailing single quote
          continue;
-       if (*s != 0x20) // 0x20 is the single space character ' '
+       if (*s != ' ')
          return FALSE;
      }
      return foundSingleQuote;
