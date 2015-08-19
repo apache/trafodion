@@ -2886,13 +2886,11 @@ short ExExeUtilLobExtractTcb::work()
 		  }
 
 	      }
-	    if (lobTdb().retrieveLength())
-	      step_ = RETRIEVE_LOB_HANDLE_LENGTH_;
-	    else
-	      step_ = EXTRACT_LOB_DATA_;
+	    
+	    step_ = RETRIEVE_LOB_LENGTH_;	    
 	    break;
 	  }
-	case RETRIEVE_LOB_HANDLE_LENGTH_ : 
+	case RETRIEVE_LOB_LENGTH_ : 
 	  {
 	    Int16 flags;
 	    Lng32  lobNum;
@@ -2915,12 +2913,15 @@ short ExExeUtilLobExtractTcb::work()
 		     step_ = HANDLE_ERROR_;
 		     break;
 		   }
-		else
+		if  (lobTdb().retrieveLength())
 		  {
 		    str_sprintf(statusString_," LOB Length : %d", lobDataLen);
 		    step_ = RETURN_STATUS_;
 		    break;	
-		  }	  
+		  }
+		else
+		  step_ = EXTRACT_LOB_DATA_;
+		break;
 	      
 	  }
 	case EXTRACT_LOB_DATA_ :
@@ -2956,7 +2957,7 @@ short ExExeUtilLobExtractTcb::work()
 	       LOB_CLI_SELECT_UNIQUE,
 	       lobNumList,
 	       lobTypList,
-	       lobLocList);
+	       lobLocList,0);
 	    if (cliRC < 0)
 	      {
 		getDiagsArea()->mergeAfter(diags);
@@ -2972,7 +2973,7 @@ short ExExeUtilLobExtractTcb::work()
 
 	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_)
 	      {
-		LobTgtFileFlags tgtFlags = Lob_Append_Or_Create;
+		LobTgtFileFlags tgtFlags = Lob_Error_Or_Create;
 		if (lobTdb().errorIfNotExists() && !lobTdb().truncateExisting())
 		  tgtFlags = Lob_Append_Or_Error;
 		if (lobTdb().truncateExisting() && !lobTdb().errorIfNotExists())
@@ -3004,7 +3005,7 @@ short ExExeUtilLobExtractTcb::work()
 		    ComDiagsArea * diagsArea = getDiagsArea();
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
 				    (ExeErrorCode)(8442), NULL, &intParam1, 
-				    &cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
+				    &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
 				    getLobErrStr(intParam1));
 		    step_ = HANDLE_ERROR_;
 		    break;

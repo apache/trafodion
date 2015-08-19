@@ -12679,15 +12679,15 @@ update_obj_to_lob_function :
 			        {
 				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, TRUE);
 				}
-                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
+                          | TOK_FILETOLOB '('character_literal_sbyte ')'
 			        {
-				  YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, FALSE);
+				 
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,LOBoper::FILE_, FALSE);
 				}
-                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ',' TOK_APPEND ')'
+                          | TOK_FILETOLOB '('character_literal_sbyte ',' TOK_APPEND ')'
 			        {
-				  YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, TRUE);
+				 
+				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, LOBoper::FILE_, TRUE);
 				}
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
 			        {
@@ -15661,7 +15661,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
               
             | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING  ','  QUOTED_STRING ')'
                {
-                 // if file exists, truncate and replace contents. if file doesn't exist, error
+                 // if file exists, error . if file doesn't exist, create
                  // extract lobtofile (lob 'abc',  'file');
 
 		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
@@ -15671,13 +15671,13 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
 		    NULL, NULL, 
-		    ExeUtilLobExtract::ERROR_IF_NOT_EXISTS, 
-		    ExeUtilLobExtract::TRUNCATE_EXISTING,
+		    0, 
+		    0,
 		    (char*)$7->data());
 
 		 $$ = lle;
 	       }
-              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_CREATE  ')'
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' QUOTED_STRING ',' TOK_TRUNCATE  ')'
                {
                  // if file exists, truncate and replace contents. if file doesn't exist, create
                  // extract lobtofile (lob 'abc',  'file', create);
@@ -15707,7 +15707,7 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		   (handle, 
 		    ExeUtilLobExtract::TO_FILE_,
 		    NULL, NULL, 
-		    0,
+		    ExeUtilLobExtract::ERROR_IF_EXISTS,
 		    0,
 		    (char*)$7->data());
 

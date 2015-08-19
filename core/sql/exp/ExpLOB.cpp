@@ -163,7 +163,7 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 }
 Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap, 
 			    char * lobLoc,
-			    Int64 uid, Lng32 num)
+			    Int64 uid, Lng32 num, Int64 lobMaxSize)
 {
   char buf[100];
   
@@ -183,7 +183,7 @@ Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap,
   else
     lobGlobL = lobGlob;
 
-  rc = ExpLOBinterfaceCreate(lobGlobL, lobName, lobLoc);
+  rc = ExpLOBinterfaceCreate(lobGlobL, lobName, lobLoc, Lob_HDFS_File,(char *)"default",lobMaxSize);
 
   return rc;
 }
@@ -681,9 +681,14 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
 
   Lng32 cliError = 0;
   char * lobData = NULL;
+  lobData= new(h) char[lobLen];
   //send lobData only if it's a lob_file operation
   if (so == Lob_File)
-    lobData = op_data[1];
+    {
+      str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
+      
+    }
+ 
   LobsOper lo ;
  
   if (lobOperStatus == CHECK_STATUS_)
@@ -789,8 +794,16 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
     return ex_expr::EXPR_ERROR;
 
   lobLen = getOperand(1)->getLength();
-  char * lobData = op_data[1];
-LobsOper lo ;
+  
+  char * lobData = NULL;
+  if(fromFile())
+    {
+      lobData = new (h) char[lobLen];  
+      str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
+    }
+    else
+      lobData = op_data[1];
+  LobsOper lo ;
  
   if (lobOperStatus == CHECK_STATUS_)
     lo = Lob_Check_Status;
@@ -800,8 +813,8 @@ LobsOper lo ;
     lo = Lob_InsertData;
 
   LobsSubOper so = Lob_None;
-  if (fromFile())
-    so = Lob_File;
+  if (fromFile())    
+    so = Lob_File;       
   else if (fromString() || fromLoad())
     so = Lob_Memory;
   else if (fromLob())
@@ -1195,7 +1208,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 lobLen, 
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
-	 fromDescKey, fromDescTS);
+	 fromDescKey, fromDescTS,
+	 getLobMaxSize(), getLobMaxChunkMemSize());
     }
   else
     {
@@ -1217,7 +1231,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 lobLen, 
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
-	 fromDescKey, fromDescTS);
+	 fromDescKey, fromDescTS,
+	 getLobMaxSize(), getLobMaxChunkMemSize());
     }
 
   if (rc < 0)
@@ -1382,7 +1397,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,
 
-				 descKey, lobLen, lobLen, tgtFileName,getLobMaxChunkMemSize());
+				 0, lobLen, lobLen, tgtFileName,getLobMaxChunkMemSize());
     }
   else if (toString())
     {
@@ -1407,7 +1422,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 				 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
  				 waitedOp,
 
-				 descKey, lobLen, lobLen, lobData,getLobMaxChunkMemSize());
+				 0, lobLen, lobLen, lobData,getLobMaxChunkMemSize());
 
       if (rc == LOB_ACCESS_PREEMPT)
 	{

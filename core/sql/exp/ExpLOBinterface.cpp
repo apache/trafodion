@@ -31,7 +31,7 @@ using std::ofstream;
 #include "ExpLOBinterface.h"
 
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive)
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive, Int64  lobMaxSize)
 {
   Ex_Lob_Error err;
 
@@ -54,8 +54,8 @@ Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive)
                    1, // waited op
 		   lobGlob,
 		   0,
-		   NULL, 0
-		   );
+		   NULL, 0,
+		   lobMaxSize);
   if (lobGlob)
     {
       ((ExLobGlobals *)lobGlob)->setIsHive(isHive);
@@ -108,6 +108,7 @@ Lng32 ExpLOBinterfaceCreate(
 			    void * lobGlob, char * lobName, char * lobLoc,
 			    Lng32 lobType,
 			    char * lobHdfsServer,
+			    Int64 lobMaxSize,
 			    Lng32 lobHdfsPort,
 	                    int    bufferSize ,
 	                    short  replication ,
@@ -132,9 +133,11 @@ Lng32 ExpLOBinterfaceCreate(
                    1, // waited op
 		   lobGlob,
 		   0, NULL, 0,
+		   lobMaxSize,
                    bufferSize ,
                    replication,
                    blockSize
+		   
 		   );
 
   if (err != LOB_OPER_OK)
@@ -474,7 +477,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS
+				  Int64 srcDescTS,
+				  Int64 lobMaxSize,
+				  Int64 lobMaxChunkMemSize
 				  )
 {
   Ex_Lob_Error err;
@@ -498,7 +503,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
                    so,
                    1, 
                    lobGlob,
-                   0, NULL, 0
+                   xnId, NULL, 0,
+		   lobMaxSize,
+		   lobMaxChunkMemSize
                    );
 
   if ((err == LOB_OPER_OK) &&
@@ -549,7 +556,9 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    short srcDescSchNameLen,
 			    char * srcDescSchName,
 			    Int64 srcDescKey, 
-			    Int64 srcDescTS)
+			    Int64 srcDescTS,
+			    Int64 lobMaxSize ,
+			    Int64 lobMaxChunkMemSize )
 {
   Ex_Lob_Error err;
 
@@ -573,7 +582,9 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
                    1, 
                    lobGlob,
                    xnId, 
-		   NULL, 0
+		   NULL, 0,
+		   lobMaxSize,
+		   lobMaxChunkMemSize
                    );
 
   if ((err == LOB_OPER_OK) &&

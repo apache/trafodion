@@ -234,7 +234,7 @@ public:
 
   static Lng32 createLOB(void * lobGlob, void * lobHeap,
 			 char * lobLoc,
-			 Int64 uid, Lng32 lobNum);
+			 Int64 uid, Lng32 lobNum, Int64 lobMAxSize);
 
   static Lng32 dropLOB(void * lobGlob, void * lobHeap, 
 		       char * lobLoc,

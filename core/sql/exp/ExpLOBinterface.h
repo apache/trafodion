@@ -74,7 +74,7 @@ enum ExpLOBinterfaceInputFlags
     ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
   };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE, Int64   lobMaxSize =0);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 
@@ -83,6 +83,7 @@ Lng32 ExpLOBinterfaceCreate(void * lobGlob,
 			    char * lobLoc,
 			    Lng32 lobType = (Lng32)Lob_HDFS_File,
 			    char * lobHdfsServer = (char *)"default",
+			    Int64 lobMaxSize = 0,
 			    Lng32 lobHdfsPort = 0,
 	                    int    bufferSize = 0,
 	                    short  replication =0,
@@ -182,7 +183,9 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    short srcDescSchNameLen,
 			    char * srcDescSchName,
 			    Int64 srcDescKey, 
-			    Int64 srcDescTS);
+			    Int64 srcDescTS,
+			    Int64 lobMaxSize = 0,
+			    Int64 lobMaxChunkMemSize = 0);
 
 Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob, 
 				  char * lobHdfsServer ,
@@ -209,7 +212,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS
+				  Int64 srcDescTS,
+				  Int64 lobMaxSize = 0,
+				  Int64 lobMaxChunkMemSize = 0
 				  );
 
 Lng32 ExpLOBInterfaceDelete(void * lobGlob, 

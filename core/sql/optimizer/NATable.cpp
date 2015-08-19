@@ -5324,7 +5324,7 @@ NATable::NATable(BindWA *bindWA,
 	 LOB_CLI_SELECT_CURSOR,
 	 lobNumList,
 	 lobTypList,
-	 lobLocList);
+	 lobLocList,0);
       
       if (cliRC == 0)
 	{

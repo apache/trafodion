@@ -1832,7 +1832,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
 	  j++;
 	}
     }
-  
+  Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024; 
   if (j > 0)
      {
        Int64 objUID = getObjectUID(&cliInterface,
@@ -1852,7 +1852,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
 					   LOB_CLI_CREATE,
 					   lobNumList,
 					   lobTypList,
-					   lobLocList);
+					   lobLocList,
+					   lobMaxSize);
        if (rc < 0)
 	 {
 	   //sss TBD need to retrive the cli diags here.
@@ -3172,7 +3173,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 					  LOB_CLI_DROP,
 					  lobNumList,
 					  lobTypList,
-					  lobLocList);
+					  lobLocList,0);
       if (rc < 0)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)

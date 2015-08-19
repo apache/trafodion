@@ -1862,7 +1862,7 @@ public:
   };
   enum ExtractFileActionType
   {
-    ERROR_IF_NOT_EXISTS =1, TRUNCATE_EXISTING };
+    ERROR_IF_NOT_EXISTS =1, ERROR_IF_EXISTS, TRUNCATE_EXISTING };
   
   
  ExeUtilLobExtract(ItemExpr * handle, 

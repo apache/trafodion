@@ -792,7 +792,7 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
                                    LOB_CLI_CLEANUP,
                                    lobNumList_,
                                    lobTypList_,
-                                   lobLocList_);
+                                   lobLocList_,0);
 
   return 0;
 }
