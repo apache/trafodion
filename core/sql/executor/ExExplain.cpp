@@ -1503,6 +1503,7 @@ RtsExplainFrag *ExExplainTcb::sendToSsmp()
   RtsExplainReq *explainReq;
   CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
                         castToExMasterStmtGlobals()->getCliGlobals();
+  ContextCli *context = cliGlobals->currContext();
   if (cliGlobals->getStatsGlobals() == NULL)
   {
     // Runtime Stats not running.
@@ -1510,6 +1511,14 @@ RtsExplainFrag *ExExplainTcb::sendToSsmp()
     IpcAllocateDiagsArea(diagsArea_, getHeap());
     (*diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
     return NULL;
+  }
+
+  ExMasterStats *masterStats;
+
+  if (strcasecmp(qid_, "CURRENT") == 0) {
+     if (context->getStats() != NULL && (masterStats = context->getStats()->getMasterStats()) != NULL) {
+        setQid(masterStats->getQueryId(), masterStats->getQueryIdLen()); 
+     }
   }
 
   // Verify that we have valid parameters for each kind of request. If not, fill in the diagsArea
