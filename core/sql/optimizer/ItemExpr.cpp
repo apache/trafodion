@@ -2289,6 +2289,10 @@ void ItemExpr::computeKwdAndFlags( NAString &kwd,
     else
       kwd = getText();
   }
+  else if (operatorType == ITM_NAMED_TYPE_TO_ITEM)
+  {
+    kwd = ToAnsiIdentifier(((NamedTypeToItem *)this)->getText());
+  }
   else if (( operatorType == ITM_CACHE_PARAM) &&
            (form == QUERY_FORMAT) )
     ((ConstantParameter *)this)->getConstVal()->unparse(kwd, phase, QUERY_FORMAT, tabId);
@@ -9737,7 +9741,7 @@ ConstValue::ConstValue()
      , storageSize_(0)
      , text_(new (CmpCommon::statementHeap()) NAString("NULL", CmpCommon::statementHeap()))
      , textIsValidatedSQLLiteralInUTF8_(FALSE)
-     , wtext_(0), isSystemSupplied_(FALSE)
+     , isSystemSupplied_(FALSE)
      , locale_strval(0)
      , locale_wstrval(0)
      , isStrLitWithCharSetPrefix_(FALSE)
@@ -9751,7 +9755,6 @@ ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
            : ItemExpr(ITM_CONSTANT)
            , isNull_(IS_NOT_NULL)
            , textIsValidatedSQLLiteralInUTF8_(FALSE)
-           , wtext_(0)
            , type_(new (CmpCommon::statementHeap()) SQLInt(TRUE, FALSE))
 	   , isSystemSupplied_(FALSE)
            , locale_strval(0)
@@ -9778,7 +9781,7 @@ ConstValue::ConstValue(const NAString & strval,
              enum CharInfo::Collation collation,
              enum CharInfo::Coercibility coercibility,
              NAMemory * outHeap)
-: ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL), wtext_(0),
+: ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL),
   textIsValidatedSQLLiteralInUTF8_(FALSE), isStrLitWithCharSetPrefix_(FALSE),
   isSystemSupplied_(FALSE), locale_wstrval(0), rebindNeeded_(FALSE)
 {
@@ -9876,7 +9879,6 @@ ConstValue::ConstValue(const NAWString& wstrval,
    isSystemSupplied_(FALSE),
    value_(0),
    text_(0),
-   wtext_(0),
    locale_strval(0),
    locale_wstrval(0),
    isStrLitWithCharSetPrefix_(FALSE),
@@ -9951,8 +9953,6 @@ void ConstValue::initCharConstValue(const NAWString& strval,
 	    NAString((char*)strval.data(), storageSize_,
 	     outHeap);
   textIsValidatedSQLLiteralInUTF8_ = FALSE;
-
-  init_wtext_field(strLitPrefixCharSet);
 }
 
 
@@ -9964,7 +9964,6 @@ ConstValue::ConstValue(NAString strval, NAWString wstrval,
    value_(0),
    text_(0),
    textIsValidatedSQLLiteralInUTF8_(FALSE),
-   wtext_(0),
    isSystemSupplied_(FALSE),
    isStrLitWithCharSetPrefix_(FALSE),
    rebindNeeded_(FALSE)
@@ -10066,7 +10065,6 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   : ItemExpr(ITM_CONSTANT)
   , isNull_(IS_NOT_NULL)
   , type_(type)
-  , wtext_(0)
   , isSystemSupplied_(FALSE)
   , locale_strval(0)
   , locale_wstrval(0)
@@ -10128,7 +10126,6 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   : ItemExpr(ITM_CONSTANT)
   , isNull_(isNull)
   , type_(type)
-  , wtext_(0)
   , isSystemSupplied_(FALSE)
   , locale_strval(0)
   , locale_wstrval(0)
@@ -10176,7 +10173,6 @@ ConstValue::ConstValue(const NAType * type,
 		       const NABoolean includeNull,
                        NAMemory * outHeap)
 : ItemExpr(ITM_CONSTANT)
-, wtext_(0)
 , isNull_(IsNullEnum(type->supportsSQLnull() && includeNull && !wantMinValue))
 , type_(type)
 , isSystemSupplied_(FALSE)
@@ -10267,7 +10263,7 @@ ConstValue::ConstValue(OperatorTypeEnum otype,
 
 ConstValue::ConstValue(const ConstValue& s, NAHeap *h)
   : ItemExpr(ITM_CONSTANT), isNull_(s.isNull_), type_(s.type_)
-  , storageSize_(s.storageSize_), wtext_(s.wtext_)
+  , storageSize_(s.storageSize_)
   , textIsValidatedSQLLiteralInUTF8_(s.textIsValidatedSQLLiteralInUTF8_)
   , isSystemSupplied_(s.isSystemSupplied_)
   , isStrLitWithCharSetPrefix_(s.isStrLitWithCharSetPrefix_)
@@ -10284,7 +10280,7 @@ ConstValue::ConstValue(const ConstValue& s, NAHeap *h)
 
 ConstValue::ConstValue(const ConstValue& s)
   : ItemExpr(ITM_CONSTANT), isNull_(s.isNull_), type_(s.type_)
-  , storageSize_(s.storageSize_), wtext_(s.wtext_), value_(s.value_)
+  , storageSize_(s.storageSize_), value_(s.value_)
   , textIsValidatedSQLLiteralInUTF8_(s.textIsValidatedSQLLiteralInUTF8_)
   , text_(s.text_), isSystemSupplied_(s.isSystemSupplied_)
   , isStrLitWithCharSetPrefix_(s.isStrLitWithCharSetPrefix_)
@@ -10302,9 +10298,6 @@ ConstValue::~ConstValue()
 
   if (text_)
     NADELETEBASIC((NAString*)text_,CmpCommon::statementHeap());
-
-  if (wtext_)
-    NADELETEBASIC((NAWString*)wtext_,CmpCommon::statementHeap());
 }
 
 NABoolean ConstValue::isAUserSuppliedInput() const    { return TRUE; }
@@ -10494,91 +10487,17 @@ NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
   {
     CharType* chType = (CharType*)getType();
 
-     // 4/8/96: added the Boolean switch so that displayable
-     // and non-displayable version can be differed.
-    if ( transformeNeeded ) {
+    // 4/8/96: added the Boolean switch so that displayable
+    // and non-displayable version can be differed.
+    if ( transformeNeeded )
       return chType->getCharSetAsPrefix() + getText();
-    }
-    else {
-      NAString str(CmpCommon::statementHeap());
-      ToQuotedString(str, *text_);
-      return chType->getCharSetAsPrefix() + str;
-    }
+    else
+      return chType->getCharSetAsPrefix() + getTextForQuery(QUERY_FORMAT);
   }
   else
   {
     return *text_;
   }
-}
-
-NAWString ConstValue::getConstWStr()
-{
-  if (wtext_ == NULL)
-    init_wtext_field();
-
-  return *wtext_;
-}
-
-void ConstValue::init_wtext_field(enum CharInfo::CharSet strLitPrefixCharSet)
-{
-  NAMemory *heap = CmpCommon::statementHeap();
-
-  if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
-    {
-      CharType* chType = (CharType*)getType();
-      enum CharInfo::CharSet charset = chType->getCharSet();
-      switch (charset)
-        {
-        case CharInfo::ISO88591:
-        case CharInfo::UTF8:
-        // case CharInfo::SJIS: // Uncomment if we ever support SJIS
-          {
-            NAWcharBuf *wBuf = NULL;
-            NAString str(getConstStr(FALSE), heap);
-
-#pragma nowarn(1506)   // warning elimination
-            charBuf cBuf((unsigned char*)str.data(), str.length(), heap);
-#pragma warn(1506)  // warning elimination
-            Int32 ErrCod = 0;
-            wBuf = csetToUnicode(cBuf, heap, wBuf, charset, ErrCod);
-            if (wBuf)
-              {
-                wtext_ = new (heap)
-                  NAWString(wBuf->data(), wBuf->getStrLen(), heap);
-                NADELETE(wBuf, NAWcharBuf, heap);
-              }
-            break;
-          }
-        case CharInfo::UNICODE:
-          {
-            NAWString wt((NAWchar*)text_->data(), (text_->length() / BYTES_PER_NAWCHAR));
-            NAWString wstr = wt.ToQuotedWString();
-            if ( ( strLitPrefixCharSet == CharInfo::ISO88591 ) ||
-                 ( strLitPrefixCharSet == CharInfo::UTF8 )   )
-            {
-              wtext_ = new (heap)
-                NAWString(NAWString(CharInfo::ISO88591,
-                          (strLitPrefixCharSet == CharInfo::ISO88591)
-                           ? "_ISO88591" : "_UTF8" ) + wstr,
-                          heap);
-            }
-            else
-            {
-            wtext_ = new (heap)
-	      NAWString(
-	        NAWString(CharInfo::ISO88591, chType->getCharSetAsPrefix()) + wstr,
-                        heap);
-            }
-            break;
-          }
-        }
-    }
-  else
-    {
-      wtext_ = new (heap) NAWString(CharInfo::ISO88591, getConstStr().data(), heap);
-    }
-
-  if (!wtext_) wtext_ = new (heap) NAWString(WIDE_(""), heap);
 }
 
 // Genesis 10-980402-1556 (see Binder)
@@ -10813,7 +10732,6 @@ NABoolean ConstValue::isEmptyString() const
 {
   if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE) {
     if (text_ && text_->length() == 0) { return TRUE; }
-    if (wtext_ && wtext_->length() == 0) { return TRUE; }
   }
   return FALSE;
 }

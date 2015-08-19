@@ -1452,6 +1452,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // need to extend the partial buffer, allocate a copy
       actEncodedKey = new(heap) char[totalKeyLength];
       memcpy(actEncodedKey, encodedKey, encodedKeyLen);
+
+      // extend the remainder with zeroes, assuming that this is what
+      // HBase does when deciding which region a row belongs to
       memset(&actEncodedKey[encodedKeyLen], 0, totalKeyLength-encodedKeyLen);
       Lng32 currOffset = lenOfFullyProvidedCols;
 
@@ -1459,11 +1462,14 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // so that we can treat the buffer as fully encoded in the final loop below
       for (CollIndex j = numProvidedCols; j < partColArray.entries(); j++)
         {
-          const NAType *pkType = partColArray[j]->getType();
-          Lng32 nullHdrSize = pkType->getSQLnullHdrSize();
-          Lng32 colEncodedLength = nullHdrSize + pkType->getNominalSize();
-          NABoolean isDescending = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
+          const NAType *pkType        = partColArray[j]->getType();
+          Lng32 nullHdrSize           = pkType->getSQLnullHdrSize();
+          int valOffset               = currOffset + nullHdrSize;
+          int valEncodedLength        = pkType->getNominalSize();
+          Lng32 colEncodedLength      = nullHdrSize + valEncodedLength;
+          NABoolean isDescending      = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
 
+          NABoolean nullHdrAlreadySet = FALSE;
           NABoolean columnIsPartiallyProvided = (currOffset < encodedKeyLen);
 
           if (columnIsPartiallyProvided)
@@ -1472,58 +1478,161 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // value. Note that the buffer has a prefix of some bytes with actual key
               // values, followed by bytes that are zeroed out. 
 
+              // the number of bytes actually provided in the key (not filled in)
+              int numBytesInProvidedVal = encodedKeyLen-valOffset;
 
-              // First, for descending columns, use 0xFF instead of 0 for fillers
-              if (isDescending)
-                memset(&actEncodedKey[encodedKeyLen],
-                       0xFF,
-                       currOffset + colEncodedLength - encodedKeyLen);
+              if (nullHdrSize && numBytesInProvidedVal <= 0)
+                {
+                  // only the null-header or a part thereof was provided
+                  CMPASSERT(nullHdrSize == sizeof(short));
+
+                  // get the partial indicator values into a short
+                  short indicatorVal = *reinterpret_cast<short *>(&actEncodedKey[currOffset]);
+
+                  // make it either 0 or -1
+                  if (indicatorVal)
+                    indicatorVal = -1;
+
+                  // put it back and let the code below know that we set it already
+                  // (this is handled otherwise as a non-provided column)
+                  memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
+                  nullHdrAlreadySet = TRUE;
+                  columnIsPartiallyProvided = FALSE;
+                }
 
               // Next, decide by data type whether it's ok for the type to have
-              // a suffix of the buffer zeroed out (even descending columns will
-              // in the end see zeroes). If the type can't take it, we'll just
-              // discard all the partial information.
+              // a suffix of the buffer zeroed out (descending columns will
+              // see 0xFF values, once the encoded value gets inverted). If the
+              // type can't take it or we are not quite sure, we'll just discard
+              // all the partial information. Note that this could potentially
+              // lead to two partition boundaries with the same key, and also
+              // to partition boundaries that don't reflect the actual region
+              // boundaries.
 
-              switch (pkType->getTypeQualifier())
-                {
-                case NA_NUMERIC_TYPE:
+              if (columnIsPartiallyProvided)
+                switch (pkType->getTypeQualifier())
                   {
-                    NumericType *nt = (NumericType *) pkType;
+                  case NA_NUMERIC_TYPE:
+                    {
+                      NumericType *nt = (NumericType *) pkType;
 
-                    if (!nt->isExact() || nt->isDecimal() || nt->isBigNum())
+                      if (!nt->isExact() || nt->isDecimal() || nt->isBigNum() ||
+                          (isDescending && nt->decimalPrecision()))
+                        // we may be able to improve this in the future
+                        columnIsPartiallyProvided = FALSE;
+                    }
+                    break;
+
+                  case NA_DATETIME_TYPE:
+                  case NA_INTERVAL_TYPE:
+                    // those types should tolerate zeroing out trailing bytes, but
+                    // not filling with 0xFF 
+                    if (isDescending)
                       columnIsPartiallyProvided = FALSE;
+                    break;
+
+                  case NA_CHARACTER_TYPE:
+                    // generally, character types should also tolerate zeroing out
+                    // trailing bytes, but we might need to clean up characters
+                    // that got split in the middle
+                    {
+                      CharInfo::CharSet cs = pkType->getCharSet();
+
+                      switch (cs)
+                        {
+                        case CharInfo::UCS2:
+                          // For now just accept partial characters, it's probably ok
+                          // since they are just used as a key. May look funny in EXPLAIN.
+                          break;
+                        case CharInfo::UTF8:
+                          {
+                            // temporarily invert the provided key so it is actual UTF8
+                            if (isDescending)
+                              for (int i=0; i<numBytesInProvidedVal; i++)
+                                actEncodedKey[valOffset+i] = ~actEncodedKey[valOffset+i];
+
+                            CMPASSERT(numBytesInProvidedVal > 0);
+
+                            // remove a trailing partial character, if needed
+                            int validLen = lightValidateUTF8Str(&actEncodedKey[valOffset],
+                                                                numBytesInProvidedVal);
+
+                            // replace the remainder of the buffer with UTF8 min/max chars
+                            fillWithMinMaxUTF8Chars(&actEncodedKey[valOffset+validLen],
+                                                    valEncodedLength - validLen,
+                                                    0,
+                                                    isDescending);
+
+                            // limit to the max # of UTF-8characters, if needed
+                            if (pkType->getPrecisionOrMaxNumChars() > 0)
+                              {
+                                // this time validate the # of chars (likely to be more,
+                                // since we filled to the end with non-blanks)
+                                validLen = lightValidateUTF8Str(&actEncodedKey[valOffset],
+                                                                valEncodedLength,
+                                                                pkType->getPrecisionOrMaxNumChars());
+
+                                if (validLen > 0)
+                                  // space after valid #chars is filled with blanks
+                                  memset(&actEncodedKey[valOffset+validLen], ' ', valEncodedLength-validLen);
+                                else
+                                  columnIsPartiallyProvided = FALSE;
+                              }
+
+                            // undo the inversion, if needed, now for the whole key
+                            if (isDescending)
+                              for (int k=0; k<valEncodedLength; k++)
+                                actEncodedKey[valOffset+k] = ~actEncodedKey[valOffset+k];
+                          }
+                          break;
+                        case CharInfo::ISO88591:
+                          // filling with 0x00 or oxFF should both be ok
+                          break;
+
+                        default:
+                          // don't accept partial keys for other charsets
+                          columnIsPartiallyProvided = FALSE;
+                          break;
+                        }
+                    }
+                    break;
+
+                  default:
+                    // don't accept partial keys for any other data types
+                    columnIsPartiallyProvided = FALSE;
+                    break;
                   }
-                  break;
 
-                case NA_DATETIME_TYPE:
-                case NA_INTERVAL_TYPE:
-                  // those types should tolerate zeroing out trailing bytes
-                  break;
+              if (columnIsPartiallyProvided)
+                {
+                  // a CQD can suppress, give errors, warnings or enable partially provided cols
+                  DefaultToken tok = CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_PARTIAL_COLS);
 
-                case NA_CHARACTER_TYPE:
-                  // generally, character types should also tolerate zeroing out
-                  // trailing bytes, but we might need to clean up characters
-                  // that got split in the middle
-                  {
-                    CharInfo::CharSet cs = pkType->getCharSet();
+                  switch (tok)
+                    {
+                    case DF_OFF:
+                      // disable use of partial columns
+                      // (use this as a workaround if they cause problems)
+                      columnIsPartiallyProvided = FALSE;
+                      break;
 
-                    switch (cs)
-                      {
-                      case CharInfo::UCS2:
-                      case CharInfo::UTF8:
-                        // For now just accept partial characters, it's probably ok
-                        // since they are just used as a key. May look funny in EXPLAIN.
-                        break;
+                    case DF_MINIMUM:
+                      // give an error (again, this is probably mostly used as a
+                      // workaround or to detect past problems)
+                      *CmpCommon::diags() << DgSqlCode(-1212) << DgInt0(j);
+                      break;
 
-                      default:
-                        break;
-                      }
-                  }
-                  break;
+                    case DF_MEDIUM:
+                      // give a warning, could be used for searching or testing
+                      *CmpCommon::diags() << DgSqlCode(+1212) << DgInt0(j);
+                      break;
 
-                default:
-                  columnIsPartiallyProvided = FALSE;
-                  break;
+                    case DF_ON:
+                    case DF_MAXIMUM:
+                    default:
+                      // allow it, no warning or error
+                      break;
+                    }
                 }
 
               if (columnIsPartiallyProvided)
@@ -1539,9 +1648,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // NOTE: This is generating un-encoded values, unlike
               //       the values we get from HBase. The next loop below
               //       will skip decoding for any values generated here.
-              Lng32 remainingBufLen = colEncodedLength - nullHdrSize;
+              Lng32 remainingBufLen = valEncodedLength;
 
-              if (nullHdrSize)
+              if (nullHdrSize && !nullHdrAlreadySet)
                 {
                   // generate a NULL indicator
                   // NULL (-1) for descending columns, this is the max value
@@ -1552,20 +1661,11 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                   memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
                 }
 
-              if (isDescending)
-                {
-                  pkType->maxRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
-                                                &remainingBufLen,
-                                                NULL,
-                                                heap);
-                }
-              else
-                {
-                  pkType->minRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
-                                                &remainingBufLen,
-                                                NULL,
-                                                heap);
-                }
+              pkType->minMaxRepresentableValue(&actEncodedKey[valOffset],
+                                               &remainingBufLen,
+                                               isDescending,
+                                               NULL,
+                                               heap);
             }
 
           currOffset += colEncodedLength;
@@ -1628,11 +1728,12 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
           }
 
           // un-encode the key value by using an expression
+          NAString encConstLiteral("encoded_val");
           ConstValue *keyColEncVal =
             new (heap) ConstValue(pkType,
                                   (void *) encodedKeyP,
                                   decodedValueLen,
-                                  NULL,
+                                  &encConstLiteral,
                                   heap);
           CMPASSERT(keyColEncVal);
 

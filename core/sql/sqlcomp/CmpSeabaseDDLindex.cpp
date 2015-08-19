@@ -721,7 +721,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
     // verify base table is salted
     if (naTable->hasSaltedColumn())
     {
-      createIndexNode->getSaltOptions()->setNumPartns(naTable->numSaltPartns());
+      createIndexNode->getSaltOptions()->setNumPartns(nafs->numSaltPartns());
       NAString saltColName;
       for (CollIndex c=0; c<baseTableKeyArr.entries(); c++)
         if (baseTableKeyArr[c]->isSaltColumn())
@@ -737,7 +737,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
       //SALT column will be the first column in the index
       indexColRefArray.insertAt(numPrefixColumns, saltColRef);
       numPrefixColumns++;
-      numSplits = naTable->numSaltPartns() - 1;
+      numSplits = nafs->numSaltPartns() - 1;
     }
     else
     {
@@ -828,8 +828,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
                                                 colInfoArray,
                                                 keyColCount) ;
 
-    if (createEncodedKeysBuffer(encodedKeysBuffer,
-                                colDescs, keyDescs, numSplits, 
+    if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                                numSplits/*out*/,
+                                colDescs, keyDescs,
+                                nafs->numSaltPartns(), numSplits, NULL,
                                 keyColCount, keyLength, TRUE))
       {
         deallocEHI(ehi);

@@ -580,10 +580,10 @@ select num_entries, text_entries, num_plans from table(querycache('meta', 'local
 select num_entries, text_entries, num_plans from table(querycache('ustats', 'local'));
 select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
 
-select num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
-select num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
-select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
-select num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('user', 'local')) order by 1,2;
+select num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1,2;
+select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1,2;
+select num_hits, num_params from table(querycacheentries('all', 'local')) order by 1,2;
 
 
 --Stats in Hybrid Query Cache
@@ -592,10 +592,10 @@ select * from table(hybridquerycache('meta', 'local'));
 select * from table(hybridquerycache('ustats', 'local'));
 select * from table(hybridquerycache('all', 'local'));
 
-select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1, 2;
-select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1, 2;
-select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1, 2;
-select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1, 2;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1, 2, 3, 4;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1, 2, 3, 4;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1, 2, 3, 4;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1, 2, 3, 4;
 
 
 -- virtual table ISP queries are not cacheable.

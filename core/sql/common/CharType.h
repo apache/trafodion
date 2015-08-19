@@ -339,6 +339,13 @@ virtual NABoolean createSQLLiteral(const char * buf,
                                    NABoolean &isNull,
                                    CollHeap *h) const;
 
+protected:
+void minMaxRepresentableValue(void* bufPtr,
+                              Lng32* bufLen,
+                              NAString ** stringLiteral,
+                              NABoolean isMax,
+                              CollHeap* h) const;
+
 private:
 
 void NONVIRT_METHOD_PLACEHOLDER_1();	// slot for reuse, or delete it!##

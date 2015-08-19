@@ -5131,8 +5131,10 @@ StmtDDLCreateTable::setPartitions(ElemDDLPartitionClause * pPartitionClause)
     // "hash2 partitioning") and a partitioning count (e.g. 
     // "number of partitions 2")   But, if "no partitions" is specified 
     // (number of partitions 0) then we don't allow any other partn spec
-    *SqlParser_Diags << DgSqlCode(-3103);
+    *SqlParser_Diags << DgSqlCode(-3103)
+                     << DgString0("PARTITION");
   }
+
   isPartitionClauseSpec_ = TRUE;
 
   //
@@ -5457,7 +5459,8 @@ StmtDDLCreateTable::setTableOption(ElemDDLNode * pTableOption)
       // "hash2 partitioning") and a partitioning count (e.g. 
       // "number of partitions 2")   But, if "no partitions" is specified 
       // (number of partitions 0) then we don't allow any other partn spec
-      *SqlParser_Diags << DgSqlCode(-3103);
+      *SqlParser_Diags << DgSqlCode(-3103)
+                       << DgString0("PARTITION");
     }
 
     isPOSNumPartnsSpecified_ = TRUE;    
@@ -6534,7 +6537,8 @@ StmtDDLCreateMV::checkPartitionDefinitionclause(
   if (isPartitionDefinitionSpecified_ || isPartitionByClauseSpecified_)
   {
     // Duplicate PARTITION clauses.
-    *SqlParser_Diags << DgSqlCode(-3103);
+    *SqlParser_Diags << DgSqlCode(-3103)
+                     << DgString0("PARTITION");
   }
   isPartitionDefinitionSpecified_ = TRUE;
 

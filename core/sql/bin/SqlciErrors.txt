@@ -205,6 +205,13 @@
 1203 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU HBASE_OPTIONS clause in CREATE statement is longer than 6000 characters. Object $0~string0 was not created.
 1204 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unsupported Hive datatype $0~string0.
 1205 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Hive feature $0~string0 is not supported.
+1206 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU SALT AND SPLIT BY clauses are not allowed together.
+1207 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Text to be inserted into the TEXT metadata table contains too many quotes.
+1208 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause is not supported for indexes.
+1209 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause has more columns than the table has key columns ($0~Int0).
+1210 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~String0 is not allowed at position $1~Int0 in the SPLIT BY clause, because SPLIT BY must specify a prefix of the clustering key columns and the next clustering key column is $2~String1.
+1211 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The column values of the SPLIT BY first key in position $0~Int0 (one-based) are not greater (for ascending columns) or less (for descending columns) than its predecessor.
+1212 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An HBase region start key provided only part of the value for Trafodion key column $0~Int0. This could in some unusual situations cause errors.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
 1222 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Command not supported when authorization is not enabled.
@@ -843,7 +850,7 @@ $1~String1 --------------------------------
 3100 42000 99999 BEGINNER MAJOR DBADMIN Duplicate DSLACK clauses were specified.
 3101 42000 99999 BEGINNER MAJOR DBADMIN Duplicate ISLACK clauses were specified.
 3102 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PARALLEL EXECUTION clauses were specified.
-3103 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PARTITION clauses were specified.
+3103 42000 99999 BEGINNER MAJOR DBADMIN Duplicate $0~string0 clauses were specified.
 3104 42000 99999 BEGINNER MAJOR DBADMIN Only the ADD option is allowed in a PARTITION clause in a CREATE TABLE statement.
 3105 0A000 99999 BEGINNER MAJOR DBADMIN Only range, hash, hash2 and system partitioning are currently supported.
 3106 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PRIMARY KEY clauses were specified.

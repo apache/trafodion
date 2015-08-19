@@ -2097,7 +2097,6 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
             NAString hbaseCreateOptions((char*)oi->get(1));
                
             Lng32 numSaltPartns = 0;
-            NAString newHbaseCreateOptions;
                
             // get num salt partns from hbaseCreateOptions.
             // It is stored as:  NUM_SALT_PARTNS=>NNNN
@@ -2114,10 +2113,6 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
                    
                 hbaseCreateOptions.remove(idx2, strlen("NUM_SALT_PARTNS=>")+4);
                 hbaseCreateOptions = hbaseCreateOptions.strip();
-                   
-                if (NOT hbaseCreateOptions.isNull())
-                  ToQuotedString(newHbaseCreateOptions, hbaseCreateOptions.data(), 
-                                 FALSE);
               }
                
             str_sprintf(buf, "update %s.\"%s\".%s set num_salt_partns = %d where table_uid = %Ld",
@@ -2139,11 +2134,11 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
                 return -1;
               }
                
-            if (NOT newHbaseCreateOptions.isNull())
+            if (NOT hbaseCreateOptions.isNull())
               {
                 if (updateTextTable(&cliInterface, tableUID, 
                                     COM_HBASE_OPTIONS_TEXT, 0,
-                                    newHbaseCreateOptions))
+                                    hbaseCreateOptions))
                   {
                     *CmpCommon::diags() << DgSqlCode(-1423)
                                         << DgString0(SEABASE_TABLES);
