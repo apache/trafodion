@@ -1,6 +1,6 @@
 >>
 >>create table T106_interleaved_log (
-+>                   ts time(6) not null,
++>                   ts timestamp(6) not null,
 +>                   msg char(60) ) no partition;
 
 --- SQL operation complete.
@@ -79,7 +79,7 @@ End of MXCI Session
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:44:08.024520
+FUNKY_OPT_UNIQUE  2015-07-10 17:06:19.088376
 
 --- 1 row(s) selected.
 >>
@@ -94,7 +94,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:44:08.024520
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:44:08.586593
+FUNKY_OPT_UNIQUE  2015-07-10 17:06:19.593994
 
 --- 1 row(s) selected.
 >>
@@ -109,7 +109,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:44:08.586593
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:44:11.475884
+FUNKY_OPT_UNIQUE  2015-07-10 17:06:25.701964
 
 --- 1 row(s) selected.
 >>
@@ -124,7 +124,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:44:11.475884
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:44:12.434876
+FUNKY_OPT_UNIQUE  2015-07-10 17:06:27.328307
 
 --- 1 row(s) selected.
 >>
@@ -192,17 +192,17 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:44:12.434876
 >>
 >>
 >>select 'subject launch canceler - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  18:44:12.600588
+subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:06:27.705202
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test1, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -210,17 +210,17 @@ subject launch canceler - FUNKY_OPT_UNIQUE  18:44:12.600588
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     18:44:13.685929
+subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:06:28.699544
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test1, launch canceler, finish');
 
 --- 1 row(s) inserted.
@@ -228,7 +228,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:44:13.685929
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -237,29 +237,29 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:44:13.685929
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:44:22.828203
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:06:38.788316
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       18:44:22.847723
+subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:06:38.813948
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test1, execute, start');
 
 --- 1 row(s) inserted.
@@ -272,17 +272,17 @@ subject execute s1 - FUNKY_OPT_UNIQUE       18:44:22.847723
 
 --- 0 row(s) selected.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:44:38.893456
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:06:51.861646
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test1, execute, finished');
 
 --- 1 row(s) inserted.
@@ -290,7 +290,7 @@ subject - FUNKY_OPT_UNIQUE                  18:44:38.893456
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -299,12 +299,12 @@ subject - FUNKY_OPT_UNIQUE                  18:44:38.893456
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:44:38.919106
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:06:51.912524
 
 --- 1 row(s) selected.
 >>log;
@@ -316,7 +316,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:44:38.919106
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -324,24 +324,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:44:38.919106
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:44:22.830272
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.714664
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:44:35.844104
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:06:51.735687
 
 --- 1 row(s) selected.
 >>
@@ -352,28 +352,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:44:35.844104
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_899_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_183_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:44:38.891723
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:06:51.817032
 
 --- 1 row(s) selected.
 >>log;
@@ -411,7 +411,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:44:38.891723
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test2, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -419,7 +419,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:44:38.891723
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test2, launch canceler, finished');
 
 --- 1 row(s) inserted.
@@ -427,7 +427,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:44:38.891723
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -436,19 +436,19 @@ canceler - FUNKY_OPT_UNIQUE                 18:44:38.891723
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:44:50.290561
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:03.399656
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test2, execute s1, start');
 
 --- 1 row(s) inserted.
@@ -462,17 +462,17 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:44:50.290561
 
 --- 0 row(s) selected.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:45:06.374139
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:07:16.484716
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'positive_test2, execute s1, finished');
 
 --- 1 row(s) inserted.
@@ -480,7 +480,7 @@ subject - FUNKY_OPT_UNIQUE                  18:45:06.374139
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -489,12 +489,12 @@ subject - FUNKY_OPT_UNIQUE                  18:45:06.374139
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:06.408139
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:16.521981
 
 --- 1 row(s) selected.
 >>log;
@@ -506,7 +506,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:06.408139
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -514,24 +514,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:06.408139
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:44:50.202179
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.311535
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:45:03.215082
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:07:16.361158
 
 --- 1 row(s) selected.
 >>
@@ -542,28 +542,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:45:03.215082
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1024_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_222_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:45:06.363564
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:07:16.472310
 
 --- 1 row(s) selected.
 >>log;
@@ -589,17 +589,17 @@ canceler - FUNKY_OPT_UNIQUE                 18:45:06.363564
 >>
 >>
 >>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  18:45:08.515494
+subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.686506
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'update_test1, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -607,17 +607,17 @@ subject launch canceler - FUNKY_OPT_UNIQUE  18:45:08.515494
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     18:45:08.530935
+subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:07:18.705866
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'update_test1, launch canceler, finish');
 
 --- 1 row(s) inserted.
@@ -625,7 +625,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:45:08.530935
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -634,29 +634,29 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:45:08.530935
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:17.662764
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:28.373358
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       18:45:17.677584
+subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:07:28.394035
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values 
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'update_test1, execute, start');
 
 --- 1 row(s) inserted.
@@ -667,17 +667,17 @@ subject execute s1 - FUNKY_OPT_UNIQUE       18:45:17.677584
 
 --- 0 row(s) updated.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:45:39.763471
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:07:48.064685
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'update_test1, execute, finished');
 
 --- 1 row(s) inserted.
@@ -685,7 +685,7 @@ subject - FUNKY_OPT_UNIQUE                  18:45:39.763471
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -694,12 +694,12 @@ subject - FUNKY_OPT_UNIQUE                  18:45:39.763471
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:39.789198
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:48.096812
 
 --- 1 row(s) selected.
 >>log;
@@ -711,7 +711,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:39.789198
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -719,24 +719,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:39.789198
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:45:17.659487
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.302277
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:45:30.672336
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:07:41.320811
 
 --- 1 row(s) selected.
 >>
@@ -747,28 +747,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:45:30.672336
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1039_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_237_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:45:33.719686
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:07:41.407319
 
 --- 1 row(s) selected.
 >>log;
@@ -786,17 +786,17 @@ canceler - FUNKY_OPT_UNIQUE                 18:45:33.719686
 >>
 >>
 >>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  18:45:41.866548
+subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.195393
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'delete_test1, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -804,17 +804,17 @@ subject launch canceler - FUNKY_OPT_UNIQUE  18:45:41.866548
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     18:45:41.881869
+subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:07:50.215880
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'delete_test1, launch canceler, finish');
 
 --- 1 row(s) inserted.
@@ -822,7 +822,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:45:41.881869
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -831,29 +831,29 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:45:41.881869
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:45:51.115955
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:07:59.487739
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       18:45:51.132566
+subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:07:59.508758
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values 
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'delete_test1, execute, start');
 
 --- 1 row(s) inserted.
@@ -864,17 +864,17 @@ subject execute s1 - FUNKY_OPT_UNIQUE       18:45:51.132566
 
 --- 0 row(s) deleted.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:46:10.568845
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:08:25.759995
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'delete_test1, execute, finished');
 
 --- 1 row(s) inserted.
@@ -882,7 +882,7 @@ subject - FUNKY_OPT_UNIQUE                  18:46:10.568845
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -891,12 +891,12 @@ subject - FUNKY_OPT_UNIQUE                  18:46:10.568845
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:10.593140
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:25.795455
 
 --- 1 row(s) selected.
 >>log;
@@ -908,7 +908,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:10.593140
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -916,24 +916,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:10.593140
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:45:51.059337
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.486860
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:46:04.072903
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:08:12.509301
 
 --- 1 row(s) selected.
 >>
@@ -944,28 +944,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:46:04.072903
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1055_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_253_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:46:07.122233
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:08:12.606156
 
 --- 1 row(s) selected.
 >>log;
@@ -982,17 +982,17 @@ canceler - FUNKY_OPT_UNIQUE                 18:46:07.122233
 >>
 >>
 >>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  18:46:13.617606
+subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.298685
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test1, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -1000,17 +1000,17 @@ subject launch canceler - FUNKY_OPT_UNIQUE  18:46:13.617606
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     18:46:13.631648
+subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:08:29.318388
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test1, launch canceler, finish');
 
 --- 1 row(s) inserted.
@@ -1018,7 +1018,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:46:13.631648
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1027,29 +1027,29 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:46:13.631648
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:22.863644
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:38.782601
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       18:46:22.878623
+subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:08:38.800701
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values 
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test1, execute, start');
 
 --- 1 row(s) inserted.
@@ -1060,17 +1060,17 @@ subject execute s1 - FUNKY_OPT_UNIQUE       18:46:22.878623
 
 --- 0 row(s) inserted.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:46:37.360484
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:08:56.574479
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test1, execute, finished');
 
 --- 1 row(s) inserted.
@@ -1078,7 +1078,7 @@ subject - FUNKY_OPT_UNIQUE                  18:46:37.360484
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1087,12 +1087,12 @@ subject - FUNKY_OPT_UNIQUE                  18:46:37.360484
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:37.385820
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:08:56.608716
 
 --- 1 row(s) selected.
 >>log;
@@ -1104,7 +1104,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:37.385820
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -1112,24 +1112,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:37.385820
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:46:22.785269
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.771967
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:46:35.798404
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:08:51.799087
 
 --- 1 row(s) selected.
 >>
@@ -1140,28 +1140,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:46:35.798404
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1070_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_268_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:46:35.854406
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:08:54.940529
 
 --- 1 row(s) selected.
 >>log;
@@ -1196,17 +1196,17 @@ canceler - FUNKY_OPT_UNIQUE                 18:46:35.854406
 >>
 >>
 >>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  18:46:39.603386
+subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.019859
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test2, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -1214,17 +1214,17 @@ subject launch canceler - FUNKY_OPT_UNIQUE  18:46:39.603386
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     18:46:39.619344
+subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:08:59.038540
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test2, launch canceler, finish');
 
 --- 1 row(s) inserted.
@@ -1232,7 +1232,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:46:39.619344
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1241,29 +1241,29 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:46:39.619344
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:46:48.851438
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:08.728176
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       18:46:48.866462
+subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:09:08.748097
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values 
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test2, execute, start');
 
 --- 1 row(s) inserted.
@@ -1274,17 +1274,17 @@ subject execute s1 - FUNKY_OPT_UNIQUE       18:46:48.866462
 
 --- 0 row(s) inserted.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:47:02.903038
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:09:25.863895
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'insert_test2, execute, finished');
 
 --- 1 row(s) inserted.
@@ -1292,7 +1292,7 @@ subject - FUNKY_OPT_UNIQUE                  18:47:02.903038
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1301,12 +1301,12 @@ subject - FUNKY_OPT_UNIQUE                  18:47:02.903038
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:02.927886
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:25.898587
 
 --- 1 row(s) selected.
 >>log;
@@ -1318,7 +1318,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:02.927886
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -1326,24 +1326,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:02.927886
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:46:48.784046
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.679253
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:47:01.797521
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:09:21.705227
 
 --- 1 row(s) selected.
 >>
@@ -1354,28 +1354,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:47:01.797521
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1194_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_306_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:47:01.847325
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:24.803186
 
 --- 1 row(s) selected.
 >>log;
@@ -1411,17 +1411,17 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:01.847325
 >>
 >>
 >>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  18:47:05.183623
+subject launch canceler - FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.259737
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'upsert_test1, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -1429,17 +1429,17 @@ subject launch canceler - FUNKY_OPT_UNIQUE  18:47:05.183623
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     18:47:05.197434
+subject synch cancel - FUNKY_OPT_UNIQUE     2015-07-10 17:09:28.282876
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'upsert_test1, launch canceler, finish');
 
 --- 1 row(s) inserted.
@@ -1447,7 +1447,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:47:05.197434
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1456,29 +1456,29 @@ subject synch cancel - FUNKY_OPT_UNIQUE     18:47:05.197434
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:14.431700
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:37.705479
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       18:47:14.446894
+subject execute s1 - FUNKY_OPT_UNIQUE       2015-07-10 17:09:37.727412
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values 
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'upsert_test1, execute, start');
 
 --- 1 row(s) inserted.
@@ -1489,17 +1489,17 @@ subject execute s1 - FUNKY_OPT_UNIQUE       18:47:14.446894
 
 --- 0 row(s) inserted.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:47:30.409367
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:09:53.821321
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'upsert_test1, execute, finished');
 
 --- 1 row(s) inserted.
@@ -1507,7 +1507,7 @@ subject - FUNKY_OPT_UNIQUE                  18:47:30.409367
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1516,12 +1516,12 @@ subject - FUNKY_OPT_UNIQUE                  18:47:30.409367
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:30.534282
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:09:53.952650
 
 --- 1 row(s) selected.
 >>log;
@@ -1533,7 +1533,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:30.534282
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -1541,24 +1541,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:30.534282
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:47:14.353445
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.708310
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:47:27.366864
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:09:50.732984
 
 --- 1 row(s) selected.
 >>
@@ -1569,28 +1569,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:47:27.366864
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1209_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_321_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:47:30.413842
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:09:53.825816
 
 --- 1 row(s) selected.
 >>log;
@@ -1617,14 +1617,14 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:30.413842
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'cpu_bound_esps, launch canceler, start');
 
 --- 1 row(s) inserted.
 >>
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'cpu_bound_esps, launch canceler, finished');
 
 --- 1 row(s) inserted.
@@ -1632,7 +1632,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:30.413842
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1641,19 +1641,19 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:30.413842
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:41.890322
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:10:06.471498
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'cpu_bound_esps, execute s1, start');
 
 --- 1 row(s) inserted.
@@ -1666,17 +1666,17 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:47:41.890322
 
 --- 0 row(s) selected.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                  18:48:02.002758
+subject - FUNKY_OPT_UNIQUE                  2015-07-10 17:10:30.700079
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'cpu_bound_esps, execute s1, finished');
 
 --- 1 row(s) inserted.
@@ -1684,7 +1684,7 @@ subject - FUNKY_OPT_UNIQUE                  18:48:02.002758
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1693,12 +1693,12 @@ subject - FUNKY_OPT_UNIQUE                  18:48:02.002758
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   18:48:02.035282
+done with synch_cancel - FUNKY_OPT_UNIQUE   2015-07-10 17:10:30.735707
 
 --- 1 row(s) selected.
 >>log;
@@ -1710,7 +1710,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:48:02.035282
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -1718,24 +1718,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   18:48:02.035282
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:47:41.882191
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.408419
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:47:54.895424
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:10:19.430779
 
 --- 1 row(s) selected.
 >>
@@ -1746,28 +1746,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:47:54.895424
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1225_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_337_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:47:54.943810
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:10:19.515222
 
 --- 1 row(s) selected.
 >>log;
@@ -1800,7 +1800,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:54.943810
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'escalation1, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -1808,7 +1808,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:54.943810
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'escalation1, launch canceler, finished');
 
 --- 1 row(s) inserted.
@@ -1816,7 +1816,7 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:54.943810
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1825,19 +1825,19 @@ canceler - FUNKY_OPT_UNIQUE                 18:47:54.943810
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                     (EXPR)         
------------------------------------------  ---------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  18:48:13.413982
+done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.359509
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'escalation1, execute s1, start');
 
 --- 1 row(s) inserted.
@@ -1850,17 +1850,17 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  18:48:13.413982
 
 --- 0 row(s) selected.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                     (EXPR)         
------------------------------------------  ---------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                 18:48:33.498101
+subject - FUNKY_OPT_UNIQUE                 2015-07-10 17:11:06.522144
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'escalation1, execute s1, finished');
 
 --- 1 row(s) inserted.
@@ -1868,7 +1868,7 @@ subject - FUNKY_OPT_UNIQUE                 18:48:33.498101
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -1877,12 +1877,12 @@ subject - FUNKY_OPT_UNIQUE                 18:48:33.498101
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                     (EXPR)         
------------------------------------------  ---------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  18:48:33.539023
+done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.564411
 
 --- 1 row(s) selected.
 >>log;
@@ -1894,7 +1894,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  18:48:33.539023
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -1902,24 +1902,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  18:48:33.539023
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:48:13.379388
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.305768
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:48:26.393377
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:10:55.328810
 
 --- 1 row(s) selected.
 >>
@@ -1930,28 +1930,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:48:26.393377
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1240_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_352_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:48:26.441487
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:10:55.406493
 
 --- 1 row(s) selected.
 >>log;
@@ -2169,7 +2169,7 @@ CONTROL_RUNNING_QUERY =====================  SEQ_NO 1        NO CHILDREN
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:48:40.499238
+FUNKY_OPT_UNIQUE  2015-07-10 17:11:17.016966
 
 --- 1 row(s) selected.
 >>
@@ -2185,7 +2185,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:40.499238
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.182127
+FUNKY_OPT_UNIQUE  2015-07-10 17:11:47.131046
 
 --- 1 row(s) selected.
 >>
@@ -2201,7 +2201,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.182127
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.207498
+FUNKY_OPT_UNIQUE  2015-07-10 17:11:48.077070
 
 --- 1 row(s) selected.
 >>
@@ -2217,7 +2217,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.207498
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.232383
+FUNKY_OPT_UNIQUE  2015-07-10 17:12:18.192873
 
 --- 1 row(s) selected.
 >>
@@ -2233,7 +2233,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.232383
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.394898
+FUNKY_OPT_UNIQUE  2015-07-10 17:12:19.105450
 
 --- 1 row(s) selected.
 >>
@@ -2249,7 +2249,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.394898
 (EXPR)            (EXPR)                    
 ----------------  --------------------------
 
-FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.565754
+FUNKY_OPT_UNIQUE  2015-07-10 17:12:49.225497
 
 --- 1 row(s) selected.
 >>
@@ -2263,9 +2263,9 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.565754
 >>log;
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1490_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_611_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000030341212294587366771702000000000206U3333300_1490_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000021348212303307894875569000000000206U3333300_611_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -2377,7 +2377,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.565754
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'ustats_test, launch canceler, start');
 
 --- 1 row(s) inserted.
@@ -2385,7 +2385,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.565754
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'ustats_test, launch canceler, finished');
 
 --- 1 row(s) inserted.
@@ -2393,7 +2393,7 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.565754
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -2402,19 +2402,19 @@ FUNKY_OPT_UNIQUE  2015-03-31 18:48:41.565754
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                     (EXPR)         
------------------------------------------  ---------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  18:49:42.098857
+done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.314100
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'ustats_test, execute s1, start');
 
 --- 1 row(s) inserted.
@@ -2427,17 +2427,17 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  18:49:42.098857
 
 --- SQL operation failed with errors.
 >>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                     (EXPR)         
------------------------------------------  ---------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-subject - FUNKY_OPT_UNIQUE                 18:49:55.126685
+subject - FUNKY_OPT_UNIQUE                 2015-07-10 17:14:00.677443
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6),
++>(CURRENT_TIMESTAMP (6),
 +>'ustats_test, execute s1, finished');
 
 --- 1 row(s) inserted.
@@ -2445,7 +2445,7 @@ subject - FUNKY_OPT_UNIQUE                 18:49:55.126685
 >>obey TEST106(synch_cancel);
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'foreground awaits synch_cancel');
 
 --- 1 row(s) inserted.
@@ -2454,12 +2454,12 @@ subject - FUNKY_OPT_UNIQUE                 18:49:55.126685
 >>sh sh $scriptsdir/executor/synch_106.ksh;
 >>
 >>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
++>       CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                     (EXPR)         
------------------------------------------  ---------------
+(EXPR)                                     (EXPR)                    
+-----------------------------------------  --------------------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  18:49:55.151686
+done with synch_cancel - FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.717696
 
 --- 1 row(s) selected.
 >>log;
@@ -2471,7 +2471,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  18:49:55.151686
 >>------ Contents of cancel session --------;
 >>------------------------------------------;
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has begun');
 
 --- 1 row(s) inserted.
@@ -2479,24 +2479,24 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  18:49:55.151686
 >>sh touch ${REGRRUNDIR}/test106_synch;
 >>
 >>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  18:49:42.008000
+canceler going to sleep - FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.295281
 
 --- 1 row(s) selected.
 >>
 >>sh sleep 13;
 >>
 >>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
++>CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         18:49:55.021091
+canceler woke up - FUNKY_OPT_UNIQUE         2015-07-10 17:14:00.323547
 
 --- 1 row(s) selected.
 >>
@@ -2507,28 +2507,28 @@ canceler woke up - FUNKY_OPT_UNIQUE         18:49:55.021091
 Execute End Time         -1
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel will cancel');
 
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000030341212294587366771702000000000206U3333300_1495_S1;
+>>control query cancel qid MXID11000021348212303307894875569000000000206U3333300_616_S1;
 
 --- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
++>(CURRENT_TIMESTAMP (6), 
 +>'do_cancel has canceled');
 
 --- 1 row(s) inserted.
 >>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIMESTAMP (6) from (values (1)) as t1;
 
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
+(EXPR)                                      (EXPR)                    
+------------------------------------------  --------------------------
 
-canceler - FUNKY_OPT_UNIQUE                 18:49:55.067866
+canceler - FUNKY_OPT_UNIQUE                 2015-07-10 17:14:00.465200
 
 --- 1 row(s) selected.
 >>log;
@@ -2541,118 +2541,118 @@ canceler - FUNKY_OPT_UNIQUE                 18:49:55.067866
 +>  from T106_interleaved_log order by ts;
 
 MSG                                                           (EXPR)            TS
-------------------------------------------------------------  ----------------  ---------------
+------------------------------------------------------------  ----------------  --------------------------
 
-positive_test1, launch canceler, start                        FUNKY_OPT_UNIQUE  18:44:13.638229
-positive_test1, launch canceler, finish                       FUNKY_OPT_UNIQUE  18:44:13.688233
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:44:13.698796
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:44:22.776334
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:44:22.841304
-positive_test1, execute, start                                FUNKY_OPT_UNIQUE  18:44:22.849905
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:44:38.878203
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:44:38.887181
-positive_test1, execute, finished                             FUNKY_OPT_UNIQUE  18:44:38.896291
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:44:38.903435
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:44:38.930460
-positive_test2, launch canceler, start                        FUNKY_OPT_UNIQUE  18:44:41.049406
-positive_test2, launch canceler, finished                     FUNKY_OPT_UNIQUE  18:44:41.061249
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:44:41.067451
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:44:50.146751
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:44:50.302479
-positive_test2, execute s1, start                             FUNKY_OPT_UNIQUE  18:44:50.307293
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:45:06.350655
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:45:06.359123
-positive_test2, execute s1, finished                          FUNKY_OPT_UNIQUE  18:45:06.387103
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:45:06.394392
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:45:06.429246
-update_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  18:45:08.518935
-update_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  18:45:08.534099
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:45:08.540606
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:45:17.607156
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:45:17.674242
-update_test1, execute, start                                  FUNKY_OPT_UNIQUE  18:45:17.680828
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:45:33.705394
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:45:33.714304
-update_test1, execute, finished                               FUNKY_OPT_UNIQUE  18:45:39.766657
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:45:39.773953
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:45:39.799093
-delete_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  18:45:41.869980
-delete_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  18:45:41.884976
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:45:41.890959
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:45:51.005634
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:45:51.129218
-delete_test1, execute, start                                  FUNKY_OPT_UNIQUE  18:45:51.135769
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:46:07.108754
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:46:07.117670
-delete_test1, execute, finished                               FUNKY_OPT_UNIQUE  18:46:10.572314
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:46:10.578631
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:46:10.604242
-insert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  18:46:13.621093
-insert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  18:46:13.634611
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:46:13.640367
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:46:22.731139
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:46:22.875517
-insert_test1, execute, start                                  FUNKY_OPT_UNIQUE  18:46:22.881906
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:46:35.839541
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:46:35.849336
-insert_test1, execute, finished                               FUNKY_OPT_UNIQUE  18:46:37.363740
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:46:37.370606
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:46:37.397069
-insert_test2, launch canceler, start                          FUNKY_OPT_UNIQUE  18:46:39.606838
-insert_test2, launch canceler, finish                         FUNKY_OPT_UNIQUE  18:46:39.622584
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:46:39.628680
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:46:48.731131
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:46:48.863535
-insert_test2, execute, start                                  FUNKY_OPT_UNIQUE  18:46:48.869375
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:47:01.833351
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:47:01.842396
-insert_test2, execute, finished                               FUNKY_OPT_UNIQUE  18:47:02.906377
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:47:02.912696
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:47:02.940437
-upsert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  18:47:05.186992
-upsert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  18:47:05.200503
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:47:05.206276
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:47:14.299262
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:47:14.443976
-upsert_test1, execute, start                                  FUNKY_OPT_UNIQUE  18:47:14.449921
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:47:30.400899
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:47:30.409382
-upsert_test1, execute, finished                               FUNKY_OPT_UNIQUE  18:47:30.412254
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:47:30.418029
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:47:30.546179
-cpu_bound_esps, launch canceler, start                        FUNKY_OPT_UNIQUE  18:47:32.751988
-cpu_bound_esps, launch canceler, finished                     FUNKY_OPT_UNIQUE  18:47:32.763438
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:47:32.769218
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:47:41.826696
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:47:41.904317
-cpu_bound_esps, execute s1, start                             FUNKY_OPT_UNIQUE  18:47:41.907909
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:47:54.930916
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:47:54.939382
-cpu_bound_esps, execute s1, finished                          FUNKY_OPT_UNIQUE  18:48:02.014062
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:48:02.020678
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:48:02.056196
-escalation1, launch canceler, start                           FUNKY_OPT_UNIQUE  18:48:04.265880
-escalation1, launch canceler, finished                        FUNKY_OPT_UNIQUE  18:48:04.278138
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:48:04.285006
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:48:13.327563
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:48:13.426447
-escalation1, execute s1, start                                FUNKY_OPT_UNIQUE  18:48:13.430263
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:48:26.427967
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:48:26.436819
-escalation1, execute s1, finished                             FUNKY_OPT_UNIQUE  18:48:33.516840
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:48:33.523696
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:48:33.561165
-ustats_test, launch canceler, start                           FUNKY_OPT_UNIQUE  18:49:32.852000
-ustats_test, launch canceler, finished                        FUNKY_OPT_UNIQUE  18:49:32.864806
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:49:32.871232
-do_cancel has begun                                           FUNKY_OPT_UNIQUE  18:49:41.954888
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:49:42.111658
-ustats_test, execute s1, start                                FUNKY_OPT_UNIQUE  18:49:42.115267
-do_cancel will cancel                                         FUNKY_OPT_UNIQUE  18:49:55.054706
-do_cancel has canceled                                        FUNKY_OPT_UNIQUE  18:49:55.063252
-ustats_test, execute s1, finished                             FUNKY_OPT_UNIQUE  18:49:55.129614
-foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  18:49:55.136583
-foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  18:49:55.163190
+positive_test1, launch canceler, start                        FUNKY_OPT_UNIQUE  2015-07-10 17:06:28.605534
+positive_test1, launch canceler, finish                       FUNKY_OPT_UNIQUE  2015-07-10 17:06:28.702813
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:28.712618
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.626473
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.804751
+positive_test1, execute, start                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:38.816899
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.795368
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.811123
+positive_test1, execute, finished                             FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.865571
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.881210
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:06:51.925973
+positive_test2, launch canceler, start                        FUNKY_OPT_UNIQUE  2015-07-10 17:06:54.121258
+positive_test2, launch canceler, finished                     FUNKY_OPT_UNIQUE  2015-07-10 17:06:54.135947
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:06:54.144872
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.218202
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.414289
+positive_test2, execute s1, start                             FUNKY_OPT_UNIQUE  2015-07-10 17:07:03.421669
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.425344
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.465426
+positive_test2, execute s1, finished                          FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.489121
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.500205
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:16.558636
+update_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.691347
+update_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.710009
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:18.718706
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.214420
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.388345
+update_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:07:28.397823
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:41.385593
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:07:41.400965
+update_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:07:48.069219
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:48.078175
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:48.109026
+delete_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.200100
+delete_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.221685
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:07:50.230056
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.371817
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.504170
+delete_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:07:59.512807
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:12.579070
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:08:12.595650
+delete_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:08:25.765256
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:25.774591
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:08:25.809037
+insert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.303373
+insert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.322696
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:29.330814
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.663779
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.796777
+insert_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:08:38.804614
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:54.896102
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:08:54.930493
+insert_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:08:56.579137
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:56.589386
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:08:56.622206
+insert_test2, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.024743
+insert_test2, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.042423
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:08:59.050281
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.564653
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.742892
+insert_test2, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:09:08.751928
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:09:24.776254
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:09:24.795329
+insert_test2, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:09:25.871938
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:25.880384
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:25.911426
+upsert_test1, launch canceler, start                          FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.265459
+upsert_test1, launch canceler, finish                         FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.287050
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:28.294726
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.613861
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.723289
+upsert_test1, execute, start                                  FUNKY_OPT_UNIQUE  2015-07-10 17:09:37.731436
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.801878
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.819783
+upsert_test1, execute, finished                               FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.825158
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.832495
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:09:53.970360
+cpu_bound_esps, launch canceler, start                        FUNKY_OPT_UNIQUE  2015-07-10 17:09:56.333247
+cpu_bound_esps, launch canceler, finished                     FUNKY_OPT_UNIQUE  2015-07-10 17:09:56.347915
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:09:56.355395
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.308852
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.491893
+cpu_bound_esps, execute s1, start                             FUNKY_OPT_UNIQUE  2015-07-10 17:10:06.499750
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:10:19.492506
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:10:19.508940
+cpu_bound_esps, execute s1, finished                          FUNKY_OPT_UNIQUE  2015-07-10 17:10:30.705276
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:10:30.716871
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:10:30.748949
+escalation1, launch canceler, start                           FUNKY_OPT_UNIQUE  2015-07-10 17:10:33.132692
+escalation1, launch canceler, finished                        FUNKY_OPT_UNIQUE  2015-07-10 17:10:33.149281
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:10:33.158984
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.217942
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.376461
+escalation1, execute s1, start                                FUNKY_OPT_UNIQUE  2015-07-10 17:10:42.381161
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:10:55.385636
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:10:55.400533
+escalation1, execute s1, finished                             FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.526582
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.539511
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:11:06.580843
+ustats_test, launch canceler, start                           FUNKY_OPT_UNIQUE  2015-07-10 17:13:38.014277
+ustats_test, launch canceler, finished                        FUNKY_OPT_UNIQUE  2015-07-10 17:13:38.035897
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:13:38.045217
+do_cancel has begun                                           FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.211662
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.339719
+ustats_test, execute s1, start                                FUNKY_OPT_UNIQUE  2015-07-10 17:13:47.345734
+do_cancel will cancel                                         FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.422546
+do_cancel has canceled                                        FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.458124
+ustats_test, execute s1, finished                             FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.681401
+foreground awaits synch_cancel                                FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.693030
+foreground finished synch_cancel                              FUNKY_OPT_UNIQUE  2015-07-10 17:14:00.731016
 
 --- 110 row(s) selected.
 >>

@@ -69,7 +69,8 @@ public:
     isVolatile_(FALSE),
     exeUtil_(FALSE),
     isGhostObject_(FALSE),
-    inMemoryObjectDefn_(FALSE)
+    inMemoryObjectDefn_(FALSE),
+    isExternal_(FALSE)
   { }
 
   // virtual destructor
@@ -110,6 +111,11 @@ public:
   NABoolean processAsExeUtil() { return exeUtil_; }
   void setProcessAsExeUtil(NABoolean eu) { exeUtil_ = eu; }
 
+  // External object
+  NABoolean isExternal() { return isExternal_; }
+  NABoolean isExternal() const { return isExternal_; }
+  void setIsExternal(NABoolean e) { isExternal_ = e; }
+
   // Ghost Object
   NABoolean isGhostObject() { return isGhostObject_; }
   NABoolean isGhostObject() const { return isGhostObject_; }
@@ -146,6 +152,9 @@ private:
   // if this DDL operation was specified using GHOST syntax.
   NABoolean isGhostObject_;
   
+  // if this DDL operation was specified using EXTERNAL syntax.
+  NABoolean isExternal_;
+
 }; // class StmtDDLNode
 
 // -----------------------------------------------------------------------

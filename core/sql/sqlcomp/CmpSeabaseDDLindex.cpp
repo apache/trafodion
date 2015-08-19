@@ -906,8 +906,6 @@ void CmpSeabaseDDL::createSeabaseIndex(
 			 keyInfoArray,
 			 1, // numIndex
                          ii,
-                         tableInfo->objOwnerID,
-                         tableInfo->schemaOwnerID,
                          objUID))
     {
       goto label_error;
@@ -1763,10 +1761,11 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   Int64 btUID;
   Int32 btObjOwner = 0;
   Int32 btSchemaOwner = 0;
-  if ((getObjectUIDandOwners(&cliInterface,
-                             btCatName, btSchName, btObjName, 
-                             COM_BASE_TABLE_OBJECT,
-                             btObjOwner, btSchemaOwner)) < 0)
+  Int64 btObjectFlags = 0;
+  if ((getObjectInfo(&cliInterface,
+                     btCatName, btSchName, btObjName, 
+                     COM_BASE_TABLE_OBJECT,
+                     btObjOwner, btSchemaOwner, btObjectFlags)) < 0)
     {
       processReturn();
 

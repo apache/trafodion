@@ -2282,7 +2282,8 @@ static short cmpDisplayColumn(const NAColumn *nac,
                               Space &space, char * buf,
                               Lng32 &ii,
                               NABoolean namesOnly,
-                              NABoolean &identityCol)
+                              NABoolean &identityCol,
+                              NABoolean isExternalTable)
 {
   identityCol = FALSE;
   
@@ -2291,7 +2292,8 @@ static short cmpDisplayColumn(const NAColumn *nac,
 
   NAString colFam;
   if ((nac->getNATable()->isSQLMXAlignedTable()) || 
-      (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY))
+      (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY) ||
+      isExternalTable)
     colFam = "";
   else if (nac->getNATable()->isSeabaseTable())
     {
@@ -2436,6 +2438,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         NABoolean displaySystemCols,
                         NABoolean namesOnly,
                         Lng32 &identityColPos,
+                        NABoolean isExternalTable,
                         char * inColName = NULL,
                         NABoolean isAdd = FALSE,
                         const NAColumn * nacol = NULL)
@@ -2461,7 +2464,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
             continue;
         }
       
-       if (cmpDisplayColumn(nac, type, space, buf, ii, namesOnly, identityCol))
+       if (cmpDisplayColumn(nac, type, space, buf, ii, namesOnly, identityCol, isExternalTable))
         return -1;
 
       if (identityCol)
@@ -2472,7 +2475,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
 
   if ((inColName) && (isAdd) && (nacol))
     {
-      if (cmpDisplayColumn(nacol, type, space, buf, ii, namesOnly, identityCol))
+      if (cmpDisplayColumn(nacol, type, space, buf, ii, namesOnly, identityCol, isExternalTable))
         return -1;
     }
 
@@ -2566,7 +2569,8 @@ short CmpDescribeSeabaseTable (
   const NAString& tableName =
     dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
  
-  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  // set inDDL to try to allow Hive External tables to be described
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), TRUE/*inDDL*/);
   NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
   TableDesc *tdesc = NULL;
   if (naTable == NULL || bindWA.errStatus())
@@ -2582,6 +2586,7 @@ short CmpDescribeSeabaseTable (
     return -1;
 
   NABoolean isVolatile = naTable->isVolatileTable();
+  NABoolean isExternalTable = naTable->isExternalTable();
 
   char * buf = new (heap) char[15000];
   CMPASSERT(buf);
@@ -2714,14 +2719,14 @@ short CmpDescribeSeabaseTable (
       else
         sprintf(buf,  "-- Definition of Trafodion%stable %s\n"
                 "-- Definition current  %s",
-                (isVolatile ? " volatile " : " "), 
+                (isVolatile ? " volatile " : isExternalTable ? " external " : " "), 
                 tableName.data(), ctime(&tp));
       outputShortLine(space, buf);
     }
   else if (type == 2)
     {
       sprintf(buf,  "CREATE%sTABLE %s",
-              (isVolatile ? " VOLATILE " : " "),
+              (isVolatile ? " VOLATILE " : isExternalTable ? " EXTERNAL " : " "), 
               tableName.data());
       outputShortLine(space, buf);
     }
@@ -2733,6 +2738,7 @@ short CmpDescribeSeabaseTable (
 		    displaySystemCols, 
 		    FALSE,
                     identityColPos,
+                    isExternalTable,
                     colName, isAdd, nacol);
 
   Int32 nonSystemKeyCols = 0;
@@ -3056,7 +3062,8 @@ short CmpDescribeSeabaseTable (
                                 type, space, buf,
 				displaySystemCols,
 				(type == 2),
-                                dummy);
+                                dummy,
+                                isExternalTable);
 	      outputShortLine(space, "  )");
 	      
 	      sprintf(buf,  "  PRIMARY KEY ");
@@ -3428,7 +3435,7 @@ bool CmpDescribeIsAuthorized(
            break;
         case COM_PRIVATE_SCHEMA_OBJECT:
         case COM_SHARED_SCHEMA_OBJECT:
-           break;
+          break;
         case COM_VIEW_OBJECT:
         case COM_BASE_TABLE_OBJECT:
         default:

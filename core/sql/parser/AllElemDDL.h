@@ -58,7 +58,6 @@
 #include "ElemDDLLibClientName.h"
 #include "ElemDDLLibPathName.h"
 #include "ElemDDLLikeOptions.h"
-#include "ElemDDLLoadOptions.h"
 #include "ElemDDLLocation.h"
 #include "ElemDDLTableFeature.h"
 #include "ElemDDLHbaseOptions.h"

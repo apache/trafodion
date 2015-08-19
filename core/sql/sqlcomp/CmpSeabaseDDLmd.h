@@ -238,6 +238,16 @@ static const QString seabaseObjectsUniqIdxDDL[] =
   {" ; "}
 };
 
+enum SeabaseObjectsFlags {
+  SEABASE_OBJECT_IS_EXTERNAL_HIVE  = 0x0000000000000001, // set if this object
+                                                         // references external
+                                                         // HIVE table
+  SEABASE_OBJECT_IS_EXTERNAL_HBASE  = 0x0000000000000002 // set if this object
+                                                         // references external
+                                                         // HBASE table
+
+};
+
 static const QString seabaseRefConstraintsDDL[] =
 {
   {" create table "SEABASE_REF_CONSTRAINTS" "},

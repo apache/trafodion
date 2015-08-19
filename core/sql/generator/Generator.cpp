@@ -1868,6 +1868,8 @@ desc_struct * Generator::createVirtualTableDesc(
       strcpy(table_desc->body.table_desc.all_col_fams, tableInfo->allColFams);
     }
 
+  table_desc->body.table_desc.tableFlags = (tableInfo ? tableInfo->objectFlags : 0);
+
   desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
   //  files_desc->body.files_desc.audit = -1; // audited table
   files_desc->body.files_desc.audit = (tableInfo ? tableInfo->isAudited : -1);

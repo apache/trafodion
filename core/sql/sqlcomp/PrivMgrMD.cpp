@@ -509,7 +509,9 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
   }
   CmpSeabaseDDLrole role;
     
-  role.dropStandardRole(DB_ROOTROLE_NAME);
+  role.dropStandardRole(DB__ROOTROLE);
+  role.dropStandardRole(DB__HIVEROLE);
+  role.dropStandardRole(DB__HBASEROLE);
     
 
 //TODO: should notify QI
@@ -1301,7 +1303,9 @@ PrivStatus privStatus = STATUS_GOOD;
     
 CmpSeabaseDDLrole role;
     
-   role.createStandardRole(DB_ROOTROLE_NAME,DB_ROOTROLE_ID);
+   role.createStandardRole(DB__ROOTROLE,DB_ROOTROLE_ID);
+   role.createStandardRole(DB__HIVEROLE,HIVE_ROLE_ID);
+   role.createStandardRole(DB__HBASEROLE,HBASE_ROLE_ID);
    
    if (shouldPopulateRoleGrants)
    {
