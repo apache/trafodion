@@ -1,20 +1,23 @@
 #!/bin/bash
-#
+
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -138,7 +141,7 @@ if [ -n "$MY_NODES" ];then
     MY_NODES_PRM=$MY_NODES
 fi
 
-dirlist=`$SQ_PDSH $MY_NODES_PRM "find -L $MY_SQROOT/sql -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L $MY_SQROOT/export -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L /database/u*/$USER -name core\.\* 2> /dev/null | /bin/gawk -F \/core '{print \\\$1}'" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}' 2> /dev/null`
+dirlist=`$PDSH $MY_NODES_PRM $PDSH_SSH_CMD "find -L $MY_SQROOT/sql -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L $MY_SQROOT/export -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L /database/u*/$USER -name core\.\* 2> /dev/null | /bin/gawk -F \/core '{print \\\$1}'" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}' 2> /dev/null`
 
 if [[ $dirlist == "" ]]; then
     echo "No core files were found. Exiting..."
@@ -161,7 +164,7 @@ do
     fi
 
     echo "Searching for core files in n$node:$path..."
-    corelist=`$SQ_PDSH -w n$node "ls $path | grep ^core."`
+    corelist=`$PDSH -w n$node $PDSH_SSH_CMD "ls $path | grep ^core."`
 
     # Create a list of core files
     for j in $corelist
@@ -171,13 +174,13 @@ do
             # Remove core file if -r supplied
 	    if [ $SQ_REMOVE '==' 1 ]; then
                 echo "  Removing $path/$j..."
-                $SQ_PDSH -w n$node rm -rf $path/$j
+                $PDSH -w n$node $PDSH_SSH_CMD rm -rf $path/$j
             # Otherwise move core file to head node; in order to prevent overwrites
             # the core files will be moved using the following format:
             #   <filename>.<node>.<volume>
             else
                 # Copy core file only if have proper ownership
-                cowner=`$SQ_PDSH -w n$node ls -l $path/$j | tail -1 | /bin/gawk '{print $4}'`
+                cowner=`$PDSH -w n$node $PDSH_SSH_CMD ls -l $path/$j | tail -1 | /bin/gawk '{print $4}'`
                 if [[ $cowner != $USER ]]; then
                     echo "  Current user ($USER) cannot move $path/$j ($cowner). Skipping...";
                 else
@@ -194,7 +197,7 @@ do
                         else
                              # If successfully copied off the file, now remove it.
                              # Is there an scp equivalent for moving files? 
-                             $SQ_PDSH -w n$node rm -rf $path/$j
+                             $PDSH -w n$node $PDSH_SSH_CMD rm -rf $path/$j
                         fi
                     fi
                 fi

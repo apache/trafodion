@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1449,6 +1452,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // need to extend the partial buffer, allocate a copy
       actEncodedKey = new(heap) char[totalKeyLength];
       memcpy(actEncodedKey, encodedKey, encodedKeyLen);
+
+      // extend the remainder with zeroes, assuming that this is what
+      // HBase does when deciding which region a row belongs to
       memset(&actEncodedKey[encodedKeyLen], 0, totalKeyLength-encodedKeyLen);
       Lng32 currOffset = lenOfFullyProvidedCols;
 
@@ -1456,11 +1462,14 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // so that we can treat the buffer as fully encoded in the final loop below
       for (CollIndex j = numProvidedCols; j < partColArray.entries(); j++)
         {
-          const NAType *pkType = partColArray[j]->getType();
-          Lng32 nullHdrSize = pkType->getSQLnullHdrSize();
-          Lng32 colEncodedLength = nullHdrSize + pkType->getNominalSize();
-          NABoolean isDescending = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
+          const NAType *pkType        = partColArray[j]->getType();
+          Lng32 nullHdrSize           = pkType->getSQLnullHdrSize();
+          int valOffset               = currOffset + nullHdrSize;
+          int valEncodedLength        = pkType->getNominalSize();
+          Lng32 colEncodedLength      = nullHdrSize + valEncodedLength;
+          NABoolean isDescending      = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
 
+          NABoolean nullHdrAlreadySet = FALSE;
           NABoolean columnIsPartiallyProvided = (currOffset < encodedKeyLen);
 
           if (columnIsPartiallyProvided)
@@ -1469,58 +1478,161 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // value. Note that the buffer has a prefix of some bytes with actual key
               // values, followed by bytes that are zeroed out. 
 
+              // the number of bytes actually provided in the key (not filled in)
+              int numBytesInProvidedVal = encodedKeyLen-valOffset;
 
-              // First, for descending columns, use 0xFF instead of 0 for fillers
-              if (isDescending)
-                memset(&actEncodedKey[encodedKeyLen],
-                       0xFF,
-                       currOffset + colEncodedLength - encodedKeyLen);
+              if (nullHdrSize && numBytesInProvidedVal <= 0)
+                {
+                  // only the null-header or a part thereof was provided
+                  CMPASSERT(nullHdrSize == sizeof(short));
+
+                  // get the partial indicator values into a short
+                  short indicatorVal = *reinterpret_cast<short *>(&actEncodedKey[currOffset]);
+
+                  // make it either 0 or -1
+                  if (indicatorVal)
+                    indicatorVal = -1;
+
+                  // put it back and let the code below know that we set it already
+                  // (this is handled otherwise as a non-provided column)
+                  memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
+                  nullHdrAlreadySet = TRUE;
+                  columnIsPartiallyProvided = FALSE;
+                }
 
               // Next, decide by data type whether it's ok for the type to have
-              // a suffix of the buffer zeroed out (even descending columns will
-              // in the end see zeroes). If the type can't take it, we'll just
-              // discard all the partial information.
+              // a suffix of the buffer zeroed out (descending columns will
+              // see 0xFF values, once the encoded value gets inverted). If the
+              // type can't take it or we are not quite sure, we'll just discard
+              // all the partial information. Note that this could potentially
+              // lead to two partition boundaries with the same key, and also
+              // to partition boundaries that don't reflect the actual region
+              // boundaries.
 
-              switch (pkType->getTypeQualifier())
-                {
-                case NA_NUMERIC_TYPE:
+              if (columnIsPartiallyProvided)
+                switch (pkType->getTypeQualifier())
                   {
-                    NumericType *nt = (NumericType *) pkType;
+                  case NA_NUMERIC_TYPE:
+                    {
+                      NumericType *nt = (NumericType *) pkType;
 
-                    if (!nt->isExact() || nt->isDecimal() || nt->isBigNum())
+                      if (!nt->isExact() || nt->isDecimal() || nt->isBigNum() ||
+                          (isDescending && nt->decimalPrecision()))
+                        // we may be able to improve this in the future
+                        columnIsPartiallyProvided = FALSE;
+                    }
+                    break;
+
+                  case NA_DATETIME_TYPE:
+                  case NA_INTERVAL_TYPE:
+                    // those types should tolerate zeroing out trailing bytes, but
+                    // not filling with 0xFF 
+                    if (isDescending)
                       columnIsPartiallyProvided = FALSE;
+                    break;
+
+                  case NA_CHARACTER_TYPE:
+                    // generally, character types should also tolerate zeroing out
+                    // trailing bytes, but we might need to clean up characters
+                    // that got split in the middle
+                    {
+                      CharInfo::CharSet cs = pkType->getCharSet();
+
+                      switch (cs)
+                        {
+                        case CharInfo::UCS2:
+                          // For now just accept partial characters, it's probably ok
+                          // since they are just used as a key. May look funny in EXPLAIN.
+                          break;
+                        case CharInfo::UTF8:
+                          {
+                            // temporarily invert the provided key so it is actual UTF8
+                            if (isDescending)
+                              for (int i=0; i<numBytesInProvidedVal; i++)
+                                actEncodedKey[valOffset+i] = ~actEncodedKey[valOffset+i];
+
+                            CMPASSERT(numBytesInProvidedVal > 0);
+
+                            // remove a trailing partial character, if needed
+                            int validLen = lightValidateUTF8Str(&actEncodedKey[valOffset],
+                                                                numBytesInProvidedVal);
+
+                            // replace the remainder of the buffer with UTF8 min/max chars
+                            fillWithMinMaxUTF8Chars(&actEncodedKey[valOffset+validLen],
+                                                    valEncodedLength - validLen,
+                                                    0,
+                                                    isDescending);
+
+                            // limit to the max # of UTF-8characters, if needed
+                            if (pkType->getPrecisionOrMaxNumChars() > 0)
+                              {
+                                // this time validate the # of chars (likely to be more,
+                                // since we filled to the end with non-blanks)
+                                validLen = lightValidateUTF8Str(&actEncodedKey[valOffset],
+                                                                valEncodedLength,
+                                                                pkType->getPrecisionOrMaxNumChars());
+
+                                if (validLen > 0)
+                                  // space after valid #chars is filled with blanks
+                                  memset(&actEncodedKey[valOffset+validLen], ' ', valEncodedLength-validLen);
+                                else
+                                  columnIsPartiallyProvided = FALSE;
+                              }
+
+                            // undo the inversion, if needed, now for the whole key
+                            if (isDescending)
+                              for (int k=0; k<valEncodedLength; k++)
+                                actEncodedKey[valOffset+k] = ~actEncodedKey[valOffset+k];
+                          }
+                          break;
+                        case CharInfo::ISO88591:
+                          // filling with 0x00 or oxFF should both be ok
+                          break;
+
+                        default:
+                          // don't accept partial keys for other charsets
+                          columnIsPartiallyProvided = FALSE;
+                          break;
+                        }
+                    }
+                    break;
+
+                  default:
+                    // don't accept partial keys for any other data types
+                    columnIsPartiallyProvided = FALSE;
+                    break;
                   }
-                  break;
 
-                case NA_DATETIME_TYPE:
-                case NA_INTERVAL_TYPE:
-                  // those types should tolerate zeroing out trailing bytes
-                  break;
+              if (columnIsPartiallyProvided)
+                {
+                  // a CQD can suppress, give errors, warnings or enable partially provided cols
+                  DefaultToken tok = CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_PARTIAL_COLS);
 
-                case NA_CHARACTER_TYPE:
-                  // generally, character types should also tolerate zeroing out
-                  // trailing bytes, but we might need to clean up characters
-                  // that got split in the middle
-                  {
-                    CharInfo::CharSet cs = pkType->getCharSet();
+                  switch (tok)
+                    {
+                    case DF_OFF:
+                      // disable use of partial columns
+                      // (use this as a workaround if they cause problems)
+                      columnIsPartiallyProvided = FALSE;
+                      break;
 
-                    switch (cs)
-                      {
-                      case CharInfo::UCS2:
-                      case CharInfo::UTF8:
-                        // For now just accept partial characters, it's probably ok
-                        // since they are just used as a key. May look funny in EXPLAIN.
-                        break;
+                    case DF_MINIMUM:
+                      // give an error (again, this is probably mostly used as a
+                      // workaround or to detect past problems)
+                      *CmpCommon::diags() << DgSqlCode(-1212) << DgInt0(j);
+                      break;
 
-                      default:
-                        break;
-                      }
-                  }
-                  break;
+                    case DF_MEDIUM:
+                      // give a warning, could be used for searching or testing
+                      *CmpCommon::diags() << DgSqlCode(+1212) << DgInt0(j);
+                      break;
 
-                default:
-                  columnIsPartiallyProvided = FALSE;
-                  break;
+                    case DF_ON:
+                    case DF_MAXIMUM:
+                    default:
+                      // allow it, no warning or error
+                      break;
+                    }
                 }
 
               if (columnIsPartiallyProvided)
@@ -1536,9 +1648,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // NOTE: This is generating un-encoded values, unlike
               //       the values we get from HBase. The next loop below
               //       will skip decoding for any values generated here.
-              Lng32 remainingBufLen = colEncodedLength - nullHdrSize;
+              Lng32 remainingBufLen = valEncodedLength;
 
-              if (nullHdrSize)
+              if (nullHdrSize && !nullHdrAlreadySet)
                 {
                   // generate a NULL indicator
                   // NULL (-1) for descending columns, this is the max value
@@ -1549,20 +1661,11 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                   memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
                 }
 
-              if (isDescending)
-                {
-                  pkType->maxRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
-                                                &remainingBufLen,
-                                                NULL,
-                                                heap);
-                }
-              else
-                {
-                  pkType->minRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
-                                                &remainingBufLen,
-                                                NULL,
-                                                heap);
-                }
+              pkType->minMaxRepresentableValue(&actEncodedKey[valOffset],
+                                               &remainingBufLen,
+                                               isDescending,
+                                               NULL,
+                                               heap);
             }
 
           currOffset += colEncodedLength;
@@ -1625,11 +1728,12 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
           }
 
           // un-encode the key value by using an expression
+          NAString encConstLiteral("encoded_val");
           ConstValue *keyColEncVal =
             new (heap) ConstValue(pkType,
                                   (void *) encodedKeyP,
                                   decodedValueLen,
-                                  NULL,
+                                  &encConstLiteral,
                                   heap);
           CMPASSERT(keyColEncVal);
 
@@ -2152,7 +2256,7 @@ static PartitioningFunction * createHash2PartitioningFunction
 
 
 static 
-NodeMap* createNodeMapForHbase(desc_struct* desc, NAMemory* heap)
+NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table, NAMemory* heap)
 {
    Int32 partns = 0;
    desc_struct* hrk = desc;
@@ -2164,21 +2268,6 @@ NodeMap* createNodeMapForHbase(desc_struct* desc, NAMemory* heap)
 
    NodeMap* nodeMap = new (heap) 
        NodeMap(heap, partns, NodeMapEntry::ACTIVE, NodeMap::HBASE);
-
-   return nodeMap;
-}
-
-static 
-PartitioningFunction*
-createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
-                                        NAMemory* heap)
-{
-
-   desc_struct* hrk = desc;
- 
-   NodeMap* nodeMap = createNodeMapForHbase(desc, heap);
-
-   Int32 partns = nodeMap->getNumEntries();
 
    // get nodeNames of region servers by making a JNI call
    // do it only for multiple partition table
@@ -2197,6 +2286,21 @@ createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table
        }
      }
    }
+
+   return nodeMap;
+}
+
+static 
+PartitioningFunction*
+createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
+                                        NAMemory* heap)
+{
+
+   desc_struct* hrk = desc;
+ 
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+
+   Int32 partns = nodeMap->getNumEntries();
 
    PartitioningFunction* partFunc;
    if ( partns > 1 )
@@ -2441,6 +2545,7 @@ createRangePartitioningFunctionForSingleRegionHBase(
         tail->header.next = new (heap) struct desc_struct;
         tail = tail->header.next;
      }
+     tail->header.next = NULL;
 
      NAString firstkey('(');
      for ( Int32 i=0; i<keys; i++ ) {
@@ -2487,40 +2592,12 @@ createRangePartitioningFunctionForSingleRegionHBase(
                                  heap);
 }
 
-static 
-PartitioningFunction*
-createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
-                                        desc_struct* desc, 
-			                const NAColumnArray & partKeyColArray,
-                                        NAMemory* heap)
+void
+populatePartnDescOnEncodingKey( struct desc_struct* prevEndKey,
+                               struct desc_struct* tail, 
+                               struct desc_struct* hrk, 
+                               NAMemory* heap)
 {
-   desc_struct* hrk = desc;
-   desc_struct* prevEndKey = NULL;
- 
-   NodeMap* nodeMap = createNodeMapForHbase(desc, heap);
-
-   struct desc_struct* head = NULL;
-   struct desc_struct* tail = NULL;
-
-   Int32 i=0;
-   while ( hrk ) {
-
-     struct desc_struct *newNode = new (heap) struct desc_struct;
-     memset(&newNode->header, 0, sizeof(newNode->header));
-     memset(&newNode->body.partns_desc, 0, sizeof(tail->body.partns_desc));
-     newNode->header.nodetype = DESC_PARTNS_TYPE;
-
-     if ( tail == NULL ) {
-        head = tail = newNode;
-
-        // to satisfy createRangePartitionBoundaries() in NATable.cpp
-        tail->body.partns_desc.primarypartition = 1;
-
-     } else {
-        tail->header.next = newNode;
-        tail = tail->header.next;
-     }
-
      if (!prevEndKey) {
        // the start key of the first partitions has all zeroes in it
        Int32 len = hrk->body.hbase_region_desc.endKeyLen;
@@ -2543,18 +2620,98 @@ createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
        memcpy(tail->body.partns_desc.encodedkey, 
               prevEndKey->body.hbase_region_desc.endKey, len);
      }
+}
+
+void
+populatePartnDescOnFirstKey( struct desc_struct* ,
+                             struct desc_struct* tail, 
+                             struct desc_struct* hrk,
+                             NAMemory* heap)
+{
+   char* buf = hrk->body.hbase_region_desc.beginKey;
+   Int32 len = hrk->body.hbase_region_desc.beginKeyLen;
+
+   NAString firstkey('(');
+   firstkey.append('\'');
+   firstkey.append(buf, len);
+   firstkey.append('\'');
+   firstkey.append(')');
+
+   Int32 keyLen = firstkey.length();
+   tail->body.partns_desc.firstkeylen = keyLen;
+   tail->body.partns_desc.firstkey = new (heap) char[keyLen];
+   memcpy(tail->body.partns_desc.firstkey, firstkey.data(), keyLen);
+
+   tail->body.partns_desc.encodedkeylen = keyLen;
+   tail->body.partns_desc.encodedkey = new (heap) char[keyLen];
+   memcpy(tail->body.partns_desc.encodedkey, firstkey.data(), keyLen);
+}
+
+typedef void (*populatePartnDescT)( struct desc_struct* prevEndKey,
+                                    struct desc_struct* tail, 
+                                    struct desc_struct* hrk,
+                                    NAMemory* heap);
+static struct desc_struct*
+convertRangeDescToPartnsDesc(desc_struct* desc, populatePartnDescT funcPtr, NAMemory* heap)
+{
+   desc_struct* hrk = desc;
+   desc_struct* prevEndKey = NULL;
+ 
+   struct desc_struct* head = NULL;
+   struct desc_struct* tail = NULL;
+
+   Int32 i=0;
+   while ( hrk ) {
+
+     struct desc_struct *newNode = new (heap) struct desc_struct;
+     memset(&newNode->header, 0, sizeof(newNode->header));
+     memset(&newNode->body.partns_desc, 0, sizeof(tail->body.partns_desc));
+     newNode->header.nodetype = DESC_PARTNS_TYPE;
+
+     if ( tail == NULL ) {
+        head = tail = newNode;
+
+        // to satisfy createRangePartitionBoundaries() in NATable.cpp
+        tail->body.partns_desc.primarypartition = 1;
+
+     } else {
+        tail->header.next = newNode;
+        tail = tail->header.next;
+     }
+
+     (*funcPtr)(prevEndKey, tail, hrk, heap);
 
      prevEndKey = hrk;
      hrk     = hrk->header.next;
    }
 
+   return head;
+}
+
+
+static 
+PartitioningFunction*
+createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
+                                        desc_struct* desc, 
+                                        const NATable* table, 
+			                const NAColumnArray & partKeyColArray,
+                                        NAMemory* heap)
+{
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+
+   struct desc_struct* 
+      partns_desc = ( table->isHbaseCellTable() || table->isHbaseRowTable()) ?
+         convertRangeDescToPartnsDesc(desc, populatePartnDescOnFirstKey, heap)
+             :
+         convertRangeDescToPartnsDesc(desc, populatePartnDescOnEncodingKey, heap);
+
+
    return createRangePartitioningFunction
-                                (head,
+                                (partns_desc,
                                  partKeyColArray,
                                  nodeMap,
                                  heap);
 }
-
 
 Int32 findDescEntries(desc_struct* desc)
 {
@@ -2574,7 +2731,8 @@ Int32 findDescEntries(desc_struct* desc)
 static 
 PartitioningFunction*
 createRangePartitioningFunctionForHBase(desc_struct* desc, 
-			                const NAColumnArray & partKeyColArray,
+			                const NATable* table,
+                                        const NAColumnArray & partKeyColArray,
                                         NAMemory* heap)
 {
 
@@ -2587,7 +2745,7 @@ createRangePartitioningFunctionForHBase(desc_struct* desc,
 
    return (partns > 1) ?
       createRangePartitioningFunctionForMultiRegionHBase(partns,
-                                    desc, partKeyColArray, heap)
+                                    desc, table, partKeyColArray, heap)
        :
       createRangePartitioningFunctionForSingleRegionHBase(
                                     partKeyColArray, heap);
@@ -3393,6 +3551,9 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 	    table->setHasLobColumn(TRUE);
 
 	  if (CmpSeabaseDDL::isEncodingNeededForSerialization(newColumn))
+	    table->setHasSerializedEncodedColumn(TRUE);
+
+          if (CmpSeabaseDDL::isSerialized(newColumn->getHbaseColFlags()))
 	    table->setHasSerializedColumn(TRUE);
 	}
 
@@ -3680,6 +3841,24 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 
       NABoolean isNotAvailable =
 	indexes_desc->body.indexes_desc.notAvailable;
+/*
+      RowFormatEnum rowFormat;
+      switch (indexes_desc->body.indexes_desc.rowFormat)
+      {
+        case COM_PACKED_FORMAT_TYPE:
+           rowFormat = SQLMX_ROW_FORMAT;
+           break;
+        case COM_ALIGNED_FORMAT_TYPE:
+           rowFormat = SQLMX_ALIGNED_ROW_FORMAT;
+           break;
+        case COM_HBASE_FORMAT_TYPE:
+           rowFormat = SQLMX_HBASE_FORMAT;
+           break;
+        default:
+           rowFormat = SQLMX_UNKNOWN_FORMAT;
+      }
+*/
+
 
       ItemExprList hbaseSaltColumnList(CmpCommon::statementHeap());
       Int64 numOfSaltedPartitions = 0;
@@ -4036,6 +4215,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                 (hbd && hbd->header.nodetype == DESC_HBASE_RANGE_REGION_TYPE))
 	           partFunc = createRangePartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
+                      table,
 	    	      partitioningKeyColumns,
 		      heap);
               else {
@@ -4196,6 +4376,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       if (isNotAvailable)
 	newIndex->setNotAvailable(TRUE);
 
+      newIndex->setRowFormat(indexes_desc->body.indexes_desc.rowFormat);
       // Mark each NAColumn in the list
       indexKeyColumns.setIndexKey();
       if ((table->isHbaseTable()) && (indexes_desc->body.indexes_desc.keytag != 0))
@@ -4859,6 +5040,9 @@ NATable::NATable(BindWA *bindWA,
     case COM_ALIGNED_FORMAT_TYPE:
       setSQLMXAlignedTable(TRUE);
       break;
+    case COM_HBASE_FORMAT_TYPE:
+    case COM_UNKNOWN_FORMAT_TYPE:
+      break;
     }
 
   if (table_desc->body.table_desc.isVolatile)
@@ -4924,6 +5108,24 @@ NATable::NATable(BindWA *bindWA,
         new(heap_) char[strlen(table_desc->body.table_desc.snapshotName) + 1];
       strcpy(snapshotName_, table_desc->body.table_desc.snapshotName);
     }
+
+  if (table_desc->body.table_desc.default_col_fam)
+    defaultColFam_ = table_desc->body.table_desc.default_col_fam;
+
+  if (table_desc->body.table_desc.all_col_fams)
+    {
+      // Space delimited col families.
+      
+      string buf; // Have a buffer string
+      stringstream ss(table_desc->body.table_desc.all_col_fams); // Insert the string into a stream
+      
+      while (ss >> buf)
+        {
+          allColFams_.insert(buf.c_str());
+        }
+    }
+  else
+    allColFams_.insert(defaultColFam_);
 
   desc_struct * files_desc = table_desc->body.table_desc.files_desc;
 
@@ -7445,31 +7647,9 @@ Int32 NATable::computeHBaseRowSizeFromMetaData() const
 // other considerations).
 Int64 NATable::estimateHBaseRowCount() const
 {
-  if (!isHbaseTable() || isSeabaseMDTable() ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME)
-    return ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
-
-  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
-  const char* server = defs->getValue(HBASE_SERVER);
-  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
-  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-                           (STMTHEAP, server, zkPort);
-
-  Int64 estRowCount;
-  Lng32 retcode = ehi->init(NULL);
-  if (retcode < 0)
-    {
-      *CmpCommon::diags()
-                << DgSqlCode(-8448)
-                << DgString0((char*)"ExpHbaseInterface::init()")
-                << DgString1(getHbaseErrStr(-retcode))
-                << DgInt0(-retcode)
-                << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-      delete ehi;
-      estRowCount = 0;
-    }
-  else
+  Int64 estRowCount = 0;
+  ExpHbaseInterface* ehi = getHBaseInterface();
+  if (ehi)
     {
       HbaseStr fqTblName;
       NAString tblName = getTableName().getQualifiedNameAsString();
@@ -7479,7 +7659,7 @@ Int64 NATable::estimateHBaseRowCount() const
       fqTblName.val[fqTblName.len] = '\0';
 
       Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
-      retcode = ehi->estimateRowCount(fqTblName,
+      Lng32 retcode = ehi->estimateRowCount(fqTblName,
                                       partialRowSize,
                                       colcount_,
                                       estRowCount);
@@ -7498,14 +7678,19 @@ Int64 NATable::estimateHBaseRowCount() const
 }
 
 // Method to get hbase regions servers node names
-NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
+ExpHbaseInterface* NATable::getHBaseInterface() const
 {
   if (!isHbaseTable() || isSeabaseMDTable() ||
       getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
       getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
       getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
-    return FALSE;
+    return NULL;
 
+   return NATable::getHBaseInterfaceRaw();
+}
+
+ExpHbaseInterface* NATable::getHBaseInterfaceRaw() 
+{
   NADefaults* defs = &ActiveSchemaDB()->getDefaults();
   const char* server = defs->getValue(HBASE_SERVER);
   const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
@@ -7522,18 +7707,52 @@ NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNa
               << DgInt0(-retcode)
               << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
     delete ehi;
-    return FALSE;
+    return NULL;
   }
+
+  return ehi;
+}
+
+ByteArrayList* NATable::getRegionsBeginKey(const char* hbaseName) 
+{
+  ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
+  ByteArrayList* bal = NULL;
+
+  if (!ehi)
+    return NULL;
+  else
+  {
+    bal = ehi->getRegionBeginKeys(hbaseName);
+
+    delete ehi;
+  }
+  return bal;
+}
+
+
+NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
+{
+  ExpHbaseInterface* ehi = getHBaseInterface();
+
+  if (!ehi)
+    return FALSE;
   else
   {
     HbaseStr fqTblName;
-    NAString tblName = getTableName().getQualifiedNameAsString();
+
+    CorrName corrName(getTableName());
+
+    NAString tblName = (corrName.isHbaseCell() || corrName.isHbaseRow()) ?
+       corrName.getQualifiedNameObj().getObjectName()
+                :
+       getTableName().getQualifiedNameAsString();
+
     fqTblName.len = tblName.length();
     fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
     strncpy(fqTblName.val, tblName.data(), fqTblName.len);
     fqTblName.val[fqTblName.len] = '\0';
 
-    retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
+    Lng32 retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
 
     NADELETEBASIC(fqTblName.val, STMTHEAP);
     delete ehi;
@@ -7547,30 +7766,10 @@ NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNa
 // Method to get hbase table index levels and block size
 NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const
 {
-  if (!isHbaseTable() || isSeabaseMDTable() ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
-      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
-      getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
-    return FALSE;
+  ExpHbaseInterface* ehi = getHBaseInterface();
 
-  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
-  const char* server = defs->getValue(HBASE_SERVER);
-  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
-  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-                           (STMTHEAP, server, zkPort);
-
-  Lng32 retcode = ehi->init(NULL);
-  if (retcode < 0)
-  {
-    *CmpCommon::diags()
-              << DgSqlCode(-8448)
-              << DgString0((char*)"ExpHbaseInterface::init()")
-              << DgString1(getHbaseErrStr(-retcode))
-              << DgInt0(-retcode)
-              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-    delete ehi;
+  if (!ehi)
     return FALSE;
-  }
   else
   {
     HbaseStr fqTblName;
@@ -7580,7 +7779,7 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
     strncpy(fqTblName.val, tblName.data(), fqTblName.len);
     fqTblName.val[fqTblName.len] = '\0';
 
-    retcode = ehi->getHbaseTableInfo(fqTblName,
+    Lng32 retcode = ehi->getHbaseTableInfo(fqTblName,
                                      hbtIndexLevels,
                                      hbtBlockSize);
 
@@ -7590,7 +7789,6 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
       return FALSE;
   }
   return TRUE;
-
 }
 
 // get details of this NATable cache entry
@@ -7796,7 +7994,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       NABoolean isHbaseRow = corrName.isHbaseRow();
       if (isHbaseCell || isHbaseRow)// explicit cell or row format specification
 	{
-	  if (cmpSBD.existsInHbase(corrName.getQualifiedNameObj().getObjectName()) != 1)
+	  const char* extHBaseName = corrName.getQualifiedNameObj().getObjectName();
+	  if (cmpSBD.existsInHbase(extHBaseName) != 1)
 	    {
 	      *CmpCommon::diags()
 		<< DgSqlCode(-1389)
@@ -7806,11 +8005,17 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	      return NULL;
 	    }
 
+          ByteArrayList* bal = NATable::getRegionsBeginKey(extHBaseName);
+
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell);
+	     isHbaseRow, isHbaseCell, bal);
+
+          delete bal;
+
 	  isSeabase = FALSE;
+
 	}
       else if (corrName.isSeabaseMD())
 	{

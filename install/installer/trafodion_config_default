@@ -1,19 +1,22 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -34,6 +37,10 @@
 
 
 #=====================================================
+#Must be set to 'true' if on a SUSE linux system. If on another type of system
+#this must be set to false. 
+
+export SUSE_LINUX=""
 
 # The working directory where Trafodion installer untars files, etc.
 # do not change this unless you really know what you are doing
@@ -100,6 +107,16 @@ export HADOOP_TYPE=""
 
 # The URL for the Hadoop distro's REST API (i.e. node1.hp.com:8080)
 export URL=""
+
+# The list of Hadoop nodes
+export HADOOP_NODES=""
+
+## another list of the same nodes in HADOOP_NODES but specified in a pdsh usable format
+# i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
+export MY_HADOOP_NODES=""
+
+# Count of nodes in  Hadoop nodes
+export hadoop_node_count=""
 
 # Hadoop UI admin's userid and password
 export ADMIN="admin"

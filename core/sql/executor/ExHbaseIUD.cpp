@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -1779,7 +1782,6 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    StrVec columns;
 	    retcode =  tcb_->ehi_->getRowOpen( tcb_->table_,  
 					       tcb_->rowIds_[tcb_->currRowidIdx_],
 					       tcb_->columns_, -1);
@@ -3833,9 +3835,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
           }
           else
             step_ = ALL_DONE;
-     }
-
-
+      }
       switch (step_)
 	{
 	case NOT_STARTED:
@@ -3883,16 +3883,10 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    setupListOfColNames(hbaseAccessTdb().listOfFetchedColNames(),
 				columns_);
 
-	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_) {
-	        retcode = ehi_->getHTable(table_);
-	        if (setupError(retcode, "ExpHbaseInterface::getHTable")) {
-	           step_ = HANDLE_ERROR;
-		   break;
-	        }
-	        step_ = SETUP_SELECT;
-            }
+	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_) 
+	       step_ = SETUP_SELECT;
             else
-	      step_ = SETUP_UMD;
+	       step_ = SETUP_UMD;
 	  }
 	  break;
 	case SETUP_SELECT:
@@ -3932,11 +3926,19 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
 	    rowIds_.clear();
 	    retcode = setupUniqueKeyAndCols(FALSE);
-	    if (retcode == -1)
-	      {
+	    if (retcode == -1) {
 		step_ = HANDLE_ERROR;
 		break;
-	      }
+	    }
+            rc = evalDeletePreCondExpr();
+            if (rc == -1) {
+                step_ = HANDLE_ERROR;
+                break;
+            }
+            if (rc == 0) { // No need to delete
+               step_ = NEXT_ROW;
+               break;
+            }
 
 	    copyRowIDToDirectBuffer(rowIds_[0]);
 
@@ -3964,7 +3966,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
               // But EOD is never returned, instead HBASE_ACCESS_NO_ROW is returned
               // when no row is found in CREATE_ROW step
               if (retcode == HBASE_ACCESS_EOR) {
-                 step_ = SETUP_SELECT;
+                 step_ = RS_CLOSE;
                  break;
               }
               if (retcode == HBASE_ACCESS_EOD) {
@@ -4069,11 +4071,13 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
            if (numRowsInDirectBuffer() > 0) {
               short numRowsInBuffer = patchDirectRowIDBuffers();
-	      retcode = ehi_->getRows(hbaseAccessTdb().getRowIDLen(),
+	      retcode = ehi_->getRowsOpen(
+                            table_,
+                            hbaseAccessTdb().getRowIDLen(),
                             rowIDs_, 
                             columns_);
               currRowNum_ = 0;
-	      if (setupError(retcode, "ExpHbaseInterface::getRows"))
+	      if (setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;
@@ -4265,13 +4269,9 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      return rc;
 
 	    if (step_ == DONE)
-		step_ = SETUP_UMD;
-	    else {
-		if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)
-		   step_ = RS_CLOSE; 
-                else
-		   step_ = NOT_STARTED;
-	      }
+	       step_ = SETUP_UMD;
+	    else 
+	       step_ = NOT_STARTED;
 	  }
 	  break;
 	} // switch

@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -43,13 +46,11 @@ if [ "$ACCEPT_LICENSE" != "Y" ]; then
    cat $( cd "$( dirname "$0" )" && pwd )/trafodion_license
    echo -n "BY TYPING \"ACCEPT\" YOU AGREE TO THE TERMS OF THIS AGREEMENT: " 
    read answer
-   answer=${answer,,}
-   if [ "$answer" != "accept" ]; then
+   if [ "$answer" != "accept" ] && [ "$answer" != "ACCEPT" ] && [ "$answer" != "Accept" ]; then
       echo "***ERROR: You must accept this license by typing \"accept\" to install."
       exit -1
    fi
 fi
-
 #============================
 # check that we are running from a userid with sudo access
 sudo echo "***INFO: testing sudo access"
@@ -76,7 +77,7 @@ MY_NODES=""
 for node in $NODE_LIST
 do
     # use BatchMode so it will just give an error instead of prompting for password
-    ssh -oStrictHostKeyChecking=no -oBatchMode=yes $node hostname
+    ssh -q -oStrictHostKeyChecking=no -oBatchMode=yes $node hostname
     if [ $? != 0 ]; then
         bad_nodes="$bad_nodes $node"
     fi
@@ -92,11 +93,13 @@ fi
 echo "***INFO: Total number of nodes = $node_count"
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
+    TRAF_PDCP=""
 else
     # use the -S option to cause pdsh to return largest of
     # the remote command return values so we can tell if one
     # or more of the remote commands failed
-    TRAF_PDSH="pdsh -S $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $MY_NODES ssh -q -n %h"
+    TRAF_PDCP="pdcp -R ssh $MY_NODES"
 fi
 #==========================================
 #Determine Internet Access
@@ -108,179 +111,179 @@ internetAccess=true
 echo "***INFO: Installing required packages"
 echo "***INFO: Log file located in /var/log/trafodion"
 YUM_LOG=/var/log/trafodion/trafodion_yum_$timestamp.log
-
-# first install pdsh on each node so we can use it to install
-# everything else.  don't need pdsh if only a single node
-if [ $node_count -ne 1 ]; then
-    for node in $NODE_LIST
-    do
-        echo "***INFO: ... pdsh on node $node"
-
-        # if not already installed on this node, then install it
-        ssh $node rpm -qa | grep pdsh &> /dev/null
-        if [ $? -ne 0 ]; then
-            ssh $node sudo mkdir -p $TRAF_WORKDIR
-            ssh $node sudo mkdir -p /var/log/trafodion
-	    if [[ $internetAccess == "true" ]]; then 
-               ssh $node sudo yum --assumeyes install pdsh &>> $YUM_LOG
-               if [ $? != 0 ]; then
-                  echo "***ERROR: Can't install pdsh on node $node"
-                  exit -1
-               fi
-            else
-               echo "***ERROR: Can't install pdsh on node $node"
-               echo "***ERROR: Must have pdsh installed on each node."
-               echo "***ERROR: No internet access to do automatic install." 
-               exit -1
-            fi
-        fi
-    done
-    # create working directory on all nodes
-    $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR &> /dev/null
-    $TRAF_PDSH sudo chmod -R 777 $TRAF_WORKDIR
-    $TRAF_PDSH mkdir -p /var/log/trafodion &> /dev/null
- 
-fi
+ZYPP_LOG=/var/log/trafodion/trafodion_zypp_$timestamp.log
 
 #================================
 #Checking to see if epel package is installed. 
+if [[ $SUSE_LINUX == "false" ]]; then
+   for node in $NODE_LIST;
+   do
+     EPEL_INSTALLED=$(ssh -q -n $node rpm -qa | grep epel | wc -l)
+     if [[ $EPEL_INSTALLED == 0 ]]; then
+        break;
+     fi
+   done
 
-for node in $NODE_LIST;
-do
-  EPEL_INSTALLED=$(ssh -n $node rpm -qa | grep epel | wc -l)
-  if [[ $EPEL_INSTALLED == 0 ]]; then
-     break;
-  fi
-done
-
-if [[ $EPEL_INSTALLED == 0 ]]; then
-   echo "***INFO: ... EPEL rpm"
-   if [[ "$EPEL_RPM" != "" ]]; then
-      if [ $node_count -ne 1 ]; then
-         pdcp $MY_NODES $EPEL_RPM $TRAF_WORKDIR
-      else
-         cp -rf $EPEL_RPM $TRAF_WORKDIR
-      fi
-   else
-      if [[ $internetAccess == "true" ]]; then
-         epel_rpm="epel-release-6-8.noarch.rpm"
-         wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+   if [[ $EPEL_INSTALLED == 0 ]]; then
+      echo "***INFO: ... EPEL rpm"
+      if [[ "$EPEL_RPM" != "" ]]; then
          if [ $node_count -ne 1 ]; then
-            pdcp $MY_NODES $epel_rpm $TRAF_WORKDIR
+            for node in $NODE_LIST
+            do
+               scp -q $EPEL_RPM $(whoami)@$node:$HOME
+            done
          else
-            cp -rf $epel_rpm $TRAF_WORKDIR
+            cp -rf $EPEL_RPM $HOME
          fi
-
-         if [ $? != 0 ]; then
-            echo "***ERROR: Can't download EPEL rpm $epel_rpm"
-            echo "***ERROR: Please check http_proxy settings in .bashrc file"
-            echo
-            exit -1
-         fi 
       else
-         echo "***ERROR: No EPEL RPM installed"
-         echo "***ERROR: No internet access to do automatic install."
-         exit -1         
+         if [[ $internetAccess == "true" ]]; then
+            epel_rpm="epel-release-6-8.noarch.rpm"
+            wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+            if [ $node_count -ne 1 ]; then
+               for node in $NODE_LIST
+               do
+                  scp -q $LOCAL_WORKDIR/$epel_rpm $(whoami)@$node:$HOME
+               done
+            else
+               cp -rf $epel_rpm $HOME
+            fi
+
+            if [ $? != 0 ]; then
+               echo "***ERROR: Can't download EPEL rpm $epel_rpm"
+               echo "***ERROR: Please check http_proxy settings in .bashrc file"
+               echo
+               exit -1
+            fi 
+         else
+            echo "***ERROR: No EPEL RPM installed"
+            echo "***ERROR: No internet access to do automatic install."
+            exit -1         
+         fi
       fi
    fi
+
+   for node in $NODE_LIST;
+   do
+     EPEL_INSTALLED=$( ssh -q -n $node rpm -qa | grep epel | wc -l)
+     if [[ $EPEL_INSTALLED == 0 ]]; then
+        ssh -q -n $node sudo rpm -Uvh $HOME/epel* 2>> $YUM_LOG >> $YUM_LOG
+        if [ $? != 0 ]; then
+           echo "***ERROR: Can't install EPEL rpm $EPEL_RPM"
+           exit -1
+        fi
+     fi
+   done
+
+else
+   echo 
+   echo
+   echo 
+   echo "***WARNING: This system is using SUSE Linux"
+   echo "***WARNING: pdsh must be installed prior to installing Trafodion."
+   echo "***WARNING: If pdsh has not been installed. Please stop the installer and install pdsh"
+   echo 
+   echo 
+   sleep 10
 fi
 
-for node in $NODE_LIST;
-do
-  EPEL_INSTALLED=$( ssh -n $node rpm -qa | grep epel | wc -l)
-  if [[ $EPEL_INSTALLED == 0 ]]; then
-     ssh $node -n sudo rpm -Uvh $TRAF_WORKDIR/epel* 2>> $YUM_LOG >> $YUM_LOG
-     if [ $? != 0 ]; then
-        echo "***ERROR: Can't install EPEL rpm $EPEL_RPM"
-        exit -1
-     fi
-  fi
-done
-
-# to handle the case where the EPEL rpm was already
-# installed but disabled, we enable it here
-# it doesn't hurt if it was already enabled and we try to enable it again
-$TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
-
-package_list="log4cxx qpid-cpp-client perl sqlite"
-package_list+=" expect perl-DBD-SQLite* protobuf xerces-c "
-package_list+=" libiodbc unixODBC tigervnc-server firefox "
-package_list+=" pixman libXfont libX11 perl-Params-Validate perl-Time-HiRes gzip"
-
-if [[ $internetAccess == "true" ]]; then
-   for package in $package_list
-   do
-       echo "***INFO: Checking if $package is installed ..."
-       for node in $NODE_LIST
-       do
-          installed=`ssh -n $node sudo rpm -qa | grep $package | wc -l`
-          if [[ $installed -eq "0" ]]; then
-             echo "***INFO: Installing $package on all nodes"
-             $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
-             if [ $? != 0 ]; then
-                echo "***ERROR: Can't install $package"
+#install pdsh if not on SUSE Linux
+if [[ $SUSE_LINUX == "false" ]]; then
+   if [ $node_count -ne 1 ]; then
+      for node in $NODE_LIST
+      do
+          echo "***INFO: ... pdsh on node $node"
+          #if not already installed on this node, then install it
+          ssh -q -n $node rpm -qa | grep pdsh &> /dev/null
+          if [ $? -ne 0 ]; then
+             ssh -q -n $node sudo mkdir -p $TRAF_WORKDIR
+             ssh -q -n $node sudo mkdir -p /var/log/trafodion
+             if [[ $internetAccess == "true" ]]; then
+                ssh -q -n $node sudo yum --assumeyes install pdsh >> $YUM_LOG
+                if [ $? != 0 ]; then
+                   echo "***ERROR: Can't install pdsh on node $node"
+                   exit -1
+                fi
+             else
+                echo "***ERROR: Can't install pdsh on node $node"
+                echo "***ERROR: Must have pdsh installed on each node."
+                echo "***ERROR: No internet access to do automatic install."
                 exit -1
              fi
-             break
-          fi
-       done
-   done
-else
-   for node in $NODE_LIST
-   do
-      echo "***ERROR: No internet access on $node"
-      echo "***ERROR: Missing packages will need to be installed."
-      echo "***ERROR: Missing packages: " 
-      for package in $package_list
-      do
-          installed=$(sudo rpm -qa | grep $package | wc -l)
-          if [[ $installed -eq "0" ]]; then
-             echo "$package"
-             stopInstall=true
           fi
       done
-   done
-   if [[ $stopInstall == "true" ]]; then
-      exit -1   
+      # create working directory on all nodes
+      $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR &> /dev/null
+      $TRAF_PDSH sudo chmod -R 777 $TRAF_WORKDIR
+      $TRAF_PDSH mkdir -p /var/log/trafodion &> /dev/null
+
    fi
 fi
-#================================
-group_package_list="Desktop Fonts"
-if [[ $internetAccess ]]; then
-   for group_package in $group_package_list
-   do
-       echo "***INFO: ... $group_package"
-       $TRAF_PDSH sudo yum --assumeyes groupinstall \"$group_package\" 2>> $YUM_LOG >> $YUM_LOG
-       if [ $? != 0 ]; then
-           echo "***WARNING: Can't group install optional group package $group_package"
-       fi
-   done
 
-   # need to do these separately because they have blanks in their name
-   # and won't work properly in a list even if escaped with quotes
-   group_package="Desktop Platform"
-   echo "***INFO: ... $group_package"
-   $TRAF_PDSH sudo yum --assumeyes groupinstall \"$group_package\" 2>> $YUM_LOG >> $YUM_LOG
-   if [ $? != 0 ]; then
-       echo "***WARNING: Can't group install optional group package $group_package"
-   fi
+$TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
+$TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
 
-   group_package="X Window System"
-   echo "***INFO: ... $group_package"
-   $TRAF_PDSH sudo yum --assumeyes groupinstall \"$group_package\" 2>> $YUM_LOG >> $YUM_LOG
-   if [ $? != 0 ]; then
-      echo "***WARNING: Can't group install optional group package $group_package"
+if [[ $SUSE_LINUX == "false" ]]; then
+   # to handle the case where the EPEL rpm was already
+   # installed but disabled, we enable it here
+   # it doesn't hurt if it was already enabled and we try to enable it again
+   $TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
+
+   package_list="log4cxx sqlite "
+   package_list+="expect perl-DBD-SQLite* protobuf xerces-c "
+   package_list+="perl-Params-Validate perl-Time-HiRes gzip"
+
+   if [[ $internetAccess == "true" ]]; then
+      for package in $package_list
+      do
+         echo "***INFO: Checking if $package is installed ..."
+         for node in $NODE_LIST
+         do
+            installed=`ssh -q -n $node sudo rpm -qa | grep $package | wc -l`
+            if [[ $installed -eq "0" ]]; then
+               echo "***INFO: Installing $package on all nodes"
+               $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+               if [ $? != 0 ]; then
+                  echo "***ERROR: Can't install $package"
+                  exit -1
+               fi
+               break
+            fi
+         done
+      done
+   else
+      for node in $NODE_LIST
+      do
+         echo "***ERROR: No internet access on $node"
+         echo "***ERROR: Missing packages will need to be installed."
+         echo "***ERROR: Missing packages: " 
+         for package in $package_list
+         do
+             installed=$(sudo rpm -qa | grep $package | wc -l)
+             if [[ $installed -eq "0" ]]; then
+                echo "$package"
+                stopInstall=true
+             fi
+         done
+      done
+      if [[ $stopInstall == "true" ]]; then
+         exit -1   
+      fi
    fi
 else
-  echo "***ERROR: No internet access"
-  echo "***ERROR: Please install 'Desktop Fonts' 'Desktop Platform' and 'X Window System'"
+   echo
+   echo 
+   echo "***WARNING: All needed RPM's must be installed in advance to install Trafodion on SUSE."
+   echo "***WARNING: log4cxx sqlite expect perl-DBD-SQLite* protobuf xerces-c perl-Params-Validate perl-Time-HiRes gzip"
+   echo "***WARNING: If any of these packages have not been installed. Stop Trafodion installation and install."
+   echo 
+   echo 
+   sleep 10
 fi
-
-#=======================================
+#================================
 # Set some limits needed by Trafodion
 
 TRAF_LIMITS_CONF="$TRAF_WORKDIR/trafodion.conf"
-sudo rm $TRAF_WORKDIR/trafodion.conf
+sudo rm $TRAF_WORKDIR/trafodion.conf &>/dev/null
 
 echo "***INFO: modifying limits in $TRAF_LIMITS_CONF on all nodes"
 
@@ -306,13 +309,13 @@ if [ $node_count -eq 1 ]; then
        exit -1
     fi
 else
-    pdcp $MY_NODES $TRAF_LIMITS_CONF $TRAF_LIMITS_CONF
+    $TRAF_PDCP $TRAF_LIMITS_CONF $TRAF_LIMITS_CONF
     if [ $? != 0 ]; then
        echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to all nodes"
        exit -1
     fi
     
-    pdsh $MY_NODES -S sudo cp $TRAF_LIMITS_CONF /etc/security/limits.d/trafodion.conf
+    $TRAF_PDSH sudo cp $TRAF_LIMITS_CONF /etc/security/limits.d/trafodion.conf
     if [ $? != 0 ]; then
        echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to /etc/security/limits.d/trafodion.conf on all nodes"
        exit -1
@@ -322,7 +325,7 @@ fi
 
 #=======================================
 echo "***INFO: create Trafodion userid \"$TRAF_USER\" "
-$TRAF_WORKDIR/installer/traf_add_user
+$LOCAL_WORKDIR/traf_add_user
 
 if [ $? != 0 ]; then
     echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
@@ -330,18 +333,3 @@ if [ $? != 0 ]; then
 fi
 
 #=======================================
-if [[ -f /etc/selinux/config ]]; then
-   echo "***INFO: Setting SELINUX=disabled in /etc/selinux.config"
-   sudo cp /etc/selinux/config $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
-   sudo sh -c "sed -e 's@^SELINUX=.*@SELINUX=disabled@' <$TRAF_WORKDIR/etc_selinux_config_ORIGINAL >/etc/selinux/config"
-   if [ $node_count -gt 1 ] ; then
-       echo "***INFO: modifying /etc/selinux/config on remaining nodes"
-
-       sudo cp /etc/selinux/config $TRAF_WORKDIR/traf_selinux.conf
-
-       pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/traf_selinux.conf $TRAF_WORKDIR
-       pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
-       pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
-
-   fi
-fi

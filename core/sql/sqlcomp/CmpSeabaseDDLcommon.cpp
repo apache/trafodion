@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -546,7 +549,8 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
       if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
-                            &colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
+                            &colArray, colInfoArray, FALSE, FALSE, NULL, NULL, NULL, NULL, 
+                            CTXTHEAP))
         {
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
@@ -620,11 +624,12 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
       NAList<NAString> selColList;
-      
+      NAString defaultColFam(SEABASE_DEFAULT_COL_FAMILY);
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
                                          FALSE, // no syskey
                                          FALSE, // not alignedFormat
+                                         defaultColFam,
                                          btNAColArray, btNAKeyArr,
                                          numIndexKeys, numIndexNonKeys, numIndexCols,
                                          indexColInfoArray, indexKeyInfoArray,
@@ -2087,6 +2092,9 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
   NAText * hbaseCreateOptionsArray,
   NAList<HbaseCreateOption*> * hbaseCreateOptions)
 {
+  if (! hbaseCreateOptions)
+    return 0;
+
   for (CollIndex i = 0; i < hbaseCreateOptions->entries(); i++)
     {
       HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[i];
@@ -2101,16 +2109,18 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
           s = s.substr( startpos, endpos-startpos+1 );
         }
           
-      // upcase value, save original (now trimmed)
+      // upcase value, save original (now trimmed).
       valInOrigCase = s;
-      std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+
+      // Do not upcase column family name as fam name is case sensitive
+      if (hbaseOption->key() != "NAME")
+        std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 
       NABoolean isError = FALSE;
       if (hbaseOption->key() == "NAME")
         {
           hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
         }
-          
       else if (hbaseOption->key() == "MAX_VERSIONS")
         {
           if (str_atoi(hbaseOption->val().data(), 
@@ -2274,9 +2284,7 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
 
 short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
                                       HbaseStr *table,
-                                      const char * cf1, 
-                                      const char * cf2, 
-                                      const char * cf3,
+                                      std::vector<NAString> &colFamVec,
                                       NAList<HbaseCreateOption*> * hbaseCreateOptions,
                                       const int numSplits,
                                       const int keyLength,
@@ -2287,10 +2295,9 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   // metadata. It creates the corresponding hbase table.
   short retcode = 0;
 
-  // create HBASE_MD table.
   HBASE_NAMELIST colFamList;
   HbaseStr colFam;
-  
+
   retcode = -1;
   Lng32 numTries = 0;
   Lng32 delaySecs = 500; // 5 secs to start with
@@ -2333,74 +2340,46 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
     }
 
   NAText hbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
-  if (hbaseCreateOptions)
+  if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
+                                hbaseCreateOptions) < 0)
     {
-      if (generateHbaseOptionsArray(hbaseCreateOptionsArray,
-                                    hbaseCreateOptions) < 0)
-        {
-          // diags already set             
-          return -1;
-        }   
+      // diags already set             
+      return -1;
     }
-  else
+
+  if (NOT hbaseCreateOptionsArray[HBASE_NAME].empty())
     {
-      colFamList.clear();
-      char cfName[1000];
+      short retcode = -HBASE_CREATE_OPTIONS_ERROR;
+      *CmpCommon::diags() << DgSqlCode(-8448)
+                          << DgString0((char*)"CmpSeabaseDDL::generateHbaseOptionsArray()")
+                          << DgString1(getHbaseErrStr(-retcode))
+                          << DgInt0(-retcode)
+                          << DgString2((char*)"NAME");
       
-      if (cf1)
-        {
-          strcpy(cfName, cf1);
-          colFam.val = cfName;
-          colFam.len = strlen(cfName);
-          
-          colFamList.insert(colFam);
-        }
-      
-      char cfName2[1000];
-      
-      if (cf2)
-        {
-          strcpy(cfName2, cf2);
-          colFam.val = cfName2;
-          colFam.len = strlen(cfName2);
-          
-          colFamList.insert(colFam);
-        }
-      
-      char cfName3[1000];
-      
-      if (cf3)
-        {
-          strcpy(cfName3, cf3);
-          colFam.val = cfName3;
-          colFam.len = strlen(cfName3);
-          
-          colFamList.insert(colFam);
-        }
+      return -1;
     }
 
   NABoolean isMVCC = true;
   if (CmpCommon::getDefault(TRAF_TRANS_TYPE) == DF_SSCC)
     isMVCC = false;
 
-  if (hbaseCreateOptions || (numSplits > 0) )
+  NAString colFamNames;
+  for (int i = 0; i < colFamVec.size(); i++)
     {
-      if (hbaseCreateOptionsArray[HBASE_NAME].empty())
-        hbaseCreateOptionsArray[HBASE_NAME] = SEABASE_DEFAULT_COL_FAMILY;
-
-      NABoolean noXn =
-                (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-
-      retcode = ehi->create(*table, hbaseCreateOptionsArray,
-                            numSplits, keyLength,
-                            (const char **)encodedKeysBuffer,
-                            noXn,
-                            isMVCC);
+      colFamNames += colFamVec[i];
+      colFamNames += " ";
     }
-  else
-    {
-      retcode = ehi->create(*table, colFamList, isMVCC);
-    }
+
+  hbaseCreateOptionsArray[HBASE_NAME] = colFamNames.data();
+
+  NABoolean noXn =
+    (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+  
+  retcode = ehi->create(*table, hbaseCreateOptionsArray,
+                        numSplits, keyLength,
+                        (const char **)encodedKeysBuffer,
+                        noXn,
+                        isMVCC);
 
   if (retcode < 0)
     {
@@ -2416,8 +2395,36 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   return 0;
 }
 
+short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi, 
+                                      HbaseStr *table,
+                                      const char * cf1, 
+                                      NAList<HbaseCreateOption*> * inHbaseCreateOptions,
+                                      const int numSplits,
+                                      const int keyLength,
+                                      char** encodedKeysBuffer,
+                                      NABoolean doRetry)
+{
+  if (! cf1)
+    return -1;
+
+  std::vector<NAString> colFamVec;
+  colFamVec.push_back(cf1);
+
+  NAList<HbaseCreateOption*> lHbaseCreateOptions;
+  NAText lHbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions = inHbaseCreateOptions;
+  if (! inHbaseCreateOptions)
+    hbaseCreateOptions = &lHbaseCreateOptions;
+
+  return createHbaseTable(ehi, table, colFamVec, hbaseCreateOptions,
+                          numSplits, keyLength,
+                          encodedKeysBuffer, doRetry);
+}
+
 short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
                                      HbaseStr *table,
+                                     NAList<NAString> &allColFams,
                                      NAList<HbaseCreateOption*> * hbaseCreateOptions)
 {
   short retcode = 0;
@@ -2433,19 +2440,36 @@ short CmpSeabaseDDL::alterHbaseTable(ExpHbaseInterface *ehi,
     {
       NABoolean noXn =
         (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
-               
-      retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+         
+      retcode = 0;
+
+      // if col family name passed in, change attrs for that family.
+      // Otherwise change it for all user specified families.
+      if (hbaseCreateOptionsArray[HBASE_NAME].empty())
+        {
+          for (int i = 0; ((retcode != -1) && (i < allColFams.entries())); i++)
+            {
+              NAString colFam = allColFams[i];
+              
+              hbaseCreateOptionsArray[HBASE_NAME] = colFam;
+              retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+            } // for
+        } // if
+      else
+        {
+          retcode = ehi->alter(*table, hbaseCreateOptionsArray, noXn);
+        }
 
       if (retcode < 0)
         {
-           *CmpCommon::diags() << DgSqlCode(-8448)
-                          << DgString0((char*)"ExpHbaseInterface::alter()")
-                          << DgString1(getHbaseErrStr(-retcode))
-                          << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-           retcode = -1;
-        } 
-    }
+          *CmpCommon::diags() << DgSqlCode(-8448)
+                              << DgString0((char*)"ExpHbaseInterface::alter()")
+                              << DgString1(getHbaseErrStr(-retcode))
+                              << DgInt0(-retcode)
+                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+          retcode = -1;
+        } // if
+    } // else
 
   return retcode;
 }
@@ -2738,6 +2762,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 }
 
 short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode, 
+                                NAString &colFamily,
                                 NAString &colName,
                                 NABoolean alignedFormat,
 				Lng32 &datatype,
@@ -2762,6 +2787,7 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   hbaseColFlags = 0;
   colFlags = 0;
 
+  colFamily = colNode->getColumnFamily();
   colName = colNode->getColumnName();
 
   if (colNode->isHeadingSpecified())
@@ -4007,7 +4033,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
 
   // get the text from the metadata
 
-  Lng32 textType = 2;  // to get text containing HBASE_OPTIONS=>
+  ComTextType textType = COM_HBASE_OPTIONS_TEXT;  // to get text containing HBASE_OPTIONS=>
   Lng32 textSubID = 0; // meaning, the text pertains to the object as a whole
   NAString metadataText(STMTHEAP);
   result = getTextFromMD(cliInterface,
@@ -4084,35 +4110,20 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
       // possible that the metadata text could shrink and take fewer
       // rows in its new form than the old. So we do the simple thing
       // to avoid such complications.
- 
-      char buf[2000];
-      str_sprintf(buf, 
-                  "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objectUID, textType, textSubID);
-      Lng32 cliRC = cliInterface->executeImmediate(buf);
+      Lng32 cliRC = deleteFromTextTable(cliInterface, objectUID, textType, textSubID);
       if (cliRC < 0)
         {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
           result = -1;
         }
       else
         {
-          // double any quotes in the text, since we are going to use it
-          // as a literal an an INSERT statement shortly 
-
-          NAString doubledQuoteMetadataText;
-          ToQuotedString(doubledQuoteMetadataText /* out */,
-                         metadataText,
-                         FALSE /* don't surround with quotes */);
-
-          // insert the edited text back into the metadata
+          // insert the text back into the metadata
 
           result = updateTextTable(cliInterface,
                                    objectUID,
                                    textType,
                                    textSubID,
-                                   doubledQuoteMetadataText);
+                                   metadataText);
         }
     }
 
@@ -4424,19 +4435,20 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                 }
             }
 
-           ToQuotedString(quotedDefVal, defVal, FALSE);
-
            if (colInfo->defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
                colInfo->defaultClass == COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT)
              {
-               computedColumnDefinition = quotedDefVal;
-               quotedDefVal = "";
+               computedColumnDefinition = defVal;
+               // quotedDefVal = "";
                isComputedColumn = TRUE;
              }
            else if (useRWRS)
              {
                quotedDefVal = defVal; // outer quotes not needed when inserting using rowsets
              }
+           else
+             ToQuotedString(quotedDefVal, defVal, FALSE);
+
         } // colInfo->defVal
 
       const char *colClassLit = NULL;
@@ -4583,7 +4595,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       if (tableInfo)
         {
           isAudited = tableInfo->isAudited;
-          if (tableInfo->rowFormat == 1)
+          if (tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
             strcpy(rowFormat, COM_ALIGNED_FORMAT_LIT);
           numSaltPartns = tableInfo->numSaltPartns;
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
@@ -5231,13 +5243,120 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
   return;
 }
 
+// user created traf stored col fam is of the form:  #<1-byte-num>
+//  1-byte-num is character '2' through '9', or 'a' through 'x'.
+// This allows for 32 column families and
+// is the index of user specified col family stored in naTable.allColFam().
+//
+// Family "#1" is reserved for system default column family name. This is also
+// the name that was used priori to multi-col fam support.
+short CmpSeabaseDDL::genTrafColFam(int index, NAString &trafColFamily)
+{
+  trafColFamily = "#";
+  unsigned char v;
+  
+  if (index >= 0 && index <= 7)
+    v = (unsigned char)('2' + index);
+  else if (index >= 8 && index <= 32)
+    v = (unsigned char)('a' + (index - 8));
+  else
+    return -1; // error
+  
+  trafColFamily.append((char*)&v, 1);
+
+  return 0;
+}
+
+short CmpSeabaseDDL::extractTrafColFam(const NAString &trafColFam, int &index)
+{
+  unsigned char v = (unsigned char)trafColFam.data()[1];
+  index = 0;
+  if (v >= '2' && v <= '9')
+    index = v - '2';
+  else if (v >= 'a' && v <= 'x')
+    index = ((v - 'a') + 8);
+  else
+    return -1;
+ 
+  return 0;
+}
+
+// inColFamily:       user specified column family
+// trafColFamily:     col fam stored in traf tables 
+// userColFamVec:  unique array of user col families
+// trafColFamVec:   unique array of traf col families 
+short CmpSeabaseDDL::processColFamily(NAString &inColFamily,
+                                      NAString &trafColFamily,
+                                      std::vector<NAString> *userColFamVec,
+                                      std::vector<NAString> *trafColFamVec)
+{
+  if (inColFamily.isNull())
+    return 0;
+  
+  if (! userColFamVec)
+    {
+      trafColFamily = inColFamily;
+      return 0;
+    }
+
+  int i = 0;
+  NABoolean found = FALSE;
+  while ((NOT found) && (i < userColFamVec->size()))
+    {
+      NAString &nas = (*userColFamVec)[i];
+      if (nas == inColFamily)
+        {
+          found = TRUE;
+        }
+      else
+        i++;
+    }
+
+  // add this user col fam to user fam array if not already there.
+  if (NOT found)
+    {
+      userColFamVec->push_back(inColFamily);
+    }
+
+  if (inColFamily == SEABASE_DEFAULT_COL_FAMILY)
+    trafColFamily = SEABASE_DEFAULT_COL_FAMILY;
+  else
+    {
+      genTrafColFam(i, trafColFamily);
+    }
+
+  if (trafColFamVec)
+    {
+      found = FALSE;
+      i = 0;
+      while ((NOT found) && (i < trafColFamVec->size()))
+        {
+          NAString &nas = (*trafColFamVec)[i];
+          if (nas == trafColFamily)
+            {
+              found = TRUE;
+            }
+          else
+            i++;
+        }
+
+      if (not found)
+        trafColFamVec->push_back(trafColFamily);
+    }
+
+  return 0;
+}
+
 short CmpSeabaseDDL::buildColInfoArray(
                                        ComObjectType objType,
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
                                        NABoolean alignedFormat,
-                                       Lng32 *identityColPos,
+                                       Lng32 *identityColPos, // IN_OUT
+                                       std::vector<NAString> *userColFamVec, // IN_OUT
+                                       std::vector<NAString> *trafColFamVec, // IN_OUT
+                                       const char * inColFam, // IN
                                        NAMemory * heap)
 {
   std::vector<NAString> myvector;
@@ -5245,11 +5364,15 @@ short CmpSeabaseDDL::buildColInfoArray(
   if (identityColPos)
     *identityColPos = -1;
 
+  NAString defaultColFam = (inColFam ? inColFam : SEABASE_DEFAULT_COL_FAMILY);
+
+  NABoolean nullColFamFound = FALSE;
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
     {
       ElemDDLColDef *colNode = (*colArray)[index];
       
+      NAString colFamily;
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
       ComColumnClass colClass;
@@ -5260,6 +5383,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(colNode,
+                     colFamily,
                      colName,
                      alignedFormat,
                      datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
@@ -5321,9 +5445,31 @@ short CmpSeabaseDDL::buildColInfoArray(
           colInfoArray[index].colHeading = head_val;
         }
 
+      if (colFamily.isNull())
+        {
+          colFamily = defaultColFam;
+
+          nullColFamFound = TRUE;
+        }
+      else 
+        {
+          if (alignedFormat)
+            {
+              *CmpCommon::diags() << DgSqlCode(-4223)
+                                  << DgString0("Column Family specification on columns of an aligned format table is");
+              return -1;
+            }
+
+          if (userColFamVec)
+            userColFamVec->push_back(colFamily);
+        }
+
+      NAString storedColFamily;
+      processColFamily(colFamily, storedColFamily, userColFamVec, trafColFamVec);
+
       colInfoArray[index].hbaseColFam = 
-        new((heap ? heap : STMTHEAP)) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)SEABASE_DEFAULT_COL_FAMILY);
+        new((heap ? heap : STMTHEAP)) char[storedColFamily.length() +1];
+      strcpy((char*)colInfoArray[index].hbaseColFam, (char*)storedColFamily.data());
 
       char idxNumStr[40];
       str_itoa(index+1, idxNumStr);
@@ -5351,6 +5497,13 @@ short CmpSeabaseDDL::buildColInfoArray(
         }
     }
 
+  if (userColFamVec && (userColFamVec->size() > 32))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4225);
+
+      return -1;
+    }
+
   return 0;
 }
 
@@ -5363,9 +5516,11 @@ short CmpSeabaseDDL::buildColInfoArray(
   for (index = 0; index < paramArray->entries(); index++)
     {
       ElemDDLParamDef *paramNode = (*paramArray)[index];
-      ElemDDLColDef colNode(paramNode->getParamName(), 
+      ElemDDLColDef colNode(NULL, &paramNode->getParamName(), 
                             paramNode->getParamDataType(),
                             NULL, NULL, STMTHEAP);
+
+      NAString colFamily;
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
       ComColumnClass colClass;
@@ -5376,6 +5531,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(&colNode,
+                     colFamily,
                      colName,
                      FALSE,
                      datatype, length, precision, scale, dt_start, dt_end, 
@@ -5496,33 +5652,41 @@ short CmpSeabaseDDL::buildKeyInfoArray(
   return 0;
 }
 
-// textType:   0, view text.  1, constraint text.  2, computed col text.
 // subID: 0, for text that belongs to table. colNumber, for column based text.
 short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
                                      Int64 objUID, 
-                                     Lng32 textType, 
+                                     ComTextType textType, 
                                      Lng32 subID, 
                                      NAString &text)
 {
   Lng32 cliRC = 0;
-
-  char * buf = new(STMTHEAP) char[400+TEXTLEN];
   Lng32 textLen = text.length();
+  Lng32 bufLen = (textLen>TEXTLEN ? TEXTLEN : textLen) + 1000;
+  char * buf = new(STMTHEAP) char[bufLen];
   Lng32 numRows = (textLen / TEXTLEN) + 1;
   Lng32 currPos = 0;
   for (Lng32 i = 0; i < numRows; i++)
     {
-      NAString temp = 
-        (i < numRows-1 ? text(currPos, TEXTLEN)
-         : text(currPos, (textLen - currPos)));
+      NAString temp;
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, '%s')",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objUID,
-                  textType,
-                  subID,
-                  i,
-                  temp.data());
+      if (i < numRows-1)
+        ToQuotedString(temp, text(currPos, TEXTLEN));
+      else
+        ToQuotedString(temp, text(currPos, (textLen - currPos)));
+
+      if (snprintf(buf, bufLen, "insert into %s.\"%s\".%s values (%ld, %d, %d, %d, 0, %s)",
+                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                   objUID,
+                   textType,
+                   subID,
+                   i,
+                   temp.data()) >= bufLen)
+        {
+          // we left room in buf for a few hundred quotes, but using
+          // too many could get us here
+          *CmpCommon::diags() << DgSqlCode(-1207);
+          return -1;
+        }
       cliRC = cliInterface->executeImmediate(buf);
       
       if (cliRC < 0)
@@ -5532,6 +5696,28 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
         }
 
       currPos += TEXTLEN;
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::deleteFromTextTable(ExeCliInterface *cliInterface,
+                                         Int64 objUID, 
+                                         ComTextType textType, 
+                                         Lng32 subID)
+{
+  Lng32 cliRC = 0;
+
+  char buf[1000];
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID, static_cast<int>(textType), subID);
+  cliRC = cliInterface->executeImmediate(buf);
+  
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
     }
 
   return 0;
@@ -5952,53 +6138,82 @@ short CmpSeabaseDDL::validateDivisionByExprForDDL(ItemExpr *divExpr)
 }
 
 short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
+                                             int &numSplits,
                                              desc_struct * colDescs, 
                                              desc_struct * keyDescs,
-                                             Lng32 numSplits, Lng32 numKeys, 
-                                             Lng32 keyLength, NABoolean isIndex)
+                                             int numSaltPartitions,
+                                             Lng32 numSaltSplits,
+                                             NAString *splitByClause,
+                                             Lng32 numKeys, 
+                                             Lng32 keyLength,
+                                             NABoolean isIndex)
 {
   encodedKeysBuffer = NULL;
-  
-  if (numSplits <= 0)
+  numSplits = 0;
+
+  if (numSaltSplits <= 0)
     return 0;
 
-    NAString ** inArray = createInArrayForLowOrHighKeys(colDescs, 
-                                                        keyDescs,
-                                                        numKeys,
-                                                        FALSE,
-                                                        isIndex,
-                                                        STMTHEAP ); 
+  // make a list of NAStrings with the default values for start keys
+  NAString ** defaultSplits = createInArrayForLowOrHighKeys(
+       colDescs,
+       keyDescs,
+       numKeys,
+       FALSE,
+       isIndex,
+       STMTHEAP );
+  NAString **splitValuesAsText = new(STMTHEAP) NAString *[numKeys];
+  ElemDDLPartitionList * pPartitionList = NULL;
+  ElemDDLPartitionRange *pPartitionRange = NULL;
 
-    char splitNumCharStr[5];
-    NAString splitNumString;
+      numSplits = numSaltSplits;
 
-    /* HBase creates 1 more split than
-       the number of rows in the split array. In the example below we have a 
-       salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
-       encodedKeysBuffer will have 4 elements, each of length 8. When this
-       buffer is given to HBase through the Java API we get a table with 5 
-       splits and begin/end keys as shown below
-       
-       Start Key                                                     End Key
-       \x00\x00\x00\x01\x00\x00\x00\x00
-       \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00   
-       \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
-       \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00   
-       \x00\x00\x00\x04\x00\x00\x00\x00 
-    */
-    encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
-    for(int i =0; i < numSplits; i++)
-      encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+      // for salt splits, only the first key column value
+      // is variable, the rest use the default values
+      for (int k=1; k<numKeys; k++)
+        splitValuesAsText[k] = defaultSplits[k];
 
-    inArray[0] = &splitNumString;
-    short retVal = 0;
-    
-    for(Int32 i =0; i < numSplits; i++) {
-      sprintf(splitNumCharStr, "%d", i+1);
-      splitNumString = splitNumCharStr;
+  // allocate the result buffers, numSplits buffers of length keyLength
+  encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
+  for(int i =0; i < numSplits; i++)
+    encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+
+  char splitNumCharStr[10];
+  NAString splitNumString;
+
+  // loop over the splits, HBase will create 1 more region than the
+  // number of rows in the split array
+  for(Int32 i =0; i < numSplits; i++)
+    {
+          /* We are splitting along salt partitions. In the example below we have a 
+             salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
+             encodedKeysBuffer will have 4 elements, each of length 8. When this
+             buffer is given to HBase through the Java API we get a table with 5 
+             regions (4 splits) and begin/end keys as shown below
+
+             Start Key                             End Key
+                                                   \x00\x00\x00\x01\x00\x00\x00\x00
+             \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00   
+             \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
+             \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00   
+             \x00\x00\x00\x04\x00\x00\x00\x00
+
+             When we have more salt partitions than regions, the salt values
+             will be distributed across the regions as evenly as possible
+          */
+
+          snprintf(splitNumCharStr, sizeof(splitNumCharStr), "%d",
+                  ((i+1)*numSaltPartitions)/(numSaltSplits+1));
+          splitNumString = splitNumCharStr;
+          splitValuesAsText[0] = &splitNumString;
+
+      short retVal = 0;
+
+      // convert the array of NAStrings with textual values into
+      // an encoded binary key buffer
       retVal = encodeKeyValues(colDescs,
                                keyDescs,
-                               inArray, // INPUT
+                               splitValuesAsText, // INPUT
                                isIndex,
                                encodedKeysBuffer[i],  // OUTPUT
                                STMTHEAP,
@@ -6006,7 +6221,19 @@ short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
 
       if (retVal)
         return -1;
-    }
+
+      // check whether the encoded keys are ascending
+      if (i > 0 &&
+          memcmp(encodedKeysBuffer[i-1],
+                 encodedKeysBuffer[i],
+                 keyLength) >= 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1211)
+                              << DgInt0(i+1);
+          return -1;
+        }
+
+    } // loop over splits
 
   return 0;
 }
@@ -6257,7 +6484,7 @@ void CmpSeabaseDDL::initSeabaseMD()
       hbaseObjectStr += mdti.newName;
       hbaseObject.val = (char*)hbaseObjectStr.data();
       hbaseObject.len = hbaseObjectStr.length();
-      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
+      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL) == -1)
         {
           deallocEHI(ehi); 
           return;
@@ -7656,8 +7883,9 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   NAFileSet * naf = naTable->getClusteringIndex();
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions = naTable->hbaseCreateOptions();
-  Lng32 numSaltedPartitions = naTable->numSaltPartns();
-  Lng32 numSplits = (numSaltedPartitions ? numSaltedPartitions - 1 : 0);
+  Lng32 numSaltPartns = naf->numSaltPartns();
+  Lng32 numSaltSplits = numSaltPartns - 1;
+  Lng32 numSplits = 0;
   Lng32 numKeys = naf->getIndexKeyColumns().entries();
   Lng32 keyLength = naf->getKeyLength();
   char ** encodedKeysBuffer = NULL;
@@ -7665,9 +7893,16 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   const desc_struct * tableDesc = naTable->getTableDesc();
   desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
   desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
-  if (createEncodedKeysBuffer(encodedKeysBuffer,
-                              colDescs, keyDescs, numSplits, numKeys, 
-                              keyLength, FALSE))
+
+  if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                              numSplits/*out*/,
+                              colDescs, keyDescs,
+                              numSaltPartns,
+                              numSaltSplits,
+                              NULL,
+                              numKeys, 
+                              keyLength,
+                              FALSE))
     {
       deallocEHI(ehi); 
 
@@ -7676,9 +7911,18 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
   
-  retcode = createHbaseTable(ehi, &hbaseTable, SEABASE_DEFAULT_COL_FAMILY, 
-                             NULL, NULL,
-                             hbaseCreateOptions, numSplits, keyLength, 
+  std::vector<NAString> userColFamVec;
+  std::vector<NAString> trafColFamVec;
+  NAString outColFam;
+  for (int i = 0; i < naTable->allColFams().entries(); i++)
+    {
+      processColFamily(naTable->allColFams()[i], outColFam,
+                       &userColFamVec, &trafColFamVec);
+    } // for
+  
+  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
+                             hbaseCreateOptions,
+                             numSplits, keyLength, 
                              encodedKeysBuffer);
   if (retcode == -1)
     {
@@ -7722,10 +7966,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               return;
             }
           
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, 
-                                     NULL, NULL,
-                                     NULL, 0, 0,
-                                     NULL);
+          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY);
           if (retcode == -1)
             {
               deallocEHI(ehi); 
@@ -9688,9 +9929,9 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
         compressionOptionSpecified = TRUE;
       
       hbaseOptionsStr += hbaseOption->key();
-      hbaseOptionsStr += "=''";
+      hbaseOptionsStr += "='";
       hbaseOptionsStr += hbaseOption->val();
-      hbaseOptionsStr += "''";
+      hbaseOptionsStr += "'";
 
       hbaseOptionsStr += "|";
     }
@@ -9730,7 +9971,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
                HBASE_SALTED_TABLE_MAX_FILE_SIZE) == TRUE)
       {
         numHbaseOptions += 1;
-        snprintf(fileSizeOption,100,"MAX_FILESIZE=''%ld''|", maxFileSizeInt);
+        snprintf(fileSizeOption,100,"MAX_FILESIZE='%ld'|", maxFileSizeInt);
         hbaseOptionsStr += fileSizeOption;
       }
     }
@@ -9747,9 +9988,9 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
                HBASE_SALTED_TABLE_SET_SPLIT_POLICY) == TRUE)
       {
         numHbaseOptions += 1;
-        hbaseOptionsStr += "SPLIT_POLICY=''";
+        hbaseOptionsStr += "SPLIT_POLICY='";
         hbaseOptionsStr += saltedTableSplitPolicy;
-        hbaseOptionsStr += "''|";
+        hbaseOptionsStr += "'|";
       }
     }  
   }
@@ -9771,7 +10012,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_DATA_BLOCK_ENCODING_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "DATA_BLOCK_ENCODING=''%s''|", dataBlockEncoding.data());
+          sprintf(optionStr, "DATA_BLOCK_ENCODING='%s'|", dataBlockEncoding.data());
           hbaseOptionsStr += optionStr;
         }
     }
@@ -9786,7 +10027,7 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
           (HBASE_COMPRESSION_OPTION) == TRUE)
         {
           numHbaseOptions += 1;
-          sprintf(optionStr, "COMPRESSION=''%s''|", compression.data());
+          sprintf(optionStr, "COMPRESSION='%s'|", compression.data());
           hbaseOptionsStr += optionStr;
         }
     }

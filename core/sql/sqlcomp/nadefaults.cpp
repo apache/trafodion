@@ -1,19 +1,22 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
  *****************************************************************************
@@ -1763,6 +1766,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(HBASE_RANGE_PARTITIONING,	        "ON"),
   DDkwd__(HBASE_RANGE_PARTITIONING_MC_SPLIT,	"ON"),
+  DDkwd__(HBASE_RANGE_PARTITIONING_PARTIAL_COLS,"ON"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
@@ -3291,8 +3295,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "OFF"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
-
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
   DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
@@ -3317,6 +3321,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
  // max size in bytes of a char or varchar column.
   DDui2__(TRAF_MAX_CHARACTER_COL_LENGTH,	"200000"),
+
+ DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
@@ -6890,6 +6896,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok  == DF_MVCC || tok == DF_SSCC)
         isValid = TRUE;
     break;
+
+    case HBASE_RANGE_PARTITIONING_PARTIAL_COLS:
+      if (tok == DF_OFF || tok == DF_MINIMUM ||
+          tok == DF_MEDIUM || tok == DF_MAXIMUM || tok == DF_ON)
+        isValid = TRUE;
 
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -228,10 +231,11 @@ short CmpSeabaseDDL::buildViewColInfo(StmtDDLCreateView * createViewParseNode,
 	}
       
       colDefArray->insert(new (STMTHEAP) ElemDDLColDef
-			  ( viewColDefArray[i]->getColumnName()
+			  ( NULL, &viewColDefArray[i]->getColumnName()
 			    , (NAType *)&valIdList[i].getType()
 			    , NULL    // default value (n/a for view def)
 			    , NULL    // col attr list (not needed)
+
 			    , STMTHEAP));
       
       if (viewColDefArray[i]->isHeadingSpecified())
@@ -722,15 +726,6 @@ void CmpSeabaseDDL::createSeabaseView(
   NAString viewText(STMTHEAP);
   buildViewText(createViewNode, viewText);
 
-  NAString newViewText(STMTHEAP);
-  for (Lng32 i = 0; i < viewText.length(); i++)
-    {
-      if (viewText.data()[i] == '\'')
-	newViewText += "''";
-      else
-	newViewText += viewText.data()[i];
-    }
-
   ElemDDLColDefArray colDefArray(STMTHEAP);
   if (buildViewColInfo(createViewNode, &colDefArray))
     {
@@ -744,7 +739,7 @@ void CmpSeabaseDDL::createSeabaseView(
   ComTdbVirtTableColumnInfo * colInfoArray = 
     new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
 
-  if (buildColInfoArray(COM_VIEW_OBJECT, &colDefArray, colInfoArray, FALSE, 0, FALSE))
+  if (buildColInfoArray(COM_VIEW_OBJECT, &colDefArray, colInfoArray, FALSE, FALSE))
     {
       deallocEHI(ehi); 
       processReturn();
@@ -836,7 +831,7 @@ void CmpSeabaseDDL::createSeabaseView(
     }
 
 
-  query = new(STMTHEAP) char[newViewText.length() + 1000];
+  query = new(STMTHEAP) char[1000];
   str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
@@ -861,7 +856,7 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
-  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, newViewText))
+  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, viewText))
     {
       deallocEHI(ehi); 
       processReturn();

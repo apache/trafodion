@@ -2,19 +2,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -2621,6 +2624,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		file_attribute_maxextent_clause
 %type <pElemDDL>  		file_attribute_uid_clause
 %type <pElemDDL>  		file_attribute_row_format_clause
+%type <pElemDDL>  		file_attribute_default_col_fam
 %type <pElemDDL>  		file_attribute_pos_clause
 %type <pElemDDL>                attribute_num_rows_clause
 %type <pElemDDL>                attribute_inmemory_options_clause
@@ -24826,7 +24830,7 @@ reset_in_column_defn :
                   }
 
 /* type pElemDDL */
-column_definition : column_name data_type optional_col_def_default_clause
+column_definition : qualified_name data_type optional_col_def_default_clause
                                 optional_column_attributes
                                 {
                                   NAType * type = $2;
@@ -24862,23 +24866,73 @@ column_definition : column_name data_type optional_col_def_default_clause
                                         }
                                     }
 
+                                  NAString * colFam = NULL;
+                                  NAString * colNam = NULL;
+                                  ShortStringSequence *strseq = $1;
+                                  Lng32 numParts = strseq->numParts();
+                                  if (CmpCommon::getDefault(TRAF_MULTI_COL_FAM) == DF_OFF)
+                                    {
+                                      if (numParts != 1)
+                                        YYERROR;
+                                      colNam = strseq->extract(0);
+                                    }
+                                  else
+                                    {
+                                      if (numParts > 2)
+                                        YYERROR;
+
+                                      if (numParts == 1)
+                                        colNam = strseq->extract(0);
+                                      else
+                                        {
+                                          colFam = strseq->extract(0);
+                                          colNam = strseq->extract(1);
+                                        }
+                                    }
+
                                   $$ = new (PARSERHEAP())
 				    ElemDDLColDef(
-						  *$1 /*column_name*/,
-						  type /*data_type*/,
-						  $3 /*optional_col_def_default_clause*/,
-						  $4 /*optional_column_attributes*/);
+                                         colFam /* column family */,
+                                         colNam /*column_name*/,
+                                         type /*data_type*/,
+                                         $3 /*optional_col_def_default_clause*/,
+                                         $4 /*optional_column_attributes*/);
                                   delete $1 /*column_name*/;
                                 }
 
-column_definition : column_name 
+column_definition : qualified_name 
                                 {
+                                  NAString * colFam = NULL;
+                                  NAString * colNam = NULL;
+                                  ShortStringSequence *strseq = $1;
+                                  Lng32 numParts = strseq->numParts();
+                                  if (CmpCommon::getDefault(TRAF_MULTI_COL_FAM) == DF_OFF)
+                                    {
+                                      if (numParts != 1)
+                                        YYERROR;
+                                      colNam = strseq->extract(0);
+                                    }
+                                  else
+                                    {
+                                      if (numParts > 2)
+                                        YYERROR;
+
+                                      if (numParts == 1)
+                                        colNam = strseq->extract(0);
+                                      else
+                                        {
+                                          colFam = strseq->extract(0);
+                                          colNam = strseq->extract(1);
+                                        }
+                                    }
+
                                   $$ = new (PARSERHEAP())
 				    ElemDDLColDef(
-						  *$1 /*column_name*/,
-						  NULL,
-						  NULL,
-						  NULL);
+                                         colFam /* column family */,
+                                         colNam /*column_name*/,
+                                          NULL,
+                                         NULL,
+                                         NULL);
                                   delete $1 /*column_name*/;
                                 }
 
@@ -25831,6 +25885,7 @@ file_attribute :        file_attribute_allocate_clause
                       | file_attribute_row_format_clause
                       | file_attribute_no_label_update_clause
                       | file_attribute_owner_clause
+                      | file_attribute_default_col_fam
 
 /* type pElemDDL */           
 file_attribute_allocate_clause : TOK_ALLOCATE unsigned_smallint
@@ -26252,6 +26307,17 @@ file_attribute_row_format_clause : TOK_ALIGNED TOK_FORMAT
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::eHBASE);
 				}
+
+/* type pElemDDL */
+file_attribute_default_col_fam : TOK_DEFAULT TOK_COLUMN TOK_FAMILY QUOTED_STRING
+                                {
+                                  if (CmpCommon::getDefault(TRAF_MULTI_COL_FAM) == DF_OFF)
+                                    {
+                                      YYERROR;
+                                    }
+
+                                  $$ = new (PARSERHEAP()) ElemDDLFileAttrColFam(*$4);
+                                }
 
 /* type pElemDDL */
 attribute_inmemory_options_clause : 

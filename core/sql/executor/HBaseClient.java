@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -74,6 +77,7 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
 
+import java.util.concurrent.ExecutionException;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -482,21 +486,30 @@ public class HBaseClient {
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            HColumnDescriptor colDesc = new 
-		HColumnDescriptor((String)tableOptions[HBASE_NAME]);
+
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
             else
                 defaultVersionsValue = DtmConst.SSCC_MAX_VERSION;
 
-            // change the descriptors based on the tableOptions; note that
-            // the tableOptions effect only the first column family, as
-            // Trafodion at present only uses one column family for its
-            // SQL columns
-            setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+            // column family names are space delimited list of names.
+            // extract all family names and add to table descriptor.
+            // All other default and specified options remain the same for all families.
+            String colFamsStr = (String)tableOptions[HBASE_NAME];
+            String[] colFamsArr = colFamsStr.split("\\s+"); 
 
-            desc.addFamily(colDesc);
+            for (int i = 0; i < colFamsArr.length; i++){            
+                String colFam = colFamsArr[i];
+
+                HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
+
+                // change the descriptors based on the tableOptions; 
+                setDescriptors(tableOptions,desc /*out*/,colDesc /*out*/, defaultVersionsValue);
+                
+                desc.addFamily(colDesc);
+            }
+
             HColumnDescriptor metaColDesc = new HColumnDescriptor(DtmConst.TRANSACTION_META_FAMILY);
             if (isMVCC)
               metaColDesc.setMaxVersions(DtmConst.MVCC_MAX_DATA_VERSION);
@@ -582,11 +595,46 @@ public class HBaseClient {
         HBaseAdmin admin = new HBaseAdmin(config);
         HTableDescriptor htblDesc = admin.getTableDescriptor(tblName.getBytes());       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
-        HColumnDescriptor colDesc = families[0];  // Trafodion keeps SQL columns only in first column family
-        int defaultVersionsValue = colDesc.getMaxVersions(); 
 
-        ChangeFlags status = 
-            setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+        String colFam = (String)tableOptions[HBASE_NAME];
+        if (colFam == null)
+            return true; // must have col fam name
+
+        // if the only option specified is col fam name and this family doesnt already
+        // exist, then add it.
+        boolean onlyColFamOptionSpecified = true;
+        for (int i = 0; (onlyColFamOptionSpecified && (i < tableOptions.length)); i++) {
+            if (i == HBASE_NAME)	
+                continue ;
+
+            if (((String)tableOptions[i]).length() != 0)
+                {
+                    onlyColFamOptionSpecified = false;
+                }
+        }
+
+        HColumnDescriptor colDesc = htblDesc.getFamily(colFam.getBytes());
+
+        ChangeFlags status = new ChangeFlags();
+        if (onlyColFamOptionSpecified) {
+            if (colDesc == null) {
+                colDesc = new HColumnDescriptor(colFam);
+                
+                htblDesc.addFamily(colDesc);
+                
+                status.setTableDescriptorChanged();
+            } else
+                return true; // col fam already exists
+        }
+        else {
+            if (colDesc == null)
+                return true; // colDesc must exist
+
+            int defaultVersionsValue = colDesc.getMaxVersions(); 
+
+            status = 
+                setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
+        }
 
         try {
             if (transID != 0) {
@@ -1416,6 +1464,99 @@ public class HBaseClient {
                         throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       return htc.startGet(transID, rowIDs, columns, timestamp);
+  }
+
+  public int startGet(long jniObject, String tblName, boolean useTRex, long transID, short rowIDLen, Object rowIDs,
+                        Object[] columns)
+                        throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      return htc.getRows(transID, rowIDLen, rowIDs, columns);
+  }
+
+  public boolean insertRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
+                         Object row,
+                         long timestamp,
+                         boolean checkAndPut,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.putRow(transID, rowID, row, null, null,
+                                checkAndPut, asyncOperation);
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean checkAndUpdateRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
+                         Object columnsToUpdate,
+                         byte[] columnToCheck, byte[] columnValToCheck,
+                         long timestamp,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+      boolean checkAndPut = true;
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
+                                checkAndPut, asyncOperation);
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean insertRows(long jniObject, String tblName, boolean useTRex, long transID, 
+			 short rowIDLen,
+                         Object rowIDs,
+                         Object rows,
+                         long timestamp,
+                         boolean autoFlush,
+                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.putRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush, asyncOperation);
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean deleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
+                                 byte[] rowID,
+                                 Object[] columns,
+                                 long timestamp, boolean asyncOperation) throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp);
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean deleteRows(long jniObject, String tblName, boolean useTRex, long transID, short rowIDLen, Object rowIDs,
+                      long timestamp, 
+                      boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.deleteRows(transID, rowIDLen, rowIDs, timestamp);
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
+         releaseHTableClient(htc);
+      return ret;
+  }
+
+  public boolean checkAndDeleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
+                                 byte[] rowID,
+                                 byte[] columnToCheck, byte[] colValToCheck,
+                                 long timestamp, boolean asyncOperation) throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp);
+      if (asyncOperation == true)
+         htc.setJavaObject(jniObject);
+      else
+         releaseHTableClient(htc);
+      return ret;
   }
 
   public boolean  createCounterTable(String tabName,  String famName) throws IOException, MasterNotRunningException

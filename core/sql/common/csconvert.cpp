@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -1177,6 +1180,27 @@ int lightValidateUTF8StrAndPad(char *bufr,
   return trunc;
 }
 #endif /* Not currently called anywhere.*/
+
+int fillWithMinUTF8Chars(char *bufr,
+                         int in_len,
+                         int max_chars)
+{
+  int i;
+
+  if (max_chars <= 0)
+    max_chars = in_len;
+
+  // fill with minimum characters (NUL), up to the
+  // limit of characters
+  memset(bufr, 0, max_chars);
+
+  // fill up the remainder with blanks, which is the
+  // convention for UTF-8 strings with a character limit
+  if (in_len > max_chars)
+    memset(&bufr[max_chars], ' ', in_len-max_chars);
+
+  return max_chars;
+}
 
 int fillWithMaxUTF8Chars(char *bufr,
                          int in_len,

@@ -1,21 +1,23 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
 ##############################################################
 # Set / Calculate standard environmental values
@@ -115,7 +117,10 @@ fi
 
 
 export SQ_PDSH=/usr/bin/pdsh
+export PDSH="$SQ_PDSH -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
 export SQ_PDCP=/usr/bin/pdcp
+export PDCP="$SQ_PDCP -R ssh"
 export TAR_DOWNLOAD_ROOT=$HOME/sqllogs
 export CACERTS_DIR=$HOME/cacerts
 
@@ -123,8 +128,11 @@ export CACERTS_DIR=$HOME/cacerts
 # Examples:
 # Red Hat Enterprise Linux Server release 6.3 (Santiago)
 # CentOS release 6.5 (Final)
-export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-release)
-
+if [[ "$SUSE_LINUX" == "false" ]]; then
+   export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-release)
+else
+   export RH_MAJ_VERS=6
+fi
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
@@ -286,10 +294,55 @@ elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
   export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
   export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
 
+elif [[ -d /opt/cloudera/parcels/CDH ]]; then
+  # we are on a cluster with Cloudera parcels installed
+  # -------------------------------------------
+
+  # native library directories and include directories
+  export HADOOP_LIB_DIR=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native
+  export HADOOP_INC_DIR=/opt/cloudera/parcels/CDH/include
+
+  ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
+  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
+  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+
+
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
+
+  # directories with jar files and list of jar files
+  # (could try to reduce the number of jars in the classpath)
+  export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
+                          /opt/cloudera/parcels/CDH/lib/hadoop/lib"
+  export HADOOP_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop/client/hadoop-hdfs-*.jar"
+  export HBASE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hbase/hbase-*-security.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-client.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-common.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-server.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-examples.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-protocol.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/zookeeper.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/$protobuf-*.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/snappy-java-*.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/high-scale-lib-*.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-hadoop-compat.jar "
+  export HIVE_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hive/lib"
+  export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
+
+  # suffixes to suppress in the classpath (set this to ---none--- to add all files)
+  export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"
+
+  # Configuration directories
+
+  export HADOOP_CNF_DIR=/etc/hadoop/conf
+  export HBASE_CNF_DIR=/etc/hbase/conf
+  export HIVE_CNF_DIR=/etc/hive/conf
+
 elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   # we are on a cluster with Cloudera installed
   # -------------------------------------------
-
+  
   # native library directories and include directories
   export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
   export HADOOP_INC_DIR=/usr/include
@@ -297,7 +350,7 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
- 
+
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
@@ -313,7 +366,7 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
                           /usr/lib/hbase/hbase-server.jar
                           /usr/lib/hbase/hbase-examples.jar
                           /usr/lib/hbase/hbase-protocol.jar
-			  /usr/lib/hbase/lib/htrace-core.jar
+                          /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar
                          /usr/lib/hbase/lib/snappy-java-*.jar

@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -70,6 +73,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      NABoolean isUnique,
      NABoolean hasSyskey,
      NABoolean alignedFormat,
+     NAString &defaultColFam,
      const NAColumnArray &baseTableNAColArray,
      const NAColumnArray &baseTableKeyArr,
      Lng32 &keyColCount,
@@ -196,8 +200,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
        }
 
      colInfoArray[i].hbaseColFam = 
-	new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+       new(heap) char[strlen(defaultColFam.data()) +1];
+     strcpy((char*)colInfoArray[i].hbaseColFam, defaultColFam.data());
 
       char idxNumStr[40];
       idxNumStr[0] = '@';
@@ -221,8 +225,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 
      keyInfoArray[i].nonKeyCol = 0;
 
-     keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
-     strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+     keyInfoArray[i].hbaseColFam = new(heap) char[strlen(defaultColFam.data()) + 1];
+     strcpy((char*)keyInfoArray[i].hbaseColFam, defaultColFam.data());
      
      char qualNumStr[40];
      str_sprintf(qualNumStr, "@%d", keyInfoArray[i].keySeqNum);
@@ -337,8 +341,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 	}
       
      colInfoArray[i].hbaseColFam = 
-       new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+       new(heap) char[strlen(defaultColFam.data()) +1];
+     strcpy((char*)colInfoArray[i].hbaseColFam, defaultColFam.data());
      
       char idxNumStr[40];
       idxNumStr[0] = '@';
@@ -366,8 +370,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
         keyLength += naType->getEncodedKeyLength();
       }
 
-      keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
-      strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+      keyInfoArray[i].hbaseColFam = new(heap) char[strlen(defaultColFam.data()) + 1];
+      strcpy((char*)keyInfoArray[i].hbaseColFam, defaultColFam);
       
       char qualNumStr[40];
       str_sprintf(qualNumStr, "@%d", keyInfoArray[i].keySeqNum);
@@ -547,6 +551,16 @@ void CmpSeabaseDDL::createSeabaseIndex(
       return;
     }
 
+  NAString &indexColFam = naTable->defaultColFam();
+  NAString trafColFam;
+  if (indexColFam != SEABASE_DEFAULT_COL_FAMILY)
+    {
+      CollIndex idx = naTable->allColFams().index(indexColFam);
+      genTrafColFam(idx, trafColFam);
+    }
+  else
+    trafColFam = indexColFam;
+
   // Verify that current user has authority to create an index
   // The user must own the base table or have the ALTER_TABLE privilege or
   // have the CREATE_INDEX privilege
@@ -600,6 +614,16 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   NABoolean alignedFormat = FALSE;
+  if (CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON) {
+     if (naTable->hasSerializedColumn())
+        alignedFormat = FALSE;
+     else
+     if (isSeabaseReservedSchema(tableName))
+        alignedFormat = FALSE;
+     else
+        alignedFormat = TRUE;
+  }
+  else
   if (naTable->isSQLMXAlignedTable())
     alignedFormat = TRUE;
 
@@ -697,7 +721,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
     // verify base table is salted
     if (naTable->hasSaltedColumn())
     {
-      createIndexNode->getSaltOptions()->setNumPartns(naTable->numSaltPartns());
+      createIndexNode->getSaltOptions()->setNumPartns(nafs->numSaltPartns());
       NAString saltColName;
       for (CollIndex c=0; c<baseTableKeyArr.entries(); c++)
         if (baseTableKeyArr[c]->isSaltColumn())
@@ -713,7 +737,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
       //SALT column will be the first column in the index
       indexColRefArray.insertAt(numPrefixColumns, saltColRef);
       numPrefixColumns++;
-      numSplits = naTable->numSaltPartns() - 1;
+      numSplits = nafs->numSaltPartns() - 1;
     }
     else
     {
@@ -775,6 +799,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 				     createIndexNode->isUniqueSpecified(),
 				     naTable->getClusteringIndex()->hasSyskey(),
                                      alignedFormat,
+                                     trafColFam,
 				     naColArray,
 				     baseTableKeyArr,
 				     keyColCount,
@@ -803,8 +828,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
                                                 colInfoArray,
                                                 keyColCount) ;
 
-    if (createEncodedKeysBuffer(encodedKeysBuffer,
-                                colDescs, keyDescs, numSplits, 
+    if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                                numSplits/*out*/,
+                                colDescs, keyDescs,
+                                nafs->numSaltPartns(), numSplits, NULL,
                                 keyColCount, keyLength, TRUE))
       {
         deallocEHI(ehi);
@@ -832,7 +859,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo->validDef = 0;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
-  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? COM_ALIGNED_FORMAT_TYPE : COM_HBASE_FORMAT_TYPE);
 
   ComTdbVirtTableIndexInfo * ii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
   ii->baseTableName = (char*)extTableName.data();
@@ -890,8 +917,9 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
-  if (createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, NULL, 
-                       NULL, &hbaseCreateOptions, numSplits, keyLength, 
+  if (createHbaseTable(ehi, &hbaseIndex, trafColFam.data(),
+                       &hbaseCreateOptions,
+                       numSplits, keyLength, 
                        encodedKeysBuffer) == -1)
     {
       goto label_error_drop_index;
@@ -2049,11 +2077,14 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
 
   // tell HBase to change the options
 
+  NAList<NAString> nal;
+  nal.insert(naTable->defaultColFam());
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
   result = alterHbaseTable(ehi,
                            &hbaseTable,
+                           nal,
                            &(edhbo->getHbaseOptions()));
   if (result < 0)
     {

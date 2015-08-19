@@ -1,23 +1,24 @@
 #!/bin/bash
-
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
-
 #
 # This script will configure HBase with HBase-trx
 # and co-processors needed for Trafodion.  It uses
@@ -28,6 +29,13 @@
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
 
+export PDSH="pdsh -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
+export PDCP="pdcp -R ssh"
+
+TRAF_PDCP="$PDCP $MY_NODES"
+TRAF_PDSH="$PDSH $MY_NODES $PDSH_SSH_CMD"
+
 #=====================================
 # copy Trafodion hbase trx jar to /usr/lib/hbase/lib
 
@@ -37,8 +45,11 @@ PORT=`echo $URL | sed 's/.*://'`
 echo $PORT 
 AMBARI_HOST=$(echo $URL | sed 's@:.*@@')
 echo $AMBARI_HOST
+echo "export AMBARI_HOST=\"$AMBARI_HOST\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
 
-# determine java version and choose corresponding jar files
+#determine java version and choose corresponding jar files
 echo "***INFO: Detected JAVA version $JAVA_VERSION"
 if [ "$JAVA_VERSION" == "1.6" ]; then
    echo "***ERROR: JAVA 1.6 not supported for Trafodion HBase 0.98"
@@ -66,87 +77,93 @@ fi
 # if more than one node then copy to all nodes
 echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
-    pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
-    pdsh $MY_NODES sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/hbase-trx* 2>/dev/null
-    pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
-    pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
-    pdsh $MY_NODES sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/trafodion* 2>/dev/null
-    pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
-    pdsh $MY_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf  $HADOOP_PATH/hbase-trx* 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/hbase-trx* 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/trafodion* 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
+    $PDSH $MY_NODES $PDSH_SSH_CMD mkdir -p $LOCAL_WORKDIR 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD mkdir -p $LOCAL_WORKDIR 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
-    pdcp $MY_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
+    $PDCP $MY_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
 
-    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-       pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
-       pdsh $MY_NODES sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
-    else
-       pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/hdp/current/hbase-regionserver/lib
-       pdsh $MY_NODES sudo chmod 644 /usr/hdp/current/hbase-regionserver/lib/$hbase_trx_jar
-    fi
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
 
-    pdsh $MY_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
 else
-    sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
-    sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
-    sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
-    sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
+    for node in $HADOOP_NODES
+    do 
+    ssh -q -n $node sudo rm -rf $HADOOP_PATH/hbase-trx* 2>/dev/null
+    ssh -q -n $node sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    ssh -q -n $node sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
+    ssh -q -n $node sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    ssh -q -n $node sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
+    ssh -q -n $node sudo mkdir -p $TRAF_WORKDIR 2>/dev/null
+    ssh -q -n $node sudo chmod 777 $TRAF_WORKDIR
+    scp -q $UNTAR_DIR/export/lib/$hbase_trx_jar $(whoami)@$node:$TRAF_WORKDIR
 
-    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then 
-       sudo cp $UNTAR_DIR/export/lib/$hbase_trx_jar /usr/lib/hbase/lib
-       sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
-    else
-       sudo cp $UNTAR_DIR/export/lib/$hbase_trx_jar /usr/hdp/current/hbase-regionserver/lib
-       sudo chmod 644 /usr/hdp/current/hbase-regionserver/lib/$hbase_trx_jar
-    fi
+    ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+    ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
+    done
 fi
+
+
+#Copy hbase-site.xml file
+
+scp -q $(whoami)@$AMBARI_HOST:/etc/hbase/conf/hbase-site.xml $TRAF_WORKDIR
+sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
 #=====================================
 # create new directories for bulkload and lobs if not already there
 rm $LOCAL_WORKDIR/traf_temp_output 2>/dev/null
 
-sudo su $HDFS_USER --command "hadoop fs -mkdir /hbase-staging" 2> $LOCAL_WORKDIR/traf_temp_output
+ssh -q -n $AMBARI_HOST 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
-   dir_exists=$(grep "File exists" $LOCAL_WORKDIR/traf_temp_output | wc -l)
+   dir_exists=$(ssh -q -n $AMBARI_HOST 'grep "File exists" $HOME/traf_temp_output | wc -l')
    if [ $dir_exists -eq 0 ]; then
       echo "***ERROR: 'hadoop fs -mkdir /hbase-staging' command failed"
-      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
+      echo "***ERROR: $(ssh -q -n $AMBARI_HOST cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "hadoop fs -chown -R $HBASE_USER:$HBASE_GROUP /hbase-staging"
-sudo su $HDFS_USER --command "hadoop fs -mkdir /bulkload" 2> $LOCAL_WORKDIR/traf_temp_output
+ssh -q -n $AMBARI_HOST 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$HBASE_USER"':'"$HBASE_GROUP" '/hbase-staging"'
+ssh -q -n $AMBARI_HOST 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
-   dir_exists=$(grep "File exists" $LOCAL_WORKDIR/traf_temp_output | wc -l)
+   dir_exists=$(ssh -q -n $AMBARI_HOST 'grep "File exists" $HOME/traf_temp_output | wc -l')
    if [ $dir_exists -eq 0 ]; then
       echo "***ERROR: 'hadoop fs -mkdir /bulkload' command failed"
-      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
+      echo "***ERROR: $(ssh -q -n $AMBARI_HOST cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"
+ssh -q -n $AMBARI_HOST 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /bulkload"'
 
 # Create lobs directory
-sudo su hdfs --command "hadoop fs -mkdir /lobs" 2> $LOCAL_WORKDIR/traf_temp_output
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
-   dir_exists=$(grep "File exists" $LOCAL_WORKDIR/traf_temp_output | wc -l)
+   dir_exists=$(ssh -q -n $AMBARI_HOST 'grep "File exists" $HOME/traf_temp_output | wc -l')
    if [ $dir_exists -eq 0 ]; then
       echo "***ERROR: 'hadoop fs -mkdir /lobs' command failed"
-      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
+      echo "***ERROR: $(ssh -q -n $AMBARI_HOST cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
-sudo su hdfs --command "hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /lobs"'
 
+ssh -q -n $AMBARI_HOST 'rm -rf $HOME/traf_temp_output'
 #=====================================
 # change the hbase configuration using Ambari's script
 
 AMBARI_DIR=/var/lib/ambari-server/resources/scripts
 cd $LOCAL_WORKDIR
 
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.master.distributed.log.splitting false
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.master.distributed.log.splitting false'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.master.distributed.log.splitting through Ambari's configs.sh script."
     echo "***ERROR: Check if Ambari URL is correct, may need to enter external IP address."
@@ -156,61 +173,61 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.coprocessor.region.classes "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.coprocessor.region.classes "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.coprocessor.region.classes through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.hregion.impl org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.hregion.impl org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.hregion.impl through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.regionserver.region.split.policy org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.regionserver.region.split.policy org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.regionserver.region.split.policy through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2 
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.snapshot.enabled true
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.enabled true'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.enabled through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.bulkload.staging.dir /hbase-staging
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.bulkload.staging.dir /hbase-staging'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.bulkload.staging.dir through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.regionserver.region.transactional.tlog true
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.regionserver.region.transactional.tlog true'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.regionserver.region.transactional.tlog through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.snapshot.master.timeoutMillis 600000
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.master.timeoutMillis 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.master.timeoutMillis through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.snapshot.region.timeout 600000
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.region.timeout 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.region.timeout through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hdfs-site dfs.namenode.acls.enabled true
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hdfs-site dfs.namenode.acls.enabled true'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify dfs.namenode.acls.enabled through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.client.scanner.timeout.period 600000
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.client.scanner.timeout.period 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.client.scanner.timeout.period through Ambari's configs.sh script."
     exit -1
@@ -220,7 +237,7 @@ echo
 
 #Change Zookeeeper settings
 
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME zoo.cfg maxClientCnxns 0
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'zoo.cfg maxClientCnxns 0'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify maxClientCnxns through Ambari's configs.sh script."
     exit -1
@@ -483,27 +500,27 @@ echo "***INFO: HBase restart completed"
 # NOTE: These command must be done AFTER acls are 
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
-sudo su hdfs --command "hdfs dfs -mkdir -p /apps/hbase/data/archive"
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hdfs dfs -mkdir -p /apps/hbase/data/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -mkdir -p /apps/hbase/data/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -chown hbase:hdfs /apps/hbase/data/archive"
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hdfs dfs -chown hbase:hdfs /apps/hbase/data/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -chown hbase:hdfs /apps/hbase/data/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /apps/hbase/data/archive"
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hdfs dfs -setfacl -R -m user:'"$TRAF_USER"':rwx /apps/hbase/data/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /apps/hbase/data/archive"
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:'"$TRAF_USER"':rwx /apps/hbase/data/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive"
+ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
    exit -1
@@ -511,6 +528,6 @@ fi
 
 
 # clean up files generated by Ambari's config.sh script
-rm $LOCAL_WORKDIR/doSet_version*
+ssh -q -n $AMBARI_HOST 'rm $HOME/doSet_version*'
 
 exit

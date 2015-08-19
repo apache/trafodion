@@ -1,0 +1,116 @@
+#!/bin/bash
+
+source /etc/trafodion/trafodion_config
+TRAF_CONFIG=/etc/trafodion/trafodion_config
+
+
+echo "***INFO: Getting list of all $HADOOP_TYPE nodes"
+
+curlRC=0
+if [[ $HADOOP_TYPE == "cloudera" ]]; then
+   curl -su $ADMIN:$PASSWORD http://$URL/api/v6/cm/deployment > tempFile
+   curlRC=$?
+   numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
+   grep -r "hostname" tempFile > tempFile2
+
+   if [[ -d /opt/cloudera/parcels/CDH ]]; then
+      HADOOP_PATH="/opt/cloudera/parcles/CDH/lib/hbase/lib"
+   else
+      HADOOP_PATH="/usr/lib/hbase/lib"
+   fi
+fi
+
+if [[ $HADOOP_TYPE == "hortonworks" ]]; then
+   curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
+   curlRC=$?
+   numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
+   grep -r "host_name" tempFile > tempFile2
+
+   if [[ -d /usr/lib/hbase/lib ]]; then
+      HADOOP_PATH="/usr/lib/hbase/lib"
+   else
+      HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
+   fi
+fi
+
+if [ $curlRC != 0 ]; then
+   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
+   echo "***ERROR: curl command failed."
+   exit -1
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE tempFile | grep Error | wc -l)
+
+if [ $curl_error -ne 0 ]; then
+   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE"
+   cat tempFile
+   exit -1
+fi
+
+#Get list of all hadoop nodes
+HADOOP_NODES=""
+MY_HADOOP_NODES=""
+while read line
+do
+   hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+   HADOOP_NODES="$HADOOP_NODES $hostName"
+   MY_HADOOP_NODES="$MY_HADOOP_NODES -w $hostName"
+done < tempFile2
+rm tempFile
+rm tempFile2
+
+if [[ -z $HADOOP_NODES ]]; then
+   echo "***ERROR: List of $HADOOP_TYPE nodes not found."
+   echo "***ERROR: Check that $HADOOP_TYPE is up and running."
+   echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
+   exit -1
+fi
+
+echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_NODES\=/d' $TRAF_CONFIG
+echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HADOOP_NODES\=/d' $TRAF_CONFIG
+echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
+echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+
+hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
+
+for node in $HADOOP_NODES
+do
+   ssh -q -n $node echo "***INFO: Testing ssh on $node"
+   if [[ $? -ne "0" ]]; then
+      errorFound=1
+      ERROR_NODES="$ERROR_NODES $node"
+   fi
+done
+
+if [[ $errorFound == "1" ]]; then
+   echo "***ERROR: Could not ssh to $ERROR_NODES."
+   echo "***ERROR: Check permissions and known hosts files."
+   exit -1
+fi
+
+for node in $HADOOP_NODES
+do
+   ssh -q -n $node sudo echo "***INFO: Testing sudo access on $node"
+   if [ $? -ne "0" ]; then
+      error=1
+      ERROR_NODES="$ERROR_NODES $newNode"
+   fi
+done
+
+if [[ $error == "1" ]]; then
+   echo "***ERROR: $ERROR_NODES does not have sudo access."
+   echo "***ERROR: Must have sudo access on all nodes."
+   exit -1
+fi
+

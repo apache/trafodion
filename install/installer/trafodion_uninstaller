@@ -1,19 +1,22 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -80,6 +83,10 @@ fi
 timestamp=$(date +%F-%H-%M-%S)
 logsdir="/var/log/trafodion"
 logfile="$logsdir/uninstall_$timestamp.log"
+export PDSH="pdsh -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
+export PDCP="pdcp -R ssh"
+
 
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
@@ -87,7 +94,7 @@ else
     # use the -S option to cause pdsh to return largest of
     # the remote command return values so we can tell if one
     # or more of the remote commands failed
-    TRAF_PDSH="pdsh -S $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
 fi
 
 #Check sudo access which is required for "--all" option
@@ -108,17 +115,15 @@ sudo su $TRAF_USER --login --command "vncserver -kill :1"
 echo "***INFO: restoring linux system files that were changed"
 echo "***INFO: removing $HBASE_TRX from Hadoop directories"
 if [ $node_count -eq 1 ]; then
-   sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
-   sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
+   sudo rm /etc/security/limits.d/trafodion.conf 2>/dev/null
    sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
    sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null
    sudo rm /usr/hdp/current/hbase-regionserver/lib/$HBASE_TRX 2>/dev/null
 else
-   pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
-   pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
-   pdsh $MY_NODES "sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null"
-   pdsh $MY_NODES "sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null"
-   pdsh $MY_NODES "sudo rm /usr/hdp/current/hbase-regionserver/lib/$HBASE_TRX 2>/dev/null" 
+   $TRAF_PDSH "sudo rm /etc/security/limits.d/trafodion.conf 2>/dev/null"
+   $TRAF_PDSH "sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null"
+   $TRAF_PDSH "sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null"
+   $TRAF_PDSH "sudo rm /usr/hdp/current/hbase-regionserver/lib/$HBASE_TRX 2>/dev/null" 
 fi
 
 echo "***INFO remove the Trafodion userid and group"

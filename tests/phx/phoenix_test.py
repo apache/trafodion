@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -440,7 +443,7 @@ def prog_parse_args():
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
     DEFAULT_RESULTS_DIR = os.path.join(gvars.my_ROOT, 'results')
-    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/jdbcT4.jar'
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/jdbcT4.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
 
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -478,7 +481,7 @@ def prog_parse_args():
         optparse.make_option('', '--jdbccp', action='store', type='string',
                              dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
                              help="jdbc classpath, defaulted to " +
-                                  "'${project.basedir}/lib/hp/tr/jdbcT4.jar', \t\t "
+                                  "'${project.basedir}/lib/jdbcT4.jar', \t\t "
                                   "<test_root> is where this program is"),
         optparse.make_option('', '--resultdir', action='store', type='string',
                              dest='resultdir', default=DEFAULT_RESULTS_DIR,
@@ -828,7 +831,7 @@ else:
 
     # generate command to run tests without Maven
     gvars.my_RUN_CMD = (os.path.join(ArgList._javahome, 'bin/java') + ' -cp ' + myclasspath +
-                        ' ' + myoptions + ' -Duser.timezone=GMT -Dhpjdbc.properties=' +
+                        ' ' + myoptions + ' -Duser.timezone=GMT -Dtrafjdbc.properties=' +
                         ArgList._prop_file + ' org.junit.runner.JUnitCore ' +
                         'test.java.com.hp.phoenix.end2end.')
 

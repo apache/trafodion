@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -8251,6 +8254,8 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
   ExUDRBaseStats *udrBaseStats;
   ExMasterStats *masterStats;
   ExProcessStats *processStats;
+  ExHbaseAccessStats *hbaseAccessStats;
+  ExHdfsScanStats *hdfsScanStats;
   NABoolean retcode = FALSE;
   ExOperStats::StatType statType;
   ExOperStats *stat1;
@@ -8405,6 +8410,26 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
             retcode = TRUE;
           }
           break;
+        case ExOperStats::HDFSSCAN_STATS:
+          if (detailLevel_ == stat->getTdbId())
+          {
+            hdfsScanStats = new (getHeap()) ExHdfsScanStats(getHeap());
+            hdfsScanStats->setCollectStatsType(getCollectStatsType());
+            hdfsScanStats->copyContents((ExHdfsScanStats *)stat);
+            insert(hdfsScanStats);
+            retcode = TRUE;
+          }
+          break;
+        case ExOperStats::HBASE_ACCESS_STATS:
+          if (detailLevel_ == stat->getTdbId())
+          {
+            hbaseAccessStats = new (getHeap()) ExHbaseAccessStats(getHeap());
+            hbaseAccessStats->setCollectStatsType(getCollectStatsType());
+            hbaseAccessStats->copyContents((ExHbaseAccessStats *)stat);
+            insert(hbaseAccessStats);
+            retcode = TRUE;
+          }
+          break; 
         default:
           break;
         } // StatType case
@@ -10663,6 +10688,27 @@ NABoolean ExMasterStats::filterForCpuStats(short subReqType,
       }
    }
    else
+   if (subReqType == SQLCLI_STATS_REQ_ACTIVE_QUERIES)
+   {
+      if (stmtState_ != Statement::PROCESS_ENDED_)
+      {
+         if (exeStartTime_ != -1) {
+            if (exeEndTime_ != -1)
+               tsToCompare = exeEndTime_;
+            else
+               tsToCompare = exeStartTime_;
+            lastActivity_ = (Int32)((currTimestamp-tsToCompare) / (Int64)1000000);
+            if (exeEndTime_ == -1)
+               return TRUE;
+            else
+            if (lastActivity_ <= etTimeInSecs) {
+               lastActivity_ = -lastActivity_;
+               retcode = TRUE;
+            }
+         }
+      }
+   }
+   else
    if (subReqType == SQLCLI_STATS_REQ_QUERIES_IN_SQL)
    {
       if (exeStartTime_ != -1 && exeEndTime_ == -1 && isBlocking_)
@@ -10903,6 +10949,15 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
     }
     else  
+    if (strncasecmp(ptr, "ACTIVE_QUERIES", 14) == 0) 
+    {
+      ptr = str_tok(NULL, ',', &internal);
+      etTemp = ptr;
+      etOffender = TRUE; 
+      *subReqType = (short)SQLCLI_STATS_REQ_ACTIVE_QUERIES;
+      retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
+    }
+    else	
     if (strncasecmp(ptr, "DEAD_QUERIES", 12) == 0) 
     {
       ptr = str_tok(NULL, ',', &internal);

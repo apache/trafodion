@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -361,6 +364,17 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
           size_t pos = key_nodeName->index('.');
           if (pos && pos != NA_NPOS)
             key_nodeName->remove(pos);
+#ifdef _DEBUG
+          else {
+             // The node names for virtual nodes seen with workstations are of
+             // format <nodeName>:0, <nodeName>:1 etc. In debug mode, we work with
+             // such node names by removing all substrings starting at ':' and 
+             // insert the node name into the nodeIdToNodeNameMap_.
+             pos = key_nodeName->index(':');
+             if (pos && pos != NA_NPOS)
+               key_nodeName->remove(pos);
+          }
+#endif
 
           Int32 *val_nodeId = new Int32(nodeInfo[i].nid);
           nodeNameToNodeIdMap_->insert(key_nodeName, val_nodeId);

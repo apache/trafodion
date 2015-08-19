@@ -599,7 +599,7 @@ Administrator</guilabel>.</para></listitem>
 >) and an optional description, and click <guibutton>Next</guibutton
 >.</para></step>
 <step><para>Enter the IP address or host name for the database platform.
-Enter the port number<phrase> as 37800</phrase>. Leave the defaults
+Enter the port number<phrase> as 23400</phrase>. Leave the defaults
 as is, and click <guibutton>Next</guibutton>.</para></step>
 <step><para>Enter the schema name. The default schema name is <phrase
 >SEABASE</phrase>. Click <guibutton>Next</guibutton>.</para></step>
@@ -702,7 +702,7 @@ box appears, prompting you to create a new data source.</para>
 <step><para>Enter the name of the data source, <literal>Default_DataSource</literal
 >, and click <guibutton>Next</guibutton> to continue.</para></step>
 <step><para>Enter the IP address and port number of the Trafodion
-system to which will be connecting. The port number must be 37800.
+system to which will be connecting. The port number must be 23400.
 Click <guibutton>Next</guibutton> to continue.</para></step>
 <step><para>Select the default schema. If you do not select a schema,
 the default is USR. Click <guibutton>Next</guibutton> to continue.</para>
@@ -1108,7 +1108,7 @@ Catalog                     = TRAFODION
 Schema                      = SEABASE
 DataLang                    = 0
 FetchBufferSize             = SYSTEM_DEFAULT
-<emphasis role="bold">Server                      = TCP:1.2.3.4:37800</emphasis
+<emphasis role="bold">Server                      = TCP:1.2.3.4:23400</emphasis
 >
 SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
 SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
@@ -1162,7 +1162,7 @@ Catalog                     = TRAFODION
 Schema                      = SEABASE
 DataLang                    = 0
 FetchBufferSize             = SYSTEM_DEFAULT
-<emphasis role="bold">Server                      = TCP:1.2.3.4:37800</emphasis
+<emphasis role="bold">Server                      = TCP:1.2.3.4:23400</emphasis
 >
 SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
 SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
@@ -1655,7 +1655,7 @@ be accessing the database.</para></listitem>
 <para><replaceable>host-name</replaceable> is the IP address or host
 name of the database platform, and <replaceable>port-number</replaceable
 > is the location where the <phrase>Trafodion Database Connectivity
-Service (DCS)</phrase> is running<phrase>, which is 37800 by default</phrase
+Service (DCS)</phrase> is running<phrase>, which is 23400 by default</phrase
 >.</para>
 </listitem>
 </itemizedlist>
@@ -2530,8 +2530,8 @@ Trafodion Query Workbench.</para>
 >workbench_config.xml</filename>, in the <filename class="directory"
 >~/workbench/etc/</filename> folder, and set the <literal>jdbcURL</literal
 > property to match your system settings. Make sure that the value
-“<literal>localhost:37800</literal>” matches your Trafodion system.</para>
-<screen>&lt;jdbcUrl>jdbc:hpt4jdbc://<emphasis role="bold">localhost:37800</emphasis
+“<literal>localhost:23400</literal>” matches your Trafodion system.</para>
+<screen>&lt;jdbcUrl>jdbc:hpt4jdbc://<emphasis role="bold">localhost:23400</emphasis
 >/:&lt;/jdbcUrl></screen>
 </step>
 <step><para>The jetty webserver is set to listen on port 9080. You
@@ -2747,7 +2747,7 @@ fileref="img/DbVisualizer_Driver_Manager.png"/></imageobject>
 <listitem><para>Use the Open File icon and locate the Trafodion JDBC
 Type 4 Driver.</para></listitem>
 <listitem><para>Use the JDBC URL format:</para><para><literal>jdbc:t4jdbc://<replaceable
->host-name or ip-address</replaceable>:37800/:</literal></para>
+>host-name or ip-address</replaceable>:23400/:</literal></para>
 </listitem>
 </itemizedlist>
 </section>
@@ -2756,7 +2756,7 @@ Type 4 Driver.</para></listitem>
 <para>Create a new connection by selecting the Trafodion JDBC Type
 4 Driver and filling in the connection parameters. Edit the database
 URL to match your Trafodion system’s host name and port number: <literal
->jdbc:t4jdbc://<replaceable>host-name or ip-address</replaceable>:37800/:</literal
+>jdbc:t4jdbc://<replaceable>host-name or ip-address</replaceable>:23400/:</literal
 ></para>
 <informalfigure>
 <mediaobject><imageobject><imagedata contentwidth="6.0in"
@@ -2822,7 +2822,7 @@ fileref="img/Add_Driver_SQuirreL.png"/></imageobject></mediaobject>
 <itemizedlist>
 <listitem><para>Name: <literal>Trafodion</literal></para></listitem>
 <listitem><para>Example URL: <literal>jdbc:t4jdbc://<replaceable>host-name
-or ip-address</replaceable>:37800/:</literal></para></listitem>
+or ip-address</replaceable>:23400/:</literal></para></listitem>
 </itemizedlist>
 </listitem>
 </itemizedlist>
@@ -2838,7 +2838,7 @@ fileref="img/Add_Alias_SQuirreL.png"/></imageobject></mediaobject>
 <itemizedlist>
 <listitem><para>Edit the connection URL to match your Trafodion system's
 host name and port number: <literal>jdbc:t4jdbc://<replaceable>host-name
-or ip-address</replaceable>:37800/:</literal></para></listitem>
+or ip-address</replaceable>:23400/:</literal></para></listitem>
 <listitem><para>Click on the <guibutton>Properties</guibutton> button
 for the alias.</para></listitem>
 <listitem><para>In the Schemas tab, select the option <guilabel>Load

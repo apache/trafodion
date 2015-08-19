@@ -2,21 +2,25 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
+
 
 # This script adds a userid and configures it for Trafodion
 
@@ -24,6 +28,11 @@
 # Default values
 typeset TRAF_GROUP="trafodion"
 typeset QPIDPORT="65500"
+
+export PDSH="pdsh -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
+export PDCP="pdcp -R ssh"
+
 #=========================================
 # get the default $HOME directory for this system
 if [[ $HOME_DIR == "/home" ]]; then
@@ -48,13 +57,16 @@ if [ $? -ne 0 ]; then
 fi
 
 # create MY_NODES (used for pdsh/pdcp) from NODE_LIST
-
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
+    TRAF_PDCP=""
 else
-    TRAF_PDSH="pdsh -S $MY_NODES"
+    # use the -S option to cause pdsh to return largest of
+    # the remote command return values so we can tell if one
+    # or more of the remote commands failed
+    TRAF_PDSH="pdsh -R exec $MY_NODES ssh -q -n %h"
+    TRAF_PDCP="pdcp -R ssh $MY_NODES"
 fi
-
 #==============================
 # Find an unused uid and gid on all nodes for the Trafodion userid.
 # Need to make sure the uid and gid are free on all nodes in the cluster,
@@ -62,7 +74,12 @@ fi
 # unused on another node.
 
 # Create Trafodion group if there is not one already
-traf_gid=$(cat /etc/group | grep $TRAF_GROUP | sed -e 's@^.*:x:\([0-9]*\):.*@\1@'| grep --max-count=1 -E "[0-9]")
+if [[ "$SUSE_LINUX" == "true" ]]; then
+   traf_gid=$(cat /etc/group | grep $TRAF_GROUP | sed -e 's@^.*:!:\([0-9]*\):.*@\1@'| grep --max-count=1 -E "[0-9]")
+else
+   traf_gid=$(cat /etc/group | grep $TRAF_GROUP | sed -e 's@^.*:x:\([0-9]*\):.*@\1@'| grep --max-count=1 -E "[0-9]")
+fi
+
 if [ -z "$traf_gid" ]; then
 
     # Trafodion group does not exist need to find an unused gid and create it
@@ -94,7 +111,6 @@ else
         fi
     fi
 fi
-
 #=================================================
 # Create Trafodion user, if not already created
 found=1
@@ -116,7 +132,7 @@ $TRAF_PDSH sudo mkdir -p $default_home
 userid_already_exists="N"
 $TRAF_PDSH sudo /usr/sbin/useradd \
     --shell /bin/bash \
-    --home $TRAF_USER_DIR \
+    --home $TRAF_USER_DIR -m \
     --gid $traf_gid \
     --password "$(openssl passwd $TRAF_USER_PASSWORD)" \
     --uid $traf_uid \
@@ -139,7 +155,11 @@ if [ "$userid_already_exists" == "Y" ]; then
     echo "***INFO: skipping passwordless ssh setup because userid ($TRAF_USER) already exists"
 else
     sudo su $TRAF_USER --command "echo -e 'y\n' | ssh-keygen -t rsa -N \"\" -f $TRAF_USER_DIR/.ssh/id_rsa"
-    sudo su $TRAF_USER --command "cp $TRAF_USER_DIR/.ssh/id_rsa.pub $TRAF_USER_DIR/.ssh/authorized_keys"
+    if [[ "$SUSE_LINUX" == "true" ]]; then
+       sudo su $TRAF_USER --command "cp $TRAF_USER_DIR/.ssh/id_rsa.pub $TRAF_USER_DIR/.ssh/authorized_keys"
+    else
+       sudo su $TRAF_USER --command "cp $TRAF_USER_DIR/.ssh/id_rsa.pub $TRAF_USER_DIR/.ssh/authorized_keys"
+    fi
     sudo su $TRAF_USER --command "echo localhost $(cat /etc/ssh/ssh_host_rsa_key.pub) > $TRAF_USER_DIR/.ssh/known_hosts"
     sudo su $TRAF_USER --command "echo \"NoHostAuthenticationForLocalhost=yes\" >> $TRAF_USER_DIR/.ssh/config"
     sudo chmod 600 $TRAF_USER_DIR/.ssh/config
@@ -163,6 +183,10 @@ if [ "$userid_already_exists" == "Y" ]; then
     fi
 fi
 sudo cp $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp3 $TRAF_USER_DIR/.bashrc
+if [[ -f $TRAF_WORKDIR/installer/sqenvcom.sh ]]; then
+   sudo cp $TRAF_WORKDIR/installer/sqenvcom.sh $TRAF_USER_DIR
+   sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqenvcom.sh
+fi
 sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.bashrc
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
@@ -179,9 +203,9 @@ if [ "$node_count" -ne 1 ]; then
     sudo cp -r $TRAF_USER_DIR $TRAF_WORKDIR
     sudo rm -rf $TRAF_WORKDIR/$TRAF_USER/.pulse 2>/dev/null
     sudo chown -R $USER.$(id -ng) $TRAF_WORKDIR/$TRAF_USER
-    pdcp -r $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/$TRAF_USER $TRAF_WORKDIR
-    pdsh $MY_NODES -x $HOSTNAME sudo cp -r $TRAF_WORKDIR/$TRAF_USER $default_home
-    pdsh $MY_NODES -x $HOSTNAME sudo chown -R $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR
+    $PDCP -r $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/$TRAF_USER $TRAF_WORKDIR
+    $PDSH $MY_NODES -x $HOSTNAME $PDSH_SSH_CMD sudo cp -r $TRAF_WORKDIR/$TRAF_USER $default_home
+    $PDSH $MY_NODES -x $HOSTNAME $PDSH_SSH_CMD sudo chown -R $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR
 fi
 
 #=================================================
@@ -189,7 +213,7 @@ fi
 echo "***INFO: Creating known_hosts file for all nodes"
 for node in $NODE_LIST
 do
-    sudo su $TRAF_USER --command "ssh -oStrictHostKeyChecking=no $node hostname"
+    sudo su $TRAF_USER --command "ssh -q -oStrictHostKeyChecking=no $node hostname"
     if [ $? -ne 0 ]; then
         echo "***ERROR: Unable to ssh to node $node"
         exit -1
@@ -198,25 +222,8 @@ done
 
 if [ "$node_count" -ne 1 ]; then
     # Copy known_hosts file to all other nodes
-    sudo su $TRAF_USER --command "pdcp $MY_NODES -x $HOSTNAME $TRAF_USER_DIR/.ssh/known_hosts $TRAF_USER_DIR/.ssh"
+    sudo su $TRAF_USER --command "$PDCP $MY_NODES -x $HOSTNAME $TRAF_USER_DIR/.ssh/known_hosts $TRAF_USER_DIR/.ssh"
 fi
-
-#=================================================
-# Setup and start a vncserver for this userid
-echo "***INFO: starting up a vncserver"
-
-# kill any left over existing vnc server
-sudo su $TRAF_USER --command "vncserver -kill :1" 2>/dev/null
-
-VNC_SERVER=$(expect -c " 
-set timeout 10
-spawn sudo su $TRAF_USER --command \"vncserver :1 -geometry 1280x1024\"
-expect \"Password:\"
-send \"$TRAF_USER_PASSWORD\r\" 
-expect \"Verify:\"
-send \"$TRAF_USER_PASSWORD\r\" 
-expect eof") 
-echo "$VNC_SERVER" 
 
 #=================================================
 echo "***INFO: $TRAF_USER user added successfully"

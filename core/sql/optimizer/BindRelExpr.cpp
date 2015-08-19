@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -10123,13 +10126,14 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
 
-  if (getTableDesc()->getNATable()->hasSerializedColumn())
+   if (getTableDesc()->getNATable()->hasSerializedColumn())
   {
     *CmpCommon::diags() << DgSqlCode(-3241) 
                         << DgString0(" upsert on a serialzed table with indexes is not allowed.");
     bindWA->setErrStatus();
     return NULL;
-  }
+  } 
+
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
 
@@ -10219,13 +10223,18 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   ValueIdSet debugSet;
   if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
   {
+    RelExpr * mu = re;
+    
     re = new(bindWA->wHeap()) Join
       (child(0), re, REL_TSJ_FLOW, NULL);
     ((Join*)re)->doNotTransformToTSJ();
     ((Join*)re)->setTSJForMerge(TRUE);	
     ((Join*)re)->setTSJForMergeWithInsert(TRUE);
     ((Join*)re)->setTSJForWrite(TRUE);
-    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+    if (bindWA->hasDynamicRowsetsInQuery())
+      mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+    else
+      re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
   } 
   
   re = re->bindNode(bindWA);
@@ -12814,9 +12823,19 @@ RelExpr *LeafDelete::bindNode(BindWA *bindWA)
     if (GU_DEBUG) cerr << "\nLeafDelete " << getUpdTableNameText() << endl;
   #endif
 
+  if (getPreconditionTree()) {
+    ValueIdSet pc;
+
+    getPreconditionTree()->convertToValueIdSet(pc, bindWA, ITM_AND);
+    if (bindWA->errStatus())
+      return this;
+
+    setPreconditionTree(NULL);
+    setPrecondition(pc);
+  }
+
   RelExpr *boundExpr = GenericUpdate::bindNode(bindWA);
   if (bindWA->errStatus()) return boundExpr;
-
 
   //Set the beginKeyPred
   if (TriggersTempTable *tempTableObj = getTrigTemp())

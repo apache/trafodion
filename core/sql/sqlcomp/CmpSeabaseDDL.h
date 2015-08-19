@@ -1,18 +1,21 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 
@@ -99,6 +102,7 @@ class StmtDDLAddConstraintCheck;
 class ElemDDLColDefArray;
 class ElemDDLColRefArray;
 class ElemDDLParamDefArray;
+class ElemDDLPartitionClause;
 
 class DDLExpr;
 class DDLNode;
@@ -174,6 +178,14 @@ class CmpSeabaseDDL
                                            const NAString &catName,
                                            const NAString &schName);
  
+  static short getTextFromMD(
+       const char *catalogName,
+       ExeCliInterface * cliInterface,
+       Int64 constrUID,
+       ComTextType textType,
+       Lng32 textSubID,
+       NAString &constrText);
+  
   NABoolean isAuthorizationEnabled();
 
   short existsInHbase(const NAString &objName,
@@ -304,6 +316,9 @@ class CmpSeabaseDDL
 			  NABoolean implicitPK,
                           NABoolean alignedFormat,
                           Lng32 *identityColPos = NULL,
+                          std::vector<NAString> *userColFamVec = NULL,
+                          std::vector<NAString> *trafColFamVec = NULL,
+                          const char * defaultColFam = NULL,
 			  NAMemory * heap = NULL);
 
   // The next three methods do use anything from the CmpSeabaseDDL class.
@@ -357,14 +372,23 @@ class CmpSeabaseDDL
                        char * outObjType = NULL,
                        NABoolean lookInObjects = FALSE,
                        NABoolean lookInObjectsIdx = FALSE);
-
+  
    short getObjectValidDef(ExeCliInterface *cliInterface,
-                           const char * catName,
+                          const char * catName,
                            const char * schName,
                            const char * objName,
                            const ComObjectType objectType,
                            NABoolean &validDef);
-
+  
+   short genTrafColFam(int index, NAString &trafColFam);
+  
+   static short extractTrafColFam(const NAString &trafColFam, int &index);
+  
+   short processColFamily(NAString &inColFamily,
+                          NAString &outColFamily,
+                          std::vector<NAString> *userColFamVec,
+                          std::vector<NAString> *trafColFamVec);
+     
    short switchCompiler(Int32 cntxtType = CmpContextInfo::CMPCONTEXT_TYPE_META);
 
    short switchBackCompiler();
@@ -439,8 +463,17 @@ class CmpSeabaseDDL
 
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
-			 const char * cf1, const char * cf2, const char * cf3,
-			 NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
+			 const char * cf1, 
+                         NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
+                         const int numSplits = 0,
+                         const int keyLength = 0,
+                         char **encodedKeysBuffer = NULL,
+			 NABoolean doRetry = TRUE);
+
+  short createHbaseTable(ExpHbaseInterface *ehi, 
+			 HbaseStr *table,
+                         std::vector<NAString> &collFamVec,
+                         NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL,
                          const int numSplits = 0,
                          const int keyLength = 0,
                          char **encodedKeysBuffer = NULL,
@@ -448,6 +481,7 @@ class CmpSeabaseDDL
 
   short alterHbaseTable(ExpHbaseInterface *ehi,
                         HbaseStr *table,
+                        NAList<NAString> &allColFams,
                         NAList<HbaseCreateOption*> * hbaseCreateOptions);
 
   short dropHbaseTable(ExpHbaseInterface *ehi, 
@@ -499,6 +533,7 @@ class CmpSeabaseDDL
 		    ULng32 &colFlags);
 
   short getColInfo(ElemDDLColDef * colNode, 
+                   NAString &colFamily,
 		   NAString &colName,
                    NABoolean alignedFormat,
 		   Lng32 &datatype,
@@ -666,13 +701,17 @@ class CmpSeabaseDDL
 			    NABoolean audited,
                             const NAString& objType);
 
-  // textType:   0, view text.  1, constraint text.  2, computed col text.
   // subID: 0, for text that belongs to table. colNumber, for column based text.
   short updateTextTable(ExeCliInterface *cliInterface,
                         Int64 objUID, 
-                        Lng32 textType, 
+                        ComTextType textType, 
                         Lng32 subID, 
                         NAString &text);
+
+  short deleteFromTextTable(ExeCliInterface *cliInterface,
+                            Int64 objUID, 
+                            ComTextType textType, 
+                            Lng32 subID);
 
   ItemExpr * bindDivisionExprAtDDLTime(ItemExpr *expr,
                                        NAColumnArray *availableCols,
@@ -680,8 +719,12 @@ class CmpSeabaseDDL
   short validateDivisionByExprForDDL(ItemExpr *divExpr);
 
   short createEncodedKeysBuffer(char** &encodedKeysBuffer,
+                                int &numSplits,
 				desc_struct * colDescs, desc_struct * keyDescs,
-				Lng32 numSplits, Lng32 numKeys, 
+				int numSaltPartitions,
+                                Lng32 numSaltSplits,
+                                NAString *splitByClause,
+                                Lng32 numKeys,
                                 Lng32 keyLength, NABoolean isIndex);
 
   short validateRoutine( 
@@ -956,7 +999,7 @@ class CmpSeabaseDDL
   short getTextFromMD(
        ExeCliInterface * cliInterface,
        Int64 constrUID,
-       Lng32 textType,
+       ComTextType textType,
        Lng32 textSubID,
        NAString &constrText);
   
@@ -1164,8 +1207,6 @@ class CmpSeabaseDDL
      StmtDDLGiveSchema * giveSchemaNode,
      NAString          & currentCatalogName);
 
-  desc_struct * assembleRegionDescs(ByteArrayList* bal, desc_nodetype format);
-
   void glueQueryFragments(Lng32 queryArraySize,
 			  const QString * queryArray,
 			  char * &gluedQuery,
@@ -1202,6 +1243,7 @@ class CmpSeabaseDDL
 				       NABoolean isUnique,
 				       NABoolean hasSyskey,
                                        NABoolean alignedFormat,
+                                       NAString &defaultColFam,
 				       const NAColumnArray &baseTableNAColArray,
 				       const NAColumnArray &baseTableKeyArr,
 				       Lng32 &keyColCount,
@@ -1243,5 +1285,8 @@ class CmpSeabaseDDL
 
   NABoolean cmpSwitched_;
 };
+
+desc_struct* assembleDescs(ByteArrayList* bal, populateFuncT func, NAMemory* heap);
+
 
 #endif // _CMP_SEABASE_DDL_H_

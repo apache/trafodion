@@ -1,19 +1,22 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 /**********************************************************************/
@@ -2284,18 +2287,40 @@ static short cmpDisplayColumn(const NAColumn *nac,
   identityCol = FALSE;
   
   const NAString &colName = nac->getColName();
-  
+  NATable * naTable = (NATable*)nac->getNATable();
+
+  NAString colFam;
+  if ((nac->getNATable()->isSQLMXAlignedTable()) || 
+      (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY))
+    colFam = "";
+  else if (nac->getNATable()->isSeabaseTable())
+    {
+      int index = 0;
+      CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);
+
+      if (index >= naTable->allColFams().entries())
+        return -1;
+
+      colFam = ANSI_ID(naTable->allColFams()[index].data());
+      
+      colFam += ".";
+    }
+
   if (type == 3)
     {
       NAString quotedColName = "\"";
       quotedColName += colName.data(); 
       quotedColName += "\"";
-      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+      sprintf(buf, "%s%-*s ", 
+              colFam.data(),
+              CM_SIM_NAME_LEN,
               quotedColName.data());
     }
   else
     {
-      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+      sprintf(buf, "%s%-*s ", 
+              colFam.data(),
+              CM_SIM_NAME_LEN-(int)colFam.length(),
               ANSI_ID(colName.data()));
     }
   
@@ -2805,7 +2830,7 @@ short CmpDescribeSeabaseTable (
       if ((isSalted) && !withoutSalt)
         {
           Lng32 currPartitions = naf->getCountOfPartitions();
-          Lng32 numPartitions = naTable->numSaltPartns();
+          Lng32 numPartitions = naf->numSaltPartns();
 
           if (numPartitions != currPartitions)
             sprintf(buf,  "  SALT USING %d PARTITIONS /* ACTUAL PARTITIONS %d */", numPartitions, currPartitions);
@@ -2905,16 +2930,22 @@ short CmpDescribeSeabaseTable (
         }
 
       NABoolean attributesSet = FALSE;
-      if ((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned)))
+      if (((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned))) ||
+          (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY))
         {
-          char attrs[200];
+          char attrs[2000];
           strcpy(attrs, " ATTRIBUTES ");
 
           if (NOT isAudited)
-            strcat(attrs, "NO AUDIT");
+            strcat(attrs, "NO AUDIT ");
           if (isAligned)
-            strcat(attrs, "ALIGNED FORMAT");
-          
+            strcat(attrs, "ALIGNED FORMAT ");
+          if (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY)
+            {
+              strcat(attrs, "DEFAULT COLUMN FAMILY '");
+              strcat(attrs, naTable->defaultColFam());
+              strcat(attrs, "'");
+            }
           outputShortLine(space, attrs);
         }
 

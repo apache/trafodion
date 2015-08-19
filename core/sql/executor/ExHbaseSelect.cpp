@@ -1,19 +1,22 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
@@ -577,8 +580,8 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case RETURN_ROW:
 	  {
-	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->hbaseAccessTdb().convertRowLen(), 
-				 &rc, FALSE))
+	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->convertRowLen_, 
+				       &rc, FALSE))
 	      return 1;
 	    
 	    if (tcb_->getHbaseAccessStats())
@@ -751,7 +754,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
-		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
+		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, &tcb_->rowIds_,
 					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
@@ -935,7 +938,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
-		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
+		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, &tcb_->rowIds_,
 					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
@@ -1111,7 +1114,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
-		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
+		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, &tcb_->rowIds_,
 					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;

@@ -157,7 +157,7 @@ def generate_t4_propfile(propfile, target, user, pw, role, dsn, schema, appname,
     fd.write('catalog=TRAFODION\n')
     fd.write('schema=' + schema + '\n')
     fd.write('serverDataSource=' + dsn + '\n')
-    fd.write('hpjdbc_version=' + jdbc_version + '\n')
+    fd.write('trafjdbc_version=' + jdbc_version + '\n')
     fd.write('sessionName=' + appname + '\n')
     fd.write('applicationName=' + appname + '\n')
     fd.write('batchBinding=500\n')
@@ -173,7 +173,7 @@ def generate_t2_propfile(propfile, user, pw, role, dsn, schema, appname, jdbc_ve
     fd.write('catalog=TRAFODION\n')
     fd.write('schema=' + schema + '\n')
     fd.write('serverDataSource=' + dsn + '\n')
-    fd.write('hpjdbc_version=' + jdbc_version + '\n')
+    fd.write('trafjdbc_version=' + jdbc_version + '\n')
     fd.write('sessionName=' + appname + '\n')
     fd.write('applicationName=' + appname + '\n')
     fd.write('batchBinding=500\n')
@@ -192,7 +192,7 @@ def prog_parse_args():
     info = inspect.getframeinfo(frame)
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
-    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/jdbcT4.jar'
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/jdbcT4.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
     
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -230,7 +230,7 @@ def prog_parse_args():
           help='java program (version 1.7 required) location, defaulted to \'/usr\''),
         optparse.make_option('', '--jdbccp', action='store', type='string',
           dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
-          help='jdbc classpath, defaulted to \'${project.basedir}/lib/hp/tr/jdbcT4.jar\', <test_root> is where this program is.'),
+          help='jdbc classpath, defaulted to \'${project.basedir}/lib/jdbcT4.jar\', <test_root> is where this program is.'),
         optparse.make_option('', '--propfile', action='store', type='string',
           dest='propfile', default=DEFAULT_PROP_FILE,
           help='property file, defaulted to automatically generated \'<test root>/jdbcprop\', <test root> is where this program is.'),

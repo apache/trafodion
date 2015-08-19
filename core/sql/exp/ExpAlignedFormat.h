@@ -1,19 +1,22 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
@@ -97,25 +100,24 @@ public:
 //
 // Class to encapsulate the SQLMX_ALIGNED_FORMAT record header.
 // The SQLMX_ALIGNED_FORMAT differs from the SQLMX_FORMAT in that there is
-// a 2-byte offset to a null bitmap vector.  The null bitmap vector has a
+// a 4-byte offset to a null bitmap vector.  The null bitmap vector has a
 // bit for every nullable column in the table.  If no nullable columns exist
 // in the table, the offset is 0 and not bitmap is present in the record.
 // The null bitmap offset value is directly after the first fixed field
 // offset.
 // The null bitmap vector itself can be 0, 4, 8, 12, ... to accomodate all
 // the nullable columns.
-// Also, all offsets within the data record are now 2 bytes rather than 4 bytes.
 //
 // Aligned format
 //   -----------------------------------------------------------------------
 //   | FF | BO | VO1 | .. | VOn | bitmap | fixed | addFixed | var | addVar |
 //   -----+----+-----+----+-----+--------+-------+----------+-----+---------
 //
-//   FF       = first fixed field offset, 2 bytes
+//   FF       = first fixed field offset, 4 bytes
 //              the hi 2 bits of FF used to record # of bytes the record is
 //              extended to ensure record is a 4-byte multiple
-//   BO       = null bitmap offset (may be 0 if no nulls), 2 bytes
-//   VO1, VOn = offsets to variable fields within record, 2 bytes each
+//   BO       = null bitmap offset (may be 0 if no nulls), 4 bytes
+//   VO1, VOn = offsets to variable fields within record, 4 bytes each
 //   bitmap   = 4 bytes (or a multiple of 4 bytes) for null bitmap
 //              1 bit per nullable field
 //              may not be there if no nullable columns
@@ -123,7 +125,7 @@ public:
 //              alignment needs grouped and aligned correctly
 //   addFixed = any added fixed fields, aligned on proper byte boundaries
 //   var      = original variable length fields, first variable length field
-//              aligned on a 2-byte boundary for length value
+//              aligned on a 4-byte boundary for length value
 //   addVar   = all added variable fields packed together
 //
 //   Padding if needed:

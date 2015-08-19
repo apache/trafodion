@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 #
@@ -66,6 +69,9 @@ foundation: dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 
 jdbc_jar: verhdr
 	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	mvn install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
+	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
+	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
 	cd conn/odbc/src/odbc && $(MAKE) ndcs        2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
@@ -78,8 +84,11 @@ trafci: jdbc_jar
 jdbc_type2_jar: ndcs
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
+	mvn install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
+	    -DgroupId=org.trafodion.jdbc.t2.T2Driver -DartifactId=t2driver -Dversion="$$TRAFODION_VER" \
+	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBC_TYPE2)/";exit $${PIPESTATUS[0]}
 
-rest: verhdr
+rest: verhdr jdbc_jar
 	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
 
 odb: ndcs
