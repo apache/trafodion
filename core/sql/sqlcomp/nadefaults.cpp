@@ -1374,7 +1374,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPLAIN_DISPLAY_FORMAT,		"EXTERNAL"),
 
-  DDkwd__(EXPLAIN_IN_RMS, 		        "OFF"),
+  DDkwd__(EXPLAIN_IN_RMS, 		        "ON"),
 
   DDui___(EXPLAIN_OUTPUT_ROW_SIZE,   "80"),
 

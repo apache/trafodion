@@ -366,13 +366,6 @@ short ExControlTcb::work()
                           currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
                         }
 		      }
-		    else if (strcmp(value[1], "EXPLAIN_IN_RMS") == 0)
-		      {
-                        NABoolean explainInRMS = TRUE;
-			if (strcmp(value[2], "OFF") == 0)
-                            explainInRMS = FALSE;
-			currContext->getSessionDefaults()->setExplainInRMS(explainInRMS);
-                      }
 		    else if (strcmp(value[1], "MARIAQUEST_PROCESS") == 0)
 		      {
 			if (strcmp(value[2], "ON") == 0)

@@ -571,13 +571,6 @@ public:
 
   AQRInfo * aqrInfo() { return aqrInfo_; }
 
-  void setExplainInRMS(NABoolean v = TRUE)
-  {
-    explainInRMS_ = v;
-  }
-
-  NABoolean isExplainInRMS() { return explainInRMS_; }
-
   Lng32 getStatisticsViewType() { return statisticsViewType_; }
   void setStatisticsViewType(Lng32 type) 
   { 
@@ -766,8 +759,6 @@ private:
   NABoolean suspendLogging_;              // suspended's session
   NABoolean callEmbeddedArkcmp_;       // call the procedural interface and don't send a message to the arkcmp process.
   AQRInfo * aqrInfo_;
-  NABoolean explainInRMS_;  // Flag to trigger copying of explain fragment to the RMS shared
-                            // segment
   Lng32 statisticsViewType_;     // Statistics view type which could be different from the collection statistics type
 /*
   Memory manager will start to reclaim space when the below conditions are met
