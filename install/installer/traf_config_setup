@@ -649,11 +649,12 @@ if [[ -z $HADOOP_NODES ]]; then
 fi
 
 echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
+hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
+
 
 echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
 echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
-
-hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
+echo "export hadoop_node_count=\"$hadoop_node_count\"" >>$LOCAL_TRAF_CONFIG
 
 for node in $HADOOP_NODES
 do

@@ -575,9 +575,25 @@ echo
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
 
-   echo "***INFO: $TRAF_USER username has already been installed." | tee -a $INSTALL_LOG
-   echo "***INFO: Skipping Trafodion setup..." | tee -a $INSTALL_LOG
-
+   sed -i -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc   
+   sed -i -e "s@export MY_NODES=.*@export MY_NODES=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc
+   
+   for node in $NODE_LIST
+   do
+      userForTrafodion=$(ssh -q -n $node grep "$TRAF_USER:" /etc/passwd | wc -l)
+      if [[ "$userForTrafodion" == 0 ]]; then
+         $LOCAL_WORKDIR/traf_setup | tee -a $INSTALL_LOG
+         if [ ${PIPESTATUS[0]} != "0" ]; then
+            echo "***ERROR: Error while running traf_setup." | tee -a $INSTALL_LOG
+            echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
+            echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
+            exit -1
+         else
+            echo "***INFO: Trafodion environment setup completed" | tee -a $INSTALL_LOG
+         fi
+      fi
+   done  
+   
 else
    $LOCAL_WORKDIR/traf_setup | tee -a $INSTALL_LOG
 
@@ -607,15 +623,11 @@ if [ $node_count -ne 1 ]; then
 fi
 
 
-#Create sqconfig file if it does not exist
-
-if [[ ! -f $HOME_DIR/$TRAF_USER/sqconfig ]]; then
-   $LOCAL_WORKDIR/traf_sqconfig
-   if [ $? != 0 ]; then
-      echo "***ERROR: traf_sqconfig script failed."
-      echo "***ERROR: sqconfig file not created."
-      exit -1
-   fi
+$LOCAL_WORKDIR/traf_sqconfig
+if [ $? != 0 ]; then
+   echo "***ERROR: traf_sqconfig script failed."
+   echo "***ERROR: sqconfig file not created."
+   exit -1
 fi
 #Reserve DCS Ports
 
@@ -643,6 +655,10 @@ do
       exit -1
    fi
 done
+
+#Set Max kernel pid 
+
+$TRAF_PDSH sudo sysctl -w kernel.pid_max=65535
 
 
 #Create install directory

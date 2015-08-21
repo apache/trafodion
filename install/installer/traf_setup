@@ -241,7 +241,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
             installed=`ssh -q -n $node sudo rpm -qa | grep $package | wc -l`
             if [[ $installed -eq "0" ]]; then
                echo "***INFO: Installing $package on all nodes"
-               $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+               ssh -q -n $node sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
                if [ $? != 0 ]; then
                   echo "***ERROR: Can't install $package"
                   exit -1
