@@ -2938,7 +2938,8 @@ short ExpGenerator::generateDeserializedMoveExpr(
 						 ex_expr ** moveExpr,
 						 ExpTupleDesc ** tupleDesc,
 						 ExpTupleDesc::TupleDescFormat tdescF,
-						 ValueIdList &deserVIDlist)
+						 ValueIdList &deserVIDlist,
+						 ValueIdSet &alreadyDeserialized)
 {
   for (Lng32 i = 0; i < valIdList.entries(); i++)
     {
@@ -2946,7 +2947,8 @@ short ExpGenerator::generateDeserializedMoveExpr(
       NAColumn * nac = vid.getNAColumn( TRUE );
 
       ItemExpr * ie = NULL;
-      if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
+      if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac) &&
+	  !alreadyDeserialized.contains(vid))
 	{
 	  ie = new(generator->wHeap()) CompDecode(vid.getItemExpr(), &vid.getType(),
 						  FALSE, TRUE);

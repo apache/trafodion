@@ -10115,7 +10115,7 @@ so that we can delete the old version of an updated row from the index.
 NABoolean Insert::isUpsertThatNeedsMerge() const
 {
   if (!isUpsert() || getIsTrafLoadPrep() || 
-      (systemGeneratesIdentityValue() && 
+      (getTableDesc()->isIdentityColumnGeneratedAlways() && 
        getTableDesc()->hasIdentityColumnInClusteringKey()) ||
       getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey() || 
       !(getTableDesc()->hasSecondaryIndexes()))
@@ -10126,22 +10126,12 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
 
-   if (getTableDesc()->getNATable()->hasSerializedColumn())
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-                        << DgString0(" upsert on a serialzed table with indexes is not allowed.");
-    bindWA->setErrStatus();
-    return NULL;
-  } 
-
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
-
 		    
   Scan * inputScan =
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
-
 
   ItemExpr * keyPred = NULL;
   ItemExpr * keyPredPrev = NULL;
@@ -11303,13 +11293,8 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
    // allowing a VEG in this case causes corruption on base table key values because
    // we use the "old" value of key column from fetchReturnedExpr, which can be junk
    // in case there is no row to update/delete, and a brand bew row is being inserted
-
-   NABoolean xformedUpsert = FALSE ;
-   if (isMergeUpdate())
-     xformedUpsert = ((MergeUpdate *)this)->xformedUpsert();
-
-
-   if ((NOT onRollback) && (NOT xformedUpsert)){
+   NABoolean mergeWithIndex = isMerge() && getTableDesc()->hasSecondaryIndexes() ;
+   if ((NOT onRollback) && (NOT mergeWithIndex)){
      for (i = 0;i < totalColCount; i++){
        if (!(holeyArray.used(i))){
          oldToNewMap().addMapEntry(
