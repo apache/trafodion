@@ -109,7 +109,7 @@ do
       break
    fi
    count=$[$count+1]
-   if [[ $count -ge $hadoop_nodes ]]; then
+   if [[ $count -ge $hadoop_node_count ]]; then
       echo "***ERROR: Could not find Cloudera Server status on any node"
       echo "***ERROR: Restart Cloudera Server" 
       exit -1 

@@ -96,8 +96,10 @@ if [ -z "$traf_gid" ]; then
     done
     $TRAF_PDSH sudo /usr/sbin/groupadd --gid $traf_gid $TRAF_GROUP
     if [ $? -ne 0 ]; then
-        echo "***ERROR: unable to create Trafodion group: $TRAF_GROUP"
-        exit -1
+       if [ $? -ne 9]; then
+          echo "***ERROR: unable to create Trafodion group: $TRAF_GROUP"
+          exit -1
+       fi
     fi
 else
     # Make sure Trafodion group exists on all nodes and create it if it is not
