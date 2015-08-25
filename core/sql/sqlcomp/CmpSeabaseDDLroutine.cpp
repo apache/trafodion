@@ -348,20 +348,32 @@ void CmpSeabaseDDL::createSeabaseLibrary(
       processReturn();
       return;
     }
+
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = NULL,
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = 0;
+  tableInfo->objOwnerID = objectOwnerID;
+  tableInfo->schemaOwnerID = schemaOwnerID;
+  tableInfo->isAudited = 1;
+  tableInfo->validDef = 1;
+  tableInfo->hbaseCreateOptions = NULL;
+  tableInfo->numSaltPartns = 0;
+  tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
+  tableInfo->objectFlags = 0;
   
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
 			   COM_LIBRARY_OBJECT,
 			   "N",
-			   NULL,
+			   tableInfo,
 			   0,
 			   NULL,
 			   0,			       
 			   NULL,
 			   0, NULL,
-                           objectOwnerID,
-                           schemaOwnerID,
                            objUID))
     {
       deallocEHI(ehi); 
@@ -460,10 +472,11 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
 
   Int32 objectOwnerID = 0;
   Int32 schemaOwnerID = 0;
-  Int64 objUID = getObjectUIDandOwners(&cliInterface,
+  Int64 objectFlags = 0;
+  Int64 objUID = getObjectInfo(&cliInterface,
 			      catalogNamePart.data(), schemaNamePart.data(), 
 			      objectNamePart.data(), COM_LIBRARY_OBJECT,
-                              objectOwnerID,schemaOwnerID);
+                              objectOwnerID,schemaOwnerID,objectFlags);
   if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
     {
       deallocEHI(ehi); 
@@ -1009,18 +1022,30 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       return;
     }
 
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = NULL,
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = 0;
+  tableInfo->objOwnerID = objectOwnerID;
+  tableInfo->schemaOwnerID = schemaOwnerID;
+  tableInfo->isAudited = 1;
+  tableInfo->validDef = 1;
+  tableInfo->hbaseCreateOptions = NULL;
+  tableInfo->numSaltPartns = 0;
+  tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
+  tableInfo->objectFlags = 0;
+
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
 			   COM_USER_DEFINED_ROUTINE_OBJECT,
 			   "N",
-			   NULL,
+			   tableInfo,
 			   numParams,
 			   colInfoArray,
 			   0, NULL,
 			   0, NULL,
-                           objectOwnerID,
-                           schemaOwnerID,
                            objUID))
     {
       deallocEHI(ehi); 
@@ -1166,6 +1191,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   Int64 objUID = 0;
   Int32 objectOwnerID = 0;
   Int32 schemaOwnerID = 0;
+  Int64 objectFlags = 0;
 
   // see if routine is cached
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
@@ -1182,10 +1208,10 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
     }
   else
     {
-      objUID = getObjectUIDandOwners(&cliInterface,
+      objUID = getObjectInfo(&cliInterface,
 			      catalogNamePart.data(), schemaNamePart.data(), 
 			      objectNamePart.data(), COM_USER_DEFINED_ROUTINE_OBJECT,
-                              objectOwnerID,schemaOwnerID);
+                              objectOwnerID,schemaOwnerID,objectFlags);
     if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
       {
         deallocEHI(ehi); 

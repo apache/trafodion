@@ -90,9 +90,6 @@ public:
   virtual Int32 getArity() const;
   virtual ExprNode * getChild(Lng32 index);
 
-  inline unsigned short getDSlackPercentage() const;
-  inline unsigned short getISlackPercentage() const;
-
   inline const NAString & getGuardianLocation() const;
 
         // returns an empty string unless the parse node
@@ -150,8 +147,6 @@ public:
         // Same as getOption() except that this method returns
         // NAString("ADD") or NAString("DROP").
 
-  inline NABoolean isDSlackSpecified() const;
-  inline NABoolean isISlackSpecified() const;
   inline NABoolean isMaxSizeSpecified() const;
   inline NABoolean isMaxSizeUnbounded() const;
   inline NABoolean isExtentSpecified() const;
@@ -162,10 +157,6 @@ public:
   //
 
   virtual void setChild(Lng32 index, ExprNode * pChildNode);
-  inline void setDSlackPercentage(unsigned short dSlackPercentage);
-  inline void setISlackPercentage(unsigned short iSlackPercentage);
-  inline void setIsDSlackSpecified(NABoolean isDSlackSpecified);
-  inline void setIsISlackSpecified(NABoolean isISlackSpecified);
   inline void setIsMaxSizeSpecified(NABoolean isMaxSizeSpecified);
   inline void setIsMaxSizeUnbounded(NABoolean isMaxSizeUnbounded);
   inline void setIsExtentSpecified(NABoolean isExtentSpecified);
@@ -272,18 +263,6 @@ private:
   NABoolean isMaxExtentSpec_;
   ULng32 maxExt_;
 
-  //
-  // load options
-  //
-
-  // DSLACK
-  NABoolean isDSlackSpec_;
-  unsigned short dSlackPercentage_;     // percentage of free data blocks
-
-  // ISLACK
-  NABoolean isISlackSpec_;
-  unsigned short iSlackPercentage_;     // percentage of free index blocks
-
 }; // class ElemDDLPartitionSystem
 
 // -----------------------------------------------------------------------
@@ -293,18 +272,6 @@ private:
 //
 // accessors
 //
-
-inline unsigned short
-ElemDDLPartitionSystem::getDSlackPercentage() const
-{
-  return dSlackPercentage_;
-}
-
-inline unsigned short
-ElemDDLPartitionSystem::getISlackPercentage() const
-{
-  return iSlackPercentage_;
-}
 
 inline const NAString &
 ElemDDLPartitionSystem::getGuardianLocation() const
@@ -387,18 +354,6 @@ ElemDDLPartitionSystem::getPartitionSystemAttrList() const
 }
 
 inline NABoolean
-ElemDDLPartitionSystem::isDSlackSpecified() const
-{
-  return isDSlackSpec_;
-}
-
-inline NABoolean
-ElemDDLPartitionSystem::isISlackSpecified() const
-{
-  return isISlackSpec_;
-}
-
-inline NABoolean
 ElemDDLPartitionSystem::isMaxSizeSpecified() const
 {
   return isMaxSizeSpec_;
@@ -425,30 +380,6 @@ ElemDDLPartitionSystem::isMaxSizeUnbounded() const
 //
 // mutators
 //
-
-inline void 
-ElemDDLPartitionSystem::setDSlackPercentage(unsigned short dSlackPercentage)
-{
-  dSlackPercentage_ = dSlackPercentage;
-}
-
-inline void 
-ElemDDLPartitionSystem::setISlackPercentage(unsigned short iSlackPercentage)
-{
-  iSlackPercentage_ = iSlackPercentage;
-}
-
-inline void
-ElemDDLPartitionSystem::setIsDSlackSpecified(NABoolean isDSlackSpecified)
-{
-  isDSlackSpec_ = isDSlackSpecified;
-}
-
-inline void
-ElemDDLPartitionSystem::setIsISlackSpecified(NABoolean isISlackSpecified)
-{
-  isISlackSpec_ = isISlackSpecified;
-}
 
 inline void
 ElemDDLPartitionSystem::setIsMaxSizeSpecified(NABoolean isMaxSizeSpecified)

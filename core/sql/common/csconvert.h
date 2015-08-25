@@ -258,15 +258,25 @@ int lightValidateUTF8StrAndPad(char *bufr,
                                int max_chars = 0,
                                int ignore_trailing_blanks = 1);
 
-/* A method to create the maximum valid UTF-8 character
-   string that fits into a given buffer. Used to form high keys.
+/* A method to create the minimum/maximum valid UTF-8 character
+   string that fits into a given buffer. Used to form low/high keys.
    If max_chars is > 0, generates at most max_chars and pads
    the remaining bytes with blanks. Returns the space occupied
    by actual characters, not padding (same as in_len if max_chars == 0).
 */
+int fillWithMinUTF8Chars(char *bufr,
+                         int in_len, // in bytes
+                         int max_chars);
 int fillWithMaxUTF8Chars(char *bufr,
                          int in_len, // in bytes
                          int max_chars);
+inline int fillWithMinMaxUTF8Chars(char *bufr,
+                                   int in_len, // in bytes
+                                   int max_chars,
+                                   int is_max)
+{ if (is_max) return fillWithMaxUTF8Chars(bufr, in_len, max_chars);
+  else        return fillWithMinUTF8Chars(bufr, in_len, max_chars); }
+                                   
 
 /* A method to find the beginning of a UTF8 char that is at the end off
    a buffer.

@@ -1452,6 +1452,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // need to extend the partial buffer, allocate a copy
       actEncodedKey = new(heap) char[totalKeyLength];
       memcpy(actEncodedKey, encodedKey, encodedKeyLen);
+
+      // extend the remainder with zeroes, assuming that this is what
+      // HBase does when deciding which region a row belongs to
       memset(&actEncodedKey[encodedKeyLen], 0, totalKeyLength-encodedKeyLen);
       Lng32 currOffset = lenOfFullyProvidedCols;
 
@@ -1459,11 +1462,14 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // so that we can treat the buffer as fully encoded in the final loop below
       for (CollIndex j = numProvidedCols; j < partColArray.entries(); j++)
         {
-          const NAType *pkType = partColArray[j]->getType();
-          Lng32 nullHdrSize = pkType->getSQLnullHdrSize();
-          Lng32 colEncodedLength = nullHdrSize + pkType->getNominalSize();
-          NABoolean isDescending = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
+          const NAType *pkType        = partColArray[j]->getType();
+          Lng32 nullHdrSize           = pkType->getSQLnullHdrSize();
+          int valOffset               = currOffset + nullHdrSize;
+          int valEncodedLength        = pkType->getNominalSize();
+          Lng32 colEncodedLength      = nullHdrSize + valEncodedLength;
+          NABoolean isDescending      = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
 
+          NABoolean nullHdrAlreadySet = FALSE;
           NABoolean columnIsPartiallyProvided = (currOffset < encodedKeyLen);
 
           if (columnIsPartiallyProvided)
@@ -1472,58 +1478,161 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // value. Note that the buffer has a prefix of some bytes with actual key
               // values, followed by bytes that are zeroed out. 
 
+              // the number of bytes actually provided in the key (not filled in)
+              int numBytesInProvidedVal = encodedKeyLen-valOffset;
 
-              // First, for descending columns, use 0xFF instead of 0 for fillers
-              if (isDescending)
-                memset(&actEncodedKey[encodedKeyLen],
-                       0xFF,
-                       currOffset + colEncodedLength - encodedKeyLen);
+              if (nullHdrSize && numBytesInProvidedVal <= 0)
+                {
+                  // only the null-header or a part thereof was provided
+                  CMPASSERT(nullHdrSize == sizeof(short));
+
+                  // get the partial indicator values into a short
+                  short indicatorVal = *reinterpret_cast<short *>(&actEncodedKey[currOffset]);
+
+                  // make it either 0 or -1
+                  if (indicatorVal)
+                    indicatorVal = -1;
+
+                  // put it back and let the code below know that we set it already
+                  // (this is handled otherwise as a non-provided column)
+                  memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
+                  nullHdrAlreadySet = TRUE;
+                  columnIsPartiallyProvided = FALSE;
+                }
 
               // Next, decide by data type whether it's ok for the type to have
-              // a suffix of the buffer zeroed out (even descending columns will
-              // in the end see zeroes). If the type can't take it, we'll just
-              // discard all the partial information.
+              // a suffix of the buffer zeroed out (descending columns will
+              // see 0xFF values, once the encoded value gets inverted). If the
+              // type can't take it or we are not quite sure, we'll just discard
+              // all the partial information. Note that this could potentially
+              // lead to two partition boundaries with the same key, and also
+              // to partition boundaries that don't reflect the actual region
+              // boundaries.
 
-              switch (pkType->getTypeQualifier())
-                {
-                case NA_NUMERIC_TYPE:
+              if (columnIsPartiallyProvided)
+                switch (pkType->getTypeQualifier())
                   {
-                    NumericType *nt = (NumericType *) pkType;
+                  case NA_NUMERIC_TYPE:
+                    {
+                      NumericType *nt = (NumericType *) pkType;
 
-                    if (!nt->isExact() || nt->isDecimal() || nt->isBigNum())
+                      if (!nt->isExact() || nt->isDecimal() || nt->isBigNum() ||
+                          (isDescending && nt->decimalPrecision()))
+                        // we may be able to improve this in the future
+                        columnIsPartiallyProvided = FALSE;
+                    }
+                    break;
+
+                  case NA_DATETIME_TYPE:
+                  case NA_INTERVAL_TYPE:
+                    // those types should tolerate zeroing out trailing bytes, but
+                    // not filling with 0xFF 
+                    if (isDescending)
                       columnIsPartiallyProvided = FALSE;
+                    break;
+
+                  case NA_CHARACTER_TYPE:
+                    // generally, character types should also tolerate zeroing out
+                    // trailing bytes, but we might need to clean up characters
+                    // that got split in the middle
+                    {
+                      CharInfo::CharSet cs = pkType->getCharSet();
+
+                      switch (cs)
+                        {
+                        case CharInfo::UCS2:
+                          // For now just accept partial characters, it's probably ok
+                          // since they are just used as a key. May look funny in EXPLAIN.
+                          break;
+                        case CharInfo::UTF8:
+                          {
+                            // temporarily invert the provided key so it is actual UTF8
+                            if (isDescending)
+                              for (int i=0; i<numBytesInProvidedVal; i++)
+                                actEncodedKey[valOffset+i] = ~actEncodedKey[valOffset+i];
+
+                            CMPASSERT(numBytesInProvidedVal > 0);
+
+                            // remove a trailing partial character, if needed
+                            int validLen = lightValidateUTF8Str(&actEncodedKey[valOffset],
+                                                                numBytesInProvidedVal);
+
+                            // replace the remainder of the buffer with UTF8 min/max chars
+                            fillWithMinMaxUTF8Chars(&actEncodedKey[valOffset+validLen],
+                                                    valEncodedLength - validLen,
+                                                    0,
+                                                    isDescending);
+
+                            // limit to the max # of UTF-8characters, if needed
+                            if (pkType->getPrecisionOrMaxNumChars() > 0)
+                              {
+                                // this time validate the # of chars (likely to be more,
+                                // since we filled to the end with non-blanks)
+                                validLen = lightValidateUTF8Str(&actEncodedKey[valOffset],
+                                                                valEncodedLength,
+                                                                pkType->getPrecisionOrMaxNumChars());
+
+                                if (validLen > 0)
+                                  // space after valid #chars is filled with blanks
+                                  memset(&actEncodedKey[valOffset+validLen], ' ', valEncodedLength-validLen);
+                                else
+                                  columnIsPartiallyProvided = FALSE;
+                              }
+
+                            // undo the inversion, if needed, now for the whole key
+                            if (isDescending)
+                              for (int k=0; k<valEncodedLength; k++)
+                                actEncodedKey[valOffset+k] = ~actEncodedKey[valOffset+k];
+                          }
+                          break;
+                        case CharInfo::ISO88591:
+                          // filling with 0x00 or oxFF should both be ok
+                          break;
+
+                        default:
+                          // don't accept partial keys for other charsets
+                          columnIsPartiallyProvided = FALSE;
+                          break;
+                        }
+                    }
+                    break;
+
+                  default:
+                    // don't accept partial keys for any other data types
+                    columnIsPartiallyProvided = FALSE;
+                    break;
                   }
-                  break;
 
-                case NA_DATETIME_TYPE:
-                case NA_INTERVAL_TYPE:
-                  // those types should tolerate zeroing out trailing bytes
-                  break;
+              if (columnIsPartiallyProvided)
+                {
+                  // a CQD can suppress, give errors, warnings or enable partially provided cols
+                  DefaultToken tok = CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_PARTIAL_COLS);
 
-                case NA_CHARACTER_TYPE:
-                  // generally, character types should also tolerate zeroing out
-                  // trailing bytes, but we might need to clean up characters
-                  // that got split in the middle
-                  {
-                    CharInfo::CharSet cs = pkType->getCharSet();
+                  switch (tok)
+                    {
+                    case DF_OFF:
+                      // disable use of partial columns
+                      // (use this as a workaround if they cause problems)
+                      columnIsPartiallyProvided = FALSE;
+                      break;
 
-                    switch (cs)
-                      {
-                      case CharInfo::UCS2:
-                      case CharInfo::UTF8:
-                        // For now just accept partial characters, it's probably ok
-                        // since they are just used as a key. May look funny in EXPLAIN.
-                        break;
+                    case DF_MINIMUM:
+                      // give an error (again, this is probably mostly used as a
+                      // workaround or to detect past problems)
+                      *CmpCommon::diags() << DgSqlCode(-1212) << DgInt0(j);
+                      break;
 
-                      default:
-                        break;
-                      }
-                  }
-                  break;
+                    case DF_MEDIUM:
+                      // give a warning, could be used for searching or testing
+                      *CmpCommon::diags() << DgSqlCode(+1212) << DgInt0(j);
+                      break;
 
-                default:
-                  columnIsPartiallyProvided = FALSE;
-                  break;
+                    case DF_ON:
+                    case DF_MAXIMUM:
+                    default:
+                      // allow it, no warning or error
+                      break;
+                    }
                 }
 
               if (columnIsPartiallyProvided)
@@ -1539,9 +1648,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // NOTE: This is generating un-encoded values, unlike
               //       the values we get from HBase. The next loop below
               //       will skip decoding for any values generated here.
-              Lng32 remainingBufLen = colEncodedLength - nullHdrSize;
+              Lng32 remainingBufLen = valEncodedLength;
 
-              if (nullHdrSize)
+              if (nullHdrSize && !nullHdrAlreadySet)
                 {
                   // generate a NULL indicator
                   // NULL (-1) for descending columns, this is the max value
@@ -1552,20 +1661,11 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                   memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
                 }
 
-              if (isDescending)
-                {
-                  pkType->maxRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
-                                                &remainingBufLen,
-                                                NULL,
-                                                heap);
-                }
-              else
-                {
-                  pkType->minRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
-                                                &remainingBufLen,
-                                                NULL,
-                                                heap);
-                }
+              pkType->minMaxRepresentableValue(&actEncodedKey[valOffset],
+                                               &remainingBufLen,
+                                               isDescending,
+                                               NULL,
+                                               heap);
             }
 
           currOffset += colEncodedLength;
@@ -1628,11 +1728,12 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
           }
 
           // un-encode the key value by using an expression
+          NAString encConstLiteral("encoded_val");
           ConstValue *keyColEncVal =
             new (heap) ConstValue(pkType,
                                   (void *) encodedKeyP,
                                   decodedValueLen,
-                                  NULL,
+                                  &encConstLiteral,
                                   heap);
           CMPASSERT(keyColEncVal);
 
@@ -4851,7 +4952,8 @@ NATable::NATable(BindWA *bindWA,
     privInfo_(NULL),
     secKeySet_(heap),
     newColumns_(heap),
-    snapshotName_(NULL)
+    snapshotName_(NULL),
+    prototype_(NULL)
 {
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
   NAString mmPhase;
@@ -4959,6 +5061,11 @@ NATable::NATable(BindWA *bindWA,
     setDroppableTable( TRUE );
   }
 
+  if (corrName.isExternal())
+  {
+    setIsExternalTable(TRUE);
+  }
+ 
   insertMode_ = table_desc->body.table_desc.insertMode;
 
   setRecordLength(table_desc->body.table_desc.record_length);
@@ -4989,6 +5096,10 @@ NATable::NATable(BindWA *bindWA,
 
   if (!(corrName.isSeabaseMD() || corrName.isSpecialTable()))
     setupPrivInfo();
+
+  if ((table_desc->body.table_desc.tableFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
+      (table_desc->body.table_desc.tableFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
+    setIsExternalTable(TRUE);
 
   rcb_ = table_desc->body.table_desc.rcb;
   rcbLen_ = table_desc->body.table_desc.rcbLen;
@@ -5447,6 +5558,50 @@ NATable::NATable(BindWA *bindWA,
 #pragma warn(770)  // warning elimination
 
 
+// ----------------------------------------------------------------------------
+// method: lookupObjectUid
+//
+// Calls DDL manager to get the object UID for the specified object
+//
+// params:
+//    qualName - name of object to lookup
+//    objectType - type of object
+//
+// returns:
+//   -1 -> error found trying to read metadata including object not found
+//   UID of found object
+//
+// the diags area contains details of any error detected
+//
+// *** recent change - move this function up in this file and move resetting
+//     of ComDiagsArea to the caller ***
+// ----------------------------------------------------------------------------      
+Int64 lookupObjectUid( const QualifiedName& qualName
+                     , ComObjectType objectType
+                     )
+{
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int64 objectUID = 0;
+
+  CmpSeabaseDDL cmpSBD(STMTHEAP);
+  if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
+
+      return -1;
+    }
+
+  objectUID = cmpSBD.getObjectUID(&cliInterface,
+                                  qualName.getCatalogName().data(),
+                                  qualName.getSchemaName().data(),
+                                  qualName.getObjectName().data(),
+                                  comObjectTypeLit(objectType));
+
+  cmpSBD.switchBackCompiler();
+
+  return objectUID;
+}
 
 // Constructor for a Hive table
 NATable::NATable(BindWA *bindWA,
@@ -5589,39 +5744,60 @@ NATable::NATable(BindWA *bindWA,
   cacheTime_  = longArrayToInt64(table_desc->body.table_desc.cachetime);
 */
 
-  // To get from the qualified name for catalog and schema
-/*
-  catalogUID_ = longArrayToInt64(table_desc->body.table_desc.catUID);
-  schemaUID_ = longArrayToInt64(table_desc->body.table_desc.schemaUID);
-  objectUID_ = longArrayToInt64(table_desc->body.table_desc.objectUID);
-*/
+  // NATable has a schemaUID column, probably should propogate it.
+  // for now, set to 0.
+  schemaUID_ = 0;
 
-/*
+  // Set the objectUID_
+  // If the HIVE table has been registered in Trafodion, get the objectUID
+  // from Trafodion, otherwise, set it to 0.
+  // TBD - does getQualifiedNameObj handle delimited names correctly?
+  QualifiedName extObjName (corrName.getQualifiedNameObj().getObjectName(),
+                            corrName.getQualifiedNameObj().getSchemaName(),
+                            TRAFODION_SYSCAT_LIT,
+                            STMTHEAP);
 
-  if (table_desc->body.table_desc.owner)
+  Lng32 diagsMark = CmpCommon::diags()->mark();
+  objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
+
+  // If the objectUID is not found, then the table is not externally defined
+  // in Trafodion, set the objectUID to 0
+  // If an unexpected error occurs, then return with the error
+  if (objectUID_ <= 0)
     {
-#ifdef NA_WINNT
-      NAUserInfo userInfo;
-      userInfo.setUserId(table_desc->body.table_desc.owner, TRUE);
-#else
-      NAUserInfo userInfo (table_desc->body.table_desc.owner);
-#endif
-      owner_ = userInfo;
+      if (CmpCommon::diags()->contains(-1389))
+        {
+          CmpCommon::diags()->rewind(diagsMark);
+          objectUID_ = 0;
+        }
+      else
+        return;
     }
-  if (table_desc->body.table_desc.schemaOwner)
-    {
-#ifdef NA_WINNT
-      NAUserInfo schemaUser;
-      schemaUser.setUserId(table_desc->body.table_desc.schemaOwner, TRUE);
-#else
-      NAUserInfo schemaUser(table_desc->body.table_desc.schemaOwner);
-#endif
-      schemaOwner_ = schemaUser;
-    }
-*/
+  else
+    setHasExternalTable(TRUE);
+ 
+  // for HIVE objects, the schema owner and table owner is HIVE_ROLE_ID
+  if (CmpCommon::context()->isAuthorizationEnabled())
+  {
+    owner_ = HIVE_ROLE_ID;
+    schemaOwner_ = HIVE_ROLE_ID;
+  }
+  else
+  {
+     owner_ = SUPER_USER;
+     schemaOwner_ = SUPER_USER;
+  }
 
+  if (hasExternalTable())
+    setupPrivInfo();
 
-// What object type code to use? 
+  // TBD - if authorization is enabled and there is no external table to store
+  // privileges, go get privilege information from HIVE metadata ...
+  
+  // TBD - add a check to verify that the column list coming from HIVE matches
+  // the column list stored in the external table.  Maybe some common method
+  // that can be used to compare other things as well...
+ 
   objectType_ = COM_BASE_TABLE_OBJECT;
 
 // to check
@@ -6611,7 +6787,8 @@ void NATable::setupPrivInfo()
     }
 
   privInfo_ = new(heap_) PrivMgrUserPrivs;
-  if (!isSeabaseTable() || 
+
+  if ((!isSeabaseTable() && !isHiveTable()) ||
       !CmpCommon::context()->isAuthorizationEnabled() ||
       isVolatileTable() ||
       ComUser::isRootUserID()||
@@ -6671,31 +6848,6 @@ void NATable::setupPrivInfo()
     delete *iter;
   }
 
-}
-
-Int64 lookupObjectUid( const QualifiedName& qualName
-                     , ComObjectType objectType
-                    )
-{
-  ExeCliInterface cliInterface(STMTHEAP);
-  Int64 objectUID = 0;
-
-  Lng32 diagsMark = CmpCommon::diags()->mark();
-
-  CmpSeabaseDDL cmpSBD(STMTHEAP);
-  objectUID = cmpSBD.getObjectUID(&cliInterface, 
-                                  qualName.getCatalogName().data(),
-                                  qualName.getSchemaName().data(),
-                                  qualName.getObjectName().data(),
-                                  comObjectTypeLit(objectType));
-
-  if (objectUID <= 0)
-    {
-      // remove errors
-      CmpCommon::diags()->rewind(diagsMark);
-    }
-
-  return objectUID;
 }
 
 // Query the metadata to find the object uid of the table. This is used when
@@ -7788,12 +7940,6 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
   //check cache to see if a cached NATable object exists
   NATable *table = get(&corrName.getExtendedQualNameObj(), bindWA);  
 
-  if (table && corrName.genRcb())
-    {
-      remove(table->getKey());
-      table = NULL;
-    }
-
   if (table && (corrName.isHbase() || corrName.isSeabase()) && inTableDescStruct)
     {
       remove(table->getKey());
@@ -8277,12 +8423,16 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
       // add its objectUID to the set.
       if (0 == objectUIDs.entries())
       {
+        // ignore any errors returned
+        Lng32 diagsMark = CmpCommon::diags()->mark();
         Int64 ouid = lookupObjectUid(
                        toRemove->getQualifiedNameObj(), 
                        ot); 
+        CmpCommon::diags()->rewind(diagsMark);
         if (ouid > 0)
           objectUIDs.insert(ouid);
       }
+
       Int32 numKeys = objectUIDs.entries();
       if (numKeys > 0)
       {                 

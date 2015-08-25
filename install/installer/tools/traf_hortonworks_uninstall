@@ -176,6 +176,7 @@ sudo rm -rf /var/spool/mail/mapred
 
 sudo rm -rf /kdump/hadoop
 sudo rm -rf /hadoop
+sudo rm -rf /etc/init.d/ambari*
 
 #==============================================
 #Deleting all userids
@@ -227,5 +228,6 @@ sudo pkill -f zookeeper
 sudo pkill -f hbase
 sudo pkill -f hive
 sudo pkill -f yarn
+sudo pkill -f hdp
 #==============================================
 

@@ -1,0 +1,275 @@
+>>obey TEST009(set_up);
+>>prepare get_hv_schemas from
++>select schema_name from "_MD_".objects
++>where schema_name like '_HV_%' and object_type = 'PS';
+
+--- SQL command prepared.
+>>
+>>obey TEST009(create_db);
+>>
+>>-- The version of hive installed does not support special characters
+>>-- TDB - when hive is upgraded to a new version, add tests where
+>>--   the hive schema contains special characters
+>>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql;
+>>
+>>-- make sure no external hive schema exist in Trafodion
+>>execute get_hv_schemas;
+
+--- 0 row(s) selected.
+>>
+>>obey TEST009(tests);
+>>-- create external tables for precreated tables
+>>create external table customer for hive.hive.customer;
+
+--- SQL operation complete.
+>>create external table item for hive.hive.item;
+
+--- SQL operation complete.
+>>create external table promotion for hive.hive.promotion;
+
+--- SQL operation complete.
+>>
+>>-- should create an schema called "_HV_HIVE_"
+>>execute get_hv_schemas;
+
+SCHEMA_NAME
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+_HV_HIVE_                                                                                                                                                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>-- Verify tables were created
+>>showddl trafodion."_HV_HIVE_".customer;
+
+CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".CUSTOMER
+  (
+    C_CUSTOMER_SK                    INT DEFAULT NULL
+  , C_CUSTOMER_ID                    VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_CURRENT_CDEMO_SK               INT DEFAULT NULL
+  , C_CURRENT_HDEMO_SK               INT DEFAULT NULL
+  , C_CURRENT_ADDR_SK                INT DEFAULT NULL
+  , C_FIRST_SHIPTO_DATE_SK           INT DEFAULT NULL
+  , C_FIRST_SALES_DATE_SK            INT DEFAULT NULL
+  , C_SALUTATION                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_FIRST_NAME                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_LAST_NAME                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_PREFERRED_CUST_FLAG            VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_BIRTH_DAY                      INT DEFAULT NULL
+  , C_BIRTH_MONTH                    INT DEFAULT NULL
+  , C_BIRTH_YEAR                     INT DEFAULT NULL
+  , C_BIRTH_COUNTRY                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_LOGIN                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_EMAIL_ADDRESS                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , C_LAST_REVIEW_DATE               VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>showddl trafodion."_HV_HIVE_".item;
+
+CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".ITEM
+  (
+    I_ITEM_SK                        INT DEFAULT NULL
+  , I_ITEM_ID                        VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_REC_START_DATE                 TIMESTAMP(0) DEFAULT NULL
+  , I_REC_END_DATE                   TIMESTAMP(0) DEFAULT NULL
+  , I_ITEM_DESC                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_CURRENT_PRICE                  REAL DEFAULT NULL
+  , I_WHOLESALE_COST                 REAL DEFAULT NULL
+  , I_BRAND_ID                       INT DEFAULT NULL
+  , I_BRAND                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_CLASS_ID                       INT DEFAULT NULL
+  , I_CLASS                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_CATEGORY_ID                    INT DEFAULT NULL
+  , I_CATEGORY                       VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_MANUFACT_ID                    INT DEFAULT NULL
+  , I_MANUFACT                       VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_SIZE                           VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_FORMULATION                    VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_COLOR                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_UNITS                          VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_CONTAINER                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , I_MANAGER_ID                     INT DEFAULT NULL
+  , I_PRODUCT_NAME                   VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>showddl trafodion."_HV_HIVE_".promotion;
+
+CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".PROMOTION
+  (
+    P_PROMO_SK                       INT DEFAULT NULL
+  , P_PROMO_ID                       VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_START_DATE_SK                  INT DEFAULT NULL
+  , P_END_DATE_SK                    INT DEFAULT NULL
+  , P_ITEM_SK                        INT DEFAULT NULL
+  , P_COST                           REAL DEFAULT NULL
+  , P_RESPONSE_TARGET                INT DEFAULT NULL
+  , P_PROMO_NAME                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_DMAIL                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_EMAIL                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_CATALOG                VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_TV                     VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_RADIO                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_PRESS                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_EVENT                  VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_DEMO                   VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_CHANNEL_DETAILS                VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_PURPOSE                        VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , P_DISCOUNT_ACTIVE                VARCHAR(32000 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- create external tables from hive schema sch_t009
+>>create external table t009t1 for hive.sch_t009.t009t1;
+
+--- SQL operation complete.
+>>create external table t009t2 for hive.sch_t009.t009t2;
+
+--- SQL operation complete.
+>>
+>>execute get_hv_schemas;
+
+SCHEMA_NAME
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+_HV_HIVE_                                                                                                                                                                                                                                                       
+_HV_SCH_T009_                                                                                                                                                                                                                                                   
+
+--- 2 row(s) selected.
+>>showddl trafodion."_HV_SCH_T009_".t009t1;
+
+CREATE EXTERNAL TABLE TRAFODION."_HV_SCH_T009_".T009T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>showddl trafodion."_HV_SCH_T009_".t009t2;
+
+CREATE EXTERNAL TABLE TRAFODION."_HV_SCH_T009_".T009T2
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>
+>>select count(*) from hive.hive.customer;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.hive.item;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.hive.promotion;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>
+>>select * from hive.sch_t009.t009t1;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           15           10
+          9           26           10
+          8           26           12
+          7           24            4
+          6            4           12
+          5            8            5
+          4            7            6
+          3           18            9
+          2            9            4
+          1            9           12
+
+--- 10 row(s) selected.
+>>select * from hive.sch_t009.t009t2;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           15           10
+          9           26           10
+          8           26           12
+          7           24            4
+          6            4           12
+          5            8            5
+          4            7            6
+          3           18            9
+          2            9            4
+          1            9           12
+
+--- 10 row(s) selected.
+>>
+>>-- accesses to the external name should be prohibited
+>>select * from trafodion."_HV_SCH_T009_".t009t1;
+
+*** ERROR[4258] Trying to access external table TRAFODION."_HV_SCH_T009_".T009T1 through its external name format. Please use the native table name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop external table "_HV_HIVE_".customer;
+
+--- SQL operation complete.
+>>drop external table item for hive.hive.item;
+
+--- SQL operation complete.
+>>log;

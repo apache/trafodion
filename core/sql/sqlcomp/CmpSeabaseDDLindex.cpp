@@ -721,7 +721,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
     // verify base table is salted
     if (naTable->hasSaltedColumn())
     {
-      createIndexNode->getSaltOptions()->setNumPartns(naTable->numSaltPartns());
+      createIndexNode->getSaltOptions()->setNumPartns(nafs->numSaltPartns());
       NAString saltColName;
       for (CollIndex c=0; c<baseTableKeyArr.entries(); c++)
         if (baseTableKeyArr[c]->isSaltColumn())
@@ -737,7 +737,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
       //SALT column will be the first column in the index
       indexColRefArray.insertAt(numPrefixColumns, saltColRef);
       numPrefixColumns++;
-      numSplits = naTable->numSaltPartns() - 1;
+      numSplits = nafs->numSaltPartns() - 1;
     }
     else
     {
@@ -828,8 +828,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
                                                 colInfoArray,
                                                 keyColCount) ;
 
-    if (createEncodedKeysBuffer(encodedKeysBuffer,
-                                colDescs, keyDescs, numSplits, 
+    if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                                numSplits/*out*/,
+                                colDescs, keyDescs,
+                                nafs->numSaltPartns(), numSplits, NULL,
                                 keyColCount, keyLength, TRUE))
       {
         deallocEHI(ehi);
@@ -906,8 +908,6 @@ void CmpSeabaseDDL::createSeabaseIndex(
 			 keyInfoArray,
 			 1, // numIndex
                          ii,
-                         tableInfo->objOwnerID,
-                         tableInfo->schemaOwnerID,
                          objUID))
     {
       goto label_error;
@@ -1763,10 +1763,11 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   Int64 btUID;
   Int32 btObjOwner = 0;
   Int32 btSchemaOwner = 0;
-  if ((getObjectUIDandOwners(&cliInterface,
-                             btCatName, btSchName, btObjName, 
-                             COM_BASE_TABLE_OBJECT,
-                             btObjOwner, btSchemaOwner)) < 0)
+  Int64 btObjectFlags = 0;
+  if ((getObjectInfo(&cliInterface,
+                     btCatName, btSchName, btObjName, 
+                     COM_BASE_TABLE_OBJECT,
+                     btObjOwner, btSchemaOwner, btObjectFlags)) < 0)
     {
       processReturn();
 

@@ -108,12 +108,18 @@
 >>create trigger t013t1 after insert on nt008
 +>	update nt008 set i = 7 where i = 9;
 
---- SQL operation complete.
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>--not ok
 >>create trigger t013t2 after insert on nt008
 +>	update nt007 set d = _UCS2'qwer' where d = _UCS2'aaaa';
 
---- SQL operation complete.
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>--no UCS2 strings in a FIRST KEY clause
 >>create table nt009 (c char(10) character set UCS2)

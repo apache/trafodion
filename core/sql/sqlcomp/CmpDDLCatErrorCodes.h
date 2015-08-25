@@ -214,8 +214,8 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   //
                   // 1150-1180  Queuing and publish/subscribe errors
                   //
-                  , CAT_SUBVOLUME_MISMATCH                        = 1180
-                  , CAT_DROP_LABEL_ERROR                          = 1181
+                  , CAT_EXTERNAL_NAME_MISMATCH                    = 1180
+                  , CAT_EXTERNAL_SCHEMA_NAME_TOO_LONG             = 1181
                   , CAT_RFORK_SQL_ERROR                           = 1182
                   , CAT_METADATA_SQL_ERROR                        = 1183
                   , CAT_INSUFFICIENT_PRIV_ON_COLUMN               = 1184

@@ -294,10 +294,55 @@ elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
   export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
   export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
 
+elif [[ -d /opt/cloudera/parcels/CDH ]]; then
+  # we are on a cluster with Cloudera parcels installed
+  # -------------------------------------------
+
+  # native library directories and include directories
+  export HADOOP_LIB_DIR=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native
+  export HADOOP_INC_DIR=/opt/cloudera/parcels/CDH/include
+
+  ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
+  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
+  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+
+
+  export CURL_INC_DIR=/usr/include
+  export CURL_LIB_DIR=/usr/lib64
+
+  # directories with jar files and list of jar files
+  # (could try to reduce the number of jars in the classpath)
+  export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
+                          /opt/cloudera/parcels/CDH/lib/hadoop/lib"
+  export HADOOP_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop/client/hadoop-hdfs-*.jar"
+  export HBASE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hbase/hbase-*-security.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-client.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-common.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-server.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-examples.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-protocol.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/zookeeper.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/$protobuf-*.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/snappy-java-*.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/lib/high-scale-lib-*.jar
+                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-hadoop-compat.jar "
+  export HIVE_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hive/lib"
+  export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
+
+  # suffixes to suppress in the classpath (set this to ---none--- to add all files)
+  export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"
+
+  # Configuration directories
+
+  export HADOOP_CNF_DIR=/etc/hadoop/conf
+  export HBASE_CNF_DIR=/etc/hbase/conf
+  export HIVE_CNF_DIR=/etc/hive/conf
+
 elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   # we are on a cluster with Cloudera installed
   # -------------------------------------------
-
+  
   # native library directories and include directories
   export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
   export HADOOP_INC_DIR=/usr/include
@@ -305,7 +350,7 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
- 
+
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
@@ -321,7 +366,7 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
                           /usr/lib/hbase/hbase-server.jar
                           /usr/lib/hbase/hbase-examples.jar
                           /usr/lib/hbase/hbase-protocol.jar
-			  /usr/lib/hbase/lib/htrace-core.jar
+                          /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar
                          /usr/lib/hbase/lib/snappy-java-*.jar
@@ -775,5 +820,3 @@ if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo $CLASSPATH | sed -e's/:/ /g' | fmt -w2 | xargs printf '\t%s\n'
   echo
 fi
-export DCS_INSTALL_DIR=/home/trafodion/trafodion-20150801_0830/dcs-1.2.0
-export REST_INSTALL_DIR=/home/trafodion/trafodion-20150801_0830/rest-1.2.0

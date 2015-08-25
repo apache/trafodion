@@ -183,6 +183,10 @@ if [ "$userid_already_exists" == "Y" ]; then
     fi
 fi
 sudo cp $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp3 $TRAF_USER_DIR/.bashrc
+if [[ -f $TRAF_WORKDIR/installer/sqenvcom.sh ]]; then
+   sudo cp $TRAF_WORKDIR/installer/sqenvcom.sh $TRAF_USER_DIR
+   sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqenvcom.sh
+fi
 sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.bashrc
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2

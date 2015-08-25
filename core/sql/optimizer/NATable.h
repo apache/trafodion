@@ -697,6 +697,19 @@ public:
   NABoolean hasSerializedColumn() const
   {  return (flags_ & SERIALIZED_COLUMN) != 0; }
 
+  void setIsExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_EXTERNAL_TABLE : flags_ &= ~IS_EXTERNAL_TABLE; }
+
+  NABoolean isExternalTable() const
+  {  return (flags_ & IS_EXTERNAL_TABLE) != 0; }
+
+
+  void setHasExternalTable( NABoolean value )
+  {  value ? flags_ |= HAS_EXTERNAL_TABLE : flags_ &= ~HAS_EXTERNAL_TABLE; }
+
+  NABoolean hasExternalTable() const
+  {  return (flags_ & HAS_EXTERNAL_TABLE) != 0; }
+
   const CheckConstraintList &getCheckConstraints() const
                                                 { return checkConstraints_; }
   const AbstractRIConstraintList &getUniqueConstraints() const
@@ -777,7 +790,6 @@ public:
   NABoolean insertMissingStatsWarning(CollIndexSet colsSet) const;
 
   const desc_struct * getTableDesc() const { return tableDesc_; }
-  Lng32 numSaltPartns() { return clusteringIndex_->numSaltPartns(); }
   NAList<HbaseCreateOption*> * hbaseCreateOptions()
     { return clusteringIndex_->hbaseCreateOptions();}
 
@@ -909,8 +921,10 @@ private:
     DROPPABLE                 = 0x00004000,
     LOB_COLUMN                = 0x00008000,
     REMOVE_FROM_CACHE_BNC     = 0x00010000,  // Remove from NATable Cache Before Next Compilation
-    SERIALIZED_ENCODED_COLUMN  = 0x00020000,
-    SERIALIZED_COLUMN          = 0x00040000
+    SERIALIZED_ENCODED_COLUMN = 0x00020000,
+    SERIALIZED_COLUMN         = 0x00040000,
+    IS_EXTERNAL_TABLE         = 0x00080000,
+    HAS_EXTERNAL_TABLE        = 0x00100000
   };
     
   UInt32 flags_;

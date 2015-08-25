@@ -179,8 +179,8 @@
 1177 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: trying to create an object with a qualified name type of $0~string0. This qualified name type is not supported. 
 1178 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Internal error: unable to find catalog associated with uid $0~string0.  This catalog is being accessed by role $1~string1.
 1179 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: inconsistent object definition for $0~TableName found for object in name space $0~string0. Object owned by $1~string1. Unable to find object details in $2~string2;
-1180 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The required subvolume name for locations in schema $0~SchemaName is $1~String0.
-1181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Label $0~String0 could not be dropped (file error $1~NSKCode). 
+1180 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to create an external table $0~TableName with a different schema or table name than the source table $1~TableName.  The external schema and table name must be the same as the source. 
+1181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to create a schema with name $0~TableName to store the definition of a native HIVE or HBASE table and the name is too long.  Maximum length supported is $0~Int0.
 1182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $0~NSKCode was returned by the file system on resource fork $1~String0.
 1183 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $0~NSKCode was returned by the file system on metadata table $1~TableName (file name $2~String0).
 1184 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You do not have the required privilege(s) on $0~ColumnName.
@@ -205,6 +205,13 @@
 1203 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU HBASE_OPTIONS clause in CREATE statement is longer than 6000 characters. Object $0~string0 was not created.
 1204 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unsupported Hive datatype $0~string0.
 1205 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Hive feature $0~string0 is not supported.
+1206 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU SALT AND SPLIT BY clauses are not allowed together.
+1207 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Text to be inserted into the TEXT metadata table contains too many quotes.
+1208 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause is not supported for indexes.
+1209 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The SPLIT BY clause has more columns than the table has key columns ($0~Int0).
+1210 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~String0 is not allowed at position $1~Int0 in the SPLIT BY clause, because SPLIT BY must specify a prefix of the clustering key columns and the next clustering key column is $2~String1.
+1211 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The column values of the SPLIT BY first key in position $0~Int0 (one-based) are not greater (for ascending columns) or less (for descending columns) than its predecessor.
+1212 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An HBase region start key provided only part of the value for Trafodion key column $0~Int0. This could in some unusual situations cause errors.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
 1222 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Command not supported when authorization is not enabled.
@@ -843,7 +850,7 @@ $1~String1 --------------------------------
 3100 42000 99999 BEGINNER MAJOR DBADMIN Duplicate DSLACK clauses were specified.
 3101 42000 99999 BEGINNER MAJOR DBADMIN Duplicate ISLACK clauses were specified.
 3102 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PARALLEL EXECUTION clauses were specified.
-3103 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PARTITION clauses were specified.
+3103 42000 99999 BEGINNER MAJOR DBADMIN Duplicate $0~string0 clauses were specified.
 3104 42000 99999 BEGINNER MAJOR DBADMIN Only the ADD option is allowed in a PARTITION clause in a CREATE TABLE statement.
 3105 0A000 99999 BEGINNER MAJOR DBADMIN Only range, hash, hash2 and system partitioning are currently supported.
 3106 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PRIMARY KEY clauses were specified.
@@ -1287,6 +1294,7 @@ $1~String1 --------------------------------
 4255 ZZZZZ 99999 BEGINNER MINOR DBADMIN Provided schema name does not exist in metadata. Cleanup will be performed on objects in this schema, if they exist.
 4256 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object type specified for this object does not match the object type stored in metadata.
 4257 ZZZZZ 99999 BEGINNER MINOR DBADMIN DIVISION BY with an approximate numeric data type is not supported.
+4258 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to access external table $0~TableName through its external name format. Please use the native table name.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

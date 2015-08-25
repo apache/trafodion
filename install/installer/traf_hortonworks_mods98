@@ -77,6 +77,7 @@ fi
 # if more than one node then copy to all nodes
 echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf  $HADOOP_PATH/hbase-trx* 2>/dev/null
     $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
     $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/hbase-trx* 2>/dev/null
     $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
@@ -88,18 +89,14 @@ if [ $node_count -ne 1 ]; then
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     $PDCP $MY_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
 
-    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-       $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
-       $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
-    else
-       $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/hdp/current/hbase-regionserver/lib
-       $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 /usr/hdp/current/hbase-regionserver/lib/$hbase_trx_jar
-    fi
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
 
     $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
 else
     for node in $HADOOP_NODES
-    do
+    do 
+    ssh -q -n $node sudo rm -rf $HADOOP_PATH/hbase-trx* 2>/dev/null
     ssh -q -n $node sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
     ssh -q -n $node sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     ssh -q -n $node sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
@@ -108,13 +105,8 @@ else
     ssh -q -n $node sudo chmod 777 $TRAF_WORKDIR
     scp -q $UNTAR_DIR/export/lib/$hbase_trx_jar $(whoami)@$node:$TRAF_WORKDIR
 
-    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-       ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
-       ssh -q -n $node sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
-    else
-       ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/hdp/current/hbase-regionserver/lib
-       ssh -q -n $node sudo chmod 644 /usr/hdp/current/hbase-regionserver/lib/$hbase_trx_jar
-    fi
+    ssh -q -n $node sudo cp $TRAF_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+    ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
     done
 fi
 

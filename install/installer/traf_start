@@ -73,10 +73,10 @@ fi
 
 #============================================
 echo "***INFO: traf_start" | tee -a $INSTALL_LOG
-echo ******************************************
-echo ******************************************
-echo ******************************************
-echo ******************************************
+echo "******************************************"
+echo "******************************************"
+echo "******************************************"
+echo "******************************************"
 #============================================
 # Check if an existing instance is up
 process_count=$(cstat -noheader 2>/dev/null | wc -l)
@@ -92,6 +92,12 @@ fi
 # Create install directory
 mkdir -p $SQ_ROOT
 echo $SQ_ROOT
+
+if [[ -f $HOME/sqenvcom.sh ]]; then
+   echo "****INFO: Copying over sqenvcom.sh"
+   cp -rf $HOME/sqenvcom.sh $SQ_ROOT
+fi
+
 cd $SQ_ROOT
 
 # untar Trafodion build into install directory
@@ -186,6 +192,10 @@ cd $SQ_ROOT
 if [ "$node_count" -ne "1" ]; then
    echo "***INFO: Creating $SQ_ROOT directory on all nodes" | tee -a $INSTALL_LOG
    $PDSH $MY_NODES -x $HOSTNAME $PDSH_SSH_CMD mkdir -p $SQ_ROOT
+   if [[ -f $HOME/sqenvcom.sh ]]; then
+      echo "****INFO: Copying over sqenvcom.sh"
+      $PDCP $MY_NODES $HOME/sqenvcom.sh $SQ_ROOT
+   fi
 fi
 
 echo "***INFO: starting sqgen" | tee -a $INSTALL_LOG

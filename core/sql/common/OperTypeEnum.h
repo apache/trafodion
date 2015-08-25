@@ -1044,8 +1044,6 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_WITH_HORIZONTAL_PARTITIONS_ELEM,
                         ELM_LIKE_OPT_WITHOUT_SALT_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
-                        ELM_LOAD_OPT_D_SLACK_ELEM,
-                        ELM_LOAD_OPT_I_SLACK_ELEM,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

@@ -646,11 +646,12 @@ void CmpSeabaseDDL::createSeabaseView(
       
       Int32 objectOwnerID = 0;
       Int32 schemaOwnerID = 0;
-      Int64 objUID = getObjectUIDandOwners(&cliInterface,
-    			                   catalogNamePart.data(), schemaNamePart.data(), 
-    			                   objectNamePart.data(),
-    			                   COM_VIEW_OBJECT,
-                                           objectOwnerID,schemaOwnerID);
+      Int64 objectFlags = 0;
+      Int64 objUID = getObjectInfo(&cliInterface,
+    			           catalogNamePart.data(), schemaNamePart.data(), 
+    			           objectNamePart.data(),
+    			           COM_VIEW_OBJECT,
+                                   objectOwnerID,schemaOwnerID,objectFlags);
 
       if (objUID < 0 || objectOwnerID == 0)
         {
@@ -726,15 +727,6 @@ void CmpSeabaseDDL::createSeabaseView(
   NAString viewText(STMTHEAP);
   buildViewText(createViewNode, viewText);
 
-  NAString newViewText(STMTHEAP);
-  for (Lng32 i = 0; i < viewText.length(); i++)
-    {
-      if (viewText.data()[i] == '\'')
-	newViewText += "''";
-      else
-	newViewText += viewText.data()[i];
-    }
-
   ElemDDLColDefArray colDefArray(STMTHEAP);
   if (buildViewColInfo(createViewNode, &colDefArray))
     {
@@ -756,18 +748,30 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = NULL,
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = 0;
+  tableInfo->objOwnerID = objectOwnerID;
+  tableInfo->schemaOwnerID = schemaOwnerID;
+  tableInfo->isAudited = 1;
+  tableInfo->validDef = 1;
+  tableInfo->hbaseCreateOptions = NULL;
+  tableInfo->numSaltPartns = 0;
+  tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
+  tableInfo->objectFlags = 0;
+
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
 			   COM_VIEW_OBJECT,
 			   "N",
-			   NULL,
+			   tableInfo,
 			   numCols,
 			   colInfoArray,	       
 			   0, NULL,
 			   0, NULL,
-                           objectOwnerID,
-                           schemaOwnerID,
                            objUID))
     {
       deallocEHI(ehi); 
@@ -840,7 +844,7 @@ void CmpSeabaseDDL::createSeabaseView(
     }
 
 
-  query = new(STMTHEAP) char[newViewText.length() + 1000];
+  query = new(STMTHEAP) char[1000];
   str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
@@ -865,7 +869,7 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
-  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, newViewText))
+  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, viewText))
     {
       deallocEHI(ehi); 
       processReturn();
@@ -966,11 +970,12 @@ void CmpSeabaseDDL::dropSeabaseView(
 
   Int32 objectOwnerID = 0;
   Int32 schemaOwnerID = 0;
-  Int64 objUID = getObjectUIDandOwners(&cliInterface,
-			              catalogNamePart.data(), schemaNamePart.data(), 
-			              objectNamePart.data(),
-			              COM_VIEW_OBJECT,
-                                      objectOwnerID,schemaOwnerID);
+  Int64 objectFlags = 0;
+  Int64 objUID = getObjectInfo(&cliInterface,
+			      catalogNamePart.data(), schemaNamePart.data(), 
+			      objectNamePart.data(),
+			      COM_VIEW_OBJECT,
+                              objectOwnerID,schemaOwnerID,objectFlags);
 
   if (objUID < 0 || objectOwnerID == 0)
     {

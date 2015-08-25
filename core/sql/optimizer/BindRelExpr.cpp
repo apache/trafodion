@@ -1391,8 +1391,6 @@ NATable *BindWA::getNATable(CorrName& corrName,
       CorrName newCorrName = 
         CmpCommon::context()->sqlSession()->getVolatileCorrName
           (corrName);
-      newCorrName.applyDefaults(bindWA, bindWA->getDefaultSchema());
-	  newCorrName.setGenRcb(corrName.genRcb());
       if (bindWA->errStatus())
         return NULL;
 
@@ -1571,6 +1569,21 @@ NATable *BindWA::getNATable(CorrName& corrName,
       ((QualifiedName&)(table->getTableName())).setIsVolatile(TRUE);
     }
       
+  // For now, do not allow access through the Trafodion external name created for
+  // the HIVE object unless the inDDL flag is set.  inDDL is set for drop 
+  // table and SHOWDDL statements.  
+  // TDB - may want to merge the Trafodion version with the HIVE version.
+  // TDB - similar operation may be needed for external HBase tables
+  if ((table) && (table->isExternalTable() && (! bindWA->inDDL())))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4258)
+                          << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+    
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);
@@ -7004,9 +7017,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
                                const CorrName &corrName,
                                NABoolean noSecurityCheck)
 {
-  if ( naTable->isHiveTable() )
-     return NULL;
-
   // Get the PHYSICAL (non-Ansi/non-delimited) filename of the table or view.
   CMPASSERT(!naTable->getViewText() || naTable->getViewFileName());
   NAString fileName( naTable->getViewText() ?

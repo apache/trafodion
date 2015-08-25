@@ -10298,23 +10298,23 @@ NABoolean ZZZBinderFunction::isPadWithSpace (ExprValueId& padExpr, CharInfo::Cha
   if ((padExpr->castToItemExpr()->getOperatorType() == ITM_CONSTANT) &&
       (!((ConstValue *)padExpr->castToItemExpr())->getText().isNull()))
   {
-     NAWString padString(
-       ((ConstValue *)padExpr->castToItemExpr())->getConstWStr());
+     NAString padString(
+       ((ConstValue *)padExpr->castToItemExpr())->getConstStr(FALSE));
      Int32 i = 0;
      NABoolean foundSingleQuote = FALSE;
-     for (const NAWchar *s = padString.data(); *s; s++)
+     for (const char *s = padString.data(); *s; s++)
      {
-       i++;  // 0x0027 is the single quote character '
-       if ((!foundSingleQuote)&&(*s != 0x0027)) // loop through 
+       i++;
+       if ((!foundSingleQuote)&&(*s != '\'')) // loop through 
          continue;  // the prefix _UCS2 or _ISO88591
        else if ((!foundSingleQuote))
        {
         foundSingleQuote = TRUE; // found the leading single quote.
         continue;
        }
-       if ((i == (padString.length())) && (*s == 0x0027)) // trailing single quote
+       if ((i == (padString.length())) && (*s == '\'')) // trailing single quote
          continue;
-       if (*s != 0x0020) // 0x0020 is the single space character ' '
+       if (*s != ' ')
          return FALSE;
      }
      return foundSingleQuote;
