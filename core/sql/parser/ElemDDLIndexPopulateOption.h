@@ -39,9 +39,7 @@
  *****************************************************************************
  */
 
-#include "ElemDDLLoadOptions.h"
-
-class ElemDDLIndexPopulateOption : public ElemDDLLoadOpt
+class ElemDDLIndexPopulateOption : public ElemDDLNode
 {
 
 public:
@@ -50,7 +48,7 @@ public:
       // no populate both exist in one statement. Error will be issue if both populate and no populate 
       // clause exist.
       ElemDDLIndexPopulateOption ()
-        :  ElemDDLLoadOpt(ELM_WITH_POPULATE_OPTION_ELEM)
+        :  ElemDDLNode(ELM_WITH_POPULATE_OPTION_ELEM)
   
       {
 	populateCount_ = 0;

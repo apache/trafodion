@@ -3294,6 +3294,89 @@ SqlParserAux_buildDescribeForFunctionAndAction
                                     );
 }
 
+// ----------------------------------------------------------------------------
+// method:: TableTokens::setTableTokens
+//
+// Method that sets appropriate values in the createTableNode parser tree
+// based on options described in this class.
+//
+// in:  StmtDDLCreateTable *pNode - pointer to the create table parse tress
+//
+// ----------------------------------------------------------------------------
+void
+TableTokens::setTableTokens(StmtDDLCreateTable *pNode)
+{
+  pNode->setCreateIfNotExists(ifNotExistsSet());
+
+  switch (type_)
+  {
+    case TableTokens::TYPE_REGULAR_TABLE:
+    case TableTokens::TYPE_GHOST_TABLE:
+      break;
+
+    case TableTokens::TYPE_EXTERNAL_TABLE:
+      pNode->setIsExternal(TRUE);
+      break;
+
+    case TableTokens::TYPE_SET_TABLE:
+      pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
+      break;
+
+    case TableTokens::TYPE_MULTISET_TABLE:
+      pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
+      break;
+
+    case TableTokens::TYPE_VOLATILE_TABLE:
+      pNode->setIsVolatile(TRUE);
+      pNode->setProcessAsExeUtil(TRUE);
+      break;
+
+    case TableTokens::TYPE_VOLATILE_TABLE_MODE_SPECIAL1:
+    case TableTokens::TYPE_VOLATILE_SET_TABLE:
+      pNode->setIsVolatile(TRUE);
+      pNode->setProcessAsExeUtil(TRUE);
+      pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
+      break;
+
+    case TableTokens::TYPE_VOLATILE_MULTISET_TABLE:
+      pNode->setProcessAsExeUtil(TRUE);
+      pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
+      break;
+
+    default:
+      NAAbort("TableTokens - TypeAttr", __LINE__, "internal logic error");
+      break;
+  }
+
+  switch (options_)
+  {
+    case TableTokens::OPT_NONE:
+      break;
+
+    case TableTokens::OPT_LOAD:
+      pNode->setLoadIfExists(TRUE);
+      break;
+
+    case TableTokens::OPT_NO_LOAD:
+      pNode->setNoLoad(TRUE);
+      break;
+
+    case TableTokens::OPT_IN_MEM:
+      pNode->setNoLoad(TRUE);
+      pNode->setInMemoryObjectDefn(TRUE);
+      break;
+
+    case TableTokens::OPT_LOAD_WITH_DELETE:
+      pNode->setLoadIfExists(TRUE);
+      pNode->setDeleteData(TRUE);
+      break;
+
+    default:
+      NAAbort("TableTokens - LoadAttr", __LINE__, "internal logic error");
+      break;
+  }
+}
+
 //
 // End of File
 //

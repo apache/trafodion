@@ -44,7 +44,6 @@
 #include "ComOperators.h"
 #include "ComLocationNames.h"
 #include "ElemDDLKeyValue.h"
-#include "ElemDDLLoadOptions.h"
 #include "ElemDDLLocation.h"
 #include "ElemDDLPartitionList.h"
 #include "ItemConstValueArray.h"
@@ -355,15 +354,6 @@ ElemDDLPartitionSystem::initializeDataMembers()
 
   isMaxExtentSpec_         = FALSE;
   ParSetDefaultMaxExtents(maxExt_);
- //
-  // load options
-  //
-
-  isDSlackSpec_         = FALSE;
-  dSlackPercentage_     = ElemDDLLoadOptDSlack::DEFAULT_PERCENTAGE;
-
-  isISlackSpec_         = FALSE;
-  iSlackPercentage_     = ElemDDLLoadOptISlack::DEFAULT_PERCENTAGE;
 
   //
   // location
@@ -467,28 +457,6 @@ ElemDDLPartitionSystem::setPartitionAttr(ElemDDLNode * pPartitionAttr)
 	  }
     }
 	break;
-    case ELM_LOAD_OPT_D_SLACK_ELEM :
-    if (isDSlackSpec_)
-    {
-      // cout << "*** Error *** Duplicate DSLACK phrases in PARTITION clause.
-      *SqlParser_Diags << DgSqlCode(-3063);
-    }
-    isDSlackSpec_ = TRUE;
-    dSlackPercentage_ =
-      pPartitionAttr->castToElemDDLLoadOptDSlack()->getPercentage();
-    break;
-
-    case ELM_LOAD_OPT_I_SLACK_ELEM :
-    if (isISlackSpec_)
-    {
-      // Duplicate ISLACK phrases in PARTITION clause.
-      *SqlParser_Diags << DgSqlCode(-3064);
-    }
-    isISlackSpec_ = TRUE;
-    iSlackPercentage_ =
-      pPartitionAttr->castToElemDDLLoadOptISlack()->getPercentage();
-    break;
-
   default :
     ABORT("internal logic error");
     break;
@@ -657,28 +625,6 @@ ElemDDLPartitionSystem::getDetailInfo() const
 
   detailText = "    max size unit: ";
   detailText += maxSizeFileAttr.getMaxSizeUnitAsNAString();;
-  detailTextList.append(detailText);
-
-  //
-  // load options for this partition
-  //
-
-  detailTextList.append("Load options:");
-
-  detailText = "    dslack spec?   ";
-  detailText += YesNo(isDSlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    dslack %:      ";
-  detailText += LongToNAString((Lng32)getDSlackPercentage());
-  detailTextList.append(detailText);
-
-  detailText = "    islack spec?   ";
-  detailText += YesNo(isISlackSpecified());
-  detailTextList.append(detailText);
-
-  detailText = "    islack %:      ";
-  detailText += LongToNAString((Lng32)getISlackPercentage());
   detailTextList.append(detailText);
 
   return detailTextList;

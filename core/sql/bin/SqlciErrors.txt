@@ -179,8 +179,8 @@
 1177 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: trying to create an object with a qualified name type of $0~string0. This qualified name type is not supported. 
 1178 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Internal error: unable to find catalog associated with uid $0~string0.  This catalog is being accessed by role $1~string1.
 1179 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: inconsistent object definition for $0~TableName found for object in name space $0~string0. Object owned by $1~string1. Unable to find object details in $2~string2;
-1180 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The required subvolume name for locations in schema $0~SchemaName is $1~String0.
-1181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Label $0~String0 could not be dropped (file error $1~NSKCode). 
+1180 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to create an external table $0~TableName with a different schema or table name than the source table $1~TableName.  The external schema and table name must be the same as the source. 
+1181 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to create a schema with name $0~TableName to store the definition of a native HIVE or HBASE table and the name is too long.  Maximum length supported is $0~Int0.
 1182 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $0~NSKCode was returned by the file system on resource fork $1~String0.
 1183 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $0~NSKCode was returned by the file system on metadata table $1~TableName (file name $2~String0).
 1184 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You do not have the required privilege(s) on $0~ColumnName.
@@ -1294,6 +1294,7 @@ $1~String1 --------------------------------
 4255 ZZZZZ 99999 BEGINNER MINOR DBADMIN Provided schema name does not exist in metadata. Cleanup will be performed on objects in this schema, if they exist.
 4256 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object type specified for this object does not match the object type stored in metadata.
 4257 ZZZZZ 99999 BEGINNER MINOR DBADMIN DIVISION BY with an approximate numeric data type is not supported.
+4258 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to access external table $0~TableName through its external name format. Please use the native table name.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.
