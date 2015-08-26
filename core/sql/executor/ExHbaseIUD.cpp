@@ -1615,9 +1615,44 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         break;
       case RETURN_ROW:
       {
-        if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(),
-                             &rc, FALSE))
-		  return rc;
+	if (qparent_.up->isFull())
+	      return WORK_OK;
+	    
+	if (returnUpdateExpr())
+	{
+	  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+	  
+	  // allocate tupps where returned rows will be created
+	  if (allocateUpEntryTupps(
+				   -1,
+				   0,
+				   hbaseAccessTdb().returnedTuppIndex_,
+				   hbaseAccessTdb().returnUpdatedRowLen_,
+				   FALSE,
+				   &rc))
+	    return rc;
+	  
+	  ex_expr::exp_return_type exprRetCode =
+	    returnUpdateExpr()->eval(up_entry->getAtp(), workAtp_);
+	  if (exprRetCode == ex_expr::EXPR_ERROR)
+	  {
+	    step_ = HANDLE_ERROR;
+	    break;
+	  }
+	  
+	  rc = 0;
+	  // moveRowToUpQueue also increments matches_
+	  if (moveRowToUpQueue(&rc))
+	    return rc;
+	}
+	else
+	{
+	  rc = 0;
+	  // moveRowToUpQueue also increments matches_
+	  if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(), 
+			       &rc, FALSE))
+	    return rc;
+	}
         if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
           step_ = DONE;
         else
