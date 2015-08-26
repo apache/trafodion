@@ -16660,8 +16660,7 @@ HbaseInsert::costMethod() const
   static THREAD_P CostMethodHbaseInsert *m = NULL;
   if (m == NULL)
     m = new (GetCliGlobals()->exCollHeap()) CostMethodHbaseInsert();
-  // return m;  TODO: uncomment this line
-  return RelExpr::costMethod();  // TODO: remove this testing line
+  return m;
 } // HbaseInsert::costMethod()
 
 
