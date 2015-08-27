@@ -1447,7 +1447,7 @@ $1~String1 --------------------------------
 6021 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Compiler Optimizer Warning $0~String0.
 7000 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error occurred in the code generator in file $0~string0 at line $1~int0: $2~string1.
 7001 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Default value $0~String0 is not valid for column $1~String1.
-7002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- available ---
+7002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The input row format of the hive table is not yet supported.
 7003 42000 99999 BEGINNER MAJOR DBADMIN A plan using cluster sampling could not be produced for this query.
 7004 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A parallel extract plan could not be produced. Possible causes include an incompatible Control Query Shape (CQS) specification, use of rowset expressions, or use of SQL features that cannot be parallelized such as [FIRST/LAST N], table-valued functions, stream access to tables, and embedded updates or deletes.
 7005 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of selection predicates in parallel extract consumer queries is not allowed.

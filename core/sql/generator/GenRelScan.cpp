@@ -1072,7 +1072,11 @@ short FileScan::codeGenForHive(Generator * generator)
     type = (short)ComTdbHdfsScan::SEQUENCE_;
   else if (hTabStats->isOrcFile())
     type = (short)ComTdbHdfsScan::ORC_;
-
+  else {
+    *CmpCommon::diags() << DgSqlCode(-7002);
+      GenExit();
+    return -1;
+  }
   ULng32 buffersize = getDefault(GEN_DPSO_BUFFER_SIZE);
   queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
   queue_index downqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_DOWN);

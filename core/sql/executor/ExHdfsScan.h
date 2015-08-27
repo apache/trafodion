@@ -426,4 +426,48 @@ protected:
   char * aggrRow_;
 };
 
+#define RANGE_DELIMITER '\002'
+
+inline char *hdfs_strchr(const char *s, int c, const char *end)
+{
+  char *curr = (char *)s;
+
+  while (curr < end) {
+    if (*curr == c)
+       return curr;
+    if (*curr == RANGE_DELIMITER)
+       return NULL;
+    curr++;
+  }
+  return NULL;
+}
+
+
+inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoolean *rdSeen)
+{
+  char *curr = (char *)s;
+
+  while (curr < end) {
+    if (*curr == rd) {
+       *rdSeen = TRUE;
+       return curr;
+    }
+    else
+    if (*curr == cd) {
+       *rdSeen = FALSE;
+       return curr;
+    }
+    else
+    if (*curr == RANGE_DELIMITER) {
+       *rdSeen = TRUE;
+       return NULL;
+    }
+    curr++;
+  }
+  *rdSeen = FALSE;
+  return NULL;
+}
+
+
+
 #endif
