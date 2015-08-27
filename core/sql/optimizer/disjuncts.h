@@ -104,7 +104,13 @@ public:
 private:
   void createDisjunctArray(const ValueIdSet& selectionPredicates);
 
-
+  // An array of disjuncts created by calling createDisjunctArray(). 
+  // The main functionality of that method is to call mdamTreeWalk() on
+  // ItemExpr and convert the predicates into disjunctive normal form. 
+  // Note that for a RANGE SPEC itemExpr, only predicates NOT in OR
+  // forms can be processed. Also, the mdam tree walk has a 
+  // threshold of 256 * 8 = 2000 disjuncts that are allowed in the array. 
+  // Beyond that, a NULL is returned. 
   DisjunctArray *disjunctArrayPtr_;
 
 }; // class MaterialDisjuncts
