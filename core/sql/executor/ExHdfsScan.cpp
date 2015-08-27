@@ -114,6 +114,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , hdfo_(NULL)
   , numBytesProcessedInRange_(0)
   , exception_(FALSE)
+  , checkRangeDelimiter_(FALSE)
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
@@ -388,6 +389,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;
 	    hdfsOffset_ = 0;
+            checkRangeDelimiter_ = FALSE;
 
 	    if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
 	      {
@@ -718,7 +720,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		// Position in the hdfsScanBuffer_ to the
 		// first record delimiter.  
 		hdfsBufNextRow_ = hdfs_strchr(hdfsScanBuffer_,
-                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_);
+                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_);
 		// May be that the record is too long? Or data isn't ascii?
 		// Or delimiter is incorrect.
 		if (! hdfsBufNextRow_)
@@ -1104,6 +1106,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
               if ((trailingPrevRead_ > 0)  && 
                   (hdfsBufNextRow_[0] == RANGE_DELIMITER))
               {
+                 checkRangeDelimiter_ = FALSE;
                  step_ = CLOSE_HDFS_CURSOR;
                  break;
               }  
@@ -1392,14 +1395,16 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   hdfsLoggingRow_ = hdfsBufNextRow_;
   if (asciiSourceTD->numAttrs() == 0)
   {
-     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd);
+     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd, checkRangeDelimiter_);
      hdfsLoggingRowEnd_  = sourceRowEnd;
 
      if (!sourceRowEnd)
        return NULL; 
      if ((endOfRequestedRange_) && 
-         (sourceRowEnd >= endOfRequestedRange_))
+            (sourceRowEnd >= endOfRequestedRange_)) {
+        checkRangeDelimiter_ = TRUE;
         *(sourceRowEnd +1)= RANGE_DELIMITER;
+     }
 
     // no columns need to be converted. For e.g. count(*) with no predicate
     return sourceRowEnd+1;
@@ -1425,7 +1430,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
         attr = NULL;
  
       if (!isTrailingMissingColumn) {
-         sourceColEnd = hdfs_strchr(sourceData, rd, cd, sourceDataEnd, &rdSeen);
+         sourceColEnd = hdfs_strchr(sourceData, rd, cd, sourceDataEnd, checkRangeDelimiter_, &rdSeen);
          if (sourceColEnd == NULL) {
             if (rdSeen || (sourceRowEnd == NULL))
                return NULL;
@@ -1438,8 +1443,10 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
             sourceRowEnd = sourceColEnd; 
             hdfsLoggingRowEnd_  = sourceRowEnd;
             if ((endOfRequestedRange_) && 
-                (sourceRowEnd >= endOfRequestedRange_))
-                   *(sourceRowEnd +1)= RANGE_DELIMITER;
+                   (sourceRowEnd >= endOfRequestedRange_)) {
+               checkRangeDelimiter_ = TRUE;
+               *(sourceRowEnd +1)= RANGE_DELIMITER;
+            }
             if (i != hdfsScanTdb().convertSkipListSize_ - 1)
                isTrailingMissingColumn = TRUE;
          }
@@ -1486,13 +1493,15 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   // rowDelimiter is encountered
   // So try to find the record delimiter
   if (sourceRowEnd == NULL) {
-     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd);
+     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd, checkRangeDelimiter_);
      if (sourceRowEnd) {
         hdfsLoggingRowEnd_  = sourceRowEnd;
         if ((endOfRequestedRange_) &&
-           (sourceRowEnd >= endOfRequestedRange_))
-         *(sourceRowEnd +1)= RANGE_DELIMITER;
-      }
+              (sourceRowEnd >= endOfRequestedRange_ )) {
+           checkRangeDelimiter_ = TRUE;
+          *(sourceRowEnd +1)= RANGE_DELIMITER;
+        }
+     }
   }
 
   workAtp_->getTupp(hdfsScanTdb().workAtpIndex_) = hdfsSqlTupp_;

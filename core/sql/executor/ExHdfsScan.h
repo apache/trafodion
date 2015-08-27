@@ -282,6 +282,7 @@ protected:
 
   NABoolean exception_;
   ComCondition * lastErrorCnd_;
+  NABoolean checkRangeDelimiter_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb
@@ -428,14 +429,14 @@ protected:
 
 #define RANGE_DELIMITER '\002'
 
-inline char *hdfs_strchr(const char *s, int c, const char *end)
+inline char *hdfs_strchr(const char *s, int c, const char *end, NABoolean checkRangeDelimiter)
 {
   char *curr = (char *)s;
 
   while (curr < end) {
     if (*curr == c)
        return curr;
-    if (*curr == RANGE_DELIMITER)
+    if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
        return NULL;
     curr++;
   }
@@ -443,7 +444,7 @@ inline char *hdfs_strchr(const char *s, int c, const char *end)
 }
 
 
-inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoolean *rdSeen)
+inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen)
 {
   char *curr = (char *)s;
 
@@ -458,7 +459,7 @@ inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoole
        return curr;
     }
     else
-    if (*curr == RANGE_DELIMITER) {
+    if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
        *rdSeen = TRUE;
        return NULL;
     }
