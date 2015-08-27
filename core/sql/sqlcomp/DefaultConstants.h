@@ -3754,6 +3754,7 @@ enum DefaultConstants
   UDR_JVM_DEBUG_PORT,
   UDR_JVM_DEBUG_TIMEOUT,
 
+  TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,
   HBASE_RANGE_PARTITIONING_PARTIAL_COLS,
 
   // This enum constant must be the LAST one in the list; it's a count,

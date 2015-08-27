@@ -1824,6 +1824,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 				   0, returnedFetchedTuppIndex); 
       
       ValueIdList updatedOutputs;
+      ValueIdSet alreadyDeserialized;
 
       if (isMerge())
 	{
@@ -1860,6 +1861,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 	      else
 		{
 		  tgtValueId = fetchedCol->getValueId();
+		  alreadyDeserialized += tgtValueId; // if it is necessary to deserialize, that is
 		}
  
 	      updatedOutputs.insert(tgtValueId);
@@ -1898,7 +1900,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 	     &returnUpdateExpr, 
 	     &returnedUpdatedTupleDesc,
 	     ExpTupleDesc::SHORT_FORMAT,
-	     tgtConvValueIdList);
+	     tgtConvValueIdList,
+	     alreadyDeserialized);
 	}
      else
        {
@@ -1972,7 +1975,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 		 &returnMergeInsertExpr, 
 		 &returnedMergeInsertedTupleDesc,
 		 ExpTupleDesc::SHORT_FORMAT,
-		 tgtConvValueIdList);
+		 tgtConvValueIdList,
+		 alreadyDeserialized);
 	    }
 	  else
 	    {
@@ -2584,6 +2588,7 @@ short HbaseInsert::codeGen(Generator *generator)
       if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
 	{
 	  ValueIdList deserColVIDList;
+	  ValueIdSet dummy;
 
 	  // if serialized columns are present, then create a new row with
 	  // deserialized columns before returning it.
@@ -2596,7 +2601,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	     &projExpr, 
 	     &projRowTupleDesc,
 	     ExpTupleDesc::SHORT_FORMAT,
-	     deserColVIDList);
+	     deserColVIDList,
+	     dummy);
 	  
 	  workCriDesc->setTupleDescriptor(projRowTuppIndex, projRowTupleDesc);
 

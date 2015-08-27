@@ -432,7 +432,6 @@ explain options 'f'
 load  transform into customer_demographics
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
-cqd comp_bool_226 'off' ;
 load  into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
@@ -461,8 +460,6 @@ select count(*) from table(index_table cd_dep_college_count_IDX2);
 
 drop index cd_dep_count_IDX2;
 drop index cd_dep_college_count_IDX2;
-
-cqd comp_bool_226 'on' ;
 
 -- --load with upsert using load
 -- drop table customer_demographics_salt cascade;
