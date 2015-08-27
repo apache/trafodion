@@ -307,6 +307,8 @@ public:
                                                 { return keyPredicates_; }
   ValueIdSet & keyPredicates()                  { return keyPredicates_; }
 
+  const ValueIdSet & getFullKeyPredicates() const  { return fullKeyPredicates_; }
+
   // ---------------------------------------------------------------------
   // Method for determining whether the key predicates are unique.
   // ---------------------------------------------------------------------
@@ -331,6 +333,7 @@ public:
   // scan's selection predicates:
   void getKeyPredicatesByColumn(ColumnOrderList& colOrdLis,
 				CollIndex disjunctNumber = 0) const;
+
   // Obtain the set of key predicates in the disjunct:
   //for SearchKey allKeyPredicates and disjunctNumber are
   //insignificant, but the signature of the function had to
@@ -382,6 +385,7 @@ public:
 
 protected:
   void computeCoveredLeadingKeys();
+  void computeFullKeyPredicates(ValueIdSet& predicates);
 
 private:
 
@@ -400,9 +404,23 @@ private:
   ValueIdList endKeyValues_;
 
   // -----------------------------------------------------------------------
-  // The set of key predicates
+  // The set of key predicates that are derived from the common predicate,
+  // computed by computeCommonPredicates() and is an intersection of all 
+  // predicates in DisjunctArray). During the computation, the range spec is 
+  // examined and only those NOT in OR form are included in the common 
+  // predicate. For example, the IN list in the following query is an OR 
+  // predicate,
+  //    select * from t010t2 where a in (1,4) and b='a' and c = 1;
+  // the predicate "a in (1,4)" will not be part of the common predicate.
   // -----------------------------------------------------------------------
   ValueIdSet keyPredicates_;
+
+  // -----------------------------------------------------------------------
+  // The set of full key predicates that are derived from the selection
+  // predicates.  This set includes every predicate that refers to any key
+  // columns. 
+  // -----------------------------------------------------------------------
+  ValueIdSet fullKeyPredicates_;
 
   // ---------------------------------------------------------------------
   // Boolean indicating whether key predicates formulate a unique key.

@@ -201,6 +201,11 @@ void SearchKey::init(const ValueIdList & keyColumns,
 					      );
 
 
+  // Find any full key predicate in setOfPredicates that refers 
+  // to a key column and save the result in fullKeyPredicates_.
+  computeFullKeyPredicates(setOfPredicates);
+  
+
   // We do not want to remove the predicates which have two constants
   // in their VEG. These should be evaluated like any other predicate.
 
@@ -2708,6 +2713,65 @@ void SearchKey::computeCoveredLeadingKeys()
        if ( !found )
          break;
     }
+  }
+}
+
+void SearchKey::computeFullKeyPredicates(ValueIdSet& predicates)
+{
+  // If the key column is an INDEX COLUMN, convert it into a base column
+  ValueIdList baseKeyCols;
+
+  ValueId vid;
+  const ValueIdList& keyColumns = getKeyColumns();
+  for (CollIndex i=0; i<keyColumns.entries(); i++ ) {
+     if ( keyColumns[i].getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN )
+       vid = ((IndexColumn*)(keyColumns[i].getItemExpr()))->getDefinition();
+     else
+       vid = keyColumns[i];
+
+     baseKeyCols.insertAt(baseKeyCols.entries(), vid);
+  }
+
+  // compute the # of leading key columns covered by the key columns 
+  // in the disjunct.
+   ValueIdSet columnsCoveredByKey;
+
+   vid = predicates.init();
+   for (; predicates.next(vid); predicates.advance(vid)) {
+
+      columnsCoveredByKey.clear();
+      vid.getItemExpr()->findAll(ITM_BASECOLUMN, columnsCoveredByKey, TRUE, TRUE);
+
+      // for each vid (or predicate), check the base column list
+      for (CollIndex i=0; i<baseKeyCols.entries(); i++ ) {
+
+         NABoolean found = FALSE;
+
+         // the predicate directly refers the base column 
+         if ( columnsCoveredByKey.containsTheGivenValue(baseKeyCols[i]) ) {
+            fullKeyPredicates_ += vid;
+            found = TRUE;
+         } else {
+            // do a search by column position
+           BaseColumn* keyCol = (BaseColumn*)(baseKeyCols[i].getItemExpr());
+
+
+           ValueId cvid = columnsCoveredByKey.init();
+           for (; columnsCoveredByKey.next(cvid); columnsCoveredByKey.advance(cvid)) {
+              BaseColumn* colInKeyPred =  (BaseColumn*)(cvid.getItemExpr());
+ 
+              // the key column in the predicate is the same as the base column 
+              if ( keyCol->getColNumber() == colInKeyPred->getColNumber() ) {
+                 fullKeyPredicates_ += vid;
+                 found = TRUE;
+                 break;
+              }
+          }
+        }
+
+        if ( found )
+         break;
+     }
   }
 }
 
