@@ -14042,139 +14042,11 @@ Cost* CostMethodHbaseInsert::computeOperatorCostInternal(RelExpr* op,
   cacheParameters(op, myContext);
   estimateDegreeOfParallelism();
 
-  const InputPhysicalProperty* ippForMe =
-    myContext->getInputPhysicalProperty();
-
   // ------------------------------------------------------
   // Save off our current estimated degree of parallelism.
   // in the 'out' parameter; we might revise it below
   // ------------------------------------------------------
   countOfStreams = countOfStreams_;
-
-  HbaseInsert* insOp = (HbaseInsert *)op;   // downcast
-
-  if (ippForMe != NULL)  // input physical properties exist?
-    {
-      // ----------------------------------------------------------
-      // This long block of code is devoted to figuring out
-      // if there are constraints to parallelism. For example,
-      // if a layer of ESPs is doing the inserts, and the
-      // degree of parallelism (DoP) at that layer is less 
-      // than the number of partitions in the table, and the
-      // inserts arrive in partition order, then the regions
-      // accessed by a given ESP are accessed serially. In
-      // that case, we want to reduce the returned "countOfStreams"
-      // to be the ESP layer DoP rather than the number of
-      // partitions.
-      // ---------------------------------------------------------- 
-
-      // See if the probes are in order.
-
-      // For insert, a partial order is of no help and so we can't use it.
-      NABoolean partiallyInOrderOK = FALSE;
-      NABoolean probesForceSynchronousAccess = FALSE;
-      IndexDesc * CIDesc = (IndexDesc *)insOp->getIndexDesc();
-      ValueIdList targetSortKey = CIDesc->getOrderOfKeyValues();
-      ValueIdSet sourceCharInputs =
-        insOp->getGroupAttr()->getCharacteristicInputs();
-
-      ValueIdSet targetCharInputs;
-      // The char inputs are still in terms of the source. Map them to the target.
-      // Note: The source char outputs in the ipp have already been mapped to
-      // the target. CharOutputs are a set, meaning they do not have duplicates
-      // But we could have cases where two columns of the target are matched to the
-      // same source column, for example, if we have
-      // INSERT INTO b6table1
-      //                  ( SELECT f, h_to_f, f, 8.4
-      //            FROM btre211
-      //            );
-      // Hence we use lists here instead of sets.
-      // Check to see if there are any duplicates in the source Characteristics inputs
-      // if no, we shall perform set operations, as these are faster
-
-      ValueIdList bottomValues = insOp->updateToSelectMap().getBottomValues();
-      ValueIdSet bottomValuesSet(bottomValues);
-      NABoolean useListInsteadOfSet = FALSE;
-
-      CascadesGroup* group1 = (*CURRSTMT_OPTGLOBALS->memo)[insOp->getGroupId()];
-
-      GenericUpdate* upOperator = (GenericUpdate *)group1->getFirstLogExpr();
-
-      if (((upOperator->getTableName().getSpecialType() == ExtendedQualName::NORMAL_TABLE) || (upOperator->getTableName().getSpecialType() == ExtendedQualName::GHOST_TABLE)) &&
-          (bottomValuesSet.entries() != bottomValues.entries()))
-        {
-
-          ValueIdList targetInputList;
-          // from here get all the bottom values that appear in the sourceCharInputs
-          bottomValues.findCommonElements(sourceCharInputs);
-          bottomValuesSet = bottomValues;
-
-          // we can use the bottomValues only if these contain some duplicate columns of
-          // characteristics inputs, otherwise we shall use the characteristics inputs.
-          if (bottomValuesSet == sourceCharInputs)
-            {
-              useListInsteadOfSet = TRUE;
-              insOp->updateToSelectMap().rewriteValueIdListUpWithIndex(
-                                                                       targetInputList,
-                                                                       bottomValues);
-              targetCharInputs = targetInputList;
-            }
-        }
-
-      if (!useListInsteadOfSet)
-        {
-          insOp->updateToSelectMap().rewriteValueIdSetUp(
-                                                         targetCharInputs,
-                                                         sourceCharInputs);
-        }
-
-      // If a target key column is covered by a constant on the source side,
-      // then we need to remove that column from the target sort key
-      removeConstantsFromTargetSortKey(&targetSortKey,
-                                       &(insOp->updateToSelectMap()));
-      NABoolean orderedNJ = TRUE;
-      // Don't call ordersMatch if njOuterOrder_ is null.
-      if (ippForMe->getAssumeSortedForCosting())
-        orderedNJ = FALSE;
-      else
-        // if leading keys are not same then don't try ordered NJ.
-        orderedNJ =
-          isOrderedNJFeasible(*(ippForMe->getNjOuterOrder()), targetSortKey);
-
-      if (orderedNJ AND
-          ordersMatch(ippForMe,
-                      CIDesc,
-                      &targetSortKey,
-                      targetCharInputs,
-                      partiallyInOrderOK,
-                      probesForceSynchronousAccess))
-        {
-          if (probesForceSynchronousAccess)
-            {
-              // The probes form a complete order across all partitions and
-              // the clustering key and partitioning key are the same. So, the
-              // only asynchronous I/O we will see will be due to ESPs. So,
-              // limit the count of streams by the count of streams in ESP.
-
-              // Get the logPhysPartitioningFunction, which we will use
-              // to get the logical partitioning function. If it's NULL,
-              // it means the table was not partitioned at all, so we don't
-              // need to limit anything since there already is no asynch I/O.
-              const LogPhysPartitioningFunction* lppf =
-                partFunc_->castToLogPhysPartitioningFunction();
-              if (lppf != NULL)
-                {
-                  PartitioningFunction* logPartFunc =
-                    lppf->getLogPartitioningFunction();
-                  // Get the number of ESPs:
-                  CostScalar numParts = logPartFunc->getCountOfPartitions();
-
-                  countOfAsynchronousStreams_ = MINOF(numParts,
-                                                      countOfAsynchronousStreams_);
-                } // lppf != NULL
-            } // probesForceSynchronousAccess
-        } // probes are in order
-    } // if input physical properties exist
 
   CostScalar currentCpus =
     (CostScalar)myContext->getPlan()->getPhysicalProperty()->getCurrentCountOfCPUs();
@@ -14190,12 +14062,12 @@ Cost* CostMethodHbaseInsert::computeOperatorCostInternal(RelExpr* op,
   streamsPerCpu_ =
     (countOfAsynchronousStreams_ / activeCpus_).getCeiling();
 
-  CostScalar noOfProbesPerPartition(csOne);
+  CostScalar noOfProbesPerStream(csOne);
 
   // Determine the number of probes per stream. Use this number as
   // the number of rows to insert (this is "per-stream" costing).
 
-  noOfProbesPerPartition =
+  noOfProbesPerStream =
     (noOfProbes_ / countOfAsynchronousStreams_).minCsOne();
 
   // ************************************************************
@@ -14209,11 +14081,56 @@ Cost* CostMethodHbaseInsert::computeOperatorCostInternal(RelExpr* op,
   SimpleCostVector cvFR;
   SimpleCostVector cvLR;
 
-  // we don't bother to estimate CPU time, I/O time, transfer time or idle 
-  // time, since we really are only supporting the new cost model
+  // For now, we don't bother to estimate CPU time, I/O time, transfer 
+  // time or idle time, since we really are only supporting the new 
+  // cost model.
+  //
+  // Future possible improvements:
+  //
+  // 1. Take into account HBase memstore insertion cost. The memstore
+  // uses a Red-Black tree which has o(n * log(n)) insertion cost. To
+  // model this correctly, we'd need to take into account the number
+  // of HBase regions rather than the number of ESPs, that is, to
+  // divide the number of probes by the number of HBase regions to find
+  // n. This cost will be paid no matter how many inserting streams
+  // there are so by itself this may not be interesting. It would only
+  // be interesting if there were a choice in the plan between inserting
+  // and not inserting (e.g. if we were considering bypassing the
+  // memstore, or if we were considering storing an intermediate result,
+  // neither of which are choices we examine today).
+  //
+  // 2. Take into account whether the probes are in key order. There
+  // is anecdotal evidence that if the probes are in key order, then
+  // memstore insertion cost is less. Possibly this is true only if
+  // inserting at the end or the beginning of the key range in a 
+  // partition; intuitively inserting in the middle would seem to incur
+  // the full insertion cost. This is worthwhile taking into 
+  // consideration as it opens the possibility of choosing between a
+  // plan that sorts rows in Trafodion before passing them to HBase
+  // vs. a plan that does not. To make this calculation we must know
+  // the memstore insertion cost (point 1 above), the order of the 
+  // probes, whether the ESPs are aligned to the Regions of the 
+  // target table, and whether we are inserting at the beginning or
+  // end of the key range. A first approximation to the last item
+  // would be whether the target table is empty. This is interesting
+  // because the case that we are doing an INSERT/SELECT into a new
+  // table is likely to be common.
+  //
+  // 3. Take into account memstore flush cost. We could add I/O time
+  // for flushes. For example, we could compare the number of probes
+  // per HBase Region with the number of rows that would cause a
+  // flush (the latter can be obtained from 
+  // HbaseClient::estimateMemStoreRows() and is a function of the
+  // HBase parameter hbase.hregion.memstore.flush.size). Again, this
+  // cost will be paid no matter the plan choice so this is not
+  // interesting today. As with point 1, it becomes interesting only
+  // if there is a plan choice between inserting via memstore or not.
+  //
+  // In the interest of time, we move forward without these 
+  // improvements for now.
 
-  cvFR.setNumProbes(noOfProbesPerPartition);
-  cvLR.setNumProbes(noOfProbesPerPartition);
+  cvFR.setNumProbes(noOfProbesPerStream);
+  cvLR.setNumProbes(noOfProbesPerStream);
 
   // ---------------------------------------------------------------------
   // Synthesize and return cost object.
