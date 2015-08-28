@@ -6208,14 +6208,15 @@ ItemExpr * RelRoot::removeAssignmentStTree()
 }
 // LCOV_EXCL_STOP
 
-bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType)
-
+bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType,
+                                       const PrivMgrUserPrivs *pPrivInfo)
 {
+  CMPASSERT (pPrivInfo);
 
   NATable* table = getTable();
   NAString columns = "";
 
-  if (CmpCommon::getDefault(CAT_TEST_BOOL) == DF_OFF || !isColumnPrivType(privType))
+  if (!isColumnPrivType(privType))
   {
     *CmpCommon::diags() << DgSqlCode(-4481)
                         << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str())
@@ -6250,7 +6251,7 @@ bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType)
   }
 
   bool collectColumnNames = false;
-  if (table->getPrivInfo()->hasAnyColPriv(privType))
+  if (pPrivInfo->hasAnyColPriv(privType))
   {
     collectColumnNames = true;
     columns += "(columns:" ; 
@@ -6259,7 +6260,7 @@ bool OptSqlTableOpenInfo::checkColPriv(const PrivType privType)
   for(size_t i = 0; i < colList->entries(); i++)
   {
     size_t columnNumber = (*colList)[i];
-    if (!(table->getPrivInfo()->hasColPriv(privType,columnNumber)))
+    if (!(pPrivInfo->hasColPriv(privType,columnNumber)))
     {
       hasPriv = false;
       if (firstColumn && collectColumnNames)
@@ -6422,7 +6423,9 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), thisUserID, privInfo);
+      retcode = privInterface.getPrivileges( tab->objectUid().get_value(),
+                                             tab->getObjectType(), thisUserID,
+                                             privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -6442,7 +6445,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     {
       if (stoi->getPrivAccess((PrivType)i))
       {
-        if (!pPrivInfo->hasPriv((PrivType)i) && !optStoi->checkColPriv((PrivType)i))
+        if (!pPrivInfo->hasPriv((PrivType)i) && !optStoi->checkColPriv((PrivType)i, pPrivInfo))
           RemoveNATableEntryFromCache = TRUE;
         else
           if (insertQIKeys)    
@@ -6542,7 +6545,9 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), thisUserID, privInfo);
+      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), 
+                                             tab->getObjectType(), thisUserID, 
+                                             privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -6595,7 +6600,9 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
         *CmpCommon::diags() << DgSqlCode( -4400 );
       return FALSE;
     }
-    retcode = privInterface.getPrivileges(tab->objectUid().get_value(), thisUserID, privInfo);
+    retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
+                                          COM_SEQUENCE_GENERATOR_OBJECT, 
+                                          thisUserID, privInfo);
     cmpSBD.switchBackCompiler();
     if (retcode != STATUS_GOOD)
     {

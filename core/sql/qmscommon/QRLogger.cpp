@@ -50,6 +50,7 @@ std::string CAT_SQL_LOB                       = "SQL.LOB";
 std::string CAT_SQL_SSMP                      = "SQL.SSMP";
 std::string CAT_SQL_SSCP                      = "SQL.SSCP";
 std::string CAT_SQL_UDR                       = "SQL.UDR";
+std::string CAT_SQL_PRIVMGR                   = "SQL.PRIVMGR";
 // hdfs
 std::string CAT_SQL_HDFS_JNI_TOP              =  "SQL.HDFS.JniTop";
 std::string CAT_SQL_HDFS_SEQ_FILE_READER      =  "SQL.HDFS.SeqFileReader";
@@ -295,7 +296,6 @@ std::string &QRLogger::getMyDefaultCat()
     case QRL_UDR:
       return CAT_SQL_UDR;
       break;
-
     default:
       return CAT_SQL;   
     }
@@ -359,7 +359,6 @@ void QRLogger::introduceSelf ()
    case QRL_UDR:
       snprintf (msg, 300, "%s,,, A udrserver  process is launched.", procInfo.data());
       break;
-           
     }
 
    LOG4CXX_INFO(myLogger,msg);

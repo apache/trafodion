@@ -6817,8 +6817,8 @@ void NATable::setupPrivInfo()
       return;
     }
   if (testError || (STATUS_GOOD !=
-       privInterface.getPrivileges(objectUid().get_value(), thisUserID,
-                                    *privInfo_, &secKeyVec)))
+       privInterface.getPrivileges(objectUid().get_value(), objectType_,
+                                   thisUserID, *privInfo_, &secKeyVec)))
   {
     if (testError)
 #ifndef NDEBUG

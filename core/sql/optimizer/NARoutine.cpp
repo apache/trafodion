@@ -673,8 +673,12 @@ void NARoutine::setupPrivInfo(void)
 
   // gather privileges
   std::vector <ComSecurityKey *> secKeyVec;
-  if (STATUS_GOOD != privInterface.getPrivileges(objectUID_, ComUser::getCurrentUser(),
-                                    *privInfo_, &secKeyVec))
+  ComObjectType objectType = (UDRType_ == COM_PROCEDURE_TYPE ? 
+                              COM_STORED_PROCEDURE_OBJECT : 
+                              COM_USER_DEFINED_ROUTINE_OBJECT);
+  if (STATUS_GOOD != privInterface.getPrivileges(objectUID_, objectType,
+                                                 ComUser::getCurrentUser(),
+                                                 *privInfo_, &secKeyVec))
   {
     NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
     privInfo_ = NULL;

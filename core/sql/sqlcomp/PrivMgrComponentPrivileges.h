@@ -80,6 +80,12 @@ public:
       
    int64_t getCount();
      
+   void getSQLDMLPrivileges(
+      const int32_t                granteeID,
+      const std::vector<int32_t> & roleIDs,
+      PrivObjectBitmap           & DMLBitmap,
+      bool                       & hasManagePrivileges);
+      
    PrivStatus grantPrivilege(
       const std::string & componentName,
       const std::vector<std::string> & operations,

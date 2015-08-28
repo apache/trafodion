@@ -58,6 +58,7 @@ extern std::string CAT_SQL_COMP_XML;
 extern std::string CAT_SQL_EXE;
 extern std::string CAT_SQL_COMP;
 extern std::string CAT_SQL_ESP;
+extern std::string CAT_SQL_PRIVMGR;
 
 // HDFS
 extern std::string CAT_SQL_HDFS_JNI_TOP;
@@ -169,7 +170,7 @@ public:
     QRL_LOB,
     QRL_SSMP,
     QRL_SSCP,
-    QRL_UDR
+    QRL_UDR 
   };
 
   /**

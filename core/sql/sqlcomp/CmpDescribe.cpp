@@ -2642,6 +2642,7 @@ short CmpDescribeSeabaseTable (
           }
  
           PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+                                                           naTable->getObjectType(),
                                                            ComUser::getCurrentUser(),
                                                            privs);
 
@@ -3560,7 +3561,7 @@ PrivMgrCommands privInterface(privMgrMDLoc.data(),CmpCommon::diags());
         return -1  ;
       }
 
-      PrivStatus retcode = privInterface.getPrivileges(libraryUID, 
+      PrivStatus retcode = privInterface.getPrivileges(libraryUID, COM_LIBRARY_OBJECT, 
                                                        ComUser::getCurrentUser(), 
                                                        privs);
 

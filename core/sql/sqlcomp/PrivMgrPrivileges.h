@@ -133,6 +133,7 @@ public:
       std::vector<PrivObjectBitmap> & privBitmaps);
       
    PrivStatus getPrivRowsForObject(
+      const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
 
    PrivStatus getPrivTextForObject(
@@ -141,6 +142,7 @@ public:
 
    PrivStatus getPrivsOnObjectForUser(
       const int64_t objectUID,
+      ComObjectType objectType,
       const int32_t userID,
       PrivObjectBitmap &userPrivs,
       PrivObjectBitmap &grantablePrivs,
@@ -189,6 +191,7 @@ public:
       const std::string & creatorName);
       
    PrivStatus insertPrivRowsForObject(
+      const int64_t objectUID,
       const std::vector<ObjectPrivsRow> & objectPrivsRows);
    
    PrivStatus populateObjectPriv(
@@ -238,16 +241,20 @@ protected:
 
    PrivStatus getPrivsFromAllGrantors(
      const int64_t objectUID,
+     ComObjectType objectType,
      const int32_t grantee,
      const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
+     bool & hasManagePrivileges,
      std::vector <ComSecurityKey *>* secKeySet = NULL
      );
           
    PrivStatus getUserPrivs(
+     ComObjectType objectType,
      const int32_t grantee,
      const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
+     bool & hasManagePrivileges,
      std::vector <ComSecurityKey *>* secKeySet = NULL
      );
      

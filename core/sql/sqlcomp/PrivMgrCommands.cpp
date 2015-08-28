@@ -404,6 +404,7 @@ PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
 //
 // Input:
 //     objectUID - a unique object identifier
+//     objectType - the type of the object
 //     objectName - the name of the object
 //     privilegeText - the resultant grant text
 //     secKeySet - the security keys for the object/user
@@ -413,6 +414,7 @@ PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
 // ----------------------------------------------------------------------------
 PrivStatus PrivMgrCommands::getPrivileges(
   const int64_t objectUID,
+  ComObjectType objectType,
   const int32_t userID,
   PrivMgrUserPrivs &userPrivs,
   std::vector <ComSecurityKey *>* secKeySet)
@@ -426,7 +428,8 @@ PrivStatus PrivMgrCommands::getPrivileges(
   if (authorizationEnabled())
   {
     PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
-    PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID, 
+    PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID,
+                                                             objectType, 
                                                              userID, 
                                                              objPrivs, 
                                                              grantablePrivs,
@@ -490,7 +493,7 @@ PrivStatus privStatus = STATUS_GOOD;
    try
    {
       PrivMgrPrivileges objectPrivileges(objectUID,getMetadataLocation(),pDiags_);
-      privStatus = objectPrivileges.getPrivRowsForObject(objectPrivsRows);
+      privStatus = objectPrivileges.getPrivRowsForObject(objectUID, objectPrivsRows);
    }
 
    catch (...)
@@ -875,7 +878,7 @@ PrivStatus privStatus = STATUS_GOOD;
    {
       PrivMgrPrivileges objectPrivileges(objectUID, getMetadataLocation(),pDiags_);
       
-      privStatus = objectPrivileges.insertPrivRowsForObject(objectPrivsRows);
+      privStatus = objectPrivileges.insertPrivRowsForObject(objectUID, objectPrivsRows);
    }
 
    catch (...)
@@ -1046,8 +1049,8 @@ PrivStatus privStatus = STATUS_GOOD;
       privStatus = componentPrivileges.revokePrivilege(componentName,
                                                        operationNamesList,
                                                        grantorID,
-                                                       granteeID,0,
-                                                       isGOFSpecified,
+                                                       granteeID,
+                                                       isGOFSpecified, 0,
                                                        dropBehavior);
    }
 

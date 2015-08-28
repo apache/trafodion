@@ -318,7 +318,7 @@ SCHEMA_PRIVILEGES
 (EXPR)              
 --------------------
 
-                  50
+                  57
 
 --- 1 row(s) selected.
 >>select count (*) from component_privileges;
@@ -326,7 +326,7 @@ SCHEMA_PRIVILEGES
 (EXPR)              
 --------------------
 
-                 102
+                 116
 
 --- 1 row(s) selected.
 >>execute get_owner_privs;

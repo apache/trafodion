@@ -799,7 +799,8 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
       PrivMgrCommands privInterface(privMgrMDLoc.data(), CmpCommon::diags());
       PrivMgrUserPrivs privs;
-      PrivStatus retcode = privInterface.getPrivileges(libUID, ComUser::getCurrentUser(), privs);
+      PrivStatus retcode = privInterface.getPrivileges(libUID, COM_LIBRARY_OBJECT, 
+                                                       ComUser::getCurrentUser(), privs);
       if (retcode != STATUS_GOOD)
         {
           if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
