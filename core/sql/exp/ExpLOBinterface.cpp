@@ -905,5 +905,8 @@ Lng32 ExpLOBinterfaceStats(
  
 char * getLobErrStr(Lng32 errEnum)
 {
+  if (errEnum < LOB_MIN_ERROR_NUM || errEnum > LOB_MAX_ERROR_NUM)
+    return (char *)"Unknown LOB error";
+else
   return (char*)lobErrorEnumStr[errEnum - (Lng32)LOB_MIN_ERROR_NUM];
 }

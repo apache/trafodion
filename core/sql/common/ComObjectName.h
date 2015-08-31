@@ -280,6 +280,9 @@ class ComObjectName : public NABasicObject
     void setIsVolatile(NABoolean v)
     { (v ? flags_ |= IS_VOLATILE : flags_ &= ~IS_VOLATILE);}
 
+    inline NABoolean isExternalHive(); 
+    inline NABoolean isExternalHbase();
+
   protected:
 
     // The following constructor is invoked by a constructor of class CatRoutineActionName
@@ -589,6 +592,50 @@ NABoolean
 ComObjectName::isValid() const
 {
   return (NOT objectNamePart_.isEmpty());
+}
+
+// ----------------------------------------------------------------------------
+// Method: isExternalHive
+//
+// Looks at the prefix and suffix of the schema name to see the schema contains
+// external (native) hive table information.
+//
+// returns TRUE if it is a HIVE schema
+// ----------------------------------------------------------------------------
+NABoolean
+ComObjectName::isExternalHive()
+{
+  if (schemaNamePart_.isEmpty())
+    return FALSE;
+  
+  NAString schemaName(schemaNamePart_.getInternalName());
+  Int32 len (schemaName.length());
+  if (len > sizeof(HIVE_EXT_SCHEMA_PREFIX))
+    return (schemaName(0,sizeof(HIVE_EXT_SCHEMA_PREFIX)-1) == HIVE_EXT_SCHEMA_PREFIX &&
+            schemaName(len-1) == '_');
+  return FALSE;
+}
+  
+// ----------------------------------------------------------------------------
+// Method: isExternalHbase
+//
+// Looks at the prefix and suffix of the schema name to see the schema contains
+// external (native) hbase table information.
+//
+// returns TRUE if it is a hbase schema
+// ----------------------------------------------------------------------------
+NABoolean
+ComObjectName::isExternalHbase()
+{
+  if (schemaNamePart_.isEmpty())
+    return FALSE;
+
+  NAString schemaName(schemaNamePart_.getInternalName());
+  Int32 len (schemaName.length());
+  if (len > sizeof(HBASE_EXT_SCHEMA_PREFIX))
+    return (schemaName(0,sizeof(HBASE_EXT_SCHEMA_PREFIX)-1) == HBASE_EXT_SCHEMA_PREFIX &&
+            schemaName(len-1) == '_');
+  return FALSE;
 }
 
 void

@@ -55,6 +55,7 @@
 #include "LateBindInfo.h"
 #include "ComVersionDefs.h"
 #include "ParScannedTokenQueue.h"
+#include "StmtDDLCreateTable.h"
 
 class NAWString;
 
@@ -740,6 +741,70 @@ class MultiValueExprList
 
 // INSERT2000 COLUMN FIX ENDS HERE
 // */
+
+// ----------------------------------------------------------------------------
+// Class: TableTokens
+//
+// This is a helper class that gathers tokens from different create table
+// productions to make setting values in the create table parser node more
+// uniform.
+//
+// Class contains three members:
+//   type_ - describe the type of table as specified by the create table
+//           start tokens
+//   options_ - describe how data is loaded for create table statements
+//           that load data
+//   ifNotExistsSet - A table token that tells the create code to ignore
+//           already exists errors.
+// ----------------------------------------------------------------------------           
+class TableTokens : public NABasicObject
+{
+public:
+  // Type of tables available from create table start tokens
+  enum TableType
+    { TYPE_REGULAR_TABLE = 0,
+      TYPE_EXTERNAL_TABLE,
+      TYPE_SET_TABLE,
+      TYPE_MULTISET_TABLE,
+      TYPE_VOLATILE_TABLE,
+      TYPE_VOLATILE_TABLE_MODE_SPECIAL1,
+      TYPE_VOLATILE_SET_TABLE,
+      TYPE_VOLATILE_MULTISET_TABLE,
+      TYPE_GHOST_TABLE
+    };
+
+  // load/in memory options
+  enum TableOptions
+    { OPT_NONE,
+      OPT_LOAD,
+      OPT_NO_LOAD,
+      OPT_IN_MEM,
+      OPT_LOAD_WITH_DELETE
+    };
+
+  TableTokens(TableType type, NABoolean ifNotExistsSet)
+  : type_(type),
+    options_ (OPT_NONE),
+    ifNotExistsSet_(ifNotExistsSet)
+  {}
+
+  TableType getType() { return type_; }
+  NABoolean isVolatile()
+   { return (type_ == TYPE_VOLATILE_TABLE ||
+             type_ == TYPE_VOLATILE_TABLE_MODE_SPECIAL1 ||
+             type_ == TYPE_VOLATILE_SET_TABLE ||
+             type_ == TYPE_VOLATILE_MULTISET_TABLE); }
+  TableOptions getOptions() { return options_; }
+  NABoolean ifNotExistsSet() { return ifNotExistsSet_; }
+
+  void setOptions( TableOptions load) { options_ = load; }
+  void setTableTokens(StmtDDLCreateTable *pNode);
+
+private:
+  TableType    type_;
+  TableOptions options_;
+  NABoolean    ifNotExistsSet_;
+};
 
 // -----------------------------------------------------------------------
 // Declarations of global functions

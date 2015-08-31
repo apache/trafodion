@@ -2382,8 +2382,11 @@ void ItemExpr::computeKwdAndPostfix( NAString &kwd,
                   // Get the Data type after the Cast
                   const NAType *naType = ((Cast *) this)->getType();
 
-                  // ignore NULLs description in getTypeSQLName
+                  // ignore NULLs description in getTypeSQLName, since it
+                  // does not return valid SQL syntax
                   postfix += naType->getTypeSQLname(TRUE);
+                  if (!naType->supportsSQLnull())
+                    postfix += " NOT NULL";
                   postfix += ")";
                 }
               else

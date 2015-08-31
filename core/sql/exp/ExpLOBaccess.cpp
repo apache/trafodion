@@ -1538,6 +1538,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       tgt += bytesRead;
    }
    hdfsCloseFile(fs_, fdData_);
+   fdData_ = NULL;
    return LOB_OPER_OK;
 }
 
@@ -1899,7 +1900,9 @@ Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 s
 		  getRequest()->getHandleInLen());	    
     }
   hdfsCloseFile(fs_, fdTgtFile);
+  fdTgtFile=NULL;
   hdfsCloseFile(fs_,fdData_);
+  fdData_=NULL;
   
   return LOB_OPER_OK;
 }

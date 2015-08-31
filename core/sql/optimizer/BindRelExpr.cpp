@@ -1391,8 +1391,6 @@ NATable *BindWA::getNATable(CorrName& corrName,
       CorrName newCorrName = 
         CmpCommon::context()->sqlSession()->getVolatileCorrName
           (corrName);
-      newCorrName.applyDefaults(bindWA, bindWA->getDefaultSchema());
-	  newCorrName.setGenRcb(corrName.genRcb());
       if (bindWA->errStatus())
         return NULL;
 
@@ -1571,6 +1569,21 @@ NATable *BindWA::getNATable(CorrName& corrName,
       ((QualifiedName&)(table->getTableName())).setIsVolatile(TRUE);
     }
       
+  // For now, do not allow access through the Trafodion external name created for
+  // the HIVE object unless the inDDL flag is set.  inDDL is set for drop 
+  // table and SHOWDDL statements.  
+  // TDB - may want to merge the Trafodion version with the HIVE version.
+  // TDB - similar operation may be needed for external HBase tables
+  if ((table) && (table->isExternalTable() && (! bindWA->inDDL())))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4258)
+                          << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+    
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);
@@ -7004,9 +7017,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
                                const CorrName &corrName,
                                NABoolean noSecurityCheck)
 {
-  if ( naTable->isHiveTable() )
-     return NULL;
-
   // Get the PHYSICAL (non-Ansi/non-delimited) filename of the table or view.
   CMPASSERT(!naTable->getViewText() || naTable->getViewFileName());
   NAString fileName( naTable->getViewText() ?
@@ -10115,7 +10125,7 @@ so that we can delete the old version of an updated row from the index.
 NABoolean Insert::isUpsertThatNeedsMerge() const
 {
   if (!isUpsert() || getIsTrafLoadPrep() || 
-      (systemGeneratesIdentityValue() && 
+      (getTableDesc()->isIdentityColumnGeneratedAlways() && 
        getTableDesc()->hasIdentityColumnInClusteringKey()) ||
       getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey() || 
       !(getTableDesc()->hasSecondaryIndexes()))
@@ -10126,22 +10136,12 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
 
-   if (getTableDesc()->getNATable()->hasSerializedColumn())
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-                        << DgString0(" upsert on a serialzed table with indexes is not allowed.");
-    bindWA->setErrStatus();
-    return NULL;
-  } 
-
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
-
 		    
   Scan * inputScan =
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
-
 
   ItemExpr * keyPred = NULL;
   ItemExpr * keyPredPrev = NULL;
@@ -11303,13 +11303,8 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
    // allowing a VEG in this case causes corruption on base table key values because
    // we use the "old" value of key column from fetchReturnedExpr, which can be junk
    // in case there is no row to update/delete, and a brand bew row is being inserted
-
-   NABoolean xformedUpsert = FALSE ;
-   if (isMergeUpdate())
-     xformedUpsert = ((MergeUpdate *)this)->xformedUpsert();
-
-
-   if ((NOT onRollback) && (NOT xformedUpsert)){
+   NABoolean mergeWithIndex = isMerge() && getTableDesc()->hasSecondaryIndexes() ;
+   if ((NOT onRollback) && (NOT mergeWithIndex)){
      for (i = 0;i < totalColCount; i++){
        if (!(holeyArray.used(i))){
          oldToNewMap().addMapEntry(

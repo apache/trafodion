@@ -559,7 +559,8 @@ public:
 				     ex_expr ** moveExpr,
 				     ExpTupleDesc ** tupleDesc,
 				     ExpTupleDesc::TupleDescFormat tdescF,
-				     ValueIdList &deserColVIDlist);
+				     ValueIdList &deserColVIDlist,
+				     ValueIdSet &alreadyDeserialized);
 
   // generate expression for an exclude flag for a key value
   short generateExclusionExpr(ItemExpr *expr,

@@ -139,7 +139,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
        cancelLogging_(TRUE),
        suspendLogging_(TRUE),
        aqrWarn_(0),
-       explainInRMS_(FALSE),
        redriveCTAS_(FALSE),
        callEmbeddedArkcmp_(FALSE),
        exsmTraceLevel_(0),
@@ -226,7 +225,6 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setParentQidSystem(NULL, 0);
   setWmsProcess(FALSE);
   aqrInfo_ = new(heap) AQRInfo(heap);
-  setExplainInRMS(FALSE);
   setRtsTimeout(rtsTimeout_);
   setStatisticsViewType(SQLCLI_PERTABLE_STATS);
   setReclaimTotalMemorySize(DEFAULT_RECLAIM_MEMORY_AFTER);
@@ -1689,7 +1687,6 @@ void SessionDefaults::beginSession()
   setParentQid(NULL, 0);
   setParentQidSystem(NULL, 0);
   setWmsProcess(FALSE);
-  setExplainInRMS(FALSE);
   setStatisticsViewType(SQLCLI_PERTABLE_STATS);
   setReclaimTotalMemorySize(DEFAULT_RECLAIM_MEMORY_AFTER);
   setReclaimFreeMemoryRatio(DEFAULT_RECLAIM_FREE_MEMORY_RATIO);

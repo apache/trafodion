@@ -218,25 +218,14 @@ SimpleFileScanOptimizer::isLogicalSubPartitioned() const
 SearchKey *
 SimpleFileScanOptimizer::constructSearchKey()
 {
+  // We do not need to incude the flatten version of RANGE SPEC predicates 
+  // to the exePreds because SearchKey is capable of handling such predicates.
+  // In addition, we do not want to confuse the SearchKey::ini() method 
+  // about what are the original predicates and what are derived predicates, 
+  // since combing these two forms will confuse SearchKey::makeHBaseSearchKey() 
+  // and cause the missing of the end keys (JIRA1449).
   ValueIdSet exePreds(getRelExpr().getSelectionPred());
 
-  ValueIdList selectionPredList(exePreds);
-  ItemExpr *inputItemExprTree;
-  if((CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
-	  && ( exePreds.entries())){
-   ValueIdSet resultSet; 
-   inputItemExprTree =  selectionPredList.rebuildExprTree(ITM_AND,FALSE,FALSE);
-   ItemExpr* resultOld = revertBackToOldTree(CmpCommon::statementHeap(), 
-   		  inputItemExprTree);
-//	revertBackToOldTreeUsingValueIdSet(exePreds, resultSet);
-//	exePreds.clear();	
-//	ItemExpr* resultOld =  resultSet.rebuildExprTree(ITM_AND,FALSE,FALSE);
-//	exePreds += resultSet;
-//	doNotReplaceAnItemExpressionForLikePredicates(resultOld,exePreds,resultOld);
-	resultOld->convertToValueIdSet(exePreds, NULL, ITM_AND, FALSE);
-    doNotReplaceAnItemExpressionForLikePredicates(resultOld,exePreds,resultOld);
-   }
- 
   const Disjuncts *curDisjuncts = &(getDisjuncts());
 
   if(isLogicalSubPartitioned()) {

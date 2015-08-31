@@ -88,17 +88,20 @@ typedef Int32			ComUserID;
 
 typedef NABoolean               ComBoolean;
 
-#define SERVICES_USER 33334       // user id of DB__ServicesUser
-#define SUPER_USER 33333          // user id of DB__ROOT
-#define SUPER_USER_LIT "33333"
 
-// Defines for special users
-#define DB__USERADMIN_ROLE      "DB__USERADMIN"
+// Defines for special users and roles
+#define DB__HIVEROLE      "DB__HIVEROLE"
+#define DB__HBASEROLE      "DB__HBASEROLE"
 #define DB__ROOTROLE            "DB__ROOTROLE"
 #define DB__ROOT                "DB__ROOT"
-// Defines for special users
+#define SUPER_USER_LIT "33333"
+
 #define SYSTEM_USER -2
 #define PUBLIC_USER -1
+#define SUPER_USER 33333          // user id of DB__ROOT
+
+#define HIVE_ROLE_ID 1490000      // role id of DB__HIVEROLE
+#define HBASE_ROLE_ID 1490001     // role id of DB__HBASEROLE
 
 // Defaults for system attributes
 #define SMD_LOCATION  "$SYSTEM"
@@ -114,6 +117,7 @@ typedef NABoolean               ComBoolean;
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
 #define HIVE_STATS_CATALOG           "TRAFODION"
 #define HIVE_STATS_SCHEMA            "HIVESTATS"
+#define HIVE_EXT_SCHEMA_PREFIX       "_HV_"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
@@ -121,6 +125,8 @@ typedef NABoolean               ComBoolean;
 #define HBASE_HISTINT_NAME            "SB_HISTOGRAM_INTERVALS"
 #define HBASE_HIST_PK                    "SB_HISTOGRAMS_PK"
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
+#define HBASE_EXT_SCHEMA_PREFIX       "_HB_"
+
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
@@ -1065,6 +1071,7 @@ enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
                      , COM_PACKED_FORMAT_TYPE
                      , COM_ALIGNED_FORMAT_TYPE
                      , COM_HBASE_FORMAT_TYPE
+                     , COM_HIVE_EXTERNAL_FORMAT_TYPE
 };
 
 #define COM_ROWFORMAT_LIT_LEN                2
@@ -1072,6 +1079,7 @@ enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
 #define COM_PACKED_FORMAT_LIT                "PF"
 #define COM_ALIGNED_FORMAT_LIT               "AF"
 #define COM_HBASE_FORMAT_LIT                   "HF"
+#define COM_HIVE_EXTERNAL_FORMAT_TYPE_LIT    "EV"
 
 // table load action: regular, SET or MULTISET.
 // Regular:  will error out if duplicate key is inserted.
@@ -1520,7 +1528,8 @@ enum ComSchemaType { COM_USER_TYPE,
 enum ComSchemaClass { COM_SCHEMA_CLASS_UNKNOWN = 2,
                       COM_SCHEMA_CLASS_PRIVATE = 3,
                       COM_SCHEMA_CLASS_SHARED = 4,
-                      COM_SCHEMA_CLASS_DEFAULT = 5};
+                      COM_SCHEMA_CLASS_DEFAULT = 5
+                    };
 
 enum ComSQLDataType { COM_UNKNOWN_SDT
                     , COM_CHARACTER_SDT

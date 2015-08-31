@@ -575,24 +575,6 @@ ElemDDLNode::castToElemDDLList()
   return NULL;
 }
 
-ElemDDLLoadOpt *
-ElemDDLNode::castToElemDDLLoadOpt()
-{
-  return NULL;
-}
-
-ElemDDLLoadOptDSlack *
-ElemDDLNode::castToElemDDLLoadOptDSlack()
-{
-  return NULL;
-}
-
-ElemDDLLoadOptISlack *
-ElemDDLNode::castToElemDDLLoadOptISlack()
-{
-  return NULL;
-}
-
 ElemDDLLocation *
 ElemDDLNode::castToElemDDLLocation()
 {

@@ -1,0 +1,106 @@
+-- ============================================================================
+-- TEST009 - tests external tables for hive
+--
+-- @@@ START COPYRIGHT @@@
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- This tests the following commands:
+--
+--   create external table
+--   drop external table
+--   granting/revoking privileges on hive table
+--
+-- When local hadoop is executed, a set of hive tables in the hive default
+-- schema are created.  This test assumes that the following hive tables 
+-- exist:
+--     customer
+--     item
+--     promotion
+--
+-- This test also requires several additional tests in different hive schemas
+-- ============================================================================
+
+obey TEST009(clean_up);
+log LOG009 clear;
+obey TEST009(set_up);
+obey TEST009(create_db);
+obey TEST009(tests);
+log;
+obey TEST009(clean_up);
+exit;
+
+?section clean_up
+
+-- remove schemas from Trafodion
+-- for now, parserflags need to be set to drop hv schemas:
+set parserflags 131072;
+drop schema if exists "_HV_HIVE_" cascade;
+drop schema if exists "_HV_SCH_T009_" cascade;
+
+-- remove data from hdfs
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t2/*;
+
+
+?section create_db
+
+-- The version of hive installed does not support special characters
+-- TDB - when hive is upgraded to a new version, add tests where
+--   the hive schema contains special characters
+sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql;
+
+-- make sure no external hive schema exist in Trafodion
+execute get_hv_schemas;
+
+?section set_up
+prepare get_hv_schemas from
+select schema_name from "_MD_".objects
+where schema_name like '_HV_%' and object_type = 'PS';
+
+?section tests
+-- create external tables for precreated tables
+create external table customer for hive.hive.customer;
+create external table item for hive.hive.item;
+create external table promotion for hive.hive.promotion;
+
+-- should create an schema called "_HV_HIVE_"
+execute get_hv_schemas;
+
+-- Verify tables were created
+showddl trafodion."_HV_HIVE_".customer;
+showddl trafodion."_HV_HIVE_".item;
+showddl trafodion."_HV_HIVE_".promotion;
+
+-- create external tables from hive schema sch_t009
+create external table t009t1 for hive.sch_t009.t009t1;
+create external table t009t2 for hive.sch_t009.t009t2;
+
+execute get_hv_schemas;
+showddl trafodion."_HV_SCH_T009_".t009t1;
+showddl trafodion."_HV_SCH_T009_".t009t2;
+
+select count(*) from hive.hive.customer;
+select count(*) from hive.hive.item;
+select count(*) from hive.hive.promotion;
+
+select * from hive.sch_t009.t009t1;
+select * from hive.sch_t009.t009t2;
+
+-- accesses to the external name should be prohibited
+select * from trafodion."_HV_SCH_T009_".t009t1;
+
+drop external table "_HV_HIVE_".customer;
+drop external table item for hive.hive.item;

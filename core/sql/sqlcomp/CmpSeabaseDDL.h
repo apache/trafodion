@@ -178,6 +178,10 @@ class CmpSeabaseDDL
                                            const NAString &catName,
                                            const NAString &schName);
  
+  static NABoolean isSeabaseExternalSchema(
+                                           const NAString &catName,
+                                           const NAString &schName);
+
   static short getTextFromMD(
        const char *catalogName,
        ExeCliInterface * cliInterface,
@@ -352,15 +356,16 @@ class CmpSeabaseDDL
                      NABoolean lookInObjectsIdx = FALSE,
                      NABoolean reportErrorNow = TRUE);
 
-   Int64 getObjectUIDandOwners(
+   Int64 getObjectInfo(
                      ExeCliInterface * cliInterface,
                      const char * catName,
                      const char * schName,
                      const char * objName,
                      const ComObjectType objectType,
-		     Int32 & objectOwner,
-		     Int32 & schemaOwner,
-		     bool reportErrorNow = true,
+                     Int32 & objectOwner,
+                     Int32 & schemaOwner,
+                     Int64 & objectFlags,
+                     bool reportErrorNow = true,
                      NABoolean checkForValidDef = FALSE);
   
    short getObjectName(
@@ -615,6 +620,7 @@ class CmpSeabaseDDL
                                     const char * validDef, 
                                     Int32 objOwnerID,
                                     Int32 schemaOwnerID,
+                                    Int64 objectFlags,
                                     Int64 & inUID);
                                     
   short getAllIndexes(ExeCliInterface *cliInterface,
@@ -636,8 +642,6 @@ class CmpSeabaseDDL
 			     const ComTdbVirtTableKeyInfo * keyInfo,
 			     Lng32 numIndexes,
 			     const ComTdbVirtTableIndexInfo * indexInfo,
-                             Int32 objOwnerID,
-                             Int32 schemaOwnerID,
                              Int64 &inUID);
 
   short deleteFromSeabaseMDTable(
@@ -904,7 +908,13 @@ class CmpSeabaseDDL
   void createSeabaseTableLike(
 			      StmtDDLCreateTable                  * createTableNode,
 			      NAString &currCatName, NAString &currSchName);
-  
+
+  short createSeabaseTableExternalHive(
+                                       ExeCliInterface &cliInterface,
+                                       StmtDDLCreateTable * createTableNode,
+                                       NAString &currCatName,
+                                       NAString &currSchName);
+
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
                           StmtDDLDropTable * dropTableNode,

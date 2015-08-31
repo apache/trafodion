@@ -1973,11 +1973,12 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
   SessionDefaults *sessionDefaults =
        context_->getSessionDefaults();
   if (statsGlobals != NULL && stmtStats_ != NULL && root_tdb != NULL 
-        && getUniqueStmtId() != NULL 
-        && sessionDefaults->isExplainInRMS())
+        && getUniqueStmtId() != NULL) 
   {
     ex_root_tdb *rootTdb = getRootTdb();
-    if (rootTdb->explainInRms() &&
+    //root_tdb is not unpacked for SHOWPLAN and 
+    // explain fragment can't be obtained for such prepared queries
+    if (!rootTdb->isPacked() && rootTdb->explainInRms() &&
         rootTdb->getFragDir()->getExplainFragDirEntry
                  (fragOffset, fragLen, topNodeOffset) == 0)
     {

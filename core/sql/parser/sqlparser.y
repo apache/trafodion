@@ -61,9 +61,9 @@
 // but it also wanted to shift TOK_TABLE because DROP TABLE was not enough to distinguish the 
 // first two productions for drop_table_statement. So in order to avoid introducing a 
 // shift/reduce conflict, the productions have been written like this:
-//   drop_table_statement : drop_table_or_ghost_table ddl_qualified_name optional_cleanup
+//   drop_table_statement : drop_table_start_tokens ddl_qualified_name optional_cleanup
 //                            optional_drop_invalidate_dependent_behavior optional_validate optional_logfile
-//   drop_table_or_ghost_table : TOK_DROP TOK_TABLE | TOK_DROP TOK_GHOST TOK_TABLE
+//   drop_table_start_tokens : TOK_DROP TOK_TABLE | TOK_DROP TOK_GHOST TOK_TABLE
 // This solves the problem because bison does not have to reduce after reading TOK_DROP. Rather,
 // after reading TOK_DROP TOK_TABLE, it can lookahead at the next token to decide what to do.
 
@@ -1618,6 +1618,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   CollationAndCoercibility	collationAndCoercibility;
   CollationInfo::CollationType	CollationType;
   CollationInfo::SortDirection	SortDirection;
+  TableTokens                  *tableTokens;
   ExprNode                      *exprnode;
   ExprNodePtrList               *exprnodeptrs;
   HVArgType      		*hvArgtype;
@@ -1652,6 +1653,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   StaticDescItem   		*staticDescItem;
   StmtDDLNode      	     	*pStmtDDL;
   StmtDDLCreateTrigger 	     	*pStmtDDLCreateTrigger;
+  enum TableTokens::TableOptions tableLoadAttrEnum;
   enum TransMode::AccessMode	transAccessMode;
   enum TransMode::IsolationLevel isolation;
   StmtNode             		*stmt_ptr;
@@ -2501,7 +2503,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                revoke_component_privilege_stmt
 %type <pStmtDDL>                alter_synonym_statement
 %type <pStmtDDL>  		drop_table_statement
-%type <uint>   	        	drop_table_or_ghost_table
+%type <uint>   	        	drop_table_start_tokens
 %type <pStmtDDL>  		drop_trigger_statement
 %type <pStmtDDL>  		drop_mv_statement
 %type <pStmtDDL>  		drop_view_statement
@@ -2528,6 +2530,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		table_element_list
 %type <pElemDDL>  		table_elements
 %type <pElemDDL>  		table_element
+%type <pElemDDL>                external_table_definition
 %type <pElemDDLConstraint>  	column_constraint
 %type <pElemDDL>  		optional_loggable 
 %type <pElemDDL>                optional_lobattrs
@@ -2645,7 +2648,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		range_partition_list
 %type <pElemDDL>  		system_partition_list
 %type <pElemDDL>  		system_partition
-%type <pElemDDL>  		load_option
 %type <pElemDDL>  		file_attribute_extent
 %type <pElemDDL>  		file_attribute_maxextent
 %type <item>      		null_constant
@@ -2664,7 +2666,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <uint>                    optional_ignore_clause
 %type <pElemDDL>  		index_option_list
 %type <pElemDDL>  		index_option_spec
-%type <pElemDDL>  		index_load_option
 %type <pElemDDL>                populate_option
 %type <pElemDDL>  		parallel_execution_clause
 %type <pElemDDL>  		parallel_execution_spec
@@ -2684,7 +2685,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		store_option
 %type <item>                    range_n_args
 %type <item>                    range_n_arg
-%type <pElemDDL>                optional_on_commit_clause
 %type <boolean>                 optional_in_memory_clause
 %type <dropBehaviorEnum>  	extension_drop_behavior
 %type <dropBehaviorEnum>  	optional_drop_behavior
@@ -2894,14 +2894,15 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                   locking_stmt
 %type <parTriggerScopeType>         optional_row_table
 
-%type <uint>                    create_table_start_tokens
-%type <uint>                    ctas_load_and_in_memory_options
-%type <pElemDDL>                ctas_insert_columns
-%type <pElemDDL>	        table_feature
-%type <boolean>                 is_not_droppable
-%type <boolean>   		online_or_offline
-%type <boolean>   		optional_validate_clause
-%type <extractType>             extract_type
+%type <tableTokens>            create_table_start_tokens
+%type <tableLoadAttrEnum>      ctas_load_and_in_memory_options
+%type <pElemDDL>               ctas_insert_columns
+%type <pElemDDL>	       table_feature
+%type <boolean>                is_not_droppable
+%type <boolean>   	       online_or_offline
+%type <boolean>   	       optional_validate_clause
+%type <extractType>            extract_type
+%type <boolean>                optional_if_not_exists_clause
 
 %type <uint>                    merge_stmt_start_tokens
 %type <relx>                   merge_stmt_using_clause
@@ -23278,7 +23279,6 @@ schema_class : empty
                                   $$ = COM_SCHEMA_CLASS_SHARED;
                                 }
 
-
 /* type pElemDDLSchemaName */
 schema_name_clause: schema_name
                                 {
@@ -24315,26 +24315,16 @@ udf_version_tag_clause : TOK_VERSION TOK_TAG std_char_string_literal
 table_definition : create_table_start_tokens ddl_qualified_name
                         table_definition_body
                         optional_create_table_attribute_list
-                        optional_on_commit_clause
                         optional_in_memory_clause
 	  	   {
-		     // table_definition : create_table_start_tokens ddl_qualified_name
+                     $1->setOptions(TableTokens::OPT_NONE);
 		     QualifiedName * qn;
-		     if ($1 == 3 || $1 == 5 || $1 == 6) // volatile table
-		       {
-			 qn = 
-			   processVolatileDDLName($2, TRUE, TRUE);
-		       }
+                     if ($1->isVolatile())
+                       qn = processVolatileDDLName($2, TRUE, TRUE);
 		     else
-		       {
-			 qn =
-			   processVolatileDDLName($2, FALSE, FALSE);
-		       }
-		     
+                       qn = processVolatileDDLName($2, FALSE, FALSE);
 		     if (! qn)
-		       {
-			 YYABORT;
-		       }
+                       YYABORT;
 
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
@@ -24347,40 +24337,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			    NULL,
 			    PARSERHEAP());
 
-		     pNode->setInMemoryObjectDefn($6);
-
-		     if ($1 == 3) // volatile table
-		       {
-			 pNode->setIsVolatile(TRUE);
-			 pNode->setProcessAsExeUtil(TRUE);
-		       }
-		     else if ($1 == 1)
-		       pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
-		     else if ($1 == 2)
-		       pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
-		     else if ($1 == 4)
-		       {
-			 pNode->setIsGhostObject(TRUE);
-			 pNode->setTableType(ExtendedQualName::GHOST_TABLE);
-		       }
-		     else if ($1 ==5) //set volatile
-		       {
-			 pNode->setIsVolatile(TRUE);
-			 pNode->setProcessAsExeUtil(TRUE);
-			 pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
-		       }
-		     else if ($1 ==6) //multiset volatile
-		       {
-			 pNode->setIsVolatile(TRUE);
-			 pNode->setProcessAsExeUtil(TRUE);
-			 pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
-		       }
-
-		     if ($1 == 7) // if not exists
-		       {
-			 pNode->setCreateIfNotExists(TRUE);
-		       }
-
+                     $1->setTableTokens(pNode);
 		     pNode->synthesize();
 
 		     if (ParNameCTLocListPtr)
@@ -24390,6 +24347,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		       }
 
 		     $$ = pNode;
+                     delete $1; /*TableTokens*/
 		     delete $2 /*ddl_qualified_name*/;
 		   }
 		 | TOK_CREATE special_table_name
@@ -24432,24 +24390,19 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   {
 		     QualifiedName * qn;
 
-		     if ($1 == 4) // ghost table
+		     if ($1->getType() == TableTokens::TYPE_GHOST_TABLE) // ghost table
 		       {
 			 // Syntax error: CREATE GHOST TABLE ... AS ...
 			 yyerror("");
 			 YYERROR;
 		       }
-		     if ($1 != 3 && $1 != 5 && $1 != 6) // not volatile table
-		       {
-			 qn =
-			   processVolatileDDLName($2, FALSE, FALSE);
-		       }
+                     $1->setOptions($6);
+                     if ($1->isVolatile())
+                       qn = processVolatileDDLName($2, FALSE, FALSE);
 		     else
 		       qn = $2;
-
 		     if (! qn)
-		       {
 			 YYABORT;
-		       }
 
 		     RelRoot *top = finalize($10);
 		     StmtDDLCreateTable *pNode =
@@ -24462,42 +24415,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			    $7, /* insert column list */
 			    top,
 			    PARSERHEAP());
-		     if ($1 == 3) // volatile table
-		       {
-			 pNode->setIsVolatile(TRUE);
-			 pNode->setProcessAsExeUtil(TRUE);
-		       }
-		     else if ($1 == 1)
-		       pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
-		     else if ($1 == 2)
-		       pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
-		     else if ($1 ==5) //set volatile
-                     {
-                       pNode->setIsVolatile(TRUE);
-		       pNode->setProcessAsExeUtil(TRUE);
-		       pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
-                     }
-                     else if ($1 == 6) //multiset volatile
-                     {
-                       pNode->setIsVolatile(TRUE);
-		       pNode->setProcessAsExeUtil(TRUE);
-		       pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
-                     }
-
-		     if ($6 == 1)
-		       pNode->setLoadIfExists(TRUE);
-		     else if ($6 == 2)
-		       pNode->setNoLoad(TRUE);
-		     else if ($6 == 3)
-		       {
-			 pNode->setNoLoad(TRUE);
-			 pNode->setInMemoryObjectDefn(TRUE);
-		       }
-		     else if ($6 ==  4)
-		       {
-			 pNode->setLoadIfExists(TRUE);
-			 pNode->setDeleteData(TRUE);
-		       }
+                     $1->setTableTokens(pNode);
 		     pNode->synthesize();
 		     
 		     if (ParSetTextEndPos(pNode)) 
@@ -24513,6 +24431,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		       }
 		     
 		     $$ = pNode;
+                     delete $1; /*TableTokens*/
 		     delete $2 /*ddl_qualified_name*/;
 		   }
 
@@ -24528,24 +24447,19 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		   {
 		     QualifiedName * qn;
 
-		     if ($1 == 4) // ghost table
+		     if ($1->getType() == TableTokens::TYPE_GHOST_TABLE) // ghost table
 		       {
 			 // Syntax error: CREATE GHOST TABLE ... AS ...
 			 yyerror("");
 			 YYERROR;
 		       }
-		     if ($1 != 3 && $1 != 5 && $1 != 6) // not volatile table
-		       {
-			 qn =
-			   processVolatileDDLName($2, FALSE, FALSE);
-		       }
+                     $1->setOptions($5);
+                     if ($1->isVolatile())
+                       qn = processVolatileDDLName($2, FALSE, FALSE);
 		     else
 		       qn = $2;
-
 		     if (! qn)
-		       {
-			 YYABORT;
-		       }
+                       YYABORT;
 
 		     RelRoot *top = finalize($9);
 		     StmtDDLCreateTable *pNode =
@@ -24558,42 +24472,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			    $6, /* insert column list */
 			    top,
 			    PARSERHEAP());
-		     if ($1 == 3) // volatile table
-		       {
-			 pNode->setIsVolatile(TRUE);
-			 pNode->setProcessAsExeUtil(TRUE);
-		       }
-		     else if ($1 == 1)
-		       pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
-		     else if ($1 == 2)
-		       pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
-		     else if ($1 ==5) //set volatile
-                     {
-                       pNode->setIsVolatile(TRUE);
-		       pNode->setProcessAsExeUtil(TRUE);
-		       pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
-                     }
-                     else if ($1 == 6) //multiset volatile
-                     {
-                       pNode->setIsVolatile(TRUE);
-		       pNode->setProcessAsExeUtil(TRUE);
-		       pNode->setInsertMode(COM_MULTISET_TABLE_INSERT_MODE);
-                     }
-
-		     if ($5 == 1)
-		       pNode->setLoadIfExists(TRUE);
-		     else if ($5 == 2)
-		       pNode->setNoLoad(TRUE);
-		     else if ($5 == 3)
-		       {
-			 pNode->setNoLoad(TRUE);
-			 pNode->setInMemoryObjectDefn(TRUE);
-		       }
-		     else if ($5 == 4)
-		       {
-			 pNode->setLoadIfExists(TRUE);
-			 pNode->setDeleteData(TRUE);
-		       }
+                     $1->setTableTokens(pNode);
 		     pNode->synthesize();
 		     
 		     if (ParSetTextEndPos(pNode)) 
@@ -24609,6 +24488,7 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		       }
 
 		     $$ = pNode;
+                     delete $1; /*TableTokens*/
 		     delete $2 /*ddl_qualified_name*/;
 		   }
 
@@ -24641,20 +24521,32 @@ table_definition : create_table_start_tokens ddl_qualified_name
 		 $$ = pNode;
                }
 
-create_table_start_tokens : TOK_CREATE TOK_TABLE
-                   {
-	             // create_table_start_tokens : TOK_CREATE TOK_TABLE
-		     ParNameCTLocListPtr = new (PARSERHEAP())
-		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 0;
-		   }
-                   | TOK_CREATE TOK_SET TOK_TABLE 
+create_table_start_tokens : 
+                   TOK_CREATE TOK_TABLE optional_if_not_exists_clause
                    {
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 1;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_REGULAR_TABLE, $3); 
+                     $$ = tableTokens;
 		   }
-                   | TOK_CREATE TOK_MULTISET TOK_TABLE 
+
+                   | TOK_CREATE TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
+                   {
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_EXTERNAL_TABLE, $4); 
+                     $$ = tableTokens;
+		   }
+
+                   | TOK_CREATE TOK_SET TOK_TABLE optional_if_not_exists_clause
+                   {
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_SET_TABLE, $4); 
+                     $$ = tableTokens;
+		   }
+
+                   | TOK_CREATE TOK_MULTISET TOK_TABLE optional_if_not_exists_clause 
                    {
 		     if ((NOT SqlParser_CurrentParser->modeSpecial1()) &&
 			 (NOT SqlParser_CurrentParser->modeSpecial2()))
@@ -24664,60 +24556,81 @@ create_table_start_tokens : TOK_CREATE TOK_TABLE
 
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), PARSERHEAP());
-		     $$ = 2;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_MULTISET_TABLE, $4); 
+                     $$ = tableTokens;
 		   }
-                   | TOK_CREATE TOK_VOLATILE TOK_TABLE 
+
+                   | TOK_CREATE TOK_VOLATILE TOK_TABLE optional_if_not_exists_clause 
                    {
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
                     if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
                     { 
-                      $$ = 5;
+                       TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_VOLATILE_TABLE_MODE_SPECIAL1, $4); 
+                       $$ = tableTokens;
                     }
+
                     else
                     {                      
-		       $$ = 3;
+                       TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_VOLATILE_TABLE, $4); 
+                       $$ = tableTokens;
                     }
 		   }
-                   | TOK_CREATE TOK_LOCAL TOK_TEMPORARY TOK_TABLE 
+
+                   | TOK_CREATE TOK_LOCAL TOK_TEMPORARY TOK_TABLE optional_if_not_exists_clause
                    {
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 3;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_VOLATILE_TABLE, $5); 
+                     $$ = tableTokens;
 		   }
-                   | TOK_CREATE TOK_GLOBAL TOK_TEMPORARY TOK_TABLE 
+
+                   | TOK_CREATE TOK_GLOBAL TOK_TEMPORARY TOK_TABLE optional_if_not_exists_clause 
                    {
                      CheckModeSpecial4;
  
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 3;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_VOLATILE_TABLE, $5); 
+                     $$ = tableTokens;
 		   }
+
                    | TOK_CREATE ghost TOK_TABLE 
                    {
                      ParNameCTLocListPtr = new (PARSERHEAP())
                      ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-                     $$ = 4;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_GHOST_TABLE, FALSE); 
+                     $$ = tableTokens;
                    }
-                   | TOK_CREATE TOK_SET TOK_VOLATILE TOK_TABLE 
+
+                   | TOK_CREATE TOK_SET TOK_VOLATILE TOK_TABLE optional_if_not_exists_clause
                    {
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		     ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 5;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_VOLATILE_SET_TABLE, $5); 
+                     $$ = tableTokens;
 		   }
-		   | TOK_CREATE TOK_MULTISET TOK_VOLATILE TOK_TABLE 
+
+		   | TOK_CREATE TOK_MULTISET TOK_VOLATILE TOK_TABLE optional_if_not_exists_clause
                    {
                      CheckModeSpecial1();
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		     ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 6;
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_VOLATILE_MULTISET_TABLE, $5); 
+                     $$ = tableTokens;
 		   }
-                   | TOK_CREATE TOK_TABLE TOK_IF TOK_NOT TOK_EXISTS
-                   {
-		     ParNameCTLocListPtr = new (PARSERHEAP())
-		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
-		     $$ = 7;
-		   }
+
+/* type boolean */
+optional_if_not_exists_clause : 
+                empty
+                  {
+                    $$ = FALSE;
+                  }
+               | TOK_IF TOK_NOT TOK_EXISTS
+                  {
+                    $$ = TRUE;
+                  }
+
 
 create_table_as_attr_list_start: empty
 	           {
@@ -24733,36 +24646,31 @@ create_table_as_attr_list_end: empty
 		       ParSetEndOfCreateTableAsAttrList(ParNameCTLocListPtr);
 		   }
 
-/* 
-   LOAD IF EXISTS      = 1
-   NO LOAD             = 2
-   IN MEMORY NO LOAD   = 3
-*/
 ctas_load_and_in_memory_options : TOK_LOAD TOK_IF TOK_EXISTS 
                    {
-		     $$ = 1;
+		     $$ = TableTokens::OPT_LOAD; 
 		   }
                  | TOK_NO_LOAD
                    {
 		     if (CmpCommon::getDefault(IN_MEMORY_OBJECT_DEFN) == DF_ON)
-		       $$ = 3;
+		       $$ = TableTokens::OPT_IN_MEM; 
 		     else
-		       $$ = 2;
+		       $$ = TableTokens::OPT_NO_LOAD; 
 		   }
                  | TOK_NO_LOAD TOK_IN TOK_MEMORY 
                    {
-		     $$ = 3;
+		     $$ = TableTokens::OPT_IN_MEM; 
 		   }
                  | TOK_LOAD TOK_IF TOK_EXISTS TOK_WITH TOK_DELETE TOK_DATA 
                    {
-		     $$ = 4;
+		     $$ = TableTokens::OPT_LOAD_WITH_DELETE; 
 		   }
                  | empty 
                    {		  
 		     if (CmpCommon::getDefault(IN_MEMORY_OBJECT_DEFN) == DF_ON)
-		       $$ = 3;
+		       $$ = TableTokens::OPT_IN_MEM; 
 		     else
-		       $$ = 0;
+		       $$ = TableTokens::OPT_NONE;
 		   }
 
 /* type pElemDDL */
@@ -24787,6 +24695,7 @@ create_table_as_token: TOK_AS
 /* type pElemDDL */
 table_definition_body : table_element_list
                       | like_definition
+                      | external_table_definition
 
 /* type pElemDDL */
 table_element_list : '(' table_elements ')'
@@ -25664,6 +25573,17 @@ like_definition : TOK_LIKE source_table optional_like_option_list
                                   delete $2 /*source_table*/;
                                 }
 
+/* type pElemDDL */
+external_table_definition : TOK_FOR source_table
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLLikeCreateTable(
+                                        *$2 /*source_table*/,
+                                        NULL,
+                                        PARSERHEAP());
+                                  delete $2 /*source_table*/;
+                                }
+
 //++ MV
 // added support for special tables
 /* type corrName */
@@ -26458,13 +26378,6 @@ partition_type    : empty
 
 /* TD-style ON COMMIT clause -- ignore it! */
 
-optional_on_commit_clause : empty
-                            { $$ = NULL; }
-                          | TOK_ON_COMMIT TOK_PRESERVE TOK_ROWS
-                            { $$ = NULL; }
-                          | TOK_ON_COMMIT TOK_DELETE TOK_ROWS
-                            { $$ = NULL; }
-
 table_feature : TOK_NOT_DROPPABLE
                 { 
                     $$ = new (PARSERHEAP())
@@ -26760,26 +26673,6 @@ partition_attribute_list :   partition_attribute
 /* type pElemDDL */
 partition_attribute : file_attribute_extent_clause
 		      | file_attribute_maxextent_clause
-                      | load_option
-
-/* type pElemDDL */
-load_option : TOK_DSLACK unsigned_integer
-                                {
-#pragma nowarn(1506)   // warning elimination 
-                                  $$ = new (PARSERHEAP())
-				    ElemDDLLoadOptDSlack(
-                                       $2 /*unsigned_integer (percentage)*/);
-#pragma warn(1506)   // warning elimination 
-                                }
-
-                      | TOK_ISLACK unsigned_integer
-                                {
-#pragma nowarn(1506)   // warning elimination 
-                                  $$ = new (PARSERHEAP())
-				    ElemDDLLoadOptISlack(
-                                       $2 /*unsigned_integer (percentage)*/);
-#pragma warn(1506)   // warning elimination 
-                                }
 
 /* type partitionOptionEnum */
 partition_add_drop_option : TOK_ADD
@@ -29381,7 +29274,7 @@ index_option_list : index_option_spec
 index_option_spec : location_clause
                       | partition_definition
                       | file_attribute_clause
-                      | index_load_option
+                      | parallel_execution_clause
                       | populate_option
                       | attribute_num_rows_clause
                       | index_division_clause
@@ -29405,10 +29298,6 @@ index_division_clause : division_by_clause
                           $$ = new (PARSERHEAP())
                             ElemDDLDivisionClause(ElemDDLDivisionClause::DIVISION_LIKE_TABLE);
                         }
-
-/* type pElemDDL */
-index_load_option : parallel_execution_clause
-                      | load_option
 
 /* type pElemDDL */
 
@@ -31653,44 +31542,32 @@ drop_table_statement : TOK_DROP special_table_name optional_drop_behavior
                  delete $2 /*table_name*/;
                }
 
-               | drop_table_or_ghost_table ddl_qualified_name optional_cleanup
-                 optional_drop_invalidate_dependent_behavior optional_validate optional_logfile
+               | drop_table_start_tokens  ddl_qualified_name optional_cleanup
+                 optional_drop_invalidate_dependent_behavior 
                {
-                 /* If VALIDATE, or LOG option specified, */
-                 /* ALLOW_SPECIALTABLETYPE must also be specified  */
-                 if (($5 || $6) &&
-                     !Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                 {
-                   yyerror(""); YYERROR; /*internal syntax only!*/
-                 }
-                 else
-                 {
-                   NAString *pLogFile = NULL;
-                   if ($6)
-                     pLogFile =new (PARSERHEAP()) NAString
-                       ( $6->data(), PARSERHEAP());
                    $$ = new (PARSERHEAP())
                    StmtDDLDropTable(
                                     *$2  /*ddl_qualified_name*/,
                                     $4   /*optional_drop_invalidate_dependent_behavior*/,
                                     $3   /*for CLEANUP mode set to TRUE*/,
-                                    $5   /*for VALIDATE mode set to FALSE*/,
-                                    pLogFile  /*log_file_name*/);
-		   if ($1 == 1)  /*ghost*/
+                                    FALSE, /* validate option - to be obsoleted*/
+                                    NULL  /*log_file_name - to be obsoleted*/);
+                   // $1: 0 - regular table, 1 - ghost table, 2 - regular table IF EXISTS,
+                   //     3 - external table, 4 - external table IF EXISTS
+                   if ($1 == 1)  /*ghost*/
                    {
-		     $$->setIsGhostObject(TRUE);
+                     $$->setIsGhostObject(TRUE);
                      $$->castToStmtDDLDropTable()->setTableType(ExtendedQualName::GHOST_TABLE);
                    }
 
-		   if ($1 == 2)
-		     {
-		       $$->castToStmtDDLDropTable()->setDropIfExists(TRUE);
-		     }
+                   if ($1 == 2 || $1 == 4)
+                     {
+                       $$->castToStmtDDLDropTable()->setDropIfExists(TRUE);
+                     }
 
                    delete $2 /*ddl_qualified_name*/;
-                   delete $6 /* logfile name */;
+
                  }
-               }
                   | TOK_DROP TOK_VOLATILE TOK_TABLE volatile_ddl_qualified_name
                                 optional_cleanup optional_drop_behavior
 				{
@@ -31735,12 +31612,37 @@ drop_table_statement : TOK_DROP special_table_name optional_drop_behavior
 		   
 		   $$ = pNode;
 		 }
+               | drop_table_start_tokens identifier TOK_FOR ddl_qualified_name
+                 optional_cleanup optional_drop_behavior
+                 {
+                   // TBD: currently the syntax ignores identifier.  The drop
+                   // code assumes the identifier is the same as the third part
+                   // of the ddl_qualified_name. We may allow them to be 
+                   // different in the future.  
+                   $$ = new (PARSERHEAP())
+                   StmtDDLDropTable(
+                                    *$4  /*ddl_qualified_name*/,
+                                    $6   /*optional_drop_invalidate_dependent_behavior*/,
+                                    $5   /*for CLEANUP mode set to TRUE*/,
+                                    FALSE, /* validate option - to be obsoleted*/
+                                    NULL  /*log_file_name - to be obsoleted*/);
+                   // $1: 0 - regular table, 1 - ghost table, 2 - regular table IF EXISTS,
+                   //     3 - external table, 4 - external table IF EXISTS
+                   if ($1 == 3 || $1 == 4)
+                     $$->setIsExternal(TRUE);
+                   if ($1 == 4)
+                     $$->castToStmtDDLDropTable()->setDropIfExists(TRUE);
+                      
+                   delete $2 /*identifier*/;
+                   delete $4 /*ddl_qualified_name*/;
+                 }
+
 
 // It took some care to avoid introducing a shift/reduce conflict for DROP GHOST TABLE.
 // See the shift/reduce case study near the beginning of this file.
 
 /* type uint */
-drop_table_or_ghost_table : TOK_DROP TOK_TABLE
+drop_table_start_tokens : TOK_DROP TOK_TABLE
                    {
                      $$ = 0;
                    }
@@ -31751,6 +31653,14 @@ drop_table_or_ghost_table : TOK_DROP TOK_TABLE
                   | TOK_DROP TOK_TABLE TOK_IF TOK_EXISTS
                    {
                      $$ = 2;
+                   }
+                  | TOK_DROP TOK_EXTERNAL TOK_TABLE 
+                   {
+                     $$ = 3;
+                   }
+                  | TOK_DROP TOK_EXTERNAL TOK_TABLE TOK_IF TOK_EXISTS
+                   {
+                     $$ = 4;
                    }
 
 /* type pStmtDDL */
