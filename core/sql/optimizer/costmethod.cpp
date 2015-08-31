@@ -19,7 +19,7 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-**********************************************************************/
+/**********************************************************************/
 /* -*-C++-*-
 **************************************************************************
 *
@@ -13997,15 +13997,188 @@ CostMethodFastExtract::computeOperatorCostInternal(RelExpr* op,
 /**********************************************************************/
 
 //<pb>
-// ----QUICKSEARCH FOR DP2Insert........................................
+// ----QUICKSEARCH FOR HbaseInsert........................................
 
 /**********************************************************************/
 /*                                                                    */
-/*                      CostMethodDP2Insert                           */
+/*                      CostMethodHbaseInsert                         */
 /*                                                                    */
 /**********************************************************************/
 
-#pragma nowarn(262)   // warning elimination
+// -----------------------------------------------------------------------
+// CostMethodHbaseInsert::cacheParameters()
+// -----------------------------------------------------------------------
+void CostMethodHbaseInsert::cacheParameters(RelExpr* op, const Context * myContext)
+{
+  CostMethod::cacheParameters(op, myContext);
+
+  HbaseInsert* insOp = (HbaseInsert *)op;
+
+  CMPASSERT(partFunc_ != NULL);
+  NodeMap * nodeMap = (NodeMap *)partFunc_->getNodeMap();
+  if (nodeMap)
+    activePartitions_ = (CostScalar)nodeMap->getNumActivePartitions();
+  else
+    // Occasionally (e.g., regress/fullstack2/test023, the insert/select
+    // from t023t1 into t023t2 using a transpose operator), we get
+    // a ReplicateNoBroadcastPartitioningFunction lacking a node map.
+    // In this case we'll just use the number of partitions from the
+    // partitioning function itself -- which is probably an ESP count.
+    activePartitions_ = (CostScalar)partFunc_->getCountOfPartitions();
+
+  // The number of asynchronous streams is USUALLY the # of active parts.
+  countOfAsynchronousStreams_ = activePartitions_;
+} // CostMethodHbaseInsert::cacheParameters()
+
+
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseInsert::computeOperatorCostInternal()
+// -----------------------------------------------------------------------
+Cost* CostMethodHbaseInsert::computeOperatorCostInternal(RelExpr* op,
+  const Context* myContext,
+  Lng32& countOfStreams)
+{
+  cacheParameters(op, myContext);
+  estimateDegreeOfParallelism();
+
+  // ------------------------------------------------------
+  // Save off our current estimated degree of parallelism.
+  // in the 'out' parameter; we might revise it below
+  // ------------------------------------------------------
+  countOfStreams = countOfStreams_;
+
+  CostScalar currentCpus =
+    (CostScalar)myContext->getPlan()->getPhysicalProperty()->getCurrentCountOfCPUs();
+  activeCpus_ = MINOF(countOfAsynchronousStreams_, currentCpus);
+
+  // update count of streams; the caller of the method uses this value
+  if ((countOfAsynchronousStreams_ > 0) &&
+      (countOfAsynchronousStreams_ < countOfStreams)
+      )
+    countOfStreams = (Lng32)countOfAsynchronousStreams_.getValue();
+
+
+  streamsPerCpu_ =
+    (countOfAsynchronousStreams_ / activeCpus_).getCeiling();
+
+  CostScalar noOfProbesPerStream(csOne);
+
+  // Determine the number of probes per stream. Use this number as
+  // the number of rows to insert (this is "per-stream" costing).
+
+  noOfProbesPerStream =
+    (noOfProbes_ / countOfAsynchronousStreams_).minCsOne();
+
+  // ************************************************************
+  // Compute the write/read cost for the insert
+  //
+  // ************************************************************
+
+  // ---------------------------------------------------------------------
+  // Synthesize the cost vectors.
+  // ---------------------------------------------------------------------
+  SimpleCostVector cvFR;
+  SimpleCostVector cvLR;
+
+  // For now, we don't bother to estimate CPU time, I/O time, transfer 
+  // time or idle time, since we really are only supporting the new 
+  // cost model.
+  //
+  // Future possible improvements:
+  //
+  // 1. Take into account HBase memstore insertion cost. The memstore
+  // uses a Red-Black tree which has o(n * log(n)) insertion cost. To
+  // model this correctly, we'd need to take into account the number
+  // of HBase regions rather than the number of ESPs, that is, to
+  // divide the number of probes by the number of HBase regions to find
+  // n. This cost will be paid no matter how many inserting streams
+  // there are so by itself this may not be interesting. It would only
+  // be interesting if there were a choice in the plan between inserting
+  // and not inserting (e.g. if we were considering bypassing the
+  // memstore, or if we were considering storing an intermediate result,
+  // neither of which are choices we examine today).
+  //
+  // 2. Take into account whether the probes are in key order. There
+  // is anecdotal evidence that if the probes are in key order, then
+  // memstore insertion cost is less. Possibly this is true only if
+  // inserting at the end or the beginning of the key range in a 
+  // partition; intuitively inserting in the middle would seem to incur
+  // the full insertion cost. This is worthwhile taking into 
+  // consideration as it opens the possibility of choosing between a
+  // plan that sorts rows in Trafodion before passing them to HBase
+  // vs. a plan that does not. To make this calculation we must know
+  // the memstore insertion cost (point 1 above), the order of the 
+  // probes, whether the ESPs are aligned to the Regions of the 
+  // target table, and whether we are inserting at the beginning or
+  // end of the key range. A first approximation to the last item
+  // would be whether the target table is empty. This is interesting
+  // because the case that we are doing an INSERT/SELECT into a new
+  // table is likely to be common.
+  //
+  // 3. Take into account memstore flush cost. We could add I/O time
+  // for flushes. For example, we could compare the number of probes
+  // per HBase Region with the number of rows that would cause a
+  // flush (the latter can be obtained from 
+  // HbaseClient::estimateMemStoreRows() and is a function of the
+  // HBase parameter hbase.hregion.memstore.flush.size). Again, this
+  // cost will be paid no matter the plan choice so this is not
+  // interesting today. As with point 1, it becomes interesting only
+  // if there is a plan choice between inserting via memstore or not.
+  //
+  // In the interest of time, we move forward without these 
+  // improvements for now.
+
+  cvFR.setNumProbes(noOfProbesPerStream);
+  cvLR.setNumProbes(noOfProbesPerStream);
+
+  // ---------------------------------------------------------------------
+  // Synthesize and return cost object.
+  // ---------------------------------------------------------------------
+
+  Cost *costPtr = new STMTHEAP
+    Cost(&cvFR
+         , &cvLR
+         , NULL
+         , Lng32(activeCpus_.getValue())
+         , Lng32(streamsPerCpu_.getValue())
+         );
+
+#ifndef NDEBUG
+  if (CmpCommon::getDefault(OPTIMIZER_PRINT_COST) == DF_ON)
+    {
+      pfp = stdout;
+      fprintf(pfp, "HbaseInsert elapsed time: ");
+      fprintf(pfp, "%f", costPtr->
+              convertToElapsedTime(
+                                   myContext->getReqdPhysicalProperty()).
+              value());
+      fprintf(pfp, "\n");
+    }
+#endif
+
+  return costPtr;
+} // CostMethodHbaseInsert::computeOperatorCostInternal
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseInsert::cleanUp()
+//
+// The method cleans up cached parameters which need deallocation and
+// should be called after a costing session is done.
+// -----------------------------------------------------------------------
+void CostMethodHbaseInsert::cleanUp()
+{
+  activePartitions_ = csOne;
+  activeCpus_ = csOne;
+  streamsPerCpu_ = csOne;
+  countOfAsynchronousStreams_ = csOne;
+
+  // Clean up fields in base class
+  CostMethod::cleanUp();
+
+}  // CostMethodHbaseInsert::cleanUp().
+
+//<pb>
 
 
 

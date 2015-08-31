@@ -65,9 +65,8 @@ class CostMethodNestedJoinFlow;
 class CostMethodMergeUnion;
 class CostMethodTuple;
 class CostMethodTranspose;
-class CostMethodDP2Insert;
-class CostMethodDP2SideTreeInsert;
-class CostMethodDP2VSBBInsert;
+class CostMethodStoredProc;
+class CostMethodHbaseInsert;
 class CostMethodDP2Update;
 class CostMethodDP2Delete;
 class CostMethodUnPackRows;
@@ -1996,14 +1995,14 @@ protected:
 //<pb>
 /**********************************************************************/
 /*                                                                    */
-/*                         CostMethodDP2Insert                        */
+/*                         CostMethodHbaseInsert                      */
 /*                                                                    */
 /**********************************************************************/
-class CostMethodDP2Insert : public CostMethod
+class CostMethodHbaseInsert : public CostMethod
 {
 public:
   // Constructor
-  CostMethodDP2Insert() : CostMethod( "CostMethodDP2Insert" ) {}
+  CostMethodHbaseInsert() : CostMethod( "CostMethodHbaseInsert" ) {}
 
 protected:
   // Cost functions
@@ -2012,26 +2011,17 @@ protected:
                                             Lng32& countOfStreams);
 
   virtual Cost* scmComputeOperatorCostInternal(RelExpr* op,
-					       const Context* myContext,
                                                const PlanWorkSpace* pws,
 					       Lng32& countOfStreams);
 
   virtual void cacheParameters(RelExpr*, const Context *);
-  CostScalar getNumberOfInserts();
-  virtual void calculateIOCosts();
-  virtual CostScalar calculateNumberOfInserts();
   virtual void cleanUp();
-  virtual void calculateCpuAndIdleCosts();
 
 protected:
-  IndexDesc* CIDesc_;
   
   // storage related
-  CostScalar indexLevels_;
-  CostScalar kbPerBlock_;
-  CostScalar rowsPerBlock_;
-  CostScalar totalIndexBlocks_;
-  CostScalar entriesInIndexBlock_;
+  // TODO: add members to help compute whether inserts will
+  // fit in memstore or not if this seems interesting
 
   // parallelism related
   CostScalar activePartitions_;
@@ -2039,47 +2029,9 @@ protected:
   CostScalar streamsPerCpu_;
   CostScalar countOfAsynchronousStreams_;
 
-  NABoolean probesInOrder_;
-
-  // Used for MV logging pushdown
-  NABoolean usedForMvLogging_;
-  const PushDownProperty* pushDownProperty_;
-
-  // I/O and CPU related cost scalars
-  CostScalar transferFR_;
-  CostScalar transferLR_;
-  CostScalar seeksFR_;
-  CostScalar seeksLR_;
-  CostScalar numInserts_;
-  CostScalar cpuFR_;
-  CostScalar cpuLR_;
-  CostScalar idleFR_;
-  CostScalar idleLR_;
-
-}; // class CostMethodDP2Insert
-
-class CostMethodDP2SideTreeInsert : public CostMethodDP2Insert
-{
-public:
-  // constructor
-  CostMethodDP2SideTreeInsert() : CostMethodDP2Insert () {}
-
-protected:
-  virtual void calculateIOCosts();
-  virtual CostScalar calculateNumberOfInserts();
-};
-
-class CostMethodDP2VSBBInsert : public CostMethodDP2Insert
-{
-public:
-  // constructor
-  CostMethodDP2VSBBInsert() : CostMethodDP2Insert () {}
+}; // class CostMethodHbaseInsert
 
 
-protected:
-  virtual void calculateIOCosts();
-  virtual CostScalar calculateNumberOfInserts();
-};
 
 //<pb>
 /**********************************************************************/

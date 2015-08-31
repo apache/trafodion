@@ -3629,6 +3629,78 @@ CostMethodMergeUnion::scmComputeOperatorCostInternal(RelExpr *op,
 
   return muCost;
 }      // CostMethodMergeUnion::scmComputeOperatorInternal()
+	   
+//<pb>
+
+//**************************************************************
+// This method computes the cost vector of the HbaseInsert operation
+//**************************************************************
+Cost*
+CostMethodHbaseInsert::scmComputeOperatorCostInternal(RelExpr* op,
+  const PlanWorkSpace* pws,
+  Lng32& countOfStreams)
+{
+  // TODO: For now assume we are always doing an HBase insert.
+  // Is it possible we go through this code path for Hive inserts?
+  // If so, figure out what to do.
+
+  HbaseInsert* insOp = (HbaseInsert *)op;   // downcast
+
+  // compute some details
+  const Context * myContext = pws->getContext();
+  Cost *costPtr = computeOperatorCostInternal(op, myContext, countOfStreams);
+
+  CostScalar noOfProbesPerStream(csOne);
+
+  // the number of rows to insert (this is "per-stream" costing).
+  CostScalar numOfProbesPerStream =
+    (noOfProbes_ / countOfAsynchronousStreams_).minCsOne();
+
+  CostScalar tuplesProcessed = numOfProbesPerStream;
+  CostScalar tuplesProduced = numOfProbesPerStream;
+
+  CostScalar ioRand = csZero;  // we don't bother estimating this
+  CostScalar ioSeq = csZero;  // we don't bother estimating this
+
+  // Factor in row sizes.
+  CostScalar rowSize = ((IndexDesc *)insOp->getIndexDesc())->getNAFileSet()->getRecordLength();
+  CostScalar rowSizeFactor = scmRowSizeFactor(rowSize);
+  tuplesProcessed *= rowSizeFactor;
+  tuplesProduced *= rowSizeFactor;
+
+  // there doesn't seem to be an estRowsAccessed_ member or
+  // related methods in hbaseInsert at the moment... add it
+  // when the need becomes apparent
+  //insOp->setEstRowsAccessed(noOfProbes_);
+
+  //----------------------------------------
+  //  Synthesize and return the cost object.
+  //----------------------------------------
+  Cost *hbaseInsertCost =
+    scmCost(tuplesProcessed, tuplesProduced, csZero, ioRand, ioSeq, noOfProbesPerStream_,
+            rowSize, csZero, rowSize, csZero);
+
+#ifndef NDEBUG
+  NABoolean printCost =
+    (CmpCommon::getDefault(OPTIMIZER_PRINT_COST) == DF_ON);
+  if (printCost)
+    {
+      pfp = stdout;
+      fprintf(pfp, "DP2INSERT::scmComputeOperatorCostInternal()\n");
+      hbaseInsertCost->getScmCplr().print(pfp);
+      fprintf(pfp, "DP2Insert elapsed time: ");
+      fprintf(pfp, "%f", hbaseInsertCost->convertToElapsedTime(myContext->getReqdPhysicalProperty()).value());
+      fprintf(pfp, "\n");
+    }
+#endif
+
+  // We use the call to computeOperatorCostInternal() to compute the various costs, but we
+  // we do not need the cost object computed by this method, we generate and return
+  // a different New Cost Model (NCM) cost object.
+  delete costPtr;
+
+  return hbaseInsertCost;
+}
 
 //<pb>
 
