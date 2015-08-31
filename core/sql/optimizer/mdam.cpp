@@ -2101,6 +2101,74 @@ DisjunctArray * Disjuncts::createEmptyDisjunctArray() const
   return disjunctArrayPtr;
 }
 
+NABoolean isOrItemExpr(ItemExpr* iePtr)
+{
+   return (iePtr && iePtr->getOperatorType() == ITM_OR);
+}
+
+NABoolean isAndOrItemExpr(ItemExpr* iePtr)
+{
+   return (iePtr &&
+           (iePtr->getOperatorType() == ITM_AND || 
+            iePtr->getOperatorType() == ITM_OR)
+           )
+           ;
+}
+
+NABoolean Disjuncts::containsSomePredsInRanges(funcPtrT funcP) const
+{
+//  CollIndex order;
+//  CollIndex numOfKeyCols=keyPredsByCol.entries();
+//  KeyColumns::KeyColumn::KeyColumnType typeOfRange = KeyColumns::KeyColumn::EMPTY;
+  Disjunct disjunct;
+  ValueIdSet vs;
+  for (CollIndex i=0; i < entries(); i++)
+  {
+    this->get(disjunct,i);
+    vs = disjunct.getAsValueIdSet();
+    for (ValueId predId = vs.init();
+	 vs.next(predId);
+	 vs.advance(predId) )
+    {
+      if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
+      {
+	if ((*funcP)(predId.getItemExpr()->child(1)))
+	  return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+NABoolean Disjuncts::containsOrPredsInRanges() const
+{
+   return containsSomePredsInRanges(isOrItemExpr);
+}
+
+NABoolean Disjuncts::containsAndorOrPredsInRanges() const
+{
+   return containsSomePredsInRanges(isAndOrItemExpr);
+  /*
+  if (keyPredsByCol.containsPredicates())
+  {
+    for (order = 0; order < numOfKeyCols; order++)
+    {
+      if (keyPredsByCol.getPredicateExpressionPtr(order) != NULL)
+        typeOfRange = keyPredsByCol.getPredicateExpressionPtr(order)->getType();
+      else
+      	typeOfRange = KeyColumns::KeyColumn::EMPTY;
+      if (typeOfRange == KeyColumns::KeyColumn::INLIST )
+	//  ||
+	//  typeOfRange != KeyColumns::KeyColumn::RANGE)
+	return TRUE;
+    } // end of for-loop
+
+  } // if (containsPredicates())
+  */
+  //return FALSE;
+}
+
+
 //---------------------------------------------------------
 // Methods for class DisjunctsDisjuncts                             |
 //---------------------------------------------------------
