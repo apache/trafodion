@@ -154,15 +154,19 @@ static NABoolean processConstHBaseKeys(Generator * generator,
   // convert built-in search key to entries with constants, if possible
   if (skey->areAllKeysConstants(TRUE))
     {
-      ValueIdSet exePreds;
       ValueIdSet nonKeyColumnSet;
       idesc->getNonKeyColumnSet(nonKeyColumnSet);
 
-      // seed exePreds with all predicates, key and non-key
-      // they will be reduced by the method below
-      skey->getKeyPredicates(exePreds);
+      // seed keyPreds with only the full key predicate from skey
+      ValueIdSet keyPreds = skey->getFullKeyPredicates();
+
+      // include executorPreds and selection predicates 
+      // but exclude the full key predicates.
+      ValueIdSet exePreds;
+
       exePreds += executorPreds;
       exePreds += relExpr->getSelectionPred();
+      exePreds.subtractSet(keyPreds);
 
       HbaseSearchKey::makeHBaseSearchKeys(
            skey,
@@ -170,11 +174,15 @@ static NABoolean processConstHBaseKeys(Generator * generator,
            skey->getIndexDesc()->getOrderOfKeyValues(),
            relExpr->getGroupAttr()->getCharacteristicInputs(),
            TRUE, /* forward scan */
-           exePreds,
+           keyPreds,
            nonKeyColumnSet,
            idesc,
            relExpr->getGroupAttr()->getCharacteristicOutputs(),
            mySearchKeys);
+
+      // Include any remaining key predicates that have not been 
+      // picked up (to be used as the HBase search keys).
+      exePreds += keyPreds;
 
       TableDesc *tdesc = NULL;
       if (mySearchKeys.entries()>0)

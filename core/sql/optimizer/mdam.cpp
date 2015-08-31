@@ -2007,39 +2007,39 @@ void Disjuncts::computeCommonPredicates()
       get(disjunct,i);
       if(CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
       {
-	    ValueIdSet inVidset = disjunct.getAsValueIdSet();
-	    ValueIdSet outVidset,parsedVs;
-        for (ValueId predId = inVidset.init();
-	     inVidset.next(predId);
-	     inVidset.advance(predId) )
-	    {
-         if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
-         {
-		  if(predId.getItemExpr()->child(1)->getOperatorType() == ITM_AND ){
-	        predId.getItemExpr()->child(1)->convertToValueIdSet(parsedVs, NULL, ITM_AND, FALSE);
+	 ValueIdSet inVidset = disjunct.getAsValueIdSet();
+	 ValueIdSet outVidset,parsedVs;
+         for (ValueId predId = inVidset.init();
+	      inVidset.next(predId);
+	      inVidset.advance(predId) )
+	 {
+            if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
+            {
+	       if(predId.getItemExpr()->child(1)->getOperatorType() == ITM_AND ){
+	          predId.getItemExpr()->child(1)->convertToValueIdSet(parsedVs, NULL, ITM_AND, FALSE);
 		    outVidset +=parsedVs;
-		 }
-	     else if(predId.getItemExpr()->child(1)->getOperatorType() != ITM_AND 
+            }
+	    else if(predId.getItemExpr()->child(1)->getOperatorType() != ITM_AND 
 			 && predId.getItemExpr()->child(1)->getOperatorType() != ITM_OR)
-	      outVidset += predId.getItemExpr()->child(1)->castToItemExpr()->getValueId();	    
-	   }
+	       outVidset += predId.getItemExpr()->child(1)->castToItemExpr()->getValueId();	    
+           }
 	   else
-	    outVidset +=predId;
-	    parsedVs.clear();
+	     outVidset +=predId;
+	 parsedVs.clear();
 	}
 
 	if (i==0)
 	  commonPredicates_.insert(outVidset);
 	else
 	  commonPredicates_.intersectSet(outVidset);
-      }
-      else
-      {
+     }
+     else
+     {
 	if (i==0)
 	  commonPredicates_.insert(disjunct.getAsValueIdSet());
 	else
 	  commonPredicates_.intersectSet(disjunct.getAsValueIdSet());
-      }
+     }
     }
   }
 } // Disjuncts::computeCommonPredicates(..)
