@@ -932,7 +932,7 @@ void PrivMgr::setFlags()
 //   Privilege manager code sets up a message and calls this log method
 //   This method calls SQLMXLoggingArea::logPrivMgrInfo described in 
 //      sqlmxevents/logmxevent_traf (.h & .cpp)
-//   logPrivMgInfo is a wrapper class around qmscommon/QRLogger (.h & .cpp)
+//   logPrivMgrInfo is a wrapper class around qmscommon/QRLogger (.h & .cpp)
 //      log method
 //   QRLogger generates a message calls the log method in 
 //      sqf/commonLogger/CommonLogger (.h & .cpp) 

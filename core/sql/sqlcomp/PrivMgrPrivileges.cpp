@@ -2120,7 +2120,7 @@ PrivStatus PrivMgrPrivileges::generateColumnRowList()
   PrivStatus privStatus = 
    columnPrivsTable.selectWhere(whereClause, orderByClause, columnRowList_);
 
-  std::string traceMsg ("getting column privileges, number privleges is ");
+  std::string traceMsg ("getting column privileges, number privileges is ");
   traceMsg += to_string((long long int)columnRowList_.size());
   log (__FILE__, traceMsg, -1);
   for (size_t i = 0; i < columnRowList_.size(); i++)
@@ -4648,6 +4648,7 @@ static bool hasAllDMLPrivs(
       case COM_USER_DEFINED_ROUTINE_OBJECT:
          if (privBitmap.test(EXECUTE_PRIV))
             return true;
+         break;
       case COM_SEQUENCE_GENERATOR_OBJECT:
          if (privBitmap.test(USAGE_PRIV))
             return true;
