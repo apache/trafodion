@@ -897,10 +897,23 @@ void SimpleCostVector::print(FILE* ofd) const
 // excluded for coverage because it's a debug code
 void SimpleCostVector::print(FILE* pfp) const
 {
+  fprintf(pfp,"CPUTime=%g\n",counter_[CPU_TIME].value());
+  fprintf(pfp,"IOTime=%g\n",counter_[IO_TIME].value());
+  fprintf(pfp,"MSGTime=%g\n",counter_[MSG_TIME].value());
+  fprintf(pfp,"idleTime=%g\n",counter_[IDLE_TIME].value());
+  fprintf(pfp,"tuple processed=%g\n",counter_[TC_PROC].value());
+  fprintf(pfp,"tuple produced=%g\n",counter_[TC_PROD].value());
+  fprintf(pfp,"tuple sent=%g\n",counter_[TC_SENT].value());
+  fprintf(pfp,"IO rand=%g\n",counter_[IO_RAND].value());
+  fprintf(pfp,"IO seq=%g\n",counter_[IO_SEQ].value());
+  fprintf(pfp,"num Probes=%g\n",counter_[NUM_PROBES].value());
+/*
   for (Lng32 i = 0; i < COUNT_OF_SIMPLE_COST_COUNTERS; i++)
     fprintf(pfp,"%g,",counter_[i].value());
+*/
   fprintf(pfp,"\n");
 }
+
 // LCOV_EXCL_STOP
 //<pb>
 
@@ -2449,6 +2462,12 @@ void Cost::print(FILE * pfp, const char * , const char *) const
   fprintf(pfp,"preference : %d\n", priority_.getLevel()); //sathya
   return;
 }
+
+void Cost::display() const                                        
+{ 
+  print(); 
+}
+
 // LCOV_EXCL_STOP
 
 //<pb>

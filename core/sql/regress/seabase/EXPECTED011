@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Wed Jul  8 15:31:57 2015
+-- Definition current  Mon Aug 31 19:14:22 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -136,6 +136,76 @@ A            B
           3  c         
 
 --- 1 row(s) selected.
+>>
+>>explain select * from t011t1 where a >= 3 and a < 5;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212307808462699638
+ROWS_OUT ................. 7
+EST_TOTAL_COST ........... 0.01
+STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 7
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 11
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 11
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_FILTER_PREDS ..... ON
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  QUERY_CACHE ............ 0
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 1981659512042308171
+  select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T011T1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 11
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ........... 0.01
+DESCRIPTION
+  max_card_est .......... 11
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T011T1
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl) ....... 3
+  end_keys(excl) ......... 5
+  cache_size ........... 100
+  probes ................. 1
+  rows_accessed ......... 11
+  key_columns ............ A
+
+--- SQL operation complete.
 >>
 >>select * from t011t1 where a > 4 and a < 2;
 
@@ -1180,7 +1250,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Wed Jul  8 15:33:08 2015
+-- Definition current  Mon Aug 31 19:15:26 2015
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1362,7 +1432,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000004060212303129491881703000000000206U3333300_1276_EXPLSTMT
+MXID11000003520212307808438691264000000000206U3333300_1207_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1414,7 +1484,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000004060212303129491881703000000000206U3333300_1287_EXPLSTMT2
+MXID11000003520212307808438691264000000000206U3333300_1218_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -1987,7 +2057,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t011t7;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Wed Jul  8 15:33:42 2015
+-- Definition current  Mon Aug 31 19:16:03 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2004,7 +2074,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t011t7;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Wed Jul  8 15:33:43 2015
+-- Definition current  Mon Aug 31 19:16:07 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2021,7 +2091,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t011t7;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Wed Jul  8 15:33:44 2015
+-- Definition current  Mon Aug 31 19:16:11 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE

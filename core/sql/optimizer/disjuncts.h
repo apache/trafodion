@@ -49,6 +49,9 @@
 // array class. It always contains at least one element.
 // -----------------------------------------------------------------------
 
+
+typedef NABoolean (*funcPtrT)(ItemExpr*);
+
 class Disjuncts : public NABasicObject // Abstract class
 {
 public:
@@ -70,12 +73,17 @@ public:
   const ValueIdSet& getCommonPredicates() const
   { return commonPredicates_; }
 
+  NABoolean containsOrPredsInRanges() const;
+  NABoolean containsAndorOrPredsInRanges() const;
+
 protected:
   // The intersection of all the disjuncts in the *local* disjunct array:
   virtual void computeCommonPredicates();
   // The empty disjunct array is a disjunct array with
   // one entry: the empty disjunct
   DisjunctArray * createEmptyDisjunctArray() const;
+
+  NABoolean containsSomePredsInRanges(funcPtrT funcP) const;
 
 private:
   // the intersection of all the predicates in the disjunct
