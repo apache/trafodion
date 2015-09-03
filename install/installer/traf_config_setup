@@ -550,10 +550,10 @@ else
    exit -1
 fi
 
-hadoopVersion=$(curl -su admin:admin http://$URL/api/v1/clusters | grep version | grep -c CDH)
+hadoopVersion=$(curl -su $username:$password http://$URL/api/v1/clusters | grep version | grep -c CDH)
 
 if [[ $hadoopVersion -ne "1" ]]; then
-   hadoopVersion=$(curl -su admin:admin http://$URL/api/v1/clusters | grep version | grep -c HDP)
+   hadoopVersion=$(curl -su $username:$password http://$URL/api/v1/clusters | grep version | grep -c HDP)
    if [[ $hadoopVersion -ne "1" ]]; then
       echo "***ERROR: Hadoop type can not be determined"
       echo "***ERROR: Check that URL and port are correct or if Hadoop is up"
