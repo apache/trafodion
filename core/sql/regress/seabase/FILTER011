@@ -26,4 +26,5 @@
 fil=$1
 sed "
 s/MXID[0-9_A-Za-z]*/MXID@EXPLSTMT/g
+s/^\([ ]*PLAN_ID[ ]*[\.]*\) .*/\1 removed/g
 " $fil
