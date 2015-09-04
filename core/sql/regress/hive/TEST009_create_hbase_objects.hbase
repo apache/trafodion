@@ -1,0 +1,55 @@
+#######################################################################
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#######################################################################
+create 'baseball', 'games', 'teams'
+put 'baseball', '1', 'games:team_number', ' 1 '
+put 'baseball', '1', 'games:visitor_team', ' 2 '
+put 'baseball', '1', 'games:game_number', ' 1 '
+put 'baseball', '1', 'games:game_time', ' 2015-10-23 19:30:30 '
+put 'baseball', '1', 'games:game_location', ' California '
+put 'baseball', '2', 'games:team_number', ' 1 '
+put 'baseball', '2', 'games:visitor_team', ' 3 '
+put 'baseball', '2', 'games:game_number', ' 2 '
+put 'baseball', '2', 'games:game_time', ' 2015-10-24 19:30:30 '
+put 'baseball', '2', 'games:game_location', ' California '
+put 'baseball', '3', 'games:team_number', ' 1 '
+put 'baseball', '3', 'games:visitor_team', ' 4 '
+put 'baseball', '3', 'games:game_number', ' 3 '
+put 'baseball', '3', 'games:game_time', ' 2015-10-25 19:30:30 '
+put 'baseball', '3', 'games:game_location', ' Oklahoma '
+
+put 'baseball', '1', 'teams:team_number', ' 1 '
+put 'baseball', '1', 'teams:team_name', ' White Socks '
+put 'baseball', '1', 'teams:team_contact', ' Sam '
+put 'baseball', '1', 'teams:contact_number', ' 1234561234 '
+put 'baseball', '2', 'teams:team_number', ' 2 '
+put 'baseball', '2', 'teams:team_name', ' Giants '
+put 'baseball', '2', 'teams:team_contact', ' Joe '
+put 'baseball', '2', 'teams:contact_number', ' 5102839483 '
+put 'baseball', '3', 'teams:team_number', ' 3 '
+put 'baseball', '3', 'teams:team_name', ' Cardinals '
+put 'baseball', '3', 'teams:team_contact', ' Stella '
+put 'baseball', '3', 'teams:contact_number', ' 9513849384 '
+
+scan 'baseball'
+exit
+

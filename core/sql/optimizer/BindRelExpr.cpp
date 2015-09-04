@@ -1569,12 +1569,11 @@ NATable *BindWA::getNATable(CorrName& corrName,
       ((QualifiedName&)(table->getTableName())).setIsVolatile(TRUE);
     }
       
-  // For now, do not allow access through the Trafodion external name created for
-  // the HIVE object unless the inDDL flag is set.  inDDL is set for drop 
-  // table and SHOWDDL statements.  
-  // TDB - may want to merge the Trafodion version with the HIVE version.
-  // TDB - similar operation may be needed for external HBase tables
-  if ((table) && (table->isExternalTable() && (! bindWA->inDDL())))
+  // For now, don't allow access through the Trafodion external name created for
+  // native HIVE or HBASE objects unless the allowExternalTables flag is set.  
+  // allowExternalTables is set for drop table and SHOWDDL statements.  
+  // TDB - may want to merge the Trafodion version with the native version.
+  if ((table) && (table->isExternalTable() && (! bindWA->allowExternalTables())))
     {
       *CmpCommon::diags() << DgSqlCode(-4258)
                           << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
@@ -1582,17 +1581,44 @@ NATable *BindWA::getNATable(CorrName& corrName,
       bindWA->setErrStatus();
       return NULL;
     }
+  
+  // If the table is a native table and has an associated external table, 
+  // check to see if the external table structure still matches the native table
+  // If not, return an error
+  if ((table) && table->hasExternalTable()) 
+    {
+      NAString adjustedName = ComConvertNativeNameToTrafName 
+           (table->getTableName().getCatalogName(),
+            table->getTableName().getUnqualifiedSchemaNameAsAnsiString(),
+            table->getTableName().getUnqualifiedObjectNameAsAnsiString()); 
+        
+      // Get a description of the associated Trafodion table
+      Int32 numNameParts = 3;
+      QualifiedName adjustedQualName(adjustedName,numNameParts,STMTHEAP, bindWA);
+      CorrName externalCorrName(adjustedQualName, STMTHEAP);
+      NATable *externalNATable = bindWA->getSchemaDB()->getNATableDB()->
+                                  get(externalCorrName, bindWA, inTableDescStruct);
+  
+      // Should always have an external table, the hasExternalTable() flag indicates
+      // that it exists.
+      CMPASSERT(externalNATable);
 
+       // Compare column lists
+       // TBD - return what mismatches
+       if (!(table->getNAColumnArray() == externalNATable->getNAColumnArray()))
+         {
+           *CmpCommon::diags() << DgSqlCode(-3078)
+                               << DgString0(adjustedName)
+                               << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+           bindWA->setErrStatus();
+           externalNATable->setRemoveFromCacheBNC(TRUE);
+           return NULL;
+         }
+    }
     
   HostVar *proto = corrName.getPrototype();
   if (proto && proto->isPrototypeValid())
     corrName.getPrototype()->bindNode(bindWA);
-
-  // Solution 10-040518-6149: When we bind the view as part of the compound
-  // create schema statement, we need to reset referenceCount_ of the base
-  // table to zero.  Otherwise, error 1109 would be reported.
-  if ( bindWA->isCompoundCreateSchema() && bindWA->inViewDefinition() )
-    table->resetReferenceCount();
 
   // This test is not "inAnyConstraint()" because we DO want to increment
   // the count for View With Check Option constraints.

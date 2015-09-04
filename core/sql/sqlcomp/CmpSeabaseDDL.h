@@ -909,11 +909,11 @@ class CmpSeabaseDDL
 			      StmtDDLCreateTable                  * createTableNode,
 			      NAString &currCatName, NAString &currSchName);
 
-  short createSeabaseTableExternalHive(
-                                       ExeCliInterface &cliInterface,
-                                       StmtDDLCreateTable * createTableNode,
-                                       NAString &currCatName,
-                                       NAString &currSchName);
+  short createSeabaseTableExternal(
+                                   ExeCliInterface &cliInterface,
+                                   StmtDDLCreateTable * createTableNode,
+                                   const ComObjectName &tgtTableName,
+                                   const ComObjectName &srcTableName);
 
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,

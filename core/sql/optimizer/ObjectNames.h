@@ -276,6 +276,9 @@ public:
 		     size_t *lenArray /* array[5] */) const;
   const NAString  getQualifiedNameAsAnsiNTFilenameString() const;
   const NAString& getObjectName() const		{ return objectName_; }
+  const NAString  getUnqualifiedObjectNameAsAnsiString() const
+                                { return ToAnsiIdentifier(objectName_); }
+
   ComAnsiNameSpace getObjectNameSpace() const { return objectNameSpace_; }
 
 
@@ -690,12 +693,6 @@ public:
     flagbits_(0)
   {
     setIsExternal(ComIsTrafodionExternalSchemaName(schemaName));
-    //Int32 len (schemaName.length());
-    //Int32 prefixLen = sizeof(HIVE_EXT_SCHEMA_PREFIX);
-    //if (len > prefixLen)
-    //  setIsExternal(schemaName(0,prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX &&
-    //                schemaName(len-1) == '_' );
-
     setLocationName (locName) ;
   }
 
@@ -715,12 +712,6 @@ public:
     flagbits_(0)
   {
     setIsExternal(ComIsTrafodionExternalSchemaName(qualName.getSchemaName()));
-    //Int32 len (qualName.getSchemaName().length());
-    //Int32 prefixLen = sizeof(HIVE_EXT_SCHEMA_PREFIX);
-    //if (len > prefixLen)
-    //  setIsExternal(qualName.getSchemaName()(0,prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX &&
-    //                qualName.getSchemaName()(len-1) == '_');
-
     setLocationName (locName) ;
   }
 

@@ -1480,8 +1480,8 @@ public:
 
   short &viewCount()			   { return viewCount_; }
 
-  NABoolean isCompoundCreateSchema() const { return compoundCreateSchema_; }
-  void setCompoundCreateSchema(NABoolean t) { compoundCreateSchema_ = t; }
+  NABoolean allowExternalTables() const { return allowExternalTables_; }
+  void setAllowExternalTables(NABoolean t) { allowExternalTables_ = t; }
 
   LIST(OptSqlTableOpenInfo *) &getStoiList()  { return stoiList_; }
   LIST(OptUdrOpenInfo *) &getUdrStoiList()  { return udrStoiList_; }
@@ -1818,15 +1818,10 @@ private:
   short viewCount_;
 
   // --------------------------------------------------------------------
-  // Flag to indicate we are compiling a compound create schema statement.
-  // When we bind the view as part of the compound create schema statement,
-  // we need to reset referenceCount_ of the base table to zero.  The
-  // base table is of class NATable.  Otherwise, error 1109 would be           
-  // reported.  The referencCount_ is reset in BindWA:getNATable,
-  // BindRelExpr.cpp.  This flag is introduced for this purpose to fix
-  // solution 10-040518-6149.
+  // Flag to indicate we are accessing an object which is defined in an
+  // external (native) hive or hbase.
   // --------------------------------------------------------------------
-  NABoolean compoundCreateSchema_;
+  NABoolean allowExternalTables_;
 
   // points to a class used by RowSets code.
   HostArraysWA *hostArraysArea_;

@@ -2569,8 +2569,9 @@ short CmpDescribeSeabaseTable (
   const NAString& tableName =
     dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
  
-  // set inDDL to try to allow Hive External tables to be described
-  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), TRUE/*inDDL*/);
+  // set isExternalTable to allow Hive External tables to be described
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  bindWA.setAllowExternalTables (TRUE);
   NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
   TableDesc *tdesc = NULL;
   if (naTable == NULL || bindWA.errStatus())
@@ -2583,7 +2584,11 @@ short CmpDescribeSeabaseTable (
     }
 
   if (NOT naTable->isHbaseTable())
-    return -1;
+    {
+      if (CmpCommon::diags()->getNumber() == 0)
+        *CmpCommon::diags() << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);
+      return -1;
+    }
 
   NABoolean isVolatile = naTable->isVolatileTable();
   NABoolean isExternalTable = naTable->isExternalTable();
