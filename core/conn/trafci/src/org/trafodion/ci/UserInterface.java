@@ -407,7 +407,8 @@ public class UserInterface {
 
 	private static void banner() {
 		System.out.println("\nWelcome to " + SessionDefaults.PROD_NAME);
-		System.out.println("Copyright(C) 2013-2014 Hewlett-Packard Development Company, L.P.");
+		String copyright_str = "Copyright (c) "+System.getenv("PRODUCT_COPYRIGHT_HEADER");
+		System.out.println(copyright_str);
 		System.out.println();
 	}
 }

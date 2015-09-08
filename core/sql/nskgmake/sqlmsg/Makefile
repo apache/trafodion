@@ -27,4 +27,7 @@ CPPSRC := \
 	ParserMsg.cpp
 
 CPPSRC += vers_libsqlmsg.cpp
-DEFS := -DSQLCLI_LIB
+
+DEFS += -DSQLCLI_LIB -DPRODVER='"$(TRAFODION_VER_PROD)"'
+
+

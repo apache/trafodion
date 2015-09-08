@@ -283,10 +283,10 @@ sub version_elf ($$) {
 		$ver =~ s/_sl_/\//g;
 		$ver =~ s/_dt_/\./g;
 		$ver =~ s/_dh_/-/g;
-		if ($ver =~ /([a-zA-Z0-9_]*)_CV(\d*)_(\d*)_(\d*)_PV(\d*)_(\d*)_(\d*)_BV(\w*)_BR([\w\-\.\/]*)_DT(\w*)_SV(.*)/) {
+		if ($ver =~ /([a-zA-Z0-9_]*)_CV(\d*)_(\d*)_(\d*)_PV(\d*)_(\d*)_(\d*)_(\w*)_BV(\w*)_BR([\w\-\.\/]*)_DT(\w*)_SV(.*)/) {
 			$has_version = 1;
-			my $verstr = "Release $5.$6.$7 (Build $8 [$11], branch $9, date $10)";
-			my $bldstr = $11;
+			my $verstr = "$8 Release $5.$6.$7 (Build $9 [$12], branch $10, date $11)";
+			my $bldstr = $12;
 			if ($utt) {
 				utt_add($dir, $elf, $verstr, $bldstr);
 			} else {
