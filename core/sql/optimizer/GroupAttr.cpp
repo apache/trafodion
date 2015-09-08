@@ -327,6 +327,38 @@ void GroupAttributes::addConstraint(ItemExpr *c)
       }
       break;
 
+    case ITM_CHECK_OPT_CONSTRAINT:
+      {
+        CheckOptConstraint *cc = (CheckOptConstraint *) c;
+
+        // check existing uniqueness constraints whether they are similar
+        // and combine uniqueness constraints if possible
+        for (ValueId occ = constraints_.init();
+             constraints_.next(occ);
+             constraints_.advance(occ))
+          {
+            if (occ.getItemExpr()->getOperatorType() ==
+		ITM_CHECK_OPT_CONSTRAINT)
+              {
+                const ValueIdSet &occPreds =
+                  ((CheckOptConstraint *) occ.getItemExpr())->getCheckPreds();
+
+                if (occPreds.contains(cc->getCheckPreds()))
+                  {
+                    // this is no news, delete this useless new constraint
+                    duplicateConstraint = TRUE;
+                  }
+                else if(cc->getCheckPreds().contains(cc->getCheckPreds()))
+                  {
+                    // we are improving an existing check constraint,
+                    // take the existing one out
+                    constraints_ -= occ;
+                  }
+              } // this is an existing uniqueness constraint
+          } // for each existing constraint
+      }
+      break;
+
     case ITM_UNIQUE_CONSTRAINT:
       DCMPASSERT("Wrong constraint type used in GA" == 0); // LCOV_EXCL_LINE
       break;
@@ -579,6 +611,127 @@ void GroupAttributes::addSuitableCompRefOptConstraints(
       } // do nothing if its not a ComplementaryRefOptConstraint
     }  // loop over constraints
 }
+
+// a const method for validating eliminated columns in a sort order,
+// usually called for validating an earlier result created with
+// the next method below, tryToEliminateOrderColumnBasedOnEqualsPred()
+NABoolean GroupAttributes::canEliminateOrderColumnBasedOnEqualsPred(
+     ValueId col) const
+{
+  // cast away const-ness and call the non-const method without
+  // predicates, which will mean it won't side-effect "this"
+  return const_cast<GroupAttributes *>(this)->
+    tryToEliminateOrderColumnBasedOnEqualsPred(col, NULL);
+}
+
+// This and the previous method are used to match required sort orders
+// or arrangements to an actual key ordering of a table, in cases
+// where some columns are equated to a constant, like this, with the
+// clustering key being (a,b,c)
+//
+// select ...
+// from t
+// where a = 5
+// order by b
+//
+// Note that for VEGs, this is handled differently (see
+// ValueIdList::satisfiesReqdOrder), this code is only for non-VEG
+// cases (usually computed columns, also varchar).
+//
+// If we eliminate a column based on a supplied predicate, then
+// this predicate is added as an Optimizer check constraint to the
+// group attributes, so that future calls will continue to accept
+// the simplified sort order.
+NABoolean GroupAttributes::tryToEliminateOrderColumnBasedOnEqualsPred(
+     ValueId col,
+     const ValueIdSet *preds)
+{
+  NABoolean result = FALSE;
+
+  if (preds || hasConstraintOfType(ITM_CHECK_OPT_CONSTRAINT))
+    {
+      // Comparison failed. If the caller provided predicates,
+      // then we can try something similar to what we did with
+      // group attributes above. If the predicate equate the
+      // column with a constant, then we can eliminate it as
+      // well. Note that we don't expect the requirements to
+      // omit such columns, since the parent will usually not
+      // know about such predicates, so we check this condition
+      // only after trying the regular method.
+      //
+      // This situation typically happens with computed columns
+      // where predicates are added after VEGs are formed
+
+      ValueIdSet checkConstraints;
+      ValueIdSet checkPreds;
+
+      // look for predicates we remembered from earlier calls
+      getConstraintsOfType(ITM_CHECK_OPT_CONSTRAINT,
+                           checkConstraints);
+
+      for (ValueId c = checkConstraints.init();
+           checkConstraints.next(c);
+           checkConstraints.advance(c))
+        checkPreds += static_cast<CheckOptConstraint *>(
+             c.getItemExpr())->getCheckPreds();
+
+      // also use newly provided predicates
+      if (preds)
+        checkPreds += *preds;
+
+      // if the column is descending, then get rid of the Inverse
+      // operator for the next check
+      if (col.getItemExpr()->getOperatorType() == ITM_INVERSE)
+        col = col.getItemExpr()->child(0).getValueId();
+
+      // convert col from a VEGRef to a base column, if needed,
+      // the ScanKey method below wants a real column as input
+      if (col.getItemExpr()->getOperatorType() == ITM_VEG_REFERENCE)
+        {
+          const ValueIdSet &vegMembers =
+            static_cast<VEGReference *>(col.getItemExpr())->
+            getVEG()->getAllValues();
+          for (ValueId b=vegMembers.init();
+               vegMembers.next(b);
+               vegMembers.advance(b))
+            if (b.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+              col = b;
+        }
+
+      for (ValueId p = checkPreds.init();
+           checkPreds.next(p);
+           checkPreds.advance(p))
+        {
+          ValueId dummy1, dummy2;
+
+          if (p.getItemExpr()->getOperatorType() == ITM_EQUAL &&
+              ScanKey::isAKeyPredicateForColumn(
+                   p,
+                   dummy1, dummy2,
+                   col,
+                   getCharacteristicInputs()))
+            {
+              // this is a predicate of the form col = const
+              // and col is our current ValueId in tempThis,
+              // therefore skip over it and try again
+              result = TRUE;
+
+              // if we used a newly provided predicate, then
+              // remember it in the constraints, so that when
+              // the search engine validates our physical
+              // property later, it will come to the same
+              // conclusion
+              if (preds && preds->contains(p))
+                addConstraint(
+                     new(CmpCommon::statementHeap()) CheckOptConstraint(
+                          ValueIdSet(p)));
+            }
+        }
+    }
+
+  return result;
+}
+
 
 // -----------------------------------------------------------------------
 // Low-level utility for merging Group Attributes.

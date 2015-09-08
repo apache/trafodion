@@ -715,27 +715,28 @@ enum OperatorTypeEnum {
                         ITM_REF_CONSTRAINT = 2503,
                         ITM_UNIQUE_OPT_CONSTRAINT = 2504,
                         ITM_FUNC_DEPEND_CONSTRAINT = 2505,
-                        ITM_REF_OPT_CONSTRAINT = 2506,
-                        ITM_COMP_REF_OPT_CONSTRAINT = 2507,
+                        ITM_CHECK_OPT_CONSTRAINT,
+                        ITM_REF_OPT_CONSTRAINT,
+                        ITM_COMP_REF_OPT_CONSTRAINT,
 
                         // lookup a column in a native hbase table being accessed in row format
-                        ITM_HBASE_COLUMN_LOOKUP = 2508,
+                        ITM_HBASE_COLUMN_LOOKUP,
 
                         // display hbase columns being accessed in row format
-                        ITM_HBASE_COLUMNS_DISPLAY = 2509,
+                        ITM_HBASE_COLUMNS_DISPLAY,
 
-                       ITM_HBASE_COLUMN_CREATE = 2510,
+                        ITM_HBASE_COLUMN_CREATE,
 
                         // generate sequence numbers
-                        ITM_SEQUENCE_VALUE = 2511,
+                        ITM_SEQUENCE_VALUE,
 
                         // return number of the row being returned. Starts at 1
-                        ITM_ROWNUM = 2512,
+                        ITM_ROWNUM,
 
-                        ITM_HBASE_TIMESTAMP = 2513,
-                        ITM_HBASE_TIMESTAMP_REF = 2514,
-                        ITM_HBASE_VERSION = 2515,
-                        ITM_HBASE_VERSION_REF = 2516,
+                        ITM_HBASE_TIMESTAMP,
+                        ITM_HBASE_TIMESTAMP_REF,
+                        ITM_HBASE_VERSION,
+                        ITM_HBASE_VERSION_REF,
 
                         // list of item expressions
                         ITM_ITEM_LIST = 2550,
