@@ -1072,6 +1072,7 @@ enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
                      , COM_ALIGNED_FORMAT_TYPE
                      , COM_HBASE_FORMAT_TYPE
                      , COM_HIVE_EXTERNAL_FORMAT_TYPE
+                     , COM_HBASE_EXTERNAL_FORMAT_TYPE
 };
 
 #define COM_ROWFORMAT_LIT_LEN                2

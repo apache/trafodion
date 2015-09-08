@@ -603,7 +603,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("LOCATOR",            TOK_LOCATOR,     COMPAQ_|RESWORD_),
   ParKeyWord("LOCK",               TOK_LOCK,        FIRST_|NONRESTOKEN_),
   ParKeyWord("LOCKING",            TOK_LOCKING,     NONRESTOKEN_),
-  ParKeyWord("LOCKLENGTH",         TOK_LOCKLENGTH,  NONRESTOKEN_),
   ParKeyWord("LOCKONREFRESH",      TOK_LOCKONREFRESH, FLAGSNONE_),
   ParKeyWord("LOG",                TOK_LOG,         NONRESTOKEN_),
   ParKeyWord("LOG10",              TOK_LOG10,       NONRESTOKEN_),

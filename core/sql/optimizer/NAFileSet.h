@@ -93,7 +93,6 @@ public:
 	    Lng32 countOfFiles,
 	    Cardinality estimatedNumberOfRecords,
 	    Lng32 recordLength,
-	    Lng32 lockLength,
 	    Lng32 blockSize,
 	    Int32 indexLevels,
 	    const NAColumnArray & allColumns,

@@ -5,19 +5,29 @@
 
 --- SQL command prepared.
 >>
+>>prepare get_hb_schemas from
++>select schema_name from "_MD_".objects
++>where schema_name like '_HB_%' and object_type = 'PS';
+
+--- SQL command prepared.
+>>
 >>obey TEST009(create_db);
 >>
 >>-- The version of hive installed does not support special characters
 >>-- TDB - when hive is upgraded to a new version, add tests where
 >>--   the hive schema contains special characters
 >>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql;
+>>sh regrhbase.ksh $REGRTSTDIR/TEST009_create_hbase_objects.hbase &> $REGRRUNDIR/LOG009_create_hbase_tables.log ;
 >>
->>-- make sure no external hive schema exist in Trafodion
+>>-- make sure no external schemas exist in Trafodion
 >>execute get_hv_schemas;
 
 --- 0 row(s) selected.
+>>execute get_hb_schemas;
+
+--- 0 row(s) selected.
 >>
->>obey TEST009(tests);
+>>obey TEST009(test_hive1);
 >>-- create external tables for precreated tables
 >>create external table customer for hive.hive.customer;
 
@@ -82,8 +92,8 @@ CREATE EXTERNAL TABLE TRAFODION."_HV_HIVE_".ITEM
     I_ITEM_SK                        INT DEFAULT NULL
   , I_ITEM_ID                        VARCHAR(32000 BYTES) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL
-  , I_REC_START_DATE                 TIMESTAMP(0) DEFAULT NULL
-  , I_REC_END_DATE                   TIMESTAMP(0) DEFAULT NULL
+  , I_REC_START_DATE                 TIMESTAMP(6) DEFAULT NULL
+  , I_REC_END_DATE                   TIMESTAMP(6) DEFAULT NULL
   , I_ITEM_DESC                      VARCHAR(32000 BYTES) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL
   , I_CURRENT_PRICE                  REAL DEFAULT NULL
@@ -258,7 +268,7 @@ A            B            C
 
 --- 10 row(s) selected.
 >>
->>-- accesses to the external name should be prohibited
+>>-- fails since accesses to the external name are prohibited
 >>select * from trafodion."_HV_SCH_T009_".t009t1;
 
 *** ERROR[4258] Trying to access external table TRAFODION."_HV_SCH_T009_".T009T1 through its external name format. Please use the native table name.
@@ -266,10 +276,301 @@ A            B            C
 *** ERROR[8822] The statement was not prepared.
 
 >>
+>>set schema "_HV_HIVE_";
+
+--- SQL operation complete.
+>>
+>>-- all these creates should fail, they are not supported yet
+>>create table hive_customer like hive.hive.customer;
+
+*** ERROR[1118] Creating object TRAFODION."_HV_HIVE_".HIVE_CUSTOMER is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
+>>create table newtable1 like hive.hive.customer;
+
+*** ERROR[1118] Creating object TRAFODION."_HV_HIVE_".NEWTABLE1 is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
+>>create table newtable2 like customer;
+
+*** ERROR[1118] Creating object TRAFODION."_HV_HIVE_".NEWTABLE2 is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
+>>create table newtable3 (a int);
+
+*** ERROR[1118] Creating object TRAFODION."_HV_HIVE_".NEWTABLE3 is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
+>>get tables;
+
+Tables in Schema TRAFODION._HV_HIVE_
+====================================
+
+CUSTOMER
+ITEM
+PROMOTION
+
+--- SQL operation complete.
+>>
+>>-- test creates with a different default schema
+>>create schema hive_t009;
+
+--- SQL operation complete.
+>>set schema hive_t009;
+
+--- SQL operation complete.
+>>
+>>-- these creates fail
+>>create table hive_customer like hive.hive.customer;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+--- SQL operation failed with errors.
+>>create table newtable1 like hive.hive.customer;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+--- SQL operation failed with errors.
+>>create external table seabase.customer like hive.hive.customer;
+
+*** ERROR[1180] Trying to create an external HIVE table with a different schema or table name (SEABASE) than the source table (HIVE).  The external schema and table name must be the same as the source.
+
+--- SQL operation failed with errors.
+>>create external table customer1 like hive.hive.customer;
+
+*** ERROR[1180] Trying to create an external HIVE table with a different schema or table name (CUSTOMER1) than the source table (CUSTOMER).  The external schema and table name must be the same as the source.
+
+--- SQL operation failed with errors.
+>>create table t009t1 like "_HV_SCH_T009_".t009t1;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+--- SQL operation failed with errors.
+>>create table t009t2 as select * from "_HV_SCH_T009_".t009t2;
+
+*** ERROR[4258] Trying to access external table TRAFODION."_HV_SCH_T009_".T009T2 through its external name format. Please use the native table name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- this create succeeds
+>>create table t009t1 as select * from hive.sch_t009.t009t1;
+
+--- 10 row(s) inserted.
+>>
+>>get tables;
+
+Tables in Schema TRAFODION.HIVE_T009
+====================================
+
+T009T1
+
+--- SQL operation complete.
+>>drop table t009t1;
+
+--- SQL operation complete.
+>>
 >>drop external table "_HV_HIVE_".customer;
 
 --- SQL operation complete.
 >>drop external table item for hive.hive.item;
 
 --- SQL operation complete.
+>>
+>>obey TEST009(test_hive2);
+>>-- drop data from the hive table and recreate with 4 columns
+>>-- this causes the external table to be invalid
+>>
+>>-- cleanup data from the old table, and create/load data with additional column
+>>sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
+>>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_b.hive.sql;
+>>
+>>-- should fail - column mismatch
+>>select count(*) from hive.sch_t009.t009t1;
+
+*** ERROR[3078] The column list for HIVE.SCH_T009.T009T1 does not match its external table representation defined as TRAFODION."_HV_SCH_T009_".T009T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>sh sqlci -i "TEST009(select_stmts)";
+>>select * from hive.sch_t009.t009t1;
+
+*** ERROR[3078] The column list for HIVE.SCH_T009.T009T1 does not match its external table representation defined as TRAFODION."_HV_SCH_T009_".T009T1.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from hive.sch_t009.t009t2;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           15           10
+          9           26           10
+          8           26           12
+          7           24            4
+          6            4           12
+          5            8            5
+          4            7            6
+          3           18            9
+          2            9            4
+          1            9           12
+
+--- 10 row(s) selected.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- drop and recreate external table
+>>select * from table(natablecacheentries('user','local')) ;
+
+ROW_ID      CATALOG_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       OBJECT_NAME
+----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+         1  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+         2  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+         3  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+         4  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+         5  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ITEM                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+         6  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+         7  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+         8  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+--- 8 row(s) selected.
+>>drop external table t009t1 for hive.sch_t009.t009t1;
+
+--- SQL operation complete.
+>>get tables in schema "_HV_SCH_T009_";
+
+Tables in Schema TRAFODION._HV_SCH_T009_
+========================================
+
+T009T2
+
+--- SQL operation complete.
+>>select * from table(natablecacheentries('user','local')) ;
+
+ROW_ID      CATALOG_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       OBJECT_NAME
+----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+         1  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+         2  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+         3  TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+         4  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ITEM                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+         5  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+         6  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+         7  HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+--- 7 row(s) selected.
+>>create external table t009t1 for hive.sch_t009.t009t1;
+
+--- SQL operation complete.
+>>
+>>-- select should now succeed
+>>select count(*) from hive.sch_t009.t009t1;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>
+>>obey TEST009(test_hbase);
+>>-- create external tables for precreated tables
+>>create external table "baseball" for hbase."_ROW_"."baseball";
+
+--- SQL operation complete.
+>>create external table "baseball" for hbase."_CELL_"."baseball";
+
+--- SQL operation complete.
+>>
+>>-- should create schemas called "_HB__ROW__" and "_HB__CELL__"
+>>execute get_hb_schemas;
+
+SCHEMA_NAME
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+_HB__ROW__                                                                                                                                                                                                                                                      
+_HB__CELL__                                                                                                                                                                                                                                                     
+
+--- 2 row(s) selected.
+>>
+>>-- Verify tables were created
+>>showddl trafodion."_HB__ROW__"."baseball";
+
+CREATE EXTERNAL TABLE TRAFODION."_HB__ROW__"."baseball"
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
+  )
+;
+
+--- SQL operation complete.
+>>showddl trafodion."_HB__CELL__"."baseball";
+
+CREATE EXTERNAL TABLE TRAFODION."_HB__CELL__"."baseball"
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT DEFAULT NULL NOT NULL NOT
+      DROPPABLE
+  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
+  )
+;
+
+--- SQL operation complete.
+>>
+>>select count(*) from hbase."_ROW_"."baseball";
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select count(*) from hbase."_CELL_"."baseball";
+
+(EXPR)              
+--------------------
+
+                  27
+
+--- 1 row(s) selected.
+>>
+>>select left(row_id, 10) as row_id, left(column_display(column_details, ('teams:team_number', 'games:visitor_team', 'games:game_time')), 100) as cols from hbase."_ROW_"."baseball";
+
+ROW_ID      COLS
+----------  ----------------------------------------------------------------------------------------------------
+
+1           games:game_time =>  2015-10-23 19:30:30 , games:visitor_team =>  2 , teams:team_number =>  1        
+2           games:game_time =>  2015-10-24 19:30:30 , games:visitor_team =>  3 , teams:team_number =>  2        
+3           games:game_time =>  2015-10-25 19:30:30 , games:visitor_team =>  4 , teams:team_number =>  3        
+
+--- 3 row(s) selected.
+>>
+>>-- fails since accesses to the external name are prohibited
+>>select * from trafodion."_HB__ROW__"."baseball";
+
+*** ERROR[4258] Trying to access external table TRAFODION."_HB__ROW__"."baseball" through its external name format. Please use the native table name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop external table trafodion."_HB__ROW__"."baseball";
+
+--- SQL operation complete.
+>>drop external table "baseball" for hbase."_CELL_"."baseball";
+
+--- SQL operation complete.
+>>
 >>log;

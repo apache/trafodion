@@ -381,12 +381,6 @@ ElemDDLNode::castToElemDDLPartnAttrList()
   return NULL;
 }
 
-ElemDDLFileAttrLockLength *
-ElemDDLNode::castToElemDDLFileAttrLockLength()
-{
-  return NULL;
-}
-
 ElemDDLFileAttrMaxSize *
 ElemDDLNode::castToElemDDLFileAttrMaxSize()
 {
