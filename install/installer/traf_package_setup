@@ -44,9 +44,6 @@ if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
     TRAF_PDCP=""
 else
-    # use the -S option to cause pdsh to return largest of
-    # the remote command return values so we can tell if one
-    # or more of the remote commands failed
     TRAF_PDSH="pdsh -R exec $MY_NODES ssh -q -n %h"
     TRAF_PDCP="pdcp -R ssh $MY_NODES"
 fi
@@ -78,6 +75,10 @@ if [[ $SUSE_LINUX == "false" ]]; then
             for node in $NODE_LIST
             do
                scp -q $EPEL_RPM $(whoami)@$node:$HOME
+               if [[ $? -gt 1 ]]; then
+                  echo "***ERROR: Unable to find $EPEL_RPM or unable to copy."
+                  exit -1
+               fi
             done
          else
             cp -rf $EPEL_RPM $HOME
@@ -90,6 +91,10 @@ if [[ $SUSE_LINUX == "false" ]]; then
                for node in $NODE_LIST
                do
                   scp -q $LOCAL_WORKDIR/$epel_rpm $(whoami)@$node:$HOME
+                  if [[ $? -gt 1 ]]; then
+                     echo "***ERROR: Unable to find $EPEL_RPM or unable to copy."
+                     exit -1
+                  fi
                done
             else
                cp -rf $epel_rpm $HOME
