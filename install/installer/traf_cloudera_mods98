@@ -43,9 +43,13 @@ if [ "$JAVA_VERSION" == "1.6" ]; then
    exit -1
 elif [ "$JAVA_VERSION" == "1.7" ]; then
    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-      hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar"
+      if [[ $CDH_5_4_SUPPORT == "Y" ]]; then
+         hbase_trx_jar="hbase-trx-cdh5_4-${TRAF_VERSION}.jar"
+      else
+         hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar" 
+      fi 
    else
-       hbase_trx_jar="hbase-trx-cdh5_3-${TRAF_VERSION}.jar"      
+      hbase_trx_jar="hbase-trx-cdh5_3-${TRAF_VERSION}.jar"
    fi
 else
     echo "***ERROR: unable to determine Hadoop's java version"
@@ -121,8 +125,16 @@ sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
 #Copy hbase-site.xml file
+ssh -q -n $CDH_START_NODE sudo cp /etc/hbase/conf/hbase-site.xml $HOME
+ssh -q -n $CDH_START_NODE sudo chown $(whoami).$(whoami) $HOME/hbase-site.xml
+ssh -q -n $CDH_START_NODE sudo chmod 777 $HOME/hbase-site.xml
 
-scp -q $(whoami)@$CDH_START_NODE:/etc/hbase/conf/hbase-site.xml $TRAF_WORKDIR
+scp -q $(whoami)@$CDH_START_NODE:$HOME/hbase-site.xml $HOME
+if [[ $? -ne 0 ]]; then
+   echo "***ERROR: Unable to find /etc/hbase/conf/hbase-site.xml file on $CDH_START_NODE or unable to copy."
+   exit -1
+fi
+sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
 
