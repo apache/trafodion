@@ -160,8 +160,8 @@ public class ZkClient implements Watcher {
 			
 			if(this.zk.getState() != ZooKeeper.States.CONNECTED) {
 				this.zk.close();
-				this.zk=null;
 				LOG.error("Zookeeper.State [" + this.zk.getState() + "]");
+				this.zk=null;
 				throw new IOException("Cannot connect to Zookeeper");
 			}
 			

@@ -483,6 +483,7 @@ protected:
   Lng32 colValEntry_;
   Int16 asyncCompleteRetryCount_;
   NABoolean *resultArray_;
+  NABoolean asyncOperation_;
   Int32 asyncOperationTimeout_;
 
   // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
@@ -1144,7 +1145,7 @@ public:
     , CREATE_ROW
     , APPLY_PRED
     , RETURN_ROW
-    , ASYNC_INSERT_COMPLETE
+    , ASYNC_OPERATION_COMPLETE
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,

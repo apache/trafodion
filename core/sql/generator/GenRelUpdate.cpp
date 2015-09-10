@@ -1281,6 +1281,10 @@ short HbaseDelete::codeGen(Generator * generator)
 
   generator->initTdbFields(hbasescan_tdb);
 
+  if ((CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON)
+           && getInliningInfo().isIMGU())
+     hbasescan_tdb->setAsyncOperations(TRUE);
+
   if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
     hbasescan_tdb->setRowwiseFormat(TRUE);
 
@@ -2652,7 +2656,8 @@ short HbaseInsert::codeGen(Generator *generator)
   queue_index downqueuelength = (queue_index)getDefault(GEN_DP2I_SIZE_DOWN);
   Int32 numBuffers = getDefault(GEN_DP2I_NUM_BUFFERS);
 
-  if (getInsertType() == Insert::VSBB_INSERT_USER)
+  if (getInsertType() == Insert::VSBB_INSERT_USER &&
+              generator->oltOptInfo()->multipleRowsReturned())
     downqueuelength = 400;
 
   char * tablename = NULL;
@@ -2765,8 +2770,8 @@ short HbaseInsert::codeGen(Generator *generator)
 
   generator->initTdbFields(hbasescan_tdb);
 
-  if (CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON
-           && t == ComTdbHbaseAccess::INSERT_)
+  if ((CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON)
+           && getInliningInfo().isIMGU())
      hbasescan_tdb->setAsyncOperations(TRUE);
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
@@ -2783,8 +2788,10 @@ short HbaseInsert::codeGen(Generator *generator)
 	  (noCheck()))
 	hbasescan_tdb->setHbaseSqlIUD(FALSE);
 
-      if ((getInsertType() == Insert::VSBB_INSERT_USER) ||
-	  (getInsertType() == Insert::UPSERT_LOAD)) {
+      if (((getInsertType() == Insert::VSBB_INSERT_USER) && 
+                   generator->oltOptInfo()->multipleRowsReturned()) ||
+	  (getInsertType() == Insert::UPSERT_LOAD))
+      {
 	hbasescan_tdb->setVsbbInsert(TRUE);
         hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
       }

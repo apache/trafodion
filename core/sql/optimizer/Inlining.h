@@ -63,71 +63,76 @@ class ForceCardinalityInfo;
 
 enum InliningInfoEnum {
   // this TSJ's child(1) is a temp Insert.
-  II_DrivingTempInsert		= 0x00000001, 
+  II_DrivingTempInsert		= 0x0000000000000001LL, 
+                                 
   // this TSJ's child(1) is a tree of row triggers and RI.
-  II_DrivingPipelinedActions	= 0x00000002,
+  II_DrivingPipelinedActions	= 0x0000000000000002LL,
   // this TSJ's child(1) is a tree of row triggers.
-  II_DrivingRowTrigger		= 0x00000004,
+  II_DrivingRowTrigger		= 0x0000000000000004LL,
   // this Ordered Union's child(1) is a tree of statement triggers.
-  II_DrivingStatementTrigger	= 0x00000008,
+  II_DrivingStatementTrigger	= 0x0000000000000008LL,
   // this Ordered Union's child(1) is a temp Delete.
-  II_DrivingTempDelete		= 0x00000010,
+  II_DrivingTempDelete		= 0x0000000000000010LL,
   // this Union has before triggers on child(0), after triggers on child(1).
-  II_DrivingBeforeTriggers	= 0x00000020,
+  II_DrivingBeforeTriggers	= 0x0000000000000020LL,
   // this Union's child(0) is an RI tree.
-  II_DrivingRI			= 0x00000040,
+  II_DrivingRI			= 0x0000000000000040LL,
   // this TSJ's child(1) is an IM tree.
-  II_DrivingIM			= 0x00000080,
+  II_DrivingIM			= 0x0000000000000080LL,
   // this Union is the IF node of a trigger root.
-  II_TriggerRoot		= 0x00000100,
+  II_TriggerRoot		= 0x0000000000000100LL,
   // located on a DrivingTempDelete node, when before triggers are present.
-  II_BeforeTriggersExist	= 0x00000200,
+  II_BeforeTriggersExist	= 0x0000000000000200LL,
   // Access Sets should be saved in this node.
-  II_AccessSetNeeded		= 0x00000400,
+  II_AccessSetNeeded		= 0x0000000000000400LL,
   // this Tuple node should be removed during transformation.
-  II_DummyStatement		= 0x00000800,
+  II_DummyStatement		= 0x0000000000000800LL,
   // this EffectiveGU has also row triggers, RI or IM to
   // pipeline values to.
-  II_hasPipelinedActions	= 0x00001000,
+  II_hasPipelinedActions	= 0x0000000000001000LL,
   // this GenericUpdate is the Effective GU of a before trigger. 
   // Do not do inlining again.
-  II_EffectiveGU		= 0x00002000,
+  II_EffectiveGU		= 0x0000000000002000LL,
   // This RelRoot node is on top of the RI action.
-  II_ActionOfRI			= 0x00004000,
+  II_ActionOfRI			= 0x0000000000004000LL,
   // avoid security checks
-  II_AvoidSecurityChecks		= 0x00008000,
+  II_AvoidSecurityChecks		= 0x0000000000008000LL,
   // Does the outputs of this GU go to an MV log (CurrentEpoch required)?
-  II_isMVLoggingInlined		= 0x00010000,
+  II_isMVLoggingInlined		= 0x0000000000010000LL,
   // Marks the MV log insert TSJ for the push-to-DP2 transformation rule.
-  II_DrivingMvLogInsert		= 0x00020000,
+  II_DrivingMvLogInsert		= 0x0000000000020000LL,
   // VSBB Insert drives MV range logging and also IM etc.
-  II_ProjectMidRangeRows        = 0x00040000,
+  II_ProjectMidRangeRows        = 0x0000000000040000LL,
   // Need to project the OLD/NEW outputs from the GU node, for other purposes.
-  II_NeedGuOutputs              = 0x00080000,
+  II_NeedGuOutputs              = 0x0000000000080000LL,
   // Don't apply join commutativity rule
-  II_JoinChildsOrder		= 0x00100000,
+  II_JoinChildsOrder		= 0x0000000000100000LL,
   // Force MDAM on the table
-  II_MdamForcedByInlining	= 0x00200000,
+  II_MdamForcedByInlining	= 0x0000000000200000LL,
   // Force Single execution for TSJ
-  II_SingleExecutionForTSJ	= 0x00400000,
+  II_SingleExecutionForTSJ	= 0x0000000000400000LL,
   // Enable the use of First N Rows for Mvlog
-  II_EnableFirstNRows		= 0x00800000,
+  II_EnableFirstNRows		= 0x0000000000800000LL,
   // Do not implement using the Materialize node
-  II_MaterializeNodeForbidden	= 0x01000000,
+  II_MaterializeNodeForbidden	= 0x0000000001000000LL,
   // this GU has IM
-  II_hasIM	                = 0x02000000,
+  II_hasIM	                = 0x0000000002000000LL,
   // this GU has some inlined actions(IM, RI, triggers, MV logging...)
-  II_hasInlinedActions          = 0x04000000,
+  II_hasInlinedActions          = 0x0000000004000000LL,
   // this GU has RI
-  II_hasRI                      = 0x08000000,
+  II_hasRI                      = 0x0000000008000000LL,
   // this GU has Triggers
-  II_hasTriggers                = 0x10000000,
+  II_hasTriggers                = 0x0000000010000000LL,
   // Force Single execution for TSJ driving row Triggers
-  II_SingleExecutionForTriggersTSJ	= 0x20000000,
+  II_SingleExecutionForTriggersTSJ	= 0x0000000020000000LL,
   // this update operator is part of an action of a row trigger
-  II_InActionOfRowTrigger     	= 0x40000000,
+  II_InActionOfRowTrigger     	= 0x0000000040000000LL,
   // Is this RelRoot, Union, or Insert used in MV logging -- ONLY USED FOR PUSH DOWN
-  II_isUsedForMvLogging         = 0x80000000
+  II_isUsedForMvLogging         = 0x0000000080000000LL,
+  // Is this generic update a part of IM
+  II_isIMGU                     = 0x0000000100000000LL,
+  // is this Union a part of IM
+  II_isIMUnion                  = 0x0000000200000000LL,
   
 };
 
@@ -219,6 +224,11 @@ public:
     return ( isDrivingBeforeTriggers() ||
 	     (isDrivingTempDelete() && !isDrivingBeforeTriggers() ) );
   }
+  inline NABoolean
+  isIMGU()	      const { return forceBool(II_isIMGU); }
+
+  inline NABoolean
+  isIMUnion()	      const { return forceBool(II_isIMUnion); }
 
   inline NABoolean isSystemGenerated() const { return flags_ ? TRUE: FALSE; }
 
@@ -241,8 +251,8 @@ public:
   // LCOV_EXCL_STOP
   
   // Mutators
-  inline void setFlags(Int32 flags)                {flags_ |= flags;}
-  inline void resetFlags(Int32 flags)              {flags_ &= ~flags;}
+  inline void setFlags(Int64 flags)                {flags_ |= flags;}
+  inline void resetFlags(Int64 flags)              {flags_ &= ~flags;}
   inline void setTriggerObject(Trigger *trigger) {triggerObject_ = trigger;}
 
   void merge(InliningInfo *other);
@@ -261,7 +271,7 @@ private:
   inline NABoolean forceBool(InliningInfoEnum bitToTest) const
     { return (flags_ & bitToTest) ? TRUE : FALSE; }
 
-  Int32	     flags_;
+  Int64	     flags_;
   Trigger   *triggerObject_;
 
   //++MV

@@ -1841,6 +1841,7 @@ RelExpr *GenericUpdate::createIMTree(BindWA *bindWA,
               Union(imTree, createIMNodes(bindWA, useInternalSyskey, index),
                     NULL, NULL, REL_UNION, CmpCommon::statementHeap(), TRUE, TRUE);
             imTree->setBlockStmt(isinBlockStmt());
+            imTree->getInliningInfo().setFlags(II_isIMUnion);
           } // not bulk load
           else {
             RelExpr * oldIMTree = imTree;
@@ -2007,6 +2008,9 @@ static RelExpr *createIMNode(BindWA *bindWA,
 
   // Do not collect STOI info for security checks.
   imNode->getInliningInfo().setFlags(II_AvoidSecurityChecks);
+  
+  // Set the flag that this GU is part of IM
+  imNode->getInliningInfo().setFlags(II_isIMGU);
 
   if (bindWA->isTrafLoadPrep())
     return imNode;
@@ -2101,6 +2105,9 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 
     // Add a root just to be consistent, so all returns from this method
     // are topped with a RelRoot.
+
+    // Set this Union is part of IM
+    indexOp->getInliningInfo().setFlags(II_isIMUnion);
     indexOp = new (bindWA->wHeap()) RelRoot(indexOp);
   }
 

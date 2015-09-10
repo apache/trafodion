@@ -417,6 +417,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	    matches_ = 0;
             asyncCompleteRetryCount_ = 0;
             asyncOperationTimeout_ = 1;
+            asyncOperation_ = hbaseAccessTdb().asyncOperations() && getTransactionIDFromContext();
 	    step_ = INSERT_INIT;
 	  }
 	  break;
@@ -525,7 +526,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	                                      row_,
                                               hbaseAccessTdb().useHbaseXn(),
                                               insColTSval_,
-                                              hbaseAccessTdb().asyncOperations());
+                                              asyncOperation_);
 
 	    if (retcode == HBASE_DUP_ROW_ERROR) // row exists, return error
 	      {
@@ -549,7 +550,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
                 break;
             }
 	    matches_++;
-	    if (hbaseAccessTdb().asyncOperations()) {
+	    if (asyncOperation_) {
                 step_ = ASYNC_INSERT_COMPLETE;
                 return WORK_CALL_AGAIN;
             }
@@ -605,7 +606,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 				      row_,
                                       hbaseAccessTdb().useHbaseXn(),
 				      insColTSval_,
-                                      hbaseAccessTdb().asyncOperations());
+                                      asyncOperation_);
 
 	    if (setupError(retcode, "ExpHbaseInterface::insertRow")) {
 		step_ = HANDLE_ERROR;
@@ -616,7 +617,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		break;
 	    }
 	    matches_++;
-	    if (hbaseAccessTdb().asyncOperations()) {
+	    if (asyncOperation_) {
                 step_ = ASYNC_INSERT_COMPLETE;
                 return WORK_CALL_AGAIN;
             }
@@ -668,7 +669,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 				     &rc, FALSE))
 		  return 1;
 	      }
-	    if (hbaseAccessTdb().asyncOperations()) {
+	    if (asyncOperation_) {
                step_ = ASYNC_INSERT_COMPLETE;
                return WORK_CALL_AGAIN;
             }
@@ -779,6 +780,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    rowsInserted_ = 0;
             asyncCompleteRetryCount_ = 0;
             asyncOperationTimeout_ = 1;
+            asyncOperation_ = hbaseAccessTdb().asyncOperations() && getTransactionIDFromContext();
             numRowsInVsbbBuffer_ = 0;
 	    step_ = INSERT_INIT;
 	  }
@@ -921,14 +923,14 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 				       hbaseAccessTdb().useHbaseXn(),
                                        insColTSval_,
                                        hbaseAccessTdb().getIsTrafLoadAutoFlush(), 
-				       hbaseAccessTdb().asyncOperations());
+				       asyncOperation_);
 
 	    if (setupError(retcode, "ExpHbaseInterface::insertRows"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-            if (hbaseAccessTdb().asyncOperations()) {
+            if (asyncOperation_) {
 		lastHandledStep_ = step_;
                 step_ = ASYNC_INSERT_COMPLETE;
                 break;
@@ -2065,7 +2067,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	                                     tcb_->row_,
 					     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
 					     -1, //colTS_
-                                             FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
+                                             tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -2099,7 +2101,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 						     colValToCheck_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
 						     -1, //colTS_
-                                                     FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
+                                                     tcb_->asyncOperation_);
 
 	    if (retcode == HBASE_ROW_NOTFOUND_ERROR)
 	      {
@@ -2157,8 +2159,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                                      rowID,
                                                      tcb_->row_,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
-						     -1, // colTS_
-                                                     FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
+						     -1, // colTS
+                                                     tcb_->asyncOperation_); 
 
 	    if (retcode == HBASE_DUP_ROW_ERROR)
 	      {
@@ -2216,7 +2218,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
                                              NULL,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
-                                             latestRowTimestamp_);
+                                             latestRowTimestamp_,
+                                             tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -2653,11 +2656,8 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
                                              tcb_->rowIds_[tcb_->currRowidIdx_],
                                              &tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
-                                             -1 //colTS_
-                                             );
-
-
-
+                                             -1 ,
+                                             tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -2682,11 +2682,9 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
                 retcode =  tcb_->ehi_->insertRow(tcb_->table_,
                                                  tcb_->rowIds_[tcb_->currRowidIdx_],
                                                  tcb_->row_,
-
                                                  tcb_->hbaseAccessTdb().useHbaseXn(),
-    
                                                  -1, // colTS_
-                                                 FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
+                                                 tcb_->asyncOperation_);
 
 		if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
@@ -2946,8 +2944,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 					    tcb_->row_,
                                             tcb_->hbaseAccessTdb().useHbaseXn(),
 					    -1, // colTS_
-                                            FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
-
+                                            tcb_->asyncOperation_);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	    {
 		step_ = HANDLE_ERROR;
@@ -2981,9 +2978,8 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 					     rowID,
 					     NULL,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
-					     -1 //colTS_
-					     );
-
+					     -1,
+					     tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -3344,10 +3340,8 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 						tcb_->rowId_,
 						tcb_->row_,
                                                 tcb_->hbaseAccessTdb().useHbaseXn(),						
-					
 						-1,// colTS_
-                                                FALSE); //tcb_->hbaseAccessTdb().asyncOperations());
-
+                                                tcb_->asyncOperation_); 
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
 		    step_ = HANDLE_ERROR;
@@ -3370,9 +3364,8 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 					     tcb_->rowId_,
 					     &tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
-					     -1 //colTS_
-					     );
-
+					     -1,
+					     tcb_->asyncOperation_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -3882,6 +3875,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    prevTailIndex_ = 0;
             asyncCompleteRetryCount_ = 0;
             asyncOperationTimeout_ = 1;
+            asyncOperation_ = hbaseAccessTdb().asyncOperations() && getTransactionIDFromContext();
             numRowsInVsbbBuffer_ = 0;
             lastHandledStep_ = NOT_STARTED;
 	    
@@ -4079,22 +4073,23 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                                        hbaseAccessTdb().getRowIDLen(),
                                        rowIDs_,
                                        hbaseAccessTdb().useHbaseXn(),
-				       -1 // ColTS_
-				       );
+				       -1,
+				       asyncOperation_);
             currRowNum_ = 0;	    
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRows"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-
-          if (getHbaseAccessStats())
-	    {
+            if (asyncOperation_) {
+               lastHandledStep_ = step_;
+               step_ = ASYNC_OPERATION_COMPLETE;
+               break;
+            }
+            if (getHbaseAccessStats()) {
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInBuffer);
-
 	    }
-
 	    if (step_ == PROCESS_DELETE_AND_CLOSE)
 	      step_ = RS_CLOSE;
 	    else
@@ -4171,16 +4166,16 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                                        rows_,
                                        hbaseAccessTdb().useHbaseXn(),
 				       -1,
-				       hbaseAccessTdb().asyncOperations());
+				       asyncOperation_);
             currRowNum_ = 0;	    
 	    if (setupError(retcode, "ExpHbaseInterface::insertRows"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-            if (hbaseAccessTdb().asyncOperations()) {
+            if (asyncOperation_) {
                lastHandledStep_ = step_;
-               step_ = ASYNC_INSERT_COMPLETE;
+               step_ = ASYNC_OPERATION_COMPLETE;
                break;
             }
             if (getHbaseAccessStats()) {
@@ -4193,7 +4188,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      step_ = DONE;
 	  }
 	  break;
-      case ASYNC_INSERT_COMPLETE:
+      case ASYNC_OPERATION_COMPLETE:
          {
             if (resultArray_  == NULL)
                 resultArray_ = new (getHeap()) NABoolean[hbaseAccessTdb().getHbaseRowsetVsbbSize()];
@@ -4230,7 +4225,8 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
             }
-            if (lastHandledStep_ == PROCESS_UPDATE_AND_CLOSE)
+            if ((lastHandledStep_ == PROCESS_UPDATE_AND_CLOSE)
+                 || (lastHandledStep_ == PROCESS_DELETE_AND_CLOSE))
               step_ = RS_CLOSE;
             else
               step_ = DONE;
