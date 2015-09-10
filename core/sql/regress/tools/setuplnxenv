@@ -79,6 +79,8 @@ fi
 # Finally, add the regression variables and make sure the directories
 # actually exist
 #
+echo "MY_SQROOT"
+echo $MY_SQROOT
 export MY_SQROOT=$MY_SQROOT
 export SQLMX_MODULE_DIR=${MY_SQROOT}/sql/sqlmx/USERMODULES
 export SQLMX_SYSMODULE_DIR=${MY_SQROOT}/sql/sqlmx/SYSTEMMODULES

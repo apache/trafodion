@@ -59,6 +59,8 @@ function usage {
    print_usage_line "-major" "Specifies major number in the version string."
    print_usage_line "-minor" "Specifies minor number in the version string."
    print_usage_line "-update" "Specifies update number in the version string."
+   print_usage_line "-prodver" "Specifies product version(open,Ent,EntAdv) in the version string."
+   
 }
 
 #---------------
@@ -100,6 +102,12 @@ static const char * SCMBuildStr = "";
 
 /* build date */
 #define VERS_DT        $buildDate
+
+/*prodver*/
+#define VERS_PRODVER $prodver
+
+/*copyright*/
+#define COPYRIGHT $copyright
 
 #endif
 
@@ -161,6 +169,8 @@ typeset buildDate=
 typeset major=
 typeset minor=
 typeset update=
+typeset prodver=
+typeset copyright=
 
 while [ $# -gt 0 ]; do
    case $1 in
@@ -196,6 +206,10 @@ while [ $# -gt 0 ]; do
          update="${2}"
          shift
          ;;
+       -prodver|-pv)
+         prodver="${2}"
+         shift
+         ;;       
       -h|*)
          usage
          exit 1
@@ -224,5 +238,7 @@ fi
 [ -z "$major" ]  && major="$( grep TRAFODION_VER_MAJOR=  $VERFILE | cut -f2 -d=)"
 [ -z "$minor" ]  && minor="$( grep TRAFODION_VER_MINOR=  $VERFILE | cut -f2 -d=)"
 [ -z "$update" ] && update="$(grep TRAFODION_VER_UPDATE= $VERFILE | cut -f2 -d=)"
+[ -z "$prodver" ] && prodver="$(grep TRAFODION_VER_PROD= $VERFILE | cut -f2 -d=| sed 's/ /_/' | sed 's/\"//g')"
+[ -z "$copyright" ] && copyright=" Copyright (c) $(grep PRODUCT_COPYRIGHT_HEADER= $VERFILE | cut -f2 -d=)"
 
 writeVerHdr

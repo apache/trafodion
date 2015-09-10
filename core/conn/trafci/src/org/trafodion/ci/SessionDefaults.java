@@ -22,7 +22,7 @@
 package org.trafodion.ci;
 
 public interface SessionDefaults {
-   final String PROD_NAME = "Trafodion Command Interface ";
+   final String PROD_NAME = System.getenv("TRAFODION_VER_PROD")+" Command Interface ";
    final String APP_NAME = "TrafCI";
    final String DRIVER_NAME = "org.trafodion.jdbc.t4.T4Driver"; 
    final String PKG_NAME = "/org/trafodion/ci/";
