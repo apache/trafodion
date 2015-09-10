@@ -605,7 +605,9 @@ if [ -z $CLUSTER_NAME ]; then
 fi
 
 echo "export CLUSTER_NAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
-echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
+if [[ $node_count -ne 1 ]]; then
+   echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
+fi
 #=============================================
 #Get Hadoop Nodes
 
