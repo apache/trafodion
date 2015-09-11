@@ -948,9 +948,6 @@ void PrivMgr::log(
   const std::string message,
   const int_32 index)
 { 
-  // for now, don't log
-  return;
-
   std::string logMessage (filename);
   logMessage += ": ";
   logMessage += message;
