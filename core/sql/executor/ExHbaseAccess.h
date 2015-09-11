@@ -836,7 +836,7 @@ public:
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
-    , ASYNC_INSERT_COMPLETE
+    , COMPLETE_ASYNC_INSERT
 
   } step_;
 
@@ -1145,7 +1145,7 @@ public:
     , CREATE_ROW
     , APPLY_PRED
     , RETURN_ROW
-    , ASYNC_OPERATION_COMPLETE
+    , COMPLETE_ASYNC_OPERATION
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,

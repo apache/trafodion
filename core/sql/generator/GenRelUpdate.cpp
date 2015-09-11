@@ -2658,8 +2658,16 @@ short HbaseInsert::codeGen(Generator *generator)
 
   if (getInsertType() == Insert::VSBB_INSERT_USER &&
               generator->oltOptInfo()->multipleRowsReturned())
-    downqueuelength = 400;
-
+  {
+    downqueuelength = getDefault(HBASE_ROWSET_VSBB_SIZE);
+    queue_index dq = 1;
+    queue_index bits = downqueuelength;
+    while (bits && dq < downqueuelength) {
+        bits = bits  >> 1;
+        dq = dq << 1;
+    }
+    downqueuelength = dq;
+  }
   char * tablename = NULL;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
       (getTableDesc()->getNATable()->isHbaseCellTable()))

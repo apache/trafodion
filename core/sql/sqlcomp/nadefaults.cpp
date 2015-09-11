@@ -1770,7 +1770,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
-  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1000"),
+  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1024"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),
   DDkwd__(HBASE_SALTED_TABLE_SET_SPLIT_POLICY,	"ON"),
   DD_____(HBASE_SCHEMA,                         "HBASE"),

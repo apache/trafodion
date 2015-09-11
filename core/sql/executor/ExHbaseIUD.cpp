@@ -544,6 +544,8 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		break;
 	      }
 	    
+	    if (getHbaseAccessStats())
+	      getHbaseAccessStats()->incUsedRows();
 
 	    if (hbaseAccessTdb().returnRow()) {
 		step_ = RETURN_ROW;
@@ -551,18 +553,15 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
             }
 	    matches_++;
 	    if (asyncOperation_) {
-                step_ = ASYNC_INSERT_COMPLETE;
+                step_ = COMPLETE_ASYNC_INSERT;
                 return WORK_CALL_AGAIN;
             }
             else {
 	        step_ = INSERT_CLOSE;
 	    }
-	    if (getHbaseAccessStats())
-	      getHbaseAccessStats()->incUsedRows();
-	        
 	  }
 	  break;
-        case ASYNC_INSERT_COMPLETE:
+        case COMPLETE_ASYNC_INSERT:
           {
             if (resultArray_  == NULL)
                 resultArray_ = new (getHeap()) NABoolean[1];
@@ -591,8 +590,6 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		step_ = HANDLE_ERROR;
 		break;
             }
-	    if (getHbaseAccessStats())
-	      getHbaseAccessStats()->incUsedRows();
 	    step_ = INSERT_CLOSE;
           }
           break;
@@ -612,20 +609,20 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		step_ = HANDLE_ERROR;
 		break;
 	    }
+	    if (getHbaseAccessStats())
+	      getHbaseAccessStats()->incUsedRows();
 	    if (hbaseAccessTdb().returnRow()) {
 		step_ = RETURN_ROW;
 		break;
 	    }
 	    matches_++;
 	    if (asyncOperation_) {
-                step_ = ASYNC_INSERT_COMPLETE;
+                step_ = COMPLETE_ASYNC_INSERT;
                 return WORK_CALL_AGAIN;
             }
             else {
 	        step_ = INSERT_CLOSE;
             }
-	    if (getHbaseAccessStats())
-	      getHbaseAccessStats()->incUsedRows();
 	  }
 	  break;
 
@@ -670,7 +667,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		  return 1;
 	      }
 	    if (asyncOperation_) {
-               step_ = ASYNC_INSERT_COMPLETE;
+               step_ = COMPLETE_ASYNC_INSERT;
                return WORK_CALL_AGAIN;
             }
             else
@@ -925,22 +922,20 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
                                        hbaseAccessTdb().getIsTrafLoadAutoFlush(), 
 				       asyncOperation_);
 
-	    if (setupError(retcode, "ExpHbaseInterface::insertRows"))
-	      {
+	    if (setupError(retcode, "ExpHbaseInterface::insertRows")) {
 		step_ = HANDLE_ERROR;
 		break;
-	      }
-            if (asyncOperation_) {
-		lastHandledStep_ = step_;
-                step_ = ASYNC_INSERT_COMPLETE;
-                break;
-            }
+	    }
 	    if (getHbaseAccessStats()) {
 		getHbaseAccessStats()->lobStats()->numReadReqs++;
 		getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
-	      }
+	    }
             rowsInserted_ += numRowsInVsbbBuffer_; 
-	    if (step_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
+            if (asyncOperation_) {
+		lastHandledStep_ = step_;
+                step_ = COMPLETE_ASYNC_INSERT;
+            }
+            else if (step_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
 	      step_ = FLUSH_BUFFERS;
 	    else if (step_ == PROCESS_INSERT_AND_CLOSE)
 	      step_ = INSERT_CLOSE;
@@ -948,7 +943,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
               step_ = ALL_DONE;
 	  }
 	  break;
-        case ASYNC_INSERT_COMPLETE:
+        case COMPLETE_ASYNC_INSERT:
           {
             if (resultArray_  == NULL)
                 resultArray_ = new (getHeap()) NABoolean[hbaseAccessTdb().getHbaseRowsetVsbbSize()];
@@ -981,7 +976,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
             }
             if (step_ == HANDLE_ERROR)
                break;
-            rowsInserted_ += numRowsInVsbbBuffer_;
             if (lastHandledStep_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
               step_ = FLUSH_BUFFERS;
             else if (lastHandledStep_ == PROCESS_INSERT_AND_CLOSE)
@@ -1525,7 +1519,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       case PROCESS_INSERT:
       {
-        short numRowsInBuffer = patchDirectRowBuffers();
+        numRowsInVsbbBuffer_ = patchDirectRowBuffers();
         retcode = ehi_->addToHFile(hbaseAccessTdb().getRowIDLen(),
                                    rowIDs_,
                                    rows_);
@@ -1535,12 +1529,12 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
            step_ = HANDLE_ERROR;
            break;
         }
-        rowsInserted_ += numRowsInBuffer;
+        rowsInserted_ += numRowsInVsbbBuffer_;
 
         if (getHbaseAccessStats())
         {
           getHbaseAccessStats()->lobStats()->numReadReqs++;
-          getHbaseAccessStats()->incUsedRows(numRowsInBuffer);
+          getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
         }
 
         step_ = ALL_DONE;
@@ -4068,7 +4062,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	case PROCESS_DELETE:
 	case PROCESS_DELETE_AND_CLOSE:
 	  {
-            short numRowsInBuffer = patchDirectRowIDBuffers();
+            numRowsInVsbbBuffer_ = patchDirectRowIDBuffers();
 	    retcode = ehi_->deleteRows(table_,
                                        hbaseAccessTdb().getRowIDLen(),
                                        rowIDs_,
@@ -4083,12 +4077,12 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      }
             if (asyncOperation_) {
                lastHandledStep_ = step_;
-               step_ = ASYNC_OPERATION_COMPLETE;
+               step_ = COMPLETE_ASYNC_OPERATION;
                break;
             }
             if (getHbaseAccessStats()) {
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
-	      getHbaseAccessStats()->incUsedRows(numRowsInBuffer);
+	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
 	    if (step_ == PROCESS_DELETE_AND_CLOSE)
 	      step_ = RS_CLOSE;
@@ -4100,9 +4094,9 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	case PROCESS_SELECT:
 	  {
            if (numRowsInDirectBuffer() > 0) {
-              short numRowsInBuffer = patchDirectRowIDBuffers();
-	      retcode = ehi_->getRowsOpen(
-                            table_,
+		      numRowsInVsbbBuffer_ = patchDirectRowIDBuffers();
+		      retcode = ehi_->getRowsOpen(
+				    table_,
                             hbaseAccessTdb().getRowIDLen(),
                             rowIDs_, 
                             columns_);
@@ -4175,7 +4169,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      }
             if (asyncOperation_) {
                lastHandledStep_ = step_;
-               step_ = ASYNC_OPERATION_COMPLETE;
+               step_ = COMPLETE_ASYNC_OPERATION;
                break;
             }
             if (getHbaseAccessStats()) {
@@ -4188,7 +4182,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      step_ = DONE;
 	  }
 	  break;
-      case ASYNC_OPERATION_COMPLETE:
+      case COMPLETE_ASYNC_OPERATION:
          {
             if (resultArray_  == NULL)
                 resultArray_ = new (getHeap()) NABoolean[hbaseAccessTdb().getHbaseRowsetVsbbSize()];
