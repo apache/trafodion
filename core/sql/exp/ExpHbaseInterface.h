@@ -61,6 +61,8 @@ class ex_globals;
 class CliGlobals;
 class ExHbaseAccessStats;
 
+Int64 getTransactionIDFromContext();
+
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
@@ -219,7 +221,8 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr row, 
 		  const LIST(HbaseStr) *columns,
 		  NABoolean noXn,
-		  const int64_t timestamp) = 0;
+		  const int64_t timestamp,
+                  NABoolean asyncOperation) = 0;
 
 
 
@@ -228,7 +231,8 @@ class ExpHbaseInterface : public NABasicObject
                   short rowIDLen,
 		  HbaseStr rowIDs,
 		  NABoolean noXn,
-		  const int64_t timestamp) = 0;
+		  const int64_t timestamp,
+                  NABoolean asyncOperation) = 0;
 
 
   virtual Lng32 checkAndDeleteRow(
@@ -518,7 +522,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr row, 
 		  const LIST(HbaseStr) *columns,
 		  NABoolean noXn,
-		  const int64_t timestamp);
+		  const int64_t timestamp,
+                  NABoolean asyncOperation);
 
 
   virtual Lng32 deleteRows(
@@ -526,7 +531,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   short rowIDLen,
 		  HbaseStr rowIDs,
 		  NABoolean noXn,		 		  
-		  const int64_t timestamp);
+		  const int64_t timestamp,
+                  NABoolean asyncOperation);
 
 
   virtual Lng32 checkAndDeleteRow(

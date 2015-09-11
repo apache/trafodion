@@ -42,8 +42,6 @@
 #include "CmpCommon.h"
 #include "CmpContext.h"
 
-extern Int64 getTransactionIDFromContext();
-
 // ===========================================================================
 // ===== Class ExpHbaseInterface
 // ===========================================================================
@@ -728,11 +726,11 @@ Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr row, 
 	  const LIST(HbaseStr) *columns,
 	  NABoolean noXn,
-	  const int64_t timestamp)
+	  const int64_t timestamp,
+          NABoolean asyncOperation)
 
 {
   HTableClient_JNI *htc;
-  bool asyncOperation = false;
   Int64 transID;
 
   if (noXn)
@@ -756,10 +754,10 @@ Lng32 ExpHbaseInterface_JNI::deleteRows(
           short rowIDLen,
 	  HbaseStr rowIDs,
 	  NABoolean noXn,
-	  const int64_t timestamp)
+	  const int64_t timestamp,
+          NABoolean asyncOperation)
 {
   HTableClient_JNI *htc;
-  bool asyncOperation = false;
   Int64 transID;
 
   if (noXn)
