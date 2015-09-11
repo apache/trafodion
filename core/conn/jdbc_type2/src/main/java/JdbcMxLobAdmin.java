@@ -40,8 +40,7 @@ public class JdbcMxLobAdmin
 		String fileName = null;
 		JdbcMxLobAdmin lobAdmin;
 
-		System.err.println("Hewlett-Packard JDBC/MX Lob Admin Utility 2.0");
-		System.err.println("(c) Copyright 2004, 2005 Hewlett-Packard Development Company, LP.");
+		System.err.println(" JDBC/MX Lob Admin Utility 2.0");
 		if (args.length == 0)
 			doSql_ = false;
 		else
