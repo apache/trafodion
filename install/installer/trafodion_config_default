@@ -125,9 +125,6 @@ export PASSWORD="admin"
 # hadoop cluster name
 export CLUSTER_NAME=""
 
-#Trafodion Cluster name, normally the same as Cloudera cluster name
-export CLUSTERNAME=""
-
 # the Hadoop HDFS userid
 export HDFS_USER="hdfs"
 
