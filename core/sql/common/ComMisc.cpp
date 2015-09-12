@@ -127,7 +127,7 @@ NABoolean ComIsTrafodionExternalSchemaName (
 // ----------------------------------------------------------------------------
 // function: ComConvertNativeNameToTrafName
 //
-// this fuction converts the native HIVE or HBASE object name into its
+// this function converts the native HIVE or HBASE object name into its
 // Trafodion external name format.
 //
 // params:

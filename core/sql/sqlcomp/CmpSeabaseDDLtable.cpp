@@ -542,11 +542,11 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       colInfoArray[index].dtEnd = dtEnd;
       colInfoArray[index].upshifted = upshifted;
       colInfoArray[index].colHeading = NULL;
-      colInfoArray[index].hbaseColFlags = 0;
+      colInfoArray[index].hbaseColFlags = naCol->getHbaseColFlags();
       colInfoArray[index].defaultClass = COM_NULL_DEFAULT;
       colInfoArray[index].defVal = NULL;
-      colInfoArray[index].hbaseColFam = NULL;
-      colInfoArray[index].hbaseColQual = NULL;
+      colInfoArray[index].hbaseColFam = naCol->getHbaseColFam();
+      colInfoArray[index].hbaseColQual = naCol->getHbaseColQual();
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = 0;
