@@ -144,7 +144,6 @@ if [ $return_code -ne 0 ]; then
     if [ $return_code -eq 9 ]; then
         echo "***WARNING: username already exists, will use existing userid, $TRAF_USER..."
         echo "***WARNING: ...and assume it was setup properly with passwordless ssh access to all nodes."
-        userid_already_exists="Y"
     else
         echo "***ERROR: unable to create Trafodion userid: $TRAF_USER.$TRAF_GROUP, RC=$return_code"
         exit -1
@@ -153,9 +152,9 @@ fi
 #=================================================
 
 # Setup passwordless ssh for this Trafodion userid
-if [ "$userid_already_exists" == "Y" ]; then
-    echo "***INFO: skipping passwordless ssh setup because userid ($TRAF_USER) already exists"
-else
+#if [ "$userid_already_exists" == "Y" ]; then
+#    echo "***INFO: skipping passwordless ssh setup because userid ($TRAF_USER) already exists"
+#else
     sudo su $TRAF_USER --command "echo -e 'y\n' | ssh-keygen -t rsa -N \"\" -f $TRAF_USER_DIR/.ssh/id_rsa"
     if [[ "$SUSE_LINUX" == "true" ]]; then
        sudo su $TRAF_USER --command "cp $TRAF_USER_DIR/.ssh/id_rsa.pub $TRAF_USER_DIR/.ssh/authorized_keys"
@@ -165,7 +164,7 @@ else
     sudo su $TRAF_USER --command "echo localhost $(cat /etc/ssh/ssh_host_rsa_key.pub) > $TRAF_USER_DIR/.ssh/known_hosts"
     sudo su $TRAF_USER --command "echo \"NoHostAuthenticationForLocalhost=yes\" >> $TRAF_USER_DIR/.ssh/config"
     sudo chmod 600 $TRAF_USER_DIR/.ssh/config
-fi
+#fi
 
 echo "***INFO: creating .qpidports file"
 sudo su $TRAF_USER --command="echo $QPIDPORT > $TRAF_USER_DIR/.qpidports"

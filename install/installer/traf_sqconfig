@@ -73,9 +73,6 @@ if [ "$node_count" -ne "1" ]; then
         echo "***WARNING: ...defaulting sqconfig 'processors=1'"
         processors="1"
     fi
-    echo "# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P." > $sqconfig
-    echo "#" >> $sqconfig
-    echo "# This sqconfig file is for the Trafodion open source version" >> $sqconfig
     echo "#" >> $sqconfig
     echo "begin node" >> $sqconfig
     node_id=0
