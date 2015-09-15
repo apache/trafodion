@@ -237,9 +237,9 @@ do
   echo "Exporting ${snapshot_name} ..."
   #export--
   hbase_cmd="$(get_hbase_cmd)  org.apache.hadoop.hbase.snapshot.ExportSnapshot"
-  hbase_cmd+="-snapshot ${snapshot_name}"
-  hbase_cmd+="-copy-to ${hdfs_backup_location}/${snapshot_name}"
-  hbase_cmd+="-mappers $mappers"
+  hbase_cmd+=" -snapshot ${snapshot_name}"
+  hbase_cmd+=" -copy-to ${hdfs_backup_location}/${snapshot_name}"
+  hbase_cmd+=" -mappers $mappers"
   echo "${hbase_cmd}" | tee -a ${log_file}
 
   do_sudo ${hbase_user} "${hbase_cmd}" 2>&1 | tee -a  ${log_file}
