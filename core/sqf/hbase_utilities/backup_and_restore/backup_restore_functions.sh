@@ -35,7 +35,7 @@ which_environment()
   if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
     # we are on a development system where install_local_hadoop has been executed
     return 1
-  elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" || -n "$(ls /etc/init.d/ambari* 2>/dev/null)" || -d /opt/mapr  ]]; then
+  elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" || -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ||  -d /opt/cloudera/parcels/CDH || -d /opt/mapr  ]]; then
     #cluster with Cloudera, Horton Works or Mapr distribution
     return 2
   else
@@ -302,7 +302,7 @@ validate_sudo_access()
    do_sudo $usr "echo 'aa'" &> /dev/null
    if [[  $? -ne 0 ]]
    then
-     echo "***[ERROR]: Could not validate sudo access."     | tee -a ${log_file}
+     echo "***[ERROR]: Could not validate sudo access for ${usr}."     | tee -a ${log_file}
      return 1
    fi
 
