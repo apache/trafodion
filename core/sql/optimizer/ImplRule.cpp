@@ -698,8 +698,8 @@ void copyCommonGenericUpdateFields(GenericUpdate *result,
   // We should write a RelExpr::copyCommonRelExprFields method instead
   // of copying them here.
   result->setTolerateNonFatalError(bef->getTolerateNonFatalError());
-
   result->setNoCheck(bef->noCheck());
+  result->setPrecondition(bef->getPrecondition());
 
 }
 
@@ -722,7 +722,6 @@ void copyCommonDeleteFields(Delete *result,
   result->mergeInsertRecExprArray()     = bef->mergeInsertRecExprArray();
 
   result->csl() = bef->csl();
-  result->setPrecondition(bef->getPrecondition());
 }
 
 // -----------------------------------------------------------------------

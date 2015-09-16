@@ -142,7 +142,8 @@ GenericUpdate(const CorrName &name,
     noCheck_(FALSE),
     noIMneeded_(FALSE),
     useMVCC_(FALSE),
-    useSSCC_(FALSE)
+    useSSCC_(FALSE),
+    preconditionTree_(NULL)
   {}
 
   // copy ctor
@@ -532,6 +533,13 @@ GenericUpdate(const CorrName &name,
                                else
                                  return FALSE; 
                             }
+
+  inline ItemExpr * getPreconditionTree() const { return preconditionTree_; }
+  inline const ValueIdSet getPrecondition() const { return precondition_; }
+  inline void setPreconditionTree(ItemExpr *pc) { preconditionTree_ = pc; }
+  inline void setPrecondition(const ValueIdSet pc)
+           { precondition_ = pc; exprsInDerivedClasses_ += precondition_; }
+
 protected:
 
   // Here, derived classes can register expressions that are used by
@@ -914,6 +922,11 @@ private:
   // if set to ON, then this statement will run under SSCC mode
   NABoolean useSSCC_;
 
+  // predicate evaluated before doing the LeafInsert(unique IM)
+  // LeafDelete (IM). Only insert/delete if TRUE
+  ItemExpr *preconditionTree_;
+  ValueIdSet precondition_;
+
 };
 
 // -----------------------------------------------------------------------
@@ -1256,9 +1269,10 @@ public:
              TableDesc *tabId,
              ItemExprList *afterColumns,
              OperatorTypeEnum otype = REL_LEAF_INSERT,
+	     ItemExpr *preconditionTree = NULL,
              CollHeap *oHeap = CmpCommon::statementHeap())
   : Insert(name, tabId, otype, NULL, NULL, NULL, oHeap)
-  {setBaseColRefs(afterColumns);}
+  {setBaseColRefs(afterColumns);setPreconditionTree(preconditionTree);}
 
   // copy ctor
   LeafInsert (const LeafInsert &) ; // not written
@@ -1461,8 +1475,6 @@ public:
   // a virtual function for performing name binding within the query tree
   virtual RelExpr *bindNode(BindWA *bindWA);
 
-  virtual void rewriteNode(NormWA &normWARef);
-
   virtual RelExpr *preCodeGen(Generator * generator,
                               const ValueIdSet & externalInputs,
                               ValueIdSet &pulledNewInputs);
@@ -1475,9 +1487,6 @@ public:
 
   // is this entire expression cacheable after this phase?
   virtual NABoolean isCacheableExpr(CacheWA& cwa);
-
-  virtual void addLocalExpr(LIST(ExprNode *) &xlist,
-                            LIST(NAString) &llist) const;
 
   // get a printable string that identifies the operator
   virtual const NAString getText() const;
@@ -1518,12 +1527,6 @@ public:
 
   inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
 
-  inline ItemExpr * getPreconditionTree() const { return preconditionTree_; }
-  inline const ValueIdSet getPrecondition() const { return precondition_; }
-  inline void setPreconditionTree(ItemExpr *pc) { preconditionTree_ = pc; }
-  inline void setPrecondition(const ValueIdSet pc)
-           { precondition_ = pc; exprsInDerivedClasses_ += precondition_; }
-
 private:
   NABoolean isFastDelete_;
 
@@ -1532,10 +1535,6 @@ private:
   ConstStringList * csl_;
   // Estimated number of rows accessed by Delete operator.
   CostScalar estRowsAccessed_;
-
-  // predicate evaluated before doing the delete, only delete if TRUE
-  ItemExpr *preconditionTree_;
-  ValueIdSet precondition_;
 };
 
 // -----------------------------------------------------------------------

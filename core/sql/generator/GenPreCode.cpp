@@ -4445,6 +4445,15 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
       generator->setRIinliningForTrafIUD(TRUE);
     }
 
+  if (precondition_.entries() > 0)
+  {
+    ValueIdSet availableValues;
+    getInputValuesFromParentAndChildren(availableValues);  
+    precondition_.
+      replaceVEGExpressions(availableValues,
+			    getGroupAttr()->getCharacteristicInputs());
+  }
+
   markAsPreCodeGenned();
 
   return this;
@@ -4547,13 +4556,6 @@ RelExpr * Delete::preCodeGen(Generator * generator,
   
   if (! GenericUpdate::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;
-
-  ValueIdSet availableValues;
-  getInputValuesFromParentAndChildren(availableValues);
-
-  precondition_.replaceVEGExpressions
-                        (availableValues,
-			 getGroupAttr()->getCharacteristicInputs());
 
   markAsPreCodeGenned();
 

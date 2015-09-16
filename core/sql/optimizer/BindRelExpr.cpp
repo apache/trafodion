@@ -10686,14 +10686,6 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   NATable *naTable = bindWA->getNATable(getTableName());
   if (bindWA->errStatus())
     return NULL;
-
-  if (naTable->getViewText() != NULL)
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-			<< DgString0(" View not allowed.");	    
-    bindWA->setErrStatus();
-    return NULL;
-  }
   
   if ((naTable->isHbaseCellTable()) ||
       (naTable->isHbaseRowTable()))
@@ -11065,13 +11057,6 @@ RelExpr *MergeDelete::bindNode(BindWA *bindWA)
   NATable *naTable = bindWA->getNATable(getTableName());
   if (bindWA->errStatus())
     return NULL;
-  if (naTable->getViewText() != NULL)
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-			<< DgString0(" View not allowed.");	    
-    bindWA->setErrStatus();
-    return NULL;
-  }
 
   bindWA->setMergeStatement(TRUE);  
   RelExpr * boundExpr = Delete::bindNode(bindWA);
@@ -12725,13 +12710,6 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
 
   }
 
-  if (getTableDesc()->hasUniqueIndexes())
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-                        << DgString0(" unique indexes not allowed.");
-    bindWA->setErrStatus();
-    return TRUE;
-  }
   if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback
@@ -12753,11 +12731,10 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
   if ((getInliningInfo().hasInlinedActions()) ||
       (getInliningInfo().isEffectiveGU()))
   {
-    if ((getInliningInfo().hasTriggers()) ||
-        (getInliningInfo().hasRI()))
+    if (getInliningInfo().hasTriggers()) 
     {
       *CmpCommon::diags() << DgSqlCode(-3241)
-                          << DgString0(" RI or Triggers not allowed.");
+                          << DgString0(" Triggers not allowed.");
       bindWA->setErrStatus();
       return TRUE;
     }
@@ -12785,6 +12762,17 @@ RelExpr *LeafInsert::bindNode(BindWA *bindWA)
   #endif
 
   setInUpdateOrInsert(bindWA, this, REL_INSERT);
+
+  if (getPreconditionTree()) {
+    ValueIdSet pc;
+    
+    getPreconditionTree()->convertToValueIdSet(pc, bindWA, ITM_AND);
+    if (bindWA->errStatus())
+      return this;
+    
+    setPreconditionTree(NULL);
+    setPrecondition(pc);
+  }
 
   RelExpr *boundExpr = GenericUpdate::bindNode(bindWA);
   if (bindWA->errStatus()) return boundExpr;

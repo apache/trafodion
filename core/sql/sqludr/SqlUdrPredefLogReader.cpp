@@ -597,7 +597,8 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
 	 strstr(fileName, "ssmp")          == fileName ||
 	 strstr(fileName, "mon")          == fileName ||
    	 strstr(fileName, "pstartd")          == fileName ||
-	 strstr(fileName, "wdg")          == fileName) 
+	 strstr(fileName, "wdg")          == fileName || 
+	 strstr(fileName, "udr"           == fileName) 
 	
 	)
       {
