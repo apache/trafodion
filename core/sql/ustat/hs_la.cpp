@@ -121,7 +121,10 @@ NABoolean HSSqTableDef::objExists(labelDetail detail)
 
 void HSTableDef::setNATable()
   {
-    BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+    //BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE, getIsNativeHbaseOrHive());
+    BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE, 
+                  HSGlobalsClass::isNativeCat(*catalog_));
+
     CorrName corrName(*object_, STMTHEAP, *schema_, *catalog_);
     if (isVolatile())
       corrName.setIsVolatile(TRUE);
@@ -848,6 +851,9 @@ NABoolean HSHiveTableDef::objExists(labelDetail unused)
   if (!naTbl_)
     return FALSE;
 
+  if (!setObjectUID())
+    return FALSE;
+
   tableStats_ = naTbl_->getClusteringIndex()->getHHDFSTableStats();
 
   *ansiName_ = *catalog_;
@@ -922,7 +928,6 @@ NABoolean HSHiveTableDef::objExists(labelDetail unused)
     return FALSE;
   }
 
-  objectUID_ = hiveTblDesc_->tblID_;
   objActualFormat_ = SQLMX;
 
   return TRUE;
@@ -994,12 +999,106 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
 }
 
 //=====================================================
+//
+NAString HSHbaseTableDef::getHistLoc(formatType format) const
+{
+  return HBASE_STATS_CATALOG "." HBASE_STATS_SCHEMA;
+}
+
+static 
+Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, const NAString& nativeTableName)
+{
+   HSLogMan *LM = HSLogMan::Instance();
+   if (LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Creating external table table for %s on demand.",
+                          nativeTableName.data());
+        LM->Log(LM->msg);
+      }
+
+   // do not have to worry about the catalog and schema for the new external table 
+   // here. These names will be determined by the processing logic. 
+   NAString ddl = "CREATE EXTERNAL TABLE ";
+   ddl.append(nativeTableName);
+   ddl.append(" FOR ");
+   ddl.append(catName);
+   ddl.append(".");
+   ddl.append(schName);
+   ddl.append(".");
+   ddl.append(nativeTableName);
+   ddl.append(" ATTRIBUTE ");
+
+   HSTranMan *TM = HSTranMan::Instance();
+   if (TM->InTransaction())
+      ddl.append(" AUDIT");
+   else
+      ddl.append("NO AUDIT");
+
+   Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
+                            "Create external table", NULL);
+
+   if (retcode < 0 && LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Creation of the external table failed.");
+        LM->Log(LM->msg);
+      }
+
+   return retcode;
+}
+
+NABoolean HSTableDef::setObjectUID()
+{
+  objectUID_ = naTbl_->objectUid().get_value();
+
+  if (objectUID_ <= 0 && HSGlobalsClass::isNativeCat(getCatName(EXTERNAL_FORMAT)) ) {
+
+    // If objectUID is not set, it means there is no corresponding
+    // external table created for it. Need to create one here.
+    NAString catName = getCatName(EXTERNAL_FORMAT);
+    NAString schName = getSchemaName(EXTERNAL_FORMAT);
+    NAString objName = getObjectName(EXTERNAL_FORMAT);
+    Lng32 retcode = CreateExternalTable(catName, schName, objName);
+
+    if (retcode != 0)
+      return FALSE;
+
+    setNATable();
+    if (!naTbl_)
+      return FALSE;
+
+    CorrName corrName(getObjectName(), STMTHEAP, getSchemaName(), getCatName());
+
+    if ( !naTbl_->fetchObjectUIDForNativeTable(corrName) )
+      return FALSE;
+
+    objectUID_ = naTbl_->objectUid().get_value();
+
+    HSLogMan *LM = HSLogMan::Instance();
+    if (LM->LogNeeded()) {
+       sprintf(LM->msg, "NATable::fetchObjectUIDForNativeTable() returns %ld\n", objectUID_);
+       LM->Log(LM->msg);
+    }
+  }
+
+  return (objectUID_ > 0);
+}
 
 NABoolean HSHbaseTableDef::objExists(labelDetail unused)
 {
+  HSLogMan *LM = HSLogMan::Instance();
+
+  if (LM->LogNeeded()) {
+     sprintf(LM->msg, "call HSHbaseTableDef::objExists\n");
+     LM->Log(LM->msg);
+  }
+
   setNATable();
   if (!naTbl_)
     return FALSE;
+
+  if (!setObjectUID())
+    return FALSE;
+
 
   *ansiName_ = getCatName(EXTERNAL_FORMAT);
   ansiName_->append(".");
@@ -1018,7 +1117,14 @@ NABoolean HSHbaseTableDef::objExists(labelDetail unused)
   Lng32 retcode_ = getColumnNames();
   HSHandleError(retcode_);
 
-  objectUID_ = naTbl_->objectUid().get_value();
+  if (LM->LogNeeded()) {
+     sprintf(LM->msg, "objectUID_ set to %ld\n", objectUID_);
+     sprintf(LM->msg, "naTbl_->objectUid() is %ld\n", naTbl_->objectUid().get_value());
+     LM->Log(LM->msg);
+           
+  }
+
+
   objActualFormat_ = SQLMX;
 
   return TRUE;

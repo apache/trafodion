@@ -1147,6 +1147,9 @@ NAString getHistogramsTableLocation(
     {
       NAString catName = regularLocation;
       catName.remove(catName.first('.'));
+      if ( HSGlobalsClass::isNativeHbaseCat(catName) )
+        histLoc = HBASE_STATS_CATALOG "." HBASE_STATS_SCHEMA;
+      else
       if (HSGlobalsClass::isHiveCat(catName))
         histLoc = HIVE_STATS_CATALOG "." HIVE_STATS_SCHEMA;
       else

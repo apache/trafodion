@@ -58,6 +58,7 @@ class HSTableDef : public NABasicObject
     HSTableDef(const ComObjectName &tableName,
                const hs_table_type tableType,
                const ComAnsiNameSpace nameSpace);
+
     ~HSTableDef();
     virtual NABoolean objExists(labelDetail detail = MIN_INFO) = 0;
     virtual NABoolean publicSchemaExists() = 0;
@@ -68,6 +69,7 @@ class HSTableDef : public NABasicObject
     NAString getObjectFullName() const;
     NATable* getNATable() const {return naTbl_;}
     void setNATable();
+
     virtual NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const = 0;
     NAString getPrimaryLoc(formatType format = INTERNAL_FORMAT) const;
     virtual NAString getHistLoc(formatType format = INTERNAL_FORMAT) const = 0;
@@ -111,6 +113,9 @@ class HSTableDef : public NABasicObject
 
     // SQ, Hive, or Hbase table?
     virtual tblOrigin getTblOrigin() const = 0;
+
+  protected:
+    NABoolean setObjectUID();
 
   protected:
     NAString           *tableName_;
@@ -350,12 +355,8 @@ class HSHbaseTableDef : public HSTableDef
         HS_ASSERT(FALSE);  // MP only
         return "";
       }
-    // Unlike Hive, for HBase we must put the hist and hist_ints tables in
-    // HBase, so we use same cat/sch as source table.
-    NAString getHistLoc(formatType format = INTERNAL_FORMAT) const
-      {
-        return getPrimaryLoc(format);  // inherited from HSTableDef
-      }
+    NAString getHistLoc(formatType format = INTERNAL_FORMAT) const;
+
     Lng32 getFileType()  const
       {
         return -1;

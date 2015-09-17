@@ -1573,7 +1573,8 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // native HIVE or HBASE objects unless the allowExternalTables flag is set.  
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
-  if ((table) && (table->isExternalTable() && (! bindWA->allowExternalTables())))
+  if ((table) && (table->isExternalTable() && (! bindWA->allowExternalTables()) &&
+                  !table->isHistogramTable()))
     {
       *CmpCommon::diags() << DgSqlCode(-4258)
                           << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());

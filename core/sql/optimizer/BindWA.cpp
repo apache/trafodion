@@ -114,7 +114,7 @@ void BindScope::mergeOuterRefs(const ValueIdSet& other)
 // ***********************************************************************
 // BindWA()
 // ***********************************************************************
-BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
+BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABoolean allowExtTables)
      : schemaDB_(schemaDB)
      , currentCmpContext_(cmpContext)
      , inputVars_(cmpContext ? cmpContext->statementHeap() : NULL)
@@ -131,7 +131,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
   //     , inRIMaint_(FALSE)
      , inViewWithCheckOption_(NULL)
      , viewCount_(0)
-     , allowExternalTables_(FALSE)
+     , allowExternalTables_(allowExtTables)
      , errFlag_(FALSE)
      , uniqueNum_(0)
      , uniqueIudNum_(0) //++Triggers,

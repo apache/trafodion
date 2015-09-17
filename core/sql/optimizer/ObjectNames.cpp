@@ -670,6 +670,7 @@ NABoolean QualifiedName::isSeabasePrivMgrMD() const
     (getCatalogName(), getSchemaName());
 }
 
+
 // -----------------------------------------------------------------------
 // Methods for class CorrName
 // -----------------------------------------------------------------------
@@ -1384,6 +1385,17 @@ void QualifiedName::print(FILE* ofd, const char* indent, const char* title) cons
   if (strcmp(title,"")) fprintf(ofd,"\n");
 #endif
 }
+
+NABoolean QualifiedName::isHistograms() const
+{
+   return (getObjectName() == "SB_HISTOGRAMS");
+}
+
+NABoolean QualifiedName::isHistogramIntervals() const
+{
+   return (getObjectName() == "SB_HISTOGRAM_INTERVALS");
+}
+
 
 void ExtendedQualName::print(FILE* ofd, const char* indent, const char* title) const
 {
