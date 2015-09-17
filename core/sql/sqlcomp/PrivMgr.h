@@ -67,6 +67,12 @@ class PrivMgr
                             UNKNOWN_TABLE               = 37
                           };
 
+    enum PrivCommand { GRANT_OBJECT           = 30,
+                       REVOKE_OBJECT_RESTRICT = 31,
+                       REVOKE_OBJECT_CASCADE  = 32,
+                       UNKNOWN_PRIV_COMMAND   = 33
+                     };
+
     // -------------------------------------------------------------------
     // Static functions:
     // -------------------------------------------------------------------
@@ -142,6 +148,11 @@ class PrivMgr
        std::vector<PrivClass> privClasses);
     void resetFlags();
     void setFlags();
+    void log(
+      const std::string filename,
+      const std::string message,
+      const int_32 index);
+
 
   protected:
   // Returns status of privilege manager metadata

@@ -460,6 +460,7 @@ public:
 
    PrivStatus getPrivileges(
       const int64_t objectUID,
+      ComObjectType objectType,
       const int32_t granteeUID,
       PrivMgrUserPrivs &userPrivileges,
       std::vector <ComSecurityKey *>* secKeySet = NULL);

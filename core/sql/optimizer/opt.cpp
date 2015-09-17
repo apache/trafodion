@@ -998,12 +998,18 @@ NAString Context::getRequirementsString() const
 {
   NAString IPPString("", CmpCommon::statementHeap());
 
-  char thisptr[7 + sizeof(void *)];
+  // will receive the string "ptr=%p, ", where %p is a hex address
+  // example:  "ptr=0x7fffffff23db, "
+  // so we need 4 bytes for "ptr=", 2 bytes for the "0x", up to
+  // 2 * sizeof(void *) bytes for the hex (each nibble goes to
+  // one ASCII character), 2 bytes for the ", " and 1 byte for
+  // the trailing null 
+  char thisptr[4 + 2 + 2*sizeof(void *) + 2 + 1];
 
   if ( CmpCommon::getDefault( NSK_DBG_PRINT_CONTEXT_POINTER ) == DF_ON )
   {
     sprintf(thisptr, "ptr=%p, ",this);
-    thisptr[6 + sizeof(void *)]='\0';
+    thisptr[sizeof(thisptr)-1]='\0';  // shouldn't be needed, but be safe
   }
   else
     thisptr[0]='\0';

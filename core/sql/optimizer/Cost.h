@@ -535,7 +535,7 @@ public:
   void print(FILE * f = stdout,
 	     const char * prefix = "", const char * suffix = "") const;
 
-  void display() const                                        { print(); }
+  void display() const;
 //<pb>
 private:
 

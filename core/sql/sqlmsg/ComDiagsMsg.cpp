@@ -421,7 +421,6 @@ static const char *returnClassOrigin(Lng32 theSQLCODE, size_t offset)
 {
   char sqlstate[6];
   ComSQLSTATE(theSQLCODE,sqlstate);
-
   // Classes and subclasses starting with letters '0' ... '4', 'A' ... 'H' are
   // defined by ISO/ANSI SQL92. See subclause 18.1, GR 3b) and subclause 22.1.
 
@@ -429,7 +428,7 @@ static const char *returnClassOrigin(Lng32 theSQLCODE, size_t offset)
       (sqlstate[offset] >= 'A' && sqlstate[offset] <= 'H'))
     return "ISO 9075";
   else
-    return COPYRIGHT_XTOP_PRODNAME_H;
+    return (const char *)COPYRIGHT_XTOP_PRODNAME_H;
 }
 
 const char *ComClassOrigin(Lng32 theSQLCODE)

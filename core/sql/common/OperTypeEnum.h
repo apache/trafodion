@@ -1009,7 +1009,6 @@ enum OperatorTypeEnum {
                         // of class ElemDDLFileAttr.
                         ELM_FILE_ATTR_LIST,
                         ELM_PARTN_ATTR_LIST,
-                        ELM_FILE_ATTR_LOCK_LENGTH_ELEM,
                         ELM_FILE_ATTR_MAX_SIZE_ELEM,
                         ELM_FILE_ATTR_NO_LABEL_UPDATE_ELEM,
                         ELM_FILE_ATTR_OWNER_ELEM,

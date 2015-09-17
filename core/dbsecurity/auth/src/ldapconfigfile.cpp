@@ -940,15 +940,15 @@ char inBuf[300];
    while (fgets(inBuf,sizeof(inBuf),fp) != NULL)
    {
       lineNumber++;
-      // Skip comment lines
-      if (inBuf[0] == '#' || strlen(inBuf) < 3)  
-         continue;
-      
       // Skip over leading blanks   
       char *ptr = inBuf;
       
       while (*ptr == ' ')
          ptr++;
+    
+      // Skip comment lines
+      if (ptr[0] == '#' || strlen(ptr) < 3)  
+         continue;
       
       // Let's parse that line!   
       if (readingDefaultLines)

@@ -21,7 +21,8 @@
 // @@@ END COPYRIGHT @@@
 //*****************************************************************************
 #include "PrivMgrComponentPrivileges.h"
-  
+
+#include "PrivMgrDefs.h"  
 #include "PrivMgrMD.h"
 #include "PrivMgrMDTable.h"
 #include "PrivMgrComponents.h"
@@ -44,8 +45,22 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
+static bool isSQLDMLPriv(
+   const int64_t componentUID,
+   const std::string operationCode);
+
 namespace ComponentPrivileges 
 {
+
+class DMLPrivData
+{
+public:
+   int32_t                granteeID_;
+   std::vector<int32_t>   roleIDs_;
+   PrivObjectBitmap       DMLBitmap_;
+   bool                   managePrivileges_;
+};
+
 // *****************************************************************************
 // * Class:        MyRow
 // * Description:  This class represents a row in the COMPONENT_PRIVILEGES table.
@@ -109,7 +124,12 @@ public:
     
    inline void clear() { lastRowRead_.clear(); };
       
-   
+   PrivStatus fetchDMLPrivInfo(
+      const int32_t                granteeID,
+      const std::vector<int32_t> & roleIDs,
+      PrivObjectBitmap           & DMLBitmap,
+      bool                       & hasManagePrivileges);
+      
    PrivStatus fetchOwner(
       const int64_t componentUID,
       const std::string & operationCode,
@@ -138,7 +158,7 @@ private:
    MyTable();
    
    MyRow lastRowRead_;
-
+   DMLPrivData userDMLPrivs_;
 };
 }//End namespace ComponentPrivileges
 using namespace ComponentPrivileges;
@@ -531,6 +551,52 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 }
 //***************** End of PrivMgrComponentPrivileges::getCount ****************
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrComponentPrivileges::getSQLDMLPrivileges                 *
+// *                                                                           *
+// *    Returns the SQL_OPERATION privileges associated with DML privileges    *
+// * for the specified authorization ID.                                       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <granteeID>                     const int32_t                   In       *
+// *    is the authorization ID of the grantee.                                *
+// *                                                                           *
+// *  <roleIDs>                       const std::vector<int32_t> &    In       *
+// *    is a list of roleIDs granted to the grantee.                           *
+// *                                                                           *
+// *  <DMLBitmap>                     PrivObjectBitmap &              In       *
+// *    passes back the system-level DML privileges granted to the grantee.    *
+// *                                                                           *
+// *  <hasManagePrivileges>           bool &                          In       *
+// *    passes back if the user has MANAGE_PRIVILEGES authority.               *
+// *                                                                           *
+// *****************************************************************************
+void PrivMgrComponentPrivileges::getSQLDMLPrivileges(
+   const int32_t                granteeID,
+   const std::vector<int32_t> & roleIDs,
+   PrivObjectBitmap           & DMLBitmap,
+   bool                       & hasManagePrivileges)
+
+{
+                                   
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
+PrivStatus privStatus = myTable.fetchDMLPrivInfo(granteeID,roleIDs,DMLBitmap,
+                                                 hasManagePrivileges);
+
+   if (privStatus != STATUS_GOOD)
+      pDiags_->rewind(diagsMark);
+
+}
+//************ End of PrivMgrComponentPrivileges::getSQLDMLPrivileges **********
 
 
    
@@ -1443,6 +1509,15 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
       
 // *****************************************************************************
 // *                                                                           *
+// *   Expected NOTFOUND, but if empty list returned, return no error.         *
+// *                                                                           *
+// *****************************************************************************
+
+   if (rows.size() == 0)
+      return STATUS_GOOD;
+
+// *****************************************************************************
+// *                                                                           *
 // *   If there are grants and drop behavior is RESTRICT, return an error.     *
 // *                                                                           *
 // *****************************************************************************
@@ -1655,6 +1730,10 @@ PrivStatus privStatus = STATUS_GOOD;
       {
          return STATUS_ERROR;
       }
+      if (isSQLDMLPriv(componentUID,operations[oc]))
+      {   //TODO: QI only supports revoke from objects and users (roles)
+         // Notify QI
+      }
    }
     
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -1716,11 +1795,207 @@ bool someNotRevoked = false;
   
 }  
 //************* End of PrivMgrComponentPrivileges::revokePrivilege *************
-  
+
+// *****************************************************************************
+//    Private functions
+// *****************************************************************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrComponentPrivileges::isSQLDMLPriv                        *
+// *                                                                           *
+// *     This function determines if a component-level privilege is a DML      *
+// *  privilege in the SQL_OPERATIONS component.                               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentUID>                  const int64_t                   In       *
+// *    is the unique ID associated with the component.                        *
+// *                                                                           *
+// *  <operationCode>                 const std::string &             In       *
+// *    is the two character code associated with the component operation.     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: This is a SQL_OPERATION DML privilege.                              *
+// * false: This is NOT a SQL_OPERATION DML privilege.                         *
+// *                                                                           *
+// *****************************************************************************
+static bool isSQLDMLPriv(
+   const int64_t componentUID,
+   const std::string operationCode)
+
+{
+
+   if (componentUID != SQL_OPERATIONS_COMPONENT_UID)
+      return false;
+      
+   for (SQLOperation operation = SQLOperation::FIRST_DML_PRIV;
+        static_cast<int>(operation) <= static_cast<int>(SQLOperation::LAST_DML_PRIV); 
+        operation = static_cast<SQLOperation>(static_cast<int>(operation) + 1))
+   {
+      if (PrivMgr::getSQLOperationCode(operation) == operationCode)
+         return true;
+   }
+
+   return false;
+
+}  
+//***************************** End of isSQLDMLPriv ****************************
+
+
 
 // *****************************************************************************
 //    MyTable methods
 // *****************************************************************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: MyTable::fetchDMLPrivInfo                                       *
+// *                                                                           *
+// *    Reads from the COMPONENT_PRIVILEGES table and returns the              * 
+// *    SQL_OPERATIONS privileges associated with DML privileges.              *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <granteeID>                     int32_t &                       In       *
+// *    is the authID whose system-level DML privileges are being fetched.     *
+// *                                                                           *
+// *  <roleIDs>                       const std::vector<int32_t> &    In       *
+// *    is a list of roleIDs granted to the grantee.                           *
+// *                                                                           *
+// *  <DMLBitmap>                     PrivObjectBitmap &              In       *
+// *    passes back the system-level DML privileges granted to the grantee.    *
+// *                                                                           *
+// *  <hasManagePrivileges>           bool &                          In       *
+// *    passes back if the user has MANAGE_PRIVILEGES authority.               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Data returned.                                               *
+// *           *: Error encountered.                                           *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus MyTable::fetchDMLPrivInfo(
+   const int32_t                granteeID,
+   const std::vector<int32_t> & roleIDs,
+   PrivObjectBitmap           & DMLBitmap,
+   bool                       & hasManagePrivileges)
+   
+{
+
+// Check the last grantee data read before reading metadata.
+
+   if (userDMLPrivs_.granteeID_ == granteeID && 
+       userDMLPrivs_.roleIDs_ == roleIDs)
+   {
+      DMLBitmap = userDMLPrivs_.DMLBitmap_;
+      hasManagePrivileges = userDMLPrivs_.managePrivileges_;
+      return STATUS_GOOD;
+   } 
+      
+// Not found in cache, look for the priv info in metadata.
+// ??? - is the component_uid for SQL_OPERATIONS always going to be 1?
+std::string whereClause("WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN ('");
+
+   for (SQLOperation operation = SQLOperation::FIRST_DML_PRIV;
+        static_cast<int>(operation) <= static_cast<int>(SQLOperation::LAST_DML_PRIV); 
+        operation = static_cast<SQLOperation>(static_cast<int>(operation) + 1))
+   {
+      whereClause += PrivMgr::getSQLOperationCode(operation);
+      whereClause += "','";
+   }
+
+   whereClause += PrivMgr::getSQLOperationCode(SQLOperation::MANAGE_PRIVILEGES);
+   whereClause += "') AND GRANTEE_ID IN (";
+   whereClause += PrivMgr::authIDToString(granteeID);
+   whereClause += ",";
+   for (size_t ri = 0; ri < roleIDs.size(); ri++)
+   {
+      whereClause += PrivMgr::authIDToString(roleIDs[ri]);
+      whereClause += ",";
+   }
+   whereClause += PrivMgr::authIDToString(PUBLIC_AUTH_ID);
+   whereClause += ")";
+   
+std::string orderByClause;
+   
+std::vector<MyRow> rows;
+
+PrivStatus privStatus = selectAllWhere(whereClause,orderByClause,rows);
+
+   if (privStatus != STATUS_GOOD && privStatus != STATUS_WARNING)
+      return privStatus;
+   
+// Initialize cache.
+   userDMLPrivs_.granteeID_ = granteeID;
+   userDMLPrivs_.roleIDs_ = roleIDs;
+   userDMLPrivs_.managePrivileges_ = false;
+   userDMLPrivs_.DMLBitmap_.reset();  
+    
+   for (size_t r = 0; r < rows.size(); r++)
+   {
+      MyRow &row = rows[r];
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::MANAGE_PRIVILEGES))
+      {
+         userDMLPrivs_.managePrivileges_ = true;
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_DELETE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(DELETE_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_INSERT))
+      {
+         userDMLPrivs_.DMLBitmap_.set(INSERT_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_REFERENCES))
+      {
+         userDMLPrivs_.DMLBitmap_.set(REFERENCES_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_SELECT))
+      {
+         userDMLPrivs_.DMLBitmap_.set(SELECT_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_UPDATE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(UPDATE_PRIV);
+         continue;
+      }   
+      
+      if (row.operationCode_ == PrivMgr::getSQLOperationCode(SQLOperation::DML_USAGE))
+      {
+         userDMLPrivs_.DMLBitmap_.set(USAGE_PRIV);
+         continue;
+      }   
+   }
+   
+   hasManagePrivileges = userDMLPrivs_.managePrivileges_;
+   DMLBitmap = userDMLPrivs_.DMLBitmap_;   
+   
+   return STATUS_GOOD;
+
+}   
+//******************* End of MyTable::fetchDMLPrivInfo *************************
+
 
 
 // *****************************************************************************
@@ -1805,7 +2080,8 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
    return STATUS_GOOD;
 
 }   
-//********************** End of MyTable::fetchByName ***************************
+//*********************** End of MyTable::fetchOwner ***************************
+
 
 
 
@@ -1899,6 +2175,9 @@ std::string selectStmt ("SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANT
 Queue * tableQueue = NULL;
 
 PrivStatus privStatus = executeFetchAll(selectStmt,tableQueue);
+
+   if (privStatus != STATUS_GOOD || privStatus != STATUS_WARNING)
+      return privStatus;
 
    tableQueue->position();
    for (int idx = 0; idx < tableQueue->numEntries(); idx++)

@@ -236,6 +236,15 @@ else
 fi
 
 source $TRAF_CONFIG
+
+#Need to set CLUSTERNAME for DCS
+if [[ $node_count -ne 1 ]]; then
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/CLUSTERNAME\=/d' $TRAF_CONFIG
+   echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+   source $TRAF_CONFIG
+fi
 if [ $? -ne 0 ]; then
    echo "***ERROR: unable to source $TRAF_CONFIG"
    exit -1
@@ -413,8 +422,15 @@ if [[ -n "$USER_CONFIG" ]]; then
          tar -xzf $TRAF_BUILD $install_features_path
          source $install_features_path
          echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
+          if [[ -z $CDH_5_4_SUPPORT ]]; then
+             echo "export CDH_5_4_SUPPORT=\"N\"" >> $LOCAL_TRAF_CONFIG
+          else
+             echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
+          fi
       else
          CDH_5_3_HDP_2_2_SUPPORT="N"
+         CDH_5_4_SUPPORT="N"
+         echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $TRAF_CONFIG
          echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
       fi
    fi
@@ -449,10 +465,18 @@ do
       fi
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
          if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
-            if [[ $supportedHBase -eq "0" ]]; then
-               echo "***ERROR: HBase installed must be 0.98.1 on node $node"
-               exit -1
+            if [[ $CDH_5_4_SUPPORT == "Y" ]]; then
+               supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 1.0.0 on node $node"
+                  exit -1
+               fi
+            else 
+               supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 0.98.1 on node $node"
+                  exit -1
+               fi
             fi
          else
             supportedHBase=$(echo $version | grep "0.98.6" | wc -l)
@@ -461,11 +485,6 @@ do
                exit -1
             fi
          fi
-      fi
-      hbaseVersion=$(echo "${version#*.}"| cut -f1 -d".")
-      if [[ $hbaseVersion -lt "98" ]]; then
-         echo "***ERROR: HBase installed must be 0.98"
-         exit -1
       fi
       hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
       break
@@ -574,9 +593,9 @@ echo "******************************"
 echo
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
-
-   sed -i -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc   
-   sed -i -e "s@export MY_NODES=.*@export MY_NODES=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc
+   sudo chmod 777 $HOME_DIR/$TRAF_USER/.bashrc
+   sudo sed -i -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" $HOME_DIR/$TRAF_USER/.bashrc   
+   sudo sed -i -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" $HOME_DIR/$TRAF_USER/.bashrc
    
    for node in $NODE_LIST
    do
@@ -590,6 +609,13 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
             exit -1
          else
             echo "***INFO: Trafodion environment setup completed" | tee -a $INSTALL_LOG
+         fi
+      else
+         echo "***INFO: Installing required RPM packages" | tee -a $INSTALL_LOG
+         $LOCAL_WORKDIR/traf_package_setup | tee -a $INSTALL_LOG
+         if [ $? != 0 ]; then
+            echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
+            exit -1
          fi
       fi
    done  
@@ -640,15 +666,15 @@ do
    redhatSystem=$(ssh -q -n $node '/sbin/sysctl net.ipv4.ip_local_reserved_ports | wc -l')
    if [[ "$redhatSystem" -ge "1" ]]; then
       reserved_ports=$(ssh -q -n $node '/sbin/sysctl net.ipv4.ip_local_reserved_ports' | awk -F'=' '{print $2;}' | sed 's/^ //')
-      ssh -q -n $node 'sudo chmod 777 /etc/sysctl.conf'
-      ssh -q -n $node 'sudo sed -i '/net.ipv4.ip_local_reserved_ports""\=*/d' /etc/sysctl.conf'
+      ssh -q -n $node 'sudo chmod 777 /etc/sysctl.conf' 2>&1 > /dev/null
+      ssh -q -n $node 'sudo sed -i '/net.ipv4.ip_local_reserved_ports""\=*/d' /etc/sysctl.conf' 2>&1 > /dev/null
 
    if [[ -z "${reserved_ports}" ]]; then
-      ssh -q -n $node "sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf"
+      ssh -q -n $node "sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf" 2>&1 > /dev/null
    else
-      ssh -q -n $node "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf"
+      ssh -q -n $node "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf" 2>&1 > /dev/null
    fi
-   ssh -q -n $node 'sudo chmod 644 /etc/sysctl.conf'
+   ssh -q -n $node 'sudo chmod 644 /etc/sysctl.conf' 2>&1 > /dev/null
    ssh -q -n $node 'sudo /sbin/sysctl -p' 2>&1 > /dev/null
    else
       echo "***ERROR: Unable to reserve DCS ports (${trafodion_ports})."
@@ -658,7 +684,7 @@ done
 
 #Set Max kernel pid 
 
-$TRAF_PDSH sudo sysctl -w kernel.pid_max=65535
+$TRAF_PDSH sudo sysctl -w kernel.pid_max=65535 2>&1 > /dev/null
 
 
 #Create install directory

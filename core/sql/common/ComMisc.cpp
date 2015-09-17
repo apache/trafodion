@@ -40,6 +40,7 @@
 #include "ComASSERT.h"
 #include "ComMisc.h"
 #include "ComDistribution.h" // enumToLiteral, literalToEnum, literalAndEnumStruct
+#include "CmpSeabaseDDL.h"
 
 // define the enum-to-literal function
 #define ComDefXLateE2L(E2L,eType,array) void E2L (const eType e, NAString &l) \
@@ -99,17 +100,74 @@ NABoolean ComIsTrafodionReservedSchemaName(
   return FALSE;
 }
 
-// schema names of pattern "_HV ... _" and "_HB_ ... _" are reserved to store
+// schema names of pattern "_HV_ ... _" and "_HB_ ... _" are reserved to store
 // external hive and hbase tables
 NABoolean ComIsTrafodionExternalSchemaName (
                                     const NAString &schName)
 {
   Int32 len (schName.length());
+
+  // check for HIVE
   Int32 prefixLen = sizeof(HIVE_EXT_SCHEMA_PREFIX);
   if (len > prefixLen && 
-      (schName(0,prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX || 
-       schName(0,prefixLen-1) == HBASE_EXT_SCHEMA_PREFIX) && 
-      schName(len-1) == '_' )
+     (schName(0,prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX && 
+      schName(len-1) == '_' ))
     return TRUE;
+
+  // check for HBASE
+  prefixLen = sizeof(HBASE_EXT_SCHEMA_PREFIX);
+  if (len > prefixLen && 
+     (schName(0,prefixLen-1) == HBASE_EXT_SCHEMA_PREFIX && 
+      schName(len-1) == '_' ))
+    return TRUE;
+
   return FALSE;
 }
+
+// ----------------------------------------------------------------------------
+// function: ComConvertNativeNameToTrafName
+//
+// this function converts the native HIVE or HBASE object name into its
+// Trafodion external name format.
+//
+// params:
+//    catalogName - catalog name to identify HBASE or HIVE native table
+//    schemaName - external name of the HBASE or HIVE schema
+//    objectName - external name of the HBASE of HIVE table
+//
+// If it is not HIVE or HBASE, just return the qualified name
+// ----------------------------------------------------------------------------
+NAString ComConvertNativeNameToTrafName ( 
+  const NAString &catalogName,
+  const NAString &schemaName,
+  const NAString &objectName)
+{
+  // generate new schema name 
+  NAString tempSchemaName; 
+  if (catalogName == HIVE_SYSTEM_CATALOG)
+    tempSchemaName += HIVE_EXT_SCHEMA_PREFIX;
+  else if(catalogName == HBASE_SYSTEM_CATALOG)
+    tempSchemaName += HBASE_EXT_SCHEMA_PREFIX;
+  else
+    return catalogName + NAString(".") +
+           schemaName + NAString(".") +
+           objectName; 
+
+  ComAnsiNamePart externalAnsiName(schemaName, ComAnsiNamePart::EXTERNAL_FORMAT);
+  tempSchemaName += externalAnsiName.getInternalName();
+  tempSchemaName.append ("_");
+
+  // Catalog name is "TRAFODION"
+  NAString convertedName (CmpSeabaseDDL::getSystemCatalogStatic());
+  convertedName += ".";
+
+  // append transformed schema name, convert internal name to external format
+  ComAnsiNamePart internalAnsiName(tempSchemaName, ComAnsiNamePart::INTERNAL_FORMAT);
+  convertedName += internalAnsiName.getExternalName();
+
+  // object  name is appended without change
+  convertedName += NAString(".") + objectName;
+
+  return convertedName;
+}
+

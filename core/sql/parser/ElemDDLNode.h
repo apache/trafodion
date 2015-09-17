@@ -100,7 +100,6 @@ class ElemDDLFileAttrDeallocate;
 class ElemDDLFileAttrICompress;
 class ElemDDLFileAttrList;
 class ElemDDLPartnAttrList;
-class ElemDDLFileAttrLockLength;
 class ElemDDLFileAttrMaxSize;
 class ElemDDLFileAttrExtents;
 class ElemDDLFileAttrMaxExtents;
@@ -419,7 +418,6 @@ public:
   virtual ElemDDLFileAttrICompress      * castToElemDDLFileAttrICompress();
   virtual ElemDDLFileAttrList           * castToElemDDLFileAttrList();
   virtual ElemDDLPartnAttrList          * castToElemDDLPartnAttrList();
-  virtual ElemDDLFileAttrLockLength     * castToElemDDLFileAttrLockLength();
   virtual ElemDDLFileAttrMaxSize        * castToElemDDLFileAttrMaxSize();
   virtual ElemDDLFileAttrExtents        * castToElemDDLFileAttrExtents();
   virtual ElemDDLFileAttrMaxExtents     * castToElemDDLFileAttrMaxExtents();

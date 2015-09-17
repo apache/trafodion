@@ -6470,10 +6470,6 @@ StmtDDLCreateMV::checkFileAttribute(ElemDDLFileAttr * pFileAttr)
 		*SqlParser_Diags << DgSqlCode(-12047); 
 		break;
 
-	case ELM_FILE_ATTR_LOCK_LENGTH_ELEM    :
-		*SqlParser_Diags << DgSqlCode(-12048); 
-		break;
-
 	case ELM_FILE_ATTR_AUDIT_ELEM :
 		*SqlParser_Diags << DgSqlCode(-12050); 
 		break;

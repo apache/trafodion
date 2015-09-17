@@ -1603,8 +1603,9 @@ int ldapderef = LDAP_DEREF_ALWAYS;
    }
 // LCOV_EXCL_STOP  
 
-   // startTLS
-   if (self.host_->LDAPConfig_->SSL_Level == YES_TLS)
+   // Setup certificate file
+   if (self.host_->LDAPConfig_->SSL_Level == YES_TLS || 
+       self.host_->LDAPConfig_->SSL_Level == YES_SSL)
    {
       int demand = LDAP_OPT_X_TLS_DEMAND;
       rc = ldap_set_option(ld,LDAP_OPT_X_TLS_REQUIRE_CERT,&demand);
@@ -1629,7 +1630,11 @@ int ldapderef = LDAP_DEREF_ALWAYS;
          LOG_AUTH_EVENT(DBS_NO_LDAP_SEARCH_CONNECTION,emsMsg); 
          return LD_STATUS_RESOURCE_FAILURE;
       }
-      
+   }   
+   
+   // startTLS
+   if (self.host_->LDAPConfig_->SSL_Level == YES_TLS)
+   {
       rc = ldap_start_tls_s (ld, NULL, NULL);
       if (rc != LDAP_SUCCESS)
       {

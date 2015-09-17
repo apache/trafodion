@@ -21,7 +21,6 @@
 --
 --   create external table
 --   drop external table
---   granting/revoking privileges on hive table
 --
 -- When local hadoop is executed, a set of hive tables in the hive default
 -- schema are created.  This test assumes that the following hive tables 
@@ -30,14 +29,15 @@
 --     item
 --     promotion
 --
--- This test also requires several additional tests in different hive schemas
 -- ============================================================================
 
 obey TEST009(clean_up);
 log LOG009 clear;
 obey TEST009(set_up);
 obey TEST009(create_db);
-obey TEST009(tests);
+obey TEST009(test_hive1);
+obey TEST009(test_hive2);
+obey TEST009(test_hbase);
 log;
 obey TEST009(clean_up);
 exit;
@@ -45,32 +45,43 @@ exit;
 ?section clean_up
 
 -- remove schemas from Trafodion
--- for now, parserflags need to be set to drop hv schemas:
-set parserflags 131072;
 drop schema if exists "_HV_HIVE_" cascade;
 drop schema if exists "_HV_SCH_T009_" cascade;
+drop schema if exists hive_t009 cascade;
 
 -- remove data from hdfs
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t2/*;
 
+-- drop hbase tables
+drop schema if exists "_HB__ROW__" cascade;
+drop schema if exists "_HB__CELL__" cascade;
+
+-- remove table from hbase
+drop hbase table "baseball";
 
 ?section create_db
 
 -- The version of hive installed does not support special characters
 -- TDB - when hive is upgraded to a new version, add tests where
 --   the hive schema contains special characters
-sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql;
+sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql &> $REGRRUNDIR/LOG009_a.hive.log;
+sh regrhbase.ksh $REGRTSTDIR/TEST009_create_hbase_objects.hbase &> $REGRRUNDIR/LOG009_create_hbase_tables.log ;
 
--- make sure no external hive schema exist in Trafodion
+-- make sure no external schemas exist in Trafodion
 execute get_hv_schemas;
+execute get_hb_schemas;
 
 ?section set_up
 prepare get_hv_schemas from
 select schema_name from "_MD_".objects
 where schema_name like '_HV_%' and object_type = 'PS';
 
-?section tests
+prepare get_hb_schemas from
+select schema_name from "_MD_".objects
+where schema_name like '_HB_%' and object_type = 'PS';
+
+?section test_hive1
 -- create external tables for precreated tables
 create external table customer for hive.hive.customer;
 create external table item for hive.hive.item;
@@ -99,8 +110,87 @@ select count(*) from hive.hive.promotion;
 select * from hive.sch_t009.t009t1;
 select * from hive.sch_t009.t009t2;
 
--- accesses to the external name should be prohibited
+-- fails since accesses to the external name are prohibited
 select * from trafodion."_HV_SCH_T009_".t009t1;
+
+set schema "_HV_HIVE_";
+
+-- all these creates should fail, they are not supported yet
+create table hive_customer like hive.hive.customer;
+create table newtable1 like hive.hive.customer;
+create table newtable2 like customer;
+create table newtable3 (a int);
+get tables;
+
+-- test creates with a different default schema
+create schema hive_t009;
+set schema hive_t009;
+
+-- these creates fail
+create table hive_customer like hive.hive.customer;
+create table newtable1 like hive.hive.customer;
+create external table seabase.customer like hive.hive.customer;
+create external table customer1 like hive.hive.customer;
+create table t009t1 like "_HV_SCH_T009_".t009t1;
+create table t009t2 as select * from "_HV_SCH_T009_".t009t2;
+
+-- this create succeeds
+create table t009t1 as select * from hive.sch_t009.t009t1;
+
+get tables;
+drop table t009t1;
 
 drop external table "_HV_HIVE_".customer;
 drop external table item for hive.hive.item;
+
+?section test_hive2
+-- drop data from the hive table and recreate with 4 columns
+-- this causes the external table to be invalid
+
+-- cleanup data from the old table, and create/load data with additional column
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
+sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_b.hive.sql &> $REGRRUNDIR/LOG009_b.hive.log;;
+
+-- should fail - column mismatch
+select count(*) from hive.sch_t009.t009t1;
+
+sh sqlci -i "TEST009(select_stmts)";
+
+-- drop and recreate external table
+select * from table(natablecacheentries('user','local')) ;
+drop external table t009t1 for hive.sch_t009.t009t1;
+get tables in schema "_HV_SCH_T009_";
+select * from table(natablecacheentries('user','local')) ;
+create external table t009t1 for hive.sch_t009.t009t1;
+
+-- select should now succeed
+select count(*) from hive.sch_t009.t009t1;
+
+?section select_stmts
+log LOG009;
+select * from hive.sch_t009.t009t1;
+select * from hive.sch_t009.t009t2;
+
+?section test_hbase
+-- create external tables for precreated tables
+create external table "baseball" for hbase."_ROW_"."baseball";
+create external table "baseball" for hbase."_CELL_"."baseball";
+
+-- should create schemas called "_HB__ROW__" and "_HB__CELL__"
+execute get_hb_schemas;
+
+-- Verify tables were created
+showddl trafodion."_HB__ROW__"."baseball";
+showddl trafodion."_HB__CELL__"."baseball";
+
+select count(*) from hbase."_ROW_"."baseball";
+select count(*) from hbase."_CELL_"."baseball";
+
+select left(row_id, 10) as row_id, left(column_display(column_details, ('teams:team_number', 'games:visitor_team', 'games:game_time')), 100) as cols from hbase."_ROW_"."baseball";
+
+-- fails since accesses to the external name are prohibited
+select * from trafodion."_HB__ROW__"."baseball";
+
+drop external table trafodion."_HB__ROW__"."baseball";
+drop external table "baseball" for hbase."_CELL_"."baseball";
+

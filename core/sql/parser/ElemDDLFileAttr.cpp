@@ -758,38 +758,6 @@ NAString ElemDDLFileAttrICompress::getSyntax() const
 
 
 // -----------------------------------------------------------------------
-// methods for class ElemDDLFileAttrLockLength
-// -----------------------------------------------------------------------
-
-// virtual destructor
-ElemDDLFileAttrLockLength::~ElemDDLFileAttrLockLength()
-{
-}
-
-// cast
-ElemDDLFileAttrLockLength *
-ElemDDLFileAttrLockLength::castToElemDDLFileAttrLockLength()
-{
-  return this;
-}
-
-// trace
-
-const NAString
-ElemDDLFileAttrLockLength::getText() const
-{
-  return "ElemDDLFileAttrLockLength";
-}
-
-const NAString
-ElemDDLFileAttrLockLength::displayLabel1() const
-{
-  char buffer[80];
-  sprintf(buffer, "%d", getLockLength());
-  return NAString("Lock length: ") + NAString(buffer);
-}
-
-// -----------------------------------------------------------------------
 // methods for class ElemDDLFileAttrRangeLog
 // -----------------------------------------------------------------------
 

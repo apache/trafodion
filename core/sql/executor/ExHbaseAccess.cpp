@@ -451,6 +451,7 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   colVal_.val = 0;
   colVal_.len = 0;
   asyncCompleteRetryCount_ = 0;
+  asyncOperation_ = FALSE;
   asyncOperationTimeout_ = 2;
   resultArray_ = NULL;
 }

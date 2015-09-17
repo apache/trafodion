@@ -112,8 +112,16 @@ fi
 
 
 #Copy hbase-site.xml file
+ssh -q -n $AMBARI_HOST sudo cp /etc/hbase/conf/hbase-site.xml $HOME
+ssh -q -n $AMBARI_HOST sudo chown $(whoami).$(whoami) $HOME/hbase-site.xml
+ssh -q -n $AMBARI_HOST sudo chmod 777 $HOME/hbase-site.xml
 
-scp -q $(whoami)@$AMBARI_HOST:/etc/hbase/conf/hbase-site.xml $TRAF_WORKDIR
+scp -q $(whoami)@$AMBARI_HOST:$HOME/hbase-site.xml $HOME
+if [[ $? -gt 1 ]]; then
+   echo "***ERROR: Unable to find /etc/hbase/conf/hbase-site.xml file on $CDH_START_NODE or unable to copy."
+   exit -1
+fi
+sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
 #=====================================

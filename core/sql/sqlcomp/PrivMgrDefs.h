@@ -46,6 +46,30 @@ enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_ERROR     = 24
                 };
 
+inline const char * privStatusEnumToLit(PrivStatus privStatus)
+{
+  std::string result;
+  switch (privStatus)
+  {
+    case STATUS_GOOD:
+      result = "GOOD";
+      break;
+    case STATUS_WARNING:
+      result = "WARNING";
+      break;
+    case STATUS_NOTFOUND:
+      result = "NOTFOUND";
+      break;
+    case STATUS_ERROR:
+      result = "ERROR";
+      break;
+    default:
+      result = "UNKNOWN";
+  }
+  return result.c_str();
+}
+  
+
 enum {SQL_OPERATIONS_COMPONENT_UID = 1};
 #define SQL_OPERATION_NAME "SQL_OPERATIONS"
 
@@ -157,6 +181,13 @@ enum class SQLOperation {
    CREATE_TABLE,
    CREATE_TRIGGER,
    CREATE_VIEW,
+   DML_DELETE,
+   DML_EXECUTE,
+   DML_INSERT,
+   DML_REFERENCES,
+   DML_SELECT,
+   DML_UPDATE,
+   DML_USAGE,
    DROP,
    DROP_CATALOG,
    DROP_INDEX,
@@ -187,19 +218,15 @@ enum class SQLOperation {
    FIRST_OPERATION = ALTER,
    LAST_OPERATION = USE_ALTERNATE_SCHEMA,
    NUMBER_OF_OPERATIONS = LAST_OPERATION - FIRST_OPERATION + 1,
-   UNKNOWN
+   UNKNOWN,
+   FIRST_DML_PRIV = DML_DELETE,
+   LAST_DML_PRIV = DML_USAGE
 };
 
 enum class PrivDropBehavior {
    CASCADE = 2,
    RESTRICT = 3
 };                
-
-enum class PrivCommand {
-   GRANT_OBJECT = 2,
-   REVOKE_OBJECT_RESTRICT = 3,
-   REVOKE_OBJECT_CASCADE = 4
-};
 
 enum class PrivLevel {
    UNKNOWN = 0,

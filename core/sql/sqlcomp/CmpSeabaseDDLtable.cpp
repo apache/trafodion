@@ -249,6 +249,14 @@ void CmpSeabaseDDL::createSeabaseTableLike(
   ComObjectName srcTableName(createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
   srcTableName.applyDefaults(currCatAnsiName, currSchAnsiName);
   
+  // If source table is external, return an error.  
+  // TBD - allow create table like a native (external) HIVE or HBASE table
+  if (ComIsTrafodionExternalSchemaName(srcTableName.getSchemaNamePart().getInternalName()))
+    {
+      *SqlParser_Diags << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);
+      return;
+    }
+  
   CorrName cn(srcTableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
               srcTableName.getSchemaNamePart().getInternalName(),
@@ -379,84 +387,40 @@ void CmpSeabaseDDL::createSeabaseTableLike(
 }
 
 // ----------------------------------------------------------------------------
-// Method: createSeabaseTableExternalHive
+// Method: createSeabaseTableExternal
 //
-// This method creates a Trafodion table that represents a Hive table 
+// This method creates a Trafodion table that represents a Hive or HBase table 
 //
 // in:
 //   cliInterface - references to the cli execution structure
 //   createTableNode - representation of the CREATE TABLE statement
-//   currCatName - catalog name to use, if not specified
-//   currSchName - schema name to use, if not specified
+//   tgtTableName - the Trafodion external table name to create
+//   srcTableName - the native source table
 //
-// returns:  0 - successful, -1 error, -2 error requiring cleanup
+// returns:  0 - successful, -1 error
 //
 // any error detected is added to the diags area
 // ---------------------------------------------------------------------------- 
-short CmpSeabaseDDL::createSeabaseTableExternalHive(
+short CmpSeabaseDDL::createSeabaseTableExternal(
   ExeCliInterface &cliInterface,
   StmtDDLCreateTable * createTableNode,
-  NAString &currCatName, 
-  NAString &currSchName)
+  const ComObjectName &tgtTableName,
+  const ComObjectName &srcTableName) 
 {
-  Lng32 retcode = 0;
+  Int32 retcode = 0;
 
-  ComObjectName srcTableName(createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
-  srcTableName.applyDefaults(currCatName, currSchName);
-
-  // For the target object, use TRAFODION as the default catalog and the source
-  // table's schema name as the default schema
-  ComObjectName tgtTableName(createTableNode->getTableName(), COM_TABLE_NAME);
-  ComAnsiNamePart currCatAnsiName(getSystemCatalog());
-  ComAnsiNamePart currSchAnsiName(srcTableName.getSchemaNamePart().getExternalName());
-  tgtTableName.applyDefaults(currCatName, currSchAnsiName);
-
-  // For now the object and schema name for the target table must match the
-  // object and schema name for the source table
-  if (tgtTableName.getObjectNamePart().getExternalName() != 
-      srcTableName.getObjectNamePart().getExternalName()) 
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-CAT_EXTERNAL_NAME_MISMATCH)
-        << DgTableName(tgtTableName.getObjectNamePart().getExternalName())
-        << DgTableName(srcTableName.getObjectNamePart().getExternalName());
-      return -1;
-    }
-
-  // Verify that the name with prepending is not too long
-  // sizeof(HIVE_EXT_SCHEMA_PREFIX) returns the length of the prefix plus
-  // one for the null character.  This works since we add a trailing 
-  // underscore to the generated name
-  NAString adjustedSchName = srcTableName.getSchemaNamePartAsAnsiString(TRUE);
-  if ((adjustedSchName.length() + sizeof(HIVE_EXT_SCHEMA_PREFIX)) > 
-      ComMAX_ANSI_IDENTIFIER_INTERNAL_LEN) 
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-CAT_EXTERNAL_SCHEMA_NAME_TOO_LONG)
-        << DgTableName(srcTableName.getSchemaNamePartAsAnsiString(FALSE))
-        << DgInt0(ComMAX_ANSI_IDENTIFIER_INTERNAL_LEN - sizeof(HIVE_EXT_SCHEMA_PREFIX)); 
-      return -1;
-    }
-
-  // Convert the target schema name to the special HIVE schema, prepend 
-  // HIVE_EXT_SCHEMA_PREFIX and a final underscore
-  adjustedSchName.prepend(HIVE_EXT_SCHEMA_PREFIX);
-  adjustedSchName.append ("_");
-  ComAnsiNamePart adjustedSchAnsiName(adjustedSchName, ComAnsiNamePart::INTERNAL_FORMAT);
-  tgtTableName.setSchemaNamePart (adjustedSchAnsiName);
+  NABoolean isHive = tgtTableName.isExternalHive(); 
 
   // go create the schema - if it does not already exist.
   NAString createSchemaStmt ("CREATE SCHEMA IF NOT EXISTS ");
-  createSchemaStmt += adjustedSchAnsiName.getExternalName();
+  createSchemaStmt += tgtTableName.getSchemaNamePartAsAnsiString();
   if (isAuthorizationEnabled())
     {
       createSchemaStmt += " AUTHORIZATION ";
-      createSchemaStmt += DB__HIVEROLE;
+      createSchemaStmt += (isHive) ? DB__HIVEROLE : DB__HBASEROLE; 
     }
 
-  Lng32 cliRC = 0;
-
-  cliRC = cliInterface.executeImmediate((char*)createSchemaStmt.data());
+  Lng32 cliRC = cliInterface.executeImmediate((char*)createSchemaStmt.data());
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -491,17 +455,6 @@ short CmpSeabaseDDL::createSeabaseTableExternalHive(
               srcTableName.getSchemaNamePart().getInternalName(),
               srcTableName.getCatalogNamePart().getInternalName());
 
-  // Get a description of the source table
-  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  NATable *naTable = bindWA.getNATable(cnSrc);
-  if (naTable == NULL || bindWA.errStatus())
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-4082)
-        << DgTableName(cnSrc.getExposedNameAsAnsiString());
-      return -1;
-    }
-
   // build the structures needed to create the table
   // tableInfo contains data inserted into OBJECTS and TABLES
   ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
@@ -513,13 +466,23 @@ short CmpSeabaseDDL::createSeabaseTableExternalHive(
   tableInfo->validDef = 1;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = 0;
-  tableInfo->rowFormat = COM_HIVE_EXTERNAL_FORMAT_TYPE;
-  tableInfo->objectFlags = SEABASE_OBJECT_IS_EXTERNAL_HIVE;
+  tableInfo->rowFormat = (isHive) ?  COM_HIVE_EXTERNAL_FORMAT_TYPE : 
+                                     COM_HBASE_EXTERNAL_FORMAT_TYPE;
+  tableInfo->objectFlags = (isHive) ?  SEABASE_OBJECT_IS_EXTERNAL_HIVE : 
+                                       SEABASE_OBJECT_IS_EXTERNAL_HBASE;
 
   if (isAuthorizationEnabled())
     {
-      tableInfo->objOwnerID = HIVE_ROLE_ID;
-      tableInfo->schemaOwnerID = HIVE_ROLE_ID;
+      if (srcTableName.isExternalHive())
+        {
+          tableInfo->objOwnerID = HIVE_ROLE_ID;
+          tableInfo->schemaOwnerID = HIVE_ROLE_ID;
+        }
+      else
+        {
+          tableInfo->objOwnerID = HBASE_ROLE_ID;
+          tableInfo->schemaOwnerID = HBASE_ROLE_ID;
+        }
     }
   else
     {
@@ -536,10 +499,24 @@ short CmpSeabaseDDL::createSeabaseTableExternalHive(
   NABoolean alignedFormat = FALSE;
   Lng32 serializedOption = -1;
 
+  Int32 numCols = 0;
+  ComTdbVirtTableColumnInfo * colInfoArray = NULL;
+        
+  // Get a description of the source table
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NATable *naTable = bindWA.getNATable(cnSrc);
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-4082)
+        << DgTableName(cnSrc.getExposedNameAsAnsiString());
+      return -1;
+    }
+
   // convert column array from NATable into a ComTdbVirtTableColumnInfo struct
   const NAColumnArray &naColArray = naTable->getNAColumnArray();
-  Lng32 numCols = naColArray.entries();
-  ComTdbVirtTableColumnInfo * colInfoArray = new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
+  numCols = naColArray.entries();
+  colInfoArray = new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
   for (CollIndex index = 0; index < numCols; index++)
     {
       const NAColumn *naCol = naColArray[index];
@@ -560,15 +537,16 @@ short CmpSeabaseDDL::createSeabaseTableExternalHive(
       colInfoArray[index].nullable = nullable;
       colInfoArray[index].charset = (SQLCHARSET_CODE)CharInfo::getCharSetEnum(charset);
       colInfoArray[index].precision = precision;
+      colInfoArray[index].scale = scale;
       colInfoArray[index].dtStart = dtStart;
       colInfoArray[index].dtEnd = dtEnd;
       colInfoArray[index].upshifted = upshifted;
       colInfoArray[index].colHeading = NULL;
-      colInfoArray[index].hbaseColFlags = 0;
+      colInfoArray[index].hbaseColFlags = naCol->getHbaseColFlags();
       colInfoArray[index].defaultClass = COM_NULL_DEFAULT;
       colInfoArray[index].defVal = NULL;
-      colInfoArray[index].hbaseColFam = NULL;
-      colInfoArray[index].hbaseColQual = NULL;
+      colInfoArray[index].hbaseColFam = naCol->getHbaseColFam();
+      colInfoArray[index].hbaseColQual = naCol->getHbaseColQual();
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = 0;
@@ -603,7 +581,7 @@ short CmpSeabaseDDL::createSeabaseTableExternalHive(
       *CmpCommon::diags()
         << DgSqlCode(-CAT_UNABLE_TO_CREATE_OBJECT)
         << DgTableName(extTgtTableName);
-      return -2;
+      return -1;
     }
 
   // remove cached definition - this code exists in other create stmte,
@@ -1347,21 +1325,65 @@ short CmpSeabaseDDL::createSeabaseTable2(
   ComAnsiNamePart currSchAnsiName(currSchName);
   tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
 
+  // Make some additional checks if creating an external table
+  ComObjectName *srcTableName = NULL;
   if (createTableNode->isExternal())
     {
-      // Convert the HIVE name to the external name
-      NABoolean getInternal (TRUE);
-      NAString adjustedSchName = tableName.getSchemaNamePartAsAnsiString(getInternal);
-      adjustedSchName.prepend(HIVE_EXT_SCHEMA_PREFIX);
-      adjustedSchName.append ("_");
-      ComAnsiNamePart adjustedSchAnsiName(adjustedSchName, ComAnsiNamePart::INTERNAL_FORMAT);
-      tableName.setSchemaNamePart (adjustedSchAnsiName);
+      // The schema name of the target table, if specified,  must match the 
+      // schema name of the source table
+      NAString origSchemaName = 
+        createTableNode->getOrigTableNameAsQualifiedName().getSchemaName();
 
-      NAString adjustedCatName = getSystemCatalog();
-      ComAnsiNamePart adjustedCatAnsiName(adjustedCatName);
-      tableName.setCatalogNamePart (adjustedCatAnsiName);
+      srcTableName = new(STMTHEAP) ComObjectName
+          (createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
+      srcTableName->applyDefaults(currCatAnsiName, currSchAnsiName);
+
+      // Convert the native table name to its trafodion name
+      NAString tabName = ComConvertNativeNameToTrafName 
+        (srcTableName->getCatalogNamePartAsAnsiString(),
+         srcTableName->getSchemaNamePartAsAnsiString(),
+         tableName.getObjectNamePartAsAnsiString());
+                               
+      ComObjectName adjustedName(tabName, COM_TABLE_NAME);
+      NAString type = adjustedName.isExternalHive() ? "HIVE" : "HBASE";
+      tableName = adjustedName;
+
+      // Verify that the name with prepending is not too long
+      if (tableName.getSchemaNamePartAsAnsiString(TRUE).length() >
+          ComMAX_ANSI_IDENTIFIER_INTERNAL_LEN)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-CAT_EXTERNAL_SCHEMA_NAME_TOO_LONG)
+            << DgString0(type.data())
+            << DgTableName(tableName.getSchemaNamePartAsAnsiString(FALSE))
+            << DgInt0(ComMAX_ANSI_IDENTIFIER_INTERNAL_LEN - sizeof(HIVE_EXT_SCHEMA_PREFIX));
+          return -1;
+        }
+
+      if ((origSchemaName.length() > 0)&&
+          (origSchemaName != srcTableName->getSchemaNamePart().getExternalName()))
+      {
+        *CmpCommon::diags()
+          << DgSqlCode(-CAT_EXTERNAL_NAME_MISMATCH)
+          << DgString0 (type.data())
+          << DgTableName(origSchemaName)
+          << DgString1((srcTableName->getSchemaNamePart().getExternalName()));
+        return -1;
+      }
+              
+      // For now the object name of the target table must match the
+      // object name of the source table
+      if (tableName.getObjectNamePart().getExternalName() !=
+          srcTableName->getObjectNamePart().getExternalName())
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-CAT_EXTERNAL_NAME_MISMATCH)
+            << DgString0 (type.data())
+            << DgTableName(tableName.getObjectNamePart().getExternalName())
+            << DgString1((srcTableName->getObjectNamePart().getExternalName()));
+          return -1;
+        }
     }
-
 
   const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
@@ -1424,13 +1446,14 @@ short CmpSeabaseDDL::createSeabaseTable2(
   // If creating an external table, go perform operation
   if (createTableNode->isExternal())
     {
-      retcode = createSeabaseTableExternalHive(cliInterface, createTableNode, currCatName, currSchName);
+      retcode = createSeabaseTableExternal
+        (cliInterface, createTableNode, tableName, *srcTableName);
       if (retcode != 0 && CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
         SEABASEDDL_INTERNAL_ERROR("creating external HIVE table");
 
       deallocEHI(ehi);
       processReturn();
-      return -1;
+      return retcode;
     }
 
   ElemDDLColDefArray &colArray = createTableNode->getColDefArray();
@@ -1459,6 +1482,17 @@ short CmpSeabaseDDL::createSeabaseTable2(
      processReturn();
      return -1;
   }
+
+  // If the schema name specified is external HIVE or HBase name, users cannot 
+  // create them.
+  if (ComIsTrafodionExternalSchemaName(schemaNamePart) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      // error.
+      *SqlParser_Diags << DgSqlCode(-CAT_CREATE_TABLE_NOT_ALLOWED_IN_SMD)
+                       << DgTableName(extTableName.data());
+      return -1;
+    }
 
   if (createTableNode->getIsLikeOptionSpecified())
     {
@@ -2666,18 +2700,14 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 
   if (dropTableNode->isExternal())
     {
-      // Convert the HIVE name to the external name
-      NABoolean getInternal (TRUE);
-      NAString adjustedSchName = tableName.getSchemaNamePartAsAnsiString(getInternal);
-      adjustedSchName.prepend(HIVE_EXT_SCHEMA_PREFIX);
-      adjustedSchName.append ("_");
-      ComAnsiNamePart adjustedSchAnsiName(adjustedSchName, ComAnsiNamePart::INTERNAL_FORMAT);
-      tableName.setSchemaNamePart (adjustedSchAnsiName);
-  
-      NAString adjustedCatName = getSystemCatalog(); 
-      ComAnsiNamePart adjustedCatAnsiName(adjustedCatName);
-      tableName.setCatalogNamePart (adjustedCatAnsiName);
-      tabName = tableName.getExternalName();
+      // Convert the native name to its Trafodion form
+      tabName = ComConvertNativeNameToTrafName
+        (tableName.getCatalogNamePartAsAnsiString(),
+         tableName.getSchemaNamePartAsAnsiString(),
+         tableName.getObjectNamePartAsAnsiString());
+                               
+      ComObjectName adjustedName(tabName, COM_TABLE_NAME);
+      tableName = adjustedName;
     }
 
   NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
@@ -2686,8 +2716,9 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  // inDDL: true to allow an NATable entry to be created for an external table
-  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), TRUE/*inDDL*/);
+  // allowExternalTables: true to allow an NATable entry to be created for an external table
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  bindWA.setAllowExternalTables(TRUE);
  
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -2833,7 +2864,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 
   // If this is an external (native HIVE or HBASE) table, then skip
   if (!isSeabaseExternalSchema(catalogNamePart, schemaNamePart))
-  //if (! (tableName.isExternalHive() || tableName.isExternalHbase()) )
     {
       HbaseStr hbaseTable;
       hbaseTable.val = (char*)extNameForHbase.data();
@@ -7815,6 +7845,9 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   
+  // TDB - add a check to see if there is an external HBASE table that should be
+  // removed
+
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
     {
@@ -9339,7 +9372,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
       // if this is base table or index and hbase object doesn't exist, then this object
       // is corrupted.
-      if (!objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE)
+      if (!objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE &&
+          !objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE)
         {
           if ((tableDesc->body.table_desc.objectType == COM_BASE_TABLE_OBJECT) &&
               (existsInHbase(extNameForHbase, ehi) == 0))

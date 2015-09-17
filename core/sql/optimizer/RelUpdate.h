@@ -1847,6 +1847,9 @@ public:
                                                   const Lng32    planNumber,
                                                   PlanWorkSpace  *pws);
 
+  // optimizer functions
+  virtual CostMethod* costMethod() const;
+
   // get a printable string that identifies the operator
   const NAString getText() const;
 

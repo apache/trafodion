@@ -56,7 +56,6 @@
 #include "ElemDDLFileAttrDeallocate.h"
 #include "ElemDDLFileAttrDCompress.h"
 #include "ElemDDLFileAttrICompress.h"
-#include "ElemDDLFileAttrLockLength.h"
 #include "ElemDDLFileAttrPOS.h"
 #include "ElemDDLFileAttrMaxSize.h"
 #include "ElemDDLFileAttrRangeLog.h"

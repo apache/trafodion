@@ -4925,17 +4925,26 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	       (listOfDelUniqueRows_[0].rowIds_.entries() == 1))
 	isUnique = TRUE;
     }
-
+ 
+  if (getInliningInfo().isIMGU()) {
+     // There is no need to do checkAndDelete for IM
+     canDoCheckAndUpdel() = FALSE;
+     uniqueHbaseOper() = FALSE;
+     if ((generator->oltOptInfo()->multipleRowsReturned()) &&
+	  (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	  (NOT generator->isRIinliningForTrafIUD()))
+	 uniqueRowsetHbaseOper() = TRUE;
+  }
+  else
   if (isUnique)
     {
       // do not cancel unique queries.
       generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
-
       canDoCheckAndUpdel() = FALSE;
       if ((NOT producesOutputs()) &&
 	  (NOT  inlinedActions) &&
-	  (executorPred().isEmpty()))
+          (executorPred().isEmpty()))
 	{
 	  if ((generator->oltOptInfo()->multipleRowsReturned()) &&
 	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
@@ -5183,7 +5192,16 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	       (listOfUpdUniqueRows_[0].rowIds_.entries() == 1))
 	isUnique = TRUE;
     }
-
+  if (getInliningInfo().isIMGU()) {
+     // There is no need to checkAndPut for IM
+     canDoCheckAndUpdel() = FALSE;
+     uniqueHbaseOper() = FALSE;
+     if ((generator->oltOptInfo()->multipleRowsReturned()) &&
+	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	      (NOT generator->isRIinliningForTrafIUD()))
+	 uniqueRowsetHbaseOper() = TRUE;
+  }
+  else
   if (isUnique)
     {
       // do not cancel unique queries.
@@ -5882,7 +5900,7 @@ RelExpr * MergeUnion::preCodeGen(Generator * generator,
   condExpr().replaceVEGExpressions(availableValues,
 				   getGroupAttr()->getCharacteristicInputs());
 
-  if (!getUnionForIF())
+  if (!getUnionForIF() && !getInliningInfo().isIMUnion())
     generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
 
   markAsPreCodeGenned();
