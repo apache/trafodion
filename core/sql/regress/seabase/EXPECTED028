@@ -1,0 +1,111 @@
+>>
+>>log off;
+>>
+>>update statistics for table hbase."_CELL_"."test028tbl2" on every column;
+
+--- SQL operation complete.
+>>update statistics for table hbase."_CELL_"."test028tbl2" on every key;
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (COL_VALUE),(COL_TIMESTAMP),(COL_NAME),(COL_FAMILY).
+
+--- SQL operation completed with warnings.
+>>
+>>showstats for table hbase."_CELL_"."test028tbl2" on ROW_ID detail;
+
+Detailed Histogram data for Table HBASE."_CELL_"."test028tbl2"
+Table ID: 961595648449090953
+
+Hist ID:    1150301280
+Column(s):  ROW_ID
+Total Rows: 10
+Total UEC:  10
+Low Value:  ('100')
+High Value: ('9990')
+Intervals:  10
+
+Number    Rowcount         UEC Boundary
+====== =========== =========== ======================================
+     0           0           0 ('100')
+     1           1           1 ('100')
+     2           1           1 ('200')
+     3           1           1 ('300')
+     4           1           1 ('400')
+     5           1           1 ('500')
+     6           1           1 ('600')
+     7           1           1 ('700')
+     8           1           1 ('720')
+     9           1           1 ('999')
+    10           1           1 ('9990')
+
+
+--- SQL operation complete.
+>>showstats for table hbase."_CELL_"."test028tbl2" on COL_FAMILY detail;
+
+Detailed Histogram data for Table HBASE."_CELL_"."test028tbl2"
+Table ID: 961595648449090953
+
+Hist ID:    1150301276
+Column(s):  COL_FAMILY
+Total Rows: 10
+Total UEC:  1
+Low Value:  ('cf1')
+High Value: ('cf1')
+Intervals:  1
+
+Number    Rowcount         UEC Boundary
+====== =========== =========== ======================================
+     0           0           0 ('cf1')
+     1          10           1 ('cf1')
+
+
+--- SQL operation complete.
+>>showstats for table hbase."_CELL_"."test028tbl2" on COL_VALUE detail;
+
+Detailed Histogram data for Table HBASE."_CELL_"."test028tbl2"
+Table ID: 961595648449090953
+
+Hist ID:    1150301261
+Column(s):  COL_VALUE
+Total Rows: 10
+Total UEC:  10
+Low Value:  ('v100')
+High Value: ('v9990')
+Intervals:  10
+
+Number    Rowcount         UEC Boundary
+====== =========== =========== ======================================
+     0           0           0 ('v100')
+     1           1           1 ('v100')
+     2           1           1 ('v200')
+     3           1           1 ('v300')
+     4           1           1 ('v400')
+     5           1           1 ('v500')
+     6           1           1 ('v600')
+     7           1           1 ('v700')
+     8           1           1 ('v720')
+     9           1           1 ('v999')
+    10           1           1 ('v9990')
+
+
+--- SQL operation complete.
+>>
+>>explain options 'f' select * from hbase."_CELL_"."test028tbl2";
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+001
+.    .    1    hbase_scan                      test028tbl2           1.00E+001
+
+--- SQL operation complete.
+>>explain options 'f' select * from hbase."_CELL_"."test028tbl2" where ROW_ID = '700';
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    hbase_scan                      test028tbl2           1.00E+000
+
+--- SQL operation complete.
+>>
+>>log off;

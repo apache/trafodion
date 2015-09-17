@@ -1002,7 +1002,14 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
 //
 NAString HSHbaseTableDef::getHistLoc(formatType format) const
 {
-  return HBASE_STATS_CATALOG "." HBASE_STATS_SCHEMA;
+  if ( HSGlobalsClass::isNativeHbaseCat(getCatName(format))) {
+    return HBASE_STATS_CATALOG "." HBASE_STATS_SCHEMA;
+  } else {  
+    NAString name(getCatName(format));
+    name.append(".");
+    name.append(getSchemaName(format));
+    return name;
+  }
 }
 
 static 

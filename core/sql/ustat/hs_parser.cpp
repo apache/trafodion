@@ -442,15 +442,13 @@ Lng32 AddTableName( const hs_table_type type
         NABoolean isHbaseOrHive = HSGlobalsClass::isHbaseCat(catName) ||
                                   HSGlobalsClass::isHiveCat(catName);
 
-        if (isHbaseOrHive)
+        if (isHbaseOrHive) {
           hs_globals->hstogram_table->append(".").append(HBASE_HIST_NAME);
-        else
-          hs_globals->hstogram_table->append(".HISTOGRAMS");
-
-        if (isHbaseOrHive)
           hs_globals->hsintval_table->append(".").append(HBASE_HISTINT_NAME);
-        else
+        } else {
+          hs_globals->hstogram_table->append(".HISTOGRAMS");
           hs_globals->hsintval_table->append(".HISTOGRAM_INTERVALS");
+        }
       }
     else
       {

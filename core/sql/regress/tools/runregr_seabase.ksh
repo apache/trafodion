@@ -209,6 +209,11 @@ else
   done
 fi
 
+echo "copying scripts to $REGRRUNDIR"
+cp $REGRTSTDIR/create_hbase_tables.sh $REGRRUNDIR 2>$NULL
+cp $REGRTSTDIR/drop_hbase_tables.sh $REGRRUNDIR 2>$NULL
+cp $REGRTSTDIR/FILTER028 $REGRRUNDIR 2>$NULL
+
 skippedfiles=
 
 ##############################################################
