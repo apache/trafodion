@@ -12709,7 +12709,16 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
     return TRUE;
 
   }
-
+  
+  if (getTableDesc()->hasUniqueIndexes() && 
+      (CmpCommon::getDefault(MERGE_WITH_UNIQUE_INDEX) == DF_OFF))
+  {
+    *CmpCommon::diags() << DgSqlCode(-3241) 
+			<< DgString0(" unique indexes not allowed.");
+    bindWA->setErrStatus();
+    return TRUE;
+  }
+  
   if ((accessOptions().accessType() == SKIP_CONFLICT_) ||
       (getGroupAttr()->isStream()) ||
       (newRecBeforeExprArray().entries() > 0)) // set on rollback

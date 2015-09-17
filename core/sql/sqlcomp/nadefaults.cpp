@@ -2214,6 +2214,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MERGE_JOIN_CONTROL,			"OFF"),
   DDkwd__(MERGE_JOIN_WITH_POSSIBLE_DEADLOCK, "OFF"),
 
+  // controls if merge/upsert is supported on table with a unique index
+  DDkwd__(MERGE_WITH_UNIQUE_INDEX,   "ON"),
+
  SDDui___(METADATA_CACHE_SIZE,    "20"),
   DDkwd__(METADATA_STABLE_ACCESS, "OFF"),
   //-------------------------------------------------------------------
