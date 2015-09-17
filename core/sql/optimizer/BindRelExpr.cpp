@@ -10169,6 +10169,17 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
 
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return NULL;
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+  {		
+    *CmpCommon::diags() << DgSqlCode(-3241) 		
+			<< DgString0(" View with check option not allowed.");	    		
+    bindWA->setErrStatus();		
+    return NULL;		
+  }
+
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
 		    
@@ -10686,7 +10697,15 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   NATable *naTable = bindWA->getNATable(getTableName());
   if (bindWA->errStatus())
     return NULL;
-  
+ 
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+  {		
+    *CmpCommon::diags() << DgSqlCode(-3241) 		
+			<< DgString0(" View with check option not allowed.");	    		
+    bindWA->setErrStatus();		
+    return NULL;		
+  }
+
   if ((naTable->isHbaseCellTable()) ||
       (naTable->isHbaseRowTable()))
     {
@@ -11057,6 +11076,14 @@ RelExpr *MergeDelete::bindNode(BindWA *bindWA)
   NATable *naTable = bindWA->getNATable(getTableName());
   if (bindWA->errStatus())
     return NULL;
+  
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+  {		
+    *CmpCommon::diags() << DgSqlCode(-3241) 		
+			<< DgString0(" View with check option not allowed.");	    		
+    bindWA->setErrStatus();		
+    return NULL;		
+  }
 
   bindWA->setMergeStatement(TRUE);  
   RelExpr * boundExpr = Delete::bindNode(bindWA);
