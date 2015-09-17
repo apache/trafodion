@@ -5939,48 +5939,6 @@ NABoolean NATable::insertMissingStatsWarning(CollIndexSet colsSet) const
 StatsList &
 NATable::getStatistics()
 {
-   // HIVE-TBD
-   if ( isHiveTable() ) {
-
-       NAMemory* heap = CmpCommon::statementHeap();
-
-       if ( colStats_ == NULL ) {
-	  colStats_ = new (heap) StatsList(CmpCommon::statementHeap());
-       }
-
-       return *colStats_;
-
-//       // side-affect NAColumn in colArray on needHistogram() and 
-//       // needFullHistogram()
-//       markColumnsForHistograms();
-//
-//       NAColumnArray& colArray = const_cast<NAColumnArray&>(getNAColumnArray());
-//
-//       for(UInt32 i=0;i<colArray.entries();i++)
-//       {
-//          //get a reference to the column
-//          NAColumn * column = colArray[i];
-//
-//          if ( column->needHistogram() ) {
-//
-//            ComUID id(ColStats::nextFakeHistogramID());
-//
-//            ColStatsSharedPtr colStatsPtr = new (heap)
-//                ColStats (id,
-//                          CostScalar(1000), /*CS uec*/
-//                          CostScalar(2200), /* rowcount in CS */
-//                          CostScalar(-1),  // baseRC
-//                          FALSE, // NABoolean unique 
-//                          0,     // Int32 avgVarcharSize = 0
-//                          heap   // NAMemory* heap=0
-//                         );
-//
-//             colStats_->insertAt(colStats_->entries(), colStatsPtr);
-//          }
-//       }
-//       return *colStats_;
-   }
-
     if (!statsFetched_)
     {
       // mark the kind of histograms needed for this table's columns
