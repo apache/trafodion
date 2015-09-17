@@ -51,21 +51,6 @@
 # also set http_proxy and ftp_proxy if necessary, to download
 # files from repositories on the Internet
 #
-# DCS to use. This list is in order of precedent.
-# DCS_TAR - Optionally specify a local tar file to use
-# DCS_URL - Optionally specify a URL to download
-# DCS_SRC - Optionally specify a local source tree to use
-# If none specified, download latest code from github
-#
-# Trafodion REST to use. This list is in order of precedent.
-# REST_TAR - Optionally specify a local tar file to use
-# REST_URL - Optionally specify a URL to download
-# REST_SRC - Optionally specify a local source tree to use
-# If none specified, download latest code from github
-#
-# phoenix_test
-# PHX_SRC - Optionally specify a local source tree to use
-#  otherwise, download latest code from github
 ##############################################################################
 
 function usage {
@@ -1518,101 +1503,17 @@ fi
 
 cd $MY_SW_ROOT
 
-echo "Setting up DCS, REST and Phoenix tests..."
-
-#Default GIT location
-GIT_DIR="git@github.com:apache/incubator-trafodion"
-DCS_SRC=$MY_SQROOT/../../dcs
-
-if [ -d $DCS_SRC ]; then
-   TRAF_SRC=$MY_SQROOT/../../
-   # Default location of DCS code
-   DCS_SRC=$MY_SQROOT/../../dcs
-   # Default location of REST code
-   REST_SRC=$MY_SQROOT/../rest
-   # Default location for phoenix_test
-   PHX_SRC=$MY_SQROOT/../../tests/phx
-else
-   TRAF_SRC=$MY_SW_ROOT/src/incubator-trafodion
-   if [ ! -d $TRAF_SRC ]; then
-     mkdir -p $MY_SW_ROOT/src
-     cd $MY_SW_ROOT/src
-     git clone $GIT_DIR
-   fi
-   # Default location of DCS code
-   DCS_SRC=$TRAF_SRC/dcs
-   # Default location of REST code
-   REST_SRC=$TRAF_SRC/core/rest
-   # Default location for phoenix_test
-   PHX_SRC=$TRAF_SRC/tests/phx
+if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
+  echo "------------------------------------------------------------"
+  echo "-- WARNING: libhdfs.so is not present on this system. Please"
+  echo "--          build it, otherwise Trafodion will not compile."
+  echo "------------------------------------------------------------"
 fi
 
-echo "Default Trafodion Source directory..."
-echo "For Core... $TRAF_SRC"
-echo "For DCS... $DCS_SRC"
-echo "For REST... $REST_SRC"
-echo "For PHX... $PHX_SRC"
+echo "Setting up configuration script for dcs, rest and trafci..."
 
-if [ -d dcs-* ]; then
-  echo "DCS files already exist, skipping DCS setup"
-else
-  #####################################################
-  # four options, depend on user Env variables, as described above
-  if [[ -f $DCS_TAR ]]
-  then
-    echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
-  elif [[ -n $DCS_URL ]]
-  then
-    echo "Downloading DCS Tar: $DCS_URL" | tee -a ${MY_LOG_FILE}
-    rm -f dcs_download.tar
-    curl ${DCS_URL} -o dcs_download.tar
-    DCS_TAR=./dcs_download.tar
-  elif [[ -d $DCS_SRC ]]
-  then
-    if [[ -f $DCS_SRC/target/dcs*tar.gz ]]
-    then
-      echo "Using DCS tar file in source tree: $DCS_SRC" | tee -a ${MY_LOG_FILE}
-    else
-      echo "No DCS tar file found, building DCS: $DCS_SRC" | tee -a ${MY_LOG_FILE}
-      echo "Building DCS Source in $DCS_SRC" | tee -a ${MY_LOG_FILE}
-      cd $DCS_SRC
-      ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
-      cd $MY_SW_ROOT
-    fi
-    DCS_TAR=$(ls $DCS_SRC/target/dcs*tar.gz)
-  fi
-  if [[ ! -f $DCS_TAR ]]
-  then
-    echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
-    echo "DCS tar file not found: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
-    exit 2
-  fi
-  # install
-  echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
-  tar xzf $DCS_TAR
-  DCS_HOME=$(ls -d $MY_SW_ROOT/dcs-*)
-
-  # configure DCS
-
-  #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding DCS_INSTALL_DIR=$DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
-  echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
-  if [[ -f ~/.trafodion ]]
-  then
-    mv -f ~/.trafodion ~/.trafodion.orig
-    grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
-  fi
-  DCSDIR=${DCS_HOME##*/}
-  echo "export DCS_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion
-
-  cd $DCS_HOME/conf/
-  mv dcs-env.sh dcs-env.sh.orig
-   # SQROOT env var does not propagate thru ssh command
-  echo "MY_SQROOT=$MY_SQROOT" > dcs-env.sh
-  sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
-  mv -f dcs-site.xml dcs-site.xml.orig
-  sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
-  cat >>dcs-site.xml <<EOF
+# For DCS
+cat >$HOME/.dcs-site.xml-$USER <<EOF
     <property>
      <name>dcs.master.port</name> <value>$MY_DCS_MASTER_PORT</value>
     </property>
@@ -1631,137 +1532,11 @@ else
     <property>
      <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
     </property>
-  </configuration>
 EOF
-  echo "localhost 4" > servers
 
-  # Configure DCS test scripts
-  if [[ -n "$DCS_SRC" ]]
-  then
-    echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
-    cat <<EOF >$MY_SW_SCRIPTS_DIR/swjdbc
-#!/bin/sh
-# command to run JDBC tests
-cd $DCS_SRC/src/test/jdbc_test
-./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
-  --target=localhost:$MY_DCS_MASTER_PORT \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
-EOF
-    chmod +x $MY_SW_SCRIPTS_DIR/swjdbc
-  fi
-fi
-# end of DCS setup
+# For rest
 
-# begin of trafci setup
-
-echo "Updating trafci port number" | tee -a ${MY_LOG_FILE}
-TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
-if [[ -f $TRAFCI_BIN_DIR/trafci ]]
-then
-  mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
-  sed -e "s@localhost:23400@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
-  chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
-  echo "Modified trafci port number to $MY_DCS_MASTER_PORT" | tee -a ${MY_LOG_FILE}
-else
-  echo "$TRAFCI_BIN_DIR not found" | tee -a ${MY_LOG_FILE}
-fi
-
-# end of trafci set up
-
-if [[ -d $PHX_SRC ]]; then
-  echo "Phoenix files already exist, skipping Phoenix setup" | tee -a ${MY_LOG_FILE}
-
-  #######################################################
-  # scripts to run tests
-  #######################################################
-  # adding this in this section to enable adding it to
-  # existing local_hadoop installations
-  echo "Adding swphoenix script...." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SW_SCRIPTS_DIR/swphoenix
-#!/bin/sh
-# command to run phoenix tests
-
-cd $PHX_SRC
-if [[ \$1 == "t4" ]]
-then
-  ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
-elif [[ \$1 == "t2" ]]
-then
-  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
-  ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
-     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2
-else
-  echo "Usage: swphoenix (t2|t4)"
-  exit 1
-fi
-EOF
-  chmod +x $MY_SW_SCRIPTS_DIR/swphoenix
-
-fi
-# end of Phoenix setup
-
-# Begin of Trafodion REST Server setup
-
-if [ -d rest-* ]; then
-  echo "Trafodion REST files already exist, skipping REST setup"
-else
-  #####################################################
-  # three options, depend on user Env variables, as described above
-  if [[ -f $REST_TAR ]]
-  then
-    echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
-  elif [[ -n $REST_URL ]]
-  then
-    echo "Downloading REST Tar: $REST_URL" | tee -a ${MY_LOG_FILE}
-    rm -f rest_download.tar
-    curl ${REST_URL} -o rest_download.tar
-    REST_TAR=./rest_download.tar
-  elif [[ -d $REST_SRC ]]
-  then
-    if [[ -f $REST_SRC/target/rest*tar.gz ]]
-    then
-      echo "Using REST tar file in source tree: $REST_SRC" | tee -a ${MY_LOG_FILE}
-    else
-      echo "No REST tar file found, building REST: $REST_SRC" | tee -a ${MY_LOG_FILE}
-      echo "Building REST Source in $REST_SRC" | tee -a ${MY_LOG_FILE}
-      cd $REST_SRC
-      ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
-      cd $MY_SW_ROOT
-    fi
-    REST_TAR=$(ls $REST_SRC/target/rest*tar.gz)
-  fi
-  if [[ ! -f $REST_TAR ]]
-  then
-    echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
-    echo "REST tar file not found: $REST_TAR"  | tee -a ${MY_LOG_FILE}
-    exit 2
-  fi
-  # install
-  echo "Installing REST from: $REST_TAR"  | tee -a ${MY_LOG_FILE}
-  tar xzf $REST_TAR
-  REST_HOME=$(ls -d $MY_SW_ROOT/rest-*)
-
-  # configure REST
-
-  #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
-  echo "Adding REST_INSTALL_DIR=$REST_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
-  echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
-  if [[ -f ~/.trafodion ]]
-  then
-    mv -f ~/.trafodion ~/.trafodion.orig
-    grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
-  fi
-  RESTDIR=${REST_HOME##*/}
-  echo "export REST_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion
-  cd $REST_HOME/conf/
-  mv rest-env.sh rest-env.sh.orig
-   # SQROOT env var does not propagate thru ssh command
-  echo "MY_SQROOT=$MY_SQROOT" > rest-env.sh
-  sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
-  mv -f rest-site.xml rest-site.xml.orig
-  sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml
-  cat >>rest-site.xml <<EOF
+cat >$HOME/.rest-site.xml-$USER <<EOF
     <property>
      <name>rest.port</name> <value>$MY_REST_SERVER_PORT</value>
     </property>
@@ -1777,18 +1552,12 @@ else
     <property>
      <name>rest.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
     </property>
-  </configuration>
 EOF
-fi
 
-# End of Trafodion REST Server setup
-
-if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
-  echo "------------------------------------------------------------"
-  echo "-- WARNING: libhdfs.so is not present on this system. Please"
-  echo "--          build it, otherwise Trafodion will not compile."
-  echo "------------------------------------------------------------"
-fi
+#For clients
+cat >$HOME/.dcs-masterport-$USER <<EOF
+$MY_DCS_MASTER_PORT
+EOF
 
 echo
 echo "Installed directory size and name = $(du -sh $MY_SW_ROOT)" | tee -a ${MY_LOG_FILE}

@@ -21,6 +21,7 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
+include ../macros.gmk #top level
 BLD_TRAFODION_REST_TARNAME           =rest-$(TRAFODION_VER).tar.gz
 
 VFILE			    =trafodion-rest.jar.versions
@@ -35,6 +36,8 @@ build_all:
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_rest.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	mkdir -p ../../${DISTRIBUTION_DIR}
+	mv target/$(BLD_TRAFODION_REST_TARNAME) ../../${DISTRIBUTION_DIR}/
 	$(RM) $(VFILE)
 
 build_chk:
@@ -46,3 +49,4 @@ clean:
 	-$(MAVEN) clean | grep ERROR
 	$(RM) build_rest.log
 	$(RM) $(VFILE)
+	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_REST_TARNAME)

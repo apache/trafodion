@@ -22,3 +22,4 @@
 # Current code values not configurable
 MPI_TARGET=mpi
 SEAMONSTER_TARGET=seamonster
+DISTRIBUTION_DIR=distribution

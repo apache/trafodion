@@ -27,15 +27,15 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress check-copyrights
+.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr dcs rest odb
+.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests check-copyrights
 
 ################
 ### Main targets
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
+all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb
 
 package: pkg-product pkg-client
 
@@ -69,9 +69,14 @@ foundation: dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 
 jdbc_jar: verhdr
 	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
-	mvn install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
+	$(MAVEN) install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
 	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
 	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
+
+dcs: verhdr jdbc_jar
+	cd ../dcs && $(MAVEN) site package 2>&1 | sed -e "s/$$/        ##(DCS)/";exit $${PIPESTATUS[0]}
+	mkdir -p ../${DISTRIBUTION_DIR}
+	mv ../dcs/target/dcs*.gz ../${DISTRIBUTION_DIR}/ | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
 	cd conn/odbc/src/odbc && $(MAKE) ndcs        2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
@@ -84,7 +89,7 @@ trafci: jdbc_jar
 jdbc_type2_jar: ndcs
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
-	mvn install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
+	$(MAVEN) install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
 	    -DgroupId=org.trafodion.jdbc.t2.T2Driver -DartifactId=t2driver -Dversion="$$TRAFODION_VER" \
 	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBC_TYPE2)/";exit $${PIPESTATUS[0]}
 
@@ -106,6 +111,8 @@ clean: sqroot
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
+	cd ../dcs &&			$(MAVEN) clean 
+	$(RM) -r ../${DISTRIBUTION_DIR}
 
 cleanall: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -118,8 +125,10 @@ cleanall: sqroot
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
+	cd ../dcs &&			$(MAVEN) clean
+	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress
+package-all: package pkg-sql-regress pkg-phx-tests
 
 pkg-product: all  
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
@@ -129,7 +138,11 @@ pkg-client: ci ndcs odb
 
 # Package SQL regression tests (all target produces some regress/tool files so do that first)
 pkg-sql-regress: all
-	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
+	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package sql regress)/";exit $${PIPESTATUS[0]}
+
+# Package Phoenix test
+pkg-phx-tests: all
+	cd sqf && $(MAKE) package-phx 2>&1 | sed -e "s/$$/	##(Package phoenix)/";exit $${PIPESTATUS[0]}
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
