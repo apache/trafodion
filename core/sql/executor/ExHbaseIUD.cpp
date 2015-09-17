@@ -440,7 +440,13 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case SETUP_INSERT:
 	  {
-	    step_ = EVAL_INSERT_EXPR;
+	    rc = evalInsDelPreCondExpr();
+	    if (rc == -1)
+	      step_ = HANDLE_ERROR;
+	    else if (rc == 0)
+	      step_ = INSERT_CLOSE;
+	    else // expr is true or does not exist
+	      step_ = EVAL_INSERT_EXPR;
 	  }
 	  break;
 
@@ -472,15 +478,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	  {
 	    rc = applyPred(scanExpr());
 	    if (rc == 1) // expr is true or no expr
-	      {
-		 rc = evalInsDelPreCondExpr();
-		 if (rc == -1)
-		   step_ = HANDLE_ERROR;
-		 else if (rc == 0)
-		   step_ = INSERT_CLOSE;
-		 else
-		   step_ = CREATE_MUTATIONS;
-	      }
+	      step_ = CREATE_MUTATIONS;
 	    else if (rc == 0) // expr is false
 	      step_ = INSERT_CLOSE;
 	    else // error

@@ -1891,7 +1891,8 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // key belonging to a different row). Hence in this case, it is better to always
   // match not only the index key but also remaining columns in the index table
   // that correspond to the base table. Hence we introduce 
-  // robustDelete below. 
+  // robustDelete below. This flag could also be called 
+  // isIMOnAUniqueIndexForMerge
   NABoolean robustDelete = isForMerge && index->isUniqueIndex();
 
   tableCorrName.setCorrName((isIMInsert)?  NEWCorr : OLDCorr);
@@ -1919,6 +1920,11 @@ static RelExpr *createIMNode(BindWA *bindWA,
     colRefList->insert(colRef);
   }
 
+  // There are 4 cases here. Following table shows when precondition
+  // expression is addded
+  // Index Type/IM operation->  Delete  | Insert
+  // Non-unique Index           Yes        No 
+  // Unique Index               Yes        Yes
   if ((!isIMInsert && isForUpdate)||robustDelete)
     {
       // For delete nodes that are part of an update, generate a
