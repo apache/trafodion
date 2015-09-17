@@ -3823,8 +3823,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     if (retcode) TM->Rollback();
     HSHandleError(retcode);
 
-    HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS 'PERTABLE'");
-
     if (LM->LogNeeded())
       {
         sprintf(LM->msg, "\tSAMPLE TABLE = %s", sampleTable.data());
@@ -3974,7 +3972,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       HSFuncExecQuery("CONTROL QUERY DEFAULT PLAN_STEALING RESET");        //Workaround: 10-040706-7608
     if (dp2SamplingUsed)
       HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
-    HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS_NUM_OF_PARTNS RESET");
     

@@ -458,7 +458,6 @@ Lng32 AddTableName( const hs_table_type type
         hs_globals->hsintval_table->append(".HISTINTS");        
 
         // RESET CQDS:
-        HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT POS RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT POS_NUM_OF_PARTNS RESET");
