@@ -439,6 +439,10 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_REST_SERVER_PORT=4200
   # trafodion.rest.https.port
   MY_REST_SERVER_SECURE_PORT=4201
+  # database.mgr.port
+  MY_DB_MGR_PORT=4205
+  # database.mgr.secure.port
+  MY_DB_MGR_SECURE_PORT=4206
 else
   # fs.default.name
   MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
@@ -467,6 +471,8 @@ else
   MY_DCS_SERVER_INFO_PORT=`expr $MY_START_PORT + 182`
   MY_REST_SERVER_PORT=`expr $MY_START_PORT + 183`
   MY_REST_SERVER_SECURE_PORT=`expr $MY_START_PORT + 184`
+  MY_DB_MGR_PORT=`expr $MY_START_PORT + 185`
+  MY_DB_MGR_SECURE_PORT=`expr $MY_START_PORT + 186`
 fi
 
 # handle ports in the range of 50000 to 50199
