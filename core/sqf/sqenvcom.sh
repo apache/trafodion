@@ -29,7 +29,7 @@
 #  * Add an entry in sqf/LocalSettingsTemplate.sh to make path configurable.
 ##############################################################
 
-#Product version (Trafodion, Enterprise or Enterprise Adv)
+#Product version (Trafodion or derivative product)
 export TRAFODION_VER_PROD="Apache Trafodion"
 # Trafodion version (also update file ../sql/common/copyright.h)
 export TRAFODION_VER_MAJOR=1
