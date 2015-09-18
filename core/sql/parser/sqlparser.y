@@ -1306,7 +1306,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LABEL_PURGEDATA
 %token <tokval> TOK_LOCATION            /* Tandem extension */
 %token <tokval> TOK_LOCKING             /* TD extension that HP wants to ignore */
-%token <tokval> TOK_LOCKLENGTH          /* Tandem extension */
 %token <tokval> TOK_LOCKONREFRESH		// MV
 %token <tokval> TOK_M                   /* Tandem extension */
 %token <tokval> TOK_MOVE                /* Tandem extension */
@@ -2621,7 +2620,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		file_attribute_deallocate_clause
 %type <pElemDDL>  		file_attribute_icompress_clause
 %type <pElemDDL>  		file_attribute_list
-%type <pElemDDL>                file_attribute_lock_length_clause
 %type <pElemDDL>                file_attribute_compression_clause
 %type <pElemDDL>  		file_attribute_extent_clause
 %type <pElemDDL>  		file_attribute_maxextent_clause
@@ -25790,7 +25788,6 @@ file_attribute :        file_attribute_allocate_clause
 /* not yet supported: | file_attribute_dcompress_clause		***/
                       | file_attribute_deallocate_clause
                       | file_attribute_icompress_clause
-                      | file_attribute_lock_length_clause
 /* not supported anymore | file_attribute_max_size_clause       ***/
 					  | file_attribute_extent_clause
 					  | file_attribute_maxextent_clause
@@ -25936,15 +25933,6 @@ file_attribute_icompress_clause : TOK_ICOMPRESS
                                   $$ = new (PARSERHEAP())
 				    ElemDDLFileAttrICompress(FALSE);
                                 }
-
-/* type pElemDDL */
-file_attribute_lock_length_clause : TOK_LOCKLENGTH unsigned_smallint
-                                {
-                                  $$ = new (PARSERHEAP())
-				    ElemDDLFileAttrLockLength(
-                                       $2 /*unsigned_smallint*/);
-                                }
-
 
 /* type pElemDDL */
 file_attribute_extent_clause : TOK_EXTENT file_attribute_extent
@@ -32724,7 +32712,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_LOCK
                       | TOK_LOCK_ROW
                       | TOK_LOCKING
-                      | TOK_LOCKLENGTH
 		      | TOK_LOCKONREFRESH // MV
 		      | TOK_LOGGABLE //++ MV
                       | TOK_LOGON

@@ -131,7 +131,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
   //     , inRIMaint_(FALSE)
      , inViewWithCheckOption_(NULL)
      , viewCount_(0)
-     , compoundCreateSchema_(FALSE)
+     , allowExternalTables_(FALSE)
      , errFlag_(FALSE)
      , uniqueNum_(0)
      , uniqueIudNum_(0) //++Triggers,

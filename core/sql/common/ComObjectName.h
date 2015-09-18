@@ -61,6 +61,7 @@ using namespace std;
 #include "ComAnsiNamePart.h"
 #include "ComRoutineActionNamePart.h"
 #include "ComSchemaName.h"
+#include "ComMisc.h"
 
 // -----------------------------------------------------------------------
 // forward declarations
@@ -280,8 +281,8 @@ class ComObjectName : public NABasicObject
     void setIsVolatile(NABoolean v)
     { (v ? flags_ |= IS_VOLATILE : flags_ &= ~IS_VOLATILE);}
 
-    inline NABoolean isExternalHive(); 
-    inline NABoolean isExternalHbase();
+    inline NABoolean isExternalHive() const;  
+    inline NABoolean isExternalHbase() const;
 
   protected:
 
@@ -603,16 +604,12 @@ ComObjectName::isValid() const
 // returns TRUE if it is a HIVE schema
 // ----------------------------------------------------------------------------
 NABoolean
-ComObjectName::isExternalHive()
+ComObjectName::isExternalHive() const
 {
-  if (schemaNamePart_.isEmpty())
-    return FALSE;
-  
   NAString schemaName(schemaNamePart_.getInternalName());
-  Int32 len (schemaName.length());
-  if (len > sizeof(HIVE_EXT_SCHEMA_PREFIX))
-    return (schemaName(0,sizeof(HIVE_EXT_SCHEMA_PREFIX)-1) == HIVE_EXT_SCHEMA_PREFIX &&
-            schemaName(len-1) == '_');
+
+  if (ComIsTrafodionExternalSchemaName(schemaName))
+    return (schemaName(0,sizeof(HIVE_EXT_SCHEMA_PREFIX)-1) == HIVE_EXT_SCHEMA_PREFIX); 
   return FALSE;
 }
   
@@ -625,16 +622,12 @@ ComObjectName::isExternalHive()
 // returns TRUE if it is a hbase schema
 // ----------------------------------------------------------------------------
 NABoolean
-ComObjectName::isExternalHbase()
+ComObjectName::isExternalHbase() const
 {
-  if (schemaNamePart_.isEmpty())
-    return FALSE;
-
   NAString schemaName(schemaNamePart_.getInternalName());
-  Int32 len (schemaName.length());
-  if (len > sizeof(HBASE_EXT_SCHEMA_PREFIX))
-    return (schemaName(0,sizeof(HBASE_EXT_SCHEMA_PREFIX)-1) == HBASE_EXT_SCHEMA_PREFIX &&
-            schemaName(len-1) == '_');
+
+  if (ComIsTrafodionExternalSchemaName(schemaName))
+    return (schemaName(0,sizeof(HBASE_EXT_SCHEMA_PREFIX)-1) == HBASE_EXT_SCHEMA_PREFIX); 
   return FALSE;
 }
 

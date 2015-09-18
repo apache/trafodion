@@ -1734,7 +1734,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // HBASE_SQL_IUD_SEMANTICS:      Off: Don't check for existing rows for insert/update
 
   DDkwd__(HBASE_ASYNC_DROP_TABLE,		"OFF"),
-  DDkwd__(HBASE_ASYNC_OPERATIONS,		"OFF"),
+  DDkwd__(HBASE_ASYNC_OPERATIONS,		"ON"),
  // HBASE_CACHE_BLOCKS, ON => cache every scan, OFF => cache no scan
  // SYSTEM => cache scans which take less than 1 RS block cache mem.
  DDui___(HBASE_BLOCK_SIZE,                      "65536"),
@@ -1770,7 +1770,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
-  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1000"),
+  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1024"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),
   DDkwd__(HBASE_SALTED_TABLE_SET_SPLIT_POLICY,	"ON"),
   DD_____(HBASE_SCHEMA,                         "HBASE"),
@@ -2213,6 +2213,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(MERGE_JOIN_ACCEPT_MULTIPLE_NJ_PROBES,	"ON"),
   DDkwd__(MERGE_JOIN_CONTROL,			"OFF"),
   DDkwd__(MERGE_JOIN_WITH_POSSIBLE_DEADLOCK, "OFF"),
+
+  // controls if merge/upsert is supported on table with a unique index
+  DDkwd__(MERGE_WITH_UNIQUE_INDEX,   "ON"),
 
  SDDui___(METADATA_CACHE_SIZE,    "20"),
   DDkwd__(METADATA_STABLE_ACCESS, "OFF"),

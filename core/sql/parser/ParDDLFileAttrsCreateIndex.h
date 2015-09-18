@@ -157,12 +157,6 @@ public:
         // For Create Table statements, the default value is FALSE (no
         // compression).
 
-  inline unsigned short getLockLength() const;
-
-        // Returns the unsigned number appearing in the specified
-        // LockLength phrase.  Returns 0 (the default value) when
-        // the LockLength phrase is not specified.
-
   inline ULng32 getMaxSize() const;
 
         // Returns the value specified in the MaxSize clause.
@@ -260,11 +254,6 @@ public:
         // Returns TRUE if the ICompress phrase appears;
         // returns FALSE otherwise.
 
-  inline NABoolean isLockLengthSpecified() const;
-
-        // Returns TRUE if the LockLength phrase appears;
-        // returns FALSE otherwise.
-
   inline NABoolean isMaxSizeSpecified() const;
 
         // Returns TRUE if the MaxSize phrase appears;
@@ -354,10 +343,6 @@ private:
   NABoolean       isICompressSpec_;
   NABoolean       isICompress_;
 
-  // LOCKLENGTH
-  NABoolean       isLockLengthSpec_;
-  unsigned short  lockLength_;
-
   // MAXSIZE
   NABoolean       isMaxSizeSpec_;
   NABoolean       isMaxSizeUnbounded_;
@@ -441,12 +426,6 @@ inline NABoolean
 ParDDLFileAttrsCreateIndex::getIsICompress() const
 {
   return isICompress_;
-}
-
-inline unsigned short
-ParDDLFileAttrsCreateIndex::getLockLength() const
-{
-  return lockLength_;
 }
 
 inline ULng32
@@ -576,13 +555,6 @@ inline NABoolean
 ParDDLFileAttrsCreateIndex::isICompressSpecified() const
 {
   return isICompressSpec_;
-}
-
-// is the LockLength phrase specified?
-inline NABoolean
-ParDDLFileAttrsCreateIndex::isLockLengthSpecified() const
-{
-  return isLockLengthSpec_;
 }
 
 // is the MaxSize phrase specified?

@@ -2369,12 +2369,27 @@ IndexDescHistograms::estimateUecUsingMultiColUec(
    // Instead of returning 55mil UEC, the above formula MC(A,B)/MC(A) returned 221 
    // (55727500/252136 -> 221). The new code below is similar to how we compute MCUEC in the 
    // rest of the compiler code.
+
    for (CollIndex j=0; j<listOfSubsets->entries();j++)
    {
      vidSet = (*listOfSubsets)[j];
+#ifndef NDEBUG
+     if(getenv("MDAM_MCUEC"))
+     {
+       fprintf(stdout, "Now checkout this set\n");
+       vidSet.print();
+     }
+#endif
      if (vidSet.entries() == columnList.entries())
      {
        estimatedUec = MCUL->lookup(vidSet);
+#ifndef NDEBUG
+     if(getenv("MDAM_MCUEC"))
+     {
+       fprintf(stdout, "entry size matches\n");
+       fprintf(stdout, "MC UEC=%f\n", estimatedUec.value());
+     }
+#endif
        return TRUE;
      }
    }
@@ -2549,49 +2564,6 @@ ScanOptimizer::~ScanOptimizer()
 {
 };
 
-static NABoolean containsINListOrRanges(const Disjuncts *curDisjuncts ) 
-{
-//  CollIndex order;
-//  CollIndex numOfKeyCols=keyPredsByCol.entries();
-//  KeyColumns::KeyColumn::KeyColumnType typeOfRange = KeyColumns::KeyColumn::EMPTY;
-  Disjunct disjunct;
-  ValueIdSet vs;
-  for (CollIndex i=0; i < curDisjuncts->entries(); i++)
-  {
-    curDisjuncts->get(disjunct,i);
-    vs = disjunct.getAsValueIdSet();
-    for (ValueId predId = vs.init();
-	 vs.next(predId);
-	 vs.advance(predId) )
-    {
-      if(predId.getItemExpr()->getOperatorType() == ITM_RANGE_SPEC_FUNC )
-      {
-	if(predId.getItemExpr()->child(1)->getOperatorType() == ITM_OR ||
-	   predId.getItemExpr()->child(1)->getOperatorType() == ITM_AND)
-	  return TRUE;
-      }
-    }
-  }
-  /*
-  if (keyPredsByCol.containsPredicates())
-  {
-    for (order = 0; order < numOfKeyCols; order++)
-    {
-      if (keyPredsByCol.getPredicateExpressionPtr(order) != NULL)
-        typeOfRange = keyPredsByCol.getPredicateExpressionPtr(order)->getType();
-      else
-      	typeOfRange = KeyColumns::KeyColumn::EMPTY;
-      if (typeOfRange == KeyColumns::KeyColumn::INLIST )
-	//  ||
-	//  typeOfRange != KeyColumns::KeyColumn::RANGE)
-	return TRUE;
-    } // end of for-loop
-
-  } // if (containsPredicates())
-  */
-  return FALSE;
-}
-
 // Determine if the SimpleFileScanOptimizer can be used for the given
 // scan with the given context.
 // Return : TRUE - Use the SimpleFileScanOptimizer
@@ -2605,6 +2577,7 @@ ScanOptimizer::useSimpleFileScanOptimizer(const FileScan& associatedFileScan
 #ifndef NDEBUG
   if (CmpCommon::getDefault(MDAM_TRACING) == DF_ON )
     MdamTrace::setLevel(MTL2);
+    //MdamTrace::setLevel(MDAM_TRACE_LEVEL_ALL);
 #endif
 
   //
@@ -2790,7 +2763,7 @@ ScanOptimizer::useSimpleFileScanOptimizer(const FileScan& associatedFileScan
       if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
       {
 	if ((singleSubsetPrefixColumn+1 < keyPredsByCol.entries()) &&
-	    (curDisjuncts->entries() >= 1) && containsINListOrRanges(curDisjuncts))
+	    (curDisjuncts->entries() >= 1) && curDisjuncts->containsAndorOrPredsInRanges())
 	{
 	  return FALSE;
 	}
@@ -2811,7 +2784,7 @@ ScanOptimizer::useSimpleFileScanOptimizer(const FileScan& associatedFileScan
     if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
     {
       if ((searchKey.getKeyPredicates().entries() == 0) &&
-	  (curDisjuncts->entries() >= 1) && containsINListOrRanges(curDisjuncts))
+	  (curDisjuncts->entries() >= 1) && curDisjuncts->containsAndorOrPredsInRanges())
       {
 	return FALSE;
       }
@@ -3487,13 +3460,22 @@ ScanOptimizer::computeCostObject(
   // occuring. If there is synchronous access, then we need to
   // adjust the cost, since the cost was computed assuming that
   // asynchronous access would occur.
-  if (lppf == NULL)  // Unpartitioned table?
+  if (lppf == NULL)  // Unpartitioned, Trafodion, native HBase or hive tables?
     {
-      // If there is no lppf then the table cannot be partitioned
-      DCMPASSERT(getContext().getPlan()->getPhysicalProperty()->
-                getPartitioningFunction()->
-                 castToSinglePartitionPartitioningFunction() != NULL);
-      countOfPAs = 1;
+      PartitioningFunction* partFunc = getContext().getPlan()
+                ->getPhysicalProperty()-> getPartitioningFunction();
+
+      if ( partFunc->castToSinglePartitionPartitioningFunction() )
+         countOfPAs = 1;
+      else {
+         const FileScan& fileScan = getFileScan();
+
+         if ( fileScan.isHbaseTable() || fileScan.isHiveTable() ||
+              fileScan.isSeabaseTable())
+            countOfPAs = partFunc->getCountOfPartitions();
+         else
+            DCMPASSERT(FALSE);
+      }
     }
   else
     {
@@ -3650,7 +3632,6 @@ ScanOptimizer::computeCostObject(
 
   return costPtr;
 } // computeCostObject(...)
-
 // -----------------------------------------------------------------------
 // Use this routine to find a basic cost object to share.
 // INPUT:
@@ -4247,6 +4228,8 @@ FileScanOptimizer::optimize(SearchKey*& searchKeyPtr   /* out */
 
 
       DCMPASSERT(mdamDisjunctsKeyPtr != NULL);
+
+      MDAM_DEBUG0(MTL2, "call computeCostForMultipleSubset()");
 
       mdamTypeIsCommon = FALSE;
       mdamDisjunctsCostPtr =
@@ -6902,7 +6885,7 @@ FileScanOptimizer::oldComputeCostForMultipleSubset
 	  }
 
 	  MDAM_DEBUGX(MTL2,
-	    MdamTrace::printBasicCost(this, prefixFR, prefixLR, "Cost for prefix:"));
+	    MdamTrace::printBasicCost(this, prefixFR, prefixLR, "Cost for prefix in oldComputeCostForMultipleSubset():"));
 
 
           if (proceedViaCosting)
@@ -9131,9 +9114,18 @@ void MDAMOptimalDisjunctPrefixWA::processNonLeadingColumn()
   // $$$ times the previous UEC
   // $$$ If the hists can handle IN lists then
   // $$$ the next line is correct.
-  uecForPreviousCol_ = disjunctHistograms_.getColStatsForColumn
-    ( optimizer_.getIndexDesc()->getIndexKey()[prefixColumnPosition_-1] ).
-    getTotalUec().getCeiling();
+              
+  MDAM_DEBUG1(MTL2, "processNonLeadingColumn(), prefixCOlumnPosition_-1: %d:", prefixColumnPosition_-1);
+
+  const ColStats& colStats = disjunctHistograms_.getColStatsForColumn
+    ( optimizer_.getIndexDesc()->getIndexKey()[prefixColumnPosition_-1] );
+
+  MDAM_DEBUGX(MTL2, colStats.print());
+
+  uecForPreviousCol_ = colStats.getTotalUec().getCeiling();
+
+  MDAM_DEBUG1(MTL2, "processNonLeadingColumn(), total UEC, uecForPreviousCol_: %f:", uecForPreviousCol_.value());
+      
 
   CostScalar estimatedUec = csOne;
 
@@ -9145,9 +9137,14 @@ void MDAMOptimalDisjunctPrefixWA::processNonLeadingColumn()
 				 prefixColumnPosition_ - 1, /*in*/
 				 estimatedUec /*out*/))
     {
+
       uecForPreviousCol_ = MIN_ONE(
 	(uecForPreviousCol_ / uecForPreviousColBeforeAppPreds_)
 	*estimatedUec);
+
+      MDAM_DEBUG1(MTL2, "processNonLeadingColumn(), MC uec : %f:", estimatedUec.value());
+      MDAM_DEBUG1(MTL2, "processNonLeadingColumn(), modify by MC uec, uecForPreviousCol_: %f:", uecForPreviousCol_.value());
+
       uecForPreviousColBeforeAppPreds_ = estimatedUec;
     }
   sumOfUecsSoFar_ += uecForPreviousColBeforeAppPreds_;
@@ -9380,10 +9377,17 @@ void MDAMOptimalDisjunctPrefixWA::updatePositions()
 	  // case, don't multiply:
 	  if (uecForPreviousCol_.isGreaterThanZero())
 	    {
-	      prefixSubsets_ *= uecForPreviousCol_;
+              MDAM_DEBUG1(MTL2, "updatePositions(), prefixSubsets_: %f:", prefixSubsets_.value());
+              MDAM_DEBUG1(MTL2, "updatePositions(), uecForPreviousCol_: %f:", uecForPreviousCol_.value());
+
+              prefixSubsets_ *= uecForPreviousCol_;
+              MDAM_DEBUG1(MTL2, "updatePositions(), updated prefixSubsets_: %f:", prefixSubsets_.value());
+
 	      prefixSubsets_ =
 		MINOF(innerRowsUpperBound_.getValue(),
 		      prefixSubsets_.getValue());
+
+              MDAM_DEBUG1(MTL2, "updatePositions(), updated prefixSubsets_ bounded: %f:", prefixSubsets_.value());
 	    }
 	  if( uecForPrevColForSeeks_.isGreaterThanZero())
 	    {
@@ -9631,7 +9635,7 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
     } // if scanForcePtr
 
   MDAM_DEBUGX(MTL2,
-    MdamTrace::printBasicCost(&optimizer_, prefixFR, prefixLR, "Cost for prefix:"));
+    MdamTrace::printBasicCost(&optimizer_, prefixFR, prefixLR, "Cost for prefix in updateMinPrefix():"));
   if (proceedViaCosting)
     {
       // Mdam has not been forced, or forced but with the choice
@@ -9654,12 +9658,16 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
         // we should not take MIN (CostA, CostB) for the second case, it should be the cost to apply 
         // last key predicate. 
         //     Total Mdam Cost = CostB
+        //
+        //  This is a heuristics in that we unconditionally include the last key column 
+        //  with IN list (OR preds) predicate without going through the cost comparison 
+        //  step.
         if ( (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
-             (containsINListOrRanges(&optimizer_.getDisjuncts())) &&
-             ( prefixColumnPosition_ == (lastColumnPosition_ - 1) )
-            )
+              optimizer_.getDisjuncts().containsOrPredsInRanges() &&
+              prefixColumnPosition_ == (lastColumnPosition_ - 1) 
+           ) {
           newMinimumFound = TRUE;
-        else
+        } else
           newMinimumFound = (pMinCost_ == NULL) ? TRUE :
             (scmCost->scmCompareCosts(*pMinCost_) == LESS);
       }
@@ -9692,6 +9700,11 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
       firstRound_ = FALSE;
       optRows_ = prefixRows_;
       optRqsts_ = prefixRqsts_;
+
+      MDAM_DEBUG1(MTL2, "<<<<<Update optRqsts_ as %f\n", prefixRqsts_.value());
+      MDAM_DEBUG1(MTL2, "prefixColumnPosition_ =%d\n", prefixColumnPosition_);
+      MDAM_DEBUG1(MTL2, "newMinimumFound=%d\n", newMinimumFound);
+
       optRqstsForSubsetBoundaries_ = prefixRqstsForSubsetBoundaries_;
       optSeeks_ = prefixSeeks_;
       optSeqKBRead_ = prefixKBRead_;

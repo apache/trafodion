@@ -220,7 +220,7 @@ End of MXCI Session
 >>-- As user1, should fail
 >>select * from us4.t1 ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL1, COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -244,13 +244,13 @@ End of MXCI Session
 
 >>update us4.v1 set vc2 = vc1 ;
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.V1.
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.V1(columns: VC2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>insert into us4.v1(vc1,vc2) values (10,10) ;
 
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.V1.
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.V1(columns: VC2).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -258,19 +258,16 @@ End of MXCI Session
 >>-- As user1, should succeed
 >>update us4.t1 set col3 = 2 ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 4 row(s) updated.
 >>select * from us4.v1 order by vc1;
 
 VC1          VC2          VC3        
 -----------  -----------  -----------
 
-          1            1            1
+          1            1            2
           2            2            2
-          5            5            5
-          7            7            7
+          5            5            2
+          7            7            2
 
 --- 4 row(s) selected.
 >>insert into us4.t2 values (5,5,5);
@@ -278,16 +275,10 @@ VC1          VC2          VC3
 --- 1 row(s) inserted.
 >>update us4.v1 set vc1 = vc1 ;
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.V1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 4 row(s) updated.
 >>insert into us4.v1(vc1) values (10) ;
 
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.V1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 1 row(s) inserted.
 >>
 >>delete all from table(querycache()) ;
 
@@ -321,7 +312,7 @@ select * from table(natablecache()) ;
 >>-- As user1, should fail
 >>select * from us4.t1 ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL1, COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -345,13 +336,13 @@ select * from table(natablecache()) ;
 
 >>update us4.v1 set vc2 = vc1 ;
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.V1.
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.V1(columns: VC2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>insert into us4.v1(vc1,vc2) values (10,10) ;
 
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.V1.
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.V1(columns: VC2).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -359,21 +350,19 @@ select * from table(natablecache()) ;
 >>-- As user1, should succeed
 >>update us4.t1 set col3 = 2 ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 5 row(s) updated.
 >>select * from us4.v1 order by vc1;
 
 VC1          VC2          VC3        
 -----------  -----------  -----------
 
-          1            1            1
+          1            1            2
           2            2            2
-          5            5            5
-          7            7            7
+          5            5            2
+          7            7            2
+         10            ?            2
 
---- 4 row(s) selected.
+--- 5 row(s) selected.
 >>insert into us4.t2 values (5,5,5);
 
 *** ERROR[8102] The operation is prevented by a unique constraint.
@@ -381,16 +370,12 @@ VC1          VC2          VC3
 --- 0 row(s) inserted.
 >>update us4.v1 set vc1 = vc1 ;
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.V1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 5 row(s) updated.
 >>insert into us4.v1(vc1) values (10) ;
 
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.V1.
+*** ERROR[8102] The operation is prevented by a unique constraint.
 
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) inserted.
 >>
 >>delete all from table(querycache()) ;
 
@@ -442,7 +427,7 @@ select * from table(natablecache()) ;
 
 >>insert into us4.t2 values (1,1,1);
 
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2(columns: C).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -450,50 +435,40 @@ select * from table(natablecache()) ;
 >>-- As user2, should succeed
 >>update us4.t1 set col3 = 4 ;
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 5 row(s) updated.
 >>update us4.t1 set col2 = 3 ;
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 5 row(s) updated.
 >>select * from us4.t1 order by col1;
 
 COL1         COL2         COL3       
 -----------  -----------  -----------
 
-          1            1            1
-          2            2            2
-          5            5            5
-          7            7            7
+          1            3            4
+          2            3            4
+          5            3            4
+          7            3            4
+         10            3            4
 
---- 4 row(s) selected.
+--- 5 row(s) selected.
 >>insert into us4.t2(a,b) values (1,1);
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2.
-
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 1 row(s) inserted.
 >>log;
 >>-- as user3
 >>insert into us4.t2(a,b) values (2,2) ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2(columns: B).
 
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2(columns: B).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>update us4.t1 set col2 = col1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -501,117 +476,118 @@ COL1         COL2         COL3
 >>
 >>insert into us4.t2(a) values (3) ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T2.
-
-*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.US4.T2.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 1 row(s) inserted.
 >>update us4.t1 set col1 = col1 + 1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 5 row(s) updated.
 >>
 >>select col1 from us4.t1 order by 1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+COL1       
+-----------
 
-*** ERROR[8822] The statement was not prepared.
+          2
+          3
+          6
+          8
+         11
 
+--- 5 row(s) selected.
 >>select col2 from us4.t1 ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>
 >>select col1 from us4.t1 where col2 > 100;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select col1 from us4.t1 where col1 > 100 order by 1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) selected.
 >>
 >>select count(*), min(col1) from us4.t1 group by col2;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select count(*), min(col1) from us4.t1 group by col1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+(EXPR)                (EXPR)     
+--------------------  -----------
 
-*** ERROR[8822] The statement was not prepared.
+                   1            2
+                   1            3
+                   1            6
+                   1            8
+                   1           11
 
+--- 5 row(s) selected.
 >>
 >>select count(*) from us4.t1 group by col1 having min(col2) > 10;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select count(*) from us4.t1 group by col1 having min(col1) > 10;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+(EXPR)              
+--------------------
 
-*** ERROR[8822] The statement was not prepared.
+                   1
 
+--- 1 row(s) selected.
 >>
 >>select x from us4.t1 transpose col2 as x;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select x from us4.t1 transpose col1 as x order by 1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+X          
+-----------
 
-*** ERROR[8822] The statement was not prepared.
+          2
+          3
+          6
+          8
+         11
 
+--- 5 row(s) selected.
 >>
 >>select col1 from us4.t1 sample random balance 
 +>when col2 = 1 then 100 percent else 0 percent end;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select col1 from us4.t1 sample random balance 
 +>when col1 = 1 then 100 percent else 0 percent end order by 1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) selected.
 >>
 >>select col1 from us4.t1 where exists (select 1 from (values (us4.t1.col2)) t2(x) where t2.x = 100);
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2).
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select col1 from us4.t1 where exists (select 1 from (values (us4.t1.col1)) t2(x) where t2.x = 100) order by 1;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) selected.
 >>
 >>select * from us4.t1 ;
 
-*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.US4.T1(columns: COL2, COL3).
 
 *** ERROR[8822] The statement was not prepared.
 

@@ -137,12 +137,6 @@ public:
   inline ComCompressionType getCompressionType() const;
      // Returns the value of COMPRESSION TYPE
 
-  inline unsigned short getLockLength() const;
-
-       // Returns the unsigned number appearing in the specified
-       // LockLength phrase.  The return value has no meanings when
-       // the LockLength phrase is not specified.
-
   inline ULng32 getMaxSize() const;
 
        // Returns the value appearing in the specified MaxSize phrase.
@@ -218,11 +212,6 @@ public:
   inline NABoolean isDeallocateSpecified() const;
 
        // Returns TRUE if the Deallocate phrase appears;
-       // returns FALSE otherwise.
-
-  inline NABoolean isLockLengthSpecified() const;
-
-       // Returns TRUE if the LockLength phrase appears;
        // returns FALSE otherwise.
 
   inline NABoolean isMaxSizeSpecified() const;
@@ -332,10 +321,6 @@ private:
   // DEALLOCATE
   NABoolean       isDeallocateSpec_;
   
-  // LOCKLENGTH
-  NABoolean       isLockLengthSpec_;
-  unsigned short  lockLength_;
-
   // MAXSIZE
   NABoolean       isMaxSizeSpec_;
   NABoolean       isMaxSizeUnbounded_;
@@ -420,12 +405,6 @@ ParDDLFileAttrsAlterTable::getIsClearOnPurge() const
   return isClearOnPurge_;
 }
 
-inline unsigned short
-ParDDLFileAttrsAlterTable::getLockLength() const
-{
-  return lockLength_;
-}
-
 inline ULng32
 ParDDLFileAttrsAlterTable::getMaxSize() const
 {
@@ -508,13 +487,6 @@ inline NABoolean
 ParDDLFileAttrsAlterTable::isDeallocateSpecified() const
 {
   return isDeallocateSpec_;
-}
-
-// is the LockLength phrase specified?
-inline NABoolean
-ParDDLFileAttrsAlterTable::isLockLengthSpecified() const
-{
-  return isLockLengthSpec_;
 }
 
 // is the MaxSize phrase specified?

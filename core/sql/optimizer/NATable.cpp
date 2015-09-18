@@ -3588,7 +3588,9 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
                                    TRUE, // allow NULL
                                    FALSE, // not upshifted
                                    FALSE, // not case-insensitive
-                                   CharInfo::getCharSetEnum(hiveCharset));
+                                   CharInfo::getCharSetEnum(hiveCharset),
+                                   CharInfo::DefaultCollation,
+                                   CharInfo::IMPLICIT);
     }
   
   if ( !strcmp(hiveType, "float"))
@@ -4341,8 +4343,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		  isSystemTable,
 		  numberOfFiles,
 		  MAXOF(table_desc->body.table_desc.rowcount,0),
-		  indexes_desc->body.indexes_desc.record_length,
-		  files_desc ? files_desc->body.files_desc.lockLength : 0,
+                  indexes_desc->body.indexes_desc.record_length,
                   blockSize,
 		  indexLevels,
 		  allColumns,
@@ -4674,9 +4675,7 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
 
                   // HIVE-TBD
 		  Cardinality(estimatedRC),
-		  Lng32(estimatedRecordLength), 
-
-		  0, // lock length
+                  Lng32(estimatedRecordLength),
 
 		  //hvt_desc->getBlockSize(), 
 		  (Lng32)hiveHDFSTableStats->getEstimatedBlockSize(), 
@@ -4845,6 +4844,51 @@ ULng32 hashColPosList(const CollIndexSet &colSet)
   return colSet.hash();
 }
 
+
+// ----------------------------------------------------------------------------
+// method: lookupObjectUid
+//
+// Calls DDL manager to get the object UID for the specified object
+//
+// params:
+//    qualName - name of object to lookup
+//    objectType - type of object
+//
+// returns:
+//   -1 -> error found trying to read metadata including object not found
+//   UID of found object
+//
+// the diags area contains details of any error detected
+//
+// *** recent change - move this function up in this file and move resetting
+//     of ComDiagsArea to the caller ***
+// ----------------------------------------------------------------------------      
+Int64 lookupObjectUid( const QualifiedName& qualName
+                     , ComObjectType objectType
+                     )
+{
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int64 objectUID = 0;
+
+  CmpSeabaseDDL cmpSBD(STMTHEAP);
+  if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
+
+      return -1;
+    }
+
+  objectUID = cmpSBD.getObjectUID(&cliInterface,
+                                  qualName.getCatalogName().data(),
+                                  qualName.getSchemaName().data(),
+                                  qualName.getObjectName().data(),
+                                  comObjectTypeLit(objectType));
+
+  cmpSBD.switchBackCompiler();
+
+  return objectUID;
+}
 
 // -----------------------------------------------------------------------
 // NATable::NATable() constructor
@@ -5079,6 +5123,36 @@ NATable::NATable(BindWA *bindWA,
   catalogUID_ = uint32ArrayToInt64(table_desc->body.table_desc.catUID);
   schemaUID_ = uint32ArrayToInt64(table_desc->body.table_desc.schemaUID);
   objectUID_ = uint32ArrayToInt64(table_desc->body.table_desc.objectUID);
+
+  // Set the objectUID_ for hbase Cell and Row tables, if the table has
+  // been defined in Trafodion use this value, otherwise, set to 0
+  if (isHbaseCell_ || isHbaseRow_)
+    {
+      NAString adjustedName = ComConvertNativeNameToTrafName
+         (corrName.getQualifiedNameObj().getCatalogName(),
+          corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
+          corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
+      QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+
+      Lng32 diagsMark = CmpCommon::diags()->mark();
+      objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
+
+      // If the objectUID is not found, then the table is not externally defined
+      // in Trafodion, set the objectUID to 0
+      // If an unexpected error occurs, then return with the error
+      if (objectUID_ <= 0)
+        {
+          if (CmpCommon::diags()->contains(-1389))
+            {
+              CmpCommon::diags()->rewind(diagsMark);
+              objectUID_ = 0;
+            }
+          else
+            return;
+        }
+      else
+        setHasExternalTable(TRUE);
+    }
 
   if (table_desc->body.table_desc.owner)
     {
@@ -5558,51 +5632,6 @@ NATable::NATable(BindWA *bindWA,
 #pragma warn(770)  // warning elimination
 
 
-// ----------------------------------------------------------------------------
-// method: lookupObjectUid
-//
-// Calls DDL manager to get the object UID for the specified object
-//
-// params:
-//    qualName - name of object to lookup
-//    objectType - type of object
-//
-// returns:
-//   -1 -> error found trying to read metadata including object not found
-//   UID of found object
-//
-// the diags area contains details of any error detected
-//
-// *** recent change - move this function up in this file and move resetting
-//     of ComDiagsArea to the caller ***
-// ----------------------------------------------------------------------------      
-Int64 lookupObjectUid( const QualifiedName& qualName
-                     , ComObjectType objectType
-                     )
-{
-  ExeCliInterface cliInterface(STMTHEAP);
-  Int64 objectUID = 0;
-
-  CmpSeabaseDDL cmpSBD(STMTHEAP);
-  if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
-    {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-        *CmpCommon::diags() << DgSqlCode( -4400 );
-
-      return -1;
-    }
-
-  objectUID = cmpSBD.getObjectUID(&cliInterface,
-                                  qualName.getCatalogName().data(),
-                                  qualName.getSchemaName().data(),
-                                  qualName.getObjectName().data(),
-                                  comObjectTypeLit(objectType));
-
-  cmpSBD.switchBackCompiler();
-
-  return objectUID;
-}
-
 // Constructor for a Hive table
 NATable::NATable(BindWA *bindWA,
                  const CorrName& corrName,
@@ -5752,10 +5781,11 @@ NATable::NATable(BindWA *bindWA,
   // If the HIVE table has been registered in Trafodion, get the objectUID
   // from Trafodion, otherwise, set it to 0.
   // TBD - does getQualifiedNameObj handle delimited names correctly?
-  QualifiedName extObjName (corrName.getQualifiedNameObj().getObjectName(),
-                            corrName.getQualifiedNameObj().getSchemaName(),
-                            TRAFODION_SYSCAT_LIT,
-                            STMTHEAP);
+  NAString adjustedName = ComConvertNativeNameToTrafName 
+                            ( corrName.getQualifiedNameObj().getCatalogName(),
+                              corrName.getQualifiedNameObj().getSchemaName(),
+                              corrName.getQualifiedNameObj().getObjectName()); 
+  QualifiedName extObjName (adjustedName, 3, STMTHEAP);
 
   Lng32 diagsMark = CmpCommon::diags()->mark();
   objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
@@ -6817,8 +6847,8 @@ void NATable::setupPrivInfo()
       return;
     }
   if (testError || (STATUS_GOOD !=
-       privInterface.getPrivileges(objectUid().get_value(), thisUserID,
-                                    *privInfo_, &secKeyVec)))
+       privInterface.getPrivileges(objectUid().get_value(), objectType_,
+                                   thisUserID, *privInfo_, &secKeyVec)))
   {
     if (testError)
 #ifndef NDEBUG

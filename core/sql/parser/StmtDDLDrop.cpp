@@ -561,7 +561,8 @@ StmtDDLDropSchema::StmtDDLDropSchema(//const SchemaName & schemaName,
   // If the schema name specified is reserved name, users cannot drop them.
   // They can only be dropped internally.
   if ((! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
-      (ComIsTrafodionReservedSchemaName(schemaQualName_.getSchemaName())))
+      (ComIsTrafodionReservedSchemaName(schemaQualName_.getSchemaName())) &&
+      (!ComIsTrafodionExternalSchemaName(schemaQualName_.getSchemaName())))
     {
       // error.
       *SqlParser_Diags << DgSqlCode(-1430)

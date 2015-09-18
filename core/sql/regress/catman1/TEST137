@@ -54,9 +54,9 @@ obey TEST137(drop_privs);
 
 log;
 -- run tests as different users
-sh sh runmxci.ksh -i "TEST137(user1_tests)" -u sql_user1;
-sh sh runmxci.ksh -i "TEST137(user4_tests)" -u sql_user4;;
-sh sh runmxci.ksh -i "TEST137(user5_tests)" -u sql_user5;
+sh sqlci -i "TEST137(user1_tests)" -u sql_user1;
+sh sqlci -i "TEST137(user4_tests)" -u sql_user4;;
+sh sqlci -i "TEST137(user5_tests)" -u sql_user5;
 
 -- test the SQL_OPERATIONS privilege
 log LOG137;

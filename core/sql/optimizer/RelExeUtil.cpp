@@ -3814,23 +3814,21 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 
       qualObjName_ = dropTableNode->getTableNameAsQualifiedName();
 
-      // Hive tables can only be specified as external and must be created
-      // with the FOR clause
-      if (qualObjName_.isHive())
-      {
-        if (dropTableNode->isExternal())
+      // Drops of Hive and HBase external tables are allowed 
+      if (qualObjName_.isHive() || (qualObjName_.isHbase()))
         {
-          isHbase_ = TRUE;
-          externalTable = TRUE;
+          if (dropTableNode->isExternal())
+            {
+              isHbase_ = TRUE;
+              externalTable = TRUE;
+            }
+          else
+            {
+              *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
+              bindWA->setErrStatus();
+              return NULL;
+            }
         }
-        else
-        {
-          *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("DDL");
-          bindWA->setErrStatus();
-          return NULL;
-        }
-
-      }
     }
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropHbaseTable())
     {

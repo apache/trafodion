@@ -1026,8 +1026,12 @@ char volatileString[20] = {0};
    if (isVolatile)
       strcpy(volatileString,"VOLATILE");
 
-   str_sprintf(buf,"DROP %s TABLE \"%s\".\"%s\".\"%s\" CASCADE",
-               volatileString,catalogName,schemaName,objectName);
+   if (ComIsTrafodionExternalSchemaName(schemaName))
+     str_sprintf(buf,"DROP EXTERNAL TABLE \"%s\" FOR \"%s\".\"%s\".\"%s\" CASCADE",
+                 objectName,catalogName,schemaName,objectName);
+   else
+     str_sprintf(buf,"DROP %s TABLE \"%s\".\"%s\".\"%s\" CASCADE",
+                 volatileString,catalogName,schemaName,objectName);
  
 ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
 

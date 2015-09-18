@@ -163,6 +163,28 @@ void SQLMXLoggingArea::logExecRtInfo(const char *fileName,
     unlockMutex();
 }
 
+// ----------------------------------------------------------------------------
+// Method: logPrivMgrInfo
+//
+// When privMgr debugging is set, logs information 
+// Information is logged into: master_exec_pid.log in the logs directory
+// ----------------------------------------------------------------------------
+void SQLMXLoggingArea::logPrivMgrInfo(const char *filename,
+                                      ULng32 lineNo,
+                                      const char *msg,
+                                      Int32 level)
+{
+  bool lockedMutex = lockMutex();
+
+  QRLogger::log(CAT_SQL_PRIVMGR,
+                LL_DEBUG, 
+                "%s ", msg);
+
+  if (lockedMutex)
+    unlockMutex();
+}
+
+
 static void writeStackTrace(char *s, int bufLen)
 {
   const int safetyMargin = 256;

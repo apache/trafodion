@@ -50,6 +50,7 @@ std::string CAT_SQL_LOB                       = "SQL.LOB";
 std::string CAT_SQL_SSMP                      = "SQL.SSMP";
 std::string CAT_SQL_SSCP                      = "SQL.SSCP";
 std::string CAT_SQL_UDR                       = "SQL.UDR";
+std::string CAT_SQL_PRIVMGR                   = "SQL.PRIVMGR";
 // hdfs
 std::string CAT_SQL_HDFS_JNI_TOP              =  "SQL.HDFS.JniTop";
 std::string CAT_SQL_HDFS_SEQ_FILE_READER      =  "SQL.HDFS.SeqFileReader";
@@ -295,7 +296,6 @@ std::string &QRLogger::getMyDefaultCat()
     case QRL_UDR:
       return CAT_SQL_UDR;
       break;
-
     default:
       return CAT_SQL;   
     }
@@ -359,7 +359,6 @@ void QRLogger::introduceSelf ()
    case QRL_UDR:
       snprintf (msg, 300, "%s,,, A udrserver  process is launched.", procInfo.data());
       break;
-           
     }
 
    LOG4CXX_INFO(myLogger,msg);
@@ -450,7 +449,13 @@ void QRLogger::logQVP(ULng32 eventId,
     {
         if ( myLevel == log4cxx::Level::getOff() )
           return;
-        if ( myLevel->toInt() < paramLevel->toInt() )
+
+        int_32 configuredLevel = myLevel->toInt();
+        int_32 requestedLevel = paramLevel->toInt();
+
+        // If the configured logging level is greater (more restrictive) than
+        // the requested level, don't log.  
+        if ( configuredLevel > requestedLevel)
           return;
     }
   }
@@ -478,7 +483,9 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, std::string &cat)
     log4cxx::LevelPtr myLevel = myLogger->getLevel();
     if ( myLevel ) 
     {
-      if ( myLevel != log4cxx::Level::getOff() && myLevel->toInt() >= LL_WARN )
+      // If configured Level is the same or less restrictive than WARN (30000)
+      // than report the warning
+      if ( myLevel != log4cxx::Level::getOff() && myLevel->toInt() <= LL_WARN )
       {
         for (i=1; i<=diagsArea->getNumber(DgSqlCode::WARNING_); i++)
         {
@@ -567,7 +574,13 @@ void QRLogger::log(std::string &cat,
     {
         if ( myLevel == log4cxx::Level::getOff() )
           return;
-        if ( myLevel->toInt() < paramLevel->toInt() )
+
+        int_32 configuredLevel = myLevel->toInt();
+        int_32 requestedLevel = paramLevel->toInt();
+
+        // If the configured logging level is greater (more restrictive) than
+        // the requested level, don't log.  
+        if ( configuredLevel > requestedLevel)
           return;
     }
   }
@@ -610,7 +623,13 @@ void QRLogger::log(std::string &cat,
     {
         if ( myLevel == log4cxx::Level::getOff() )
           return;
-        if ( myLevel->toInt() < paramLevel->toInt() )
+
+        int_32 configuredLevel = myLevel->toInt();
+        int_32 requestedLevel = paramLevel->toInt();
+  
+        // If the configured logging level is greater (more restrictive) than
+        // the requested level, don't log. 
+        if ( configuredLevel > requestedLevel)
           return;
     }
   }

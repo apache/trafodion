@@ -67,6 +67,20 @@ typedef struct {
   ComObjectType objectType;
   PrivMgrDesc originalPrivs;
   PrivMgrDesc updatedPrivs;
+
+  void describe (std::string &details) const
+  {
+    details = "object usage - type is ";
+    char objectTypeLit[3] = {0};
+    strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+    details += objectTypeLit;
+    details += ", UID is ";
+    details += to_string((long long int) objectUID);
+    details += ", name is ";
+    details += objectName;
+    details += ", owner is ";
+    details += to_string((long long int) objectOwner);
+  }
 } ObjectUsage;
 
 typedef struct {
@@ -77,6 +91,20 @@ typedef struct {
   bool isInsertable;
   PrivMgrDesc originalPrivs;
   PrivMgrDesc updatedPrivs;
+
+  void describe (std::string &details) const
+  {
+    details = "view usage - type is VI";
+    details += ", UID is ";
+    details += to_string((long long int) viewUID);
+    details += ", name is ";
+    details += viewName;
+    details += ", viewOwner is ";
+    details += to_string((long long int) viewOwner);
+    details += (isUpdatable) ? ", isUpdatable is Y " : "isUpdateable is N"; 
+    details += (isInsertable) ? ", isInsertable is Y " : "isInsertable is N"; 
+  }
+
 } ViewUsage;
 
 typedef struct {
@@ -85,6 +113,20 @@ typedef struct {
   ComObjectType objectType;
   std::string objectName;
   PrivMgrDesc updatedPrivs;
+  void describe (std::string &details) const
+  {
+    details = "object reference - type is ";
+    char objectTypeLit[3] = {0};
+    strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+    details += objectTypeLit;
+    details += ", UID is ";
+    details += to_string((long long int) objectUID);
+    details += ", name is ";
+    details += objectName;
+    details += ", owner is ";
+    details += to_string((long long int) objectOwner);
+  }
+
 } ObjectReference;
 
 

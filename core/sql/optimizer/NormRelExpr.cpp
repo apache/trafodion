@@ -6258,12 +6258,15 @@ void GenericUpdate::rewriteNode(NormWA & normWARef)
   potentialOutputs_.normalizeNode(normWARef);
   // QSTUFF
 
+  precondition_.normalizeNode(normWARef);
+
+  // these are no longer used in the following phases,
+  // so remove them instead of rewriting them
+  exprsInDerivedClasses_.clear();
   // ---------------------------------------------------------------------
   // Rewrite the expressions in the selection predicates and
   // in the Group Attributes.
   // ---------------------------------------------------------------------
-
-  
   RelExpr::rewriteNode(normWARef);
 
   // ---------------------------------------------------------------------
@@ -6529,17 +6532,6 @@ RelExpr * Insert::normalizeNode(NormWA & normWARef)
   // ON STATEMENT MV source table
 
   return normalizedThis;
-}
-
-void Delete::rewriteNode(NormWA &normWARef)
-{
-  precondition_.normalizeNode(normWARef);
-
-  // these are no longer used in the following phases,
-  // so remove them instead of rewriting them
-  exprsInDerivedClasses_.clear();
-
-  GenericUpdate::rewriteNode(normWARef);
 }
 
 // ***********************************************************************

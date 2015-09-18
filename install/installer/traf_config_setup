@@ -2,19 +2,22 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
 # @@@ END COPYRIGHT @@@
 
@@ -152,25 +155,23 @@ echo "export SQCONFIG=\"$SQCONFIG\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 # Password
-if [[ "$userForTrafodion" == "0" ]]; then
-   echo -n "Enter $TRAF_USER password, default is [$TRAF_USER_PASSWORD]: "
-   read answer
-   if [ -z $answer ]; then
-      echo "export TRAF_USER_PASSWORD=\"$TRAF_USER_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
-   else
-      length=${#answer}
-      if [[ $length -lt "6" ]]; then
-         echo "***ERROR: Linux requires password to be at least 6 characters"
-         echo "***ERROR: Password length must be from 6-8 characters."
-         exit -1
-      fi
-      if [[ $length -gt "8" ]]; then
-         echo "***ERROR: VNC server requires passwords be 8 or less characters"
-         echo "***ERROR: Password length must be from 6-8 characters."
-         exit -1  
-      fi
-      echo "export TRAF_USER_PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   fi
+echo -n "Enter $TRAF_USER password, default is [$TRAF_USER_PASSWORD]: "
+read answer
+if [ -z $answer ]; then
+   echo "export TRAF_USER_PASSWORD=\"$TRAF_USER_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+else
+   length=${#answer}
+    if [[ $length -lt "6" ]]; then
+       echo "***ERROR: Linux requires password to be at least 6 characters"
+       echo "***ERROR: Password length must be from 6-8 characters."
+       exit -1
+    fi
+    if [[ $length -gt "8" ]]; then
+       echo "***ERROR: VNC server requires passwords be 8 or less characters"
+       echo "***ERROR: Password length must be from 6-8 characters."
+       exit -1  
+    fi
+    echo "export TRAF_USER_PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
 #==============================================
@@ -418,7 +419,7 @@ if [ $package -eq 0 ]; then
    echo "***INFO: assuming it is a Trafodion build only tar file"
    
    # since it is not a package tar file, we'll need to prompt for the DCS build file
-   echo -n "Enter location of DCS tar file [DCS_BUILD]: "
+   echo -n "Enter location of DCS tar file [$DCS_BUILD]: "
    read answer
    if [ -z $answer ]; then
       if [ -z $DCS_BUILD ]; then
@@ -474,6 +475,9 @@ echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
 if [[ -z $TRAF_BUILD ]]; then
    TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
    tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
+   TRAF_BUILD_PATH=$LOCAL_WORKDIR/$TRAF_BUILD
+else
+   TRAF_BUILD_PATH=$TRAF_BUILD
 fi
 
 if [[ -z $TRAF_BUILD ]]; then 
@@ -482,15 +486,23 @@ if [[ -z $TRAF_BUILD ]]; then
    exit -1
 fi
 
-install_features_path=$(tar -tf $LOCAL_WORKDIR/$TRAF_BUILD | grep "install_features")
+install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
+
 
 if [[ ! -z $install_features_path ]]; then
-   tar -xzf $LOCAL_WORKDIR/$TRAF_BUILD $install_features_path
+   tar -xzf $TRAF_BUILD_PATH $install_features_path
    source $install_features_path
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
+   if [[ -z $CDH_5_4_SUPPORT ]]; then
+      echo "export CDH_5_4_SUPPORT=\"N\"" >> $LOCAL_TRAF_CONFIG
+   else
+      echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
+   fi
 else
    CDH_5_3_HDP_2_2_SUPPORT="N"
+   CDH_5_4_SUPPORT="N"
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
+   echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
 fi
 
 #>>> to allow failed installs to be rerun easily we need to do something
@@ -550,10 +562,10 @@ else
    exit -1
 fi
 
-hadoopVersion=$(curl -su admin:admin http://$URL/api/v1/clusters | grep version | grep -c CDH)
+hadoopVersion=$(curl -su $username:$password http://$URL/api/v1/clusters | grep version | grep -c CDH)
 
 if [[ $hadoopVersion -ne "1" ]]; then
-   hadoopVersion=$(curl -su admin:admin http://$URL/api/v1/clusters | grep version | grep -c HDP)
+   hadoopVersion=$(curl -su $username:$password http://$URL/api/v1/clusters | grep version | grep -c HDP)
    if [[ $hadoopVersion -ne "1" ]]; then
       echo "***ERROR: Hadoop type can not be determined"
       echo "***ERROR: Check that URL and port are correct or if Hadoop is up"
@@ -593,7 +605,9 @@ if [ -z $CLUSTER_NAME ]; then
 fi
 
 echo "export CLUSTER_NAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
-
+if [[ $node_count -ne 1 ]]; then
+   echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
+fi
 #=============================================
 #Get Hadoop Nodes
 
@@ -736,28 +750,43 @@ do
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
          if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
             #Check that Cloudera 5.2 or 5.3 are not installed.
-            versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
-            nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
-            if [[ $versionInstalled -eq "0" ]]; then
-               echo "***ERROR: Only Cloudera Versions 5.0.* or 5.1.* are currently supported"
-               echo "***ERROR: Detected Cloudera version:"
-               ssh -q -n $node cat hbaseVersion.txt
-               exit -1
+            if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
+               nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
+               #Check that Cloudera 5.[n>3].* is not installed.
+               if [[ -z $nameOfVersion ]]; then
+                  versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-6].[0-9].* | wc -l)
+                  if [[ $versionInstalled -gt "0" ]]; then
+                     echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
+                     echo "***ERROR: Detected Cloudera version:"
+                     ssh -q -n $node cat hbaseVersion.txt
+                     exit -1
+                  fi
+               fi
+            else
+               versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
+               nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
+               if [[ $versionInstalled -eq "0" ]]; then
+                  echo "***ERROR: Only Cloudera Versions 5.0.* or 5.1.* are currently supported"
+                  echo "***ERROR: Detected Cloudera version:"
+                  ssh -q -n $node cat hbaseVersion.txt
+                  exit -1
+               fi
             fi
          else
             nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
-         fi
 
-         #Check that Cloudera 5.[n>3].* is not installed.
-         if [[ -z $nameOfVersion ]]; then
-            versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
-            if [[ $versionInstalled -gt "0" ]]; then
-               echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
-               echo "***ERROR: Trafodion 1.1.0 is compatible with Cloudera 5.2 and 5.3"
-               echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatible with Cloudera 5.1.2 and 5.1.3"
-               echo "***ERROR: Detected Cloudera version:"
-               ssh -q -n $node cat hbaseVersion.txt
-               exit -1
+            #Check that Cloudera 5.[n>3].* is not installed.
+            if [[ -z $nameOfVersion ]]; then
+               versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
+               if [[ $versionInstalled -gt "0" ]]; then
+                  echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
+                  echo "***ERROR: Trafodion 1.2.0 is compatible with Cloudera 5.4"
+                  echo "***ERROR: Trafodion 1.1.0 is compatible with Cloudera 5.2 and 5.3"
+                  echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatible with Cloudera 5.1.2 and 5.1.3"
+                  echo "***ERROR: Detected Cloudera version:"
+                  ssh -q -n $node cat hbaseVersion.txt
+                  exit -1
+               fi
             fi
          fi
          HADOOP_PATH="/usr/lib/hbase/lib"
@@ -861,7 +890,8 @@ fi
 #==============================================
 #DCS Servers
 
-echo -n "Total number of DCS servers to start, default [$DCS_SERVERS_PARM]: "
+DCS_SERVERS_PARM=$(($node_count * 8))
+echo -n "Total number of concurrent sessions to start, default [$DCS_SERVERS_PARM]: "
 read answer
 
 if [ ! -z $answer ]; then

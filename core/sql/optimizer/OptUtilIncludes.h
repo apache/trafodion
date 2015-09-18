@@ -67,7 +67,9 @@ public:
     { if (!updateColList_.contains(col)) updateColList_.insert(col); }
   void addSelectColumn(Lng32 col) 
     { if (!selectColList_.contains(col)) selectColList_.insert(col); }
-  bool checkColPriv(const PrivType privType);
+  bool checkColPriv(
+   const PrivType privType,
+   const PrivMgrUserPrivs *pPrivInfo);
   
 private:
   SqlTableOpenInfo * stoi_;

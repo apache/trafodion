@@ -269,7 +269,9 @@ void CommonLogger::log(std::string &cat,
     log4cxx::LevelPtr paramLevel = log4cxx::Level::toLevel(level);
     if ( myLevel && paramLevel )
     {
-        if ( myLevel == log4cxx::Level::getOff() || myLevel->toInt() < paramLevel->toInt() )
+        // if no logging - return; if configured logging is more restrictive
+        //  (greater than) the requested level - return
+        if ( myLevel == log4cxx::Level::getOff() || myLevel->toInt() > paramLevel->toInt() )
         {
           return;
         }

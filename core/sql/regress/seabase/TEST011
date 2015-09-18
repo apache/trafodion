@@ -82,6 +82,8 @@ select * from t011t1 where a >= 2 and a < 4;
 select * from t011t1 where a >= 2 and a <= 3;
 select * from t011t1 where a >= 3 and a < 5;
 
+explain select * from t011t1 where a >= 3 and a < 5;
+
 select * from t011t1 where a > 4 and a < 2;
 
 delete from t011t1 where a = 1;

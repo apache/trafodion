@@ -980,23 +980,27 @@ A            B            C
 >>merge into t015t7 on a = 1 when matched then update set c = 3
 +>                           when not matched then insert (a,c) values (1,2);
 
-*** ERROR[3241] This MERGE statement is not supported. Reason:  unique indexes not allowed.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 1 row(s) updated.
 >>select a,c from t015t7;
 
---- 0 row(s) selected.
+A            C          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
 >>merge into t015t7 on a = 1 when matched then update set c = 3
 +>                           when not matched then insert (a,c) values (1,2);
 
-*** ERROR[3241] This MERGE statement is not supported. Reason:  unique indexes not allowed.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- 1 row(s) updated.
 >>select a,c from t015t7;
 
---- 0 row(s) selected.
+A            C          
+-----------  -----------
+
+          1            3
+
+--- 1 row(s) selected.
 >>
 >>control query default olt_query_opt 'ON';
 
@@ -1284,7 +1288,7 @@ A            B
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>-- IDENTITY column not allowed if part of the primary key
+>>-- IDENTITY column
 >>drop table temp;
 
 --- SQL operation complete.
@@ -1298,69 +1302,284 @@ A            B
 
 --- 1 row(s) updated.
 >>
->>-- view not allowed
+>>-- view
 >>create view vtemp as select * from t015t1;
 
 --- SQL operation complete.
 >>merge into vtemp on a = 1 when matched then update set b = 10
 +>                          when not matched then insert values (1,2);
 
-*** ERROR[3241] This MERGE statement is not supported. Reason:  View not allowed.
-
-*** ERROR[8822] The statement was not prepared.
-
->>
->>
->>#ifndef SEABASE_REGRESS
->>-- merge and unique index are not supported on seabase until transaction support is in.
->>-- otherwise unique errors on the index will not rollback the row from the base table.
+--- 1 row(s) updated.
 >>
 >>-- Merge stmt and unique index
 >>set parserflags 1;
+
+--- SQL operation complete.
 >>delete from t015t8;
+
+--- 0 row(s) deleted.
 >>insert into t015t8 values (1,2,3);
+
+--- 1 row(s) inserted.
 >>prepare xx from MERGE INTO t015t8 ON i = 2
 +>      WHEN MATCHED THEN UPDATE SET j = 3
 +>      WHEN NOT MATCHED THEN INSERT VALUES (2,2,3);
+
+--- SQL command prepared.
 >>execute xx;
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
 >>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+
+--- 1 row(s) selected.
 >>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+
+--- 1 row(s) selected.
 >>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+
+--- 1 row(s) selected.
 >>
 >>prepare xx from MERGE INTO t015t8 ON i = 5
 +>      WHEN MATCHED THEN UPDATE SET j = 6
 +>      WHEN NOT MATCHED THEN INSERT VALUES (5,6,7);
+
+--- SQL command prepared.
 >>execute xx;
+
+--- 1 row(s) updated.
 >>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+          5            6            7
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+          6            5
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+          7            5
+
+--- 2 row(s) selected.
 >>
 >>prepare xx from MERGE INTO t015t8 ON i = 1
 +>      WHEN MATCHED THEN UPDATE SET (j,k) = (6,7)
 +>      WHEN NOT MATCHED THEN INSERT VALUES (1,6,7);
+
+--- SQL command prepared.
 >>execute xx;
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
 >>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+          5            6            7
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+          6            5
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+          7            5
+
+--- 2 row(s) selected.
 >>
 >>prepare xx from MERGE INTO t015t8 ON i = 1
 +>      WHEN MATCHED THEN UPDATE SET j = 6
 +>      WHEN NOT MATCHED THEN INSERT VALUES (1,6,7);
+
+--- SQL command prepared.
 >>execute xx;
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
 >>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+          5            6            7
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+          6            5
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+          7            5
+
+--- 2 row(s) selected.
 >>
 >>insert into t015t9 values(1,6,3);
+
+--- 1 row(s) inserted.
 >>prepare xx from MERGE INTO t015t8 using(select * from t015t9) z(i,j,k)
 +>      ON i = z.i
 +>      WHEN MATCHED THEN UPDATE SET j = z.j
 +>      WHEN NOT MATCHED THEN INSERT VALUES (z.i,z.j,z.k);
+
+--- SQL command prepared.
 >>execute xx;
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
 >>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+          5            6            7
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+          6            5
+
+--- 2 row(s) selected.
 >>select * from table (index_table t015t8i2);
->>#endif
+
+K@           I          
+-----------  -----------
+
+          3            1
+          7            5
+
+--- 2 row(s) selected.
+>>
+>>delete from t015t8 ;
+
+--- 2 row(s) deleted.
+>>upsert into t015t8 values (1,2,3),(11,12,13) ;
+
+--- 2 row(s) inserted.
+>>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+         11           12           13
+
+--- 2 row(s) selected.
+>>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+         12           11
+
+--- 2 row(s) selected.
+>>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+         13           11
+
+--- 2 row(s) selected.
+>>MERGE INTO t015t8 ON i = 1
++>      WHEN MATCHED THEN UPDATE SET j = 12
++>      WHEN NOT MATCHED THEN INSERT VALUES (1,3,4);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
+>>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+         11           12           13
+
+--- 2 row(s) selected.
+>>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+         12           11
+
+--- 2 row(s) selected.
+>>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+         13           11
+
+--- 2 row(s) selected.
+>>
+>>
+>>
 >>
 >>-- Merge stmt and added column.
 >>alter table t015t11 add column j int default 0 not null;
@@ -1408,9 +1627,6 @@ A            B            C
           3            3            3
 
 --- 3 row(s) selected.
->>set parserflags 1;
-
---- SQL operation complete.
 >>select * from table(index_table t015t12i1) ;
 
 B@           _SALT_      A          
@@ -1464,5 +1680,18 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    trafodion_upsert                T015T13               1.00E+000
 
 --- SQL operation complete.
+>>
+>>-- Upsert/merge on table with RI constraint & unique index
+>>upsert into t015t14 values (1,2),(11,12);
+
+--- 2 row(s) inserted.
+>>upsert into t015t15 values (2);
+
+--- 1 row(s) inserted.
+>>upsert into t015t14 values (1,3);
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.SCH.CONS1 on table TRAFODION.SCH.T015T14.
+
+--- 0 row(s) inserted.
 >>
 >>log;
