@@ -38,12 +38,11 @@ cqd mode_seahive 'ON';
 --------------------------------------------------------------------------
 -- test update stats on native hive tables
 
-update statistics for table customer on every column sample random 2 percent;
+update statistics for table hive.hive.customer on every column sample random 1 percent;
 
-showstats for table customer on "C_BIRTH_YEAR" detail;
-
-explain options 'f' select * from customer ;
-explain options 'f' select * from customer where "C_BIRTH_YEAR" = 1973;
+--showstats for table customer on "C_BIRTH_YEAR" detail;
+--explain options 'f' select * from customer ;
+--explain options 'f' select * from customer where "C_BIRTH_YEAR" = 1973;
 
 update statistics for table customer clear;
 

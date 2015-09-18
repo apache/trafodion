@@ -301,7 +301,7 @@ Lng32 AddTableName( const hs_table_type type
                                                 hs_globals->tableType,
                                                 hs_globals->nameSpace);
 
-      	if (NOT hs_globals->objDef->objExists(HSTableDef::MAX_INFO))
+      	if (NOT hs_globals->objDef->objExists(TRUE))
           {
             // now look into the regular schema
             delete hs_globals->objDef;
@@ -349,7 +349,7 @@ Lng32 AddTableName( const hs_table_type type
 
        // try public schema if an object is not qualified and not found
        if ((NOT schema) && 
-           (NOT hs_globals->objDef->objExists(HSTableDef::MAX_INFO)))
+           (NOT hs_globals->objDef->objExists(TRUE)))
        {
           NAString pubSch = ActiveSchemaDB()->getDefaults().getValue(PUBLIC_SCHEMA_NAME);
           ComSchemaName pubSchema(pubSch);
@@ -368,7 +368,7 @@ Lng32 AddTableName( const hs_table_type type
                                                            hs_globals->tableType,
                                                            hs_globals->nameSpace);
 
-                if (pubObjDef->objExists(HSTableDef::MAX_INFO))
+                if (pubObjDef->objExists(TRUE))
                 {
                   hs_globals->objDef = pubObjDef;
                 }
@@ -376,7 +376,7 @@ Lng32 AddTableName( const hs_table_type type
           }
        }
 
-      if (NOT hs_globals->objDef->objExists(HSTableDef::MAX_INFO))
+      if (NOT hs_globals->objDef->objExists(TRUE))
       {
          HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, extName);
          retcode = -1;

@@ -60,7 +60,7 @@ class HSTableDef : public NABasicObject
                const ComAnsiNameSpace nameSpace);
 
     ~HSTableDef();
-    virtual NABoolean objExists(labelDetail detail = MIN_INFO) = 0;
+    virtual NABoolean objExists(NABoolean createExternalTable = FALSE) = 0;
     virtual NABoolean publicSchemaExists() = 0;
     Lng32 getColNum(const char *colName, NABoolean errIfNotFound = TRUE) const;
     char* getColName(Lng32 colNum) const;
@@ -115,7 +115,7 @@ class HSTableDef : public NABasicObject
     virtual tblOrigin getTblOrigin() const = 0;
 
   protected:
-    NABoolean setObjectUID();
+    NABoolean setObjectUID(NABoolean createExternalObject);
 
   protected:
     NAString           *tableName_;
@@ -154,7 +154,7 @@ class HSSqTableDef : public HSTableDef
       {}
     ~HSSqTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists();
     NAString getNodeName() const;
     NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const;
@@ -229,7 +229,7 @@ class HSHiveTableDef : public HSTableDef
 
     ~HSHiveTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists()
       {
         return FALSE;
@@ -340,7 +340,7 @@ class HSHbaseTableDef : public HSTableDef
 
     ~HSHbaseTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists()
       {
         return FALSE;

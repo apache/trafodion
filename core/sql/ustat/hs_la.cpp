@@ -111,7 +111,7 @@ HSTableDef::~HSTableDef()
       }
   }
 
-NABoolean HSSqTableDef::objExists(labelDetail detail)
+NABoolean HSSqTableDef::objExists(NABoolean createExternalTable)
   {
     setNATable();
     if (!naTbl_)
@@ -845,13 +845,13 @@ Lng32 HSSqTableDef::collectFileStatistics() const
 
 //=====================================================
 
-NABoolean HSHiveTableDef::objExists(labelDetail unused)
+NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
 {
   setNATable();
   if (!naTbl_)
     return FALSE;
 
-  if (!setObjectUID())
+  if (!setObjectUID(createExternalTable))
     return FALSE;
 
   tableStats_ = naTbl_->getClusteringIndex()->getHHDFSTableStats();
@@ -1053,11 +1053,12 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
    return retcode;
 }
 
-NABoolean HSTableDef::setObjectUID()
+NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
 {
   objectUID_ = naTbl_->objectUid().get_value();
 
-  if (objectUID_ <= 0 && HSGlobalsClass::isNativeCat(getCatName(EXTERNAL_FORMAT)) ) {
+  if (createExternalTable && objectUID_ <= 0 && 
+      HSGlobalsClass::isNativeCat(getCatName(EXTERNAL_FORMAT)) ) {
 
     // If objectUID is not set, it means there is no corresponding
     // external table created for it. Need to create one here.
@@ -1087,10 +1088,13 @@ NABoolean HSTableDef::setObjectUID()
     }
   }
 
-  return (objectUID_ > 0);
+  if ( createExternalTable )
+    return (objectUID_ > 0);
+  else 
+    return TRUE;
 }
 
-NABoolean HSHbaseTableDef::objExists(labelDetail unused)
+NABoolean HSHbaseTableDef::objExists(NABoolean createExternalTable)
 {
   HSLogMan *LM = HSLogMan::Instance();
 
@@ -1103,7 +1107,7 @@ NABoolean HSHbaseTableDef::objExists(labelDetail unused)
   if (!naTbl_)
     return FALSE;
 
-  if (!setObjectUID())
+  if (!setObjectUID(createExternalTable))
     return FALSE;
 
 
