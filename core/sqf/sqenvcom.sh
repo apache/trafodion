@@ -30,7 +30,7 @@
 ##############################################################
 
 #Product version (Trafodion, Enterprise or Enterprise Adv)
-export TRAFODION_VER_PROD="Apache Trafodion "
+export TRAFODION_VER_PROD="Apache Trafodion"
 # Trafodion version (also update file ../sql/common/copyright.h)
 export TRAFODION_VER_MAJOR=1
 export TRAFODION_VER_MINOR=2
