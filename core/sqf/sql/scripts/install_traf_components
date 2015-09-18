@@ -31,7 +31,7 @@ if [ -z "$CLIENT_TAR" ]; then
     CLIENT_TAR=$TRAF_TARS/*clients*.tgz
 fi
 
-if [ -f "$CLIENT_TAR" ]; then
+if [ -f $CLIENT_TAR ]; then
    cd $MY_SW_ROOT
    tar -xzf $CLIENT_TAR *Linux*
    tar -xzf $CLIENT_TAR *odb*
@@ -60,11 +60,11 @@ echo "   For local hadoop... $MY_SW_ROOT" | tee -a ${MY_LOG_FILE}
 echo "   For DCS_TAR... $DCS_TAR" | tee -a ${MY_LOG_FILE}
 echo "   For REST_TAR... $REST_TAR" | tee -a ${MY_LOG_FILE}
 
-if [ -f "$PHX_TAR" ]; then
+if [ -f $PHX_TAR ]; then
   echo "   For PHX_TAR... $PHX_TAR" | tee -a ${MY_LOG_FILE}
 fi
 
-if [ -f "$CLIENT_TAR" ]; then
+if [ -f $CLIENT_TAR ]; then
   echo "   For CLIENT_TAR... $CLIENT_TAR" | tee -a ${MY_LOG_FILE}
   echo "      For ODB_TAR... $ODB_TAR" | tee -a ${MY_LOG_FILE}
   echo "      For LNXDRVR_TAR... $LNXDRVR_TAR" | tee -a ${MY_LOG_FILE}
@@ -78,18 +78,12 @@ echo | tee -a ${MY_LOG_FILE}
 if [ -d dcs-* ]; then
   echo "DCS files already exist, skipping DCS setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -n "$DCS_URL" ]; then 
-    echo "Downloading DCS Tar: $DCS_URL" | tee -a ${MY_LOG_FILE}
-    rm -f dcs_download.tar
-    curl ${DCS_URL} -o dcs_download.tar
-    DCS_TAR=./dcs_download.tar
-  else
-    if [ -f "$DCS_TAR" ]; then
+  if [ -f $DCS_TAR ]; then
       echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
-    elif [ -d "$DCS_SRC" ]; then
+  elif [ -d "$DCS_SRC" ]; then
       echo "DCS tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
       echo "Building DCS tar file" | tee -a ${MY_LOG_FILE}
-      if [ -f "$MY_SQROOT/export/lib/jdbcT4.jar" ]; then
+      if [ -f $MY_SQROOT/export/lib/jdbcT4.jar ]; then
          echo "JDBCT4 jar file exist. Proceeding to build DCS from $DCS_SRC" | tee -a ${MY_LOG_FILE}
          cd $DCS_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
@@ -100,7 +94,6 @@ else
          echo "Please build the core Trafodion component"  | tee -a ${MY_LOG_FILE}
          exit 2
       fi
-    fi
   fi
 
 # Install DCS
@@ -159,15 +152,9 @@ echo | tee -a ${MY_LOG_FILE}
 if [ -d rest-* ]; then
   echo "REST files already exist, skipping REST setup"
 else
-  if [ -n "$REST_URL" ]; then
-    echo "Downloading REST Tar: $REST_URL" | tee -a ${MY_LOG_FILE}
-    rm -f rest_download.tar
-    curl ${REST_URL} -o rest_download.tar
-    REST_TAR=./rest_download.tar
-  else
-    if [ -f "$REST_TAR" ]; then
+  if [ -f $REST_TAR ]; then
         echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
-    elif [ -d "$REST_SRC" ]; then
+  elif [ -d "$REST_SRC" ]; then
       echo "REST tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
       echo "Building REST tar file" | tee -a ${MY_LOG_FILE}
       if [ -f $MY_SQROOT/export/lib/jdbcT4.jar ]; then
@@ -180,7 +167,6 @@ else
          echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. Please build the core Trafodion components" | tee -a ${MY_LOG_FILE}
        exit 2
       fi
-    fi
   fi
 
 # Install REST
@@ -233,7 +219,7 @@ HNAME=localhost:$MY_DCS_MASTER_PORT
 UNAME=zz
 PWORD=zz
 
-$MY_SQROOT/trafci/bin/trafci.sh -h $HNAME -u $UNAME -p $PWORD
+$MY_SQROOT/trafci/bin/trafci.sh -h "$HNAME" -u "$UNAME" -p "$PWORD"
 EOF
   chmod +x $MY_SQROOT/sql/scripts/swtrafci
 else
@@ -250,7 +236,7 @@ PHXDIR=$MY_SW_ROOT/tests/phx
 if [ -d "$PHXDIR" ]; then
   echo "Phoenix tests already exist $PHXDIR, skipping Phoenix test setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f "$PHX_TAR" ]; then
+  if [ -f $PHX_TAR ]; then
     echo "Installing Phoenix tests $PHX_TAR"| tee -a ${MY_LOG_FILE}
     tar -xzf $PHX_TAR | tee -a ${MY_LOG_FILE}
     echo "Successfully installed Phoenix tests "| tee -a ${MY_LOG_FILE}
@@ -292,10 +278,10 @@ echo | tee -a ${MY_LOG_FILE}
 
 LNXDRVR=$MY_SW_ROOT/lnxdrvr
 
-if [ -d $LNXDRVR ]; then
+if [ -d "$LNXDRVR" ]; then
   echo "Linux driver files already exist $LNXDRVR, skipping Linux Driver setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f "$LNXDRVR_TAR" ]; then
+  if [ -f $LNXDRVR_TAR ]; then
      echo "Installing Linux driver: $LNXDRV"| tee -a ${MY_LOG_FILE}
      mkdir -p $LNXDRVR | tee -a ${MY_LOG_FILE}
      cd $LNXDRVR 
@@ -325,10 +311,10 @@ echo | tee -a ${MY_LOG_FILE}
 
 ODBLOC=$MY_SW_ROOT/odb
 
-if [ -d $ODBLOC ]; then
+if [ -d "$ODBLOC" ]; then
   echo "ODB files already exist $ODBLOC, skipping ODB setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f "$ODB_TAR" ]; then
+  if [ -f $ODB_TAR ]; then
     echo "Installing ODB tool: $ODBLOC"| tee -a ${MY_LOG_FILE}
     mkdir -p $ODBLOC | tee -a ${MY_LOG_FILE}
     cd $ODBLOC 
