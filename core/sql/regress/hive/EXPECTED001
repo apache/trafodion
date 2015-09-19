@@ -85,6 +85,8 @@
 >>
 >>select c_customer_sk from customer where c_customer_sk < 100;
 
+*** WARNING[6008] Statistics for column (C_CUSTOMER_SK) from table HIVE.HIVE.CUSTOMER were not available. As a result, the access path chosen might not be the best possible.
+
 C_CUSTOMER_SK
 -------------
 
@@ -192,6 +194,8 @@ C_CUSTOMER_SK
 >>
 >>select ca_gmt_offset from customer_address where ca_gmt_offset < -8 
 +>order by ca_gmt_offset;
+
+*** WARNING[6008] Statistics for column (CA_GMT_OFFSET) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
 
 CA_GMT_OFFSET  
 ---------------
@@ -1045,6 +1049,8 @@ P_PROMO_SK   P_PROMO_ID            P_START_DATE_SK  P_END_DATE_SK  P_ITEM_SK    
 >>
 >>select t_time from time_dim where t_time > 100 and t_time < 200 ;
 
+*** WARNING[6008] Statistics for column (T_TIME) from table HIVE.HIVE.TIME_DIM were not available. As a result, the access path chosen might not be the best possible.
+
 T_TIME     
 -----------
 
@@ -1171,6 +1177,8 @@ S_STORE_SK   S_STORE_ID            S_REC_START_DATE            S_REC_END_DATE   
 --- 12 row(s) selected.
 >>
 >>select d_date from date_dim where d_date > cast('2099-01-01' as timestamp);
+
+*** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
 
 D_DATE                    
 --------------------------
