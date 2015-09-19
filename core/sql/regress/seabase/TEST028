@@ -21,24 +21,34 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+
+set schema hbase."_CELL_";
+drop hbase table t028tbl1;
+
 log LOG028 clear;
 
-log off;
-sh sh drop_hbase_tables.sh;
-sh sh create_hbase_tables.sh;
+create hbase table t028tbl1(column family 'cf');
 
-log LOG028;
+insert into hbase."_CELL_".t028tbl1 values 
+('0', 'cf', '1a', -1, '2'),
+('1', 'cf', '1a', -1, '102'),
+('2', 'cf', '1a', -1, '202'),
+('3', 'cf', '1a', -1, '302'),
+('4', 'cf', '1a', -1, '402'),
+('5', 'cf', '1a', -1, '502'),
+('6', 'cf', '1a', -1, '602'),
+('7', 'cf', '1a', -1, '702'),
+('8', 'cf', '1a', -1, '802');
 
-update statistics for table hbase."_CELL_"."test028tbl2" on every column;
-update statistics for table hbase."_CELL_"."test028tbl2" on every key;
 
-showstats for table hbase."_CELL_"."test028tbl2" on ROW_ID detail;
-showstats for table hbase."_CELL_"."test028tbl2" on COL_FAMILY detail;
-showstats for table hbase."_CELL_"."test028tbl2" on COL_VALUE detail;
+cqd  USTAT_INTERNAL_SORT 'off';
+update statistics for table hbase."_CELL_".t028tbl1 on every column;
 
-explain options 'f' select * from hbase."_CELL_"."test028tbl2";
-explain options 'f' select * from hbase."_CELL_"."test028tbl2" where ROW_ID = '700';
+showstats for table hbase."_CELL_".t028tbl1 on ROW_ID detail;
+showstats for table hbase."_CELL_".t028tbl1 on COL_FAMILAY detail;
 
-log off;
-sh sh drop_hbase_tables.sh;
+explain options 'f' select * from hbase."_CELL_".t028tbl1;
+explain options 'f' select * from hbase."_CELL_".t028tbl1 where col_family = 'cf1';
+
+drop hbase table t028tbl1;
 
