@@ -57,6 +57,8 @@ extern void init_scanner (void* &);
 extern void destroy_scanner(void* &scanner);
 Lng32 AddSingleColumn(const Lng32 colNumber);
 
+    
+NABoolean isUpdatestatsStmt = FALSE;
 
 
 // -----------------------------------------------------------------------
@@ -164,11 +166,6 @@ Lng32 AddTableName( const hs_table_type type
     // following updates the global MPLOC value to be consistent with
     // the default attribute values set by SET MPLOC/CQD.
     ActiveSchemaDB()->getDefaults().getSqlParser_NADefaults();
-
-    NABoolean createExternalTable = TRUE;
-    if ( hs_globals->optFlags & SHOWSTATS_OPT ||
-        (hs_globals->optFlags & CLEAR_OPT) )
-      createExternalTable = FALSE;
 
     if (type == GUARDIAN_TABLE)
       {
@@ -306,7 +303,7 @@ Lng32 AddTableName( const hs_table_type type
                                                 hs_globals->tableType,
                                                 hs_globals->nameSpace);
 
-      	if (NOT hs_globals->objDef->objExists(createExternalTable))
+      	if (NOT hs_globals->objDef->objExists(isUpdatestatsStmt))
           {
             // now look into the regular schema
             delete hs_globals->objDef;
@@ -354,7 +351,7 @@ Lng32 AddTableName( const hs_table_type type
 
        // try public schema if an object is not qualified and not found
        if ((NOT schema) && 
-           (NOT hs_globals->objDef->objExists(createExternalTable)))
+           (NOT hs_globals->objDef->objExists(isUpdatestatsStmt)))
        {
           NAString pubSch = ActiveSchemaDB()->getDefaults().getValue(PUBLIC_SCHEMA_NAME);
           ComSchemaName pubSchema(pubSch);
@@ -373,7 +370,7 @@ Lng32 AddTableName( const hs_table_type type
                                                            hs_globals->tableType,
                                                            hs_globals->nameSpace);
 
-                if (pubObjDef->objExists(createExternalTable))
+                if (pubObjDef->objExists(isUpdatestatsStmt))
                 {
                   hs_globals->objDef = pubObjDef;
                 }
@@ -381,7 +378,7 @@ Lng32 AddTableName( const hs_table_type type
           }
        }
 
-      if (NOT hs_globals->objDef->objExists(createExternalTable))
+      if (NOT hs_globals->objDef->objExists(isUpdatestatsStmt))
       {
          HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, extName);
          retcode = -1;

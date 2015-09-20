@@ -60,6 +60,8 @@ extern THREAD_P HSGlobalsClass *hs_globals_y;
 extern int yylex(YYSTYPE * lvalp, void* scanner);
 //extern int yylex();
 
+extern NABoolean isUpdatestatsStmt;
+
 #define scanner scanner
 
 %}
@@ -102,7 +104,10 @@ extern int yylex(YYSTYPE * lvalp, void* scanner);
          same syntax it will fail to parse there and never get here.
 */
 
-statement   :  UPDATE STATISTICS FOR table_kind table_identifier histogram_options
+statement   :  UPDATE STATISTICS { isUpdatestatsStmt = TRUE; } FOR table_kind table_identifier histogram_options
+                   {
+                       isUpdatestatsStmt = FALSE;
+                   }
               | UPDATE STATISTICS LOG ON
                    {
                      HSLogMan *LM = HSLogMan::Instance();
