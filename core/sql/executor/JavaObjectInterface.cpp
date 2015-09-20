@@ -27,8 +27,8 @@
 #include "ComUser.h"
 
 // Changed the default to 512 to limit java heap size used by SQL processes.
+// Keep this define in sync with udrserv/udrserv.cpp
 #define DEFAULT_JVM_MAX_HEAP_SIZE 512
-#define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
 #define TRAF_DEFAULT_JNIHANDLE_CAPACITY 32
 // ===========================================================================
 // ===== Class JavaObjectInterface
