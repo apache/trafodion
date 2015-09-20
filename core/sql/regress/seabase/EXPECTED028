@@ -27,9 +27,9 @@
 >>showstats for table hbase."_CELL_".t028tbl1 on ROW_ID detail;
 
 Detailed Histogram data for Table HBASE."_CELL_".T028TBL1
-Table ID: 7271138919030419384
+Table ID: 6047285781859643730
 
-Hist ID:    519562736
+Hist ID:    1955006841
 Column(s):  ROW_ID
 Total Rows: 9
 Total UEC:  9
@@ -52,11 +52,26 @@ Number    Rowcount         UEC Boundary
 
 
 --- SQL operation complete.
->>showstats for table hbase."_CELL_".t028tbl1 on COL_FAMILAY detail;
+>>showstats for table hbase."_CELL_".t028tbl1 on COL_FAMILY detail;
 
-*** ERROR[9209] Column COL_FAMILAY does not exist in object HBASE."_CELL_".T028TBL1.
+Detailed Histogram data for Table HBASE."_CELL_".T028TBL1
+Table ID: 6047285781859643730
 
---- SQL operation failed with errors.
+Hist ID:    1955006834
+Column(s):  COL_FAMILY
+Total Rows: 9
+Total UEC:  1
+Low Value:  ('cf')
+High Value: ('cf')
+Intervals:  1
+
+Number    Rowcount         UEC Boundary
+====== =========== =========== ======================================
+     0           0           0 ('cf')
+     1           9           1 ('cf')
+
+
+--- SQL operation complete.
 >>
 >>explain options 'f' select * from hbase."_CELL_".t028tbl1;
 

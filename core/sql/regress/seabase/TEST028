@@ -45,7 +45,7 @@ cqd  USTAT_INTERNAL_SORT 'off';
 update statistics for table hbase."_CELL_".t028tbl1 on every column;
 
 showstats for table hbase."_CELL_".t028tbl1 on ROW_ID detail;
-showstats for table hbase."_CELL_".t028tbl1 on COL_FAMILAY detail;
+showstats for table hbase."_CELL_".t028tbl1 on COL_FAMILY detail;
 
 explain options 'f' select * from hbase."_CELL_".t028tbl1;
 explain options 'f' select * from hbase."_CELL_".t028tbl1 where col_family = 'cf1';
