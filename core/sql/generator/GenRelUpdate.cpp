@@ -1343,7 +1343,7 @@ short HbaseDelete::codeGen(Generator * generator)
     }
 
   if (preCondExpr)
-    hbasescan_tdb->setDeletePreCondExpr(preCondExpr);
+    hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
 
   if (generator->isTransactionNeeded())
     setTransactionRequired(generator);
@@ -2475,6 +2475,15 @@ short HbaseInsert::codeGen(Generator *generator)
 	} // if
     }
 
+  ex_expr* preCondExpr = NULL;
+  if (! getPrecondition().isEmpty())
+  {
+    ItemExpr * preCondTree = getPrecondition().rebuildExprTree(ITM_AND,
+							       TRUE,TRUE);
+    expGen->generateExpr(preCondTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			 &preCondExpr);
+  }
+
   ULng32 f;
   expGen->generateKeyEncodeExpr(
 				getIndexDesc(),                         // describes the columns
@@ -2780,7 +2789,10 @@ short HbaseInsert::codeGen(Generator *generator)
 
   if ((CmpCommon::getDefault(HBASE_ASYNC_OPERATIONS) == DF_ON)
            && getInliningInfo().isIMGU())
-     hbasescan_tdb->setAsyncOperations(TRUE);
+    hbasescan_tdb->setAsyncOperations(TRUE);
+
+  if (preCondExpr)
+    hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {

@@ -141,7 +141,6 @@ int main(int argc, char *argv[])
 	if (!noHeader)
 	{
 		printf("JDBC/MX Utility Program\n");
-		printf("Copyright 2004 Hewlett-Packard Development Company, L.P.\n");
 		printf("--------------------------------------------------------\n");
 	}
 

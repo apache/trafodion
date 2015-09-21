@@ -155,7 +155,9 @@ if [[ $cloudera_installed -eq 0 ]]; then
    if [[ "$linuxInstalled" -eq "1" ]]; then
       wget  http://archive.cloudera.com/cm5/sles/11/x86_64/cm/5.3.0/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm
    else
-      wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm
+      if [[ ! -d /usr/java/jdk1.7.0_67-cloudera ]]; then
+         wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm
+      fi
    fi
 
    if [ $? -ne 0 ]; then
@@ -165,11 +167,21 @@ if [[ $cloudera_installed -eq 0 ]]; then
       exit -1
    fi
 
-   sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm 
+   if [[ ! -d /usr/java/jdk1.7.0_67-cloudera ]]; then
+
+      sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm 
+   fi
 
    chmod +x cloudera-manager-installer.bin
 
-   sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme --noprompt
+   echo -n "Setting up with a local repository? (Y/N) "
+   read answer
+
+   if [[ $answer != "Y" ]] && [[ $answer != "y" ]]; then
+      sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme --noprompt
+   else
+      sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme --noprompt --skip_repo_package=1
+   fi
 
    if [ $? -ne 0 ]; then
       echo "***ERROR: Error while installing Cloudera" | tee -a $SETUP_LOG

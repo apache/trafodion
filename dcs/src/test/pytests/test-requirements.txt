@@ -6,6 +6,6 @@ mock>=1.0
 sphinx>=1.1.2,<1.2
 testrepository>=0.0.17
 testtools>=0.9.32
-configparser>=3.3.0r2
+configparser>=3.3.0
 xmlrunner>=1.7.4
 http://pyodbc.googlecode.com/files/pyodbc-3.0.7.zip

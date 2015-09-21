@@ -45,11 +45,11 @@ BEGIN
         BLOCK "000004b0"
         BEGIN
             VALUE "Comments", "T7968G10_01NOV2004_ABC_IPV4_1220\0"
-            VALUE "CompanyName", "Hewlett-Packard Company\0"
+            VALUE "CompanyName", "Esgyn Corporation\0"
             VALUE "FileDescription", "NonStop™ ODBC/MX TCPIPV4 DLL\0"
             VALUE "FileVersion", "3, 51, 201, 113\0"
             VALUE "InternalName", "NonStop™ ODBC/MX TCPIPV4 DLL\0"
-            VALUE "LegalCopyright", "© Copyright 2003 Hewlett-Packard Development Company, LP\0"
+            VALUE "LegalCopyright", "© Copyright Apache Software Foundation\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "tdm_TCPIPV4.dll\0"
             VALUE "PrivateBuild", "\0"

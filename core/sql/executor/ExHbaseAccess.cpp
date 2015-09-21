@@ -336,8 +336,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
     encodedKeyExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (keyColValExpr())
     keyColValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
-  if (deletePreCondExpr())
-    deletePreCondExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (insDelPreCondExpr())
+    insDelPreCondExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (hbaseFilterValExpr())
     hbaseFilterValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   
@@ -1810,9 +1810,9 @@ short ExHbaseAccessTcb::evalRowIdExpr(NABoolean noVarchar)
   return 0;
 }
 
-short ExHbaseAccessTcb::evalDeletePreCondExpr()
+short ExHbaseAccessTcb::evalInsDelPreCondExpr()
 {
-  if (! deletePreCondExpr()) {
+  if (! insDelPreCondExpr()) {
      return 1;
   }
 
@@ -1821,7 +1821,7 @@ short ExHbaseAccessTcb::evalDeletePreCondExpr()
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
   
   exprRetCode =
-    deletePreCondExpr()->eval(pentry_down->getAtp(), workAtp_);
+    insDelPreCondExpr()->eval(pentry_down->getAtp(), workAtp_);
 
   switch (exprRetCode) {
      case ex_expr::EXPR_FALSE:

@@ -130,7 +130,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(returnMergeInsertExpr),
   encodedKeyExpr_(encodedKeyExpr),
   keyColValExpr_(keyColValExpr),
-  deletePreCondExpr_(NULL),
+  insDelPreCondExpr_(NULL),
   hbaseFilterExpr_(hbaseFilterExpr),
 
   asciiRowLen_(asciiRowLen),
@@ -238,7 +238,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   returnMergeInsertExpr_(NULL),
   encodedKeyExpr_(NULL),
   keyColValExpr_(NULL),
-  deletePreCondExpr_(NULL),
+  insDelPreCondExpr_(NULL),
   hbaseFilterExpr_(NULL),
 
   asciiRowLen_(0),
@@ -352,7 +352,7 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
     case 14:
       return "hbaseFilterExpr";
     case 15:
-      return "deletePreCondExpr";
+      return "preCondExpr";
     default:
       return 0;
     }  
@@ -396,7 +396,7 @@ ComTdbHbaseAccess::getExpressionNode(Int32 expNum)
     case 14:
       return hbaseFilterExpr_;
     case 15:
-      return deletePreCondExpr_;
+      return insDelPreCondExpr_;
     default:
       return NULL;
     }  
@@ -417,7 +417,7 @@ Long ComTdbHbaseAccess::pack(void * space)
   rowIdExpr_.pack(space);
   encodedKeyExpr_.pack(space);
   keyColValExpr_.pack(space);
-  deletePreCondExpr_.pack(space);
+  insDelPreCondExpr_.pack(space);
   hbaseFilterExpr_.pack(space);
   colFamNameList_.pack(space);
   workCriDesc_.pack(space);
@@ -485,7 +485,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(rowIdExpr_.unpack(base, reallocator)) return -1;
   if(encodedKeyExpr_.unpack(base, reallocator)) return -1;
   if(keyColValExpr_.unpack(base, reallocator)) return -1;
-  if(deletePreCondExpr_.unpack(base, reallocator)) return -1;
+  if(insDelPreCondExpr_.unpack(base, reallocator)) return -1;
   if(hbaseFilterExpr_.unpack(base, reallocator)) return -1;
   if(colFamNameList_.unpack(base, reallocator)) return -1;
   if(workCriDesc_.unpack(base, reallocator)) return -1;

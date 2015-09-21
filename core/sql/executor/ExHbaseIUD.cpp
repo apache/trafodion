@@ -440,7 +440,13 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case SETUP_INSERT:
 	  {
-	    step_ = EVAL_INSERT_EXPR;
+	    rc = evalInsDelPreCondExpr();
+	    if (rc == -1)
+	      step_ = HANDLE_ERROR;
+	    else if (rc == 0)
+	      step_ = INSERT_CLOSE;
+	    else // expr is true or does not exist
+	      step_ = EVAL_INSERT_EXPR;
 	  }
 	  break;
 
@@ -2198,7 +2204,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-            rc = tcb_->evalDeletePreCondExpr();
+            rc = tcb_->evalInsDelPreCondExpr();
 	    if (rc == -1) {
                 step_ = HANDLE_ERROR;
                 break;
@@ -2239,7 +2245,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case CHECK_AND_DELETE_ROW:
 	  {
-            rc = tcb_->evalDeletePreCondExpr();
+            rc = tcb_->evalInsDelPreCondExpr();
 	    if (rc == -1) {
                 step_ = HANDLE_ERROR;
                 break;
@@ -3953,7 +3959,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		step_ = HANDLE_ERROR;
 		break;
 	    }
-            rc = evalDeletePreCondExpr();
+            rc = evalInsDelPreCondExpr();
             if (rc == -1) {
                 step_ = HANDLE_ERROR;
                 break;
