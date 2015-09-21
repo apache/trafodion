@@ -58,9 +58,6 @@ extern void destroy_scanner(void* &scanner);
 Lng32 AddSingleColumn(const Lng32 colNumber);
 
     
-NABoolean isUpdatestatsStmt = FALSE;
-
-
 // -----------------------------------------------------------------------
 // Invoke yyparse, set hsGlobal structure for each column group.
 // -----------------------------------------------------------------------
@@ -303,7 +300,7 @@ Lng32 AddTableName( const hs_table_type type
                                                 hs_globals->tableType,
                                                 hs_globals->nameSpace);
 
-      	if (NOT hs_globals->objDef->objExists(isUpdatestatsStmt))
+      	if (NOT hs_globals->objDef->objExists(hs_globals->isUpdatestatsStmt))
           {
             // now look into the regular schema
             delete hs_globals->objDef;
@@ -351,7 +348,7 @@ Lng32 AddTableName( const hs_table_type type
 
        // try public schema if an object is not qualified and not found
        if ((NOT schema) && 
-           (NOT hs_globals->objDef->objExists(isUpdatestatsStmt)))
+           (NOT hs_globals->objDef->objExists(hs_globals->isUpdatestatsStmt)))
        {
           NAString pubSch = ActiveSchemaDB()->getDefaults().getValue(PUBLIC_SCHEMA_NAME);
           ComSchemaName pubSchema(pubSch);
@@ -370,7 +367,7 @@ Lng32 AddTableName( const hs_table_type type
                                                            hs_globals->tableType,
                                                            hs_globals->nameSpace);
 
-                if (pubObjDef->objExists(isUpdatestatsStmt))
+                if (pubObjDef->objExists(hs_globals->isUpdatestatsStmt))
                 {
                   hs_globals->objDef = pubObjDef;
                 }
@@ -378,7 +375,7 @@ Lng32 AddTableName( const hs_table_type type
           }
        }
 
-      if (NOT hs_globals->objDef->objExists(isUpdatestatsStmt))
+      if (NOT hs_globals->objDef->objExists(hs_globals->isUpdatestatsStmt))
       {
          HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, extName);
          retcode = -1;

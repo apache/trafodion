@@ -2785,7 +2785,8 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     sample_I_generated(FALSE),
     jitLogThreshold(0),
     stmtStartTime(0),
-    jitLogOn(FALSE)
+    jitLogOn(FALSE),
+    isUpdatestatsStmt(FALSE)
   {
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);

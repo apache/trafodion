@@ -1604,6 +1604,7 @@ public:
     NABoolean      sampleTableUsed;                /* sample table created    */
     NABoolean      samplingUsed;                   /* sample (w/wo sample tbl)*/
     NABoolean      unpartitionedSample;            /* sample tbl not partitned*/
+    NABoolean      isUpdatestatsStmt;              /* is update stats command */
     Lng32           groupCount;                     /* total #column groups    */
     Lng32           singleGroupCount;               /* #single-column groups   */
     HSColGroupStruct *singleGroup;                 /* single-column group list*/
