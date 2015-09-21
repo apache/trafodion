@@ -1,0 +1,23 @@
+
+set schema hbase."_CELL_";
+drop hbase table t028tbl1;
+
+drop table trafodion."_HB__CELL__".T028TBL1;
+drop table TRAFODION."_HBASESTATS_".SB_HISTOGRAMS;
+drop table TRAFODION."_HBASESTATS_".SB_HISTOGRAM_INTERVALS;
+
+log LOG028 clear;
+
+create hbase table t028tbl1(column family 'cf');
+
+insert into hbase."_CELL_".t028tbl1 values
+('0', 'cf', '1a', -1, '2'),
+('1', 'cf', '1a', -1, '102'),
+('2', 'cf', '1a', -1, '202'),
+('3', 'cf', '1a', -1, '302'),
+('4', 'cf', '1a', -1, '402'),
+('5', 'cf', '1a', -1, '502'),
+('6', 'cf', '1a', -1, '602'),
+('7', 'cf', '1a', -1, '702'),
+('8', 'cf', '1a', -1, '802');
+
