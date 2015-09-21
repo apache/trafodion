@@ -116,7 +116,7 @@ typedef NABoolean               ComBoolean;
 #define HIVE_SYSTEM_CATALOG          "HIVE"
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
 #define HIVE_STATS_CATALOG           "TRAFODION"
-#define HIVE_STATS_SCHEMA            "HIVESTATS"
+#define HIVE_STATS_SCHEMA            "\"_HIVESTATS_\""
 #define HIVE_EXT_SCHEMA_PREFIX       "_HV_"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
@@ -126,6 +126,9 @@ typedef NABoolean               ComBoolean;
 #define HBASE_HIST_PK                    "SB_HISTOGRAMS_PK"
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
 #define HBASE_EXT_SCHEMA_PREFIX       "_HB_"
+
+#define HBASE_STATS_CATALOG          "TRAFODION"
+#define HBASE_STATS_SCHEMA           "\"_HBASESTATS_\""
 
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"

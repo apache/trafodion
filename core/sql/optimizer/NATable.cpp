@@ -4890,6 +4890,34 @@ Int64 lookupObjectUid( const QualifiedName& qualName
   return objectUID;
 }
 
+NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName)
+{
+   NAString adjustedName = ComConvertNativeNameToTrafName
+         (corrName.getQualifiedNameObj().getCatalogName(),
+          corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
+          corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
+   QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+
+   Lng32 diagsMark = CmpCommon::diags()->mark();
+   objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
+
+   // If the objectUID is not found, then the table is not externally defined
+   // in Trafodion, set the objectUID to 0
+   // If an unexpected error occurs, then return with the error
+   if (objectUID_ <= 0)
+     {
+       if (CmpCommon::diags()->contains(-1389))
+         {
+           CmpCommon::diags()->rewind(diagsMark);
+           objectUID_ = 0;
+         }
+       else
+         return FALSE;
+     }
+
+   return TRUE;
+}
+
 // -----------------------------------------------------------------------
 // NATable::NATable() constructor
 // -----------------------------------------------------------------------
@@ -5110,6 +5138,12 @@ NATable::NATable(BindWA *bindWA,
     setIsExternalTable(TRUE);
   }
  
+  if (qualifiedName_.getQualifiedNameObj().isHistograms() || 
+      qualifiedName_.getQualifiedNameObj().isHistogramIntervals())
+  {
+    setIsHistogramTable(TRUE);
+  }
+ 
   insertMode_ = table_desc->body.table_desc.insertMode;
 
   setRecordLength(table_desc->body.table_desc.record_length);
@@ -5128,29 +5162,10 @@ NATable::NATable(BindWA *bindWA,
   // been defined in Trafodion use this value, otherwise, set to 0
   if (isHbaseCell_ || isHbaseRow_)
     {
-      NAString adjustedName = ComConvertNativeNameToTrafName
-         (corrName.getQualifiedNameObj().getCatalogName(),
-          corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
-          corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
-      QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+      if ( !fetchObjectUIDForNativeTable(corrName) )
+        return;
 
-      Lng32 diagsMark = CmpCommon::diags()->mark();
-      objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
-
-      // If the objectUID is not found, then the table is not externally defined
-      // in Trafodion, set the objectUID to 0
-      // If an unexpected error occurs, then return with the error
-      if (objectUID_ <= 0)
-        {
-          if (CmpCommon::diags()->contains(-1389))
-            {
-              CmpCommon::diags()->rewind(diagsMark);
-              objectUID_ = 0;
-            }
-          else
-            return;
-        }
-      else
+      if (objectUID_ > 0 )
         setHasExternalTable(TRUE);
     }
 
@@ -5781,31 +5796,12 @@ NATable::NATable(BindWA *bindWA,
   // If the HIVE table has been registered in Trafodion, get the objectUID
   // from Trafodion, otherwise, set it to 0.
   // TBD - does getQualifiedNameObj handle delimited names correctly?
-  NAString adjustedName = ComConvertNativeNameToTrafName 
-                            ( corrName.getQualifiedNameObj().getCatalogName(),
-                              corrName.getQualifiedNameObj().getSchemaName(),
-                              corrName.getQualifiedNameObj().getObjectName()); 
-  QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+  if ( !fetchObjectUIDForNativeTable(corrName) )
+     return;
 
-  Lng32 diagsMark = CmpCommon::diags()->mark();
-  objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
-
-  // If the objectUID is not found, then the table is not externally defined
-  // in Trafodion, set the objectUID to 0
-  // If an unexpected error occurs, then return with the error
-  if (objectUID_ <= 0)
-    {
-      if (CmpCommon::diags()->contains(-1389))
-        {
-          CmpCommon::diags()->rewind(diagsMark);
-          objectUID_ = 0;
-        }
-      else
-        return;
-    }
-  else
+  if ( objectUID_ > 0 )
     setHasExternalTable(TRUE);
- 
+
   // for HIVE objects, the schema owner and table owner is HIVE_ROLE_ID
   if (CmpCommon::context()->isAuthorizationEnabled())
   {
@@ -5943,48 +5939,6 @@ NABoolean NATable::insertMissingStatsWarning(CollIndexSet colsSet) const
 StatsList &
 NATable::getStatistics()
 {
-   // HIVE-TBD
-   if ( isHiveTable() ) {
-
-       NAMemory* heap = CmpCommon::statementHeap();
-
-       if ( colStats_ == NULL ) {
-	  colStats_ = new (heap) StatsList(CmpCommon::statementHeap());
-       }
-
-       return *colStats_;
-
-//       // side-affect NAColumn in colArray on needHistogram() and 
-//       // needFullHistogram()
-//       markColumnsForHistograms();
-//
-//       NAColumnArray& colArray = const_cast<NAColumnArray&>(getNAColumnArray());
-//
-//       for(UInt32 i=0;i<colArray.entries();i++)
-//       {
-//          //get a reference to the column
-//          NAColumn * column = colArray[i];
-//
-//          if ( column->needHistogram() ) {
-//
-//            ComUID id(ColStats::nextFakeHistogramID());
-//
-//            ColStatsSharedPtr colStatsPtr = new (heap)
-//                ColStats (id,
-//                          CostScalar(1000), /*CS uec*/
-//                          CostScalar(2200), /* rowcount in CS */
-//                          CostScalar(-1),  // baseRC
-//                          FALSE, // NABoolean unique 
-//                          0,     // Int32 avgVarcharSize = 0
-//                          heap   // NAMemory* heap=0
-//                         );
-//
-//             colStats_->insertAt(colStats_->entries(), colStatsPtr);
-//          }
-//       }
-//       return *colStats_;
-   }
-
     if (!statsFetched_)
     {
       // mark the kind of histograms needed for this table's columns
@@ -6883,10 +6837,19 @@ void NATable::setupPrivInfo()
 // Query the metadata to find the object uid of the table. This is used when
 // the uid for a metadata table is requested, since 0 is usually stored for
 // these tables.
+// 
+// On return, the "Object Not Found" error (1389) is filtered out from 
+// CmpCommon::diags().
 Int64 NATable::lookupObjectUid()
 {
+    Lng32 diagsMark = CmpCommon::diags()->mark();
+
     QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
     objectUID_ = ::lookupObjectUid(qualName, objectType_);
+
+    if (CmpCommon::diags()->contains(-1389))
+      CmpCommon::diags()->rewind(diagsMark);
+
     return objectUID_.get_value();
 }
 

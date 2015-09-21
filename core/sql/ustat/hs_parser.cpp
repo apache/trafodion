@@ -57,8 +57,7 @@ extern void init_scanner (void* &);
 extern void destroy_scanner(void* &scanner);
 Lng32 AddSingleColumn(const Lng32 colNumber);
 
-
-
+    
 // -----------------------------------------------------------------------
 // Invoke yyparse, set hsGlobal structure for each column group.
 // -----------------------------------------------------------------------
@@ -148,6 +147,7 @@ Lng32 AddTableName( const hs_table_type type
                  )
   {
     HSGlobalsClass *hs_globals = GetHSContext();
+    
     NAString catName, schName, objName;
     NAString extName;
     NAString defaultCat, defaultSch;
@@ -225,7 +225,7 @@ Lng32 AddTableName( const hs_table_type type
               catName = ActiveSchemaDB()->getDefaultSchema().getCatalogName();
           }
   
-        if (schema)
+        if (schema) 
           schName = schema;
         else
           {
@@ -299,7 +299,8 @@ Lng32 AddTableName( const hs_table_type type
                                                 volIntName,
                                                 hs_globals->tableType,
                                                 hs_globals->nameSpace);
-      	if (NOT hs_globals->objDef->objExists(HSTableDef::MAX_INFO))
+
+      	if (NOT hs_globals->objDef->objExists(hs_globals->isUpdatestatsStmt))
           {
             // now look into the regular schema
             delete hs_globals->objDef;
@@ -340,45 +341,47 @@ Lng32 AddTableName( const hs_table_type type
 	  }
 	
 
-  hs_globals->objDef = HSTableDef::create(STMTHEAP,
+       hs_globals->objDef = HSTableDef::create(STMTHEAP,
                                           intName,
                                           hs_globals->tableType,
                                           hs_globals->nameSpace);
 
-  // try public schema if an object is not qualified and not found
-  if ((NOT schema) && 
-      (NOT hs_globals->objDef->objExists(HSTableDef::MAX_INFO)))
-	  {
-      NAString pubSch = ActiveSchemaDB()->getDefaults().getValue(PUBLIC_SCHEMA_NAME);
-      ComSchemaName pubSchema(pubSch);
-      if (NOT pubSchema.getSchemaNamePart().isEmpty())
-      {
-        NAString pubSchName = pubSchema.getSchemaNamePart().getInternalName();
-        NAString pubCatName = (pubSchema.getCatalogNamePart().isEmpty() ? 
-          catName:pubSchema.getCatalogNamePart().getInternalName());
-      	ComObjectName pubIntName(pubCatName, pubSchName, objName,
-			                           COM_UNKNOWN_NAME, ComAnsiNamePart::INTERNAL_FORMAT);
-	      if (pubIntName.isValid())
-	      {
-          HSTableDef *pubObjDef = HSTableDef::create(STMTHEAP,
-                                                     pubIntName, 
-                                                     hs_globals->tableType,
-                                                     hs_globals->nameSpace);
-          if (pubObjDef->objExists(HSTableDef::MAX_INFO))
+       // try public schema if an object is not qualified and not found
+       if ((NOT schema) && 
+           (NOT hs_globals->objDef->objExists(hs_globals->isUpdatestatsStmt)))
+       {
+          NAString pubSch = ActiveSchemaDB()->getDefaults().getValue(PUBLIC_SCHEMA_NAME);
+          ComSchemaName pubSchema(pubSch);
+          if (NOT pubSchema.getSchemaNamePart().isEmpty())
           {
-            hs_globals->objDef = pubObjDef;
-          }
-	      }
-      }
-	  }
+            NAString pubSchName = pubSchema.getSchemaNamePart().getInternalName();
+            NAString pubCatName = (pubSchema.getCatalogNamePart().isEmpty() ? 
+              catName:pubSchema.getCatalogNamePart().getInternalName());
+      	    ComObjectName pubIntName(pubCatName, pubSchName, objName,
+                                     COM_UNKNOWN_NAME, ComAnsiNamePart::INTERNAL_FORMAT);
+	      
+            if (pubIntName.isValid())
+	     {
+                HSTableDef *pubObjDef = HSTableDef::create(STMTHEAP,
+                                                           pubIntName, 
+                                                           hs_globals->tableType,
+                                                           hs_globals->nameSpace);
 
-	if (NOT hs_globals->objDef->objExists(HSTableDef::MAX_INFO))
-	  {
-	    HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, extName);
-	    retcode = -1;
-	    HSHandleError(retcode);
-	  }
+                if (pubObjDef->objExists(hs_globals->isUpdatestatsStmt))
+                {
+                  hs_globals->objDef = pubObjDef;
+                }
+	     }
+          }
+       }
+
+      if (NOT hs_globals->objDef->objExists(hs_globals->isUpdatestatsStmt))
+      {
+         HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, extName);
+         retcode = -1;
+         HSHandleError(retcode);
       }
+    }
 
     //10-040123-2660 We only support tables. We do not allow views.
     // Tables can be metadata tables.
@@ -398,6 +401,7 @@ Lng32 AddTableName( const hs_table_type type
     *hs_globals->user_table = hs_globals->objDef->getObjectFullName();
     hs_globals->tableFormat = hs_globals->objDef->getObjectFormat();
     hs_globals->isHbaseTable = HSGlobalsClass::isHbaseCat(catName);
+    hs_globals->isHiveTable = HSGlobalsClass::isHiveCat(catName);
 
     if (hs_globals->tableFormat == SQLMX)
       {
@@ -428,25 +432,22 @@ Lng32 AddTableName( const hs_table_type type
             LM->Log(LM->msg);
          }
 
-        const char* period = strchr(hs_globals->catSch->data(), '.');
-        NAString catName(hs_globals->catSch->data(),
-                         period - hs_globals->catSch->data());
+        NAString catName(hs_globals->objDef->getCatName());
+
+        *hs_globals->hstogram_table = getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
+
+        *hs_globals->hsintval_table = getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
+
         NABoolean isHbaseOrHive = HSGlobalsClass::isHbaseCat(catName) ||
                                   HSGlobalsClass::isHiveCat(catName);
 
-        *hs_globals->hstogram_table = 
-            getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
-        if (isHbaseOrHive)
+        if (isHbaseOrHive) {
           hs_globals->hstogram_table->append(".").append(HBASE_HIST_NAME);
-        else
-          hs_globals->hstogram_table->append(".HISTOGRAMS");
-
-        *hs_globals->hsintval_table = 
-            getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
-        if (isHbaseOrHive)
           hs_globals->hsintval_table->append(".").append(HBASE_HISTINT_NAME);
-        else
+        } else {
+          hs_globals->hstogram_table->append(".HISTOGRAMS");
           hs_globals->hsintval_table->append(".HISTOGRAM_INTERVALS");
+        }
       }
     else
       {

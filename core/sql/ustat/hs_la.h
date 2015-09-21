@@ -58,8 +58,9 @@ class HSTableDef : public NABasicObject
     HSTableDef(const ComObjectName &tableName,
                const hs_table_type tableType,
                const ComAnsiNameSpace nameSpace);
+
     ~HSTableDef();
-    virtual NABoolean objExists(labelDetail detail = MIN_INFO) = 0;
+    virtual NABoolean objExists(NABoolean createExternalTable = FALSE) = 0;
     virtual NABoolean publicSchemaExists() = 0;
     Lng32 getColNum(const char *colName, NABoolean errIfNotFound = TRUE) const;
     char* getColName(Lng32 colNum) const;
@@ -68,6 +69,7 @@ class HSTableDef : public NABasicObject
     NAString getObjectFullName() const;
     NATable* getNATable() const {return naTbl_;}
     void setNATable();
+
     virtual NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const = 0;
     NAString getPrimaryLoc(formatType format = INTERNAL_FORMAT) const;
     virtual NAString getHistLoc(formatType format = INTERNAL_FORMAT) const = 0;
@@ -113,6 +115,9 @@ class HSTableDef : public NABasicObject
     virtual tblOrigin getTblOrigin() const = 0;
 
   protected:
+    NABoolean setObjectUID(NABoolean createExternalObject);
+
+  protected:
     NAString           *tableName_;
     NAString           *ansiName_;
     NAString           *guardianName_;
@@ -149,7 +154,7 @@ class HSSqTableDef : public HSTableDef
       {}
     ~HSSqTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists();
     NAString getNodeName() const;
     NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const;
@@ -224,7 +229,7 @@ class HSHiveTableDef : public HSTableDef
 
     ~HSHiveTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists()
       {
         return FALSE;
@@ -335,7 +340,7 @@ class HSHbaseTableDef : public HSTableDef
 
     ~HSHbaseTableDef()
       {}
-    NABoolean objExists(labelDetail detail = MIN_INFO);
+    NABoolean objExists(NABoolean createExternalTable = FALSE);
     NABoolean publicSchemaExists()
       {
         return FALSE;
@@ -350,12 +355,8 @@ class HSHbaseTableDef : public HSTableDef
         HS_ASSERT(FALSE);  // MP only
         return "";
       }
-    // Unlike Hive, for HBase we must put the hist and hist_ints tables in
-    // HBase, so we use same cat/sch as source table.
-    NAString getHistLoc(formatType format = INTERNAL_FORMAT) const
-      {
-        return getPrimaryLoc(format);  // inherited from HSTableDef
-      }
+    NAString getHistLoc(formatType format = INTERNAL_FORMAT) const;
+
     Lng32 getFileType()  const
       {
         return -1;

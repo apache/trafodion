@@ -921,7 +921,8 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
                 getHistogramsTableLocation
                 (tabDef->getHistLoc(HSTableDef::EXTERNAL_FORMAT),
                  tabDef->isInMemoryObjectDefn());
-              if (HSGlobalsClass::isHbaseCat(objectName->getCatalogNamePart().getInternalName()))
+              if (HSGlobalsClass::isHbaseCat(objectName->getCatalogNamePart().getInternalName()) ||
+                  HSGlobalsClass::isHiveCat(objectName->getCatalogNamePart().getInternalName()))
                 {
                   histogramTableName = histLoc + "." + HBASE_HIST_NAME;
                   histintsTableName  = histLoc + "." + HBASE_HISTINT_NAME;

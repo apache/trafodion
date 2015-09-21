@@ -249,14 +249,6 @@ void CmpSeabaseDDL::createSeabaseTableLike(
   ComObjectName srcTableName(createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
   srcTableName.applyDefaults(currCatAnsiName, currSchAnsiName);
   
-  // If source table is external, return an error.  
-  // TBD - allow create table like a native (external) HIVE or HBASE table
-  if (ComIsTrafodionExternalSchemaName(srcTableName.getSchemaNamePart().getInternalName()))
-    {
-      *SqlParser_Diags << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);
-      return;
-    }
-  
   CorrName cn(srcTableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
               srcTableName.getSchemaNamePart().getInternalName(),

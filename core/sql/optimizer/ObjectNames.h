@@ -322,6 +322,9 @@ public:
   NABoolean isSeabaseMD() const;
   NABoolean isSeabasePrivMgrMD() const;
 
+  NABoolean isHistograms() const;
+  NABoolean isHistogramIntervals() const;
+
   void setObjectName(const NAString &objName)   { objectName_ = objName; }
   void setObjectNameSpace(ComAnsiNameSpace objNameSpace)   { objectNameSpace_ = objNameSpace; }
 

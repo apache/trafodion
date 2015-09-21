@@ -1178,7 +1178,8 @@ public:
   // --------------------------------------------------------------------
   BindWA(SchemaDB *schemaDB,
   	 CmpContext *currentCmpContext = NULL,
-	 NABoolean inDDL = FALSE);
+	 NABoolean inDDL = FALSE,
+	 NABoolean allowExternalTables = FALSE);
 
   // copy ctor
   BindWA (const BindWA & orig, CollHeap * h=0) ; // not written
@@ -1796,7 +1797,6 @@ private:
   // if binding DDL we can avoid executing some bulky code.
   // --------------------------------------------------------------------
   NABoolean inDDL_;
-
 
   //---------------------------------------------------------------------
   // does the query tree contain any update nodes?
