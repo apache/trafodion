@@ -11,6 +11,11 @@ package-all: package
 	echo "Packaging all Trafodion components"
 	cd core && $(MAKE) package-all 
 
+eclipse: 
+	echo "Making eclipse projects for Trafodion components"
+	cd core && $(MAKE) eclipse 
+
+
 clean: 
 	echo "Removing Trafodion objects"
 	cd core && $(MAKE) clean 
