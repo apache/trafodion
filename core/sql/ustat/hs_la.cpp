@@ -1033,13 +1033,8 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
    ddl.append(schName);
    ddl.append(".");
    ddl.append(nativeTableName);
-   ddl.append(" ATTRIBUTE ");
-
-   HSTranMan *TM = HSTranMan::Instance();
-   if (TM->InTransaction())
-      ddl.append(" AUDIT");
-   else
-      ddl.append("NO AUDIT");
+   ddl.append(" ATTRIBUTE NO AUDIT"); // The external table will not be audited because it 
+                                      // does not store any data.
 
    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
                             "Create external table", NULL);

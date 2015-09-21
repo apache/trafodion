@@ -1388,12 +1388,12 @@ void QualifiedName::print(FILE* ofd, const char* indent, const char* title) cons
 
 NABoolean QualifiedName::isHistograms() const
 {
-   return (getObjectName() == "SB_HISTOGRAMS");
+   return (getObjectName() == HBASE_HIST_NAME);
 }
 
 NABoolean QualifiedName::isHistogramIntervals() const
 {
-   return (getObjectName() == "SB_HISTOGRAM_INTERVALS");
+   return (getObjectName() == HBASE_HISTINT_NAME);
 }
 
 

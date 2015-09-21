@@ -2884,12 +2884,14 @@ Lng32 HSGlobalsClass::Initialize()
         HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
         TM->Begin("Create schema for hive stats.");
         NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
-        ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA);
+        ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA).
+            append(" AUTHORIZATION DB__ROOT");
         retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
                                   "Creating schema for Hive statistics", NULL,
                                   NULL);
         HSHandleError(retcode);
-        TM->Commit(); // Must commit this transaction (even if schema didn't get created).
+        TM->Commit(); // In case if there is an error, the commit will log the error (if
+                      // ULOG is enabled. Otherwise, the method will commit the tranaction.
       }
                                               /*=====================================*/
                                               /*   CREATE HBASE STATS SCHEMA         */
@@ -2900,12 +2902,14 @@ Lng32 HSGlobalsClass::Initialize()
         HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
         TM->Begin("Create schema for native hbase stats.");
         NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
-        ddl.append(HBASE_STATS_CATALOG).append('.').append(HBASE_STATS_SCHEMA);
+        ddl.append(HBASE_STATS_CATALOG).append('.').append(HBASE_STATS_SCHEMA).
+            append(" AUTHORIZATION DB__ROOT");
         retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
                                   "Creating schema for native HBase statistics", NULL,
                                   NULL);
         HSHandleError(retcode);
-        TM->Commit(); // Must commit this transaction (even if schema didn't get created).
+        TM->Commit(); // In case if there is an error, the commit will log the error (if
+                      // ULOG is enabled. Otherwise, the method will commit the tranaction.
       }
                                               /*==============================*/
                                               /*    CREATE HISTOGRM TABLES    */
