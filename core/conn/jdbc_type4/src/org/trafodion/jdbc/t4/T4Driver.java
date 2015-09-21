@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  * the Java program.
  * </p>
  * <p>
- * Copyright: (C) Copyright 2004-2007 Hewlett-Packard Development Company, L.P.
+ * Licensed to the Apache Software Foundation (ASF)
  * </p>
  * 
  * @see java.sql.DriverManager

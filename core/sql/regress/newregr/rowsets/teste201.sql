@@ -20,10 +20,6 @@
 -- @@@ END COPYRIGHT @@@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
-//
-// @@@ END COPYRIGHT @@@
 // +++ Copyright added on 2003/12/3
 // +++ Code modified on 2002/12/17
 **********************************************************************/

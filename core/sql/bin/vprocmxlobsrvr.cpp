@@ -37,10 +37,10 @@
 #include "vproc.h"
 #include <stdio.h>
 
-extern "C" { void
+/*extern "C" { void
 VPROC (PRODNUMMXCI,DATE1MXCI,MXCI_CC_LABEL)
 () {} }
-
+*/
 #include "SCMVersHelp.h"
 
 #define VERS_CV_MAJ 1

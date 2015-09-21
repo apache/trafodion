@@ -20,10 +20,6 @@
 -- @@@ END COPYRIGHT @@@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
-//
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
-//
-// @@@ END COPYRIGHT @@@ 
 **********************************************************************/
         /*  Tests for compound statements containing rowsets and assignment 
           statements, on or below DP2. */ 
