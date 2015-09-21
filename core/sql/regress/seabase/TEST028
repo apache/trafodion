@@ -21,34 +21,11 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+-- setup tables
+sh sqlci -i ddl.sb028;
 
-set schema hbase."_CELL_";
-drop hbase table t028tbl1;
-
-log LOG028 clear;
-
-create hbase table t028tbl1(column family 'cf');
-
-insert into hbase."_CELL_".t028tbl1 values 
-('0', 'cf', '1a', -1, '2'),
-('1', 'cf', '1a', -1, '102'),
-('2', 'cf', '1a', -1, '202'),
-('3', 'cf', '1a', -1, '302'),
-('4', 'cf', '1a', -1, '402'),
-('5', 'cf', '1a', -1, '502'),
-('6', 'cf', '1a', -1, '602'),
-('7', 'cf', '1a', -1, '702'),
-('8', 'cf', '1a', -1, '802');
-
-
-cqd  USTAT_INTERNAL_SORT 'off';
-update statistics for table hbase."_CELL_".t028tbl1 on every column;
-
-showstats for table hbase."_CELL_".t028tbl1 on ROW_ID detail;
-showstats for table hbase."_CELL_".t028tbl1 on COL_FAMILY detail;
-
-explain options 'f' select * from hbase."_CELL_".t028tbl1;
-explain options 'f' select * from hbase."_CELL_".t028tbl1 where col_family = 'cf1';
+-- do update stats 
+sh sqlci -i dml.sb028;
 
 drop hbase table t028tbl1;
 
