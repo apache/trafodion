@@ -1,0 +1,842 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#  Script that prompts user for all user input needed for the
+#  trafodion_config file
+
+
+#==============================================
+# Defaults
+suseLinux=$(grep -cr SUSE /proc/version)
+LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
+TRAF_WORKDIR="/usr/lib/trafodion"
+TRAF_CONFIG="/etc/trafodion/trafodion_config"
+TRAF_CONFIG_DIR=$(dirname $TRAF_CONFIG)
+LOCAL_TRAF_CONFIG="$LOCAL_WORKDIR/trafodion_config"
+LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
+TRAF_USER="trafodion"
+TRAF_USER_PASSWORD="traf123"   # must be 6-8 chars
+userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
+NODE_LIST=""
+HOME_DIR="/home"
+
+TRAF_PACKAGE=""
+TRAF_BUILD=""
+DCS_BUILD=""
+
+
+HADOOP_PREFIX=""
+HBASE_HOME=""
+HIVE_HOME=""
+
+
+HADOOP_NODES=""
+HDFS_USER="hdfs"
+HBASE_USER="hbase"
+HBASE_GROUP="hbase"
+
+SQ_ROOT=""
+INIT_TRAFODION="N"
+START="N"
+SQCONFIG=""
+DCS_SERVERS_PARM="2"
+LDAP_SECURITY="N"
+SCANNER_MODE="N"
+
+LDAP_LEVEL="0"
+#==============================================
+
+function print_usage {
+cat << EOF
+
+This script takes in user input to add to the trafodion_config file or uses known
+defaults. Script will return an error if user enters bad inputs. Type response or
+select [Enter] to select default.
+
+Inputs Requested:
+
+*Trafodion Password (default is [$TRAF_USER_PASSWORD])
+*List of Nodes
+*Home directory (default is [$HOME_DIR])
+*Location of EPEL RPM (default is [None])
+*Full path to Trafodion Server tar file
+(default is [$TRAF_BUILD])
+*Apache Hadoop install location
+*Apache Hbase install location
+*Apache Hive install location
+*HDFS username (default is [$HDFS_USER])
+*HBase username (default is [$HBASE_USER])
+*HBase group (default is [$HBASE_GROUP])
+*Full pathname to the install directory location (default [$SQ_ROOT])
+*Full pathname to the DNS build tar file (default [$DCS_BUILD])
+*Start Trafodion after install (default is [No])
+*Total number of DCS servers to start
+
+
+Options:
+    --help             Print this message and exit.
+
+EOF
+}
+
+#==============================================
+#Parse input parameters
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --scanner_mode)
+            SCANNER_MODE="Y"
+            ;;
+
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+            echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+#==============================================
+
+
+echo
+echo "*******************************"
+echo " Trafodion Configuration Setup"
+echo "*******************************"
+echo
+echo "***INFO: Please press [Enter] to select defaults."
+echo
+
+sudo mkdir -p $TRAF_WORKDIR
+sudo chmod 777 $TRAF_WORKDIR
+
+# if there was a partial config file then use it
+# to fill in default values so user doesn't have to retype
+# everything again.
+if [ -f $LOCAL_TRAF_CONFIG ]; then
+	source $LOCAL_TRAF_CONFIG
+fi
+
+if [[ "$suseLinux" -ge "1" ]]; then
+   SUSE_LINUX="true"
+else 
+   SUSE_LINUX="false"
+fi
+
+echo "#!/bin/bash" > $LOCAL_TRAF_CONFIG
+echo "export SUSE_LINUX=\"$SUSE_LINUX\"" >> $LOCAL_TRAF_CONFIG
+echo "export TRAF_USER=\"$TRAF_USER\"" >> $LOCAL_TRAF_CONFIG
+echo "export TRAF_WORKDIR=\"$TRAF_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
+echo "export LOCAL_WORKDIR=\"$LOCAL_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
+echo "export SQCONFIG=\"$SQCONFIG\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+# Password
+if [[ "$userForTrafodion" == "0" ]]; then
+   echo -n "Enter $TRAF_USER password, default is [$TRAF_USER_PASSWORD]: "
+   read answer
+   if [ -z $answer ]; then
+      echo "export TRAF_USER_PASSWORD=\"$TRAF_USER_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+   else
+      length=${#answer}
+      if [[ $length -lt "6" ]]; then
+         echo "***ERROR: Linux requires password to be at least 6 characters"
+         echo "***ERROR: Password length must be from 6-8 characters."
+         exit -1
+      fi
+      if [[ $length -gt "8" ]]; then
+         echo "***ERROR: VNC server requires passwords be 8 or less characters"
+         echo "***ERROR: Password length must be from 6-8 characters."
+         exit -1  
+      fi
+      echo "export TRAF_USER_PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+   fi
+fi
+
+#==============================================
+# List of Nodes
+
+echo -n "Enter list of nodes to install trafodion(must have apache hadoop/hbase installed) (blank separated), default [$NODE_LIST]: "
+read answer
+if [[ -z "$answer" ]]; then
+   if [ -z "$NODE_LIST" ]; then
+      echo "***ERROR: Must enter list of nodes."
+      exit -1
+   fi 
+else
+   NODES="$answer"
+   NODE_LIST=""
+   ERROR_NODES=""
+   for node in $NODES
+   do
+      newNode=$(ssh -q -n $node hostname)
+      
+      if [[ $? -ne "0" ]]; then
+         echo "***ERROR: Could not ssh to $node."
+         echo "***ERROR: Please check node names for typos"
+         exit -1
+      fi
+
+      nodeName=$(echo $newNode | sed 's/[^a-zA-Z0-9\ \.\-]//g')
+
+      if [[ "$nodeName" != "$newNode" ]]; then
+         echo "***ERROR: Nodes are not named properly."
+         echo "***ERROR: Nodes can have no special characters other than '-' and '.'"
+         exit -1
+      fi
+
+      if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
+         echo "***ERROR: Nodes are not named properly."
+         echo "***ERROR: IP addresses are not supported. Please use node names."
+         exit -1
+      fi
+    
+      #Testing sudo access on all nodes
+      ssh -q -n $newNode sudo echo "***INFO: Testing sudo access on node $newNode"
+      if [ $? -ne "0" ]; then
+         error=1
+         ERROR_NODES="$ERROR_NODES $newNode"
+      fi
+      NODE_LIST="$NODE_LIST $newNode"  
+   done
+
+   if [[ $error == "1" ]]; then
+      echo "***ERROR: $ERROR_NODES does not have sudo access."
+      echo "***ERROR: Must have sudo access on all nodes."
+      exit -1
+   fi
+
+fi
+
+for node in $NODE_LIST
+do
+   ssh -q -n $node echo "***INFO: Testing ssh on $node"
+   if [[ $? -ne "0" ]]; then
+      errorFound=1
+      ERROR_NODES="$ERROR_NODES $node"
+   fi
+done
+
+if [[ $errorFound == "1" ]]; then
+   echo "***ERROR: Could not ssh to $ERROR_NODES."
+   echo "***ERROR: Check permissions and known hosts files."
+   exit -1 
+fi
+
+node_count=$(echo $NODE_LIST | wc -w)
+echo "export NODE_LIST=\"$NODE_LIST\"" >> $LOCAL_TRAF_CONFIG
+echo "export node_count=\"$node_count\"" >> $LOCAL_TRAF_CONFIG
+
+MY_NODES=""
+for node in $NODE_LIST
+do 
+   MY_NODES="$MY_NODES -w $node"
+done 
+echo "export MY_NODES=\"$MY_NODES\"" >> $LOCAL_TRAF_CONFIG
+
+if [ $node_count -eq 1 ]; then
+    TRAF_PDSH=""
+else
+    TRAF_PDSH="pdsh -S $MY_NODES"
+fi
+
+#==============================================
+# Home directory
+if [[ "$userForTrafodion" == "0" ]]; then
+   echo -n "Enter Trafodion userid's home directory prefix, default is [$HOME_DIR]: "
+   read answer
+
+   if [ ! -z $answer ]; then
+      # strip off TRAF_USER if user added it on end of directory
+      HOME_DIR=$(echo "$answer" | sed -e "s@/$TRAF_USER\$@@")
+   fi
+
+   #Test if home directory is on a NFS disk
+   diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
+   if [ "$diskType" == "nfs" ]; then
+      echo "***ERROR: Trafodion userid's home directory ($HOME_DIR) cannot be on an NFS disk"
+      echo "***ERROR: Please choose a different directory to install on."
+      exit -1
+  fi
+else
+  HOME_DIR=$(grep -r "trafodion" /etc/passwd | sed 's/.*:://' | sed 's/\:.*$//' | sed 's/\/trafodion.*$//')
+  
+fi
+
+echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
+#==============================================
+#Check location given for EPEL RPM
+if [[ "$userForTrafodion" == "0" ]] &&[[ "$SUSE_LINUX" != "true" ]]; then
+   echo -n "Specify full path to EPEL RPM (including .rpm), default is None: "
+   read answer
+
+   if [ -z $answer ]; then
+      echo "***INFO: Will attempt to download RPM if EPEL is not installed on all nodes."
+      echo "export EPEL_RPM=\"\"" >> $LOCAL_TRAF_CONFIG
+   else
+      if [[ ! -f $answer ]]; then
+         echo "***ERROR: File not found. Please check path for existence and typos."
+         exit -1
+      fi 
+      if [[ "$answer" == *"rpm"* ]]; then
+         echo "export EPEL_RPM=\"$answer\"" >> $LOCAL_TRAF_CONFIG      
+      else
+         echo "***ERROR: File enter is not an RPM. Check file is of type epel***.rpm"
+         exit -1
+      fi
+   fi
+fi
+#==============================================
+#Check location given for Java 65 or greater
+
+echo -n "Specify location of Java 1.7.0_65 or higher (JDK), default is [$JAVA_HOME]: "
+read answer
+
+if [ -z $answer ]; then
+      if [ -z $JAVA_HOME ]; then
+         echo "***ERROR: Must specify location of Java 1.7.0_65 or higher (JDK)."
+         exit -1
+      fi
+else
+      JAVA_HOME=$answer
+fi
+
+REQ_VER="1.7.0_65"
+JAVA7="7"
+JAVA65="65"
+
+for node in $NODE_LIST
+do
+   THIS_JVM_VER="$(ssh -q -n $node $JAVA_HOME/bin/java -version 2>&1 > /dev/null)"
+   if [[ "$THIS_JVM_VER" == *"No such file"* ]]; then
+      echo "***ERROR: Unable to find Java version on node $node"
+      echo "***ERROR: Must enter a specific Java version (example: /usr/java/jdk1.7.0_67)"
+      echo "***ERROR: Please check for typos and that directory exists"
+      exit -1
+   fi
+
+   javaType="$(ssh -q -n $node $JAVA_HOME/bin/javac -version 2>&1 > /dev/null | grep "No such file" | wc -l)"
+   if [[ $javaType -eq "1" ]]; then
+      echo "***ERROR: Java version on node $node is of type JRE"
+      echo "***ERROR: Java version needed on all nodes must be a JDK"
+      exit -1
+   fi
+
+   temp_JAVA=`echo "${THIS_JVM_VER:15:2}" | sed 's/.*\.//'`
+   
+   #Check if using something less than Java 7
+   if [[ "$temp_JAVA" -lt "$JAVA7" ]]; then
+      error="true"
+   fi
+   
+   #Checking if using 1.7.0_n
+   if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
+      if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then      
+         error="true"
+      fi
+   fi
+
+   if [[ -n $error ]]; then
+      echo "***ERROR: Your existing JAVA_HOME on $node is less than $REQ_VER"
+      echo "***ERROR: Your Java Version on $node = $THIS_JVM_VER"
+      echo "***ERROR: Required java version on $node should be greater than $REQ_VER"
+      exit -1
+   fi
+done
+
+echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+# Trafodion Build location
+# set the following based on what the user provided as input
+# TRAF_PACKAGE = the trafodion package tar file which contains trafodion core & dcs
+# TRAF_BUILD = the trafodion core tar file extracted from the trafodion package
+# DCS_BUILD = the dcs tar file extracted from the trafodion package
+
+if [ -z "$TRAF_PACKAGE" ]; then
+   TRAF_DEFAULT="$TRAF_BUILD"
+else
+   TRAF_DEFAULT="$TRAF_PACKAGE"
+fi
+
+
+echo -n "Enter full path (including .tar or .tar.gz) of trafodion tar file [$TRAF_DEFAULT]: "
+read answer
+if [ -z $answer ] && [ -z $TRAF_DEFAULT ]; then
+   echo "***ERROR: Must specify Trafodion tar file location."
+   exit -1
+fi
+
+if [ ! -z "$answer" ]; then
+   TRAF_PACKAGE="$answer"
+else
+   TRAF_PACKAGE="$TRAF_DEFAULT"
+fi
+
+# make sure file exists
+if [ ! -f $TRAF_PACKAGE ]; then
+   echo "***ERROR: $TRAF_PACKAGE does not exist"
+   exit -1
+fi
+
+# Determine if we have a package or just the trafodion_server tar file
+# Normally, the package file is what should be specified but because
+# we used to not support the package file and required the trafodion core
+# tar file previous users might still specify the trafodion core tar file instead
+# Also, developers might only have trafodion core tar file and not a package
+# tar file.
+package=$(tar -tzf $TRAF_PACKAGE | grep build-version.txt | wc -l )
+if [ $package -eq 0 ]; then
+   
+   # assume user specified a trafodion core tar file
+   TRAF_BUILD=$TRAF_PACKAGE
+   TRAF_PACKAGE=""
+   
+   #TODO: do a quick sanity check on the file to make sure it is a traf build tar file
+
+   echo "***INFO: tar file is not a package tar file which includes Trafodion & DCS"
+   echo "***INFO: assuming it is a Trafodion build only tar file"
+   
+   # since it is not a package tar file, we'll need to prompt for the DCS build file
+   echo -n "Enter location of DCS tar file [DCS_BUILD]: "
+   read answer
+   if [ -z $answer ]; then
+      if [ -z $DCS_BUILD ]; then
+         echo "***ERROR: Must specify DCS tar file location."
+         exit -1
+      fi
+   else
+      DCS_BUILD=$answer
+   fi
+   
+   # make sure file exists
+   if [ ! -f $DCS_BUILD ]; then
+      echo "***ERROR: $DCS_BUILD does not exist"
+      exit -1
+   fi
+
+   #TODO: do a quick sanity check on the file to make sure it is a DCS build tar file
+   
+   # since it is not a package tar file, we'll need to prompt for the rest build file
+   echo -n "Enter location of REST tar file [$REST_BUILD]: "
+   read answer
+   if [ -z $answer ]; then
+      if [ -z $REST_BUILD ]; then
+         echo "***ERROR: Must specify REST tar file location."
+         exit -1
+      fi
+   else
+      REST_BUILD=$answer
+   fi
+   
+   # make sure file exists
+   if [ ! -f $REST_BUILD ]; then
+      echo "***ERROR: $REST_BUILD does not exist"
+      exit -1
+   fi
+
+   #TODO: do a quick sanity check on the file to make sure it is a rest build tar file
+   
+else
+   # user specifed a package file
+   TRAF_BUILD=""
+   DCS_BUILD=""
+   REST_BUILD=""
+fi
+
+
+echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
+echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
+echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
+echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
+
+#Check if install_features file exists
+if [[ -z $TRAF_BUILD ]]; then
+   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
+   tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
+fi
+
+if [[ -z $TRAF_BUILD ]]; then 
+   echo "***ERROR: trafodion_server-n.n.n.tgz not included in $TRAF_PACKAGE"
+   echo "***ERROR: Workaround may be to enter trafodion_server-n.n.n.tgz as trafodion tar package."
+   exit -1
+fi
+
+
+#==============================================
+#Hadoop path 
+
+echo -n "Enter Hadoop installed full path, default is [$HADOOP_PREFIX]: "
+read answer
+
+if [ -z  $answer ]; then
+   if [[ -z $HADOOP_PREFIX ]]; then
+      echo "***ERROR: Must enter apache Hadoop installed path"
+      exit -1
+   fi
+else
+   if [[ -e $answer ]]; then
+      HADOOP_PREFIX=$answer
+   else
+      echo "***ERROR: apache Hadoop installed path doesn't exist"
+      exit -1
+   fi
+fi
+echo "export HADOOP_PREFIX=\"$HADOOP_PREFIX\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Hbase path 
+
+echo -n "Enter Hbase installed full path, default is [$HBASE_HOME]: "
+read answer
+
+if [ -z  $answer ]; then
+   if [[ -z $HBASE_HOME ]]; then
+      echo "***ERROR: Must enter apache Hbase installed path"
+      exit -1
+   fi
+else
+   if [[ -e $answer ]]; then
+      HBASE_HOME=$answer
+   else
+      echo "***ERROR: apache Hbase installed path doesn't exist"
+      exit -1
+   fi
+fi
+echo "export HBASE_HOME=\"$HBASE_HOME\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Hive path 
+
+echo -n "Enter Hive installed full path, default is [$HIVE_HOME]: "
+read answer
+
+if [ -z  $answer ]; then
+   if [[ -z $HIVE_HOME ]]; then
+      echo "***ERROR: Must enter apache Hive installed path"
+      exit -1
+   fi
+else
+   if [[ -e $answer ]]; then
+      HIVE_HOME=$answer
+   else
+      echo "***ERROR: apache Hive installed path doesn't exist"
+      exit -1
+   fi
+fi
+
+echo "export HIVE_HOME=\"$HIVE_HOME\"" >> $LOCAL_TRAF_CONFIG
+
+#=====================
+#Hadoop checks
+count=0
+
+# assume they are the same
+HADOOP_NODES=$NODE_LIST
+echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
+
+for node in $NODE_LIST;
+do
+   ssh -q -n $node 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
+   count=$[$count+1]
+   foundFile=$(ssh -q -n $node ls $HOME/hbaseVersion.txt | wc -l)
+   if [[ $foundFile -eq "0" ]]; then
+      echo "***ERROR: HBase shell not found on any node"
+      echo "***ERROR: Check that HBase is installed and working"
+      exit -1
+   fi
+done
+
+
+#==============================================
+#HDFS Username
+
+echo -n "Enter HDFS username, default is [$HDFS_USER]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export HDFS_USER=\"$HDFS_USER\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export HDFS_USER=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#HBase user
+
+echo -n "Enter HBase username, default is [$HBASE_USER]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export HBASE_USER=\"$HBASE_USER\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export HBASE_USER=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#HBase group
+
+echo -n "Enter HBase group, default is [$HBASE_GROUP]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export HBASE_GROUP=\"$HBASE_GROUP\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export HBASE_GROUP=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#Install location
+
+if [ -z $SQ_ROOT ]; then
+
+	# if we have a package file then use its name for the default install dir
+	if [ ! -z "$TRAF_PACKAGE" ]; then
+	   traf_filename=$(basename "$TRAF_PACKAGE")
+	   SQ_ROOT="$HOME_DIR/$TRAF_USER/${traf_filename%.tar.gz}"
+	else
+	   # otherwise, create a default install dir using a timestamp
+	   SQ_ROOT="$HOME_DIR/$TRAF_USER/traf_$(date +%F_%H%M)"
+	fi
+fi
+
+echo -n "Enter directory to install trafodion to, default is [$SQ_ROOT]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export SQ_ROOT=\"$SQ_ROOT\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export SQ_ROOT=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#Run sqstart
+if [[ $SCANNER_MODE == "N" ]]; then
+   echo -n "Start Trafodion after install (Y/N), default is Y: "
+   read answer
+
+   if [ -z $answer ]; then
+      echo "export START=\"Y\"" >> $LOCAL_TRAF_CONFIG
+      echo "export INIT_TRAFODION=\"Y\"" >> $LOCAL_TRAF_CONFIG 
+   else
+      if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         echo "export START=\"Y\"" >> $LOCAL_TRAF_CONFIG
+         echo "export INIT_TRAFODION=\"Y\"" >> $LOCAL_TRAF_CONFIG 
+      else
+         echo "export START=\"N\"" >> $LOCAL_TRAF_CONFIG
+         echo "export INIT_TRAFODION=\"N\"" >> $LOCAL_TRAF_CONFIG
+         echo "***INFO: Trafodion will not be started after install is complete."
+         echo "***INFO: User will need follow steps on the trafodion wiki on how to start."
+      fi
+   fi
+fi
+#==============================================
+#DCS Servers
+
+echo -n "Total number of DCS servers to start, default [$DCS_SERVERS_PARM]: "
+read answer
+
+if [ ! -z $answer ]; then
+   DCS_SERVERS_PARM="$answer"
+fi
+
+if [[ $DCS_SERVERS_PARM != *[!0-9]* ]]; then
+   echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "***ERROR: DCS servers must be a number."
+   exit -1
+fi
+
+#==============================================
+#Simple security
+if [[ $SCANNER_MODE == "N" ]]; then
+   echo -n "Enable simple LDAP security (Y/N), default is N: "
+   read answer
+
+   if [ ! -z $answer ]; then
+      if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         LDAP_SECURITY="Y"
+      fi
+   else 
+      LDAP_SECURITY="N"
+   fi
+
+   echo "export LDAP_SECURITY=\"$LDAP_SECURITY\"" >> $LOCAL_TRAF_CONFIG
+
+   if [[ "$LDAP_SECURITY" == "Y" ]]; then
+      #Hostnames
+      echo -n "Enter list of LDAP Hostnames (blank separated), default [$LDAP_HOSTS]: "
+      read answer1
+      if [[ -z "$answer1" ]]; then
+         if [ -z "$LDAP_HOSTS" ]; then
+            echo "***ERROR: Must enter list of LDAP Hostnames."
+            exit -1
+         fi
+      else
+         LDAP_HOSTS=$answer1
+      fi
+      echo "export LDAP_HOSTS=\"$LDAP_HOSTS\"" >> $LOCAL_TRAF_CONFIG
+      cp -rf traf_authentication_conf_default $LOCAL_WORKDIR/$LDAP_AUTH_FILE
+      echo "export LDAP_AUTH_FILE=\"$LDAP_AUTH_FILE\"" >> $LOCAL_TRAF_CONFIG
+
+      counter=0
+      for host in $LDAP_HOSTS
+      do
+        counter=$[$counter+1]
+        if [ $counter -eq "1" ]; then
+           list=" LdapHostname: $host"
+        elif [ $counter -eq "$node_count" ]; then
+           list="LdapHostname: $host\n $list"
+        else
+           list=" LdapHostname: $host\n $list"
+        fi
+      done
+      sed -i -e "s/LdapHostname:/$list/g" $LDAP_AUTH_FILE
+
+      #Port numbers
+      echo -n "Enter LDAP Port number (Example: 389 for no encryption or TLS, 636 for SSL), default [$LDAP_PORT]: "
+      read answer2
+      if [[ -z "$answer2" ]]; then
+         if [ -z "$LDAP_PORT" ]; then
+            echo "***ERROR: Must enter LDAP port."
+            exit -1
+         fi
+      else
+         LDAP_PORT=$answer2
+      fi
+
+      echo "export LDAP_PORT=\"$LDAP_PORT\"" >> $LOCAL_TRAF_CONFIG
+      port="LdapPort: $LDAP_PORT"
+      sed -i -e "s/LdapPort:389/$port/g" $LDAP_AUTH_FILE
+
+      #Unique IDs
+      echo -n "Enter all LDAP unique identifiers (blank separated), default [$LDAP_ID]: "
+      read answer3
+      if [[ -z "$answer3" ]]; then
+         if [ -z "$LDAP_ID" ]; then
+            echo "***ERROR: Must enter LDAP unique identifiers."
+            exit -1
+         fi
+      else
+         LDAP_ID=$answer3
+      fi
+      echo "export LDAP_ID=\"$LDAP_ID\"" >> $LOCAL_TRAF_CONFIG
+
+      counter=0
+      for id in $LDAP_ID
+      do
+        counter=$[$counter+1]
+        if [ $counter -eq "1" ]; then
+           list=" UniqueIdentifier: $id"
+        elif [ $counter -eq "$node_count" ]; then
+           list="UniqueIdentifier: $id\n $list"
+        else
+           list=" LdapHostname: $id\n $list"
+        fi
+      done
+
+      sed -i -e "s/UniqueIdentifier:/$list/g" $LDAP_AUTH_FILE
+
+      #Encryption level
+      echo -n "Enter LDAP Encryption Level (0: Encryption not used, 1: SSL, 2: TLS), default [$LDAP_LEVEL]: "
+      read answer4
+      if [[ -z "$answer4" ]]; then
+         if [ -z "$LDAP_LEVEL" ]; then
+            echo "***ERROR: Much enter LDAP Encryption level."
+            exit -1
+         fi
+      else
+         LDAP_LEVEL=$answer4
+      fi
+      echo "export LDAP_LEVEL=\"$LDAP_LEVEL\"" >> $LOCAL_TRAF_CONFIG
+
+      level="LDAPSSL: $LDAP_LEVEL"
+      sed -i -e "s/LDAPSSL:0/$level/g" $LDAP_AUTH_FILE
+
+
+      if [[ "$LDAP_LEVEL" -eq "1" ]] || [[ "$LDAP_LEVEL" -eq "2" ]]; then
+         echo -n "Enter full path to TLS certificate, default [$LDAP_CERT]: "
+         read answer7
+         if [[ -z "$answer7" ]]; then
+            if [ -z "$LDAP_CERT" ]; then
+               echo "***ERROR: Encryption level 2(TLS) requires a certificate file (*.pem)"
+               exit -1
+            fi
+         else
+            LDAP_CERT=$answer7
+            LDAP_CERT_BASE=$(basename $LDAP_CERT)
+
+            if [[ ! -f $LDAP_CERT ]]; then
+               echo "***ERROR: File does not exist."
+               echo "***ERROR: Please enter full path or check for errors."
+               exit -1
+            fi
+
+         fi
+         echo "export LDAP_CERT=\"$LDAP_CERT\"" >> $LOCAL_TRAF_CONFIG
+         echo "export LDAP_CERT_BASE=\"$LDAP_CERT_BASE\"" >> $LOCAL_TRAF_CONFIG
+
+         list="TLS_CACERTFilename: $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE"
+
+         sed -i -e "s@TLS\_CACERTFilename:@$list@" $LDAP_AUTH_FILE
+      fi
+
+      #Search username and password
+      echo -n "Enter Search user name (if required), default [$LDAP_USER]: "
+      read answer5
+      if [[ ! -z "$answer5" ]]; then
+         LDAP_USER=$answer5
+         echo "export LDAP_USER=\"$LDAP_USER\"" >> $LOCAL_TRAF_CONFIG
+         
+         echo -n "Enter Search password (if required), default [$LDAP_PASSWORD]: "
+         read answer6
+         if [[ ! -z "$answer6" ]]; then
+            LDAP_PASSWORD=$answer6
+            echo "export LDAP_PASSWORD=\"$LDAP_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+         fi
+      fi
+      user="LDAPSearchDN: $LDAP_USER"
+      sed -i -e "s/LDAPSearchDN:/$user/g" $LDAP_AUTH_FILE
+      password="LDAPSearchPwd: $LDAP_PASSWORD"
+      sed -i -e "s/LDAPSearchPwd:/$password/g" $LDAP_AUTH_FILE
+   fi
+
+fi
+#==============================================
+#All items added to config file
+#Will add setup complete flag
+
+echo "export CONFIG_COMPLETE=\"true\"" >> $LOCAL_TRAF_CONFIG
+#=============================================
+#Create directories and cp files
+
+sudo mkdir -p $TRAF_CONFIG_DIR
+sudo chmod 777 $TRAF_CONFIG_DIR
+sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+echo "***INFO: Configuration file: $TRAF_CONFIG"
+
+echo "***INFO: Trafodion configuration setup complete"
