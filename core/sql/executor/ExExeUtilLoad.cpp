@@ -3575,7 +3575,7 @@ short ExExeUtilFileLoadTcb::work()
 
 	    lobType_ =  lobTdb().lobStorageType_; //(Lng32)Lob_HDFS_File;
 
-	    lobDataExtractLen_ = lobTdb().bufSize_; //100000;
+	    lobDataExtractLen_ = lobTdb().bufSize_; 
 	    
 
 	    lobData_ = new(getHeap()) char[(UInt32)lobDataExtractLen_];

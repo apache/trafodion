@@ -113,7 +113,7 @@ Ex_Lob_Error ExLobsOper (
     void        *blackBox,         // black box to be sent to cli
     Int64       blackBoxLen,        // length of black box
     Int64       lobMaxSize = 0,        // max size of lob.
-    Int64       lobMaxChunkMemSize = 0 ,//mas length of intermediate mem buffer used to do i/o.
+    Int64       lobMaxChunkMemSize = 0 ,//max length of intermediate mem buffer used to do i/o.
     int         bufferSize =0,
     short       replication =0,
     int         blocksize=0,

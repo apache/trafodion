@@ -596,8 +596,6 @@ Ex_Lob_Error ExLob::readLocalSourceFile(char *srcfile, char *&fileData, Int32 &s
        return LOB_SOURCE_FILE_STAT_ERROR;
      }
 
-     //size = statbuf.st_size;
-
      fileData = (char *) (getLobGlobalHeap())->allocateMemory(size);
      if (fileData == (char *)-1) {
        return LOB_SOURCE_DATA_ALLOC_ERROR;

@@ -2056,7 +2056,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
    
    // Size of memoryin bytes  used to perform I/O to lob data file 
-  // default size is 512MB   (1000 M) . Change to adjust memory usage. 
+  // default size is 512MB   . Change to adjust memory usage. 
   DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "536870912"), 
   // default size is 10 G  (10000 M)
   DDint__(LOB_MAX_SIZE,                         "10000"),

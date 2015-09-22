@@ -12700,21 +12700,7 @@ update_obj_to_lob_function :
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, TRUE);
 				}
-                          | TOK_FILETOLOB '(' literal ')'
-			        {
-                                  YYERROR;
-                                  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::FILE_, FALSE);
-				}
-                          | TOK_FILETOLOB '(' literal ',' TOK_APPEND ')'
-			        {
-				  YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::FILE_, TRUE);
-				}
- 			  | TOK_LOADTOLOB '(' literal ')'
-			        {
-				  YYERROR;
-                                  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::LOAD_, FALSE);
-				}
+
 			  | TOK_EXTERNALTOLOB '(' literal ')'
 			        {
                                   YYERROR;
