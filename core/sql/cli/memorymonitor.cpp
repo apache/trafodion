@@ -82,6 +82,7 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
 			     Lng32 sampleInterval,
 			     CollHeap *heap)
   : physKBytes_(0),
+    physKBytesRatio_(0),
     availBytesPercent_(1.0),
     commitBytesPercent_(0),
     commitPhysRatio_(0),
@@ -121,8 +122,9 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
   }
 
   // Disable monitoring if the envvar is set.
-  // We do this here to get the initial meminfo when the
-  // 
+  // We do this here to get the initial meminfo 
+  // even if one wants to disable continous memory 
+  // monitoring.
   char *lv_envVar = getenv("SQL_DISABLE_MEMMONITOR");
   if (lv_envVar && (strcmp(lv_envVar, "1") == 0)) {
     return;
