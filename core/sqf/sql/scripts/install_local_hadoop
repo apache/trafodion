@@ -245,7 +245,9 @@ function listports {
 	MY_YARN_NM_PORT_NUM
 	MY_YARN_RESMAN_PORT_NUM
 	MY_YARN_SCHED_PORT_NUM
-	MY_YARN_TRACKER_PORT_NUM"
+	MY_YARN_TRACKER_PORT_NUM
+        MY_DB_MGR_PORT
+        MY_DB_MGR_SECURE_PORT"
 
   for AVAR in $VARS_FOR_PORTS; do
     AVALUE="$(eval "echo \$$AVAR")"
@@ -858,7 +860,7 @@ EOF
 <a href="http://${MY_HOST_1}:${MY_HADOOP_NN_HTTP_PORT_NUM}">HDFS Admin</a>
 <a href="http://${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}">Yarn</a>
 <a href="http://${MY_HOST_1}:${MY_HBASE_MASTER_INFO_PORT_NUM}">HBase Master</a>
-<a href="http://${MY_HOST_1}:${MY_DCS_MASTER_INFO_PORT}">DCS Master</a>
+<a href="http://${MY_HOST_1}:${MY_DCS_MASTER_PORT}">DCS Master</a>
 </pre>
 </BODY>
 </HTML>
@@ -1561,8 +1563,12 @@ cat >$HOME/.rest-site.xml-$USER <<EOF
 EOF
 
 #For clients
-cat >$HOME/.dcs-masterport-$USER <<EOF
-$MY_DCS_MASTER_PORT
+cat >$HOME/.traf-clports-$USER <<EOF
+DCS_MASTER=$MY_DCS_MASTER_PORT
+REST_SERVER=$MY_REST_SERVER_PORT
+REST_SECURE_SERVER=$MY_REST_SERVER_SECURE_PORT
+DB_MGR=$MY_DB_MGR_PORT
+DB_SECURE_MGR=$MY_DB_MGR_SECURE_PORT
 EOF
 
 echo

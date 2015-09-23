@@ -28,7 +28,7 @@ include macros.gmk
 
 # Make Targets
 .PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr dcs rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests check-copyrights
+.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests pkg-dcs-tests check-copyrights
 
 ################
 ### Main targets
@@ -128,7 +128,7 @@ cleanall: sqroot
 	cd ../dcs &&			$(MAVEN) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress pkg-phx-tests
+package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests
 
 pkg-product: all  
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
@@ -143,6 +143,10 @@ pkg-sql-regress: all
 # Package Phoenix test
 pkg-phx-tests: all
 	cd sqf && $(MAKE) package-phx 2>&1 | sed -e "s/$$/	##(Package phoenix)/";exit $${PIPESTATUS[0]}
+
+# Package dcs tests
+pkg-dcs-tests: all
+	cd sqf && $(MAKE) package-dcs 2>&1 | sed -e "s/$$/	##(Package dcs tests)/";exit $${PIPESTATUS[0]}
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"

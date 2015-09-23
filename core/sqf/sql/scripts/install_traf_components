@@ -13,30 +13,29 @@ REST_SRC=$MY_SQROOT/../rest
 PHX_SRC=$MY_SQROOT/../../tests/phx
 TRAF_TARS=$MY_SQROOT/../../distribution
 
-MY_DCS_MASTER_PORT=`cat $HOME/.dcs-masterport-$USER`
+MY_DCS_MASTER_PORT=`cat $HOME/.traf-clports-$USER |grep DCS_MASTER |cut -d "=" -f2`
 
 if [ -z "$DCS_TAR" ]; then
-  DCS_TAR=$TRAF_TARS/dcs*tar.gz 
+  DCS_TAR=$(ls $TRAF_TARS/dcs*tar.gz 2>/dev/null)
 fi
 
 if [ -z "$REST_TAR" ]; then
-  REST_TAR=$TRAF_TARS/rest*tar.gz
+  REST_TAR=$(ls $TRAF_TARS/rest*tar.gz 2>/dev/null)
 fi
 
 if [ -z "$PHX_TAR" ]; then
-    PHX_TAR=$TRAF_TARS/phoenix*.tgz
+    PHX_TAR=$(ls $TRAF_TARS/phoenix*.tgz 2>/dev/null)
 fi
 
 if [ -z "$CLIENT_TAR" ]; then
-    CLIENT_TAR=$TRAF_TARS/*clients*.tgz
+    CLIENT_TAR=$(ls $TRAF_TARS/*clients*.tgz 2>/dev/null)
 fi
 
-if [ -f $CLIENT_TAR ]; then
+if [[ -f $CLIENT_TAR ]]; then
    cd $MY_SW_ROOT
-   tar -xzf $CLIENT_TAR *Linux*
-   tar -xzf $CLIENT_TAR *odb*
-   LNXDRVR_TAR=$MY_SW_ROOT/clients/*Linux*.gz
-   ODB_TAR=$MY_SW_ROOT/clients/*odb*.gz
+   tar -xzf $CLIENT_TAR 
+   LNXDRVR_TAR=$(ls $MY_SW_ROOT/clients/*Linux*.gz 2>/dev/null)
+   ODB_TAR=$(ls $MY_SW_ROOT/clients/*odb*.gz 2>/dev/null)
 fi
 
 echo | tee ${MY_LOG_FILE}
@@ -46,7 +45,7 @@ echo | tee -a ${MY_LOG_FILE}
 echo "Environment used for core, DCS, REST and Phonenix ..." | tee -a ${MY_LOG_FILE}
 echo | tee -a ${MY_LOG_FILE}
 
-if [ ! -d "$DCS_SRC" ]; then
+if [[ ! -d $DCS_SRC ]]; then
   echo "Using only tar distribution and does not include source..."
   echo | tee -a ${MY_LOG_FILE}
 else
@@ -60,11 +59,11 @@ echo "   For local hadoop... $MY_SW_ROOT" | tee -a ${MY_LOG_FILE}
 echo "   For DCS_TAR... $DCS_TAR" | tee -a ${MY_LOG_FILE}
 echo "   For REST_TAR... $REST_TAR" | tee -a ${MY_LOG_FILE}
 
-if [ -f $PHX_TAR ]; then
+if [[ -f $PHX_TAR ]]; then
   echo "   For PHX_TAR... $PHX_TAR" | tee -a ${MY_LOG_FILE}
 fi
 
-if [ -f $CLIENT_TAR ]; then
+if [[ -f $CLIENT_TAR ]]; then
   echo "   For CLIENT_TAR... $CLIENT_TAR" | tee -a ${MY_LOG_FILE}
   echo "      For ODB_TAR... $ODB_TAR" | tee -a ${MY_LOG_FILE}
   echo "      For LNXDRVR_TAR... $LNXDRVR_TAR" | tee -a ${MY_LOG_FILE}
@@ -78,12 +77,12 @@ echo | tee -a ${MY_LOG_FILE}
 if [ -d dcs-* ]; then
   echo "DCS files already exist, skipping DCS setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f $DCS_TAR ]; then
+  if [[ -f $DCS_TAR ]]; then
       echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
-  elif [ -d "$DCS_SRC" ]; then
+  elif [[ -d $DCS_SRC ]]; then
       echo "DCS tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
       echo "Building DCS tar file" | tee -a ${MY_LOG_FILE}
-      if [ -f $MY_SQROOT/export/lib/jdbcT4.jar ]; then
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build DCS from $DCS_SRC" | tee -a ${MY_LOG_FILE}
          cd $DCS_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
@@ -96,6 +95,10 @@ else
       fi
   fi
 
+  if [[ ! -f $DCS_TAR ]]; then
+    echo "**** ERROR: DCS tar file not found. "  | tee -a ${MY_LOG_FILE}
+    exit 2
+  fi
 # Install DCS
   echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
   tar xzf $DCS_TAR | tee -a ${MY_LOG_FILE}
@@ -152,12 +155,12 @@ echo | tee -a ${MY_LOG_FILE}
 if [ -d rest-* ]; then
   echo "REST files already exist, skipping REST setup"
 else
-  if [ -f $REST_TAR ]; then
+  if [[ -f $REST_TAR ]]; then
         echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
-  elif [ -d "$REST_SRC" ]; then
+  elif [[ -d $REST_SRC ]]; then
       echo "REST tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
       echo "Building REST tar file" | tee -a ${MY_LOG_FILE}
-      if [ -f $MY_SQROOT/export/lib/jdbcT4.jar ]; then
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build REST from $REST_SRC" | tee -a ${MY_LOG_FILE}
          cd $REST_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
@@ -167,6 +170,11 @@ else
          echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. Please build the core Trafodion components" | tee -a ${MY_LOG_FILE}
        exit 2
       fi
+  fi
+
+  if [[ ! -f $REST_TAR ]]; then
+    echo "**** ERROR: REST tar file not found"  | tee -a ${MY_LOG_FILE}
+    exit 2
   fi
 
 # Install REST
@@ -215,11 +223,7 @@ then
   cat <<EOF >$MY_SQROOT/sql/scripts/swtrafci
 #!/bin/sh
 # command to run trafci
-HNAME=localhost:$MY_DCS_MASTER_PORT
-UNAME=zz
-PWORD=zz
-
-$MY_SQROOT/trafci/bin/trafci.sh -h "$HNAME" -u "$UNAME" -p "$PWORD"
+$MY_SQROOT/trafci/bin/trafci.sh -h localhost:$MY_DCS_MASTER_PORT -u zz -p zz
 EOF
   chmod +x $MY_SQROOT/sql/scripts/swtrafci
 else
@@ -233,20 +237,21 @@ echo | tee -a ${MY_LOG_FILE}
 
 PHXDIR=$MY_SW_ROOT/tests/phx
 
-if [ -d "$PHXDIR" ]; then
+if [[ -d $PHXDIR ]]; then
   echo "Phoenix tests already exist $PHXDIR, skipping Phoenix test setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f $PHX_TAR ]; then
+  if [[ -f $PHX_TAR ]]; then
     echo "Installing Phoenix tests $PHX_TAR"| tee -a ${MY_LOG_FILE}
     tar -xzf $PHX_TAR | tee -a ${MY_LOG_FILE}
     echo "Successfully installed Phoenix tests "| tee -a ${MY_LOG_FILE}
-  elif [ -d "$PHX_SRC" ]; then
+  elif [[ -d $PHX_SRC ]]; then
      echo "Phoenix files already exist $PHX_SRC skipping Phoenix setup" | tee -a ${MY_LOG_FILE}
      PHXDIR=$PHX_SRC
   fi
 
-echo "Adding swphoenix script..." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SQROOT/sql/scripts/swphoenix
+  if [[ -d $PHXDIR ]]; then
+     echo "Adding swphoenix script..." | tee -a ${MY_LOG_FILE}
+     cat <<EOF >$MY_SQROOT/sql/scripts/swphoenix
 #!/bin/sh
 # command to run phoenix tests
 
@@ -266,7 +271,8 @@ else
 fi
 EOF
 
-  chmod +x $MY_SQROOT/sql/scripts/swphoenix
+     chmod +x $MY_SQROOT/sql/scripts/swphoenix
+  fi 
 fi
 
 # End of Phoenix setup
@@ -278,11 +284,11 @@ echo | tee -a ${MY_LOG_FILE}
 
 LNXDRVR=$MY_SW_ROOT/lnxdrvr
 
-if [ -d "$LNXDRVR" ]; then
+if [[ -d $LNXDRVR ]]; then
   echo "Linux driver files already exist $LNXDRVR, skipping Linux Driver setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f $LNXDRVR_TAR ]; then
-     echo "Installing Linux driver: $LNXDRV"| tee -a ${MY_LOG_FILE}
+  if [[ -f $LNXDRVR_TAR ]]; then
+     echo "Installing Linux driver: $LNXDRVR"| tee -a ${MY_LOG_FILE}
      mkdir -p $LNXDRVR | tee -a ${MY_LOG_FILE}
      cd $LNXDRVR 
      tar -xzf $LNXDRVR_TAR | tee -a ${MY_LOG_FILE} 
@@ -297,8 +303,6 @@ EOF
     mv TRAFDSN TRAFDSN.orig | tee -a ${MY_LOG_FILE}
     sed -e "s@TCP:1.2.3.4:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN | tee -a ${MY_LOG_FILE}
     echo "Successfully installed linux driver in $LNXDRVR"| tee -a ${MY_LOG_FILE}
-  else
-    echo "Linux driver tar file not found. Please install it manually..." | tee -a ${MY_LOG_FILE}
   fi
 fi
 
@@ -311,21 +315,46 @@ echo | tee -a ${MY_LOG_FILE}
 
 ODBLOC=$MY_SW_ROOT/odb
 
-if [ -d "$ODBLOC" ]; then
+if [[ -d $ODBLOC ]]; then
   echo "ODB files already exist $ODBLOC, skipping ODB setup" | tee -a ${MY_LOG_FILE}
 else
-  if [ -f $ODB_TAR ]; then
+  if [[ -f $ODB_TAR ]]; then
     echo "Installing ODB tool: $ODBLOC"| tee -a ${MY_LOG_FILE}
     mkdir -p $ODBLOC | tee -a ${MY_LOG_FILE}
     cd $ODBLOC 
     tar -xzf $ODB_TAR | tee -a ${MY_LOG_FILE}
     echo "Successfully installed ODB tool in $ODBLOC"| tee -a ${MY_LOG_FILE}
-  else
-    echo "ODB tar file not found. Please install it manually after installing linux odbc driver..." | tee -a ${MY_LOG_FILE}
   fi
 fi
 
-# End setup of ODB load told
+# End setup of ODB load tool
+
+# Begin setup of PyODBC test
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin configure of PyODBC test 
+
+if [[ -n "$DCS_SRC" ]]
+  then
+    if [[ -f $LNXDRVR_TAR ]]; then
+       echo "Linux driver exists. Adding swpyodbc script...." | tee -a ${MY_LOG_FILE}
+       cat <<EOF >$MY_SQROOT/sql/scripts/swpyodbc
+#!/bin/sh
+# command to run Python ODBC tests
+cd $DCS_SRC/src/test/pytests
+./config.sh -d localhost:$MY_DCS_MASTER_PORT -t $LNXDRVR_TAR
+tox -e py27
+
+EOF
+       chmod +x $MY_SQROOT/sql/scripts/swpyodbc
+    fi 
+fi
+
+# End setup of PyODBC test
+
+cds
 
 echo | tee -a ${MY_LOG_FILE}
 echo "Configuration scripts for DCS, REST, TRAFCI and Phoenix test are set up " | tee -a ${MY_LOG_FILE}

@@ -495,6 +495,7 @@ elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
      && -e ${HBASE_TRXDIR}/${HBASE_TRX_JAR}
      && -e $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar
      && -e $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar
+     && -e $MY_SQROOT/export/lib/jdbcT4.jar
      && -e $MY_SQROOT/export/lib/jdbcT2.jar ]]; then
 
   # Several built files exist, perhaps by unpackaging a file from downloads.trafodion.org,
@@ -744,6 +745,7 @@ SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
 $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/jdbcT4.jar:\
 $MY_SQROOT/export/lib/jdbcT2.jar
 
 # Check whether the current shell environment changed from a previous execution of this
