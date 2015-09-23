@@ -87,8 +87,8 @@ fi
 
 function check_node {
 	 dcsEcho "checking node $1"
-    for myinterface in `pdsh -N -w $1 ip link show|awk -F': ' '/^[0-9]+:.*/ {print $2;}'`; do
-		  ip_output=$(pdsh -N -w $1 ip addr show $myinterface)
+    for myinterface in `pdsh -N -w $1 /sbin/ip link show|awk -F': ' '/^[0-9]+:.*/ {print $2;}'`; do
+		  ip_output=$(pdsh -N -w $1 /sbin/ip addr show $myinterface)
 		  if [ $gv_externalip_set -eq 1 -a $external_only -eq 1 ]; then
 				myifport=`echo "$ip_output" | grep $gv_float_external_ip`
 				status=$?
@@ -101,8 +101,8 @@ function check_node {
 						  unbindip=`echo "$myifport"|awk '{print $2}'`
 						  unbindlb=`echo "$myifport"|awk '{print $NF}'`
 						  dcsEcho "external ip $gv_float_external_ip is already in use on node $1 bound to interface $myinterface($unbindlb) - unbind..."
-						  dcsEcho "pdsh -S -w $1 sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-						  pdsh -S -w $1 sudo ip addr del $unbindip dev $myinterface label $unbindlb
+						  dcsEcho "pdsh -S -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface label $unbindlb"
+						  pdsh -S -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface label $unbindlb
 
 						  status=$?
 						  if [ $status -ne 0 ]; then
@@ -124,7 +124,7 @@ function Check_VirtualIP_InUse_Unbind {
 	 
 	#check if external ip is in use
     dcsEcho "check all nodes $allMyNodes"
-    externalNodes=`pdsh $allMyNodes ip addr show | grep $gv_float_external_ip | awk -F' ' '/^.+:[[:space:]]+.*/ {print $1;}' | cut -d':' -f1 | sed '/^$/d'`
+    externalNodes=`pdsh $allMyNodes /sbin/ip addr show | grep $gv_float_external_ip | awk -F' ' '/^.+:[[:space:]]+.*/ {print $1;}' | cut -d':' -f1 | sed '/^$/d'`
     if [ ! -z "$externalNodes" ]; then
 		  dcsEcho "find possible node `echo $externalNodes`"
 		  external_only=1
@@ -151,7 +151,7 @@ if [ $gv_externalip_set -eq 1 ]; then
       dcsEcho "external ip is already bound on node $gv_myhostname - skip bind step"
    else
       dcsEcho "sudo /sbin/ip addr add $gv_float_external_ip/$mask broadcast $bcast dev $gv_float_external_interface label $gv_float_external_interface:$gv_port"
-      sudo ip addr add $gv_float_external_ip/$mask broadcast $bcast dev $gv_float_external_interface label $gv_float_external_interface:$gv_port
+      sudo /sbin/ip addr add $gv_float_external_ip/$mask broadcast $bcast dev $gv_float_external_interface label $gv_float_external_interface:$gv_port
       status=$?
       if [ $status -ne 0 ]; then
        dcsEcho "failed - status is $status"
