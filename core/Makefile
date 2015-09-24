@@ -160,7 +160,7 @@ find-absolute-dlls:
 check-copyrights:
 	python ./updateCopyrightCheck.py
 
-eclipse: rest/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
+eclipse: rest/.project dcs/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
 	@echo
 	@echo
 	@echo "  Now you can import 5 projects in Eclipse:"
@@ -174,6 +174,9 @@ eclipse: rest/.project sql/.project sqf/src/seatrans/hbase-trx/.project .project
 
 rest/.project:
 	cd rest && $(MAVEN) eclipse:eclipse
+
+dcs/.project:
+	cd ../dcs && $(MAVEN) eclipse:eclipse
 
 sql/.project:
 	cd sql  && $(MAVEN) eclipse:eclipse
