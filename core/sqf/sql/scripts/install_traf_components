@@ -1,4 +1,22 @@
 #!/bin/bash
+# @@@ START COPYRIGHT @@@ 
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# @@@ END COPYRIGHT @@@
 
 #### Script to install and configure DCS, REST and Phoenix tests...
 
@@ -25,6 +43,10 @@ fi
 
 if [ -z "$PHX_TAR" ]; then
     PHX_TAR=$(ls $TRAF_TARS/phoenix*.tgz 2>/dev/null)
+fi
+
+if [ -z "$DCSTEST_TAR" ]; then
+    DCSTEST_TAR=$(ls $TRAF_TARS/dcs-test*.tgz 2>/dev/null)
 fi
 
 if [ -z "$CLIENT_TAR" ]; then
@@ -129,20 +151,6 @@ else
   echo "localhost 4" > servers
   echo "Configured $DCS_HOME/conf/servers" | tee -a ${MY_LOG_FILE}
 
-# Configure DCS test scripts
-  if [[ -n "$DCS_SRC" ]]
-  then
-    echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
-    cat <<EOF >$MY_SQROOT/sql/scripts/swjdbc
-#!/bin/sh
-# command to run JDBC tests
-cd $DCS_SRC/src/test/jdbc_test
-./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
-  --target=localhost:$MY_DCS_MASTER_PORT \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
-EOF
-    chmod +x $MY_SQROOT/sql/scripts/swjdbc
-  fi
 fi
 
 # End of DCS setup
@@ -329,27 +337,56 @@ fi
 
 # End setup of ODB load tool
 
-# Begin setup of PyODBC test
-
 cd $MY_SW_ROOT
 
 echo | tee -a ${MY_LOG_FILE}
-# Begin configure of PyODBC test 
+# Begin setup of PyODBC test
 
-if [[ -n "$DCS_SRC" ]]
-  then
+DCSTEST_DIR=$MY_SW_ROOT/dcstests
+
+if [[ -d $DCSTEST_DIR ]]; then
+  echo "DCS tests already exist $DCSTEST_DIR, skipping dcs test setup" | tee -a ${MY_LOG_FILE}
+else
+  if [[ -f $DCSTEST_TAR ]]; then
+    echo "Installing DCS tests $DCSTEST_DIR"| tee -a ${MY_LOG_FILE}
+    mkdir -p $DCSTEST_DIR | tee -a ${MY_LOG_FILE}
+    cd $DCSTEST_DIR
+    tar -xzf $DCSTEST_TAR | tee -a ${MY_LOG_FILE}
+    echo "Successfully installed DCS tests "| tee -a ${MY_LOG_FILE}
+    JDBCTEST_DIR=$DCSTEST_DIR/dcs/src/test/jdbc_test
+    PYODBCTEST_DIR=$DCSTEST_DIR/dcs/src/test/pytests
+  elif [[ -d $DCS_SRC ]]; then
+     echo "DCS test files already exist $DCS_SRC skipping test setup" | tee -a ${MY_LOG_FILE}
+     DCSTEST_DIR=$DCS_SRC
+     JDBCTEST_DIR=$DCSTEST_DIR/src/test/jdbc_test
+     PYODBCTEST_DIR=$DCSTEST_DIR/src/test/pytests
+  fi
+
+  if [[ -d $DCSTEST_DIR ]]; then
+     echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
+     cat <<EOF >$MY_SQROOT/sql/scripts/swjdbc
+#!/bin/sh
+# command to run JDBC tests
+cd $JDBCTEST_DIR
+./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
+  --target=localhost:$MY_DCS_MASTER_PORT \\
+  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
+EOF
+    chmod +x $MY_SQROOT/sql/scripts/swjdbc
+
     if [[ -f $LNXDRVR_TAR ]]; then
        echo "Linux driver exists. Adding swpyodbc script...." | tee -a ${MY_LOG_FILE}
        cat <<EOF >$MY_SQROOT/sql/scripts/swpyodbc
 #!/bin/sh
 # command to run Python ODBC tests
-cd $DCS_SRC/src/test/pytests
+cd $PYODBCTEST_DIR
 ./config.sh -d localhost:$MY_DCS_MASTER_PORT -t $LNXDRVR_TAR
 tox -e py27
 
 EOF
        chmod +x $MY_SQROOT/sql/scripts/swpyodbc
     fi 
+  fi
 fi
 
 # End setup of PyODBC test

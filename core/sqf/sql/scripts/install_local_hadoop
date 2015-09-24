@@ -860,7 +860,7 @@ EOF
 <a href="http://${MY_HOST_1}:${MY_HADOOP_NN_HTTP_PORT_NUM}">HDFS Admin</a>
 <a href="http://${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}">Yarn</a>
 <a href="http://${MY_HOST_1}:${MY_HBASE_MASTER_INFO_PORT_NUM}">HBase Master</a>
-<a href="http://${MY_HOST_1}:${MY_DCS_MASTER_PORT}">DCS Master</a>
+<a href="http://${MY_HOST_1}:${MY_DCS_MASTER_INFO_PORT}">DCS Master</a>
 </pre>
 </BODY>
 </HTML>

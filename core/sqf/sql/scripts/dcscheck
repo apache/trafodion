@@ -133,3 +133,4 @@ else
  echo "Trafodion is not started..."
  echo
 fi
+exit 0

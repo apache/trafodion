@@ -74,9 +74,7 @@ jdbc_jar: verhdr
 	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 dcs: verhdr jdbc_jar
-	cd ../dcs && $(MAVEN) site package 2>&1 | sed -e "s/$$/        ##(DCS)/";exit $${PIPESTATUS[0]}
-	mkdir -p ../${DISTRIBUTION_DIR}
-	mv ../dcs/target/dcs*.gz ../${DISTRIBUTION_DIR}/ | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
+	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
 	cd conn/odbc/src/odbc && $(MAKE) ndcs        2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
@@ -111,7 +109,7 @@ clean: sqroot
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
-	cd ../dcs &&			$(MAVEN) clean 
+	cd ../dcs &&			$(MAKE) clean 
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 cleanall: sqroot
@@ -125,7 +123,7 @@ cleanall: sqroot
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
-	cd ../dcs &&			$(MAVEN) clean
+	cd ../dcs &&			$(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests
