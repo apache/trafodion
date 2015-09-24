@@ -111,7 +111,7 @@ if [[ $sq_stat == 0 ]]; then
      echo "DcsMaster is listening on port $masterport"
      echo
    fi
-   rm -f $dcstmp
+   rm -f $dcstmp $tmp_chk $tmp_ps
   else
    if ( [ "$actual_dcsmaster_cnt" '>' 0 ] || [ "$actual_dcsserver_cnt" '>' 0 ] ); then
      echo "Partial DCS process is up and running. Please stop and restart DCS using 'dcsstop' and 'dcsstart' command..."

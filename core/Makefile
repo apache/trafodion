@@ -97,6 +97,10 @@ rest: verhdr jdbc_jar
 odb: ndcs
 	cd conn/odb && $(MAKE) 2>&1 | sed -e "s/$$/	##(ODB)/" ; exit $${PIPESTATUS[0]}
 
+cleantests:
+	cd ../dcs/src/test/pytests && $(RM) -r odbc* tox.ini config.ini .tox .testrep* env.sh test_p2.pyc 
+	cd ../dcs/src/test/jdbc_test && $(RM) -r jdbcprop pom.xml  target
+	
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
@@ -187,3 +191,10 @@ sqf/src/seatrans/hbase-trx/.project:
 .project:
 	cp sqf/export/limited-support-tools/eclipse.project .project
 	cp sqf/export/limited-support-tools/eclipse.cproject .cproject
+
+eclipseclean:
+	$(RM) rest/.classpath rest/.project
+	$(RM) ../dcs/.classpath ../dcs/.project
+	$(RM) sql/.classpath sql/.project
+	$(RM) sqf/src/seatrans/hbase-trx/.classpath sqf/src/seatrans/hbase-trx/.project
+	$(RM) .cproject .project
