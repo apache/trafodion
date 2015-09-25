@@ -1582,12 +1582,12 @@ NATable *BindWA::getNATable(CorrName& corrName,
       return NULL;
     }
   
-  // If the table is a native table and has an associated external table, 
-  // check to see if the external table structure still matches the native table
+  // If the table is an external table and has an associated native table, 
+  // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->hasExternalTable()) 
+  if ((table) && table->isExternalTable()) 
     {
-      NAString adjustedName = ComConvertNativeNameToTrafName 
+      NAString adjustedName =ComConvertTrafNameToNativeName 
            (table->getTableName().getCatalogName(),
             table->getTableName().getUnqualifiedSchemaNameAsAnsiString(),
             table->getTableName().getUnqualifiedObjectNameAsAnsiString()); 
@@ -1596,22 +1596,18 @@ NATable *BindWA::getNATable(CorrName& corrName,
       Int32 numNameParts = 3;
       QualifiedName adjustedQualName(adjustedName,numNameParts,STMTHEAP, bindWA);
       CorrName externalCorrName(adjustedQualName, STMTHEAP);
-      NATable *externalNATable = bindWA->getSchemaDB()->getNATableDB()->
+      NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
   
-      // Should always have an external table, the hasExternalTable() flag indicates
-      // that it exists.
-      CMPASSERT(externalNATable);
-
        // Compare column lists
        // TBD - return what mismatches
-       if (!(table->getNAColumnArray() == externalNATable->getNAColumnArray()))
+       if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
          {
            *CmpCommon::diags() << DgSqlCode(-3078)
                                << DgString0(adjustedName)
                                << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
            bindWA->setErrStatus();
-           externalNATable->setRemoveFromCacheBNC(TRUE);
+           nativeNATable->setRemoveFromCacheBNC(TRUE);
            return NULL;
          }
     }

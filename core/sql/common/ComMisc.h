@@ -60,4 +60,9 @@ NAString ComConvertNativeNameToTrafName (
                                          const NAString &schemaName,
                                          const NAString &objectName);
 
+NAString ComConvertTrafNameToNativeName(
+                                         const NAString &catalogName,
+                                         const NAString &schemaName,
+                                         const NAString &objectName);
+
 #endif // COMMISC_H

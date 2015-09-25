@@ -4886,8 +4886,11 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
   if ( !strcmp(hiveType, "bigint"))
     return 8;
 
-  if ( !strcmp(hiveType, "string"))
-    return 32000; // TBD: add cqd.
+  if ( !strcmp(hiveType, "string")) {
+    char maxStrLen[100];
+    cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH", maxStrLen);
+    return atoi(maxStrLen); // TBD: add cqd.
+  }
 
   if ( !strcmp(hiveType, "float"))
     return 4;
