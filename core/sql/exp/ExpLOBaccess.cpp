@@ -464,7 +464,7 @@ Ex_Lob_Error ExLob::statSourceFile(char *srcfile, Int64 &sourceEOF)
      {
        int openFlags = O_RDONLY;
        int fdSrcFile = open(srcfile, openFlags);
-       if (fdSrcFile == -1) {
+       if (fdSrcFile < 0) {
 	 return LOB_SOURCE_FILE_OPEN_ERROR;
        }
 
@@ -583,7 +583,7 @@ Ex_Lob_Error ExLob::readLocalSourceFile(char *srcfile, char *&fileData, Int32 &s
    {  
      int openFlags = O_RDONLY;
      int fdSrcFile = open(srcfile, openFlags);
-     if (fdSrcFile == -1) {
+     if (fdSrcFile < 0 ) {
        return LOB_SOURCE_FILE_OPEN_ERROR;
      }
 
@@ -1699,7 +1699,7 @@ Ex_Lob_Error ExLob::readDataToLocalFile(char *fileName,  Int64 offset, Int64 siz
       openFlags |= O_TRUNC;
     int fdDestFile = open(fileName, openFlags, filePerms);
 	  
-    if (fdDestFile >0 )
+    if (fdDestFile >=0 )
       {
 	if ((LobTgtFileFlags)fileflags == Lob_Error_Or_Create)
 	    return LOB_TARGET_FILE_EXISTS_ERROR;	  
