@@ -36,8 +36,8 @@ build_all:
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_dcs.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
-	mkdir -p ../../${DISTRIBUTION_DIR}
-	cp -pf target/$(BLD_TRAFODION_DCS_TARNAME) ../${DISTRIBUTION_DIR}/
+	mkdir -p ../${DISTRIBUTION_DIR}
+	cp -pf target/$(BLD_TRAFODION_DCS_TARNAME) ../${DISTRIBUTION_DIR}
 	$(RM) $(VFILE)
 
 build_chk:
@@ -49,4 +49,4 @@ clean:
 	-$(MAVEN) clean | grep ERROR
 	$(RM) build_dcs.log
 	$(RM) $(VFILE)
-	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_DCS_TARNAME)
+	$(RM) ../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_DCS_TARNAME)
