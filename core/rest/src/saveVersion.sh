@@ -26,10 +26,10 @@ outputDirectory=$2
 user=`whoami`
 date=`date`
 cwd=`pwd`
-if [ -d ../../.git ]; then
-  revision=`git log -1 --pretty=format:"%H"`
-  hostname=`hostname`
-  url="git://${hostname}${cwd}"
+if [[ -d ../../.git ]]; then
+    revision=`git log -1 --pretty=format:"%h"`
+    hostname=`hostname`
+    url="git://${hostname}${cwd}"
 else
   revision="Unknown"
   url="file://$cwd"
