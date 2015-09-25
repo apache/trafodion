@@ -34,7 +34,7 @@ using std::ofstream;
 #include "ExpLOBinterface.h"
 
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive)
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive, Int64  lobMaxSize)
 {
   Ex_Lob_Error err;
 
@@ -57,8 +57,8 @@ Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive)
                    1, // waited op
 		   lobGlob,
 		   0,
-		   NULL, 0
-		   );
+		   NULL, 0,
+		   lobMaxSize);
   if (lobGlob)
     {
       ((ExLobGlobals *)lobGlob)->setIsHive(isHive);
@@ -111,6 +111,7 @@ Lng32 ExpLOBinterfaceCreate(
 			    void * lobGlob, char * lobName, char * lobLoc,
 			    Lng32 lobType,
 			    char * lobHdfsServer,
+			    Int64 lobMaxSize,
 			    Lng32 lobHdfsPort,
 	                    int    bufferSize ,
 	                    short  replication ,
@@ -135,9 +136,11 @@ Lng32 ExpLOBinterfaceCreate(
                    1, // waited op
 		   lobGlob,
 		   0, NULL, 0,
+		   lobMaxSize,
                    bufferSize ,
                    replication,
                    blockSize
+		   
 		   );
 
   if (err != LOB_OPER_OK)
@@ -325,6 +328,7 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 			    char * srcLobData, 
 			    Int64  srcLobLen,
 			    Int64 lobMaxSize,
+			    Int64 lobMaxChunkMemSize,
 			    int   bufferSize ,
 			    short replication ,
 			    int   blockSize)
@@ -368,6 +372,7 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 		   xnId, 
 		   blackBox, blackBoxLen,
 		   lobMaxSize,
+		   lobMaxChunkMemSize,
 		   bufferSize,
 		   replication,
 		   blockSize
@@ -475,7 +480,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS
+				  Int64 srcDescTS,
+				  Int64 lobMaxSize,
+				  Int64 lobMaxChunkMemSize
 				  )
 {
   Ex_Lob_Error err;
@@ -499,7 +506,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
                    so,
                    1, 
                    lobGlob,
-                   0, NULL, 0
+                   xnId, NULL, 0,
+		   lobMaxSize,
+		   lobMaxChunkMemSize
                    );
 
   if ((err == LOB_OPER_OK) &&
@@ -550,7 +559,9 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    short srcDescSchNameLen,
 			    char * srcDescSchName,
 			    Int64 srcDescKey, 
-			    Int64 srcDescTS)
+			    Int64 srcDescTS,
+			    Int64 lobMaxSize ,
+			    Int64 lobMaxChunkMemSize )
 {
   Ex_Lob_Error err;
 
@@ -574,7 +585,9 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
                    1, 
                    lobGlob,
                    xnId, 
-		   NULL, 0
+		   NULL, 0,
+		   lobMaxSize,
+		   lobMaxChunkMemSize
                    );
 
   if ((err == LOB_OPER_OK) &&
@@ -691,7 +704,10 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 waitedOp,
 
 			    Int64 srcOffset, Int64 inLen, 
-			    Int64 &outLen, char * lobData)
+			    Int64 &outLen, char * lobData,
+			    Int64 lobMaxMemChunkLen,
+			    Int32 inputFlags
+			    )
 {
   Ex_Lob_Error err;
 
@@ -731,7 +747,10 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
                    waitedOp, 
 		   lobGlob,
 		   xnId, 
-		   NULL, 0
+		   NULL, 0,
+		   0,
+		   lobMaxMemChunkLen,
+		   0,0,0,inputFlags
 		   );
 
   if ((err == LOB_OPER_OK) &&
@@ -837,7 +856,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                    waitedOp,
 		   lobGlob,
 		   0,
-		   NULL, 0,0,0,0,0,
+		   NULL, 0,0,0,0,0,0,
                    openType
 		   );
 
@@ -886,5 +905,8 @@ Lng32 ExpLOBinterfaceStats(
  
 char * getLobErrStr(Lng32 errEnum)
 {
+  if (errEnum < LOB_MIN_ERROR_NUM || errEnum > LOB_MAX_ERROR_NUM)
+    return (char *)"Unknown LOB error";
+else
   return (char*)lobErrorEnumStr[errEnum - (Lng32)LOB_MIN_ERROR_NUM];
 }

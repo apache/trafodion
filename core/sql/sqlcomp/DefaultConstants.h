@@ -3290,7 +3290,8 @@ enum DefaultConstants
   // size is for all rows for a particular column.
   // Size is expressed in Mbs
   LOB_MAX_SIZE,
-
+  //Max memory used to tranfer data/perform I/O to lob data file. 
+  LOB_MAX_CHUNK_MEM_SIZE,
   LOB_STORAGE_TYPE,
   LOB_STORAGE_FILE_DIR,
 

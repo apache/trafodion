@@ -1,5 +1,10 @@
 >>obey TEST130(setup);
->>
+>>create schema trafodion.lob;
+
+--- SQL operation complete.
+>>set schema trafodion.lob;
+
+--- SQL operation complete.
 >>create table t130lob1 (c1 blob);
 
 --- SQL operation complete.
@@ -48,9 +53,9 @@ C1
 C1           C2
 -----------  ----------------------------------------------------------------------------------------------------
 
-          1  LOBH000002000100013579647185009197177606709209127596718212300980818700469017"TRAFODION"."SCH"       
-          2  LOBH000002000100013579647185009197177606709209460413718212300980822060824017"TRAFODION"."SCH"       
-          3  LOBH000002000100013579647185009197177606709209768095018212300980825169591017"TRAFODION"."SCH"       
+          1  LOBH00000200010511053751678432359419481892944098569206618212309972129672581017"TRAFODION"."LOB"     
+          2  LOBH00000200010511053751678432359419481892944099238599718212309972144917011017"TRAFODION"."LOB"     
+          3  LOBH00000200010511053751678432359419481892944099831577118212309972150917990017"TRAFODION"."LOB"     
 
 --- 3 row(s) selected.
 >>
@@ -75,14 +80,14 @@ in
 in    
 
 --- 3 row(s) selected.
->>select c1,lobtostring(c2) from t130lob2;
+>>select c1,lobtostring(c2,100) from t130lob2;
 
 C1           (EXPR)
------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------  ----------------------------------------------------------------------------------------------------
 
-          1  inserted row11                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-          2  inserted row12                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-          3  inserted row13                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+          1  inserted row11                                                                                      
+          2  inserted row12                                                                                      
+          3  inserted row13                                                                                      
 
 --- 3 row(s) selected.
 >>
@@ -164,22 +169,22 @@ C1           (EXPR)
 >>update t130lob2 set c2=stringtolob('appended row21a',append) where c1=1;
 
 --- 1 row(s) updated.
->>select c1, lobtostring(c2) from t130lob2;
+>>select c1, lobtostring(c2,100) from t130lob2;
 
 C1           (EXPR)
------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------  ----------------------------------------------------------------------------------------------------
 
-          1  updated row21aappended row21a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-          2  updated c2 in all rows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-          3  updated c2 in all rows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+          1  updated row21aappended row21a                                                                       
+          2  updated c2 in all rows                                                                              
+          3  updated c2 in all rows                                                                              
 
 --- 3 row(s) selected.
->>select c1, lobtostring(c2) from t130lob2 where c1=1;
+>>select c1, lobtostring(c2,100) from t130lob2 where c1=1;
 
 C1           (EXPR)
------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------  ----------------------------------------------------------------------------------------------------
 
-          1  updated row21aappended row21a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+          1  updated row21aappended row21a                                                                       
 
 --- 1 row(s) selected.
 >>
@@ -187,14 +192,14 @@ C1           (EXPR)
 >>update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);
 
 --- 3 row(s) updated.
->>select c1, lobtostring(c2,50) from t130lob2;
+>>select c1, lobtostring(c2,60) from t130lob2;
 
-C1           (EXPR)                                            
------------  --------------------------------------------------
+C1           (EXPR)
+-----------  ------------------------------------------------------------
 
-          1  updated row21aappended row21a appended c2 to all r
-          2  updated c2 in all rows appended c2 to all rows    
-          3  updated c2 in all rows appended c2 to all rows    
+          1  updated row21aappended row21a appended c2 to all rows       
+          2  updated c2 in all rows appended c2 to all rows              
+          3  updated c2 in all rows appended c2 to all rows              
 
 --- 3 row(s) selected.
 >>
@@ -220,5 +225,389 @@ C1           (EXPR)                          (EXPR)
 >>select * from t130lob2;
 
 --- 0 row(s) selected.
+>>log;
+>>--setup
+>>sh echo "Test for file input and extract";
+>>create table tlob130txt1 (c1 int not null, c2 clob, primary key (c1));
+
+--- SQL operation complete.
+>>create table tlob130bin1 (c1 int not null, c2 blob, primary key (c1));
+
+--- SQL operation complete.
+>>sh cp $scriptsdir/executor/deep.jpg $rundir/executor/;
+>>sh cp $scriptsdir/executor/anoush.jpg $rundir/executor/;
+>>sh cp $scriptsdir/executor/lob_input_* $rundir/executor/;
 >>
+>>-- inserts
+>>-- first line
+>>insert into tlob130txt1 values (1, filetolob('lob_input_a1.txt'));
+
+--- 1 row(s) inserted.
+>>
+>>-- second line
+>>insert into tlob130txt1 values (2, filetolob('lob_input_b1.txt'));
+
+--- 1 row(s) inserted.
+>>
+>>-- third line
+>>insert into tlob130txt1 values (3, filetolob('lob_input_c1.txt'));
+
+--- 1 row(s) inserted.
+>>
+>>select lobtostring(c2, 40 ) from tlob130txt1;
+
+(EXPR)                                  
+----------------------------------------
+
+Hey diddle diddle,
+                     
+The cat and the fiddle,
+                
+The cow jumped over the moon.
+          
+
+--- 3 row(s) selected.
+>>
+>>--updates
+>>
+>>--should update with full poem
+>>update tlob130txt1 set c2=filetolob('lob_input_d1.txt', append) where c1 = 3;
+
+--- 1 row(s) updated.
+>>
+>>select lobtostring(c2, 200 ) from tlob130txt1;
+
+(EXPR)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Hey diddle diddle,
+                                                                                                                                                                                     
+The cat and the fiddle,
+                                                                                                                                                                                
+The cow jumped over the moon.
+The little dog laughed,
+To see such sport,
+
+And the dish ran away with the spoon.
+                                                                                        
+
+--- 3 row(s) selected.
+>>
+>>-- should see wrong text in the last few lines
+>>update tlob130txt1 set c2=filetolob('lob_input_e1.txt') where c1 =3 ;
+
+--- 1 row(s) updated.
+>>
+>>select lobtostring(c2, 200 ) from tlob130txt1;
+
+(EXPR)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Hey diddle diddle,
+                                                                                                                                                                                     
+The cat and the fiddle,
+                                                                                                                                                                                
+The little dog cried,
+To see such sport,
+
+And the dish ran away with the fork !
+                                                                                                                        
+
+--- 3 row(s) selected.
+>>
+>>--delete
+>>
+>>-- go back to having just the first  line. 
+>>delete from tlob130txt1 where c1 =2;
+
+--- 1 row(s) deleted.
+>>delete from tlob130txt1 where c1 =3;
+
+--- 1 row(s) deleted.
+>>
+>>--test extract 
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_txt1.txt');/g" >> t130_extract_command;
+>>
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200010511053751678435828119481892944130250244918212309972455030509017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
+
+*** ERROR[8442] Unable to access ExpLOBInterfaceSelect interface. Call to LOB_TGT_FILE_EXISTS_ERROR returned error (561). Error detail 14.
+
+--- SQL operation failed with errors.
+>>
+>>--binary input/update
+>>
+>>insert into tlob130bin1 values (1 , filetolob('deep.jpg'));
+
+--- 1 row(s) inserted.
+>>--extract // should have a viewable picture file
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep.jpg');/g" >> t130_extract_command;
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200010511053751678435882219481892944135784008218212309972510357377017"TRAFODION"."LOB"     ' , 'tlob130_deep.jpg');
+Success. Targetfile :tlob130_deep.jpg  Length : 159018
+
+--- SQL operation complete.
+>>
+>>update tlob130bin1 set c2=filetolob('anoush.jpg') ;
+
+--- 1 row(s) updated.
+>>
+>>--extract into a different file // should have a different viewable picture.
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush.jpg');/g" >> t130_extract_command;
+>>
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200010511053751678435882219481892944135784008218212309972510357377017"TRAFODION"."LOB"     ' , 'tlob130_anoush.jpg');
+Success. Targetfile :tlob130_anoush.jpg  Length : 230150
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>-- Test for hdfs input
+>>--cleanup -- comment the following lines out if you want to debug this test and save intermediate files.
+>>obey TEST130(lob_hdfs_cleanup);
+>>log;
+>>create table tlob130txt2 (c1 int not null, c2 clob, primary key (c1));
+
+--- SQL operation complete.
+>>create table tlob130bin2 (c1 int not null, c2 blob, primary key (c1));
+
+--- SQL operation complete.
+>>
+>>sh swhadoop fs -copyFromLocal lob_input_a1.txt /mydata/lob_input_a1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_b1.txt /mydata/lob_input_b1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_c1.txt /mydata/lob_input_c1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_d1.txt /mydata/lob_input_d1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_e1.txt /mydata/lob_input_e1.txt;
+>>sh swhadoop fs -copyFromLocal deep.jpg /mydata/deep.jpg;
+>>sh swhadoop fs -copyFromLocal anoush.jpg /mydata/anoush.jpg;
+>>
+>>
+>>
+>>insert into tlob130txt2 values (1, filetolob('hdfs:///mydata/lob_input_a1.txt'));
+
+--- 1 row(s) inserted.
+>>
+>>-- second line
+>>insert into tlob130txt2 values (2, filetolob('hdfs:///mydata/lob_input_b1.txt'));
+
+--- 1 row(s) inserted.
+>>
+>>-- third line
+>>insert into tlob130txt2 values (3, filetolob('hdfs:///mydata/lob_input_c1.txt'));
+
+--- 1 row(s) inserted.
+>>select lobtostring(c2, 40 ) from tlob130txt2;
+
+(EXPR)                                  
+----------------------------------------
+
+Hey diddle diddle,
+                     
+The cat and the fiddle,
+                
+The cow jumped over the moon.
+          
+
+--- 3 row(s) selected.
+>>
+>>--updates
+>>
+>>--should update with full poem
+>>update tlob130txt2 set c2=filetolob('hdfs:///mydata/lob_input_d1.txt', append) where c1 = 3;
+
+--- 1 row(s) updated.
+>>select lobtostring(c2, 200 ) from tlob130txt2;
+
+(EXPR)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Hey diddle diddle,
+                                                                                                                                                                                     
+The cat and the fiddle,
+                                                                                                                                                                                
+The cow jumped over the moon.
+The little dog laughed,
+To see such sport,
+
+And the dish ran away with the spoon.
+                                                                                        
+
+--- 3 row(s) selected.
+>>
+>>-- should see wrong text in the last few lines
+>>update tlob130txt2 set c2=filetolob('hdfs:///mydata/lob_input_e1.txt') where c1 =3 ;
+
+--- 1 row(s) updated.
+>>select lobtostring(c2, 200 ) from tlob130txt2;
+
+(EXPR)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Hey diddle diddle,
+                                                                                                                                                                                     
+The cat and the fiddle,
+                                                                                                                                                                                
+The little dog cried,
+To see such sport,
+
+And the dish ran away with the fork !
+                                                                                                                        
+
+--- 3 row(s) selected.
+>>
+>>--delete
+>>
+>>
+>>-- go back to having just the first  line. 
+>>delete from tlob130txt2 where c1 =2;
+
+--- 1 row(s) deleted.
+>>delete from tlob130txt2 where c1 =3;
+
+--- 1 row(s) deleted.
+>>-- test extract 
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_txt2.txt');/g" >> t130_extract_command;
+>>
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200010511053751678436796319481892944142317645618212309972575633380017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_txt2.txt');
+Success. Targetfile :hdfs:///mydata/tlob130_txt2.txt  Length : 19
+
+--- SQL operation complete.
+>>
+>>--binary input/update
+>>
+>>insert into tlob130bin2 values (1 , filetolob('deep.jpg'));
+
+--- 1 row(s) inserted.
+>>--extract // should have a viewable picture file
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_deep.jpg');/g" >> t130_extract_command;
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200010511053751678436862019481892944147840655918212309972630998193017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_deep.jpg');
+Success. Targetfile :hdfs:///mydata/tlob130_deep.jpg  Length : 159018
+
+--- SQL operation complete.
+>>
+>>update tlob130bin2 set c2=filetolob('anoush.jpg') ;
+
+--- 1 row(s) updated.
+>>
+>>--extract into a different file // should have a different viewable picture.
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_anoush.jpg');/g" >> t130_extract_command;
+>>
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200010511053751678435882219481892944135784008218212309972510357377017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_anoush.jpg');
+Success. Targetfile :hdfs:///mydata/tlob130_anoush.jpg  Length : 230150
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>------------------------------------------------------------------------------
+>>obey TEST130(lob_misc_cleanup);
+>>log;
+>>-- 2 clob columns
+>>create table tlob130txt3 (c1 int not null, c2 int, c3 clob, c4 clob, primary key (c1));
+
+--- SQL operation complete.
+>>insert into tlob130txt3 values (1, 1,filetolob('lob_input_a1.txt'), filetolob('lob_input_b1.txt'));
+
+--- 1 row(s) inserted.
+>>insert into tlob130txt3 values (2, 2,filetolob('lob_input_c1.txt'), filetolob('lob_input_d1.txt'));
+
+--- 1 row(s) inserted.
+>>select lobtostring(c3,100), lobtostring(c4,100)from tlob130txt3;
+
+(EXPR)                                                                                                (EXPR)
+----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------
+
+Hey diddle diddle,
+                                                                                   The cat and the fiddle,
+                                                                            
+The cow jumped over the moon.
+                                                                        The little dog laughed,
+To see such sport,
+
+And the dish ran away with the spoon.
+                  
+
+--- 2 row(s) selected.
+>>
+>>-- 2 blob columns
+>>create table tlob130bin3 (c1 int not null, c2 int, c3 blob, c4 blob, primary key (c1));
+
+--- SQL operation complete.
+>>insert into tlob130bin3 values (1, 1, filetolob('deep.jpg'), filetolob('anoush.jpg'));
+
+--- 1 row(s) inserted.
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep2.jpg');/g" >> t130_extract_command;
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200020511053751678438441919481892944156470608918212309972717301409017"TRAFODION"."LOB"     ' , 'tlob130_deep2.jpg');
+
+*** ERROR[8442] Unable to access ExpLOBInterfaceSelect interface. Call to LOB_TGT_FILE_EXISTS_ERROR returned error (561). Error detail 14.
+
+--- SQL operation failed with errors.
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200030511053751678438441919481892944156980402118212309972722402083017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_anoush2.jpg');
+Success. Targetfile :hdfs:///mydata/tlob130_anoush2.jpg  Length : 230150
+
+--- SQL operation complete.
+>>
+>>-- combination blob and clob columns
+>>create table tlob130bt (c1 int not null, c2 int, c3 blob, c4 clob, primary key (c1));
+
+--- SQL operation complete.
+>>insert into tlob130bt values (1,1, filetolob('lob_input_a1.txt'), filetolob('anoush.jpg'));
+
+--- 1 row(s) inserted.
+>>
+>>select lobtostring(c3,40) from tlob130bt;
+
+(EXPR)                                  
+----------------------------------------
+
+Hey diddle diddle,
+                     
+
+--- 1 row(s) selected.
+>>
+>>log;
+>>sh rm t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',truncate);/g" >> t130_extract_command;
+>>obey t130_extract_command;
+>>extract lobtofile(LOB 'LOBH00000200030511053751678438817719481892944160479315318212309972757456948017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',truncate);
+Success. Targetfile :tlob130_anoush3.jpg  Length : 230150
+
+--- SQL operation complete.
+>>
+>>obey TEST130(lob_general_cleanup);
 >>log;

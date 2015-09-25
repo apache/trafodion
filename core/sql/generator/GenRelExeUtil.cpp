@@ -3712,12 +3712,12 @@ if (handleInStringFormat_)
   if (handle_ == NULL)
     exe_util_tdb->setSrcIsFile(TRUE);
 
-  if (ExtractFileActionType::ERROR_IF_NOT_EXISTS)
+  if (intParam_ == ExtractFileActionType::ERROR_IF_NOT_EXISTS)
     exe_util_tdb->setErrorIfNotExists(TRUE);   
   else
     exe_util_tdb->setErrorIfNotExists(FALSE);
 
-  if (ExtractFileActionType::TRUNCATE_EXISTING)
+  if (intParam2_ == ExtractFileActionType::TRUNCATE_EXISTING)
     exe_util_tdb->setTruncateExisting(TRUE);
   else
     exe_util_tdb->setTruncateExisting(FALSE);
@@ -3737,7 +3737,7 @@ if (handleInStringFormat_)
     {
       exe_util_tdb->setRetrieveLength(TRUE);
     }
-  exe_util_tdb->setBufSize(CmpCommon::getDefaultNumeric(LOB_OUTPUT_SIZE));
+  exe_util_tdb->setBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
   generator->setCriDesc(returnedDesc, Generator::UP);

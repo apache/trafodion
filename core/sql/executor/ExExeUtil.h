@@ -2914,6 +2914,8 @@ public:
     EMPTY_,
     GET_NO_CHILD_HANDLE_,
     GET_LOB_HANDLE_,
+    RETRIEVE_LOB_LENGTH_,
+    EXTRACT_LOB_DATA_,
     RETURN_STATUS_,
     SEND_REQ_TO_CHILD_,
     GET_REPLY_FROM_CHILD_,
@@ -2945,7 +2947,7 @@ public:
   Lng32 lobType_;
   char * lobData_;
   char * lobData2_;
-  Int64 lobDataMaxLen_;
+  Int64 lobDataExtractLen_;
   Int64 lobDataLen_;
   Lng32 remainingBytes_;
   Lng32 currPos_;
