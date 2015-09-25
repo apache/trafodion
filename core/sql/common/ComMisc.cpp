@@ -177,7 +177,7 @@ NAString ComConvertNativeNameToTrafName (
 // this function converts the Trafodion external table name 
 // into its native name format. Both names are in external format.
 //
-// Example:  TRAFODION._HV_HIVE_.abc becomes HIVE.HIVE.abc
+// Example:  TRAFODION."_HV_HIVE_".abc becomes HIVE.HIVE.abc
 //
 // params:
 //    catalogName - catalog name of the external table

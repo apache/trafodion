@@ -19,7 +19,7 @@
 >>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_a.hive.sql &> $REGRRUNDIR/LOG009_a.hive.log;
 >>sh regrhbase.ksh $REGRTSTDIR/TEST009_create_hbase_objects.hbase &> $REGRRUNDIR/LOG009_create_hbase_tables.log ;
 >>
->>-- make sure no external schemas exist in Trafodion
+>>-- make sure external schemas exist in Trafodion
 >>execute get_hv_schemas;
 
 SCHEMA_NAME
