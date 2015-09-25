@@ -177,7 +177,7 @@ void SQLMXLoggingArea::logPrivMgrInfo(const char *filename,
   bool lockedMutex = lockMutex();
 
   QRLogger::log(CAT_SQL_PRIVMGR,
-                LL_INFO, 
+                LL_DEBUG, 
                 "%s ", msg);
 
   if (lockedMutex)

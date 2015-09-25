@@ -61,7 +61,7 @@ W       X
 >>				-- should work
 >>update t002v set w=0;
 
-*** ERROR[4028] Table or view SEABASE.SCH.T002V is not updatable.
+*** ERROR[4028] Table or view TRAFODION.SCH.T002V is not updatable.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -957,7 +957,7 @@ A            (EXPR)
 +> (select a,sum(a) from t002t1 group by a) y) z(a,b,c,d)
 +>		group by a;
 
-*** ERROR[4001] Column B is not found.  Tables in scope: X, Y.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column B is not found.  Tables in scope: X, Y.  Default schema: TRAFODION.SCH.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1032,28 +1032,28 @@ A            (EXPR)
 >>
 >>select *, sum(a) from t002t1;
 
-*** ERROR[4012] Column reference SEABASE.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
+*** ERROR[4012] Column reference TRAFODION.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>			-- err 4012
 >>select sum(a), * from t002t1;
 
-*** ERROR[4012] Column reference SEABASE.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
+*** ERROR[4012] Column reference TRAFODION.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>			-- err 4012
 >>select *, sum(a) from t002t1 having 1=1;
 
-*** ERROR[4012] Column reference SEABASE.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
+*** ERROR[4012] Column reference TRAFODION.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>	-- err 4012
 >>select *, sum(a) from t002t1 group by b;
 
-*** ERROR[4012] Column reference SEABASE.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
+*** ERROR[4012] Column reference TRAFODION.SCH.T002T1.A must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1102,7 +1102,7 @@ A            B          C            D     (EXPR)
 >>-- The select list contains a non-grouping non-aggregated column.
 >>SELECT A,MAX(A) FROM T002T1;
 
-*** ERROR[4021] The select list contains a nongrouping non-aggregated column, SEABASE.SCH.T002T1.A.
+*** ERROR[4021] The select list contains a nongrouping non-aggregated column, TRAFODION.SCH.T002T1.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1129,7 +1129,7 @@ A            (EXPR)
 >>-- The select list contains a non-grouping non-aggregated column.
 >>SELECT A,COUNT(*) FROM T002T1;
 
-*** ERROR[4021] The select list contains a nongrouping non-aggregated column, SEABASE.SCH.T002T1.A.
+*** ERROR[4021] The select list contains a nongrouping non-aggregated column, TRAFODION.SCH.T002T1.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1156,7 +1156,7 @@ A            (EXPR)
 >>-- The select list contains a non-grouping non-aggregated column.
 >>SELECT (SELECT A FROM T002T2 WHERE OUTT.A > A AND MAX(OUTT.B)>'C') FROM T002T1 OUTT;
 
-*** ERROR[4021] The select list contains a nongrouping non-aggregated column, SEABASE.SCH.T002T1.A.
+*** ERROR[4021] The select list contains a nongrouping non-aggregated column, TRAFODION.SCH.T002T1.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1571,7 +1571,11 @@ C            (EXPR)      (EXPR)
          20       27648                    30
 
 --- 6 row(s) selected.
+>>
 >>control query shape merge_join(cut,cut);
+
+--- SQL operation complete.
+>>cqd PCODE_OPT_LEVEL '0';
 
 --- SQL operation complete.
 >>select t002t6.c, character_length(T.b), T.a+10
@@ -1598,6 +1602,9 @@ C            (EXPR)      (EXPR)
          20       27648                    30
 
 --- 6 row(s) selected.
+>>cqd PCODE_OPT_LEVEL reset;
+
+--- SQL operation complete.
 >>control query shape cut;
 
 --- SQL operation complete.
@@ -6709,7 +6716,7 @@ FOO
 +>  WHERE
 +>    (SELECT 27 FROM TbadCorr) = 27;
 
-*** ERROR[4082] Object SEABASE.SCH.TBADCORR does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.TBADCORR does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -6862,7 +6869,7 @@ FOO
 +>  WHERE
 +>    (SELECT 27 FROM TbadCorr) = 27;
 
-*** ERROR[4082] Object SEABASE.SCH.TBADCORR does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.TBADCORR does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 

@@ -249,14 +249,6 @@ void CmpSeabaseDDL::createSeabaseTableLike(
   ComObjectName srcTableName(createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
   srcTableName.applyDefaults(currCatAnsiName, currSchAnsiName);
   
-  // If source table is external, return an error.  
-  // TBD - allow create table like a native (external) HIVE or HBASE table
-  if (ComIsTrafodionExternalSchemaName(srcTableName.getSchemaNamePart().getInternalName()))
-    {
-      *SqlParser_Diags << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);
-      return;
-    }
-  
   CorrName cn(srcTableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
               srcTableName.getSchemaNamePart().getInternalName(),
@@ -542,11 +534,11 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       colInfoArray[index].dtEnd = dtEnd;
       colInfoArray[index].upshifted = upshifted;
       colInfoArray[index].colHeading = NULL;
-      colInfoArray[index].hbaseColFlags = 0;
+      colInfoArray[index].hbaseColFlags = naCol->getHbaseColFlags();
       colInfoArray[index].defaultClass = COM_NULL_DEFAULT;
       colInfoArray[index].defVal = NULL;
-      colInfoArray[index].hbaseColFam = NULL;
-      colInfoArray[index].hbaseColQual = NULL;
+      colInfoArray[index].hbaseColFam = naCol->getHbaseColFam();
+      colInfoArray[index].hbaseColQual = naCol->getHbaseColQual();
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = 0;

@@ -209,6 +209,11 @@ else
   done
 fi
 
+echo "copying scripts to $REGRRUNDIR"
+cp $REGRTSTDIR/ddl.sb028 $REGRRUNDIR 2>$NULL
+cp $REGRTSTDIR/dml.sb028 $REGRRUNDIR 2>$NULL
+cp $REGRTSTDIR/FILTER028 $REGRRUNDIR 2>$NULL
+
 skippedfiles=
 
 ##############################################################

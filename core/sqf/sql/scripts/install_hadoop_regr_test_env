@@ -199,7 +199,6 @@ fi
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store       >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table promotion   >>${MY_LOG_FILE} 2>&1
 
-  echo "Copying generated data to HDFS..."
   $MY_HDFS_CMD dfs -mkdir /hive/tpcds                        >>${MY_LOG_FILE} 2>&1
   $MY_HDFS_CMD dfs -mkdir /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
   $MY_HDFS_CMD dfs -mkdir /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
@@ -214,6 +213,20 @@ fi
 
   cd $MY_TPCDS_DATA_DIR
 
+  which iconv >>${MY_LOG_FILE} 2>&1
+  if (( $? != 0 ))
+  then
+    echo "iconv utility not available. The data will be in ISO-8859-1 format."
+  else
+    echo "Converting the data into UTF-8 format ..."
+    for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales
+      do
+        iconv -f ISO-8859-1 -t UTF-8 -o ${t}.utf8.dat ${t}.dat >>${MY_LOG_FILE} 2>&1
+        mv ${t}.utf8.dat ${t}.dat
+      done
+  fi
+
+  echo "Copying generated data to HDFS..."
   for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales
     do
       $MY_HDFS_CMD dfs -put ${t}.dat /hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1

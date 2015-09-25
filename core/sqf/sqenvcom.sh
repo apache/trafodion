@@ -29,13 +29,16 @@
 #  * Add an entry in sqf/LocalSettingsTemplate.sh to make path configurable.
 ##############################################################
 
+#Product version (Trafodion or derivative product)
+export TRAFODION_VER_PROD="Apache Trafodion"
 # Trafodion version (also update file ../sql/common/copyright.h)
 export TRAFODION_VER_MAJOR=1
 export TRAFODION_VER_MINOR=2
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
-
+# Product copyright header
+export PRODUCT_COPYRIGHT_HEADER="2015 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -433,6 +436,8 @@ elif [[ -d /opt/mapr ]]; then
 
   # We tried this with MapR 3.1, which has hadoop-0.20.2, hbase-0.94.13, hive-0.12
 
+  [[ $SQ_VERBOSE == 1 ]] && echo "Found /opt/mapr, this is a MapR distro"
+
   # Note that hadoopversion and hiveversion are not officially
   # supported by MapR, only hbaseversion is. We recommend creating
   # these files to guide Trafodion to the right version, if necessary.
@@ -490,25 +495,151 @@ elif [[ -d /opt/mapr ]]; then
   # HBase-trx jar with some modifications to work with MapR HBase 0.94.13
   export HBASE_TRX_JAR=hbase-trx-mapr4_0-trx-${TRAFODION_VER}.jar
 
-elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
-     && -e $MY_SQROOT/export/bin${SQ_MBTYPE}/monitor
-     && -e ${HBASE_TRXDIR}/${HBASE_TRX_JAR}
-     && -e $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar
-     && -e $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar
-     && -e $MY_SQROOT/export/lib/jdbcT4.jar
-     && -e $MY_SQROOT/export/lib/jdbcT2.jar ]]; then
-
-  # Several built files exist, perhaps by unpackaging a file from downloads.trafodion.org,
-  # but install_local_hadoop has not yet run.
-
-  NEEDS_HADOOP_INSTALL=1
-  echo "WARNING: Did not find Hadoop distribution,"
-  echo "         you may need to run sql/scripts/install_local_hadoop"
-
 else
-  echo "WARNING: Did not find supported Hadoop distribution"
+
+  # try some other options
+
+  function vanilla_apache_usage {
+
+  cat <<EOF
+
+    If you have Apache Hadoop and HBase installed, without a distro,
+    please do the following to ensure Trafodion can find the installation
+
+    Method 1: Ensure that hadoop-site.xml, hbase-site.xml and hive-site.xml
+              are in the CLASSPATH.
+
+    Method 2: Set the following environment variables:
+              - HADOOP_PREFIX for Hadoop (example: /opt/hadoop-1.2.3)
+              - HBASE_HOME for HBase (example: /opt/hbase-1.2.3)
+              - HIVE_HOME for Hive (example: /opt/hive-1.2.3)
+
+    See http://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/ClusterSetup.html
+
+    Yet another option is to use the install_local_hadoop script on a
+    single node for evaluation or development.
+
+EOF
+  }
+
+  # Hadoop/HBase/Hive install directories, as determined by this script,
+  # when using an Apache installation without one of the distros
+  APACHE_HADOOP_HOME=
+  APACHE_HBASE_HOME=
+  APACHE_HIVE_HOME=
+
+  if [ -f $HADOOP_PREFIX/etc/hadoop/core-site.xml ]; then
+    APACHE_HADOOP_HOME=$HADOOP_PREFIX
+    export HADOOP_CNF_DIR=$HADOOP_PREFIX/etc/hadoop
+  fi
+  if [ -f $HBASE_HOME/conf/hbase-site.xml ]; then
+    [[ $SQ_VERBOSE == 1 ]] && echo "HBASE_HOME is set to $HBASE_HOME, this is vanilla Apache"
+    APACHE_HBASE_HOME=$HBASE_HOME
+    export HBASE_CNF_DIR=$HBASE_HOME/conf
+  fi
+  if [ -f $HIVE_HOME/conf/hive-site.xml ]; then
+    APACHE_HIVE_HOME=$HIVE_HOME
+    export HIVE_CNF_DIR=$HIVE_HOME/conf
+  fi
+
+  for cp in `echo $CLASSPATH | sed 's/:/ /g'`
+  do
+    if [ -f $cp/core-site.xml ]; then
+      export HADOOP_CNF_DIR=$cp
+      APACHE_HADOOP_HOME=$(dirname $(dirname $cp))
+    fi
+    if [ -f $cp/hbase-site.xml ]; then
+      [[ $SQ_VERBOSE == 1 ]] && echo "Found $cp/hbase-site.xml in CLASSPATH, this is vanilla Apache"
+      export HBASE_CNF_DIR=$cp
+      APACHE_HBASE_HOME=`dirname $cp`
+    fi
+    if [ -f $cp/hive-site.xml ]; then
+      export HIVE_CNF_DIR=$cp
+      APACHE_HIVE_HOME=`dirname $cp`
+    fi
+  done
+
+  # sometimes, conf file and lib files don't have the same parent,
+  # try to handle some common cases, where the libs are under /usr/lib
+  if [ ! -d $APACHE_HADOOP_HOME/lib/ -a -d /usr/lib/hadoop ]; then
+    APACHE_HADOOP_HOME=/usr/lib/hadoop
+  fi
+  if [ ! -d $APACHE_HBASE_HOME/lib -a -d /usr/lib/hbase ]; then
+    APACHE_HBASE_HOME=/usr/lib/hbase
+  fi
+  if [ ! -d $APACHE_HIVE_HOME/lib -a -d /usr/lib/hive ]; then
+    APACHE_HIVE_HOME=/usr/lib/hive
+  fi
+
+  if [ ! -d $APACHE_HADOOP_HOME/lib ]; then
+    echo "**** ERROR: Unable to determine location of Hadoop lib directory"
+  fi
+
+  if [ ! -d $APACHE_HBASE_HOME/lib ]; then
+    echo "**** ERROR: Unable to determine location of HBase lib directory"
+  fi
+
+  if [ -n "$HBASE_CNF_DIR" -a -n "$HADOOP_CNF_DIR" -a \
+       -d $APACHE_HADOOP_HOME/lib -a -d $APACHE_HBASE_HOME/lib ]; then
+    # We are on a system with Apache HBase, probably without a distro
+    # ---------------------------------------------------------------
+
+
+    [ "$SQ_VERBOSE" == 1 ] && echo "Found both HBase and Hadoop config for vanilla Apache"
+
+    # native library directories and include directories
+    if [ -f /usr/lib/hadoop/lib/native/libhdfs.so ]; then
+      export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
+    elif [ -f $APACHE_HADOOP_HOME/lib/native/libhdfs.so ]; then
+      export HADOOP_LIB_DIR=$APACHE_HADOOP_HOME/lib/native
+    else
+      echo '**** ERROR: Could not find Hadoop native library libhdfs.so in ' $APACHE_HADOOP_HOME/lib/native
+    fi
+
+    if [ -f /usr/include/hdfs.h ]; then
+      export HADOOP_INC_DIR=/usr/include
+    elif [ -f $APACHE_HADOOP_HOME/include/hdfs.h ]; then
+      export HADOOP_INC_DIR=$APACHE_HADOOP_HOME/include
+    else
+      # ok for running Trafodion, not ok for building it
+      if [ "$SQ_VERBOSE" == 1 ]; then
+        echo '*** WARNING: Could not find hdfs.h include file'
+      fi
+    fi
+
+    # directories with jar files and list of jar files
+    export HADOOP_JAR_DIRS="$APACHE_HADOOP_HOME/share/hadoop/common
+                            $APACHE_HADOOP_HOME/share/hadoop/common/lib
+                            $APACHE_HADOOP_HOME/share/hadoop/mapreduce
+                            $APACHE_HADOOP_HOME/share/hadoop/hdfs"
+    export HADOOP_JAR_FILES=
+
+
+    export HBASE_JAR_FILES="$APACHE_HBASE_HOME/lib/hbase-common-*.jar
+                            $APACHE_HBASE_HOME/lib/hbase-client-*.jar
+                            $APACHE_HBASE_HOME/lib/hbase-server-*.jar
+                            $APACHE_HBASE_HOME/lib/hbase-protocol-*.jar
+                            $APACHE_HBASE_HOME/lib/htrace-core-*.jar
+                            $APACHE_HBASE_HOME/lib/zookeeper-*.jar
+                            $APACHE_HBASE_HOME/lib/protobuf-*.jar
+                            $APACHE_HBASE_HOME/lib/snappy-java-*.jar
+                            $APACHE_HBASE_HOME/lib/high-scale-lib-*.jar
+                            $APACHE_HBASE_HOME/lib/hbase-hadoop-compat-*-hadoop2.jar "
+
+    export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
+
+    export HBASE_TRX_JAR=hbase-trx-hbase_98_4-${TRAFODION_VER}.jar
+    # end of code for Apache Hadoop/HBase installation w/o distro
+  else
+    # print usage information, not enough information about Hadoop/HBase
+    vanilla_apache_usage
+    NEEDS_HADOOP_INSTALL=1
+  fi
 
 fi
+
+# ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+# end of customization variables
 
 # Common for local workstations, Cloudera, Hortonworks and MapR
 
@@ -526,9 +657,6 @@ else
   export LOG4CXX_INC_DIR=/usr/include/log4cxx
 fi
 
-
-# ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-# end of customization variables
 
 # for debugging
 export LD_BIND_NOW=true
@@ -738,7 +866,7 @@ SQ_CLASSPATH=${SQ_CLASSPATH#:}
 
 # add Hadoop and HBase config dirs to classpath, if they exist
 if [[ -n "$HADOOP_CNF_DIR" ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HADOOP_CNF_DIR"; fi
-if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
+if [[ -n "$HBASE_CNF_DIR"  ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
 SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
@@ -764,6 +892,10 @@ This is not supported. To change environments, do the following:
   start a new shell and source in sqenv.sh
   sqstart
 EOF
+# export an env var that can be checked by subsequent scripts
+# (exit is not a good option here since we source in this file,
+# so exit would kill the entire shell)
+export CHANGED_SQ_ENV_RESTART_SHELL=1
 fi
 
 # take anything from the existing classpath, but not the part that was

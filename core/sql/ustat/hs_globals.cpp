@@ -2745,6 +2745,7 @@ THREAD_P NABoolean HSGlobalsClass::performISForMC_ = FALSE;
 HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
   : catSch(new(STMTHEAP) NAString(STMTHEAP)),
     isHbaseTable(FALSE),
+    isHiveTable(FALSE),
     user_table(new(STMTHEAP) NAString(STMTHEAP)),
     numPartitions(0),
     hstogram_table(new(STMTHEAP) NAString(STMTHEAP)),
@@ -2784,7 +2785,8 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     sample_I_generated(FALSE),
     jitLogThreshold(0),
     stmtStartTime(0),
-    jitLogOn(FALSE)
+    jitLogOn(FALSE),
+    isUpdatestatsStmt(FALSE)
   {
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);
@@ -2862,6 +2864,7 @@ Lng32 HSGlobalsClass::Initialize()
        defaultHiveCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
     else
       (*defaultHiveCatName) = "";
+
     CmpCommon::getDefault(HIVE_CATALOG, (*defaultHiveCatName), FALSE);
     (*defaultHiveCatName).toUpper();
 
@@ -2869,7 +2872,8 @@ Lng32 HSGlobalsClass::Initialize()
        defaultHbaseCatName = new (GetCliGlobals()->exCollHeap()) NAString("");
     else
       (*defaultHbaseCatName) = "";
-    CmpCommon::getDefault(SEABASE_CATALOG, (*defaultHbaseCatName), FALSE);
+
+    CmpCommon::getDefault(HBASE_CATALOG, (*defaultHbaseCatName), FALSE);
     (*defaultHbaseCatName).toUpper();
 
                                               /*==============================*/
@@ -2880,12 +2884,32 @@ Lng32 HSGlobalsClass::Initialize()
         HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
         TM->Begin("Create schema for hive stats.");
         NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
-        ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA);
+        ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA).
+            append(" AUTHORIZATION DB__ROOT");
         retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
                                   "Creating schema for Hive statistics", NULL,
                                   NULL);
         HSHandleError(retcode);
-        TM->Commit(); // Must commit this transaction (even if schema didn't get created).
+        TM->Commit(); // In case if there is an error, the commit will log the error (if
+                      // ULOG is enabled. Otherwise, the method will commit the tranaction.
+      }
+                                              /*=====================================*/
+                                              /*   CREATE HBASE STATS SCHEMA         */
+                                              /*   typically as trafodion.hbasestats */
+                                              /*=====================================*/
+    if (isNativeHbaseCat(objDef->getCatName()))
+      {
+        HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
+        TM->Begin("Create schema for native hbase stats.");
+        NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
+        ddl.append(HBASE_STATS_CATALOG).append('.').append(HBASE_STATS_SCHEMA).
+            append(" AUTHORIZATION DB__ROOT");
+        retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
+                                  "Creating schema for native HBase statistics", NULL,
+                                  NULL);
+        HSHandleError(retcode);
+        TM->Commit(); // In case if there is an error, the commit will log the error (if
+                      // ULOG is enabled. Otherwise, the method will commit the tranaction.
       }
                                               /*==============================*/
                                               /*    CREATE HISTOGRM TABLES    */
@@ -3823,8 +3847,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     if (retcode) TM->Rollback();
     HSHandleError(retcode);
 
-    HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS 'PERTABLE'");
-
     if (LM->LogNeeded())
       {
         sprintf(LM->msg, "\tSAMPLE TABLE = %s", sampleTable.data());
@@ -3938,7 +3960,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // On SQ, alter the sample table to audit afterwards. There are performance 
     // issues with non-audited tables on SQ. For Trafodion, however, this alter
     // is not supported, so skip it.
-     if (!hs_globals->isHbaseTable)
+     if (!hs_globals->isHbaseTable && !hs_globals->isHiveTable)
        {
          LM->StartTimer("Set audit attribute on sample table");
          SQL_EXEC_SetParserFlagsForExSqlComp_Internal(hsALLOW_SPECIALTABLETYPE);
@@ -3974,7 +3996,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       HSFuncExecQuery("CONTROL QUERY DEFAULT PLAN_STEALING RESET");        //Workaround: 10-040706-7608
     if (dp2SamplingUsed)
       HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
-    HSFuncExecQuery("CONTROL QUERY DEFAULT DETAILED_STATISTICS RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS_NUM_OF_PARTNS RESET");
     
@@ -15510,3 +15531,4 @@ Lng32 HSGlobalsClass::CollectStatisticsWithFastStats()
 
   return retcode;
 }
+

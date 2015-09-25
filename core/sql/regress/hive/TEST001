@@ -53,7 +53,8 @@ select count(*) from time_dim ;
 
 select c_customer_sk from customer where c_customer_sk < 100; 
 
-select ca_gmt_offset from customer_address where ca_gmt_offset < -8;
+select ca_gmt_offset from customer_address where ca_gmt_offset < -8 
+order by ca_gmt_offset;
 
 select [first 100] hd_buy_potential from household_demographics ;
 

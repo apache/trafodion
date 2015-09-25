@@ -661,7 +661,9 @@ left outer join (
   ) T) T) T) T) T) T
 on (t002t6.c = T.a)
 ;
+
 control query shape merge_join(cut,cut);
+cqd PCODE_OPT_LEVEL '0';
 select t002t6.c, character_length(T.b), T.a+10
 from t002t6
 left outer join (
@@ -674,6 +676,7 @@ left outer join (
   ) T) T) T) T) T) T
 on (t002t6.c = T.a)
 ;
+cqd PCODE_OPT_LEVEL reset;
 control query shape cut;
 
 -- Test Outer Join with many (all) rows are null instanitated.

@@ -73,7 +73,7 @@ import javax.naming.StringRefAddr;
  * </p>
  * </blockquote>
  * <p>
- * Copyright: (C) Copyright 2004-2007 Hewlett-Packard Development Company, L.P.
+ *  Licensed to the Apache Software Foundation (ASF)
  * </p>
  */
 public class T4Properties {

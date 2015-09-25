@@ -44,22 +44,15 @@ NABoolean UdrCfgParser::cfgFileIsOpen(NAString &errorText)
 
    NABoolean envFound = FALSE;
 
-   if(cfgFileName = getenv("MXUDRCFG"))
+   if(cfgFileName = getenv("TRAFUDRCFG"))
    {
       envFound = TRUE;
-      UDR_DEBUG1("UdrCfgParser(): MXUDRCFG cfgFileName is %s", cfgFileName);
+      UDR_DEBUG1("UdrCfgParser(): TRAFUDRCFG cfgFileName is %s", cfgFileName);
    }
    else
    {
-     NAString s("c:/tdm_sql/udr/mxudrcfg");
-     char installdir[1024];
-     Lng32 resultlength = 0;
-     Int32 res = ComRtGetInstallDir(installdir, 1024, &resultlength);
-     if (res == 0)
-     {
-       s = installdir;
-       s += "/mxudrcfg";
-     }
+     NAString s(getenv("MY_SQROOT"));
+     s += "/conf/trafodion.udr.config";
      cfgFileName = strdup(s.data());
      UDR_DEBUG1("UdrCfgParser(): default cfgFileName is %s", cfgFileName);
    }
@@ -73,7 +66,7 @@ NABoolean UdrCfgParser::cfgFileIsOpen(NAString &errorText)
          errorText += cfgFileName;
          errorText += ": ";
          errorText += strerror(errno);
-         errorText += ". Check envvar MXUDRCFG setting.\n";
+         errorText += ". Check envvar TRAFUDRCFG setting.\n";
       }
 
       return FALSE;

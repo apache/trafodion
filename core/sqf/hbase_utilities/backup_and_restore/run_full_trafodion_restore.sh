@@ -198,13 +198,13 @@ do
   echo "delete_snapshot	'${snapshot_name}'" >>	$hbase_delete_snapshots
   echo  "Importing Snapshot: ${snapshot_name}"   | tee -a $log_file
   hbase_cmd="$(get_hbase_cmd)"
-  hbase_cmd+="org.apache.hadoop.hbase.snapshot.ExportSnapshot"
-  hbase_cmd+="-D hbase.rootdir=${hdfs_backup_location}/${snapshot_name}"
-  hbase_cmd+="-snapshot ${snapshot_name}"
-  hbase_cmd+="-copy-to ${hbase_root_dir}"
+  hbase_cmd+=" org.apache.hadoop.hbase.snapshot.ExportSnapshot"
+  hbase_cmd+=" -D hbase.rootdir=${hdfs_backup_location}/${snapshot_name}"
+  hbase_cmd+=" -snapshot ${snapshot_name}"
+  hbase_cmd+=" -copy-to ${hbase_root_dir}"
   echo "${hbase_cmd}" | tee -a  $log_file
 
-  do_sudo ${hbase_user} "${hbase_cmd}" 2>&1 | tee -a  ${log_file}
+  do_sudo ${hbase_user} " ${hbase_cmd}" 2>&1 | tee -a  ${log_file}
   ##check for erros
   if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
       echo "****[ERROR]: Error encountered while importing snapshot ${snapshot_name}." | tee -a $log_file

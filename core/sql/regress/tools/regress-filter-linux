@@ -324,6 +324,7 @@ s/^NonStop SQL\/MX \([A-Za-z\/ +]*\) [0-9][0-9]*\.[0-9][0-9]*$/\1 #n.#n/
 /^Copyright (c).*All Rights Reserved. *$/s/Compaq[^.]*\./#CPQ#TDM#./
 /^(c) Copyright [0-9][0-9][0-9][0-9] Hewlett-Packard Development Company.*$/s/^.*$/Copyright (c) ####-#### #CPQ#TDM#\.  All Rights Reserved./
 /^(c) Copyright [0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9] Hewlett-Packard Development Company.*$/s/^.*$/Copyright (c) ####-#### #CPQ#TDM#\.  All Rights Reserved./
+s/^Copyright (c) .*/Copyright (c) ######/
 /^[Hh]istory file .* Access is denied/d
 s/^\(MESSAGEFILE     [ 	]*\).*/\1#f/
 /^MESSAGEFILE VRSN[ 	]*{/s/{.*/#v/

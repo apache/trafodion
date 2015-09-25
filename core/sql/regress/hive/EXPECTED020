@@ -20,7 +20,7 @@
 >>invoke hive.hive.store_orc;
 
 -- Definition of hive table STORE_ORC
--- Definition current  Sun Nov  9 22:00:42 2014
+-- Definition current  Fri Sep 18 21:54:29 2015
 
   (
     S_STORE_SK                       INT
@@ -139,10 +139,10 @@ S_STORE_SK   (EXPR)
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-3    .    4    root                                                  4.09E+001
-2    1    3    hybrid_hash_join                                      4.09E+001
-.    .    2    hive_scan                       STORE_ORC             9.00E+000
-.    .    1    hive_scan                       STORE_ORC             9.00E+000
+3    .    4    root                                                  8.17E+004
+2    1    3    hybrid_hash_join                                      8.17E+004
+.    .    2    hive_scan                       STORE_ORC             4.08E+003
+.    .    1    hive_scan                       STORE_ORC             4.08E+003
 
 --- SQL operation complete.
 >>
@@ -177,10 +177,10 @@ Suite 100             College
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-3    .    4    root                                                  5.00E+001
-2    1    3    hybrid_hash_join                                      5.00E+001
-.    .    2    hive_scan                       STORE                 1.10E+001
-.    .    1    hive_scan                       STORE_ORC             9.00E+000
+3    .    4    root                                                  4.08E+003
+1    2    3    nested_join                                           4.08E+003
+.    .    2    hive_scan                       STORE_ORC             4.08E+001
+.    .    1    hive_scan                       STORE                 1.00E+002
 
 --- SQL operation complete.
 >>
