@@ -160,6 +160,7 @@ class ISFixedChar
     // NABasicObject does not define array versions of those operators. Even if
     // it did, we wouldn't subclass it because it would make the objects bigger
     // (NABasicObject has a heap ptr member variable).
+    /*
     void* operator new[](size_t size)
     {
       return STMTHEAP->allocateMemory(size, FALSE);
@@ -169,6 +170,7 @@ class ISFixedChar
     {
       STMTHEAP->deallocateMemory(addr);
     }
+*/
 
     // Note that we forego the usual convention of having operator= return a
     // reference to the assigned-to object. This is just to make this operation
@@ -1701,7 +1703,7 @@ private:
 
     // Select a set of columns that will fit in available memory so they can
     // be sorted internally.
-    Int32 selectSortBatch(NABoolean ISonlyWhenBetter,
+    Int32 selectSortBatch(Int64 rows, NABoolean ISonlyWhenBetter,
                         NABoolean trySampleInMemory);
 
     // Select a set of columns that can be IUS updated in memory in one batch.
@@ -1714,7 +1716,7 @@ private:
 
     // Determine if all groups (both single and MC) can fit in memory for internal sort.
     // No space is actually allocated and no state is set for each group.
-    NABoolean allGroupsFitInMemory();
+    NABoolean allGroupsFitInMemory(Int64 rows);
 
     // Determine the next batch of columns to be processed with internal sort
     // by calling selectSortBatch() and ensuring that adequate memory can be
