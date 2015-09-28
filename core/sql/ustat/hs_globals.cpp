@@ -5401,7 +5401,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         if (trySampleTableBypassForIS && multiGroup ) {
 
               if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON &&
-                  allGroupsFitInMemory()) 
+                  allGroupsFitInMemory(maxRowsToRead)) 
               {
                 // if both single and MC groups can fit in memory, turn on
                 // performing MC in memory flag.
@@ -10257,7 +10257,7 @@ bool isInternalSortType(HSColumnStruct &col)
 // from the column's existing histogram). If there is no existing histogram for
 // the column, the values used default to 0, and internal sort will not be used.
 //
-NABoolean isInternalSortEfficient(HSColGroupStruct *group)
+NABoolean isInternalSortEfficient(Int64 rows, HSColGroupStruct *group)
 {
   HSLogMan *LM = HSLogMan::Instance();
   Lng32 dataType = group->ISdatatype;
@@ -10295,10 +10295,16 @@ NABoolean isInternalSortEfficient(HSColGroupStruct *group)
     }
   else if (DFS2REC::isAnyCharacter(dataType))
     {
-      // For char types, number of distinct values must be at least 
+      // For char types, if the total amount of data (rows * length) is less than 
+      // USTAT_MIN_CHAR_DATASIZE_FOR_IS (default to 1000 MB), use IS. Otherwise
+      // the number of distinct values must be at least 
       // USTAT_MIN_CHAR_UEC_FOR_IS of total (default 20%).
-      uecRateMinForIS = CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_UEC_FOR_IS);
-      returnVal = (uecRate >= uecRateMinForIS);
+      if ( rows * group->ISlength < 1024*1024*CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_DATASIZE_FOR_IS) )
+        returnVal = TRUE;
+      else {
+        uecRateMinForIS = CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_UEC_FOR_IS);
+        returnVal = (uecRate >= uecRateMinForIS);
+      }
     }
   else
     returnVal = TRUE;  // No threshold established yet for other types; use IS
@@ -10327,7 +10333,7 @@ NABoolean isInternalSortEfficient(HSColGroupStruct *group)
   return returnVal;
 }
 
-NABoolean HSGlobalsClass::allGroupsFitInMemory()
+NABoolean HSGlobalsClass::allGroupsFitInMemory(Int64 rows)
 {
   Int64 memLeft = getMaxMemory();
 
@@ -10346,7 +10352,7 @@ NABoolean HSGlobalsClass::allGroupsFitInMemory()
       if (group->memNeeded > 0 &&        // was set to 0 if exceeds address space
           group->memNeeded < memLeft &&
           isInternalSortType(group->colSet[0]) &&
-          isInternalSortEfficient(group))  
+          isInternalSortEfficient(rows, group))  
         {
           count++;
           memLeft -= group->memNeeded;
@@ -10393,7 +10399,7 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
 
   do
     {
-      numColsSelected = selectSortBatch(internalSortWhenBetter,
+      numColsSelected = selectSortBatch(rows, internalSortWhenBetter,
                                         trySampleTableBypass);
       if (numColsSelected > 0)
         numColsToProcess = allocateMemoryForInternalSortColumns(rows);
@@ -10431,8 +10437,9 @@ Int32 HSGlobalsClass::getColsToProcess(Int64 rows,
 // select all columns if they will all fit in memory at once, and only consider
 // expected individual column performance if this can't be done.
 //
-Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
-                                    NABoolean trySampleInMemory)
+Int32 HSGlobalsClass::selectSortBatch(Int64 rows, 
+                                      NABoolean ISonlyWhenBetter,
+                                      NABoolean trySampleInMemory)
 {
   HSLogMan *LM = HSLogMan::Instance();
 
@@ -10469,7 +10476,8 @@ Int32 HSGlobalsClass::selectSortBatch(NABoolean ISonlyWhenBetter,
           group->memNeeded > 0 &&        // was set to 0 if exceeds address space
           group->memNeeded < memLeft &&
           isInternalSortType(group->colSet[0]) &&
-          (trySampleInMemory || !ISonlyWhenBetter || isInternalSortEfficient(group)))  //@ZXuec
+          (trySampleInMemory || !ISonlyWhenBetter || 
+           isInternalSortEfficient(rows, group)))  //@ZXuec
         {
           group->state = PENDING;
           count++;

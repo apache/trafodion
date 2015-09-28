@@ -1381,7 +1381,7 @@ NABoolean NodeMap::smooth(Lng32 numNodes)
     } 
   }
 
-  // Find how many entries wth the highest frequency, and compute the number of entris with
+  // Find how many entries wth the highest frequency, and compute the number of entries with
   // normal frequency (normEntries) and the number of nodes that appear with normal frequency 
   // (normalNodesCt).
   Lng32 count = 0;

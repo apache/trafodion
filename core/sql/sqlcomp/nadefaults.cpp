@@ -3522,8 +3522,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
   DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.
 
+  DDflt0_(USTAT_MIN_CHAR_DATASIZE_FOR_IS,      "1000"),  // max data size in MB for char type to use 
+                                                         // internal sort without checking UEC.
   DDflt0_(USTAT_MIN_CHAR_UEC_FOR_IS,            "0.2"),  // minimum UEC for char type to use internal sort
-  DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.03"), // minimum UEC for binary types to use internal sort
+  DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.0"),  // minimum UEC for binary types to use internal sort
 
   DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
   DDui1__(USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE,    "10000"),
