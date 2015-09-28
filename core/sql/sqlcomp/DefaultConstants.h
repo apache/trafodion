@@ -3758,7 +3758,7 @@ enum DefaultConstants
   HBASE_RANGE_PARTITIONING_PARTIAL_COLS,
   MERGE_WITH_UNIQUE_INDEX,
 
-  USTAT_MIN_CHAR_DATASIZE_FOR_IS,
+  USTAT_MAX_CHAR_DATASIZE_FOR_IS,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

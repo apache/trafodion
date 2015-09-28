@@ -10296,10 +10296,10 @@ NABoolean isInternalSortEfficient(Int64 rows, HSColGroupStruct *group)
   else if (DFS2REC::isAnyCharacter(dataType))
     {
       // For char types, if the total amount of data (rows * length) is less than 
-      // USTAT_MIN_CHAR_DATASIZE_FOR_IS (default to 1000 MB), use IS. Otherwise
+      // USTAT_MAX_CHAR_DATASIZE_FOR_IS (default to 1000 MB), use IS. Otherwise
       // the number of distinct values must be at least 
       // USTAT_MIN_CHAR_UEC_FOR_IS of total (default 20%).
-      if ( rows * group->ISlength < 1024*1024*CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_DATASIZE_FOR_IS) )
+      if ( rows * group->ISlength < 1024*1024*CmpCommon::getDefaultNumeric(USTAT_MAX_CHAR_DATASIZE_FOR_IS) )
         returnVal = TRUE;
       else {
         uecRateMinForIS = CmpCommon::getDefaultNumeric(USTAT_MIN_CHAR_UEC_FOR_IS);
