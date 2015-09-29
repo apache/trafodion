@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -65,7 +65,9 @@ void CReplObj::validateObj()
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
-    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSoftNodeUp),
+    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplNodeAdd),
+                                                                                        sizeof(CReplNodeDelete)),
+                                                                                    sizeof(CReplSoftNodeUp)),
                                                                                 sizeof(CReplSoftNodeDown)),
                                                                             sizeof(CReplSchedData)),
                                                                         sizeof(CReplActivateSpare)),
@@ -1204,6 +1206,186 @@ bool CReplShutdown::replicate(struct internal_msg_def *&msg)
 
     return true;
 }
+
+
+
+CReplNodeAdd::CReplNodeAdd(CLNodeConfig *lnodeConfig, CProcess *process) 
+            : lnodeConfig_(lnodeConfig)
+            , process_(process)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLN", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( node_add_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+    {
+        const char method_name[] = "CReplNodeAdd::CReplNodeAdd";
+        trace_printf( "%s@%d  - Queuing node add replication: node-name=%s, "
+                      "first_core=%d, last_core=%d, processors=%d, roles=%d\n"
+                    , method_name, __LINE__
+                    , lnodeConfig_->GetName()
+                    , lnodeConfig_->GetFirstCore()
+                    , lnodeConfig_->GetLastCore()
+                    , lnodeConfig_->GetProcessors()
+                    , lnodeConfig_->GetZoneType()
+                    );
+    }
+
+    // Increment reference count for process object
+    process_->incrReplRef();
+}
+
+CReplNodeAdd::~CReplNodeAdd()
+{
+    const char method_name[] = "CReplNodeAdd::~CReplNodeAdd";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d - Node add replication for nid=%d, node-name=%s\n"
+                    , method_name, __LINE__
+                    , lnodeConfig_->GetNid()
+                    , lnodeConfig_->GetName()
+                    );
+
+    CPNodeConfig *pnodeConfig = lnodeConfig_->GetPNodeConfig();
+    delete pnodeConfig;
+    delete lnodeConfig_;
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rpln", 4);
+}
+
+bool CReplNodeAdd::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNodeAdd::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf( "%s@%d  - Replicating node add (%s): node-name=%s, "
+                      "first_core=%d, last_core=%d, processors=%d, roles=%d\n"
+                    , method_name, __LINE__
+                    , process_->GetName()
+                    , lnodeConfig_->GetName()
+                    , lnodeConfig_->GetFirstCore()
+                    , lnodeConfig_->GetLastCore()
+                    , lnodeConfig_->GetProcessors()
+                    , lnodeConfig_->GetZoneType()
+                    );
+
+    // build message to replicate this node add to other nodes
+    msg->type = InternalType_Add;
+    msg->u.node_add.req_nid = process_->GetNid();
+    msg->u.node_add.req_pid = process_->GetPid();
+    msg->u.node_add.req_verifier = process_->GetVerifier();
+    STRCPY( msg->u.node_add.node_name, lnodeConfig_->GetName() );
+    msg->u.node_add.first_core = lnodeConfig_->GetFirstCore();
+    msg->u.node_add.last_core  = lnodeConfig_->GetLastCore();
+    msg->u.node_add.processors = lnodeConfig_->GetProcessors();
+    msg->u.node_add.roles      = lnodeConfig_->GetZoneType();
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+
+
+CReplNodeDelete::CReplNodeDelete(CPNodeConfig *pnodeConfig, CProcess *process) 
+               : pnodeConfig_(pnodeConfig)
+               , process_(process)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLN", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( node_delete_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+    {
+        const char method_name[] = "CReplNodeDelete::CReplNodeDelete";
+        trace_printf( "%s@%d  - Queuing node delete replication: pnid=%d, node-name=%s\n"
+                    , method_name, __LINE__
+                    , pnodeConfig_->GetPNid()
+                    , pnodeConfig_->GetName()
+                    );
+    }
+
+    // Increment reference count for process object
+    process_->incrReplRef();
+}
+
+CReplNodeDelete::~CReplNodeDelete()
+{
+    const char method_name[] = "CReplNodeDelete::~CReplNodeDelete";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d - Node delete replication for pnid=%d, node-name=%s\n"
+                    , method_name, __LINE__
+                    , pnodeConfig_->GetPNid()
+                    , pnodeConfig_->GetName()
+                    );
+
+    // Decrement reference count for process object.  Then, if reference
+    // count is zero and process object has been removed from list of
+    // processes, delete it.
+    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
+    {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
+        delete process_;
+    }
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rpln", 4);
+}
+
+bool CReplNodeDelete::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplNodeDelete::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL))
+        trace_printf( "%s@%d  - Replicating node delete (%s): pnid=%d, node-name=%s\n"
+                    , method_name, __LINE__
+                    , process_->GetName()
+                    , pnodeConfig_->GetPNid()
+                    , pnodeConfig_->GetName()
+                    );
+
+    // build message to replicate this node delete to other nodes
+    msg->type = InternalType_Delete;
+    msg->u.node_delete.req_nid = process_->GetNid();
+    msg->u.node_delete.req_pid = process_->GetPid();
+    msg->u.node_delete.req_verifier = process_->GetVerifier();
+    msg->u.node_delete.pnid = pnodeConfig_->GetPNid();
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+
 
 CReplNodeDown::CReplNodeDown(int pnid) : pnid_(pnid)
 {

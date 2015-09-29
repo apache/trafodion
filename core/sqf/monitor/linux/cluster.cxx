@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -263,6 +263,55 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
 
     TRACE_EXIT;
 }
+
+void CCluster::NodeAdded( CNode *node )
+{
+    const char method_name[] = "CCluster::NodeAdded";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_SYNC))
+    {
+        trace_printf( "%s@%d - node %s, pnid=%d, zone=%d\n"
+                    , method_name, __LINE__
+                    , node->GetName(), node->GetPNid(), node->GetZone() );
+    }
+
+    assert( node->GetState() == State_Down );
+
+    // Broadcast node added notice to local processes
+    CLNode *lnode = node->GetFirstLNode();
+    for ( ; lnode; lnode = lnode->GetNext() )
+    {
+        lnode->Added();
+    }
+
+    TRACE_EXIT;
+}
+
+void CCluster::NodeDeleted( CNode *node )
+{
+    const char method_name[] = "CCluster::NodeDeleted";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_SYNC))
+    {
+        trace_printf( "%s@%d - node %s, pnid=%d, zone=%d\n"
+                    , method_name, __LINE__
+                    , node->GetName(), node->GetPNid(), node->GetZone() );
+    }
+
+    assert( node->GetState() == State_Down );
+
+    // Send node deleted notice
+    CLNode *lnode = node->GetFirstLNode();
+    for ( ; lnode; lnode = lnode->GetNext() )
+    {
+        lnode->Deleted();
+    }
+
+    TRACE_EXIT;
+}
+
 
 void CCluster::NodeTmReady( int nid )
 {
@@ -527,14 +576,15 @@ CCluster::CCluster (void)
     agMinElapsed_.tv_nsec = 0;
 
     tmSyncBuffer_ = Nodes->GetSyncBuffer();
-
+#ifndef USE_MON_ELASTICY
     // Allocate structures for monitor point-to-point communications
     int cfgPNodes = Nodes->GetClusterConfig()->GetPNodesCount();
     comms_        = new MPI_Comm[cfgPNodes];
     otherMonRank_ = new int[cfgPNodes];
     socks_        = new int[cfgPNodes];
     sockPorts_    = new int[cfgPNodes];
-
+#else
+#endif
     for ( int i =0; i < MAX_NODE_MASKS ; i++ )
     {
         upNodes_.upNodes[i] = 0;
@@ -1856,6 +1906,28 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         ReqQueue.enqueueActivateSpareReq( spareNode, downNode );
         break;
 
+    case InternalType_Add:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal node add request for node_name=%s, "
+                          "first_core=%d, last_core=%d, "
+                          "processors=%d, roles=%d\n"
+                        , method_name, __LINE__
+                        , recv_msg->u.node_add.node_name
+                        , recv_msg->u.node_add.first_core
+                        , recv_msg->u.node_add.last_core
+                        , recv_msg->u.node_add.processors
+                        , recv_msg->u.node_add.roles );
+
+        ReqQueue.enqueueNodeAddReq( recv_msg->u.node_add.req_nid
+                                  , recv_msg->u.node_add.req_pid
+                                  , recv_msg->u.node_add.req_verifier
+                                  , recv_msg->u.node_add.node_name
+                                  , recv_msg->u.node_add.first_core
+                                  , recv_msg->u.node_add.last_core
+                                  , recv_msg->u.node_add.processors
+                                  , recv_msg->u.node_add.roles );
+        break;
+
     case InternalType_Clone:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal clone request, process (%d, %d)"
@@ -1876,6 +1948,17 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
 
         // Queue the shutdown request for processing by a worker thread.
         ReqQueue.enqueueShutdownReq( recv_msg->u.shutdown.level );
+        break;
+
+    case InternalType_Delete:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal node delete request for pnid=%d\n"
+                        , method_name, __LINE__, recv_msg->u.node_delete.pnid);
+
+        ReqQueue.enqueueNodeDeleteReq( recv_msg->u.node_delete.req_nid
+                                     , recv_msg->u.node_delete.req_pid
+                                     , recv_msg->u.node_delete.req_verifier
+                                     , recv_msg->u.node_delete.pnid );
         break;
 
     case InternalType_Down:
@@ -2368,6 +2451,27 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                         , recv_msg->u.activate_spare.down_pnid);
         break;
 
+    case InternalType_Add:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal node add request for node_name=%s, "
+                          "first_core=%d, last_core=%d, "
+                          "processors=%d, roles=%d\n"
+                        , method_name, __LINE__
+                        , recv_msg->u.node_add.node_name
+                        , recv_msg->u.node_add.first_core
+                        , recv_msg->u.node_add.last_core
+                        , recv_msg->u.node_add.processors
+                        , recv_msg->u.node_add.roles );
+        ReqQueue.enqueueNodeAddReq( recv_msg->u.node_add.req_nid
+                                  , recv_msg->u.node_add.req_pid
+                                  , recv_msg->u.node_add.req_verifier
+                                  , recv_msg->u.node_add.node_name
+                                  , recv_msg->u.node_add.first_core
+                                  , recv_msg->u.node_add.last_core
+                                  , recv_msg->u.node_add.processors
+                                  , recv_msg->u.node_add.roles );
+        break;
+
     case InternalType_Clone:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal clone request, completed replicating process (%d, %d) %s\n", method_name, __LINE__, recv_msg->u.clone.nid, recv_msg->u.clone.os_pid, (recv_msg->u.clone.backup?" Backup":""));
@@ -2384,6 +2488,16 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
 
         // Queue the shutdown request for processing by a worker thread.
         ReqQueue.enqueueShutdownReq( recv_msg->u.shutdown.level );
+        break;
+
+    case InternalType_Delete:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf( "%s@%d - Internal node delete request for pnid=%d\n"
+                        , method_name, __LINE__, recv_msg->u.node_delete.pnid);
+        ReqQueue.enqueueNodeDeleteReq( recv_msg->u.node_delete.req_nid
+                                     , recv_msg->u.node_delete.req_pid
+                                     , recv_msg->u.node_delete.req_verifier
+                                     , recv_msg->u.node_delete.pnid );
         break;
 
     case InternalType_Down:
@@ -2693,6 +2807,56 @@ int CCluster::MPIAllgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
     TRACE_EXIT;
     return rc;
+}
+
+bool CCluster::ReinitializeConfigCluster( bool nodeAdded, int pnid )
+{
+    const char method_name[] = "CCluster::ReinitializeConfigCluster";
+
+    int rs = true;
+
+    TRACE_ENTRY;
+
+    // TODO: Reload the static configuration and
+    //       update node membership in the cluster:
+    // 
+    //       Several things must be taken into account in the implementation
+    //       all surrounding the array structures allocated in the CCluster constructor
+    //       - the point to point arrays in CCluster contructor (see USE_MON_ELASTICY define)
+    //       - the InitializeConfigCluster()
+    //       
+    //       A short cut could be to allocate the array structure using the
+    //       MAX_NODES and MAX_LNODES and change the logic which used these
+    //       arrays to allow for empty entries in the arrays as nodes are 
+    //       delete. Adding nodes would have to continually use new unused
+    //       until MAX_NODES or MAX_LNODES is reached and new nodes could use
+    //       the first empty entry starting a index location zero.
+    //
+    //       Until this logic is implemented, the node add and node delete
+    //       shell commands will not be functional as the design requires that
+    //       the monitor add and delete rows from sqconfig.db which would happen
+    //       in parallel across all monitor processes in the cluster.
+
+    CNode *node = Nodes->GetNode( pnid );
+    if (node)
+    {
+        // Broadcast node added or deleted notice to local processes
+        if (nodeAdded)
+        {
+            NodeAdded( node );
+        }
+        else
+        {
+            NodeDeleted( node );
+        }
+    }
+    else
+    {
+        rs = false;
+    }
+
+    TRACE_EXIT;
+    return( rs );
 }
 
 void CCluster::InitializeConfigCluster( void )

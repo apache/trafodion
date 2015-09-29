@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -309,6 +309,32 @@ private:
     void populateRequestString( void );
 };
 
+class CExtNodeAddReq: public CExternalReq
+{
+public:
+    CExtNodeAddReq (reqQueueMsg_t msgType, int pid,
+                     struct message_def *msg );
+    virtual ~CExtNodeAddReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+
+class CExtNodeDeleteReq: public CExternalReq
+{
+public:
+    CExtNodeDeleteReq (reqQueueMsg_t msgType, int pid,
+                     struct message_def *msg );
+    virtual ~CExtNodeDeleteReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+
 class CExtNodeDownReq: public CExternalReq
 {
 public:
@@ -420,7 +446,8 @@ class CExtProcInfoBase: public CExternalReq
     int ProcessInfo_BuildReply(CProcess *process,
                                struct message_def * msg,
                                PROCESSTYPE type,
-                               bool getDataForAllNodes);
+                               bool getDataForAllNodes,
+                               char *pattern);
 };
 
 class CExtProcInfoReq: public CExtProcInfoBase
@@ -846,6 +873,55 @@ private:
     int level_;
 };
 
+class CIntNodeAddReq: public CInternalReq
+{
+public:
+    CIntNodeAddReq( int req_nid
+                  , int req_pid
+                  , Verifier_t req_verifier
+                  , char *nodeName
+                  , int  firstCore
+                  , int  lastCore
+                  , int  processors
+                  , int  roles
+                  );
+    virtual ~CIntNodeAddReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
+    char nodeName_[MPI_MAX_PROCESSOR_NAME];
+    int  first_core_;
+    int  last_core_;
+    int  processors_;
+    int  roles_;
+};
+
+class CIntNodeDeleteReq: public CInternalReq
+{
+public:
+    CIntNodeDeleteReq( int req_nid
+                     , int req_pid
+                     , Verifier_t req_verifier
+                     , int pnid );
+    virtual ~CIntNodeDeleteReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
+    int  pnid_;
+};
+
 class CIntDownReq: public CInternalReq
 {
 public:
@@ -1023,6 +1099,18 @@ class CReqQueue
     void enqueueUniqStrReq( struct uniqstr_def *uniqStrDef );
     void enqueueChildDeathReq ( pid_t pid );
     void enqueueAttachedDeathReq ( pid_t pid );
+    void enqueueNodeAddReq( int req_nid
+                          , int req_pid
+                          , Verifier_t req_verifier
+                          , char *node_name
+                          , int firstCore
+                          , int lastCore
+                          , int processors
+                          , int roles );
+    void enqueueNodeDeleteReq( int req_nid
+                             , int req_pid
+                             , Verifier_t req_verifier
+                             , int pnid );
     void enqueueDownReq( int pnid );
     void enqueueSoftNodeDownReq( int pnid );
     void enqueueSoftNodeUpReq( int pnid );
@@ -1109,19 +1197,19 @@ private:
       RQIG   CIntSnapshotReq
       RQIH   CIntShutdownReq
       RQII   CIntProcInitReq
-      RQIJ   (unused)
+      RQIJ   CIntNodeAddReq
       RQIK   CIntKillReq
       RQIL   CIntCloneProcReq
-      RQIM   (unused)
+      RQIM   CIntNodeDeleteReq
       RQIN   CIntNewProcReq
       RQIO   CIntOpenReq
       RQIP   CIntDownReq
       RQIQ   CIntUpReq
       RQIR   CIntReviveReq
       RQIS   CIntSetReq
-      RQIT   (unused)
+      RQIT   CIntNodeAddReq
       RQIU   CQuiesceReq
-      RQIV   (unused)
+      RQIV   CIntNodeDeleteReq
       RQIW   CIntCreatePrimitiveReq
       RQIX   CIntSoftNodeDownReq
       RQIY   CIntSoftNodeUpReq
@@ -1152,8 +1240,8 @@ private:
       RQEU   CExtTmSeqNumReq
       RQEV   CExtTmSyncReq
       RQEW   CExtZoneInfoReq
-      RQEX   (unused)
-      RQEY   (unused)
+      RQEX   CExtNodeAddReq
+      RQEY   CExtNodeDeleteReq
       RQEZ   (unused)
       RQE_   CExtNullReq
 

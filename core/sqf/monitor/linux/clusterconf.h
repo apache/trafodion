@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,86 +24,132 @@
 #define CLUSTERCONF_H_
 
 #include <stdlib.h>
+#include <sqlite3.h>
 
 #include "lnodeconfig.h"
 #include "pnodeconfig.h"
+#include "persistconfig.h"
 
 #define MAX_TOKEN   132
+#define PERSIST_PROCESS_KEYS       "PERSIST_PROCESS_KEYS"
+#define PERSIST_PROCESS_NAME_KEY   "PROCESS_NAME"
+#define PERSIST_PROCESS_TYPE_KEY   "PROCESS_TYPE"
+#define PERSIST_PROGRAM_NAME_KEY   "PROGRAM_NAME"
+#define PERSIST_REQUIRES_DTM       "REQUIRES_DTM"
+#define PERSIST_STDOUT_KEY         "STDOUT"
+#define PERSIST_RETRIES_KEY        "PERSIST_RETRIES"
+#define PERSIST_ZONES_KEY          "PERSIST_ZONES"
 
-class CTokenizer
-{
-public:
-
-    CTokenizer( void );
-    ~CTokenizer( void );
-
-protected:
-    FILE *confFile_;
-    char *cmdTail_;
-    char buffer_[MPI_MAX_PROCESSOR_NAME+MAX_ROLEBUF_SIZE];
-    char token_[MAX_TOKEN];
-    int  line_;
-
-    char *GetToken ( char *str, char *token, char *delimiter, int maxlen = MAX_TOKEN );
-    virtual bool Initialize( void ){ abort(); } // virtual function must be defined
-    bool  ReadLine( void );
-
-private:
-    char *FindDelimiter( char *str );
-    char *FindEndOfToken( char *str, int  maxlen );
-    char *NormalizeCase( char *token );
-    char *RemoveWhiteSpace( char *str );
-};
-
-class CClusterConfig  : public CTokenizer
-                      , public CPNodeConfigContainer
+class CClusterConfig  : public CPNodeConfigContainer
                       , public CLNodeConfigContainer
+                      , public CPersistConfigContainer
 {
 public:
 
     CClusterConfig( void );
     ~CClusterConfig( void );
 
-    bool  Initialize( void );
-    bool  LoadConfig( void );
-    inline bool IsConfigReady( void ) { return ( configReady_ ); }
+    void            Clear( void );
+    bool            DeleteNodeConfig( int  pnid );
+    inline sqlite3 *GetConfigDb( void ){ return ( db_ ); }
+    bool            Initialize( void );
+    inline bool     IsConfigReady( void ) { return ( configReady_ ); }
+    bool            LoadConfig( void );
+    bool            SaveNodeConfig( const char *name
+                                  , int         nid
+                                  , int         pnid
+                                  , int         firstCore
+                                  , int         lastCore
+                                  , int         processors
+                                  , int         excludedFirstCore
+                                  , int         excludedLastCore
+                                  , int         roles );
+    void            SetCoreMask( int        firstCore
+                               , int        lastCore
+                               , cpu_set_t &coreMask );
 
 protected:
 private:
-    bool configReady_; // true when configuration loaded
-    char delimiter_;
-    char nodename_[MPI_MAX_PROCESSOR_NAME];
-    bool excludedNid_;
-    bool excludedProcessor_;
-    bool excludedCores_;
-    bool gatherSpares_;
-    bool newPNodeConfig_;
-    bool newLNodeConfig_;
-    bool spareNode_;
-    int  currProcessor_;
-    int  prevProcessor_;
-    int  currNid_;
-    int  currPNid_;
-    int  prevNid_;
-    int  prevPNid_;
-    int  sparePNid_[MAX_NODES];
-    int  spareIndex_;
-    cpu_set_t currCoreMask_;
-    cpu_set_t prevCoreMask_;
-    cpu_set_t excludedCoreMask_;
-    cpu_set_t prevExcludedCoreMask_;
-    ZoneType  currZoneType_;
-    ZoneType  prevZoneType_;
+
+    bool       configReady_; // true when configuration loaded
+    bool       excludedCores_;
+    bool       newPNodeConfig_;
+    bool       newLNodeConfig_;
+    int        currNid_;
+    int        currPNid_;
+    int        currSPNid_;
+    char       currNodename_[MPI_MAX_PROCESSOR_NAME];
+    cpu_set_t  currExcludedCoreMask_;
+    cpu_set_t  currCoreMask_;
+    int        currExcludedFirstCore_;
+    int        currExcludedLastCore_;
+    int        currFirstCore_;
+    int        currLastCore_;
+    int        currProcessor_;
+    ZoneType   currZoneType_;
     CPNodeConfig *currPNodeConfig_;
+    int        prevNid_;
+    int        prevPNid_;
+    int        prevSPNid_;
+    char       prevNodename_[MPI_MAX_PROCESSOR_NAME];
+    cpu_set_t  prevExcludedCoreMask_;
+    cpu_set_t  prevCoreMask_;
+    int        prevExcludedFirstCore_;
+    int        prevExcludedLastCore_;
+    int        prevFirstCore_;
+    int        prevLastCore_;
+    int        prevProcessor_;
+    ZoneType   prevZoneType_;
     CPNodeConfig *prevPNodeConfig_;
+    int        sparePNid_[MAX_NODES];
+    int        spareIndex_;
     CLNodeConfig *lnodeConfig_;
-    
-    bool  ParsePNid( void );
-    bool  ParseNid( void );
-    bool  ParseNodename( void );
-    bool  ParseProcessor( void );
-    bool  ParseCore( void );
-    bool  ParseRoles( void );
+    char            persistPrefix_[MAX_PERSIST_KEY_STR];
+    char            processNamePrefix_[MAX_PERSIST_VALUE_STR];
+    char            processNameFormat_[MAX_PERSIST_VALUE_STR];
+    char            stdoutPrefix_[MAX_PERSIST_VALUE_STR];
+    char            stdoutFormat_[MAX_PERSIST_VALUE_STR];
+    char            programName_[MAX_PERSIST_VALUE_STR];
+    char            zoneFormat_[MAX_PERSIST_VALUE_STR];
+    PROCESSTYPE     processType_;
+    bool            requiresDTM_;
+    int             persistRetries_;
+    int             persistWindow_;
+    CPersistConfig *persistConfig_;
+
+    sqlite3   *db_;
+
+    void  AddNodeConfiguration( bool spareNode );
+    void  AddPersistConfiguration( void );
+    bool  DeleteDbNodeData( int  pnid );
+    PROCESSTYPE GetProcessType( const char *processtype );
+    bool  ProcessLNode( int nid
+                      , int pnid
+                      , const char *nodename
+                      , int excfirstcore
+                      , int exclastcore
+                      , int firstcore
+                      , int lastcore
+                      , int processors
+                      , int roles );
+    bool  ProcessSNode( int pnid
+                      , const char *nodename
+                      , int excfirstcore
+                      , int exclastcore
+                      , int spnid );
+    bool  ProcessPersist( void );
+    bool  ProcessPersistData( const char *persistkey
+                            , const char *persistvalue );
+    bool SaveDbLNodeData( int         nid
+                        , int         pnid
+                        , int         firstCore
+                        , int         lastCore
+                        , int         processors
+                        , int         roles );
+    bool SaveDbPNodeData( const char *name
+                        , int         pnid
+                        , int         excludedFirstCore
+                        , int         excludedLastCore );
 };
 
 #endif /* CLUSTERCONF_H_ */

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#include <string>
+#include <sqlite3.h>
 #include "msgdef.h"
 #include "internal.h"
-#include <string>
-
-#include <sqlite3.h>
-//#include "sqlite/sqlite3.h" 
+#include "clusterconf.h"
 
 class CConfigGroup;
 

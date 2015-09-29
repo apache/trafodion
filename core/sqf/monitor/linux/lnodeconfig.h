@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,18 +36,23 @@ public:
     CLNodeConfig *AddLNodeConfig( CPNodeConfig *pnodeConfig
                                 , int           nid
                                 , cpu_set_t    &coreMask 
+                                , int           firstCore
+                                , int           lastCore
                                 , int           processors
                                 , ZoneType      zoneType
                                 );
     CLNodeConfig *AddLNodeConfigP( CLNodeConfig *lnodeConfig );
+    void          Clear( void );
     void          DeleteLNodeConfig( CLNodeConfig *lnodeConfig );
     void          RemoveLNodeConfigP( CLNodeConfig *lnodeConfig );
     inline CLNodeConfig *GetFirstLNodeConfig( void ) { return ( head_ ); }
+    inline int    GetNextNid( void ) { return ( nextNid_ ); }
     CLNodeConfig *GetLNodeConfig( int nid );
     inline int    GetLNodesCount( void ) { return ( lnodesCount_ ); }
 
 protected:
     int             lnodesCount_; // # of logical nodes 
+    int             nextNid_;     // next logical node id available
 
 private:
     int             lnodeConfigSize_; // size of array 
@@ -62,6 +67,8 @@ class CLNodeConfig
     friend CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
                                                               , int           nid
                                                               , cpu_set_t    &coreMask 
+                                                              , int           firstCore
+                                                              , int           lastCore
                                                               , int           processors
                                                               , ZoneType      zoneType
                                                               );
@@ -72,28 +79,34 @@ public:
     CLNodeConfig( CPNodeConfig *pnodeConfig
                 , int           nid
                 , cpu_set_t    &coreMask 
+                , int           firstCore
+                , int           lastCore
                 , int           processors
                 , ZoneType      zoneType
                 );
     ~CLNodeConfig( void );
 
-    inline cpu_set_t    &GetCoreMask( void ) { return ( coreMask_ ); }
-    inline CLNodeConfig *GetNext( void ){ return( next_); }
-    inline CLNodeConfig *GetNextP( void ){ return( nextP_); }
-    inline int           GetNid( void ) { return ( nid_ ); }
+    inline cpu_set_t    &GetCoreMask( void ) { return( coreMask_ ); }
+    inline int           GetFirstCore( void ) { return( firstCore_ ); }
+    inline int           GetLastCore( void ) { return( lastCore_ ); }
+    const char          *GetName( void );
+    inline CLNodeConfig *GetNext( void ) { return( next_); }
+    inline CLNodeConfig *GetNextP( void ) { return( nextP_); }
+    inline int           GetNid( void ) { return( nid_ ); }
+    int                  GetPNid( void );
+    CPNodeConfig        *GetPNodeConfig( void ) { return(pnodeConfig_); }
 
-    int           GetPNid( void );
-    CPNodeConfig *GetPNodeConfig( void ) { return (pnodeConfig_); }
+    inline int           GetProcessors( void ) { return( processors_ ); }
+    inline ZoneType      GetZoneType( void ) { return( zoneType_ ); }
 
-    inline int           GetProcessors( void ) { return ( processors_ ); }
-    inline ZoneType      GetZoneType( void ) { return ( zoneType_ ); }
-
-    inline void          SetPNid( CPNodeConfig *pnodeConfig ) { pnodeConfig_ = pnodeConfig; }
+//    inline void          SetPNid( CPNodeConfig *pnodeConfig ) { pnodeConfig_ = pnodeConfig; }
 
 protected:
 private:
     int           nid_;         // Logical Node Identifier
     cpu_set_t     coreMask_;    // mask of SMP processor cores used by logical node
+    int           firstCore_;   // First SMP processor core used by logical node
+    int           lastCore_;    // Last SMP processor core used by logical node
     int           processors_;  // # of logical processors in logical node
     ZoneType      zoneType_;    // type of zone
     CPNodeConfig *pnodeConfig_; // logical node's current physical node

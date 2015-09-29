@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2008-2015 Hewlett Packard Enterprise Development LP
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -106,6 +106,7 @@ MONITORSRC += lock.cxx
 MONITORSRC += clusterconf.cxx
 MONITORSRC += lnodeconfig.cxx
 MONITORSRC += pnodeconfig.cxx
+MONITORSRC += persistconfig.cxx
 MONITORSRC += lnode.cxx
 MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
@@ -125,6 +126,8 @@ MONITORSRC += reqkill.cxx
 MONITORSRC += reqmonstats.cxx
 MONITORSRC += reqmount.cxx
 MONITORSRC += reqnewproc.cxx
+MONITORSRC += reqnodeadd.cxx
+MONITORSRC += reqnodedelete.cxx
 MONITORSRC += reqnodedown.cxx
 MONITORSRC += reqnodeinfo.cxx
 MONITORSRC += reqnodeup.cxx
@@ -165,6 +168,7 @@ MONITOROBJS += $(OUTDIR)/lock.o
 MONITOROBJS += $(OUTDIR)/clusterconf.o
 MONITOROBJS += $(OUTDIR)/lnodeconfig.o
 MONITOROBJS += $(OUTDIR)/pnodeconfig.o
+MONITOROBJS += $(OUTDIR)/persistconfig.o
 MONITOROBJS += $(OUTDIR)/lnode.o
 MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
@@ -184,6 +188,8 @@ MONITOROBJS += $(OUTDIR)/reqkill.o
 MONITOROBJS += $(OUTDIR)/reqmonstats.o
 MONITOROBJS += $(OUTDIR)/reqmount.o
 MONITOROBJS += $(OUTDIR)/reqnewproc.o
+MONITOROBJS += $(OUTDIR)/reqnodeadd.o
+MONITOROBJS += $(OUTDIR)/reqnodedelete.o
 MONITOROBJS += $(OUTDIR)/reqnodedown.o
 MONITOROBJS += $(OUTDIR)/reqnodeinfo.o
 MONITOROBJS += $(OUTDIR)/reqpnodeinfo.o
@@ -214,6 +220,7 @@ SHELLOBJS += $(OUTDIR)/versshell.o
 SHELLOBJS += $(OUTDIR)/clusterconf.o
 SHELLOBJS += $(OUTDIR)/lnodeconfig.o
 SHELLOBJS += $(OUTDIR)/pnodeconfig.o
+SHELLOBJS += $(OUTDIR)/persistconfig.o
 SHELLOBJS += $(OUTDIR)/cmsh.o
 SHELLOBJS += $(OUTDIR)/phnode.o
 SHELLOBJS += $(OUTDIR)/system.o
@@ -250,6 +257,7 @@ CLIENTOBJS += $(OUTDIR)/props.o
 CLIENTOBJS += $(OUTDIR)/clusterconf.o
 CLIENTOBJS += $(OUTDIR)/lnodeconfig.o
 CLIENTOBJS += $(OUTDIR)/pnodeconfig.o
+CLIENTOBJS += $(OUTDIR)/persistconfig.o
 
 MONWDTOBJS = $(OUTDIR)/monwdt.o
 MONWDTOBJS += $(OUTDIR)/versmwdt.o
@@ -309,7 +317,7 @@ $(BINEXPDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -317,7 +325,7 @@ $(OUTDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -393,13 +401,14 @@ $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 CONFOBJS = $(OUTDIR)/testconf.o \
 	$(OUTDIR)/clusterconf.o \
 	$(OUTDIR)/lnodeconfig.o \
-	$(OUTDIR)/pnodeconfig.o
+	$(OUTDIR)/pnodeconfig.o \
+	$(OUTDIR)/persistconfig.o
 
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -407,7 +416,7 @@ $(BINEXPDIR)/shell : $(SHELLOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
-	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
+	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 

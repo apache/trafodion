@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
+#include <regex.h>
 #include "reqqueue.h"
 #include "montrace.h"
 #include "monsonar.h"
@@ -140,12 +141,27 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
 int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                                      struct message_def * msg,
                                      PROCESSTYPE type,
-                                     bool getDataForAllNodes)
+                                     bool getDataForAllNodes,
+                                     char *pattern)
 {
     int currentNode = (process != 0) ? process->GetNid() : Nodes->NumberLNodes;
     bool moreToRetrieve;
+    bool copy = true;
+    bool reg = false;
     int count = 0;
+    int rerr;
+    regex_t regex;
 
+    if (strlen( pattern ) > 0)
+    {
+        // Compile pattern regex
+        rerr = regcomp( &regex, pattern, 0 );
+        if (rerr == 0)
+        {
+            copy = false;
+            reg = true;
+        }
+    }
     do
     {
         // Retrieve process data for processes on current node
@@ -153,10 +169,18 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
         {
             if (type == ProcessType_Undefined || type == process->GetType())
             {
-                ProcessInfo_CopyData(process,
-                                     msg->u.reply.u.process_info.process[count]);
-                count++;
-
+                if (reg)
+                {
+                    // Check for regex match
+                    rerr  = regexec( &regex, process->GetName(), 0 , NULL, 0 );
+                    copy = (rerr == 0) ? true : false;
+                }
+                if (copy)
+                {
+                    ProcessInfo_CopyData(process,
+                                         msg->u.reply.u.process_info.process[count]);
+                    count++;
+                }
             }
             process = process->GetNextL();
             if ( count == MAX_PROCINFO_LIST )
@@ -185,6 +209,11 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
         }
     } while (moreToRetrieve);
 
+    if (reg)
+    {
+        regfree( &regex );
+    }
+
     msg->u.reply.u.process_info.more_data = false;
     return count;
 }
@@ -210,7 +239,7 @@ void CExtProcInfoReq::populateRequestString( void )
     snprintf( strBuf, sizeof(strBuf), 
               "ExtReq(%s) req #=%ld "
               "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
-              "target(name=%s/nid=%d/pid=%d/verifier=%d)"
+              "target(name=%s/nid=%d/pid=%d/verifier=%d) pattern(name=%s)"
             , CReqQueue::svcReqType[reqType_], getId()
             , msg_->u.request.u.process_info.process_name
             , msg_->u.request.u.process_info.nid
@@ -220,7 +249,8 @@ void CExtProcInfoReq::populateRequestString( void )
             , msg_->u.request.u.process_info.target_process_name
             , msg_->u.request.u.process_info.target_nid
             , msg_->u.request.u.process_info.target_pid
-            , msg_->u.request.u.process_info.target_verifier );
+            , msg_->u.request.u.process_info.target_verifier
+            , msg_->u.request.u.process_info.target_process_pattern );
     requestString_.assign( strBuf );
 }
 
@@ -328,7 +358,8 @@ void CExtProcInfoReq::performRequest()
             count = ProcessInfo_BuildReply( ProcessInfo_GetProcess(nid, true)
                                           , msg_
                                           , msg_->u.request.u.process_info.type
-                                          , true);
+                                          , true
+                                          , msg_->u.request.u.process_info.target_process_pattern );
         }
         else
         {
@@ -349,7 +380,8 @@ void CExtProcInfoReq::performRequest()
                     count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
                                                    msg_,
                                                    msg_->u.request.u.process_info.type,
-                                                   false);
+                                                   false,
+                                                   msg_->u.request.u.process_info.target_process_pattern);
                 }
             }
             else
@@ -503,7 +535,8 @@ void CExtProcInfoContReq::performRequest()
                                 process,
                                 msg_,
                                 msg_->u.request.u.process_info_cont.type,
-                                msg_->u.request.u.process_info_cont.allNodes);
+                                msg_->u.request.u.process_info_cont.allNodes,
+                                (char *) "");
 
         }
     }

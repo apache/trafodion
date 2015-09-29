@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ void localIONoticeCallback(struct message_def *recv_msg, int )
 
         snprintf( buf, sizeof(buf), "Received 'Shutdown' event.\n");
         monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
-        
+
         CShutdownReq * reqShutdown;
         reqShutdown = new CShutdownReq();
         pStartD->enqueueReq( reqShutdown );
@@ -118,7 +118,7 @@ void localIONoticeCallback(struct message_def *recv_msg, int )
         {
             trace_printf( "%s@%d Process death notice for %s (%d, %d), "
                           "aborted=%d\n",
-                          method_name, __LINE__, 
+                          method_name, __LINE__,
                           recv_msg->u.request.u.death.process_name,
                           recv_msg->u.request.u.death.nid,
                           recv_msg->u.request.u.death.pid,
@@ -192,6 +192,18 @@ void localIOEventCallback(struct message_def *recv_msg, int )
     }
 }
 
+// ignore these, prevent leak
+void localIORecvCallback(struct message_def *recv_msg, int )
+{
+    const char method_name[] = "localIORecvCallback";
+
+    if ( tracing )
+    {
+        trace_printf( "%s@%d CB Recv: Type=%d\n",
+                      method_name,  __LINE__, recv_msg->type);
+    }
+}
+
 CMonUtil::CMonUtil(): nid_(-1), pid_(-1), verifier_(-1), trace_(false)
 {
     processName_[0] = '\0';
@@ -209,7 +221,7 @@ char * CMonUtil::MPIErrMsg ( int code )
 
     if (MPI_Error_string (code, buffer, &length) != MPI_SUCCESS)
     {
-        snprintf(buffer, sizeof(buffer), 
+        snprintf(buffer, sizeof(buffer),
                  "MPI_Error_string: Invalid error code (%d)\n", code);
         length = strlen(buffer);
     }
@@ -228,7 +240,7 @@ bool CMonUtil::requestGet ( ConfigType type,
     /*  ReqType_Get arguments:
       type: ConfigType_Cluster, ConfigType_Node, or ConfigType_Process
       next: false if start from beginning, true if start from key
-      group: name of group, if NULL and type=ConfigNode assume local node 
+      group: name of group, if NULL and type=ConfigNode assume local node
       key: name of the item to be returned, empty string for all in group
     */
 
@@ -295,7 +307,7 @@ bool CMonUtil::requestGet ( ConfigType type,
         monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
 
     }
-    
+
     gp_local_mon_io->release_msg(msg);
 
     return result;
@@ -549,7 +561,7 @@ bool CMonUtil::requestProcInfo( const char *processName, int &nid, int &pid )
                     if ( trace_ )
                     {
                         trace_printf ( "%s@%d Got process status for %s "
-                                       "(%d, %d), state=%s\n", 
+                                       "(%d, %d), state=%s\n",
                                        method_name, __LINE__,
                              msg->u.reply.u.process_info.process[0].process_name,
                              msg->u.reply.u.process_info.process[0].nid,
@@ -710,7 +722,7 @@ void CNodeUpReq::performRequest()
               "requires DTM flag=%d\n", nid_, requiresDTM_);
     monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
 
-    //    [ todo: need to check if nid_ is any one of the logical nodes in 
+    //    [ todo: need to check if nid_ is any one of the logical nodes in
     //      the physical node ]
     if ( nid_ == MyPNID )
     {
@@ -810,146 +822,57 @@ void CPStartD::enqueueReq(CRequest * req)
     workQ_.push_back ( req );
 }
 
-void CPStartD::WaitForEvent( void ) 
-{ 
+void CPStartD::WaitForEvent( void )
+{
     CAutoLock autoLock(getLocker());
     wait();
 }
 
 
-void CPStartD::startProcess ( const char * pName )
+void CPStartD::startProcess(const char * pName, string prefix, map<string,string> * persistMap)
 {
     const char method_name[] = "CPStartD::startProcess";
 
-    int rc;
-    const char *selStmt;
-    selStmt = "select procType, nid, stdoutFile, program, args "
-              " from procs where name = ?";
-
-    sqlite3_stmt *prepStmt;
-
-    rc = sqlite3_prepare_v2( db_, selStmt, strlen(selStmt)+1, &prepStmt, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed: %s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-        return;
-    }
-    else
-    {   // Set process name in prepared statement
-        rc = sqlite3_bind_text(prepStmt, 1, pName, -1, SQLITE_STATIC);
-        if ( rc != SQLITE_OK )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] sqlite3_bind_text failed: %s (%d)\n",
-                      method_name,  sqlite3_errmsg(db_), rc );
-            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-            return;
-        }
-    }
-
-    // Execute query and process results
     int progType = -1;
-    int progNid = -1;
-    int newNid;
-    int newPid;
-    char newProcName[MAX_PROCESS_PATH];
-    bool result;
-    bool okToStart = false;
-
+    int progArgC = 0;
+    string progArgs;
     string progStdout;
     string progProgram;
-    string progArgs;
-    int progArgC = 0;
+    char newProcName[MAX_PROCESS_PATH];
+    int progNid = MyNid;
+    bool result;
+    int newNid;
+    int newPid;
+    int okMask = 0;
     int argBegin[MAX_ARGS];
     int argLen[MAX_ARGS];
-    while ( 1 )
+    map<string,string>::iterator fIt;
+    fIt = persistMap->find(prefix + "_PROCESS_TYPE");
+    if (fIt != persistMap->end()) 
     {
-        rc = sqlite3_step( prepStmt );
-        if ( rc == SQLITE_ROW )
-        {  // Process row
-            int colCount = sqlite3_column_count(prepStmt);
-            if ( tracing )
-            {
-                trace_printf("%s@%d sqlite3_column_count=%d\n",
-                             method_name, __LINE__, colCount);
-                for (int i=0; i<colCount; ++i)
-                {
-                    trace_printf("%s@%d column %d is %s\n",
-                                 method_name, __LINE__, i,
-                                 sqlite3_column_name(prepStmt, i));
-                }
-            }
-
-            progType = sqlite3_column_int(prepStmt, 0);
-            progNid = sqlite3_column_int(prepStmt, 1);
-            progStdout = (const char *) sqlite3_column_text(prepStmt, 2);
-            progProgram = (const char *) sqlite3_column_text(prepStmt, 3);
-            progArgs = (const char *) sqlite3_column_text(prepStmt, 4);
-            if (progArgs.length() != 0)
-            {
-                // Parse argument list (note, does not handle quoted
-                // string arguments with embedded spaces).
-
-                string delimiters = " ";
-                size_t current;
-                size_t next = -1;
-                do
-                {
-                    next = progArgs.find_first_not_of( delimiters, next + 1 );
-                    if (next == string::npos) break;
-                    next -= 1;
-
-                    current = next + 1;
-                    next = progArgs.find_first_of( delimiters, current );
-
-                    argBegin[progArgC] = current;
-                    if ( next == string::npos )
-                    {
-                        argLen[progArgC] = progArgs.length() - current;
-                    }
-                    else
-                    {
-                        argLen[progArgC] = next - current;
-                    }
-                    ++progArgC;
-                }
-                while (next != string::npos && progArgC < MAX_ARGS);
-            }
-
-            okToStart = true;
-
-        }
-        else if ( rc == SQLITE_DONE )
-        {
-            if ( tracing )
-            {
-                trace_printf("%s@%d Finished processing all rows.\n",
-                             method_name, __LINE__);
-            }
-
-            break;
-        }
-        else
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] step failed: %s (%d)\n",
-                      method_name,  sqlite3_errmsg(db_), rc );
-            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-            break;
-        }
+        string value = fIt->second;
+        okMask |= 0x1;
+        if (value.compare("DTM") == 0)
+            progType = ProcessType_DTM;
+        else if (value.compare("SSMP") == 0)
+            progType = ProcessType_SSMP;
+        else if (value.compare("GENERIC") == 0)
+            progType = ProcessType_Generic;
+    }
+    fIt = persistMap->find(prefix + "_STDOUT");
+    if (fIt != persistMap->end()) 
+    {
+        okMask |= 0x2;
+        progStdout = fIt->second;
+    }
+    fIt = persistMap->find(prefix + "_PROGRAM_NAME");
+    if (fIt != persistMap->end()) 
+    {
+        okMask |= 0x4;
+        progProgram = fIt->second;
     }
 
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
-
-    if ( okToStart )
+    if ( okMask & 0x7 )
     {
         if ( tracing )
         {
@@ -1010,19 +933,21 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
     const char method_name[] = "CPStartD::startProcs";
 
     /*
-1. query configuation database to find all persistent processes that
-   should run on the logical node.
+1. cache configuation database to find all persistent data.
 2. for each persistent process:
    a) ask monitor if process is currently running
    b) if not running, start it on the logical node using process
       definition from the database.
     */
 
-    list<string> procsToStart;
+    list<pair<string,string> > procsToStart;
+    list<string> prefixToStart;
+    list<string> keys;
+    map<string,string> persistDataMap;
 
     int rc;
     const char *selStmt;
-    selStmt = "select procName from persist where zone = ? and reqTm = ?";
+    selStmt = "select keyName,valueName from monRegPersistData";
 
     sqlite3_stmt *prepStmt;
 
@@ -1034,75 +959,45 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
                   method_name,  sqlite3_errmsg(db_), rc );
         monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
-        return;
-    }
-    else
-    {   // Set zone number in prepared statement
-        rc = sqlite3_bind_int(prepStmt, 1, nid);
-        if ( rc != SQLITE_OK )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] sqlite3_bind_int failed: %s (%d)\n",
-                      method_name,  sqlite3_errmsg(db_), rc );
-            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-            if ( prepStmt != NULL )
-                sqlite3_finalize( prepStmt );
-
-            return;
-        }
-
-        rc = sqlite3_bind_int(prepStmt, 2, requiresDTM ? 1 : 0);
-        if ( rc != SQLITE_OK )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] sqlite3_bind_int failed: %s (%d)\n",
-                      method_name,  sqlite3_errmsg(db_), rc );
-            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-            if ( prepStmt != NULL )
-                sqlite3_finalize( prepStmt );
-
-            return;
-        }
+        return; // no keys, no work
     }
 
-    // Execute query and process results
-    const char * procName;
-    int procNid;
-    int procPid;
     while ( 1 )
     {
         rc = sqlite3_step( prepStmt );
         if ( rc == SQLITE_ROW )
         {  // Process row
-            procName = (const char *) sqlite3_column_text(prepStmt, 0);
-
-            procNid = -1;
-            procPid = -1;
-            if (!monUtil.requestProcInfo(procName, procNid, procPid))
-            {   // Save this process name
-                procsToStart.push_back((const char *)procName);
+            const char *key = (const char *) sqlite3_column_text(prepStmt, 0);
+            const char *value = (const char *) sqlite3_column_text(prepStmt, 1);
+            if ( tracing )
+                trace_printf("%s@%d monRegPersistData key=%s, value=%s\n", method_name, __LINE__, key, value);
+            if (strcmp(key, "PERSIST_PROCESS_KEYS") == 0)
+            {
+                processKeys(value, keys);
+            }
+            else if (strstr(key, "_PERSIST_ZONES") != NULL)
+            {
+                char zones[1000];
+                strcpy(zones, value);
+                replaceZid(zones);
+                persistDataMap.insert(map<string,string>::value_type(key, zones));
+            }
+            else if (strstr(key, "_PROCESS_NAME") != NULL)
+            {
+                char process_name[1000];
+                strcpy(process_name, value);
+                replaceNid(process_name);
+                persistDataMap.insert(map<string,string>::value_type(key, process_name));
+            }
+            else if (strstr(key, "_STDOUT") != NULL)
+            {
+                char stdout_str[1000];
+                strcpy(stdout_str, value);
+                replaceNid(stdout_str);
+                persistDataMap.insert(map<string,string>::value_type(key, stdout_str));
             }
             else
-            {
-                if ( procNid != -1)
-                { 
-                    char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), "Not starting process %s "
-                              "because it is already running\n",
-                              procName);
-                    monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
-
-                    if ( tracing )
-                    {
-                        trace_printf("%s@%d %s", method_name, __LINE__,
-                                     buf);
-                    }
-                }
-            }
+                persistDataMap.insert(map<string,string>::value_type(key, value));
         }
         else if ( rc == SQLITE_DONE )
         {
@@ -1117,7 +1012,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
         else
         {
             char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
+            snprintf( buf, sizeof(buf),
                       "[%s] step failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
             monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
@@ -1125,14 +1020,82 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
         }
     }
 
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
+    list<string>::iterator keyIt;
+    for (keyIt = keys.begin(); keyIt != keys.end(); ++keyIt)
+    {
+        string procName = "";
+        string requiresDtm = "";
+        string zones = "";
+        string prefix = (*keyIt);
+        string keyProcName = prefix + "_PROCESS_NAME";
+        map<string,string>::iterator fIt;
+        fIt = persistDataMap.find(keyProcName);
+        if (fIt != persistDataMap.end()) 
+        {
+            procName = fIt->second;
+        }
 
+        string keyRequiresDtm = prefix + "_REQUIRES_DTM";
+        fIt = persistDataMap.find(keyRequiresDtm);
+        if (fIt != persistDataMap.end()) 
+        {
+            requiresDtm = fIt->second;
+            if (requiresDtm.compare("Y"))
+            {
+                if (!requiresDTM)
+                    zones = "";
+            }
+            else if (requiresDtm.compare("N"))
+            {
+                if (requiresDTM)
+                    zones = "";
+            }
+        }
 
-    list<string>::iterator it;
+        string keyZones = prefix + "_PERSIST_ZONES";
+        fIt = persistDataMap.find(keyZones);
+        if (fIt != persistDataMap.end()) 
+        {
+            zones = fIt->second;
+        }
+
+        if ((procName.length() != 0) && (requiresDtm.length() != 0) && (zones.length() != 0))
+        {
+            int procNid = -1;
+            int procPid = -1;
+
+            if (zoneMatch(zones.c_str()))
+            {
+                if (!monUtil.requestProcInfo(procName.c_str(), procNid, procPid))
+                {   // Save this process name
+                    procsToStart.push_back(pair<string,string>(procName, prefix));
+                }
+                else
+                {
+                    if ( procNid != -1)
+                    {
+                        char buf[MON_STRING_BUF_SIZE];
+                        snprintf( buf, sizeof(buf), "Not starting process %s "
+                                  "because it is already running\n",
+                                  procName.c_str());
+                        monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
+    
+                        if ( tracing )
+                        {
+                            trace_printf("%s@%d %s", method_name, __LINE__,
+                                         buf);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    list<pair<string,string> >::iterator it;
     for ( it = procsToStart.begin(); it != procsToStart.end(); ++it)
     {
-        procName = (*it).c_str();
+        const char * procName = (*it).first.c_str();
+        const char * prefix = (*it).second.c_str();
 
         if ( strncmp(procName, "$XDN", 4) == 0 && seapilotDisabled())
         {
@@ -1154,12 +1117,94 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
                 trace_printf("%s@%d Will start process %s for zone %d\n",
                              method_name, __LINE__, procName, nid);
             }
-            startProcess( procName );
+            startProcess( procName, prefix, &persistDataMap );
         }
     }
     procsToStart.clear();
 }
 
+void CPStartD::processKeys(const char *keys, list<string> &keyList)
+{
+    char *keyDup = strdup(keys);
+    char *k = keyDup;
+    for (;;)
+    {
+        char *kComma = index(k, ',');
+        if (kComma == NULL)
+        {
+            keyList.push_back(k);
+            break;
+        }
+        else
+        {
+            *kComma = '\0';
+            keyList.push_back(k);
+            k = &kComma[1];
+        }
+    }
+    free(keyDup);
+}
+
+void CPStartD::replaceNid(char *str)
+{
+    for (;;)
+    {
+        //                     1234
+        char *p = strstr(str, "%nid");
+        if (p == NULL)
+            break;
+        char tail[1000];
+        if (p[4] == '+')
+            strcpy(tail, &p[5]);
+        else
+            strcpy(tail, &p[4]);
+        sprintf(p, "%d", MyNid);
+        strcat(p, tail);
+    }
+}
+
+void CPStartD::replaceZid(char *str)
+{
+    for (;;) {
+        //                     1234
+        char *p = strstr(str, "%zid");
+        if (p == NULL)
+            break;
+        char tail[1000];
+        if (p[4] == '+')
+            strcpy(tail, &p[5]);
+        else
+            strcpy(tail, &p[4]);
+        sprintf(p, "%d", MyNid);
+        strcat(p, tail);
+    }
+}
+
+bool CPStartD::zoneMatch ( const char *zones )
+{
+    bool ret;
+    int zone;
+    const char *z = zones;
+    for (;;)
+    {
+        const char *zComma = index(z, ',');
+        if (zComma == NULL)
+        {
+            sscanf(z, "%d", &zone);
+            ret = (zone == MyNid);
+            break;
+        }
+        else
+        {
+            sscanf(z, "%d", &zone);
+            ret = (zone == MyNid);
+            if (ret)
+                 break;
+            z = &zComma[1];
+        }
+    }
+    return ret;
+}
 
 void TraceInit( int & argc, char **& argv )
 {
@@ -1177,7 +1222,7 @@ void TraceInit( int & argc, char **& argv )
     snprintf( traceFileName, sizeof(traceFileName),
               "%s/pstartd.trace.%d", ((tmpDir != NULL) ? tmpDir : currentDir),
               getpid() );
-        
+
     const char *envVar;
     envVar = getenv("PSD_TRACE_FILE");
     if (envVar != NULL &&
@@ -1250,7 +1295,7 @@ int main (int argc, char *argv[])
     MyNid = monUtil.getNid();
     MyPid = monUtil.getPid();
 
-    MonLog = new CMonLog( "log4cxx.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
+    MonLog = new CMonLog( "log4cpp.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
 
     pStartD = new CPStartD;
 
@@ -1258,6 +1303,7 @@ int main (int argc, char *argv[])
 
     gp_local_mon_io->set_cb(localIONoticeCallback, "notice");
     gp_local_mon_io->set_cb(localIOEventCallback, "event");
+    gp_local_mon_io->set_cb(localIORecvCallback, "recv");
 
     monUtil.requestStartup ();
 
@@ -1280,7 +1326,7 @@ int main (int argc, char *argv[])
         req->performRequest();
         delete req;
     }
-    while ( !done && !shuttingDown );    
+    while ( !done && !shuttingDown );
 
     monUtil.requestExit ();
 }

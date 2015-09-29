@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -140,6 +140,8 @@ int main(int argc, char *argv[]) {
     assert(strcmp(text, "MS_ReqType_ProcessInfo") == 0);
     text = msg_mon_text_get_mon_req_type(MS_ReqType_ProcessInfoCont);
     assert(strcmp(text, "MS_ReqType_ProcessInfoCont") == 0);
+    text = msg_mon_text_get_mon_req_type(MS_ReqType_ProcessInfoPat);
+    assert(strcmp(text, "MS_ReqType_ProcessInfoPat") == 0);
     text = msg_mon_text_get_mon_req_type(MS_ReqType_Set);
     assert(strcmp(text, "MS_ReqType_Set") == 0);
     text = msg_mon_text_get_mon_req_type(MS_ReqType_Shutdown);

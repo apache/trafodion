@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2011-2015 Hewlett Packard Enterprise Development LP
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ NOTE: Make sure that there is no seaquest environment running.
       e.g. sqps - should show 'Environment has not been started!
 If the environment is setup correctly, you should be able to 'goall'.
 
-cluster.conf must be setup correctly.
-
 To use goall:
   goall [-cluster] [-verbose]
   options:
@@ -34,3 +32,7 @@ To use goall:
 To run an individual test, e.g. t<number>:
   go<number> [-cluster] [-verbose]
 
+An adhoc cluster (set of workstations using nfs) can be 
+used by creating a nmap.conf file which contains a list of hosts
+for the cluster (one host per line).
+'goall -cluster -verbose' can then be used to run the tests.

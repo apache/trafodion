@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2008-2015 Hewlett Packard Enterprise Development LP
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ FLAGS = $(CFLAGS)
 #FLAGS+= -fdiagnostics-show-option
 FLAGS+= -Wall -Wextra
 
+LIBS+=  -lsqlite3
+
 INCLUDES =  -I$(INCEXPDIR) -I../linux
 
 MONOUTDIR = ../linux/$(OUTDIR)
@@ -34,6 +36,7 @@ CLIENTOBJS	+= $(MONOUTDIR)/monclio.o
 CLIENTOBJS	+= $(MONOUTDIR)/clusterconf.o
 CLIENTOBJS	+= $(MONOUTDIR)/lnodeconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/pnodeconfig.o
+CLIENTOBJS	+= $(MONOUTDIR)/persistconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/trace.o
 CLIENTOBJS	+= $(MONOUTDIR)/otrace.o
 CLIENTOBJS	+= $(MONOUTDIR)/threadtls.o
@@ -61,8 +64,8 @@ TEST_PGMS	+= $(OUTDIR)/spxProc
 $(OUTDIR)/%:%.cxx $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@echo $(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 

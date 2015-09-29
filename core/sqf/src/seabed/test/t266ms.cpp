@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     pthread_key_t key[MAX_KEYS];
     bool          verbose = false;
     TAD           zargs[] = {
+      { "-cluster",   TA_Ign,  TA_NOMAX,    NULL       },
       { "-server",    TA_Ign,  TA_NOMAX,    NULL       },
       { "-v",         TA_Bool, TA_NOMAX,    &verbose   },
       { "-verbose",   TA_Ign,  TA_NOMAX,    NULL       },

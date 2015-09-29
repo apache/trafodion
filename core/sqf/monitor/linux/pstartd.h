@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
 #include <string.h>
 
 #include <list>
+#include <map>
+#include <string>
 using namespace std;
 
 #include "msgdef.h"
@@ -133,14 +135,20 @@ class CPStartD : public CLock
 
     void WaitForEvent( void ) ;
 
-    void startProcess ( const char * pName );
+    void startProcess ( const char * pName, string prefix, map<string, string> *persistMap );
 
     void startProcs ( int nid, bool requiresDTM );
 
     bool seapilotDisabled ( void );
 
+    bool zoneMatch ( const char *zones );
+
 
  private:
+    void processKeys(const char *keys, list<string> &keyList);
+    void replaceNid(char *str);
+    void replaceZid(char *str);
+
     list<CRequest *>  workQ_;
 
     sqlite3      *db_;

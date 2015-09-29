@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@ public:
     ~CLNode( void );
 
     void    DeLink( CLNode **head, CLNode **tail );
+    void    Added( void );
+    void    Deleted( void );
     void    Down( void );
     inline CLNode *GetNext( void ) { return( next_); }
 

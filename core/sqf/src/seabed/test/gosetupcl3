@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2011-2015 Hewlett Packard Enterprise Development LP
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 # setup
 . ./gosetup
-head -n 3 cluster.conf > $MPI_TMPDIR/cluster.conf
+./godb 3
 if [ "$cluster" != "-cluster" ]; then
 	export SQ_VIRTUAL_NODES=3
 	export SQ_VIRTUAL_NID=0

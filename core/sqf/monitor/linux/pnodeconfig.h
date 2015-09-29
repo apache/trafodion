@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,9 +35,15 @@ public:
     CPNodeConfigContainer( void );
     ~CPNodeConfigContainer( void );
 
-    CPNodeConfig *AddPNodeConfig( int pnid, char *name, bool spare );
+    CPNodeConfig *AddPNodeConfig( int   pnid
+                                , char *name
+                                , int   excludedFirstCore
+                                , int   excludedLastCore
+                                , bool  spare );
+    void          Clear( void );
     void          DeletePNodeConfig( CPNodeConfig *pnodeConfig );
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }
+    inline int    GetNextPNid( void ) { return ( nextPNid_ ); }
     int           GetPNid( char  *nodename );
     CPNodeConfig *GetPNodeConfig( int pnid );
     inline int    GetPNodesCount( void ) { return ( pnodesCount_ ); }
@@ -49,6 +55,7 @@ protected:
     CPNodeConfig  **pnodeConfig_; // array of physical node configuration objects
     int             pnodesCount_; // # of physical nodes 
     int             snodesCount_; // # of spare nodes
+    int             nextPNid_;    // next physical node id available
 
 private:
     PNodesConfigList_t  spareNodesConfigList_; // configured spare nodes list
@@ -59,18 +66,25 @@ private:
 
 class CPNodeConfig : public CLNodeConfigContainer
 {
-    friend CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int pnid, char *name, bool spare );
+    friend CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
+                                                              , char *name
+                                                              , int   excludedFirstCore
+                                                              , int   excludedLastCore
+                                                              , bool  spare );
     friend void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *entry );
 public:
 
     CPNodeConfig( CPNodeConfigContainer *pnodesConfig
                 , int                    pnid
+                , int                    excludedFirstCore
+                , int                    excludedLastCore
                 , const char            *hostname
                 );
     ~CPNodeConfig( void );
 
     inline cpu_set_t    &GetExcludedCoreMask( void ) { return (excludedCoreMask_); }
-    inline int           GetLNodesCount( void ) { return ( CLNodeConfigContainer::lnodesCount_ ); }
+    inline int           GetExcludedFirstCore( void ) { return ( excludedFirstCore_ ); }
+    inline int           GetExcludedLastCore( void ) { return ( excludedLastCore_ ); }
     inline const char   *GetName( void ) { return ( name_ ); }
     inline CPNodeConfig *GetNext( void ) { return ( next_ ); }
     inline int           GetPNid( void ) { return ( pnid_ ); }
@@ -80,7 +94,6 @@ public:
 
     inline bool          IsSpareNode( void ) { return ( spareNode_ ); }
     inline void          SetExcludedCoreMask( cpu_set_t &coreMask ) { excludedCoreMask_ = coreMask; }
-
     void        SetSpareList( int sparePNid[], int spareCount );
     void        ResetSpare( void );
 
@@ -90,6 +103,8 @@ private:
     char                   name_[MPI_MAX_PROCESSOR_NAME]; // hostname
     int                    pnid_;         // physical node identifier
     cpu_set_t              excludedCoreMask_; // mask of excluded SMP processor cores
+    int                    excludedFirstCore_;// First excluded SMP processor core used by logical node
+    int                    excludedLastCore_; // Last excluded SMP processor core used by logical node
     bool                   spareNode_;    // true when this is a spare physical node
     int                   *sparePNids_;   // array of pnids this physical node can spare
     int                    sparePNidsCount_; // # of entries in spare sparePNids_ array

@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett Packard Enterprise Development LP
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -990,24 +990,7 @@ $(OUTDIR)/tcheck.o: tcheck.cpp
 testfiles:
 	@if [ ! -r sqconfig.db ]; then \
 		echo "creating sqconfig.db"; \
-		sqlite3 sqconfig.db < xconfigdb; \
-	fi
-	@if [ ! -r cluster.conf ]; then \
-		echo "creating cluster.conf"; \
-		echo "0:0:n1:0:0:connection,aggregation,storage" > cluster.conf; \
-		echo "1:1:n2:0:0:connection,aggregation,storage" >> cluster.conf; \
-		echo "2:2:n3:0:0:connection,aggregation,storage" >> cluster.conf; \
-		echo "3:3:n4:0:0:connection,aggregation,storage" >> cluster.conf; \
-	fi
-	@if [ ! -r clustern.conf ]; then \
-		echo "creating clustern.conf"; \
-		echo "0:0:n7:0:0:connection,aggregation,storage" > clustern.conf; \
-		echo "1:1:n6:0:0:connection,aggregation,storage" >> clustern.conf; \
-		echo "2:2:n5:0:0:connection,aggregation,storage" >> clustern.conf; \
-		echo "3:3:n4:0:0:connection,aggregation,storage" >> clustern.conf; \
-		echo "4:4:n3:0:0:connection,aggregation,storage" >> clustern.conf; \
-		echo "5:5:n2:0:0:connection,aggregation,storage" >> clustern.conf; \
-		echo "6:6:n1:0:0:connection,aggregation,storage" >> clustern.conf; \
+		./gocleandb; \
 	fi
 
 tsock: tsock.cpp
@@ -1044,7 +1027,7 @@ clean:
 	@grep 'HOOK_ENABLE=1' ms.env >/dev/null 2>/dev/null; if [ $$? == 0 ]; then echo "touch c s"; touch c s; fi
 
 cleanall: clean
-	$(RM) -fr $(BUILD_PLAT) stdout_* t9thread.rh6x.supp cluster.conf clustern.conf sqconfig.db
+	$(RM) -fr $(BUILD_PLAT) stdout_* t9thread.rh6x.supp sqconfig.db
 
 cleaner: clean
 	$(RM) *~

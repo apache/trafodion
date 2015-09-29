@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett Packard Enterprise Development LP
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1105,8 +1105,8 @@ void CNode::StartWatchdogProcess( void )
     CProcess * watchdogProcess;
     CConfigGroup *group;
     
-    snprintf( name, sizeof(name), "$WDG%03d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_WDG%03d", MyNode->GetZone() );
+    snprintf( name, sizeof(name), "$WDG%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_WDG%d", MyNode->GetZone() );
 
     group = Config->GetGroup( name );
     if (group==NULL)
@@ -1198,8 +1198,8 @@ void CNode::StartPStartDProcess( void )
     CProcess * pstartdProcess;
     CConfigGroup *group;
     
-    snprintf( name, sizeof(name), "$PSD%03d", MyNode->GetZone() );
-    snprintf( stdout, sizeof(stdout), "stdout_PSD%03d", MyNode->GetZone() );
+    snprintf( name, sizeof(name), "$PSD%d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_PSD%d", MyNode->GetZone() );
 
     group = Config->GetGroup( name );
     if (group==NULL)
@@ -1462,7 +1462,7 @@ CNodeContainer::CNodeContainer( void )
 
     SyncBuffer = new struct sync_buffer_def;
 
-    // Load cluster configuration from 'cluster.conf'
+    // Load cluster configuration from 'sqconfig.db'
     LoadConfig();
 
     TRACE_EXIT;
@@ -2819,11 +2819,9 @@ void CNodeContainer::LoadConfig( void )
     const char method_name[] = "CNodeContainer::LoadConfig";
     TRACE_ENTRY;
 
-    // Open the 'cluster.conf' file
-    // Read each line and create cluster configuration objects:
-    //  list of CPnid:hostname_:numCores_:spare_ (when spare_=true, nid list=null)
-    //    list of CNid:ZoneType (when nid = -1, ZoneType_Excluded)
-    //      list of CProcessor:firstCore_:lastCore_ (when nid = -1, processor = -1)
+//    CNode   **oldNode;          // array of physical node objects
+//    CLNode  **oldLNode;         // array of logical node objects
+
     if ( !clusterConfig_ )
     {
         clusterConfig_ = new CClusterConfig();
@@ -2864,6 +2862,35 @@ void CNodeContainer::LoadConfig( void )
         
         abort();
     }
+
+    TRACE_EXIT;
+}
+
+void CNodeContainer::ReloadConfig( void )
+{
+    const char method_name[] = "CNodeContainer::ReloadConfig";
+    TRACE_ENTRY;
+
+    // Delete old static configuration
+    if ( clusterConfig_ )
+    {
+        delete clusterConfig_;
+        clusterConfig_ = NULL;
+    }
+
+    // Load the current static configuration
+    if ( !clusterConfig_ )
+    {
+        //
+    }
+//    else
+//    {
+//        char la_buf[MON_STRING_BUF_SIZE];
+//        sprintf(la_buf, "[%s], Failed to allocate cluster configuration.\n", method_name);
+//        mon_log_write(MON_NODECONT_RELOAD_CONFIG_1, SQ_LOG_CRIT, la_buf);
+//        
+//        abort();
+//    }
 
     TRACE_EXIT;
 }
