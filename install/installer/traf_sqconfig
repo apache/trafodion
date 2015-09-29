@@ -44,21 +44,34 @@ if [ "$node_count" -ne "1" ]; then
     #       file requires a range instead of a comma separated list.
     #       So, we convert the comma to a dash to cover this case.
     cores=$(lscpu | grep "CPU(s) list" | awk '{print $4}' | sed -e "s@,@-@" )
+    if [ "$cores" == "" ]; then
+        # NOTE: On some VM containers like OpenVZ (and maybe others)
+        #       lscpu cannot be used to get cores and cpus. So an
+        #       alternative is to use the info from /proc/cpuinfo.
+        echo "***INFO: cannot get cores from lscpu, trying from /proc/cpuinfo"
+        cores="0-$(($(cat /proc/cpuinfo | grep "processor" | sort -u | wc -l)-1))"
+    fi    
     maxCores=`echo $cores | sed 's/.*\-//'`
     if [[ "$maxCores" -gt "15" ]]; then
        cores="0-15"
     fi
+    
     processors=$(lscpu | grep "Socket(s)" | awk '{print $2}')
-
-    # On some VMs it seems that "Socket(s)" is not listed in
-    # lscpu so, we will default processors=1 in that case
     if [ "$processors" == "" ]; then
        processors=$(lscpu | grep "CPU socket(s)" | awk '{print $3}')
-       if [ "$processors" == "" ]; then
-          echo "***WARNING: unable to determine number of sockets with 'lscpu'..."
-          echo "***WARNING: ...defaulting sqconfig 'processors=1'"
-          processors="1"
-       fi
+    fi
+    if [ "$processors" == "" ]; then
+        # Trying also from /proc/cpuinfo.
+        echo "***INFO: cannot get processors from lscpu, trying from /proc/cpuinfo"
+        processors=$(cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l)
+    fi    
+    # On some VMs it seems that "Socket(s)" is not listed in
+    # lscpu, so if we could neither get it from /proc/cpuinfo we will default
+    # processors=1 in that case
+    if [ "$processors" == "" ]; then
+        echo "***WARNING: unable to determine number of sockets with 'lscpu' or '/proc/cpuinfo' ..."
+        echo "***WARNING: ...defaulting sqconfig 'processors=1'"
+        processors="1"
     fi
     echo "#" >> $sqconfig
     echo "begin node" >> $sqconfig
