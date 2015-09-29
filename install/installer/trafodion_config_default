@@ -46,11 +46,6 @@ export SUSE_LINUX=""
 # do not change this unless you really know what you are doing
 export TRAF_WORKDIR="/usr/lib/trafodion"
 
-# temporary directory to untar the Trafodion package to
-# this is typically $TRAF_WORKDIR/<package-filename>
-# i.e. $TRAF_WORKDIR/trafodion-1.0.0  or $TRAF_WORKDIR/trafodion-20150116_0830
-export UNTAR_DIR="$TRAF_WORKDIR/<package-filename>"
-
 # This is the directory where the installer scripts were untarred to
 export LOCAL_WORKDIR="$HOME/installer"
 
@@ -65,13 +60,6 @@ export TRAF_USER="trafodion"
 
 # Trafodion userid's password
 export TRAF_USER_PASSWORD="traf123"
-
-# the Trafodion version
-export TRAF_VERSION="1.0.0"
-
-# the HBase java version
-# NOTE: this is NOT the same as what you get with a java -version command
-export JAVA_VERSION="1.7"
 
 # a blank separated list of nodes in your cluster
 # node names should include full domain names
@@ -99,24 +87,15 @@ export TRAF_PACKAGE=""
 # if TRAF_PACKAGE wasn't specified then these two values must be specified
 # TRAF_BUILD is the trafodion_server tar file
 # DCS_BUILD is the DCS tar file
+# REST_BUILD is the REST tar file
 export TRAF_BUILD=""
 export DCS_BUILD=""
-
+export REST_BUILD=""
 # Either "cloudera" or "hortonworks" (all lowercase)
 export HADOOP_TYPE=""
 
 # The URL for the Hadoop distro's REST API (i.e. node1.hp.com:8080)
 export URL=""
-
-# The list of Hadoop nodes
-export HADOOP_NODES=""
-
-## another list of the same nodes in HADOOP_NODES but specified in a pdsh usable format
-# i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
-export MY_HADOOP_NODES=""
-
-# Count of nodes in  Hadoop nodes
-export hadoop_node_count=""
 
 # Hadoop UI admin's userid and password
 export ADMIN="admin"
@@ -135,9 +114,6 @@ export HBASE_GROUP="hbase"
 # The hadoop HBase service name
 export HBASE="hbase"
 
-# the version string from hbase shell
-export hbaseVersion="0.98.0.2.1.1.0"
-
 # full path of where to isntall Trafodion to
 export SQ_ROOT="$HOME_DIR/$TRAF_USER/traf"
 
@@ -148,6 +124,7 @@ export START="N"
 export INIT_TRAFODION="N"
 
 # full path to the sqconfig file
+# Default is to leave as is and this file will be created.
 export SQCONFIG=""
 
 export CONFIG_COMPLETE="true"

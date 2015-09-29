@@ -51,6 +51,88 @@ Options:
 EOF
 }
 
+function checkHBaseVersion {
+
+for node in $HADOOP_NODES;
+do
+   ssh -q -n $node 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
+   hbaseInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l)
+   if [[ $hbaseInstalled -eq "1" ]]; then
+
+      version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+
+      if [[ $HADOOP_TYPE == "hortonworks" ]]; then
+         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+            if [[ "$HDP_2_3_SUPPORT" == "N" ]]; then
+               supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
+                  exit -1
+               fi
+            else
+               supportedHBase=$(echo $version | grep "1.1.1" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 1.1.1 on node $node"
+                  exit -1
+               fi
+            fi
+         else
+            supportedHBase=$(echo $version | grep "0.98.4" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 0.98.4 on node $node"
+               exit -1
+            fi
+         fi
+      fi
+      if [[ $HADOOP_TYPE == "cloudera" ]]; then
+         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+            if [[ $CDH_5_4_SUPPORT == "Y" ]]; then
+               supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 1.0.0 on node $node"
+                  exit -1
+               fi
+            else
+               supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
+               if [[ $supportedHBase -eq "0" ]]; then
+                  echo "***ERROR: HBase installed must be 0.98.1 on node $node"
+                  exit -1
+               fi
+            fi
+         else
+            supportedHBase=$(echo $version | grep "0.98.6" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 0.98.6 on node $node"
+               exit -1
+            fi
+         fi
+      fi
+      hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
+      break
+   fi
+
+done
+
+HBASE=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
+echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
+sed -i '/HBASE\=/d' $TRAF_CONFIG
+echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sudo rm -rf hbaseVersion.txt
+
+trafodionFullName=$(basename $TRAF_BUILD)
+echo "***DEBUG: trafodionFullName=$trafodionFullName"
+#Debug version
+trafodionVersion=$(echo $trafodionFullName | sed 's/trafodion_server-//' | sed 's/-debug//' | sed 's/.tgz//')
+
+echo "***INFO: Trafodion version = $trafodionVersion"
+
+}
+
 #==============================================
 #Parse input
 USER_CONFIG=""
@@ -105,14 +187,12 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-
 #==============================================
 echo
 echo "******************************"
 echo " TRAFODION INSTALLATION START"
 echo "******************************"
 echo
-
 #==============================================
 # Default values
 
@@ -231,23 +311,24 @@ else
       echo "***ERROR: unable to copy $USER_CONFIG to $TRAF_CONFIG"
       exit -1
    fi
-   $LOCAL_WORKDIR/traf_getHadoopNodes | tee -a $INSTALL_LOG
    sudo chmod 777 $TRAF_CONFIG
 fi
 
 source $TRAF_CONFIG
-
-#Need to set CLUSTERNAME for DCS
-if [[ $node_count -ne 1 ]]; then
-   sudo chmod 777 $TRAF_CONFIG
-   sed -i '/CLUSTERNAME\=/d' $TRAF_CONFIG
-   echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $TRAF_CONFIG
-   sudo chmod 777 $TRAF_CONFIG
-   source $TRAF_CONFIG
-fi
 if [ $? -ne 0 ]; then
    echo "***ERROR: unable to source $TRAF_CONFIG"
    exit -1
+fi
+
+#==============================================
+#Check Config File for Errors
+
+$LOCAL_WORKDIR/traf_config_check | tee -a $INSTALL_LOG
+
+if [ ${PIPESTATUS[0]} != "0" ]; then   
+   echo "***ERROR: Error found while checking config file." 
+   echo "***ERROR: Exiting..."
+   exit -1 
 fi
 
 sudo chmod 777 $TRAF_CONFIG
@@ -411,104 +492,10 @@ echo "export UNTAR_DIR=\"$UNTAR_DIR\"" >> $TRAF_CONFIG
 source $TRAF_CONFIG
 
 #============================================
-#If user supplied a config file must now check if install_features file 
-#exists
-
-if [[ -n "$USER_CONFIG" ]]; then
-   #Check if install_features file exists
-   if [[ -z $CDH_5_3_HDP_2_2_SUPPORT ]]; then
-       install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
-      if [[ ! -z $install_features_path ]]; then
-         tar -xzf $TRAF_BUILD $install_features_path
-         source $install_features_path
-         echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
-          if [[ -z $CDH_5_4_SUPPORT ]]; then
-             echo "export CDH_5_4_SUPPORT=\"N\"" >> $LOCAL_TRAF_CONFIG
-          else
-             echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-          fi
-      else
-         CDH_5_3_HDP_2_2_SUPPORT="N"
-         CDH_5_4_SUPPORT="N"
-         echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $TRAF_CONFIG
-         echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
-      fi
-   fi
-fi
-
-#==============================================
 #Check to make sure HBase Version is the correct version
 
+checkHBaseVersion
 
-for node in $HADOOP_NODES;
-do
-   ssh -q -n $node 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
-   hbaseInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l)
-   if [[ $hbaseInstalled -eq "1" ]]; then
-
-      version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
-
-      if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
-            if [[ $supportedHBase -eq "0" ]]; then
-               echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
-               exit -1
-            fi
-         else
-            supportedHBase=$(echo $version | grep "0.98.4" | wc -l)
-            if [[ $supportedHBase -eq "0" ]]; then
-               echo "***ERROR: HBase installed must be 0.98.4 on node $node"
-               exit -1
-            fi
-         fi
-      fi
-      if [[ $HADOOP_TYPE == "cloudera" ]]; then
-         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            if [[ $CDH_5_4_SUPPORT == "Y" ]]; then
-               supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
-               if [[ $supportedHBase -eq "0" ]]; then
-                  echo "***ERROR: HBase installed must be 1.0.0 on node $node"
-                  exit -1
-               fi
-            else 
-               supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
-               if [[ $supportedHBase -eq "0" ]]; then
-                  echo "***ERROR: HBase installed must be 0.98.1 on node $node"
-                  exit -1
-               fi
-            fi
-         else
-            supportedHBase=$(echo $version | grep "0.98.6" | wc -l)
-            if [[ $supportedHBase -eq "0" ]]; then
-               echo "***ERROR: HBase installed must be 0.98.6 on node $node"
-               exit -1
-            fi
-         fi
-      fi
-      hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
-      break
-   fi
-
-done
-
-HBASE=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-
-
-sudo chmod 777 $TRAF_CONFIG
-sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
-echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
-sed -i '/HBASE\=/d' $TRAF_CONFIG
-echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
-sudo chmod 777 $TRAF_CONFIG
-sudo rm -rf hbaseVersion.txt
-
-trafodionFullName=$(basename $TRAF_BUILD)
-echo "***DEBUG: trafodionFullName=$trafodionFullName"
-#Debug version
-trafodionVersion=$(echo $trafodionFullName | sed 's/trafodion_server-//' | sed 's/-debug//' | sed 's/.tgz//')
-
-echo "***INFO: Trafodion version = $trafodionVersion"
 #==============================================
 # Determine Trafodion version by parsing it
 # from the trafodion_server tar file.
@@ -562,9 +549,10 @@ fi
 
 # test for java 1.7
 java_17=$(echo $JAVA_VERSION | grep "1.7." | wc -l)
+java_18=$(echo $JAVA_VERSION | grep "1.8." | wc -l)
 
 # if not java 1.7 then test for java 1.6
-if [ "$java_17" == "0" ]; then
+if [ "$java_17" == "0" ] && [ "$java_18" == "0" ]; then
    java_16=$(echo $JAVA_VERSION | grep "1.6." | wc -l)
 
    # if not 1.7 nor 1.6 then we have a problem
@@ -575,7 +563,11 @@ if [ "$java_17" == "0" ]; then
       JAVA_VERSION="1.6"
    fi
 else
-   JAVA_VERSION="1.7"
+   if [[ $java_17 == "0" ]]; then
+      JAVA_VERSION="1.8"
+   else
+      JAVA_VERSION="1.7"
+   fi
 fi
 
 sudo chmod 777 $TRAF_CONFIG
@@ -610,15 +602,15 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
          else
             echo "***INFO: Trafodion environment setup completed" | tee -a $INSTALL_LOG
          fi
-      else
-         echo "***INFO: Installing required RPM packages" | tee -a $INSTALL_LOG
-         $LOCAL_WORKDIR/traf_package_setup | tee -a $INSTALL_LOG
-         if [ $? != 0 ]; then
-            echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
-            exit -1
-         fi
       fi
-   done  
+   done
+   
+  echo "***INFO: Installing required RPM packages" | tee -a $INSTALL_LOG
+  $LOCAL_WORKDIR/traf_package_setup | tee -a $INSTALL_LOG
+  if [ $? != 0 ]; then
+     echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
+     exit -1
+  fi
    
 else
    $LOCAL_WORKDIR/traf_setup | tee -a $INSTALL_LOG
