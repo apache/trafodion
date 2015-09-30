@@ -246,6 +246,8 @@ genverhdr:
                                         -date "${PV_DATE}"
 
 PKG_PROD = trafodion
+PKG_PHX = phoenix
+PKG_DCS = dcs
 
 ifeq ($(SQ_BUILD_TYPE),release)
   PKG_TYPE="server-$(TRAFODION_VER)"
@@ -253,12 +255,13 @@ else
   PKG_TYPE="server-$(TRAFODION_VER)-debug"
 endif
 
-
 PKG_BIN ?= "${PKG_PROD}.bin"
-PKG_TAR ?= "../${PKG_PROD}_$(PKG_TYPE).tgz"
+PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}_$(PKG_TYPE).tgz"
 PKG_TAR_UN = "${PKG_PROD}_${SQ_BUILD_TYPE}.tar"
-SRC_PKG_BIN ?= "../${PKG_PROD}-src.bin"
-SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
+SRC_PKG_BIN ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.bin"
+SRC_PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.tgz"
+PKG_PHX_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PHX}-tests.tgz"
+PKG_DCS_TEST_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_DCS}-tests.tgz"
 
 PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
 
@@ -273,7 +276,7 @@ PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(
 REGRESS_EXCLUDE_FILES = "--exclude=$(SQL_W)/regress/seabase"
 REGRESS_EXCLUDE_FILES =
 
-PKG_REGRESS_TAR ?= "../${PKG_PROD}-regress.tgz"
+PKG_REGRESS_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-regress.tgz"
 
 
 # Package SeaMonster kernel module
@@ -281,6 +284,7 @@ SEAMONSTER_TAR ?= "seamonster_${SQ_BUILD_TYPE}-src.tar.gz"
 
 #	Targets to tar/gzip the tree
 package: pkglist-files pkglist-symlinks tmp/sqenv.sh
+	mkdir -p ../../${DISTRIBUTION_DIR}
 	chmod o-rwx $(PKG_BIN_DIRS)
 	chmod -R o-rwx $(PKG_BIN_OBJS)
 	tar --mode o-rwx --no-recursion -chf $(PKG_TAR_UN) -X build-scripts/package.exclude -X build-scripts/package.exclude.$(SQ_MBTYPE) -T pkglist-files
@@ -326,6 +330,13 @@ srcpackage:
 package-regress:
 	tar chzf $(PKG_REGRESS_TAR) -X build-scripts/package.exclude $(REGRESS_EXCLUDE_FILES) $(PKG_REGRESS_OBJS)
 
+#	Targets to tar/gzip the phoenix tests
+package-phx:
+	tar chzf $(PKG_PHX_TAR) ../../tests/phx 
+
+#	Targets to tar/gzip the dcs tests
+package-dcs:
+	tar chzf $(PKG_DCS_TEST_TAR) ../../dcs/src/test 
 
 #	Targets to tar/gzip the self installer with sources
 srcpackagebin:
