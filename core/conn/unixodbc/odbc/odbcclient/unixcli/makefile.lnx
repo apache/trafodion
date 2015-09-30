@@ -29,7 +29,7 @@ VPATH = ./DrvrManager:./trace:./cli:./TCPIPV4:./Interface:./common:./platform:./
 
 C_FLAGS = -m64 -Dunixcli -DVERSION3 -DMXLINUX -DDISABLE_TRACE -DSIZEOF_LONG=8 -DSIZEOF_LONG_INT=8 -Wall -fPIC -w -DASYNCIO -DTRACE_COMPRESSION -I$(ICU)/linux64/include -I/usr/include/openssl
 
-LIBS = -lpthread -lrt -ldl -lz -L$(ICU)/linux64/lib -licuucNv44 -Wl,--hash-style=both /usr/lib64/libssl.a /usr/lib64/libcrypto.a -Wl,--version-script=linux.exports
+LIBS = -lpthread -lrt -ldl -lz -L$(ICU)/linux64/lib -licuuc -Wl,--hash-style=both /usr/lib64/libssl.a /usr/lib64/libcrypto.a -Wl,--version-script=linux.exports
 
 ifeq ($(MAKECMDGOALS),linux64_release)
 	OBJDIR = ./obj/linux64/release/

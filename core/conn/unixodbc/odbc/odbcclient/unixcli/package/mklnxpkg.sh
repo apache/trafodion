@@ -95,9 +95,9 @@ then
     let err=0
     cp ../../../libtrafodbc_l64.so ${libname##*/}
     ((err += $?))
-    cp ${ICU}/linux64/lib/libicuucNv44.so.44.0 libicuucNv44.so.44
+    cp ${ICU}/linux64/lib/libicuuc.so.44.0 libicuuc.so.44
     ((err += $?))
-    cp ${ICU}/linux64/lib/libicudataNv44.so.44.0 libicudataNv44.so.44
+    cp ${ICU}/linux64/lib/libicudata.so.44.0 libicudata.so.44
     ((err += $?))
     md5sum ./${libname##*/} >  MD5SUM
     ((err += $?))
