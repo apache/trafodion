@@ -11,6 +11,11 @@ package-all: package
 	echo "Packaging all Trafodion components"
 	cd core && $(MAKE) package-all 
 
+package-src: 
+	echo "Packaging source for all Trafodion components"
+	mkdir -p distribution
+	git ls-files  |tar -cf distribution/trafodion-src.tar.gz -T -
+
 eclipse: 
 	echo "Making eclipse projects for Trafodion components"
 	cd core && $(MAKE) eclipse 

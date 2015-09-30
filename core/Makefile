@@ -116,7 +116,7 @@ clean: sqroot
 	cd ../dcs &&			$(MAKE) clean 
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-cleanall: sqroot
+cleanall: sqroot eclipseclean cleantests
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd dbsecurity &&		$(MAKE) cleanall
 	cd sqf &&			$(MAKE) cleanall
