@@ -40,7 +40,7 @@ ETC_DIR=
 INCLUDE_DIR=
 SAMPLE_DIR=
 #package files, excluding this file
-pkgfiles=(libhpodbc_l64.so.?.*.? MXODSN MD5SUM LICENSE hpsqlext.h connect_test.cpp license.txt libicuucNv44.so.44 libicudataNv44.so.44)
+pkgfiles=(libhpodbc_l64.so.?.*.? MXODSN MD5SUM LICENSE hpsqlext.h connect_test.cpp license.txt libicuuc.so.44 libicudata.so.44)
 
 #check whether the package directory has all files (or this script is invoked form "PkgTmp" dir)
 function check_package {
@@ -151,9 +151,9 @@ function install_lib {
       err=0
       mv -f $lib $lib.SAV
       (( err += $? ))
-	  mv -f libicuucNv44.so.44 libicuucNv44.so.44.SAV     
+	  mv -f libicuuc.so.44 libicuuc.so.44.SAV     
       (( err += $? ))   
-	  mv -f libicudataNv44.so.44 libicudataNv44.so.44.SAV     
+	  mv -f libicudata.so.44 libicudata.so.44.SAV     
       (( err += $? ))    
       #remove link
       rm -f libhpodbc_l64.so.$ver
@@ -168,21 +168,21 @@ function install_lib {
    fi
    #copy library
    err=0
-   cp -f $PKG_DIR/libicuucNv44.so.44  .
+   cp -f $PKG_DIR/libicuuc.so.44  .
    (( err += $? ))
-   chmod 555 libicuucNv44.so.44
+   chmod 555 libicuuc.so.44
    (( err += $? ))
-   rm -f libicuucNv44.so
+   rm -f libicuuc.so
    (( err += $? ))
-   ln -s libicuucNv44.so.44 libicuucNv44.so
+   ln -s libicuuc.so.44 libicuuc.so
    (( err += $? ))
-   cp -f $PKG_DIR/libicudataNv44.so.44  .
+   cp -f $PKG_DIR/libicudata.so.44  .
    (( err += $? ))
-   chmod 555 libicudataNv44.so.44
+   chmod 555 libicudata.so.44
    (( err += $? ))       
-   rm -f libicudataNv44.so
+   rm -f libicudata.so
    (( err += $? ))       
-   ln -s libicudataNv44.so.44 libicudataNv44.so
+   ln -s libicudata.so.44 libicudata.so
    (( err += $? ))       
    cp -f $PKG_DIR/libhpodbc_l64.so.?.*.? .
    (( err += $? ))
