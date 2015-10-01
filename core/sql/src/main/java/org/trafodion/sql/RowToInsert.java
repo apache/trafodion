@@ -19,36 +19,26 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 
-import java.util.ArrayList;
+import java.util.Vector;
 
-public class ByteArrayList extends ArrayList<byte[]> {
+public class RowToInsert extends Vector<RowToInsert.ColToInsert> {
 
-	private static final long serialVersionUID = -3557219337406352735L;
-
-	void addElement(byte[] ba) {
-	        add(ba);
+	public class ColToInsert {
+		public byte[] qualName;
+		public byte[] colValue;
 	}
 
-	byte[] getElement(int i) {
-	    if (size() == 0)
-		return null;
-	    else if (i < size())
-		return get(i);
-	    else
-		return null;
+	private static final long serialVersionUID = 5066470006717527862L;
+
+	public void addColumn(byte[] name, byte[] value) {
+		ColToInsert col = new ColToInsert();
+		col.qualName = name;
+		col.colValue = value;
+		add(col);
 	}
 
-        int getSize() {
-           return size();
-	}
-
-        int getEntrySize(int i) {
-          return get(i).length;
-        }
-
-        byte[] getEntry(int i) {
-          return get(i);
-        }
 }
+
+

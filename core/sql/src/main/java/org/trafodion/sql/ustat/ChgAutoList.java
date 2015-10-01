@@ -23,7 +23,7 @@
 // Compile this as: javac ChgAutoList.java;  
 //  (Note that the class must be the same name as the file).
 //
-package com.hp.mx_ustat;
+package org.trafodion.sql.ustat;
 
 import java.sql.*;
 import java.io.*;

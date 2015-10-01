@@ -22,7 +22,7 @@
 /**
  * 
  */
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 
 import java.io.IOException;
 import java.util.ArrayList;

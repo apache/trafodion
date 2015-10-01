@@ -34,7 +34,7 @@
 #include "Hbase_types.h"
 #include "ExpHbaseDefs.h"
 #include "NAMemory.h"
-#include "HTableClient.h"
+#include "org_trafodion_sql_HTableClient.h"
 
 // forward declare
 class ExHbaseAccessStats;

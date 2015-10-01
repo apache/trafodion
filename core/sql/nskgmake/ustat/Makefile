@@ -33,21 +33,8 @@ CPPSRC := hs_cli.cpp \
 	hs_util.cpp \
 	vers_libustat.cpp
 
-JSRC := ChgAutoList.java \
-	UstatUtil.java
-
-PACKAGE := com/hp/mx_ustat
-JARPREFIX := mx_ustat
-  JARMANIFEST := $(TOPDIR)/ustat/mx_ustat.jar.mf
-CLASSPATH := $(TARGOBJDIR)/java
-
 YSRC := hs_yacc.y
 LSRC := hs_lex.ll
 
 YACC_VAR_PREFIX := ystat
 LEX_PREFIX := ystat
-
-# Explicit dependencies needed
-$(JARMANIFEST) : $(MY_SQROOT)/export/include/SCMBuildMan.mf $(TOPDIR)/ustat/mx_ustat.jar.version
-	cat  $(TOPDIR)/ustat/mx_ustat.jar.version >$@
-	cat $(MY_SQROOT)/export/include/SCMBuildMan.mf >>$@

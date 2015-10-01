@@ -123,9 +123,6 @@ endif
 #      should be set up in other makefiles (e.g. sqlci and tdm_arkcmp makefiles).
 #EARLY_DLLS :=
 
-ifeq ($(SQ_BUILD_TYPE),debug)
-   JAVA_COMPILE_FLAGS=-g
-endif
 LIBHDFS_INC=-I$(HADOOP_INC_DIR)
 LIBHDFS_LIB=-ljvm -lhdfs
 LIBHDFS_SO=libhdfs.so
@@ -410,11 +407,6 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 	   echo rm -f $(NSKBIN)/$$i ;\
 	   rm -f $(NSKBIN)/$$i ;\
 	 done;\
-	 for i in $(notdir $(FINAL_JARS));\
-	 do \
-	   echo rm -f $(NSK_SQ)/export/lib/$$i ;\
-	   rm -f $(NSK_SQ)/export/lib/$$i ;\
-	 done;\
 	 for i in $(filter $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
 	            $(notdir $(FINAL_EXES)));\
 	 do \
@@ -451,11 +443,6 @@ linuxmklinksdebug linuxmklinksrelease: copytoolslibs
 	 do \
 	   echo ln -sf $$OUTDIR/$$i $(NSKBIN);\
 	   ln -sf $$OUTDIR/$$i $(NSKBIN);\
-	 done;\
-	 for i in $(notdir $(FINAL_JARS));\
-	 do \
-	   echo ln -sf $$OUTDIR/$$i $(NSK_SQ)/export/lib/;\
-	   ln -sf $$OUTDIR/$$i $(NSK_SQ)/export/lib/;\
 	 done;\
 	 for i in $(filter $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
 	            $(notdir $(FINAL_EXES)));\
