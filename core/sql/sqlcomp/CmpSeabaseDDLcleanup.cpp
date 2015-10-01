@@ -486,6 +486,22 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
   NABoolean errorSeen = FALSE;
 
   // OBJECTS table
+
+  // Must first hide the index to OBJECTS, because the delete plan would otherwise
+  // likely access OBJECTS_UNIQ_IDX first then join that to OBJECTS (as OBJECT_UID
+  // is the leading part of the index key). If the index row were missing, we'd 
+  // fail to delete the base table row. Right now OBJECTS is the only metadata
+  // table with an index, so this is the only place we need to take this precaution.
+
+  cliRC = cliInterface->holdAndSetCQD("HIDE_INDEXES","ALL",CmpCommon::diags());
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(cliInterface, errorSeen))
+        return -1;
+    } 
+
+  // Now delete from OBJECTS (but not its index)
+
   str_sprintf(query, "delete from %s.\"%s\".%s where object_uid = %Ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               objUID_);
@@ -495,6 +511,15 @@ short CmpSeabaseMDcleanup::deleteMDentries(ExeCliInterface *cliInterface)
       if (processCleanupErrors(cliInterface, errorSeen))
         return -1;
     }
+ 
+  // Restore previous setting of CQD HIDE_INDEXES
+
+  cliRC = cliInterface->restoreCQD("HIDE_INDEXES",CmpCommon::diags());
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(cliInterface, errorSeen))
+        return -1;
+    } 
   
   // OBJECTS index
   str_sprintf(query, "delete from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %Ld",

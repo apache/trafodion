@@ -3287,6 +3287,15 @@ NABoolean TSJRule::topMatch (RelExpr * expr,
       ((updateExpr->getOperatorType() == REL_UNARY_DELETE) && updateExpr->isMtsStatement()))
     return FALSE;
 
+  // It is not semantically correct to convert a MERGE having a 
+  // "NOT MATCHED" action to a TSJ, since the former has right 
+  // join semantics. (If we converted here to a TSJ, a non-matching
+  // row would not be returned by the outer child scan node, so
+  // the inner child merge node would never see it and hence the
+  // "NOT MATCHED" logic would not be activiated.)
+  if (updateExpr->isMerge() && updateExpr->insertValues())
+    return FALSE;
+
   return TRUE;
 }
 

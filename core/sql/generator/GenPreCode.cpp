@@ -4368,14 +4368,6 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 	  identityCol = valId.getNAColumn();
 	}
 
-      if ((getOperatorType() != REL_HBASE_UPDATE) &&
-	  (mergeInsertRecExpr().entries() > 0))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-3241)
-			      << DgString0(" Non-unique ON clause not allowed with INSERT.");
-	  GenExit();
-	}
-
       if (((getOperatorType() == REL_HBASE_DELETE) ||
            (getOperatorType() == REL_HBASE_UPDATE)) &&
           (getTableDesc()->getNATable()->getClusteringIndex()->hasSyskey()))
@@ -4385,12 +4377,14 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 	  GenExit();
 	}
 
-      if ((getOperatorType() == REL_HBASE_DELETE) &&
+      if ((getOperatorType() != REL_HBASE_UPDATE) &&
           (mergeInsertRecExpr().entries() > 0) &&
           (CmpCommon::getDefault(COMP_BOOL_175) == DF_OFF))
 	{
+          // MERGE with INSERT is limited to HBase updates unless
+          // the CQD is on
 	  *CmpCommon::diags() << DgSqlCode(-3241)
-			      << DgString0(" MERGE delete not allowed with INSERT.");
+			      << DgString0(" This MERGE is not allowed with INSERT.");
 	  GenExit();
 	}
 
@@ -10987,6 +10981,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
   NABoolean found = FALSE;
   removeFromOrigList = FALSE;
   NABoolean hbaseLookupPred = FALSE;
+  NABoolean flipOp = FALSE;  // set to TRUE when column is child(1)
 
   if (ie && 
       ((ie->getOperatorType() >= ITM_EQUAL) &&
@@ -11006,6 +11001,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	       (NOT hasColReference(ie->child(0))))
 	{
 	  found = TRUE;
+          flipOp = TRUE;
 	  colVID = ie->child(1)->getValueId();
 	  valueVID = ie->child(0)->getValueId();
 	}
@@ -11020,6 +11016,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	       (NOT hasColReference(ie->child(0))))
 	{
 	  found = TRUE;
+          flipOp = TRUE;
 	  colVID = ie->child(1)->getValueId();
 	  valueVID = ie->child(0)->getValueId();
 	}
@@ -11034,6 +11031,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	       (NOT hasColReference(ie->child(0))))
 	{
 	  found = TRUE;
+          flipOp = TRUE;
 	  colVID = ie->child(1)->getValueId();
 	  valueVID = ie->child(0)->getValueId();
 	}
@@ -11067,6 +11065,7 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	      newCV = newCV->preCodeGen(generator);
 	      
 	      found = TRUE;
+              flipOp = TRUE;
 	      colVID = newCV->getValueId();
 	      valueVID = ie->child(0)->getValueId();
 	    }
@@ -11180,13 +11179,33 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	  else  if (ie->getOperatorType() == ITM_NOT_EQUAL)
 	    op = "NOT_EQUAL";
 	  else  if (ie->getOperatorType() == ITM_LESS)
-	    op = "LESS";
+            {
+            if (flipOp)
+              op = "GREATER";
+            else
+	      op = "LESS";
+            }
 	  else  if (ie->getOperatorType() == ITM_LESS_EQ)
-	    op = "LESS_OR_EQUAL";
+            {
+            if (flipOp)
+              op = "GREATER_OR_EQUAL";
+            else
+	      op = "LESS_OR_EQUAL";
+            }
 	  else  if (ie->getOperatorType() == ITM_GREATER)
-	    op = "GREATER";
+            {
+            if (flipOp)
+              op = "LESS";
+            else
+	      op = "GREATER";
+            }
 	  else  if (ie->getOperatorType() == ITM_GREATER_EQ)
-	    op = "GREATER_OR_EQUAL";
+            {
+            if (flipOp)
+              op = "LESS_OR_EQUAL";
+            else
+	      op = "GREATER_OR_EQUAL";
+            }
 	  else
 	    op = "NO_OP";
 	}
