@@ -1,0 +1,401 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@ 
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# @@@ END COPYRIGHT @@@
+
+#### Script to install and configure DCS, REST and Phoenix tests...
+
+# Location of hadoop install
+MY_SW_ROOT=$MY_SQROOT/sql/local_hadoop
+MY_LOG_FILE=$MY_SW_ROOT/log/install_traf_components_$(date +%F_%T).log
+
+# Default location of Trafodion, DCS, REST and Phoenix src folders
+TRAF_SRC=$MY_SQROOT/../../
+DCS_SRC=$MY_SQROOT/../../dcs
+REST_SRC=$MY_SQROOT/../rest
+PHX_SRC=$MY_SQROOT/../../tests/phx
+TRAF_TARS=$MY_SQROOT/../../distribution
+
+MY_DCS_MASTER_PORT=`cat $HOME/.traf-clports-$USER |grep DCS_MASTER |cut -d "=" -f2`
+
+if [ -z "$DCS_TAR" ]; then
+  DCS_TAR=$(ls $TRAF_TARS/dcs*tar.gz 2>/dev/null)
+fi
+
+if [ -z "$REST_TAR" ]; then
+  REST_TAR=$(ls $TRAF_TARS/rest*tar.gz 2>/dev/null)
+fi
+
+if [ -z "$PHX_TAR" ]; then
+    PHX_TAR=$(ls $TRAF_TARS/phoenix*.tgz 2>/dev/null)
+fi
+
+if [ -z "$DCSTEST_TAR" ]; then
+    DCSTEST_TAR=$(ls $TRAF_TARS/dcs-test*.tgz 2>/dev/null)
+fi
+
+if [ -z "$CLIENT_TAR" ]; then
+    CLIENT_TAR=$(ls $TRAF_TARS/*clients*.tgz 2>/dev/null)
+fi
+
+if [[ -f $CLIENT_TAR ]]; then
+   cd $MY_SW_ROOT
+   tar -xzf $CLIENT_TAR 
+   LNXDRVR_TAR=$(ls $MY_SW_ROOT/clients/*Linux*.gz 2>/dev/null)
+   ODB_TAR=$(ls $MY_SW_ROOT/clients/*odb*.gz 2>/dev/null)
+fi
+
+echo | tee ${MY_LOG_FILE}
+echo "Installing and configuring DCS, REST, TRAFCI & Phoenix tests for Trafodion..." | tee -a ${MY_LOG_FILE}
+
+echo | tee -a ${MY_LOG_FILE}
+echo "Environment used for core, DCS, REST and Phonenix ..." | tee -a ${MY_LOG_FILE}
+echo | tee -a ${MY_LOG_FILE}
+
+if [[ ! -d $DCS_SRC ]]; then
+  echo "Using only tar distribution and does not include source..."
+  echo | tee -a ${MY_LOG_FILE}
+else
+  echo "   For Core... $TRAF_SRC" | tee -a ${MY_LOG_FILE}
+  echo "   For DCS... $DCS_SRC" | tee -a ${MY_LOG_FILE}
+  echo "   For REST... $REST_SRC" | tee -a ${MY_LOG_FILE}
+  echo "   For PHX... $PHX_SRC" | tee -a ${MY_LOG_FILE}
+fi
+
+echo "   For local hadoop... $MY_SW_ROOT" | tee -a ${MY_LOG_FILE}
+echo "   For DCS_TAR... $DCS_TAR" | tee -a ${MY_LOG_FILE}
+echo "   For REST_TAR... $REST_TAR" | tee -a ${MY_LOG_FILE}
+
+if [[ -f $PHX_TAR ]]; then
+  echo "   For PHX_TAR... $PHX_TAR" | tee -a ${MY_LOG_FILE}
+fi
+
+if [[ -f $CLIENT_TAR ]]; then
+  echo "   For CLIENT_TAR... $CLIENT_TAR" | tee -a ${MY_LOG_FILE}
+  echo "      For ODB_TAR... $ODB_TAR" | tee -a ${MY_LOG_FILE}
+  echo "      For LNXDRVR_TAR... $LNXDRVR_TAR" | tee -a ${MY_LOG_FILE}
+fi
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin set up of DCS
+
+if [ -d dcs-* ]; then
+  echo "DCS files already exist, skipping DCS setup" | tee -a ${MY_LOG_FILE}
+else
+  if [[ -f $DCS_TAR ]]; then
+      echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
+  elif [[ -d $DCS_SRC ]]; then
+      echo "DCS tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
+      echo "Building DCS tar file" | tee -a ${MY_LOG_FILE}
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
+         echo "JDBCT4 jar file exist. Proceeding to build DCS from $DCS_SRC" | tee -a ${MY_LOG_FILE}
+         cd $DCS_SRC
+         ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
+         mv $DCS_SRC/target/dcs*.gz $TRAF_TARS
+         cd $MY_SW_ROOT
+      else
+         echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. " | tee -a ${MY_LOG_FILE}
+         echo "Please build the core Trafodion component"  | tee -a ${MY_LOG_FILE}
+         exit 2
+      fi
+  fi
+
+  if [[ ! -f $DCS_TAR ]]; then
+    echo "**** ERROR: DCS tar file not found. "  | tee -a ${MY_LOG_FILE}
+    exit 2
+  fi
+# Install DCS
+  echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
+  tar xzf $DCS_TAR | tee -a ${MY_LOG_FILE}
+  DCS_HOME=$(/bin/ls -d $MY_SW_ROOT/dcs-*)
+
+# Configure DCS
+  echo "Adding DCS_INSTALL_DIR=$DCS_INSTALL_DIR to ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  if [[ -f ~/.trafodion ]]
+  then
+    mv -f ~/.trafodion ~/.trafodion.orig
+    grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
+  fi
+  DCSDIR=${DCS_HOME##*/}
+  echo "export DCS_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion | tee -a ${MY_LOG_FILE}
+
+  echo "Setting DCS env and site.xml file" | tee -a ${MY_LOG_FILE}
+  cd $DCS_HOME/conf/
+  mv dcs-env.sh dcs-env.sh.orig
+  echo "MY_SQROOT=$MY_SQROOT" > dcs-env.sh
+  sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
+  mv -f dcs-site.xml dcs-site.xml.orig
+  sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
+  cat $HOME/.dcs-site.xml-$USER >> $DCS_HOME/conf/dcs-site.xml
+  echo "</configuration>" >> $DCS_HOME/conf/dcs-site.xml
+
+  echo "Configured $DCS_HOME/conf/dcs-site.xml" | tee -a ${MY_LOG_FILE}
+
+  echo "localhost 4" > servers
+  echo "Configured $DCS_HOME/conf/servers" | tee -a ${MY_LOG_FILE}
+
+fi
+
+# End of DCS setup
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin setup of REST Server 
+
+if [ -d rest-* ]; then
+  echo "REST files already exist, skipping REST setup"
+else
+  if [[ -f $REST_TAR ]]; then
+        echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
+  elif [[ -d $REST_SRC ]]; then
+      echo "REST tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
+      echo "Building REST tar file" | tee -a ${MY_LOG_FILE}
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
+         echo "JDBCT4 jar file exist. Proceeding to build REST from $REST_SRC" | tee -a ${MY_LOG_FILE}
+         cd $REST_SRC
+         ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
+         mv $REST_SRC/target/rest*.gz $TRAF_TARS
+         cd $MY_SW_ROOT
+       else
+         echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. Please build the core Trafodion components" | tee -a ${MY_LOG_FILE}
+       exit 2
+      fi
+  fi
+
+  if [[ ! -f $REST_TAR ]]; then
+    echo "**** ERROR: REST tar file not found"  | tee -a ${MY_LOG_FILE}
+    exit 2
+  fi
+
+# Install REST
+  echo "Installing REST from: $REST_TAR"  | tee -a ${MY_LOG_FILE}
+  tar xzf $REST_TAR | tee -a ${MY_LOG_FILE}
+  REST_HOME=$(/bin/ls -d $MY_SW_ROOT/rest-*)
+
+# Configure REST
+  echo "Adding REST_INSTALL_DIR=$REST_INSTALL_DIR to via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  if [[ -f ~/.trafodion ]]
+  then
+    mv -f ~/.trafodion ~/.trafodion.orig
+    grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
+  fi
+  RESTDIR=${REST_HOME##*/}
+  echo "export REST_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion  | tee -a ${MY_LOG_FILE}
+  echo "Setting REST env and site.xml "  | tee -a ${MY_LOG_FILE}
+  cd $REST_HOME/conf/
+  mv rest-env.sh rest-env.sh.orig
+
+  echo "MY_SQROOT=$MY_SQROOT" > rest-env.sh
+  sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
+  mv -f rest-site.xml rest-site.xml.orig
+  sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml
+  cat $HOME/.rest-site.xml-$USER >> $REST_HOME/conf/rest-site.xml
+  echo "</configuration>" >> $REST_HOME/conf/rest-site.xml
+
+  echo "Configured $REST_HOME/conf/rest-site.xml" | tee -a ${MY_LOG_FILE}
+fi
+
+# End of setup for REST
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin setup of TRAFCI
+
+echo "Configuring TRAFCI " | tee -a ${MY_LOG_FILE}
+TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
+if [[ -f $TRAFCI_BIN_DIR/trafci ]]
+then
+  mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
+  sed -e "s@localhost:23400@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
+  chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
+  echo "Adding swtrafci script..." | tee -a ${MY_LOG_FILE}
+  cat <<EOF >$MY_SQROOT/sql/scripts/swtrafci
+#!/bin/sh
+# command to run trafci
+$MY_SQROOT/trafci/bin/trafci.sh -h localhost:$MY_DCS_MASTER_PORT -u zz -p zz
+EOF
+  chmod +x $MY_SQROOT/sql/scripts/swtrafci
+else
+  echo "$TRAFCI_BIN_DIR not found" | tee -a ${MY_LOG_FILE}
+fi
+
+# End setup for TRAFCI
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin setup of Phoenix test
+
+PHXDIR=$MY_SW_ROOT/tests/phx
+
+if [[ -d $PHXDIR ]]; then
+  echo "Phoenix tests already exist $PHXDIR, skipping Phoenix test setup" | tee -a ${MY_LOG_FILE}
+else
+  if [[ -f $PHX_TAR ]]; then
+    echo "Installing Phoenix tests $PHX_TAR"| tee -a ${MY_LOG_FILE}
+    tar -xzf $PHX_TAR | tee -a ${MY_LOG_FILE}
+    echo "Successfully installed Phoenix tests "| tee -a ${MY_LOG_FILE}
+  elif [[ -d $PHX_SRC ]]; then
+     echo "Phoenix files already exist $PHX_SRC skipping Phoenix setup" | tee -a ${MY_LOG_FILE}
+     PHXDIR=$PHX_SRC
+  fi
+
+  if [[ -d $PHXDIR ]]; then
+     echo "Adding swphoenix script..." | tee -a ${MY_LOG_FILE}
+     cat <<EOF >$MY_SQROOT/sql/scripts/swphoenix
+#!/bin/sh
+# command to run phoenix tests
+
+cd $PHXDIR
+if [[ \$1 == "t4" ]]
+then
+  ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
+elif [[ \$1 == "t2" ]]
+then
+  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
+  ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
+     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2
+else
+  echo "Usage: swphoenix (t2|t4)"
+  exit 1
+fi
+EOF
+
+     chmod +x $MY_SQROOT/sql/scripts/swphoenix
+  fi 
+fi
+
+# End of Phoenix setup
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin setup of Linux driver
+
+LNXDRVR=$MY_SW_ROOT/lnxdrvr
+
+if [[ -d $LNXDRVR ]]; then
+  echo "Linux driver files already exist $LNXDRVR, skipping Linux Driver setup" | tee -a ${MY_LOG_FILE}
+else
+  if [[ -f $LNXDRVR_TAR ]]; then
+     echo "Installing Linux driver: $LNXDRVR"| tee -a ${MY_LOG_FILE}
+     mkdir -p $LNXDRVR | tee -a ${MY_LOG_FILE}
+     cd $LNXDRVR 
+     tar -xzf $LNXDRVR_TAR | tee -a ${MY_LOG_FILE} 
+     cd PkgTmp 
+     ./install.sh <<EOF | tee -a ${MY_LOG_FILE}
+YES
+../
+../
+../
+EOF
+    cd .. | tee -a ${MY_LOG_FILE}
+    mv TRAFDSN TRAFDSN.orig | tee -a ${MY_LOG_FILE}
+    sed -e "s@TCP:1.2.3.4:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN | tee -a ${MY_LOG_FILE}
+    echo "Successfully installed linux driver in $LNXDRVR"| tee -a ${MY_LOG_FILE}
+  fi
+fi
+
+# End setup of Linux driver
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin setup of ODB load tool
+
+ODBLOC=$MY_SW_ROOT/odb
+
+if [[ -d $ODBLOC ]]; then
+  echo "ODB files already exist $ODBLOC, skipping ODB setup" | tee -a ${MY_LOG_FILE}
+else
+  if [[ -f $ODB_TAR ]]; then
+    echo "Installing ODB tool: $ODBLOC"| tee -a ${MY_LOG_FILE}
+    mkdir -p $ODBLOC | tee -a ${MY_LOG_FILE}
+    cd $ODBLOC 
+    tar -xzf $ODB_TAR | tee -a ${MY_LOG_FILE}
+    echo "Successfully installed ODB tool in $ODBLOC"| tee -a ${MY_LOG_FILE}
+  fi
+fi
+
+# End setup of ODB load tool
+
+cd $MY_SW_ROOT
+
+echo | tee -a ${MY_LOG_FILE}
+# Begin setup of PyODBC test
+
+DCSTEST_DIR=$MY_SW_ROOT/dcstests
+
+if [[ -d $DCSTEST_DIR ]]; then
+  echo "DCS tests already exist $DCSTEST_DIR, skipping dcs test setup" | tee -a ${MY_LOG_FILE}
+else
+  if [[ -f $DCSTEST_TAR ]]; then
+    echo "Installing DCS tests $DCSTEST_DIR"| tee -a ${MY_LOG_FILE}
+    mkdir -p $DCSTEST_DIR | tee -a ${MY_LOG_FILE}
+    cd $DCSTEST_DIR
+    tar -xzf $DCSTEST_TAR | tee -a ${MY_LOG_FILE}
+    echo "Successfully installed DCS tests "| tee -a ${MY_LOG_FILE}
+    JDBCTEST_DIR=$DCSTEST_DIR/dcs/src/test/jdbc_test
+    PYODBCTEST_DIR=$DCSTEST_DIR/dcs/src/test/pytests
+  elif [[ -d $DCS_SRC ]]; then
+     echo "DCS test files already exist $DCS_SRC skipping test setup" | tee -a ${MY_LOG_FILE}
+     DCSTEST_DIR=$DCS_SRC
+     JDBCTEST_DIR=$DCSTEST_DIR/src/test/jdbc_test
+     PYODBCTEST_DIR=$DCSTEST_DIR/src/test/pytests
+  fi
+
+  if [[ -d $DCSTEST_DIR ]]; then
+     echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
+     cat <<EOF >$MY_SQROOT/sql/scripts/swjdbc
+#!/bin/sh
+# command to run JDBC tests
+cd $JDBCTEST_DIR
+./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
+  --target=localhost:$MY_DCS_MASTER_PORT \\
+  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
+EOF
+    chmod +x $MY_SQROOT/sql/scripts/swjdbc
+
+    if [[ -f $LNXDRVR_TAR ]]; then
+       echo "Linux driver exists. Adding swpyodbc script...." | tee -a ${MY_LOG_FILE}
+       cat <<EOF >$MY_SQROOT/sql/scripts/swpyodbc
+#!/bin/sh
+# command to run Python ODBC tests
+cd $PYODBCTEST_DIR
+./config.sh -d localhost:$MY_DCS_MASTER_PORT -t $LNXDRVR_TAR
+tox -e py27
+
+EOF
+       chmod +x $MY_SQROOT/sql/scripts/swpyodbc
+    fi 
+  fi
+fi
+
+# End setup of PyODBC test
+
+cds
+
+echo | tee -a ${MY_LOG_FILE}
+echo "Configuration scripts for DCS, REST, TRAFCI and Phoenix test are set up " | tee -a ${MY_LOG_FILE}
+
+echo | tee -a ${MY_LOG_FILE}
+echo "   Open a new session and start Trafodion by executing sqgen and sqstart scripts" | tee -a ${MY_LOG_FILE}
+echo | tee -a ${MY_LOG_FILE}

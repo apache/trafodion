@@ -21,10 +21,10 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
-include ../macros.gmk #top level
-BLD_TRAFODION_REST_TARNAME           =rest-$(TRAFODION_VER).tar.gz
+include ../core/macros.gmk #top level
+BLD_TRAFODION_DCS_TARNAME           =dcs-$(TRAFODION_VER).tar.gz
 
-VFILE			    =trafodion-rest.jar.versions
+VFILE			    =trafodion-dcs.jar.versions
 GENVERS			    =./genvers
 
 .NOTPARALLEL: all
@@ -34,19 +34,19 @@ all: build_all
 build_all:	 
 	$(MAKE) build_chk
 	echo "$(MAVEN) site package -DskipTests"
-	echo "### For full Maven output, see file build_rest.log"
-	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
-	mkdir -p ../../${DISTRIBUTION_DIR}
-	mv target/$(BLD_TRAFODION_REST_TARNAME) ../../${DISTRIBUTION_DIR}/
+	echo "### For full Maven output, see file build_dcs.log"
+	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	mkdir -p ../${DISTRIBUTION_DIR}
+	mv target/$(BLD_TRAFODION_DCS_TARNAME) ../${DISTRIBUTION_DIR}
 	$(RM) $(VFILE)
 
 build_chk:
 	$(GENVERS) > $(VFILE)
-	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
-	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
+	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
+	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
 
 clean:
-	-$(MAVEN) clean | grep ERROR 
-	$(RM) build_rest.log
+	-$(MAVEN) clean | grep ERROR
+	$(RM) build_dcs.log
 	$(RM) $(VFILE)
-	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_REST_TARNAME)
+	$(RM) ../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_DCS_TARNAME)

@@ -20,8 +20,84 @@
 
 dcsznode=/$USER/dcs/master
 dcstmp=/tmp/dcstmp-$USER.log
+jpscmd=$JAVA_HOME/bin/jps
+cfg_mxo_cnt=0
+act_mxo_cnt=0
+down_mxo_cnt=0
+backup_dcsmaster_cnt=0
+cfg_dcsmaster_cnt=0
+actual_dcsmaster_cnt=0
+down_dcsmaster_cnt=0
+cfg_dcsserver_cnt=0
+actual_dcsserver_cnt=0
+down_dcsserver_cnt=0
 
-if [ -d $DCS_INSTALL_DIR ];then
+tmp_ps=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file. Exiting."
+    exit 3
+fi
+tmp_chk=`mktemp -t`
+if [[ $? != 0 ]]; then
+    echo "Error while getting a temporary file. Exiting."
+    exit 3
+fi
+
+echo
+#Check if Trafodion is up and running
+sqcheck -f > $tmp_chk 2>&1
+sq_stat=$?
+if [[ $sq_stat == 0 ]]; then
+
+ if [ -d $DCS_INSTALL_DIR ];then
+
+### Get the configured number of DcsMaster's
+  if [ -s ${DCS_INSTALL_DIR}/conf/backup-masters ]; then
+     let backup_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/backup-masters`
+     let cfg_dcsmaster_cnt=$backup_dcsmaster_cnt+1
+   else
+     let cfg_dcsmaster_cnt=1
+   fi
+
+### Get the configured number of DcsServer and mxosrvr
+   if [ -f ${DCS_INSTALL_DIR}/conf/servers ]; then
+      let cfg_mxo_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") k=1;else k=$2;cnt+=k} END {print cnt}'`
+      let cfg_dcsserver_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") p=1;else p+=1;} END {print p}'`
+   fi
+
+### Check if there are any DcsMaster and DcsServer's that are started 
+   if [ -e $SQ_PDSH ]; then
+     actual_dcsmaster_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsMaster |wc -l` 
+     actual_dcsserver_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsServer |wc -l` 
+   else
+     actual_dcsmaster_cnt=`$jpscmd |grep DcsMaster |wc -l`
+     actual_dcsserver_cnt=`$jpscmd |grep DcsServer |wc -l`
+   fi
+
+   if ( [ "$cfg_dcsserver_cnt" '!=' "$actual_dcsserver_cnt" ] ); then
+     let down_dcsserver_cnt=cfg_dcsserver_cnt-actual_dcsserver_cnt
+   else
+     down_dcsserver_cnt=''
+   fi
+
+   if ( [ "$cfg_dcsmaster_cnt" '!=' "$actual_dcsmaster_cnt" ] ); then
+     let down_dcsmaster_cnt=cfg_dcsmaster_cnt-actual_dcsmaster_cnt
+   else
+     down_dcsmaster_cnt=''
+   fi
+
+### Get the current process status (all processes)
+  sqps > $tmp_ps 2>&1
+
+### Get the actual number of mxosrvrs
+  let act_mxo_cnt=`< $tmp_ps egrep -a -i ' mxosrvr' | wc -l`
+  if ( [ "$cfg_mxo_cnt" '!=' "$act_mxo_cnt" ] ); then 
+    let down_mxo_cnt=cfg_mxo_cnt-act_mxo_cnt
+  else
+    down_mxo_cnt=''
+  fi 
+
+  if ( [ "$actual_dcsmaster_cnt" '!=' 0 ] && [ "$actual_dcsserver_cnt" '!=' 0 ] ); then
    echo "ls $dcsznode"|$DCS_INSTALL_DIR/bin/dcs zkcli > $dcstmp
    zkport=`cat $dcstmp | /usr/bin/head -n 1 | cut -d ":" -f2`
    if [ ! -z "$zkport" ]; then
@@ -32,13 +108,29 @@ if [ -d $DCS_INSTALL_DIR ];then
    fi
    masterport=`cat $dcstmp | /usr/bin/tail -n 1 | cut -d ":" -f4`
    if [ ! -z "$masterport" ]; then
-     echo "Dcs Master is listening on port $masterport"
-   else
-     echo "Dcs Master is not started ..."
-     exit 1
+     echo "DcsMaster is listening on port $masterport"
+     echo
    fi
-   rm -f $dcstmp
-else
-   echo "DCS is not installed..."
+   rm -f $dcstmp $tmp_chk $tmp_ps
+  else
+   if ( [ "$actual_dcsmaster_cnt" '>' 0 ] || [ "$actual_dcsserver_cnt" '>' 0 ] ); then
+     echo "Partial DCS process is up and running. Please stop and restart DCS using 'dcsstop' and 'dcsstart' command..."
+    else
+     echo "DcsMaster is not started. Please start DCS using 'dcsstart' command..."
+   fi
+   echo
+  fi
+  echo -e "Process\t\tConfigured\tActual\t\tDown"
+  echo -e "---------\t----------\t------\t\t----"
+  echo -e "DcsMaster\t$cfg_dcsmaster_cnt\t\t$actual_dcsmaster_cnt\t\t$down_dcsmaster_cnt"
+  echo -e "DcsServer\t$cfg_dcsserver_cnt\t\t$actual_dcsserver_cnt\t\t$down_dcsserver_cnt"
+  echo -e "mxosrvr\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t\t$down_mxo_cnt\n"
+ else
+   echo "DCS is not installed. Please install and configure DCS..."
    exit 1
+ fi
+else
+ echo "Trafodion is not started..."
+ echo
 fi
+exit 0

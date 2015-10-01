@@ -30,13 +30,10 @@ outputDirectory=$2
 user=`whoami`
 date=`date`
 cwd=`pwd`
-if [ -d .svn ]; then
-  revision=`svn info | sed -n -e 's/Last Changed Rev: \(.*\)/\1/p'`
-  url=`svn info | sed -n -e 's/URL: \(.*\)/\1/p'`
-elif [ -d .git ]; then
-  revision=`git log -1 --pretty=format:"%H"`
-  hostname=`hostname`
-  url="git://${hostname}${cwd}"
+if [[ -d ../../.git ]]; then
+    revision=`git log -1 --pretty=format:"%h"`
+    hostname=`hostname`
+    url="git://${hostname}${cwd}"
 else
   revision="Unknown"
   url="file://$cwd"

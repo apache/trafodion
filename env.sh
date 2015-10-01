@@ -18,24 +18,7 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
-# Makefile for packaging client products
 
-include ../macros.gmk #top level
-
-RM      = /bin/rm
-ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER).tgz
-else
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER)-debug.tgz
-endif
-
-
-.PHONY: all
-all: pkg-clients
-
-pkg-clients: 
-	tar -zcvf $(CLIENT_TAR) clients
-clean:	
-	$(RM) -rf $(MY_SQROOT)/../conn/clients 
-	$(RM) -f $(CLIENT_TAR)
+cd core/sqf
+. ./sqenv.sh
+cd ../..

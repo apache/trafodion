@@ -98,33 +98,9 @@ $DATA3
 $DATA4
 end tse
 
-# NDCS association server
-# port [port range] [edgenode 1] [edgenode 2]
-# If the block is present with no entries only the single default port (18650)
-# is configured.
-# begin ndcs
-port 17000
-# end ndcs
-
 # Overflow directories for ssd and hdd. Format: [overflow type] [directory]
 begin overflow
 hdd $MY_SQROOT/tmp
 #ssd /ssd/directory
 end overflow
 
-# Section to configure BDR (Bulk Data Replicator).
-# To configure BDR, uncomment the following section and
-# provide appropriate values for the attributes.
-#begin bdr
-#bdr_cluster_name <Seven character SQ cluster name>
-#bdr_ip_address   <External IP Address of the node where the mxbdrsrv process $ZBDR would run>
-#bdr_node_id      <Logical node id where the mxbdrsrv process $ZBDR process would run
-#bdr_port_number  <Listening port number for the mxbdrsrv process - should reserve m+1 port numbers where m is the number of sql nodes>
-#end bdr
-
-#begin floating_ip
-#process=$MXOAS;interface=bond1;external-ip=xxx.xxx.xx.xxx
-#process=$MXOAS;interface=eth0;internal-ip=xxx.xxx.xxx.xxx
-#floating_ip_node_id 1
-#floating_ip_failover_node_id 0
-#end floating_ip
