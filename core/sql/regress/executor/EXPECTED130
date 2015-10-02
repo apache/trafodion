@@ -53,9 +53,9 @@ C1
 C1           C2
 -----------  ----------------------------------------------------------------------------------------------------
 
-          1  LOBH00000200010511053751678432359419481892944098569206618212309972129672581017"TRAFODION"."LOB"     
-          2  LOBH00000200010511053751678432359419481892944099238599718212309972144917011017"TRAFODION"."LOB"     
-          3  LOBH00000200010511053751678432359419481892944099831577118212309972150917990017"TRAFODION"."LOB"     
+          1  LOBH00000200010584124707425497952319694856963269331201918212310490052925408017"TRAFODION"."LOB"     
+          2  LOBH00000200010584124707425497952319694856963269891596318212310490058662308017"TRAFODION"."LOB"     
+          3  LOBH00000200010584124707425497952319694856963270523057718212310490064989391017"TRAFODION"."LOB"     
 
 --- 3 row(s) selected.
 >>
@@ -333,11 +333,10 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_txt1.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010511053751678435828119481892944130250244918212309972455030509017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
+>>extract lobtofile(LOB 'LOBH00000200010584124707425501262519694856963301033871118212310490370005806017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
+Success. Targetfile :tlob130_txt1.txt  Length : 19
 
-*** ERROR[8442] Unable to access ExpLOBInterfaceSelect interface. Call to LOB_TGT_FILE_EXISTS_ERROR returned error (561). Error detail 14.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>--binary input/update
 >>
@@ -350,7 +349,7 @@ And the dish ran away with the fork !
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010511053751678435882219481892944135784008218212309972510357377017"TRAFODION"."LOB"     ' , 'tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010584124707425501330119694856963306762394118212310490427404712017"TRAFODION"."LOB"     ' , 'tlob130_deep.jpg');
 Success. Targetfile :tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -366,7 +365,7 @@ Success. Targetfile :tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010511053751678435882219481892944135784008218212309972510357377017"TRAFODION"."LOB"     ' , 'tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010584124707425501330119694856963306762394118212310490427404712017"TRAFODION"."LOB"     ' , 'tlob130_anoush.jpg');
 Success. Targetfile :tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -385,27 +384,27 @@ Success. Targetfile :tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
 >>
->>sh swhadoop fs -copyFromLocal lob_input_a1.txt /mydata/lob_input_a1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_b1.txt /mydata/lob_input_b1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_c1.txt /mydata/lob_input_c1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_d1.txt /mydata/lob_input_d1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_e1.txt /mydata/lob_input_e1.txt;
->>sh swhadoop fs -copyFromLocal deep.jpg /mydata/deep.jpg;
->>sh swhadoop fs -copyFromLocal anoush.jpg /mydata/anoush.jpg;
+>>sh swhadoop fs -copyFromLocal lob_input_a1.txt /lobs/lob_input_a1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_b1.txt /lobs/lob_input_b1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_c1.txt /lobs/lob_input_c1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_d1.txt /lobs/lob_input_d1.txt;
+>>sh swhadoop fs -copyFromLocal lob_input_e1.txt /lobs/lob_input_e1.txt;
+>>sh swhadoop fs -copyFromLocal deep.jpg /lobs/deep.jpg;
+>>sh swhadoop fs -copyFromLocal anoush.jpg /lobs/anoush.jpg;
+>>sh sleep(20);
 >>
 >>
->>
->>insert into tlob130txt2 values (1, filetolob('hdfs:///mydata/lob_input_a1.txt'));
+>>insert into tlob130txt2 values (1, filetolob('hdfs:///lobs/lob_input_a1.txt'));
 
 --- 1 row(s) inserted.
 >>
 >>-- second line
->>insert into tlob130txt2 values (2, filetolob('hdfs:///mydata/lob_input_b1.txt'));
+>>insert into tlob130txt2 values (2, filetolob('hdfs:///lobs/lob_input_b1.txt'));
 
 --- 1 row(s) inserted.
 >>
 >>-- third line
->>insert into tlob130txt2 values (3, filetolob('hdfs:///mydata/lob_input_c1.txt'));
+>>insert into tlob130txt2 values (3, filetolob('hdfs:///lobs/lob_input_c1.txt'));
 
 --- 1 row(s) inserted.
 >>select lobtostring(c2, 40 ) from tlob130txt2;
@@ -425,7 +424,7 @@ The cow jumped over the moon.
 >>--updates
 >>
 >>--should update with full poem
->>update tlob130txt2 set c2=filetolob('hdfs:///mydata/lob_input_d1.txt', append) where c1 = 3;
+>>update tlob130txt2 set c2=filetolob('hdfs:///lobs/lob_input_d1.txt', append) where c1 = 3;
 
 --- 1 row(s) updated.
 >>select lobtostring(c2, 200 ) from tlob130txt2;
@@ -447,7 +446,7 @@ And the dish ran away with the spoon.
 --- 3 row(s) selected.
 >>
 >>-- should see wrong text in the last few lines
->>update tlob130txt2 set c2=filetolob('hdfs:///mydata/lob_input_e1.txt') where c1 =3 ;
+>>update tlob130txt2 set c2=filetolob('hdfs:///lobs/lob_input_e1.txt') where c1 =3 ;
 
 --- 1 row(s) updated.
 >>select lobtostring(c2, 200 ) from tlob130txt2;
@@ -482,11 +481,11 @@ And the dish ran away with the fork !
 >>log;
 >>sh rm t130_extract_command;
 >>
->>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_txt2.txt');/g" >> t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010511053751678436796319481892944142317645618212309972575633380017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_txt2.txt');
-Success. Targetfile :hdfs:///mydata/tlob130_txt2.txt  Length : 19
+>>extract lobtofile(LOB 'LOBH00000200010584124707425502305319694856963313616474018212310490495877435017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_txt2.txt');
+Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 
 --- SQL operation complete.
 >>
@@ -499,10 +498,10 @@ Success. Targetfile :hdfs:///mydata/tlob130_txt2.txt  Length : 19
 >>
 >>log;
 >>sh rm t130_extract_command;
->>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_deep.jpg');/g" >> t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010511053751678436862019481892944147840655918212309972630998193017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_deep.jpg');
-Success. Targetfile :hdfs:///mydata/tlob130_deep.jpg  Length : 159018
+>>extract lobtofile(LOB 'LOBH00000200010584124707425502364319694856963319390054018212310490553614828017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_deep.jpg');
+Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
 >>
@@ -514,11 +513,11 @@ Success. Targetfile :hdfs:///mydata/tlob130_deep.jpg  Length : 159018
 >>
 >>log;
 >>sh rm t130_extract_command;
->>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_anoush.jpg');/g" >> t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010511053751678435882219481892944135784008218212309972510357377017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_anoush.jpg');
-Success. Targetfile :hdfs:///mydata/tlob130_anoush.jpg  Length : 230150
+>>extract lobtofile(LOB 'LOBH00000200010584124707425501330119694856963306762394118212310490427404712017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush.jpg');
+Success. Targetfile :hdfs:///lobs/tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
 >>
@@ -567,18 +566,17 @@ And the dish ran away with the spoon.
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200020511053751678438441919481892944156470608918212309972717301409017"TRAFODION"."LOB"     ' , 'tlob130_deep2.jpg');
+>>extract lobtofile(LOB 'LOBH00000200020584124707425504003519694856963328040860218212310490640085774017"TRAFODION"."LOB"     ' , 'tlob130_deep2.jpg');
+Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 
-*** ERROR[8442] Unable to access ExpLOBInterfaceSelect interface. Call to LOB_TGT_FILE_EXISTS_ERROR returned error (561). Error detail 14.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>log;
 >>sh rm t130_extract_command;
->>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200030511053751678438441919481892944156980402118212309972722402083017"TRAFODION"."LOB"     ' , 'hdfs:///mydata/tlob130_anoush2.jpg');
-Success. Targetfile :hdfs:///mydata/tlob130_anoush2.jpg  Length : 230150
+>>extract lobtofile(LOB 'LOBH00000200030584124707425504003519694856963328593490518212310490645692223017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
+Success. Targetfile :hdfs:///lobs/tlob130_anoush2.jpg  Length : 230150
 
 --- SQL operation complete.
 >>
@@ -604,7 +602,7 @@ Hey diddle diddle,
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',truncate);/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200030511053751678438817719481892944160479315318212309972757456948017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',truncate);
+>>extract lobtofile(LOB 'LOBH00000200030584124707425504360119694856963332388257518212310490683247656017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',truncate);
 Success. Targetfile :tlob130_anoush3.jpg  Length : 230150
 
 --- SQL operation complete.
