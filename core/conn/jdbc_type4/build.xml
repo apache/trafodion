@@ -90,7 +90,7 @@
 			</fileset>
 		</copy>
 
-		<replace file="${temp.src}/${vproc.java}" token="@@@" value="${vproc.str}" />
+		<replace file="${temp.src}/${vproc.java}" token="@@@@" value="${vproc.str}" />
 		<javac destdir="${temp.classes}" srcdir="${temp.src}" debug="on" includes="**/*.java" classpath="${java.home}/lib/tools.jar;${temp.classes}" includeAntRuntime="false" />
 	</target>
 

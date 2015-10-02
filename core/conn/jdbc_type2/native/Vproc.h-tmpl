@@ -1,5 +1,0 @@
-#ifndef VPROC_H
-#define VPROC_H
-extern const char *driverVproc;
-extern "C" void @@@(void);
-#endif /* VPROC_H */
