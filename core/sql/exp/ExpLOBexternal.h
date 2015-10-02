@@ -145,7 +145,8 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     LOBcliQueryType qType,
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
- /*IN*/     char* *lobLocList
+ /*IN*/     char* *lobLocList,
+ /*IN*/     Int64 lobMaxSize
  );
 
 

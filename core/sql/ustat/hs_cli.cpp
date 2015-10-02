@@ -542,7 +542,7 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
     NAString userTabName = objDef->getObjectFullName();
 
     // If the table is a native one, convert the fully qualified user table name NT
-    // to a fully qualified external table name ET. The sample table will be coreated
+    // to a fully qualified external table name ET. The sample table will be created
     // like ET.
     if ( HSGlobalsClass::isNativeCat(objDef->getCatName(HSTableDef::EXTERNAL_FORMAT))) {
       userTabName = ComConvertNativeNameToTrafName(

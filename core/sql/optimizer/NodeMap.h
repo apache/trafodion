@@ -325,6 +325,7 @@ public:
                            NABoolean activeOnly) const;
 
 
+  NABoolean smooth(Lng32 numNodes) ;
 
   // These functions should be const but because of the
   // cached values and the fact that mutable is not

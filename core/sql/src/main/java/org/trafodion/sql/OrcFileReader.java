@@ -19,36 +19,18 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.apache.hadoop.hive.ql.io.orc;
+package org.trafodion.sql;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.lang.Integer;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import org.apache.hadoop.hive.conf.*;
-import org.apache.hadoop.hive.ql.io.sarg.SearchArgument;
 import org.apache.hadoop.hive.serde2.objectinspector.*;
-
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-
-import org.apache.hive.common.util.HiveTestUtils;
-
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.assertNull;
+import org.apache.hadoop.hive.ql.io.orc.*;
 
 public class OrcFileReader
 {
@@ -61,8 +43,8 @@ public class OrcFileReader
     StructObjectInspector       m_oi;
     List<? extends StructField> m_fields;
     RecordReader                m_rr;
-    String																						lastError = null;
-    Reader.Options														m_options;
+    String                      lastError = null;
+    Reader.Options		m_options;
 
 public class OrcRowReturnSQL
 {
@@ -72,7 +54,7 @@ public class OrcRowReturnSQL
 		byte[] m_row_ba = new byte[4096];
 }
 
-    OrcRowReturnSQL													rowData;	//TEMP!!
+    OrcRowReturnSQL		rowData;	//TEMP!!
 
 
     OrcFileReader() {
@@ -239,7 +221,7 @@ public class OrcRowReturnSQL
 	    lv_row = (OrcStruct) m_rr.next(lv_row);
 	    lv_row_string.setLength(0);
 	    for (int i = 0; i < m_fields.size(); i++) {
-		lv_field_val = lv_row.getFieldValue(i);
+		lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 		if (lv_field_val != null) {
 		    lv_row_string.append(lv_field_val);
 		}
@@ -264,7 +246,7 @@ public class OrcRowReturnSQL
 	    lv_row_buffer = ByteBuffer.wrap(lv_row_ba);
 	    lv_row = (OrcStruct) m_rr.next(lv_row);
 	    for (int i = 0; i < m_fields.size(); i++) {
-		lv_field_val = lv_row.getFieldValue(i);
+		lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 		if (lv_field_val == null) {
 		    lv_row_buffer.putInt(0);
 		    continue;
@@ -292,7 +274,7 @@ public class OrcRowReturnSQL
 
 	lv_row = (OrcStruct) m_rr.next(lv_row);
 	for (int i = 0; i < m_fields.size(); i++) {
-	    lv_field_val = lv_row.getFieldValue(i);
+	    lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 	    if (lv_field_val != null) {
 		lv_row_string.append(lv_field_val);
 	    }
@@ -317,7 +299,7 @@ public class OrcRowReturnSQL
 	byte[] lv_row_ba = new byte[4096];
 	lv_row_buffer = ByteBuffer.wrap(lv_row_ba);
 	for (int i = 0; i < m_fields.size(); i++) {
-	    lv_field_val = lv_row.getFieldValue(i);
+	    lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 	    if (lv_field_val == null) {
   		lv_row_buffer.putInt(0);
 		continue;
@@ -358,7 +340,7 @@ public OrcRowReturnSQL fetchNextRowObj() throws Exception
 	rowData.m_row_number = m_rr.getRowNumber();
 	
 	for (int i = 0; i < m_fields.size(); i++) {
-	    lv_field_val = lv_row.getFieldValue(i);
+	    lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 	    if (lv_field_val == null) {
   		lv_row_buffer.putInt(0);
   		rowData.m_row_length = rowData.m_row_length + lv_integerLength;
@@ -405,7 +387,7 @@ public OrcRowReturnSQL fetchNextRowObj() throws Exception
 	
 	for (int i = 0; i < m_fields.size(); i++) {
 					if (lv_include[i+1] == false) continue;
-	    lv_field_val = lv_row.getFieldValue(i);
+	    lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 	    if (lv_field_val == null) {
   				lv_row_buffer.putInt(0);
   				rowData.m_row_length = rowData.m_row_length + lv_integerLength;
@@ -457,7 +439,7 @@ public boolean isEOF() throws Exception
 
 	lv_row = (OrcStruct) m_rr.next(lv_row);
 	for (int i = 0; i < m_fields.size(); i++) {
-	    lv_field_val = lv_row.getFieldValue(i);
+	    lv_field_val = m_oi.getStructFieldData(lv_row, m_fields.get(i));
 	    if (lv_field_val != null) {
 		lv_row_string.append(lv_field_val);
 	    }
@@ -513,6 +495,6 @@ public boolean isEOF() throws Exception
 		}
 	    }
 	}
-System.out.println("Shows the change in place");
+        System.out.println("Shows the change in place");
     }
 }

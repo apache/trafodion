@@ -69,7 +69,7 @@ OrcFileReader::~OrcFileReader()
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::init()
 {
-  static char className[]="org/apache/hadoop/hive/ql/io/orc/OrcFileReader";
+  static char className[]="org/trafodion/sql/OrcFileReader";
   
   if (JavaMethods_)
     return (OFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
@@ -102,7 +102,7 @@ OFR_RetCode OrcFileReader::init()
 //    JavaMethods_[JM_FETCHROW2 ].jm_name      = "fetchNextRow";
 //    JavaMethods_[JM_FETCHROW2 ].jm_signature = "()[B";
     JavaMethods_[JM_FETCHROW2 ].jm_name      = "fetchNextRowObj";
-    JavaMethods_[JM_FETCHROW2 ].jm_signature = "()Lorg/apache/hadoop/hive/ql/io/orc/OrcFileReader$OrcRowReturnSQL;";
+    JavaMethods_[JM_FETCHROW2 ].jm_signature = "()Lorg/trafodion/sql/OrcFileReader$OrcRowReturnSQL;";
     JavaMethods_[JM_GETNUMROWS ].jm_name      = "getNumberOfRows";
     JavaMethods_[JM_GETNUMROWS ].jm_signature = "()J";
 //    JavaMethods_[JM_FETCHBUFF1].jm_name      = "fetchArrayOfRows";

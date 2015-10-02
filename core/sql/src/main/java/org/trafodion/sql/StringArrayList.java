@@ -19,7 +19,7 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 
 import java.util.ArrayList;
 

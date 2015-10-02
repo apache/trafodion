@@ -61,14 +61,14 @@ std::string CAT_SQL_HBASE                     =  "SQL.HBase";
 // these categories are currently not used 
 std::string CAT_SQL_QMP                       = "SQL.Qmp";
 std::string CAT_SQL_QMM                       = "SQL.Qmm";
-std::string CAT_SQL_COMP_QR_DESC_GEN          = "SQL.Comp.DescGen";
-std::string CAT_SQL_COMP_QR_HANDLER           = "SQL.Comp.QRHandler";
-std::string CAT_SQL_COMP_QR_COMMON            = "SQL.COMP.QRCommon";
-std::string CAT_SQL_COMP_QR_IPC               = "SQL.COMP.QRCommon.IPC";
-std::string CAT_SQL_COMP_MV_REFRESH           = "SQL.COMP.MV.REFRESH";
-std::string CAT_SQL_COMP_MVCAND               = "SQL.Comp.MVCandidates";
-std::string CAT_SQL_MEMORY                    = "SQL.Memory";
-std::string CAT_SQL_COMP_RANGE                = "SQL.COMP.Range";
+std::string CAT_SQL_COMP_QR_DESC_GEN          = "SQL.COMP"; // ".DescGen";
+std::string CAT_SQL_COMP_QR_HANDLER           = "SQL.COMP"; // ".QRHandler";
+std::string CAT_SQL_COMP_QR_COMMON            = "SQL.COMP"; // ".QRCommon";
+std::string CAT_SQL_COMP_QR_IPC               = "SQL.COMP"; // ".QRCommon.IPC";
+std::string CAT_SQL_COMP_MV_REFRESH           = "SQL.COMP"; // ".MV.REFRESH";
+std::string CAT_SQL_COMP_MVCAND               = "SQL.COMP"; // ".MVCandidates";
+std::string CAT_SQL_MEMORY                    = "SQL.COMP"; // ".Memory";
+std::string CAT_SQL_COMP_RANGE                = "SQL.COMP"; // ".Range";
 std::string CAT_QR_TRACER                     = "QRCommon.Tracer";
 std::string CAT_SQL_QMS                       = "SQL.Qms";
 std::string CAT_SQL_QMS_MAIN                  = "SQL.Qms.Main";
@@ -78,7 +78,7 @@ std::string CAT_SQL_MVMEMO_STATS              = "SQL.Qms.MvmemoStats";
 std::string CAT_SQL_QMS_GRP_LATTCE_INDX       = "SQL.Qms.LatticeIndex";
 std::string CAT_SQL_QMS_MATCHTST_MVDETAILS    = "SQL.Qms.MatchTest";
 std::string CAT_SQL_QMS_XML                   = "SQL.Qms.XML";
-std::string CAT_SQL_COMP_XML                  = "SQL.Comp.XML";
+std::string CAT_SQL_COMP_XML                  = "SQL.COMP"; // ".XML";
 
 // **************************************************************************
 // **************************************************************************

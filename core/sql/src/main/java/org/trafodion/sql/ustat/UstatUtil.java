@@ -19,7 +19,7 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package com.hp.mx_ustat;
+package org.trafodion.sql.ustat;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

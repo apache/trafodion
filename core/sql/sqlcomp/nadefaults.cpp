@@ -2054,9 +2054,12 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
- 
-  // default size is 1 G  (1000 M)
-  DDint__(LOB_MAX_SIZE,                         "1000"),
+   
+   // Size of memoryin bytes  used to perform I/O to lob data file 
+  // default size is 512MB   . Change to adjust memory usage. 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "536870912"), 
+  // default size is 10 G  (10000 M)
+  DDint__(LOB_MAX_SIZE,                         "10000"),
   // default size is 32000. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
@@ -3519,11 +3522,13 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_LOCK_HIST_TABLES,               "OFF"),
   DD_____(USTAT_LOG,                            "ULOG"),
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
+  DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
   DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.
 
+                                                         // internal sort without checking UEC.
   DDflt0_(USTAT_MIN_CHAR_UEC_FOR_IS,            "0.2"),  // minimum UEC for char type to use internal sort
-  DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.03"), // minimum UEC for binary types to use internal sort
+  DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.0"),  // minimum UEC for binary types to use internal sort
 
   DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
   DDui1__(USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE,    "10000"),
@@ -6884,6 +6889,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     break;
 
     case LOB_OUTPUT_SIZE:
+      if (tok >=0  && tok <= 512000)
+	isValid = TRUE;
+      break;
+
+    case LOB_MAX_CHUNK_MEM_SIZE:
       if (tok >=0  && tok <= 512000)
 	isValid = TRUE;
       break;

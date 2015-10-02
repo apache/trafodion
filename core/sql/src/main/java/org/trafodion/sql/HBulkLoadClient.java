@@ -19,7 +19,7 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.IOException;
@@ -68,8 +68,8 @@ import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.regionserver.BloomType; 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.trafodion.sql.HBaseAccess.HTableClient;
-//import org.trafodion.sql.HBaseAccess.HBaseClient;
+import org.trafodion.sql.HTableClient;
+//import org.trafodion.sql.HBaseClient;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.io.compress.CodecPool;
@@ -298,7 +298,7 @@ public class HBulkLoadClient
   }
 
   private boolean createSnapshot( String tableName, String snapshotName)
-  throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException
+      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, Exception
   {
     HBaseAdmin admin = null;
     try 
@@ -334,7 +334,7 @@ public class HBulkLoadClient
   }
   
   private boolean restoreSnapshot( String snapshotName, String tableName)
-  throws IOException, RestoreSnapshotException
+      throws IOException, RestoreSnapshotException, Exception
   {
     HBaseAdmin admin = null;
     try
@@ -363,7 +363,7 @@ public class HBulkLoadClient
     return true;
   }
   private boolean deleteSnapshot( String snapshotName, String tableName)
-      throws IOException
+      throws IOException, Exception
   {
     
     HBaseAdmin admin = null;
@@ -407,7 +407,7 @@ public class HBulkLoadClient
   }
   
   private void doSnapshotNBulkLoad(Path hFilePath, String tableName, HTable table, LoadIncrementalHFiles loader, boolean snapshot)
-  throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException
+      throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException, Exception
   {
     HBaseAdmin admin = new HBaseAdmin(config);
     String snapshotName= null;

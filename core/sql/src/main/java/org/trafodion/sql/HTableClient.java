@@ -19,8 +19,8 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.trafodion.sql.HBaseAccess;
-import org.trafodion.sql.HBaseAccess.*;
+package org.trafodion.sql;
+import org.trafodion.sql.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,7 +65,6 @@ import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.client.coprocessor.*;
 import org.apache.hadoop.hbase.coprocessor.*;
-import org.apache.hadoop.hbase.coprocessor.example.*;
 import org.apache.hadoop.hbase.ipc.*;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.*;
 import org.apache.hadoop.hbase.util.*;
@@ -1203,8 +1202,12 @@ public class HTableClient {
            if (future != null) {
               try {
                  future.get(30, TimeUnit.SECONDS);
-              } catch(TimeoutException | InterruptedException e) {
-		  logger.error("Asynchronous Thread is Cancelled, " + e);
+              } catch(TimeoutException e) {
+		  logger.error("Asynchronous Thread is Cancelled (timeout), " + e);
+                  retcode = true;
+                  future.cancel(true); // Interrupt the thread
+              } catch(InterruptedException e) {
+		  logger.error("Asynchronous Thread is Cancelled (interrupt), " + e);
                   retcode = true;
                   future.cancel(true); // Interrupt the thread
               } catch (ExecutionException ee)

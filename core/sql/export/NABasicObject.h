@@ -132,7 +132,7 @@ typedef NAMemory CollHeap ;
 // 4. For array of elements, do
 //    class C;
 //    C* c = new(anyCollHeap*) C[100];
-//    NADELETEARRAY(c,C,anyCollHeap*,100);
+//    NADELETEARRAY(c,100, C,anyCollHeap*);
 //
 //    If the array of elements are allocated from CollHeap*, it has to be
 //    deleted using NADELETEARRAY, because the new of array will always

@@ -58,17 +58,15 @@
 
 #define SQ_USE_HDFS 1
 
-#ifdef SQ_USE_HDFS
+
 
 #include "hdfs.h"
 
-#endif
+
 
 
 using namespace std;
 
-// 2GB max Lob data file size 
-#define LOB_DATA_FILE_SIZE_MAX (1 << 31)
 
 #define MAX_LOB_FILE_NAME_LEN 256
 #define MAX_HANDLE_IN_LEN 1024
@@ -114,7 +112,8 @@ Ex_Lob_Error ExLobsOper (
     Int64       transId,
     void        *blackBox,         // black box to be sent to cli
     Int64       blackBoxLen,        // length of black box
-    Int64       lobMaxSize = 2000*1024*1024,        // max size of lob.
+    Int64       lobMaxSize = 0,        // max size of lob.
+    Int64       lobMaxChunkMemSize = 0 ,//max length of intermediate mem buffer used to do i/o.
     int         bufferSize =0,
     short       replication =0,
     int         blocksize=0,
@@ -370,15 +369,17 @@ class ExLob
 
     Ex_Lob_Error initialize(char *lobFile, Ex_Lob_Mode mode, char *dir, 
                             LobsStorage storage, char *hdfsServer, Int64 hdfsPort,
-                            int bufferSize = 0, short replication =0, int blocksize=0, ExLobGlobals *lobGlobals = NULL);
+                            int bufferSize = 0, short replication =0, int blocksize=0, Int64 lobMaxSize = 0, ExLobGlobals *lobGlobals = NULL);
     Ex_Lob_Error initialize(char *lobFile);
     Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize);
-    Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, LobsSubOper subOperation, 
-                           Int64 descNumIn, Int64 &operLen);
+    Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, 
+			      LobsSubOper subOperation, 
+			      Int64 tgtOffset,Int64 &operLen, 
+			      Int64 lobMaxMemChunkLen);
     Ex_Lob_Error writeDataSimple(char *data, Int64 size, LobsSubOper subOperation, Int64 &operLen,
                                  int bufferSize = 0, short replication =0, int blocksize=0);
     Ex_Lob_Error readToMem(char *memAddr, Int64 size,  Int64 &operLen);
-    Ex_Lob_Error readToFile(char *fileName, Int64 descNum, Int64 &operLen);
+    Ex_Lob_Error readToFile(char *fileName, Int64 tgtLen,Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags);
     Ex_Lob_Error readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int64 handleInLen, Int64 &operLen);
     Ex_Lob_Error readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
     Ex_Lob_Error readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
@@ -391,14 +392,15 @@ class ExLob
     Ex_Lob_Error fetchCursor();
     Ex_Lob_Error selectCursorDesc(ExLobRequest *request);
     Ex_Lob_Error fetchCursorDesc(ExLobRequest *request);
-    Ex_Lob_Error append(char *data, Int64 size, Int64 headDescNum, Int64 &operLen);
+    Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize);
+    Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen);
     Ex_Lob_Error append(ExLobRequest *request);
-    Ex_Lob_Error update(char *data, Int64 size, Int64 headDescNum, Int64 &operLen);
+    Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen);
     Ex_Lob_Error update(ExLobRequest *request);
-    Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, int &size);
-    Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, int &size);
-    Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, int &size);
-    Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, int &size);
+    Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+    Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+    Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
+    Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
     Ex_Lob_Error statSourceFile(char *srcfile, Int64 &sourceEOF);
     Ex_Lob_Error delDesc();
     Ex_Lob_Error delDesc(ExLobRequest *request);
@@ -411,7 +413,7 @@ class ExLob
     Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
                                 Int64 handleInLen, Int64 handleOutLen, 
                                 Int64 blackBoxLen);
-    Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset);
+    Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize);
     Ex_Lob_Error readStats(char *buffer);
     Ex_Lob_Error initStats();
 
@@ -434,12 +436,13 @@ class ExLob
     Ex_Lob_Error putDesc(ExLobDesc &desc, Int64 descNum);
     Ex_Lob_Error getDesc(ExLobRequest *request);
 
-    Ex_Lob_Error writeData(Int64 offset, char *data, Int64 size, Int64 &operLen);
+    Ex_Lob_Error writeData(Int64 offset, char *data, Int32 size, Int64 &operLen);
     Ex_Lob_Error readDataToMem(char *memAddr, Int64 offset, Int64 size, Int64 &operLen);
-    Ex_Lob_Error readDataToFile(char *fileName, Int64 offset, Int64 &operLen);
-    Ex_Lob_Error readDataToLocalFile(char *fileName, Int64 offset, Int64 &operLen);
-    Ex_Lob_Error readDataToHdfsFile(char *fileName, Int64 offset, Int64 &operLen);
-    Ex_Lob_Error readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 &operLen);
+   
+    Ex_Lob_Error readDataToLocalFile(char *fileName, Int64 offset, Int64 size,Int64 &operLen,Int64 lobMaxChunkMemLen ,Int32 fileFlags);
+    Ex_Lob_Error readCursorDataToLocalFile(char *fileName,  Int64 offset, Int64 size, Int64 &writeOperLen, Int64 lobMaxChunkMemSize, Int32 fileflags);
+    Ex_Lob_Error readDataToHdfsFile(char *fileName, Int64 offset, Int64 size, Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags);
+    Ex_Lob_Error readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 size, Int64 &operLen, Int64 lobMaxChunkMemLen, Int32 fileflags);
     Ex_Lob_Error readDataFromFile(char *memAddr, Int64 len, Int64 &operLen);
 
     Ex_Lob_Error emptyDirectory();
@@ -456,13 +459,11 @@ class ExLob
     ExLobLock lobCursorLock_;
     LobsStorage storage_;
     string dir_; // lob data directory
-#ifdef SQ_USE_HDFS
     char *hdfsServer_;
     Int64 hdfsPort_;
     hdfsFS fs_;
     hdfsFile fdData_;
     int openFlags_;
-#endif
     ExLobRequest request_; 
     ExLobStats stats_;
     bool prefetchQueued_;
@@ -475,7 +476,7 @@ typedef map<string, ExLob *>::iterator lobMap_it;
 ///////////////////////////////////////////////////////////////////////////////
 // ExLobHdfsRequest
 ///////////////////////////////////////////////////////////////////////////////
-#ifdef SQ_USE_HDFS
+
 class ExLobHdfsRequest
 {
   public:
@@ -498,7 +499,7 @@ class ExLobHdfsRequest
     int size_;
     Ex_Lob_Error error_;
 };
-#endif
+
 
 class ExLobPreOpen
 {

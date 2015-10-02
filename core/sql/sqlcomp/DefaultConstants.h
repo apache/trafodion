@@ -3290,7 +3290,8 @@ enum DefaultConstants
   // size is for all rows for a particular column.
   // Size is expressed in Mbs
   LOB_MAX_SIZE,
-
+  //Max memory used to tranfer data/perform I/O to lob data file. 
+  LOB_MAX_CHUNK_MEM_SIZE,
   LOB_STORAGE_TYPE,
   LOB_STORAGE_FILE_DIR,
 
@@ -3757,6 +3758,8 @@ enum DefaultConstants
   TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,
   HBASE_RANGE_PARTITIONING_PARTIAL_COLS,
   MERGE_WITH_UNIQUE_INDEX,
+
+  USTAT_MAX_CHAR_DATASIZE_FOR_IS,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

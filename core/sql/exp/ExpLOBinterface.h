@@ -70,8 +70,14 @@ class HdfsFileInfo
 
 #define LOB_ACCESS_SUCCESS 0
 #define LOB_ACCESS_PREEMPT 1
+enum ExpLOBinterfaceInputFlags
+  {
+    TRUNCATE_TGT_FILE_ =        0x0001,
+    CREATE_TGT_FILE_   =        0x0002,
+    ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
+  };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE, Int64   lobMaxSize =0);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 
@@ -80,6 +86,7 @@ Lng32 ExpLOBinterfaceCreate(void * lobGlob,
 			    char * lobLoc,
 			    Lng32 lobType = (Lng32)Lob_HDFS_File,
 			    char * lobHdfsServer = (char *)"default",
+			    Int64 lobMaxSize = 0,
 			    Lng32 lobHdfsPort = 0,
 	                    int    bufferSize = 0,
 	                    short  replication =0,
@@ -147,8 +154,8 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 
 			    char * srcLobData = NULL, 
 			    Int64  srcLobLen  = 0,
-			    Int64 lobMaxSize = 2000*1024*1024,
-			    
+			    Int64 lobMaxSize = 0,
+			    Int64 lobMaxChunkMemSize = 0,
 			    int    bufferSize = 0,
 			    short  replication =0,
 			    int    blocksize=0
@@ -179,7 +186,9 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    short srcDescSchNameLen,
 			    char * srcDescSchName,
 			    Int64 srcDescKey, 
-			    Int64 srcDescTS);
+			    Int64 srcDescTS,
+			    Int64 lobMaxSize = 0,
+			    Int64 lobMaxChunkMemSize = 0);
 
 Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob, 
 				  char * lobHdfsServer ,
@@ -206,7 +215,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  short srcDescSchNameLen,
 				  char * srcDescSchName,
 				  Int64 srcDescKey, 
-				  Int64 srcDescTS
+				  Int64 srcDescTS,
+				  Int64 lobMaxSize = 0,
+				  Int64 lobMaxChunkMemSize = 0
 				  );
 
 Lng32 ExpLOBInterfaceDelete(void * lobGlob, 
@@ -238,7 +249,9 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
 			    Lng32 waited,
 
 			    Int64 offset, Int64 inLen, 
-			    Int64 &outLen, char * lobData);
+			    Int64 &outLen, char * lobData,
+			    Int64 lobMaxChunkMemlen,
+			    Int32 inputFlags=0);
 
 Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob, 
 				  char * lobName, 

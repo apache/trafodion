@@ -70,8 +70,6 @@ SHELL := sh
 YACC       = export BISON_PKGDATADIR=$(TOPDIR)/toolbin/bison; export M4=$(TOPDIR)/toolbin/m4; $(TOPDIR)/toolbin/bison.exe -p $(YACC_VAR_PREFIX)
 LEX        = $(TOPDIR)/toolbin/flex.exe -P$(YACC_VAR_PREFIX)
 AWK       := awk.exe
-JAVAC     := $(JAVA_HOME)/bin/javac
-JAR       := $(JAVA_HOME)/bin/jar
 
 # Build everything by default
 .DEFAULT_GOAL := buildall
@@ -96,9 +94,6 @@ LINK_LIB_DLL_ECHO_RULE = @echo "Creating export file and DLL .lib file $@";
 LINK_DLL_ECHO_RULE = @echo "Linking DLL library $@";
 BUILD_RC_ECHO_RULE = @echo "Building resource file $@";
 LINK_EXE_ECHO_RULE = @echo "Linking executable $@";
-JAVAC_ECHO_RULE = @echo "Compiling $<";
-JAR_APPEND_ECHO_RULE = @echo "Appending to jar file $(JARFILE)";
-JAR_ECHO_RULE = @echo "Creating jar file $(JARFILE)";
 LEX_ECHO_RULE = @echo "Generating C++ code from lex file $<";
 YACC_ECHO_RULE = @echo "Generating C++ code from yacc file $<";
 GENERATE_ECHO_RULE = @echo "Generating file $@";
@@ -158,7 +153,6 @@ FINAL_LIBS :=
 FINAL_DLLS :=
 FINAL_EXES :=
 FINAL_INSTALL_OBJS :=
-FINAL_JARS :=
 
 # These rules are used as part of a mechanism to compile the files
 # located in different source locations.  This template is called from
@@ -186,67 +180,6 @@ $(C_OBJ): $(1)
 $(C_OBJ) : DEP_FILE:=$(DEP_FILE)
 $(C_OBJ) : C_OBJ:=$(C_OBJ)
 $(C_OBJ) : C_INC_OVERRIDE:=$(C_INC_OVERRIDE)
-endef
-
-# The build_java_rule rules and the JAVA_BUILD_template are used for
-# compiling java classes into class files.
-compile_java_rule = $(JAVAC) ${JAVA_COMPILE_FLAGS} -d $(TARGOBJDIR)/java -classpath '$(CLASSPATH)' $<
-
-append_jar_rule = cp $(JAR_APPEND) $$(JARFILE);$(JAR) uvmf $$(JARMANIFEST) $$(JARFILE) -C $$(TARGOBJDIR)/java $$(PACKAGE)
-compile_jar_rule = $(JAR) cvmf $$(JARMANIFEST) $$(JARFILE)_temp -C $$(TARGOBJDIR)/java $$(PACKAGE) -C $$(TARGOBJDIR)/java $$(ORCPACKAGE); mv -f $$(JARFILE)_temp $$(JARFILE)
-
-build_java_rule = $(JAVAC_ECHO_RULE) \
-		HEADING="Compiling $(<) --> $(@)"; $(starting_logfile) \
-		CMD="$(compile_java_rule)"; $(capture_output)
-
-define JAVA_BUILD_template
-  _dummy := $(if $(wildcard $(TARGOBJDIR)/java),,$(shell mkdir -p $(TARGOBJDIR)/java))
-  ifneq (.,$(PACKAGE))
-    $(TARGOBJDIR)/java/$(PACKAGE)/$(basename $(notdir $1)).class: $(1)
-	$$(build_java_rule)
-  else
-    $(TARGOBJDIR)/java/$(basename $(notdir $1)).class: $(1)
-	$$(build_java_rule)
-  endif
-endef
-
-# The build_jar_rule creates the .jar file from the individual .class files.
-define JAR_BUILD_template
-  ifneq (.,$(PACKAGE))
-  JAVA_OBJS := $$(patsubst %.java,$$(TARGOBJDIR)/java/$$(PACKAGE)/%.class,\
-                 $$(JSRC) $$(SPECIAL_JSRC))
-  else
-  JAVA_OBJS := $$(patsubst %.java,$$(TARGOBJDIR)/java/%.class,\
-                 $$(JSRC) $$(SPECIAL_JSRC))
-  PACKAGE := .
-  endif
-  JARFILE := $$(RESULTDIR)/$$(JARPREFIX).jar
-  FINAL_JARS += $$(JARFILE)
-
-  # Rules for building jar files
-  ifneq (,$(JAR_APPEND))
-  $$(JARFILE): $$(JAVA_OBJS) $(JAR_APPEND) $$(JARMANIFEST)
-	$$(JAR_APPEND_ECHO_RULE) \
-	HEADING="Compiling $$(<) --> $$(@)"; $$(starting_logfile) \
-	CMD="$(append_jar_rule)"; $$(capture_output)
-  else
-  $$(JARFILE): $$(JAVA_OBJS) $$(JARMANIFEST)
-	$$(JAR_ECHO_RULE) \
-	HEADING="Compiling $$(<) --> $$(@)"; $$(starting_logfile) \
-	CMD="$(compile_jar_rule)"; $$(capture_output)
-  endif
-
-  # Rules for compiling java files
-  $$(foreach srcfile,$$(JSRC),$$(eval $$(call JAVA_BUILD_template,\
-  $$(call find_first,$$(srcfile),$$(SRCPATH)))))
-
-  # Make sure these variables are instantiated correctly.
-  $$(JARFILE): TARGOBJDIR:=$$(TARGOBJDIR)
-  $$(JARFILE): JARFILE:=$$(JARFILE)
-  $$(JARFILE): PACKAGE:=$$(PACKAGE)
-  $$(JARFILE): CLASSPATH:=$$(CLASSPATH)
-  $$(JARFILE): JAVA_OBJS := $(JAVA_OBJS)
-    $$(JARFILE): JARMANIFEST := $(JARMANIFEST)
 endef
 
 compile_c_resultobj_rule = $(CXX) $(DEBUG_FLAGS) $(SQLCLIOPT) $(ALL_INCLUDES) -o $@ -c $<
@@ -335,16 +268,16 @@ endif
 
 .PHONY: $(MAKECMDGOALS)
 
-# DLL's should be build before executables, so we are adding this dependency here.
+# DLLs should be built before executables, so we are adding this dependency here.
 # $(FINAL_EXES): $(FINAL_DLLS)
 
-# Some (soon maybe all) Java files get built through Maven
+# Java files get built through Maven
 mavenbuild:
 	set -o pipefail && cd ..; $(MAVEN) -f pom.xml package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
 
 # This is where the top-level is declared to build everything.
-buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_JARS) $(FINAL_EXES) mavenbuild
+buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES) mavenbuild
 
 clean:
 	@echo "Removing intermediate objects for $(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)"

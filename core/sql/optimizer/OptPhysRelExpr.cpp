@@ -15050,6 +15050,7 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         myNodeMap->setNodeNumber(index, popularNodeId);
         beginPos = endPos;
       }
+      myNodeMap->smooth(gpClusterInfo->numOfSMPs());
     } else if (m == n) { // 1:1 allocation strategy
       for (Lng32 index = 0; index < n; index++) {
         myNodeMap->setNodeNumber(index, regNodeMap->getNodeNumber(index));

@@ -1311,6 +1311,135 @@ NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
   return popularNodeNumber;
 } // NodeMap::getNodeNum
 
+// Smooth the node map to reassign entries with identical node Id of higher
+// frequency than the rest to some other nodes. Assume there are m total entries in the map, and 
+// n nodes in the cluster. Assume further there are s entries in the map (out of m) that refer 
+// to very few nodes.  These s entrres are the subject of smoothing operation.  We do so by
+// 1. allocate an array nodeUsageMap[] and the ith entry in it contains all indexes k in the map
+//    that points at i (i.e., nodeMap.getNodeId[k] = i)
+// 2. Find out s by frequency counting
+// 3. Find out m - s
+// 4. Find out how many nodes in each of the s entries that should be moved
+// 
+// The nodels accepting the reasssignment will be from the set of the nodes contained in the map.
+//
+// Example 1.  Assume the original node map with 6 entries as follows:
+//
+//    NodeMapIndex   0   1   2   3  4  5 
+//    NodeMapEntry   0   1   1   3  1  5
+//
+// The nodes accepting the reasssignment will be { 0, 3, 5 }
+//
+// The subset of entries referring to a few nodes with high frequency: s = { 1, 2, 4 } 
+// Since f(0)=f(3)=f(5)=1, the average frequency of nodes not in s: (1+1+1)/3 = 1.
+// We will allow one (1) assigment in s to remain in node 1 since it is the average frequency, and 
+// re-assign the rest (marked X) to different nodes via round-robin starting the 1st node in the map. 
+// The node (1) is excluded from the re-assignment. 
+//
+//    NodeMapIndex   0   1   2   3  4  5 
+//    NodeMapEntry   0   1   1   3  1  5
+//                           X      X
+//                           ^      ^
+//                           |      |
+//                          to 0   to 3
+//
+// The final smoothed node map:
+//
+//    NodeMapIndex   0   1   2   3  4  5 
+//    NodeMapEntry   0   1   0   3  3  5
+//
+NABoolean NodeMap::smooth(Lng32 numNodes) 
+{
+  NABoolean smoothed = FALSE;
+
+  typedef ClusteredBitmap* ClusteredBitmapPtr;
+
+  ClusteredBitmap** nodeUsageMap = new (heap_) ClusteredBitmapPtr[numNodes];
+
+  for (Lng32 index = 0; index < numNodes; index++) {
+     nodeUsageMap[index] = NULL;
+  }
+
+  ClusteredBitmap includedNodes(heap_);
+
+  Lng32 highestFreq = 0;
+  for (Lng32 index = 0; index < getNumEntries(); index++) {
+    Lng32 currNodeNum = getNodeNumber(index);
+
+    if ( currNodeNum != ANY_NODE ) {
+
+      if ( nodeUsageMap[currNodeNum] == NULL ) 
+         nodeUsageMap[currNodeNum] = new (heap_)ClusteredBitmap(heap_);
+
+      nodeUsageMap[currNodeNum]->insert(index);
+      includedNodes.insert(currNodeNum);
+
+      Lng32 entries = nodeUsageMap[currNodeNum]->entries();
+      if ( highestFreq < entries ) {
+         highestFreq = entries;
+      } 
+    } 
+  }
+
+  // Find how many entries wth the highest frequency, and compute the number of entries with
+  // normal frequency (normEntries) and the number of nodes that appear with normal frequency 
+  // (normalNodesCt).
+  Lng32 count = 0;
+  Lng32 normalEntries = 0;
+  Lng32 normalNodesCt = 0;
+  for (Lng32 index = 0; index < numNodes; index++) {
+      if ( !nodeUsageMap[index] ) continue;
+
+      if ( nodeUsageMap[index]->entries() == highestFreq ) {
+         count++;
+         includedNodes.subtractElement(index);
+      } else {
+         normalEntries++;
+         normalNodesCt += nodeUsageMap[index]->entries();
+      }
+  }
+
+  if ( normalEntries >= 1 && count <= 2 && count < getNumEntries() && 
+       count* highestFreq < floor(numNodes * 0.67) ) 
+  {
+     Lng32 baseFreq  = ceil(normalNodesCt / normalEntries);
+     CollIndex availableNode = 0;
+
+     for (Lng32 index = 0; index < numNodes; index++) {
+         if ( nodeUsageMap[index] && nodeUsageMap[index]->entries() == highestFreq ) {
+            // skip first baseFreq entries and reassign the rest starting at the (baseFreq+1)th entry
+            Lng32 notTouched = 0;
+            NABoolean canAssign = FALSE;
+            for (CollIndex j=0; nodeUsageMap[index]->nextUsed(j); j++ ) {
+               if ( canAssign ) {
+
+                  // round-robin to the next available node. If we exhause all the available
+                  // nodes, go back to the start
+                  if ( !includedNodes.nextUsed(availableNode) ) {
+                     availableNode=0;
+                     includedNodes.nextUsed(availableNode);
+                  } 
+     
+                  // availableNode++ is part ofhte round-robin scheme, required to
+                  // iterate over a ClusteredBitmap.
+                  setNodeNumber(j, availableNode++);             
+
+                  smoothed=TRUE;
+               } else {
+                  notTouched++;
+                  if ( notTouched >= baseFreq ) 
+                    canAssign = TRUE;  
+               }
+            }
+         }
+     }
+  }
+
+  NADELETEARRAY(nodeUsageMap, numNodes, ClusteredBitmapPtr, heap_);
+                  
+  return smoothed;
+}
+
 //<pb>
 //==============================================================================
 //  Return node number of node map entry at a specified position within the node

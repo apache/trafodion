@@ -171,3 +171,61 @@ NAString ComConvertNativeNameToTrafName (
   return convertedName;
 }
 
+// ----------------------------------------------------------------------------
+// function: ComConvertTrafNameToNativeName
+//
+// this function converts the Trafodion external table name 
+// into its native name format. Both names are in external format.
+//
+// Example:  TRAFODION."_HV_HIVE_".abc becomes HIVE.HIVE.abc
+//
+// params:
+//    catalogName - catalog name of the external table
+//    schemaName - schema name of the extenal table
+//    objectName - object name of the external table
+//
+// ----------------------------------------------------------------------------
+NAString ComConvertTrafNameToNativeName( 
+  const NAString &catalogName,
+  const NAString &schemaName,
+  const NAString &objectName)
+{
+
+  NAString tempSchemaName; 
+  ComAnsiNamePart externalAnsiSchemaName(schemaName, ComAnsiNamePart::EXTERNAL_FORMAT);
+  tempSchemaName += externalAnsiSchemaName.getInternalName();
+
+  NAString tempCatalogName; 
+
+  NASubString prefix = tempSchemaName.subString(HIVE_EXT_SCHEMA_PREFIX, 0);
+  if ( prefix.length() > 0 ) {
+     tempSchemaName.remove(0, prefix.length()); 
+     tempSchemaName.remove(tempSchemaName.length()-1, 1); // remove the trailing "_" 
+     tempCatalogName = HIVE_SYSTEM_CATALOG;
+  }  else {
+     // do not reuse prefix here because it becomes immutable after the above 
+     // subString() call. 
+     NASubString prefix2 = tempSchemaName.subString(HBASE_EXT_SCHEMA_PREFIX, 0);
+     if ( prefix2.length() > 0 ) {
+       tempSchemaName.remove(0, prefix2.length());; 
+       tempSchemaName.remove(tempSchemaName.length()-1, 1); // remove the trailing "_" 
+       tempCatalogName = HBASE_SYSTEM_CATALOG;
+     } 
+  } 
+
+  NAString convertedName;
+
+  ComAnsiNamePart internalAnsiCatalogName(tempCatalogName, ComAnsiNamePart::INTERNAL_FORMAT);
+  convertedName += internalAnsiCatalogName.getExternalName();
+  convertedName += ".";
+
+  ComAnsiNamePart internalAnsiSchemaName(tempSchemaName, ComAnsiNamePart::INTERNAL_FORMAT);
+  convertedName += internalAnsiSchemaName.getExternalName();
+  convertedName += ".";
+
+  convertedName += objectName;
+
+  return convertedName;
+}
+
+

@@ -21,13 +21,13 @@
 #
 # Makefile for packaging client products
 
-include $(MY_SQROOT)/macros.gmk #top level
+include ../macros.gmk #top level
 
 RM      = /bin/rm
 ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= $(MY_SQROOT)/../trafodion_clients-$(TRAFODION_VER).tgz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER).tgz
 else
-  CLIENT_TAR	?= $(MY_SQROOT)/../trafodion_clients-$(TRAFODION_VER)-debug.tgz
+  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER)-debug.tgz
 endif
 
 

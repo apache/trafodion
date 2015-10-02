@@ -19,7 +19,7 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 
 import com.google.protobuf.ServiceException;
 
@@ -69,7 +69,7 @@ import org.apache.hadoop.hbase.regionserver.BloomType;
 //import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
 import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 import org.apache.hadoop.hbase.client.Durability;
-import org.trafodion.sql.HBaseAccess.HTableClient;
+import org.trafodion.sql.HTableClient;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.client.HTable;
