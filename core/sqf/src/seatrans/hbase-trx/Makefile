@@ -36,7 +36,7 @@ all: build_all
 
 jdk_1_7_cdh:
 	$(MAKE) build_chk_cdh
-	set -o pipefail && $(MAVEN) -f pom.xml.cdh package -DskipTests | tee -a build_trx.log
+	set -o pipefail && $(MAVEN) -f pom.xml.cdh package install -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_CDH_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 

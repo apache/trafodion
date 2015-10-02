@@ -19,26 +19,39 @@
 //
 // @@@ END COPYRIGHT @@@
 
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 
 import java.util.Vector;
 
-public class RowToInsert extends Vector<RowToInsert.ColToInsert> {
+public class RowsToInsert  extends Vector<RowsToInsert.RowInfo> {
 
-	public class ColToInsert {
-		public byte[] qualName;
-		public byte[] colValue;
-	}
+    public class RowInfo {
+	public byte[] rowId;
+	public Vector<RowsToInsert.ColToInsert> columns;
+    }
 
-	private static final long serialVersionUID = 5066470006717527862L;
+    public class ColToInsert {
+	public byte[] qualName;
+	public byte[] colValue;
+    }
 
-	public void addColumn(byte[] name, byte[] value) {
-		ColToInsert col = new ColToInsert();
-		col.qualName = name;
-		col.colValue = value;
-		add(col);
-	}
+    private static final long serialVersionUID = 5066470006717527863L;
+
+    public void addRowId(byte[] rowId) {
+	RowInfo rowInfo = new RowInfo();
+	rowInfo.rowId = rowId;
+	rowInfo.columns = new Vector<RowsToInsert.ColToInsert>();
+	rowInfo.columns.clear();
+	add(rowInfo);
+    }
+
+    public void addColumn(byte[] name, byte[] value) {
+	ColToInsert col = new ColToInsert();
+	col.qualName = name;
+	col.colValue = value;
+	if (size() > 0)
+	    get(size()-1).columns.add(col);
+	//	RowInfo.columns.add(col);
+    }
 
 }
-
-

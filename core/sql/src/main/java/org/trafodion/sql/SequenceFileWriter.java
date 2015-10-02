@@ -22,7 +22,7 @@
 /**
  * 
  */
-package org.trafodion.sql.HBaseAccess;
+package org.trafodion.sql;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -391,7 +391,7 @@ public class SequenceFileWriter {
   
   public boolean createSnapshot( String tableName, String snapshotName)
       throws MasterNotRunningException, IOException, SnapshotCreationException, 
-      InterruptedException, ZooKeeperConnectionException, ServiceException
+             InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
   {
     try 
     {
@@ -409,7 +409,7 @@ public class SequenceFileWriter {
   }
   public boolean verifySnapshot( String tableName, String snapshotName)
       throws MasterNotRunningException, IOException, SnapshotCreationException, 
-      InterruptedException, ZooKeeperConnectionException, ServiceException
+             InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
   {
     try 
     {
@@ -437,7 +437,7 @@ public class SequenceFileWriter {
  
   public boolean deleteSnapshot( String snapshotName)
       throws MasterNotRunningException, IOException, SnapshotCreationException, 
-      InterruptedException, ZooKeeperConnectionException, ServiceException
+             InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
   {
     try 
     {

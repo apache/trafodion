@@ -71,7 +71,7 @@ SequenceFileReader::~SequenceFileReader()
 //////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/SequenceFileReader";
+  static char className[]="org/trafodion/sql/SequenceFileReader";
   SFR_RetCode rc; 
 
   if (javaMethodsInitialized_)
@@ -489,7 +489,7 @@ SequenceFileWriter::~SequenceFileWriter()
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/SequenceFileWriter";
+  static char className[]="org/trafodion/sql/SequenceFileWriter";
   SFW_RetCode rc;
   
   if (javaMethodsInitialized_)

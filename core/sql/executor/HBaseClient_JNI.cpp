@@ -69,7 +69,7 @@ ByteArrayList::~ByteArrayList()
 //////////////////////////////////////////////////////////////////////////////
 BAL_RetCode ByteArrayList::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/ByteArrayList";
+  static char className[]="org/trafodion/sql/ByteArrayList";
   BAL_RetCode rc;
   
   if (isInitialized())
@@ -405,7 +405,7 @@ HBaseClient_JNI::~HBaseClient_JNI()
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/HBaseClient";
+  static char className[]="org/trafodion/sql/HBaseClient";
   HBC_RetCode rc;
   
   if (isInitialized())
@@ -432,9 +432,9 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CLEANUP    ].jm_name      = "cleanup";
     JavaMethods_[JM_CLEANUP    ].jm_signature = "()Z";
     JavaMethods_[JM_GET_HTC    ].jm_name      = "getHTableClient";
-    JavaMethods_[JM_GET_HTC    ].jm_signature = "(JLjava/lang/String;Z)Lorg/trafodion/sql/HBaseAccess/HTableClient;";
+    JavaMethods_[JM_GET_HTC    ].jm_signature = "(JLjava/lang/String;Z)Lorg/trafodion/sql/HTableClient;";
     JavaMethods_[JM_REL_HTC    ].jm_name      = "releaseHTableClient";
-    JavaMethods_[JM_REL_HTC    ].jm_signature = "(Lorg/trafodion/sql/HBaseAccess/HTableClient;)V";
+    JavaMethods_[JM_REL_HTC    ].jm_signature = "(Lorg/trafodion/sql/HTableClient;)V";
     JavaMethods_[JM_CREATE     ].jm_name      = "create";
     JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;Z)Z";
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
@@ -448,7 +448,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
     JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_LIST_ALL       ].jm_name      = "listAll";
-    JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/HBaseAccess/ByteArrayList;";
+    JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/ByteArrayList;";
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
@@ -460,11 +460,11 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_FLUSHALL   ].jm_name      = "flushAllTables";
     JavaMethods_[JM_FLUSHALL   ].jm_signature = "()Z";
     JavaMethods_[JM_GET_HBLC   ].jm_name      = "getHBulkLoadClient";
-    JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;";
+    JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBulkLoadClient;";
     JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
     JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
     JavaMethods_[JM_REL_HBLC   ].jm_name      = "releaseHBulkLoadClient";
-    JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;)V";
+    JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBulkLoadClient;)V";
     JavaMethods_[JM_GET_CAC_FRC].jm_name      = "getBlockCacheFraction";
     JavaMethods_[JM_GET_CAC_FRC].jm_signature = "()F";
     JavaMethods_[JM_GET_LATEST_SNP].jm_name      = "getLatestSnapshot";
@@ -1884,7 +1884,7 @@ static const char* const hblcErrorEnumStr[] = ///need to update content
 };
 HBLC_RetCode HBulkLoadClient_JNI::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/HBulkLoadClient";
+  static char className[]="org/trafodion/sql/HBulkLoadClient";
   HBLC_RetCode rc;
 
   if (isInitialized())
@@ -3545,7 +3545,7 @@ HTableClient_JNI::~HTableClient_JNI()
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/HTableClient";
+  static char className[]="org/trafodion/sql/HTableClient";
   HTC_RetCode rc;
   
   if (isInitialized())
@@ -3578,7 +3578,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_GET_HTNAME ].jm_name      = "getTableName";
     JavaMethods_[JM_GET_HTNAME ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_GETENDKEYS ].jm_name      = "getEndKeys";
-    JavaMethods_[JM_GETENDKEYS ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/ByteArrayList;";
+    JavaMethods_[JM_GETENDKEYS ].jm_signature = "()Lorg/trafodion/sql/ByteArrayList;";
     JavaMethods_[JM_FLUSHT     ].jm_name      = "flush";
     JavaMethods_[JM_FLUSHT     ].jm_signature = "()Z";
     JavaMethods_[JM_SET_WB_SIZE ].jm_name      = "setWriteBufferSize";
@@ -3590,7 +3590,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_COMPLETE_PUT ].jm_name      = "completeAsyncOperation";
     JavaMethods_[JM_COMPLETE_PUT ].jm_signature = "(I[Z)Z";
     JavaMethods_[JM_GETBEGINKEYS ].jm_name      = "getStartKeys";
-    JavaMethods_[JM_GETBEGINKEYS ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/ByteArrayList;";
+    JavaMethods_[JM_GETBEGINKEYS ].jm_signature = "()Lorg/trafodion/sql/ByteArrayList;";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -4277,7 +4277,7 @@ HiveClient_JNI::~HiveClient_JNI()
 //////////////////////////////////////////////////////////////////////////////
 HVC_RetCode HiveClient_JNI::init()
 {
-  static char className[]="org/trafodion/sql/HBaseAccess/HiveClient";
+  static char className[]="org/trafodion/sql/HiveClient";
   HVC_RetCode rc;
   
   if (isInitialized())
@@ -4752,7 +4752,7 @@ void HiveClient_JNI::logIt(const char* str)
 extern "C" {
 #endif
 
-JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResultInfo
+JNIEXPORT jint JNICALL Java_org_trafodion_sql_HTableClient_setResultInfo
   (JNIEnv *jenv, jobject jobj, jlong jniObject, 
 	jintArray jKvValLen, jintArray jKvValOffset, 
         jintArray jKvQualLen, jintArray jKvQualOffset,
@@ -4771,7 +4771,7 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResult
    return 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setJavaObject
+JNIEXPORT jint JNICALL Java_org_trafodion_sql_HTableClient_setJavaObject
   (JNIEnv *jenv, jobject jobj, jlong jniObject)
 {
    HTableClient_JNI *htc = (HTableClient_JNI *)jniObject;
@@ -4779,7 +4779,7 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setJavaOb
    return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_cleanup
+JNIEXPORT void JNICALL Java_org_trafodion_sql_HTableClient_cleanup
   (JNIEnv *jenv, jobject jobj, jlong jniObject)
 {
    HTableClient_JNI *htc = (HTableClient_JNI *)jniObject;

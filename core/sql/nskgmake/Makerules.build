@@ -47,11 +47,6 @@ LSRC           :=
 YSRC           :=
 YINC           :=
 LEX_PREFIX     := yy
-JSRC           :=
-SPECIAL_JSRC   :=
-JARPREFIX      :=
-JARFILE        :=
-JAR_APPEND     :=
 CFLAGS         :=
 CXXFLAGS       :=
 LDFLAGS        :=
@@ -242,15 +237,7 @@ ifdef INSTALL_OBJ
   $(call find_first,$(srcfile),$(SRCPATH)))))
 endif
 
-# These are the rules dealing with Java.
-JAVA_OBJS :=
-
-ifdef JSRC
-  $(eval $(call JAR_BUILD_template))
-endif
-
 # These dependencies will rebuild all of the objects in a directory if the
 # makefile for that directory changes.
 # $(OBJ_PATHS): $(OBJDIR)/Makefile
 # $(INSTALL_OBJ): $(OBJDIR)/Makefile
-# $(JAVA_OBJS): $(OBJDIR)/Makefile
