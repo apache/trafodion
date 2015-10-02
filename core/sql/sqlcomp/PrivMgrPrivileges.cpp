@@ -5390,7 +5390,8 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
 //    <catalogName> "<schema_name>"."<object_name>", 
 //    object_type,
 //    object_owner, -- granteeID
-//    (select auth_db_name from AUTHS where auth_id = object_owner), --granteeName
+//    coalesce((select auth_db_name from AUTHS where auth_id = object_owner),
+//             'DB__ROOT') --granteeName
 //    USER_GRANTEE_LIT, -- "U"
 //    SYSTEM_AUTH_ID,  -- system grantor ID (-2)
 //    SYSTEM_AUTH_NAME, -- grantorName (_SYSTEM)
@@ -5413,6 +5414,10 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
 //    end as grantableBitmap
 //  from OBJECTS 
 //  where object_type in ('VI','BT','LB','UR','SG')
+//
+// The "coalesce" for the granteeName above is in case the auth_id is
+// invalid (that is, does not appear in the AUTHS table). If we don't
+// know who the auth_id is, we'll put DB__ROOT, the super user, there.
 //   
 // The ComDiags area is set up with unexpected errors
 // ----------------------------------------------------------------------------
@@ -5482,7 +5487,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   sprintf(buf, "insert into %s select distinct object_uid, "
           "trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', "
           "object_type, object_owner, "
-          "(select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, "
+          "coalesce((select auth_db_name from %s where auth_id = o.object_owner),'DB__ROOT') as auth_db_name, "
           "'%s', %d, '%s', '%s', %s, %s from %s o " 
           "where o.object_type in ('VI','BT','LB','UR','SG')",
           tableName_.c_str(),
