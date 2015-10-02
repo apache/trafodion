@@ -4908,7 +4908,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName)
      {
        if (CmpCommon::diags()->contains(-1389))
          {
-           CmpCommon::diags()->rewind(diagsMark);
+           CmpCommon::diags()->rewind(diagsMark, TRUE);
            objectUID_ = 0;
          }
        else
@@ -6848,7 +6848,7 @@ Int64 NATable::lookupObjectUid()
     objectUID_ = ::lookupObjectUid(qualName, objectType_);
 
     if (CmpCommon::diags()->contains(-1389))
-      CmpCommon::diags()->rewind(diagsMark);
+      CmpCommon::diags()->rewind(diagsMark, TRUE);
 
     return objectUID_.get_value();
 }
