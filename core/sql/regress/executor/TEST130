@@ -39,9 +39,9 @@ obey TEST130(clnup);
 
 log LOG130 clear;
 obey TEST130(setup);
-obey TEST130(dml);
-obey TEST130(clnup);
-exit;
+--obey TEST130(dml);
+--obey TEST130(clnup);
+--exit;
 
 
 ?section clnup
@@ -52,7 +52,8 @@ drop table t130lob4 cascade;
 
 
 ?section setup
-
+create schema trafodion.lob;
+set schema trafodion.lob;
 create table t130lob1 (c1 blob);
 create table t130lob2 (c1 int not null, c2 blob , primary key (c1));
 create table t130lob3 (c1 int not null,
@@ -76,7 +77,7 @@ select * from t130lob2;
 
 select lobtostring(c2,10) from t130lob2;
 select lobtostring(c2,2) from t130lob2;
-select c1,lobtostring(c2) from t130lob2;
+select c1,lobtostring(c2,100) from t130lob2;
 
 
 obey TEST130(dml_join);
@@ -112,12 +113,12 @@ obey TEST130(dml_update_append);
 ?section dml_update_append
 
 update t130lob2 set c2=stringtolob('appended row21a',append) where c1=1;
-select c1, lobtostring(c2) from t130lob2;
-select c1, lobtostring(c2) from t130lob2 where c1=1;
+select c1, lobtostring(c2,100) from t130lob2;
+select c1, lobtostring(c2,100) from t130lob2 where c1=1;
 
 
 update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);
-select c1, lobtostring(c2,50) from t130lob2;
+select c1, lobtostring(c2,60) from t130lob2;
 
 obey TEST130(dml_delete);
 
@@ -128,12 +129,300 @@ select c1, lobtostring(c2,30), lobtostring(c3,30)  from t130lob3;
 
 delete from t130lob2 ;
 select * from t130lob2;
-
 log;
 obey TEST130(clnup);
 
 
 
+sh echo "Test for file input and extract";
+-- Test for local input
+
+--cleanup -- comment the following lines out if you want to debug this test and save intermediate files.
+obey TEST130(lob_local_cleanup);
+?section lob_local_cleanup
+log;
+drop table tlob130txt1; 
+drop table tlob130bin1;
+sh rm TMP130;
+sh rm tlob130txt1;
+sh rm tlob130_deep.jpg;
+sh rm tlob130_anoush.jpg;
+
+
+obey TEST130(lob_local_file);
+?section lob_local_file
+log LOG130;
+--setup
+sh echo "Test for file input and extract";
+create table tlob130txt1 (c1 int not null, c2 clob, primary key (c1));
+create table tlob130bin1 (c1 int not null, c2 blob, primary key (c1));
+sh cp $scriptsdir/executor/deep.jpg $rundir/executor/;
+sh cp $scriptsdir/executor/anoush.jpg $rundir/executor/;
+sh cp $scriptsdir/executor/lob_input_* $rundir/executor/;
+
+-- inserts
+-- first line
+insert into tlob130txt1 values (1, filetolob('lob_input_a1.txt'));
+
+-- second line
+insert into tlob130txt1 values (2, filetolob('lob_input_b1.txt'));
+
+-- third line
+insert into tlob130txt1 values (3, filetolob('lob_input_c1.txt'));
+
+select lobtostring(c2, 40 ) from tlob130txt1;
+
+--updates
+
+--should update with full poem
+update tlob130txt1 set c2=filetolob('lob_input_d1.txt', append) where c1 = 3;
+
+select lobtostring(c2, 200 ) from tlob130txt1;
+
+-- should see wrong text in the last few lines
+update tlob130txt1 set c2=filetolob('lob_input_e1.txt') where c1 =3 ;
+
+select lobtostring(c2, 200 ) from tlob130txt1;
+
+--delete
+
+-- go back to having just the first  line. 
+delete from tlob130txt1 where c1 =2;
+delete from tlob130txt1 where c1 =3;
+
+--test extract 
+
+log;
+log TMP130 clear;
+select c2 from tlob130txt1;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_txt1.txt');/g" >> t130_extract_command;
+
+obey t130_extract_command;
+
+--binary input/update
+
+insert into tlob130bin1 values (1 , filetolob('deep.jpg'));
+--extract // should have a viewable picture file
+
+log;
+log TMP130 clear;
+select c2 from tlob130bin1;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep.jpg');/g" >> t130_extract_command;
+obey t130_extract_command;
+
+update tlob130bin1 set c2=filetolob('anoush.jpg') ;
+
+--extract into a different file // should have a different viewable picture.
+
+log;
+log TMP130 clear ;
+select c2 from tlob130bin1;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush.jpg');/g" >> t130_extract_command;
+
+obey t130_extract_command;
+
+
+
+
+-- Test for hdfs input
+--cleanup -- comment the following lines out if you want to debug this test and save intermediate files.
+obey TEST130(lob_hdfs_cleanup);
+?section lob_hdfs_cleanup
+log;
+drop table tlob130txt2; 
+drop table tlob130bin2;
+sh rm TMP130;
+sh rm tlob130txt2;
+sh swhadoop fs -rm /mydata/tlob130_deep.jpg;
+sh swhadoop fs -rm /mydata/tlob130_anoush.jpg;
+
+
+obey TEST130(lob_hdfs_file);
+?section lob_hdfs_file
+log LOG130;
+create table tlob130txt2 (c1 int not null, c2 clob, primary key (c1));
+create table tlob130bin2 (c1 int not null, c2 blob, primary key (c1));
+
+sh swhadoop fs -copyFromLocal lob_input_a1.txt /mydata/lob_input_a1.txt;
+sh swhadoop fs -copyFromLocal lob_input_b1.txt /mydata/lob_input_b1.txt;
+sh swhadoop fs -copyFromLocal lob_input_c1.txt /mydata/lob_input_c1.txt;
+sh swhadoop fs -copyFromLocal lob_input_d1.txt /mydata/lob_input_d1.txt;
+sh swhadoop fs -copyFromLocal lob_input_e1.txt /mydata/lob_input_e1.txt;
+sh swhadoop fs -copyFromLocal deep.jpg /mydata/deep.jpg;
+sh swhadoop fs -copyFromLocal anoush.jpg /mydata/anoush.jpg;
+
+
+
+insert into tlob130txt2 values (1, filetolob('hdfs:///mydata/lob_input_a1.txt'));
+
+-- second line
+insert into tlob130txt2 values (2, filetolob('hdfs:///mydata/lob_input_b1.txt'));
+
+-- third line
+insert into tlob130txt2 values (3, filetolob('hdfs:///mydata/lob_input_c1.txt'));
+select lobtostring(c2, 40 ) from tlob130txt2;
+
+--updates
+
+--should update with full poem
+update tlob130txt2 set c2=filetolob('hdfs:///mydata/lob_input_d1.txt', append) where c1 = 3;
+select lobtostring(c2, 200 ) from tlob130txt2;
+
+-- should see wrong text in the last few lines
+update tlob130txt2 set c2=filetolob('hdfs:///mydata/lob_input_e1.txt') where c1 =3 ;
+select lobtostring(c2, 200 ) from tlob130txt2;
+
+--delete
+
+ 
+-- go back to having just the first  line. 
+delete from tlob130txt2 where c1 =2;
+delete from tlob130txt2 where c1 =3;
+-- test extract 
+
+log;
+log TMP130 clear;
+select c2 from tlob130txt2;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_txt2.txt');/g" >> t130_extract_command;
+
+obey t130_extract_command;
+
+--binary input/update
+
+insert into tlob130bin2 values (1 , filetolob('deep.jpg'));
+--extract // should have a viewable picture file
+
+log;
+log TMP130 clear ;
+select c2 from tlob130bin2;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_deep.jpg');/g" >> t130_extract_command;
+obey t130_extract_command;
+
+update tlob130bin2 set c2=filetolob('anoush.jpg') ;
+
+--extract into a different file // should have a different viewable picture.
+
+log;
+log TMP130 clear;
+select c2 from tlob130bin1;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_anoush.jpg');/g" >> t130_extract_command;
+
+obey t130_extract_command;
+
+
+
+
+------------------------------------------------------------------------------
+obey TEST130(lob_misc_cleanup);
+?section lob_misc_cleanup
+log;
+drop table tlob130txt3;
+drop table tlob130bin3;
+drop table tlob130bt;
+
+
+obey TEST130(lob_miscfile_test);
+
+?section lob_miscfile_test
+log LOG130;
+-- 2 clob columns
+create table tlob130txt3 (c1 int not null, c2 int, c3 clob, c4 clob, primary key (c1));
+insert into tlob130txt3 values (1, 1,filetolob('lob_input_a1.txt'), filetolob('lob_input_b1.txt'));
+insert into tlob130txt3 values (2, 2,filetolob('lob_input_c1.txt'), filetolob('lob_input_d1.txt'));
+select lobtostring(c3,100), lobtostring(c4,100)from tlob130txt3;
+
+-- 2 blob columns
+create table tlob130bin3 (c1 int not null, c2 int, c3 blob, c4 blob, primary key (c1));
+insert into tlob130bin3 values (1, 1, filetolob('deep.jpg'), filetolob('anoush.jpg'));
+
+log;
+log TMP130 clear;
+select c3 from tlob130bin3;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep2.jpg');/g" >> t130_extract_command;
+obey t130_extract_command;
+
+log;
+log TMP130 clear;
+select c4 from tlob130bin3;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/mydata\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
+obey t130_extract_command;
+
+-- combination blob and clob columns
+create table tlob130bt (c1 int not null, c2 int, c3 blob, c4 clob, primary key (c1));
+insert into tlob130bt values (1,1, filetolob('lob_input_a1.txt'), filetolob('anoush.jpg'));
+
+select lobtostring(c3,40) from tlob130bt;
+
+log;
+log TMP130 clear;
+select c4 from tlob130bt;
+log;
+
+log LOG130;
+sh rm t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',truncate);/g" >> t130_extract_command;
+obey t130_extract_command;
+
+obey TEST130(lob_general_cleanup);
+-- cleanup
+?section lob_general_cleanup
+log;
+sh rm t130_*;
+sh swhadoop fs -rm /mydata/tlob130_*
+sh rm lobinput_*;
+sh rm deep.jpg;
+sh rm anoush.jpg;
+drop table tlob130txt1; 
+drop table tlob130bin1;
+sh rm TMP130;
+sh rm tlob130txt1;
+sh rm tlob130_deep.jpg;
+sh rm tlob130_anoush.jpg;
+drop table tlob130txt3;
+drop table tlob130bin3;
+drop table tlob130bt;
+drop table tlob130txt2;
+drop table tlob130bin2; 
+sh rm TMP130;
+sh rm tlob130txt2;
+
+drop schema trafodion.lob;
+
+exit;
 
 
 

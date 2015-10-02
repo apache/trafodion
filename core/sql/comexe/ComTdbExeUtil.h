@@ -2738,6 +2738,10 @@ public:
   void setErrorIfNotExists(NABoolean v)
   {(v ? flags_ |= ERROR_IF_NOT_EXISTS : flags_ &= ~ERROR_IF_NOT_EXISTS); };
   NABoolean errorIfNotExists() { return (flags_ & ERROR_IF_NOT_EXISTS) != 0; };
+
+  void setErrorIfExists(NABoolean v)
+  {(v ? flags_ |= ERROR_IF_EXISTS : flags_ &= ~ERROR_IF_EXISTS); };
+  NABoolean errorIfExists() { return (flags_ & ERROR_IF_EXISTS) != 0; };
   
   void setTruncateExisting(NABoolean v)
   {(v ? flags_ |= TRUNCATE_EXISTING : flags_ &= ~TRUNCATE_EXISTING); };
@@ -2755,7 +2759,9 @@ private:
     WITH_CREATE        = 0x0004,
     RETRIEVE_LENGTH    =0x0008,
     ERROR_IF_NOT_EXISTS =0x0010,
-    TRUNCATE_EXISTING = 0x0020
+    ERROR_IF_EXISTS     =0x0020,
+    TRUNCATE_EXISTING = 0x0040
+    
   };
 
   NABasicPtr handle_;                                      // 00-07

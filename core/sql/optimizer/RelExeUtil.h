@@ -1865,7 +1865,7 @@ public:
   };
   enum ExtractFileActionType
   {
-    ERROR_IF_NOT_EXISTS =1, TRUNCATE_EXISTING };
+    ERROR_IF_NOT_EXISTS =1, ERROR_IF_EXISTS, TRUNCATE_EXISTING };
   
   
  ExeUtilLobExtract(ItemExpr * handle, 
@@ -1889,7 +1889,7 @@ public:
     intParam_(intParam),
     intParam2_(intParam2),
     handleInStringFormat_(TRUE),
-    withCreate_(FALSE)
+    withCreate_(TRUE)
     {
       if (stringParam)
 	stringParam_ = stringParam;

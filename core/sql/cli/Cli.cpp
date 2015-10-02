@@ -10292,7 +10292,8 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     LOBcliQueryType qType,
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
- /*IN*/     char* *lobLocList
+ /*IN*/     char* *lobLocList,
+ /*IN*/    Int64 lobMaxSize
  )
 {
   Lng32 cliRC = 0;
@@ -10376,7 +10377,7 @@ Lng32 SQLCLI_LOBddlInterface
 	    Lng32 rc = ExpLOBoper::createLOB
 	      (NULL, currContext.exHeap(),
 	       lobLocList[i],
-	       objectUID, lobNumList[i]);
+	       objectUID, lobNumList[i], lobMaxSize);
 	    
 	    if (rc)
 	      {

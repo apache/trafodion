@@ -1,3 +1,4 @@
 mvn.out
 target/*
 /target/
+*.log

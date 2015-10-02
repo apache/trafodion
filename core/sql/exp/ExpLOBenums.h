@@ -91,6 +91,7 @@ typedef enum {
   LOB_OPER_CONTINUE,
   LOB_INVALID_ERROR_VAL,
   LOB_MAX_LIMIT_ERROR = 560,
+  LOB_TARGET_FILE_EXISTS_ERROR,
   LOB_MAX_ERROR_NUM     // keep this as the last element in enum list.
 } Ex_Lob_Error;
 
@@ -157,6 +158,7 @@ static const char * const lobErrorEnumStr[] =
   "LOB_OPER_CONTINUE",
   "LOB_INVALID_ERROR_VAL", 
   "LOB_MAX_LIMIT_ERROR", //560
+  "LOB_TGT_FILE_EXISTS_ERROR",
   "LOB_MAX_ERROR_NUM"     // keep this as the last element in enum list.
 };
 
@@ -271,4 +273,11 @@ typedef enum {
    Lob_Cursor_Simple
 } LobsCursorType;
 
+typedef enum { 
+  Lob_Append_Or_Error =0,
+  Lob_Truncate_Or_Error,
+  Lob_Truncate_Or_Create,
+  Lob_Error_Or_Create
+     
+} LobTgtFileFlags;
 #endif

@@ -497,7 +497,7 @@ if [ $sq_up '==' 1 ]; then
 elif ( [ $total_procs_result '==' 0 ] ); then
     if [ $json_output '==' 0 ]; then
         echo
-        echo "The SQ environment is down."]
+        echo "The SQ environment is down."
     fi
     exit -1;
 else

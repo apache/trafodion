@@ -109,11 +109,6 @@ function do_prompt {
 }
 
 function verify_dir {
-    echo $1 | /bin/grep "^/.*" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo -e "\n** error!  path name must begin with a '/'."
-        return 1
-    fi
     if ! [ -d $1 ]; then 
 	mkdir -p $1
 	if [[ $? != 0 ]]; then
