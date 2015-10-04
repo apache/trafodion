@@ -53,9 +53,9 @@ C1
 C1           C2
 -----------  ----------------------------------------------------------------------------------------------------
 
-          1  LOBH00000200010584124707425497952319694856963269331201918212310490052925408017"TRAFODION"."LOB"     
-          2  LOBH00000200010584124707425497952319694856963269891596318212310490058662308017"TRAFODION"."LOB"     
-          3  LOBH00000200010584124707425497952319694856963270523057718212310490064989391017"TRAFODION"."LOB"     
+          1  LOBH00000200010693674787682417371619694856982590420626418212310683263747991017"TRAFODION"."LOB"     
+          2  LOBH00000200010693674787682417371619694856982591098641718212310683270590988017"TRAFODION"."LOB"     
+          3  LOBH00000200010693674787682417371619694856982591683997818212310683276625879017"TRAFODION"."LOB"     
 
 --- 3 row(s) selected.
 >>
@@ -333,7 +333,7 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_txt1.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010584124707425501262519694856963301033871118212310490370005806017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
+>>extract lobtofile(LOB 'LOBH00000200010693674787682420601819694856982621059127818212310683570262309017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
 Success. Targetfile :tlob130_txt1.txt  Length : 19
 
 --- SQL operation complete.
@@ -349,7 +349,7 @@ Success. Targetfile :tlob130_txt1.txt  Length : 19
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010584124707425501330119694856963306762394118212310490427404712017"TRAFODION"."LOB"     ' , 'tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010693674787682420661119694856982626512107918212310683624877213017"TRAFODION"."LOB"     ' , 'tlob130_deep.jpg');
 Success. Targetfile :tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -365,7 +365,7 @@ Success. Targetfile :tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010584124707425501330119694856963306762394118212310490427404712017"TRAFODION"."LOB"     ' , 'tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010693674787682420661119694856982626512107918212310683624877213017"TRAFODION"."LOB"     ' , 'tlob130_anoush.jpg');
 Success. Targetfile :tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -384,13 +384,13 @@ Success. Targetfile :tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
 >>
->>sh swhadoop fs -copyFromLocal lob_input_a1.txt /lobs/lob_input_a1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_b1.txt /lobs/lob_input_b1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_c1.txt /lobs/lob_input_c1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_d1.txt /lobs/lob_input_d1.txt;
->>sh swhadoop fs -copyFromLocal lob_input_e1.txt /lobs/lob_input_e1.txt;
->>sh swhadoop fs -copyFromLocal deep.jpg /lobs/deep.jpg;
->>sh swhadoop fs -copyFromLocal anoush.jpg /lobs/anoush.jpg;
+>>sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /lobs/lob_input_a1.txt;
+>>sh regrhadoop.ksh fs -copyFromLocal lob_input_b1.txt /lobs/lob_input_b1.txt;
+>>sh regrhadoop.ksh fs -copyFromLocal lob_input_c1.txt /lobs/lob_input_c1.txt;
+>>sh regrhadoop.ksh fs -copyFromLocal lob_input_d1.txt /lobs/lob_input_d1.txt;
+>>sh regrhadoop.ksh fs -copyFromLocal lob_input_e1.txt /lobs/lob_input_e1.txt;
+>>sh regrhadoop.ksh fs -copyFromLocal deep.jpg /lobs/deep.jpg;
+>>sh regrhadoop.ksh fs -copyFromLocal anoush.jpg /lobs/anoush.jpg;
 >>sh sleep(20);
 >>
 >>
@@ -484,7 +484,7 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010584124707425502305319694856963313616474018212310490495877435017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_txt2.txt');
+>>extract lobtofile(LOB 'LOBH00000200010693674787682421596119694856982633506711718212310683694732509017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_txt2.txt');
 Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 
 --- SQL operation complete.
@@ -500,7 +500,7 @@ Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010584124707425502364319694856963319390054018212310490553614828017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010693674787682421663719694856982639038579718212310683750106446017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_deep.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -516,7 +516,7 @@ Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010584124707425501330119694856963306762394118212310490427404712017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010693674787682420661119694856982626512107918212310683624877213017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -566,7 +566,7 @@ And the dish ran away with the spoon.
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200020584124707425504003519694856963328040860218212310490640085774017"TRAFODION"."LOB"     ' , 'tlob130_deep2.jpg');
+>>extract lobtofile(LOB 'LOBH00000200020693674787682423271119694856982647703683318212310683836458197017"TRAFODION"."LOB"     ' , 'tlob130_deep2.jpg');
 Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -575,7 +575,7 @@ Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200030584124707425504003519694856963328593490518212310490645692223017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
+>>extract lobtofile(LOB 'LOBH00000200030693674787682423271119694856982648309186318212310683842238864017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_anoush2.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -602,7 +602,7 @@ Hey diddle diddle,
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',truncate);/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200030584124707425504360119694856963332388257518212310490683247656017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',truncate);
+>>extract lobtofile(LOB 'LOBH00000200030693674787682423658119694856982652241489318212310683882224693017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',truncate);
 Success. Targetfile :tlob130_anoush3.jpg  Length : 230150
 
 --- SQL operation complete.
