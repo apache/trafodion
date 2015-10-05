@@ -46,7 +46,7 @@ build_chk:
 	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_REST_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_REST_TARNAME); fi
 
 clean:
-	$(MAVEN) clean
+	-$(MAVEN) clean |grep ERROR
 	$(RM) build_rest.log
 	$(RM) $(VFILE)
 	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_REST_TARNAME)
