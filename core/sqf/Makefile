@@ -44,6 +44,11 @@ MISC = win misc_sec
 SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools
 
 .PHONY: $(SQ_COMPONENTS)
+
+buildinfo:
+	@echo "Building $(TRAFODION_VER_PROD) Version $(TRAFODION_VER) $(SQ_BUILD_TYPE)"
+	@echo ""
+ 
 all: genverhdr setupdir $(SQ_COMPONENTS) 
 
 win: make_sqevlog seabed
@@ -235,7 +240,7 @@ PV_MAJOR ?=  $(shell grep TRAFODION_VER_MAJOR=  $(SQVFILE) | cut -f2 -d=)
 PV_MINOR ?=  $(shell grep TRAFODION_VER_MINOR=  $(SQVFILE) | cut -f2 -d=)
 PV_UPDATE ?= $(shell grep TRAFODION_VER_UPDATE= $(SQVFILE) | cut -f2 -d=)
 
-genverhdr:
+genverhdr: buildinfo
 	cd build-scripts && ./genverhdr.ksh -major "${PV_MAJOR}" \
                                         -minor "${PV_MINOR}" \
                                         -update "${PV_UPDATE}" \
