@@ -64,8 +64,16 @@
     <property name="tar.file" value="trafci.tar" />
     <property name="installer.zipfile" value="trafci.zip" />
     <property name="vproc.version" value="TrafCI_Build_${bldId}"/>
+    <property environment="my_env"/>
+
+    <target name="ProductVersion">
+       <echo>
+         ${my_env.TRAFODION_VER_PROD}
+         ${my_env.PRODUCT_COPYRIGHT_HEADER}
+       </echo>
+    </target>
  
-    <target name="clean">
+    <target name="clean" depends="ProductVersion">
        <delete dir="${temp.dir}"/>
        <delete dir="${platform-install.dir}"/>
     </target>
@@ -104,7 +112,7 @@
 
     </target>
 
-    <target name="build" depends="compile"> 
+    <target name="build" depends="compile, ProductVersion"> 
       <copy todir="${Properties.dest}">
          <fileset dir="${Properties.src}"/>
       </copy>
@@ -132,7 +140,7 @@
 
     <target name="deploy" depends="build">
        <copy todir="${deploy.dir}/bin">
-           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh"/>
+           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, trafci.cmd-tmpl"/>
       </copy>
       <copy todir="${deploy.dir}/lib">
            <fileset dir="${lib.dir}" excludes="**/*.contrib*, *.db, **/*.db"/>
@@ -149,6 +157,14 @@
                <attribute name="Main-Class" value="Installer" />
             </manifest>
       </jar>
+
+     <copy file="${utils.dir}/trafci.cmd-tmpl"
+           tofile="${utils.dir}/trafci.cmd"
+           overwrite="true">
+     </copy>
+
+     <replace file="${utils.dir}/trafci.cmd" token="@prodver@" value="${my_env.TRAFODION_VER_PROD}"/>
+     <replace file="${utils.dir}/trafci.cmd" token="@copyrighthdr@" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
 
       <copy file="${utils.dir}/README" todir="${deploy.dir}" overwrite="true" />
 
