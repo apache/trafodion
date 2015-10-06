@@ -767,7 +767,7 @@ Lng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
       if (colQVal > maxVal)
 	maxVal = colQVal ;
     }
-  return colQVal;
+  return maxVal;
 }
 
 // LCOV_EXCL_STOP
