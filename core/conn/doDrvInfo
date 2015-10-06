@@ -28,7 +28,7 @@ BUILDID=$3
 if [ -f $SRC ]; then
 	# SRC exists - make a copy
 	TMP=/tmp/di$$
-	sed "s:@@@:$BUILDID:" $TMPL > $TMP
+	sed "s:@@@@:$BUILDID:" $TMPL > $TMP
 	cmp $SRC $TMP >& /dev/null
 	if [ $? != 0 ]; then
 		# new SRC does not match old SRC - overwrite it
@@ -37,5 +37,5 @@ if [ -f $SRC ]; then
 	rm -f $TMP
 else
 	# SRC does not exist - build the SRC
-	sed "s:@@@:$BUILDID:" $TMPL > $SRC
+	sed "s:@@@@:$BUILDID:" $TMPL > $SRC
 fi

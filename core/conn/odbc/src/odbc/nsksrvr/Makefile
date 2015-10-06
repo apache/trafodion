@@ -37,7 +37,6 @@ include ../macros.gmk       # odbc level
 #       compression.cpp
 #       TransportBase.cpp
 #       FileSystemDrvr.cpp
-#       FileSystemDrvr_ps.cpp
 #       FileSystemSrvr.cpp
 #       TCPIPSystemSrvr.cpp
 #       Listener.cpp
@@ -48,9 +47,7 @@ include ../macros.gmk       # odbc level
 #       QSInterfaceDrvr
 #       QSMarshalingDrvr
 #    from Common/linux
-#       FileSystemDrvr_ps.cpp
 #       TCPIPSystemSrvr_ps.cpp
-#       Listener_ps.cpp
 #    from nsksrvr/Interface:
 #       Listener_srvr.cpp
 #       marshalingsrvr_srvr.cpp
@@ -74,7 +71,6 @@ COMMON_OBJS  = $(OUTDIR)/utils.o \
         $(OUTDIR)/compression.o \
         $(OUTDIR)/TransportBase.o \
         $(OUTDIR)/FileSystemDrvr.o \
-        $(OUTDIR)/FileSystemDrvr_ps.o \
         $(OUTDIR)/FileSystemSrvr.o \
         $(OUTDIR)/TCPIPSystemSrvr.o \
         $(OUTDIR)/TCPIPSystemSrvr_ps.o \

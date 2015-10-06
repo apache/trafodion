@@ -20,7 +20,6 @@
 // @@@ END COPYRIGHT @@@
 #ifndef SMXOEVL_H
 #define SMXOEVL_H
-#include "zspic"
 #include "zmxoc.h"
 
 typedef struct EVENTDATA_TABLE
