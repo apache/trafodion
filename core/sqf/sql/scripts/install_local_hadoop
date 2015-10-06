@@ -844,6 +844,9 @@ read YN
 
 if [ "\$YN" = "y" -o "\$YN" = "Y" ]; then
   rm -rf $MY_SW_ROOT
+  # also remove the convenience scripts
+  cds
+  rm sw*
   echo "Removed $MY_SW_ROOT"
 else
   echo "Exiting without removing anything..."
