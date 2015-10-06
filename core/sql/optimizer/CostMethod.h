@@ -2061,7 +2061,6 @@ protected:
                                                const PlanWorkSpace* pws,
 					       Lng32& countOfStreams) = 0;
 
-  // Common functions to cost Hbase operations.
   NABoolean allKeyColumnsHaveHistogramStatistics(
     const IndexDescHistograms & histograms,
     const IndexDesc * CIDesc

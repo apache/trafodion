@@ -3728,7 +3728,12 @@ CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
 
   CMPASSERT(NOT histograms.isEmpty());
 
-  if ( thereAreSingleSubsetPreds )
+  // Apply those key predicates that reference key columns
+  // before the first missing key to the histograms:
+  const SelectivityHint * selHint = CIDesc->getPrimaryTableDesc()->getSelectivityHint();
+  const CardinalityHint * cardHint = CIDesc->getPrimaryTableDesc()->getCardinalityHint();
+
+  if ( thereAreSingleSubsetPreds || selHint || cardHint )
   {
     // ---------------------------------------------------------
     // There are some key predicates, so apply them
@@ -3736,22 +3741,15 @@ CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
     // ---------------------------------------------------------
 
     // Get all the key preds for the key columns up to the first
-    // key column with no key preds
+    // key column with no key preds (if any)
     ValueIdSet singleSubsetPrefixPredicates;
-    NABoolean conflict = FALSE;
     for ( CollIndex i = 0; i <= singleSubsetPrefixOrder; i++ )
     {
-
       const ValueIdSet *predsPtr = keyPredsByCol[i];
       CMPASSERT( predsPtr != NULL ); // it must contain preds
       singleSubsetPrefixPredicates.insert( *predsPtr );
 
     } // for every key col in the sing. subset prefix
-
-    // Apply those key predicates that reference key columns
-    // before the first missing key to the histograms:
-    const SelectivityHint * selHint = CIDesc->getPrimaryTableDesc()->getSelectivityHint();
-    const CardinalityHint * cardHint = CIDesc->getPrimaryTableDesc()->getCardinalityHint();
 
     RelExpr * dummyExpr = new (STMTHEAP) RelExpr(ITM_FIRST_ITEM_OP,
 				                 NULL,
@@ -3784,7 +3782,6 @@ void CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation(
   NABoolean probesInOrder
   ) const
 {
-  const CostScalar indexLevels = CIDesc->getIndexLevels();
   const CostScalar & kbPerBlock = CIDesc->getBlockSizeInKb();
   const CostScalar rowsPerBlock =
     ((kbPerBlock * csOneKiloBytes) /
@@ -4079,6 +4076,11 @@ CostMethodHbaseDelete::scmComputeOperatorCostInternal(RelExpr* op,
 	activePartitions,
 	CIDesc
 	);
+      if (numRowsToScan < numRowsToDelete) // sanity test
+      {
+        // we will scan at least as many rows as we delete
+        numRowsToScan = numRowsToDelete;
+      }
     }
   }
 
@@ -4145,9 +4147,9 @@ CostMethodHbaseDelete::scmComputeOperatorCostInternal(RelExpr* op,
   CostScalar outputRowSize = delOp->getGroupAttr()->getRecordLength();
   CostScalar outputRowSizeFactor = scmRowSizeFactor(outputRowSize);
 
-  tuplesProcessed = tuplesProcessed * rowSizeFactor;
-  tuplesSent = tuplesSent * rowSizeFactor;
-  tuplesProduced = tuplesProduced * outputRowSizeFactor;
+  tuplesProcessed *= rowSizeFactor;
+  tuplesSent *= rowSizeFactor;
+  tuplesProduced *= outputRowSizeFactor;
 
 
   // ---------------------------------------------------------------------
