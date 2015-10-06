@@ -39,7 +39,7 @@ package-all: package
 package-src:
 	@echo "Packaging source for $(TRAFODION_VER_PROD) $(TRAFODION_VER)"
 	mkdir -p distribution
-	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}/ HEAD | gzip > distribution/$(SRCDIR)-${TRAFODION_VER}.tgz
+	git archive --format tar --prefix $(SRCDIR)-${TRAFODION_VER}-incubating/ HEAD | gzip > distribution/$(SRCDIR)-${TRAFODION_VER}-incubating-src.tar.gz
 
 eclipse: 
 	@echo "Making eclipse projects for Trafodion components"
