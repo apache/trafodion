@@ -749,6 +749,27 @@ Lng32 NAColumnArray::getOffset(Lng32 position) const
 
   return result;
 }
+
+Lng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
+{
+  NAColumn *column;
+  char * colQualPtr;
+  Lng32 colQualLen;
+  Int64 colQVal;
+  Lng32 maxVal = 0;
+
+  for (CollIndex i = 0; i < entries(); i++)
+    {
+      column = (*this)[i];
+      colQualPtr = (char*)column->getHbaseColQual().data();
+      colQualLen = column->getHbaseColQual().length();
+      colQVal = str_atoi(colQualPtr, colQualLen);
+      if (colQVal > maxVal)
+	maxVal = colQVal ;
+    }
+  return maxVal;
+}
+
 // LCOV_EXCL_STOP
 
 //method to reset an NAColumn object after a statement

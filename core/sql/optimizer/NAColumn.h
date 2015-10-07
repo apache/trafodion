@@ -627,6 +627,12 @@ public:
   // get total storage size (aggregated over each element)
   Int32 getTotalStorageSize() const;
 
+  // For Trafodion tables column qualifier is an unsigned 
+  // numeric > 0. This method is used during alter table add
+  // column to find the maximum value currently in use. Columns
+  // are deleted during alter table drop column.
+  Lng32 getMaxTrafHbaseColQualifier() const;
+
 private:
 
   ARRAY(NABoolean) ascending_; // ignore for non-key or hash key columns

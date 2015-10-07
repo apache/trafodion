@@ -4596,6 +4596,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   char * col_name = new(STMTHEAP) char[colName.length() + 1];
   strcpy(col_name, (char*)colName.data());
 
+  Lng32 maxColQual = nacolArr.getMaxTrafHbaseColQualifier();
+
   NAString quotedHeading;
   if (NOT heading.isNull())
     {
@@ -4609,7 +4611,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
     }
 
   Int64 objUID = naTable->objectUid().castToInt64();
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%d', '%s', '%s', %Ld )",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%u', '%s', '%s', %Ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               objUID,
               col_name,
@@ -4630,7 +4632,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
               (quotedDefVal.isNull() ? "" : quotedDefVal.data()),
               (quotedHeading.isNull() ? "" : quotedHeading.data()),
               trafColFam.data(),
-              naTable->getColumnCount()+1,
+              maxColQual+1,
               COM_UNKNOWN_PARAM_DIRECTION_LIT,
               "N",
               colFlags);

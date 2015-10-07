@@ -405,9 +405,6 @@ public class HTableClient {
 
           if (cacheBlocks == true) {
               scan.setCacheBlocks(true);
-              // Disable block cache for full table scan
-              if (startRow == null && stopRow == null)
-                  scan.setCacheBlocks(false);
           }
 	  else
               scan.setCacheBlocks(false);
