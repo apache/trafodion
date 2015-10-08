@@ -275,6 +275,7 @@
             <HBASE_TRXDIR>${env.HBASE_TRXDIR}</HBASE_TRXDIR>
             <SQ_MBTYPE>${env.SQ_MBTYPE}</SQ_MBTYPE>
             <MY_SQROOT>${env.MY_SQROOT}</MY_SQROOT>
+            <TRAFODION_VER>${env.TRAFODION_VER}</TRAFODION_VER>
             <MPI_TMPDIR>${env.MPI_TMPDIR}</MPI_TMPDIR>
             <LD_PRELOAD>${env.LD_PRELOAD}</LD_PRELOAD>
             <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}</LD_LIBRARY_PATH>
