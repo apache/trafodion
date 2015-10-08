@@ -37,7 +37,7 @@
  *
  ***************************************************************************** */
 
-// This enum contains defaults used in SQLARK.
+// This enum contains defaults used in Trafodion.
 // To add a default, include it in this enum and in DefaultDefaults of
 // sqlcomp/NADefaults.cpp.
 //
@@ -54,7 +54,6 @@
 // ***************************************************************************
 // ***************************************************************************
 // NOTE: DO NOT make this enum non-contiguous.
-// Add new defaults after the last entry in this enum.
 // Valid attributes must begin at zero and there must be no holes.
 // The algorithm to read defaults from the defaults table requires this.
 // You must always add a default default in NADefaults.cpp, otherwise
@@ -3760,6 +3759,13 @@ enum DefaultConstants
   MERGE_WITH_UNIQUE_INDEX,
 
   USTAT_MAX_CHAR_DATASIZE_FOR_IS,
+
+  // If the next two are 'ON' we use the HBase costing code; if they
+  // are 'OFF' we use a stub cost of 1 for Updates and Deletes to
+  // Trafodion or HBase tables instead. We'll remove these once the
+  // costing code has broader exposure.
+  HBASE_DELETE_COSTING,
+  HBASE_UPDATE_COSTING,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

@@ -1750,6 +1750,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  DDkwd__(HBASE_DATA_BLOCK_ENCODING_OPTION,		             ""),
 
+ // If set to 'OFF' we get a stub cost of 1 for delete operations.
+ // We can remove this once the delete costing code has broader
+ // exposure.
+ DDkwd__(HBASE_DELETE_COSTING,		             "ON"),
+
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
  DDui___(HBASE_INDEX_LEVEL,                          "0"),
@@ -1780,6 +1785,13 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
   DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
+
+  // If set to 'OFF' we get a stub cost of 1 for update operations.
+  // We can remove this once the delete costing code has broader
+  // exposure. This is 'OFF' at the moment because the update code
+  // is only partially written.
+  DDkwd__(HBASE_UPDATE_COSTING,		             "OFF"),
+
   DDkwd__(HBASE_UPDEL_CURSOR_OPT,		"ON"),
   DDui___(HBASE_USE_FAKED_REGIONS,		"0"),
   DD_____(HBASE_ZOOKEEPER_PORT,                 ""),

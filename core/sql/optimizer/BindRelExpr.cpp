@@ -11046,6 +11046,15 @@ RelExpr *MergeDelete::bindNode(BindWA *bindWA)
         bindWA->setErrStatus();
         return this;
       }
+      if (CmpCommon::getDefault(COMP_BOOL_175) == DF_OFF)
+      {
+        // MERGE DELETE + INSERT is buggy, so disallow it unless CQD is on. In
+        // particular, the optimizer sometimes fails to produce a plan in phase 1.
+        // JIRA TRAFODION-1509 covers completing the MERGE DELETE + INSERT feature.
+	*CmpCommon::diags() << DgSqlCode(-3241)
+			    << DgString0(" MERGE DELETE not allowed with INSERT.");
+
+      }
 
       Tuple * tuple = new (bindWA->wHeap()) Tuple(insertValues());
       Insert * ins = new (bindWA->wHeap())

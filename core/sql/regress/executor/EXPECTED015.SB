@@ -1113,7 +1113,7 @@ update t015t3 set (b,c) = 10,20;
 +>  when matched then delete
 +>  when not matched then insert values (1,2,3);
 
-*** ERROR[3241] This MERGE statement is not supported. Reason:  Non-unique ON clause not allowed with INSERT.
+*** ERROR[3241] This MERGE statement is not supported. Reason:  MERGE DELETE not allowed with INSERT.
 
 *** ERROR[8822] The statement was not prepared.
 
