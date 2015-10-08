@@ -28,19 +28,32 @@
 
 #######################
 # Build Dependencies
+#
+#  This file needs to be copied to ~/.trafodion and updated to override
+#    build tool locations
+#  .trafodion is sourced in when running $MY_SQROOT/sqenvcom.sh
+#    sqenvcom.sh is sourced in by $MY_SQROOT/sqenv.sh
+#    sqenv.sh is sourced in by: 
+#      $MY_SQROOT/../../env.sh or
+#      $MY_SQROOT/sqenvd.sh (debug build) or
+#      $MY_SQROOT/sqenvr.sh (release build)
+#
+#  sqenvcom.sh sets up the environment in preparation for building and
+#    running Trafodion.
+########################
 
 # Standard tools expected to be installed and found in PATH
 # Change to explicit path as needed
 ANT=ant
+
 AR=ar
 FLEX=flex
 CXX=g++
 
 # Non-standard or newer version tools
-TOOLSDIR="/opt/home/tools"   # convenient to put them all in the same place
+TOOLSDIR="/opt/home/tools" # convenient to put dependent tools in the same place
 
 BISON="${TOOLSDIR}/bison_3_linux/bin/bison"
-MAVEN="${TOOLSDIR}/apache-maven-3.0.5/bin/mvn"
 LLVM="${TOOLSDIR}/dest-llvm-3.2"
 UDIS86="${TOOLSDIR}/udis86-1.7.2"
 ICU="${TOOLSDIR}/icu4.4"
@@ -48,10 +61,14 @@ MPICH_ROOT="$TOOLSDIR/dest-mpich-3.0.4"
 ZOOKEEPER_DIR="$TOOLSDIR/zookeeper-3.4.5"
 THRIFT_LIB_DIR="$TOOLSDIR/thrift-0.9.0/lib"
 THRIFT_INC_DIR="$TOOLSDIR/thrift-0.9.0/include"
-PROTOBUFS="/usr"
-QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
-# Explicitly unset QT_TOOLKIT here if Qt is not installed and you don't want to build the SqlCompilerDebugger
-# unset QT_TOOLKIT
-LOG4CXX_DIR="$TOOLSDIR/apache-log4cxx-0.10.0"
 
-# HBASE*, HIVE*, HADOOP* locations may be overridden here - see sqf/sqenvcom.sh
+# Explicitly set QT_TOOLKIT here if Qt is installed and you want to build the SqlCompilerDebugger
+# QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
+
+# HBASE*, HIVE*, HADOOP* locations may be overridden here
+# uncomment the following lines to describe where your Hadoop locations exist.
+# This is needed if you are building with an existing installation
+#HADOOP_PREFIX=/usr/hadoop-2.5.2
+#HBASE_HOME=/usr/hbase-0.98.6-hadoop2
+#HIVE_HOME=/usr/apache-hive-0.13.1-bin
+

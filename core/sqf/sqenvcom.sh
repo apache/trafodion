@@ -95,17 +95,20 @@ cpucnt=$(grep processor /proc/cpuinfo | wc -l)
 #     no number means unlimited, and will swamp the system
 export MAKEFLAGS="-j$cpucnt"
 
+# For now set up the TOOLSDIR, it may be overwritten later when the
+# .trafodion configuration file is loaded.
 if [[ -n "$CLUSTERNAME" ]]; then
-  export MY_ROOT=/opt/hp
-  export TOOLSDIR=${TOOLSDIR:-/home/tools}
+  if [ -z "$TOOLSDIR" ]; then
+    export TOOLSDIR=${TOOLSDIR:-/home/tools}
+  fi
   export MY_UDR_ROOT=/home/udr
 else
-  export MY_ROOT=/opt/home
-  export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
+  if [ -z "$TOOLSDIR" ]; then
+    export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
+  fi
   export MY_UDR_ROOT=$PWD
 fi
 
-export MY_MPI_ROOT=$MY_ROOT
 
 # Use JAVA_HOME if set, else look for installed openjdk, finally toolsdir
 REQ_JDK_VER="1.7.0_67"
@@ -267,6 +270,7 @@ elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
   # ----------------------------------------------------------------
 
   # native library directories and include directories
+  # Trafodion needs native libs and include file for C++ code to build
   export HADOOP_LIB_DIR=$TOOLSDIR/hadoop-2.4.0/lib/native
   export HADOOP_INC_DIR=$TOOLSDIR/hadoop-2.4.0/include
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
@@ -537,10 +541,9 @@ EOF
     APACHE_HBASE_HOME=$HBASE_HOME
     export HBASE_CNF_DIR=$HBASE_HOME/conf
   fi
-  if [ -f $HIVE_HOME/conf/hive-site.xml ]; then
-    APACHE_HIVE_HOME=$HIVE_HOME
-    export HIVE_CNF_DIR=$HIVE_HOME/conf
-  fi
+
+  APACHE_HIVE_HOME=$HIVE_HOME
+  export HIVE_CNF_DIR=$HIVE_HOME/conf
 
   for cp in `echo $CLASSPATH | sed 's/:/ /g'`
   do
@@ -619,6 +622,7 @@ EOF
                             $APACHE_HBASE_HOME/lib/hbase-client-*.jar
                             $APACHE_HBASE_HOME/lib/hbase-server-*.jar
                             $APACHE_HBASE_HOME/lib/hbase-protocol-*.jar
+                            $APACHE_HBASE_HOME/lib/hbase-examples-*.jar
                             $APACHE_HBASE_HOME/lib/htrace-core-*.jar
                             $APACHE_HBASE_HOME/lib/zookeeper-*.jar
                             $APACHE_HBASE_HOME/lib/protobuf-*.jar
@@ -795,13 +799,9 @@ fi
 
 # Non-standard or newer version tools
 export BISON="${TOOLSDIR}/bison_3_linux/bin/bison"     # Need 1.3 version or later
-
-
 export LLVM="${TOOLSDIR}/dest-llvm-3.2"
 export UDIS86="${TOOLSDIR}/udis86-1.7.2"
 export ICU="${TOOLSDIR}/icu4.4"
-export QT_TOOLKIT="${TOOLSDIR}/Qt-4.8.5-64"
-
 
 #######################
 # Developer Local over-rides  (see sqf/LocalSettingsTemplate.sh)
@@ -810,6 +810,7 @@ if [[ -r ~/.trafodion ]]; then
   [[ $SQ_VERBOSE == 1 ]] && echo "Sourcing local settings file ~/.trafodion"
   source ~/.trafodion
 fi
+
 # PROTOBUFS may include local over-rides
 export PROTOBUFS_LIB=$PROTOBUFS/lib
 export PROTOBUFS_INC=$PROTOBUFS/include

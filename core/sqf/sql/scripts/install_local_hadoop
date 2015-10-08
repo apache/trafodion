@@ -521,8 +521,16 @@ fi
 # Specify mirrors and versions of needed components
 #####################################################
 
-HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
+# See JIRA TRAFODION-1512 that will eliminate this check
+if [ -d $MY_LOCAL_SW_DIST ]; then
+  
+  HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+  HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
+else
+  HADOOP_MIRROR_URL=http://download.nextag.com/apache/hadoop/common/hadoop-2.5.2
+  HADOOP_TAR=hadoop-2.5.2.tar.gz
+fi
+
 if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.6.0.2.2.0.0-2041.tar.gz
 fi
@@ -541,7 +549,6 @@ HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-0.13.1
 HIVE_PREFIX=apache-hive-0.13.1-bin
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
-#HBASE_MIRROR_URL=http://psg.mtu.edu/pub/apache/hbase/hbase-0.98.3
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
 
 HBASE_TAR=hbase-0.98.6-cdh5.3.0.tar.gz
@@ -565,8 +572,9 @@ fi
 
 # check for missing tpcds_kit.zip file
 install_hadoop_regr_test_env --check
+INSTALL_TPCDS=0
 if [ $? -ne 0 ]; then
-  exit 1
+  INSTALL_TPCDS=1
 fi
 
 if [ -d "$MY_SW_ROOT" ]; then
@@ -925,8 +933,10 @@ else
 
   if [ -f $MY_LOCAL_SW_DIST/${HADOOP_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HADOOP_TAR} .
+    echo "Downloaded Hadoop tar file: $MY_LOCAL_SW_DIST/${HADOOP_TAR}" 
   else
     curl -O ${HADOOP_MIRROR_URL}/${HADOOP_TAR}
+    echo "Downloaded Hadoop tar file: ${HADOOP_MIRROR_URL}/${HADOOP_TAR}"
   fi
 
   echo "Unpacking Hadoop tar file..."
@@ -1143,8 +1153,10 @@ else
 
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
+    echo "Downloaded MySql tar file: $MY_LOCAL_SW_DIST/${MYSQL_TAR}"
   else
     curl ${MYSQL_MIRROR_URL}/${MYSQL_TAR} -o ${MYSQL_TAR}
+    echo "Downloaded MySql tar file: ${MYSQL_MIRROR_URL}/${MYSQL_TAR}"
   fi
 
   echo "Unpacking MySQL tar file ${MYSQL_TAR} ..."
@@ -1220,8 +1232,10 @@ else
 
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} .
+    echo "Downloaded MySql JDBC tar file: $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   else
     curl -O ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}
+    echo "Downloaded MySql JDBC tar file: ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}"
   fi
 
   echo "Unpacking MySQL JDBC tar file ${MYSQL_JDBC_TAR} ..."
@@ -1241,8 +1255,10 @@ else
 
   if [ -f $MY_LOCAL_SW_DIST/${HIVE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HIVE_TAR} .
+    echo "Downloaded Hive tar file: $MY_LOCAL_SW_DIST/${HIVE_TAR}"
   else
     curl -O ${HIVE_MIRROR_URL}/${HIVE_TAR}
+    echo "Downloaded Hive tar file: ${HIVE_MIRROR_URL}/${HIVE_TAR}"
   fi
 
   echo "Unpacking Hive tar file ${HIVE_TAR} ..."
@@ -1367,8 +1383,10 @@ else
 
   if [ -f $MY_LOCAL_SW_DIST/${HBASE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HBASE_TAR} .
+    echo "Downloaded HBase tar file: $MY_LOCAL_SW_DIST/${HBASE_TAR}"
   else
     curl -O ${HBASE_MIRROR_URL}/${HBASE_TAR}
+    echo "Downloaded HBase tar file: ${HBASE_MIRROR_URL}/${HBASE_TAR}"
   fi
 
   echo "Unpacking HBase tar file ${HBASE_TAR} ..."
@@ -1496,18 +1514,20 @@ fi
 
 cd $MY_SW_ROOT
 
-if [ -d tpcds/tools ]; then
-  echo "TPC-DS files already exist, skipping TPC-DS setup"
-else
-  install_hadoop_regr_test_env \
-      --unpackDir=$MY_SW_ROOT/tpcds \
-      --dataDir=${MY_DATA_DIR}/tpcds \
-      --logFile=$MY_LOG_FILE \
-      --hdfsCmd=${MY_SW_SCRIPTS_DIR}/swhdfs \
-      --hiveCmd=${MY_SW_SCRIPTS_DIR}/swhive
-  if [ $? -ne 0 ]; then
-    echo "Error installing TPC-DS and ORC files, exiting..."
-    exit 1
+if [ $INSTALL_TPCDS -eq 1 ]; then
+  if [ -d tpcds/tools ]; then
+    echo "TPC-DS files already exist, skipping TPC-DS setup"
+  else
+    install_hadoop_regr_test_env \
+        --unpackDir=$MY_SW_ROOT/tpcds \
+        --dataDir=${MY_DATA_DIR}/tpcds \
+        --logFile=$MY_LOG_FILE \
+        --hdfsCmd=${MY_SW_SCRIPTS_DIR}/swhdfs \
+        --hiveCmd=${MY_SW_SCRIPTS_DIR}/swhive
+    if [ $? -ne 0 ]; then
+      echo "Error installing TPC-DS and ORC files, exiting..."
+      exit 1
+    fi
   fi
 fi
 # end of TPC-DS setup
