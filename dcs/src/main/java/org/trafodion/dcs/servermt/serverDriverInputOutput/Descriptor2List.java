@@ -42,119 +42,103 @@ import org.apache.commons.logging.LogFactory;
 
 public class Descriptor2List {
     private static  final Log LOG = LogFactory.getLog(Descriptor2List.class);
-    private int length;
-    private long paramLength;
-    private long nullLength;
-    private long noNullLength;
-    private int numberParams;
+    private long varLength;
+    private int descLength;
+    private int descCount;
     private Descriptor2[] buffer;
     private boolean oldFormat;
-    private int lengthOldFormat;        //for Catalogs Api we need to convert Descriptor2 to Old Format
-    
+
     public Descriptor2List(){
-        length = 0;
-        paramLength = 0;
-        numberParams = 0; 
+        varLength = 0;
+        descLength = 0;
+        descCount = 0;
         buffer = null;
         oldFormat = false;
-        lengthOldFormat = 0;
     }
-    public Descriptor2List(int numberParams, boolean oldFormat){
+    public Descriptor2List(int descCount, boolean oldFormat){
+        this.varLength = 0;
+        this.descLength = 0;
+        this.descCount = descCount;
         this.oldFormat = oldFormat;
-        lengthOldFormat = ServerConstants.INT_FIELD_SIZE; //old SQLItemDescList
-        this.length = 3 * ServerConstants.INT_FIELD_SIZE;
-        this.paramLength = 0;
-        this.nullLength = 0;        //length of null buffer. every description needs short 
-        this.noNullLength = 0;        //length of nonull buffer. 
-        this.numberParams = numberParams; 
-        buffer = new Descriptor2[numberParams];
+        buffer = new Descriptor2[descCount];
     }
     public Descriptor2List(Descriptor2List dl){
+        descLength = dl.descLength;
+        varLength = dl.varLength;
+        descCount = dl.descCount;
         oldFormat = dl.oldFormat;
-        lengthOldFormat = dl.lengthOldFormat;
-        length = dl.length;
-        paramLength = dl.paramLength;
-        nullLength = dl.nullLength;
-        noNullLength = dl.noNullLength;
-        numberParams = dl.numberParams;
-        buffer = new Descriptor2[numberParams];
-        for (int i = 0; i < numberParams; i++)
+        buffer = new Descriptor2[descCount];
+        for (int i = 0; i < descCount; i++)
             buffer[i] = dl.buffer[i];
     }
-    public void addDescriptor(int param, Descriptor2 dsc){
+    public void addDescriptor(int descNumber, Descriptor2 dsc){
+
         if(LOG.isDebugEnabled())
-            LOG.debug("addDescriptor param :" + param + " numberParams :" + numberParams);
-        length += dsc.lengthOfData();
-        if (dsc.getNullInfo() == 1){        //nullable
-            dsc.setNullValue((int)nullLength);
-            nullLength += 2;
-        }
-        else {
-            dsc.setNullValue(-1);            //nonullable
-        }
-        dsc = getMemoryAllocInfo(dsc, noNullLength);
-        noNullLength += dsc.getMemAlignOffset();
-        noNullLength = ((noNullLength + 2 - 1) >> 1) << 1;
-        noNullLength += ServerConstants.SHORT_FIELD_SIZE;
-        dsc.setNoNullValue((int)noNullLength);
-        buffer[param - 1] = dsc;
-        
-        noNullLength += dsc.getAllocSize();
-        if (numberParams == param){
-            Descriptor2 tmpdsc = null;
-            long tmpNoNullLength = 0;
-            
-            nullLength = ((nullLength + 8 - 1) >> 3) << 3;
-            noNullLength = ((noNullLength + 8 - 1) >> 3) << 3;
-            paramLength = nullLength + noNullLength;
-            if(LOG.isDebugEnabled()){
-                LOG.debug("nullLength :" + nullLength);
-                LOG.debug("noNullLength :" + noNullLength);
-                LOG.debug("maxLen :" + paramLength);
-            }
-            for (int i = 0; i < numberParams; i++) {
-                tmpdsc = buffer[i];
-                tmpNoNullLength = tmpdsc.getNoNullValue();
-                tmpdsc.setNoNullValue((int)(nullLength + tmpNoNullLength));
-                buffer[i] = tmpdsc;
-                if(LOG.isDebugEnabled()){
-                    LOG.debug("param :" + (i+1));
-                    LOG.debug("noNullValue :" + tmpdsc.getNoNullValue());
-                    LOG.debug("nullValue :" + tmpdsc.getNullValue());
-                    LOG.debug("maxLen :" + tmpdsc.getMaxLen());
+            LOG.debug("addDescriptor descNumber :" + descNumber + " descCount :" + descCount);
+        buffer[descNumber - 1] = dsc;
+
+        if (descCount == descNumber){
+            Descriptor2 desc = null;
+            if (oldFormat == false)
+                descLength = 3 * ServerConstants.INT_FIELD_SIZE;
+            else
+                descLength = ServerConstants.INT_FIELD_SIZE;
+            varLength = 0;
+
+            for (int i = 0; i < descCount; i++) {
+                desc = buffer[i];
+                descLength += desc.lengthOfData();
+
+                if (oldFormat == false){
+                    if (desc.getNullInfo() == 1){        //nullable
+                        varLength = ((varLength + 2 - 1) >> 1) << 1;
+                        desc.setNullValue((int)varLength);
+                        varLength += 2;
+                    }
+                    else {
+                        desc.setNullValue(-1);            //nonullable
+                    }
+                    desc = setVarLength(desc, varLength);
+                    varLength = desc.getVarLength();
+                } else {
+                    desc = setVarLength(desc, varLength);
+                    varLength = desc.getVarLength();
                 }
+                if(LOG.isDebugEnabled()){
+                   LOG.debug("--------desc :" + (i+1));
+                   LOG.debug("varLength :" + varLength);
+                   LOG.debug("noNullValue :" + desc.getNoNullValue());
+                   LOG.debug("nullValue :" + desc.getNullValue());
+                   LOG.debug("maxLen :" + desc.getMaxLen());
+                }
+                buffer[i] = desc;
             }
         }
     }
     public void insertIntoByteBuffer(ByteBuffer bbBuf) throws UnsupportedEncodingException {
         if (oldFormat == false){
-            if(LOG.isDebugEnabled())
-                LOG.debug("length :" + length + " paramLength :" + paramLength + " numberParams :" + numberParams);
-            bbBuf.putInt(length);
-            if (length > 0){
-                bbBuf.putInt((int)paramLength);
-                bbBuf.putInt(numberParams);
-                for (int i = 0; i < numberParams; i++) {
+            bbBuf.putInt(descLength);
+            if (descLength > 0){
+                bbBuf.putInt((int)varLength);          // param length
+                bbBuf.putInt(descCount);                // param count
+                for (int i = 0; i < descCount; i++) {
                     buffer[i].insertIntoByteBuffer(bbBuf);
                 }
             }
          }
         else {
             if(LOG.isDebugEnabled())
-                 LOG.debug("numberParams :" + numberParams);
-            bbBuf.putInt(numberParams);
-            if (numberParams > 0){
-                for (int i = 0; i < numberParams; i++) {
+                 LOG.debug("descCount :" + descCount);
+            bbBuf.putInt(descCount);
+            if (descCount > 0){
+                for (int i = 0; i < descCount; i++) {
                     buffer[i].insertIntoByteBuffer(bbBuf);
                 }
             }
         }
     }
     public int lengthOfData() {
-        if (oldFormat == false)
-            return length;        
-        else
-            return lengthOldFormat;
+        return descLength;
     }
     public void setOldFormat(boolean oldFormat){
         this.oldFormat = oldFormat;
@@ -162,100 +146,105 @@ public class Descriptor2List {
     public boolean getOldFormat(){
         return oldFormat;
     }
-    public void  setParamLength(long paramLength){
-        this.paramLength = paramLength;
+    public void  setDescLength(int descLength){
+        this.descLength = descLength;
     }
     public Descriptor2[] getDescriptors2(){
         return buffer;
     }
-    public int getLength(){
-        return length;
+    public long getVarLength(){
+        return varLength;
     }
-    public long getParamLength(){
-        return paramLength;
+    public int getDescLength(){
+        return descLength;
     }
-    public int getNumberParams(){
-        return numberParams;
+    public int getDescCount(){
+        return descCount;
     }
-//    
-// Compute the memory allocation requirements for the descriptor data type
-//   
-    Descriptor2 getMemoryAllocInfo(Descriptor2 desc, long currMemOffset) {
+    Descriptor2 setVarLength(Descriptor2 desc, long memOffSet) {
         int dataType = desc.getDataType();
         int dataLength = desc.getMaxLen();
-        int charSet = desc.getSqlCharset();
-//
-        int varPad = 0;            // Bytes to pad allocation for actual data type memory requirements
-        int varNulls = 0;        // Number of extra bytes that will be appended to data type (e.g. NULL for strings)
-        long memAlignOffset = 0;    // Boundry offset from current memory location to set the data pointer
-        int allocBoundry = 0;    // Boundry to round the size of the memory allocation to end on proper boundry
-        int allocSize = 0;
-        int varLayout = 0;
 
         switch (dataType)
         {
         case ServerConstants.SQLTYPECODE_CHAR:
         case ServerConstants.SQLTYPECODE_VARCHAR:
-            if( charSet == ServerConstants.sqlCharsetCODE_ISO88591 )
-                varNulls = 1;
+            desc.setNoNullValue((int)memOffSet);
+            memOffSet += dataLength;
             break;
         case ServerConstants.SQLTYPECODE_VARCHAR_WITH_LENGTH:
+            if( dataLength > Short.MAX_VALUE )
+            {
+                if (oldFormat == false){
+                    memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
+                    desc.setNoNullValue((int)memOffSet);
+                }
+                memOffSet += dataLength + 4;
+            }
+            else
+            {
+                if (oldFormat == false){
+                    memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+                    desc.setNoNullValue((int)memOffSet);
+                }
+                memOffSet += dataLength + 2;
+            }
+            break;
         case ServerConstants.SQLTYPECODE_VARCHAR_LONG:
-            memAlignOffset = (((currMemOffset + 2 - 1) >> 1) << 1) - currMemOffset;
-            varPad = 2;
-            varNulls = 1;
-            allocBoundry = 2;
+            if (oldFormat == false){
+                memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+                desc.setNoNullValue((int)memOffSet);
+            }
+            memOffSet += dataLength + 2;
             break;
         case ServerConstants.SQLTYPECODE_SMALLINT:
         case ServerConstants.SQLTYPECODE_SMALLINT_UNSIGNED:
-            memAlignOffset = (((currMemOffset + 2 - 1) >> 1) << 1) - currMemOffset;
+            if (oldFormat == false){
+                memOffSet = ((memOffSet + 2 - 1) >> 1) << 1;
+                desc.setNoNullValue((int)memOffSet);
+            }
+            memOffSet += dataLength;
             break;
         case ServerConstants.SQLTYPECODE_INTEGER:
         case ServerConstants.SQLTYPECODE_INTEGER_UNSIGNED:
-            memAlignOffset = (((currMemOffset + 4 - 1) >> 2) << 2) - currMemOffset;
+        //case SQLTYPECODE_IEEE_REAL:
+            if (oldFormat == false){
+                memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
+                desc.setNoNullValue((int)memOffSet);
+            }
+            memOffSet += dataLength;
             break;
         case ServerConstants.SQLTYPECODE_LARGEINT:
-        case ServerConstants.SQLTYPECODE_REAL:
-        case ServerConstants.SQLTYPECODE_DOUBLE:
-            memAlignOffset = (((currMemOffset + 8 - 1) >> 3) << 3) - currMemOffset;
+        case ServerConstants.SQLTYPECODE_IEEE_REAL:
+        case ServerConstants.SQLTYPECODE_IEEE_FLOAT:
+        case ServerConstants.SQLTYPECODE_IEEE_DOUBLE:
+            if (oldFormat == false){
+                memOffSet = ((memOffSet + 8 - 1) >> 3) << 3;
+                desc.setNoNullValue((int)memOffSet);
+            }
+            memOffSet += dataLength;
             break;
         case ServerConstants.SQLTYPECODE_DECIMAL_UNSIGNED:
         case ServerConstants.SQLTYPECODE_DECIMAL:
         case ServerConstants.SQLTYPECODE_DECIMAL_LARGE_UNSIGNED: // Tandem extension
         case ServerConstants.SQLTYPECODE_DECIMAL_LARGE: // Tandem extension
-            break;
-        case ServerConstants.SQLTYPECODE_INTERVAL:        // Treating as CHAR
+        case ServerConstants.SQLTYPECODE_INTERVAL:      // Treating as CHAR
         case ServerConstants.SQLTYPECODE_DATETIME:
-            memAlignOffset = (((currMemOffset + 2 - 1) >> 1) << 1) - currMemOffset;
-            varPad = 2;
-            varNulls = 1;
-            allocBoundry = 2;
+            if (oldFormat == false){
+                desc.setNoNullValue((int)memOffSet);
+            }
+            memOffSet += dataLength;
             break;
         default:
-            memAlignOffset = (((currMemOffset + 8 - 1) >> 3) << 3) - currMemOffset;
+            if (oldFormat == false){
+                memOffSet = ((memOffSet + 8 - 1) >> 3) << 3;
+                desc.setNoNullValue((int)memOffSet);
+            }
+            memOffSet += dataLength;
             break;
         }
-        varLayout = dataLength + varNulls;
-        allocSize = varLayout + varPad;
-        if (allocBoundry != 0) allocSize += allocSize % allocBoundry;
-        
-        desc.setMemAlignOffset(memAlignOffset);
-        desc.setAllocSize(allocSize);
-        desc.setVarLayout(varLayout);
-
-        if(LOG.isDebugEnabled()){
-            LOG.debug("input currMemOffset :" + currMemOffset);
-            LOG.debug("input dataType :" + SqlUtils.getSqlDataType(dataType) + " [" + dataType + "]" );
-            LOG.debug("input dataLength :" + dataLength);
-            LOG.debug("input SqlCharsetSTRING :" + SqlUtils.getCharsetName(charSet) + " [" + charSet + "]");
-            LOG.debug("tmp varNulls :" + varNulls);
-            LOG.debug("tmp varPad :" + varPad);
-            LOG.debug("tmp allocBoundry :" + allocBoundry);
-            LOG.debug("output memAlignOffset :" + memAlignOffset);
-            LOG.debug("output allocSize :" + allocSize);
-            LOG.debug("output varLayout :" + varLayout);
-        }
-
+        desc.setVarLength(memOffSet);
         return desc;
     }
+
 }

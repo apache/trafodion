@@ -20,7 +20,10 @@ import java.math.BigInteger;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Hashtable;
+import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
 
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.servermt.ServerConstants;
@@ -35,7 +38,7 @@ public class SqlUtils {
 
     private SqlUtils() {
     }
-    
+
     static private Hashtable valueToCharset;
     static {
         valueToCharset = new Hashtable(11);
@@ -97,6 +100,63 @@ public class SqlUtils {
         return ret;
     }
 
+    static public String getComponentId(int componentId){
+        String str = "UNKNOWN Component [" + componentId + "]";
+        switch (componentId){
+            case ServerConstants.DCS_MASTER_COMPONENT:
+                str = "DCS_MASTER_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.SQL_COMPONENT:
+                str = "SQL_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.ODBC_SRVR_COMPONENT:
+                str = "ODBC_SRVR_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.DRVR_COMPONENT:
+                str = "DRVR_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.APP_COMPONENT:
+                str = "APP_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.JDBC_DRVR_COMPONENT:
+                str = "JDBC_DRVR_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.LINUX_DRVR_COMPONENT:
+                str = "LINUX_DRVR_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.DOT_NET_DRVR_COMPONENT:
+                str = "DOT_NET_DRVR_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.WIN_UNICODE_DRVR_COMPONENT:
+                str = "WIN_UNICODE_DRVR_COMPONENT [" + componentId + "]";
+                break;
+            case ServerConstants.LINUX_UNICODE_DRVR_COMPONENT:
+                str = "LINUX_UNICODE_DRVR_COMPONENT [" + componentId + "]";
+                break;
+            default:
+        }
+        return str;
+    }
+    static public int getSqlStmtType(int stmtType) {
+        int retQueryType;
+        switch(stmtType){
+            case ServerConstants.TYPE_SELECT:
+                retQueryType = ServerConstants.SQL_SELECT_NON_UNIQUE;
+                break;
+            case ServerConstants.TYPE_UPDATE:
+                retQueryType = ServerConstants.SQL_UPDATE_NON_UNIQUE;
+                break;
+            case ServerConstants.TYPE_DELETE:
+                retQueryType = ServerConstants.SQL_DELETE_NON_UNIQUE;
+                break;
+            case ServerConstants.TYPE_INSERT:
+                retQueryType = ServerConstants.SQL_INSERT_NON_UNIQUE;
+                break;
+            default:
+                retQueryType = stmtType;
+        }
+        return retQueryType;
+    }
     static public short getSqlStmtType(String str) {
         //
         // Kludge to determin if the type of statement.
@@ -120,14 +180,18 @@ public class SqlUtils {
         if ((str3.equals("SELECT")) || (str3.equals("SHOWSHAPE"))
                 || (str3.equals("INVOKE")) || (str3.equals("SHOWCONTROL"))
                 || (str3.equals("SHOWPLAN"))) {
-            rt1 = ServerConstants.TYPE_SELECT;
-        } else if (str3.equals("UPDATE")) {
-                rt1 = ServerConstants.TYPE_UPDATE;
+              rt1 = ServerConstants.SQL_SELECT_NON_UNIQUE;
+//            rt1 = ServerConstants.TYPE_SELECT;
+       } else if (str3.equals("UPDATE")) {
+              rt1 = ServerConstants.SQL_UPDATE_NON_UNIQUE;
+//            rt1 = ServerConstants.TYPE_UPDATE;
         } else if (str3.equals("DELETE")) {
-                rt1 = ServerConstants.TYPE_DELETE;
+              rt1 = ServerConstants.SQL_DELETE_NON_UNIQUE;
+//            rt1 = ServerConstants.TYPE_DELETE;
         } else if (str3.equals("INSERT") || (str.equals("UPSERT"))) {
             if (str.indexOf('?') == -1) {
-                rt1 = ServerConstants.TYPE_INSERT;
+              rt1 = ServerConstants.SQL_INSERT_NON_UNIQUE;
+//            rt1 = ServerConstants.TYPE_INSERT;
             } else {
                 rt1 = ServerConstants.TYPE_INSERT_PARAM;
             }
@@ -151,7 +215,7 @@ public class SqlUtils {
         return rt1;
     }
     static public String getSqlCharsetName(int code) {
-        
+
         String str = ServerConstants.sqlCharsetSTRING_UNKNOWN;
         switch (code){
         case ServerConstants.sqlCharsetCODE_ISO88591:
@@ -171,7 +235,7 @@ public class SqlUtils {
     static public String getSqlError(int retcode)
     {
         String rc;
-        
+
         // SQL_NO_DATA_FOUND can be defined as SQL_NO_DATA
         if (retcode==ServerConstants.SQL_NO_DATA_FOUND)
         {
@@ -241,7 +305,7 @@ public class SqlUtils {
     static public String getSqlStatementType(short stmtType)
     {
         String rc;
-        
+
         if (stmtType == ServerConstants.TYPE_UNKNOWN) return "TYPE_UNKNOWN";
         rc = "";
         if ((stmtType & ServerConstants.TYPE_SELECT) != 0) rc = rc + "|TYPE_SELECT";
@@ -299,7 +363,7 @@ public class SqlUtils {
         }
         return "Unknown (" + stmtType + ")";
     };
-    
+
     static public String getSqlAttrType(int code)
     {
         String rc;
@@ -426,7 +490,7 @@ public class SqlUtils {
     }
     static public BigDecimal getBigDecimalValue(Object paramValue) throws SQLException {
         BigDecimal tmpbd;
-        
+
         if (paramValue instanceof Long) {
             tmpbd = BigDecimal.valueOf(((Long) paramValue).longValue());
         } else if (paramValue instanceof Integer) {
@@ -463,11 +527,11 @@ public class SqlUtils {
         }
         return tmpbd;
     } // end getBigDecimalValue
-    
+
     static public BigDecimal convertSQLBigNumToBigDecimal(ByteBuffer sourceData, int len, int scale, boolean isUnSigned) {
         String strVal = ""; // our final String
         boolean negative = false;
-        
+
         // we need the data in an array which can hold UNSIGNED 16 bit values
         // in java we dont have unsigned datatypes so 32-bit signed is the best
         // we can do
@@ -489,16 +553,16 @@ public class SqlUtils {
             }
             // normally
         }
-        
+
         int curPos = dataInShorts.length - 1; // start at the end
         while (curPos >= 0 && dataInShorts[curPos] == 0)
             // get rid of any trailing 0's
             curPos--;
-        
+
         int remainder = 0;
         long temp; // we need to use a LONG since we will have to hold up to
         // 32-bit UNSIGNED values
-        
+
         // we now have the huge value stored in 2 bytes chunks
         // we will divide by 10000 many times, converting the remainder to
         // String
@@ -516,34 +580,274 @@ public class SqlUtils {
                 temp &= 0xFFFF;
                 temp = temp << 16;
                 temp += dataInShorts[j];
-                
+
                 dataInShorts[j] = (int) (temp / 10000);
                 remainder = (int) (temp % 10000);
             }
-        
+
             // if we are done with the current 16bits, move on
             if (dataInShorts[curPos] == 0)
                 curPos--;
-        
+
             // go through the remainder and add each digit to the final String
             for (int j = 0; j < 4; j++) {
                 strVal = (remainder % 10) + strVal;
                 remainder /= 10;
             }
         }
-        
+
         // when we finish the above loop we still have 1 <10000 value to include
         remainder = dataInShorts[0];
         for (int j = 0; j < 4; j++) {
             strVal = (remainder % 10) + strVal;
             remainder /= 10;
         }
-        
+
         BigInteger bi = new BigInteger(strVal); // create a java BigInt
         if (negative && isUnSigned == false)
             bi = bi.negate();
-        
+
         return new BigDecimal(bi, scale); // create a new BigDecimal with the
         // descriptor's scale
+    }
+    static public byte[] formatSqlT4Output(Descriptor2 dsc, byte[] sqlarray, long curOutPos, byte[] outValues, ByteOrder bo) throws UnsupportedEncodingException{
+
+        ByteBuffer bb = null;
+        byte[] dst = null;
+        int len = 0;
+        int offset = 0;
+        int insNull = 0;
+
+        String[] stDate = null;
+        String[] stTime = null;
+        String[] stTimestamp = null;
+        String[] stNanos = null;
+        Integer year = 0;
+        Integer month = 0;
+        Integer day = 0;
+        Integer hour = 0;
+        Integer minutes = 0;
+        Integer seconds = 0;
+        Integer nanos = 0;
+
+        String setString = "";
+        short setShort = 0;
+        int setInt = 0;
+        long setLong = 0L;
+        boolean setSign = false;
+        String charSet = "";
+
+        int precision = dsc.getPrecision();
+        int scale = dsc.getScale();
+        int datetimeCode = dsc.getDatetimeCode();
+        int FSDataType = dsc.getFsDataType();
+        int OdbcDataType = dsc.getOdbcDataType();
+        int dataCharSet = dsc.getSqlCharset();
+        int length = dsc.getMaxLen();
+        int dataType = dsc.getDataType();
+
+        if(dataCharSet == SqlUtils.SQLCHARSETCODE_UNICODE)
+            charSet = "UTF-16LE";
+        else
+            charSet = SqlUtils.getCharsetName(dataCharSet);
+
+        len = sqlarray.length;
+        ByteBuffer tb = ByteBuffer.wrap(sqlarray).order(bo);
+
+        if(LOG.isDebugEnabled())
+            LOG.debug("formatSqlT4Output: -----------");
+
+        switch(dataType){
+        case ServerConstants.SQLTYPECODE_CHAR:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_CHAR :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_VARCHAR:
+        case ServerConstants.SQLTYPECODE_VARCHAR_LONG:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_VARCHAR/VARCHAR_LONG :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_VARCHAR_WITH_LENGTH:       //-601
+            if( length > Short.MAX_VALUE ){
+                len = tb.getInt() + 4;
+            } else {
+                len = tb.getShort() + 2;
+            }
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_VARCHAR :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_DATETIME:
+            LOG.debug("formatSqlT4Output: SQLTYPECODE_DATETIME :" + Arrays.toString(sqlarray));
+            switch(datetimeCode){
+                case ServerConstants.SQLDTCODE_DATE:
+                case ServerConstants.SQLDTCODE_TIME:
+                case ServerConstants.SQLDTCODE_TIMESTAMP:
+                    len = tb.getShort();
+                    dst = new byte[len];
+                    System.arraycopy(sqlarray, 2, dst, 0, len);
+                    setString = new String(dst,"UTF8");
+                    tb.clear();
+                    switch(datetimeCode){
+                        case ServerConstants.SQLDTCODE_DATE:
+                            stDate = setString.split("-");
+                            year = Integer.valueOf(stDate[0]);
+                            month = Integer.valueOf(stDate[1]);
+                            day = Integer.valueOf(stDate[2]);
+                            tb.putShort(year.shortValue());
+                            tb.put(month.byteValue());
+                            tb.put(day.byteValue());
+                            break;
+                        case ServerConstants.SQLDTCODE_TIME:
+                            stTime = setString.split(":");
+                            hour = Integer.valueOf(stTime[0]);
+                            minutes = Integer.valueOf(stTime[1]);
+                            seconds = Integer.valueOf(stTime[2]);
+                            tb.put(hour.byteValue());
+                            tb.put(minutes.byteValue());
+                            tb.put(seconds.byteValue());
+                            break;
+                        case ServerConstants.SQLDTCODE_TIMESTAMP:
+                            stTimestamp = setString.split(" ");
+                            stDate = stTimestamp[0].split("-");
+                            stNanos = stTimestamp[1].split("\\.");
+                            stTime = stNanos[0].split(":");
+                            year = Integer.valueOf(stDate[0]);
+                            month = Integer.valueOf(stDate[1]);
+                            day = Integer.valueOf(stDate[2]);
+                            hour = Integer.valueOf(stTime[0]);
+                            minutes = Integer.valueOf(stTime[1]);
+                            seconds = Integer.valueOf(stTime[2]);
+                            nanos = Integer.valueOf(stNanos[1]);
+                            tb.putShort(year.shortValue());
+                            tb.put(month.byteValue());
+                            tb.put(day.byteValue());
+                            tb.put(hour.byteValue());
+                            tb.put(minutes.byteValue());
+                            tb.put(seconds.byteValue());
+                            tb.putInt(nanos);
+                            break;
+                        case ServerConstants.SQLDTCODE_MPDATETIME:
+                            break;
+                    }
+                default:
+            }
+            break;
+        case ServerConstants.SQLTYPECODE_INTERVAL:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_INTERVAL :" + Arrays.toString(sqlarray));
+            len = tb.getShort();
+            dst = new byte[len];
+            System.arraycopy(sqlarray, 2, dst, 0, len);
+            Arrays.fill(sqlarray, (byte)0);
+            tb.clear();
+            if(dst[0] != '-'){
+                len++;
+                tb.put((byte)' ');
+            }
+            tb.put(dst, 0, dst.length);
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: sqlarray :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_INTEGER:                    //4
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_INTEGER :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_INTEGER_UNSIGNED:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_INTEGER_UNSIGNED :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_SMALLINT:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_SMALLINT :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_SMALLINT_UNSIGNED:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_SMALLINT_UNSIGNED :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_LARGEINT:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_LARGEINT :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_DECIMAL:
+        case ServerConstants.SQLTYPECODE_DECIMAL_UNSIGNED:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_DECIMAL :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_IEEE_REAL:                    //6
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_IEEE_REAL :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_IEEE_FLOAT:                   //7
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_IEEE_FLOAT :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_IEEE_DOUBLE:                  //8
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_IEEE_DOUBLE :" + Arrays.toString(sqlarray));
+            break;
+        case ServerConstants.SQLTYPECODE_NUMERIC:
+        case ServerConstants.SQLTYPECODE_NUMERIC_UNSIGNED:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: SQLTYPECODE_NUMERIC :" + Arrays.toString(sqlarray));
+            switch (len) {
+            case 2:
+                setShort = tb.getShort();
+                setLong = setShort;
+                if(setLong < 0){
+                    setLong = -1L * setLong;
+                    setSign = true;
+                    tb.clear();
+                    tb.put((byte) ((setLong) & 0xff));
+                    tb.put((byte) (((setLong >>> 8) | 0x80) & 0xff));
+                }
+                break;
+            case 4:
+                setInt = tb.getInt();
+                setLong = setInt;
+                if(setLong < 0){
+                    setLong = -1L * setLong;
+                    setSign = true;
+                    tb.clear();
+                    tb.put((byte) ((setLong) & 0xff));
+                    tb.put((byte) ((setLong >>> 8) & 0xff));
+                    tb.put((byte) ((setLong >>> 16) & 0xff));
+                    tb.put((byte) (((setLong >>> 24) | 0x80) & 0xff));
+                }
+                break;
+            case 8:
+                setLong = tb.getLong();
+                if(setLong < 0){
+                    setLong = -1L * setLong;
+                    setSign = true;
+                    tb.clear();
+                    tb.put((byte) ((setLong) & 0xff));
+                    tb.put((byte) ((setLong >>> 8) & 0xff));
+                    tb.put((byte) ((setLong >>> 16) & 0xff));
+                    tb.put((byte) ((setLong >>> 24) & 0xff));
+                    tb.put((byte) ((setLong >>> 32) & 0xff));
+                    tb.put((byte) ((setLong >>> 40) & 0xff));
+                    tb.put((byte) ((setLong >>> 48) & 0xff));
+                    tb.put((byte) (((setLong >>> 56) | 0x80) & 0xff));
+                }
+                break;
+            }
+            break;
+        case ServerConstants.SQLTYPECODE_DECIMAL_LARGE:
+        case ServerConstants.SQLTYPECODE_DECIMAL_LARGE_UNSIGNED:
+        case ServerConstants.SQLTYPECODE_BIT:
+        case ServerConstants.SQLTYPECODE_BITVAR:
+        case ServerConstants.SQLTYPECODE_BPINT_UNSIGNED:
+        default:
+            if(LOG.isDebugEnabled())
+                LOG.debug("formatSqlT4Output: default :" + Arrays.toString(sqlarray));
+            break;
+        }
+        if(LOG.isDebugEnabled()){
+            LOG.debug("formatSqlT4Output: offset :" + offset);
+            LOG.debug("formatSqlT4Output: curOutPos :" + curOutPos);
+            LOG.debug("formatSqlT4Output: len :" + len);
+        }
+        System.arraycopy(sqlarray, offset, outValues, (int)curOutPos, len);
+        return outValues;
     }
 }

@@ -51,7 +51,7 @@ public class ServerApiSqlExecDirect {
     private ClientData clientData;
     //
     private int dialogueId;
-    private int sqlAsyncEnable;
+    private int holdableCursor;
     private int queryTimeout;
     private int inpRowCnt;
     private int maxRowsetSize;
@@ -62,16 +62,15 @@ public class ServerApiSqlExecDirect {
     private String cursorName;
     private String stmtLabel;
     private String stmtExplainLabel;
-    private SQLDataValue inpDataValue;
-    private SQLValueList inpValueList;
     private byte[] txId;
-    
-    private int holdableCursor;
-//=======================================================================    
+
+//=======================================================================
+    private boolean isResultSet;
+    private boolean isSpj;
     private Statement stmt;
     private TrafConnection trafConn;
     private TrafStatement trafStmt;
-//-------------------output-------------------------------------    
+//-------------------output-------------------------------------
     private int returnCode;
     private SQLWarningOrErrorList errorList;
     private long rowsAffected;
@@ -80,9 +79,9 @@ public class ServerApiSqlExecDirect {
     private byte[] outValues;
 
 //----------- tmp for result set --------------------
-    private int numResultSets;
-    private int resultSetColumns;
-    private Descriptor2List resultSetDescList;
+    private int resultSetCount;
+    private int outCount;
+    private Descriptor2List outDescList;
     private ResultSet rs;
     private ResultSetMetaData rsmd;
     private TResultSetMetaData trsmd;
@@ -119,8 +118,8 @@ public class ServerApiSqlExecDirect {
 
     private int     displaySize_;
     private String  label_;
-    
-    ServerApiSqlExecDirect(int instance, int serverThread) {  
+
+    ServerApiSqlExecDirect(int instance, int serverThread) {
         this.instance = instance;
         this.serverThread = serverThread;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
@@ -130,7 +129,6 @@ public class ServerApiSqlExecDirect {
     }
     void reset(){
         dialogueId = 0;
-        sqlAsyncEnable = 0;
         queryTimeout = 0;
         inpRowCnt = 0;
         maxRowsetSize = 0;
@@ -154,9 +152,9 @@ public class ServerApiSqlExecDirect {
         sqlQueryType = 0;
         estimatedCost = 0;
         outValues = null;
-        numResultSets = 0;
-        resultSetColumns = 0;
-        resultSetDescList = null;
+        resultSetCount = 0;
+        outCount = 0;
+        outDescList = null;
         rs = null;
         rsmd = null;
         trsmd = null;
@@ -165,23 +163,23 @@ public class ServerApiSqlExecDirect {
         singleSyntax = "";
         proxySyntax = null;
     }
-    ClientData processApi(ClientData clientData) {  
+    ClientData processApi(ClientData clientData) {
         init();
         this.clientData = clientData;
-//        
+//
 // ==============process input ByteBuffer===========================
-// 
+//
         ByteBuffer bbHeader = clientData.bbHeader;
         ByteBuffer bbBody = clientData.bbBody;
         Header hdr = clientData.hdr;
 
         bbHeader.flip();
         bbBody.flip();
-        
+
         try {
 
             hdr.extractFromByteArray(bbHeader);
-            
+
             dialogueId =  bbBody.getInt();
             holdableCursor =  bbBody.getInt();
             queryTimeout =  bbBody.getInt();
@@ -217,31 +215,15 @@ public class ServerApiSqlExecDirect {
                 throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + dialogueId + "/" + clientData.getDialogueId() + "]");
             }
 //=============================================================================
-            boolean isResultSet = false;
-            sqlQueryType = sqlStmtType;
-            
-            switch (sqlStmtType){
-                case ServerConstants.TYPE_SELECT:
-                case ServerConstants.TYPE_EXPLAIN:
-                    isResultSet = true;
-                    break;
-                case ServerConstants.TYPE_UPDATE:
-                case ServerConstants.TYPE_DELETE:
-                case ServerConstants.TYPE_INSERT:
-                case ServerConstants.TYPE_INSERT_PARAM:
-                case ServerConstants.TYPE_CREATE:
-                case ServerConstants.TYPE_GRANT:
-                case ServerConstants.TYPE_DROP:
-                case ServerConstants.TYPE_CALL:
-                case ServerConstants.TYPE_CONTROL:
-                default:
-            }
+            sqlQueryType = SqlUtils.getSqlStmtType(sqlStmtType);
+
             try {
                 trafConn = clientData.getTrafConnection();
-                trafStmt = trafConn.createTrafStatement(stmtLabel, isResultSet);
-                trafStmt.setResultSet(null);
+                trafStmt = trafConn.createTrafStatement(stmtLabel, sqlStmtType, stmtHandle);
+                isResultSet = trafStmt.getIsResultSet();
+                isSpj = trafStmt.getIsSpj();
                 stmt = (Statement)trafStmt.getStatement();
-//            
+//
 //=====================Process ServerApiSqlExecute===========================
 //
                 boolean status = stmt.execute(sqlString);
@@ -250,10 +232,9 @@ public class ServerApiSqlExecDirect {
                 if(status){
                     rs = stmt.getResultSet();
                     rsmd = rs.getMetaData();
-                    trafStmt.setResultSet(rs);
                     if(LOG.isDebugEnabled())
                         LOG.debug(serverWorkerName + ". T2 Execute.getResultSet()");
-                    resultSetColumns = rsmd.getColumnCount();
+                    outCount = rsmd.getColumnCount();
                 } else {
                     rowsAffected = stmt.getUpdateCount();
                     if(LOG.isDebugEnabled())
@@ -261,25 +242,18 @@ public class ServerApiSqlExecDirect {
                 }
             } catch (SQLException se){
                 LOG.error(serverWorkerName + ". ExecDirect.SQLException " + se);
-                errorList = new SQLWarningOrErrorList(se); 
+                errorList = new SQLWarningOrErrorList(se);
                 returnCode = errorList.getReturnCode();
             } catch (Exception ex){
                 LOG.error(serverWorkerName + ". ExecDirect.Exception " + ex);
                 throw ex;
             }
             if (returnCode == ServerConstants.SQL_SUCCESS || returnCode == ServerConstants.SQL_SUCCESS_WITH_INFO) {
-                if (resultSetColumns > 0){
+                if (outCount > 0){
                     strsmd = (SQLMXResultSetMetaData)rsmd;
-                    resultSetDescList = new Descriptor2List(resultSetColumns,false);
-                    
-                    numResultSets = 1;
-                    stmtLabels = new String[numResultSets];
-                    proxySyntax = new String[numResultSets];
-                    singleSyntax = "";
-                    stmtLabels[0] = stmtLabel;
-                    proxySyntax[0] = "";
-                    
-                    for (int column = 1; column <= resultSetColumns; column++){
+                    outDescList = new Descriptor2List(outCount,false);
+
+                    for (int column = 1; column <= outCount; column++){
                         sqlCharset_ = strsmd.getSqlCharset(column);
                         odbcCharset_ = strsmd.getOdbcCharset(column);
                         sqlDataType_ = strsmd.getSqlDataType(column);
@@ -302,24 +276,24 @@ public class ServerApiSqlExecDirect {
                         paramMode_ = strsmd.getMode(column);
                         paramIndex_ = strsmd.getIndex(column);
                         paramPos_ = strsmd.getPos(column);
-                        
+
                         odbcPrecision_ = strsmd.getOdbcPrecision(column);
                         maxLen_ = strsmd.getMaxLen(column);
-                        
+
                         displaySize_ = strsmd.getDisplaySize(column);
                         label_ = strsmd.getLabel(column);
-    
-                        Descriptor2 outDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
+
+                        Descriptor2 columnDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
                             sqlOctetLength_,isNullable_,name_,scale_,precision_,isSigned_,
                             isCurrency_,isCaseSensitive_,catalogName_,schemaName_,tableName_,
                             fsDataType_,intLeadPrec_,paramMode_,paramIndex_,paramPos_,odbcPrecision_,
                             maxLen_,displaySize_,label_, false);
-                        resultSetDescList.addDescriptor(column,outDesc);
+                        outDescList.addDescriptor(column, columnDesc);
                     }
                     if(LOG.isDebugEnabled()){
-                        for (int column = 1; column <= resultSetColumns; column++){
-                            Descriptor2 dsc = resultSetDescList.getDescriptors2()[column-1];
-                            LOG.debug(serverWorkerName + ". [" + column + "] Output descriptor -------------" );
+                        for (int column = 1; column <= outCount; column++){
+                            Descriptor2 dsc = outDescList.getDescriptors2()[column-1];
+                            LOG.debug(serverWorkerName + ". [" + column + "] Column descriptor -------------" );
                             LOG.debug(serverWorkerName + ". oldFormat " + column + " :" + dsc.getOldFormat());
                             LOG.debug(serverWorkerName + ". noNullValue " + column + " :" + dsc.getNoNullValue());
                             LOG.debug(serverWorkerName + ". nullValue " + column + " :" + dsc.getNullValue());
@@ -341,18 +315,13 @@ public class ServerApiSqlExecDirect {
                             LOG.debug(serverWorkerName + ". headingName " + column + " :" + dsc.getHeadingName());
                             LOG.debug(serverWorkerName + ". intLeadPrec " + column + " :" + dsc.getParamMode());
                             LOG.debug(serverWorkerName + ". paramMode " + column + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ". memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
-                            LOG.debug(serverWorkerName + ". allocSize " + column + " :" + dsc.getAllocSize());
-                            LOG.debug(serverWorkerName + ". varLayout " + column + " :" + dsc.getVarLayout());
-                            LOG.debug(serverWorkerName + ". Output descriptor End-------------");
+                            LOG.debug(serverWorkerName + ". varLength " + column + " :" + dsc.getVarLength());
+                            LOG.debug(serverWorkerName + ". Column descriptor End-------------");
                         }
                     }
-                    trafStmt.setOutNumberParams(resultSetColumns);
-                    if (resultSetColumns > 0){
-                        trafStmt.setOutParamLength(resultSetDescList.getParamLength());
-                        trafStmt.setOutDescList(resultSetDescList);
-                    }
                 }
+                if (outCount > 0)
+                    trafStmt.addTResultSet(new TrafResultSet(rs, 0, stmtLabel, 0, outDescList,""));
             }
 //
 //===================calculate length of output ByteBuffer========================
@@ -361,36 +330,35 @@ public class ServerApiSqlExecDirect {
             bbBody.clear();
 //
 // check if ByteBuffer is big enough for output
-//  
+//
+            TrafResultSet trs = null;
+
             int dataLength = ServerConstants.INT_FIELD_SIZE;                 //returnCode
             if (errorList != null)
                 dataLength += errorList.lengthOfData();
             else
                 dataLength += ServerConstants.INT_FIELD_SIZE;             //totalErrorLength = 0
 
-            dataLength += ServerConstants.INT_FIELD_SIZE;             //outDescLength = 0
+            if (outDescList != null)
+                dataLength += outDescList.lengthOfData();
+            else
+                dataLength += ServerConstants.INT_FIELD_SIZE;             //outDescLength = 0
 
             dataLength += ServerConstants.INT_FIELD_SIZE;                 //rowsAffected
             dataLength += ServerConstants.INT_FIELD_SIZE;                 //queryType
             dataLength += ServerConstants.INT_FIELD_SIZE;                 //estimatedCost
-            dataLength += ByteBufferUtils.lengthOfByteArray(outValues); //outValues
+            dataLength += ByteBufferUtils.lengthOfByteArray(outValues);   //outValues
             dataLength += ServerConstants.INT_FIELD_SIZE;                 //numResultSets
-            if (numResultSets > 0) {
-                for (int i = 0; i < numResultSets; i++) {
-                    dataLength += ServerConstants.INT_FIELD_SIZE;         //stmt_handle
-                    dataLength += ByteBufferUtils.lengthOfString(stmtLabels[i]); //stmtLabels
-                    dataLength += ServerConstants.INT_FIELD_SIZE;         //stmt_label_charset
-                    
-                    if (resultSetDescList != null)
-                        dataLength += resultSetDescList.lengthOfData();
-                    else
-                        dataLength += ServerConstants.INT_FIELD_SIZE;
-                
-                    dataLength += ByteBufferUtils.lengthOfString(proxySyntax[i]); //proxySyntax[i]
+            if (resultSetCount > 0) {
+                trafStmt.setFirstTResultSet();
+                while (true) {
+                    trs = trafStmt.getTrafResultSet();
+                    dataLength += trs.lengthOfData();
+                    if(false == trafStmt.getNextTResultSet()) break;
                 }
             }
             dataLength += ByteBufferUtils.lengthOfString(singleSyntax);
-            
+
             int availableBuffer = bbBody.capacity() - bbBody.position();
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". dataLength :" + dataLength + " availableBuffer :" + availableBuffer);
@@ -405,33 +373,31 @@ public class ServerApiSqlExecDirect {
                 errorList.insertIntoByteBuffer(bbBody);
             else
                 bbBody.putInt(0);
-            
-            bbBody.putInt(0);             //outDescLength = 0
-            
+
+            if (outDescList != null){
+                outDescList.insertIntoByteBuffer(bbBody);
+            } else
+                bbBody.putInt(0);
+
             ByteBufferUtils.insertUInt(rowsAffected, bbBody);
             bbBody.putInt(sqlQueryType);
             bbBody.putInt(estimatedCost);
             ByteBufferUtils.insertByteArray(outValues, bbBody);     //outValues
-            bbBody.putInt(numResultSets);
+            bbBody.putInt(resultSetCount);
 
-            if (numResultSets > 0) {
-                for (int i = 0; i < numResultSets; i++) {
-                    bbBody.putInt(0); // int stmt_handle - ignored
-                    ByteBufferUtils.insertString(stmtLabels[i], bbBody);
-                    bbBody.putInt(0); // long stmt_label_charset - ignored
-                    
-                    if (resultSetDescList != null)
-                         resultSetDescList.insertIntoByteBuffer(bbBody);
-                    else
-                        bbBody.putInt(0);
-                    
-                    ByteBufferUtils.insertString(proxySyntax[i], bbBody);
+            if (resultSetCount > 0) {
+                trafStmt.setFirstTResultSet();
+                while (true) {
+                    trs = trafStmt.getTrafResultSet();
+                    trs.insertIntoByteBuffer(bbBody);
+                    if(false == trafStmt.getNextTResultSet()) break;
                 }
+                trafStmt.setFirstTResultSet();
             }
             ByteBufferUtils.insertString(singleSyntax, bbBody);
 
             bbBody.flip();
-//=========================Update header================================ 
+//=========================Update header================================
             hdr.setTotalLength(bbBody.limit());
             hdr.insertIntoByteBuffer(bbHeader);
             bbHeader.flip();

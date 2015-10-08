@@ -87,4 +87,22 @@ public class Version {
     public void setBuildId( int buildId){
         this.buildId = buildId;
     }
+    public short getComponentId(){
+        return componentId;
+    }
+    public short getMajorVersion(){
+        return majorVersion;
+    }
+    public short getMinorVersion(){
+        return minorVersion;
+    }
+    public int getBuildId(){
+        return buildId;
+    }
+    public void debug(){
+        LOG.debug("version componentId  : " + SqlUtils.getComponentId(componentId));
+        LOG.debug("version majorVersion : " + majorVersion);
+        LOG.debug("version minorVersion : " + minorVersion);
+        LOG.debug("version buildId      : " + buildId);
+    }
 }

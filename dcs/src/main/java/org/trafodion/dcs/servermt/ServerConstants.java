@@ -46,7 +46,7 @@ public final class ServerConstants {
 
     public static final char YES                            = 'Y';
     public static final char NO                             = 'N';
-    
+
     public static final int SUCCESS                         =0;
     public static final int FAIL                            =-1;
 
@@ -56,17 +56,26 @@ public final class ServerConstants {
     public static final int BODY_SIZE                       = 1024;
     //
     public static final int SIGNATURE                       = 12345; // 0x3039
-    
+
+    // Literals used in the outContext between Driver and Server
     public static final int DCS_MASTER_COMPONENT            = 2;
+    public static final int SQL_COMPONENT                   = 3;
     public static final int ODBC_SRVR_COMPONENT             = 4;
-    
+    public static final int DRVR_COMPONENT                  = 7;
+    public static final int APP_COMPONENT                   = 8;
+    public static final int JDBC_DRVR_COMPONENT             = 20;
+    public static final int LINUX_DRVR_COMPONENT            = 21;
+    public static final int DOT_NET_DRVR_COMPONENT          = 25;
+    public static final int WIN_UNICODE_DRVR_COMPONENT      = 26;
+    public static final int LINUX_UNICODE_DRVR_COMPONENT    = 27;
+
     public static final int DCS_MASTER_VERSION_MAJOR_1      = 3;
     public static final int DCS_MASTER_VERSION_MINOR_0      = 0;
     public static final int DCS_MASTER_BUILD_1              = 1;
-    
+
     public static final int CHARSET                         = 268435456; //(2^28) For charset changes compatibility
     public static final int PASSWORD_SECURITY               = 67108864; //(2^26)
-    
+
     //=================MXOSRVR versions ===================
     public static final int MXOSRVR_ENDIAN                  = 256;
     public static final int MXOSRVR_VERSION_MAJOR           = 3;
@@ -74,10 +83,10 @@ public final class ServerConstants {
     public static final int MXOSRVR_VERSION_BUILD           = 1;
 
     public static final short DCS_MASTER_GETSRVRAVAILABLE   = 1000 + 19;
-    
+
     public static final String SERVER_NAME                  = "$serverHandler";
     public static final String SERVER_WORKER_NAME           = "$serverWorkerHandler";
-    
+
     public static final int SERVER_STATE_INIT               =0;
     public static final int SERVER_STATE_AVAILABLE          =2;
     public static final int SERVER_STATE_CONNECTING         =3;
@@ -92,7 +101,7 @@ public final class ServerConstants {
     public static final int SERVER_STATE_PORTINUSE          =12;
 
 // All server APIs. Some of them are from AS
-    
+
     public static final int SRVR_API_START=3000;
 
     public static final int SRVR_API_INIT                   =SRVR_API_START;
@@ -142,11 +151,11 @@ public final class ServerConstants {
 
     public static final int SQL_PASSWORD_EXPIRING           = 8857;
     public static final int SQL_PASSWORD_GRACEPERIOD        = 8837;
-    
+
     public static final int SQL_SUCCESS                     = 0; // ODBC Standard
     public static final int SQL_SUCCESS_WITH_INFO           = 1; // ODBC Standard
     public static final int SQL_NO_DATA_FOUND               = 100;
-    public static final int SQL_NO_DATA                     = 100; 
+    public static final int SQL_NO_DATA                     = 100;
     public static final int SQL_ERROR                       = -1;
 //
 //
@@ -197,8 +206,8 @@ public final class ServerConstants {
     public static final int SQLTYPECODE_VARCHAR_WITH_LENGTH    = -601;
     public static final int SQLTYPECODE_VARCHAR_LONG           = -1;
     public static final int SQLTYPECODE_BIT                    = 14;  // not supported
-    public static final int SQLTYPECODE_BITVAR                 = 15;  // not supported 
-    
+    public static final int SQLTYPECODE_BITVAR                 = 15;  // not supported
+
     /* Date/Time/TimeStamp related constants */
     public static final int SQLDTCODE_DATE                     = 1;
     public static final int SQLDTCODE_TIME                     = 2;
@@ -222,7 +231,7 @@ public final class ServerConstants {
     public static final int SQLINTCODE_HOUR_MINUTE             = 11;
     public static final int SQLINTCODE_HOUR_SECOND             = 12;
     public static final int SQLINTCODE_MINUTE_SECOND           = 13;
-    
+
     public static final int SQLDTCODE_YEAR                     = 4;
     public static final int SQLDTCODE_YEAR_TO_MONTH            = 5;
 //    public static final int SQLDTCODE_YEAR_TO_DAY            = 1; //SQL DATE
@@ -254,10 +263,10 @@ public final class ServerConstants {
 
     public static final String CLOB_HEADING            ="JDBC_CLOB_COLUMN -";
     public static final String BLOB_HEADING            ="JDBC_BLOB_COLUMN -";
-    
-    // type codes from SQL/MP include file sql.h, for TYPE_FS descriptor fields 
+
+    // type codes from SQL/MP include file sql.h, for TYPE_FS descriptor fields
     //(with additional SQL/MX datatypes) from sqlcli.h
-    
+
     public static final int SQLDT_16BIT_SIGNED                = 130;
     public static final int SQLDT_16BIT_UNSIGNED              = 131;
     public static final int SQLDT_32BIT_SIGNED                = 132;
@@ -291,11 +300,11 @@ public final class ServerConstants {
     public static final String sqlCharsetSTRING_KSC5601         = "KSC5601";
     public static final String sqlCharsetSTRING_SJIS            = "SJIS";
     public static final String sqlCharsetSTRING_UNICODE         = "UCS2";
-    
+
     public static final int UNKNOWN_DATA_FORMAT                 = 0;
-    public static final int ROWWISE_ROWSETS                     = 1; 
-    public static final int COLUMNWISE_ROWSETS                  = 2;   
-    
+    public static final int ROWWISE_ROWSETS                     = 1;
+    public static final int COLUMNWISE_ROWSETS                  = 2;
+
     public static final int INVALID_SQL_QUERY_STMT_TYPE         = 255;
     public static final int SQL_OTHER                           = -1;
     public static final int SQL_UNKNOWN                         = 0;
@@ -311,7 +320,7 @@ public final class ServerConstants {
     public static final int SQL_SET_TRANSACTION                 = 10;
     public static final int SQL_SET_CATALOG                     = 11;
     public static final int SQL_SET_SCHEMA                      = 12;
-    
+
     public static final short TYPE_UNKNOWN                      = 0;
     public static final short TYPE_SELECT                       = 0x0001;
     public static final short TYPE_UPDATE                       = 0x0002;
@@ -324,10 +333,11 @@ public final class ServerConstants {
     public static final short TYPE_DROP                         = 0x0080;
     public static final short TYPE_CALL                         = 0x0800;
     public static final short TYPE_CONTROL                      = 0x0900;
-    
+    public static final short TYPE_CATOLOG                      = 0x1000;
+
     public static final short TYPE_BLOB                         = 2004;
     public static final short TYPE_CLOB                         = 2005;
-    
+
     public static final int SQL_ATTR_CURSOR_HOLDABLE            = -3;
     public static final int SQL_ATTR_INPUT_ARRAY_MAXSIZE        = -2;
     public static final int SQL_ATTR_QUERY_TYPE                 = -4;
@@ -345,7 +355,7 @@ public final class ServerConstants {
     public static final int SQL_ATTR_PARENT_QID                 = -15;
     public static final int SQL_ATTR_CURSOR_UPDATABLE           = -16;
     public static final int SQL_ATTR_SUBQUERY_TYPE              = -17;
-    
+
     /** shell size in bytes */
     public static final int OBJECT_SHELL_SIZE                   = 8;
     public static final int OBJREF_SIZE                         = 4;
@@ -357,9 +367,9 @@ public final class ServerConstants {
     public static final int BOOLEAN_FIELD_SIZE                  = 1;
     public static final int DOUBLE_FIELD_SIZE                   = 8;
     public static final int FLOAT_FIELD_SIZE                    = 4;
-    
+
     public static final int SERVER_STATUS_DELAY                 = 30000;
-    
+
     // declarations for processing metadata
     public static final short SQL_API_SQLGETTYPEINFO = 47;
     public static final short SQL_API_SQLCOLUMNS = 40;
@@ -395,4 +405,6 @@ public final class ServerConstants {
     // Column types and scopes in SQLSpecialColumns.
     public static final int SQL_BEST_ROWID = 1;
     public static final int SQL_ROWVER = 2;
+
 }
+
