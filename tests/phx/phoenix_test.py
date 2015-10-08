@@ -271,7 +271,6 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                     'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
                     # cdh sub-string added at 1.1
                     'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-(cdh[\d_]*-)?[\d\.]{3,}jar"),
-                    'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
                     'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
@@ -299,7 +298,6 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                     'MY_HIVE_VERSION': get_hadoop_component_ver(hadoop_distro, "hive"),
                     'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
                     'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-hdp[\d_]*-[\d\.]{3,}jar"),
-                    'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
                     'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
                                  ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
@@ -365,16 +363,6 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                                    [hadoop_dict[hadoop_distro]['TRAF_HBASE_TRX_REGEX'].search(l)]
                                    if m][0]
             template_text = re.sub('TRAF_HBASE_TRX_FILE', traf_hbase_trx_file, template_text)
-
-            traf_hbase_access_file = [m.group(0) for l in traf_lib_file_list for m in
-                                      [hadoop_dict[hadoop_distro]['TRAF_HBASE_ACS_REGEX'].search(l)]
-                                      if m][0]
-            template_text = re.sub('TRAF_HBASE_ACS_FILE', traf_hbase_access_file, template_text)
-
-            # find the Trafodion HBase version being used
-            hbaseVerRegex = re.compile("^hbase-trx(-[a-z0-9_]+)?-([\d\.]{3,})jar")
-            traf_hbase_version = hbaseVerRegex.match(traf_hbase_trx_file).group(2)[:-1]
-            template_text = re.sub('MY_TRAF_HBASE_VERSION', traf_hbase_version, template_text)
 
             # fix up T2 Hadoop properties
             for hprop in ['MY_HADOOP_DISTRO', 'MY_HADOOP_VERSION', 'MY_MVN_URL', 'MY_HBASE_VERSION',
