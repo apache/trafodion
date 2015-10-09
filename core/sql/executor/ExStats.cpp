@@ -11127,7 +11127,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
        tempNum =  str_atoi(pidTemp, str_len(pidTemp));
        if (tempNum < 0)
           tempNum = -1;
-       *pid = (short)tempNum;
+       *pid = (pid_t)tempNum;
     }
   }
   if (timeTemp != NULL)
@@ -11155,7 +11155,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   if (etTemp != NULL)
   {
     tempNum =  atoi(etTemp);
-    *filter = (short)tempNum;
+    *filter = (Lng32)tempNum;
     retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
   }
   if (nodeNameTemp != NULL)
