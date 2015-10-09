@@ -445,29 +445,12 @@ public class ServerApiGetCatalogs {
             if (outCount > 0){
                 trafStmt.addTResultSet(new TrafResultSet(rs, 0, stmtLabel, 0, outDescList,""));
             }
-/*
-            trafStmt.setoutCount(outCount);
-            if (outCount > 0){
-                trafStmt.setColumnLength(outDescList.getVarLength());
-                trafStmt.setoutDescList(outDescList);
-            }
-*/
 //
 //===================calculate length of output ByteBuffer========================
 //
             bbHeader.clear();
             bbBody.clear();
 //
-// check if ByteBuffer is big enough for output
-//
-//===================== build output ==============================================
-//
-/*          odbc_SQLSvc_GetSQLCatalogs_exc_ m_p1;
-            String m_p2; stmtLabel
-            SQLItemDescList_def m_p3;
-            ERROR_DESC_LIST_def m_p4;
-            String proxySyntax = "";
-*/
 // check if ByteBuffer is big enough for output
 //
             int dataLength = serverException.lengthOfData();
@@ -522,68 +505,4 @@ public class ServerApiGetCatalogs {
         return clientData;
     }
 }
-/*
-//
-// length of odbc_SQLSvc_GetSQLCatalogs_exc_ *exception_
-//
-    wlength += sizeof(exception_->exception_nr);
-    wlength += sizeof(exception_->exception_detail);
 
-    switch(exception_->exception_nr)
-    {
-        case odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_:
-           wlength += sizeof(exceptionLength);
-           if (exception_->u.ParamError.ParamDesc != NULL)
-           {
-              exceptionLength = strlen(exception_->u.ParamError.ParamDesc) + 1;
-              wlength += exceptionLength;
-           }
-           break;
-
-        case odbc_SQLSvc_GetSQLCatalogs_SQLError_exn_:
-            ERROR_DESC_LIST_length( (ERROR_DESC_LIST_def *)&exception_->u.SQLError.errorList, wlength);
-            break;
-
-        case odbc_SQLSvc_GetSQLCatalogs_InvalidConnection_exn_:
-        case odbc_SQLSvc_GetSQLCatalogs_SQLInvalidHandle_exn_:
-            break;
-        default:
-            break;
-    }
-
-//
-// length of IDL_char *catStmtLabel
-//
-    wlength += sizeof(catStmtLabelLength);
-    if (catStmtLabel != NULL)
-    {
-        catStmtLabelLength = strlen(catStmtLabel)+1;
-        wlength += catStmtLabelLength;
-    }
-
-//
-// length of SQLItemDescList_def *outputDesc
-//
-    SQLITEMDESC_LIST_length( outputDesc, wlength);
-
-//
-// length of ERROR_DESC_LIST_def *sqlWarning
-//
-//
-    ERROR_DESC_LIST_LENGTH2(sqlWarning)
-
-//
-//
-//
-
-  wlength += sizeof (proxySyntaxStringLen);
-
-  if((pSrvrStmt != NULL) && (pSrvrStmt->SpjProxySyntaxString != NULL))
-    proxySyntaxStringLen = strlen(pSrvrStmt->SpjProxySyntaxString);
-  else
-    proxySyntaxStringLen = 0;
-
-  if(proxySyntaxStringLen > 0)
-    wlength += proxySyntaxStringLen + 1; // null terminated string
-
- */
