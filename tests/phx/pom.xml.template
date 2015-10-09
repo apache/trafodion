@@ -1,5 +1,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+<!--
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@                                                         
+-->
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -20,6 +43,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jdbc_path>MYJDBC_PATH</jdbc_path>
+
     <!-- START_FOR_T2_ONLY -->
     <hadoop_distro>MY_HADOOP_DISTRO</hadoop_distro>
     <hadoop_version>MY_HADOOP_VERSION</hadoop_version>
@@ -27,8 +51,8 @@
     <hbase_version>MY_HBASE_VERSION</hbase_version>
     <hive_version>MY_HIVE_VERSION</hive_version>
     <zookeeper_version>MY_ZOOKEEPER_VERSION</zookeeper_version>
-    <traf_hbase_version>MY_TRAF_HBASE_VERSION</traf_hbase_version>
     <!-- END_FOR_T2_ONLY -->
+
   </properties>
 
   <!-- START_FOR_T2_ONLY -->
@@ -168,22 +192,27 @@
       <version>1.7.5</version>
       <scope>test</scope>
     </dependency>
+
     <!-- Trafodion specific test dependencies -->
+
     <dependency>
       <groupId>hbase-trx</groupId>
       <artifactId>hbase-trx</artifactId>
-      <version>${traf_hbase_version}</version>
+      <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
       <systemPath>${env.MY_SQROOT}/export/lib/TRAF_HBASE_TRX_FILE</systemPath>
     </dependency>
+
     <dependency>
       <groupId>org.trafodion.sql</groupId>
-      <artifactId>HBaseAccess</artifactId>
-      <version>${traf_hbase_version}</version>
+      <artifactId>trafodion-sql</artifactId>
+      <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/TRAF_HBASE_ACS_FILE</systemPath>
-    </dependency>
+      <systemPath>${env.MY_SQROOT}/export/lib/trafodion-sql-${env.TRAFODION_VER}.jar</systemPath>
+     </dependency>
+
     <!-- END_FOR_T2_ONLY -->
+
     <dependency>
       <groupId>MYJDBC_GROUP_ID</groupId>
       <artifactId>MYJDBC_ART_ID</artifactId>
@@ -191,6 +220,7 @@
       <scope>system</scope>
       <systemPath>${jdbc_path}</systemPath>
     </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -245,6 +275,7 @@
             <HBASE_TRXDIR>${env.HBASE_TRXDIR}</HBASE_TRXDIR>
             <SQ_MBTYPE>${env.SQ_MBTYPE}</SQ_MBTYPE>
             <MY_SQROOT>${env.MY_SQROOT}</MY_SQROOT>
+            <TRAFODION_VER>${env.TRAFODION_VER}</TRAFODION_VER>
             <MPI_TMPDIR>${env.MPI_TMPDIR}</MPI_TMPDIR>
             <LD_PRELOAD>${env.LD_PRELOAD}</LD_PRELOAD>
             <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}</LD_LIBRARY_PATH>

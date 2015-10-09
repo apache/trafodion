@@ -3632,6 +3632,563 @@ CostMethodMergeUnion::scmComputeOperatorCostInternal(RelExpr *op,
 	   
 //<pb>
 
+// -------------------------------------------------------------------
+// Cost methods for write DML operations
+// -------------------------------------------------------------------
+
+
+// -------------------------------------------------------------------
+// This method is a stub for obsolete old cost model
+// -------------------------------------------------------------------
+Cost*
+CostMethodHbaseUpdateOrDelete::computeOperatorCostInternal(RelExpr* op,
+  const Context * context,
+  Lng32& countOfStreams)
+{
+  CMPASSERT(false);  // should never be called
+  return NULL;
+}
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseUpdateOrDelete::allKeyColumnsHaveHistogramStatistics()
+//
+// Returns TRUE if all key columns have histograms, FALSE if not.
+// -----------------------------------------------------------------------
+NABoolean CostMethodHbaseUpdateOrDelete::allKeyColumnsHaveHistogramStatistics(
+  const IndexDescHistograms & histograms,
+  const IndexDesc * CIDesc
+  ) const
+{
+  // Check if all key columns have histogram statistics
+  NABoolean statsForAllKeyCols = TRUE;
+  for ( CollIndex j = 0; j < CIDesc->getIndexKey().entries(); j++ )
+  {
+    if (histograms.isEmpty())
+    {
+      statsForAllKeyCols = FALSE;
+      break;
+    }
+    else if (!histograms.getColStatsPtrForColumn((CIDesc->getIndexKey()) [j]))
+    {
+      // If we get a null pointer when we try to retrieve a
+      // ColStats for a column of this table, then no histogram
+      // data was created for that column.
+      statsForAllKeyCols = FALSE;
+      break;
+    }
+  }
+
+  return statsForAllKeyCols;
+}   // CostMethodHbaseUpdateOrDelete::allKeyColumnsHaveHistogramStatistics()
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms()
+//
+// Returns an estimate of the number of rows that will be scanned as a
+// result of applying key predicates. Assumes that histograms exist for
+// all key columns.
+// -----------------------------------------------------------------------
+#pragma nowarn(262)   // warning elimination
+CostScalar
+CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms(
+  IndexDescHistograms & histograms,
+  const ColumnOrderList & keyPredsByCol,
+  const CostScalar & activePartitions,
+  const IndexDesc * CIDesc
+  ) const
+{
+
+  // Determine if there are single subset predicates:
+  CollIndex singleSubsetPrefixOrder;
+  NABoolean itIsSingleSubset =
+    keyPredsByCol.getSingleSubsetOrder( singleSubsetPrefixOrder );
+
+  NABoolean thereAreSingleSubsetPreds = FALSE;
+  if ( singleSubsetPrefixOrder > 0 )
+  {
+    thereAreSingleSubsetPreds = TRUE;
+  }
+  else
+  {
+    //  singleSubsetPrefixOrder==0  means either there
+    // is an equal, an IN,  or there are no key preds in the
+    // first column.
+    // singleSubsetPrefixOrder==0 AND itIsSingleSubset
+    // means there is an EQUAL or there are no key preds
+    // in the first column, check for existance of
+    // predicates in this case:
+    if (     itIsSingleSubset // this FALSE for an IN predicate
+	 AND keyPredsByCol[0] != NULL
+       )
+    {
+      thereAreSingleSubsetPreds = TRUE;
+    }
+  }
+
+
+  CMPASSERT(NOT histograms.isEmpty());
+
+  // Apply those key predicates that reference key columns
+  // before the first missing key to the histograms:
+  const SelectivityHint * selHint = CIDesc->getPrimaryTableDesc()->getSelectivityHint();
+  const CardinalityHint * cardHint = CIDesc->getPrimaryTableDesc()->getCardinalityHint();
+
+  if ( thereAreSingleSubsetPreds || selHint || cardHint )
+  {
+    // ---------------------------------------------------------
+    // There are some key predicates, so apply them
+    // to the histograms and get the total rows:
+    // ---------------------------------------------------------
+
+    // Get all the key preds for the key columns up to the first
+    // key column with no key preds (if any)
+    ValueIdSet singleSubsetPrefixPredicates;
+    for ( CollIndex i = 0; i <= singleSubsetPrefixOrder; i++ )
+    {
+      const ValueIdSet *predsPtr = keyPredsByCol[i];
+      CMPASSERT( predsPtr != NULL ); // it must contain preds
+      singleSubsetPrefixPredicates.insert( *predsPtr );
+
+    } // for every key col in the sing. subset prefix
+
+    RelExpr * dummyExpr = new (STMTHEAP) RelExpr(ITM_FIRST_ITEM_OP,
+				                 NULL,
+				                 NULL,
+				                 STMTHEAP);
+
+    histograms.applyPredicates( singleSubsetPrefixPredicates, *dummyExpr, selHint, cardHint);
+
+  } // if there are key predicates
+
+  // If there is no key predicates, a full table scan will be generated.
+  // Otherwise, key predicates will be applied to the histograms.
+  // Now, compute the number of rows after key preds are applied,
+  // and accounting for asynchronous parallelism:
+  CostScalar numRowsToScan =
+    ((histograms.getRowCount()/activePartitions).getCeiling()).minCsOne();
+
+  return numRowsToScan;
+}   // CostMethodHbaseUpdateOrDelete::numRowsToScanWhenAllKeyColumnsHaveHistograms()
+#pragma warn(262)  // warning elimination
+
+// -----------------------------------------------------------------------
+// CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation().
+// -----------------------------------------------------------------------
+void CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation(
+  CostScalar & randomIOs,        // out
+  CostScalar & sequentialIOs,    // out
+  const IndexDesc * CIDesc,
+  const CostScalar & numRowsToScan,
+  NABoolean probesInOrder
+  ) const
+{
+  const CostScalar & kbPerBlock = CIDesc->getBlockSizeInKb();
+  const CostScalar rowsPerBlock =
+    ((kbPerBlock * csOneKiloBytes) /
+     CIDesc->getNAFileSet()->getRecordLength()).getFloor();
+  CostScalar totalIndexBlocks(csZero);
+
+  if (probesInOrder)
+  {
+    // If the probes are in order, assume that each successive
+    // probe refers to the next record in the table, i.e. the
+    // probes are "highly inclusive", or in other words, there
+    // are no gaps in the records to be updated. So, assuming
+    // this, the number of blocks that need to be read is
+    // the # of probes divided by the rows per block. This is
+    // guaranteed to be correct if we are updating most of the
+    // rows, we can only go wrong if we are updating a small
+    // number of dispersed rows. This seems unlikely, and anyway
+    // even if it's true we won't be that far off. If the rows
+    // are highly inclusive, we could also assume that since the
+    // blocks will be contiguous that there will only by one seek.
+    // But, we'd be way off in the case where the assumption
+    // doesn't hold so we won't do it for now. What we need is
+    // some way to determine the "inclusiveness factor".
+    sequentialIOs = (numRowsToScan / rowsPerBlock).getCeiling();
+    // The # of index blocks to read is based on the number of data
+    // blocks that must be read
+    totalIndexBlocks =
+      CIDesc->getEstimatedIndexBlocksLowerBound(sequentialIOs);
+    randomIOs = totalIndexBlocks;
+  }
+  else  // probes not in order
+  {
+    // Assume all IOs are random. This is a bit pessimistic
+    // because at some point much of the file will be in cache,
+    // so one could argue that as the number of rows updated
+    // or deleted grows large the number of random IOs should
+    // decrease. We'll leave that to future work.
+    sequentialIOs = csZero;
+    totalIndexBlocks =
+      CIDesc->getEstimatedIndexBlocksLowerBound(numRowsToScan);
+    randomIOs = numRowsToScan + totalIndexBlocks;
+  }
+
+} // CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation()
+
+
+
+// ----QUICKSEARCH FOR HbaseUpdate........................................
+
+/**********************************************************************/
+/*                                                                    */
+/*                      CostMethodHbaseUpdate                         */
+/*                                                                    */
+/**********************************************************************/
+
+//*******************************************************************
+// This method computes the cost vector of the HbaseUpdate operation
+//*******************************************************************
+Cost*
+CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
+  const PlanWorkSpace* pws,
+  Lng32& countOfStreams)
+{
+  // TODO: Write this method; the line below is a stub
+  return CostMethod::scmComputeOperatorCostInternal(op,pws,countOfStreams);
+}
+
+// ----QUICKSEARCH FOR HbaseDelete........................................
+
+/**********************************************************************/
+/*                                                                    */
+/*                      CostMethodHbaseDelete                         */
+/*                                                                    */
+/**********************************************************************/
+
+//*******************************************************************
+// This method computes the cost vector of the HbaseDelete operation
+//*******************************************************************
+Cost*
+CostMethodHbaseDelete::scmComputeOperatorCostInternal(RelExpr* op,
+  const PlanWorkSpace* pws,
+  Lng32& countOfStreams)
+{
+  const Context * myContext = pws->getContext();
+
+  cacheParameters(op,myContext);
+  estimateDegreeOfParallelism();
+
+  const InputPhysicalProperty* ippForMe =
+    myContext->getInputPhysicalProperty();
+
+  // -----------------------------------------
+  // Save off estimated degree of parallelism.
+  // -----------------------------------------
+  countOfStreams = countOfStreams_;
+
+  HbaseDelete* delOp = (HbaseDelete *)op;   // downcast
+
+  CMPASSERT(partFunc_ != NULL);
+  CostScalar activePartitions =
+   (CostScalar)
+     (((NodeMap *)(partFunc_->getNodeMap()))->getNumActivePartitions());
+  const IndexDesc* CIDesc = delOp->getIndexDesc();
+  const CostScalar & recordSizeInKb = CIDesc->getRecordSizeInKb();
+
+  CostScalar tuplesProcessed(csZero);
+  CostScalar tuplesProduced(csZero);
+  CostScalar tuplesSent(csZero);  // we use tuplesSent to model sending rowIDs to Hbase 
+  CostScalar randomIOs(csZero);
+  CostScalar sequentialIOs(csZero);
+
+  CostScalar countOfAsynchronousStreams = activePartitions;
+
+  // figure out if the probes are in order - if they are, then when
+  // scanning, I/O will tend to be sequential
+
+  NABoolean probesInOrder = FALSE;
+  if (ippForMe != NULL)  // input physical properties exist?
+  {
+    // See if the probes are in order.
+
+    // For delete, a partial order is ok.
+    NABoolean partiallyInOrderOK = TRUE;
+    NABoolean probesForceSynchronousAccess = FALSE;
+    ValueIdList targetSortKey = CIDesc->getOrderOfKeyValues();
+    ValueIdSet sourceCharInputs =
+      delOp->getGroupAttr()->getCharacteristicInputs();
+
+    ValueIdSet targetCharInputs;
+    // The char inputs are still in terms of the source. Map them to the target.
+    // Note: The source char outputs in the ipp have already been mapped to
+    // the target. CharOutputs are a set, meaning they do not have duplicates
+    // But we could have cases where two columns of the target are matched to the
+    // same source column, example: Sol: 10-040416-5166, where we have
+    // INSERT INTO b6table1
+    //		  ( SELECT f, h_to_f, f, 8.4
+    //            FROM btre211
+    //            );
+    // Hence we use lists here instead of sets.
+    // Check to see if there are any duplicates in the source Characteristics inputs
+    // if no, we shall perform set operations, as these are faster
+    ValueIdList bottomValues = delOp->updateToSelectMap().getBottomValues();
+    ValueIdSet bottomValuesSet(bottomValues);
+    NABoolean useListInsteadOfSet = FALSE;
+
+    CascadesGroup* group1 = (*CURRSTMT_OPTGLOBALS->memo)[delOp->getGroupId()];
+
+    GenericUpdate* upOperator = (GenericUpdate *) group1->getFirstLogExpr();
+
+    if (((upOperator->getTableName().getSpecialType() == ExtendedQualName::NORMAL_TABLE ) || (upOperator->getTableName().getSpecialType() == ExtendedQualName::GHOST_TABLE )) &&
+     (bottomValuesSet.entries() != bottomValues.entries() ) )
+    {
+
+      ValueIdList targetInputList;
+      // from here get all the bottom values that appear in the sourceCharInputs
+      bottomValues.findCommonElements(sourceCharInputs );
+      bottomValuesSet = bottomValues;
+
+      // we can use the bottomValues only if these contain some duplicate columns of
+      // characteristics inputs, otherwise we shall use the characteristics inputs.
+      if (bottomValuesSet == sourceCharInputs)
+      {
+        useListInsteadOfSet = TRUE;
+	delOp->updateToSelectMap().rewriteValueIdListUpWithIndex(
+	  targetInputList,
+	  bottomValues);
+	targetCharInputs = targetInputList;
+      }
+    }
+
+    if (!useListInsteadOfSet)
+    {
+      delOp->updateToSelectMap().rewriteValueIdSetUp(
+	targetCharInputs,
+	sourceCharInputs);
+    }
+
+    // If a target key column is covered by a constant on the source side,
+    // then we need to remove that column from the target sort key
+    removeConstantsFromTargetSortKey(&targetSortKey,
+                                   &(delOp->updateToSelectMap()));
+    NABoolean orderedNJ = TRUE;
+    // Don't call ordersMatch if njOuterOrder_ is null.
+    if (ippForMe->getAssumeSortedForCosting())
+      orderedNJ = FALSE;
+    else
+      // if leading keys are not same then don't try ordered NJ.
+      orderedNJ =
+        isOrderedNJFeasible(*(ippForMe->getNjOuterOrder()), targetSortKey);
+
+    if (orderedNJ AND 
+        ordersMatch(ippForMe,
+                    CIDesc,
+                    &targetSortKey,
+                    targetCharInputs,
+                    partiallyInOrderOK,
+                    probesForceSynchronousAccess))
+    {
+      probesInOrder = TRUE;
+      if (probesForceSynchronousAccess)
+      {
+        // The probes form a complete order across all partitions and
+        // the clustering key and partitioning key are the same. So, the
+        // only asynchronous I/O we will see will be due to ESPs. So,
+        // limit the count of streams in DP2 by the count of streams in ESP.
+
+        // Get the logPhysPartitioningFunction, which we will use
+        // to get the logical partitioning function. If it's NULL,
+        // it means the table was not partitioned at all, so we don't
+        // need to limit anything since there already is no asynch I/O.
+
+     // TODO: lppf is always null in Trafodion; figure out what to do instead...
+        const LogPhysPartitioningFunction* lppf =
+            partFunc_->castToLogPhysPartitioningFunction();
+        if (lppf != NULL)
+        {
+          PartitioningFunction* logPartFunc =
+            lppf->getLogPartitioningFunction();
+          // Get the number of ESPs:
+          CostScalar numParts = logPartFunc->getCountOfPartitions();
+
+          countOfAsynchronousStreams = MINOF(numParts,
+                                             countOfAsynchronousStreams);
+        } // lppf != NULL
+      } // probesForceSynchronousAccess
+    } // probes are in order
+  } // if input physical properties exist
+
+  CostScalar currentCpus = 
+    (CostScalar)myContext->getPlan()->getPhysicalProperty()->getCurrentCountOfCPUs();
+  CostScalar activeCpus = MINOF(countOfAsynchronousStreams, currentCpus);
+  CostScalar streamsPerCpu =
+    (countOfAsynchronousStreams / activeCpus).getCeiling();
+
+
+  CostScalar noOfProbesPerPartition(csOne);
+
+  CostScalar numRowsToDelete(csOne);
+  CostScalar numRowsToScan(csOne);
+
+  CostScalar commonComputation;
+
+  // Determine # of rows to scan and to delete
+
+  if (delOp->getSearchKey() && delOp->getSearchKey()->isUnique() && 
+    (noOfProbes_ == 1))
+  {
+    // unique access
+
+    activePartitions = csOne;
+    countOfAsynchronousStreams = csOne;
+    activeCpus = csOne;
+    streamsPerCpu = csOne;
+    numRowsToScan = csOne;
+    // assume the 1 row always satisfies any executor predicates so
+    // we'll always do the Delete
+    numRowsToDelete = csOne;
+  }
+  else
+  {
+    // non-unique access
+
+    numRowsToDelete =
+      ((myRowCount_ / activePartitions).getCeiling()).minCsOne();
+    noOfProbesPerPartition =
+      ((noOfProbes_ / countOfAsynchronousStreams).getCeiling()).minCsOne();
+
+    // need to compute the number of rows that satisfy the key predicates
+    // to compute the I/Os that must be performed
+
+    // need to create a new histogram, since the one from input logical
+    // prop. has the histogram for the table after all executor preds are
+    // applied (i.e. the result cardinality)
+    IndexDescHistograms histograms(*CIDesc,CIDesc->getIndexKey().entries());
+
+    // retrieve all of the key preds in key column order
+    ColumnOrderList keyPredsByCol(CIDesc->getIndexKey());
+    delOp->getSearchKey()->getKeyPredicatesByColumn(keyPredsByCol);
+
+    if ( NOT allKeyColumnsHaveHistogramStatistics( histograms, CIDesc ) )
+    {
+      // All key columns do not have histogram data, the best we can
+      // do is use the number of rows that satisfy all predicates
+      // (i.e. the number of rows we will be updating)
+      numRowsToScan = numRowsToDelete;
+    }
+    else
+    {
+      numRowsToScan = numRowsToScanWhenAllKeyColumnsHaveHistograms(
+	histograms,
+	keyPredsByCol,
+	activePartitions,
+	CIDesc
+	);
+      if (numRowsToScan < numRowsToDelete) // sanity test
+      {
+        // we will scan at least as many rows as we delete
+        numRowsToScan = numRowsToDelete;
+      }
+    }
+  }
+
+  // Notes: At execution time, several different TCBs can be created
+  // for a delete. We can class them three ways: Unique, Subset, and
+  // Rowset. Representative examples of the three classes are:
+  //
+  //   ExHbaseUMDtrafUniqueTaskTcb
+  //   ExHbaseUMDtrafSubsetTaskTcb
+  //   ExHbaseAccessSQRowsetTcb
+  //
+  // The theory of operation of each of these differs somewhat. 
+  //
+  // For the Unique variant, we use an HBase "get" to obtain a row, apply
+  // a predicate to it, then do an HBase "delete" to delete it if the
+  // predicate is true. (If there is no predicate, we'll simply do a
+  // "checkAndDelete" so there would be no "get" cost.) 
+  //
+  // For the Subset variant, we use an HBase "scan" to obtain a sequence
+  // of rows, apply a predicate to each, then do an HBase "delete" on
+  // each row that passes the predicate.
+  //
+  // For the Rowset variant, we simply pass all the input keys to 
+  // HBase in batches in HBase "deleteRows" calls. (In Explain plans,
+  // this TCB shows up as "trafodion_delete_vsbb", while the first two
+  // show up as "trafodion_delete".) There is no "get" cost. In plans
+  // with this TCB, there is a separate Scan TCB to obtain the keys,
+  // which then flow to this Rowset TCB via a tuple flow or nested join.
+  // (Such a separate Scan might exist with the first two TCBs also,
+  // e.g., when an index is used to decide which rows to delete.)
+  // The messaging cost to HBase is also reduced since multiple delete
+  // keys are sent per HBase interaction.
+  //
+  // Unfortunately the decisions as to which TCB will be used are
+  // currently made in the generator code and so aren't easily 
+  // available to us here. For the moment then, we make no attempt 
+  // to distinguish a separate "get" cost, nor do we take into account
+  // possible reduced message cost in the Rowset case. Should this
+  // choice be refactored in the future to push it into the Optimizer,
+  // then we can do a better job here. We did attempt to distinguish
+  // the unique case here from the others, but even there our criteria
+  // are not quite the same as in the generator. So at best, this attempt
+  // simply sharpens the cost estimate in this one particular case.
+
+
+  // Compute the I/O cost
+
+  computeIOCostsForCursorOperation(
+    randomIOs /* out */,
+    sequentialIOs /* out */,
+    CIDesc,
+    numRowsToScan,
+    probesInOrder
+    );
+
+  // Compute the tuple cost
+
+  tuplesProduced = numRowsToDelete;
+  tuplesProcessed = numRowsToScan; 
+  tuplesSent = numRowsToDelete;
+
+  CostScalar rowSize = delOp->getIndexDesc()->getRecordLength();
+  CostScalar rowSizeFactor = scmRowSizeFactor(rowSize); 
+  CostScalar outputRowSize = delOp->getGroupAttr()->getRecordLength();
+  CostScalar outputRowSizeFactor = scmRowSizeFactor(outputRowSize);
+
+  tuplesProcessed *= rowSizeFactor;
+  tuplesSent *= rowSizeFactor;
+  tuplesProduced *= outputRowSizeFactor;
+
+
+  // ---------------------------------------------------------------------
+  // Synthesize and return cost object.
+  // ---------------------------------------------------------------------
+
+  CostScalar probeRowSize = delOp->getIndexDesc()->getKeyLength();
+  Cost * deleteCost = 
+    scmCost(tuplesProcessed, tuplesProduced, tuplesSent, randomIOs, sequentialIOs, noOfProbes_,
+	    rowSize, csZero, outputRowSize, probeRowSize);
+
+#ifndef NDEBUG
+if ( CmpCommon::getDefault( OPTIMIZER_PRINT_COST ) == DF_ON )
+    {
+      pfp = stdout;
+      fprintf(pfp, "HbaseDelete::scmComputeOperatorCostInternal()\n");
+      deleteCost->getScmCplr().print(pfp);
+      fprintf(pfp, "HBase Delete elapsed time: ");
+      fprintf(pfp,"%f", deleteCost->
+              convertToElapsedTime(
+                   myContext->getReqdPhysicalProperty()).
+              value());
+      fprintf(pfp,"\n");
+      fprintf(pfp,"CountOfStreams returned %d\n",countOfStreams);
+    }
+#endif
+
+  return deleteCost;
+
+}  // CostMethodHbaseDelete::scmComputeOperatorCostInternal()
+
+// ----QUICKSEARCH FOR HbaseInsert ........................................
+
+/**********************************************************************/
+/*                                                                    */
+/*                      CostMethodHbaseInsert                         */
+/*                                                                    */
+/**********************************************************************/
+
 //**************************************************************
 // This method computes the cost vector of the HbaseInsert operation
 //**************************************************************
@@ -3686,11 +4243,12 @@ CostMethodHbaseInsert::scmComputeOperatorCostInternal(RelExpr* op,
   if (printCost)
     {
       pfp = stdout;
-      fprintf(pfp, "DP2INSERT::scmComputeOperatorCostInternal()\n");
+      fprintf(pfp, "HbaseInsert::scmComputeOperatorCostInternal()\n");
       hbaseInsertCost->getScmCplr().print(pfp);
-      fprintf(pfp, "DP2Insert elapsed time: ");
+      fprintf(pfp, "Hbase Insert elapsed time: ");
       fprintf(pfp, "%f", hbaseInsertCost->convertToElapsedTime(myContext->getReqdPhysicalProperty()).value());
       fprintf(pfp, "\n");
+      fprintf(pfp,"CountOfStreams returned %d\n",countOfStreams);
     }
 #endif
 
@@ -3701,6 +4259,10 @@ CostMethodHbaseInsert::scmComputeOperatorCostInternal(RelExpr* op,
 
   return hbaseInsertCost;
 }
+
+/**********************************************************************/
+// End cost methods for WRITE DML operations
+/**********************************************************************/
 
 //<pb>
 

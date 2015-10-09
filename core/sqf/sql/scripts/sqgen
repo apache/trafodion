@@ -98,6 +98,23 @@ elif [[ $sq_stat == 2 ]]; then
    exit 1
 fi
 
+# Make sure sqgen uses the latest environment
+cd $MY_SQROOT
+if [ "$SQ_BUILD_TYPE" == "release" -a -f sqenvr.sh ]; then
+  . ./sqenvr.sh
+else
+  . ./sqenv.sh
+fi
+
+if [ -n "$CHANGED_SQ_ENV_RESTART_SHELL" ]; then
+  # This is set by sqenvcom.sh when the environment has changed
+  # in the shell. The CLASSPATH and other variables are not reliable
+  # in such a situation and we should not do an sqgen.
+  echo "A change in environment variables occurred."
+  echo "Please retry sqgen in a new shell. Exiting..."
+  exit 1
+fi
+
 cd $MY_SQROOT/sql/scripts
 
 # Check to make sure this is a real cluster

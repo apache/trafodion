@@ -357,8 +357,11 @@ ExplainTuple *PhysicalTableMappingUDF::addSpecificExplainInfo(ExplainTupleMaster
   description += " external_name: ";
   description += getNARoutine()->getExternalName();
 
+  description += " library: ";
+  description += getNARoutine()->getLibrarySqlName().getExternalName();
+
   description += " external_file: ";
-  description += getNARoutine()->getFile();
+  description += getNARoutine()->getExternalPath();
   description += " ";
 
   explainTuple->setDescription(description);

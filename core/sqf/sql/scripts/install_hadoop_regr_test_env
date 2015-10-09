@@ -134,12 +134,13 @@ fi
 
 if [ ! -f $MY_LOCAL_SW_DIST/${TPCDS_ZIP} ]; then
   # Right now there is no URL to download this tool automatically
-  echo '*********************** ERROR *************************'
-  echo "Please download the tpcds_kit.zip file from"
-  echo "http://www.tpc.org/tpcds/dsgen-download-request.asp"
-  echo "and place it into a directory pointed to by the MY_LOCAL_SW_DIST"
-  echo "environment variable. Then retry installing. Sorry, this is due"
-  echo "to the TPC wanting your email address."
+  # Please download the tpcds_kit.zip file from"
+  # "http://www.tpc.org/tpcds/dsgen-download-request.asp"
+  # "and place it into a directory pointed to by the MY_LOCAL_SW_DIST"
+  # "environment variable. Then retry installing. Sorry, this is due"
+  # "to the TPC wanting your email address."
+  echo "The testware tpcds_kit.zip does not exist and will not be installed"
+  echo "This testware is needed to run developer HIVE regression tests"
   exit 99
 fi
 
