@@ -571,10 +571,10 @@ if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN |
 fi
 
 # check for missing tpcds_kit.zip file
+INSTALL_TPCDS=1
 install_hadoop_regr_test_env --check
-INSTALL_TPCDS=0
 if [ $? -ne 0 ]; then
-  INSTALL_TPCDS=1
+  INSTALL_TPCDS=0
 fi
 
 if [ -d "$MY_SW_ROOT" ]; then
@@ -933,7 +933,7 @@ else
 
   if [ -f $MY_LOCAL_SW_DIST/${HADOOP_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HADOOP_TAR} .
-    echo "Downloaded Hadoop tar file: $MY_LOCAL_SW_DIST/${HADOOP_TAR}" 
+    echo "Copied Hadoop tar file from: $MY_LOCAL_SW_DIST/${HADOOP_TAR}" 
   else
     curl -O ${HADOOP_MIRROR_URL}/${HADOOP_TAR}
     echo "Downloaded Hadoop tar file: ${HADOOP_MIRROR_URL}/${HADOOP_TAR}"
@@ -1149,11 +1149,11 @@ if [ -d mysql/bin ]; then
   echo "MySQL files already exist, skipping MySQL setup"
 else
   #####################################################
-  echo "Downloading MySQL..."
+  echo "Setting up MySQL..."
 
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
-    echo "Downloaded MySql tar file: $MY_LOCAL_SW_DIST/${MYSQL_TAR}"
+    echo "Copied MySql tar file from: $MY_LOCAL_SW_DIST/${MYSQL_TAR}"
   else
     curl ${MYSQL_MIRROR_URL}/${MYSQL_TAR} -o ${MYSQL_TAR}
     echo "Downloaded MySql tar file: ${MYSQL_MIRROR_URL}/${MYSQL_TAR}"
@@ -1228,11 +1228,11 @@ if [ -f mysql-connector-java-*/mysql-connector-java-*.jar ]; then
   echo "MySQL JDBC driver file already exists, skipping JDBC setup"
 else
   #####################################################
-  echo "Downloading MySQL JDBC driver..."
+  echo "Setting up MySQL JDBC driver..."
 
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} .
-    echo "Downloaded MySql JDBC tar file: $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
+    echo "Copied MySql JDBC tar file from: $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   else
     curl -O ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}
     echo "Downloaded MySql JDBC tar file: ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}"
@@ -1251,11 +1251,11 @@ if [ -d hive/bin ]; then
   echo "Hive files already exist, skipping Hive setup"
 else
   #####################################################
-  echo "Downloading Hive..."
+  echo "Setting up Hive..."
 
   if [ -f $MY_LOCAL_SW_DIST/${HIVE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HIVE_TAR} .
-    echo "Downloaded Hive tar file: $MY_LOCAL_SW_DIST/${HIVE_TAR}"
+    echo "Copied Hive tar file from: $MY_LOCAL_SW_DIST/${HIVE_TAR}"
   else
     curl -O ${HIVE_MIRROR_URL}/${HIVE_TAR}
     echo "Downloaded Hive tar file: ${HIVE_MIRROR_URL}/${HIVE_TAR}"
@@ -1379,11 +1379,11 @@ if [ -d hbase/bin ]; then
   echo "HBase files already exist, skipping HBase setup"
 else
   #####################################################
-  echo "Downloading HBase..."
+  echo "Setting up HBase..."
 
   if [ -f $MY_LOCAL_SW_DIST/${HBASE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HBASE_TAR} .
-    echo "Downloaded HBase tar file: $MY_LOCAL_SW_DIST/${HBASE_TAR}"
+    echo "Copied HBase tar file from: $MY_LOCAL_SW_DIST/${HBASE_TAR}"
   else
     curl -O ${HBASE_MIRROR_URL}/${HBASE_TAR}
     echo "Downloaded HBase tar file: ${HBASE_MIRROR_URL}/${HBASE_TAR}"

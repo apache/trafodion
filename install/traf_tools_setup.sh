@@ -112,10 +112,23 @@ if [ "$TOOLSDIR" == "" ]; then
 fi
 
 if [ ! -d "$TOOLSDIR" ]; then                                                    
-  echo
-  echo "ERROR: install directory ($TOOLSDIR) does not exist"
-  echo
-  exit 1;
+  read -p "Tools install directory $TOOLSDIR does not exist, do you want to to create it? y/n : " CREATEDIR
+  if [ "$CREATEDIR" == "y" ]; then
+     mkdir $TOOLSDIR
+     if [ ! -d "$TOOLSDIR" ]; then
+       echo
+       echo "ERROR: unable to create directory $TOOLSDIR"
+       echo
+       exit 1
+     else
+       echo "Created directory $TOOLSDIR"
+     fi
+  else
+    echo
+    echo "ERROR: install directory ($TOOLSDIR) does not exist"
+    echo
+    exit 1;
+  fi
 fi
 
 if [ $VERBOSE -eq 1 ]; then

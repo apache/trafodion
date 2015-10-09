@@ -97,16 +97,14 @@ export MAKEFLAGS="-j$cpucnt"
 
 # For now set up the TOOLSDIR, it may be overwritten later when the
 # .trafodion configuration file is loaded.
-if [[ -n "$CLUSTERNAME" ]]; then
-  if [ -z "$TOOLSDIR" ]; then
+if [ -z "$TOOLSDIR" ]; then
+  if [[ -n "$CLUSTERNAME" ]]; then
     export TOOLSDIR=${TOOLSDIR:-/home/tools}
-  fi
-  export MY_UDR_ROOT=/home/udr
-else
-  if [ -z "$TOOLSDIR" ]; then
+    export MY_UDR_ROOT=/home/udr
+  else
     export TOOLSDIR=${TOOLSDIR:-/opt/home/tools}
+    export MY_UDR_ROOT=$PWD
   fi
-  export MY_UDR_ROOT=$PWD
 fi
 
 
@@ -659,6 +657,13 @@ then
 else
   export LOG4CXX_LIB_DIR=/lib64:/usr/lib64
   export LOG4CXX_INC_DIR=/usr/include/log4cxx
+fi
+
+# For now, set the QT_TOOLKIT envvar if the required version exists in the
+# download location
+if [[ -d $TOOLSDIR/Qt-4.8.5-64 ]]; 
+then
+   export QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
 fi
 
 

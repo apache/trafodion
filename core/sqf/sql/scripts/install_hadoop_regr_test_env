@@ -140,6 +140,7 @@ if [ ! -f $MY_LOCAL_SW_DIST/${TPCDS_ZIP} ]; then
   # "environment variable. Then retry installing. Sorry, this is due"
   # "to the TPC wanting your email address."
   echo "The testware tpcds_kit.zip does not exist and will not be installed"
+  echo "This testware is needed to run developer HIVE regression tests"
   exit 99
 fi
 
