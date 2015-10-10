@@ -28,11 +28,11 @@ all:
 	@echo "Building all Trafodion components"
 	cd core && $(MAKE) all 
 
-package: all
+package: 
 	@echo "Packaging Trafodion components"
 	cd core && $(MAKE) package 
 
-package-all: package
+package-all: 
 	@echo "Packaging all Trafodion components"
 	cd core && $(MAKE) package-all 
 

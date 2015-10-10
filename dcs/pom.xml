@@ -332,7 +332,7 @@
           </dependencies>
           <configuration>
             <additionalClasspathElements>
-               <additionalClasspathElement>${basedir}/target/test-classes/hpt4jdbc-1.5.0.jar</additionalClasspathElement>
+               <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4.jar</additionalClasspathElement>
             </additionalClasspathElements>
             <includes>
               <include>${integrationtest.include}</include>
