@@ -50,7 +50,7 @@ public class ServerApiSqlPrepare {
     private static final int odbc_SQLSvc_Prepare_SQLStillExecuting_exn_ = 4;
     private static final int odbc_SQLSvc_Prepare_SQLQueryCancelled_exn_ = 5;
     private static final int odbc_SQLSvc_Prepare_TransactionError_exn_ = 6;
-    
+
     private static  final Log LOG = LogFactory.getLog(ServerApiSqlPrepare.class);
     private int instance;
     private int serverThread;
@@ -75,20 +75,19 @@ public class ServerApiSqlPrepare {
     private String stmtExplainLabel;
     private int maxRowsetSize;
     private String txId;
-//-----------------------------------------------    
+//-----------------------------------------------
     private int returnCode;
     private SQLWarningOrErrorList errorList;
     private int sqlQueryType;
     private int stmtHandle;
     private int estimatedCost;
-//-----------for params -------------------------
     private ParameterMetaData pmd = null;
     private SQLMXParameterMetaData spmtd = null;
-//-----------for input params -------------------
-    private int inpNumberParams;
-    private Descriptor2List inpDescList;
-//-----------for output params ------------------    
-    private int outNumberParams;
+//-----------for parameters -------------------
+    private int paramCount;
+    private Descriptor2List paramDescList;
+//-----------for output -----------------------
+    private int columnCount;
     private Descriptor2List outDescList;
 //-----------for result set --------------------
     private ResultSetMetaData rsmd = null;
@@ -98,19 +97,19 @@ public class ServerApiSqlPrepare {
     private int        odbcCharset_;
     private int        sqlDataType_;
     private int        dataType_;
-    private short    sqlPrecision_;
-    private short    sqlDatetimeCode_;
+    private short      sqlPrecision_;
+    private short      sqlDatetimeCode_;
     private int        sqlOctetLength_;
     private int        isNullable_;
-    private String    name_;
+    private String     name_;
     private int        scale_;
     private int        precision_;
     private boolean    isSigned_;
     private boolean    isCurrency_;
     private boolean    isCaseSensitive_;
     private String     catalogName_;
-    private String    schemaName_;
-    private String    tableName_;
+    private String     schemaName_;
+    private String     tableName_;
     private int        fsDataType_;
     private int        intLeadPrec_;
     private int        paramMode_;
@@ -120,10 +119,10 @@ public class ServerApiSqlPrepare {
     private int        odbcPrecision_;
     private int        maxLen_;
 
-    private int     displaySize_;
-    private String  label_;
+    private int        displaySize_;
+    private String     label_;
 
-    ServerApiSqlPrepare(int instance, int serverThread) {  
+    ServerApiSqlPrepare(int instance, int serverThread) {
         this.instance = instance;
         this.serverThread = serverThread;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
@@ -146,39 +145,39 @@ public class ServerApiSqlPrepare {
         stmtExplainLabel = "";
         maxRowsetSize = 32000;
         String txId = "";
-    
+
         returnCode = ServerConstants.SQL_SUCCESS;
         errorList = null;
         sqlQueryType = 0;
         stmtHandle = 0;
         estimatedCost = 0;
-        inpNumberParams = 0;
-        inpDescList = null;
-        outNumberParams = 0;
+        paramCount = 0;
+        paramDescList = null;
+        columnCount = 0;
         outDescList = null;
-        
+
         pmd = null;
         spmtd = null;
         rsmd = null;
-        strsmd = null;;
+        strsmd = null;
     }
-    ClientData processApi(ClientData clientData) {  
+    ClientData processApi(ClientData clientData) {
         this.clientData = clientData;
         init();
-//        
+//
 // ==============process input ByteBuffer===========================
-// 
+//
         ByteBuffer bbHeader = clientData.bbHeader;
         ByteBuffer bbBody = clientData.bbBody;
         Header hdr = clientData.hdr;
 
         bbHeader.flip();
         bbBody.flip();
-        
+
         try {
 
             hdr.extractFromByteArray(bbHeader);
-            
+
             dialogueId =  bbBody.getInt();
             sqlAsyncEnable =  bbBody.getInt();
             queryTimeout =  bbBody.getInt();
@@ -218,52 +217,35 @@ public class ServerApiSqlPrepare {
                 throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + dialogueId + "/" + clientData.getDialogueId() + "]");
             }
             boolean isResultSet = false;
-            
-            switch (sqlStmtType){
-                case ServerConstants.TYPE_SELECT:
-                case ServerConstants.TYPE_EXPLAIN:
-                    isResultSet = true;
-                    break;
-                case ServerConstants.TYPE_UPDATE:
-                case ServerConstants.TYPE_DELETE:
-                case ServerConstants.TYPE_INSERT:
-                case ServerConstants.TYPE_INSERT_PARAM:
-                case ServerConstants.TYPE_CREATE:
-                case ServerConstants.TYPE_GRANT:
-                case ServerConstants.TYPE_DROP:
-                case ServerConstants.TYPE_CALL:
-                case ServerConstants.TYPE_CONTROL:
-                default:
-            }
+
 //=====================Process ServerApiSqlPrepare===========================
             try {
 
                 trafConn = clientData.getTrafConnection();
-                trafStmt = trafConn.prepareTrafStatement(stmtLabel, sqlString, isResultSet);
+                trafStmt = trafConn.prepareTrafStatement(stmtLabel, sqlString, sqlStmtType);
+                isResultSet = trafStmt.getIsResultSet();
+                stmtHandle = trafStmt.getStmtHandle();
                 pstmt = (PreparedStatement)trafStmt.getStatement();
-                
+
                 rsmd = pstmt.getMetaData();
                 pmd = pstmt.getParameterMetaData();
-                
-//-------------------------------------------------------------
+
                 if(isResultSet)
-                    outNumberParams = rsmd.getColumnCount();
-                LOG.debug(serverWorkerName + ". outNumberParams :" + outNumberParams);
-//-------------------------------------------------------------                
+                    columnCount = rsmd.getColumnCount();
                 if(pmd != null)
-                    inpNumberParams = pmd.getParameterCount();
-                LOG.debug(serverWorkerName + ". inpNumberParams :" + inpNumberParams);
-                
+                    paramCount = pmd.getParameterCount();
+
                 if(LOG.isDebugEnabled()){
-                    LOG.debug(serverWorkerName + ".outNumberParams :" + outNumberParams);
-                    LOG.debug(serverWorkerName + ".inpNumberParams :" + inpNumberParams);
+                    LOG.debug(serverWorkerName + ".stmtHandle :" + stmtHandle);
+                    LOG.debug(serverWorkerName + ".columnCount :" + columnCount);
+                    LOG.debug(serverWorkerName + ".paramCount :" + paramCount);
                 }
-                if (outNumberParams > 0){
+                if (columnCount > 0){
 //                  strsmd = ((TResultSetMetaData)rsmd).getSqlResultSetMetaData();
                     strsmd = (SQLMXResultSetMetaData)rsmd;
-                    outDescList = new Descriptor2List(outNumberParams, false);
-                    
-                    for (int column = 1; column <= outNumberParams; column++){
+                    outDescList = new Descriptor2List(columnCount, false);
+
+                    for (int column = 1; column <= columnCount; column++){
                         sqlCharset_ = strsmd.getSqlCharset(column);
                         odbcCharset_ = strsmd.getOdbcCharset(column);
                         sqlDataType_ = strsmd.getSqlDataType(column);
@@ -286,13 +268,13 @@ public class ServerApiSqlPrepare {
                         paramMode_ = strsmd.getMode(column);
                         paramIndex_ = strsmd.getIndex(column);
                         paramPos_ = strsmd.getPos(column);
-                        
+
                         odbcPrecision_ = strsmd.getOdbcPrecision(column);
                         maxLen_ = strsmd.getMaxLen(column);
-                        
+
                         displaySize_ = strsmd.getDisplaySize(column);
                         label_ = strsmd.getLabel(column);
- 
+
                         Descriptor2 outDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
                             sqlOctetLength_,isNullable_,name_,scale_,precision_,isSigned_,
                             isCurrency_,isCaseSensitive_,catalogName_,schemaName_,tableName_,
@@ -301,9 +283,9 @@ public class ServerApiSqlPrepare {
                         outDescList.addDescriptor(column,outDesc);
                     }
                     if(LOG.isDebugEnabled()){
-                        for (int column = 1; column <= outNumberParams; column++){
+                        for (int column = 1; column <= columnCount; column++){
                             Descriptor2 dsc = outDescList.getDescriptors2()[column-1];
-                            LOG.debug(serverWorkerName + ". [" + column + "] Output descriptor -------------" );
+                            LOG.debug(serverWorkerName + ". [" + column + "] Column descriptor -------------" );
                             LOG.debug(serverWorkerName + ". oldFormat " + column + " :" + dsc.getOldFormat());
                             LOG.debug(serverWorkerName + ". noNullValue " + column + " :" + dsc.getNoNullValue());
                             LOG.debug(serverWorkerName + ". nullValue " + column + " :" + dsc.getNullValue());
@@ -323,21 +305,19 @@ public class ServerApiSqlPrepare {
                             LOG.debug(serverWorkerName + ". tableName " + column + " :" + dsc.getTableName());
                             LOG.debug(serverWorkerName + ". schemaName " + column + " :" + dsc.getSchemaName());
                             LOG.debug(serverWorkerName + ". headingName " + column + " :" + dsc.getHeadingName());
-                            LOG.debug(serverWorkerName + ". intLeadPrec " + column + " :" + dsc.getParamMode());
-                            LOG.debug(serverWorkerName + ". paramMode " + column + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ". memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
-                            LOG.debug(serverWorkerName + ". allocSize " + column + " :" + dsc.getAllocSize());
-                            LOG.debug(serverWorkerName + ". varLayout " + column + " :" + dsc.getVarLayout());
-                            LOG.debug(serverWorkerName + ". Output descriptor End-------------");
+                            LOG.debug(serverWorkerName + ". intLeadPrec " + column + " :" + dsc.getIntLeadPrec());
+                            LOG.debug(serverWorkerName + ". paramMode " + column + " :" + dsc.getParamMode());
+                            LOG.debug(serverWorkerName + ". varLength " + column + " :" + dsc.getVarLength());
+                            LOG.debug(serverWorkerName + ". Column descriptor End-------------");
                         }
                     }
                 }
-                if (inpNumberParams > 0){
-//                    spmtd = ((TParameterMetaData)pmd).getSqlParameterMetaData();
+                if (paramCount > 0){
+//                  spmtd = ((TParameterMetaData)pmd).getSqlParameterMetaData();
                     spmtd = (SQLMXParameterMetaData)pmd;
-                    inpDescList = new Descriptor2List(inpNumberParams, false);
-                    
-                    for(int param = 1; param <= inpNumberParams; param++){
+                    paramDescList = new Descriptor2List(paramCount, false);
+
+                    for(int param = 1; param <= paramCount; param++){
                         sqlCharset_ = spmtd.getSqlCharset(param);
                         odbcCharset_ = spmtd.getOdbcCharset(param);
                         sqlDataType_ = spmtd.getSqlDataType(param);
@@ -364,18 +344,18 @@ public class ServerApiSqlPrepare {
                         maxLen_ = spmtd.getMaxLen(param);
                         displaySize_ = spmtd.getDisplaySize(param);
                         label_ = spmtd.getLabel(param);
-                        
-                        Descriptor2 inpDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
+
+                        Descriptor2 paramDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
                             sqlOctetLength_,isNullable_,name_,scale_,precision_,isSigned_,
                             isCurrency_,isCaseSensitive_,catalogName_,schemaName_,tableName_,
                             fsDataType_,intLeadPrec_,paramMode_,paramIndex_,paramPos_,odbcPrecision_,
                             maxLen_,displaySize_,label_,false);
-                        inpDescList.addDescriptor(param,inpDesc);
+                        paramDescList.addDescriptor(param,paramDesc);
                     }
                     if(LOG.isDebugEnabled()){
-                        for (int param = 1; param <= inpNumberParams; param++){
-                            Descriptor2 dsc = inpDescList.getDescriptors2()[param-1];
-                            LOG.debug(serverWorkerName + ". [" + param + "] Input descriptor -------------" );
+                        for (int param = 1; param <= paramCount; param++){
+                            Descriptor2 dsc = paramDescList.getDescriptors2()[param-1];
+                            LOG.debug(serverWorkerName + ". [" + param + "] Parameter descriptor -------------" );
                             LOG.debug(serverWorkerName + ". oldFormat " + param + " :" + dsc.getOldFormat());
                             LOG.debug(serverWorkerName + ". noNullValue " + param + " :" + dsc.getNoNullValue());
                             LOG.debug(serverWorkerName + ". nullValue " + param + " :" + dsc.getNullValue());
@@ -395,31 +375,27 @@ public class ServerApiSqlPrepare {
                             LOG.debug(serverWorkerName + ". tableName " + param + " :" + dsc.getTableName());
                             LOG.debug(serverWorkerName + ". schemaName " + param + " :" + dsc.getSchemaName());
                             LOG.debug(serverWorkerName + ". headingName " + param + " :" + dsc.getHeadingName());
-                            LOG.debug(serverWorkerName + ". intLeadPrec " + param + " :" + dsc.getParamMode());
-                            LOG.debug(serverWorkerName + ". paramMode " + param + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ". memAlignOffset " + param + " :" + dsc.getMemAlignOffset());
-                            LOG.debug(serverWorkerName + ". allocSize " + param + " :" + dsc.getAllocSize());
-                            LOG.debug(serverWorkerName + ". varLayout " + param + " :" + dsc.getVarLayout());
-                            LOG.debug(serverWorkerName + ". Input descriptor End -------------" );
+                            LOG.debug(serverWorkerName + ". intLeadPrec " + param + " :" + dsc.getIntLeadPrec());
+                            LOG.debug(serverWorkerName + ". paramMode " + param + " :" + dsc.getParamMode());
+                            LOG.debug(serverWorkerName + ". varLength " + param + " :" + dsc.getVarLength());
+                            LOG.debug(serverWorkerName + ". Parameter descriptor End -------------" );
                         }
                     }
                 }
             } catch (SQLException ex){
                 LOG.error(serverWorkerName + ". Prepare.SQLException " + ex);
-                errorList = new SQLWarningOrErrorList(ex); 
+                errorList = new SQLWarningOrErrorList(ex);
                 returnCode = errorList.getReturnCode();
             }
-            sqlQueryType = sqlStmtType;
-            
+            sqlQueryType = SqlUtils.getSqlStmtType(sqlStmtType);
+
             if (returnCode == ServerConstants.SQL_SUCCESS || returnCode == ServerConstants.SQL_SUCCESS_WITH_INFO) {
-                trafStmt.setInpNumberParams(inpNumberParams);
-                if (inpNumberParams > 0){
-                    trafStmt.setInpParamLength(inpDescList.getParamLength());
-                    trafStmt.setInpDescList(inpDescList);
+                trafStmt.setParamCount(paramCount);
+                if (paramCount > 0){
+                    trafStmt.setParamLength(paramDescList.getVarLength());
+                    trafStmt.setParamDescList(paramDescList);
                 }
-                trafStmt.setOutNumberParams(outNumberParams);
-                if (outNumberParams > 0){
-                    trafStmt.setOutParamLength(outDescList.getParamLength());
+                if (columnCount > 0){
                     trafStmt.setOutDescList(outDescList);
                 }
             }
@@ -430,7 +406,7 @@ public class ServerApiSqlPrepare {
             bbBody.clear();
 //
 // check if ByteBuffer is big enough for output
-//      
+//
             int dataLength = ServerConstants.INT_FIELD_SIZE;        //returnCode
             if (returnCode == ServerConstants.SQL_SUCCESS || returnCode == ServerConstants.SQL_SUCCESS_WITH_INFO) {
                 if (returnCode == ServerConstants.SQL_SUCCESS_WITH_INFO) {
@@ -443,17 +419,16 @@ public class ServerApiSqlPrepare {
                 dataLength += ServerConstants.INT_FIELD_SIZE;    //stmtHandle
                 dataLength += ServerConstants.INT_FIELD_SIZE;    //estimatedCost
 
-                 if (inpNumberParams > 0)
-                    dataLength += inpDescList.lengthOfData();
+                 if (paramCount > 0) // input parameter
+                    dataLength += paramDescList.lengthOfData();
                  else
                     dataLength += ServerConstants.INT_FIELD_SIZE;
-                 
-                if (outNumberParams > 0)
-                    dataLength += outDescList.lengthOfData();
-                else
+
+                 if (paramCount > 0) // output parameter
+                    dataLength += paramDescList.lengthOfData();
+                 else
                     dataLength += ServerConstants.INT_FIELD_SIZE;
-             }
-            else {
+             } else {
                 if (errorList != null)
                     dataLength += errorList.lengthOfData();
                 else
@@ -477,24 +452,26 @@ public class ServerApiSqlPrepare {
                 bbBody.putInt(stmtHandle);
                 bbBody.putInt(estimatedCost);
 
-                if (inpNumberParams > 0)
-                    inpDescList.insertIntoByteBuffer(bbBody);
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". sqlQueryType :" + sqlQueryType + ", stmtHandle :" + stmtHandle + ", estimatedCost :" + estimatedCost);
+
+                if (paramCount > 0) //input
+                    paramDescList.insertIntoByteBuffer(bbBody);
                 else
                     bbBody.putInt(0);
 
-                if (outNumberParams > 0)
-                    outDescList.insertIntoByteBuffer(bbBody);
+                if (paramCount > 0) //output
+                    paramDescList.insertIntoByteBuffer(bbBody);
                 else
                     bbBody.putInt(0);
-            }
-            else {
+            } else {
                 if (errorList != null)
                     errorList.insertIntoByteBuffer(bbBody);
                 else
                     bbBody.putInt(0);
             }
             bbBody.flip();
-//=========================Update header================================ 
+//=========================Update header================================
             hdr.setTotalLength(bbBody.limit());
             hdr.insertIntoByteBuffer(bbHeader);
             bbHeader.flip();
@@ -502,7 +479,7 @@ public class ServerApiSqlPrepare {
             clientData.setByteBufferArray(bbHeader, bbBody);
             clientData.setHdr(hdr);
             clientData.setRequest(ServerConstants.REQUST_WRITE_READ);
-            
+
         } catch (UnsupportedEncodingException ue){
             LOG.error(serverWorkerName + ". Prepare.UnsupportedEncodingException :" + ue);
             clientData.setRequestAndDisconnect();
