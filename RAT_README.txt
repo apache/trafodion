@@ -1,5 +1,9 @@
 ------------------------------------------------------------------------------
 This readme contains the list of excluded files that don't have apache headers and explanations on why they don't and cannnot have headers 
+To run the RAT report for Trafodion:
+1. Install Apache Rat. Taht will install the needed jar file. 
+2. Use command line:
+   java -jar apache-rat-0.11.jar  -E $MY_SQROOT/../../.rat-excludes -d $MY_SQROOT/../.. > <RAT output log file>
 ------------------------------------------------------------------------------
 FILE           :                      NOTES
 ------------------------------------------------------------------------------

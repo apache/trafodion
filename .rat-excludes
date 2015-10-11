@@ -54,6 +54,7 @@ LICENSE.rtf*
 resource.h*
 resource.hm*
 .rat-excludes*
+RAT_README.txt
 readme.md
 eclipse.project
 usage.csv
