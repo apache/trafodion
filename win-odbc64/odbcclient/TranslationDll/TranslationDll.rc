@@ -41,11 +41,11 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "Hewlett-Packard Company"
+            VALUE "CompanyName", "Apache Trafodion"
             VALUE "FileDescription", "TRAF ODBC Translation DLL"
-            VALUE "FileVersion", "1, 2, 0, 0"
+            VALUE "FileVersion", "1.2.0.0"
             VALUE "InternalName", "TRAF ODBC Translation DLL"
-            VALUE "LegalCopyright", "?Copyright 2011 Hewlett-Packard Development Company, LP"
+            VALUE "LegalCopyright", "?Copyright 2015 Apache Trafodion"
             VALUE "OriginalFilename", "traf_translation01.dll"
             VALUE "ProductName", "TRAF ODBC"
             VALUE "ProductVersion", "1.2.0.0"
