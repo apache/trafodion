@@ -229,7 +229,7 @@ cd $BASEDIR
 wget http://download.icu-project.org/files/icu4c/4.4/icu4c-4_4-src.tgz
 tar -xzf icu4c-4_4-src.tgz
 cd icu/source
-./configure --with-library-suffix=Nv44 --prefix=$TOOLSDIR/icu4.4/linux64
+./configure --prefix=$TOOLSDIR/icu4.4/linux64
 make
 make check
 make install
