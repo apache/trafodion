@@ -26,8 +26,6 @@ readme*
 README*
 package.exclude
 eclipse.*cproject*
-.classpath*
-.project*
 Hbase_server.skeleton.cpp*
 __init__.py*
 run_me*
