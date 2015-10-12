@@ -68,7 +68,7 @@ public class Descriptor2 {
 //====== Added zo
     private int        odbcPrecision_;
     private int        maxLen_;
-    
+
     private int        displaySize_;
     private String    label_;
 //================== T4 desc fields ============================================
@@ -94,16 +94,14 @@ public class Descriptor2 {
     private int     intLeadPrec;
     private int     paramMode;
 // temp values
-    private long     memAlignOffset;
-    private int     allocSize;
-    private int     varLayout;
-    
+    private long varLength;
+
     public Descriptor2(int sqlCharset_, int odbcCharset_, int sqlDataType_, int dataType_, short sqlPrecision_, short sqlDatetimeCode_,
             int sqlOctetLength_,int isNullable_,String name_,int scale_,int precision_,boolean isSigned_,
             boolean isCurrency_,boolean isCaseSensitive_,String catalogName_,String schemaName_,String tableName_,
             int fsDataType_,int intLeadPrec_,int paramMode_,int paramIndex_,int paramPos_,int odbcPrecision_,
-            int maxLen_,int displaySize_,String label_, boolean oldFormat){
-        
+            int maxLen_,int displaySize_,String label_, boolean oldFormat) {
+
         this.oldFormat = oldFormat;
         this.sqlCharset_ = sqlCharset_;
         this.odbcCharset_ = odbcCharset_;
@@ -135,7 +133,7 @@ public class Descriptor2 {
         this.displaySize_ = displaySize_;
         this.label_ = label_;
 //====================================================================
-        if(LOG.isDebugEnabled()){
+        if(LOG.isDebugEnabled()) {
             LOG.debug("T2 descriptor ----------");
             LOG.debug("Old Format       :" + oldFormat);
             LOG.debug("sqlCharset_      :" + sqlCharset_);
@@ -207,12 +205,12 @@ public class Descriptor2 {
                     break;
                 case 134:
                     dataType = ServerConstants.SQLTYPECODE_LARGEINT;
-                    break;                              
+                    break;
                 default:
                     break;
             }
         }
-        switch(odbcDataType){
+        switch(odbcDataType) {
             case Types.DATE:
                 odbcDataType = 9;
                 break;
@@ -225,12 +223,10 @@ public class Descriptor2 {
                 precision = odbcPrecision;
                 break;
         }
-//================================================================        
-        memAlignOffset = 0;
-        allocSize = 0;
-        varLayout = 0;
-        
-        if(LOG.isDebugEnabled()){
+//================================================================
+        varLength = 0;
+
+        if(LOG.isDebugEnabled()) {
             LOG.debug("T4 descriptor ----------");
             LOG.debug("noNullValue      :" + noNullValue);
             LOG.debug("nullValue        :" + nullValue);
@@ -252,14 +248,12 @@ public class Descriptor2 {
             LOG.debug("headingName      :" + headingName);
             LOG.debug("intLeadPrec      :" + intLeadPrec);
             LOG.debug("paramMode        :" + paramMode);
-            LOG.debug("memAlignOffset   :" + memAlignOffset);
-            LOG.debug("allocSize        :" + allocSize);
-            LOG.debug("varLayout        :" + varLayout);
+            LOG.debug("varLength        :" + varLength);
             LOG.debug("T4 descriptor End ----------");
         }
     }
 //==========================================================================
-    public Descriptor2(Descriptor2 dsc){
+    public Descriptor2(Descriptor2 dsc) {
         this.oldFormat = dsc.oldFormat;
         this.sqlCharset_ = dsc.sqlCharset_;
         this.odbcCharset_ = dsc.odbcCharset_;
@@ -309,14 +303,12 @@ public class Descriptor2 {
         this.headingName = dsc.headingName;
         this.intLeadPrec = dsc.intLeadPrec;
         this.paramMode = dsc.paramMode;
-        
-        memAlignOffset = 0;
-        allocSize = 0;
-        varLayout = 0;
-        
+
+        varLength = 0;
+
     }
     public void insertIntoByteBuffer(ByteBuffer bbBuf) throws UnsupportedEncodingException {
-        if (oldFormat == false){
+        if (oldFormat == false) {
             bbBuf.putInt(noNullValue);
             bbBuf.putInt(nullValue);
             bbBuf.putInt(version);
@@ -363,8 +355,8 @@ public class Descriptor2 {
     }
     public int lengthOfData() {
         int datamaxLen = 0;
-        
-        if (oldFormat == false){
+
+        if (oldFormat == false) {
             datamaxLen += ServerConstants.INT_FIELD_SIZE;
             datamaxLen += ServerConstants.INT_FIELD_SIZE;
             datamaxLen += ServerConstants.INT_FIELD_SIZE;
@@ -392,13 +384,13 @@ public class Descriptor2 {
             datamaxLen += ServerConstants.INT_FIELD_SIZE;       //dataType
             datamaxLen += ServerConstants.INT_FIELD_SIZE;       //datetimeCode
             datamaxLen += ServerConstants.INT_FIELD_SIZE;       //maxLen
-            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;       //precision
-            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;       //scale
-            datamaxLen += ServerConstants.BYTE_FIELD_SIZE;       //nullInfo
+            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;     //precision
+            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;     //scale
+            datamaxLen += ServerConstants.BYTE_FIELD_SIZE;      //nullInfo
             datamaxLen += ByteBufferUtils.lengthOfString(colHeadingNm);
-            datamaxLen += ServerConstants.BYTE_FIELD_SIZE;       //signed
+            datamaxLen += ServerConstants.BYTE_FIELD_SIZE;      //signed
             datamaxLen += ServerConstants.INT_FIELD_SIZE;       //odbcDataType
-            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;       //odbcPrecision
+            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;     //odbcPrecision
             datamaxLen += ServerConstants.INT_FIELD_SIZE;       //sqlCharset
             datamaxLen += ServerConstants.INT_FIELD_SIZE;       //odbcCharset
             datamaxLen += ByteBufferUtils.lengthOfString(tableName);
@@ -410,165 +402,151 @@ public class Descriptor2 {
         }
         return datamaxLen;
     }
-    public void setOldFormat(boolean oldFormat){
+    public void setOldFormat(boolean oldFormat) {
         this.oldFormat = oldFormat;
     }
-    public boolean getOldFormat(){
+    public boolean getOldFormat() {
         return oldFormat;
     }
-    public void setNoNullValue(int v){
+    public void setNoNullValue(int v) {
         noNullValue = v;
     }
-    public void setNullValue(int v){
-        nullValue = v;        
+    public void setNullValue(int v) {
+        nullValue = v;
     }
-    public void setVersion(int v){
-        version = v;         
+    public void setVersion(int v) {
+        version = v;
     }
-    public void setDataType(int v){
-        dataType = v;         
+    public void setDataType(int v) {
+        dataType = v;
     }
-    public void setDatetimeCode(int v){
-        datetimeCode = v;         
+    public void setDatetimeCode(int v) {
+        datetimeCode = v;
     }
-    public void setMaxLen(int v){
-        maxLen = v;         
+    public void setMaxLen(int v) {
+        maxLen = v;
     }
-    public void setPrecision(int v){
-        precision = v;         
+    public void setPrecision(int v) {
+        precision = v;
     }
-    public void setScale(int v){
-        scale = v;         
+    public void setScale(int v) {
+        scale = v;
     }
-    public void setNullInfo(int v){
-        nullInfo = v;         
+    public void setNullInfo(int v) {
+        nullInfo = v;
     }
-    public void setSigned(int v){
-        signed = v;         
+    public void setSigned(int v) {
+        signed = v;
     }
-    public void setOdbcDataType(int v){
-        odbcDataType = v;        
+    public void setOdbcDataType(int v) {
+        odbcDataType = v;
     }
-    public void setOdbcPrecision(int v){
-        odbcPrecision = v;        
+    public void setOdbcPrecision(int v) {
+        odbcPrecision = v;
     }
-    public void setSqlCharset(int v){
-        sqlCharset = v;         
+    public void setSqlCharset(int v) {
+        sqlCharset = v;
     }
-    public void setOdbcCharset(int v){
-        odbcCharset = v;        
+    public void setOdbcCharset(int v) {
+        odbcCharset = v;
     }
-    public void setColHeadingNm(String v){
-        colHeadingNm = v;         
+    public void setColHeadingNm(String v) {
+        colHeadingNm = v;
     }
-    public void setTableName(String v){
-        tableName = v;         
+    public void setTableName(String v) {
+        tableName = v;
     }
-    public void setCatalogName(String v){
-        catalogName = v;         
+    public void setCatalogName(String v) {
+        catalogName = v;
     }
-    public void setSchemaName(String v){
-        schemaName = v;         
+    public void setSchemaName(String v) {
+        schemaName = v;
     }
-    public void setHeadingName(String v){
-        headingName = v;         
+    public void setHeadingName(String v) {
+        headingName = v;
     }
-    public void setIntLeadPrec(int v){
-        intLeadPrec = v;         
+    public void setIntLeadPrec(int v) {
+        intLeadPrec = v;
     }
-    public void setParamMode(int v){
-        paramMode = v;        
+    public void setParamMode(int v) {
+        paramMode = v;
     }
-//--------------------------------
-    public void setMemAlignOffset(long memAlignOffset){
-        this.memAlignOffset = memAlignOffset;
+    public void setVarLength(long varLength) {
+        this.varLength = varLength;
     }
-    public void setAllocSize(int allocSize){
-        this.allocSize = allocSize;
-    }
-    public void setVarLayout(int varLayout){
-        this.varLayout = varLayout;
-    }
+
 //-----------------------------
-    public int getNoNullValue(){
+    public int getNoNullValue() {
         return noNullValue;
     }
-    public int getNullValue(){
-        return nullValue;        
+    public int getNullValue() {
+        return nullValue;
     }
-    public int getVersion(){
-        return version;        
+    public int getVersion() {
+        return version;
     }
-    public int getDataType(){
-        return dataType;        
+    public int getDataType() {
+        return dataType;
     }
-    public int getDatetimeCode(){
-        return datetimeCode;        
+    public int getDatetimeCode() {
+        return datetimeCode;
     }
-    public int getMaxLen(){
-        return maxLen;        
+    public int getMaxLen() {
+        return maxLen;
     }
-    public int getPrecision(){
-        return precision;        
+    public int getPrecision() {
+        return precision;
     }
-    public int getScale(){
-        return scale;        
+    public int getScale() {
+        return scale;
     }
-    public int getNullInfo(){
-        return nullInfo;        
+    public int getNullInfo() {
+        return nullInfo;
     }
-    public int getSigned(){
-        return signed;        
+    public int getSigned() {
+        return signed;
     }
-    public int getOdbcDataType(){
-        return odbcDataType;        
+    public int getOdbcDataType() {
+        return odbcDataType;
     }
-    public int getOdbcPrecision(){
-        return odbcPrecision;        
+    public int getOdbcPrecision() {
+        return odbcPrecision;
     }
-    public int getSqlCharset(){
-        return sqlCharset;        
+    public int getSqlCharset() {
+        return sqlCharset;
     }
-    public int getOdbcCharset(){
-        return odbcCharset;        
+    public int getOdbcCharset() {
+        return odbcCharset;
     }
-    public String getColHeadingNm(){
-        return colHeadingNm;        
+    public String getColHeadingNm() {
+        return colHeadingNm;
     }
-    public String getTableName(){
-        return tableName;        
+    public String getTableName() {
+        return tableName;
     }
-    public String getCatalogName(){
-        return catalogName;        
+    public String getCatalogName() {
+        return catalogName;
     }
-    public String getSchemaName(){
-        return schemaName;        
+    public String getSchemaName() {
+        return schemaName;
     }
-    public String getHeadingName(){
-        return headingName;        
+    public String getHeadingName() {
+        return headingName;
     }
-    public int getIntLeadPrec(){
-        return intLeadPrec;        
+    public int getIntLeadPrec() {
+        return intLeadPrec;
     }
-    public int getParamMode(){
-        return paramMode;        
+    public int getParamMode() {
+        return paramMode;
     }
-//--------------------------------
-    public long getMemAlignOffset(){
-        return memAlignOffset;
-    }
-    public int getAllocSize(){
-        return allocSize;
-    }
-    public int getVarLayout(){
-        return varLayout;
-    }
-//-----------------------------
-    public int getFsDataType(){
+    public int getFsDataType() {
         return fsDataType_;
     }
+    public long getVarLength() {
+        return varLength;
+    }
 //-----------------------------
-    public void debugDescriptor(){
+    public void debugDescriptor() {
         if(LOG.isDebugEnabled()){
             LOG.debug("T4 descriptor -----------");
             LOG.debug("Old Format       :" + oldFormat);
@@ -593,9 +571,7 @@ public class Descriptor2 {
             LOG.debug("headingName      :" + headingName);
             LOG.debug("intLeadPrec      :" + intLeadPrec);
             LOG.debug("paramMode        :" + paramMode);
-            LOG.debug("memAlignOffset   :" + memAlignOffset);
-            LOG.debug("allocSize        :" + allocSize);
-            LOG.debug("varLayout        :" + varLayout);
+            LOG.debug("varLength        :" + varLength);
             LOG.debug("T4 descriptor End -----------");
         }
     }

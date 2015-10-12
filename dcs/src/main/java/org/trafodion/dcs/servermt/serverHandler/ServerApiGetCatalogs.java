@@ -55,17 +55,18 @@ public class ServerApiGetCatalogs {
     private ClientData clientData;
     private TrafConnection trafConn;
     private TrafStatement trafStmt;
+    private boolean oldFormat;
 
-    private Descriptor2List resultSetDescList;
+    private Descriptor2List outDescList;
     private DatabaseMetaData dbmd;
     private ResultSet rs;
     private ResultSetMetaData rsmd;
     private TResultSetMetaData trsmd;
     private SQLMXResultSetMetaData strsmd;
     private String proxySyntax;
-    private int numResultSets;
-    private int resultSetColumns;
-    
+    private int resultSetCount;
+    private int outCount;
+
     private int dialogueId;
     private String stmtLabel;
     private short APIType;
@@ -84,14 +85,14 @@ public class ServerApiGetCatalogs {
     private String fkCatalogNm;
     private String fkSchemaNm;
     private String fkTableNm;
-    
+
     //-------------T2 desc fields-------------------
     private int sqlCharset_;
     private int odbcCharset_;
     private int sqlDataType_;
     private int dataType_;
-    private short   sqlPrecision_;
-    private short   sqlDatetimeCode_;
+    private short sqlPrecision_;
+    private short sqlDatetimeCode_;
     private int sqlOctetLength_;
     private int isNullable_;
     private String  name_;
@@ -108,18 +109,18 @@ public class ServerApiGetCatalogs {
     private int paramMode_;
     private int paramIndex_;
     private int paramPos_;
-    
+
     private int odbcPrecision_;
     private int  maxLen_;
 
     private int displaySize_;
     private String label_;
-    
+
     private SQLWarningOrErrorList errorList = null;
-    
+
     private ServerException serverException;
 
-    ServerApiGetCatalogs(int instance, int serverThread) {  
+    ServerApiGetCatalogs(int instance, int serverThread) {
         this.instance = instance;
         this.serverThread = serverThread;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
@@ -131,13 +132,16 @@ public class ServerApiGetCatalogs {
     void reset(){
         trafConn = null;
         trafStmt = null;
+        oldFormat = false;
         dbmd = null;
-        resultSetDescList = null;
+        outDescList = null;
+        outCount = 0;
+        resultSetCount = 0;
         rs = null;
         rsmd = null;
         trsmd = null;
         strsmd = null;
-        
+
         dialogueId = 0;
         stmtLabel = "";
         APIType = 0;
@@ -156,29 +160,29 @@ public class ServerApiGetCatalogs {
         fkCatalogNm = "";
         fkSchemaNm = "";
         fkTableNm = "";
-        
+
         errorList = null;
         proxySyntax = "";
-        
+
         trafConn = null;
         serverException = null;
     }
-    ClientData processApi(ClientData clientData) {  
+    ClientData processApi(ClientData clientData) {
         this.clientData = clientData;
         init();
-//        
+//
 // ==============process input ByteBuffer===========================
-// 
+//
         ByteBuffer bbHeader = clientData.bbHeader;
         ByteBuffer bbBody = clientData.bbBody;
         Header hdr = clientData.hdr;
 
         bbHeader.flip();
         bbBody.flip();
-        
+
         try {
             hdr.extractFromByteArray(bbHeader);
-            
+
             dialogueId =  bbBody.getInt();
             stmtLabel = ByteBufferUtils.extractString(bbBody);
             APIType =  bbBody.getShort();
@@ -197,7 +201,7 @@ public class ServerApiGetCatalogs {
             fkCatalogNm = ByteBufferUtils.extractString(bbBody);
             fkSchemaNm = ByteBufferUtils.extractString(bbBody);
             fkTableNm = ByteBufferUtils.extractString(bbBody);
-            
+
             if(LOG.isDebugEnabled()){
                 LOG.debug(serverWorkerName + ". dialogueId :" + dialogueId);
                 LOG.debug(serverWorkerName + ". stmtLabel :" + stmtLabel);
@@ -227,29 +231,12 @@ public class ServerApiGetCatalogs {
 //=====================Process ServerApiGetCatalogs===========================
             try {
                 trafConn = clientData.getTrafConnection();
-                trafStmt = trafConn.createTrafStatement(stmtLabel, true);
-                trafStmt.setResultSet(null);
-    
+                trafStmt = trafConn.createTrafStatement(stmtLabel, ServerConstants.TYPE_CATOLOG, 0);
+//              trafStmt.setResultSet(null);
+
                 dbmd = trafConn.getConnection().getMetaData();
                 switch(APIType){
-                    case ServerConstants.SQL_API_SQLTABLES_JDBC:
-/*
- getCatalogs()
-                "%", // catalog
-                "", // schema
-                "", // table name
-                "", // tableTypeList
-getSchemas()
-                "", // catalog
-                "%", // schema
-                "", // table name
-                "", // tableTypeList
-getTables
-                catalogNm, // catalog
-                schemaNm, // schema
-                tableNm, // table name
-                tableTypeList, // tableTypeList
- */
+                    case ServerConstants.SQL_API_SQLTABLES:                 //odbc
                         if (tableNm.equals("") == false){
                            if (tableTypeList == null || tableTypeList.equals("")){
                                if(LOG.isDebugEnabled())
@@ -273,6 +260,36 @@ getTables
                                 LOG.debug(serverWorkerName + ". getSchemas()");
                             rs = dbmd.getSchemas();
                         }
+                        break;
+                    case ServerConstants.SQL_API_SQLTABLES_JDBC:
+                        if (tableNm.equals("") == false){
+                           if (tableTypeList == null || tableTypeList.equals("")){
+                               if(LOG.isDebugEnabled())
+                                   LOG.debug(serverWorkerName + ". getTables (catalogNm :" + catalogNm + ", schemaNm :" + schemaNm + ", tableNm :" + tableNm + ", tableTypeList :null)");
+                               rs = dbmd.getTables(catalogNm, schemaNm, tableNm, null);
+                           }
+                           else {
+                               if(LOG.isDebugEnabled())
+                                   LOG.debug(serverWorkerName + ". getTables (catalogNm :" + catalogNm + ", schemaNm :" + schemaNm + ", tableNm :" + tableNm + ", tableTypeList :" + tableTypeList + ")");
+                               String[] tpList = tableTypeList.split(",");
+                               rs = dbmd.getTables(catalogNm, schemaNm, tableNm, tpList);
+                           }
+                        }
+                        else if (catalogNm.equals("%") == true){
+                            if(LOG.isDebugEnabled())
+                                LOG.debug(serverWorkerName + ". getCatalogs()");
+                            rs = dbmd.getCatalogs();
+                        }
+                        else if (schemaNm.equals("%") == true){
+                            if(LOG.isDebugEnabled())
+                                LOG.debug(serverWorkerName + ". getSchemas()");
+                            rs = dbmd.getSchemas();
+                        }
+                        break;
+                    case ServerConstants.SQL_API_SQLCOLUMNS:        //odbc
+                        if(LOG.isDebugEnabled())
+                            LOG.debug(serverWorkerName + ". getColumns (catalogNm :" + catalogNm + ", schemaNm :" + schemaNm + ", tableNm:" + tableNm + ", columnNm :" + columnNm + ")");
+                        rs = dbmd.getColumns(catalogNm, schemaNm, tableNm, columnNm);
                         break;
                     case ServerConstants.SQL_API_SQLCOLUMNS_JDBC:
                         if(LOG.isDebugEnabled())
@@ -339,26 +356,26 @@ getTables
                         rs = dbmd.getIndexInfo(catalogNm, schemaNm, tableNm, (uniqueness == 1)? true : false, true);
                        break;
                     default:
-                        throw new SQLException(serverWorkerName + ". Unknown APIType sent by the Client : [" + APIType + "]");
+                        throw new SQLException(serverWorkerName + ". Unknown APIType sent by the Client : [" + APIType + "]", "HY024");
                 }
-                trafStmt.setResultSet(rs);
+//              trafStmt.setResultSet(rs);
                 rsmd = rs.getMetaData();
-                resultSetColumns = rsmd.getColumnCount();
-                
+                outCount = rsmd.getColumnCount();
+
             } catch (SQLException se){
                 LOG.error(serverWorkerName + ". GetCatalogs.SQLException " + se);
-                errorList = new SQLWarningOrErrorList(se); 
-                serverException.setServerException (odbc_SQLSvc_GetSQLCatalogs_SQLError_exn_, 0, se);                
+                errorList = new SQLWarningOrErrorList(se);
+                serverException.setServerException (odbc_SQLSvc_GetSQLCatalogs_SQLError_exn_, 0, se);
             } catch (Exception ex){
                 LOG.error(serverWorkerName + ". GetCatalogs.Exception " + ex);
                 throw ex;
             }
-            if (resultSetColumns > 0){
+            if (outCount > 0){
                 strsmd = (SQLMXResultSetMetaData)rsmd;
-                resultSetDescList = new Descriptor2List(resultSetColumns, true);
-                
-                numResultSets = 1;
-                for (int column = 1; column <= resultSetColumns; column++){
+                outDescList = new Descriptor2List(outCount, true);
+
+                resultSetCount = 1;
+                for (int column = 1; column <= outCount; column++){
                     sqlCharset_ = strsmd.getSqlCharset(column);
                     odbcCharset_ = strsmd.getOdbcCharset(column);
                     sqlDataType_ = strsmd.getSqlDataType(column);
@@ -381,24 +398,24 @@ getTables
                     paramMode_ = strsmd.getMode(column);
                     paramIndex_ = strsmd.getIndex(column);
                     paramPos_ = strsmd.getPos(column);
-                    
+
                     odbcPrecision_ = strsmd.getOdbcPrecision(column);
                     maxLen_ = strsmd.getMaxLen(column);
-                    
+
                     displaySize_ = strsmd.getDisplaySize(column);
                     label_ = strsmd.getLabel(column);
 
-                    Descriptor2 outDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
+                    Descriptor2 columnDesc = new Descriptor2(sqlCharset_,odbcCharset_,sqlDataType_,dataType_,sqlPrecision_,sqlDatetimeCode_,
                         sqlOctetLength_,isNullable_,name_,scale_,precision_,isSigned_,
                         isCurrency_,isCaseSensitive_,catalogName_,schemaName_,tableName_,
                         fsDataType_,intLeadPrec_,paramMode_,paramIndex_,paramPos_,odbcPrecision_,
                         maxLen_,displaySize_,label_, true);
-                    resultSetDescList.addDescriptor(column,outDesc);
+                    outDescList.addDescriptor(column,columnDesc);
                 }
                 if(LOG.isDebugEnabled()){
-                    for (int column = 1; column <= resultSetColumns; column++){
-                        Descriptor2 dsc = resultSetDescList.getDescriptors2()[column-1];
-                        LOG.debug(serverWorkerName + ". [" + column + "] Output descriptor -------------" );
+                    for (int column = 1; column <= outCount; column++){
+                        Descriptor2 dsc = outDescList.getDescriptors2()[column-1];
+                        LOG.debug(serverWorkerName + ". [" + column + "] Column descriptor -------------" );
                         LOG.debug(serverWorkerName + ". oldFormat " + column + " :" + dsc.getOldFormat());
                         LOG.debug(serverWorkerName + ". noNullValue " + column + " :" + dsc.getNoNullValue());
                         LOG.debug(serverWorkerName + ". nullValue " + column + " :" + dsc.getNullValue());
@@ -420,17 +437,13 @@ getTables
                         LOG.debug(serverWorkerName + ". headingName " + column + " :" + dsc.getHeadingName());
                         LOG.debug(serverWorkerName + ". intLeadPrec " + column + " :" + dsc.getParamMode());
                         LOG.debug(serverWorkerName + ". paramMode " + column + " :" + dsc.getColHeadingNm());
-                        LOG.debug(serverWorkerName + ". memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
-                        LOG.debug(serverWorkerName + ". allocSize " + column + " :" + dsc.getAllocSize());
-                        LOG.debug(serverWorkerName + ". varLayout " + column + " :" + dsc.getVarLayout());
-                        LOG.debug(serverWorkerName + ". Output descriptor End-------------");
-                    }
-                    trafStmt.setOutNumberParams(resultSetColumns);
-                    if (resultSetColumns > 0){
-                        trafStmt.setOutParamLength(resultSetDescList.getParamLength());
-                        trafStmt.setOutDescList(resultSetDescList);
+                        LOG.debug(serverWorkerName + ". varLength " + column + " :" + dsc.getVarLength());
+                        LOG.debug(serverWorkerName + ". Column descriptor End-------------");
                     }
                 }
+            }
+            if (outCount > 0){
+                trafStmt.addTResultSet(new TrafResultSet(rs, 0, stmtLabel, 0, outDescList,""));
             }
 //
 //===================calculate length of output ByteBuffer========================
@@ -439,21 +452,11 @@ getTables
             bbBody.clear();
 //
 // check if ByteBuffer is big enough for output
-//      
-//===================== build output ==============================================
 //
-/*          odbc_SQLSvc_GetSQLCatalogs_exc_ m_p1;
-            String m_p2; stmtLabel
-            SQLItemDescList_def m_p3;
-            ERROR_DESC_LIST_def m_p4;
-            String proxySyntax = "";
-*/
-// check if ByteBuffer is big enough for output
-//  
             int dataLength = serverException.lengthOfData();
             dataLength += ByteBufferUtils.lengthOfString(stmtLabel); //stmtLabel
-            if (resultSetDescList != null)
-                dataLength += resultSetDescList.lengthOfData();
+            if (outDescList != null)
+                dataLength += outDescList.lengthOfData();
             else
                 dataLength += ServerConstants.INT_FIELD_SIZE;
             if (errorList != null)
@@ -461,7 +464,7 @@ getTables
             else
                 dataLength += ServerConstants.INT_FIELD_SIZE;
             dataLength += ByteBufferUtils.lengthOfString(proxySyntax); //proxySyntax
-            
+
             int availableBuffer = bbBody.capacity() - bbBody.position();
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". dataLength :" + dataLength + " availableBuffer :" + availableBuffer);
@@ -471,19 +474,18 @@ getTables
 //===================== build output ==============================================
             serverException.insertIntoByteBuffer(bbBody);
             ByteBufferUtils.insertString(stmtLabel, bbBody);
-            if (resultSetDescList != null)
-                resultSetDescList.insertIntoByteBuffer(bbBody);
+            if (outDescList != null)
+                outDescList.insertIntoByteBuffer(bbBody);
             else
                 bbBody.putInt(0);
             if (errorList != null)
                 errorList.insertIntoByteBuffer(bbBody);
             else
                 bbBody.putInt(0);
-            
-            ByteBufferUtils.insertString(proxySyntax, bbBody);
 
+            ByteBufferUtils.insertString(proxySyntax, bbBody);
             bbBody.flip();
-//=========================Update header================================ 
+//=========================Update header================================
             hdr.setTotalLength(bbBody.limit());
             hdr.insertIntoByteBuffer(bbHeader);
             bbHeader.flip();
@@ -503,3 +505,4 @@ getTables
         return clientData;
     }
 }
+

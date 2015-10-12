@@ -93,7 +93,7 @@ public class VersionInfo {
   static String[] versionReport() {
     return new String[] {
       "Rest " + getVersion(),
-      "Subversion " + getUrl() + " -r " + getRevision(),
+      "Revision " + getRevision(),
       "Compiled by " + getUser() + " on " + getDate()
       };
   }

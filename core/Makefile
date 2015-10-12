@@ -73,7 +73,7 @@ jdbc_jar: verhdr
 	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
 	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
-dcs: verhdr jdbc_jar
+dcs: jdbc_jar jdbc_type2_jar
 	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
@@ -84,7 +84,7 @@ ci: trafci
 trafci: jdbc_jar
 	cd conn/trafci && $(ANT) dist 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
-jdbc_type2_jar: ndcs
+jdbc_type2_jar: verhdr foundation
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	$(MAVEN) install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \

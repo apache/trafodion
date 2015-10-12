@@ -91,7 +91,7 @@ public class VersionInfo {
   static String[] versionReport() {
     return new String[] {
       "Dcs " + getVersion(),
-      "Subversion " + getUrl() + " -r " + getRevision(),
+      "Revision " + getRevision(),
       "Compiled by " + getUser() + " on " + getDate()
       };
   }
