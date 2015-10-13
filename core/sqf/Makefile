@@ -167,6 +167,10 @@ EXPORTSQLEXE= tdm_sqlc tdm_arkcmp tdm_arkesp sqlci tdm_udrserv mxlobsrvr
 EXPORTUTILS= mxtool sup   mxexportddl mximportddl
 
 setupdir:
+	mkdir -p $(EXPORTBIN_DIR)
+	mkdir -p $(EXPORTLIB_DIR)
+	mkdir -p $(EXPORTINCSQL_DIR)
+	mkdir -p $(EXPORTINCEVL_DIR)
 	-cd monitor/linux; $(MAKE) setup
 	-cd src/win; $(MAKE) setup
 	-cd src/seabed; $(MAKE) setup
@@ -178,7 +182,6 @@ setupdir:
 	-@./makelink ../../sqinfo $(EXPORTBIN_DIR)
 	-@./makelink ../../sqvers $(EXPORTBIN_DIR)
 	@# SQL .mdf files
-	-mkdir -p $(EXPORTINCSQL_DIR)
 
 	@# SQL Messages .txt file
 	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
