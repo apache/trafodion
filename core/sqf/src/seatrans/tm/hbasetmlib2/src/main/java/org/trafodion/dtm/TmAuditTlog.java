@@ -318,27 +318,27 @@ public class TmAuditTlog {
 
       switch (tlogNumLogs) {
         case 1:
-            tLogHashKey = 0; // 0b0;
+          tLogHashKey = 0; // 0b0;
           tLogHashShiftFactor = 63;
           break;
         case 2:
-            tLogHashKey = 1; // 0b1;
+          tLogHashKey = 1; // 0b1;
           tLogHashShiftFactor = 63;
           break;
         case 4:
-            tLogHashKey = 3; // 0b11;
+          tLogHashKey = 3; // 0b11;
           tLogHashShiftFactor = 62;
           break;
         case 8:
-            tLogHashKey = 7; // 0b111;
+          tLogHashKey = 7; // 0b111;
           tLogHashShiftFactor = 61;
           break;
         case 16:
-            tLogHashKey = 15; // 0b1111;
+          tLogHashKey = 15; // 0b1111;
           tLogHashShiftFactor = 60;
           break;
         case 32:
-            tLogHashKey = 31; // 0b11111;
+          tLogHashKey = 31; // 0b11111;
           tLogHashShiftFactor = 59;
           break;
         default : {

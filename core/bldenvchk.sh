@@ -58,6 +58,7 @@ done
 # These directories should exist.
 VARDIRLIST="JAVA_HOME PERL5LIB MPI_TMPDIR"
 VARDIRLIST="$VARDIRLIST LLVM UDIS86 ICU MPICH_ROOT ZOOKEEPER_DIR PROTOBUFS"
+VARDIRLIST="$VARDIRLIST THRIFT_LIB_DIR THRIFT_INC_DIR"
 # QT_TOOLKIT is optional; if it is not set correctly then the SQL Compiler Debugger should
 # not build.
 if [ ! -d "${QT_TOOLKIT}" ]; then
