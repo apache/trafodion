@@ -35,6 +35,6 @@ clean:
 
 setup:
 	-cd stublibs; $(MAKE) setup
-	-cd $(WROOT)/nskgmake; $(MAKE) linuxmklinks$(SQ_BUILD_TYPE)
+	cd $(WROOT)/nskgmake; $(MAKE) linuxmklinks$(SQ_BUILD_TYPE)
 
 #endif
