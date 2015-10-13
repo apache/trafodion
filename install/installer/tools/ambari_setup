@@ -83,7 +83,7 @@ if [[ $AMBARI -eq 0 ]]; then
    if [[ "$SUSE_Installed" -eq "1" ]]; then
       wget http://public-repo-1.hortonworks.com/ambari/suse11/2.x/updates/2.0.0/ambari.repo
    else
-      wget http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.0.0/ambari.repo
+      wget http://public-repo-1.hortonworks.com/ambari/centos6/2.x/updates/2.1.0/ambari.repo
    fi
 
    if [ $? -ne 0 ]; then
