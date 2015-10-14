@@ -64,7 +64,7 @@ verhdr:
 dbsecurity: $(MPI_TARGET)
 	cd dbsecurity && $(MAKE) all 2>&1 | sed -e "s/$$/	##(Security)/";exit $${PIPESTATUS[0]}
 
-foundation: dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
+foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
@@ -154,9 +154,11 @@ pkg-dcs-tests: all
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
 
-# Check that Environment variables are set correctly
+# Check that Environment variables are set correctly and
+# create links and files needed as prerequisite for the build
 sqroot:
 	./bldenvchk.sh;
+	cd sqf && $(MAKE) setupdir
 
 # Check for absolute filenames used as dynamic linked libraries
 find-absolute-dlls:

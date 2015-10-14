@@ -48,8 +48,8 @@ SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_s
 buildinfo:
 	@echo "Building $(TRAFODION_VER_PROD) Version $(TRAFODION_VER) $(SQ_BUILD_TYPE)"
 	@echo ""
- 
-all: genverhdr setupdir $(SQ_COMPONENTS) 
+
+all: genverhdr $(SQ_COMPONENTS) 
 
 win: make_sqevlog seabed
 	cd src/win; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
@@ -167,18 +167,21 @@ EXPORTSQLEXE= tdm_sqlc tdm_arkcmp tdm_arkesp sqlci tdm_udrserv mxlobsrvr
 EXPORTUTILS= mxtool sup   mxexportddl mximportddl
 
 setupdir:
+	mkdir -p $(EXPORTBIN_DIR)
+	mkdir -p $(EXPORTLIB_DIR)
+	mkdir -p $(EXPORTINCSQL_DIR)
+	mkdir -p $(EXPORTINCEVL_DIR)
 	-cd monitor/linux; $(MAKE) setup
 	-cd src/win; $(MAKE) setup
 	-cd src/seabed; $(MAKE) setup
 	-cd src/tm; $(MAKE) setup
-	-cd sql; $(MAKE) WROOT=$(SQL_W) setup
+	cd sql; $(MAKE) WROOT=$(SQL_W) setup
 	-cd sqevlog; $(MAKE) setup
 	-@./makelink ../../mondump $(EXPORTBIN_DIR)
 	-@./makelink ../../sqid $(EXPORTBIN_DIR)
 	-@./makelink ../../sqinfo $(EXPORTBIN_DIR)
 	-@./makelink ../../sqvers $(EXPORTBIN_DIR)
 	@# SQL .mdf files
-	-mkdir -p $(EXPORTINCSQL_DIR)
 
 	@# SQL Messages .txt file
 	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
@@ -203,7 +206,9 @@ setupdir_clean:
 	rm -rf $(EXPORTLIB_DIR)/librwtlh.so
 	rm -rf $(EXPORTLIB_DIR)/libdummy.so $(EXPORTLIB_DIR)/libtdm_measenty.so \
 		$(EXPORTLIB_DIR)/libtdm_security.so $(EXPORTLIB_DIR)/libtdm_tfds.so \
-		$(EXPORTLIB_DIR)/libtdm_tmflib.so $(EXPORTLIB_DIR)/libtdm_tmfuser.so
+		$(EXPORTLIB_DIR)/libtdm_tmflib.so $(EXPORTLIB_DIR)/libtdm_tmfuser.so \
+	        $(EXPORTLIB_DIR)/libhdfs*.so $(EXPORTLIB_DIR)/libhadoop*.so \
+	        $(EXPORTINCEVL_DIR)/hdfs.h
 	@for f in $(EXPORTSQLLIBS); do \
 	  echo rm -f $(EXPORTLIB_DIR)/$$f ; \
 	       rm -f $(EXPORTLIB_DIR)/$$f ; done

@@ -19,7 +19,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(LIBEXPDIR)/libidtm.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/HBaseTmZK.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class $(TMCLASS_FULL)/TrafInfo.class testrun
+PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(LIBEXPDIR)/libidtm.so testrun
 ###########################################################################
 
 include ../../../../macros.gmk
@@ -28,10 +28,6 @@ include ../macros.gmk
 
 LIBJVM        = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -L$(JAVA_HOME)/jre/lib/amd64/server -ljvm
 LIBSTESTRUN   = -L$(LIBEXPDIR) -lsbms -lshbasetmlib $(DEBUG)
-TMCLASS_DIR   = $(MY_SQROOT)/export/lib
-TMCLASS_PKG   = org/trafodion/dtm
-TMCLASS_FULL  = $(TMCLASS_DIR)/$(TMCLASS_PKG)
-JAVAC         = $(JAVA_HOME)/bin/javac
 
 DEBUG		=
 DEFINES		= -DDEBUG -DxUSE_FILE_AUDIT
@@ -65,7 +61,11 @@ LIBSTM		+= $(LIBSTHX)
 endif
 
 
-all:  $(PROGS)
+all:  $(PROGS) mavenbuild
+
+mavenbuild:
+	set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+	cp -pf target/*.jar $(MY_SQROOT)/export/lib
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
@@ -74,24 +74,6 @@ $(LIBEXPDIR)/libidtm.so: $(LIBIDTMOBJS)
 	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBIDTMOBJS) -L$(LIBEXPDIR) -lsbms
 $(OUTDIR)/idtm.o: idtm.cpp
 	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-
-$(TMCLASS_FULL)/HBaseTxClient.class: HBaseTxClient.java
-	$(JAVAC) -Xlint -Xlint:-path  HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/HBaseAuditControlPoint.class: HBaseAuditControlPoint.java
-	$(JAVAC) -Xlint -Xlint:-path  HBaseAuditControlPoint.java TmAuditTlog.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/TmAuditTlog.class: TmAuditTlog.java
-	$(JAVAC) -Xlint -Xlint:-path  TmAuditTlog.java HBaseAuditControlPoint.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/HBaseTmZK.class: HBaseTmZK.java
-	$(JAVAC) -Xlint -Xlint:-path  HBaseTmZK.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/TrafInfo.class: TrafInfo.java
-	$(JAVAC) -Xlint -Xlint:-path  TrafInfo.java -d $(TMCLASS_DIR)
-
-$(TMCLASS_FULL)/HashMapArray.class: HashMapArray.java
-	$(JAVAC) -Xlint -Xlint:-path  HashMapArray.java -d $(TMCLASS_DIR)
 
 test:   testrun
 

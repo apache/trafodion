@@ -1,4 +1,4 @@
-/* Hewlett-Packard NonStop(TM) SQL/MX C/C++ Preprocessor 2.5 generated C file. */
+
 
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
@@ -1977,7 +1977,7 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_SetDescEntryCount(
 
 #endif /*SQLCLI_HDR*/
 
-/* Hewlett-Packard NonStop(TM) SQL/MX C/C++ Preprocessor 2.5 -- main body of generated source. */
+
 
 static Int32 __SQL_internal_retcode;
 extern SQLMODULE_ID __SQL_mod_199222286715188012;

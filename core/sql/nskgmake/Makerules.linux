@@ -80,20 +80,14 @@ OBJSUFFIX := o
 #######################################################################
 # Define several directories used by various parts of the Linux build
 #######################################################################
-NSK_SQ    := $(MY_SQROOT)
-NSK       := $(MY_SQROOT)/sql/nsk
-XMPIROOT        = $(NSK_SQ)/export/lib$(SQ_MBTYPE)
-NSKBIN		= $(NSK_SQ)/export/bin$(SQ_MBTYPE)
-NSKROOT         = $(NSK_SQ)/sql/nsk
-ifeq ($(SQ_BUILD_TYPE),release)
-  STUBLIBROOT     = $(NSK_SQ)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/release
-else
-  STUBLIBROOT     = $(NSK_SQ)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/debug
-endif
 LIBROOT         = $(MY_SQROOT)/export/lib$(SQ_MBTYPE)
-LITEROOT        = $(NSK_SQ)/src
-# NSKLIB          = $(NSKROOT)/lib/$(FLAVOR)
-NSKLIB          = $(XMPIROOT)
+TRAF_BIN	= $(MY_SQROOT)/export/bin$(SQ_MBTYPE)
+XMPIROOT        = $(LIBROOT)
+ifeq ($(SQ_BUILD_TYPE),release)
+  STUBLIBROOT     = $(MY_SQROOT)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/release
+else
+  STUBLIBROOT     = $(MY_SQROOT)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/debug
+endif
 PGO_DIR         := $(shell /bin/pwd)/pgo_profile_data
 ifeq ($(SQ_BUILD_TYPE),release)
   LLVM_INC_ROOT   :=$(LLVM)/release/include
@@ -126,6 +120,7 @@ endif
 LIBHDFS_INC=-I$(HADOOP_INC_DIR)
 LIBHDFS_LIB=-ljvm -lhdfs
 LIBHDFS_SO=libhdfs.so
+LIBHADOOP_SO=libhadoop.so
 
 LIBCURL_INC=-I/usr/include
 LIBCURL_LIB=-lcurl
@@ -197,22 +192,22 @@ ifdef USE_HADOOP_1
 endif
 
 SYS_INCLUDES :=
-   SYS_INCLUDES += -I$(NSK_SQ)/inc \
-	-I$(NSK_SQ)/export/include \
+   SYS_INCLUDES += -I$(MY_SQROOT)/inc \
+	-I$(MY_SQROOT)/export/include \
         -I$(PROTOBUFS_INC) \
-	$(LIBHDFS_INC) $(THRIFT_INC) $(LOG4CXX_INC)	 $(LIBCURL_INC)  \
+	$(THRIFT_INC) $(LOG4CXX_INC)	 $(LIBCURL_INC)  \
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
-OTHER_INCLUDES := -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
+OTHER_INCLUDES := -include "$(MY_SQROOT)/inc/seaquest/sqtypes.h" \
 	-I$(LLVM_INC_ROOT) \
 	-I$(LLVM_INC_ROOT2) \
 	-I$(UDIS86_INC_ROOT) \
-	-I$(NSK_SQ)/../dbsecurity/auth/inc \
-	-I$(NSK_SQ)/commonLogger
+	-I$(MY_SQROOT)/../dbsecurity/auth/inc \
+	-I$(MY_SQROOT)/commonLogger
 
 LOC_LIBS := \
 	-L$(RESULTDIR) \
-	-L$(NSKLIB) \
+	-L$(LIBROOT) \
 	-L$(XMPIROOT)
 
 # Define the correct compilation and linking flags depending on whether
@@ -398,14 +393,14 @@ linuxdebug linuxrelease : buildall
 linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 	(for i in $(notdir $(FINAL_DLLS));\
 	 do \
-	   echo rm -f $(NSKLIB)/$$i ;\
-	   rm -f $(NSKLIB)/$$i ;\
+	   echo rm -f $(LIBROOT)/$$i ;\
+	   rm -f $(LIBROOT)/$$i ;\
 	 done;\
 	 for i in $(filter-out $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
 	            $(notdir $(FINAL_EXES)));\
 	 do \
-	   echo rm -f $(NSKBIN)/$$i ;\
-	   rm -f $(NSKBIN)/$$i ;\
+	   echo rm -f $(TRAF_BIN)/$$i ;\
+	   rm -f $(TRAF_BIN)/$$i ;\
 	 done;\
 	 for i in $(filter $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
 	            $(notdir $(FINAL_EXES)));\
@@ -422,27 +417,32 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 # Thrift is odd naming scheme (version number in middle of file name), 
 #   need extra command to get the link (without extra libs)
 copytoolslibs:
-	mkdir -p $(NSKLIB)
-	(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
-	          $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
+	mkdir -p $(LIBROOT)
+	-(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
+	           $(HADOOP_LIB_DIR)/$(LIBHADOOP_SO) \
+	           $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
 	 do\
-	   cp -Pf $$i* $(NSKLIB); \
+	   cp -Pf $$i* $(LIBROOT); \
 	 done\
 	)
-	cp -Pf $(THRIFT_LIB_DIR)/libthrift.so $(NSKLIB)
+	-cp -Pf $(THRIFT_LIB_DIR)/libthrift.so $(LIBROOT)
+	-cp -Pf $(HADOOP_INC_DIR)/hdfs.h $(MY_SQROOT)/export/include
+	# if the above did not copy the files yet,
+	# download Hadoop and make the hdfs library
+	get_libhdfs_files --verbose
 
 linuxmklinksdebug linuxmklinksrelease: copytoolslibs
 	(OUTDIR=$(dir $(shell pwd))$(TOPLIBDIR)/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR);\
 	 for i in $(notdir $(FINAL_DLLS));\
 	 do \
-	   echo ln -sf $$OUTDIR/$$i $(NSKLIB);\
-	   ln -sf $$OUTDIR/$$i $(NSKLIB);\
+	   echo ln -sf $$OUTDIR/$$i $(LIBROOT);\
+	   ln -sf $$OUTDIR/$$i $(LIBROOT);\
 	 done;\
 	 for i in $(filter-out $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
 	            $(notdir $(FINAL_EXES)));\
 	 do \
-	   echo ln -sf $$OUTDIR/$$i $(NSKBIN);\
-	   ln -sf $$OUTDIR/$$i $(NSKBIN);\
+	   echo ln -sf $$OUTDIR/$$i $(TRAF_BIN);\
+	   ln -sf $$OUTDIR/$$i $(TRAF_BIN);\
 	 done;\
 	 for i in $(filter $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
 	            $(notdir $(FINAL_EXES)));\

@@ -60,7 +60,7 @@ import java.util.logging.Level;
  * </p>
  * </blockquote>
  * <p>
- * Copyright: (C) Copyright 2004-2007 Hewlett-Packard Development Company, L.P.
+ * Copyright: (C) Apache Software Foundation (ASF)
  * </p>
  * 
  */
