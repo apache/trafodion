@@ -156,7 +156,7 @@ sub find_elfs ($$) {
 		if ($file =~ /libQtGuiCmpDbg.so.4/) {
 			$dochk = 0;
 		}
-		if ($file =~ /libhdfs.so|libmysql|libthrift|libzookeeper|libcurl/) {
+		if ($file =~ /libhdfs.so|libhadoop.so|libmysql|libthrift|libzookeeper|libcurl/) {
 			$dochk = 0;
 		}
 		if ($file =~ /mpirun|hydra_pmi_proxy/) {
