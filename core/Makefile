@@ -64,7 +64,7 @@ verhdr:
 dbsecurity: $(MPI_TARGET)
 	cd dbsecurity && $(MAKE) all 2>&1 | sed -e "s/$$/	##(Security)/";exit $${PIPESTATUS[0]}
 
-foundation: dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
+foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
@@ -73,7 +73,7 @@ jdbc_jar: verhdr
 	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
 	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
-dcs: verhdr jdbc_jar
+dcs: jdbc_jar jdbc_type2_jar
 	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
@@ -84,7 +84,7 @@ ci: trafci
 trafci: jdbc_jar
 	cd conn/trafci && $(ANT) dist 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
-jdbc_type2_jar: ndcs
+jdbc_type2_jar: verhdr foundation
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	$(MAVEN) install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
@@ -100,7 +100,7 @@ odb: ndcs
 cleantests:
 	cd ../dcs/src/test/pytests && $(RM) -r odbc* tox.ini config.ini .tox .testrep* env.sh test_p2.pyc 
 	cd ../dcs/src/test/jdbc_test && $(RM) -r jdbcprop pom.xml  target
-	
+
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
@@ -153,9 +153,11 @@ pkg-dcs-tests: all
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
 
-# Check that Environment variables are set correctly
+# Check that Environment variables are set correctly and
+# create links and files needed as prerequisite for the build
 sqroot:
 	./bldenvchk.sh;
+	cd sqf && $(MAKE) setupdir
 
 # Check for absolute filenames used as dynamic linked libraries
 find-absolute-dlls:

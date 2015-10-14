@@ -42,9 +42,7 @@ TRAF_PDSH="$PDSH $MY_NODES $PDSH_SSH_CMD"
 cd $UNTAR_DIR
 
 PORT=`echo $URL | sed 's/.*://'`
-echo $PORT 
 AMBARI_HOST=$(echo $URL | sed 's@:.*@@')
-echo $AMBARI_HOST
 echo "export AMBARI_HOST=\"$AMBARI_HOST\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
@@ -54,9 +52,13 @@ echo "***INFO: Detected JAVA version $JAVA_VERSION"
 if [ "$JAVA_VERSION" == "1.6" ]; then
    echo "***ERROR: JAVA 1.6 not supported for Trafodion HBase 0.98"
    exit -1
-elif [ "$JAVA_VERSION" == "1.7" ]; then
-     if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then 
-	hbase_trx_jar="hbase-trx-hdp2_1-${TRAF_VERSION}.jar"
+elif [ "$JAVA_VERSION" == "1.7" ] || [ "$JAVA_VERSION" == "1.8" ]; then
+     if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+        if [[ $HDP_2_3_SUPPORT == "Y" ]]; then
+           hbase_trx_jar="hbase-trx-hdp2_3-${TRAF_VERSION}.jar"
+        else
+	   hbase_trx_jar="hbase-trx-hdp2_1-${TRAF_VERSION}.jar"
+        fi
      else
         hbase_trx_jar="hbase-trx-hdp2_2-${TRAF_VERSION}.jar"
      fi
@@ -118,7 +120,7 @@ ssh -q -n $AMBARI_HOST sudo chmod 777 $HOME/hbase-site.xml
 
 scp -q $(whoami)@$AMBARI_HOST:$HOME/hbase-site.xml $HOME
 if [[ $? -gt 1 ]]; then
-   echo "***ERROR: Unable to find /etc/hbase/conf/hbase-site.xml file on $CDH_START_NODE or unable to copy."
+   echo "***ERROR: Unable to find /etc/hbase/conf/hbase-site.xml file on $AMBARI_HOST or unable to copy."
    exit -1
 fi
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR

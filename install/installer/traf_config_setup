@@ -160,17 +160,6 @@ read answer
 if [ -z $answer ]; then
    echo "export TRAF_USER_PASSWORD=\"$TRAF_USER_PASSWORD\"" >> $LOCAL_TRAF_CONFIG
 else
-   length=${#answer}
-    if [[ $length -lt "6" ]]; then
-       echo "***ERROR: Linux requires password to be at least 6 characters"
-       echo "***ERROR: Password length must be from 6-8 characters."
-       exit -1
-    fi
-    if [[ $length -gt "8" ]]; then
-       echo "***ERROR: VNC server requires passwords be 8 or less characters"
-       echo "***ERROR: Password length must be from 6-8 characters."
-       exit -1  
-    fi
     echo "export TRAF_USER_PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
@@ -185,81 +174,11 @@ if [[ -z "$answer" ]]; then
       exit -1
    fi 
 else
-   NODES="$answer"
-   NODE_LIST=""
-   ERROR_NODES=""
-   for node in $NODES
-   do
-      newNode=$(ssh -q -n $node hostname)
-      
-      if [[ $? -ne "0" ]]; then
-         echo "***ERROR: Could not ssh to $node."
-         echo "***ERROR: Please check node names for typos"
-         exit -1
-      fi
-
-      nodeName=$(echo $newNode | sed 's/[^a-zA-Z0-9\ \.\-]//g')
-
-      if [[ "$nodeName" != "$newNode" ]]; then
-         echo "***ERROR: Nodes are not named properly."
-         echo "***ERROR: Nodes can have no special characters other than '-' and '.'"
-         exit -1
-      fi
-
-      if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
-         echo "***ERROR: Nodes are not named properly."
-         echo "***ERROR: IP addresses are not supported. Please use node names."
-         exit -1
-      fi
-    
-      #Testing sudo access on all nodes
-      ssh -q -n $newNode sudo echo "***INFO: Testing sudo access on node $newNode"
-      if [ $? -ne "0" ]; then
-         error=1
-         ERROR_NODES="$ERROR_NODES $newNode"
-      fi
-      NODE_LIST="$NODE_LIST $newNode"  
-   done
-
-   if [[ $error == "1" ]]; then
-      echo "***ERROR: $ERROR_NODES does not have sudo access."
-      echo "***ERROR: Must have sudo access on all nodes."
-      exit -1
-   fi
-
+   NODE_LIST="$answer"
 fi
 
-for node in $NODE_LIST
-do
-   ssh -q -n $node echo "***INFO: Testing ssh on $node"
-   if [[ $? -ne "0" ]]; then
-      errorFound=1
-      ERROR_NODES="$ERROR_NODES $node"
-   fi
-done
-
-if [[ $errorFound == "1" ]]; then
-   echo "***ERROR: Could not ssh to $ERROR_NODES."
-   echo "***ERROR: Check permissions and known hosts files."
-   exit -1 
-fi
-
-node_count=$(echo $NODE_LIST | wc -w)
 echo "export NODE_LIST=\"$NODE_LIST\"" >> $LOCAL_TRAF_CONFIG
-echo "export node_count=\"$node_count\"" >> $LOCAL_TRAF_CONFIG
-
-MY_NODES=""
-for node in $NODE_LIST
-do 
-   MY_NODES="$MY_NODES -w $node"
-done 
-echo "export MY_NODES=\"$MY_NODES\"" >> $LOCAL_TRAF_CONFIG
-
-if [ $node_count -eq 1 ]; then
-    TRAF_PDSH=""
-else
-    TRAF_PDSH="pdsh -S $MY_NODES"
-fi
+node_count=$(echo $NODE_LIST | wc -w)
 
 #==============================================
 # Home directory
@@ -271,22 +190,16 @@ if [[ "$userForTrafodion" == "0" ]]; then
       # strip off TRAF_USER if user added it on end of directory
       HOME_DIR=$(echo "$answer" | sed -e "s@/$TRAF_USER\$@@")
    fi
-
-   #Test if home directory is on a NFS disk
-   diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
-   if [ "$diskType" == "nfs" ]; then
-      echo "***ERROR: Trafodion userid's home directory ($HOME_DIR) cannot be on an NFS disk"
-      echo "***ERROR: Please choose a different directory to install on."
-      exit -1
-  fi
 else
   HOME_DIR=$(grep -r "trafodion" /etc/passwd | sed 's/.*:://' | sed 's/\:.*$//' | sed 's/\/trafodion.*$//')
   
 fi
 
 echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
+
 #==============================================
 #Check location given for EPEL RPM
+
 if [[ "$userForTrafodion" == "0" ]] &&[[ "$SUSE_LINUX" != "true" ]]; then
    echo -n "Specify full path to EPEL RPM (including .rpm), default is None: "
    read answer
@@ -294,17 +207,8 @@ if [[ "$userForTrafodion" == "0" ]] &&[[ "$SUSE_LINUX" != "true" ]]; then
    if [ -z $answer ]; then
       echo "***INFO: Will attempt to download RPM if EPEL is not installed on all nodes."
       echo "export EPEL_RPM=\"\"" >> $LOCAL_TRAF_CONFIG
-   else
-      if [[ ! -f $answer ]]; then
-         echo "***ERROR: File not found. Please check path for existence and typos."
-         exit -1
-      fi 
-      if [[ "$answer" == *"rpm"* ]]; then
-         echo "export EPEL_RPM=\"$answer\"" >> $LOCAL_TRAF_CONFIG      
-      else
-         echo "***ERROR: File enter is not an RPM. Check file is of type epel***.rpm"
-         exit -1
-      fi
+   else   
+      echo "export EPEL_RPM=\"$answer\"" >> $LOCAL_TRAF_CONFIG      
    fi
 fi
 #==============================================
@@ -321,49 +225,6 @@ if [ -z $answer ]; then
 else
       JAVA_HOME=$answer
 fi
-
-REQ_VER="1.7.0_65"
-JAVA7="7"
-JAVA65="65"
-
-for node in $NODE_LIST
-do
-   THIS_JVM_VER="$(ssh -q -n $node $JAVA_HOME/bin/java -version 2>&1 > /dev/null)"
-   if [[ "$THIS_JVM_VER" == *"No such file"* ]]; then
-      echo "***ERROR: Unable to find Java version on node $node"
-      echo "***ERROR: Must enter a specific Java version (example: /usr/java/jdk1.7.0_67)"
-      echo "***ERROR: Please check for typos and that directory exists"
-      exit -1
-   fi
-
-   javaType="$(ssh -q -n $node $JAVA_HOME/bin/javac -version 2>&1 > /dev/null | grep "No such file" | wc -l)"
-   if [[ $javaType -eq "1" ]]; then
-      echo "***ERROR: Java version on node $node is of type JRE"
-      echo "***ERROR: Java version needed on all nodes must be a JDK"
-      exit -1
-   fi
-
-   temp_JAVA=`echo "${THIS_JVM_VER:15:2}" | sed 's/.*\.//'`
-   
-   #Check if using something less than Java 7
-   if [[ "$temp_JAVA" -lt "$JAVA7" ]]; then
-      error="true"
-   fi
-   
-   #Checking if using 1.7.0_n
-   if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
-      if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then      
-         error="true"
-      fi
-   fi
-
-   if [[ -n $error ]]; then
-      echo "***ERROR: Your existing JAVA_HOME on $node is less than $REQ_VER"
-      echo "***ERROR: Your Java Version on $node = $THIS_JVM_VER"
-      echo "***ERROR: Required java version on $node should be greater than $REQ_VER"
-      exit -1
-   fi
-done
 
 echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $LOCAL_TRAF_CONFIG
 
@@ -471,44 +332,6 @@ echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
 
-#Check if install_features file exists
-if [[ -z $TRAF_BUILD ]]; then
-   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
-   tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
-   TRAF_BUILD_PATH=$LOCAL_WORKDIR/$TRAF_BUILD
-else
-   TRAF_BUILD_PATH=$TRAF_BUILD
-fi
-
-if [[ -z $TRAF_BUILD ]]; then 
-   echo "***ERROR: trafodion_server-n.n.n.tgz not included in $TRAF_PACKAGE"
-   echo "***ERROR: Workaround may be to enter trafodion_server-n.n.n.tgz as trafodion tar package."
-   exit -1
-fi
-
-install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
-
-
-if [[ ! -z $install_features_path ]]; then
-   tar -xzf $TRAF_BUILD_PATH $install_features_path
-   source $install_features_path
-   echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-   if [[ -z $CDH_5_4_SUPPORT ]]; then
-      echo "export CDH_5_4_SUPPORT=\"N\"" >> $LOCAL_TRAF_CONFIG
-   else
-      echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-   fi
-else
-   CDH_5_3_HDP_2_2_SUPPORT="N"
-   CDH_5_4_SUPPORT="N"
-   echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-   echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
-fi
-
-#>>> to allow failed installs to be rerun easily we need to do something
-#>>> about defaulting the tar file once the user specified it but maybe
-#>>> blank it out once the install completes successfully.
-
 #==============================================
 #Hadoop user name
 
@@ -561,250 +384,6 @@ else
    echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
    exit -1
 fi
-
-hadoopVersion=$(curl -su $username:$password http://$URL/api/v1/clusters | grep version | grep -c CDH)
-
-if [[ $hadoopVersion -ne "1" ]]; then
-   hadoopVersion=$(curl -su $username:$password http://$URL/api/v1/clusters | grep version | grep -c HDP)
-   if [[ $hadoopVersion -ne "1" ]]; then
-      echo "***ERROR: Hadoop type can not be determined"
-      echo "***ERROR: Check that URL and port are correct or if Hadoop is up"
-      exit -1
-   else
-      HADOOP_TYPE="hortonworks"
-   fi
-else
-   HADOOP_TYPE="cloudera"
-fi
-
-
-echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
-
-
-temp=$(curl -su $username:$password http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
-CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
-CLUSTER_NAME=${CLUSTER_NAME// /%20}
-
-if [ -z $CLUSTER_NAME ]; then
-   if [[ $hadoop_type == "cloudera" ]]; then
-      echo "***INFO: Cloudera server might be down, attempting to restart"
-      sudo /etc/init.d/cloudera-scm-server restart 2>&1 | tee -a $INSTALL_LOG
-      temp=$(curl -su $username:$password http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
-      CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
-      CLUSTER_NAME=${CLUSTER_NAME// /%20}
-      if [ -x $CLUSTER_NAME ]; then
-         echo "***ERROR: Could not access http://$URL" 2>&1 | tee -a $INSTALL_LOG
-         echo "***ERROR: Check URL and port are correct or if Cloudera manager is up" 2>&1 | tee -a $INSTALL_LOG
-         exit -1
-      fi
-   else 
-      echo "***ERROR: Could not access http://$URL" 2>&1 | tee -a $INSTALL_LOG
-      echo "***ERROR: Check URL and port are correct or if $hadoop_type is up." 2>&1 | tee -a $INSTALL_LOG
-      exit -1
-   fi
-fi
-
-echo "export CLUSTER_NAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
-if [[ $node_count -ne 1 ]]; then
-   echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
-fi
-#=============================================
-#Get Hadoop Nodes
-
-echo "***INFO: Getting list of all $HADOOP_TYPE nodes"
-
-curlRC=0
-if [[ $HADOOP_TYPE == "cloudera" ]]; then
-   curl -su $username:$password http://$URL/api/v6/cm/deployment > tempFile
-   curlRC=$?
-   numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
-   grep -r "hostname" tempFile > tempFile2
-fi
-
-if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-   curl -su $username:$password http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
-   curlRC=$?
-   numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
-   grep -r "host_name" tempFile > tempFile2
-fi
-
-if [ $curlRC != 0 ]; then
-   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
-   echo "***ERROR: curl command failed."
-   exit -1
-fi
-
-# in most cases curl does not return an error
-# so curl's actual output needs to be checked, too
-curl_error=$(grep TITLE tempFile | grep Error | wc -l)
-
-if [ $curl_error -ne 0 ]; then
-   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE"
-   cat tempFile
-   exit -1
-fi
-
-#Get list of all hadoop nodes
-HADOOP_NODES=""
-MY_HADOOP_NODES=""
-while read line
-do
-   hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
-   HADOOP_NODES="$HADOOP_NODES $hostName"
-   MY_HADOOP_NODES="$MY_HADOOP_NODES -w $hostName"
-done < tempFile2
-rm tempFile
-rm tempFile2
-
-if [[ -z $HADOOP_NODES ]]; then
-   echo "***ERROR: List of $HADOOP_TYPE nodes not found."
-   echo "***ERROR: Check that $HADOOP_TYPE is up and running."
-   exit -1 
-fi
-
-echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
-hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
-
-
-echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
-echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
-echo "export hadoop_node_count=\"$hadoop_node_count\"" >>$LOCAL_TRAF_CONFIG
-
-for node in $HADOOP_NODES
-do
-   ssh -q -n $node echo "***INFO: Testing ssh on $node"
-   if [[ $? -ne "0" ]]; then
-      errorFound=1
-      ERROR_NODES="$ERROR_NODES $node"
-   fi
-done
-
-if [[ $errorFound == "1" ]]; then
-   echo "***ERROR: Could not ssh to $ERROR_NODES."
-   echo "***ERROR: Check permissions and known hosts files."
-   exit -1
-fi
-
-for node in $HADOOP_NODES
-do
-   ssh -q -n $node sudo echo "***INFO: Testing sudo access on $node"
-   if [ $? -ne "0" ]; then
-      error=1
-      ERROR_NODES="$ERROR_NODES $newNode"
-   fi
-done
-
-if [[ $error == "1" ]]; then
-   echo "***ERROR: $ERROR_NODES does not have sudo access."
-   echo "***ERROR: Must have sudo access on all nodes."
-   exit -1
-fi
-
-
-#Hadoop checks
-count=0
-for node in $HADOOP_NODES;
-do
-   ssh -q -n $node 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
-   count=$[$count+1]
-   foundFile=$(ssh -q -n $node ls $HOME/hbaseVersion.txt | wc -l)
-   if [[ $foundFile -eq "0" ]]; then
-      if [[ $count -ge $hadoop_node_count ]]; then
-         echo "***ERROR: HBase shell not found on any node"
-         echo "***ERROR: Check that HBase is installed and working"
-         exit -1
-      fi
-   else
-      echo "***INFO: Checking $HADOOP_TYPE Version"
-      if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            #Check that Hortonworks 2.2 is not installed
-            versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.* | wc -l)
-            if [[ $versionInstalled -eq "0" ]]; then
-               echo "***ERROR: Only Hortonworks version 2.1.* is currently supported."
-               echo "***ERROR: Detected Hortonworks version:"
-               ssh -q -n $node cat $HOME/hbaseVersion.txt
-               exit -1
-            fi
-            nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.*)
-            HADOOP_PATH="/usr/lib/hbase/lib"
-         else
-            nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
-         fi
-
-         #Check that HDP 2.[n>2].* is not installed.
-         if [[ -z $nameOfVersion ]]; then
-            versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version 0.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
-            if [[ $versionInstalled -gt "0" ]]; then
-               echo "***ERROR: Trafodion and Hortonworks versions may not be compatible"
-               echo "***ERROR: Trafodion 1.1.0 is compatible with Hortonworks 2.2"
-               echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatbile with Hortonworks 2.1"
-               echo "***ERROR: Detected Hortonworks version:"
-               ssh -q -n $node cat hbaseVersion.txt
-               exit -1
-            fi
-         fi
-         HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
-      fi
-
-      if [[ $HADOOP_TYPE == "cloudera" ]]; then
-         if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            #Check that Cloudera 5.2 or 5.3 are not installed.
-            if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
-               nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
-               #Check that Cloudera 5.[n>3].* is not installed.
-               if [[ -z $nameOfVersion ]]; then
-                  versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-6].[0-9].* | wc -l)
-                  if [[ $versionInstalled -gt "0" ]]; then
-                     echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
-                     echo "***ERROR: Detected Cloudera version:"
-                     ssh -q -n $node cat hbaseVersion.txt
-                     exit -1
-                  fi
-               fi
-            else
-               versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
-               nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
-               if [[ $versionInstalled -eq "0" ]]; then
-                  echo "***ERROR: Only Cloudera Versions 5.0.* or 5.1.* are currently supported"
-                  echo "***ERROR: Detected Cloudera version:"
-                  ssh -q -n $node cat hbaseVersion.txt
-                  exit -1
-               fi
-            fi
-         else
-            nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
-
-            #Check that Cloudera 5.[n>3].* is not installed.
-            if [[ -z $nameOfVersion ]]; then
-               versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
-               if [[ $versionInstalled -gt "0" ]]; then
-                  echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
-                  echo "***ERROR: Trafodion 1.2.0 is compatible with Cloudera 5.4"
-                  echo "***ERROR: Trafodion 1.1.0 is compatible with Cloudera 5.2 and 5.3"
-                  echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatible with Cloudera 5.1.2 and 5.1.3"
-                  echo "***ERROR: Detected Cloudera version:"
-                  ssh -q -n $node cat hbaseVersion.txt
-                  exit -1
-               fi
-            fi
-         fi
-         HADOOP_PATH="/usr/lib/hbase/lib"
-         #Check for Cloudera parcels of packages.
-         parcelsInstalled=$(ssh -q -n $node sudo ls /opt/cloudera/parcels/ | wc -l)
-         if [[ $parcelsInstalled -gt "0" ]]; then
-            HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
-         fi
-      fi
-      echo "***INFO: nameOfVersion=$nameOfVersion"
-      echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
-      break;
-   fi
-done
-
-echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $LOCAL_TRAF_CONFIG
-
-
 
 #==============================================
 #HDFS Username
@@ -898,12 +477,7 @@ if [ ! -z $answer ]; then
    DCS_SERVERS_PARM="$answer"
 fi
 
-if [[ $DCS_SERVERS_PARM != *[!0-9]* ]]; then
-   echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
-else
-   echo "***ERROR: DCS servers must be a number."
-   exit -1
-fi
+echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 #Simple security

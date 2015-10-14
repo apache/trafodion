@@ -57,18 +57,13 @@ done
 
 # These directories should exist.
 VARDIRLIST="JAVA_HOME PERL5LIB MPI_TMPDIR"
-VARDIRLIST="$VARDIRLIST LLVM UDIS86 ICU MPICH_ROOT ZOOKEEPER_DIR THRIFT_LIB_DIR"
-VARDIRLIST="$VARDIRLIST THRIFT_INC_DIR PROTOBUFS"
-VARDIRLIST="$VARDIRLIST HADOOP_INC_DIR HADOOP_LIB_DIR"
-# QT_TOOLKIT is optional; if it is not set then the SQL Compiler Debugger should
-# not build.  Check the value of QT_TOOLKIT variable only if set, including when
-# set to blanks or empty string.
-if [ ! -z ${QT_TOOLKIT+x} ]; then
-   VARDIRLIST="$VARDIRLIST QT_TOOLKIT"
-else
-   if [[ "$SQ_VERBOSE" == "1" ]]; then
-      echo "QT_TOOLKIT is not set.  SQL Compiler Debugger will not be built."
-   fi
+VARDIRLIST="$VARDIRLIST LLVM UDIS86 ICU MPICH_ROOT ZOOKEEPER_DIR PROTOBUFS"
+VARDIRLIST="$VARDIRLIST THRIFT_LIB_DIR THRIFT_INC_DIR"
+# QT_TOOLKIT is optional; if it is not set correctly then the SQL Compiler Debugger should
+# not build.
+if [ ! -d "${QT_TOOLKIT}" ]; then
+   echo "*** Warning: QT_TOOLKIT does not point to an existing directory."
+   echo "*** Warning: SQL Compiler Debugger will not be built."
 fi
 
 for AVAR in $VARDIRLIST; do

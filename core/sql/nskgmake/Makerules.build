@@ -59,7 +59,6 @@ SYS_LIBS       :=
 SQLCLIOPT      :=
 USES_ROSETTA   :=
 USES_EID       :=
-NSKOBJ         :=
 ASMOBJ         :=
 INSTALL_OBJ    :=
 EXTERN_OBJS    :=

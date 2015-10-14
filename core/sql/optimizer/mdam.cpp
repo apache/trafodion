@@ -1151,12 +1151,12 @@ void ScanKey::createComputedColumnPredicates(ValueIdSet &predicates,           /
                       colToKeyValueMap.rewriteValueIdDown(mpValId,
                                                           mpValIdRewritten);
                       generatedPredicates += mpValIdRewritten;
-                    }
-                }
-            } 
-         }
-       }
-  }
+                    } // not a divisioning column
+                } // preds for all underlying columns
+            } // a computed column 
+         } // a base column
+       } // switch on operator type
+  } // loop over key columns
   predicates += generatedPredicates;
 } // createComputedColumnPredicates (...)
 

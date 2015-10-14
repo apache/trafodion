@@ -99,7 +99,7 @@ import javax.naming.Referenceable;
  * </pre>
  * 
  * <p>
- * Copyright: (C) Copyright 2004-2007 Hewlett-Packard Development Company, L.P.
+ * Copyright: (C) Apache Software Foundation (ASF)
  * </p>
  * 
  * @see T4Properties

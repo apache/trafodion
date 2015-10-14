@@ -52,7 +52,7 @@ public class SQLWarningOrError {
         sqlState = "";
     }
     public SQLWarningOrError(SQLException ex, int rowId) {
-        
+
         this.rowId = rowId;
         sqlCode = ex.getErrorCode();
         text = ex.getMessage();
@@ -74,12 +74,13 @@ public class SQLWarningOrError {
         bbBuf.putInt(rowId);
         bbBuf.putInt(sqlCode);
         ByteBufferUtils.insertString(text,bbBuf);
+        sqlState = (sqlState == null)? "HY024" : sqlState;
         bbBuf.put(sqlState.getBytes(),0,5);
         bbBuf.put((byte)0); //null terminator
     }
     public int lengthOfData() {
         int dataLength = 0;
-        
+
         dataLength += ServerConstants.INT_FIELD_SIZE;         //rowId
         dataLength += ServerConstants.INT_FIELD_SIZE;         //sqlcode
         dataLength += ByteBufferUtils.lengthOfString(text);
@@ -98,7 +99,7 @@ public class SQLWarningOrError {
     public String getSqlState(){
         return sqlState;
     }
-    
+
     public void setRowId(int rowId){
         this.rowId = rowId;
     }

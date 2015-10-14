@@ -44,13 +44,13 @@ public class ServerApiSqlSetConnectAttr {
     private static final int odbc_SQLSvc_SetConnectionOption_InvalidConnection_exn_ = 2;
     private static final int odbc_SQLSvc_SetConnectionOption_SQLError_exn_ = 3;
     private static final int odbc_SQLSvc_SetConnectionOption_SQLInvalidHandle_exn_ = 4;
-    
+
     private static  final Log LOG = LogFactory.getLog(ServerApiSqlSetConnectAttr.class);
     private int instance;
     private int serverThread;
     private String serverWorkerName;
     private ClientData clientData;
-//    
+//
     private SetConnectionOption setConnectionOption;
     private ServerException serverException;
     private ErrorDescList errorDescList;
@@ -59,8 +59,8 @@ public class ServerApiSqlSetConnectAttr {
     private TrafConnection trafConnection;
     private int attr;
     private int option;
-    
-    ServerApiSqlSetConnectAttr(int instance, int serverThread) {  
+
+    ServerApiSqlSetConnectAttr(int instance, int serverThread) {
         this.instance = instance;
         this.serverThread = serverThread;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
@@ -75,7 +75,7 @@ public class ServerApiSqlSetConnectAttr {
         serverException = null;
         errorDescList = null;
     }
-    ClientData processApi(ClientData clientData) {  
+    ClientData processApi(ClientData clientData) {
         this.clientData = clientData;
         init();
 // ==============process input ByteBuffer===========================
@@ -87,11 +87,11 @@ public class ServerApiSqlSetConnectAttr {
 
         bbHeader.flip();
         bbBody.flip();
-        
+
         try {
             hdr.extractFromByteArray(bbHeader);
             setConnectionOption.extractFromByteBuffer(bbBody);
-    
+
             if (setConnectionOption.getDialogueId() < 1 ) {
                 throw new SQLException(serverWorkerName + ". Wrong dialogueId :" + setConnectionOption.getDialogueId());
             }
@@ -106,7 +106,7 @@ public class ServerApiSqlSetConnectAttr {
             trafConnection = clientData.getTrafConnection();
             attr = setConnectionOption.getConnectionOption();
             option = setConnectionOption.getOptionValueNum();
-            
+
             switch(attr){
             case ServerConstants.SQL_ATTR_ROWSET_RECOVERY:
                 if(LOG.isDebugEnabled())
@@ -129,22 +129,7 @@ public class ServerApiSqlSetConnectAttr {
                 if(LOG.isDebugEnabled())
                     LOG.debug(serverWorkerName + ". Unknown Connection Attr: [" + attr + "/" + option + "]" );
             }
-            errorDescList = new ErrorDescList(1);
-            errorDescList.getBuffer()[0].setRowId(1);
-            errorDescList.getBuffer()[0].setErrorDiagnosticId(2);
-            errorDescList.getBuffer()[0].setSqlcode(3);
-            errorDescList.getBuffer()[0].setSqlstate("state");
-            errorDescList.getBuffer()[0].setErrorText("Text");
-            errorDescList.getBuffer()[0].setOperationAbortId(4);
-            errorDescList.getBuffer()[0].setErrorCodeType(5);
-            errorDescList.getBuffer()[0].setParam1("A");
-            errorDescList.getBuffer()[0].setParam2("B");
-            errorDescList.getBuffer()[0].setParam3("C");
-            errorDescList.getBuffer()[0].setParam4("D");
-            errorDescList.getBuffer()[0].setParam5("E");
-            errorDescList.getBuffer()[0].setParam6("F");
-            errorDescList.getBuffer()[0].setParam7("G");
-            
+            errorDescList = new ErrorDescList();
             serverException.setServerException (exception, exception_detail, errorDescList);
 //
 //===================calculate length of output ByteBuffer========================
@@ -155,7 +140,7 @@ public class ServerApiSqlSetConnectAttr {
             bbBody.clear();
 //
 // check if ByteBuffer is big enough for serverException
-//      
+//
             int dataLength = serverException.lengthOfData();
             int availableBuffer = bbBody.capacity() - bbBody.position();
              if(LOG.isDebugEnabled())
@@ -166,7 +151,7 @@ public class ServerApiSqlSetConnectAttr {
             serverException.insertIntoByteBuffer(bbBody);
 
             bbBody.flip();
-//=========================Update header================================ 
+//=========================Update header================================
             hdr.setTotalLength(bbBody.limit());
             hdr.insertIntoByteBuffer(bbHeader);
             bbHeader.flip();
@@ -174,7 +159,7 @@ public class ServerApiSqlSetConnectAttr {
             clientData.setByteBufferArray(bbHeader, bbBody);
             clientData.setHdr(hdr);
             clientData.setRequest(ServerConstants.REQUST_WRITE_READ);
-            
+
         } catch (SQLException se){
             LOG.error(serverWorkerName + ". SetConnectAttr.SQLException :" + se);
             clientData.setRequestAndDisconnect();

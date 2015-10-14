@@ -33,7 +33,7 @@ DEP_LIBS := cli comexe executor common sort sqlmsg \
 	tdm_sqlerrormsg tdm_sqlshare tdm_sqllangman
 
 EXTERN_LIBS := \
-        $(NSKLIB)/libsm.so \
+        $(LIBROOT)/libsm.so \
         $(LIBROOT)/libtdm_measenty.so \
         $(LIBROOT)/libtdm_security.so \
         $(LIBROOT)/libtdm_tfds.so \

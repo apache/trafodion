@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <!--
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+  <repositories>
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+    </repository>
+  </repositories>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <hbase.version>0.98.1-cdh5.1.0</hbase.version>
+    <hbase-trx.id>hbase-trx-cdh5_3</hbase-trx.id>
+    <java.version>1.7</java.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-server</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-client</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase.client.transactional</groupId>
+      <artifactId>${hbase-trx.id}</artifactId>
+      <version>${env.TRAFODION_VER}</version>
+      <scope>system</scope>
+      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.7</version>
+    </dependency>
+  </dependencies>
+
+  <groupId>org.trafodion.sql</groupId>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>trafodion-dtm</artifactId>
+  <version>${env.TRAFODION_VER}</version>
+  <name>trafodion-dtm</name>
+  <description>Java code for the Trafodion DTM (Distributed Transaction Manager)</description>
+
+  <build>
+    <plugins>
+      <plugin>
+            <groupId>com.github.koraktor</groupId>
+            <artifactId>mavanagaiata</artifactId>
+            <version>0.7.2</version>
+            <configuration>
+                  <dirtyFlag>false</dirtyFlag>
+                  <dirtyIgnoreUntracked>false</dirtyIgnoreUntracked>
+                  <gitDir>${env.MY_SQROOT}/../../.git</gitDir>
+                  <dateFormat>ddMMMyyyy</dateFormat>
+            </configuration>
+            <executions>
+                  <execution>
+                        <id>git-commit</id>
+                        <phase>validate</phase>
+                        <goals>
+                              <goal>commit</goal>
+                              <goal>branch</goal>
+                        </goals>
+                  </execution>
+            </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+              <manifestEntries>
+                    <Implementation-Version-1>Version ${project.version}</Implementation-Version-1>
+                    <Implementation-Version-2>Release ${project.version}</Implementation-Version-2>
+                    <Implementation-Version-3>Build ${env.SQ_BUILD_TYPE}</Implementation-Version-3>
+                    <Implementation-Version-4>[${user.name}]</Implementation-Version-4>
+                    <Implementation-Version-5>Branch ${mvngit.commit.abbrev}-${mvngit.branch}</Implementation-Version-5>
+                    <Implementation-Version-6>Date ${maven.build.timestamp}</Implementation-Version-6>
+                    <Product-Name>${project.name}</Product-Name>
+              </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

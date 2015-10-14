@@ -30,12 +30,12 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.sql.*;
 
 import org.apache.hadoop.conf.Configuration;
 
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.*;
+import org.trafodion.dcs.servermt.ServerConstants;
 import org.trafodion.dcs.servermt.serverDriverInputOutput.*;
 import org.trafodion.dcs.servermt.serverHandler.*;
 import org.apache.commons.logging.Log;
@@ -81,6 +81,11 @@ public class TrafConnection {
     private String connectOptions = "";
 
     private VersionList clientVersionList = null;
+
+    private short clientComponentId = 0;
+    private short clientMajorVersion = 0;
+    private short clientMinorVersion = 0;
+    private int clientBuildId = 0;
 
     private int dialogueId = 0;
     private long contextOptions1 = 0L;
@@ -139,6 +144,22 @@ public class TrafConnection {
         contextOptions2 = cc.getContextOptions2();
         sessionName = cc.getSessionName();
         clientUserName = cc.getClientUserName();
+
+        Version[] cvl = clientVersionList.getList();
+        for (int i = 0; i < cvl.length; i ++ ){
+            Version cv = cvl[i];
+            if (i == 0){
+                clientComponentId = cv.getComponentId();
+                clientMajorVersion = cv.getMajorVersion();
+                clientMinorVersion = cv.getMinorVersion();
+                clientBuildId = cv.getBuildId();
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(serverWorkerName + ". version index :" + 0);
+                cv.debug();
+            }
+        }
+
         /*--------------------------------------------------------------------
          T2 Driver properties
          catalog
@@ -278,69 +299,55 @@ public class TrafConnection {
 
     public void closeTConnection() {
         TrafStatement tstmt;
-        Iterator<String> keySetIterator = statements.keySet().iterator();
-        if (LOG.isDebugEnabled())
-            LOG.debug(serverWorkerName + ". closeTConnection");
-        while (keySetIterator.hasNext()) {
-            String key = keySetIterator.next();
-            tstmt = statements.get(key);
-            tstmt.closeTStatement();
-        }
-        statements.clear();
         try {
-            if (isClosed == false) {
-                isClosed = true;
-                conn.close();
+            Iterator<String> keySetIterator = statements.keySet().iterator();
+            if (LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". closeTConnection");
+            while (keySetIterator.hasNext()) {
+                String key = keySetIterator.next();
+                tstmt = statements.get(key);
+                tstmt.closeTStatement();
             }
+            statements.clear();
+                if (isClosed == false) {
+                    isClosed = true;
+                    conn.close();
+                }
         } catch (SQLException sql) {
         }
         reset();
     }
 
-    public TrafStatement createTrafStatement(String stmtLabel,
-            boolean isResultSet) throws SQLException {
+    public TrafStatement createTrafStatement(String stmtLabel, int sqlStmtType, int stmtHandle) throws SQLException {
         TrafStatement trafStatement = null;
 
         if (statements.containsKey(stmtLabel) == false) {
             if (LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName
-                        + ". createTrafStatement.containsKey [" + stmtLabel
-                        + "] is false ");
-            trafStatement = new TrafStatement(serverWorkerName, stmtLabel,
-                    conn, null);
-            trafStatement.setIsResultSet(isResultSet);
+                        + ". createTrafStatement.containsKey [" + stmtLabel + "] is false ");
+            trafStatement = new TrafStatement(serverWorkerName, stmtLabel, conn, null, sqlStmtType);
             statements.put(stmtLabel, trafStatement);
         } else {
-            LOG.debug(serverWorkerName + ". createTrafStatement.containsKey ["
-                    + stmtLabel + "] is found ");
-            trafStatement = getTrafStatement(stmtLabel);
-            trafStatement.setStatement(conn, null);
-            trafStatement.setIsResultSet(isResultSet);
+            LOG.debug(serverWorkerName + ". createTrafStatement.containsKey [" + stmtLabel + "] is found ");
+            trafStatement = getTrafStatement(stmtLabel, stmtHandle);
+            trafStatement.setStatement(conn, null, sqlStmtType);
         }
         return trafStatement;
     }
 
-    public TrafStatement prepareTrafStatement(String stmtLabel,
-            String sqlString, boolean isResultSet) throws SQLException {
+    public TrafStatement prepareTrafStatement(String stmtLabel, String sqlString, int sqlStmtType) throws SQLException {
         TrafStatement trafStatement = null;
 
         if (statements.containsKey(stmtLabel) == false) {
             if (LOG.isDebugEnabled())
-                LOG.debug(serverWorkerName
-                        + ". prepareTrafStatement.containsKey [" + stmtLabel
-                        + "] is false ");
-            trafStatement = new TrafStatement(serverWorkerName, stmtLabel,
-                    conn, sqlString);
-            trafStatement.setIsResultSet(isResultSet);
+                LOG.debug(serverWorkerName + ". prepareTrafStatement.containsKey [" + stmtLabel + "] is false ");
+            trafStatement = new TrafStatement(serverWorkerName, stmtLabel, conn, sqlString, sqlStmtType);
             statements.put(stmtLabel, trafStatement);
         } else {
             if (LOG.isDebugEnabled())
-                LOG.debug(serverWorkerName
-                        + ". prepareTrafStatement.containsKey [" + stmtLabel
-                        + "] is found ");
-            trafStatement = getTrafStatement(stmtLabel);
-            trafStatement.setStatement(conn, sqlString);
-            trafStatement.setIsResultSet(isResultSet);
+                LOG.debug(serverWorkerName + ". prepareTrafStatement.containsKey [" + stmtLabel + "] is found ");
+            trafStatement = getTrafStatement(stmtLabel, 0);
+            trafStatement.setStatement(conn, sqlString, sqlStmtType);
         }
         return trafStatement;
     }
@@ -351,27 +358,37 @@ public class TrafConnection {
 
         if (statements.containsKey(stmtLabel) == false) {
             if (LOG.isDebugEnabled())
-                LOG.debug(serverWorkerName
-                        + ". closeTrafStatement.containsKey [" + stmtLabel
-                        + "] is false ");
+                LOG.debug(serverWorkerName + ". closeTrafStatement.containsKey [" + stmtLabel + "] is false ");
         } else {
             if (LOG.isDebugEnabled())
-                LOG.debug(serverWorkerName
-                        + ". createTrafStatement.containsKey [" + stmtLabel
-                        + "] is found ");
-            trafStatement = getTrafStatement(stmtLabel);
+                LOG.debug(serverWorkerName + ". closeTrafStatement.containsKey [" + stmtLabel + "] is found ");
+            trafStatement = getTrafStatement(stmtLabel, 0);
             trafStatement.closeTStatement();
         }
         return trafStatement;
     }
 
-    public TrafStatement getTrafStatement(String stmtLabel) throws SQLException {
+    public TrafStatement getTrafStatement(String stmtLabel, int stmtHandle) throws SQLException {
         TrafStatement trafStatement = null;
-        trafStatement = statements.get(stmtLabel);
-        if (trafStatement == null)
-            throw new SQLException("getTrafStatement [" + stmtLabel
-                    + "] returns null");
-        return trafStatement;
+        if (stmtLabel != null && stmtLabel.isEmpty() == false){
+            trafStatement = statements.get(stmtLabel);
+            if (trafStatement == null)
+                throw new SQLException("getTrafStatement stmtLabel : [" + stmtLabel + "] returns null");
+            return trafStatement;
+        } else if (stmtHandle == 0)
+            throw new SQLException("getTrafStatement stmtHandle is 0 [" + stmtHandle + "]");
+        else {
+            TrafStatement  tstmt;
+            String key;
+            Iterator<String> keySetIterator = statements.keySet().iterator();
+            while (keySetIterator.hasNext()) {
+                key = keySetIterator.next();
+                tstmt = statements.get(key);
+                if (tstmt.getStmtHandle() == stmtHandle);
+                    return tstmt;
+            }
+            throw new SQLException("getTrafStatement stmtHandle [" + stmtHandle + "] returns null");
+       }
     }
 
     public void setDatasource(String datasource) {
@@ -621,6 +638,22 @@ public class TrafConnection {
 
     public String getClientUserName() {
         return clientUserName;
+    }
+
+    public short getClientComponentId(){
+        return clientComponentId;
+    }
+
+    public short getClientMajorVersion(){
+        return clientMajorVersion;
+    }
+
+    public short getClientMinorVersion(){
+        return clientMinorVersion;
+    }
+
+    public int getClientBuildId(){
+        return clientBuildId;
     }
 
     public Connection getConnection() {
