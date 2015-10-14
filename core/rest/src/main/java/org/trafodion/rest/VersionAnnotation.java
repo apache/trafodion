@@ -47,12 +47,12 @@ public @interface VersionAnnotation {
   String date();
 
   /**
-   * Get the url for the subversion repository.
+   * Get the url for the repository.
    */
   String url();
 
   /**
-   * Get the subversion revision.
+   * Get the revision.
    * @return the revision number as a string (eg. "451451")
    */
   String revision();

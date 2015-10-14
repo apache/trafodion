@@ -170,7 +170,7 @@ public class VerGen {
      *            <li>min - minor version number
      *            <li>micro - minor minor version number
      *            <li>qualifier - optional qualifier (dash followed by qualifier text)
-     *            <li>rev - current SVN revision number
+     *            <li>rev - current revision number
      *            <li>buildDate - date the build
      *            </ul>
      */

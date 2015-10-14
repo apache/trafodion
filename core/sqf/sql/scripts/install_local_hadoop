@@ -1541,57 +1541,9 @@ if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
   echo "------------------------------------------------------------"
 fi
 
-echo "Setting up configuration script for dcs, rest and trafci..."
-
-# For DCS
-cat >$HOME/.dcs-site.xml-$USER <<EOF
-    <property>
-     <name>dcs.master.port</name> <value>$MY_DCS_MASTER_PORT</value>
-    </property>
-    <property>
-     <name>dcs.master.info.port</name> <value>$MY_DCS_MASTER_INFO_PORT</value>
-    </property>
-    <property>
-     <name>dcs.server.info.port</name> <value>$MY_DCS_SERVER_INFO_PORT</value>
-    </property>
-    <property>
-     <name>dcs.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
-    </property>
-    <property>
-     <name>dcs.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
-    </property>
-    <property>
-     <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
-    </property>
-EOF
-
-# For rest
-
-cat >$HOME/.rest-site.xml-$USER <<EOF
-    <property>
-     <name>rest.port</name> <value>$MY_REST_SERVER_PORT</value>
-    </property>
-    <property>
-     <name>rest.https.port</name> <value>$MY_REST_SERVER_SECURE_PORT</value>
-    </property>
-    <property>
-     <name>rest.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
-    </property>
-    <property>
-     <name>rest.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
-    </property>
-    <property>
-     <name>rest.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
-    </property>
-EOF
-
 #For clients
 cat >$HOME/.traf-clports-$USER <<EOF
-DCS_MASTER=$MY_DCS_MASTER_PORT
-REST_SERVER=$MY_REST_SERVER_PORT
-REST_SECURE_SERVER=$MY_REST_SERVER_SECURE_PORT
-DB_MGR=$MY_DB_MGR_PORT
-DB_SECURE_MGR=$MY_DB_MGR_SECURE_PORT
+HADOOP_START_PORT=$MY_START_PORT
 EOF
 
 echo
