@@ -24,14 +24,25 @@
 MY_SW_ROOT=$MY_SQROOT/sql/local_hadoop
 MY_LOG_FILE=$MY_SW_ROOT/log/install_traf_components_$(date +%F_%T).log
 
+# Define ports for Trafodion components
+MY_START_PORT=`cat $HOME/.traf-clports-$USER |grep HADOOP_START_PORT |cut -d "=" -f2`
+MY_HBASE_ZOOKEEPER_PEERPORT_NUM=`expr $MY_START_PORT + 167`
+MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=`expr $MY_START_PORT + 168`
+MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=`expr $MY_START_PORT + 170`
+MY_DCS_MASTER_PORT=`expr $MY_START_PORT + 172`
+MY_DCS_MASTER_INFO_PORT=`expr $MY_START_PORT + 181`
+MY_DCS_SERVER_INFO_PORT=`expr $MY_START_PORT + 182`
+MY_REST_SERVER_PORT=`expr $MY_START_PORT + 193`
+MY_REST_SERVER_SECURE_PORT=`expr $MY_START_PORT + 194`
+MY_DB_MGR_PORT=`expr $MY_START_PORT + 195`
+MY_DB_MGR_SECURE_PORT=`expr $MY_START_PORT + 196`
+
 # Default location of Trafodion, DCS, REST and Phoenix src folders
 TRAF_SRC=$MY_SQROOT/../../
 DCS_SRC=$MY_SQROOT/../../dcs
 REST_SRC=$MY_SQROOT/../rest
 PHX_SRC=$MY_SQROOT/../../tests/phx
 TRAF_TARS=$MY_SQROOT/../../distribution
-
-MY_DCS_MASTER_PORT=`cat $HOME/.traf-clports-$USER |grep DCS_MASTER |cut -d "=" -f2`
 
 if [ -z "$DCS_TAR" ]; then
   DCS_TAR=$(ls $TRAF_TARS/dcs*tar.gz 2>/dev/null)
@@ -143,8 +154,27 @@ else
   sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
   mv -f dcs-site.xml dcs-site.xml.orig
   sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
-  cat $HOME/.dcs-site.xml-$USER >> $DCS_HOME/conf/dcs-site.xml
-  echo "</configuration>" >> $DCS_HOME/conf/dcs-site.xml
+  cat >>dcs-site.xml <<EOF
+    <property>
+     <name>dcs.master.port</name> <value>$MY_DCS_MASTER_PORT</value>
+    </property>
+    <property>
+     <name>dcs.master.info.port</name> <value>$MY_DCS_MASTER_INFO_PORT</value>
+    </property>
+    <property>
+     <name>dcs.server.info.port</name> <value>$MY_DCS_SERVER_INFO_PORT</value>
+    </property>
+    <property>
+     <name>dcs.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
+    </property>
+    <property>
+     <name>dcs.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
+    </property>
+    <property>
+     <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
+    </property>
+  </configuration>
+EOF
 
   echo "Configured $DCS_HOME/conf/dcs-site.xml" | tee -a ${MY_LOG_FILE}
 
@@ -207,10 +237,47 @@ else
   sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
   mv -f rest-site.xml rest-site.xml.orig
   sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml
-  cat $HOME/.rest-site.xml-$USER >> $REST_HOME/conf/rest-site.xml
-  echo "</configuration>" >> $REST_HOME/conf/rest-site.xml
+  cat >>rest-site.xml <<EOF
+    <property>
+     <name>rest.port</name> <value>$MY_REST_SERVER_PORT</value>
+    </property>
+    <property>
+     <name>rest.https.port</name> <value>$MY_REST_SERVER_SECURE_PORT</value>
+    </property>
+    <property>
+     <name>rest.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
+    </property>
+    <property>
+     <name>rest.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
+    </property>
+    <property>
+     <name>rest.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
+    </property>
+  </configuration>
+EOF
 
   echo "Configured $REST_HOME/conf/rest-site.xml" | tee -a ${MY_LOG_FILE}
+  echo "Adding swrest script..." | tee -a ${MY_LOG_FILE}
+  cat <<EOF >$MY_SQROOT/sql/scripts/swrest
+#!/bin/sh
+# command to run rest tests
+#Displays the status of configured servers
+curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/v1/servers| python -m json.tool
+
+#Displays the status of dtm
+curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/v1/servers/dtm| python -m json.tool
+
+#Displays the status of rms
+curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/v1/servers/rms| python -m json.tool
+
+#Displays the status of configured dcs servers
+curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/v1/servers/dcs | python -m json.tool
+
+#Displays the status of dcs connections
+curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/v1/servers/dcs/connections | python -m json.tool
+EOF
+
+     chmod +x $MY_SQROOT/sql/scripts/swrest
 fi
 
 # End of setup for REST

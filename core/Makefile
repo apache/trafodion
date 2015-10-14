@@ -100,6 +100,7 @@ odb: ndcs
 cleantests:
 	cd ../dcs/src/test/pytests && $(RM) -r odbc* tox.ini config.ini .tox .testrep* env.sh test_p2.pyc 
 	cd ../dcs/src/test/jdbc_test && $(RM) -r jdbcprop pom.xml  target
+	cd ../tests/phx && $(RM) -r jdbcprop *.log pom.xml target
 	
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -198,3 +199,6 @@ eclipseclean:
 	$(RM) sql/.classpath sql/.project
 	$(RM) sqf/src/seatrans/hbase-trx/.classpath sqf/src/seatrans/hbase-trx/.project
 	$(RM) .cproject .project
+
+trafinstall:
+	cd $(MY_SQROOT)/sql/scripts && install_traf_components
