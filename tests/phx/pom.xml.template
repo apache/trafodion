@@ -204,6 +204,14 @@
     </dependency>
 
     <dependency>
+      <groupId>org.trafodion.dtm</groupId>
+      <artifactId>trafodion-dtm</artifactId>
+      <version>${env.TRAFODION_VER}</version>
+      <scope>system</scope>
+      <systemPath>${env.MY_SQROOT}/export/lib/trafodion-dtm-${env.TRAFODION_VER}.jar</systemPath>
+     </dependency>
+
+    <dependency>
       <groupId>org.trafodion.sql</groupId>
       <artifactId>trafodion-sql</artifactId>
       <version>${env.TRAFODION_VER}</version>
