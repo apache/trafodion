@@ -555,7 +555,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    6    7    merge_union                                           2.00E+000
 5    .    6    sort_scalar_aggr                                      1.00E+000
 .    .    5    trafodion_scan                  T122T3_RI             1.00E+002
-.    .    4    trafodion_insert                T122_FK               1.00E+000
+.    .    4    trafodion_vsbb_upser            T122_FK               1.00E+000
 1    2    3    nested_join                                           7.00E+000
 .    .    2    trafodion_insert                T122T4_FK             1.00E+000
 .    .    1    tuplelist                                             7.00E+000
@@ -576,7 +576,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 5    .    6    root                            x                     7.00E+000
 3    4    5    nested_join                                           7.00E+000
-.    .    4    trafodion_insert                T122T3_INDEX          1.00E+000
+.    .    4    trafodion_vsbb_upser            T122T3_INDEX          1.00E+000
 1    2    3    nested_join                                           7.00E+000
 .    .    2    trafodion_insert                T122T3                1.00E+000
 .    .    1    tuplelist                                             7.00E+000
