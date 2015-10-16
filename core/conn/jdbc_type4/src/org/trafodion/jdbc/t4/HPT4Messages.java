@@ -43,12 +43,14 @@ class HPT4Messages {
 			log.logp(Level.WARNING, "HPT4Messages", "createSQLWarning", "", p);
 		}
 
-		Locale currentLocale = (t4props != null) ? t4props.getLocale() : Locale.getDefault();
+		Locale currentLocale = t4props == null ? null : t4props.getLocale();
+		currentLocale = currentLocale == null ? Locale.getDefault() : currentLocale;
+		
 		int sqlcode = 1;
 		SQLWarning ret = null;
 
 		try {
-			PropertyResourceBundle messageBundle = (PropertyResourceBundle) ResourceBundle.getBundle("HPT4Messages",
+			PropertyResourceBundle messageBundle = (PropertyResourceBundle) ResourceBundle.getBundle("T4Messages",
 					currentLocale);
 
 			MessageFormat formatter = new MessageFormat("");
@@ -251,18 +253,13 @@ class HPT4Messages {
 			Object p[] = T4LoggingUtilities.makeParams(t4props, messageId, messageArguments);
 			log.logp(Level.SEVERE, "HPT4Messages", "createSQLException", "", p);
 		}
-
-		Locale currentLocale;
+		
+		Locale currentLocale = t4props == null ? null : t4props.getLocale();
+		currentLocale = currentLocale == null ? Locale.getDefault(): currentLocale;
+		
 		int sqlcode;
-
-		if (msgLocale == null) {
-			currentLocale = Locale.getDefault();
-		} else {
-			currentLocale = msgLocale;
-
-		}
 		try {
-			PropertyResourceBundle messageBundle = (PropertyResourceBundle) ResourceBundle.getBundle("HPT4Messages",
+			PropertyResourceBundle messageBundle = (PropertyResourceBundle) ResourceBundle.getBundle("T4Messages",
 					currentLocale);
 
 			MessageFormat formatter = new MessageFormat("");
@@ -295,7 +292,7 @@ class HPT4Messages {
 			if (messageArguments != null) {
 				message = message.concat(" With parameters: ");
 				while (true) {
-					message = message.concat(messageArguments[i++].toString());
+					message = message.concat(messageArguments[i++] + "");
 					if (i >= messageArguments.length) {
 						break;
 					} else {
