@@ -466,13 +466,6 @@ do
       break;
    fi
 done
-
-sudo chmod 777 $TRAF_CONFIG
-sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
-echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
-sudo chmod 777 $TRAF_CONFIG
-source $TRAF_CONFIG
-
 }
 
 function checkClouderaVersion {
@@ -527,6 +520,11 @@ fi
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
+echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
 
 }
 
@@ -589,6 +587,12 @@ export HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
+echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
 }
 
 
