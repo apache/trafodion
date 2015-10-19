@@ -157,7 +157,7 @@ entries
     <%
     if(pageSize.equals("All")) {
     %>
-    <display:table name="serverItemList" id="parent"> 
+    <display:table name="serverItemList" id="currow"> 
         <display:column escapeXml="false" title="Host Name" sortable="true" group="1">
 		        <a href='http://${currow.ipAddress}:${currow.infoPort}'>${currow.hostname}</a>
 		  </display:column>    
@@ -200,4 +200,4 @@ entries
     }  
     %>
 </body>
-</html>        
+</html> 
