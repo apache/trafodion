@@ -157,7 +157,9 @@ entries
     if(pageSize.equals("All")) {
     %>
     <display:table name="serverItemList" id="parent"> 
-        <display:column property="hostname" title="HostName" sortable="true" group="1"/>    
+        <display:column escapeXml="false" title="Host Name" sortable="true" group="1">
+		        <a href='http://${currow.ipAddress}:${currow.infoPort}'>${currow.hostname}</a>
+		  </display:column>    
         <display:column property="instance" title="Instance" sortable="true" group="2"/>
         <display:column property="startTime" title="Start Time" sortable="true"/>         
         <display:column property="isRegistered" title="Registered" sortable="true"/>
@@ -176,7 +178,9 @@ entries
     } else {
     %>
         <display:table name="serverItemList" id="parent" pagesize="<%= pageSizeInteger %>"> 
-        <display:column property="hostname" title="HostName" sortable="true" group="1"/>    
+        <display:column escapeXml="false" title="Host Name" sortable="true" group="1">
+		        <a href='http://${currow.ipAddress}:${currow.infoPort}'>${currow.hostname}</a>
+		  </display:column>    
         <display:column property="instance" title="Instance" sortable="true" group="2"/>
         <display:column property="startTime" title="Start Time" sortable="true"/>         
         <display:column property="isRegistered" title="Registered" sortable="true"/>
