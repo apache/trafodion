@@ -263,11 +263,11 @@ fi
 
 # install maven, if not available already
 MAVEN_VERSION=`mvn --version 2>/dev/null | grep 'Apache Maven' | cut -f 3 -d ' '`
-if [[ "$MAVEN_VERSION" != "3.0.5" ]]; then
+if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
   # install maven
   cd $BASEDIR
-  wget http://archive.apache.org/dist/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
+  wget http://archive.apache.org/dist/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
   cd $TOOLSDIR
   # there is no install, simply extract the files into $TOOLSDIR
-  tar -xzf $BASEDIR/apache-maven-3.0.5-bin.tar.gz
+  tar -xzf $BASEDIR/apache-maven-3.3.3-bin.tar.gz
 fi
