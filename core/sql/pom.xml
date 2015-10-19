@@ -90,7 +90,7 @@
         <configuration>
           <archive>
             <manifestFile>
-              src/main/resources/jarmanifest.mf
+              src/main/resources/trafodion-sql.jar.mf
             </manifestFile>
           </archive>
         </configuration>

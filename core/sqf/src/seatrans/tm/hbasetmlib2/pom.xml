@@ -73,7 +73,7 @@
         <configuration>
           <archive>
             <manifestFile>
-              src/main/resources/jarmanifest.mf
+              src/main/resources/trafodion-dtm.jar.mf
             </manifestFile>
           </archive>
         </configuration>

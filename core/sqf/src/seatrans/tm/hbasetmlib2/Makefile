@@ -66,7 +66,7 @@ all:  $(PROGS) mavenbuild
 mavenbuild:
         # create a jar manifest file with the correct version information
 	mkdir -p src/main/resources
-	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/jarmanifest.mf
+	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf
         # run maven
 	set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	cp -pf target/trafodion-dtm-*.jar $(MY_SQROOT)/export/lib
