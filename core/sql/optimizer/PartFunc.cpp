@@ -3995,6 +3995,17 @@ void RangePartitionBoundaries::print(FILE* ofd, const char* indent,
       else
 	fprintf(ofd,"%s %s is empty\n",NEW_INDENT,S);
     }
+
+  fprintf(ofd,"%s %s (in binary form)\n",NEW_INDENT,title);
+  Lng32 keyLen = getEncodedBoundaryKeyLength();
+  for (index = 0; index < partitionCount_; index++)
+    {
+       const char* bValues = getBinaryBoundaryValue(index);
+       for (Int32 j = 0; j < keyLen; j++) {
+	 fprintf(ofd,"%04x ", (int)bValues[j]);
+       }
+    }
+
 } // RangePartitionBoundaries::print()
 // LCOV_EXCL_STOP
 
@@ -5009,6 +5020,118 @@ void RangePartitioningFunction::print(FILE* ofd, const char* indent,
   partitionBoundaries_->print(ofd, indent, title);
 
 } // RangePartitioningFunction::print()
+
+
+NABoolean 
+compareEncodedKey(const char* low, const char* key, const char* high, Int32 keyLen, NABoolean checkLast)
+{
+    Int32 cmpLow = memcmp(low, key, keyLen);
+    Int32 cmpHigh = memcmp(key, high, keyLen);
+
+    if ( cmpLow <= 0 && cmpHigh < 0 )
+       return TRUE;
+
+    return (checkLast && cmpLow <= 0 && cmpHigh <= 0);
+}
+
+NABoolean 
+compareAsciiKey(const char* low, const char* key, const char* high, Int32, NABoolean checkLast)
+{
+    Int32 cmpLow = strverscmp(low, key);
+    Int32 cmpHigh = strverscmp(key, high);
+
+    if ( cmpLow <= 0 && cmpHigh < 0 )
+       return TRUE;
+
+    return (checkLast && cmpLow <= 0 && cmpHigh <= 0);
+}
+
+
+// find a boundary pair [low, high) with smallest low value in which keys fall, and return the
+// index of the boundary low. Return -1 otherwise, or the key lengths are different.
+Int32 RangePartitionBoundaries::findBeginBoundary(char* encodedKey, Int32 keyLen, 
+                                                  compFuncPtrT compFunc) const
+{
+   // boundaries are stored in entries in the range [0, partitionCount_] 
+   for (Lng32 i=partitionCount_-1; i>= 0; i--) {
+
+       const char* low = getBinaryBoundaryValue(i);
+       const char* high = getBinaryBoundaryValue(i+1);
+
+       // test if encodedKey is in [low, high)
+       if ( (*compFunc)(low, encodedKey, high, keyLen, i==partitionCount_-1) )
+          return i;
+   }
+
+   return -1;
+}
+
+// find a boundary pair [low, high) with the largest low value in which keys fall, and return the
+// index of the boundary low. Return -1 otherwise, or the key lengths are different.
+Int32 RangePartitionBoundaries::findEndBoundary(char* encodedKey, Int32 keyLen, 
+                                                compFuncPtrT compFunc) const
+{
+   // boundaries are stored in entries in the range [0, partitionCount_] 
+   for (Lng32 i=0; i<partitionCount_-1; i++ ) {
+
+       const char* low = getBinaryBoundaryValue(i);
+       const char* high = getBinaryBoundaryValue(i+1);
+
+       // test if encodedKey is in [low, high)
+       if ( (*compFunc)(low, encodedKey, high, keyLen, i==partitionCount_-1) )
+          return i;
+   }
+
+   return -1;
+}
+
+Int32 
+RangePartitioningFunction::computeNumOfActivePartitions(SearchKey* skey, const TableDesc* tDesc) const
+{
+   const RangePartitionBoundaries* boundaries = getRangePartitionBoundaries();
+
+   Int32 origPartitions = getCountOfPartitions();
+   Int32 partitions = origPartitions;
+   Int32 bIndex = 0;
+
+   const NATable* naTable = tDesc->getNATable();
+   NABoolean isNativeHbase = (naTable->isHbaseCellTable() || naTable->isHbaseRowTable());
+   compFuncPtrT compFuncPtr = ( isNativeHbase ) ? compareAsciiKey: compareEncodedKey;
+  
+   char* buf = NULL;
+   Int32 len = 0;
+
+   const ValueIdList& beginKey = skey->getBeginKeyValues();
+
+   if ( beginKey.computeEncodedKey(tDesc, FALSE, buf, len) ) {
+
+      bIndex = boundaries->findBeginBoundary(buf, len, compFuncPtr);
+
+      if ( bIndex < 0 ) 
+        return origPartitions; // error in deciding the partiton
+      else
+        partitions -= bIndex; // bIndex is 0 based.
+   }
+
+   const ValueIdList& endKey = skey->getEndKeyValues();
+
+   if ( endKey.computeEncodedKey(tDesc, TRUE, buf, len) ) {
+
+      Int32 eIndex = boundaries->findEndBoundary(buf, len, compFuncPtr);
+
+      if ( eIndex < 0 )  // error in deciding the partition.
+        return origPartitions;
+
+      if ( eIndex >= bIndex )  //eIndex is also 0 based
+        partitions -= (getCountOfPartitions() - eIndex - 1);
+      else 
+        return origPartitions;  // end partition is preceeding the start partition!
+   }
+   
+   return partitions;
+}
+
+
 // LCOV_EXCL_STOP
 
 // ***********************************************************************

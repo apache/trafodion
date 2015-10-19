@@ -81,6 +81,7 @@ class VEGRewritePairs;
 class TableDesc;
 class IndexDesc;
 class ConstValue;
+class NATable;
 
 ////////////////////
 class QueryAnalysis;
@@ -226,6 +227,14 @@ public:
   // to the source table.
   // ---------------------------------------------------------------------
   void replaceBaseColWithExpr(const NAString& colName, const ValueId & vid);
+
+  // -----------------------------------------------------------------------
+  // replace any ColReference (of the given column name) in of this value
+  // expression with the given expression.
+  // used in ValueId::computeEncodedKey() to assign key values into the
+  // salt/DivisionByto expression.
+  // ----------------------------------------------------------------------
+  void replaceColReferenceWithExpr(const NAString& colName, const ValueId & vid);
 
   // ---------------------------------------------------------------------
   // Replace the definition of this valueId to be a new itemexpr
@@ -603,6 +612,14 @@ public:
   // refers to the same VEG as refered to by x, which must be a VEG predicate,
   // or to an equal predicate.
   ValueId extractVEGRefForEquiPredicate(ValueId x) const;
+
+
+  // Encode this list of constants into an encoded key and save the result into
+  // encodedKeyBuffer, and the key length into keyBufLen. Allocate an buffer
+  // if encodedKeyBuffer points at NULL from STMTHEAP. Also return the buffer pointer
+  // if everything is OK.  Return NULL otherwise.
+  char* computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey, char*& encodedKeyBuffer, Int32& keyBufLen) const;
+
 
   // ---------------------------------------------------------------------
   // Print

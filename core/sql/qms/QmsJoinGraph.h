@@ -71,7 +71,6 @@ typedef NAPtrList<JoinGraphEqualitySetPtr>		EqualitySetList;
 typedef NAPtrList<JoinGraphTablePtr>		        JoinGraphTableList;
 typedef NAPtrArray<JoinGraphTablePtr>			JoinGraphTableArray;
 typedef NASubArray<JoinGraphTablePtr>			JoinGraphTableSubArray;
-typedef NAString*                                       NAStringPtr;
 typedef NAPtrList<QRJoinSubGraphPtr>			SubGraphList;
 typedef NAPtrList<QRJoinSubGraphMapPtr>			SubGraphMapList;
 
