@@ -43,6 +43,7 @@
     serverItemList = master.getServerManager().getServerItemList();
   String masterServerName = master.getServerName();
   int masterInfoPort = master.getInfoPort();
+  String masterIP = master.getNetConf().getExtHostAddress();
   String version = org.trafodion.dcs.util.VersionInfo.getVersion();
   String revision = org.trafodion.dcs.util.VersionInfo.getRevision();
   String buildDate = org.trafodion.dcs.util.VersionInfo.getDate();
@@ -96,9 +97,9 @@
 <link rel="stylesheet" type="text/css" href="/static/dcs.css" />
 </head>
 <body>
-<h1 id="page_title">DcsMaster: <%= masterServerName %>:<%= masterInfoPort %></h1>
+<h1 id="page_title">DcsMaster: <%= masterIP %>:<%= masterInfoPort %></h1>
 <p id="links_menu">
-  <a href="http://<%= masterServerName %>:<%= masterInfoPort %>?pagesize=<%= pageSize %>">Home</a>,
+  <a href="http://<%= masterIP %>:<%= masterInfoPort %>?pagesize=<%= pageSize %>">Home</a>,
   <a href="/logs/">Dcs local logs</a><% if(! trafodionHome.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% if(trafodionQueryTools) { %>, <a href="repository.jsp?type=<%= Constants.TRAFODION_REPOS_CATALOG_SCHEMA %>">Trafodion query tools</a><% } %><% } %>
 </p>
 <hr id="head_rule" />
@@ -177,7 +178,7 @@ entries
     <%
     } else {
     %>
-        <display:table name="serverItemList" id="parent" pagesize="<%= pageSizeInteger %>"> 
+        <display:table name="serverItemList" id="currow" pagesize="<%= pageSizeInteger %>"> 
         <display:column escapeXml="false" title="Host Name" sortable="true" group="1">
 		        <a href='http://${currow.ipAddress}:${currow.infoPort}'>${currow.hostname}</a>
 		  </display:column>    
