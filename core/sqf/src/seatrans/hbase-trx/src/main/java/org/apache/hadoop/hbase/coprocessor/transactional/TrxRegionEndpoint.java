@@ -91,6 +91,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.codec.binary.Hex;
 
+import org.apache.hadoop.hbase.io.hfile.CacheConfig;
+import org.apache.hadoop.hbase.io.hfile.HFile;
+import org.apache.hadoop.hbase.io.hfile.HFileContext;
+import org.apache.hadoop.hbase.io.hfile.HFileContextBuilder;
+import org.apache.hadoop.hbase.io.hfile.HFileScanner;
+import org.apache.hadoop.hbase.io.hfile.HFileWriterV2;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.util.ProtoUtil;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionPersist;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionStateMsg;
+import com.google.protobuf.CodedInputStream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
@@ -136,10 +148,12 @@ import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
 import org.apache.hadoop.hbase.coprocessor.RegionObserver;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.FirstKeyOnlyFilter;
+import org.apache.hadoop.hbase.filter.Filter.ReturnCode;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseInterfaceAudience;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Mutation;
@@ -268,7 +282,7 @@ CoprocessorService, Coprocessor {
 
   // Concurrent map for transactional region scanner holders
   // Protected by synchronized methods
-  final ConcurrentHashMap<Long,
+  private ConcurrentHashMap<Long,
                           TransactionalRegionScannerHolder> scanners =
       new ConcurrentHashMap<Long, TransactionalRegionScannerHolder>();
 
@@ -341,6 +355,9 @@ CoprocessorService, Coprocessor {
   String lv_hostName;
   int lv_port;
   private static String zNodePath = "/hbase/Trafodion/recovery/";
+  private static final String COMMITTED_TXNS_KEY = "1_COMMITED_TXNS_KEY";
+  private static final String TXNS_BY_ID_KEY = "2_TXNS_BY_ID_KEY";
+  private HFileContext context = new HFileContextBuilder().withIncludesTags(false).build();
 
   private static final int MINIMUM_LEASE_TIME = 7200 * 1000;
   private static final int LEASE_CHECK_FREQUENCY = 1000;
@@ -367,12 +384,14 @@ CoprocessorService, Coprocessor {
   private static float memoryPercentage = 0;
   private static boolean memoryThrottle = false;
   private static boolean suppressOutOfOrderProtocolException = DEFAULT_SUPPRESS_OOP;
+  private Configuration config;
 
   // Transaction state defines
   private static final int COMMIT_OK = 1;
   private static final int COMMIT_OK_READ_ONLY = 2;
   private static final int COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR = 3;
   private static final int COMMIT_CONFLICT = 5;
+  private static final int COMMIT_RESEND = 6;
 
   private static final int CLOSE_WAIT_ON_COMMIT_PENDING = 1000;
   private static final int MAX_COMMIT_PENDING_WAITS = 10;
@@ -392,7 +411,7 @@ CoprocessorService, Coprocessor {
 
   public static final String trxkeyEPCPinstance = "EPCPinstance";
   // TBD Maybe we should just use HashMap to improve the performance, ConcurrentHashMap could be too strict
-  static ConcurrentHashMap<String, Object> transactionsEPCPMap = new ConcurrentHashMap<String, Object>();
+  static ConcurrentHashMap<String, Object> transactionsEPCPMap;
 
   // TrxRegionService methods
     
@@ -839,9 +858,11 @@ CoprocessorService, Coprocessor {
       } catch (UnknownTransactionException u) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
         ute = u;
+        status = COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
       } catch (IOException e) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught IOException after internal commitRequest call - "+ e.toString());
         ioe = e;
+        status = COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
       }
     }
 
@@ -2851,6 +2872,13 @@ CoprocessorService, Coprocessor {
     return this;
   }
 
+  static public ConcurrentHashMap<String, Object> getRegionMap() {
+    if (transactionsEPCPMap == null) {
+      transactionsEPCPMap = new ConcurrentHashMap<String, Object>();
+    }
+    return transactionsEPCPMap;
+  }
+
   /**
    * Stores a reference to the coprocessor environment provided by the
    * {@link org.apache.hadoop.hbase.regionserver.RegionCoprocessorHost} 
@@ -2864,6 +2892,9 @@ CoprocessorService, Coprocessor {
    */
   @Override
   public void start(CoprocessorEnvironment env) throws IOException {
+    if (transactionsEPCPMap == null)
+      transactionsEPCPMap = new ConcurrentHashMap<String, Object>();
+
     if (env instanceof RegionCoprocessorEnvironment) {
       this.env = (RegionCoprocessorEnvironment)env;
     } else {
@@ -2878,30 +2909,30 @@ CoprocessorService, Coprocessor {
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
     this.fs = this.m_Region.getFilesystem();
 
-    org.apache.hadoop.conf.Configuration conf = tmp_env.getConfiguration(); 
+    this.config = tmp_env.getConfiguration();
     
     synchronized (stoppableLock) {
       try {
-        this.transactionLeaseTimeout = conf.getInt(LEASE_CONF, MINIMUM_LEASE_TIME);
+        this.transactionLeaseTimeout = config.getInt(LEASE_CONF, MINIMUM_LEASE_TIME);
         if (this.transactionLeaseTimeout < MINIMUM_LEASE_TIME) {
           if (LOG.isWarnEnabled()) LOG.warn("Transaction lease time: " + this.transactionLeaseTimeout + ", was less than the minimum lease time.  Now setting the timeout to the minimum default value: " + MINIMUM_LEASE_TIME);
           this.transactionLeaseTimeout = MINIMUM_LEASE_TIME;
         }
 
-        this.scannerLeaseTimeoutPeriod = HBaseConfiguration.getInt(conf,
+        this.scannerLeaseTimeoutPeriod = HBaseConfiguration.getInt(config,
           HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD,
           HConstants.HBASE_REGIONSERVER_LEASE_PERIOD_KEY,
           HConstants.DEFAULT_HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD);
-        this.scannerThreadWakeFrequency = conf.getInt(HConstants.THREAD_WAKE_FREQUENCY, 10 * 1000);
+        this.scannerThreadWakeFrequency = config.getInt(HConstants.THREAD_WAKE_FREQUENCY, 10 * 1000);
 
-        this.cleanTimer = conf.getInt(SLEEP_CONF, DEFAULT_SLEEP);
-        this.memoryUsageThreshold = conf.getInt(MEMORY_THRESHOLD, DEFAULT_MEMORY_THRESHOLD);
-        this.memoryUsagePerformGC = conf.getBoolean(MEMORY_PERFORM_GC, DEFAULT_MEMORY_PERFORM_GC);
-        this.memoryUsageWarnOnly = conf.getBoolean(MEMORY_WARN_ONLY, DEFAULT_MEMORY_WARN_ONLY);
-        this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
-        this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
+        this.cleanTimer = config.getInt(SLEEP_CONF, DEFAULT_SLEEP);
+        this.memoryUsageThreshold = config.getInt(MEMORY_THRESHOLD, DEFAULT_MEMORY_THRESHOLD);
+        this.memoryUsagePerformGC = config.getBoolean(MEMORY_PERFORM_GC, DEFAULT_MEMORY_PERFORM_GC);
+        this.memoryUsageWarnOnly = config.getBoolean(MEMORY_WARN_ONLY, DEFAULT_MEMORY_WARN_ONLY);
+        this.memoryUsageTimer = config.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
+        this.memoryUsageTimer = config.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
 
-        this.suppressOutOfOrderProtocolException = conf.getBoolean(SUPPRESS_OOP, DEFAULT_SUPPRESS_OOP);
+        this.suppressOutOfOrderProtocolException = config.getBoolean(SUPPRESS_OOP, DEFAULT_SUPPRESS_OOP);
 	if (this.transactionLeases == null)  
 	    this.transactionLeases = new Leases(LEASE_CHECK_FREQUENCY);
 
@@ -3075,6 +3106,16 @@ CoprocessorService, Coprocessor {
     else {
         transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyClosingVar,
                                   this.closing);
+    }
+    ConcurrentHashMap<Long,TransactionalRegionScannerHolder> scannersCheck =
+        (ConcurrentHashMap<Long,TransactionalRegionScannerHolder>)transactionsByIdTestz
+        .get(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyScanners);
+    if(scannersCheck != null) {
+      this.scanners = scannersCheck;
+    }
+    else {
+      transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyScanners,
+                              this.scanners);
     }
 
     // Set up the memoryBean from the ManagementFactory
@@ -4059,7 +4100,6 @@ CoprocessorService, Coprocessor {
      throws IOException {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: beginTransaction -- ENTRY txId: " + transactionId);
-    checkClosing(transactionId);
 
     // TBD until integration with recovery 
     if (reconstructIndoubts == 0) {
@@ -4174,6 +4214,7 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
               + transactionId + " transactionsById size: "
               + transactionsById.size());
+    checkClosing(transactionId);
 
     String key = getTransactionalUniqueId(transactionId);
     synchronized (transactionsById) {
@@ -4303,8 +4344,10 @@ CoprocessorService, Coprocessor {
     }
       // may change to indicate a NOTFOUND case  then depends on the TM ts state, if reinstated tx, ignore the exception
       if (state == null) {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered unknown transactionID txId: " + transactionId + " returning COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR");
-        return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
+        String errMsg = "TrxRegionEndpoint coprocessor: commitRequest encountered unknown transactionID txId: " + transactionId;
+        if (LOG.isTraceEnabled()) LOG.trace(errMsg);
+        //return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
+        throw new UnknownTransactionException(errMsg);
       }
 
     if (LOG.isInfoEnabled()) 
@@ -4503,6 +4546,8 @@ CoprocessorService, Coprocessor {
 
     // Otherwise we were read-only and commitable, so we can forget it.
     state.setStatus(Status.COMMITED);
+    if(state.getSplitRetry())
+      return COMMIT_RESEND;
     retireTransaction(state, true);
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest READ ONLY -- EXIT txId: " + transactionId);
     return COMMIT_OK_READ_ONLY;
@@ -4673,7 +4718,7 @@ CoprocessorService, Coprocessor {
          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible -- ENTRY txId: " + transactionId + " COMMIT_OK");
          return true;
        } catch (Throwable e) {
-         LOG.error("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitIfPossible - txId " + transactionId + ", Caught exception after internal commit call "
                     + e.getMessage() + " " + stackTraceToString(e));
         throw new IOException(e.toString());
        }
@@ -5178,6 +5223,199 @@ CoprocessorService, Coprocessor {
       }
     }
   }
+  public void flushToFS(Path flushPath) throws IOException {
+    TransactionPersist.Builder txnPersistBuilder = TransactionPersist.newBuilder();
+    fs.delete(flushPath, true);
 
+    HFileWriterV2 w =
+        (HFileWriterV2)
+        HFile.getWriterFactory(config, new CacheConfig(config))
+        .withPath(fs, flushPath).withFileContext(context).create();
+
+    Map<Long, TrxTransactionState> transactionMap = new HashMap<Long, TrxTransactionState>();
+
+    for(TrxTransactionState ts : transactionsById.values()) {
+      transactionMap.put(ts.getTransactionId(), ts);
+      txnPersistBuilder.addTxById(ts.getTransactionId());
+    }
+    for(Map.Entry<Long, TrxTransactionState> entry :
+        commitedTransactionsBySequenceNumber.entrySet()) {
+      transactionMap.put(entry.getValue().getTransactionId(), entry.getValue());
+      txnPersistBuilder.addSeqNoListSeq(entry.getKey());
+      txnPersistBuilder.addSeqNoListTxn(entry.getValue().getTransactionId());
+    }
+    for(TrxTransactionState ts : transactionMap.values()) {
+      for(TrxTransactionState ts2 : ts.getTransactionsToCheck()) {
+        transactionMap.put(ts.getTransactionId(), ts);
+      }
+    }
+    txnPersistBuilder.setNextSeqId(nextSequenceId.get());
+
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    for(TrxTransactionState ts : transactionMap.values()) {
+      TransactionStateMsg.Builder tsBuilder =  TransactionStateMsg.newBuilder();
+      tsBuilder.setTxId(ts.getTransactionId());
+      tsBuilder.setStartSeqNum(ts.getStartSequenceNumber());
+      tsBuilder.setSeqNum(ts.getHLogStartSequenceId());
+      tsBuilder.setLogSeqId(ts.getLogSeqId());
+      tsBuilder.setReinstated(ts.isReinstated());
+
+      if(ts.getCommitProgress() == null)
+          tsBuilder.setCommitProgress(-1);
+      else
+          tsBuilder.setCommitProgress(ts.getCommitProgress().ordinal());
+
+      tsBuilder.setStatus(ts.getStatus().ordinal());
+      for (WriteAction wa : ts.getWriteOrdering()) {
+        if(wa.getPut() != null) {
+          tsBuilder.addPutOrDel(true);
+          tsBuilder.addPut(ProtobufUtil.toMutation(MutationType.PUT, wa.getPut()));
+        }
+        else {
+          tsBuilder.addPutOrDel(false);
+
+          tsBuilder.addDelete(ProtobufUtil.toMutation(MutationType.DELETE, wa.getDelete()));
+        }
+      }
+      tsBuilder.build().writeDelimitedTo(output);
+    }
+    byte [] firstByte = output.toByteArray();
+
+    w.append(new KeyValue(Bytes.toBytes(COMMITTED_TXNS_KEY), Bytes.toBytes("cf"), Bytes.toBytes("qual"),
+      firstByte));
+
+    byte [] persistByte = txnPersistBuilder.build().toByteArray();
+    TransactionPersist persistMsg = TransactionPersist.parseFrom(persistByte);
+    w.append(new KeyValue(Bytes.toBytes(TXNS_BY_ID_KEY), Bytes.toBytes("cf"), Bytes.toBytes("qual"),
+      persistByte));
+    w.close();
+  }
+
+  public void readTxnInfo(Path flushPath) throws IOException {
+    readTxnInfo(flushPath, false);
+  }
+
+  public void readTxnInfo(Path flushPath, boolean setRetry) throws IOException {
+          if(LOG.isTraceEnabled()) LOG.trace("readTxnInfo -- ENTRY, Path: " + flushPath.toString());
+
+          try {
+              HFile.Reader reader = HFile.createReader(fs, flushPath, new CacheConfig(config), config);
+              HFileScanner scanner = reader.getScanner(true, false);
+              scanner.seekTo();
+              //KeyValue firstVal = scanner.getKeyValue();
+              Cell firstVal = scanner.getKeyValue();
+              scanner.next();
+              //KeyValue persistKV = scanner.getKeyValue();
+              Cell persistKV = scanner.getKeyValue();
+
+              if(firstVal == null || persistKV == null) {
+                throw new IOException("Invalid values read from HFile in readTxnInfo");
+              }
+
+              Map<Long, TrxTransactionState> txnMap = new HashMap<Long, TrxTransactionState>();
+              Map<Long, List<Long>> txnsToCheckMap = new HashMap<Long, List<Long>>();
+              ByteArrayInputStream input = new ByteArrayInputStream(CellUtil.cloneValue(firstVal));
+
+              TransactionStateMsg tsm  = TransactionStateMsg.parseDelimitedFrom(input);
+              while (tsm != null) {
+                TrxTransactionState ts = new TrxTransactionState(tsm.getTxId(),
+                                                                 tsm.getSeqNum(),
+                                                                 new AtomicLong(tsm.getLogSeqId()),
+                                                                 m_Region.getRegionInfo(),
+                                                                 m_Region.getTableDesc(),
+                                                                 m_Region.getLog(),
+                                                                 configuredEarlyLogging);
+                ts.setStartSequenceNumber(tsm.getStartSeqNum());
+
+                List<Boolean> putOrDel = tsm.getPutOrDelList();
+                List<MutationProto> puts = tsm.getPutList();
+                List<MutationProto> deletes = tsm.getDeleteList();
+
+                int putIndex = 0;
+                int deleteIndex = 0;
+                for (Boolean put : putOrDel) {
+                  if(put) {
+                    Put writePut = ProtobufUtil.toPut(puts.get(putIndex++));
+                    if(m_Region.rowIsInRange(regionInfo, writePut.getRow())) {
+                        ts.addWrite(writePut);
+                    }
+                  }
+                  else {
+                    Delete writeDelete = ProtobufUtil.toDelete(deletes.get(deleteIndex++));
+                    if(m_Region.rowIsInRange(regionInfo, writeDelete.getRow())) {
+                        ts.addDelete(writeDelete);
+                    }
+                  }
+                }
+                txnsToCheckMap.put(tsm.getTxId(), tsm.getTxnsToCheckList());
+                if(setRetry)
+                  ts.setSplitRetry(true);
+                txnMap.put(ts.getTransactionId(), ts);
+                tsm  = TransactionStateMsg.parseDelimitedFrom(input);
+              }
+
+              for(TrxTransactionState ts : txnMap.values()) {
+                for (Long txid : txnsToCheckMap.get(ts.getTransactionId())) {
+                  TrxTransactionState mapTS = txnMap.get(txid);
+                  if(mapTS != null)
+                    ts.addTransactionToCheck(mapTS);
+                }
+              }
+              TransactionPersist txnPersistMsg = TransactionPersist.parseFrom(CellUtil.cloneValue(persistKV));
+
+              if(txnPersistMsg == null) {
+                throw new IOException("Invalid protobuf, message is null.");
+              }
+              for (Long txid : txnPersistMsg.getTxByIdList()) {
+                String key = getTransactionalUniqueId(txid);
+                TrxTransactionState ts = txnMap.get(txid);
+                if (ts != null) {
+                  TrxTransactionState existingTs = transactionsById.get(txid);
+                  if(existingTs != null) {
+                    for(WriteAction wa : existingTs.getWriteOrdering()) {
+                      if(wa.getPut() != null) {
+                        ts.addWrite(wa.getPut());
+                      }
+                      else {
+                        ts.addDelete(wa.getDelete());
+                      }
+                    }
+                  }
+                  transactionsById.put(key, ts);
+                  transactionLeases.createLease(key, transactionLeaseTimeout, new TransactionLeaseListener(txid));
+                }
+                else {
+                  TrxTransactionState tsEntry = new TrxTransactionState(txid,
+              0,
+              new AtomicLong(0),
+              m_Region.getRegionInfo(),
+              m_Region.getTableDesc(),
+              m_Region.getLog(),
+              configuredEarlyLogging);
+                  transactionsById.putIfAbsent(key, tsEntry);
+                }
+              }
+
+              for (int i = 0; i < txnPersistMsg.getSeqNoListSeqCount(); i++) {
+                TrxTransactionState ts = txnMap.get(txnPersistMsg.getSeqNoListTxn(i));
+                if (ts!=null)
+                  commitedTransactionsBySequenceNumber.put(txnPersistMsg.getSeqNoListSeq(i), ts);
+              }
+
+              this.nextSequenceId = new AtomicLong(txnPersistMsg.getNextSeqId());
+            } catch(IOException e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                LOG.error(sw.toString());
+            }
+          if(LOG.isTraceEnabled()) LOG.trace("readTxnInfo -- EXIT");
+
+  }
+
+  public void setClosing(boolean value) {
+    closing.set(value);
+  }
 }
 //1}
