@@ -25,8 +25,18 @@ MY_SW_ROOT=$MY_SQROOT/sql/local_hadoop
 MY_LOG_FILE=$MY_SW_ROOT/log/install_traf_components_$(date +%F_%T).log
 
 # Define ports for Trafodion components
-DEFAULT_PORT_USED=`cat $HOME/.traf-clports-$USER |grep DEFAULT_PORT |cut -d "=" -f2`
-MY_START_PORT=`cat $HOME/.traf-clports-$USER |grep HADOOP_START_PORT |cut -d "=" -f2`
+if [ -f "$HOME/.traf-clports-$USER" ]; then
+    DEFAULT_PORT_USED=`cat $HOME/.traf-clports-$USER |grep DEFAULT_PORT |cut -d "=" -f2`
+    MY_START_PORT=`cat $HOME/.traf-clports-$USER |grep HADOOP_START_PORT |cut -d "=" -f2`
+fi
+
+if [ -z "$DEFAULT_PORT_USED" ]; then
+     DEFAULT_PORT_USED="no"
+fi
+
+if [ -z "$MY_START_PORT" ]; then
+    MY_START_PORT=`cat $MY_SQROOT/sql/scripts/sw_env.sh |grep MY_HADOOP_HDFS_PORT_NUM | cut -d "=" -f2`
+fi
 
 if [ $DEFAULT_PORT_USED == 'yes' ]; then
      MY_HBASE_ZOOKEEPER_PEERPORT_NUM=2888
