@@ -1830,7 +1830,8 @@ public:
                CollHeap *oHeap = CmpCommon::statementHeap(),
                InsertType insertType = SIMPLE_INSERT)
        : Insert(name,tabId,otype,child,NULL,NULL,oHeap, insertType),
-         returnRow_(FALSE)
+         returnRow_(FALSE),
+         vsbbInsert_(FALSE)
        {};
 
   // copy ctor
@@ -1859,6 +1860,9 @@ public:
   void setReturnRow(NABoolean val) {returnRow_ = val;}
   NABoolean isReturnRow() {return returnRow_;}
 
+  void setVsbbInsert(NABoolean val) { vsbbInsert_ = val; }
+  NABoolean vsbbInsert() const { return vsbbInsert_; } 
+
   // method to do code generation
   virtual RelExpr *preCodeGen(Generator * generator,
                               const ValueIdSet & externalInputs,
@@ -1872,7 +1876,7 @@ private:
   // used when lob colums are being loaded. Set in GenPreCode.
   ValueIdList lobLoadExpr_;
   NABoolean returnRow_ ; // currently used only for bulk load incremental IM
-
+  NABoolean vsbbInsert_ ;
 
 };
 

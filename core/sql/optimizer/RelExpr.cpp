@@ -13003,20 +13003,25 @@ const NAString HbaseInsert::getText() const
 
   if (isUpsert())
     {
-      if (getInsertType() == Insert::VSBB_INSERT_USER)
-	text += "vsbb_upsert";
-      else if (getInsertType() == Insert::UPSERT_LOAD)
+      if (getInsertType() == Insert::UPSERT_LOAD)
         {
           if (getIsTrafLoadPrep())
             text += "load_preparation";
           else
             text += "load";
         }
+      else if (vsbbInsert())
+	text += "vsbb_upsert";
       else
         text += "upsert";
     }
   else
-    text += "insert";
+    {
+      if (vsbbInsert())
+	text += "vsbb_upsert";
+      else
+        text += "insert";
+    }
   
   return (text + " " + getUpdTableNameText());
 }

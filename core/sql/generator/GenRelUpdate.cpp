@@ -2814,6 +2814,9 @@ short HbaseInsert::codeGen(Generator *generator)
       {
 	hbasescan_tdb->setVsbbInsert(TRUE);
         hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
+        // Set the VSBB flag in the RelExpr to display in explain
+        if (! hbasescan_tdb->hbaseSqlIUD())  
+           setVsbbInsert(TRUE);
       }
 
       if ((isUpsert()) &&
