@@ -160,6 +160,7 @@ public:
   Lng32 getRecordLength() const             { return recordLength_; }
   Lng32 getLockLength() const             { return lockLength_; }
   Lng32 getKeyLength();
+  Lng32 getEncodedKeyLength();
   Lng32 getBlockSize() const                   { return blockSize_; }
 
   Int32 getIndexLevels() const                   { return indexLevels_; }
@@ -329,6 +330,11 @@ private:
   // Key length in bytes.
   //----------------------------------------------------------------------
   Lng32 keyLength_;
+
+  // ---------------------------------------------------------------------
+  // Encoded key length in bytes.
+  //----------------------------------------------------------------------
+  Lng32 encodedKeyLength_;
 
   // ---------------------------------------------------------------------
   // Lock length in bytes.

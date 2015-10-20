@@ -6258,6 +6258,7 @@ short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
                                keyDescs,
                                splitValuesAsText, // INPUT
                                isIndex,
+                               FALSE,             // encoding for Min Key
                                encodedKeysBuffer[i],  // OUTPUT
                                STMTHEAP,
                                CmpCommon::diags());

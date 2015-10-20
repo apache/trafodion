@@ -305,6 +305,7 @@ short encodeKeyValues(desc_struct   * column_descs,
 		      desc_struct   * key_descs,
 		      NAString      * inValuesArray[],          // INPUT
                       NABoolean isIndex,
+                      NABoolean isMaxKey,                       // INPUT
 		      char * encodedKeyBuffer,                  // OUTPUT
                       CollHeap * h,
 		      ComDiagsArea * diagsArea)
@@ -350,7 +351,7 @@ short encodeKeyValues(desc_struct   * column_descs,
       }
 
       if (inValuesArray[i] == NULL)
-	inValuesArray[i] = getMinMaxValue(column, key, FALSE, h);
+	inValuesArray[i] = getMinMaxValue(column, key, isMaxKey, h);
       
       ItemExpr * itemExpr = buildEncodeTree(column, key, inValuesArray[i],
 					    &generator, diagsArea);

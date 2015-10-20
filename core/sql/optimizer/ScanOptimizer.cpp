@@ -2989,6 +2989,9 @@ CollIndex ScanOptimizer::getEstNumActivePartitionsAtRuntime() const
     }
   }
 
+  if ( actParts > 1 ) 
+     actParts = MINOF(actParts, getFileScan().getComputedNumOfActivePartiions());
+
   return actParts;
 }
 
@@ -3022,6 +3025,9 @@ CollIndex ScanOptimizer::getEstNumActivePartitionsAtRuntimeForHbaseRegions() con
   // be one, use that value
   if (estActParts == 1 AND (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON))
     actParts = estActParts;
+
+  if ( actParts > 1 ) 
+     actParts = MINOF(actParts, getFileScan().getComputedNumOfActivePartiions());
 
   return actParts;
 }

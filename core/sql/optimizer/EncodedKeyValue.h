@@ -64,6 +64,7 @@ short encodeKeyValues(desc_struct   * column_descs,
 		      desc_struct   * key_descs,
 		      NAString      * inValuesArray[],          // INPUT
                       NABoolean isIndex,
+                      NABoolean isMaxKey,			// INPUT
 		      char * encodedKeyBuffer,                  // OUTPUT
                       CollHeap * h,
 		      ComDiagsArea * diagsArea);
