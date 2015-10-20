@@ -273,8 +273,12 @@ endif
 
 # Java files get built through Maven
 mavenbuild:
+        # create a jar manifest file with the correct version information
+	mkdir -p ../src/main/resources
+	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >../src/main/resources/trafodion-sql.jar.mf
+        # run maven
 	set -o pipefail && cd ..; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-*.jar $(MY_SQROOT)/export/lib
 
 # This is where the top-level is declared to build everything.
 buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES) mavenbuild
@@ -291,4 +295,4 @@ clean:
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
 	@cd ..; $(MAVEN) clean
-
+	@rm -rf $(MY_SQROOT)/export/lib/trafodion-sql-*.jar

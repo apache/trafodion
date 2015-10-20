@@ -52,9 +52,9 @@ if [[ "$USE_GIT" == "1" ]];then
     branch=$ZUUL_BRANCH;
   fi
 else
-  rev=`svn info .. | grep '^Last Changed Rev:' | sed 's|Last Changed Rev: ||'`
-  url=`svn info .. | grep '^URL:' | sed 's|URL: ||'`
-  reporoot=`svn info .. | grep '^Repository Root:' | sed 's|Repository Root: ||'`
+  rev=`svn info .. 2>/dev/null | grep '^Last Changed Rev:' | sed 's|Last Changed Rev: ||'`
+  url=`svn info .. 2>/dev/null | grep '^URL:' | sed 's|URL: ||'`
+  reporoot=`svn info .. 2>/dev/null | grep '^Repository Root:' | sed 's|Repository Root: ||'`
   branch=`echo $url | sed "s|$reporoot\/||" | sed 's|\/sqf$||'`
 fi
 if [ $f = 1 ]; then

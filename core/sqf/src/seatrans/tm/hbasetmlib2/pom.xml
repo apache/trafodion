@@ -68,40 +68,13 @@
   <build>
     <plugins>
       <plugin>
-            <groupId>com.github.koraktor</groupId>
-            <artifactId>mavanagaiata</artifactId>
-            <version>0.7.2</version>
-            <configuration>
-                  <dirtyFlag>false</dirtyFlag>
-                  <dirtyIgnoreUntracked>false</dirtyIgnoreUntracked>
-                  <gitDir>${env.MY_SQROOT}/../../.git</gitDir>
-                  <dateFormat>ddMMMyyyy</dateFormat>
-            </configuration>
-            <executions>
-                  <execution>
-                        <id>git-commit</id>
-                        <phase>validate</phase>
-                        <goals>
-                              <goal>commit</goal>
-                              <goal>branch</goal>
-                        </goals>
-                  </execution>
-            </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-              <manifestEntries>
-                    <Implementation-Version-1>Version ${project.version}</Implementation-Version-1>
-                    <Implementation-Version-2>Release ${project.version}</Implementation-Version-2>
-                    <Implementation-Version-3>Build ${env.SQ_BUILD_TYPE}</Implementation-Version-3>
-                    <Implementation-Version-4>[${user.name}]</Implementation-Version-4>
-                    <Implementation-Version-5>Branch ${mvngit.commit.abbrev}-${mvngit.branch}</Implementation-Version-5>
-                    <Implementation-Version-6>Date ${maven.build.timestamp}</Implementation-Version-6>
-                    <Product-Name>${project.name}</Product-Name>
-              </manifestEntries>
+            <manifestFile>
+              src/main/resources/trafodion-dtm.jar.mf
+            </manifestFile>
           </archive>
         </configuration>
       </plugin>
