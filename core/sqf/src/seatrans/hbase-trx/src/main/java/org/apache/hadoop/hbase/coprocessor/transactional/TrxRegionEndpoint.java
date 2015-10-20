@@ -357,6 +357,7 @@ CoprocessorService, Coprocessor {
   private static final String MEMORY_CONF = "hbase.transaction.memory.sleep";
   private static final String MEMORY_PERFORM_GC = "hbase.transaction.memory.perform.GC";
   private static final String SUPPRESS_OOP = "hbase.transaction.suppress.OOP.exception";
+  private static final String CHECK_ROW = "hbase.transaction.check.row";
   protected static int transactionLeaseTimeout = 0;
   private static int scannerLeaseTimeoutPeriod = 0;
   private static int scannerThreadWakeFrequency = 0;
@@ -367,6 +368,7 @@ CoprocessorService, Coprocessor {
   private static float memoryPercentage = 0;
   private static boolean memoryThrottle = false;
   private static boolean suppressOutOfOrderProtocolException = DEFAULT_SUPPRESS_OOP;
+  private static boolean checkRowBelongs = true;
 
   // Transaction state defines
   private static final int COMMIT_OK = 1;
@@ -2899,7 +2901,7 @@ CoprocessorService, Coprocessor {
         this.memoryUsagePerformGC = conf.getBoolean(MEMORY_PERFORM_GC, DEFAULT_MEMORY_PERFORM_GC);
         this.memoryUsageWarnOnly = conf.getBoolean(MEMORY_WARN_ONLY, DEFAULT_MEMORY_WARN_ONLY);
         this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
-        this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
+        this.checkRowBelongs = conf.getBoolean(CHECK_ROW, true);
 
         this.suppressOutOfOrderProtocolException = conf.getBoolean(SUPPRESS_OOP, DEFAULT_SUPPRESS_OOP);
 	if (this.transactionLeases == null)  
@@ -3635,6 +3637,8 @@ CoprocessorService, Coprocessor {
   public void delete(final long transactionId, final Delete delete)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete -- ENTRY txId: " + transactionId);
+    if(this.checkRowBelongs)
+      checkRow(delete.getRow(), "Delete");
     TrxTransactionState state = this.beginTransIfNotExist(transactionId);
     state.addDelete(delete);
   }
@@ -3653,6 +3657,8 @@ CoprocessorService, Coprocessor {
     TrxTransactionState state = this.beginTransIfNotExist(transactionId);
 
     for (Delete del : deletes) {
+      if(this.checkRowBelongs)
+        checkRow(del.getRow(), "Delete");
       state.addDelete(del);
     }
   }
@@ -3682,17 +3688,8 @@ CoprocessorService, Coprocessor {
     byte[] startKey = null;
     byte[] endKey = null;
 
-    if (!this.m_Region.rowIsInRange(this.regionInfo, row)) {
-      startKey = this.regionInfo.getStartKey();
-      endKey = this.regionInfo.getEndKey();
-      LOG.error("Requested row out of range for " +
-       "checkAndDelete for txid " + transactionId + ", on HRegion " +
-       this + ", startKey=[" + Bytes.toStringBinary(startKey) +
-       "], startKey in hex[" + Hex.encodeHexString(startKey) +
-       "], endKey [" + Bytes.toStringBinary(endKey) +
-       "], endKey in hex[" + Hex.encodeHexString(endKey) + "]" +
-       "], row=[" + Bytes.toStringBinary(row) + "]");
-     }
+    if(this.checkRowBelongs)
+      checkRow(row, "checkAndDelete");
 
     try {
 
@@ -3756,17 +3753,8 @@ CoprocessorService, Coprocessor {
     byte[] startKey = null;
     byte[] endKey = null;
 
-    if (!this.m_Region.rowIsInRange(this.regionInfo, row)) {
-      startKey = this.regionInfo.getStartKey();
-      endKey = this.regionInfo.getEndKey();
-      LOG.error("Requested row out of range for " +
-       "checkAndPut for txid " + transactionId + ", on HRegion " +
-       this + ", startKey=[" + Bytes.toStringBinary(startKey) +
-       "], startKey in hex[" + Hex.encodeHexString(startKey) +
-       "], endKey [" + Bytes.toStringBinary(endKey) +
-       "], endKey in hex[" + Hex.encodeHexString(endKey) + "]" +
-       "], row=[" + Bytes.toStringBinary(row) + "]");
-     }
+    if(this.checkRowBelongs)
+      checkRow(row, "checkAndPut");
 
     try {
       Get get = new Get(row);
@@ -3943,6 +3931,8 @@ CoprocessorService, Coprocessor {
   public void put(final long transactionId, final Put put)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: put, txid: " + transactionId);
+    if(this.checkRowBelongs)
+      checkRow(put.getRow(),"Put");
     TrxTransactionState state = this.beginTransIfNotExist(transactionId);
 
     state.addWrite(put);
