@@ -20,6 +20,13 @@ REM under the License.
 REM
 REM @@@ END COPYRIGHT @@@
 
+
+REM download vcredist_x64.exe form http://www.microsoft.com/en-us/download/details.aspx?id=40784 and copy it to VC_REDIST_DIR.
+set VC_REDIST_DIR=C:\Build\winodbc64\redist
+
+REM set this to the directory where you want to put the driver package file
+set PACKDIR=C:\Build\winodbc64
+
 @set INNO_SETUP_PATH="C:\Program Files (x86)\Inno Setup 5"
 @set PATH=%INNO_SETUP_PATH%;%PATH%
 
@@ -38,8 +45,6 @@ REM set this to openssl header files directory
 set OPENSSL_INCLUDE_PATH=C:\openssl-1.0.1e\include
 REM set this to openssl library files directory
 set OPENSSL_LIB_PATH=C:\openssl-1.0.1e\lib
-
-set PACKDIR=C:\Build\winodbc64
 
 set SRCDIR=%BUILDDIR%\win-odbc64
 set LIBDIR=%BUILDDIR%\lib
@@ -142,22 +147,25 @@ if %BUILD_STATUS%==0 (
 	goto Exit
 )
 
-set ALL_SUCCESS=1
-
-cd %SRCDIR%\odbcclient
-
-if not exist C:\Build\winodbc64\inc (
-	mkdir C:\Build\winodbc64\inc
+echo Building SetCertificateDirReg InstallHelper - Win64 Release...
+cd %SRCDIR%\Install\SetCertificateDirReg\SetCertificateDirReg
+msbuild.exe /t:rebuild SetCertificateDirReg_os.vcxproj /p:Platform=x64 /p:Configuration=Release
+set BUILD_STATUS=%ERRORLEVEL%
+if %BUILD_STATUS%==0 (
+	echo Build SetCertificateDirReg success
+) else (
+	echo Build SetCertificateDirReg failed
+	goto Exit
 )
-copy /Y %BUILDDIR%\win-odbc64\odbcclient\inc\trafsqlext.h C:\Build\winodbc64\inc
-if not exist C:\Build\winodbc64\lib\x64\Release (
-	mkdir C:\Build\winodbc64\lib\x64\Release
-)
-copy /Y %BUILDDIR%\lib\x64\Release C:\Build\winodbc64\lib\x64\Release
 
 ISCC.exe /Q %BUILDDIR%\win-odbc64\Install\win64_installer\installer.iss
-move /Y %BUILDDIR%\win-odbc64\Install\win64_installer\Output\TFODBC64-1.2.0.exe %PACKDIR%
+copy /Y %BUILDDIR%\win-odbc64\Install\win64_installer\Output\TFODBC64-1.2.0.exe %PACKDIR%
 @echo on
+
+if exist %PACKDIR%\TFODBC64-1.2.0.exe (
+	set ALL_SUCCESS=1
+)
+cd %BUILDDIR%\win-odbc64\odbcclient
 
 :Exit
 if %ALL_SUCCESS%==1 (

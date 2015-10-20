@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TranslationDll_os", "Transl
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TCPIPV6_os", "drvr35\TCPIPV6\TCPIPV6_os.vcxproj", "{1B37AEE5-7E3E-46C8-AA71-85CDED07183B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SetCertificateDirReg_os", "..\Install\SetCertificateDirReg\SetCertificateDirReg\SetCertificateDirReg_os.vcxproj", "{11B34636-6E3D-40ED-BA02-FD50B258D18D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -96,6 +98,18 @@ Global
 		{1B37AEE5-7E3E-46C8-AA71-85CDED07183B}.Template|Win32.ActiveCfg = Release|x64
 		{1B37AEE5-7E3E-46C8-AA71-85CDED07183B}.Template|x64.ActiveCfg = Release|x64
 		{1B37AEE5-7E3E-46C8-AA71-85CDED07183B}.Template|x64.Build.0 = Release|x64
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Debug|Win32.Build.0 = Debug|Win32
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Debug|x64.ActiveCfg = Debug|x64
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Debug|x64.Build.0 = Debug|x64
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Release|Win32.ActiveCfg = Release|Win32
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Release|Win32.Build.0 = Release|Win32
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Release|x64.ActiveCfg = Release|x64
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Release|x64.Build.0 = Release|x64
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Template|Win32.ActiveCfg = Template|Win32
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Template|Win32.Build.0 = Template|Win32
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Template|x64.ActiveCfg = Template|x64
+		{11B34636-6E3D-40ED-BA02-FD50B258D18D}.Template|x64.Build.0 = Template|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

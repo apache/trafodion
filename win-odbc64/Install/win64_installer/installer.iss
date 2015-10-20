@@ -6,6 +6,8 @@
 #define MyAppPublisher "Apache Trafodion"
 #define MyAppURL ""
 #define MyDriverName "TRAF ODBC 1.0"
+#define BUILDDIR  GetEnv('BUILDDIR')
+#define VCREDISTDIR GetEnv('VC_REDIST_DIR')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -35,14 +37,14 @@ SetupLogging=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "C:\Build\winodbc64\inc\trafsqlext.h"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Build\winodbc64\lib\x64\Release\traf_odbcDrvMsg_intl0100.dll"; DestDir: "{sys}"
-Source: "C:\Build\winodbc64\lib\x64\Release\traf_ores0100.dll"; DestDir: "{sys}"
-Source: "C:\Build\winodbc64\lib\x64\Release\traf_tcpipv40100.dll"; DestDir: "{sys}"
-Source: "C:\Build\winodbc64\lib\x64\Release\traf_tcpipv60100.dll"; DestDir: "{sys}"
-Source: "C:\Build\winodbc64\lib\x64\Release\traf_translation01.dll"; DestDir: "{sys}"
-Source: "C:\Build\winodbc64\lib\x64\Release\trfoadm1.dll"; DestDir: "{sys}"
-Source: "C:\Build\winodbc64\lib\x64\Release\trfodbc1.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\win-odbc64\odbcclient\inc\trafsqlext.h"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BUILDDIR}\lib\x64\Release\traf_odbcDrvMsg_intl0100.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\lib\x64\Release\traf_ores0100.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\lib\x64\Release\traf_tcpipv40100.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\lib\x64\Release\traf_tcpipv60100.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\lib\x64\Release\traf_translation01.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\lib\x64\Release\trfoadm1.dll"; DestDir: "{sys}"
+Source: "{#BUILDDIR}\lib\x64\Release\trfodbc1.dll"; DestDir: "{sys}"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -59,7 +61,7 @@ Root: HKLM; SubKey: Software\ODBC\ODBCINST.INI\{#MyDriverName}; ValueType: strin
 
 [Code]
 [Files]
-Source: "C:\Build\winodbc64\redist\vcredist_x64.exe"; DestDir: {tmp}; Flags: deleteafterinstall
+Source: "{#VCREDISTDIR}\vcredist_x64.exe"; DestDir: {tmp}; Flags: deleteafterinstall
 
 [Run]
 ; add the Parameters, WorkingDir and StatusMsg as you wish, just keep here
