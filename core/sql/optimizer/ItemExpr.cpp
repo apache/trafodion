@@ -874,6 +874,12 @@ NABoolean ItemExpr::doesExprEvaluateToConstant(NABoolean strict,
 		  return TRUE;
 
 		case ITM_HOSTVAR:
+                 {
+                     HostVar* hv = (HostVar*)this;
+                     if ( hv->isSystemGeneratedOutputHV() )
+                        return TRUE;
+                 }
+
 		case ITM_DYN_PARAM:
 		case ITM_CACHE_PARAM:
 		case ITM_CURRENT_USER:
@@ -14459,6 +14465,12 @@ HostVar::setPMOrdPosAndIndex( ComColumnDirection paramMode,
     hvIndex_ = index;
 }
 
+NABoolean HostVar::isSystemGeneratedOutputHV() const
+{  
+  return (isSystemGenerated() &&
+           getName() == "_sys_ignored_CC_convErrorFlag"); 
+}
+
 void
 DynamicParam::setPMOrdPosAndIndex( ComColumnDirection paramMode,
 				   Int32 ordinalPosition,
@@ -14906,9 +14918,9 @@ NABoolean LOBoper::isCovered
   return FALSE;
 }
 
-// Compute the exprssion at compile time. Assume all operands are constants.
+// Evalaute the exprssion at compile time. Assume all operands are constants.
 // Return NULL if the computation fails and CmpCommon::diags() may be side-affected.
-ConstValue* ItemExpr::compute(CollHeap* heap)
+ConstValue* ItemExpr::evaluate(CollHeap* heap)
 {
   ValueIdList exprs;
   exprs.insert(getValueId());
@@ -14923,9 +14935,10 @@ ConstValue* ItemExpr::compute(CollHeap* heap)
   char* decodeBuf = staticDecodeBuf;
   Lng32 decodeBufLen = staticDecodeBufLen;
 
-  // For character types, multiplying by 8 to deal with conversions between
-  // any two known character sets supported.  
-  Lng32 factor = (DFS2REC::isAnyCharacter(dataType.getFSDatatype())) ? 8 : 1;
+  // For character types, multiplying by 6 to deal with conversions between
+  // any two known character sets allowed. See CharInfo::maxBytesPerChar()
+  // for a list of max bytes per char for each supported character set.  
+  Lng32 factor = (DFS2REC::isAnyCharacter(dataType.getFSDatatype())) ? 6 : 1;
 
   if ( staticDecodeBufLen < decodedValueLen * factor) {
     decodeBufLen = decodedValueLen * factor;

@@ -1756,7 +1756,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
             keyColVal->synthTypeAndValueId();
 
-            keyColVal = keyColVal->compute(heap);
+            keyColVal = keyColVal->evaluate(heap);
 
             if ( !keyColVal ) 
               return NULL;

@@ -169,7 +169,7 @@ Lng32 NAFileSet::getEncodedKeyLength()
 
 	for(CollIndex i=0;i<indexKeyColumns_.entries();i++)
 	{
-		encodedKeyLength_ += indexKeyColumns_[i]->getType()->getNominalSize();
+		encodedKeyLength_ += indexKeyColumns_[i]->getType()->getEncodedKeyLength();
 	}
 	return encodedKeyLength_;
 }

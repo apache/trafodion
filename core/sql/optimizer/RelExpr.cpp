@@ -9516,7 +9516,7 @@ FileScan::FileScan(const CorrName& tableName,
      mdamFlag_(UNDECIDED),
      skipRowsToPreventHalloween_(FALSE),
      doUseSearchKey_(TRUE),
-     computedNumOfActivePartiions_(-1)
+     computedNumOfActivePartitions_(-1)
 {
   // Set the filescan properties:
 
@@ -9561,7 +9561,7 @@ FileScan::FileScan(const CorrName& tableName,
          const RangePartitioningFunction* rangePartFunc =
               indexDesc_->getPartitioningFunction()->castToRangePartitioningFunction();
 
-         computedNumOfActivePartiions_ = 
+         computedNumOfActivePartitions_ = 
              rangePartFunc->computeNumOfActivePartitions(partKeys_, tableDescPtr);
       }
     }

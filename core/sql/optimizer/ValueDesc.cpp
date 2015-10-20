@@ -6444,8 +6444,13 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
       ItemExpr* ie = vid.getItemExpr();
 
       if ( ie->getOperatorType() != ITM_CONSTANT ) {
-          ConstValue* value = ie->compute(STMTHEAP);
-          if ( !value )
+          
+          ConstValue* value = NULL;
+          if ( ie->doesExprEvaluateToConstant(TRUE, TRUE) ) {
+             value = ie->evaluate(STMTHEAP);
+             if ( !value )
+                return NULL;
+          } else
              return NULL;
 
           inputStrings[j] = new (STMTHEAP) NAString(value->getConstStr(FALSE));

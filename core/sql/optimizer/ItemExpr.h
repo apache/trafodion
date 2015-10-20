@@ -1048,9 +1048,9 @@ public:
   //  Utility methods
   // ---------------------------------------------------------------------
   
-  // compute the exprssion at compile time. Assume all operands are constants.
+  // Evaluate the exprssion at compile time. Assume all operands are constants.
   // Return NULL if the computation fails and CmpCommon::diags() may be side-affected.
-  ConstValue* compute(CollHeap* heap);
+  ConstValue* evaluate(CollHeap* heap);
 
   // produce an ascii-version of the object (for display or saving into a file)
   virtual void unparse(NAString &result,

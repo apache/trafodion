@@ -814,7 +814,7 @@ public:
     duplicateSuccProbes_(0),
     failedProbes_(0),
     tuplesProcessed_(0),
-    computedNumOfActivePartiions_(-1)
+    computedNumOfActivePartitions_(-1)
   {}
 
   // destructor
@@ -1021,7 +1021,7 @@ public:
            const ValueIdList& partitioningKeyColumnsList,
            const ValueIdList& partitioningKeyColumnsOrder);
 
-  Int32 getComputedNumOfActivePartiions()  const { return computedNumOfActivePartiions_; }
+  Int32 getComputedNumOfActivePartiions()  const { return computedNumOfActivePartitions_; }
 
 private:
 
@@ -1111,7 +1111,7 @@ private:
 
   // number of active partitions computed only from the Range Part Func
   // and the search key (partKey_)
-  Int32 computedNumOfActivePartiions_;
+  Int32 computedNumOfActivePartitions_;
 
 }; // class FileScan
 

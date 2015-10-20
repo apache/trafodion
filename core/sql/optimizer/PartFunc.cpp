@@ -5053,7 +5053,7 @@ Int32 RangePartitionBoundaries::findBeginBoundary(char* encodedKey, Int32 keyLen
                                                   compFuncPtrT compFunc) const
 {
    // boundaries are stored in entries in the range [0, partitionCount_] 
-   for (Lng32 i=partitionCount_-1; i>= 0; i--) {
+   for (Lng32 i=0; i<=partitionCount_-1; i++ ) {
 
        const char* low = getBinaryBoundaryValue(i);
        const char* high = getBinaryBoundaryValue(i+1);
@@ -5072,7 +5072,7 @@ Int32 RangePartitionBoundaries::findEndBoundary(char* encodedKey, Int32 keyLen,
                                                 compFuncPtrT compFunc) const
 {
    // boundaries are stored in entries in the range [0, partitionCount_] 
-   for (Lng32 i=0; i<partitionCount_-1; i++ ) {
+   for (Lng32 i=partitionCount_-1; i>= 0; i--) {
 
        const char* low = getBinaryBoundaryValue(i);
        const char* high = getBinaryBoundaryValue(i+1);
@@ -5095,6 +5095,10 @@ RangePartitioningFunction::computeNumOfActivePartitions(SearchKey* skey, const T
    Int32 bIndex = 0;
 
    const NATable* naTable = tDesc->getNATable();
+
+   if ( naTable->isHiveTable() )
+     return origPartitions;  
+
    NABoolean isNativeHbase = (naTable->isHbaseCellTable() || naTable->isHbaseRowTable());
    compFuncPtrT compFuncPtr = ( isNativeHbase ) ? compareAsciiKey: compareEncodedKey;
   
