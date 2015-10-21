@@ -4596,7 +4596,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   char * col_name = new(STMTHEAP) char[colName.length() + 1];
   strcpy(col_name, (char*)colName.data());
 
-  Lng32 maxColQual = nacolArr.getMaxTrafHbaseColQualifier();
+  ULng32 maxColQual = nacolArr.getMaxTrafHbaseColQualifier();
 
   NAString quotedHeading;
   if (NOT heading.isNull())

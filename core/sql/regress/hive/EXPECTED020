@@ -14,13 +14,28 @@
 
 --- SQL operation complete.
 >>
+>>prepare explainIt from
++>  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
++>         substring(operator,1,16) operator,
++>         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
++>         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
++>         substring
++>         (substring(tname from (1+locate('.',tname))),
++>         (locate('.',substring(tname from (1+locate('.',tname))))),
++>         10
++>        ) tab_name
++>         from table (explain(NULL,'XX'))
++>         order by 1 desc;
+
+--- SQL command prepared.
+>>
 >>obey TEST020(tests);
 >>--------------------------------------------------------------------------
 >>-- ORC file metadata info
 >>invoke hive.hive.store_orc;
 
 -- Definition of hive table STORE_ORC
--- Definition current  Fri Sep 18 21:54:29 2015
+-- Definition current  Wed Oct 21 00:08:18 2015
 
   (
     S_STORE_SK                       INT
@@ -132,24 +147,25 @@ S_STORE_SK   (EXPR)
 --- 1 row(s) selected.
 >>
 >>-- explain of join between 2 ORC tables
->>explain options 'f' select x.s_suite_number, y.s_street_name
+>>prepare XX from select x.s_suite_number, y.s_street_name
 +> from hive.hive.store_orc x, hive.hive.store_orc y
 +>  where x.s_store_sk = y.s_store_sk;
 
-LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
----- ---- ---- --------------------  --------  --------------------  ---------
+--- SQL command prepared.
+>>execute explainIt;
 
-3    .    4    root                                                  8.17E+004
-2    1    3    hybrid_hash_join                                      8.17E+004
-.    .    2    hive_scan                       STORE_ORC             4.08E+003
-.    .    1    hive_scan                       STORE_ORC             4.08E+003
+S   OPERATOR          LC  RC  TAB_NAME  
+--  ----------------  --  --  ----------
 
---- SQL operation complete.
+04  ROOT              3   ?             
+03  HYBRID_HASH_JOIN  2   1             
+02  HIVE_SCAN         ?   ?   .STORE_ORC
+01  HIVE_SCAN         ?   ?   .STORE_ORC
+
+--- 4 row(s) selected.
 >>
 >>-- execute of join between 2 ORC tables
->>select x.s_suite_number, y.s_street_name
-+> from hive.hive.store_orc x, hive.hive.store_orc y
-+>  where x.s_store_sk = y.s_store_sk;
+>>execute XX;
 
 S_SUITE_NUMBER        S_STREET_NAME       
 --------------------  --------------------
@@ -170,24 +186,25 @@ Suite 100             College
 --- 12 row(s) selected.
 >>
 >>-- explain of join between hive(hdfs) and ORC tables
->>explain options 'f' select x.s_suite_number, y.s_street_name
+>>prepare XX from select x.s_suite_number, y.s_street_name
 +> from hive.hive.store x, hive.hive.store_orc y
 +>  where x.s_store_sk = y.s_store_sk;
 
-LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
----- ---- ---- --------------------  --------  --------------------  ---------
+--- SQL command prepared.
+>>execute explainIt;
 
-3    .    4    root                                                  4.08E+003
-1    2    3    nested_join                                           4.08E+003
-.    .    2    hive_scan                       STORE_ORC             4.08E+001
-.    .    1    hive_scan                       STORE                 1.00E+002
+S   OPERATOR          LC  RC  TAB_NAME  
+--  ----------------  --  --  ----------
 
---- SQL operation complete.
+04  ROOT              3   ?             
+03  NESTED_JOIN       1   2             
+02  HIVE_SCAN         ?   ?   .STORE_ORC
+01  HIVE_SCAN         ?   ?   .STORE)   
+
+--- 4 row(s) selected.
 >>
 >>-- execute of join between hive(hdfs) and ORC tables
->>select x.s_suite_number, y.s_street_name
-+> from hive.hive.store x, hive.hive.store_orc y
-+>  where x.s_store_sk = y.s_store_sk;
+>>execute XX;
 
 S_SUITE_NUMBER        S_STREET_NAME       
 --------------------  --------------------
