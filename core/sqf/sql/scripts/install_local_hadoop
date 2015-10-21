@@ -1534,7 +1534,7 @@ fi
 
 cd $MY_SW_ROOT
 
-if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
+if [ -d $MY_LOCAL_SW_DIST && ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
   echo "------------------------------------------------------------"
   echo "-- WARNING: libhdfs.so is not present on this system. Please"
   echo "--          build it, otherwise Trafodion will not compile."
