@@ -29,9 +29,7 @@ if [ -z ${DCS_INSTALL_DIR} ]; then
    exit 1;
 fi
 
-if [ -e ${DCS_STOP_CMD} ]; then
-   echo "${DCS_STOP_CMD} found."
-else 
+if [ ! -e ${DCS_STOP_CMD} ]; then
    echo "${DCS_STOP_CMD} not found."
    exit 1;
 fi

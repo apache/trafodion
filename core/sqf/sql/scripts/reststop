@@ -29,9 +29,7 @@ if [ -z ${REST_INSTALL_DIR} ]; then
    exit 1;
 fi
 
-if [ -e ${REST_STOP_CMD} ]; then
-   echo "${REST_STOP_CMD} found."
-else 
+if [ ! -e ${REST_STOP_CMD} ]; then
    echo "${REST_STOP_CMD} not found."
    exit 1;
 fi

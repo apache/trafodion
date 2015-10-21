@@ -33,9 +33,7 @@ if [[ $sq_stat == 0 ]]; then
       exit 1;
    fi
 
-   if [ -e ${DCS_START_CMD} ]; then
-     echo "${DCS_START_CMD} found."
-   else 
+   if [ ! -e ${DCS_START_CMD} ]; then
      echo "${DCS_START_CMD} not found."
      exit 1;
    fi
