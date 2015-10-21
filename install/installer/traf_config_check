@@ -621,7 +621,7 @@ function checkSQROOT {
 if [[ -z $SQ_ROOT ]]; then
    errorFound=1
    echo "SQ ROOT" >> $ERROR_LOG
-   echo "***ERROR: SQ_ROOT variable not set in config file"
+   echo "***ERROR: SQ_ROOT variable not set in config file" >> $ERROR_LOG
 fi
 
 }
