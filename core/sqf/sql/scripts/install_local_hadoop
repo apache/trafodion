@@ -685,6 +685,16 @@ export YARN_HOME=${YARN_HOME}
 export HIVE_HOME=${HIVE_HOME}
 export HBASE_HOME=${HBASE_HOME}
 export MY_HADOOP_HDFS_PORT_NUM=${MY_HADOOP_HDFS_PORT_NUM}
+export MY_HBASE_ZOOKEEPER_PEERPORT_NUM=${MY_HBASE_ZOOKEEPER_PEERPORT_NUM}
+export MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=${MY_HBASE_ZOOKEEPER_LEADERPORT_NUM}
+export MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=${MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM}
+export MY_DCS_MASTER_PORT=${MY_DCS_MASTER_PORT}
+export MY_DCS_MASTER_INFO_PORT=${MY_DCS_MASTER_INFO_PORT}
+export MY_DCS_SERVER_INFO_PORT=${MY_DCS_SERVER_INFO_PORT}
+export MY_REST_SERVER_PORT=${MY_REST_SERVER_PORT}
+export MY_REST_SERVER_SECURE_PORT=${MY_REST_SERVER_SECURE_PORT}
+export MY_DB_MGR_PORT=${MY_DB_MGR_PORT}
+export MY_DB_MGR_SECURE_PORT=${MY_DB_MGR_SECURE_PORT}
 EOF
 
   # now source in this script
@@ -1540,12 +1550,6 @@ if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
   echo "--          build it, otherwise Trafodion will not compile."
   echo "------------------------------------------------------------"
 fi
-
-#For clients
-cat >$HOME/.traf-clports-$USER <<EOF
-DEFAULT_PORT=$USE_DEFAULT_PORT
-HADOOP_START_PORT=$MY_START_PORT
-EOF
 
 echo
 echo "Installed directory size and name = $(du -sh $MY_SW_ROOT)" | tee -a ${MY_LOG_FILE}
