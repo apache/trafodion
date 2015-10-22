@@ -648,7 +648,7 @@ public class TestCat
         {
             Connection connection = Utils.getUserConnection();
             int i = connection.getMetaData().getDatabaseMinorVersion();
-            assertEquals("DB Minor Version", 2L, i);
+            assertEquals("DB Minor Version", 3L, i);
             connection.close();
             System.out.println("JDBC Get DB minor version : Passed");
         }
