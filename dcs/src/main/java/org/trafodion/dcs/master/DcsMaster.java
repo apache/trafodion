@@ -215,6 +215,11 @@ public class DcsMaster implements Runnable {
         try {
             netConf = new DcsNetworkConfiguration(conf);
             serverName = netConf.getHostName();
+	    if (serverName == null) {
+                LOG.error("DNS Interface [" + conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE)
+	    			+ "] configured in dcs.site.xml is not found!");
+		System.exit(1);
+            }
 
             // Wait to become the leader of all DcsMasters
             mle = new MasterLeaderElection(this);
