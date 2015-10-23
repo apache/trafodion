@@ -3767,6 +3767,9 @@ enum DefaultConstants
   HBASE_DELETE_COSTING,
   HBASE_UPDATE_COSTING,
 
+  // decide if to apply the additional restriction check (majority of keys with predicates)
+  MDAM_APPLY_RESTRICTION_CHECK,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
