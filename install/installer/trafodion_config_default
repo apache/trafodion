@@ -20,6 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
+#====================================================
 # Trafodion Configuration File
 # This file contains default values for the installer.
 
@@ -27,12 +28,8 @@
 # and then specify this file on the run line of trafodion_install.
 # Example:
 # ./trafodion_install --config_file <Trafodion-config-file>
+# WARNING: This mode is for advanced users! 
 #
-# NOTE: most parameters specified through the config file are not checked
-#       for validity.  Please make sure all values supplied here are correct.
-#       It is suggested the the user first run the trafodion_install script and
-#       answer all the prompts, then take all the values from
-#       /etc/trafodion/trafodion_config and copy them into a copy of this file.
 #=====================================================
 
 
@@ -40,17 +37,17 @@
 #Must be set to 'true' if on a SUSE linux system. If on another type of system
 #this must be set to false. 
 
-export SUSE_LINUX=""
+export SUSE_LINUX="false"
 
 # The working directory where Trafodion installer untars files, etc.
 # do not change this unless you really know what you are doing
 export TRAF_WORKDIR="/usr/lib/trafodion"
 
 # This is the directory where the installer scripts were untarred to
-export LOCAL_WORKDIR="$HOME/installer"
+export LOCAL_WORKDIR="$HOME/<downloadsDirectory>/installer"
 
 # The maximum number of dcs servers, i.e. client connections
-export DCS_SERVERS_PARM="2"
+export DCS_SERVERS_PARM="8"
 
 # "true" if this is an upgrade
 export UPGRADE_TRAF="false"
@@ -63,6 +60,7 @@ export TRAF_USER_PASSWORD="traf123"
 
 # a blank separated list of nodes in your cluster
 # node names should include full domain names
+#This can not be left blank!
 export NODE_LIST=""
 
 # count of nodes in node list
@@ -75,6 +73,10 @@ export MY_NODES=""
 # the directory prefix for the trafodion userid's $HOME directory
 # i.e. /opt/home, not /opt/home/trafodion
 export HOME_DIR="/home"
+
+#JAVA HOME must be a JDK. Must include FULL Path. Must be 1.7.0_65 or higher.
+
+export JAVA_HOME=""
 
 # If your machine doesn't have external internet access then you must
 # specify the location of the EPEL rpm, otherwise leave blank and it
@@ -94,10 +96,10 @@ export REST_BUILD=""
 # Either "cloudera" or "hortonworks" (all lowercase)
 export HADOOP_TYPE=""
 
-# The URL for the Hadoop distro's REST API (i.e. node1.hp.com:8080)
+# The URL for Cloudera/Hortonworks REST API (i.e. node1.hp.com:8080)
 export URL=""
 
-# Hadoop UI admin's userid and password
+# Cloudera/Hortonworks UI admin's userid and password
 export ADMIN="admin"
 export PASSWORD="admin"
 
@@ -114,8 +116,14 @@ export HBASE_GROUP="hbase"
 # The hadoop HBase service name
 export HBASE="hbase"
 
-# full path of where to isntall Trafodion to
-export SQ_ROOT="$HOME_DIR/$TRAF_USER/traf"
+# full path of where to install Trafodion to
+# Example is used below. If $HOME_DIR or $TRAF_USER have been changed
+# then this will need to be changed. 
+# On an upgrade, it is recommend to choose a different directory. 
+# First time install : /home/trafodion/traf
+# On Upgrade: /home/trafodion/traf_<date>
+# By doing this the previous version will remain and allow for an easier rollback.
+export SQ_ROOT="home/trafodion/traf"
 
 # Start Trafodion after install completes
 export START="N"
