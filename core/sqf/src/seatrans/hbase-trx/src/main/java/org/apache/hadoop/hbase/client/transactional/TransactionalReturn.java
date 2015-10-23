@@ -34,4 +34,5 @@ public interface TransactionalReturn {
   final int COMMIT_UNSUCCESSFUL = 4;
   /** Status code representing a transaction that cannot be committed due to conflict. */
   final int COMMIT_CONFLICT = 5;
+  final int COMMIT_RESEND = 6;
 }

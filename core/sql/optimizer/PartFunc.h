@@ -75,6 +75,7 @@ class NAColumnArray;
 class SearchKey;
 class SkewedValueList;
 typedef LIST(Int64) Int64List;
+typedef NABoolean (*compFuncPtrT)(const char* low, const char* key, const char* high, Int32 keyLen, NABoolean checkLast);
 
 // ----------------------------------------------------------------------
 // literals for special numbers of partitions (don't care, exactly one)
@@ -2035,6 +2036,15 @@ public:
   void completePartitionBoundaries(const ValueIdList& partitioningKeyOrder,
 				   Lng32 encodedBoundaryKeyLength);
 
+
+  // find a boundary pair [low, high) with smallest low value in which keys fall, and return the
+  // // index of the boundary low. Return -1 otherwise, or the key lengths are different.
+  Int32 findBeginBoundary(char* encodedKey, Int32 keyLen, compFuncPtrT compFunc) const;
+
+  // find a boundary pair [low, high) with the largest low value in which keys fall, and return the
+  // // index of the boundary low. Return -1 otherwise, or the key lengths are different.
+  Int32 findEndBoundary(char* encodedKey, Int32 keyLen, compFuncPtrT compFunc) const;
+
   void setupForStatement(NABoolean useStringVersion);
   void resetAfterStatement();
 
@@ -2245,6 +2255,12 @@ public:
 
   NABoolean 
      partFuncAndFuncPushDownCompatible(const PartitioningFunction&) const;
+
+  // ---------------------------------------------------------------------
+  // Compute the number of active partitions. Active partitions are those
+  // that will be accessed applying the search key skey.
+  // ---------------------------------------------------------------------
+  Int32 computeNumOfActivePartitions(SearchKey* skey, const TableDesc* tDesc) const;
 
   virtual const NAString getText() const;
   virtual void print( FILE* ofd = stdout,
@@ -2689,5 +2705,7 @@ private:
 
 }; // class RoundRobinPartitioningFunction
 // LCOV_EXCL_STOP
+//
+
 
 #endif /* PARTFUNC_H */

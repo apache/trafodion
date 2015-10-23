@@ -473,16 +473,16 @@ function checkClouderaVersion {
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
    if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-6].[0-9].* | wc -l)
+         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-6].[0-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
             echo "***ERROR: Trafodion and Cloudera versions may not be compatible" >> $ERROR_LOG
             echo "***ERROR: Detected Cloudera version:" >> $ERROR_LOG
-            ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
+            ssh -q -n $node cat $HOME/hbaseVersion.txt >> $ERROR_LOG
          fi
       fi
    else
@@ -621,7 +621,7 @@ function checkSQROOT {
 if [[ -z $SQ_ROOT ]]; then
    errorFound=1
    echo "SQ ROOT" >> $ERROR_LOG
-   echo "***ERROR: SQ_ROOT variable not set in config file"
+   echo "***ERROR: SQ_ROOT variable not set in config file" >> $ERROR_LOG
 fi
 
 }
@@ -761,6 +761,8 @@ checkHomeDir
 
 checkEPEL
 
+checkHadoopSupport
+
 checkHadoopUserPass
 
 checkHadoopURL
@@ -776,7 +778,5 @@ checkStart
 checkDCS
 
 checkLDAP
-
-checkHadoopSupport
 
 majorErrorFound

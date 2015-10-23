@@ -288,6 +288,27 @@ message TransactionalAggregateResponse {
 
 }
 
+message TransactionPersist {
+  repeated int64 txById = 1;
+  repeated int64 seqNoListSeq = 2;
+  repeated int64 seqNoListTxn = 3;
+  required int64 nextSeqId = 4;
+}
+
+message TransactionStateMsg {
+  required int64 txId = 1;
+  repeated MutationProto put = 2;
+  repeated MutationProto delete = 3;
+  repeated bool putOrDel = 4;
+  repeated int64 txnsToCheck = 5;
+  required int64 startSeqNum = 6;
+  required int64 seqNum = 7;
+  required int64 logSeqId = 8;
+  required bool reinstated = 9;
+  required int32 status = 10;
+  required int32 commitProgress = 11;
+}
+
 service TrxRegionService {
   rpc abortTransaction(AbortTransactionRequest)
     returns(AbortTransactionResponse);

@@ -109,6 +109,7 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
            resetAfterStatement_(FALSE),
 	   bitFlags_(0),
 	   keyLength_(0),
+	   encodedKeyLength_(0),
            thisRemoteIndexGone_(FALSE),
            isDecoupledRangePartitioned_(isDecoupledRangePartitioned),
            fileCode_(fileCode),
@@ -159,6 +160,18 @@ Lng32 NAFileSet::getKeyLength()
 		keyLength_ += indexKeyColumns_[i]->getType()->getTotalSize();
 	}
 	return keyLength_;
+}
+
+// returns the length of the encoded key in bytes for this index
+Lng32 NAFileSet::getEncodedKeyLength()
+{
+	if(encodedKeyLength_ >0) return encodedKeyLength_;
+
+	for(CollIndex i=0;i<indexKeyColumns_.entries();i++)
+	{
+		encodedKeyLength_ += indexKeyColumns_[i]->getType()->getEncodedKeyLength();
+	}
+	return encodedKeyLength_;
 }
 
 Lng32 NAFileSet::getCountOfPartitions() const

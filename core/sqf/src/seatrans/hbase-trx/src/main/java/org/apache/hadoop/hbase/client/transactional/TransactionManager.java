@@ -44,12 +44,14 @@
 
 package org.apache.hadoop.hbase.client.transactional;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -61,6 +63,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 
 import org.apache.commons.codec.binary.Hex;
+
+import org.apache.hadoop.fs.Path;
 
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.commons.logging.Log;
@@ -282,7 +286,10 @@ public class TransactionManager {
         }
         startKey = location.getRegionInfo().getStartKey();
         endKey_orig = location.getRegionInfo().getEndKey();
-        endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
+        if(endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
+          endKey = null;
+        else
+          endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
     }
 
     /**
@@ -334,12 +341,12 @@ public class TransactionManager {
                   LOG.error(msg + ":" + e);
                   throw new Exception(msg);
                }
-               if(result.size() != 1) {
+               if(result.size() == 0) {
                   LOG.error("doCommitX, received incorrect result size: " + result.size() + " txid: " + transactionId);
                   refresh = true;
                   retry = true;
                }
-               else {
+               else if(result.size() == 1){
                   // size is 1
                   for (CommitResponse cresponse : result.values()){
                     if(cresponse.getHasException()) {
@@ -361,6 +368,31 @@ public class TransactionManager {
                }
                retry = false;
              }
+             else {
+                  for (CommitResponse cresponse : result.values()){
+                    if(cresponse.getHasException()) {
+                      String exceptionString = new String (cresponse.getException().toString());
+                      if (exceptionString.contains("UnknownTransactionException")) {
+                        if (ignoreUnknownTransactionException == true) {
+                          if (LOG.isTraceEnabled()) LOG.trace("doCommitX, ignoring UnknownTransactionException in cresponse");
+                        }
+                        else {
+                          LOG.error("doCommitX, coprocessor UnknownTransactionException: " + cresponse.getException());
+                          throw new UnknownTransactionException();
+                        }
+                      }
+                      else if(exceptionString.contains("Asked to commit a non-pending transaction")) {
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX, ignoring 'commit non-pending transaction' in cresponse");
+                      }
+                      else {
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX coprocessor exception: " + cresponse.getException());
+                        throw new Exception(cresponse.getException());
+                      }
+                  }
+               }
+               retry = false;
+             }
+
           }
           catch (UnknownTransactionException ute) {
               LOG.error("Got unknown exception in doCommitX for transaction: " + transactionId + " " + ute);
@@ -368,16 +400,23 @@ public class TransactionManager {
               throw new UnknownTransactionException();
           }
           catch (Exception e) {
-             LOG.error("doCommitX retrying due to Exception: " + e);
-             refresh = true;
-             retry = true;
+             if(e.toString().contains("Asked to commit a non-pending transaction")) {
+               if (LOG.isDebugEnabled()) LOG.debug("doCommitX will not retry: " + e);
+               refresh = false;
+               retry = false;
+             }
+             else {
+               LOG.error("doCommitX retrying due to Exception: " + e);
+               refresh = true;
+               retry = true;
+             }
           }
           if (refresh) {
 
              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-             String          lv_node = lv_hrl.getHostname();
-             int             lv_length = lv_node.indexOf('.');
+             //String          lv_node = lv_hrl.getHostname();
+             //int             lv_length = lv_node.indexOf('.');
 
              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + " endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -494,8 +533,6 @@ public class TransactionManager {
 
              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-             String          lv_node = lv_hrl.getHostname();
-             int             lv_length = lv_node.indexOf('.');
 
              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -585,47 +622,89 @@ public class TransactionManager {
              Map<byte[], CommitRequestResponse> result = null;
 
              try {
-//                if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- before coprocessorService txid: " + transactionId + " table: " + table.toString());
-//                if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- txid: " + transactionId + " table: " + table.toString() + " endKey_Orig: " + new String(endKey_orig, "UTF-8"));
-//                if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
-
-//                HRegionLocation lv_hrl = table.getRegionLocation(startKey);
-//                HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-//                String          lv_node = lv_hrl.getHostname();
-//                int             lv_length = lv_node.indexOf('.');
-
-//                if ((location.getRegionInfo().getEncodedName().compareTo(lv_hri.getEncodedName()) != 0) ||  // Encoded name is different
-//                        (location.getHostname().regionMatches(0, lv_node, 0, lv_length) == false)) {            // Node is different
-//                   if (LOG.isInfoEnabled())LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
-//                   if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
-//                   if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
-//                   if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_node: " + lv_node + " lv_length: " + lv_length);
-//                   if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getHostname(): " + location.getHostname());
-//                   table.getRegionLocation(startKey, true);
-//                }
                 result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
              } catch (Throwable e) {
                 LOG.error("doPrepareX coprocessor error for " + Bytes.toString(regionName) + " txid: " + transactionId + ":" + e);
                 throw new CommitUnsuccessfulException("Unable to call prepare, coprocessor error");
              }
 
-             if(result.size() != 1)  {
+             if(result.size() == 0)  {
                 LOG.error("doPrepareX, received incorrect result size: " + result.size());
                 refresh = true;
                 retry = true;
              }
-             else {
+             else if(result.size() == 1){
                 // size is 1
                 for (CommitRequestResponse cresponse : result.values()){
                    // Should only be one result
                    int value = cresponse.getResult();
                    commitStatus = value;
                    if(cresponse.getHasException()) {
-                      if (LOG.isTraceEnabled()) LOG.trace("doPrepareX coprocessor exception: " + cresponse.getException());
-                      throw new Exception(cresponse.getException());
+                      if(transactionState.hasRetried() &&
+                          cresponse.getException().contains("encountered unknown transactionID")) {
+                        retry = false;
+                        commitStatus = TransactionalReturn.COMMIT_OK_READ_ONLY;
+                      }
+                      else {
+                        if (LOG.isTraceEnabled()) LOG.trace("doPrepareX coprocessor exception: " + cresponse.getException());
+                        throw new Exception(cresponse.getException());
+                      }
+                   }
+                   if(value == TransactionalReturn.COMMIT_RESEND) {
+                     // Handle situation where repeated region is in list due to different endKeys
+                     int count = 0;
+                     for(TransactionRegionLocation trl : this.transactionState.getParticipatingRegions()) {
+                       if(trl.getRegionInfo().getTable().toString()
+                               .compareTo(location.getRegionInfo().getTable().toString()) == 0
+                               &&
+                          Arrays.equals(trl.getRegionInfo().getStartKey(),
+                               location.getRegionInfo().getStartKey())) {
+                         count++;
+                       }
+                     }
+                     if(count > 1) {
+                       commitStatus = TransactionalReturn.COMMIT_OK;
+                       retry = false;
+                     }
+                     else {
+                       // Pause for split to complete and retry
+                       Thread.sleep(100);
+                       retry = true;
+                     }
+                   }
+                   else {
+                     retry = false;
                    }
                 }
-                retry = false;
+             }
+             else {
+               for(CommitRequestResponse cresponse : result.values()) {
+                 if(cresponse.getResult() == TransactionalReturn.COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR ||
+                  cresponse.getResult() == TransactionalReturn.COMMIT_CONFLICT ||
+                  cresponse.getResult() == TransactionalReturn.COMMIT_UNSUCCESSFUL ||
+                  commitStatus == 0) {
+                     commitStatus = cresponse.getResult();
+
+                     if(cresponse.getHasException()) {
+                       if(cresponse.getException().contains("encountered unknown transactionID")) {
+                         retry = false;
+                         commitStatus = TransactionalReturn.COMMIT_OK_READ_ONLY;
+                       }
+                       else {
+                         if (LOG.isTraceEnabled()) LOG.trace("doPrepareX coprocessor exception: " +
+                            cresponse.getException());
+                         throw new Exception(cresponse.getException());
+                       }
+                     }
+                 }
+               }
+
+                 if(commitStatus == TransactionalReturn.COMMIT_OK ||
+                    commitStatus == TransactionalReturn.COMMIT_OK_READ_ONLY ||
+                    commitStatus == TransactionalReturn.COMMIT_RESEND) {
+                   commitStatus = TransactionalReturn.COMMIT_OK;
+                 }
+               retry = false;
              }
           }
           catch(UnknownTransactionException ute) {
@@ -641,8 +720,6 @@ public class TransactionManager {
 
              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-             String          lv_node = lv_hrl.getHostname();
-             int             lv_length = lv_node.indexOf('.');
 
              if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -742,8 +819,6 @@ public class TransactionManager {
 
              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-             String          lv_node = lv_hrl.getHostname();
-             int             lv_length = lv_node.indexOf('.');
 
              if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -789,6 +864,7 @@ public class TransactionManager {
        switch (commitStatus) {
           case TransactionalReturn.COMMIT_OK:
             break;
+          case TransactionalReturn.COMMIT_RESEND:
           case TransactionalReturn.COMMIT_OK_READ_ONLY:
             transactionState.addRegionToIgnore(location); // No need to doCommit for read-onlys
             readOnly = true;
@@ -870,39 +946,45 @@ public class TransactionManager {
                   throw new Exception(msg);
               }
 
-              if(result.size() != 1) {
-                     LOG.error("doAbortX, received incorrect result size: " + result.size());
+              if(result.size() == 0) {
+                     LOG.error("doAbortX, received 0 region results.");
                      refresh = true;
                      retry = true;
-                  }
-                  else {
-                     for (AbortTransactionResponse cresponse : result.values()) {
-                if(cresponse.getHasException()) {
-                  String exceptionString = cresponse.getException().toString();
-                  LOG.error("Abort HasException true: " + exceptionString);
-                  if(exceptionString.contains("UnknownTransactionException")) {
-                         throw new UnknownTransactionException();
-                  }
-                  throw new Exception(cresponse.getException());
-                }
               }
-              retry = false;
-          }
+              else {
+                 for (AbortTransactionResponse cresponse : result.values()) {
+                   if(cresponse.getHasException()) {
+                     String exceptionString = cresponse.getException().toString();
+                     LOG.error("Abort HasException true: " + exceptionString);
+                     if(exceptionString.contains("UnknownTransactionException")) {
+                       throw new UnknownTransactionException();
+                     }
+                     throw new Exception(cresponse.getException());
+                   }
+                 }
+                 retry = false;
               }
+           }
           catch (UnknownTransactionException ute) {
                  LOG.debug("UnknownTransactionException in doAbortX for transaction: " + transactionId + "(ignoring): " + ute);
           }
           catch (Exception e) {
-                LOG.error("doAbortX retrying due to Exception: " + e );
-                refresh = true;
-                retry = true;
+                if(e.toString().contains("Asked to commit a non-pending transaction")) {
+                  LOG.error("doCommitX will not retry: " + e);
+                  refresh = false;
+                  retry = false;
+                }
+                else {
+                    LOG.error("doAbortX retrying due to Exception: " + e );
+                    refresh = true;
+                    retry = true;
+                }
+
               }
               if (refresh) {
 
                  HRegionLocation lv_hrl = table.getRegionLocation(startKey);
                  HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-                 String          lv_node = lv_hrl.getHostname();
-                 int             lv_length = lv_node.indexOf('.');
 
                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -998,8 +1080,6 @@ public class TransactionManager {
 
                  HRegionLocation lv_hrl = table.getRegionLocation(startKey);
                  HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-                 String          lv_node = lv_hrl.getHostname();
-                 int             lv_length = lv_node.indexOf('.');
 
                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -1098,8 +1178,6 @@ public class TransactionManager {
 
            HRegionLocation lv_hrl = table.getRegionLocation(startKey);
            HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-           String          lv_node = lv_hrl.getHostname();
-           int             lv_length = lv_node.indexOf('.');
 
            if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                    + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -1179,8 +1257,6 @@ public class TransactionManager {
        if (refresh) {
          HRegionLocation lv_hrl = table.getRegionLocation(startKey);
          HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-         String          lv_node = lv_hrl.getHostname();
-         int             lv_length = lv_node.indexOf('.');
 
          if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                   + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);
@@ -1309,8 +1385,6 @@ public class TransactionManager {
          if (refresh) {
             HRegionLocation lv_hrl = table.getRegionLocation(startKey);
             HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-            String          lv_node = lv_hrl.getHostname();
-            int             lv_length = lv_node.indexOf('.');
 
             if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location being refreshed : " + location.getRegionInfo().getRegionNameAsString() + "endKey: "
                      + Hex.encodeHexString(location.getRegionInfo().getEndKey()) + " for transaction: " + transactionId);

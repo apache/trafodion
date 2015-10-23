@@ -838,6 +838,8 @@ public:
   void setIsCachedParam(NABoolean isCachedParam = TRUE)  
   { isCachedParam_ = isCachedParam; }
 
+  NABoolean isSystemGeneratedOutputHV() const;
+
   NAString& getPrototypeValue() 	   { return prototypeValue_; }
   const NAString& getPrototypeValue() const { return prototypeValue_; } // LCOV_EXCL_LINE
   NABoolean hasPrototypeValue() const	   { return !prototypeValue_.isNull(); }

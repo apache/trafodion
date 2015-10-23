@@ -1756,72 +1756,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
             keyColVal->synthTypeAndValueId();
 
-            ValueIdList exprs;
-            exprs.insert(keyColVal->getValueId());
+            keyColVal = keyColVal->evaluate(heap);
 
-            char staticDecodeBuf[200];
-            Lng32 staticDecodeBufLen = 200;
-
-            char* decodeBuf = staticDecodeBuf;
-            Lng32 decodeBufLen = staticDecodeBufLen;
-
-            // For character types, multiplying by 8 to deal with conversions between
-            // any two known character sets supported.  
-            Lng32 factor = (DFS2REC::isAnyCharacter(pkType->getFSDatatype())) ? 8 : 1;
-
-            if ( staticDecodeBufLen < decodedValueLen * factor) {
-              decodeBufLen = decodedValueLen * factor;
-              decodeBuf = new (STMTHEAP) char[decodeBufLen];
-            }
-
-            Lng32 resultLength = 0;
-            Lng32 resultOffset = 0;
-
-            // Produce the decoded key. Refer to 
-            // ex_function_encode::decodeKeyValue() for the 
-            // implementation of the decoding logic.
-            ex_expr::exp_return_type rc = exprs.evalAtCompileTime
-              (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, decodeBuf, decodeBufLen,
-               &resultLength, &resultOffset, CmpCommon::diags()
-               );
-
-
-            if ( rc == ex_expr::EXPR_OK ) {
-              CMPASSERT(resultOffset == pkType->getPrefixSizeWithAlignment());
-              // expect the decodeBuf to have this layout
-              // | null ind. | varchar length ind. | alignment | result |
-              // |<---getPrefixSizeWithAlignment-------------->|
-              // |<----getPrefixSize-------------->|
-
-              // The method getPrefixSizeWithAlignment(), the diagram above,
-              // and this code block assumes that varchar length ind. is
-              // 2 bytes if present. If it is 4 bytes we should fail the 
-              // previous assert
-
-              // Next we get rid of alignment bytes by prepending the prefix
-              // (null ind. + varlen ind.) to the result. ConstValue constr.
-              // will process prefix + result. The assert above ensures that 
-              // there are no alignment fillers at the beginning of the 
-              // buffer. Given the previous assumption about size
-              // of varchar length indicator, alignment bytes will be used by
-              // expression evaluator only if column is of nullable type.
-              // For a description of how alignment is computed, please see
-              // ExpTupleDesc::sqlarkExplodedOffsets() in exp/exp_tuple_desc.cpp
-
-              if (pkType->getSQLnullHdrSize() > 0)
-                memmove(&decodeBuf[resultOffset - pkType->getPrefixSize()], 
-                                  decodeBuf, pkType->getPrefixSize());
-              keyColVal =
-                new (heap) 
-                ConstValue(pkType,
-                           (void *) &(decodeBuf[resultOffset - 
-                                                pkType->getPrefixSize()]),
-                           resultLength+pkType->getPrefixSize(),
-                           NULL,
-                           heap);
-            }
-
-            if ( rc != ex_expr::EXPR_OK ) 
+            if ( !keyColVal ) 
               return NULL;
           }
 

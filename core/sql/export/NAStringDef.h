@@ -515,6 +515,8 @@ friend class NASubString;
   
 };
 
+typedef NAString* NAStringPtr;
+
 SQLEXPORT_LIB_FUNC NAString toLower(const NAString&);   // Return lower-case version of argument.
 
 

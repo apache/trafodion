@@ -59,6 +59,9 @@
 //////////////////////////////
 #include "Analyzer.h"
 //////////////////////////////
+//
+#include "NATable.h"
+#include "EncodedKeyValue.h"
 
 #include "SqlParserGlobals.h"		// must be last #include
 
@@ -639,7 +642,7 @@ void ValueId::getSubExprRootedByVidUnion(ValueIdSet & vs)
 // expression with the given expression.
 // used in Insert::bindNode() to move constraints from the target table
 // to the source table.
-// -----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 void ValueId::replaceBaseColWithExpr(const NAString& colName,
 				     const ValueId & vid)
 {
@@ -6395,5 +6398,118 @@ Lng32 ValueIdList::findPrefixLength(const ValueIdSet& x) const
          break;
     }
   return ct;
+}
+
+// -----------------------------------------------------------------------
+// replace any ColReference (of the given column name) in of this value
+// expression with the given expression.
+// used in ValueId::computeEncodedKey() to assign key values into the
+// salt/DivisionByto expression.
+// ----------------------------------------------------------------------
+void ValueId::replaceColReferenceWithExpr(const NAString& colName,
+                                          const ValueId & vid)
+{
+  ItemExpr* thisItemExpr = getItemExpr();
+  for( Lng32 i = 0; i < thisItemExpr->getArity(); i++ )
+  {
+    ValueId childValueId = thisItemExpr->child(i).getValueId();
+    ItemExpr* childItemExpr = childValueId.getItemExpr();
+
+    if( childItemExpr->getOperatorType() == ITM_REFERENCE)
+    {
+      if( ((ColReference*)childItemExpr)->getColRefNameObj().getColName() == colName )
+        thisItemExpr->setChild( i, vid.getItemExpr() );
+    }
+    childValueId.replaceColReferenceWithExpr( colName, vid );
+  }
+}
+
+
+char*
+ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey, 
+                               char*& encodedKeyBuffer, Int32& keyBufLen) const
+{
+   const NATable*  naTable = tDesc->getNATable();
+
+
+   CollIndex count = entries();
+   NAString** inputStrings = new (STMTHEAP) NAStringPtr[count];
+
+   for (Int32 j=0; j<count; j++ ) 
+       inputStrings[j] = NULL;
+
+   for (Int32 j=0; j<count; j++ ) {
+
+      ValueId vid = (*this)[j];
+      ItemExpr* ie = vid.getItemExpr();
+
+      if ( ie->getOperatorType() != ITM_CONSTANT ) {
+          
+          ConstValue* value = NULL;
+          if ( ie->doesExprEvaluateToConstant(TRUE, TRUE) ) {
+             value = ie->evaluate(STMTHEAP);
+             if ( !value )
+                return NULL;
+          } else
+             return NULL;
+
+          inputStrings[j] = new (STMTHEAP) NAString(value->getConstStr(FALSE));
+      } else  {
+         // no need to prefix with charset prefix.
+         inputStrings[j] = new (STMTHEAP) NAString(((ConstValue*) ie)->getConstStr(FALSE));
+
+         if ( *inputStrings[j] == "<min>" ||  *inputStrings[j] == "<max>" )
+            inputStrings[j] = NULL;
+      }
+   }
+
+   const NAFileSet * naf = naTable->getClusteringIndex();
+   const desc_struct * tableDesc = naTable->getTableDesc();
+   desc_struct * colDescs = tableDesc->body.table_desc.columns_desc;
+   desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
+
+   // cast away const since the method may compute and store the length
+   keyBufLen = ((NAFileSet*)naf)->getEncodedKeyLength(); 
+
+   if ( naTable->isHbaseCellTable() || naTable->isHbaseRowTable() ) { 
+      // the encoded key for Native Hbase table is a null-terminated string ('<key>')
+      NAString key;
+      key.append("(");
+
+      size_t idx = inputStrings[0]->index("_ISO88591");
+      if ( idx == 0 )
+         key.append(inputStrings[0]->remove(0, 9));
+      else
+         key.append(*inputStrings[0]);
+
+      key.append(")");
+
+      keyBufLen = inputStrings[0]->length() + 5; // extra 4 bytes for (,', ', ), and one byte for null. 
+
+      if (!encodedKeyBuffer )
+         encodedKeyBuffer = new (STMTHEAP) char[keyBufLen];
+
+      memcpy(encodedKeyBuffer, key.data(), key.length());
+      encodedKeyBuffer[key.length()] = NULL;
+
+      return encodedKeyBuffer;
+
+   } else {
+      keyBufLen = ((NAFileSet*)naf)->getEncodedKeyLength(); 
+
+      if (!encodedKeyBuffer )
+         encodedKeyBuffer = new (STMTHEAP) char[keyBufLen];
+
+      short ok = encodeKeyValues(colDescs, keyDescs,
+                      inputStrings,    // INPUT
+                      FALSE,           // not isIndex
+                      isMaxKey,        
+                      encodedKeyBuffer,// OUTPUT
+                      STMTHEAP, CmpCommon::diags());
+
+      NADELETEARRAY(inputStrings, count, NAStringPtr, STMTHEAP);
+
+      return ( ok == 0 ) ? encodedKeyBuffer : NULL;
+   }
 }
 

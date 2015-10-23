@@ -9515,7 +9515,8 @@ FileScan::FileScan(const CorrName& tableName,
      estRowsAccessed_ (0),
      mdamFlag_(UNDECIDED),
      skipRowsToPreventHalloween_(FALSE),
-     doUseSearchKey_(TRUE)
+     doUseSearchKey_(TRUE),
+     computedNumOfActivePartitions_(-1)
 {
   // Set the filescan properties:
 
@@ -9552,6 +9553,17 @@ FileScan::FileScan(const CorrName& tableName,
                                      dummySet, // needed by interface but not used here
                                      indexDesc_
                                    );
+
+   
+      if ( indexDesc_->getPartitioningFunction() &&
+           indexDesc_->getPartitioningFunction()->castToRangePartitioningFunction() ) 
+      {
+         const RangePartitioningFunction* rangePartFunc =
+              indexDesc_->getPartitioningFunction()->castToRangePartitioningFunction();
+
+         computedNumOfActivePartitions_ = 
+             rangePartFunc->computeNumOfActivePartitions(partKeys_, tableDescPtr);
+      }
     }
   setComputedPredicates(generatedCCPreds);
 
