@@ -33,7 +33,7 @@
 export TRAFODION_VER_PROD="Apache Trafodion"
 # Trafodion version (also update file ../sql/common/copyright.h)
 export TRAFODION_VER_MAJOR=1
-export TRAFODION_VER_MINOR=2
+export TRAFODION_VER_MINOR=3
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
@@ -469,24 +469,24 @@ else
 
   cat <<EOF
 
-    If you have Apache Hadoop and HBase installed, without a distro,
-    please do the following to ensure Trafodion can find the installation
+    If you are ready to build Trafodion, perform one of the following options:
 
-    Method 1: Ensure that hadoop-site.xml, hbase-site.xml and hive-site.xml
-              are in the CLASSPATH.
+      make all         (Build Trafodion, DCS, and REST) OR
+      make package     (Build Trafodion, DCS, REST, and Client drivers)  OR
+      make package-all (Build Trafodion, DCS, REST, Client drivers, and Tests)
 
-    Method 2: Set the following environment variables:
-              - HADOOP_PREFIX for Hadoop (example: /opt/hadoop-1.2.3)
-              - HBASE_HOME for HBase (example: /opt/hbase-1.2.3)
-              - HIVE_HOME for Hive (example: /opt/hive-1.2.3)
+    If Trafodion has been built and you want test: 
 
-    See http://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/ClusterSetup.html
+       Execute the install_local_hadoop script which performs a single node
+       install using a popular Hadoop distribution 
 
-    Yet another option is to use the install_local_hadoop script on a
-    single node for evaluation or development.
+          cd $MY_SQROOT/sql/scripts
+          install_local_hadoop [-p <port option]
+          source ./install_traf_components 
+          configure Trafodion and start the processes
+          HAVE FUN!
 
-    If you just checked out or copied a Trafodion source tree and want to build,
-    then you can ignore the above and continue with your build.
+   You can also choose to install_local_hadoop before building Trafodion
 
 EOF
   }
