@@ -470,7 +470,7 @@ fi
 #DCS Servers
 
 DCS_SERVERS_PARM=$(($node_count * 8))
-echo -n "Total number of concurrent sessions to start, default [$DCS_SERVERS_PARM]: "
+echo -n "Total number of client connections per node, default [$DCS_SERVERS_PARM]: "
 read answer
 
 if [ ! -z $answer ]; then

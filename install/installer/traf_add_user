@@ -27,7 +27,6 @@
 #=========================================
 # Default values
 typeset TRAF_GROUP="trafodion"
-typeset QPIDPORT="65500"
 
 export PDSH="pdsh -R exec"
 export PDSH_SSH_CMD="ssh -q -n %h"
@@ -165,9 +164,6 @@ fi
     sudo su $TRAF_USER --command "echo \"NoHostAuthenticationForLocalhost=yes\" >> $TRAF_USER_DIR/.ssh/config"
     sudo chmod 600 $TRAF_USER_DIR/.ssh/config
 #fi
-
-echo "***INFO: creating .qpidports file"
-sudo su $TRAF_USER --command="echo $QPIDPORT > $TRAF_USER_DIR/.qpidports"
 
 # Create .bashrc for this user
 echo "***INFO: creating .bashrc file"
