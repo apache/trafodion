@@ -158,6 +158,11 @@ public final class DcsServer implements Runnable {
             
             netConf = new DcsNetworkConfiguration(conf);
             serverName = netConf.getHostName();
+	    if (serverName == null) {
+	       LOG.error("DNS Interface [" + conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE)
+				+ "] configured in dcs.site.xml is not found!");
+	       System.exit(1);
+	    }
             
             // Start the info server.
             String bindAddr = conf.get(Constants.DCS_SERVER_INFO_BIND_ADDRESS, Constants.DEFAULT_DCS_SERVER_INFO_BIND_ADDRESS);
