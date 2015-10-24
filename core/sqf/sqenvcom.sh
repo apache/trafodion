@@ -482,7 +482,7 @@ else
 
           cd $MY_SQROOT/sql/scripts
           install_local_hadoop [-p <port option>]
-          source ./install_traf_components 
+          install_traf_components 
           configure Trafodion and start the processes
           HAVE FUN!
 

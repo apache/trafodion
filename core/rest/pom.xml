@@ -416,7 +416,7 @@
     <build.helper.maven.plugin.version>1.5</build.helper.maven.plugin.version>
 
     <!-- also must update this when we bump version -->
-    <package.version>1.2.0</package.version>
+    <package.version>1.3.0</package.version>
   	<final.name>${project.artifactId}-${project.version}</final.name>
   	
   	<!-- Test inclusion patterns used by failsafe configuration -->

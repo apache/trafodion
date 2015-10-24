@@ -66,6 +66,9 @@ function Usage {
 # function: downloadSource - downloads and un-tars the requested file
 #    $1 - tar file to download 
 #    $2 - directory where source is untarred
+#
+# Suggestion:  instead use a single argument $1 and figure out the name of the
+#              file to extract with basename $1
 # -----------------------------------------------------------------------------
 function downloadSource
 {
@@ -395,7 +398,7 @@ echo " *********************************************************** " | tee -a $L
 # -----------------------------------------------------------------------------
 # install maven, if version 3 or greater not available already
 #MAVEN_VERSION=`mvn --version 2>/dev/null | grep 'Apache Maven' | cut -f 3 -d ' '`
-#if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
+if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
   cd $BASEDIR
   echo
   echo "INFO: Installing Maven on $(date)" | tee -a $LOGFILE
@@ -410,7 +413,7 @@ echo " *********************************************************** " | tee -a $L
   fi
     echo "INFO: Maven installation complete" | tee -a $LOGFILE
   echo " *********************************************************** " | tee -a $LOGFILE
-#fi
+fi
 
 echo
 echo "INFO: Completed tools build on $(date)" | tee -a $LOGFILE
