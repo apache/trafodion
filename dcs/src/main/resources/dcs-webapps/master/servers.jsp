@@ -194,5 +194,22 @@ entries
     <%
     }  
     %>
+<br>
+<h2> List all configurations</h2>
+<table>
+<tr><th>Properties Name</th><th>Value</th></tr>
+<%
+TreeMap<String, String> sm = new TreeMap<String, String>();
+for(Map.Entry<String, String> obj: conf){
+	sm.put(obj.getKey(), obj.getValue());
+}
+
+for(Map.Entry<String, String> entry: sm.entrySet()){
+%>
+	<tr><td><%=entry.getKey()%></td> <td> <%=entry.getValue()%></td></tr>	
+<%
+}
+%>
+</table>
 </body>
 </html>        
