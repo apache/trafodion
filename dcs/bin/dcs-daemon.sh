@@ -174,8 +174,8 @@ case $startStop in
     dcs_rotate_log $loggc
     echo starting $command, logging to $logout
     # Add to the command log file vital stats on our environment.
-    echo "`date` Starting $command on `hostname`" >> $loglog
-    echo "`ulimit -a`" >> $loglog 2>&1
+    # echo "`date` Starting $command on `hostname`" >> $loglog
+    # echo "`ulimit -a`" >> $loglog 2>&1
     nohup nice -n $DCS_NICENESS "$DCS_HOME"/bin/dcs \
         --config "${DCS_CONF_DIR}" \
         $command "$@" $startStop > "$logout" 2>&1 < /dev/null &
@@ -188,7 +188,7 @@ case $startStop in
       # kill -0 == see if the PID exists 
       if kill -0 `cat $pid` > /dev/null 2>&1; then
         echo -n stopping $command
-        echo "`date` Terminating $command" >> $loglog
+        # echo "`date` Terminating $command" >> $loglog
         kill `cat $pid` > /dev/null 2>&1
         while kill -0 `cat $pid` > /dev/null 2>&1; do
           echo -n "."

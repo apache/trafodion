@@ -224,7 +224,7 @@ bool validateCharsAndCopy(char *outBuf, int outBufLen,
 //
 // log_ts        timestamp(6),
 // severity      char(10 bytes) character set utf8,
-// component     char(24 bytes) character set utf8,
+// component     varchar(50 bytes) character set utf8,
 // node_number   integer,
 // cpu           integer,
 // pin           integer,
@@ -379,7 +379,7 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
                            true,
                            6)));
   outTable.addCharColumn   ("SEVERITY",    10, true);
-  outTable.addCharColumn   ("COMPONENT",   24, true);
+  outTable.addVarCharColumn("COMPONENT",   50, true);
   outTable.addIntColumn    ("NODE_NUMBER",     true);
   outTable.addIntColumn    ("CPU",             true);
   outTable.addIntColumn    ("PIN",             true);
@@ -474,533 +474,556 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
   char *ok = NULL;                        // status of fgets
   int haveRowToEmit = 0;
   int appendPos = 0;
+  int numLogLocations = 2 ;
 
-  char* sqroot = getenv("MY_SQROOT");
-  if (strlen(sqroot) > 1000)
-    throw UDRException(38001, "SQROOT is longer than 1000 characters");
-
-  std::string logDirName(sqroot);
-  std::string confFileName(sqroot);
-  std::string logFileName;
-  std::string eventLogFileName(sqroot);
-
-  logDirName += "/logs";
-  confFileName += "/conf/log4cxx.trafodion.config";
-
-  if (doTrace)
+  for(int logLocationIndex = 0; logLocationIndex < numLogLocations; logLocationIndex++) 
+  {
+    char* logrootdir = NULL;
+    switch (logLocationIndex) 
+    {
+    case 0: // sqroot, for all logs other than dcs
+      logrootdir = getenv("MY_SQROOT");
+      if (strlen(logrootdir) > 1000)
+	throw UDRException(38001, "SQROOT is longer than 1000 characters");
+      break ;
+    case 1:
+      logrootdir = getenv("DCS_INSTALL_DIR");
+      if (!logrootdir)
+	throw UDRException(38001, "DCS_INSTALL_DIR not set");
+      else if (strlen(logrootdir) > 1000)
+	throw UDRException(38001, "DCS_INSTALL_DIR is longer than 1000 characters");
+      break ;
+    default:
+      throw UDRException(38001, "Internal error in determining logroot directory");
+    }
+      
+    std::string logDirName(logrootdir);
+    std::string confFileName(logrootdir);
+    std::string logFileName;
+    std::string eventLogFileName(logrootdir);
+    
+    logDirName += "/logs";
+    confFileName += "/conf/log4cxx.trafodion.config";  // conf file logic not coded for dcs yet
+    
+    if (doTrace)
     {
       printf("(%d) EVENT_LOG_READER open log dir %s\n", pid, logDirName.data());
       fflush(stdout);
     }
-
-  errno = 0;
-  if (logDir_ != NULL)
+    
+    errno = 0;
+    if (logDir_ != NULL)
     {
       // this may happen if we exited a previous call with an exception
       closedir(logDir_);
       logDir_ = NULL;
     }
-
-  logDir_ = opendir(logDirName.data());
-  if (logDir_ == NULL)
-    throw UDRException(
-         38002,
-         "Error %d on opening directory %s",
-         (int) errno, logDirName.data());
-
-  cFile = fopen(confFileName.data(), "r");
-  if (cFile)
+    
+    logDir_ = opendir(logDirName.data());
+    if (logDir_ == NULL)
+      throw UDRException(
+			 38002,
+			 "Error %d on opening directory %s",
+			 (int) errno, logDirName.data());
+    
+    cFile = fopen(confFileName.data(), "r");
+    if (cFile)
     {
       char * name ;
       if (doTrace)
-        {
-          printf("(%d) EVENT_LOG_READER Conf file fopen\n", pid);
-          fflush(stdout);
-        }
+      {
+	printf("(%d) EVENT_LOG_READER Conf file fopen\n", pid);
+	fflush(stdout);
+      }
       while ((ok = fgets(cFileInputLine, sizeof(cFileInputLine), 
                          cFile)) != NULL)
-        {
-          if (name = strstr(cFileInputLine, 
-                            "log4j.appender.mxoAppender.fileName="))
-            {
-              name = name + strlen("log4j.appender.mxoAppender.fileName=");
-              if (strstr(name, "${trafodion.log.dir}/"))
-                {
-                  name = name + strlen("${trafodion.log.dir}/");
-                  name[strlen(name) - 1] = '_' ;
-                  eventLogFileName.assign(name);
-                }
-              else
-                {
-                  // log file directory different from expected.
-                  // currently not supported.
-                }
-                break ;
-            }
-          else
-            memset((char *)cFileInputLine, 0, sizeof(cFileInputLine));
+      {
+	if (name = strstr(cFileInputLine, 
+			  "log4j.appender.mxoAppender.fileName="))
+	{
+	  name = name + strlen("log4j.appender.mxoAppender.fileName=");
+	  if (strstr(name, "${trafodion.log.dir}/"))
+	  {
+	    name = name + strlen("${trafodion.log.dir}/");
+	    name[strlen(name) - 1] = '_' ;
+	    eventLogFileName.assign(name);
+	  }
+	  else
+	  {
+	    // log file directory different from expected.
+	    // currently not supported.
+	  }
+	  break ;
+	}
+	else
+	  memset((char *)cFileInputLine, 0, sizeof(cFileInputLine));
         }
       fclose(cFile);
       cFile = NULL;
     }
 
-  if (addFileColumns)
-    // log_file_node is the same for every row generated by this process
-    info.out().setInt(LOG_FILE_NODE_COLNUM, info.getMyInstanceNum());
+    if (addFileColumns)
+      // log_file_node is the same for every row generated by this process
+      info.out().setInt(LOG_FILE_NODE_COLNUM, info.getMyInstanceNum());
 
-  // ---------------------------------------------------------------------------
-  // Loop over the files in the log directory
-  // ---------------------------------------------------------------------------
-  while (1)
-  {
-    // read the next file in the log directory
-
-    errno = 0;
-    struct dirent *dirEntry = readdir(logDir_);
-
-    if (errno != 0)
-      throw UDRException(
-           38003,
-           "Error %d on reading from directory %s",
-           (int) errno, logDirName.data());
-
-    // last file seen, we are done
-    if (dirEntry == NULL)
-      break;
-
-    if (doTrace)
+    // ---------------------------------------------------------------------------
+    // Loop over the files in the log directory
+    // ---------------------------------------------------------------------------
+    while (1)
+    {
+      // read the next file in the log directory
+      
+      errno = 0;
+      struct dirent *dirEntry = readdir(logDir_);
+      
+      if (errno != 0)
+	throw UDRException(
+			   38003,
+			   "Error %d on reading from directory %s",
+			   (int) errno, logDirName.data());
+      
+      // last file seen, we are done
+      if (dirEntry == NULL)
+	break;
+      
+      if (doTrace)
       {
-        printf("(%d) EVENT_LOG_READER examining log file %s\n", pid, dirEntry->d_name);
-        fflush(stdout);
+	printf("(%d) EVENT_LOG_READER examining log file %s\n", pid, dirEntry->d_name);
+	fflush(stdout);
       }
 
-    const char *fileName = dirEntry->d_name;
-    size_t nameLen = strlen(fileName);
-    const char *suffix =  NULL;
-    const char *expectedSuffix = ".log";
-    size_t expectedSuffixLen = strlen(expectedSuffix);
+      const char *fileName = dirEntry->d_name;
+      size_t nameLen = strlen(fileName);
+      const char *suffix =  NULL;
+      const char *expectedSuffixPart = ".log";
+      size_t expectedSuffixLenMax = strlen(expectedSuffixPart);
+      if (logLocationIndex == 0)
+	expectedSuffixLenMax += 2 ; // for "*log.1" rollover files
+      else if (logLocationIndex == 1)
+	expectedSuffixLenMax += 11 ; // for "*.log.yyyy-mm-dd" rollover files
+      
+      
+      if (nameLen > expectedSuffixLenMax)
+      suffix = &fileName[nameLen-expectedSuffixLenMax];
 
-    if (nameLen > expectedSuffixLen)
-      suffix = &fileName[nameLen-expectedSuffixLen];
-
-    // parse the file name to see whether this is a file we want to look at, 
-    // allow some fixed string values as well as any name configured in 
-    // the config file 
-    if (suffix && strcmp(suffix, expectedSuffix) == 0 &&
-        (strstr(fileName, "mxosrvr_")              == fileName ||
-         strstr(fileName, "tmf")                   == fileName ||
-         strstr(fileName, "master_exec_")          == fileName ||
-         strstr(fileName, eventLogFileName.data()) == fileName ||
-         strstr(fileName, "tm.log")                == fileName ||
-	 strstr(fileName, "mxlobsrvr")             == fileName ||
-	 strstr(fileName, "sscp")                  == fileName ||
-	 strstr(fileName, "ssmp")                  == fileName ||
-	 strstr(fileName, "mon")                   == fileName ||
-   	 strstr(fileName, "pstartd")               == fileName ||
-	 strstr(fileName, "wdg")                   == fileName || 
-	 strstr(fileName, "udr")                   == fileName) 
-       )
+      // parse the file name to see whether this is a file we want to look at, 
+      // allow some fixed string values as well as any name configured in 
+      // the config file 
+      if (suffix && strstr(suffix, expectedSuffixPart) != NULL &&
+	  (strstr(fileName, "master_exec_")          == fileName ||
+	   strstr(fileName, eventLogFileName.data()) == fileName ||
+	   strstr(fileName, "tm_")                   == fileName ||
+	   strstr(fileName, "mxlobsrvr_")            == fileName ||
+	   strstr(fileName, "sscp")                  == fileName ||
+	   strstr(fileName, "ssmp")                  == fileName ||
+	   strstr(fileName, "mon")                   == fileName ||
+	   strstr(fileName, "pstartd")               == fileName ||
+	   strstr(fileName, "wdg")                   == fileName || 
+	   strstr(fileName, "udr_")                  == fileName ||
+	   strstr(fileName, "dcs-")                  == fileName 
+	   ))
       {
         if (infile_ != NULL)
-          {
-            fclose(infile_);
-            infile_ = NULL;
-          }
-
+        {
+	  fclose(infile_);
+	  infile_ = NULL;
+	}
+	
         logFileName = logDirName + "/" + fileName;
-
+	
         // Open the input file
         infile_ = fopen(logFileName.data(), "r");
         if (infile_ == NULL)
           throw UDRException(
-               38001,
-               "Error %d returned when opening log file %s",
-               status, fileName);
-
+			     38001,
+			     "Error %d returned when opening log file %s",
+			     status, fileName);
+	
         if (doTrace)
-          {
-            printf("(%d) EVENT_LOG_READER fopen\n", pid);
-            fflush(stdout);
-          }
+        {
+	  printf("(%d) EVENT_LOG_READER fopen\n", pid);
+	  fflush(stdout);
+	}
 
         if (addFileColumns)
           info.out().setString(LOG_FILE_NAME_COLNUM, fileName);
-
+	
         lineNumber = 0;
         std::string messageTextField;
         std::string rowParseStatus;
-
+	
         // ---------------------------------------------------------------------
         // Loop over the lines of the file
         // ---------------------------------------------------------------------
         while ((ok = fgets(inputLine, sizeof(inputLine), infile_)) != NULL)
-          {
-            int year, month, day, hour, minute, second, fraction;
-            char fractionSeparator[2];
-            char *currField = inputLineValidated;
-            char *nextField = NULL;
-            int numChars = 0;
-            int numItems = 0;
-            int intFieldVal;
-            int lineLength = strlen(inputLine);
-            int lineLengthValidated = 0;
-            std::string lineParseError;
-
-            lineNumber++;
-
-            // skip any empty lines, should not really happen
-            if (lineLength < 2)
-              {
-                if (doTrace)
-                  {
-                    printf("(%d) EVENT_LOG_READER read short line %s\n", pid, inputLine);
-                    fflush(stdout);
-                  }
-
-                continue;
-              }
-
-            // remove a trailing LF character
-            if (inputLine[lineLength-1] == '\n')
-              {
-                lineLength--;
-                inputLine[lineLength] = 0;
-              }
-            else
-              {
-                // skip over any text in the same line that
-                // didn't get read
-                char extraChars[4000];
-                char *extraStatus;
-                do
-                  {
-                    extraStatus = fgets(extraChars, sizeof(extraChars), infile_);
-                  }
-                while (extraStatus != NULL && extraChars[strlen(extraChars)-1] != '\n');
-
-                setParseError(TruncationError, lineParseError);
-              }
-
-            if (! validateCharsAndCopy(inputLineValidated,
-                                       sizeof(inputLineValidated),
-                                       inputLine,
-                                       lineLength,
-                                       lineLengthValidated))
-              {
-                if (doTrace)
-                  {
-                    printf("(%d) EVENT_LOG_READER invalid UTF8 char line %d\n",
-                           pid, lineNumber);
-                    fflush(stdout);
-                  }
-                setParseError(CharConversionError, lineParseError);
-              }
-
-
-            // try to read the timestamp at the beginning of the line. Example:
-            // 2014-10-30 20:49:53,252
-            numItems = sscanf(currField,
-                              "%4d-%2d-%2d %2d:%2d:%2d %1[,.] %6d%n",
-                              &year, &month, &day, &hour, &minute,
-                              &second, fractionSeparator, &fraction, &numChars);
-
-            if (numItems == 8)
-              {
-                // We were able to read a timestamp field
-
-                // Emit previous row, we have seen the start of next row
-                if (haveRowToEmit)
-                  {
-                    // set final two columns, message text and parse error
-                    setCharOutputColumn(info,
-                                        MESSAGE_COLNUM,
-                                        messageTextField.data(),
-                                        rowParseStatus);
-                    if (addFileColumns)
-                      setCharOutputColumn(info,
-                                          PARSE_STATUS_COLNUM,
-                                          rowParseStatus.c_str(),
-                                          rowParseStatus);
-                    emitRow(info);
-                    if (doTrace)
-                      {
-                        printf("(%d) EVENT_LOG_READER emit\n", pid);
-                        fflush(stdout);
-                      }
-                  }
-
-                // we read a line that will produce an output row, initialize
-                // some fields for this output row
-                haveRowToEmit = 0;
-                appendPos = 0;
-                messageTextField.erase();
-                rowParseStatus = lineParseError;
-
-                // When we see a comma between time and fraction, we interpret
-                // that as a fraction that is specified in milliseconds. Convert
-                // to microseconds. When it's specified with a dot, we interpret
-                // the fraction as microseconds (SQL syntax).
-                if (*fractionSeparator == ',')
-                  fraction *= 1000;
-
-                char buf[100];
-                snprintf(buf, sizeof(buf),
-                         "%04d-%02d-%02d %02d:%02d:%02d.%06d",
-                         year, month, day, hour, minute, second, fraction);
-                setCharOutputColumn(info, LOG_TS_COLNUM, buf, rowParseStatus);
-              }
-            else
-              {
-                if (!haveRowToEmit)
-                  {
-                    // no valid timestamp and We did not have a previous line
-                    // with a timestamp
-                    if (numItems > 6)
-                      numItems = 6;
-                    
-                    if (doTrace)
-                      {
-                        printf("(%d) EVENT_LOG_READER Read only %d of 7 timestamp fields: %s\n",
-                               pid, numItems, currField);
-                        fflush(stdout);
-                      }
-                    
-                    // return a NULL value if we fail to parse the timestamp
-                    info.out().setNull(LOG_TS_COLNUM);
-                    rowParseStatus = lineParseError;
-                    setParseError(FieldParserError, rowParseStatus);
-                  }
-                else
-                  {
-                    // no valid timestamp and we have a row to emit
-                    // consider this line as a continuation of previous row
-                    // (add a blank instead of a line feed, though)
-                    messageTextField += " ";
-                    messageTextField += currField;
-
-                    // add any parse errors from this line
-                    for (std::string::iterator it = lineParseError.begin();
-                         it != lineParseError.end();
-                         it++)
-                      setParseError(*it, rowParseStatus);
-                  }
-              }
-
-            if (!haveRowToEmit) 
-              {
-                // skip over the information already read
-                currField = currField + numChars;
-                
-                // skip over the comma
-                currField = strstr(currField, ",");
-                if (currField)
-                  currField++;
-                else
-                  {
-                    // did not find a comma delimiter, this is a parse
-                    // error, produce NULL values for remaining columns
-                    // except the message
-                    if (numChars > 0)
-                      currField = inputLineValidated + (numChars-1);
-                    else
-                      currField = inputLineValidated;
-                    *currField = 0;
-                    messageTextField =
-                      (numChars < lineLengthValidated) ? currField+1 : currField;
-                    setParseError(FieldParserError, rowParseStatus);
-                  }
-              }
-
-            // read columns 2: SEVERITY - 9: QUERY_ID
-            for (columnNum = 2; (columnNum <= 9 && !haveRowToEmit); columnNum++)
-              {
-                // find the next comma, the end of our field value
-                char *endOfField = strstr(currField, ",");
-                char *startOfVal = NULL;
-
-                if (endOfField != NULL)
-                  {
-                    startOfVal = (endOfField != currField ? endOfField-1 : currField);
-
-                    // next field starts after the comma
-                    nextField = endOfField + 1;
-
-                    // back up before the trailing comma, if the value is not empty
-                    if (endOfField != currField)
-                      endOfField--;
-
-                    // remove trailing blanks
-                    while (*endOfField == ' ')
-                      endOfField--;
-
-                    // place a nul-terminator at the end of the field
-                    // (this overwrites the comma or a trailing blank)
-                    if (endOfField != currField)
-                      endOfField[1] = 0;
-                    else
-                      endOfField[0] = 0; // empty field
-
-                    // from the end, go back to the preceding ":" or ","
-                    // or until we reach the start of the current field
-                    // This way, we skip field names like "CPU:" in CPU: 3
-                    while (*startOfVal != ':' &&
-                           *startOfVal != ',' &&
-                           startOfVal != currField)
-                      startOfVal--;
-
-                    // skip the ":"
-                    if (startOfVal != currField)
-                      startOfVal++;
-
-                    // skip leading blanks
-                    while (*startOfVal == ' ')
-                      startOfVal++;
-                  } // found a comma delimiter
-                else
-                  {
-                    // Did not find a comma delimiter. This could be a
-                    // parse error or a missing optional column,
-                    // produce NULL values for remaining columns
-                    // except the message
-                    if (currField != inputLineValidated)
-                      // back up, since currField is now pointing
-                      // at the first character of the message text
-                      currField--;
-                    *currField = 0;
-                    startOfVal = currField;
-                    nextField = currField;
-                    // if there is any text left, point to it
-                    // (after currField, which points to a NUL byte)
-                    // otherwise set the message text field to an empty string
-                    if (messageTextField.empty())
-                      messageTextField =
-                        (currField-inputLineValidated < lineLengthValidated) ?
-                        currField+1 : currField;
-                    setParseError(FieldParserError, rowParseStatus);
-                  }
-
-                // now that we have the non-blank portion of the value,
-                // copy it into the output column
-                switch (columnNum)
-                  {
-                  case 2:
-                    setCharOutputColumn(info,
-                                        SEVERITY_COLNUM,
-                                        startOfVal,
-                                        rowParseStatus);
-                    break;
-
-                  case 3:
-                    setCharOutputColumn(info,
-                                        COMPONENT_COLNUM,
-                                        startOfVal,
-                                        rowParseStatus);
-                    break;
-
-                  case 4:
-                    setIntOutputColumn(info,
-                                       NODE_NUMBER_COLNUM,
-                                       startOfVal,
-                                       rowParseStatus);
-                    break;
-
-                  case 5:
-                    setIntOutputColumn(info,
-                                       CPU_COLNUM,
-                                       startOfVal,
-                                       rowParseStatus);
-                    break;
-
-                  case 6:
-                    setIntOutputColumn(info,
-                                       PIN_COLNUM,
-                                       startOfVal,
-                                       rowParseStatus);
-                    break;
-
-                  case 7:
-                    setCharOutputColumn(info,
-                                        PROCESS_NAME_COLNUM,
-                                        startOfVal,
-                                        rowParseStatus);
-                    break;
-
-                  case 8:
-                    setIntOutputColumn(info,
-                                       SQL_CODE_COLNUM,
-                                       startOfVal,
-                                       rowParseStatus);
-                    break;
-
-                  case 9:
-                    setCharOutputColumn(info,
-                                        QUERY_ID_COLNUM,
-                                        startOfVal,
-                                        rowParseStatus);
-                    // we read all required fields,
-                    // next field is the message text
-                    if (messageTextField.empty())
-                      messageTextField = nextField;
-                    break;
-                  }
-
-                currField = nextField;
-              } // loop over column numbers 2-9
-
+        {
+	  int year, month, day, hour, minute, second, fraction;
+	  char fractionSeparator[2];
+	  char *currField = inputLineValidated;
+	  char *nextField = NULL;
+	  int numChars = 0;
+	  int numItems = 0;
+	  int intFieldVal;
+	  int lineLength = strlen(inputLine);
+	  int lineLengthValidated = 0;
+	  std::string lineParseError;
+	  
+	  lineNumber++;
+	  
+	  // skip any empty lines, should not really happen
+	  if (lineLength < 2)
+	    {
+	      if (doTrace)
+	      {
+		printf("(%d) EVENT_LOG_READER read short line %s\n", pid, inputLine);
+		fflush(stdout);
+	      }
+	      
+	      continue;
+	    }
+	  
+	  // remove a trailing LF character
+	  if (inputLine[lineLength-1] == '\n')
+	  {
+	    lineLength--;
+	    inputLine[lineLength] = 0;
+	  }
+	  else
+	  {
+	    // skip over any text in the same line that
+	    // didn't get read
+	    char extraChars[4000];
+	    char *extraStatus;
+	    do
+	    {
+	      extraStatus = fgets(extraChars, sizeof(extraChars), infile_);
+	    }
+	    while (extraStatus != NULL && extraChars[strlen(extraChars)-1] != '\n');
+	    
+	    setParseError(TruncationError, lineParseError);
+	  }
+	  
+	  if (! validateCharsAndCopy(inputLineValidated,
+				     sizeof(inputLineValidated),
+				     inputLine,
+				     lineLength,
+				     lineLengthValidated))
+	  {
+	    if (doTrace)
+	    {
+	      printf("(%d) EVENT_LOG_READER invalid UTF8 char line %d\n",
+		     pid, lineNumber);
+	      fflush(stdout);
+	    }
+	    setParseError(CharConversionError, lineParseError);
+	  }
+	  
+	  
+	  // try to read the timestamp at the beginning of the line. Example:
+	  // 2014-10-30 20:49:53,252
+	  numItems = sscanf(currField,
+			    "%4d-%2d-%2d %2d:%2d:%2d %1[,.] %6d%n",
+			    &year, &month, &day, &hour, &minute,
+			    &second, fractionSeparator, &fraction, &numChars);
+	  
+	  if (numItems == 8)
+	  {
+	    // We were able to read a timestamp field
+	    
+	    // Emit previous row, we have seen the start of next row
+	    if (haveRowToEmit)
+	    {
+	      // set final two columns, message text and parse error
+	      setCharOutputColumn(info,
+				  MESSAGE_COLNUM,
+				  messageTextField.data(),
+				  rowParseStatus);
+	      if (addFileColumns)
+		setCharOutputColumn(info,
+				    PARSE_STATUS_COLNUM,
+				    rowParseStatus.c_str(),
+				    rowParseStatus);
+	      emitRow(info);
+	      if (doTrace)
+	       {
+		 printf("(%d) EVENT_LOG_READER emit\n", pid);
+		 fflush(stdout);
+	       }
+	    }
+	    
+	    // we read a line that will produce an output row, initialize
+	    // some fields for this output row
+	    haveRowToEmit = 0;
+	    appendPos = 0;
+	    messageTextField.erase();
+	    rowParseStatus = lineParseError;
+	    
+	    // When we see a comma between time and fraction, we interpret
+	    // that as a fraction that is specified in milliseconds. Convert
+	    // to microseconds. When it's specified with a dot, we interpret
+	    // the fraction as microseconds (SQL syntax).
+	    if (*fractionSeparator == ',')
+	      fraction *= 1000;
+	    
+	    char buf[100];
+	    snprintf(buf, sizeof(buf),
+		     "%04d-%02d-%02d %02d:%02d:%02d.%06d",
+		     year, month, day, hour, minute, second, fraction);
+	    setCharOutputColumn(info, LOG_TS_COLNUM, buf, rowParseStatus);
+	  }
+	  else
+	  {
+	    if (!haveRowToEmit)
+	    {
+	      // no valid timestamp and we did not have a previous line
+	      // with a timestamp
+	      if (numItems > 6)
+		numItems = 6;
+	      
+	      if (doTrace)
+	      {
+		printf("(%d) EVENT_LOG_READER Read only %d of 7 timestamp fields: %s\n",
+		       pid, numItems, currField);
+		fflush(stdout);
+	      }
+              
+	      // return a NULL value if we fail to parse the timestamp
+	      info.out().setNull(LOG_TS_COLNUM);
+	      rowParseStatus = lineParseError;
+	      setParseError(FieldParserError, rowParseStatus);
+	    }
+	    else
+	    {
+	      // no valid timestamp and we have a row to emit
+	      // consider this line as a continuation of previous row
+	      // (add a blank instead of a line feed, though)
+	      messageTextField += " ";
+	      messageTextField += currField;
+	      
+	      // add any parse errors from this line
+	      for (std::string::iterator it = lineParseError.begin();
+		   it != lineParseError.end();
+		   it++)
+		setParseError(*it, rowParseStatus);
+	    }
+	  }
+	  
+	  if (!haveRowToEmit) 
+	  {
+	    // skip over the information already read
+	    currField = currField + numChars;
+            
+	    // skip over the comma
+	    currField = strstr(currField, ",");
+	    if (currField)
+	      currField++;
+	    else
+	    {
+	      // did not find a comma delimiter, this is a parse
+	      // error, produce NULL values for remaining columns
+	      // except the message
+	      if (numChars > 0)
+		currField = inputLineValidated + (numChars-1);
+	      else
+		currField = inputLineValidated;
+	      *currField = 0;
+	      messageTextField =
+		(numChars < lineLengthValidated) ? currField+1 : currField;
+	      setParseError(FieldParserError, rowParseStatus);
+	    }
+	  }
+	  
+	  // read columns 2: SEVERITY - 9: QUERY_ID
+	  for (columnNum = 2; (columnNum <= 9 && !haveRowToEmit); columnNum++)
+	  {
+	    // find the next comma, the end of our field value
+	    char *endOfField = strstr(currField, ",");
+	    char *startOfVal = NULL;
+	    
+	    if (endOfField != NULL)
+	    {
+	      startOfVal = (endOfField != currField ? endOfField-1 : currField);
+	      
+	      // next field starts after the comma
+	      nextField = endOfField + 1;
+	      
+	      // back up before the trailing comma, if the value is not empty
+	      if (endOfField != currField)
+		endOfField--;
+	      
+	      // remove trailing blanks
+	      while (*endOfField == ' ')
+		endOfField--;
+	      
+	      // place a nul-terminator at the end of the field
+	      // (this overwrites the comma or a trailing blank)
+	      if (endOfField != currField)
+		endOfField[1] = 0;
+	      else
+		endOfField[0] = 0; // empty field
+	      
+	      // from the end, go back to the preceding ":" or ","
+	      // or until we reach the start of the current field
+	      // This way, we skip field names like "CPU:" in CPU: 3
+	      while (*startOfVal != ':' &&
+		     *startOfVal != ',' &&
+		     startOfVal != currField)
+		startOfVal--;
+	      
+	      // skip the ":"
+	      if (startOfVal != currField)
+		startOfVal++;
+	      
+	      // skip leading blanks
+	      while (*startOfVal == ' ')
+		startOfVal++;
+	    } // found a comma delimiter
+	    else
+	    {
+	      // Did not find a comma delimiter. This could be a
+	      // parse error or a missing optional column,
+	      // produce NULL values for remaining columns
+	      // except the message
+	      if (currField != inputLineValidated)
+		// back up, since currField is now pointing
+		// at the first character of the message text
+		currField--;
+	      *currField = 0;
+	      startOfVal = currField;
+	      nextField = currField;
+	      // if there is any text left, point to it
+	      // (after currField, which points to a NUL byte)
+	      // otherwise set the message text field to an empty string
+	      if (messageTextField.empty())
+		messageTextField =
+		  (currField-inputLineValidated < lineLengthValidated) ?
+		  currField+1 : currField;
+	      setParseError(FieldParserError, rowParseStatus);
+	    }
+	    
+	    // now that we have the non-blank portion of the value,
+	    // copy it into the output column
+	    switch (columnNum)
+	    {
+	    case 2:
+	      setCharOutputColumn(info,
+				  SEVERITY_COLNUM,
+				  startOfVal,
+				  rowParseStatus);
+	      break;
+	      
+	    case 3:
+	      setCharOutputColumn(info,
+				  COMPONENT_COLNUM,
+				  startOfVal,
+				  rowParseStatus);
+	      break;
+	      
+	    case 4:
+	      setIntOutputColumn(info,
+				 NODE_NUMBER_COLNUM,
+				 startOfVal,
+				 rowParseStatus);
+	      break;
+	      
+	    case 5:
+	      setIntOutputColumn(info,
+				 CPU_COLNUM,
+				 startOfVal,
+				 rowParseStatus);
+	      break;
+	      
+	    case 6:
+	      setIntOutputColumn(info,
+				 PIN_COLNUM,
+				 startOfVal,
+				 rowParseStatus);
+	      break;
+	      
+	    case 7:
+	      setCharOutputColumn(info,
+				  PROCESS_NAME_COLNUM,
+				  startOfVal,
+				  rowParseStatus);
+	      break;
+	      
+	    case 8:
+	      setIntOutputColumn(info,
+				 SQL_CODE_COLNUM,
+				 startOfVal,
+				 rowParseStatus);
+	      break;
+	      
+	    case 9:
+	      setCharOutputColumn(info,
+				  QUERY_ID_COLNUM,
+				  startOfVal,
+				  rowParseStatus);
+	      // we read all required fields,
+	      // next field is the message text
+	      if (messageTextField.empty())
+		messageTextField = nextField;
+	      break;
+	    }
+	    
+	    currField = nextField;
+	  } // loop over column numbers 2-9
+	  
             // do some final adjustments
-            if (!haveRowToEmit)
-              {
-                int numLeadingBlanks = messageTextField.find_first_not_of(' ');
-
-                if (numLeadingBlanks > 0 && numLeadingBlanks != std::string::npos)
-                  messageTextField.erase(0, numLeadingBlanks);
-
-                if (addFileColumns)
-                  info.out().setInt(LOG_FILE_LINE_COLNUM, lineNumber);
-              }
-
-            haveRowToEmit = 1;
-          } // loop over the lines of the file
-
+	  if (!haveRowToEmit)
+	  {
+	    int numLeadingBlanks = messageTextField.find_first_not_of(' ');
+	    
+	    if (numLeadingBlanks > 0 && numLeadingBlanks != std::string::npos)
+	      messageTextField.erase(0, numLeadingBlanks);
+	    
+	    if (addFileColumns)
+	      info.out().setInt(LOG_FILE_LINE_COLNUM, lineNumber);
+	  }
+	  
+	  haveRowToEmit = 1;
+	} // loop over the lines of the file
+	
         if (haveRowToEmit) 
-          {
-            // set final two columns, message text and parse error
-            setCharOutputColumn(info,
-                                MESSAGE_COLNUM,
-                                messageTextField.data(),
-                                rowParseStatus);
-            if (addFileColumns)
-              setCharOutputColumn(info,
-                                  PARSE_STATUS_COLNUM,
-                                  rowParseStatus.c_str(),
-                                  rowParseStatus);
-            // Emit a row
-            emitRow(info);
-            if (doTrace)
-              {
-                printf("(%d) EVENT_LOG_READER emit\n", pid);
-                fflush(stdout);
-              }
-            haveRowToEmit = 0;
+        {
+	  // set final two columns, message text and parse error
+	  setCharOutputColumn(info,
+			      MESSAGE_COLNUM,
+			      messageTextField.data(),
+			      rowParseStatus);
+	  if (addFileColumns)
+	    setCharOutputColumn(info,
+				PARSE_STATUS_COLNUM,
+				rowParseStatus.c_str(),
+				rowParseStatus);
+	  // Emit a row
+	  emitRow(info);
+	  if (doTrace)
+	  {
+	    printf("(%d) EVENT_LOG_READER emit\n", pid);
+	    fflush(stdout);
+	  }
+	  haveRowToEmit = 0;
             appendPos = 0;
-          }
+	}
         // Close the input file
         if (infile_)
-          {
-            fclose(infile_);
-            infile_ = NULL;
-          }
+        {
+	  fclose(infile_);
+	  infile_ = NULL;
+	}
         if (doTrace)
-          {
-            printf("(%d) EVENT_LOG_READER fclose\n", pid);
-            fflush(stdout);
-          }
-
+        {
+	  printf("(%d) EVENT_LOG_READER fclose\n", pid);
+	  fflush(stdout);
+	}
+	
       } // file name matched our pattern
-  } // while (1) - list files in the directory
-
-  closedir(logDir_);
-  logDir_ = NULL;
+    } // while (1) - list files in the directory
+    
+    closedir(logDir_);
+    logDir_ = NULL;
+  } // for numLogLocations
 }
 
 ReadCppEventsUDFInterface::~ReadCppEventsUDFInterface()

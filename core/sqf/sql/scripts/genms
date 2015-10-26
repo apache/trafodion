@@ -198,6 +198,9 @@ if [ ! -d $cacertsdir ]; then
 fi
 echo "CACERTS_DIR=$cacertsdir"
 
+dcsinstalldir=$DCS_INSTALL_DIR
+echo "DCS_INSTALL_DIR=$dcsinstalldir"
+
 echo ""
 echo ""
 echo "# Added by gensq.pl"
