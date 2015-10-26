@@ -43,6 +43,7 @@
 #   common services such as naming, configuration management, synchronization, 
 #   and group services.
 # Thrift: Communications and data serialization tool
+# Maven: Build tool that is only installed if compatible version does not exist
 #
 # Script can be modified to meet the needs of your environment
 # May need root or SUDO access to install tools in desired location
@@ -54,7 +55,6 @@ function Usage {
    echo
    echo " -d <downloaddir> - location of download directory"
    echo " -i <installdir>  - location of install directory"
-   echo " -v               - verbose mode"
    echo
    echo " -h - help"
    echo
@@ -62,9 +62,46 @@ function Usage {
    echo
 }
 
-  VERBOSE=0
-  TOOLSDIR=
-  BASEDIR=
+# -----------------------------------------------------------------------------
+# function: downloadSource - downloads and un-tars the requested file
+#    $1 - tar file to download 
+#    $2 - directory where source is untarred
+#
+# Suggestion:  instead use a single argument $1 and figure out the name of the
+#              file to extract with basename $1
+# -----------------------------------------------------------------------------
+function downloadSource
+{
+  # currently only tar files ending in "tar.gz" and "tgz" are recognized
+  TARSUFFIX="tar.gz"
+  if [[ ! $1 == *$"$TARSUFFIX" ]]; then
+    TARSUFFIX="tgz"
+  fi
+
+  if [ ! -e $BASEDIR/$2.$TARSUFFIX ]; then
+    wget $1  >>$LOGFILE 2>&1
+  else
+    echo "INFO:   tar file already downloaded, step skipped" | tee -a $LOGFIL
+  fi
+
+  if [ ! -e $BASEDIR/$2 ]; then
+    tar -xzf $BASEDIR/$2.$TARSUFFIX
+    echo "INFO:   downloaded tar file: $2.$TARSUFFIX " | tee -a $LOGFILE
+  else
+    echo "INFO:   source tree already exists" | tee -a $LOGFILE
+  fi
+}
+
+
+# main code
+
+TOOLSDIR=
+BASEDIR=
+LOGDIR=`pwd`
+LOGFILE=$LOGDIR/traf_tools_setup.log
+rm $LOGFILE 2>/dev/null
+echo
+echo "INFO: Starting tools build on $(date)" | tee -a $LOGFILE
 
     while getopts "d:i:hv" arg
       do
@@ -79,9 +116,6 @@ function Usage {
           i)
               TOOLSDIR=${OPTARG};
               ;;
-          v)
-             VERBOSE=1;
-             ;;
           *)
               Usage;
               exit 1;
@@ -121,7 +155,7 @@ if [ ! -d "$TOOLSDIR" ]; then
        echo
        exit 1
      else
-       echo "Created directory $TOOLSDIR"
+       echo "INFO: Created directory $TOOLSDIR" | tee -a $LOGFILE
      fi
   else
     echo
@@ -131,143 +165,259 @@ if [ ! -d "$TOOLSDIR" ]; then
   fi
 fi
 
-if [ $VERBOSE -eq 1 ]; then
-  echo "basedir is: $BASDIR";
-  echo "toolsdir is: $TOOLSDIR":
-fi
+echo "INFO: Tar download location: $BASEDIR" | tee -a $LOGFILE
+echo "INFO: Tool install directory location: $TOOLSDIR" | tee -a $LOGFILE
+echo "INFO: LogFile location: $LOGFILE" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
-#install mpi
+
+# -----------------------------------------------------------------------------
+# install mpi
 cd $BASEDIR
-wget http://www.mpich.org/static/downloads/3.0.4/mpich-3.0.4.tar.gz
-tar -xzf mpich-3.0.4.tar.gz
-cd mpich-3.0.4
-./configure --prefix=$TOOLSDIR/dest-mpich-3.0.4 --with-device=ch3:sock --disable-f77 --disable-fc
-make
-make check
-make install
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of MPI"
+echo
+echo "INFO: Installing MPI on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/dest-mpich-3.0.4/bin ]; then
+  echo "INFO: MPI is already installed, skipping to next tool" | tee -a $LOGFILE
+else	
+  downloadSource http://www.mpich.org/static/downloads/3.0.4/mpich-3.0.4.tar.gz mpich-3.0.4 
+  cd mpich-3.0.4
+  ./configure --prefix=$TOOLSDIR/dest-mpich-3.0.4 --with-device=ch3:sock --disable-f77 --disable-fc >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  make  >>$LOGFILE 2>&1
+  echo "INFO:   make completed" | tee -a $LOGFILE
+  make install  >>$LOGFILE 2>&1
+  if [ ! -d $TOOLSDIR/dest-mpich-3.0.4/bin ]; then
+    echo "ERROR:  failed to install MPI" | tee -a $LOGFILE
+    echo "  see details in $LOGFILE" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   make install complete, files placed in $TOOLSDIR"
 fi
+echo "INFO: MPI installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
-# See if need to install protobufs tested with version 2.3.0
-protoc --version
 
+# -----------------------------------------------------------------------------
 # install bison
 cd $BASEDIR
-wget http://ftp.gnu.org/gnu/bison/bison-3.0.tar.gz
-tar -xzf bison-3.0.tar.gz
-cd bison-3.0
-./configure --prefix=$TOOLSDIR/bison_3_linux
-make
-make check
-make install
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of BISON"
+echo
+echo "INFO: Installing Bison on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/bison_3_linux/bin ]; then
+  echo "INFO: Bison is already installed, skipping to next tool" | tee -a $LOGFILE
+else	
+  downloadSource http://ftp.gnu.org/gnu/bison/bison-3.0.tar.gz bison-3.0
+  cd bison-3.0
+  ./configure --prefix=$TOOLSDIR/bison_3_linux >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  make >>$LOGFILE 2>&1
+  echo "INFO:   make completed" | tee -a $LOGFILE
+  make install >>$LOGFILE 2>&1
+  if [ ! -d $TOOLSDIR/bison_3_linux/bin ]; then
+    echo "ERROR:  failed to install Bison" | tee -a $LOGFILE
+    echo "  see details in $LOGFILE" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   make install complete, files placed in $TOOLSDIR"
 fi
+echo "INFO: Bison installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
+
+# -----------------------------------------------------------------------------
 # install udis
 cd $BASEDIR
-wget http://sourceforge.net/projects/udis86/files/udis86/1.7/udis86-1.7.2.tar.gz
-tar -xzf udis86-1.7.2.tar.gz
-cd udis86-1.7.2
-./configure --prefix=$TOOLSDIR/udis86-1.7.2 --enable-shared
-make
-make check
-make install
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of UDIS"
+echo
+echo "INFO: Installing UDIS on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/udis86-1.7.2/bin ]; then
+  echo "INFO: UDIS is already installed, skipping to next tool" | tee -a $LOGFILE
+else
+  downloadSource http://sourceforge.net/projects/udis86/files/udis86/1.7/udis86-1.7.2.tar.gz udis86-1.7.2
+  cd udis86-1.7.2
+  ./configure --prefix=$TOOLSDIR/udis86-1.7.2 --enable-shared >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  make >>$LOGFILE 2>&1
+  echo "INFO:   make completed" | tee -a $LOGFILE
+  make install >>$LOGFILE 2>&1
+  if [ ! -d $TOOLSDIR/udis86-1.7.2/bin ]; then
+    echo "ERROR:  failed to install UDIS" | tee -a $LOGFILE
+    echo "  see details in $LOGFILE" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   make install complete, files placed in $TOOLSDIR"
 fi
+echo "INFO: UDIS installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
+
+# -----------------------------------------------------------------------------
 #install LLVM
-
 cd $BASEDIR
-wget http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz
-tar xzf llvm-3.2.src.tar.gz
+echo
+echo "INFO: Installing LLVM on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/dest-llvm-3.2/release/bin -a -d $TOOLSDIR/dest-llvm-3.2/debug/bin ]; then
+  echo "INFO: LLVM is already installed, skipping to next step" | tee -a $LOGFILE
+else
+  downloadSource http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz llvm-3.2.src
   
-export MY_UDIS_INSTALL_DIR=$TOOLSDIR/udis86-1.7.2
-export MY_LLVM_INSTALL_DIR=$TOOLSDIR/dest-llvm-3.2/
-export MY_LLVM_SRC_DIR=$BASEDIR/llvm-3.2.src
-export MY_LLVM_OBJ_DIR=$BASEDIR/llvm-3.2.obj/
-export LD_LIBRARY_PATH=$MY_UDIS_INSTALL_DIR/lib:$LD_LIBRARY_PATH
-export C_INCLUDE_PATH=$MY_UDIS_INSTALL_DIR/include
-export CPATH=$MY_UDIS_INSTALL_DIR/include
+  export MY_UDIS_INSTALL_DIR=$TOOLSDIR/udis86-1.7.2
+  export MY_LLVM_INSTALL_DIR=$TOOLSDIR/dest-llvm-3.2/
+  export MY_LLVM_SRC_DIR=$BASEDIR/llvm-3.2.src
+  export MY_LLVM_OBJ_DIR=$BASEDIR/llvm-3.2.obj/
+  export LD_LIBRARY_PATH=$MY_UDIS_INSTALL_DIR/lib:$LD_LIBRARY_PATH
+  export C_INCLUDE_PATH=$MY_UDIS_INSTALL_DIR/include
+  export CPATH=$MY_UDIS_INSTALL_DIR/include
 
-# Build release version
-mkdir -p $MY_LLVM_OBJ_DIR/release
-cd $MY_LLVM_OBJ_DIR/release
+  # Build release version
+  if [ ! -d $TOOLSDIR/dest-llvm-3.2/release/bin ]; then 
+    mkdir -p $MY_LLVM_OBJ_DIR/release
+    cd $MY_LLVM_OBJ_DIR/release
 
-$MY_LLVM_SRC_DIR/configure --prefix=$MY_LLVM_INSTALL_DIR/release \
-   --enable-shared --enable-targets=x86,x86_64,cpp \
-   --with-udis86=$MY_UDIS_INSTALL_DIR/lib \
-   CFLAGS=-fgnu89-inline
+    $MY_LLVM_SRC_DIR/configure --prefix=$MY_LLVM_INSTALL_DIR/release \
+       --enable-shared --enable-targets=x86,x86_64,cpp \
+       --with-udis86=$MY_UDIS_INSTALL_DIR/lib \
+       CFLAGS=-fgnu89-inline >>$LOGFILE 2>&1
+    echo "INFO:   release configure complete" | tee -a $LOGFILE
 
-make libs-only
-make install-libs
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of LLVM release"
+    echo "INFO:   building release - this will take some time"
+    make libs-only >>$LOGFILE 2>&1
+    echo "INFO:   release make completed" | tee -a $LOGFILE
+    make install-libs >>$LOGFILE 2>&1
+    if [ ! -d $TOOLSDIR/dest-llvm-3.2/release/bin ]; then
+      echo "ERROR:  failed to install release LLVM" | tee -a $LOGFILE
+      echo "  see details in $LOGFILE" | tee -a $LOGFILE
+      exit 2;
+    fi
+  fi
+  echo "INFO:   release make install complete, files placed in $TOOLSDIR"
+
+  # Build debug version
+  if [ ! -d $TOOLSDIR/dest-llvm-3.2/debut/bin ]; then
+    mkdir -p $MY_LLVM_OBJ_DIR/debug
+    cd $MY_LLVM_OBJ_DIR/debug
+
+    $MY_LLVM_SRC_DIR/configure --prefix=$MY_LLVM_INSTALL_DIR/debug \
+       --enable-optimized --enable-jit \
+       --enable-debug-runtime --enable-debug-symbols \
+       --enable-shared --enable-targets=x86,x86_64,cpp \
+       --with-udis86=$MY_UDIS_INSTALL_DIR/lib \
+       CFLAGS=-fgnu89-inline >>$LOGFILE 2>&1
+    echo "INFO:   debug configure complete" | tee -a $LOGFILE
+    echo "INFO:   building debug - this will take some time"
+    make libs-only >>$LOGFILE 2>&1
+    echo "INFO:   debug make completed" | tee -a $LOGFILE
+    make install-libs >>$LOGFILE 2>&1
+    if [ ! -d $TOOLSDIR/dest-llvm-3.2/debug/bin ]; then
+      echo "ERROR:  failed to install debug LLVM" | tee -a $LOGFILE
+      echo "  see details in $LOGFILE" | tee -a $LOGFILE
+      exit 2;
+    fi
+  fi
+  echo "INFO:   debug make install complete, files placed in $TOOLSDIR"
 fi
+echo "INFO: LLVM installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
-# Build debug version
-mkdir -p $MY_LLVM_OBJ_DIR/debug
-cd $MY_LLVM_OBJ_DIR/debug
-
-$MY_LLVM_SRC_DIR/configure --prefix=$MY_LLVM_INSTALL_DIR/debug \
-   --enable-optimized --enable-jit \
-   --enable-debug-runtime --enable-debug-symbols \
-   --enable-shared --enable-targets=x86,x86_64,cpp \
-   --with-udis86=$MY_UDIS_INSTALL_DIR/lib \
-   CFLAGS=-fgnu89-inline
-
-make libs-only
-make install-libs
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of LLVM debug"
-fi
 
 # Build ICU
 cd $BASEDIR
-wget http://download.icu-project.org/files/icu4c/4.4/icu4c-4_4-src.tgz
-tar -xzf icu4c-4_4-src.tgz
-cd icu/source
-./configure --with-library-suffix=Nv44 --prefix=$TOOLSDIR/icu4.4/linux64
-make
-make check
-make install
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of ICU"
+echo
+echo "INFO: Installing ICU on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/icu4.4/linux64/bin ]; then
+  echo "INFO: ICU is already installed, skipping to next tool" | tee -a $LOGFILE
+else
+  downloadSource http://download.icu-project.org/files/icu4c/4.4/icu4c-4_4-src.tgz icu4c-4_4-src
+  cd icu/source
+  ./configure --with-library-suffix=Nv44 --prefix=$TOOLSDIR/icu4.4/linux64 >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  make >>$LOGFILE 2>&1
+  echo "INFO:   make completed" | tee -a $LOGFILE
+  make install  >>$LOGFILE 2>&1
+  if [ ! -d $TOOLSDIR/icu4.4/linux64/bin ]; then
+    echo "ERROR:  failed to install ICU" | tee -a $LOGFILE
+    echo "  see details in $LOGFILE" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   make install complete, files placed in $TOOLSDIR"
 fi
+echo "INFO: ICU installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
+
+# -----------------------------------------------------------------------------
 # make zookeeper
 cd $BASEDIR
-wget https://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz 
-tar -zxf zookeeper-3.4.5.tar.gz
-cd zookeeper-3.4.5/src/c
-./configure --prefix=$TOOLSDIR/zookeeper-3.4.5
-make
-make install
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of ZOOKEEPER"
+echo
+echo "INFO: Installing ZooKeeper on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/zookeeper-3.4.5/bin ]; then
+  echo "INFO: ZooKeeper is already installed, skipping to next tool" | tee -a $LOGFILE
+else
+  downloadSource https://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz zookeeper-3.4.5
+  cd zookeeper-3.4.5/src/c
+  ./configure --prefix=$TOOLSDIR/zookeeper-3.4.5 >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  make >>$LOGFILE 2>&1
+  echo "INFO:   make completed" | tee -a $LOGFILE
+  make install  >>$LOGFILE 2>&1
+  if [ ! -d $TOOLSDIR/zookeeper-3.4.5/bin ]; then
+    echo "ERROR:  failed to install ZooKeeper" | tee -a $LOGFILE
+    echo "  see details in $LOGFILE" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   make install complete, files placed in $TOOLSDIR"
 fi
+echo "INFO: ZooKeeper installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
 
+
+# -----------------------------------------------------------------------------
 # make thrift
 cd $BASEDIR
-wget http://archive.apache.org/dist/thrift/0.9.0/thrift-0.9.0.tar.gz
-tar -xzf thrift-0.9.0.tar.gz
-cd thrift-0.9.0
-./configure --prefix=$TOOLSDIR/thrift-0.9.0 -without-qt
-make
-make install
-if [ $VERBOSE -eq 1 ]; then
-  echo "STEP completed:  installation of THRIFT"
+echo
+echo "INFO: Installing Thrift on $(date)" | tee -a $LOGFILE
+if [ -d $TOOLSDIR/thrift-0.9.0/bin ]; then
+  echo "INFO: Thrift is already installed, skipping to next tool" | tee -a $LOGFILE
+else
+  downloadSource http://archive.apache.org/dist/thrift/0.9.0/thrift-0.9.0.tar.gz thrift-0.9.0
+  cd thrift-0.9.0
+  ./configure --prefix=$TOOLSDIR/thrift-0.9.0 -without-qt >>$LOGFILE 2>&1
+  echo "INFO:   configure complete" | tee -a $LOGFILE
+  make >>$LOGFILE 2>&1
+  echo "INFO:   make completed" | tee -a $LOGFILE
+  make install  >>$LOGFILE 2>&1
+  if [ ! -d $TOOLSDIR/thrift-0.9.0/bin ]; then
+    echo "ERROR:  failed to install Thrift" | tee -a $LOGFILE
+    echo "  see details in $LOGFILE" | tee -a $LOGFILE
+    exit 2;
+  fi
+  echo "INFO:   make install complete, files placed in $TOOLSDIR"
+fi
+echo "INFO: Thrift installation complete" | tee -a $LOGFILE
+echo " *********************************************************** " | tee -a $LOGFILE
+
+
+# -----------------------------------------------------------------------------
+# install maven, if version 3 or greater not available already
+#MAVEN_VERSION=`mvn --version 2>/dev/null | grep 'Apache Maven' | cut -f 3 -d ' '`
+if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
+  cd $BASEDIR
+  echo
+  echo "INFO: Installing Maven on $(date)" | tee -a $LOGFILE
+  if [ -d $TOOLSDIR/apache-maven-3.3.3/bin ]; then
+    echo "INFO: Maven is already installed, skipping to next tool" | tee -a $LOGFILE
+  else
+    # there is no install, simply extract the files into $TOOLSDIR
+    wget http://archive.apache.org/dist/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz >>$LOGFILE 2>&1
+    cd $TOOLSDIR
+    tar -xzf $BASEDIR/apache-maven-3.3.3-bin.tar.gz >>$LOGFILE 2>&1
+    echo "INFO:   downloaded tar file:  apache-maven-3.3.3-bin.tar.gz" | tee -a $LOGFILE
+  fi
+    echo "INFO: Maven installation complete" | tee -a $LOGFILE
+  echo " *********************************************************** " | tee -a $LOGFILE
 fi
 
-# install maven, if not available already
-MAVEN_VERSION=`mvn --version 2>/dev/null | grep 'Apache Maven' | cut -f 3 -d ' '`
-if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
-  # install maven
-  cd $BASEDIR
-  wget http://archive.apache.org/dist/maven/maven-3/3.3.3/binaries/apache-maven-3.3.3-bin.tar.gz
-  cd $TOOLSDIR
-  # there is no install, simply extract the files into $TOOLSDIR
-  tar -xzf $BASEDIR/apache-maven-3.3.3-bin.tar.gz
-fi
+echo
+echo "INFO: Completed tools build on $(date)" | tee -a $LOGFILE
+echo "INFO: List of tools directory: " | tee -a $LOGFILE
+ls $TOOLSDIR | echo | tee -a $LOGFILE
+echo "`ls $TOOLSDIR`" | tee -a $LOGFILE
+echo

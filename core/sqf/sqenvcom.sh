@@ -481,12 +481,12 @@ else
        install using a popular Hadoop distribution 
 
           cd $MY_SQROOT/sql/scripts
-          install_local_hadoop [-p <port option]
-          source ./install_traf_components 
+          install_local_hadoop [-p <port option>]
+          install_traf_components 
           configure Trafodion and start the processes
           HAVE FUN!
 
-   You can also choose to install_local_hadoop before building Trafodion
+   You can also choose to install_local_hadoop before building Trafodion.
 
 EOF
   }
