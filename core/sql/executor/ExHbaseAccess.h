@@ -342,10 +342,10 @@ protected:
   void setRowID(char *rowId, Lng32 rowIdLen);
   void allocateDirectBufferForJNI(UInt32 rowLen);
   void allocateDirectRowBufferForJNI(short numCols, 
-                          UInt16 maxRows = 1);
+                          short maxRows = 1);
   short patchDirectRowBuffers();
   short patchDirectRowIDBuffers();
-  void allocateDirectRowIDBufferForJNI(UInt16 maxRows = 1);
+  void allocateDirectRowIDBufferForJNI(short maxRows = 1);
   Lng32 copyColToDirectBuffer( BYTE *rowCurPtr, 
                 char *colName, short colNameLen,
                 NABoolean prependNullVal, char nullVal, 
@@ -464,7 +464,7 @@ protected:
   //
   BYTE *directRowBuffer_;
   Lng32 directRowBufferLen_;
-  UInt16 directBufferMaxRows_;
+  short directBufferMaxRows_;
   // Structure to keep track of current row
   HbaseStr row_;
   // Structure to keep track of current position in direct row buffer

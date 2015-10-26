@@ -42,8 +42,8 @@ prepare explainIt from
          cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
          cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
          substring
-         (substring(tname from (1+locate('.',tname))),
-         (locate('.',substring(tname from (1+locate('.',tname))))),
+         (substring(substring(tname from (1+locate('.',tname))),1,case locate(')',tname) when 0 then 0 else locate(')',substring(tname from (1+locate('.',tname))))-1 end),
+         (locate('.',substring(tname from (1+locate('.',tname)))))+1,
          10
         ) tab_name
          from table (explain(NULL,'XX'))

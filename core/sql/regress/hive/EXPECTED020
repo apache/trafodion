@@ -20,8 +20,8 @@
 +>         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
 +>         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
 +>         substring
-+>         (substring(tname from (1+locate('.',tname))),
-+>         (locate('.',substring(tname from (1+locate('.',tname))))),
++>         (substring(substring(tname from (1+locate('.',tname))),1,case locate(')',tname) when 0 then 0 else locate(')',substring(tname from (1+locate('.',tname))))-1 end),
++>         (locate('.',substring(tname from (1+locate('.',tname)))))+1,
 +>         10
 +>        ) tab_name
 +>         from table (explain(NULL,'XX'))
@@ -35,7 +35,7 @@
 >>invoke hive.hive.store_orc;
 
 -- Definition of hive table STORE_ORC
--- Definition current  Wed Oct 21 00:08:18 2015
+-- Definition current  Mon Oct 26 16:10:15 2015
 
   (
     S_STORE_SK                       INT
@@ -159,8 +159,8 @@ S   OPERATOR          LC  RC  TAB_NAME
 
 04  ROOT              3   ?             
 03  HYBRID_HASH_JOIN  2   1             
-02  HIVE_SCAN         ?   ?   .STORE_ORC
-01  HIVE_SCAN         ?   ?   .STORE_ORC
+02  HIVE_SCAN         ?   ?   STORE_ORC 
+01  HIVE_SCAN         ?   ?   STORE_ORC 
 
 --- 4 row(s) selected.
 >>
@@ -198,8 +198,8 @@ S   OPERATOR          LC  RC  TAB_NAME
 
 04  ROOT              3   ?             
 03  NESTED_JOIN       1   2             
-02  HIVE_SCAN         ?   ?   .STORE_ORC
-01  HIVE_SCAN         ?   ?   .STORE)   
+02  HIVE_SCAN         ?   ?   STORE_ORC 
+01  HIVE_SCAN         ?   ?   STORE     
 
 --- 4 row(s) selected.
 >>
