@@ -198,21 +198,6 @@ if [ "$node_count" -ne "1" ]; then
    fi
 fi
 
-echo "***INFO: starting sqgen" | tee -a $INSTALL_LOG
-cd $MY_SQROOT/sql/scripts
-sqgen
-SQGEN_RC=$?
-if [ "$SQGEN_RC" != "0" ]; then
-    echo "***ERROR: sqgen failed with RC=$SQGEN_RC. Check install log file for details." | tee -a $INSTALL_LOG
-    exit -1;
-fi
-#==========================================
-
-if [ "$node_count" -ne "1" ]; then
-    echo "***INFO: copying $HOME/sqcert directory to all nodes" | tee -a $INSTALL_LOG
-    $PDCP $MY_NODES -x $HOSTNAME -r $HOME/sqcert $HOME
-fi
-
 #==========================================
 # install dcs
 
@@ -231,6 +216,22 @@ if [ ! -z $REST_BUILD ]; then
        echo "***ERROR: REST Server install failed.  Check install log files for details." | tee -a $INSTALL_LOG
        exit -1;
    fi
+fi
+
+#==========================================
+echo "***INFO: starting sqgen" | tee -a $INSTALL_LOG
+cd $MY_SQROOT/sql/scripts
+sqgen
+SQGEN_RC=$?
+if [ "$SQGEN_RC" != "0" ]; then
+    echo "***ERROR: sqgen failed with RC=$SQGEN_RC. Check install log file for details." | tee -a $INSTALL_LOG
+    exit -1;
+fi
+#==========================================
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying $HOME/sqcert directory to all nodes" | tee -a $INSTALL_LOG
+    $PDCP $MY_NODES -x $HOSTNAME -r $HOME/sqcert $HOME
 fi
 
 #==========================================
