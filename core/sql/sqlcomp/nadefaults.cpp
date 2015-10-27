@@ -2156,6 +2156,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDflt__(MC_SKEW_SENSITIVITY_THRESHOLD,        "0.1"),
 
 
+  DDkwd__(MDAM_APPLY_RESTRICTION_CHECK,	"OFF"),
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -3317,6 +3318,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
   DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
   DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs/" ),
+  DDint__(TRAF_LOAD_FLUSH_SIZE_IN_KB,           "1024"),
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
   DDkwd__(TRAF_LOAD_LOG_ERROR_ROWS,             "OFF"),
   DDint__(TRAF_LOAD_MAX_ERROR_ROWS,             "0"),

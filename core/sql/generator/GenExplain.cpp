@@ -1731,6 +1731,14 @@ GenericUpdate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
       description += " ";
     }
 
+  if (natable->isSeabaseTable() && 
+      (((ComTdbHbaseAccess *)tdb)->getTrafLoadFlushSize() > 0)) {
+    char lbuf[20];
+    description += "load_flush_size: " ;
+    sprintf(lbuf, "%d ", ((ComTdbHbaseAccess *)tdb)->getTrafLoadFlushSize());
+    description += lbuf;
+  }
+
   return 0;
 }
 

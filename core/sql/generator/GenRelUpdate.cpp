@@ -2838,6 +2838,15 @@ short HbaseInsert::codeGen(Generator *generator)
         hbasescan_tdb->setNoDuplicates(CmpCommon::getDefault(TRAF_LOAD_PREP_SKIP_DUPLICATES) == DF_OFF);
         hbasescan_tdb->setMaxHFileSize(CmpCommon::getDefaultLong(TRAF_LOAD_MAX_HFILE_SIZE));
 
+	ULng32 loadFlushSizeinKB = getDefault(TRAF_LOAD_FLUSH_SIZE_IN_KB);
+	ULng32 loadFlushSizeinRows = 0;
+	loadFlushSizeinRows = (loadFlushSizeinKB*1024)/hbasescan_tdb->getRowLen() ;
+	// largest flush size, runtime cannot handle higher values 
+	// without code change
+	if (loadFlushSizeinRows >= USHRT_MAX/2)
+	  loadFlushSizeinRows = ((USHRT_MAX/2)-1);
+	hbasescan_tdb->setTrafLoadFlushSize(loadFlushSizeinRows);
+
         // For sample file, set the sample location in HDFS and the sampling rate.
         // Move later, when sampling not limited to bulk loads.
         if (getCreateUstatSample())
