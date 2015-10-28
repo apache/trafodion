@@ -16565,21 +16565,35 @@ HbaseDelete::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber,
                                    PlanWorkSpace  *pws)
 {
-
-  //----------------------------------------------------------
-  // Create a node map with a single, active, wild-card entry.
-  //----------------------------------------------------------
-  NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                        NodeMap(CmpCommon::statementHeap(),
-                                1,
-                                NodeMapEntry::ACTIVE);
+  const ReqdPhysicalProperty* rppForMe =
+          myContext->getReqdPhysicalProperty();
+  PartitioningRequirement* partReqForMe =
+    rppForMe->getPartitioningRequirement();
 
   //------------------------------------------------------------
-  // Synthesize a partitioning function with a single partition.
+  // Synthesize a partitioning function with a single partition
+  // unless we have a partitioning requirement that says 
+  // otherwise.
   //------------------------------------------------------------
-  PartitioningFunction* myPartFunc =
-    new(CmpCommon::statementHeap())
-    SinglePartitionPartitioningFunction(myNodeMap);
+  PartitioningFunction* myPartFunc = NULL;
+
+  if (partReqForMe &&
+      partReqForMe->castToRequireReplicateNoBroadcast())
+    {
+      myPartFunc =
+        partReqForMe->castToRequireReplicateNoBroadcast()->
+        getPartitioningFunction()->copy();
+    }
+  else
+    {
+      // Create a node map with a single, active, wild-card entry.
+      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                               NodeMap(CmpCommon::statementHeap(),
+                               1,
+                               NodeMapEntry::ACTIVE);
+      myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+    }
 
   PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap())
@@ -16613,21 +16627,35 @@ HbaseUpdate::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber,
                                    PlanWorkSpace  *pws)
 {
-
-  //----------------------------------------------------------
-  // Create a node map with a single, active, wild-card entry.
-  //----------------------------------------------------------
-  NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                        NodeMap(CmpCommon::statementHeap(),
-                                1,
-                                NodeMapEntry::ACTIVE);
+  const ReqdPhysicalProperty* rppForMe =
+          myContext->getReqdPhysicalProperty();
+  PartitioningRequirement* partReqForMe =
+    rppForMe->getPartitioningRequirement();
 
   //------------------------------------------------------------
-  // Synthesize a partitioning function with a single partition.
+  // Synthesize a partitioning function with a single partition
+  // unless we have a partitioning requirement that says 
+  // otherwise.
   //------------------------------------------------------------
-  PartitioningFunction* myPartFunc =
-    new(CmpCommon::statementHeap())
-    SinglePartitionPartitioningFunction(myNodeMap);
+  PartitioningFunction* myPartFunc = NULL;
+
+  if (partReqForMe &&
+      partReqForMe->castToRequireReplicateNoBroadcast())
+    {
+      myPartFunc =
+        partReqForMe->castToRequireReplicateNoBroadcast()->
+        getPartitioningFunction()->copy();
+    }
+  else
+    {
+      // Create a node map with a single, active, wild-card entry.
+      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                               NodeMap(CmpCommon::statementHeap(),
+                               1,
+                               NodeMapEntry::ACTIVE);
+      myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+    }
 
   PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap())
@@ -16703,27 +16731,30 @@ HbaseInsert::synthPhysicalProperty(const Context* myContext,
   PartitioningRequirement* partReqForMe =
     rppForMe->getPartitioningRequirement();
 
-  //----------------------------------------------------------
-  // Create a node map with a single, active, wild-card entry.
-  //----------------------------------------------------------
-  NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                        NodeMap(CmpCommon::statementHeap(),
-                                1,
-                                NodeMapEntry::ACTIVE);
-
   //------------------------------------------------------------
-  // Synthesize a partitioning function with a single partition.
+  // Synthesize a partitioning function with a single partition
+  // unless we have a partitioning requirement that says 
+  // otherwise.
   //------------------------------------------------------------
   PartitioningFunction* myPartFunc = NULL;
 
   if (partReqForMe &&
       partReqForMe->castToRequireReplicateNoBroadcast())
-    myPartFunc = 
-      partReqForMe->castToRequireReplicateNoBroadcast()->
-      getPartitioningFunction()->copy();
+    {
+      myPartFunc =
+        partReqForMe->castToRequireReplicateNoBroadcast()->
+        getPartitioningFunction()->copy();
+    }
   else
-    myPartFunc = new(CmpCommon::statementHeap())
-    SinglePartitionPartitioningFunction(myNodeMap);
+    {
+      // Create a node map with a single, active, wild-card entry.
+      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                               NodeMap(CmpCommon::statementHeap(),
+                               1,
+                               NodeMapEntry::ACTIVE);
+      myPartFunc = new(CmpCommon::statementHeap())
+      SinglePartitionPartitioningFunction(myNodeMap);
+    }
 
   PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap())
