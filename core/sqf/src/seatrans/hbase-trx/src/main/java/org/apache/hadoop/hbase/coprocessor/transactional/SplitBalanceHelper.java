@@ -251,7 +251,7 @@ public class SplitBalanceHelper {
                                         ConcurrentHashMap<Long,TransactionalRegionScannerHolder> scanners,
                                         int pendingDelayLen) throws IOException {
     int count = 1;
-    while(!scannersListClear(scanners) && !pendingListClear(commitPendingTransactions)) {
+    while(!scannersListClear(scanners) || !pendingListClear(commitPendingTransactions)) {
       try {
           if(LOG.isDebugEnabled()) LOG.debug("pendingAndScannersWait() delay, count " + count++ + " on: " + hri.getRegionNameAsString());
           Thread.sleep(pendingDelayLen);
