@@ -855,10 +855,10 @@ NAString NAColumnArray::getColumnNamesAsString(char separator, UInt32 ct) const
 
   for (CollIndex i = 0; i < ct-1; i++)
   {
-     nmList += at(i)->getColName();
+     nmList += ToAnsiIdentifier(at(i)->getColName());
      nmList += separator;
   }
      
-  nmList += at(ct-1)->getColName();
+  nmList += ToAnsiIdentifier(at(ct-1)->getColName());
   return nmList;
 }
