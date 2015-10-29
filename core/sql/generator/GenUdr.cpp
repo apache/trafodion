@@ -361,7 +361,10 @@ ExplainTuple *PhysicalTableMappingUDF::addSpecificExplainInfo(ExplainTupleMaster
   description += getNARoutine()->getLibrarySqlName().getExternalName();
 
   description += " external_file: ";
-  description += getNARoutine()->getExternalPath();
+  if (getNARoutine()->getLanguage() == COM_LANGUAGE_JAVA)
+    description += getNARoutine()->getExternalPath();
+  else
+    description += getNARoutine()->getFile(); // CPP
   description += " ";
 
   explainTuple->setDescription(description);

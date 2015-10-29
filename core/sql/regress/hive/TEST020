@@ -36,6 +36,19 @@ cqd HIVE_MAX_STRING_LENGTH '20' ;
 cqd mode_seahive 'ON';
 cqd traf_enable_orc_format 'ON';
 
+prepare explainIt from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
+         substring
+         (substring(substring(tname from (1+locate('.',tname))),1,case locate(')',tname) when 0 then 0 else locate(')',substring(tname from (1+locate('.',tname))))-1 end),
+         (locate('.',substring(tname from (1+locate('.',tname)))))+1,
+         10
+        ) tab_name
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
+
 ?section tests
 --------------------------------------------------------------------------
 -- ORC file metadata info
@@ -54,22 +67,20 @@ select s_store_sk, left(s_store_id, 20) from hive.hive.store_orc where s_store_s
 select count(*) from hive.hive.store_orc;
 
 -- explain of join between 2 ORC tables
-explain options 'f' select x.s_suite_number, y.s_street_name
+prepare XX from select x.s_suite_number, y.s_street_name
  from hive.hive.store_orc x, hive.hive.store_orc y
   where x.s_store_sk = y.s_store_sk;
+execute explainIt;
 
 -- execute of join between 2 ORC tables
-select x.s_suite_number, y.s_street_name
- from hive.hive.store_orc x, hive.hive.store_orc y
-  where x.s_store_sk = y.s_store_sk;
+execute XX;
 
 -- explain of join between hive(hdfs) and ORC tables
-explain options 'f' select x.s_suite_number, y.s_street_name
+prepare XX from select x.s_suite_number, y.s_street_name
  from hive.hive.store x, hive.hive.store_orc y
   where x.s_store_sk = y.s_store_sk;
+execute explainIt;
 
 -- execute of join between hive(hdfs) and ORC tables
-select x.s_suite_number, y.s_street_name
- from hive.hive.store x, hive.hive.store_orc y
-  where x.s_store_sk = y.s_store_sk;
+execute XX;
 

@@ -3766,6 +3766,7 @@ enum DefaultConstants
   // costing code has broader exposure.
   HBASE_DELETE_COSTING,
   HBASE_UPDATE_COSTING,
+  TRAF_LOAD_FLUSH_SIZE_IN_KB,
 
   // decide if to apply the additional restriction check (majority of keys with predicates)
   MDAM_APPLY_RESTRICTION_CHECK,

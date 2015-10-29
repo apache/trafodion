@@ -750,13 +750,13 @@ Lng32 NAColumnArray::getOffset(Lng32 position) const
   return result;
 }
 
-Lng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
+ULng32 NAColumnArray::getMaxTrafHbaseColQualifier() const
 {
   NAColumn *column;
   char * colQualPtr;
   Lng32 colQualLen;
   Int64 colQVal;
-  Lng32 maxVal = 0;
+  ULng32 maxVal = 0;
 
   for (CollIndex i = 0; i < entries(); i++)
     {

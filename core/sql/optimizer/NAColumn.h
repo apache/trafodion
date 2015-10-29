@@ -631,7 +631,7 @@ public:
   // numeric > 0. This method is used during alter table add
   // column to find the maximum value currently in use. Columns
   // are deleted during alter table drop column.
-  Lng32 getMaxTrafHbaseColQualifier() const;
+  ULng32 getMaxTrafHbaseColQualifier() const;
 
   NAString getColumnNamesAsString(char separator) const;
   NAString getColumnNamesAsString(char separator, UInt32 ct) const;

@@ -698,7 +698,8 @@ public class ServerManager implements Callable {
             for (RegisteredServer aRegisteredServer : aRunningServer
                     .getRegistered()) {
                 ServerItem serverItem = new ServerItem();
-                serverItem.setHostname(aRunningServer.getHref());
+                serverItem.setHostname(aRunningServer.getHostname());
+                serverItem.setinfoPort(aRunningServer.getInfoPort() + "");
                 serverItem.setInstance(aRunningServer.getInstance());
                 serverItem.setStartTime(aRunningServer.getStartTimeAsDate());
                 serverItem.setIsRegistered(aRegisteredServer.getIsRegistered());
