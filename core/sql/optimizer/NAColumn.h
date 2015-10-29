@@ -633,6 +633,9 @@ public:
   // are deleted during alter table drop column.
   Lng32 getMaxTrafHbaseColQualifier() const;
 
+  NAString getColumnNamesAsString(char separator) const;
+  NAString getColumnNamesAsString(char separator, UInt32 ct) const;
+
 private:
 
   ARRAY(NABoolean) ascending_; // ignore for non-key or hash key columns

@@ -318,13 +318,6 @@ void CmpSeabaseDDL::createSeabaseTableLike(
       return;
     }
 
-  if (createTableNode->getSaltOptions())
-    {
-      *CmpCommon::diags() << DgSqlCode(-3111)
-                          << DgString0("SALT");
-      return;
-    }
-
   ParDDLLikeOptsCreateTable &likeOptions = createTableNode->getLikeOptions();
   
   char * buf = NULL;
