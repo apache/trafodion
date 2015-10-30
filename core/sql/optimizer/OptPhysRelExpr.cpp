@@ -3432,14 +3432,14 @@ NABoolean NestedJoin::genLeftChildPartReq(
           physicalPartFunc = new(CmpCommon::statementHeap())
               Hash2PartitioningFunction (partKey, partKey, childNumPartsRequirement);
         }
-    }
-    else
-      // HBase tables can be updated in any way, no restrictions on 
-      // parallelism
-      if (numOfESPsForced && physicalPartFunc)
-        childNumPartsRequirement = numOfESPsForced;
-      else
-        createPartReqForChild = FALSE;
+     }
+     else
+        // HBase tables can be updated in any way, no restrictions on 
+        // parallelism
+        if (numOfESPsForced && physicalPartFunc)
+          childNumPartsRequirement = numOfESPsForced;
+        else
+          createPartReqForChild = FALSE;
     }
     else if (physicalPartFunc == NULL)
     {
