@@ -821,7 +821,7 @@ else:
     gvars.my_RUN_CMD = (os.path.join(ArgList._javahome, 'bin/java') + ' -cp ' + myclasspath +
                         ' ' + myoptions + ' -Duser.timezone=GMT -Dtrafjdbc.properties=' +
                         ArgList._prop_file + ' org.junit.runner.JUnitCore ' +
-                        'test.java.com.hp.phoenix.end2end.')
+                        'test.java.org.trafodion.phoenix.end2end.')
 
     # Generate list of tests if needed
     if ArgList._tests is None:
