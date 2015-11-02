@@ -142,6 +142,7 @@ export SQ_HOME=$PWD
 
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
 export HBASE_TRX_JAR=hbase-trx-cdh5_3-${TRAFODION_VER}.jar
+export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
     export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
 fi
@@ -852,6 +853,7 @@ if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
 SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
 $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/trafodion-utility-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/trafodion-dtm-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/jdbcT4.jar:\
 $MY_SQROOT/export/lib/jdbcT2.jar

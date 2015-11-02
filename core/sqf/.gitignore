@@ -59,3 +59,8 @@ Linux-x86_64/
 
 # sql regressions
 /rundir/
+
+# hbase_utilities
+/hbase_utilities/src/main/resources/
+/hbase_utilities/target/
+

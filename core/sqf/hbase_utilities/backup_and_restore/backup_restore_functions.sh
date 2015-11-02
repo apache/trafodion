@@ -24,7 +24,7 @@
 default_trafodion_user="trafodion"
 default_hbase_user="hbase"
 default_hdfs_user="hdfs"
-mappers=2
+mappers=0
 date_str="$(date '+%Y%m%d-%H%M')"
 
 ###############################################################################
@@ -411,4 +411,36 @@ get_hdfs_uri()
   else
     echo ${fs_defFs}
   fi
+}
+###############################################################################
+#start_trafodion
+###############################################################################
+start_trafodion()
+{
+  local traf_user=$1
+  ###
+  echo "Starting Trafodion..."  | tee -a $log_file
+  ##
+  which_environment
+  local env1=$?
+  local sqstart_rc=1
+  if [[ "$USER" -eq "$traf_user" ]]; then
+    env1=1
+  fi
+  if [[ $env1 -eq 1 ]]; then
+    $MY_SQROOT/sql/scripts/sqstart
+    sqstart_rc=$?
+  elif [[ $env1 -eq 2 ]]; then
+    sudo -n -u $traf_user sh -c ". /home/trafodion/.bashrc; sqstart"  
+    sqstart_rc=$?
+  else
+    sqstart_rc=1 
+  fi
+
+  if [[ $sqstart_rc -eq 0 ]]; then
+   echo "Trafodion started successfully. Continuing ..." | tee -a $log_file
+  else
+   echo "Trafodion not started. Please start Trafodion at your convinience." | tee -a $log_file
+  fi
+  return 0
 }

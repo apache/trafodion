@@ -1422,8 +1422,8 @@ else
 
   cd $MY_SW_ROOT
 
-  # Setup HBase TRX JAR in HBase' CLASSPATH
-  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}" >> ${HBASE_ENV_FILE}
+  # Setup HBase TRX JAR and utility JAR in HBase' CLASSPATH
+  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}:${MY_SQROOT}/export/lib/\${UTIL_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
 

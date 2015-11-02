@@ -41,7 +41,7 @@ SQL_W=$(MY_SQROOT)/../sql
     DP2=se
 
 MISC = win misc_sec
-SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools
+SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools hbase_utilities
 
 .PHONY: $(SQ_COMPONENTS)
 
@@ -85,6 +85,9 @@ monitor_ib:
 make_sqevlog: 
 	cd sqevlog; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
+hbase_utilities:
+	cd hbase_utilities; $(MAKE) 2>&1 | sed -e "s/$$/  ##(HBASE_UTIL)/" ; exit $${PIPESTATUS[0]}
+
 .PHONY: conn
 conn:
 	cd ../conn/odbc/src/odbc; $(MAKE) clean; $(MAKE) all 2>&1 | sed -e "s/$$/	##(NDCS)/" ; exit $${PIPESTATUS[0]}
@@ -105,6 +108,7 @@ clean: setupdir_clean
 	-cd src/tm; $(MAKE) clean
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd sqevlog; $(MAKE) clean
+	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
 	# from makemsg.ksh
@@ -119,6 +123,7 @@ cleanall: setupdir_clean
 	-cd src/tm; $(MAKE) cleanall
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd sqevlog; $(MAKE) cleanall
+	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
 	# from makemsg.ksh
