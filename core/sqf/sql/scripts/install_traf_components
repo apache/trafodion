@@ -453,6 +453,7 @@ fi
 
 # End setup of PyODBC test
 
+source $HOME/.trafodion
 cds
 
 echo | tee -a ${MY_LOG_FILE}
