@@ -122,7 +122,7 @@ BOOL TabPageNetwork::OnInitDialog()
 	char szStaticText[]="The current configuration is displayed.\n\
 DCS Master IP address is specified during the Trafodion installation.\n\
 Port is the starting port number for the DCS Master specified during\n\
-the Trafodion installation; default is 37800.\n\
+the Trafodion installation; default is 23400.\n\
 Login Timeout default is 0 (no timeout). Connection Timeout default is 60 seconds.\n\
 Query Timeout is NO_TIMEOUT. Fetch Buffer Size default is 8 kbytes.";
 

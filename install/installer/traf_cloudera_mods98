@@ -100,86 +100,56 @@ fi
 # create new directories for bulkload and lobs if not already there
 rm $LOCAL_WORKDIR/traf_temp_output 2>/dev/null
 
-count=0
-for node in $HADOOP_NODES
-do
-   isClouderaRunning=$(ssh -q -n $node sudo /etc/init.d/cloudera-scm-server status)
-
-   clouderaUp=$(echo $isClouderaRunning | grep "running" | wc -l)
-
-   if [[ "$clouderaUp" -eq "1" ]]; then
-      echo "***INFO: Cloudera Manager is on $node"
-      CDH_START_NODE=$node
-      break
-   fi
-   count=$[$count+1]
-   if [[ $count -ge $hadoop_node_count ]]; then
-      echo "***ERROR: Could not find Cloudera Server status on any node"
-      echo "***ERROR: Restart Cloudera Server" 
-      exit -1 
-   fi
-done
-
-echo "export HADOOP_START_NODE=\"$CDH_START_NODE\"" >> $TRAF_CONFIG
-sudo chmod 777 $TRAF_CONFIG
-source $TRAF_CONFIG
-
 #Copy hbase-site.xml file
-ssh -q -n $CDH_START_NODE sudo cp /etc/hbase/conf/hbase-site.xml $HOME
-ssh -q -n $CDH_START_NODE sudo chown $(whoami).$(whoami) $HOME/hbase-site.xml
-ssh -q -n $CDH_START_NODE sudo chmod 777 $HOME/hbase-site.xml
+sudo cp /etc/hbase/conf/hbase-site.xml $HOME
+sudo chown $(whoami).$(whoami) $HOME/hbase-site.xml
+sudo chmod 777 $HOME/hbase-site.xml
 
-scp -q $(whoami)@$CDH_START_NODE:$HOME/hbase-site.xml $HOME
-if [[ $? -ne 0 ]]; then
-   echo "***ERROR: Unable to find /etc/hbase/conf/hbase-site.xml file on $CDH_START_NODE or unable to copy."
-   exit -1
-fi
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
-
-
-ssh -q -n $CDH_START_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output'
+sudo su $HDFS_USER --command "hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output
 if [ $? != 0 ]; then
    # ok if directory already exists
-   dir_exists=$(ssh -q -n $CDH_START_NODE 'grep "File exists" $HOME/traf_temp_output | wc -l')
+   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
    if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: 'hadoop fs -mkdir /hbase-staging' command failed on $CDH_START_NODE"
-      echo "***ERROR: $(ssh -q -n $CDH_START_NODE 'cat $HOME/traf_temp_output')"
+      echo "***ERROR: 'hadoop fs -mkdir /hbase-staging' command failed"
+      echo "***ERROR: $(cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
-ssh -q -n $CDH_START_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$HBASE_USER"':'"$HBASE_GROUP" '/hbase-staging"'
-ssh -q -n $CDH_START_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output'
+
+sudo su $HDFS_USER --command "hadoop fs -chown -R $HBASE_USER:$HBASE_GROUP /hbase-staging"
+sudo su $HDFS_USER --command "hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output
 if [ $? != 0 ]; then
    # ok if directory already exists
-   dir_exists=$(ssh -q -n $CDH_START_NODE 'grep "File exists" $HOME/traf_temp_output | wc -l')
+   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
    if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: 'hadoop fs -mkdir /bulkload' command failed on $CDH_START_NODE"
-      echo "***ERROR: $(ssh -q -n $CDH_START_NODE cat $HOME/traf_temp_output)"
+      echo "***ERROR: 'hadoop fs -mkdir /bulkload' command failed"
+      echo "***ERROR: $(cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
-ssh -q -n $CDH_START_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /bulkload"'
+sudo su $HDFS_USER --command "hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"
 
 # Create lobs directory
-ssh -q -n $CDH_START_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output'
+sudo su $HDFS_USER --command "hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output
 if [ $? != 0 ]; then
    # ok if directory already exists
-   dir_exists=$(ssh -q -n $CDH_START_NODE 'grep "File exists" $HOME/traf_temp_output | wc -l')
+   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
    if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: 'hadoop fs -mkdir /lobs' command failed on $CDH_START_NODE"
-      echo "***ERROR: $(ssh -q -n $CDH_START_NODE 'cat $LOCAL_WORKDIR/traf_temp_output')"
+      echo "***ERROR: 'hadoop fs -mkdir /lobs' command failed"
+      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
       exit -1
    fi
 fi
-ssh -q -n $CDH_START_NODE 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /lobs"'
+sudo su $HDFS_USER --command "hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
 
 #=====================================
 # Modify hadoop settings as needed by Trafodion
 
-ssh -q -n $CDH_START_NODE 'rm $HOME/traf_hdfs1_config_temp 2> /dev/null'
-ssh -q -n $CDH_START_NODE 'rm $HOME/traf_hbase_config_temp 2> /dev/null'
+rm $HOME/traf_hdfs1_config_temp 2> /dev/null
+rm $HOME/traf_hbase_config_temp 2> /dev/null
 
 # change the hdfs configuration using Cloudera's REST API
 curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
@@ -346,33 +316,33 @@ echo "***INFO: Hadoop restart completed successfully"
 
 # wait to make sure HDFS is fully restarted and out of safemode
 echo "***INFO: waiting for HDFS to exit safemode"
-ssh -q -n $CDH_START_NODE 'sudo su hdfs --command "hdfs dfsadmin -safemode wait"'
+sudo su hdfs --command "hdfs dfsadmin -safemode wait"
 
 #====================================================
 # NOTE: These command must be done AFTER acls are 
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
-ssh -q -n $CDH_START_NODE 'sudo su hdfs --command "hdfs dfs -mkdir -p /hbase/archive"'
+sudo su hdfs --command "hdfs dfs -mkdir -p /hbase/archive"
 if [ $? != 0 ]; then
-   echo "***ERROR: (hdfs dfs -mkdir -p /hbase/archive) command failed on $CDH_START_NODE"
+   echo "***ERROR: (hdfs dfs -mkdir -p /hbase/archive) command failed"
    exit -1
 fi
-ssh -q -n $CDH_START_NODE 'sudo su hdfs --command "hdfs dfs -chown hbase:hbase /hbase/archive"'
+sudo su hdfs --command "hdfs dfs -chown hbase:hbase /hbase/archive"
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
    exit -1
 fi
-ssh -q -n $CDH_START_NODE 'sudo su hdfs --command "hdfs dfs -setfacl -R -m user:'"$TRAF_USER"':rwx /hbase/archive"'
+sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive"
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
-ssh -q -n $CDH_START_NODE 'sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:'"$TRAF_USER"':rwx /hbase/archive"'
+sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive"
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
-ssh -q -n $CDH_START_NODE 'sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"'
+sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
    exit -1

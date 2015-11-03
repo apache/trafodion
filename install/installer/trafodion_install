@@ -195,8 +195,8 @@ echo
 export timestamp=$(date +%F-%H-%M-%S)
 export TRAF_LOGDIR="/var/log/trafodion"
 export INSTALL_LOG="$TRAF_LOGDIR/trafodion_install_$timestamp.log"
+export INSTALL_LOG_CP="$INSTALL_LOG"
 export SCANNER_LOG="$TRAF_LOGDIR/trafodion_scanner_$timestamp.log"
-#export TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 export TRAF_WORKDIR="/usr/lib/trafodion"
 export LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 export TRAF_CONFIG="/etc/trafodion/trafodion_config"
@@ -329,7 +329,7 @@ fi
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/INSTALL_LOG\=/d' $TRAF_CONFIG
-echo "export INSTALL_LOG=\"$INSTALL_LOG\"" >> $TRAF_CONFIG
+echo "export INSTALL_LOG=\"$INSTALL_LOG_CP\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
