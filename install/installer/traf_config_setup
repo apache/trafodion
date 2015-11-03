@@ -43,7 +43,7 @@ HOME_DIR="/home"
 TRAF_PACKAGE=""
 TRAF_BUILD=""
 DCS_BUILD=""
-
+REST_BUILD=""
 HADOOP_TYPE=""
 ADMIN="admin"
 PASSWORD="admin"
@@ -123,9 +123,9 @@ done
 
 
 echo
-echo "*******************************"
-echo " Trafodion Configuration Setup"
-echo "*******************************"
+echo "************************************"
+echo " Trafodion Configuration File Setup"
+echo "************************************"
 echo
 echo "***INFO: Please press [Enter] to select defaults."
 echo
@@ -197,20 +197,6 @@ fi
 
 echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
 
-#==============================================
-#Check location given for EPEL RPM
-
-if [[ "$userForTrafodion" == "0" ]] &&[[ "$SUSE_LINUX" != "true" ]]; then
-   echo -n "Specify full path to EPEL RPM (including .rpm), default is None: "
-   read answer
-
-   if [ -z $answer ]; then
-      echo "***INFO: Will attempt to download RPM if EPEL is not installed on all nodes."
-      echo "export EPEL_RPM=\"\"" >> $LOCAL_TRAF_CONFIG
-   else   
-      echo "export EPEL_RPM=\"$answer\"" >> $LOCAL_TRAF_CONFIG      
-   fi
-fi
 #==============================================
 #Check location given for Java 65 or greater
 
