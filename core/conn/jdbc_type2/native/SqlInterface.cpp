@@ -1409,7 +1409,7 @@ SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt)
 			else
 				done = true;
 		}		
-		removeSrvrStmt(pSrvrStmt->dialogueId, (long)pTmp2SrvrStmt);			
+		removeSrvrStmt(pSrvrStmt->dialogueId, (long)pSrvrStmt);			
 		break;
 	case SQL_CLOSE:
 		if (! pSrvrStmt->isClosed)
@@ -3990,7 +3990,7 @@ SQLRETURN BuildSQLDesc2(SQLDESC_ID *pDesc,
         BYTE *&SQLDesc,
         Int32 &SQLDescLen,
         BYTE *&varBuffer,
-        Long &totalMemLen,
+        Int32 &totalMemLen,
         SRVR_DESC_HDL *&implDesc,
         DESC_HDL_LISTSTMT *&SqlDescInfo)
 {
@@ -4340,7 +4340,7 @@ SQLRETURN SetIndandVarPtr(SQLDESC_ID *pDesc,
         Int32 numEntries,
         BYTE *&SQLDesc,
         BYTE *&varBuffer,
-        Long &totalMemLen,
+        Int32 &totalMemLen,
         SRVR_DESC_HDL *&implDesc,
         DESC_HDL_LISTSTMT *&SqlDescInfo)
 {
@@ -4496,7 +4496,7 @@ SQLRETURN SetIndandVarPtr(SQLDESC_ID *pDesc,
 
 SQLRETURN GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length, Int32 Precision,
         Int32 &ODBCDataType, Int32 &ODBCPrecision, BOOL &SignType,
-        Int32 Nullable, Long &totalMemLen, Int32 SQLCharset, Int32 &ODBCCharset,
+        Int32 Nullable, Int32 &totalMemLen, Int32 SQLCharset, Int32 &ODBCCharset,
         Int32 IntLeadPrec, char *ColHeading)
 {
     FUNCTION_ENTRY("GetODBCValues", ("DataType=%d, DateTimeCode=%d, Precision=%d, \
@@ -6617,7 +6617,7 @@ SQLRETURN BuildSQLDesc2withRowsets(
         , BYTE               *&SQLDesc
         , Int32                &SQLDescLen
         , BYTE               *&varBuffer
-        , Long                &totalMemLen
+        , Int32                &totalMemLen
         , SRVR_DESC_HDL      *&implDesc
         , SQLCLI_QUAD_FIELDS *&inputQuadList
         , SQLCLI_QUAD_FIELDS *&inputQuadList_recover

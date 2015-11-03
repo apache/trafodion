@@ -131,7 +131,7 @@ extern SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt);
 
 SQLRETURN GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length, Int32 Precision,
         Int32 &ODBCDataType, Int32 &ODBCPrecision, BOOL &SignType,
-        Int32 Nullable, Long &totalMemLen, Int32 SQLCharset, Int32 &ODBCCharset,
+        Int32 Nullable, Int32 &totalMemLen, Int32 SQLCharset, Int32 &ODBCCharset,
         Int32 IntLeadPrec, char *ColHeading);
 
 SQLRETURN SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int32 &totalMemLen,
@@ -155,7 +155,7 @@ SQLRETURN BuildSQLDesc2(SQLDESC_ID *pDesc,
         BYTE *&SQLDesc,
         Int32 &SQLDescLength,
         BYTE *&varBuffer,
-        Long &totalMemLen,
+        Int32 &totalMemLen,
         SRVR_DESC_HDL *&implDesc,DESC_HDL_LISTSTMT *&SqlDescInfo);
 
 SQLRETURN BuildSQLDesc2withRowsets(SQLDESC_ID *pDesc,
@@ -166,7 +166,7 @@ SQLRETURN BuildSQLDesc2withRowsets(SQLDESC_ID *pDesc,
         BYTE *&SQLDesc,
         Int32 &SQLDescLength,
         BYTE *&varBuffer,
-        Long &totalMemLen,
+        Int32 &totalMemLen,
         SRVR_DESC_HDL *&implDesc,
         SQLCLI_QUAD_FIELDS *&inputQuadList_recover,
         SQLCLI_QUAD_FIELDS *&inputQuadList);
@@ -176,7 +176,7 @@ SQLRETURN SetIndandVarPtr(SQLDESC_ID *pDesc,
         Int32 numEntries,
         BYTE *&SQLDesc,
         BYTE *&varBuffer,
-        Long &totalMemLen,
+        Int32 &totalMemLen,
         SRVR_DESC_HDL *&implDesc,
         DESC_HDL_LISTSTMT *&SqlDescInfo);
 

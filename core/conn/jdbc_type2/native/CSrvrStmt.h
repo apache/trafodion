@@ -91,8 +91,8 @@ public:
     SQLDESC_ID              outputDesc;
     BYTE                    *inputDescVarBuffer;        // Data Buffer for input values
     BYTE                    *outputDescVarBuffer;       // Data Buffer for output values
-    Long                   inputDescVarBufferLen;       // Might need it as long in the future?
-    Long                   outputDescVarBufferLen;      // Might need it as long in the future?
+    Int32                   inputDescVarBufferLen;       // Might need it as long in the future?
+    Int32                   outputDescVarBufferLen;      // Might need it as long in the future?
     BOOL                    isReadFromModule;
     jobject                 resultSetObject;
     BOOL                    endOfData;
