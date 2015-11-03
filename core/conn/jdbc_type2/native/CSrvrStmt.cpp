@@ -66,8 +66,8 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     sqlWarningOrError = NULL;
     delayedSqlWarningOrErrorLength = 0;
     delayedSqlWarningOrError = NULL;
-    //SpjProxySyntaxString = NULL;
-    //SpjProxySyntaxStringLen = 0;
+    SpjProxySyntaxString = NULL;
+    SpjProxySyntaxStringLen = 0;
     SqlDescInfo = NULL;
     endOfData = FALSE;
 
@@ -734,12 +734,11 @@ void  SRVR_STMT_HDL::cleanupAll(void)
     }
 
     exPlan = UNAVAILABLE;
-    /*
+    
     if(SpjProxySyntaxString != NULL)
         delete[] SpjProxySyntaxString;
     SpjProxySyntaxString = NULL;
     SpjProxySyntaxStringLen = 0;
-    */
 
     current_holdableCursor = SQL_NONHOLDABLE;
     holdableCursor = SQL_NONHOLDABLE;
