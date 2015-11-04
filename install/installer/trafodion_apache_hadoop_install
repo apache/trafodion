@@ -752,12 +752,12 @@ echo "******************************"
 echo
 sudo mkdir -p $SQ_ROOT
 sudo chown $TRAF_USER.trafodion $SQ_ROOT
-/bin/cp -rf $LOCAL_WORKDIR/traf_start $TRAF_WORKDIR/installer/traf_start
+/bin/cp -rf $LOCAL_WORKDIR/traf_config $TRAF_WORKDIR/installer/traf_config
 
-sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
+sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_config" 2>&1 | tee -a $INSTALL_LOG
 
 if [ ${PIPESTATUS[0]} != "0" ]; then
-   echo "***ERROR: Error while running traf_start." | tee -a $INSTALL_LOG
+   echo "***ERROR: Error while running traf_config." | tee -a $INSTALL_LOG
    echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
    echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
    exit -1

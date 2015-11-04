@@ -44,6 +44,8 @@ Options:
                        the Trafodion license.
     --config_file      If provided, all install prompts will be
                        taken from this file and not prompted for.
+    --no_start         Will not start trafodion. Useful if other configurations 
+                       need to be done before a start.
 EOF
 }
 
@@ -134,6 +136,7 @@ echo "***INFO: Trafodion version = $trafodionVersion"
 USER_CONFIG=""
 ACCEPT_LICENSE="N"
 RUN_SCANNER="N"
+NO_START="Y"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -175,6 +178,9 @@ while [[ $# -gt 0 ]]; do
                exit -1 
             fi
             ;;
+        --no_start)
+            NO_START="N"
+            ;;            
         *)
             echo "***ERROR: unknown parameter '$1'"
             print_usage
@@ -197,6 +203,7 @@ export TRAF_LOGDIR="/var/log/trafodion"
 export INSTALL_LOG="$TRAF_LOGDIR/trafodion_install_$timestamp.log"
 export INSTALL_LOG_CP="$INSTALL_LOG"
 export SCANNER_LOG="$TRAF_LOGDIR/trafodion_scanner_$timestamp.log"
+#export TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 export TRAF_WORKDIR="/usr/lib/trafodion"
 export LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 export TRAF_CONFIG="/etc/trafodion/trafodion_config"
@@ -250,6 +257,7 @@ sudo chmod -R 777 $TRAF_WORKDIR
 userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 
 if [[ "$userForTrafodion" != "0" ]]; then
+
    isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
 
    trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
@@ -330,6 +338,12 @@ fi
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/INSTALL_LOG\=/d' $TRAF_CONFIG
 echo "export INSTALL_LOG=\"$INSTALL_LOG_CP\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/START_ALL\=/d' $TRAF_CONFIG
+echo "export START_ALL=\"$NO_START\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
@@ -747,20 +761,31 @@ echo "***INFO: Trafodion Mods ran successfully."
 #Install Trafodion
 echo
 echo "******************************"
-echo " TRAFODION START"
+echo " TRAFODION CONFIGURATION"
 echo "******************************"
 echo
 sudo mkdir -p $SQ_ROOT
 sudo chown $TRAF_USER.trafodion $SQ_ROOT
-/bin/cp -rf $LOCAL_WORKDIR/traf_start $TRAF_WORKDIR/installer/traf_start
+/bin/cp -rf $LOCAL_WORKDIR/traf_config $TRAF_WORKDIR/installer/traf_config
 
-sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
+sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_config" 2>&1 | tee -a $INSTALL_LOG
 
 if [ ${PIPESTATUS[0]} != "0" ]; then
-   echo "***ERROR: Error while running traf_start." | tee -a $INSTALL_LOG
+   echo "***ERROR: Error while running traf_config." | tee -a $INSTALL_LOG
    echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
    echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
    exit -1
+fi
+
+if [[ $START_ALL == "Y" ]]; then
+   sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
+
+   if [ ${PIPESTATUS[0]} != "0" ]; then
+      echo "***ERROR: Error while running traf_start." | tee -a $INSTALL_LOG
+      echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
+      echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
+     exit -1
+  fi
 fi
 
 #==============================================
