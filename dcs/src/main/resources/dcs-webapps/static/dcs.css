@@ -17,10 +17,18 @@
  * limitations under the License.
  */
 h1, h2, h3 { color: DarkSlateBlue }
-table { border: thin solid DodgerBlue }
-tr { border: thin solid DodgerBlue }
-td { border: thin solid DodgerBlue }
-th { border: thin solid DodgerBlue }
+table { border: thin solid lightgrey }
+tr { border: thin solid lightgrey }
+td 
+{ 
+  border-left: thin solid lightgrey;
+  border-bottom: thin solid lightgrey;
+}
+th 
+{ 
+  border: thin solid lightgrey;
+  text-align: left;
+ }
 #logo {float: right;}
 #logo img {border: none;}
 #page_title {}

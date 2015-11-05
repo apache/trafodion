@@ -16,7 +16,6 @@ regress*
 .qrc
 regtest_*
 dtm*.*.pb.cc
-trafodion_license
 protobuf*
 package.exclude.*
 jdbct2.jar.version*

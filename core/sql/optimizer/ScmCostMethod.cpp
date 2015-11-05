@@ -3881,9 +3881,16 @@ CostMethodHbaseDelete::scmComputeOperatorCostInternal(RelExpr* op,
   HbaseDelete* delOp = (HbaseDelete *)op;   // downcast
 
   CMPASSERT(partFunc_ != NULL);
-  CostScalar activePartitions =
-   (CostScalar)
-     (((NodeMap *)(partFunc_->getNodeMap()))->getNumActivePartitions());
+
+  //  Later, if and when we start using NodeMaps to track active regions for 
+  //  Trafodion tables in HBase (or native HBase tables), we can use the
+  //  following to get active partitions.
+  //CostScalar activePartitions =
+  // (CostScalar)
+  //   (((NodeMap *)(partFunc_->getNodeMap()))->getNumActivePartitions());
+  //  But for now, we do the following:
+  CostScalar activePartitions = (CostScalar)(partFunc_->getCountOfPartitions());
+
   const IndexDesc* CIDesc = delOp->getIndexDesc();
   const CostScalar & recordSizeInKb = CIDesc->getRecordSizeInKb();
 

@@ -31,6 +31,7 @@ org.trafodion.dcs.servermt.DcsServer;
 org.trafodion.dcs.util.DcsConfiguration;
 org.trafodion.dcs.Constants;
 org.trafodion.dcs.util.Bytes;
+java.net.InetAddress;
 </%import>
 
 <%java>
@@ -39,6 +40,10 @@ org.trafodion.dcs.util.Bytes;
   int serverInfoPort = server.getConfiguration().getInt("dcs.server.info.port", 40030);
   String trafodionHome = server.getTrafodionHome();
   boolean trafodionLogs = server.getConfiguration().getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
+  String masterIP = server.getMasterHostName();
+  try{
+        masterIP = InetAddress.getByName(server.getMasterHostName()).getHostAddress();
+  }catch(Exception e){}
 </%java>
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- Commenting out DOCTYPE so our blue outline shows on hadoop 0.20.205.0, etc.
@@ -55,7 +60,7 @@ org.trafodion.dcs.util.Bytes;
 <body>
 <h1 id="page_title">DcsServer: <% server.getServerName() %>:<% server.getInfoServer().getPort() %></h1>
 <p id="links_menu">
-  <a href="http://<% server.getMasterHostName() %>:<% masterInfoPort %>">Home</a>,
+  <a href="http://<% masterIP %>:<% masterInfoPort %>">Home</a>,
   <a href="/logs/">Dcs local logs</a>
   <%java>
    if(! trafodionHome.isEmpty()) { 
