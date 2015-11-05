@@ -10260,22 +10260,18 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
                 NULL);
 
   ((MergeUpdate *)re)->setXformedUpsert();
-  ValueIdSet debugSet;
-  if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
-  {
-    RelExpr * mu = re;
+  RelExpr * mu = re;
     
-    re = new(bindWA->wHeap()) Join
-      (child(0), re, REL_TSJ_FLOW, NULL);
-    ((Join*)re)->doNotTransformToTSJ();
-    ((Join*)re)->setTSJForMerge(TRUE);	
-    ((Join*)re)->setTSJForMergeWithInsert(TRUE);
-    ((Join*)re)->setTSJForWrite(TRUE);
-    if (bindWA->hasDynamicRowsetsInQuery())
-      mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-    else
-      re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-  } 
+  re = new(bindWA->wHeap()) Join
+    (child(0), mu, REL_TSJ_FLOW, NULL);
+  ((Join*)re)->doNotTransformToTSJ();
+  ((Join*)re)->setTSJForMerge(TRUE);	
+  ((Join*)re)->setTSJForMergeWithInsert(TRUE);
+  ((Join*)re)->setTSJForWrite(TRUE);
+  if (bindWA->hasDynamicRowsetsInQuery())
+    mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+  else
+    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
   
   re = re->bindNode(bindWA);
   if (bindWA->errStatus())
@@ -10589,8 +10585,14 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   
   bindWA->initNewScope();
 
-  if ((isMerge()) && 
-      (child(0)))
+  // For an xformaed upsert any UDF or subquery is guaranteed to be 
+  // in the using clause. Upsert will not generate a merge without using 
+  // clause. ON clause, when matched SET clause and when not matched INSERT
+  // clauses all use expressions from the using clause. (same vid).
+  // Therefore any subquery or UDF in the using clause will flow to the
+  // rest of he tree through the TSJ and will be available. Each subquery
+  // will be evaluated only once, and will be evaluated prior to the merge
+  if (isMerge() && child(0) && !xformedUpsert())
   {
     ItemExpr *selPred = child(0)->castToRelExpr()->selPredTree();
     if (selPred || where_)
@@ -10626,8 +10628,7 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
     }
   }
 
-  if ((isMerge()) &&
-      (recExprTree()))
+  if (isMerge() && recExprTree() && !xformedUpsert())
   {
     if (recExprTree()->containsSubquery())
     {
@@ -10649,14 +10650,14 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   // if insertValues, then this is an upsert stmt.
   if (insertValues())
     {
-      if (insertValues()->containsSubquery())
+      if (insertValues()->containsSubquery() && !xformedUpsert())
         {
           *CmpCommon::diags() << DgSqlCode(-3241) 
                               << DgString0(" Subquery in INSERT clause not allowed.");
           bindWA->setErrStatus();
           return this;
         }
-      if (insertValues()->containsUDF())
+      if (insertValues()->containsUDF() && !xformedUpsert())
         {
           *CmpCommon::diags() << DgSqlCode(-4471) 
                               << DgString0(((UDFunction *)insertValues()->containsUDF())->

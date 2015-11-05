@@ -731,5 +731,12 @@ upsert into t015t14 values (1,2),(11,12);
 upsert into t015t15 values (2);
 upsert into t015t14 values (1,3);
 
+-- Upsert/merge with self-referntial subquery in values list
+delete from t015t7;
+upsert into t015t7 values (1, NVL((select b from t015t7 where a = 1),DEFAULT),10) ;
+select * from t015t7;
+upsert into t015t7 values (1, NVL((select b+1 from t015t7 where a = 1),DEFAULT),20) ;
+select * from t015t7;
+
 log;
 
