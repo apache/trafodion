@@ -1,5 +1,3 @@
-## Top-level Makefile for building Trafodion components
-
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
