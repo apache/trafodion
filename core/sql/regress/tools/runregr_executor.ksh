@@ -449,9 +449,9 @@ fi
 
 # Tests that use SPJ on NSK or Linux require a running ODBC
 # service. So if the regressions are running, start MXOAS.
-if [ $USE_NDCS -ne 0 -a $diffOnly -eq 0 ]; then
-  START_MXODBC
-fi
+#if [ $USE_NDCS -ne 0 -a $diffOnly -eq 0 ]; then
+#  START_MXODBC
+#fi
 
 # main loop over all test files
 for i in $prettyfiles; do
@@ -914,9 +914,9 @@ for i in $prettyfiles; do
 done # for i in $prettyfiles
 
 # stop the MXOAS if it was started
-if [ $MXODBC_USABLE -eq 1 ]; then
-  STOP_MXODBC
-fi
+#if [ $MXODBC_USABLE -eq 1 ]; then
+#  STOP_MXODBC
+#fi
 
 #rm -f $MAKESCRIPT 2>$NULL
 rm -f $REGRRUNDIR/runmxcmp.ksh 2>$NULL
