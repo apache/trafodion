@@ -96,8 +96,7 @@
 
 	<!-- LIB -->
 	<target name="lib" depends="compile">
-		<property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
-		<property file="jdbct4.jar.version"/>
+		<property file="${my_sqroot}/../conn/trafodion-conn.jar.mf"/>
 		<jar destfile="${jdbcT4.jar}" basedir="${temp.classes}">
 			<include name="**/*.class" />
 			<include name="**/*.properties" />
