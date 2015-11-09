@@ -7469,7 +7469,14 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-
+  if (naTable->hasLobColumn() && isSampleScan())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4322)
+       << DgTableName(
+           naTable->getTableName().getQualifiedNameAsAnsiString());
+     bindWA->setErrStatus();
+     return NULL;
+    }
   // restricted partitions for HBase table
   if (naTable->isHbaseTable() &&
       (naTable->isPartitionNameSpecified() ||
@@ -14061,6 +14068,20 @@ RelExpr *Transpose::bindNode(BindWA *bindWA)
   transUnionVectorSize_ = numTransSets + 1;
   transUnionVector() = new(bindWA->wHeap())
     ValueIdList[transUnionVectorSize_];
+  //If there is a lob column return error. Transpose not allowed on lob columns.
+ 
+  for (i = 0; i < resultTable->getDegree(); i++)
+    {
+      if ((resultTable->getType(i)).getFSDatatype() == REC_BLOB || 
+	  (resultTable->getType(i)).getFSDatatype() == REC_BLOB)
+	{
+	  *CmpCommon::diags() << DgSqlCode(-4322);
+	  bindWA->setErrStatus();
+	  return this;
+	}
+    }
+ 
+    
 
   // Get the key column reference
   // This is the last time we need this ItemExpr.

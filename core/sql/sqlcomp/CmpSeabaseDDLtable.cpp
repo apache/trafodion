@@ -949,7 +949,15 @@ short CmpSeabaseDDL::constraintErrorChecks(
                                   << DgTableName(addConstrNode->getTableName());
               return -1;
             }
-          
+	  // If column is a LOB column , error
+	  Lng32 datatype = nac->getType()->getFSDatatype();
+	  if ((datatype == REC_BLOB) || (datatype == REC_CLOB))
+	    {
+	      *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+				  << DgColumnName( ToAnsiIdentifier(keyColList[i]));
+	      processReturn();
+	      return -1;
+	    }
           Lng32 colNumber = nac->getPosition();
           
           // If the column has already been found, return error
@@ -1871,6 +1879,18 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
 
       NAType *colType = colArray[colIx]->getColumnDataType();
+      if (colType->getFSDatatype() == REC_BLOB || colType->getFSDatatype() == REC_CLOB)
+	//Cannot allow LOB in primary or clustering key 
+	{
+	  *CmpCommon::diags() << DgSqlCode(CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+                              << DgColumnName(colName);
+
+          deallocEHI(ehi); 
+
+          processReturn();
+
+          return -1;
+	}
       keyLength += colType->getEncodedKeyLength();
     }
 
@@ -2156,6 +2176,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
           if ((datatype == REC_BLOB) ||
 	      (datatype == REC_CLOB))
 	    {
+	      		
 	      lobNumList[j] = i; //column->getColumnNumber();
 	      lobTypList[j] = 
 	        (short)(column->getLobStorage() == Lob_Invalid_Storage
@@ -2178,6 +2199,17 @@ short CmpSeabaseDDL::createSeabaseTable2(
   Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
     if (j > 0)
       {
+	//if the table is a volatile table return an error
+	if (createTableNode->isVolatile())
+	  {
+	   *CmpCommon::diags()
+            << DgSqlCode(-CAT_LOB_COLUMN_IN_VOLATILE_TABLE)
+            << DgTableName(extTableName);
+          
+          deallocEHI(ehi); 
+          processReturn();
+          return -1; 
+	  }
         Int64 objUID = getObjectUID(&cliInterface,
    			   catalogNamePart.data(), schemaNamePart.data(), 
    			   objectNamePart.data(),
@@ -4592,7 +4624,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
 
       return;
     }
-
+  // If column is a LOB column , error
+   if ((datatype == REC_BLOB) || (datatype == REC_CLOB))
+     {
+      *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COLUMN_ALTER)
+                              << DgColumnName(colName);
+      processReturn();
+      return;
+     }
   char * col_name = new(STMTHEAP) char[colName.length() + 1];
   strcpy(col_name, (char*)colName.data());
 
@@ -4861,7 +4900,15 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
       return;
     }
-
+  // If column is a LOB column , error
+  Int32 datatype = nacol->getType()->getFSDatatype();
+   if ((datatype == REC_BLOB) || (datatype == REC_CLOB))
+     {
+      *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COLUMN_ALTER)
+                              << DgColumnName(colName);
+      processReturn();
+      return;
+     }
   const NAFileSet * naFS = naTable->getClusteringIndex();
   const NAColumnArray &naKeyColArr = naFS->getIndexKeyColumns();
   if (naKeyColArr.getColumn(colName))
@@ -5400,7 +5447,14 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
       
       return;
     }
-
+ // If column is a LOB column , error
+  if ((currType->getFSDatatype() == REC_BLOB) || (currType->getFSDatatype() == REC_CLOB))
+     {
+      *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COLUMN_ALTER)
+                              << DgColumnName(colName);
+      processReturn();
+      return;
+     }
   const NAFileSet * naFS = naTable->getClusteringIndex();
   const NAColumnArray &naKeyColArr = naFS->getIndexKeyColumns();
   if (naKeyColArr.getColumn(colName))
@@ -5573,6 +5627,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       pkeyStr += colName;
       if (j < (keyColumnArray.entries() - 1))
         pkeyStr += ", ";
+      
     }
   pkeyStr += ")";
 
@@ -5858,6 +5913,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
         keyColOrderList.insert("DESC");
       else
         keyColOrderList.insert("ASC");
+      
     }
 
   if (constraintErrorChecks(

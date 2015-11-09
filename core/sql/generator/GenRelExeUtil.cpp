@@ -3721,6 +3721,10 @@ if (handleInStringFormat_)
     exe_util_tdb->setTruncateExisting(TRUE);
   else
     exe_util_tdb->setTruncateExisting(FALSE);
+  if (intParam2_ == ExtractFileActionType::APPEND_OR_CREATE)
+    exe_util_tdb->setAppendOrCreate(TRUE);
+  else
+    exe_util_tdb->setAppendOrCreate(FALSE);
 
   exe_util_tdb->setWithCreate(withCreate_);
 
