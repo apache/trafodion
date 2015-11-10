@@ -131,6 +131,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   encodedKeyExpr_(encodedKeyExpr),
   keyColValExpr_(keyColValExpr),
   insDelPreCondExpr_(NULL),
+  insConstraintExpr_(NULL),
+  updConstraintExpr_(NULL),
   hbaseFilterExpr_(hbaseFilterExpr),
 
   asciiRowLen_(asciiRowLen),
@@ -239,6 +241,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   encodedKeyExpr_(NULL),
   keyColValExpr_(NULL),
   insDelPreCondExpr_(NULL),
+  insConstraintExpr_(NULL),
+  updConstraintExpr_(NULL),
   hbaseFilterExpr_(NULL),
 
   asciiRowLen_(0),
@@ -311,7 +315,7 @@ ComTdbHbaseAccess::~ComTdbHbaseAccess()
 Int32
 ComTdbHbaseAccess::numExpressions() const
 {
-  return(16);
+  return 18;
 }
  
 // Return the expression names of the explain TDB based on some 
@@ -353,6 +357,10 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
       return "hbaseFilterExpr";
     case 15:
       return "preCondExpr";
+    case 16:
+      return "insConstraintExpr";
+    case 17:
+      return "updConstraintExpr";
     default:
       return 0;
     }  
@@ -397,6 +405,10 @@ ComTdbHbaseAccess::getExpressionNode(Int32 expNum)
       return hbaseFilterExpr_;
     case 15:
       return insDelPreCondExpr_;
+    case 16:
+      return insConstraintExpr_;
+    case 17:
+      return updConstraintExpr_;
     default:
       return NULL;
     }  
@@ -418,6 +430,8 @@ Long ComTdbHbaseAccess::pack(void * space)
   encodedKeyExpr_.pack(space);
   keyColValExpr_.pack(space);
   insDelPreCondExpr_.pack(space);
+  insConstraintExpr_.pack(space);
+  updConstraintExpr_.pack(space);
   hbaseFilterExpr_.pack(space);
   colFamNameList_.pack(space);
   workCriDesc_.pack(space);
@@ -486,6 +500,8 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(encodedKeyExpr_.unpack(base, reallocator)) return -1;
   if(keyColValExpr_.unpack(base, reallocator)) return -1;
   if(insDelPreCondExpr_.unpack(base, reallocator)) return -1;
+  if(insConstraintExpr_.unpack(base, reallocator)) return -1;
+  if(updConstraintExpr_.unpack(base, reallocator)) return -1;
   if(hbaseFilterExpr_.unpack(base, reallocator)) return -1;
   if(colFamNameList_.unpack(base, reallocator)) return -1;
   if(workCriDesc_.unpack(base, reallocator)) return -1;

@@ -476,12 +476,12 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case EVAL_CONSTRAINT:
 	  {
-	    rc = applyPred(scanExpr());
-	    if (rc == 1) // expr is true or no expr
+	    rc = evalConstraintExpr(insConstraintExpr());
+	    if (rc == 1)
 	      step_ = CREATE_MUTATIONS;
-	    else if (rc == 0) // expr is false
+	    else if (rc == 0) 
 	      step_ = INSERT_CLOSE;
-	    else // error
+	    else 
 	      step_ = HANDLE_ERROR;
 	  }
 	  break;
@@ -862,12 +862,12 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
 	case EVAL_CONSTRAINT:
 	  {
-	    rc = applyPred(scanExpr());
-	    if (rc == 1) // expr is true or no expr
+	    rc = evalConstraintExpr(insConstraintExpr());
+	    if (rc == 1) 
 	      step_ = CREATE_MUTATIONS;
-	    else if (rc == 0) // expr is false
+	    else if (rc == 0) 
 	      step_ = INSERT_CLOSE;
-	    else // error
+	    else 
 	      step_ = HANDLE_ERROR;
 	  }
 	  break;
@@ -1957,18 +1957,19 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		  }
 	      }
 
-	    step_ = EVAL_CONSTRAINT;
+	    step_ = EVAL_UPD_CONSTRAINT;
 	  }
 	  break;
 
-	case EVAL_CONSTRAINT:
+	case EVAL_UPD_CONSTRAINT:
 	  {
-	    rc = tcb_->applyPred(tcb_->mergeUpdScanExpr());
-	    if (rc == 1) // expr is true or no expr
+	    rc = tcb_->evalConstraintExpr(tcb_->updConstraintExpr(), tcb_->hbaseAccessTdb().updateTuppIndex_,
+              tcb_->updateRow_);
+	    if (rc == 1)
 	      step_ = CREATE_MUTATIONS;
-	    else if (rc == 0) // expr is false
-	      step_ = NEXT_ROW_AFTER_UPDATE;
-	    else // error
+	    else if (rc == 0) 
+	      step_ = GET_CLOSE;
+	    else 
 	      step_ = HANDLE_ERROR;
 	  }
 	  break;
@@ -2040,9 +2041,22 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		    break;
 		  }
 	      }
-
-	    if (tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::MERGE_)
-	      rowUpdated_ = FALSE;
+	      if (tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::MERGE_)
+	          rowUpdated_ = FALSE;
+              step_ = EVAL_INS_CONSTRAINT;
+            }
+            break;
+         case EVAL_INS_CONSTRAINT:
+          {
+             rc = tcb_->evalConstraintExpr(tcb_->insConstraintExpr());
+             if (rc == 0) {
+               step_ = GET_CLOSE;
+               break;
+            }
+            else if (rc != 1) {
+               step_ = HANDLE_ERROR;
+               break;
+            }
 
 	    retcode = tcb_->createDirectRowBuffer( tcb_->hbaseAccessTdb().mergeInsertTuppIndex_,
 					    tcb_->mergeInsertRow_,
@@ -2875,18 +2889,18 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 		  }
 	      }
 
-	    step_ = EVAL_CONSTRAINT;
+	    step_ = EVAL_UPD_CONSTRAINT;
 	  }
 	  break;
 
-	case EVAL_CONSTRAINT:
+	case EVAL_UPD_CONSTRAINT:
 	  {
-	    rc = tcb_->applyPred(tcb_->mergeUpdScanExpr(), 
-				 tcb_->hbaseAccessTdb().updateTuppIndex_, tcb_->updateRow_);
-	    if (rc == 1) // expr is true or no expr
+	    rc = tcb_->evalConstraintExpr(tcb_->updConstraintExpr(), tcb_->hbaseAccessTdb().updateTuppIndex_,
+                     tcb_->updateRow_);
+	    if (rc == 1) 
 	      step_ = CREATE_MUTATIONS;
-	    else if (rc == 0) // expr is false
-	      step_ = NEXT_ROW; 
+	    else if (rc == 0)
+	      step_ = SCAN_CLOSE; 
 	    else // error
 	      step_ = HANDLE_ERROR;
 	  }
@@ -4129,8 +4143,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    workAtp_->getTupp(hbaseAccessTdb().updateTuppIndex_)
 	      .setDataPointer(updateRow_);
 	    
-	    if (updateExpr())
-	      {
+	    if (updateExpr()) {
 		ex_expr::exp_return_type evalRetCode =
 		  updateExpr()->eval(pentry_down->getAtp(), workAtp_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
@@ -4138,23 +4151,33 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		    step_ = HANDLE_ERROR;
 		    break;
 		  }
-	      }
-
+	    }
+            step_ = EVAL_CONSTRAINT;
+          }
+          break;
+        case EVAL_CONSTRAINT:
+          {
+            rc = evalConstraintExpr(updConstraintExpr(), hbaseAccessTdb().updateTuppIndex_,updateRow_);
+            if (rc == 0) {
+              step_ = RS_CLOSE; 
+              break;
+            }
+            else if (rc != 1) {
+              step_ = HANDLE_ERROR;
+              break;
+            }
 	    retcode = createDirectRowBuffer(
 				      hbaseAccessTdb().updateTuppIndex_,
 				      updateRow_,
 				      hbaseAccessTdb().listOfUpdatedColNames(),
 				      TRUE);
-	    if (retcode == -1)
-	      {
+	    if (retcode == -1) {
 		step_ = HANDLE_ERROR;
 		break;
-	      }
-
+	    }
 	    step_ = NEXT_ROW;
 	  }
 	  break;
-
 	case PROCESS_UPDATE:
 	case PROCESS_UPDATE_AND_CLOSE:
 	  {
