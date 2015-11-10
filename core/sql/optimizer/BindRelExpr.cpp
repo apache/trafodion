@@ -7469,14 +7469,7 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-  if (naTable->hasLobColumn() && isSampleScan())
-    {
-      *CmpCommon::diags() << DgSqlCode(-4322)
-       << DgTableName(
-           naTable->getTableName().getQualifiedNameAsAnsiString());
-     bindWA->setErrStatus();
-     return NULL;
-    }
+ 
   // restricted partitions for HBase table
   if (naTable->isHbaseTable() &&
       (naTable->isPartitionNameSpecified() ||
@@ -14073,7 +14066,7 @@ RelExpr *Transpose::bindNode(BindWA *bindWA)
   for (i = 0; i < resultTable->getDegree(); i++)
     {
       if ((resultTable->getType(i)).getFSDatatype() == REC_BLOB || 
-	  (resultTable->getType(i)).getFSDatatype() == REC_BLOB)
+	  (resultTable->getType(i)).getFSDatatype() == REC_CLOB)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-4322);
 	  bindWA->setErrStatus();

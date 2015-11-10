@@ -1064,16 +1064,7 @@ RelExpr *RelSample::bindNode(BindWA *bindWA)
       childTable.getHeading(i));
     sampledColumns() += newColumn->getValueId();
   }
-  for (i = 0; i < resultTable->getDegree(); i++)
-    {
-      if ((resultTable->getType(i)).getFSDatatype() == REC_BLOB || 
-	  (resultTable->getType(i)).getFSDatatype() == REC_BLOB)
-	{
-	  *CmpCommon::diags() << DgSqlCode(-4322);
-	  bindWA->setErrStatus();
-	  return this;
-	}
-    }
+  
   // Set the return descriptor
   //
   setRETDesc(resultTable);
