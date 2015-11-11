@@ -41,13 +41,13 @@
 
     <target name="dist" depends="native">
        <mkdir dir="dist"/>
-       <property file="${my_sqroot}/../conn/trafodion-conn.jar.mf"/>
+       <property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
        <jar destfile="dist/jdbcT2.jar" compress="true">
            <fileset dir="classes"/>
            <manifest id="mf">
               <attribute name="Main-Class" value="JdbcT2"/>
               <attribute name="VPROC" value="${vproc.str}"/>
-              <attribute name="Implementation-Version-1" value="${Implementation-Version-1}"/>
+	      <attribute name="Implementation-Version-1" value="Version 1.0.0"/>
               <attribute name="Implementation-Version-2" value="${Implementation-Version-2}"/>
               <attribute name="Implementation-Version-3" value="${Implementation-Version-3}"/>
               <attribute name="Implementation-Version-4" value="${Implementation-Version-4}"/>

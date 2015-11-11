@@ -67,10 +67,7 @@ dbsecurity: $(MPI_TARGET)
 foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
-conn-mf: verhdr
-	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.0 > $(MY_SQROOT)/../conn/trafodion-conn.jar.mf	
-
-jdbc_jar: verhdr conn-mf
+jdbc_jar: verhdr 
 	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
 	$(MAVEN) install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
 	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
@@ -87,7 +84,7 @@ ci: trafci
 trafci: jdbc_jar
 	cd conn/trafci && $(ANT) dist 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
-jdbc_type2_jar: verhdr foundation conn-mf
+jdbc_type2_jar: verhdr foundation 
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	$(MAVEN) install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
