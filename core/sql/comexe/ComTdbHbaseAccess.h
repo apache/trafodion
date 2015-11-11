@@ -851,7 +851,12 @@ public:
    void setInsDelPreCondExpr(ExExprPtr exprPtr) {
         insDelPreCondExpr_ = exprPtr;
    }
-
+   void setInsConstraintExpr(ExExprPtr exprPtr) {
+      insConstraintExpr_ = exprPtr;
+   }
+   void setUpdConstraintExpr(ExExprPtr exprPtr) {
+      updConstraintExpr_ = exprPtr;
+   }
  protected:
   enum
   {
@@ -949,6 +954,8 @@ public:
   ExExprPtr keyColValExpr_;
   ExExprPtr insDelPreCondExpr_;
   ExExprPtr hbaseFilterExpr_;
+  ExExprPtr insConstraintExpr_;
+  ExExprPtr updConstraintExpr_;
 
   ExCriDescPtr workCriDesc_;      
 
