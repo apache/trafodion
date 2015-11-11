@@ -1693,7 +1693,9 @@ Ex_Lob_Error ExLob::readDataToLocalFile(char *fileName,  Int64 offset, Int64 siz
     // open the targte file for writing 
     int filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
     int openFlags = O_RDWR ; // O_DIRECT needs mem alignment
-    if ((LobTgtFileFlags)fileflags == Lob_Append_Or_Error )
+    if (((LobTgtFileFlags)fileflags == Lob_Append_Or_Error ) ||
+	((LobTgtFileFlags)fileflags == Lob_Error_Or_Create ) ||
+	((LobTgtFileFlags)fileflags == Lob_Append_Or_Create))
       openFlags |= O_APPEND;
     else
       openFlags |= O_TRUNC;
@@ -1807,7 +1809,10 @@ Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 s
 	return LOB_TARGET_FILE_EXISTS_ERROR;
       else
 	{
+	  
 	  openFlags =  O_WRONLY ;
+	  if ((LobTgtFileFlags)fileflags == Lob_Append_Or_Error )
+	    openFlags |= O_APPEND;
 	  fdTgtFile = hdfsOpenFile(fs_, tgtFileName, openFlags, 0,0,0);
 	  if (fdTgtFile == NULL)
 	    return LOB_TARGET_FILE_OPEN_ERROR;

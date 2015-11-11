@@ -903,6 +903,7 @@ RelExpr *RelSample::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return this;
   
+  
   // If this is a random sample on an HBase table, push the sampling down into
   // the Scan node and remove the Sample node from the tree. For HBase, we
   // perform sampling via a row filter on the HBase side.

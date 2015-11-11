@@ -5524,7 +5524,6 @@ NATable::NATable(BindWA *bindWA,
 
   if (hasLobColumn())
     {
-//    Memory Leak
       // read lob related information from lob metadata
       short *lobNumList = new (heap_) short[getColumnCount()];
       short *lobTypList = new (heap_) short[getColumnCount()];

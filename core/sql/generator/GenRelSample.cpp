@@ -192,7 +192,20 @@ PhysSample::codeGen(Generator *generator)
 //       MapInfo *mapInfo = localMapTable->addMapInfoToThis(valId, attr);
 //       mapInfo->codeGenerated();
 //     }
-
+// check if any of the columns inthe sampled columns are lob columns. If so, return an error.
+  ValueId valId;
+  for(valId = sampledColumns().init();
+      sampledColumns().next(valId);
+      sampledColumns().advance(valId))
+    {
+      const NAType &colType = valId.getType();
+      if ((colType.getFSDatatype() == REC_BLOB) ||
+	  (colType.getFSDatatype() == REC_CLOB))
+	{
+	   *CmpCommon::diags() << DgSqlCode(-4322);
+	   GenExit();
+	}
+    }
   // Now, remove all attributes from the map table except the 
   // the stuff in the local map table -- the result of this node.
   //
