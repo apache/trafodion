@@ -50,7 +50,7 @@ for AVAR in $VARFILELIST; do
       printf '%s =\t%s\n' $AVAR $AVALUE
    fi
    if [[ $RESULT != 0 ]]; then
-      echo "*** Error: $AVAR file not found in PATH."
+      echo "*** Error: $AVAR file not found in PATH or file not fully qualified."
       RETVAL=1
    fi
 done
