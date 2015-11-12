@@ -23,6 +23,8 @@ package org.trafodion.jdbc.t4;
 
 public class Vproc {
 	private static final String vprocStr = "@@@@";
+	static final int jdbcMajorVersion = 1;
+	static final int jdbcMinorVersion = 0;
 
 	public static void main(String[] args) {
 		System.out.println(vprocStr);

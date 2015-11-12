@@ -32,7 +32,7 @@
 
 // component version for binaries
 #define VERS_CV_MAJ 1
-#define VERS_CV_MIN 4
+#define VERS_CV_MIN 0
 #define VERS_CV_UPD 0
 
 DEFINE_EXTERN_COMP_DOVERS(type2)
