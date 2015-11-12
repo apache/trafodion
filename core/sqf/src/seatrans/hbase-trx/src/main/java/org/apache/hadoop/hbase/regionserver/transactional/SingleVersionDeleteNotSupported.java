@@ -57,8 +57,7 @@ public class SingleVersionDeleteNotSupported extends DoNotRetryIOException {
         Collection<List<Cell>> values = delete.getFamilyCellMap().values();
         for (List<Cell> value : values) {
             for (Cell cell : value) {
-                KeyValue kv = new KeyValue(cell);
-                if (Type.Delete.getCode() == kv.getTypeByte()) {
+                if (cell.getTypeByte() == Type.Delete.getCode()) {
                     throw new SingleVersionDeleteNotSupported();
                 }
             }
