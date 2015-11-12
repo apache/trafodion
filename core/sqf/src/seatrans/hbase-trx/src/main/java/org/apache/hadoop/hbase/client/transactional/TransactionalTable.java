@@ -773,8 +773,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         if (maxKeyValueSize > 0) {
             for (List<Cell> list : put.getFamilyCellMap().values()) {
                 for (Cell c : list) {
-                    KeyValue kv = new KeyValue(c);
-                    if (kv.getLength() > maxKeyValueSize) {
+                    if (KeyValueUtil.length(c) > maxKeyValueSize) {
                         throw new IllegalArgumentException("KeyValue size too large");
                     }
                 }
