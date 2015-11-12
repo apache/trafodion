@@ -239,6 +239,8 @@ public:
   const NAColumnArray & getPartitioningKeyColumns() const
                                        { return partitioningKeyColumns_; }
 
+  NAString getBestPartitioningKeyColumns(char separator) const;
+
   PartitioningFunction * getPartitioningFunction() const
                                                      { return partFunc_; }
 

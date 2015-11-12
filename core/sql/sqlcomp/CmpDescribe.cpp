@@ -2943,7 +2943,8 @@ short CmpDescribeSeabaseTable (
 
       NABoolean attributesSet = FALSE;
       if (((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned))) ||
-          (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY))
+          ((NOT naTable->defaultColFam().isNull()) && 
+           (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY)))
         {
           char attrs[2000];
           strcpy(attrs, " ATTRIBUTES ");
@@ -2952,7 +2953,8 @@ short CmpDescribeSeabaseTable (
             strcat(attrs, "NO AUDIT ");
           if (isAligned)
             strcat(attrs, "ALIGNED FORMAT ");
-          if (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY)
+          if ((NOT naTable->defaultColFam().isNull()) &&
+              (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY))
             {
               strcat(attrs, "DEFAULT COLUMN FAMILY '");
               strcat(attrs, naTable->defaultColFam());

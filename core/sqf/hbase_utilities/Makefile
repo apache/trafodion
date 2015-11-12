@@ -18,25 +18,29 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
-# Makefile for packaging client products
+
+# This Makefile is just a thin shell to Maven, which is used to do the real build
 
 include ../macros.gmk #top level
 
-RM      = /bin/rm
-ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER).tgz
-else
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER)-debug.tgz
-endif
+.NOTPARALLEL: all
 
+all: build_all
 
-.PHONY: all
-all: pkg-clients
+build_all:	 
+	$(MAKE) mavenbuild
+	echo "$(MAVEN) site package -DskipTests"
+	echo "### For full Maven output, see file build_utility.log"
 
-pkg-clients: 
-	tar -zcvf $(CLIENT_TAR) clients
-clean:	
-	$(RM) -rf $(MY_SQROOT)/../conn/clients 
-	$(RM) -f $(MY_SQROOT)/../conn/*.mf
-	$(RM) -f $(CLIENT_TAR)
+mavenbuild:
+        # create a jar manifest file with the correct version information
+	mkdir -p src/main/resources
+	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 > src/main/resources/trafodion-utility.jar.mf
+        # run maven
+	set -o pipefail && $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
+	cp -pf target/trafodion-utility-*.jar $(MY_SQROOT)/export/lib
+
+clean:
+	$(MAVEN) clean
+	$(RM) build_utility.log
+	$(RM) -rf $(MY_SQROOT)/export/lib/trafodion-utility-*.jar

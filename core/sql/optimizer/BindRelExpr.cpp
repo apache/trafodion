@@ -7469,7 +7469,7 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-
+ 
   // restricted partitions for HBase table
   if (naTable->isHbaseTable() &&
       (naTable->isPartitionNameSpecified() ||
@@ -10260,22 +10260,18 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
                 NULL);
 
   ((MergeUpdate *)re)->setXformedUpsert();
-  ValueIdSet debugSet;
-  if (child(0) && (child(0)->getOperatorType() != REL_TUPLE))
-  {
-    RelExpr * mu = re;
+  RelExpr * mu = re;
     
-    re = new(bindWA->wHeap()) Join
-      (child(0), re, REL_TSJ_FLOW, NULL);
-    ((Join*)re)->doNotTransformToTSJ();
-    ((Join*)re)->setTSJForMerge(TRUE);	
-    ((Join*)re)->setTSJForMergeWithInsert(TRUE);
-    ((Join*)re)->setTSJForWrite(TRUE);
-    if (bindWA->hasDynamicRowsetsInQuery())
-      mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-    else
-      re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
-  } 
+  re = new(bindWA->wHeap()) Join
+    (child(0), mu, REL_TSJ_FLOW, NULL);
+  ((Join*)re)->doNotTransformToTSJ();
+  ((Join*)re)->setTSJForMerge(TRUE);	
+  ((Join*)re)->setTSJForMergeWithInsert(TRUE);
+  ((Join*)re)->setTSJForWrite(TRUE);
+  if (bindWA->hasDynamicRowsetsInQuery())
+    mu->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
+  else
+    re->getGroupAttr()->addCharacteristicInputs(myOuterRefs);
   
   re = re->bindNode(bindWA);
   if (bindWA->errStatus())
@@ -10535,7 +10531,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
   NABoolean transformUpdateKey = updatesClusteringKeyOrUniqueIndexKey(bindWA);
   if (bindWA->errStatus()) // error occurred in updatesCKOrUniqueIndexKey()
     return this;
-
+  // To be removed when TRAFODION-1610 is implemented.
   NABoolean xnsfrmHbaseUpdate = FALSE;
   if ((hbaseOper()) && (NOT isMerge()))
     {      
@@ -10543,26 +10539,19 @@ RelExpr *Update::bindNode(BindWA *bindWA)
 	{
 	  xnsfrmHbaseUpdate = TRUE;
 	}
-      else if ((CmpCommon::getDefault(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT) == DF_SYSTEM) &&
-	       (getTableDesc()->getNATable()->hasSecondaryIndexes()))
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
-      else if (avoidHalloween())
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
       else if (getCheckConstraints().entries())
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
+       {
+         xnsfrmHbaseUpdate = TRUE;
+       }
      }  
   
   if (xnsfrmHbaseUpdate)
     {
       boundExpr = transformHbaseUpdate(bindWA);
     }
-  else if ((transformUpdateKey) && (NOT isMerge()))
+  else 
+  // till here and remove the function transformHbaseUpdate also
+  if ((transformUpdateKey) && (NOT isMerge()))
     {
       boundExpr = transformUpdatePrimaryKey(bindWA);
     }
@@ -10589,8 +10578,14 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   
   bindWA->initNewScope();
 
-  if ((isMerge()) && 
-      (child(0)))
+  // For an xformaed upsert any UDF or subquery is guaranteed to be 
+  // in the using clause. Upsert will not generate a merge without using 
+  // clause. ON clause, when matched SET clause and when not matched INSERT
+  // clauses all use expressions from the using clause. (same vid).
+  // Therefore any subquery or UDF in the using clause will flow to the
+  // rest of he tree through the TSJ and will be available. Each subquery
+  // will be evaluated only once, and will be evaluated prior to the merge
+  if (isMerge() && child(0) && !xformedUpsert())
   {
     ItemExpr *selPred = child(0)->castToRelExpr()->selPredTree();
     if (selPred || where_)
@@ -10626,8 +10621,7 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
     }
   }
 
-  if ((isMerge()) &&
-      (recExprTree()))
+  if (isMerge() && recExprTree() && !xformedUpsert())
   {
     if (recExprTree()->containsSubquery())
     {
@@ -10649,14 +10643,14 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   // if insertValues, then this is an upsert stmt.
   if (insertValues())
     {
-      if (insertValues()->containsSubquery())
+      if (insertValues()->containsSubquery() && !xformedUpsert())
         {
           *CmpCommon::diags() << DgSqlCode(-3241) 
                               << DgString0(" Subquery in INSERT clause not allowed.");
           bindWA->setErrStatus();
           return this;
         }
-      if (insertValues()->containsUDF())
+      if (insertValues()->containsUDF() && !xformedUpsert())
         {
           *CmpCommon::diags() << DgSqlCode(-4471) 
                               << DgString0(((UDFunction *)insertValues()->containsUDF())->
@@ -14070,6 +14064,20 @@ RelExpr *Transpose::bindNode(BindWA *bindWA)
   transUnionVectorSize_ = numTransSets + 1;
   transUnionVector() = new(bindWA->wHeap())
     ValueIdList[transUnionVectorSize_];
+  //If there is a lob column return error. Transpose not allowed on lob columns.
+ 
+  for (i = 0; i < resultTable->getDegree(); i++)
+    {
+      if ((resultTable->getType(i)).getFSDatatype() == REC_BLOB || 
+	  (resultTable->getType(i)).getFSDatatype() == REC_CLOB)
+	{
+	  *CmpCommon::diags() << DgSqlCode(-4322);
+	  bindWA->setErrStatus();
+	  return this;
+	}
+    }
+ 
+    
 
   // Get the key column reference
   // This is the last time we need this ItemExpr.

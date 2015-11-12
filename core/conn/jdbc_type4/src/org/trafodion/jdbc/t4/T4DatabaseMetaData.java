@@ -404,8 +404,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		} catch (SQLException se) {
 			// ignore
 		}
-
-		return 1;
+                return Vproc.jdbcMajorVersion;
 	}
 
 	/*
@@ -432,7 +431,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		} catch (SQLException se) {
 			// ignore
 		}
-		return 0;
+                return Vproc.jdbcMinorVersion;
 	}
 
 	/*
@@ -5440,7 +5439,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
-		return 3;
+                return Vproc.jdbcMajorVersion;
 	}
 
 	public int getJDBCMinorVersion() throws SQLException {
@@ -5457,8 +5456,8 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
-		}
-		return 1;
+		}               
+                return Vproc.jdbcMinorVersion;
 	}
 
 	public int getSQLStateType() throws SQLException {

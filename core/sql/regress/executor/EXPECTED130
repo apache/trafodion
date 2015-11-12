@@ -28,9 +28,9 @@
 >>select * from t130lob1;
 
 C1
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-?                                                                                                   
+?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
 
 --- 1 row(s) selected.
 >>
@@ -51,11 +51,11 @@ C1
 >>select * from t130lob2;
 
 C1           C2
------------  ----------------------------------------------------------------------------------------------------
+-----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-          1  LOBH00000200010693674787682417371619694856982590420626418212310683263747991017"TRAFODION"."LOB"     
-          2  LOBH00000200010693674787682417371619694856982591098641718212310683270590988017"TRAFODION"."LOB"     
-          3  LOBH00000200010693674787682417371619694856982591683997818212310683276625879017"TRAFODION"."LOB"     
+          1  LOBH00000200010882713693210510862219414564511952143513218212313794957530571017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+          2  LOBH00000200010882713693210510862219414564511952725470718212313794971638403017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+          3  LOBH00000200010882713693210510862219414564511953242068818212313794976885710017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
 --- 3 row(s) selected.
 >>
@@ -333,7 +333,7 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_txt1.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010693674787682420601819694856982621059127818212310683570262309017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
+>>extract lobtofile(LOB 'LOBH00000200010882713693210514378719414564511984818875018212313795291895359017"TRAFODION"."LOB"     ' , 'tlob130_txt1.txt');
 Success. Targetfile :tlob130_txt1.txt  Length : 19
 
 --- SQL operation complete.
@@ -349,7 +349,7 @@ Success. Targetfile :tlob130_txt1.txt  Length : 19
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010693674787682420661119694856982626512107918212310683624877213017"TRAFODION"."LOB"     ' , 'tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010882713693210514444119414564511990648251418212313795350940159017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ' , 'tlob130_deep.jpg');
 Success. Targetfile :tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -365,7 +365,7 @@ Success. Targetfile :tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010693674787682420661119694856982626512107918212310683624877213017"TRAFODION"."LOB"     ' , 'tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010882713693210514444119414564511990648251418212313795350940159017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ' , 'tlob130_anoush.jpg');
 Success. Targetfile :tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -484,7 +484,7 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010693674787682421596119694856982633506711718212310683694732509017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_txt2.txt');
+>>extract lobtofile(LOB 'LOBH00000200010882713693210515418219414564511997894836018212313795423154729017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_txt2.txt');
 Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 
 --- SQL operation complete.
@@ -500,7 +500,7 @@ Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010693674787682421663719694856982639038579718212310683750106446017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010882713693210515488319414564512003657955318212313795480776063017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ' , 'hdfs:///lobs/tlob130_deep.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -516,7 +516,7 @@ Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200010693674787682420661119694856982626512107918212310683624877213017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH00000200010882713693210514444119414564511990648251418212313795350940159017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ' , 'hdfs:///lobs/tlob130_anoush.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -566,7 +566,7 @@ And the dish ran away with the spoon.
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200020693674787682423271119694856982647703683318212310683836458197017"TRAFODION"."LOB"     ' , 'tlob130_deep2.jpg');
+>>extract lobtofile(LOB 'LOBH00000200020882713693210517156319414564512012287022618212313795567334522017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ' , 'tlob130_deep2.jpg');
 Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -575,7 +575,7 @@ Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200030693674787682423271119694856982648309186318212310683842238864017"TRAFODION"."LOB"     ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
+>>extract lobtofile(LOB 'LOBH00000200030882713693210517156319414564512012826755818212313795572444089017"TRAFODION"."LOB"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_anoush2.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -600,9 +600,9 @@ Hey diddle diddle,
 >>
 >>log;
 >>sh rm t130_extract_command;
->>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',truncate);/g" >> t130_extract_command;
+>>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',create,truncate);/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH00000200030693674787682423658119694856982652241489318212310683882224693017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',truncate);
+>>extract lobtofile(LOB 'LOBH00000200030882713693210517507719414564512016516238718212313795609661744017"TRAFODION"."LOB"     ' , 'tlob130_anoush3.jpg',create,truncate);
 Success. Targetfile :tlob130_anoush3.jpg  Length : 230150
 
 --- SQL operation complete.

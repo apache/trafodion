@@ -2746,11 +2746,14 @@ public:
   void setTruncateExisting(NABoolean v)
   {(v ? flags_ |= TRUNCATE_EXISTING : flags_ &= ~TRUNCATE_EXISTING); };
   NABoolean truncateExisting() { return (flags_ & TRUNCATE_EXISTING) != 0; };
+  
+   void setAppendOrCreate(NABoolean v)
+  {(v ? flags_ |= APPEND_OR_CREATE : flags_ &= ~APPEND_OR_CREATE); };
+  NABoolean appendOrCreate() { return (flags_ & APPEND_OR_CREATE) != 0; };
 
   void setRowSize(Int64 rowSize) { rowSize_ = rowSize; };
   void setBufSize(Int64 bufSize) { bufSize_ = bufSize;};
-
-
+  
 private:
   enum
   {
@@ -2760,7 +2763,9 @@ private:
     RETRIEVE_LENGTH    =0x0008,
     ERROR_IF_NOT_EXISTS =0x0010,
     ERROR_IF_EXISTS     =0x0020,
-    TRUNCATE_EXISTING = 0x0040
+    TRUNCATE_EXISTING = 0x0040,
+    APPEND_OR_CREATE = 0x0080
+  
     
   };
 

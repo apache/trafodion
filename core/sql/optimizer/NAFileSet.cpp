@@ -373,3 +373,17 @@ const QualifiedName& NAFileSet::getRandomPartition() const
     new (STMTHEAP) QualifiedName(nme->getPartitionName(), 3, STMTHEAP, NULL);
   return *partQName;
 }
+
+NAString NAFileSet::getBestPartitioningKeyColumns(char separator) const
+{
+   const NAColumnArray & partKeyCols = getPartitioningKeyColumns();
+
+   if ( partKeyCols.entries() > 0 ) {
+      return partKeyCols.getColumnNamesAsString(separator);
+   } else {
+      const NAColumnArray& allCols = getAllColumns();
+      UInt32 ct = allCols.entries();
+      if ( ct > 2 ) ct=2;
+      return allCols.getColumnNamesAsString(separator, ct);
+   }
+}

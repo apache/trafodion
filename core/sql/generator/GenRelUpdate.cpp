@@ -427,6 +427,11 @@ static short genMergeInsertExpr(
   return 0;
 }
 
+static short genUpdConstraintExpr(Generator *generator)
+{
+  return 0;
+}
+
 static short genHbaseUpdOrInsertExpr(
 			     Generator * generator,
 			     NABoolean isInsert,
@@ -1381,6 +1386,8 @@ short HbaseUpdate::codeGen(Generator * generator)
   ex_expr *mergeInsertExpr = NULL;
   ex_expr *returnUpdateExpr = NULL;
   ex_expr * keyColValExpr = NULL;
+  ex_expr * insConstraintExpr  = NULL;
+  ex_expr * updConstraintExpr  = NULL;
 
   ex_cri_desc * givenDesc 
     = generator->getCriDesc(Generator::DOWN);
@@ -1761,6 +1768,18 @@ short HbaseUpdate::codeGen(Generator * generator)
   else if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
     {
       GenAssert(FALSE, "Should not reach here. This update should have been transformed to delete/insert");
+      // To be uncommented when TRAFODION-1610 is implemented
+      // Need to generate insConstraintExpr also
+/*
+      ItemExpr *constrTree =
+        getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
+
+      if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
+        constrTree = generator->addCompDecodeForDerialization(constrTree);
+
+      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
+                            &updConstraintExpr);
+*/
     }
  
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
@@ -2121,6 +2140,12 @@ short HbaseUpdate::codeGen(Generator * generator)
   if (getTableDesc()->getNATable()->isHbaseRowTable()) 
     hbasescan_tdb->setRowwiseFormat(TRUE);
 
+  if (updConstraintExpr)
+    hbasescan_tdb->setUpdConstraintExpr(updConstraintExpr);
+
+  if (insConstraintExpr)
+    hbasescan_tdb->setInsConstraintExpr(insConstraintExpr);
+
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
       hbasescan_tdb->setSQHbaseTable(TRUE);
@@ -2381,7 +2406,7 @@ short HbaseInsert::codeGen(Generator *generator)
   // Only works for base tables because the constraint information is
   // stored with the table descriptor which doesn't exist for indexes.
   //
-  ex_expr * constraintExpr = NULL;
+  ex_expr * insConstraintExpr = NULL;
   Queue * listOfUpdatedColNames = NULL;
   Lng32 keyAttrPos = -1;
   ex_expr * rowIdExpr = NULL;
@@ -2389,6 +2414,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
   ValueIdList savedInputVIDlist;
   NAList<Attributes*> savedInputAttrsList;
+
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
   CollIndex jj = 0;
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
@@ -2415,7 +2441,8 @@ short HbaseInsert::codeGen(Generator *generator)
       
       colAttr->copyLocationAttrs(castAttr);
       indexAttr->copyLocationAttrs(castAttr);
-
+      // To be removed when TRAFODION-1610 is implemented
+      //  `
       // if any of the target column is also an input value to this operator, then
       // make the value id of that input point to the location of the target column.
       // This is done as the input column value will become the target after this
@@ -2506,9 +2533,10 @@ short HbaseInsert::codeGen(Generator *generator)
 	constrTree = generator->addCompDecodeForDerialization(constrTree);
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
-			   &constraintExpr);
+			   &insConstraintExpr);
 
       // restore original attribute values
+      // To be removed when TRAFODION-1610 is implemented
       for (Lng32 i = 0; i < savedInputVIDlist.entries(); i++)
         {
           ValueId inputValId = savedInputVIDlist[i];
@@ -2716,7 +2744,7 @@ short HbaseInsert::codeGen(Generator *generator)
 		      t,
 		      tablename,
 		      insertExpr,
-		      constraintExpr,
+		      NULL,
 		      rowIdExpr,
 		      loggingDataExpr, // logging expr
 		      NULL, // mergeInsertExpr
@@ -2793,6 +2821,9 @@ short HbaseInsert::codeGen(Generator *generator)
 
   if (preCondExpr)
     hbasescan_tdb->setInsDelPreCondExpr(preCondExpr);
+
+  if (insConstraintExpr)
+    hbasescan_tdb->setInsConstraintExpr(insConstraintExpr);
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
