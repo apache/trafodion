@@ -928,45 +928,44 @@ public class TrxTransactionState  extends TransactionState{
         }
         
         synchronized List<KeyValue> getKeyValues() {
-          List<KeyValue> edits = new ArrayList<KeyValue>();
-          Collection<List<KeyValue>> kvsList = null;
+            List<KeyValue> edits = new ArrayList<KeyValue>();
+            Collection<List<Cell>> cellList = null;
 
-          if (put != null) {
-              if (!put.getFamilyMap().isEmpty()) {
-              kvsList = put.getFamilyMap().values();
-              }
-          } else if (delete != null) {
-              if (delete.getFamilyCellMap().isEmpty()) {
-                  // If whole-row delete then we need to expand for each
-                  // family
-                  kvsList = new ArrayList<List<KeyValue>>(1);
-                  for (byte[] family : tabledescriptor.getFamiliesKeys()) {
-                    KeyValue familyDelete = new KeyValue(delete.getRow(), family, null, delete.getTimeStamp(),
-                              KeyValue.Type.DeleteFamily);
-                      kvsList.add(Collections.singletonList(familyDelete));
-                  }
-              } else {
-                  kvsList = delete.getFamilyMap().values();
-              }
-          } else {
-              throw new IllegalStateException("WriteAction is invalid");
-          }
+            if (put != null) {
+                if (!put.getFamilyCellMap().isEmpty()) {
+                    cellList = put.getFamilyCellMap().values();
+                }
+            } else if (delete != null) {
+                if (delete.getFamilyCellMap().isEmpty()) {
+                    // If whole-row delete then we need to expand for each family
+                    cellList = new ArrayList<List<Cell>>(1);
+                    for (byte[] family : tabledescriptor.getFamiliesKeys()) {
+                        Cell familyDelete = new KeyValue(delete.getRow(), family, null, delete.getTimeStamp(),
+                                KeyValue.Type.DeleteFamily);
+                        cellList.add(Collections.singletonList(familyDelete));
+                    }
+                } else {
+                    cellList = delete.getFamilyCellMap().values();
+                }
+            } else {
+                throw new IllegalStateException("WriteAction is invalid");
+            }
 
-          if (kvsList != null) {
-          for (List<KeyValue> kvs : kvsList) {
-              for (KeyValue kv : kvs) {
-                  edits.add(kv);
-                  //if (LOG.isDebugEnabled()) LOG.debug("Trafodion getKeyValues:   " + regionInfo.getRegionNameAsString() + " create edits for transaction: "
-                   //              + transactionId + " with Op " + kv.getType());
-              }
-              }
-          }
-          else
-            if (LOG.isTraceEnabled()) LOG.trace("Trafodion getKeyValues:   " 
-                 + regionInfo.getRegionNameAsString() + " kvsList was null");
-          return edits;
-      }
+            if (cellList != null) {
+                for (List<Cell> cells : cellList) {
+                    for (Cell cell : cells) {
+                        edits.add(new KeyValue(cell));
+                        // if (LOG.isDebugEnabled()) LOG.debug("Trafodion getKeyValues: " + regionInfo.getRegionNameAsString() + " create edits for transaction: "
+                        // + transactionId + " with Op " + kv.getType());
+                    }
+                }
+            } else if (LOG.isTraceEnabled())
+                LOG.trace("Trafodion getKeyValues:   " + regionInfo.getRegionNameAsString() + " kvsList was null");
+            return edits;
+        }
     }
+
+
     public Set<TrxTransactionState> getTransactionsToCheck() {
       return transactionsToCheck;
     }

@@ -26,6 +26,7 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValue.Type;
@@ -53,13 +54,14 @@ public class SingleVersionDeleteNotSupported extends DoNotRetryIOException {
      * mechansim will currently treat DeleteColumn the same as Delete which could cause confusion.
      */
     public static void validateDelete(final Delete delete) throws SingleVersionDeleteNotSupported {
-        Collection<List<KeyValue>> values = delete.getFamilyMap().values();
-        for (List<KeyValue> value : values) {
-            for (KeyValue kv : value) {
-                if (Type.Delete.getCode() == kv.getType()) {
+        Collection<List<Cell>> values = delete.getFamilyCellMap().values();
+        for (List<Cell> value : values) {
+            for (Cell cell : value) {
+                if (cell.getTypeByte() == Type.Delete.getCode()) {
                     throw new SingleVersionDeleteNotSupported();
                 }
             }
         }
     }
+
 }
