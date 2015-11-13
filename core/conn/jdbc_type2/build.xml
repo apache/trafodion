@@ -42,13 +42,12 @@
     <target name="dist" depends="native">
        <mkdir dir="dist"/>
        <property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
-       <property file="jdbct2.jar.version"/>
        <jar destfile="dist/jdbcT2.jar" compress="true">
            <fileset dir="classes"/>
            <manifest id="mf">
               <attribute name="Main-Class" value="JdbcT2"/>
               <attribute name="VPROC" value="${vproc.str}"/>
-              <attribute name="Implementation-Version-1" value="${Implementation-Version-1}"/>
+	      <attribute name="Implementation-Version-1" value="Version 1.0.0"/>
               <attribute name="Implementation-Version-2" value="${Implementation-Version-2}"/>
               <attribute name="Implementation-Version-3" value="${Implementation-Version-3}"/>
               <attribute name="Implementation-Version-4" value="${Implementation-Version-4}"/>
@@ -78,13 +77,7 @@
     </target>
 
     <target name="compile" depends="init">
-<!--
-      <copy file="${package.src}/DriverInfo.java-tmpl" tofile="${package.src}/DriverInfo.java" overwrite="yes"/>
--->
       <copy todir="${dest.classes}" overwrite="yes" file="${dest.src}/SQLMXT2Messages_en.properties"/>
-<!--
-      <replace file="${package.src}/DriverInfo.java" token="@@@" value="${vproc.str}" />
--->
       <exec executable="/bin/sh">
          <arg line="../doDrvInfo ${package.src}/DriverInfo.java ${package.src}/DriverInfo.java-tmpl ${vproc.str}"/>
       </exec>   
@@ -105,21 +98,6 @@
     </target>
 
     <target name="native" depends="jni" >
-<!--
-         <copy file="${native.src}/Vproc.cpp-tmpl" tofile="${native.src}/Vproc.cpp" overwrite="yes"/>
-         <copy file="${native.src}/Vproc.h-tmpl" tofile="${native.src}/Vproc.h" overwrite="yes"/>
-
-         <replace file="${native.src}/Vproc.cpp" token="@@@" value="${vproc.str}" />
-         <replace file="${native.src}/Vproc.h" token="@@@" value="${vproc.str}" />
--->
-<!--
-         <exec dir="." executable="/usr/bin/make">
-            <arg line="clean"/>
-         </exec>
-         <exec dir="." executable="/usr/bin/make">
-            <arg line=""/>
-         </exec>
--->
      </target>
 
 </project>
