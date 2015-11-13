@@ -34,7 +34,7 @@
   <groupId>org.trafodion</groupId>
   <artifactId>dcs</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.0</version>
+  <version>${env.TRAFODION_VER}</version>
   <name>dcs</name>
   <url>http://wiki.trafodion.org</url>
   
