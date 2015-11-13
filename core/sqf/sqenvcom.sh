@@ -774,13 +774,7 @@ export ANT=ant
 export AR=ar
 export FLEX=flex
 export CXX=g++
-
-# Maven may not yet be in the path. Check and report an error
 export MAVEN=mvn
-if [[ -z "$(which $MAVEN 2> /dev/null)" ]]; then
-  echo " *** ERROR unable to find mvn (MAVEN) in path"
-  echo " *** please include it in your path before attempting your build"
-fi
 
 # Non-standard or newer version tools
 if [ -z $BISON ]; then
