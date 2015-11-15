@@ -4934,8 +4934,9 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
   else
   if (isUnique)
     {
-      // do not cancel unique queries.
-      generator->setMayNotCancel(TRUE);
+      if (!generator->oltOptInfo()->multipleRowsReturned())
+	// do not cancel unique queries.
+	generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
       canDoCheckAndUpdel() = FALSE;
       if ((NOT producesOutputs()) &&
