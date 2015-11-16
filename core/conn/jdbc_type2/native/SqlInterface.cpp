@@ -574,13 +574,6 @@ SQLRETURN AllocAssignValueBuffer(SQLItemDescList_def *SQLDesc,  SQLValueList_def
             if (memOffset > totalRowMemLen)
             {
                 //TFDS
-                /*				if (srvrEventLogger != NULL)
-                                {
-                                srvrEventLogger->SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
-                                srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-                                1, "memOffset > totalMemLen in AllocAssignValueBuffer");
-                                }
-                                */
                 DEBUG_OUT(DEBUG_LEVEL_ENTRY,("memOffset > totalRowMemLen"));
                 CLI_DEBUG_RETURN_SQL(PROGRAM_ERROR);
             }
@@ -986,7 +979,6 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
     SRVR_CONNECT_HDL *pConnect = NULL;
     if(pSrvrStmt->dialogueId == 0) CLI_DEBUG_RETURN_SQL(SQL_ERROR);
     pConnect = (SRVR_CONNECT_HDL*)pSrvrStmt->dialogueId;
-
 
     BOOL isSPJRS = false;
     long retcode = SQL_SUCCESS;
@@ -1451,273 +1443,184 @@ SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt)
     THREAD_RETURN(pSrvrStmt,SQL_SUCCESS);
 }
 
-/*
-SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt)
+// This shall be removed once we ported all native interfaces
+// to use the protocol buffer interface, and function PREPARE_R
+// will be renamed as PREPARE
+SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt) 
 {
+    FUNCTION_ENTRY("PREPARE",
+            ("pSrvrStmt=0x%08x",
+             pSrvrStmt));
 
     CLI_DEBUG_SHOW_SERVER_STATEMENT(pSrvrStmt);
 
     long retcode;
-    BOOL sqlWarning = FALSE;
+    SQLRETURN rc;
 
-    SQLSTMT_ID *pStmt;
-    SQLDESC_ID *pDesc;
+    SQLSTMT_ID	*pStmt;
+    SQLDESC_ID	*pInputDesc;
+    SQLDESC_ID	*pOutputDesc;
 
-    if (pSrvrStmt == NULL)
-    {
-        DEBUG_OUT(DEBUG_LEVEL_ENTRY,("Server statement not allocated"));
-        THREAD_RETURN(pSrvrStmt,SQL_INVALID_HANDLE);
-    }
-
+    long		numEntries;
+    char		*pStmtName;
+    BOOL		sqlWarning = FALSE;
+    BOOL		rgWarning = FALSE;
+    int    SqlQueryStatementType;
 
     pStmt = &pSrvrStmt->stmt;
+    pOutputDesc = &pSrvrStmt->outputDesc;
+    pInputDesc = &pSrvrStmt->inputDesc;
 
-    pSrvrStmt->rowsAffected = -1;
-    switch(pSrvrStmt->freeResourceOpt)
+    if (!pSrvrStmt->isClosed)
     {
-        case SQL_DROP:			// Logical Close
-            pDesc = &pSrvrStmt->inputDesc;
-            pSrvrStmt->freeBuffers(SQLWHAT_INPUT_DESC);
+        retcode = CLI_CloseStmt(pStmt);
+        if (retcode!=0) retcode = CLI_ClearDiagnostics(pStmt);
+        pSrvrStmt->isClosed = TRUE;
+    }
 
-            // Don't dealloc input descriptor if SPJRS (since it has not been allocated)
-            if ((pSrvrStmt->inputDescName[0] == '\0') && (!pSrvrStmt->isSPJRS))
+    if (pSrvrStmt->holdability == HOLD_CURSORS_OVER_COMMIT){
+        retcode = CLI_SetStmtAttr(pStmt, SQL_ATTR_CURSOR_HOLDABLE, SQL_HOLDABLE, NULL);
+        HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+    }
+
+    SQLDESC_ID	sqlString_desc;
+
+    sqlString_desc.version        = SQLCLI_ODBC_VERSION;
+    sqlString_desc.module         = &pSrvrStmt->moduleId;
+    sqlString_desc.name_mode      = string_data;
+    sqlString_desc.identifier     = (const char *)pSrvrStmt->sqlString.dataValue._buffer;
+    sqlString_desc.handle         = 0;
+    sqlString_desc.identifier_len = pSrvrStmt->sqlString.dataValue._length;
+    sqlString_desc.charset        = SQLCHARSETSTRING_ISO88591;
+
+    retcode = CLI_Prepare(pStmt, &sqlString_desc);
+
+    int rtn;
+
+#ifndef DISABLE_NOWAIT		
+    if (retcode == NOWAIT_PENDING){
+        rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
+        DEBUG_OUT(DEBUG_LEVEL_CLI,("WaitForCompletion() returned %d",rtn));
+
+        if (rtn == 0){
+            rc = pSrvrStmt->switchContext();
+            DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() returned %ld", rc));
+            if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
+
+            switch (pSrvrStmt->nowaitRetcode)
             {
-                retcode = CLI_DeallocDesc(pDesc);
-                if( trace_SQL ) LogDelete("SQL_EXEC_DeallocDesc(pDesc);",(void**)&pDesc,pDesc);
+                case 0:
+                    retcode = 0;
+                    break;
+                case 9999:
+                    THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
+                default:
+                    retcode = GETSQLCODE(pSrvrStmt);
+                    break;
             }
-            pDesc = &pSrvrStmt->outputDesc;
-            pSrvrStmt->freeBuffers(SQLWHAT_OUTPUT_DESC);
-            if (pSrvrStmt->outputDescName[0] == '\0')
-            {
-                retcode = CLI_DeallocDesc(pDesc);
-                if( trace_SQL ) LogDelete("SQL_EXEC_DeallocDesc(pDesc);",(void**)&pDesc,pDesc);
-            }
-            if (!pSrvrStmt->isClosed)
-            {
-                retcode = CLI_CloseStmt(pStmt);
-                pSrvrStmt->isClosed = TRUE;
-            }
-            retcode = CLI_ClearDiagnostics(pStmt);
-            if (pSrvrStmt->moduleName[0] == '\0')
-            {
-                retcode = CLI_DeallocStmt(pStmt);
-                if( trace_SQL ) LogDelete("SQL_EXEC_DeallocStmt(pStmt);",(void**)&pStmt,pStmt);
-            }
-            else
-            {
-                if (srvrGlobal->moduleCaching)
-                {
-                    // Drop only the MFC Module.
-                    SRVR_CONNECT_HDL *pConnect = (SRVR_CONNECT_HDL*)pSrvrStmt->dialogueId;
-                    if(pSrvrStmt->moduleId.module_name != NULL)
-                    {
-                        if(pConnect->isModuleLoaded((const char *) pSrvrStmt->moduleId.module_name))
-                        {
-                            pConnect->removeFromLoadedModuleSet((const char *) pSrvrStmt->moduleId.module_name);
-                            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-                        }
-                    }
-                }
-            }
-            // For drop, always return success, even if there was a warning.
-            // This was migrated logic during IDL removal.
-            THREAD_RETURN(pSrvrStmt,SQL_SUCCESS);
-        case SQL_CLOSE:			// Physical or hard close
-            if (! pSrvrStmt->isClosed)
-            {
-                retcode = CLI_CloseStmt(pStmt);
-                pSrvrStmt->isClosed = TRUE;
-                if ((pSrvrStmt->stmtType == INTERNAL_STMT) && (retcode!=0)) CLI_ClearDiagnostics(pStmt);
-                else HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-            }
+            DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
+                        pSrvrStmt->nowaitRetcode,
+                        CliDebugSqlError(retcode)));
+        }
+        else
+        {
+            pSrvrStmt->nowaitRetcode = rtn;
+            THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
+        }
+    }
+#endif
+
+    HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+
+    pSrvrStmt->estimatedCost = -1;
+
+    retcode = CLI_DescribeStmt(pStmt, pInputDesc, pOutputDesc);
+    HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+
+    retcode = CLI_GetDescEntryCount(pInputDesc, (int *)&pSrvrStmt->paramCount);
+    HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+
+    retcode = CLI_GetDescEntryCount(pOutputDesc, (int *)&pSrvrStmt->columnCount);
+    HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+
+    pSrvrStmt->prepareSetup();
+
+    if (pSrvrStmt->paramCount > 0){
+        kdsCreateSQLDescSeq(&pSrvrStmt->inputDescList, pSrvrStmt->paramCount+pSrvrStmt->inputDescParamOffset);
+        retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Input);
+        HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+    } else {
+        kdsCreateEmptySQLDescSeq(&pSrvrStmt->inputDescList);
+    }
+
+    if (pSrvrStmt->columnCount > 0){
+        kdsCreateSQLDescSeq(&pSrvrStmt->outputDescList, pSrvrStmt->columnCount);
+        retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Output);
+        HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+    } else {
+        kdsCreateEmptySQLDescSeq(&pSrvrStmt->outputDescList);
+    }
+
+    /* *****************************************************************************
+     * The call to CLI_GetStmtAttr to query the statement type was added as a
+     * performance enhancement. Previous versions of the Trafodion database will not return
+     * a statement type, but will return a 0 which is SQL_OTHER. In the case were
+     * SQL_OTHER is returned and JDBC/MX knows what the statement type is, then the
+     * JDBC/MX statement type will be used. This will allow the JDBC/MX driver to
+     * run with an older version of the Trafodion.
+     * ***************************************************************************** */
+
+    DEBUG_OUT(DEBUG_LEVEL_CLI,( "getSQLMX_Version: returned %i", GlobalInformation::getSQLMX_Version()));
+
+    if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of Trafodion is version R2
+        if (pSrvrStmt->sqlStmtType != TYPE_UNKNOWN)                    //If this is a SELECT, INVOKE, or SHOWSHAPE
+            SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;              //then force an execute with no fetch
+        else SqlQueryStatementType = SQL_OTHER;                         //else allow an executeFetch
+    }
+    else
+    {
+        retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statement ID
+                SQL_ATTR_QUERY_TYPE,		// (IN) Request query statement attribute
+                (int*)&SqlQueryStatementType,	// (OUT) Place to store query statement type
+                NULL,					// (OUT) Optional string
+                0,						// (IN) Max size of optional string buffer
+                NULL );					// (IN) Length of item
+
+
+        //If there is an error this statement will return
+        HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+    }
+    DEBUG_OUT(DEBUG_LEVEL_CLI,("SQL Query Statement Type=%s",
+                CliDebugSqlQueryStatementType(SqlQueryStatementType)));
+
+    if (SqlQueryStatementType == SQL_EXE_UTIL  &&
+            pSrvrStmt->columnCount > 0)
+        SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;
+
+    pSrvrStmt->setSqlQueryStatementType(SqlQueryStatementType);
+
+    switch (pSrvrStmt->getSqlQueryStatementType())
+    {
+        case SQL_CALL_NO_RESULT_SETS:
+            DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("Prepare SQL_CALL_NO_RESULT_SETS query type"));
+            pSrvrStmt->isSPJRS = false;		// Indicate this is an RS.
+            pSrvrStmt->RSIndex = 0;			// Index into RS array
+            pSrvrStmt->RSMax = 0;			// No Result Sets to return
+            DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("RSMax: %d  RSIndex: %d  isSPJRS: %d ", pSrvrStmt->RSMax, pSrvrStmt->RSIndex,  pSrvrStmt->isSPJRS));
             break;
-        default:
+
+        case SQL_CALL_WITH_RESULT_SETS:
+            DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("Prepare SQL_CALL_WITH_RESULT_SETS query type"));
+            pSrvrStmt->isSPJRS = true;
+            retcode = RSgetRSmax(pSrvrStmt);
+            DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("RSMax: %d  RSIndex: %d  isSPJRS: %d  ", pSrvrStmt->RSMax, pSrvrStmt->RSIndex,  pSrvrStmt->isSPJRS));
+            //If there is an error this statement will return
+            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
             break;
     }
     if (sqlWarning) THREAD_RETURN(pSrvrStmt,SQL_SUCCESS_WITH_INFO);
     THREAD_RETURN(pSrvrStmt,SQL_SUCCESS);
 }
-*/
-
-/*
-   SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt)
-   {
-   FUNCTION_ENTRY("PREPARE",
-   ("pSrvrStmt=0x%08x",
-   pSrvrStmt));
-
-   CLI_DEBUG_SHOW_SERVER_STATEMENT(pSrvrStmt);
-
-   long retcode;
-   SQLRETURN rc;
-
-   SQLSTMT_ID	*pStmt;
-   SQLDESC_ID	*pInputDesc;
-   SQLDESC_ID	*pOutputDesc;
-
-   long		numEntries;
-   char		*pStmtName;
-   BOOL		sqlWarning = FALSE;
-   BOOL		rgWarning = FALSE;
-   int    SqlQueryStatementType;
-
-   pStmt = &pSrvrStmt->stmt;
-   pOutputDesc = &pSrvrStmt->outputDesc;
-   pInputDesc = &pSrvrStmt->inputDesc;
-
-   if (!pSrvrStmt->isClosed)
-   {
-   retcode = CLI_CloseStmt(pStmt);
-   if (retcode!=0) retcode = CLI_ClearDiagnostics(pStmt);
-   pSrvrStmt->isClosed = TRUE;
-   }
-
-   if (pSrvrStmt->holdability == HOLD_CURSORS_OVER_COMMIT){
-   retcode = CLI_SetStmtAttr(pStmt, SQL_ATTR_CURSOR_HOLDABLE, SQL_HOLDABLE, NULL);
-   HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-   }
-
-   SQLDESC_ID	sqlString_desc;
-
-   sqlString_desc.version        = SQLCLI_ODBC_VERSION;
-   sqlString_desc.module         = &pSrvrStmt->moduleId;
-   sqlString_desc.name_mode      = string_data;
-   sqlString_desc.identifier     = (const char *)pSrvrStmt->sqlString.dataValue._buffer;
-   sqlString_desc.handle         = 0;
-   sqlString_desc.identifier_len = pSrvrStmt->sqlString.dataValue._length;
-   sqlString_desc.charset        = SQLCHARSETSTRING_ISO88591;
-
-   retcode = CLI_Prepare(pStmt, &sqlString_desc);
-
-   int rtn;
-
-#ifndef DISABLE_NOWAIT		
-if (retcode == NOWAIT_PENDING){
-rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
-DEBUG_OUT(DEBUG_LEVEL_CLI,("WaitForCompletion() returned %d",rtn));
-
-if (rtn == 0){
-rc = pSrvrStmt->switchContext();
-DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->switchContext() returned %ld", rc));
-if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) THREAD_RETURN(pSrvrStmt,rc);
-
-switch (pSrvrStmt->nowaitRetcode)
-{
-case 0:
-retcode = 0;
-break;
-case 9999:
-THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-default:
-retcode = GETSQLCODE(pSrvrStmt);
-break;
-}
-DEBUG_OUT(DEBUG_LEVEL_CLI,("pSrvrStmt->nowaitRetcode=%ld, retcode=%s",
-            pSrvrStmt->nowaitRetcode,
-            CliDebugSqlError(retcode)));
-}
-else
-{
-    pSrvrStmt->nowaitRetcode = rtn;
-    THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
-}
-}
-#endif
-
-HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-
-pSrvrStmt->estimatedCost = -1;
-
-retcode = CLI_DescribeStmt(pStmt, pInputDesc, pOutputDesc);
-HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-
-retcode = CLI_GetDescEntryCount(pInputDesc, (int *)&pSrvrStmt->paramCount);
-HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-
-retcode = CLI_GetDescEntryCount(pOutputDesc, (int *)&pSrvrStmt->columnCount);
-HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-
-pSrvrStmt->prepareSetup();
-
-if (pSrvrStmt->paramCount > 0){
-    kdsCreateSQLDescSeq(&pSrvrStmt->inputDescList, pSrvrStmt->paramCount+pSrvrStmt->inputDescParamOffset);
-    retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Input);
-    HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-} else {
-    kdsCreateEmptySQLDescSeq(&pSrvrStmt->inputDescList);
-}
-
-if (pSrvrStmt->columnCount > 0){
-    kdsCreateSQLDescSeq(&pSrvrStmt->outputDescList, pSrvrStmt->columnCount);
-    retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Output);
-    HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-} else {
-    kdsCreateEmptySQLDescSeq(&pSrvrStmt->outputDescList);
-}
-*/
-
-/* *****************************************************************************
- * The call to CLI_GetStmtAttr to query the statement type was added as a
- * performance enhancement. Previous versions of the Trafodion database will not return
- * a statement type, but will return a 0 which is SQL_OTHER. In the case were
- * SQL_OTHER is returned and JDBC/MX knows what the statement type is, then the
- * JDBC/MX statement type will be used. This will allow the JDBC/MX driver to
- * run with an older version of the Trafodion.
- * ***************************************************************************** */
-
-/*
-   DEBUG_OUT(DEBUG_LEVEL_CLI,( "getSQLMX_Version: returned %i", GlobalInformation::getSQLMX_Version()));
-
-   if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of Trafodion is version R2
-   if (pSrvrStmt->sqlStmtType != TYPE_UNKNOWN)                    //If this is a SELECT, INVOKE, or SHOWSHAPE
-   SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;              //then force an execute with no fetch
-   else SqlQueryStatementType = SQL_OTHER;                         //else allow an executeFetch
-   }
-   else
-   {
-   retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statement ID
-   SQL_ATTR_QUERY_TYPE,		// (IN) Request query statement attribute
-   (int*)&SqlQueryStatementType,	// (OUT) Place to store query statement type
-   NULL,					// (OUT) Optional string
-   0,						// (IN) Max size of optional string buffer
-   NULL );					// (IN) Length of item
-
-
-//If there is an error this statement will return
-HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-}
-DEBUG_OUT(DEBUG_LEVEL_CLI,("SQL Query Statement Type=%s",
-CliDebugSqlQueryStatementType(SqlQueryStatementType)));
-
-if (SqlQueryStatementType == SQL_EXE_UTIL  &&
-pSrvrStmt->columnCount > 0)
-SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;
-
-pSrvrStmt->setSqlQueryStatementType(SqlQueryStatementType);
-
-switch (pSrvrStmt->getSqlQueryStatementType())
-{
-case SQL_CALL_NO_RESULT_SETS:
-DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("Prepare SQL_CALL_NO_RESULT_SETS query type"));
-pSrvrStmt->isSPJRS = false;		// Indicate this is an RS.
-pSrvrStmt->RSIndex = 0;			// Index into RS array
-pSrvrStmt->RSMax = 0;			// No Result Sets to return
-DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("RSMax: %d  RSIndex: %d  isSPJRS: %d ", pSrvrStmt->RSMax, pSrvrStmt->RSIndex,  pSrvrStmt->isSPJRS));
-break;
-
-case SQL_CALL_WITH_RESULT_SETS:
-DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("Prepare SQL_CALL_WITH_RESULT_SETS query type"));
-pSrvrStmt->isSPJRS = true;
-retcode = RSgetRSmax(pSrvrStmt);
-DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("RSMax: %d  RSIndex: %d  isSPJRS: %d  ", pSrvrStmt->RSMax, pSrvrStmt->RSIndex,  pSrvrStmt->isSPJRS));
-//If there is an error this statement will return
-HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-break;
-}
-if (sqlWarning) THREAD_RETURN(pSrvrStmt,SQL_SUCCESS_WITH_INFO);
-THREAD_RETURN(pSrvrStmt,SQL_SUCCESS);
-}
-*/
 
 static SQLRETURN NoDataFound(SRVR_STMT_HDL *pSrvrStmt, long curRowNo, int curRowCount, int *rowsAffected)
 {
@@ -1782,7 +1685,7 @@ SQLRETURN FETCH(SRVR_STMT_HDL *pSrvrStmt)
 
         int rtn;
 
-#ifndef DISABLE_NOWAIT		
+#ifndef DISABLE_NOWAIT
         if (retcode == NOWAIT_PENDING){
             rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
             DEBUG_OUT(DEBUG_LEVEL_ENTRY,("WaitForCompletion() returned %d",rtn));
@@ -1800,15 +1703,6 @@ SQLRETURN FETCH(SRVR_STMT_HDL *pSrvrStmt)
                     case 9999:
                         THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
                     default:
-                        /* Soln No: 10-070223-2784
-Desc: JDBC/MX should call stmtinfo2 instead of Diagoninfo2 CLI call for rowsets
-*/
-                        /*     long row = 0;
-                               retcode = CLI_GetDiagnosticsStmtInfo2(&pSrvrStmt->stmt,SQLDIAG_ROW_COUNT,&row,NULL,0,NULL);
-                               if(row == 0)
-                               retcode = GETSQLCODE(pSrvrStmt);
-                               */
-                        // Refixed 10-070223-2784 for sol.10-090613-2299
                         retcode = GETSQLCODE(pSrvrStmt);
 
                         long rows_read_fin = 0;
@@ -2425,7 +2319,6 @@ SQLRETURN PREPARE_FROM_MODULE(SRVR_STMT_HDL* pSrvrStmt)
 }
 
 //---------------------------------------------------------------------------
-// PREPARE2 Rowset prepare
 SQLRETURN PREPARE2withRowsets(SRVR_STMT_HDL* pSrvrStmt)
 {
     SQLItemDescList_def *inputSQLDesc = &pSrvrStmt->inputDescList;
@@ -3585,12 +3478,8 @@ SQLRETURN GETSQLWARNINGORERROR2(SRVR_STMT_HDL* pSrvrStmt)
         curr_cond++;
     }
 
-    pSrvrStmt->sqlWarningOrError = new BYTE[Tot_Alloc_Buffer_len];
-
-    if (pSrvrStmt->sqlWarningOrError == NULL)
-    {
-        exit(1);
-    }
+    MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlWarningOrError, BYTE, Tot_Alloc_Buffer_len);
+    memset(pSrvrStmt->sqlWarningOrError, 0, sizeof(BYTE) * Tot_Alloc_Buffer_len);
 
     *(Int32 *)(pSrvrStmt->sqlWarningOrError+msg_total_len) = total_conds - skipped_conds;
     msg_total_len += sizeof(total_conds);
@@ -3632,7 +3521,7 @@ SQLRETURN GETSQLWARNINGORERROR2(SRVR_STMT_HDL* pSrvrStmt)
             // Incase the error message has multi-byte characters, we need to be sure
             // of providing enough buffer to hold the error message
             msg_buf_len = msg_buf_len*4;	//max, for multibyte characters
-            msg_buf = new char[msg_buf_len];
+            MEMORY_ALLOC_ARRAY(msg_buf, char, msg_buf_len);
             buf_len = 0;
             retcode = WSQL_EXEC_GetDiagnosticsCondInfo2(SQLDIAG_MSG_TEXT, curr_cond,
                     NULL, msg_buf, msg_buf_len, &buf_len);
@@ -3673,7 +3562,8 @@ SQLRETURN GETSQLWARNINGORERROR2(SRVR_STMT_HDL* pSrvrStmt)
             }
         }
 
-        if (msg_buf != NULL) delete [] msg_buf;
+        if (msg_buf != NULL)
+            MEMORY_DELETE_ARRAY(msg_buf);
         curr_cond++;
     }
 
@@ -3726,12 +3616,8 @@ SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt)
 
     curr_cond = 1;
 
-    pSrvrStmt->sqlWarningOrError = new BYTE[Tot_Alloc_Buffer_len];
-
-    if (pSrvrStmt->sqlWarningOrError == NULL)
-    {
-        exit(1);
-    }
+    MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlWarningOrError, BYTE, Tot_Alloc_Buffer_len);
+    memset(pSrvrStmt->sqlWarningOrError, 0, sizeof(BYTE) * Tot_Alloc_Buffer_len);
 
     *(Int32 *)(pSrvrStmt->sqlWarningOrError+msg_total_len) = total_conds;
     msg_total_len += sizeof(total_conds);
@@ -3760,7 +3646,7 @@ SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt)
         }
         if (retcode >= SQL_SUCCESS )
         {
-            msg_buf = new char[msg_buf_len];
+            MEMORY_ALLOC_ARRAY(msg_buf, char, msg_buf_len);
             buf_len = 0;
             memcpy(msg_buf, pSrvrStmt->sqlWarning._buffer[curr_cond - 1].errorText, msg_buf_len);
             msg_buf[msg_buf_len-1] = '\0';
@@ -3791,7 +3677,8 @@ SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt)
             }
         }
 
-        if (msg_buf != NULL) delete [] msg_buf;
+        if (msg_buf != NULL)
+            MEMORY_DELETE_ARRAY(msg_buf);
         curr_cond++;
     }  // end while
 
@@ -3802,7 +3689,7 @@ ret:
     THREAD_RETURN(pSrvrStmt,retcode);
 }  // end GETSQLWARNINGORERROR2forRowsets
 
-SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
+SQLRETURN PREPARE_R(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
 {
     FUNCTION_ENTRY("PREPARE",
             ("pSrvrStmt=0x%08x, isFromExecDirect=%d",
@@ -3820,6 +3707,8 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
     SQLSTMT_ID	*pStmt;
     SQLDESC_ID	*pInputDesc;
     SQLDESC_ID	*pOutputDesc;
+    
+    int    SqlQueryStatementType; // Will be gone once all ported to use protocol interface.
 
     char        *pStmtName;
     BOOL		sqlWarning = FALSE;
@@ -3908,69 +3797,47 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
     retcode = WSQL_EXEC_GetStmtAttr(pStmt, SQL_ATTR_QUERY_TYPE, &pSrvrStmt->sqlQueryType, NULL, 0, NULL);
     HANDLE_ERROR(retcode, sqlWarning);
 
-    if(pSrvrStmt->sqlStmtType == TYPE_CALL)
+    if (pSrvrStmt->paramCount > 0)
     {
-        pSrvrStmt->prepareSetup();
-
-        if (pSrvrStmt->paramCount > 0){
-            kdsCreateSQLDescSeq(&pSrvrStmt->inputDescList, pSrvrStmt->paramCount+pSrvrStmt->inputDescParamOffset);
-            retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Input);
-            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-        } else {
-            kdsCreateEmptySQLDescSeq(&pSrvrStmt->inputDescList);
-        }
-
-        if (pSrvrStmt->columnCount > 0){
-            kdsCreateSQLDescSeq(&pSrvrStmt->outputDescList, pSrvrStmt->columnCount);
-            retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Output);
-            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
-        } else {
-            kdsCreateEmptySQLDescSeq(&pSrvrStmt->outputDescList);
-        }
+        tmpBuildID = srvrGlobal->drvrVersion.buildId; // should go way once we support rowwise rowsets
+        srvrGlobal->drvrVersion.buildId = 0;
+        retcode = BuildSQLDesc2(pInputDesc, -9999, 0, pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->paramCount,
+                pSrvrStmt->inputDescBuffer, pSrvrStmt->inputDescBufferLength,
+                pSrvrStmt->inputDescVarBuffer, pSrvrStmt->inputDescVarBufferLen, pSrvrStmt->IPD,pSrvrStmt->SqlDescInfo);
+        srvrGlobal->drvrVersion.buildId = tmpBuildID; // should go way once we support rowwise rowsets
+        HANDLE_ERROR(retcode, sqlWarning);
     }
-    else
+
+    Int32 estRowLength=0;
+    if (pSrvrStmt->columnCount > 0)
     {
-        if (pSrvrStmt->paramCount > 0)
+        retcode = BuildSQLDesc2(pOutputDesc, pSrvrStmt->sqlQueryType,  pSrvrStmt->maxRowsetSize,
+                pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->columnCount, pSrvrStmt->outputDescBuffer,
+                pSrvrStmt->outputDescBufferLength, pSrvrStmt->outputDescVarBuffer, pSrvrStmt->outputDescVarBufferLen,
+                pSrvrStmt->IRD, pSrvrStmt->SqlDescInfo);
+        HANDLE_ERROR(retcode, sqlWarning);
+
+        if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
         {
-            tmpBuildID = srvrGlobal->drvrVersion.buildId; // should go way once we support rowwise rowsets
-            srvrGlobal->drvrVersion.buildId = 0;
-            retcode = BuildSQLDesc2(pInputDesc, -9999, 0, pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->paramCount,
-                    pSrvrStmt->inputDescBuffer, pSrvrStmt->inputDescBufferLength,
-                    pSrvrStmt->inputDescVarBuffer, pSrvrStmt->inputDescVarBufferLen, pSrvrStmt->IPD,pSrvrStmt->SqlDescInfo);
-            srvrGlobal->drvrVersion.buildId = tmpBuildID; // should go way once we support rowwise rowsets
-            HANDLE_ERROR(retcode, sqlWarning);
+            estRowLength = pSrvrStmt->outputDescVarBufferLen;
+            pSrvrStmt->bFirstSqlBulkFetch = true;
         }
-
-        Int32 estRowLength=0;
-        if (pSrvrStmt->columnCount > 0)
+        else
         {
-            retcode = BuildSQLDesc2(pOutputDesc, pSrvrStmt->sqlQueryType,  pSrvrStmt->maxRowsetSize, pSrvrStmt->sqlBulkFetchPossible,
-                    pSrvrStmt->columnCount, pSrvrStmt->outputDescBuffer, pSrvrStmt->outputDescBufferLength,
-                    pSrvrStmt->outputDescVarBuffer, pSrvrStmt->outputDescVarBufferLen, pSrvrStmt->IRD,pSrvrStmt->SqlDescInfo);
-            HANDLE_ERROR(retcode, sqlWarning);
+            int columnCount = pSrvrStmt->columnCount;
+            Int32 estLength;
+            SRVR_DESC_HDL *IRD = pSrvrStmt->IRD;
 
-            if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
+            for (int curColumnNo = 0; curColumnNo < columnCount ; curColumnNo++)
             {
-                estRowLength = pSrvrStmt->outputDescVarBufferLen;
-                pSrvrStmt->bFirstSqlBulkFetch = true;
-            }
-            else
-            {
-                int columnCount = pSrvrStmt->columnCount;
-                Int32 estLength;
-                SRVR_DESC_HDL *IRD = pSrvrStmt->IRD;
-
-                for (int curColumnNo = 0; curColumnNo < columnCount ; curColumnNo++)
-                {
-                    IRD = pSrvrStmt->IRD;
-                    estLength = getAllocLength(IRD[curColumnNo].dataType, IRD[curColumnNo].length);
-                    estLength += 1;
-                    estRowLength += estLength;
-                }
+                IRD = pSrvrStmt->IRD;
+                estLength = getAllocLength(IRD[curColumnNo].dataType, IRD[curColumnNo].length);
+                estLength += 1;
+                estRowLength += estLength;
             }
         }
-        pSrvrStmt->estRowLength = estRowLength;
     }
+    pSrvrStmt->estRowLength = estRowLength;
 
     if (rgWarning)
         THREAD_RETURN(pSrvrStmt,ODBC_RG_WARNING);
@@ -4070,31 +3937,20 @@ SQLRETURN BuildSQLDesc2(SQLDESC_ID *pDesc,
 
     if (implDesc != NULL)
     {
-        delete implDesc;
+        delete[] implDesc;
         implDesc = NULL;
     }
 
     if (numEntries > 0)
     {
 
-        implDesc = new SRVR_DESC_HDL[numEntries];
-        if (implDesc == NULL)
-        {
-            exit(1);
-        }
+        MEMORY_ALLOC_ARRAY(implDesc, SRVR_DESC_HDL, numEntries);
 
-        SqlDescInfo = new DESC_HDL_LISTSTMT[numEntries];
-        if (SqlDescInfo == NULL)
-        {
-            exit(1);
-        }
+        MEMORY_ALLOC_ARRAY(SqlDescInfo, DESC_HDL_LISTSTMT, numEntries);
 
         tempDescLen	= sizeof(totalMemLen) + sizeof(numEntries) + (sizeof(ODBCDescriptors) * numEntries);
-        SQLDesc = new BYTE[tempDescLen];
-        if (SQLDesc == NULL)
-        {
-            exit(1);
-        }
+        MEMORY_ALLOC_ARRAY(SQLDesc, BYTE, tempDescLen);
+        memset(SQLDesc, 0, sizeof(BYTE)*tempDescLen);
 
         *(Int32 *)(SQLDesc+totalDescLength) = 0; // Initialize totalMemLen, Since its calculated later
         totalDescLength += sizeof(totalMemLen);
@@ -4292,17 +4148,19 @@ SQLRETURN BuildSQLDesc2(SQLDESC_ID *pDesc,
 
     if (varBuffer != NULL)
     {
-        delete varBuffer;
+        delete[] varBuffer;
     }
     varBuffer = NULL;
     //	if (sqlBulkFetchPossible && (sqlQueryType == SQL_SELECT_NON_UNIQUE || sqlQueryType == SQL_SP_RESULT_SET))
     if (bRWRS)
-        varBuffer = new BYTE[srvrGlobal->m_FetchBufferSize];
-    else
-        varBuffer = new BYTE[totalMemLen];
-    if (varBuffer == NULL)
     {
-        exit(1);
+        MEMORY_ALLOC_ARRAY(varBuffer, BYTE, srvrGlobal->m_FetchBufferSize);
+        memset(varBuffer, 0, sizeof(BYTE)*srvrGlobal->m_FetchBufferSize);
+    }
+    else
+    {
+        MEMORY_ALLOC_ARRAY(varBuffer, BYTE, totalMemLen);
+        memset(varBuffer, 0, sizeof(BYTE)*totalMemLen);
     }
 
     //setting the Indicator and Variable pointer
@@ -5315,7 +5173,7 @@ SQLRETURN GetRowsAffected(SRVR_STMT_HDL *pSrvrStmt)
 
 //========================NOT ATOMIC ROWSET==================================
 
-    extern "C"
+extern "C"
 SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarning, SRVR_STMT_HDL* pSrvrStmt)
 {
 #define MAX_SQLSTATE_LEN 6
@@ -5431,26 +5289,6 @@ SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarn
         sqlState[MAX_SQLSTATE_LEN]=0;
         MessageText[MAX_MSG_TEXT_LEN]=0;
 
-        // Added for MODE_SPECIAL_1 behavior
-        /*
-           bool doErr;
-           if (srvrGlobal->modeSpecial_1)
-           {
-           pSrvrStmt->numErrRows = 0;
-           doErr = false;
-
-           markNewOperator,pSrvrStmt->errRowsArray = new BYTE[ pSrvrStmt->maxRowsetSize ];
-
-           if( !pSrvrStmt->errRowsArray ) {
-           SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
-           srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-           srvrGlobal->srvrObjRef, 1, "GETNOTATOMICROWSET2");
-           exit(0);
-           }
-           memset( pSrvrStmt->errRowsArray, 0x0, pSrvrStmt->maxRowsetSize );
-           }
-           */
-
         for (i=0; i < total_conds; i++)
         {
             sqlcode = (Int32)*(pCondInfoItems[4*i+0].num_val_or_len);
@@ -5458,10 +5296,6 @@ SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarn
             row_number = (Int32)*(pCondInfoItems[4*i+2].num_val_or_len);
             strcpy(MessageText,pCondInfoItems[4*i+3].string_val);
 
-            //if (srvrGlobal->modeSpecial_1)
-            //	doErr = true;
-
-            //for NAR surrogate key feature
             if (sqlcode == -8108 && pSrvrStmt != NULL)
             {
                 retcode = RECOVERY_FOR_SURROGATE_ERROR2(pSrvrStmt,pStmt,pDesc,row_number);
@@ -5472,40 +5306,25 @@ SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarn
                             sqlcode,
                             sqlState,
                             row_number + 1);
-                //else
-                // do nothing for now
-                //if (srvrGlobal->modeSpecial_1 && retcode == SQL_SUCCESS)
-                //	doErr = false;
             }
             else
-                //for NAR surrogate key feature
-
+            {
                 kdsCopySQLErrorExceptionAndRowCount(
                         SQLError,
                         MessageText,
                         sqlcode,
                         sqlState,
                         row_number + 1);
-
-            // Added for MODE_SPECIAL_1 behavior
-            // Increment pSrvrStmt->numErrRows only for the first occurrence of the
-            // current row_number. The row_number in the SQL diags area is 0-based.
-            //if( srvrGlobal->modeSpecial_1 && doErr && row_number >= 0 )
-            //{
-            //	if( pSrvrStmt->errRowsArray[ row_number ] == 0x0 ) {
-            //		pSrvrStmt->errRowsArray[ row_number ] = 0x1;
-            //		pSrvrStmt->numErrRows++;
-            //	}
-            //}
-
-        }
+            }
+        } // end of loop
     }
 bailout:
     WSQL_EXEC_ClearDiagnostics(NULL);
     sqlWarning->_length = SQLError->errorList._length;
     sqlWarning->_buffer = SQLError->errorList._buffer;
     if (gbuf_ptr != NULL)
-        delete gbuf_ptr;
+        delete[] gbuf_ptr;
+    
     CLI_DEBUG_RETURN_SQL(retcode);
 }
 
@@ -5844,7 +5663,8 @@ void COPYSQLERROR_LIST_TO_SRVRSTMT(SRVR_STMT_HDL* pSrvrStmt)
 {
     Int32 i;
     Int32 totallength = pSrvrStmt->sqlWarning._length;
-    ERROR_DESC_def* pErrorDesc;
+    ERROR_DESC_def* pErrorDesc = NULL;
+    ERROR_DESC_def* _buffer = NULL;
     ROWSET_ERROR_NODE* currNode, *nextNode;
     if (pSrvrStmt->rowsetErrorList.nodeCount == 0)
         return;
@@ -5857,17 +5677,15 @@ void COPYSQLERROR_LIST_TO_SRVRSTMT(SRVR_STMT_HDL* pSrvrStmt)
     }
     if (totallength == 0)
         return;
-    ERROR_DESC_def* _buffer = new ERROR_DESC_def[totallength];
-    if (_buffer == NULL)
-    {
-        exit(0);
-    }
+    
+    MEMORY_ALLOC_ARRAY(_buffer, ERROR_DESC_def, totallength);
     pErrorDesc = _buffer;
+    
     if (pSrvrStmt->sqlWarning._length > 0)
     {
         memcpy(pErrorDesc, pSrvrStmt->sqlWarning._buffer, pSrvrStmt->sqlWarning._length * sizeof(ERROR_DESC_def));
         pErrorDesc += pSrvrStmt->sqlWarning._length;
-        delete pSrvrStmt->sqlWarning._buffer;
+        MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarning._buffer);
     }
 
     currNode = pSrvrStmt->rowsetErrorList.firstNode;
@@ -5946,7 +5764,7 @@ SQLRETURN GETSQLERROR_AND_ROWCOUNT(
         {
             msg_buf_len = (msg_buf_len+1)*4;
             msg_buf_len += TIMEBUFSIZE;
-            msg_buf = new char[msg_buf_len];
+            MEMORY_ALLOC_ARRAY(msg_buf, char, msg_buf_len);
             buf_len = 0;
             retcode = WSQL_EXEC_GetDiagnosticsCondInfo2(SQLDIAG_MSG_TEXT, curr_cond,
                     NULL, msg_buf, msg_buf_len, &buf_len);
@@ -5973,11 +5791,11 @@ SQLRETURN GETSQLERROR_AND_ROWCOUNT(
         else
         {
             kdsCopySQLErrorExceptionAndRowCount(SQLError, "Internal Error : From GetCondDiagnostics ", retcode, "", currentRowCount);
-            delete msg_buf;
+            MEMORY_DELETE_ARRAY(msg_buf);
             break;
         }
         kdsCopySQLErrorException(SQLError, msg_buf, sqlcode, sqlState);
-        delete msg_buf;
+        MEMORY_DELETE_ARRAY(msg_buf);
         if (fatalSQLError(sqlcode))
         {
             *errorRowCount = -1;
@@ -6014,13 +5832,10 @@ void ADDSQLERROR_TO_LIST(
         Int32 rowCount)
 {
     ERROR_DESC_def *errorDesc;
+    ROWSET_ERROR_NODE* pNode = NULL;
     UInt32 i;
 
-    ROWSET_ERROR_NODE* pNode = new ROWSET_ERROR_NODE();
-    if (pNode == NULL)
-    {
-        exit(0);
-    }
+    MEMORY_ALLOC(pNode, ROWSET_ERROR_NODE);
 
     pNode->rowNumber = rowCount;
     pNode->SQLError.errorList._length = SQLError->errorList._length;
@@ -6112,11 +5927,10 @@ SQLRETURN GETSQLERROR2(bool& bSQLMessageSet,
             if (retcode >= SQL_SUCCESS)
             {
                 msg_buf_len = (msg_buf_len+1)*4 + TIMEBUFSIZE;
-                msg_buf = new char[msg_buf_len];
+                MEMORY_ALLOC_ARRAY(msg_buf, char, msg_buf_len);
                 buf_len = 0;
                 retcode = WSQL_EXEC_GetDiagnosticsCondInfo2(SQLDIAG_MSG_TEXT, curr_cond,
-                        NULL, msg_buf, msg_buf_len, &buf_len);
-            }
+                        NULL, msg_buf, msg_buf_len, &buf_len); }
             if (retcode >= SQL_SUCCESS)
             {
                 msg_buf[buf_len] = '\0';
@@ -6135,7 +5949,7 @@ SQLRETURN GETSQLERROR2(bool& bSQLMessageSet,
             {
                 kdsCopySQLErrorException(SQLError, "Internal Error : From GetCondDiagnostics",
                         retcode, "");
-                delete msg_buf;
+                MEMORY_DELETE_ARRAY(msg_buf);
                 break;
             }
             sqlRowCount = -1;
@@ -6148,7 +5962,7 @@ SQLRETURN GETSQLERROR2(bool& bSQLMessageSet,
                 sqlRowCount++;
 
             kdsCopySQLErrorExceptionAndRowCount(SQLError, msg_buf, sqlcode, sqlState, sqlRowCount);
-            delete msg_buf;
+            MEMORY_DELETE_ARRAY(msg_buf);
             curr_cond++;
         }
 
@@ -6519,7 +6333,7 @@ SQLRETURN EXECUTE2(SRVR_STMT_HDL* pSrvrStmt)
                 rsSrvrStmt->isClosed = FALSE;
 
                 // Build the output descriptor for the RS
-                retcode = PREPARE(rsSrvrStmt);
+                retcode = PREPARE_R(rsSrvrStmt);
 
                 if(retcode >= 0)
                 {
@@ -6541,7 +6355,8 @@ SQLRETURN EXECUTE2(SRVR_STMT_HDL* pSrvrStmt)
                     // that there are no more result sets. In this case we should free this statement
                     rsSrvrStmt->freeResourceOpt = SQL_DROP;
 
-                    /*
+                    /* // we might need this in the near future once we have all native interfaces
+                     * // ported to use this protocol interfaces
                     if(rsSrvrStmt->SpjProxySyntaxString != NULL)
                         delete [] rsSrvrStmt->SpjProxySyntaxString;
 
@@ -6705,58 +6520,38 @@ SQLRETURN BuildSQLDesc2withRowsets(
 
     if (implDesc != NULL)
     {
-        delete implDesc;
+        delete[] implDesc;
         implDesc = NULL;
     }
 
     if (inputQuadList != NULL)
     {
-        delete inputQuadList;
+        delete[] inputQuadList;
         inputQuadList = NULL;
     }
 
     if (inputQuadList_recover != NULL)
     {
-        delete inputQuadList_recover;
+        delete[] inputQuadList_recover;
         inputQuadList_recover = NULL;
     }
 
 
     if (numEntries > 1)
     {
-        implDesc = new SRVR_DESC_HDL[numEntries - 1];
-        if (implDesc == NULL)
-        {
-            exit(0);
-        }
-
-        inputQuadList = new SQLCLI_QUAD_FIELDS[numEntries];
-        if (inputQuadList == NULL)
-        {
-            exit(0);
-        }
-        inputQuadList_recover = new SQLCLI_QUAD_FIELDS[numEntries];
-        if (inputQuadList_recover == NULL)
-        {
-            exit(0);
-        }
+        MEMORY_ALLOC_ARRAY(implDesc, SRVR_DESC_HDL, numEntries - 1);
+        MEMORY_ALLOC_ARRAY(inputQuadList, SQLCLI_QUAD_FIELDS, numEntries);
+        MEMORY_ALLOC_ARRAY(inputQuadList_recover, SQLCLI_QUAD_FIELDS, numEntries);
 
         // Setup ind_layout in quad ptr list.
         for (i = 0; i < numEntries; i++)
             inputQuadList[i].ind_layout = 2;  // 2 byte indicator
 
-        SqlDescInfo = new DESC_HDL_LIST[numEntries - 1];
-        if (SqlDescInfo == NULL)
-        {
-            exit(0);
-        }
+        MEMORY_ALLOC_ARRAY(SqlDescInfo, DESC_HDL_LIST, numEntries - 1);
 
         tempDescLen	= sizeof(totalMemLen) + sizeof(numEntries) + (sizeof(ODBCDescriptors) * (numEntries - 1));
-        SQLDesc = new BYTE[tempDescLen];
-        if (SQLDesc == NULL)
-        {
-            exit(0);
-        }
+        MEMORY_ALLOC_ARRAY(SQLDesc, BYTE, tempDescLen);
+        memset(SQLDesc, 0, sizeof(BYTE)*tempDescLen);
 
         *(Int32 *)(SQLDesc+totalDescLength) = 0; // Initialize totalMemLen, Since its calculated later
         totalDescLength += sizeof(totalMemLen);
@@ -6990,19 +6785,18 @@ SQLRETURN BuildSQLDesc2withRowsets(
 
     if (varBuffer != NULL)
     {
-        delete varBuffer;
+        delete[] varBuffer;
     }
     varBuffer = NULL;
     if (sqlBulkFetchPossible && sqlQueryType == SQL_SELECT_NON_UNIQUE)
-        varBuffer = new BYTE[srvrGlobal->m_FetchBufferSize];
-    else
-        // KAS This probably needs to be removed if I end up using the input buffer for the
-        // quad pointers to point too.
-        varBuffer = new BYTE[totalMemLen];
-    if (varBuffer == NULL)
     {
-        // Handle Memory Overflow execption here
-        exit(0);
+        MEMORY_ALLOC_ARRAY(varBuffer, BYTE, srvrGlobal->m_FetchBufferSize);
+        memset(varBuffer, 0, sizeof(BYTE)*srvrGlobal->m_FetchBufferSize);
+    }
+    else
+    {
+        MEMORY_ALLOC_ARRAY(varBuffer, BYTE, totalMemLen);
+        memset(varBuffer, 0, sizeof(BYTE)*totalMemLen);
     }
 
     *(Int32 *)SQLDesc = totalMemLen;
@@ -7355,10 +7149,7 @@ SQLRETURN FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
     if (outputDataValue->_buffer == NULL)
     {
         /*
-        // Handle Memory Overflow execption here
-        SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
-        srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-        srvrGlobal->srvrObjRef, 1, "_buffer:FETCHPERF");
+        // Need Handle Memory Overflow execption here
         */
         exit(0);
     }
@@ -7508,7 +7299,7 @@ extern "C" BYTE* allocGlobalBuffer(Int32 size)
     {
         if (pGlobalBuffer != NULL)
         {
-            delete pGlobalBuffer;
+            delete[] pGlobalBuffer;
             pGlobalBuffer = NULL;
             GlobalBufferLen = 0;
         }
@@ -7524,7 +7315,7 @@ extern "C" void releaseGlobalBuffer()
     SRVRTRACE_ENTER(FILE_INTF+28);
     if (pGlobalBuffer != NULL)
     {
-        delete pGlobalBuffer;
+        delete[] pGlobalBuffer;
         pGlobalBuffer = NULL;
         GlobalBufferLen = 0;
     }
@@ -7557,14 +7348,11 @@ SQLRETURN FETCH2bulk(SRVR_STMT_HDL *pSrvrStmt)
             if( srvrGlobal->m_FetchBufferSize/pSrvrStmt->outputDescVarBufferLen  < pSrvrStmt->maxRowCnt )
             {
                 if (pSrvrStmt->outputDescVarBuffer != NULL)
-                    delete pSrvrStmt->outputDescVarBuffer;
+                    MEMORY_DELETE_ARRAY(pSrvrStmt->outputDescVarBuffer);
                 pSrvrStmt->outputDescVarBuffer = NULL;
-                pSrvrStmt->outputDescVarBuffer = new BYTE[pSrvrStmt->maxRowCnt*pSrvrStmt->outputDescVarBufferLen];
-                if (pSrvrStmt->outputDescVarBuffer == NULL)
-                {
-                    // Handle Memory Overflow exception here
-                    exit(0);
-                }
+                Int64 totOutputDescVarBufferLen = pSrvrStmt->maxRowCnt*pSrvrStmt->outputDescVarBufferLen; // Will this be overflow?
+                MEMORY_ALLOC_ARRAY(pSrvrStmt->outputDescVarBuffer, BYTE, totOutputDescVarBufferLen);
+                memset(pSrvrStmt->outputDescVarBuffer, 0, sizeof(BYTE)*totOutputDescVarBufferLen);
 
                 SetIndandVarPtr(&pSrvrStmt->outputDesc
                         , bRWRS
