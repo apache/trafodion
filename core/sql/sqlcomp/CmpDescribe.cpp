@@ -2283,7 +2283,8 @@ static short cmpDisplayColumn(const NAColumn *nac,
                               Lng32 &ii,
                               NABoolean namesOnly,
                               NABoolean &identityCol,
-                              NABoolean isExternalTable)
+                              NABoolean isExternalTable,
+                              NABoolean isAlignedRowFormat)
 {
   identityCol = FALSE;
   
@@ -2408,9 +2409,10 @@ static short cmpDisplayColumn(const NAColumn *nac,
   if ((! sqlmxRegr) ||
       (type == 3))
     {
-      if (CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
+      if ((NOT isAlignedRowFormat) &&
+            CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
         attrStr += " SERIALIZED";
-      else if  ((CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) ||
+      else if ((CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) ||
                 (type == 3))
         attrStr += " NOT SERIALIZED";
     }
@@ -2439,6 +2441,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         NABoolean namesOnly,
                         Lng32 &identityColPos,
                         NABoolean isExternalTable,
+			NABoolean isAlignedRowFormat,
                         char * inColName = NULL,
                         NABoolean isAdd = FALSE,
                         const NAColumn * nacol = NULL)
@@ -2464,7 +2467,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
             continue;
         }
       
-       if (cmpDisplayColumn(nac, type, space, buf, ii, namesOnly, identityCol, isExternalTable))
+       if (cmpDisplayColumn(nac, type, space, buf, ii, namesOnly, identityCol, isExternalTable, isAlignedRowFormat))
         return -1;
 
       if (identityCol)
@@ -2475,7 +2478,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
 
   if ((inColName) && (isAdd) && (nacol))
     {
-      if (cmpDisplayColumn(nacol, type, space, buf, ii, namesOnly, identityCol, isExternalTable))
+      if (cmpDisplayColumn(nacol, type, space, buf, ii, namesOnly, identityCol, isExternalTable, isAlignedRowFormat))
         return -1;
     }
 
@@ -2744,7 +2747,7 @@ short CmpDescribeSeabaseTable (
 		    displaySystemCols, 
 		    FALSE,
                     identityColPos,
-                    isExternalTable,
+                    isExternalTable, naTable->isSQLMXAlignedTable(),
                     colName, isAdd, nacol);
 
   Int32 nonSystemKeyCols = 0;
@@ -3014,6 +3017,7 @@ short CmpDescribeSeabaseTable (
       for (Int32 i = 0; i < indexList.entries(); i++)
 	{
 	  const NAFileSet * naf = indexList[i];
+          isAligned = naf->isSqlmxAlignedRowFormat();
 	  if (naf->getKeytag() == 0)
 	    continue;
 	  
@@ -3069,7 +3073,8 @@ short CmpDescribeSeabaseTable (
 				displaySystemCols,
 				(type == 2),
                                 dummy,
-                                isExternalTable);
+                                isExternalTable,
+                                isAligned);
 	      outputShortLine(space, "  )");
 	      
 	      sprintf(buf,  "  PRIMARY KEY ");
@@ -3087,6 +3092,15 @@ short CmpDescribeSeabaseTable (
 	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), numIndexCols, 
 			       displaySystemCols,
 			       space, buf, FALSE, TRUE);
+
+          if ((NOT sqlmxRegr) && isAligned)
+          {
+             char attrs[2000];
+             strcpy(attrs, " ATTRIBUTES ");
+             if (isAligned)
+                strcat(attrs, "ALIGNED FORMAT ");
+             outputShortLine(space, attrs);
+          }
 
           if ((naf->hbaseCreateOptions()) && (type == 2) &&
                (naf->hbaseCreateOptions()->entries() > 0))

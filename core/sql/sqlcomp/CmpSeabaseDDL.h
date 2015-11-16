@@ -310,7 +310,7 @@ class CmpSeabaseDDL
 
   static NABoolean isSerialized(ULng32 flags)
   {
-    return (flags & SEABASE_SERIALIZED) != 0;
+    return (flags & NAColumn::SEABASE_SERIALIZED) != 0;
   }
 
   short buildColInfoArray(
@@ -402,13 +402,11 @@ class CmpSeabaseDDL
   
   void deallocEHI(ExpHbaseInterface* &ehi);
   void dropLOBHdfsFiles();
- protected:
-
   enum {
-    SEABASE_SERIALIZED = 0x0001,
     // set if we need to get the hbase snapshot info of the table
     GET_SNAPSHOTS = 0x0002
   };
+ protected:
 
   void setFlags(ULng32 &flags, ULng32 flagbits)
   {

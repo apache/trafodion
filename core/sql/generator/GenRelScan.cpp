@@ -302,7 +302,7 @@ int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
   asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
   castValue = new(h) Cast(asciiValue, newGivenType); 
 
-  if (HbaseAccess::isEncodingNeededForSerialization(colNode))
+  if ((!alignedFormat) && HbaseAccess::isEncodingNeededForSerialization(colNode))
     {
       castValue = new(generator->wHeap()) CompDecode(castValue, 
 						     newGivenType->newCopy(h),

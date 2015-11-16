@@ -612,17 +612,22 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
       return;
     }
+  ParDDLFileAttrsCreateIndex &fileAttribs =
+    createIndexNode->getFileAttributes();
 
   NABoolean alignedFormat = FALSE;
-  if (CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON) {
-     if (naTable->hasSerializedColumn())
-        alignedFormat = FALSE;
-     else
-     if (isSeabaseReservedSchema(tableName))
-        alignedFormat = FALSE;
-     else
+  if (fileAttribs.isRowFormatSpecified() == TRUE)
+    {
+      if (fileAttribs.getRowFormat() == ElemDDLFileAttrRowFormat::eALIGNED)
+        {
+          alignedFormat = TRUE;
+        }
+    }
+  else if(CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON)
+    {
+      if ( NOT isSeabaseReservedSchema(tableName))
         alignedFormat = TRUE;
-  }
+    }
   else
   if (naTable->isSQLMXAlignedTable())
     alignedFormat = TRUE;
