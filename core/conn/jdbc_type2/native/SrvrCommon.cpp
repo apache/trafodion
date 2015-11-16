@@ -2387,7 +2387,8 @@ extern "C" void GETMXCSWARNINGORERROR(
     Int32 msg_total_len = 0;
     Int32 rowId = 0; // use this for rowset recovery.
     char tsqlState[6];
-    BYTE WarningOrError[1024];
+    //BYTE WarningOrError[1024];
+    BYTE *WarningOrError = MXCSWarningOrError; // Size of internally generated message should be enough
     char  strNow[TIMEBUFSIZE + 1];
     char* time_and_msg_buf = NULL;
 
@@ -2397,7 +2398,6 @@ extern "C" void GETMXCSWARNINGORERROR(
     bzero(WarningOrError,sizeof(WarningOrError));
 
     *MXCSWarningOrErrorLength = 0;
-    MXCSWarningOrError = WarningOrError; // Size of internally generated message should be enough
 
     *(Int32 *)(WarningOrError+msg_total_len) = total_conds;
     msg_total_len += sizeof(total_conds);
@@ -2421,7 +2421,7 @@ extern "C" void GETMXCSWARNINGORERROR(
     memcpy(WarningOrError+msg_total_len, tsqlState, sizeof(tsqlState));
     msg_total_len += sizeof(tsqlState);
 
-    memcpy(MXCSWarningOrError, WarningOrError, sizeof(WarningOrError));
+    //memcpy(MXCSWarningOrError, WarningOrError, sizeof(WarningOrError));
     *MXCSWarningOrErrorLength = msg_total_len;
     return;
 }

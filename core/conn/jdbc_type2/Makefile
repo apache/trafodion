@@ -59,7 +59,7 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/SQLWrapper.o \
        $(OUTDIR)/marshalingsrvr_srvr.o \
        $(OUTDIR)/marshaling.o \
-       $(OUTDIR)/TrafT2InterfaceOdbc.o \
+       $(OUTDIR)/TrafT2NativeInterface.o \
        $(OUTDIR)/TrafT2SrvrConnect.o \
        $(OUTDIR)/utils.o \
        $(OUTDIR)/type2version.o

@@ -192,7 +192,9 @@ extern SQLRETURN EXECUTE2(SRVR_STMT_HDL* pSrvrStmt);
 
 extern SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt);
 
-extern SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect = false);
+extern SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt);
+
+extern SQLRETURN PREPARE_R(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect = false);
 
 extern SQLRETURN PREPARE2withRowsets(SRVR_STMT_HDL* pSrvrStmt);
 

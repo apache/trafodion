@@ -2483,15 +2483,15 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 										"invalid_cursor_state", null);
 							}
 
-							//if (stmt_ instanceof org.trafodion.jdbc.t2.SQLMXPreparedStatement) {
-							//	validRow = irs_.fetch(stmtId_, maxRowCnt, queryTimeout, holdability_, this);
-							//	fetchComplete_ = true;
-                           // } else {
+							if (stmt_ instanceof org.trafodion.jdbc.t2.SQLMXPreparedStatement) {
+								validRow = irs_.fetch(stmtId_, maxRowCnt, queryTimeout, holdability_, this);
+								fetchComplete_ = true;
+                            } else {
                                 validRow = fetchN(connection_.server_, connection_
                                         .getDialogueId_(), connection_.getTxid_(),
                                         connection_.transactionMode_, stmtId_,
                                         maxRowCnt, queryTimeout, holdability_);
-						//	}
+							}
 						}// End sync
 					}
 					if (validRow) {

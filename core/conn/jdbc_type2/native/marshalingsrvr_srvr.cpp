@@ -166,9 +166,9 @@ odbc_SQLSrvr_Prepare_param_res_(
 
     if (curptr > buffer + message_length)
     {
-        //LCOV_EXCL_START
+        /* // Programing error handling:
+        */
         exit(1000);
-        //LCOV_EXCL_STOP
     }
 
     SRVRTRACE_EXIT(FILE_OMR+15);
@@ -576,9 +576,9 @@ odbc_SQLSrvr_Fetch_param_res_(
 
     if (curptr > buffer + message_length)
     {
-        //LCOV_EXCL_START
+        /* // Programing error handling:
+        */
         exit(1000);
-        //LCOV_EXCL_START
     }
 
     SRVRTRACE_EXIT(FILE_OMR+15);

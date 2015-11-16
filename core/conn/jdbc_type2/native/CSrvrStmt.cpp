@@ -357,7 +357,7 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
               MEMORY_DELETE(rowCount._buffer);
        MEMORY_ALLOC_ARRAY(rowCount._buffer,int, inputRowCnt);
        rowCount._length = 0;
-        }
+    }
     memset(rowCount._buffer,0,inputRowCnt*sizeof(int));
 
     sqlStmtType = inSqlStmtType;
@@ -402,6 +402,7 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
     case SQL_SUCCESS_WITH_INFO:
         outValueList->_buffer = outputValueList._buffer;
         outValueList->_length = outputValueList._length;
+
         //MFC update srvrGlobal if any CQD/catalog/schema is set
         if (this->sqlString.dataValue._buffer != NULL)
         {

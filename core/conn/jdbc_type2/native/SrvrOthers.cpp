@@ -1624,11 +1624,7 @@ odbc_SQLSvc_Prepare2_sme_(
         // cleanup all memory allocated in the previous operations
         pSrvrStmt->cleanupAll();
         pSrvrStmt->sqlStringLen = strlen(sqlString) + 1;
-        pSrvrStmt->sqlStringText = new char[pSrvrStmt->sqlStringLen];
-        if (pSrvrStmt->sqlStringText == NULL)
-        {
-            exit(0);
-        }
+        MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText , char, pSrvrStmt->sqlStringLen);
 
         strncpy(pSrvrStmt->sqlStringText, sqlString, pSrvrStmt->sqlStringLen);
         pSrvrStmt->sqlStmtType = (short)sqlStmtType;
@@ -1637,7 +1633,7 @@ odbc_SQLSvc_Prepare2_sme_(
 
         pSrvrStmt->currentMethod = odbc_SQLSvc_PrepareRowset_ldx_;
         pSrvrStmt->holdableCursor = holdableCursor;
-        rc = PREPARE(pSrvrStmt, isFromExecDirect);
+        rc = PREPARE_R(pSrvrStmt, isFromExecDirect);
         switch (rc)
         {
             case ODBC_RG_WARNING:
@@ -2043,22 +2039,14 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
     if(pSrvrStmt->bSQLValueListSet)
         pSrvrStmt->cleanupSQLValueList();
 
-    tmpSqlString = new char[tmpSqlStringLen+1];
-    if (tmpSqlString == NULL)
-    {
-        exit(0);
-    }
+    MEMORY_ALLOC_ARRAY(tmpSqlString, char, tmpSqlStringLen);
     strcpy(tmpSqlString, pSrvrStmt->sqlStringText);
 
     // cleanup all memory allocated in the previous operations
     pSrvrStmt->cleanupAll();
     pSrvrStmt->sqlStringLen = tmpSqlStringLen;
 
-    pSrvrStmt->sqlStringText  = new char[pSrvrStmt->sqlStringLen+1];
-    if (pSrvrStmt->sqlStringText == NULL)
-    {
-        exit(0);
-    }
+    MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText, char, pSrvrStmt->sqlStringLen+1);
     strcpy(pSrvrStmt->sqlStringText, tmpSqlString);
 
     pSrvrStmt->stmtType      = tmpStmtType;
@@ -2093,7 +2081,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
     if(pSrvrStmt->maxRowsetSize > 1)
         *rc = PREPARE2withRowsets(pSrvrStmt);
     else
-        *rc = PREPARE(pSrvrStmt);
+        *rc = PREPARE_R(pSrvrStmt);
 
 
     switch (*rc)
