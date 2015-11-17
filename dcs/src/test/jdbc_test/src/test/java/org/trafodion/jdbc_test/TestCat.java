@@ -604,9 +604,10 @@ public class TestCat
         try
         {
             Connection connection = Utils.getUserConnection();
+            String db = Utils.dbmaj_version + "." + Utils.dbmin_version;
             String s = connection.getMetaData().getDatabaseProductVersion();
             System.out.println((new StringBuilder()).append("DB product version : ").append(s).toString());
-            assertEquals("DB Product Version", "2.0", s);
+            assertEquals("DB Product Version", db, s);
             connection.close();
             System.out.println("JDBC Get DB product version : Passed");
         }
@@ -626,8 +627,9 @@ public class TestCat
         try
         {
             Connection connection = Utils.getUserConnection();
+            int maj = Integer.parseInt(Utils.dbmaj_version);
             int i = connection.getMetaData().getDatabaseMajorVersion();
-            assertEquals("DB major Version", 2L, i);
+            assertEquals("DB major Version", maj, i);
             connection.close();
             System.out.println("JDBC Get DB major version : Passed");
         }
@@ -647,8 +649,9 @@ public class TestCat
         try
         {
             Connection connection = Utils.getUserConnection();
+            int min = Integer.parseInt(Utils.dbmin_version);
             int i = connection.getMetaData().getDatabaseMinorVersion();
-            assertEquals("DB Minor Version", 0L, i);
+            assertEquals("DB Minor Version", min, i);
             connection.close();
             System.out.println("JDBC Get DB minor version : Passed");
         }
