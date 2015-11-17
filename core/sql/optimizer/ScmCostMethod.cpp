@@ -3972,7 +3972,7 @@ CostMethodHbaseDelete::scmComputeOperatorCostInternal(RelExpr* op,
                                    &(delOp->updateToSelectMap()));
     NABoolean orderedNJ = TRUE;
     // Don't call ordersMatch if njOuterOrder_ is null.
-    if (ippForMe->getAssumeSortedForCosting())
+    if  ((ippForMe->getAssumeSortedForCosting()) || (ippForMe->getNjOuterOrder() == NULL))
       orderedNJ = FALSE;
     else
       // if leading keys are not same then don't try ordered NJ.

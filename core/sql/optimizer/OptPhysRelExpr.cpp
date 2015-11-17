@@ -3917,7 +3917,7 @@ InputPhysicalProperty* NestedJoin::generateIpp(
   Cardinality maxRows;
   CardConstraint * outerCardinalityConstraint = NULL;
 
-  if (getGroupAttr()->hasCardConstraint(minRows, maxRows))
+  if (child(0).getGroupAttr()->hasCardConstraint(minRows, maxRows))
     {
       outerCardinalityConstraint = new(CmpCommon::statementHeap())
                    CardConstraint(minRows,maxRows);
