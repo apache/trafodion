@@ -412,7 +412,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   NAString extIndexName = indexName.getExternalName(TRUE);
   NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
-
+  NABoolean alignedFormatNotAllowed = FALSE; 
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
     return;
@@ -557,6 +557,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
     {
       CollIndex idx = naTable->allColFams().index(indexColFam);
       genTrafColFam(idx, trafColFam);
+      alignedFormatNotAllowed = TRUE;
     }
   else
     trafColFam = indexColFam;
@@ -620,6 +621,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
     {
       if (fileAttribs.getRowFormat() == ElemDDLFileAttrRowFormat::eALIGNED)
         {
+          if (alignedFormatNotAllowed)
+          {
+             *CmpCommon::diags() << DgSqlCode(-4223)
+                                 << DgString0("Column Family specification on columns of an aligned format index is");
+             processReturn();
+          }
           alignedFormat = TRUE;
         }
     }
@@ -631,6 +638,9 @@ void CmpSeabaseDDL::createSeabaseIndex(
   else
   if (naTable->isSQLMXAlignedTable())
     alignedFormat = TRUE;
+
+  if (alignedFormatNotAllowed)
+     alignedFormat = FALSE;
 
   if ((naTable->hasSecondaryIndexes()) &&
       (NOT createIndexNode->isVolatile()))

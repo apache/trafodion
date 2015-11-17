@@ -2845,10 +2845,15 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
   if (jenv_ == NULL)
      if (initJVM() != JOI_OK)
          return HBC_ERROR_INIT_PARAM;
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
+  }
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBTI_PARAM));
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_PARAM;
   }
 
@@ -2856,26 +2861,25 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
   tsRecentJMFromJNI = JavaMethods_[JM_GET_HBTI].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GET_HBTI].methodID,
                                               js_tblName, jHtabInfo);
-  jboolean isCopy;
-  jint* arrayElems = jenv_->GetIntArrayElements(jHtabInfo, &isCopy);
-  indexLevels = arrayElems[0];
-  blockSize = arrayElems[1];
-  if (isCopy == JNI_TRUE)
-    jenv_->ReleaseIntArrayElements(jHtabInfo, arrayElems, JNI_ABORT);
-
-  jenv_->DeleteLocalRef(js_tblName);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
+  jboolean isCopy;
+  jint* arrayElems = jenv_->GetIntArrayElements(jHtabInfo, &isCopy);
+  indexLevels = arrayElems[0];
+  blockSize = arrayElems[1];
+  if (isCopy == JNI_TRUE)
+     jenv_->ReleaseIntArrayElements(jHtabInfo, arrayElems, JNI_ABORT);
 
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
 
