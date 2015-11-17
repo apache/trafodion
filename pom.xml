@@ -409,6 +409,22 @@
           </configuration>
           <executions>
             <execution>
+              <id>output-html</id>
+              <phase>site</phase>
+              <goals>
+                <goal>process-asciidoc</goal>
+              </goals>
+              <configuration>
+                <attributes>
+                  <imagesdir>./images</imagesdir>
+                  <icons>font</icons>
+                  <stylesheet>trafodion.css</stylesheet>
+                  <last-update-label>false</last-update-label>
+                </attributes>
+                <backend>html5</backend>
+              </configuration>
+            </execution>
+            <execution>
               <id>output-pdf</id>
               <phase>site</phase>
               <goals>
