@@ -2531,7 +2531,7 @@ short HbaseInsert::codeGen(Generator *generator)
 	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
       if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
-	constrTree = generator->addCompDecodeForDerialization(constrTree);
+	constrTree = generator->addCompDecodeForDerialization(constrTree, isAlignedFormat);
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &insConstraintExpr);

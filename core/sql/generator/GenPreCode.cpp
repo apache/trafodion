@@ -9488,7 +9488,7 @@ ItemExpr * IndexColumn::preCodeGen(Generator * generator)
   return i;
 }
 
-ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
+ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie, NABoolean isAlignedFormat)
 {
   if (!ie)
     return NULL;
@@ -9496,7 +9496,7 @@ ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
   if ((ie->getOperatorType() == ITM_BASECOLUMN) ||
       (ie->getOperatorType() == ITM_INDEXCOLUMN))
     {
-      if (HbaseAccess::isEncodingNeededForSerialization(ie))
+      if (! isAlignedFormat && HbaseAccess::isEncodingNeededForSerialization(ie))
 	{
 	  ItemExpr * newNode = new(wHeap()) CompDecode
 	    (ie, &ie->getValueId().getType(), FALSE, TRUE);
@@ -9516,7 +9516,7 @@ ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
 
   for (Lng32 i = 0; i < ie->getArity(); i++)
     {
-      ItemExpr * nie = addCompDecodeForDerialization(ie->child(i));
+      ItemExpr * nie = addCompDecodeForDerialization(ie->child(i), isAlignedFormat);
       if (nie)
 	ie->setChild(i, nie);
     }

@@ -20,7 +20,7 @@
 -- under the License.
 --
 -- @@@ END COPYRIGHT @@@
-
+cqd hbase_delete_costing 'off';
 log LOG022 clear;
 
 cqd hbase_native_iud 'ON';

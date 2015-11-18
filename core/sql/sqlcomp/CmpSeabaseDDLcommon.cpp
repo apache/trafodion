@@ -2089,6 +2089,13 @@ NABoolean CmpSeabaseDDL::enabledForSerialization(NAColumn * nac)
   return FALSE;
 }
 
+// NAColumn in memory is expected to have the correct HbaseColFlags for
+// serialization depending on if it belongs to index or table. 
+// Index and Table row format can be different now. However, it is
+// recommended that the function is called only when it is not aligned
+// row format. The existing callers are verified to be working correctly
+// even though some callers don't adhere to this recommendation
+
 NABoolean CmpSeabaseDDL::isEncodingNeededForSerialization(NAColumn * nac)
 {
   const NAType *givenType = nac->getType();
