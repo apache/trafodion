@@ -2875,14 +2875,7 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
   blockSize = arrayElems[1];
   if (isCopy == JNI_TRUE)
      jenv_->ReleaseIntArrayElements(jHtabInfo, arrayElems, JNI_ABORT);
-
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_GET_HBTI_EXCEPTION;
-  }
-
+  jenv_->PopLocalFrame(NULL);
   return HBC_OK;  // Table exists.
 }
 
