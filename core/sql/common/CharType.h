@@ -778,7 +778,7 @@ public:
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
-	  Lng32 extFormatLen = 100);
+	  Lng32 extFormatLen = 1024);
  SQLBlob(const SQLBlob & aBlob,NAMemory * heap)
    :SQLlob(aBlob,heap)
     {}

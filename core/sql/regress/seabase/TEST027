@@ -118,6 +118,15 @@ create table t027t02 (
      a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
     a30.a30 int) attribute default column family 'cf';
 
+drop table if exists t027t02;
+create table t027t02 (
+     "cf".a0a0 int, "cf".a1a1 int, "cf".a2a2 int, "cf".a3a3 int, "cf".a4a4 int, "cf".a5a5 int, "cf".a6a6 int, "cf".a7a7 int, "cf".a8a8 int, "cf".a9a9 int,
+     "cf".a10a10 int, "cf".a11a11 int, "cf".a12a12 int, "cf".a13a13 int, "cf".a14a14 int, "cf".a15a15 int, "cf".a16a16 int, "cf".a17a17 int, "cf".a18a18 int, "cf".a19a19 int,
+     "cf".a20a20 int, "cf".a21a21 int, "cf".a22a22 int, "cf".a23a23 int, "cf".a24a24 int, "cf".a25a25 int, "cf".a26a26 int, "cf".a27a27 int, "cf".a28a28 int, "cf".a29a29 int,
+    "cf".a30a30 int, "cf".a31a31 int, "cf".a32a32 int, "cf".a33a33 int) 
+attribute default column family 'cf';
+invoke t027t02;
+
 drop table if exists t027t03;
 create table t027t03("cf1".a int not null, "cf2".b int not null, c int not null, d int not null, 
  primary key (a, b));
@@ -125,6 +134,12 @@ invoke t027t03;
 insert into t027t03 values (1,1,1,1);
 insert into t027t03 values (1,2,2,2);
 select * from t027t03;
+
+-- create table like metadata table
+drop table if exists t027t02;
+create table t027t02 like "_MD_".keys;
+invoke t027t02;
+select * from t027t02;
 
 -- negative tests
 drop table if exists t027t02;

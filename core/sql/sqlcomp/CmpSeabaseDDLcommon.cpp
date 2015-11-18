@@ -5502,9 +5502,6 @@ short CmpSeabaseDDL::buildColInfoArray(
                                   << DgString0("Column Family specification on columns of an aligned format table is");
               return -1;
             }
-
-          if (userColFamVec)
-            userColFamVec->push_back(colFamily);
         }
 
       NAString storedColFamily;

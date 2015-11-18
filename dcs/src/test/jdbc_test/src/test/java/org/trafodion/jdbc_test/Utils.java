@@ -52,6 +52,8 @@ public class Utils
 {
 	public static String url;
     public static String trafjdbc_version;
+    public static String dbmaj_version;
+    public static String dbmin_version;
     public static String usr;
     public static String pwd;
     public static String catalog;
@@ -82,6 +84,10 @@ public class Utils
                 System.out.println("schema: " + schema);
                 trafjdbc_version=props.getProperty("trafjdbc_version");
                 System.out.println("trafjdbc_version : " + trafjdbc_version);
+                dbmaj_version=props.getProperty("db_major");
+                System.out.println("dbmaj_version : " + dbmaj_version);
+                dbmin_version=props.getProperty("db_minor");
+                System.out.println("dbmin_version : " + dbmin_version);
             } else {
                 System.out.println("Error: prop is not set. Exiting.");
                 System.exit(0);

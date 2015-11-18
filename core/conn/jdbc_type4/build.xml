@@ -78,7 +78,7 @@
 	</target>
 
 	<!-- COMPILE -->
-	<target name="compile" depends="clean,init">
+	<target name="compile" depends="init">
 		<copy todir="${temp.src}">
 			<fileset dir="${src.src}">
 				<include name="**/*.java" />
@@ -97,7 +97,6 @@
 	<!-- LIB -->
 	<target name="lib" depends="compile">
 		<property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
-		<property file="jdbct4.jar.version"/>
 		<jar destfile="${jdbcT4.jar}" basedir="${temp.classes}">
 			<include name="**/*.class" />
 			<include name="**/*.properties" />
@@ -105,7 +104,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="${vproc.class}" />
 				<attribute name="Vproc" value="${vproc.str}" />
-				<attribute name="Implementation-Version-1" value="${Implementation-Version-1}"/>
+				<attribute name="Implementation-Version-1" value="Version 1.0.0"/>
 				<attribute name="Implementation-Version-2" value="${Implementation-Version-2}"/>
 				<attribute name="Implementation-Version-3" value="${Implementation-Version-3}"/>
 				<attribute name="Implementation-Version-4" value="${Implementation-Version-4}"/>

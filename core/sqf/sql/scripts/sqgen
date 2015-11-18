@@ -256,8 +256,8 @@ if [ -e $SQ_PDCP ]; then
     echo
     echo "Copying rest of the generated files to $PWD"
 
-    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD "
-    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm $PWD "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm $PWD
 
 
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "

@@ -7469,7 +7469,7 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-
+ 
   // restricted partitions for HBase table
   if (naTable->isHbaseTable() &&
       (naTable->isPartitionNameSpecified() ||
@@ -10531,7 +10531,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
   NABoolean transformUpdateKey = updatesClusteringKeyOrUniqueIndexKey(bindWA);
   if (bindWA->errStatus()) // error occurred in updatesCKOrUniqueIndexKey()
     return this;
-
+  // To be removed when TRAFODION-1610 is implemented.
   NABoolean xnsfrmHbaseUpdate = FALSE;
   if ((hbaseOper()) && (NOT isMerge()))
     {      
@@ -10539,26 +10539,19 @@ RelExpr *Update::bindNode(BindWA *bindWA)
 	{
 	  xnsfrmHbaseUpdate = TRUE;
 	}
-      else if ((CmpCommon::getDefault(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT) == DF_SYSTEM) &&
-	       (getTableDesc()->getNATable()->hasSecondaryIndexes()))
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
-      else if (avoidHalloween())
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
       else if (getCheckConstraints().entries())
-	{
-	  xnsfrmHbaseUpdate = TRUE;
-	}
+       {
+         xnsfrmHbaseUpdate = TRUE;
+       }
      }  
   
   if (xnsfrmHbaseUpdate)
     {
       boundExpr = transformHbaseUpdate(bindWA);
     }
-  else if ((transformUpdateKey) && (NOT isMerge()))
+  else 
+  // till here and remove the function transformHbaseUpdate also
+  if ((transformUpdateKey) && (NOT isMerge()))
     {
       boundExpr = transformUpdatePrimaryKey(bindWA);
     }
@@ -14071,6 +14064,20 @@ RelExpr *Transpose::bindNode(BindWA *bindWA)
   transUnionVectorSize_ = numTransSets + 1;
   transUnionVector() = new(bindWA->wHeap())
     ValueIdList[transUnionVectorSize_];
+  //If there is a lob column return error. Transpose not allowed on lob columns.
+ 
+  for (i = 0; i < resultTable->getDegree(); i++)
+    {
+      if ((resultTable->getType(i)).getFSDatatype() == REC_BLOB || 
+	  (resultTable->getType(i)).getFSDatatype() == REC_CLOB)
+	{
+	  *CmpCommon::diags() << DgSqlCode(-4322);
+	  bindWA->setErrStatus();
+	  return this;
+	}
+    }
+ 
+    
 
   // Get the key column reference
   // This is the last time we need this ItemExpr.

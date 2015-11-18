@@ -131,7 +131,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_PARTITION_KEY_NOT_EXIST                   = 1097
                   , CAT_PARTITION_KEY_DUPLICATED                  = 1098
                   , CAT_VIEW_COLUMN_UNNAMED                       = 1099
-                  , CAT_SMDIO_SELECT_ERROR                        = 1100
+		  , CAT_LOB_COLUMN_ALTER                          = 1100
                   , CAT_SMDIO_UPDATE_ERROR                        = 1101
                   , CAT_SMDIO_INSERT_ERROR                        = 1102
                   , CAT_SMDIO_DELETE_ERROR                        = 1103
@@ -273,6 +273,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_ALL_SCHEMAS_OP_IN_PROGRESS                = 1278
                   , CAT_VOLATILE_OPERATION_ON_REGULAR_OBJECT      = 1279
                   , CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT      = 1280
+		  , CAT_LOB_COLUMN_IN_VOLATILE_TABLE              = 1282
                   , CAT_NOT_DROPPABLE_TABLE                       = 1284
                   , CAT_NOT_DROPPABLE_SCHEMA                      = 1285
                   , CAT_ONLY_SUPER_ID_CAN_INITIALIZE_SECURITY     = 1287
@@ -418,7 +419,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_LDAP_DEFAULTCONFIG_INSERT_ERROR           = 1530
 
                   , CAT_NO_POPULATE_VOLATILE_INDEX                = 1540
-                  , CAT_LOB_COL_CANNOT_BE_KEY                     = 1541
+                  , CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY            = 1541
 
                   // Sequence Generator errors
                   , CAT_SG_MAXVALUE_MINVALUE_ERROR                = 1570

@@ -150,7 +150,13 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      colInfoArray[i].columnClass = COM_USER_COLUMN;
 
      const NAType * naType = tableCol->getType();
-
+     if ((naType->getFSDatatype() == REC_BLOB) || (naType->getFSDatatype() == REC_CLOB))
+     {
+      *CmpCommon::diags() << DgSqlCode(CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+                              << DgColumnName(col_name);
+      processReturn();
+      return -1;
+     }
      Lng32 precision = 0;
      Lng32 scale = 0;
      Lng32 dtStart = 0; 

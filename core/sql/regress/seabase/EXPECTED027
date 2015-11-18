@@ -12,7 +12,7 @@
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:06 2015
+-- Definition current  Tue Nov 10 19:18:48 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -39,7 +39,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:16 2015
+-- Definition current  Tue Nov 10 19:18:55 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -67,7 +67,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:23 2015
+-- Definition current  Tue Nov 10 19:19:04 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -98,7 +98,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:32 2015
+-- Definition current  Tue Nov 10 19:19:14 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -127,7 +127,7 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:37 2015
+-- Definition current  Tue Nov 10 19:19:19 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -191,7 +191,7 @@ A            B            C
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:40 2015
+-- Definition current  Tue Nov 10 19:19:22 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -228,7 +228,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:46 2015
+-- Definition current  Tue Nov 10 19:19:29 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -267,7 +267,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:52 2015
+-- Definition current  Tue Nov 10 19:19:31 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -304,7 +304,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Aug  7 13:32:54 2015
+-- Definition current  Tue Nov 10 19:19:36 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -343,7 +343,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Aug  7 13:33:03 2015
+-- Definition current  Tue Nov 10 19:19:47 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -387,7 +387,7 @@ A            B            C            E            D
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Aug  7 13:33:08 2015
+-- Definition current  Tue Nov 10 19:19:53 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -426,7 +426,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Aug  7 13:33:16 2015
+-- Definition current  Tue Nov 10 19:20:03 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -460,7 +460,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Aug  7 13:33:19 2015
+-- Definition current  Tue Nov 10 19:20:07 2015
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -491,7 +491,7 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Fri Aug  7 13:33:24 2015
+-- Definition current  Tue Nov 10 19:20:14 2015
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -522,7 +522,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Fri Aug  7 13:33:38 2015
+-- Definition current  Tue Nov 10 19:20:36 2015
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -556,6 +556,61 @@ CREATE VOLATILE TABLE T027T03
 
 --- SQL operation complete.
 >>
+>>drop table if exists t027t02;
+
+--- SQL operation complete.
+>>create table t027t02 (
++>     "cf".a0a0 int, "cf".a1a1 int, "cf".a2a2 int, "cf".a3a3 int, "cf".a4a4 int, "cf".a5a5 int, "cf".a6a6 int, "cf".a7a7 int, "cf".a8a8 int, "cf".a9a9 int,
++>     "cf".a10a10 int, "cf".a11a11 int, "cf".a12a12 int, "cf".a13a13 int, "cf".a14a14 int, "cf".a15a15 int, "cf".a16a16 int, "cf".a17a17 int, "cf".a18a18 int, "cf".a19a19 int,
++>     "cf".a20a20 int, "cf".a21a21 int, "cf".a22a22 int, "cf".a23a23 int, "cf".a24a24 int, "cf".a25a25 int, "cf".a26a26 int, "cf".a27a27 int, "cf".a28a28 int, "cf".a29a29 int,
++>    "cf".a30a30 int, "cf".a31a31 int, "cf".a32a32 int, "cf".a33a33 int) 
++>attribute default column family 'cf';
+
+--- SQL operation complete.
+>>invoke t027t02;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T02
+-- Definition current  Tue Nov 10 19:20:58 2015
+
+  (
+    "cf".A0A0                        INT DEFAULT NULL
+  , "cf".A1A1                        INT DEFAULT NULL
+  , "cf".A2A2                        INT DEFAULT NULL
+  , "cf".A3A3                        INT DEFAULT NULL
+  , "cf".A4A4                        INT DEFAULT NULL
+  , "cf".A5A5                        INT DEFAULT NULL
+  , "cf".A6A6                        INT DEFAULT NULL
+  , "cf".A7A7                        INT DEFAULT NULL
+  , "cf".A8A8                        INT DEFAULT NULL
+  , "cf".A9A9                        INT DEFAULT NULL
+  , "cf".A10A10                      INT DEFAULT NULL
+  , "cf".A11A11                      INT DEFAULT NULL
+  , "cf".A12A12                      INT DEFAULT NULL
+  , "cf".A13A13                      INT DEFAULT NULL
+  , "cf".A14A14                      INT DEFAULT NULL
+  , "cf".A15A15                      INT DEFAULT NULL
+  , "cf".A16A16                      INT DEFAULT NULL
+  , "cf".A17A17                      INT DEFAULT NULL
+  , "cf".A18A18                      INT DEFAULT NULL
+  , "cf".A19A19                      INT DEFAULT NULL
+  , "cf".A20A20                      INT DEFAULT NULL
+  , "cf".A21A21                      INT DEFAULT NULL
+  , "cf".A22A22                      INT DEFAULT NULL
+  , "cf".A23A23                      INT DEFAULT NULL
+  , "cf".A24A24                      INT DEFAULT NULL
+  , "cf".A25A25                      INT DEFAULT NULL
+  , "cf".A26A26                      INT DEFAULT NULL
+  , "cf".A27A27                      INT DEFAULT NULL
+  , "cf".A28A28                      INT DEFAULT NULL
+  , "cf".A29A29                      INT DEFAULT NULL
+  , "cf".A30A30                      INT DEFAULT NULL
+  , "cf".A31A31                      INT DEFAULT NULL
+  , "cf".A32A32                      INT DEFAULT NULL
+  , "cf".A33A33                      INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
 >>drop table if exists t027t03;
 
 --- SQL operation complete.
@@ -566,7 +621,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T03
--- Definition current  Fri Aug  7 13:33:56 2015
+-- Definition current  Tue Nov 10 19:21:19 2015
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -591,6 +646,34 @@ A            B            C            D
           1            2            2            2
 
 --- 2 row(s) selected.
+>>
+>>-- create table like metadata table
+>>drop table if exists t027t02;
+
+--- SQL operation complete.
+>>create table t027t02 like "_MD_".keys;
+
+--- SQL operation complete.
+>>invoke t027t02;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T02
+-- Definition current  Tue Nov 10 19:21:35 2015
+
+  (
+    OBJECT_UID                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_NAME                      VARCHAR(256 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , KEYSEQ_NUMBER                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_NUMBER                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ORDERING                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NONKEYCOL                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , FLAGS                            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>select * from t027t02;
+
+--- 0 row(s) selected.
 >>
 >>-- negative tests
 >>drop table if exists t027t02;

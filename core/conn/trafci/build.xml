@@ -79,7 +79,7 @@
        <delete file="${utils.dir}/trafci.cmd"/> 
     </target>
 
-    <target name="init" depends="clean">
+    <target name="init">
        <mkdir dir="${temp.dir}"/>
        <mkdir dir="${tempsrc.dir}"/>
        <mkdir dir="${tempinstall.dir}"/>
@@ -161,9 +161,9 @@
            <fileset dir="${samples.dir}" excludes="**/*.contrib*, *.db"/>
       </copy>
 
-      <jar destfile="${deploy.dir}/${installer.file}">
+      <jar destfile="${deploy.dir}/${installer.file}" update="true">
             <fileset dir="${installclasses.dir}" />
-            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh" />
+            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh ${installer.file}" />
             <manifest>
                <attribute name="Main-Class" value="Installer" />
             </manifest>
@@ -173,7 +173,7 @@
 
       <tar destfile="${deploy.dir}/${tar.file}" basedir="${deploy.dir}" includes="*.jar,README">
       </tar> 
-      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README"/>
+      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README" update="yes"/>
     </target>
     <target name="dist" depends="deploy">
       <exec dir="${utils.dir}" executable="sh">

@@ -4934,8 +4934,10 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
   else
   if (isUnique)
     {
-      // do not cancel unique queries.
-      generator->setMayNotCancel(TRUE);
+      //If this unique delete is not part of a rowset operation , 
+      //don't allow it to be cancelled. 
+      if (!generator->oltOptInfo()->multipleRowsReturned())
+	generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
       canDoCheckAndUpdel() = FALSE;
       if ((NOT producesOutputs()) &&
@@ -5200,8 +5202,10 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   else
   if (isUnique)
     {
-      // do not cancel unique queries.
-      generator->setMayNotCancel(TRUE);
+      //If this unique delete is not part of a rowset operation , 
+      //don't allow it to be cancelled.
+      if (!generator->oltOptInfo()->multipleRowsReturned())
+	generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
 
       canDoCheckAndUpdel() = FALSE;
@@ -11440,10 +11444,11 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   if (!isUnique)
       generator->oltOptInfo()->setMultipleRowsReturned(TRUE) ;
 
+  // Do not allow cancel of unique queries but allow cancel of queries 
+  // that are part of a rowset operation. 
   if ((isUnique) &&
       (NOT generator->oltOptInfo()->multipleRowsReturned()))
     {
-      // do not cancel unique queries.
       generator->setMayNotCancel(TRUE);
       uniqueHbaseOper() = TRUE;
     }

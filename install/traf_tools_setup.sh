@@ -397,7 +397,7 @@ echo " *********************************************************** " | tee -a $L
 
 # -----------------------------------------------------------------------------
 # install maven, if version 3 or greater not available already
-#MAVEN_VERSION=`mvn --version 2>/dev/null | grep 'Apache Maven' | cut -f 3 -d ' '`
+MAVEN_VERSION=`mvn --version 2>/dev/null | grep 'Apache Maven' | cut -f 3 -d ' '`
 if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
   cd $BASEDIR
   echo
@@ -413,6 +413,8 @@ if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
   fi
     echo "INFO: Maven installation complete" | tee -a $LOGFILE
   echo " *********************************************************** " | tee -a $LOGFILE
+else
+  echo "INFO:  Maven is already installed, skipping to next tool" | tee -a $LOGFILE
 fi
 
 echo
