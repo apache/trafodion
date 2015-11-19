@@ -1,0 +1,394 @@
+-- ============================================================================
+-- Test: TEST141 
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- ============================================================================
+-- Functionality: Extended support for views for all levels:
+--    column, object, component
+--
+-- Added in response to JIRA 1100
+--
+-- Expected files: EXPECTED141
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+obey TEST141(clean_up);
+log LOG141 clear ;
+obey TEST141(set_up);
+obey TEST141(test_private_user);
+obey TEST141(test_private_role);
+obey TEST141(test_shared_user);
+obey TEST141(test_shared_role);
+log;
+obey TEST141(clean_up);
+exit;
+
+-- ============================================================================
+?section clean_up
+-- ============================================================================
+-- Cleaning up test environment
+drop schema if exists t141_udr cascade;
+drop schema if exists t141_user1 cascade;
+drop schema if exists t141_user2 cascade;
+drop schema if exists t141_user3 cascade;
+
+revoke component privilege "CREATE" on sql_operations from sql_user2;
+revoke component privilege "CREATE" on sql_operations from user2_role;
+
+revoke role user1_role from sql_user1;
+revoke role user2_role from sql_user2;
+revoke role user3_role from sql_user3;
+drop role user1_role;
+drop role user2_role;
+drop role user3_role;
+
+
+-- ============================================================================
+?section set_up
+-- ============================================================================
+-- Setup the test environment
+
+-- create function to display bitmaps as a bitmap rather than longs
+-- use the same function from TEST140
+sh rm -f ./etest140.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
+  2>&1 | tee LOG140-SECONDARY;
+set pattern $$DLL$$ etest140.dll;
+set pattern $$QUOTE$$ '''';
+
+create schema t141_udr;
+set schema t141_udr;
+create library t141_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
+language c parameter style sql external name 'translateBitmap'
+library t141_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+grant execute on function t141_udr.translateBitmap to "PUBLIC";
+
+-- query to read privs from metadata
+prepare get_obj_privs from
+select distinct
+   substring (object_name,1,40) as object_name,
+   object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t141_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t141_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where schema_name like 'T141_USER%')
+  order by 1, 2, 3, 4, 5
+;
+
+prepare get_col_privs from
+select distinct
+   substring (object_name,1,40) as object_name,
+   column_number,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t141_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t141_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".column_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where schema_name like 'T141_%')
+  order by 1, 2, 3, 4, 5
+;
+
+-- set up role infrastructure
+create role user1_role;
+create role user2_role;
+create role user3_role;
+grant role user1_role to sql_user1;
+grant role user2_role to sql_user2;
+grant role user3_role to sql_user3;
+
+-- set up component privilege infrastructure
+grant component privilege "CREATE" on sql_operations to sql_user2;
+grant component privilege "CREATE" on sql_operations to user2_role;
+
+-- ============================================================================
+?section create_objects
+-- ============================================================================
+set schema t141_user1;
+create table u1t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t2 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t3 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t3 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t4 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t4 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+get tables;
+
+set schema t141_user2;
+create table u2t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u2t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u2t2 (c1 int not null primary key, c2 int, c3 int);
+insert into u2t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+get tables;
+
+set schema t141_user3;
+create table u3t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u3t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+get tables;
+
+
+-- ============================================================================
+?section test_private_user
+-- ============================================================================
+-- verify someone with CREATE permission can create objects in someone elses
+-- private schema.  Make sure the schema owner owns the object and the creator
+-- has appropriate privileges.
+
+values (user);
+
+-- setup database with private schemas owned by users
+drop schema if exists t141_user1 cascade;
+create schema t141_user1 authorization sql_user1;
+drop schema if exists t141_user2 cascade;
+create schema t141_user2 authorization sql_user2;
+drop schema if exists t141_user3 cascade;
+create schema t141_user3 authorization sql_user3;
+
+obey TEST141(create_objects);
+set schema t141_user1;
+grant select on u1t1 to sql_user3;
+grant select (c1, c2) on u1t2 to sql_user3;
+grant update (c1) on u1t2 to sql_user3;
+grant update, delete, insert on u1t3 to sql_user3;
+grant update on u1t4 to sql_user3;
+grant select(c1, c3) on u1t4 to sql_user3;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- sql_user2 has create privilege on all schemas.
+-- have sql_user2 create some tables in sql_user1's schema
+-- have sql_user2 create some views
+sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
+execute get_obj_privs;
+
+-- sql_user1 can create views on all tables 
+sh sqlci -i "TEST141(user1_objects)" -u sql_user1;
+execute get_obj_privs;
+
+-- sql_user3 does not have the create privilege.
+-- have sql_user3 attempt to create a table in sql_user1's schema
+sh sqlci -i "TEST141(user3_objects)" -u sql_user3;
+
+-- ============================================================================
+?section test_shared_user
+-- ============================================================================
+-- verify someone with CREATE permission can create objects in someone elses
+-- shared schema.  Make sure the schema owner owns the object and the creator
+-- has appropriate privileges.
+
+values (user);
+revoke component privilege "CREATE" on sql_operations from sql_user2;
+
+-- setup database with shared schemas owned by users
+drop schema if exists t141_user1 cascade;
+create shared schema t141_user1 authorization sql_user1;
+drop schema if exists t141_user2 cascade;
+create shared schema t141_user2 authorization sql_user2;
+drop schema if exists t141_user3 cascade;
+create shared schema t141_user3 authorization sql_user3;
+showddl schema t141_user1;
+showddl schema t141_user2;
+showddl schema t141_user3;
+
+-- schemas are owned by the authID specified in the authorization clause but
+-- tables are owned by the creator.  The objects created in create_objects are
+-- owned by DB__ROOT since DB__ROOT is the current user.
+obey TEST141(create_objects);
+set schema t141_user1;
+grant select on u1t1 to sql_user3;
+grant select (c1, c2) on u1t2 to sql_user3;
+grant update (c1) on u1t2 to sql_user3;
+grant update, delete, insert on u1t3 to sql_user3;
+grant update on u1t4 to sql_user3;
+grant select(c1, c3) on u1t4 to sql_user3;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- have sql_user2 create some tables in sql_user1's schema
+-- have sql_user2 create some views, views that reference user1's objects fail
+sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
+execute get_obj_privs;
+
+-- In a shared schema sql_user1 does not have privs on sql_user2 objects
+-- creates should fail
+sh sqlci -i "TEST141(user1_objects)" -u sql_user1;
+
+-- grant privileges to sql_user1 and retry
+grant select on t141_user1.u1t1 to sql_user1;
+grant select on t141_user1.u2t1 to sql_user1; 
+sh sqlci -i "TEST141(user1_objects)" -u sql_user1;
+execute get_obj_privs;
+
+-- sql_user3 does not have the create privilege.
+-- have sql_user3 attempt to create a table in sql_user1's schema
+sh sqlci -i "TEST141(user3_objects)" -u sql_user3;
+
+-- ============================================================================
+?section test_private_role
+-- ============================================================================
+-- verify someone with CREATE permission can create objects in someone elses
+-- private schema.  Make sure the schema owner owns the object and the creator
+-- has appropriate privileges.
+
+values (user);
+
+-- setup database with private schemas owned by roles
+drop schema if exists t141_user1 cascade;
+create schema t141_user1 authorization user1_role;
+drop schema if exists t141_user2 cascade;
+create schema t141_user2 authorization user2_role;
+drop schema if exists t141_user3 cascade;
+create schema t141_user3 authorization user3_role;
+showddl schema t141_user1;
+showddl schema t141_user2;
+
+obey TEST141(create_objects);
+set schema t141_user1;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- user2_role has create privilege on all schemas.
+-- have sql_user2 who belongs to  user2_role create some tables in 
+-- t141_user1's schema, also have sql_user2 create some views
+sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
+execute get_obj_privs;
+
+-- ============================================================================
+?section test_shared_role
+-- ============================================================================
+-- verify someone with CREATE permission can create objects in someone elses
+-- shared schema.  Make sure the schema owner owns the object and the creator
+-- has appropriate privileges.
+
+values (user);
+revoke component privilege "CREATE" on sql_operations from user2_role;
+
+-- setup database with shared schemas owned by role
+drop schema if exists t141_user1 cascade;
+create shared schema t141_user1 authorization user1_role;
+drop schema if exists t141_user2 cascade;
+create shared schema t141_user2 authorization user2_role;
+drop schema if exists t141_user3 cascade;
+create shared schema t141_user3 authorization user3_role;
+showddl schema t141_user1;
+showddl schema t141_user2;
+
+-- schemas are owned by the authID specified in the authorization clause but
+-- tables are owned by the creator.  The following objects are owned by DB__ROOT
+obey TEST141(create_objects);
+set schema t141_user1;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- have sql_user2 create some tables in user2_role's schema
+-- have sql_user2 create some views, views that reference user1's objects fail
+sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
+execute get_obj_privs;
+
+-- ============================================================================
+?section user1_objects
+-- ============================================================================
+-- executed by sql_user1
+log LOG141;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+values (user);
+
+set schema t141_user1;
+create view u1v1 as select * from u1t1;
+create view u1v2 as select * from u2t1;
+create view u1v3(c1, c2) as select u1.c1, u2.c1 from u1t1 u1, u2t1 u2;
+
+-- ============================================================================
+?section user2_objects
+-- ============================================================================
+-- executed by sql_user2
+-- sql_user2 has the CREATE component privilege for sql_operations.
+-- All creates should succeed.  The owner of the table is the schema owner
+-- (sql_user1) and sql_user2 should get all DML privileges WGO 
+log LOG141;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+values (user);
+set schema t141_user1;
+create table u2t1 (c1 int not null primary key, c2 int, c3 int);
+create table u2t2 (c1 int not null primary key, c2 int, c3 int);
+
+get tables;
+
+-- create a view on user1's table
+create view u2v1 as select c1, c2 from u2t1;
+showddl u2v1;
+
+-- for shared schemas u1t1 is owned by DB__ROOT so create fails.
+-- for private schemas this succeeds
+create view u2v2(c1, c2)  as select u1.c1, u2.c1 from t141_user2.u2t1 as u2, u2t2 as u1;
+showddl u2v2;
+
+-- these creates should fail
+-- user2 has no privs on u1t1
+create view u1v3 as select * from u1t1;
+set schema t141_user2;
+
+-- user2 has no privs on u1t2, for shared schema also u1t1
+create view u2v1 as select u1.c1, u2.c1 from u2t1 as u2, t141_user1.u1t2 as u1;
+
+-- user2 has no privs on u3t1
+create view u2v1 as select * from t141_user1.u3t1; 
+
+
+-- ============================================================================
+?section user3_objects
+-- ============================================================================
+-- executed by sql_user2
+log LOG141;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+values (user);
+set schema t141_user1;
+
+--fails for private schemas - user3 has no create privs in schema user1's schemas
+--works for shared schemas - user3 can create objects
+create table u3t1 (c1 int not null primary key, c2 int, c3 int);
+
+-- following works based on granted privs
+set schema t141_user3;
+create view u3v1 as select * from t141_user1.u1t1;
+showddl u3v1;
+create view u3v2 as select c1, c2 from t141_user1.u1t2;
+showddl u3v2;
+create view u3v3 as select c1 from t141_user1.u1t2;
+showddl u3v3;
+create view u3v4 as select c1, c2 from t141_user1.u1t4;
+create view u3v4 as select c1, c3 from t141_user1.u1t4;
+
+-- following fail
+create view u3v5 as select c1, c3 from t141_user1.u1t3;
+get tables;
+get views;

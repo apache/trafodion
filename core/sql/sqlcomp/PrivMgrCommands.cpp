@@ -699,8 +699,8 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
       const int64_t objectUID,
       const std::string &objectName,
       const ComObjectType objectType,
+      const int32_t grantorUID,
       const int32_t granteeUID,
-      const std::string &granteeName,
       const PrivMgrBitmap &objectPrivs,
       const PrivMgrBitmap &grantablePrivs)
 {
@@ -712,11 +712,10 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
      return STATUS_ERROR;
   }
 
-  int32_t grantorUID = SYSTEM_AUTH_ID;
   PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
   grantCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return grantCmd.grantObjectPriv
-   (objectType, granteeUID, granteeName, objectPrivs, grantablePrivs);
+   (objectType, granteeUID, objectPrivs, grantablePrivs);
 }
 
 // *****************************************************************************
