@@ -13,8 +13,6 @@
 -->
 
 # Release 1.3.0
-There are various ways to download and use this software see the Using the Software page for options.
-
 This is the first release of the Apache Trafodion (incubating) project. In addition to including a number of new features and improvements across the project, the focus of this release is to comply with Apache release guidelines.
 
 Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
@@ -36,6 +34,10 @@ The following platforms are supported in this release.
       <td>**Java Version**</td>
       <td>JDK 1.7.0_67 or newer</td>
     </tr>
+    <tr>
+      <td>**HBase Version**</td>
+      <td>HBase 0.98.x</td>
+    </tr>
   </table>
 </span>
 
@@ -49,16 +51,6 @@ This release contains the following new features.
       <th>Category</th>
       <th>Feature</th>
       <th>Defect ID</th>
-    </tr>
-    <tr>
-      <td>SQL</td>
-      <td>Support native HBase tables as EXTERNAL tables.</td>
-      <td>(TRAFODION-1483)</td>
-    </tr>
-    <tr>
-      <td>SQL</td>
-      <td>Support pre-splitting of unsalted tables.</td>
-      <td>(TRAFODION-50)</td>
     </tr>
     <tr>
       <td>SQL</td>

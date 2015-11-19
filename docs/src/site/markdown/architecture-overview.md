@@ -1,4 +1,16 @@
-## Overview ##
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
 
 Trafodion provides an operational SQL engine on top of Hadoop -- a solution targeted toward operational workloads in the Hadoop Big Data environment. Included are:
 
@@ -16,7 +28,7 @@ Transaction management features include:
 * Thread-aware transaction management support to work with multi-threaded SQL clients
 * Non-transactional/direct access to HBase tables
 
-## Process Architecture ##
+# Process Architecture
 
 The following figure depicts the Trafodion process architecture:
 
@@ -31,7 +43,7 @@ The figure above should be interpreted as follows:
 * The DTM (Distributed Transaction Management) process manages distributed transactions. This includes log management and transaction coordination.
 * The Storage Engine layer consists of HBase and Hadoop processes. Trafodion allows SQL access to native HBase tables. Trafodion reads HBase metadata in order to process these tables. Trafodion also offers its own implementation of SQL table, stored as an HBase table, for applications that need a more efficient OLTP representation. Trafodion generates its own metadata for such tables, and stores that in HBase.
 
-## Connectivity ##
+# Connectivity
 
 The Database Connectivity Services (DCS) framework enables applications developed for ODBC/JDBC APIs to access a Trafodion SQL database server. DCS is a distributed service. It uses the underlying HBase ZooKeeper instance for its definition of a cluster. [Apache ZooKeeper] (http://zookeeper.apache.org/ "Zookeeper website") is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. All participating nodes and clients need to be able to access the running ZooKeeper.
 
@@ -42,7 +54,7 @@ DCS is a collection of components:
 * **DCS Server Process**: This process is responsible for starting and keeping a Master Executor (MXOSRVR) server process executing. There is one DCS Server process per node in the cluster.
 * **Master Executor Process**: This is the database server that provides database access to ODBC/JDBC clients. There is a one-to-one relationship between an ODBC/JDBC client connection and a database server process. The Master Executor performs all SQL queries on behalf of its client's requests. It will perform all required SQL calls to execute a SQL query through the Executor to access HBase tables. The Master Executor is often referred to as MXOSRVR.
 
-## Transaction Subsystem ##
+# Transactions
 
 Trafodion supports distributed ACID transaction semantics using the Multi-Version Concurrency Control (MVCC) model. The transaction management is built on top of a fork of the *HBase-trx* project implementing the following changes:
 
@@ -61,7 +73,7 @@ The original HBase-trx library worked by extending certain Java classes in the r
 
 For additional details, please refer to the [Trafodion Distributed Transaction Management] (presentations/dtm-architecture.pdf) presentation.
 
-## Compiler Architecture ##
+# Compiler Architecture
 
 The Trafodion Compiler translates SQL statements into query plans that can then be executed by the Trafodion execution engine, commonly called the Executor.
 
@@ -71,19 +83,19 @@ A copy of the compiler code runs in the Master process, which avoids inter-proce
 
 The compiler is written in C++.
 
-### Parser ###
+## Parser
 
-The parser pass performs lexical and syntactic analysis, transforming the SQL statement into a parse tree. Trafodion uses a hand-coded scanner for lexical analysis of UCS2 strings. (UTF-8 encoding for SQL statement text is support but is translated to UCS2 internally). 
+The parser pass performs lexical and syntactic analysis, transforming the SQL statement into a parse tree. Trafodion uses a hand-coded scanner for lexical analysis of UCS2 strings. (UTF-8 encoding for SQL statement text is supported but is translated to UCS2 internally). 
 
 The parser grammar is implemented as a set of Bison rules. The output of the parser is a tree of objects of class RelExpr, representing relational operators. Scalar expressions are represented by trees of ItemExpr objects, which are contained in the nodes of the RelExpr tree. This common model to represent a query is used throughout the compilation process.
 
-### Binder ###
+## Binder
 
 The binder pass takes the parse tree and decorates it with metadata information. All references to SQL objects (tables, views, columns and so on) are bound to their respective metadata. The binder also performs type synthesis. At this stage, errors such as the wrong data type being passed to a function call or that a column reference doesn't belong to any of the tables in scope are detected.
 
 The binder also manages a cache of query plans. If the binder detects that the new SQL statement is similar to one previously compiled, it simply reuses the earlier query plan (modifying parameters as needed), bypassing subsequent compiler passes. This can be significant as optimization is often the most expensive compilation phase.
 
-### Normalizer ###
+## Normalizer
 
 The SQL language is rich in redundancy. Many concepts can be expressed in multiple ways. For example, sub-queries can be expressed as joins. The DISTINCT clause can be transformed into GROUP BY. The normalizer pass removes this redundancy, transforming the parse tree into a normalized representation in the following steps.
 
@@ -91,7 +103,7 @@ The SQL language is rich in redundancy. Many concepts can be expressed in multip
 * **Normalization**: Predicates are pushed back down again, performing some optimizations. For example, if we have the query, select * from t1 join t2 on t1.a = t2.b where t1.a = 5, we can infer the predicate t2.b = 5 and push that down into the t2 scan operator.
 * **Semantic Query Optimization**: We perform unconditional transformations that depend on uniqueness or cardinality constraints.
 
-### Optimizer ###
+## Optimizer
 The Trafodion optimizer is a rule-based, cost-driven optimizer based on the Cascades Framework. By "rule-based", we mean that plan transformation is based on a set of rules coded within the Optimizer. (We don't mean syntax-driven optimization based on hints in the SQL statement text.) By "cost-driven", we mean that cost estimates are used to bound the search space.
 
 It is a top-down optimizer; that is, it generates an initial feasible plan for the query, then using rules, transforms that plan into semantically equivalent alternatives. The optimizer computes the cost of each plan, and uses these costs to bound its search for additional plans using a branch-and-bound algorithm. This is in contrast to classical, dynamic programming-style optimizers, that build up a set of plans "bottom-up", by first considering all one-table plans, then joins of two tables, then joins of three tables and so on.
@@ -104,51 +116,51 @@ Search spaces in general are exponential in size. So the optimizer is rich in he
 
 Another factor the optimizer takes into account is that traversal can wrap back to a previously visited plan. The optimizer remembers plans previously visited in a "memo" structure (class CascadesMemo). Plans are hashed for quick lookup.
 
-### Pre-Code Generator ###
+## Pre-Code Generator
 
 The pre-code generator performs unconditional transformations after the optimization phase. References to elements of an equivalence class are replaced with the most efficient alternatives. 
 
 For example, an equivalence class (VEG) containing { T1.A, T2.B, 5 }, in the context of a T2 scan operator results in the predicate T2.B = 5.
 
-### Generator ###
+## Generator
 
 The generator pass transforms the chosen optimized tree into a query plan which can then be executed by the Executor. Low-level optimizations of scalar expressions take place here. Many scalar expressions are generated in native machine code using the open source LLVM infrastructure. For those scalar operators where we have not yet implemented native expression support, we instead generate code that is interpreted at run time.
 
-### Heap Management ###
+## Heap Management
 
 In order to make heap management efficient, the Compiler uses heap classes, NAHeap, that it shares with the executor. One heap, the Statement heap, is used for objects that are particular to a given SQL statement's compilation, for example, parse tree nodes. At the end of statement compilation, we simply destroy the heap instead of calling "delete" on each of possibly thousands of objects. Another heap, the Context heap, is used for objects that may be reused across SQL statements. For example, metadata is cached within the compiler. As one can imagine, considerable care goes into selecting which heap to use when creating a given object, to avoid dangling references and other resource leaks. For example, access to a given file must be encapsulated in an object on the global heap, since on the statement heap we cannot count on execution of the destructor to close the file.
 
-### Error Management ###
+## Error Management
 
 The Compiler captures error information into a ComDiagsArea object. The style of programming is to return on errors rather than throw exceptions. Calling logic then checks for the presence of errors before continuing. So, for example, the main logic that invokes each compiler pass checks for errors before proceeding to the next pass.
 
-## Executor Architecture ##
+# Executor Architecture
 
 The Trafodion Executor implements a data-flow architecture. That is, each relational operator is implemented as a set of tasks which are scheduled for execution. Operators communicate with each other using queues.
 
-### Relational Operators ###
+## Relational Operators
 
 A query plan consists of a collection of fragments, each fragment being a portion of the query plan executed in a given process. Each fragment in turn is a tree of relational operators. A relational operator may in turn be decorated with additional scalar expressions. Relational operators in the query plan are represented by two class hierarchies, ex_tdb and ex_tcb. The ex_tdb (tdb = "task descriptor block") hierarchy contains the compiler-generated state for the operator. The ex_tcb (tcb = "task control block") hierarchy contains the run-time state for the operator. So, for example, the queue objects are pointed to by ex_tcb objects.
 
-### Scalar Expressions ###
+## Scalar Expressions
 
 Scalar expressions are evaluated by an expression evaluator. If the expression could be compiled into native machine code, the expression evaluator simply invokes this code. Otherwise, the expression evaluator implements an interpreter. For historical reasons, there are actually two interpreters. The first (and oldest) is a high level clause-based expression evaluator: each clause roughly corresponds to a scalar operator in the original SQL text. The second (and newest) is a PCODE-based evaluator, implementing a lower-level machine-like instruction set. Most expressions that cannot be generated as native machine code are generated as PCODE; those few expressions that PCODE cannot cover are generated as clause expressions. For debugging purposes, it is possible to force the Compiler to generate PCODE instead of native machine code, or clause-based expressions instead of either native machine code or PCODE.
 
-### Interprocess Communication ###
+## Interprocess Communication
 
-An IPC layer, shared with other components like the compiler, abstracts the (asynchronous) communication of objects across process boundaries. The sorts of things that flow are query plan objects, data rows, and error objects (ComDiagsArea).
+An IPC layer, shared with other components such as the compiler, abstracts the (asynchronous) communication of objects across process boundaries. The sorts of things that flow are query plan objects, data rows, and error objects (ComDiagsArea).
 
-### Call Level Interface ###
+## Call Level Interface
 
 At the highest level of the Executor is the Call Level Interface (CLI) layer. This layer implements an ODBC-like interface to the Executor. Connectivity code communicates to the Executor using this interface. The CLI layer keeps track of such abstractions as SQL statements and cursors. It also provides an interface to retrieve SQL diagnostics.
 
-### Heap Management ###
+## Heap Management
 
 The Executor also uses the NAHeap classes for heap management. Again, there are statement heaps for objects local to a given SQL statement, and a global heap for objects that exist across statements.
 
-### Error Management ###
+## Error Management
 The Executor too uses the ComDiagsArea classes for error management. Like the Compiler, the programming style relies on returns rather than exceptions; calling code is expected to check for the existence of errors and respond appropriately.
 
-### Statistics Reporting ###
+## Statistics Reporting
 
 The Executor also collects statistics concerning the execution of a particular query. These statistics are available at the CLI interface at the conclusion of statement execution.

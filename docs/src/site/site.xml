@@ -94,38 +94,65 @@
             <body />
           </sections>
         </index>
+        <architecture-overview><shortTitle>Architecture Overview</shortTitle></architecture-overview>
+        <contribute>
+           <shortTitle>How to Contribute</shortTitle>
+           <toc>false</toc>
+          <sections>
+            <body />
+            <columns>2</columns>
+            <body />
+          </sections>
+        </contribute>
+        <develop>
+           <shortTitle>How to Develop</shortTitle>
+          <sections>
+            <body />
+          </sections>
+        </develop>
+        <faq>
+          <toc>top</toc>
+          <shortTitle>Frequently Asked Questions</shortTitle>
+          <tocTopFlatten>false</tocTopFlatten>
+        </faq>
         <issue-tracking><toc>false</toc></issue-tracking>
         <license><toc>false</toc></license>
         <mail-lists><toc>false</toc></mail-lists>
         <release-notes><toc>false</toc></release-notes>
-        <website><markPageHeader>false</markPageHeader></website>
+        <website>
+           <shortTitle>How to Update Web Site</shortTitle>
+           <tocTopFlatten>false</tocTopFlatten>
+           <sections>
+              <body />
+              <columns>2</columns>
+              <body />
+           </sections>
+        </website>
+        <wiki><toc>false</toc></wiki>
       </pages>
     </reflowSkin>
   </custom>
 
   <body>
-    <!--
     <breadcrumbs>
       <item name="Trafodion" href="index.html"/>
     </breadcrumbs>
-    -->
     <menu name="About">
-      <item href="index.html" name="Overview"/>
+      <item href="index.html" name="Project Overview"/>
       <item href="new-features.html" name="New Features"/>
       <item href="roadmap.html" name="Roadmap"/>
       <item href="performance.html" name="Performance"/>
+      <item href="http:divider" name=""/>
       <item href="team-list.html" name="Team"/>
       <item href="presentations.html" name="Presentations"/>
       <item href="mail-lists.html" name="Mailing List"/>
+      <item href="http:divider" name=""/>
       <item href="source-repository.html" name="Source Repository"/>
       <item href="issue-tracking.html" name="Issue Tracking"/>
+      <item href="license.html" name="License"/>
+      <item href="http:divider" name=""/>
       <item href="download.html" name="Download"/>
       <item href="install.html" name="Install"/>
-      <item href="http:divider" name=""/>
-      <item href="license.html" name="License"/>
-      <item href="http://www.apache.org/foundation/sponsorship.html" name="Sponsorship" target="_blank"/>
-      <item href="http://www.apache.org/foundation/thanks.html" name="Thanks" target="_blank"/>
-      <item href="http://www.apache.org/security/" name="Security" target="_blank"/>
     </menu>
     <menu name="Using">
       <item href="faq.html" name="F.A.Q."/>
@@ -156,11 +183,21 @@
     <menu name="Contributing">
       <item href="contribute.html" name="How to Contribute"/>
       <item href="develop.html" name="How to Develop"/>
-      <item href="website.html" name="How to Update Website"/>
       <item href="release.html" name="How to Test"/>
       <item href="release.html" name="How to Release"/>
+      <item href="website.html" name="How to Update Web Site"/>
+      <item href="wiki.html" name="How to Update Wiki Pages"/>
       <item href="http:divider" name=""/>
       <item href="design-papers.html" name="Design Paper Template"/>
+    </menu>
+    <menu name="Apache">
+      <item href="http://incubator.apache.org/projects/trafodion.html" name="Status Page" target="_blank"/>
+      <item href="http://www.apache.org/foundation/how-it-works.html" name="Apache Foundation" target="_blank"/>
+      <item href="http://www.apache.org/licenses/" name="Apache License" target="_blank"/>
+      <item href="http://www.apache.org/security/" name="Apache Security" target="_blank"/>
+      <item href="http:divider" name=""/>
+      <item href="http://www.apache.org/foundation/sponsorship.html" name="Sponsorship" target="_blank"/>
+      <item href="http://www.apache.org/foundation/thanks.html" name="Thanks" target="_blank"/>
     </menu>
     <footer>
       <hr />

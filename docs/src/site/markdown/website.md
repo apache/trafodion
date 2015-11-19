@@ -12,7 +12,11 @@
   limitations under the 
   License.
 -->
-# Modify Web Site
+# Making Changes
+
+The Trafodion web site is part of the Trafodion source tree. The following information helps you understand how to make changes to the web-site content.
+
+----
 
 ## Technology
 
@@ -35,24 +39,26 @@ The code is located in the **<code>docs</code>** directory. The code organizatio
 
 **<code>docs/target</code>** contains the generated HTML files after you run a build.
 
-## Page Management
+## Managing Pages
 
 You add/rename/delete pages in **<code>docs/src/site/markdown</code>**. You make corresponding changes in **<code>docs/src/site.xml</code>** adding/renaming/deleting pages from menus and defining page configuration; for example: removal of the table of contents bar and the special page formatting provided by the Reflow skin. Refer to the [Maven Documentation](http://maven.apache.org/plugins/maven-site-plugin/examples/sitedescriptor.html) for more information.
 
-## Developing Pages
+## Providing Content
 
 When possible, ensure that you write in active voice and to the point. 
 
 Special functions such as buttons etc. can be access by clicking **Preview** in the theme preview. There's a \<\> feature on each function, which allows you to copy the special **<code>\<div\></code>** you need to insert the selected object.
 
-## Development and Build
+## Development Environment
 
 Typically, you'll use Eclipse to develop and build the website pages. The configuration goal is: **<code>clean site</code>**. The **<code>pom.xml</code>** file in the top-level directory drives the build steps for the web site.
 
-## Testing
+## Testing Changes
 
-The website files are located in **<code>docs/target</code>**. Open **<code>index.html</code>** from your browser and test your changes.
+The website files are located in **<code>docs/target</code>**. Open **<code>index.html</code>** from your browser and test your changes. For example, you want to validate the page layout, page navigation, links, and review the overall content on the pages you modified or added/deleted.
 
-## Updating External Website
+----
+
+# Publishing Web Site
 
 To be written.   

@@ -75,8 +75,9 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 <center>
 <h2>Understand</h2>
 <img src="images/logos/understand.png" width="108" height="108"/>
-</center>
 <h4>What makes Trafodion unique</h4>
+<div class="customHr">.</div>
+</center>
 <ul>
 <li><a href="architecture-overview.html">Architecture</a></li>
 <li>Documentation</li>
@@ -88,8 +89,9 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 <center>
 <h2>Use</h2>
 <img src="images/logos/use.png" width="108" height="108"/>
-</center>
 <h4>Download and Try Trafodion</h4>
+<div class="customHr">.</div>
+</center>
 <ul>
 <li><a href="index.html">Features</a> and roadmap</li>
 <li>Release Notes</li>
@@ -101,8 +103,9 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 <center>
 <h2>Contribute</h2>
 <img src="images/logos/contribute.png" width="108" height="108"/>
-</center>
 <h4>Help enhance Trafodion</h4>
+<div class="customHr">.</div>
+</center>
 <ul>
 <li>Development environment</li>
 <li>Software architecture.</li>
@@ -114,8 +117,9 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 <center>
 <h2>Community</h2>
 <img src="images/logos/community.png" width="108" height="108"/>
-</center>
 <h4>Be part of Trafodion</h4>
+<div class="customHr">.</div>
+</center>
 <ul>
 <li>Join project team</li>
 <li>Community communication</li>
