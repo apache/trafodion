@@ -398,6 +398,14 @@ public:
     return hbaseColFlags_;
   }
 
+  void resetSerialization() {
+     hbaseColFlags_ &= SEABASE_SERIALIZED;
+  }
+
+  enum {
+    SEABASE_SERIALIZED = 0x0001
+  };
+
 private:
   enum referencedState { NOT_REFERENCED, REFERENCED_ANYWHERE, REFERENCED_FOR_MULTI_INTERVAL_HISTOGRAM, REFERENCED_FOR_SINGLE_INTERVAL_HISTOGRAM };
 
