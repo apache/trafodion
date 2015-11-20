@@ -3088,7 +3088,7 @@ $3~String1.
 20232 ZZZZZ 99999 ADVANCED MAJOR DIALOUT This operation cannot be done on a nonaudited table that contains data.
 20233 ZZZZZ 99999 BEGINNER MINOR LOGONLY No partition could be found in volume $0~string0 for the specified object.
 20234 ZZZZZ 99999 BEGINNER MINOR LOGONLY Partition $0~string0 could not be found.
-20235 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error returned while converting user ID to username, status: $0~int0 userid: $1~int1.  
+20235 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error returned while converting auth ID to auth name, status: $0~int0 ID: $1~int1.  
 20236 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error returned while converting username to user ID, status: $0~int0, username: $1~string0.
 20237 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error occurred: invalid username specified, username: $0~string0.
 20238 ZZZZZ 99999 BEGINNER MINOR LOGONLY A user-defined transaction has been started. The MODIFY utility cannot perform the partition management operation.

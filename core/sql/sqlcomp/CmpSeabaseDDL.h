@@ -777,7 +777,8 @@ class CmpSeabaseDDL
 			ExeCliInterface * cliInterface);
   
   short gatherViewPrivileges (const StmtDDLCreateView * createViewParseNode,
-			      ExeCliInterface * cliInterface,
+                              ExeCliInterface * cliInterface,
+                              NABoolean viewCreator,
                               PrivMgrBitmap &privilegesBitmap,
                               PrivMgrBitmap &grantableBitmap);
 
