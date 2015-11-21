@@ -145,7 +145,7 @@ class HSSample
   public:
     HSSample(HSTableDef *tableDef,           // input
              Lng32        type,               // input - sample type used for table creation
-             double      sampleTblPercent,   // input - used to determine DP2 sampling
+             double      sampleTblPercent,   // input 
              NABoolean   persistent = FALSE, // input - used to determine whether to drop
              NABoolean   isIUS = FALSE       // input - whether the sample table
                                              // is created for IUS
