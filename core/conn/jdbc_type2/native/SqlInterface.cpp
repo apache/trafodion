@@ -130,198 +130,198 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
         long &totalMemLen,
         char *ColHeading)
 {
-	FUNCTION_ENTRY("GetJDBCValues",
-		("DataType=%s, DateTimeCode=%ld, Length=%ld, Precision=%ld, ODBCDataType=%ld, ODBCPrecision=%ld, SignType=%ld, Nullable=%ld, totalMemLen=%ld, SQLCharset=%ld, ODBCCharset=%ld, IntLeadPrec=%ld",
-		CliDebugSqlTypeCode(SQLItemDesc->dataType),
-		SQLItemDesc->datetimeCode,
-		SQLItemDesc->maxLen,
-		SQLItemDesc->precision,
-		SQLItemDesc->ODBCDataType,
-		SQLItemDesc->ODBCPrecision,
-		SQLItemDesc->signType,
-		SQLItemDesc->nullInfo,
-		totalMemLen,
-		SQLItemDesc->SQLCharset,
-		SQLItemDesc->ODBCCharset,
-		SQLItemDesc->intLeadPrec));
+    FUNCTION_ENTRY("GetJDBCValues",
+            ("DataType=%s, DateTimeCode=%ld, Length=%ld, Precision=%ld, ODBCDataType=%ld, ODBCPrecision=%ld, SignType=%ld, Nullable=%ld, totalMemLen=%ld, SQLCharset=%ld, ODBCCharset=%ld, IntLeadPrec=%ld",
+             CliDebugSqlTypeCode(SQLItemDesc->dataType),
+             SQLItemDesc->datetimeCode,
+             SQLItemDesc->maxLen,
+             SQLItemDesc->precision,
+             SQLItemDesc->ODBCDataType,
+             SQLItemDesc->ODBCPrecision,
+             SQLItemDesc->signType,
+             SQLItemDesc->nullInfo,
+             totalMemLen,
+             SQLItemDesc->SQLCharset,
+             SQLItemDesc->ODBCCharset,
+             SQLItemDesc->intLeadPrec));
 
-	SQLItemDesc->ODBCCharset = SQLCHARSETCODE_ISO88591;
+    SQLItemDesc->ODBCCharset = SQLCHARSETCODE_ISO88591;
 
-	long memAlignOffset;
-	//long allocSize; 64 bit change
-	int allocSize;
-	getMemoryAllocInfo(	SQLItemDesc->dataType,
-		SQLItemDesc->SQLCharset,
-		SQLItemDesc->maxLen,
-		SQLItemDesc->vc_ind_length,
-		totalMemLen,
-		&memAlignOffset,
-		&allocSize,
-		NULL);
+    long memAlignOffset;
+    //long allocSize; 64 bit change
+    int allocSize;
+    getMemoryAllocInfo(	SQLItemDesc->dataType,
+            SQLItemDesc->SQLCharset,
+            SQLItemDesc->maxLen,
+            SQLItemDesc->vc_ind_length,
+            totalMemLen,
+            &memAlignOffset,
+            &allocSize,
+            NULL);
 
-	switch (SQLItemDesc->dataType)
-	{
-	case SQLTYPECODE_CHAR:
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
-		SQLItemDesc->ODBCDataType  = SQL_CHAR;
-		SQLItemDesc->signType      = FALSE;
-		SQLItemDesc->ODBCCharset   = MapSQLCharsetToJDBC(SQLItemDesc->SQLCharset);
-		break;
-	case SQLTYPECODE_VARCHAR:
-	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
-		SQLItemDesc->ODBCDataType  = SQL_VARCHAR;
-		SQLItemDesc->signType      = FALSE;
-		SQLItemDesc->ODBCCharset   = MapSQLCharsetToJDBC(SQLItemDesc->SQLCharset);
-		break;
-	case SQLTYPECODE_VARCHAR_LONG:
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
-		SQLItemDesc->ODBCDataType  = SQL_LONGVARCHAR;
-		SQLItemDesc->signType      = FALSE;
-		SQLItemDesc->ODBCCharset   = MapSQLCharsetToJDBC(SQLItemDesc->SQLCharset);
-		break;
-	case SQLTYPECODE_SMALLINT:
-		SQLItemDesc->ODBCPrecision = 5;
-		SQLItemDesc->ODBCDataType  = SQL_SMALLINT;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_SMALLINT_UNSIGNED:
-		SQLItemDesc->ODBCPrecision = 5;
-		SQLItemDesc->ODBCDataType  = SQL_SMALLINT;
-		SQLItemDesc->signType      = FALSE;
-		break;
-	case SQLTYPECODE_INTEGER:
-		SQLItemDesc->ODBCPrecision = 10;
-		SQLItemDesc->ODBCDataType  = SQL_INTEGER;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_INTEGER_UNSIGNED:
-		SQLItemDesc->ODBCPrecision = 10;
-		SQLItemDesc->ODBCDataType  = SQL_INTEGER;
-		SQLItemDesc->signType      = FALSE;
-		break;
-	case SQLTYPECODE_LARGEINT:
-		SQLItemDesc->ODBCDataType  = SQL_BIGINT;  // The LARGEINT is mapped to Types.BIGINT unless CLOB or BLOB
-		SQLItemDesc->ODBCPrecision = 19;          // Make sure that the precision is set correctly
-		if (ColHeading[0] != '\0')
-		{
-			if (strstr(ColHeading, CLOB_HEADING) != NULL)
-				SQLItemDesc->ODBCDataType = TYPE_CLOB;
-			else if (strstr(ColHeading, BLOB_HEADING) != NULL)
-				SQLItemDesc->ODBCDataType = TYPE_BLOB;
-		}
-		SQLItemDesc->signType = TRUE;
-		break;
-	case SQLTYPECODE_IEEE_REAL:
-	case SQLTYPECODE_TDM_REAL:
-		SQLItemDesc->ODBCDataType  = SQL_REAL;
-		SQLItemDesc->ODBCPrecision = 7;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_IEEE_DOUBLE:
-	case SQLTYPECODE_TDM_DOUBLE:
-		SQLItemDesc->ODBCDataType  = SQL_DOUBLE;
-		SQLItemDesc->ODBCPrecision = 15;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_DATETIME:
-		switch (SQLItemDesc->datetimeCode)
-		{
-		case SQLDTCODE_DATE:
-			SQLItemDesc->ODBCDataType = SQL_TYPE_DATE;
-			break;
-		case SQLDTCODE_TIME:
-			SQLItemDesc->ODBCDataType = SQL_TYPE_TIME;
-			break;
-		case SQLDTCODE_TIMESTAMP:
-			SQLItemDesc->ODBCDataType = SQL_TYPE_TIMESTAMP;
-			break;
-		default:
-			SQLItemDesc->ODBCDataType = SQL_TYPE_TIMESTAMP;
-			break;
-		}
-		SQLItemDesc->signType      = FALSE;
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
-		getMemoryAllocInfo(	SQLItemDesc->dataType,
-			SQLItemDesc->SQLCharset,
-			SQLItemDesc->maxLen,
-			SQLItemDesc->vc_ind_length,
-			totalMemLen,
-			&memAlignOffset,
-			&allocSize,
-			NULL);
-		break;
-	case SQLTYPECODE_NUMERIC:
-		SQLItemDesc->ODBCDataType  = SQL_NUMERIC;
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_NUMERIC_UNSIGNED:
-		SQLItemDesc->ODBCDataType  = SQL_NUMERIC;
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
-		SQLItemDesc->signType      = FALSE;
-		break;
-	case SQLTYPECODE_DECIMAL_UNSIGNED:
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
-		SQLItemDesc->ODBCDataType  = SQL_DECIMAL;
-		SQLItemDesc->signType      = FALSE;
-		break;
-	case SQLTYPECODE_DECIMAL:
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
-		SQLItemDesc->ODBCDataType  = SQL_DECIMAL;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_DECIMAL_LARGE_UNSIGNED: // Tandem extension
-		SQLItemDesc->ODBCDataType  = SQL_DOUBLE; // Since there is no corresponding ODBC DataType, Map it as a double
-		SQLItemDesc->ODBCPrecision = 15;
-		SQLItemDesc->signType      = FALSE;
-		break;
-	case SQLTYPECODE_DECIMAL_LARGE: // Tandem extension
-		SQLItemDesc->ODBCDataType  = SQL_DOUBLE; // Since there is no corresponding ODBC DataType, Map it as a double
-		SQLItemDesc->ODBCPrecision = 15;
-		SQLItemDesc->signType      = TRUE;
-		break;
-	case SQLTYPECODE_INTERVAL:		// Interval will be sent in ANSIVARCHAR format
-		SQLItemDesc->ODBCDataType  = SQL_INTERVAL;
-		SQLItemDesc->signType      = FALSE;
-		SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
-		// Calculate the length based on Precision and IntLeadPrec
-		// The max. length is for Day to Fraction(6)
-		// Day = IntLeadPrec + 1 ( 1 for Blank space)
-		// Hour = 3 ( 2+1)
-		// Minute = 3 (2+1)
-		// Seconds = 3 (2+1)
-		// Fraction = Precision
-		/*SQLItemDesc->maxLen =  SQLItemDesc->intLeadPrec + 1 + 3 + 3 + 3 + SQLItemDesc->precision; //Anitha -- 10-060510-6400 */
-		/* Soln No: 10-060510-6400
-		* Desc:String overflow no longer occurs during evaluation
-		*/
-		SQLItemDesc->maxLen =  SQLItemDesc->intLeadPrec + 1 + 1 + 3 + 3 + 3 + SQLItemDesc->precision;
+    switch (SQLItemDesc->dataType)
+    {
+        case SQLTYPECODE_CHAR:
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
+            SQLItemDesc->ODBCDataType  = SQL_CHAR;
+            SQLItemDesc->signType      = FALSE;
+            SQLItemDesc->ODBCCharset   = MapSQLCharsetToJDBC(SQLItemDesc->SQLCharset);
+            break;
+        case SQLTYPECODE_VARCHAR:
+        case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
+            SQLItemDesc->ODBCDataType  = SQL_VARCHAR;
+            SQLItemDesc->signType      = FALSE;
+            SQLItemDesc->ODBCCharset   = MapSQLCharsetToJDBC(SQLItemDesc->SQLCharset);
+            break;
+        case SQLTYPECODE_VARCHAR_LONG:
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
+            SQLItemDesc->ODBCDataType  = SQL_LONGVARCHAR;
+            SQLItemDesc->signType      = FALSE;
+            SQLItemDesc->ODBCCharset   = MapSQLCharsetToJDBC(SQLItemDesc->SQLCharset);
+            break;
+        case SQLTYPECODE_SMALLINT:
+            SQLItemDesc->ODBCPrecision = 5;
+            SQLItemDesc->ODBCDataType  = SQL_SMALLINT;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_SMALLINT_UNSIGNED:
+            SQLItemDesc->ODBCPrecision = 5;
+            SQLItemDesc->ODBCDataType  = SQL_SMALLINT;
+            SQLItemDesc->signType      = FALSE;
+            break;
+        case SQLTYPECODE_INTEGER:
+            SQLItemDesc->ODBCPrecision = 10;
+            SQLItemDesc->ODBCDataType  = SQL_INTEGER;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_INTEGER_UNSIGNED:
+            SQLItemDesc->ODBCPrecision = 10;
+            SQLItemDesc->ODBCDataType  = SQL_INTEGER;
+            SQLItemDesc->signType      = FALSE;
+            break;
+        case SQLTYPECODE_LARGEINT:
+            SQLItemDesc->ODBCDataType  = SQL_BIGINT;  // The LARGEINT is mapped to Types.BIGINT unless CLOB or BLOB
+            SQLItemDesc->ODBCPrecision = 19;          // Make sure that the precision is set correctly
+            if (ColHeading[0] != '\0')
+            {
+                if (strstr(ColHeading, CLOB_HEADING) != NULL)
+                    SQLItemDesc->ODBCDataType = TYPE_CLOB;
+                else if (strstr(ColHeading, BLOB_HEADING) != NULL)
+                    SQLItemDesc->ODBCDataType = TYPE_BLOB;
+            }
+            SQLItemDesc->signType = TRUE;
+            break;
+        case SQLTYPECODE_IEEE_REAL:
+        case SQLTYPECODE_TDM_REAL:
+            SQLItemDesc->ODBCDataType  = SQL_REAL;
+            SQLItemDesc->ODBCPrecision = 7;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_IEEE_DOUBLE:
+        case SQLTYPECODE_TDM_DOUBLE:
+            SQLItemDesc->ODBCDataType  = SQL_DOUBLE;
+            SQLItemDesc->ODBCPrecision = 15;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_DATETIME:
+            switch (SQLItemDesc->datetimeCode)
+            {
+                case SQLDTCODE_DATE:
+                    SQLItemDesc->ODBCDataType = SQL_TYPE_DATE;
+                    break;
+                case SQLDTCODE_TIME:
+                    SQLItemDesc->ODBCDataType = SQL_TYPE_TIME;
+                    break;
+                case SQLDTCODE_TIMESTAMP:
+                    SQLItemDesc->ODBCDataType = SQL_TYPE_TIMESTAMP;
+                    break;
+                default:
+                    SQLItemDesc->ODBCDataType = SQL_TYPE_TIMESTAMP;
+                    break;
+            }
+            SQLItemDesc->signType      = FALSE;
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
+            getMemoryAllocInfo(	SQLItemDesc->dataType,
+                    SQLItemDesc->SQLCharset,
+                    SQLItemDesc->maxLen,
+                    SQLItemDesc->vc_ind_length,
+                    totalMemLen,
+                    &memAlignOffset,
+                    &allocSize,
+                    NULL);
+            break;
+        case SQLTYPECODE_NUMERIC:
+            SQLItemDesc->ODBCDataType  = SQL_NUMERIC;
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_NUMERIC_UNSIGNED:
+            SQLItemDesc->ODBCDataType  = SQL_NUMERIC;
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
+            SQLItemDesc->signType      = FALSE;
+            break;
+        case SQLTYPECODE_DECIMAL_UNSIGNED:
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
+            SQLItemDesc->ODBCDataType  = SQL_DECIMAL;
+            SQLItemDesc->signType      = FALSE;
+            break;
+        case SQLTYPECODE_DECIMAL:
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->maxLen;
+            SQLItemDesc->ODBCDataType  = SQL_DECIMAL;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_DECIMAL_LARGE_UNSIGNED: // Tandem extension
+            SQLItemDesc->ODBCDataType  = SQL_DOUBLE; // Since there is no corresponding ODBC DataType, Map it as a double
+            SQLItemDesc->ODBCPrecision = 15;
+            SQLItemDesc->signType      = FALSE;
+            break;
+        case SQLTYPECODE_DECIMAL_LARGE: // Tandem extension
+            SQLItemDesc->ODBCDataType  = SQL_DOUBLE; // Since there is no corresponding ODBC DataType, Map it as a double
+            SQLItemDesc->ODBCPrecision = 15;
+            SQLItemDesc->signType      = TRUE;
+            break;
+        case SQLTYPECODE_INTERVAL:		// Interval will be sent in ANSIVARCHAR format
+            SQLItemDesc->ODBCDataType  = SQL_INTERVAL;
+            SQLItemDesc->signType      = FALSE;
+            SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
+            // Calculate the length based on Precision and IntLeadPrec
+            // The max. length is for Day to Fraction(6)
+            // Day = IntLeadPrec + 1 ( 1 for Blank space)
+            // Hour = 3 ( 2+1)
+            // Minute = 3 (2+1)
+            // Seconds = 3 (2+1)
+            // Fraction = Precision
+            /*SQLItemDesc->maxLen =  SQLItemDesc->intLeadPrec + 1 + 3 + 3 + 3 + SQLItemDesc->precision; //Anitha -- 10-060510-6400 */
+            /* Soln No: 10-060510-6400
+             * Desc:String overflow no longer occurs during evaluation
+             */
+            SQLItemDesc->maxLen =  SQLItemDesc->intLeadPrec + 1 + 1 + 3 + 3 + 3 + SQLItemDesc->precision;
 
-		getMemoryAllocInfo(	SQLItemDesc->dataType,
-			SQLItemDesc->SQLCharset,
-			SQLItemDesc->maxLen,
-			SQLItemDesc->vc_ind_length,
-			totalMemLen,
-			&memAlignOffset,
-			&allocSize,
-			NULL);
-		break;
-	case SQLTYPECODE_BIT:
-	case SQLTYPECODE_BITVAR:
-	case SQLTYPECODE_IEEE_FLOAT:
-	case SQLTYPECODE_FLOAT:
-		// SQLTYPECODE_FLOAT is also considered an error, Since Trafodion will never
-		// return SQLTYPECODE_FLOAT. It returns either SQLTYPECODE_IEEE_REAL or SQLTYPECODE_IEEE_DOUBLE
-		// depending upon the precision for FLOAT fields
-	case SQLTYPECODE_BPINT_UNSIGNED:
-	default:
-		SQLItemDesc->ODBCDataType  = SQL_TYPE_NULL;
-		SQLItemDesc->ODBCPrecision = 0;
-		SQLItemDesc->signType      = FALSE;
-		break;
-	}
-	totalMemLen += memAlignOffset + allocSize;
+            getMemoryAllocInfo(	SQLItemDesc->dataType,
+                    SQLItemDesc->SQLCharset,
+                    SQLItemDesc->maxLen,
+                    SQLItemDesc->vc_ind_length,
+                    totalMemLen,
+                    &memAlignOffset,
+                    &allocSize,
+                    NULL);
+            break;
+        case SQLTYPECODE_BIT:
+        case SQLTYPECODE_BITVAR:
+        case SQLTYPECODE_IEEE_FLOAT:
+        case SQLTYPECODE_FLOAT:
+            // SQLTYPECODE_FLOAT is also considered an error, Since Trafodion will never
+            // return SQLTYPECODE_FLOAT. It returns either SQLTYPECODE_IEEE_REAL or SQLTYPECODE_IEEE_DOUBLE
+            // depending upon the precision for FLOAT fields
+        case SQLTYPECODE_BPINT_UNSIGNED:
+        default:
+            SQLItemDesc->ODBCDataType  = SQL_TYPE_NULL;
+            SQLItemDesc->ODBCPrecision = 0;
+            SQLItemDesc->signType      = FALSE;
+            break;
+    }
+    totalMemLen += memAlignOffset + allocSize;
 
     if (SQLItemDesc->nullInfo)
     {
@@ -1400,8 +1400,8 @@ SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt)
 			}
 			else
 				done = true;
-		}		
-		removeSrvrStmt(pSrvrStmt->dialogueId, (long)pSrvrStmt);			
+		}
+		removeSrvrStmt(pSrvrStmt->dialogueId, (long)pSrvrStmt);
 		break;
 	case SQL_CLOSE:
 		if (! pSrvrStmt->isClosed)
@@ -1444,7 +1444,7 @@ SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt)
 }
 
 // This shall be removed once we ported all native interfaces
-// to use the protocol buffer interface, and function PREPARE_R
+// to use the protocol buffer interface, and function PREPARE_ROWSETS
 // will be renamed as PREPARE
 SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt) 
 {
@@ -1685,7 +1685,7 @@ SQLRETURN FETCH(SRVR_STMT_HDL *pSrvrStmt)
 
         int rtn;
 
-#ifndef DISABLE_NOWAIT
+#ifndef DISABLE_NOWAIT		
         if (retcode == NOWAIT_PENDING){
             rtn = WaitForCompletion(pSrvrStmt, &pSrvrStmt->cond, &pSrvrStmt->mutex);
             DEBUG_OUT(DEBUG_LEVEL_ENTRY,("WaitForCompletion() returned %d",rtn));
@@ -1703,6 +1703,15 @@ SQLRETURN FETCH(SRVR_STMT_HDL *pSrvrStmt)
                     case 9999:
                         THREAD_RETURN(pSrvrStmt,NOWAIT_ERROR);
                     default:
+                        /* Soln No: 10-070223-2784
+Desc: JDBC/MX should call stmtinfo2 instead of Diagoninfo2 CLI call for rowsets
+*/
+                        /*     long row = 0;
+                               retcode = CLI_GetDiagnosticsStmtInfo2(&pSrvrStmt->stmt,SQLDIAG_ROW_COUNT,&row,NULL,0,NULL);
+                               if(row == 0)
+                               retcode = GETSQLCODE(pSrvrStmt);
+                               */
+                        // Refixed 10-070223-2784 for sol.10-090613-2299
                         retcode = GETSQLCODE(pSrvrStmt);
 
                         long rows_read_fin = 0;
@@ -2319,6 +2328,7 @@ SQLRETURN PREPARE_FROM_MODULE(SRVR_STMT_HDL* pSrvrStmt)
 }
 
 //---------------------------------------------------------------------------
+// PREPARE2 Rowset prepare
 SQLRETURN PREPARE2withRowsets(SRVR_STMT_HDL* pSrvrStmt)
 {
     SQLItemDescList_def *inputSQLDesc = &pSrvrStmt->inputDescList;
@@ -2626,21 +2636,24 @@ SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, 
 #else
         pStmt->tag = (long)pSrvrStmt;
 #endif
-	}
-	else
-		pStmt->tag = 0;
-	if (pModule->module_name == NULL)
-	{
-		DEBUG_OUT(DEBUG_LEVEL_STMT,("***pModule->module_name == NULL  Call AllocStmtForRs()"));
-		CLI_AllocStmtForRS(callpStmt,
-			pSrvrStmt->RSIndex,
-			pStmt);
-		if (retcode < 0)
-		{
-			CLI_ClearDiagnostics(NULL);
-			CLI_DEBUG_RETURN_SQL(retcode);
-		}
-	}
+    }
+    else
+        pStmt->tag = 0;
+    if (pModule->module_name == NULL)
+    {
+        DEBUG_OUT(DEBUG_LEVEL_STMT,("***pModule->module_name == NULL  Call AllocStmtForRs()"));
+        /* Commenting out for now - will be looked at when SPJ is supported
+#ifdef NSK_PLATFORM
+CLI_AllocStmtForRS(callpStmt,
+pSrvrStmt->RSIndex,
+pStmt);
+#endif */
+        if (retcode < 0)
+        {
+            CLI_ClearDiagnostics(NULL);
+            CLI_DEBUG_RETURN_SQL(retcode);
+        }
+    }
 
     if (pSrvrStmt->useDefaultDesc)
     {
@@ -3479,7 +3492,6 @@ SQLRETURN GETSQLWARNINGORERROR2(SRVR_STMT_HDL* pSrvrStmt)
     }
 
     MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlWarningOrError, BYTE, Tot_Alloc_Buffer_len);
-    memset(pSrvrStmt->sqlWarningOrError, 0, sizeof(BYTE) * Tot_Alloc_Buffer_len);
 
     *(Int32 *)(pSrvrStmt->sqlWarningOrError+msg_total_len) = total_conds - skipped_conds;
     msg_total_len += sizeof(total_conds);
@@ -3562,8 +3574,7 @@ SQLRETURN GETSQLWARNINGORERROR2(SRVR_STMT_HDL* pSrvrStmt)
             }
         }
 
-        if (msg_buf != NULL)
-            MEMORY_DELETE_ARRAY(msg_buf);
+        if (msg_buf != NULL) MEMORY_DELETE_ARRAY(msg_buf);
         curr_cond++;
     }
 
@@ -3616,8 +3627,12 @@ SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt)
 
     curr_cond = 1;
 
-    MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlWarningOrError, BYTE, Tot_Alloc_Buffer_len);
-    memset(pSrvrStmt->sqlWarningOrError, 0, sizeof(BYTE) * Tot_Alloc_Buffer_len);
+   MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlWarningOrError, BYTE, Tot_Alloc_Buffer_len);
+
+    if (pSrvrStmt->sqlWarningOrError == NULL)
+    {
+        exit(1);
+    }
 
     *(Int32 *)(pSrvrStmt->sqlWarningOrError+msg_total_len) = total_conds;
     msg_total_len += sizeof(total_conds);
@@ -3677,8 +3692,7 @@ SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt)
             }
         }
 
-        if (msg_buf != NULL)
-            MEMORY_DELETE_ARRAY(msg_buf);
+        if (msg_buf != NULL) MEMORY_DELETE_ARRAY(msg_buf);
         curr_cond++;
     }  // end while
 
@@ -3689,7 +3703,7 @@ ret:
     THREAD_RETURN(pSrvrStmt,retcode);
 }  // end GETSQLWARNINGORERROR2forRowsets
 
-SQLRETURN PREPARE_R(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
+SQLRETURN PREPARE_ROWSETS(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
 {
     FUNCTION_ENTRY("PREPARE",
             ("pSrvrStmt=0x%08x, isFromExecDirect=%d",
@@ -3707,8 +3721,6 @@ SQLRETURN PREPARE_R(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
     SQLSTMT_ID	*pStmt;
     SQLDESC_ID	*pInputDesc;
     SQLDESC_ID	*pOutputDesc;
-    
-    int    SqlQueryStatementType; // Will be gone once all ported to use protocol interface.
 
     char        *pStmtName;
     BOOL		sqlWarning = FALSE;
@@ -3797,47 +3809,249 @@ SQLRETURN PREPARE_R(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
     retcode = WSQL_EXEC_GetStmtAttr(pStmt, SQL_ATTR_QUERY_TYPE, &pSrvrStmt->sqlQueryType, NULL, 0, NULL);
     HANDLE_ERROR(retcode, sqlWarning);
 
-    if (pSrvrStmt->paramCount > 0)
+    if(pSrvrStmt->sqlStmtType == TYPE_CALL)
     {
-        tmpBuildID = srvrGlobal->drvrVersion.buildId; // should go way once we support rowwise rowsets
-        srvrGlobal->drvrVersion.buildId = 0;
-        retcode = BuildSQLDesc2(pInputDesc, -9999, 0, pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->paramCount,
-                pSrvrStmt->inputDescBuffer, pSrvrStmt->inputDescBufferLength,
-                pSrvrStmt->inputDescVarBuffer, pSrvrStmt->inputDescVarBufferLen, pSrvrStmt->IPD,pSrvrStmt->SqlDescInfo);
-        srvrGlobal->drvrVersion.buildId = tmpBuildID; // should go way once we support rowwise rowsets
-        HANDLE_ERROR(retcode, sqlWarning);
-    }
+        pSrvrStmt->prepareSetup();
 
-    Int32 estRowLength=0;
-    if (pSrvrStmt->columnCount > 0)
-    {
-        retcode = BuildSQLDesc2(pOutputDesc, pSrvrStmt->sqlQueryType,  pSrvrStmt->maxRowsetSize,
-                pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->columnCount, pSrvrStmt->outputDescBuffer,
-                pSrvrStmt->outputDescBufferLength, pSrvrStmt->outputDescVarBuffer, pSrvrStmt->outputDescVarBufferLen,
-                pSrvrStmt->IRD, pSrvrStmt->SqlDescInfo);
-        HANDLE_ERROR(retcode, sqlWarning);
-
-        if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
-        {
-            estRowLength = pSrvrStmt->outputDescVarBufferLen;
-            pSrvrStmt->bFirstSqlBulkFetch = true;
+        if (pSrvrStmt->paramCount > 0){
+            kdsCreateSQLDescSeq(&pSrvrStmt->inputDescList, pSrvrStmt->paramCount+pSrvrStmt->inputDescParamOffset);
+            retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Input);
+            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+        } else {
+            kdsCreateEmptySQLDescSeq(&pSrvrStmt->inputDescList);
         }
-        else
-        {
-            int columnCount = pSrvrStmt->columnCount;
-            Int32 estLength;
-            SRVR_DESC_HDL *IRD = pSrvrStmt->IRD;
 
-            for (int curColumnNo = 0; curColumnNo < columnCount ; curColumnNo++)
+        if (pSrvrStmt->columnCount > 0){
+            kdsCreateSQLDescSeq(&pSrvrStmt->outputDescList, pSrvrStmt->columnCount);
+            retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Output);
+            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+        } else {
+            kdsCreateEmptySQLDescSeq(&pSrvrStmt->outputDescList);
+        }
+    }
+    else
+    {
+        if (pSrvrStmt->paramCount > 0)
+        {
+            tmpBuildID = srvrGlobal->drvrVersion.buildId; // should go way once we support rowwise rowsets
+            srvrGlobal->drvrVersion.buildId = 0;
+            retcode = BuildSQLDesc2(pInputDesc, -9999, 0, pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->paramCount,
+                    pSrvrStmt->inputDescBuffer, pSrvrStmt->inputDescBufferLength,
+                    pSrvrStmt->inputDescVarBuffer, pSrvrStmt->inputDescVarBufferLen, pSrvrStmt->IPD,pSrvrStmt->SqlDescInfo);
+            srvrGlobal->drvrVersion.buildId = tmpBuildID; // should go way once we support rowwise rowsets
+            HANDLE_ERROR(retcode, sqlWarning);
+        }
+
+        Int32 estRowLength=0;
+        if (pSrvrStmt->columnCount > 0)
+        {
+            retcode = BuildSQLDesc2(pOutputDesc, pSrvrStmt->sqlQueryType,  pSrvrStmt->maxRowsetSize, pSrvrStmt->sqlBulkFetchPossible,
+                    pSrvrStmt->columnCount, pSrvrStmt->outputDescBuffer, pSrvrStmt->outputDescBufferLength,
+                    pSrvrStmt->outputDescVarBuffer, pSrvrStmt->outputDescVarBufferLen, pSrvrStmt->IRD,pSrvrStmt->SqlDescInfo);
+            HANDLE_ERROR(retcode, sqlWarning);
+
+            if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
             {
-                IRD = pSrvrStmt->IRD;
-                estLength = getAllocLength(IRD[curColumnNo].dataType, IRD[curColumnNo].length);
-                estLength += 1;
-                estRowLength += estLength;
+                estRowLength = pSrvrStmt->outputDescVarBufferLen;
+                pSrvrStmt->bFirstSqlBulkFetch = true;
+            }
+            else
+            {
+                int columnCount = pSrvrStmt->columnCount;
+                Int32 estLength;
+                SRVR_DESC_HDL *IRD = pSrvrStmt->IRD;
+
+                for (int curColumnNo = 0; curColumnNo < columnCount ; curColumnNo++)
+                {
+                    IRD = pSrvrStmt->IRD;
+                    estLength = getAllocLength(IRD[curColumnNo].dataType, IRD[curColumnNo].length);
+                    estLength += 1;
+                    estRowLength += estLength;
+                }
             }
         }
+        pSrvrStmt->estRowLength = estRowLength;
     }
-    pSrvrStmt->estRowLength = estRowLength;
+
+    if (rgWarning)
+        THREAD_RETURN(pSrvrStmt,ODBC_RG_WARNING);
+    if (shapeWarning)
+        THREAD_RETURN(pSrvrStmt,SQL_SHAPE_WARNING);
+    if (sqlWarning)
+        THREAD_RETURN(pSrvrStmt,SQL_SUCCESS_WITH_INFO);
+
+    THREAD_RETURN(pSrvrStmt,SQL_SUCCESS);
+}
+
+SQLRETURN PREPARE_R(SRVR_STMT_HDL* pSrvrStmt, bool isFromExecDirect)
+{
+    FUNCTION_ENTRY("PREPARE",
+            ("pSrvrStmt=0x%08x, isFromExecDirect=%d",
+             pSrvrStmt, isFromExecDirect));
+
+    CLI_DEBUG_SHOW_SERVER_STATEMENT(pSrvrStmt);
+
+    Int32 retcode;
+    UInt32 flags = 0;
+    if(isFromExecDirect)
+        flags = flags | PREPARE_STANDALONE_QUERY;
+
+    char *pSqlStr = pSrvrStmt->sqlStringText;
+
+    SQLSTMT_ID	*pStmt;
+    SQLDESC_ID	*pInputDesc;
+    SQLDESC_ID	*pOutputDesc;
+
+    char        *pStmtName;
+    BOOL		sqlWarning = FALSE;
+    BOOL		rgWarning = FALSE;
+    BOOL		shapeWarning = FALSE;
+    Int32		tempmaxRowsetSize = 0;
+    Int32 		holdableCursor = pSrvrStmt->holdableCursor;
+
+    pSrvrStmt->PerfFetchRetcode = SQL_SUCCESS;
+    pSrvrStmt->RowsetFetchRetcode = SQL_SUCCESS;
+
+    pStmt = &pSrvrStmt->stmt;
+    pOutputDesc = &pSrvrStmt->outputDesc;
+    pInputDesc = &pSrvrStmt->inputDesc;
+
+    SQLDESC_ID	sqlString_desc;
+    sqlString_desc.version = SQLCLI_ODBC_VERSION;
+    sqlString_desc.module = &pSrvrStmt->moduleId;
+    sqlString_desc.name_mode = string_data;
+    sqlString_desc.identifier     = (const char *) pSqlStr;
+    sqlString_desc.handle = 0;
+    sqlString_desc.identifier_len = pSrvrStmt->sqlStringLen;
+    sqlString_desc.charset = SQLCHARSETSTRING_UTF8;
+    UInt32 tmpBuildID = 0;
+
+
+    if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
+        retcode = WSQL_EXEC_SetDescItem(pOutputDesc, 0, SQLDESC_ROWSET_TYPE, 3, 0);
+    else
+        retcode = WSQL_EXEC_SetDescItem(pOutputDesc, 0, SQLDESC_ROWSET_TYPE, 0, 0);
+    HANDLE_ERROR(retcode, sqlWarning);
+
+    // We have to do the following CLI to set rowsize to ZERO, Since we switch between rowset to non-rowsets
+    retcode = WSQL_EXEC_SetStmtAttr(pStmt,SQL_ATTR_INPUT_ARRAY_MAXSIZE,tempmaxRowsetSize, NULL);
+    HANDLE_ERROR(retcode, sqlWarning);
+
+    // need to set HOLDABLE cursor only when it differs from current holdable cursor
+    if (holdableCursor != pSrvrStmt->current_holdableCursor) {
+        retcode =  WSQL_EXEC_SetStmtAttr(pStmt,SQL_ATTR_CURSOR_HOLDABLE,holdableCursor, NULL);
+        pSrvrStmt->current_holdableCursor = holdableCursor;
+        HANDLE_ERROR(retcode, sqlWarning);
+    }
+
+    if (pSrvrStmt->sqlQueryType != SQL_SP_RESULT_SET)
+    {
+        // Result sets are already prepared.
+        pSrvrStmt->sqlUniqueQueryIDLen = MAX_QUERY_NAME_LEN;
+        pSrvrStmt->sqlUniqueQueryID[0] = '\0';
+        retcode = WSQL_EXEC_Prepare2(pStmt, &sqlString_desc
+                , NULL, NULL, NULL, &pSrvrStmt->cost_info
+                , &pSrvrStmt->comp_stats_info, pSrvrStmt->sqlUniqueQueryID
+                , &pSrvrStmt->sqlUniqueQueryIDLen
+                , flags);
+        pSrvrStmt->sqlUniqueQueryID[pSrvrStmt->sqlUniqueQueryIDLen] = '\0';
+        pSrvrStmt->m_bNewQueryId = true;
+
+        HANDLE_ERROR(retcode, sqlWarning);
+    }
+
+    retcode = WSQL_EXEC_DescribeStmt(pStmt, pInputDesc, pOutputDesc);
+
+    if (pSrvrStmt->sqlQueryType == SQL_SP_RESULT_SET)
+    {
+        // An SPJ can be declared to return say for example 3 Result Sets, but actually
+        // return only 2 Result Sets. In this case, SQL_EXEC_AllocStmtForRS would not
+        // return -8916 when we call it for the 3rd result set. However when we try
+        // to describe it we would get a -8915. This should also be treated as a signal
+        // that there are no more result sets. HANDLE_ERROR2 would return this value
+        // to the previous stack frame where we will handle this condition
+        HANDLE_ERROR2(retcode, sqlWarning);
+    }
+    else
+    {
+        HANDLE_ERROR(retcode, sqlWarning);
+    }
+
+    retcode = WSQL_EXEC_GetDescEntryCount(pInputDesc, &pSrvrStmt->paramCount);
+    HANDLE_ERROR(retcode, sqlWarning);
+
+    retcode = WSQL_EXEC_GetDescEntryCount(pOutputDesc, &pSrvrStmt->columnCount);
+    HANDLE_ERROR(retcode, sqlWarning);
+
+    // Child query visibility
+    retcode = WSQL_EXEC_GetStmtAttr(pStmt, SQL_ATTR_SUBQUERY_TYPE, &pSrvrStmt->sqlSubQueryType, NULL, 0, NULL);
+
+    retcode = WSQL_EXEC_GetStmtAttr(pStmt, SQL_ATTR_QUERY_TYPE, &pSrvrStmt->sqlQueryType, NULL, 0, NULL);
+    HANDLE_ERROR(retcode, sqlWarning);
+
+    if(pSrvrStmt->sqlStmtType == TYPE_CALL)
+    {
+        pSrvrStmt->prepareSetup();
+
+        if (pSrvrStmt->paramCount > 0){
+            kdsCreateSQLDescSeq(&pSrvrStmt->inputDescList, pSrvrStmt->paramCount+pSrvrStmt->inputDescParamOffset);
+            retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Input);
+            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+        } else {
+            kdsCreateEmptySQLDescSeq(&pSrvrStmt->inputDescList);
+        }
+
+        if (pSrvrStmt->columnCount > 0){
+            kdsCreateSQLDescSeq(&pSrvrStmt->outputDescList, pSrvrStmt->columnCount);
+            retcode = BuildSQLDesc(pSrvrStmt, SRVR_STMT_HDL::Output);
+            HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
+        } else {
+            kdsCreateEmptySQLDescSeq(&pSrvrStmt->outputDescList);
+        }
+    }
+    else
+    {
+        if (pSrvrStmt->paramCount > 0)
+        {
+            tmpBuildID = srvrGlobal->drvrVersion.buildId; // should go way once we support rowwise rowsets
+            srvrGlobal->drvrVersion.buildId = 0;
+            retcode = BuildSQLDesc2(pInputDesc, -9999, 0, pSrvrStmt->sqlBulkFetchPossible, pSrvrStmt->paramCount,
+                    pSrvrStmt->inputDescBuffer, pSrvrStmt->inputDescBufferLength,
+                    pSrvrStmt->inputDescVarBuffer, pSrvrStmt->inputDescVarBufferLen, pSrvrStmt->IPD,pSrvrStmt->SqlDescInfo);
+            srvrGlobal->drvrVersion.buildId = tmpBuildID; // should go way once we support rowwise rowsets
+            HANDLE_ERROR(retcode, sqlWarning);
+        }
+
+        Int32 estRowLength=0;
+        if (pSrvrStmt->columnCount > 0)
+        {
+            retcode = BuildSQLDesc2(pOutputDesc, pSrvrStmt->sqlQueryType,  pSrvrStmt->maxRowsetSize, pSrvrStmt->sqlBulkFetchPossible,
+                    pSrvrStmt->columnCount, pSrvrStmt->outputDescBuffer, pSrvrStmt->outputDescBufferLength,
+                    pSrvrStmt->outputDescVarBuffer, pSrvrStmt->outputDescVarBufferLen, pSrvrStmt->IRD,pSrvrStmt->SqlDescInfo);
+            HANDLE_ERROR(retcode, sqlWarning);
+
+            if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
+            {
+                estRowLength = pSrvrStmt->outputDescVarBufferLen;
+                pSrvrStmt->bFirstSqlBulkFetch = true;
+            }
+            else
+            {
+                int columnCount = pSrvrStmt->columnCount;
+                Int32 estLength;
+                SRVR_DESC_HDL *IRD = pSrvrStmt->IRD;
+
+                for (int curColumnNo = 0; curColumnNo < columnCount ; curColumnNo++)
+                {
+                    IRD = pSrvrStmt->IRD;
+                    estLength = getAllocLength(IRD[curColumnNo].dataType, IRD[curColumnNo].length);
+                    estLength += 1;
+                    estRowLength += estLength;
+                }
+            }
+        }
+        pSrvrStmt->estRowLength = estRowLength;
+    }
 
     if (rgWarning)
         THREAD_RETURN(pSrvrStmt,ODBC_RG_WARNING);
@@ -3935,26 +4149,34 @@ SQLRETURN BuildSQLDesc2(SQLDESC_ID *pDesc,
 
     Int32			tempDescLen = 0;
 
-    if (implDesc != NULL)
-    {
-        delete[] implDesc;
-        implDesc = NULL;
-    }
+    MEMORY_DELETE_ARRAY(implDesc);
+    MEMORY_DELETE_ARRAY(SqlDescInfo);
+    MEMORY_DELETE_ARRAY(SQLDesc);
 
     if (numEntries > 0)
     {
 
         MEMORY_ALLOC_ARRAY(implDesc, SRVR_DESC_HDL, numEntries);
+        if (implDesc == NULL)
+        {
+            exit(1);
+        }
 
         MEMORY_ALLOC_ARRAY(SqlDescInfo, DESC_HDL_LISTSTMT, numEntries);
+        if (SqlDescInfo == NULL)
+        {
+            exit(1);
+        }
 
         tempDescLen	= sizeof(totalMemLen) + sizeof(numEntries) + (sizeof(ODBCDescriptors) * numEntries);
         MEMORY_ALLOC_ARRAY(SQLDesc, BYTE, tempDescLen);
-        memset(SQLDesc, 0, sizeof(BYTE)*tempDescLen);
+        if (SQLDesc == NULL)
+        {
+            exit(1);
+        }
 
         *(Int32 *)(SQLDesc+totalDescLength) = 0; // Initialize totalMemLen, Since its calculated later
         totalDescLength += sizeof(totalMemLen);
-
         *(Int32 *)(SQLDesc+totalDescLength) = numEntries;
         totalDescLength += sizeof(numEntries);
 
@@ -4146,21 +4368,16 @@ SQLRETURN BuildSQLDesc2(SQLDESC_ID *pDesc,
         totalMemLen = ((totalMemLen + 8 - 1) >> 3) << 3;
     }
 
-    if (varBuffer != NULL)
-    {
-        delete[] varBuffer;
-    }
-    varBuffer = NULL;
+    MEMORY_DELETE_ARRAY(varBuffer);
+    
     //	if (sqlBulkFetchPossible && (sqlQueryType == SQL_SELECT_NON_UNIQUE || sqlQueryType == SQL_SP_RESULT_SET))
     if (bRWRS)
     {
         MEMORY_ALLOC_ARRAY(varBuffer, BYTE, srvrGlobal->m_FetchBufferSize);
-        memset(varBuffer, 0, sizeof(BYTE)*srvrGlobal->m_FetchBufferSize);
     }
     else
     {
         MEMORY_ALLOC_ARRAY(varBuffer, BYTE, totalMemLen);
-        memset(varBuffer, 0, sizeof(BYTE)*totalMemLen);
     }
 
     //setting the Indicator and Variable pointer
@@ -5125,10 +5342,10 @@ SQLRETURN GetRowsAffected(SRVR_STMT_HDL *pSrvrStmt)
 
     __int64 rowsAffected_ = 0;
     SQLDIAG_STMT_INFO_ITEM_ID sqlItem = SQLDIAG_ROW_COUNT;
-    rowCountDesc = new SQLDESC_ID;
+    MEMORY_ALLOC_OBJ(rowCountDesc, SQLDESC_ID);
     rowCountDesc->version = SQLCLI_ODBC_VERSION;
     rowCountDesc->name_mode = desc_handle;
-    module = new SQLMODULE_ID;
+    MEMORY_ALLOC_OBJ(module, SQLMODULE_ID);
     rowCountDesc->module = module;
     module->module_name = 0;
     module->charset = SQLCHARSETSTRING_UTF8;
@@ -5163,8 +5380,8 @@ SQLRETURN GetRowsAffected(SRVR_STMT_HDL *pSrvrStmt)
 
     // free up resources
     WSQL_EXEC_DeallocDesc(rowCountDesc);
-    delete ((void*)rowCountDesc->module);
-    delete rowCountDesc;
+    MEMORY_DELETE_ARRAY(rowCountDesc->module);
+    MEMORY_DELETE_ARRAY(rowCountDesc);
 
     CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
 
@@ -5173,7 +5390,7 @@ SQLRETURN GetRowsAffected(SRVR_STMT_HDL *pSrvrStmt)
 
 //========================NOT ATOMIC ROWSET==================================
 
-extern "C"
+    extern "C"
 SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarning, SRVR_STMT_HDL* pSrvrStmt)
 {
 #define MAX_SQLSTATE_LEN 6
@@ -5235,7 +5452,7 @@ SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarn
             total_conds * (MAX_SQLSTATE_LEN + 1) +
             total_conds * (MAX_MSG_TEXT_LEN + 1);
 
-        gbuf_ptr = new char[gbuf_len];
+        MEMORY_ALLOC_ARRAY(gbuf_ptr, char, gbuf_len);
         if (gbuf_ptr == NULL)
         {
             kdsCopySQLErrorException(SQLError, "No Memory Error : From GETNOTATOMICROWSET2",	999, "");
@@ -5296,6 +5513,10 @@ SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarn
             row_number = (Int32)*(pCondInfoItems[4*i+2].num_val_or_len);
             strcpy(MessageText,pCondInfoItems[4*i+3].string_val);
 
+            //if (srvrGlobal->modeSpecial_1)
+            //	doErr = true;
+
+            //for NAR surrogate key feature
             if (sqlcode == -8108 && pSrvrStmt != NULL)
             {
                 retcode = RECOVERY_FOR_SURROGATE_ERROR2(pSrvrStmt,pStmt,pDesc,row_number);
@@ -5306,24 +5527,39 @@ SQLRETURN GETNOTATOMICROWSET2(bool& bSQLMessageSet, ERROR_DESC_LIST_def *sqlWarn
                             sqlcode,
                             sqlState,
                             row_number + 1);
+                //else
+                // do nothing for now
+                //if (srvrGlobal->modeSpecial_1 && retcode == SQL_SUCCESS)
+                //	doErr = false;
             }
             else
-            {
+                //for NAR surrogate key feature
+
                 kdsCopySQLErrorExceptionAndRowCount(
                         SQLError,
                         MessageText,
                         sqlcode,
                         sqlState,
                         row_number + 1);
-            }
-        } // end of loop
+
+            // Added for MODE_SPECIAL_1 behavior
+            // Increment pSrvrStmt->numErrRows only for the first occurrence of the
+            // current row_number. The row_number in the SQL diags area is 0-based.
+            //if( srvrGlobal->modeSpecial_1 && doErr && row_number >= 0 )
+            //{
+            //	if( pSrvrStmt->errRowsArray[ row_number ] == 0x0 ) {
+            //		pSrvrStmt->errRowsArray[ row_number ] = 0x1;
+            //		pSrvrStmt->numErrRows++;
+            //	}
+            //}
+
+        }
     }
 bailout:
     WSQL_EXEC_ClearDiagnostics(NULL);
     sqlWarning->_length = SQLError->errorList._length;
     sqlWarning->_buffer = SQLError->errorList._buffer;
-    if (gbuf_ptr != NULL)
-        delete[] gbuf_ptr;
+    MEMORY_DELETE_ARRAY(gbuf_ptr);
     
     CLI_DEBUG_RETURN_SQL(retcode);
 }
@@ -5663,8 +5899,7 @@ void COPYSQLERROR_LIST_TO_SRVRSTMT(SRVR_STMT_HDL* pSrvrStmt)
 {
     Int32 i;
     Int32 totallength = pSrvrStmt->sqlWarning._length;
-    ERROR_DESC_def* pErrorDesc = NULL;
-    ERROR_DESC_def* _buffer = NULL;
+    ERROR_DESC_def* pErrorDesc;
     ROWSET_ERROR_NODE* currNode, *nextNode;
     if (pSrvrStmt->rowsetErrorList.nodeCount == 0)
         return;
@@ -5677,10 +5912,10 @@ void COPYSQLERROR_LIST_TO_SRVRSTMT(SRVR_STMT_HDL* pSrvrStmt)
     }
     if (totallength == 0)
         return;
-    
+    ERROR_DESC_def* _buffer = NULL;
     MEMORY_ALLOC_ARRAY(_buffer, ERROR_DESC_def, totallength);
-    pErrorDesc = _buffer;
     
+    pErrorDesc = _buffer;
     if (pSrvrStmt->sqlWarning._length > 0)
     {
         memcpy(pErrorDesc, pSrvrStmt->sqlWarning._buffer, pSrvrStmt->sqlWarning._length * sizeof(ERROR_DESC_def));
@@ -5703,7 +5938,7 @@ void COPYSQLERROR_LIST_TO_SRVRSTMT(SRVR_STMT_HDL* pSrvrStmt)
     while (currNode != NULL)
     {
         nextNode = currNode->nextNode;
-        delete currNode;
+        MEMORY_DELETE_OBJ(currNode);
         currNode = nextNode;
     }
     pSrvrStmt->rowsetErrorList.nodeCount = 0;
@@ -5795,6 +6030,7 @@ SQLRETURN GETSQLERROR_AND_ROWCOUNT(
             break;
         }
         kdsCopySQLErrorException(SQLError, msg_buf, sqlcode, sqlState);
+        
         MEMORY_DELETE_ARRAY(msg_buf);
         if (fatalSQLError(sqlcode))
         {
@@ -5831,11 +6067,10 @@ void ADDSQLERROR_TO_LIST(
         odbc_SQLSvc_SQLError *SQLError,
         Int32 rowCount)
 {
-    ERROR_DESC_def *errorDesc;
     ROWSET_ERROR_NODE* pNode = NULL;
     UInt32 i;
 
-    MEMORY_ALLOC(pNode, ROWSET_ERROR_NODE);
+    MEMORY_ALLOC_OBJ(pNode, ROWSET_ERROR_NODE);
 
     pNode->rowNumber = rowCount;
     pNode->SQLError.errorList._length = SQLError->errorList._length;
@@ -5930,7 +6165,8 @@ SQLRETURN GETSQLERROR2(bool& bSQLMessageSet,
                 MEMORY_ALLOC_ARRAY(msg_buf, char, msg_buf_len);
                 buf_len = 0;
                 retcode = WSQL_EXEC_GetDiagnosticsCondInfo2(SQLDIAG_MSG_TEXT, curr_cond,
-                        NULL, msg_buf, msg_buf_len, &buf_len); }
+                        NULL, msg_buf, msg_buf_len, &buf_len);
+            }
             if (retcode >= SQL_SUCCESS)
             {
                 msg_buf[buf_len] = '\0';
@@ -6355,14 +6591,6 @@ SQLRETURN EXECUTE2(SRVR_STMT_HDL* pSrvrStmt)
                     // that there are no more result sets. In this case we should free this statement
                     rsSrvrStmt->freeResourceOpt = SQL_DROP;
 
-                    /* // we might need this in the near future once we have all native interfaces
-                     * // ported to use this protocol interfaces
-                    if(rsSrvrStmt->SpjProxySyntaxString != NULL)
-                        delete [] rsSrvrStmt->SpjProxySyntaxString;
-
-                    rsSrvrStmt->SpjProxySyntaxString = NULL;
-                    rsSrvrStmt->SpjProxySyntaxStringLen = 0;
-                    */
                     rc = FREESTATEMENT(rsSrvrStmt);
 
                     rsNum = rsNum - 1;
@@ -6432,7 +6660,7 @@ SQLRETURN BuildSQLDesc2withRowsets(
         , BYTE               *&SQLDesc
         , Int32                &SQLDescLen
         , BYTE               *&varBuffer
-        , Int32                &totalMemLen
+        , Int32               &totalMemLen
         , SRVR_DESC_HDL      *&implDesc
         , SQLCLI_QUAD_FIELDS *&inputQuadList
         , SQLCLI_QUAD_FIELDS *&inputQuadList_recover
@@ -6518,40 +6746,47 @@ SQLRETURN BuildSQLDesc2withRowsets(
     DESC_HDL_LIST	*SqlDescInfo;
     Int32		 tempDescLen = 0;
 
-    if (implDesc != NULL)
-    {
-        delete[] implDesc;
-        implDesc = NULL;
-    }
-
-    if (inputQuadList != NULL)
-    {
-        delete[] inputQuadList;
-        inputQuadList = NULL;
-    }
-
-    if (inputQuadList_recover != NULL)
-    {
-        delete[] inputQuadList_recover;
-        inputQuadList_recover = NULL;
-    }
+    MEMORY_DELETE_ARRAY(implDesc);
+    MEMORY_DELETE_ARRAY(inputQuadList);
+    MEMORY_DELETE_ARRAY(inputQuadList_recover);
 
 
     if (numEntries > 1)
     {
         MEMORY_ALLOC_ARRAY(implDesc, SRVR_DESC_HDL, numEntries - 1);
+        if (implDesc == NULL)
+        {
+            exit(0);
+        }
+
         MEMORY_ALLOC_ARRAY(inputQuadList, SQLCLI_QUAD_FIELDS, numEntries);
+        if (inputQuadList == NULL)
+        {
+            exit(0);
+        }
+        
         MEMORY_ALLOC_ARRAY(inputQuadList_recover, SQLCLI_QUAD_FIELDS, numEntries);
+        if (inputQuadList_recover == NULL)
+        {
+            exit(0);
+        }
 
         // Setup ind_layout in quad ptr list.
         for (i = 0; i < numEntries; i++)
             inputQuadList[i].ind_layout = 2;  // 2 byte indicator
 
         MEMORY_ALLOC_ARRAY(SqlDescInfo, DESC_HDL_LIST, numEntries - 1);
+        if (SqlDescInfo == NULL)
+        {
+            exit(0);
+        }
 
         tempDescLen	= sizeof(totalMemLen) + sizeof(numEntries) + (sizeof(ODBCDescriptors) * (numEntries - 1));
         MEMORY_ALLOC_ARRAY(SQLDesc, BYTE, tempDescLen);
-        memset(SQLDesc, 0, sizeof(BYTE)*tempDescLen);
+        if (SQLDesc == NULL)
+        {
+            exit(0);
+        }
 
         *(Int32 *)(SQLDesc+totalDescLength) = 0; // Initialize totalMemLen, Since its calculated later
         totalDescLength += sizeof(totalMemLen);
@@ -6783,20 +7018,22 @@ SQLRETURN BuildSQLDesc2withRowsets(
     // Adjust totalMemLen to word boundary
     totalMemLen = ((totalMemLen + 8 - 1) >> 3) << 3;
 
-    if (varBuffer != NULL)
-    {
-        delete[] varBuffer;
-    }
-    varBuffer = NULL;
+    MEMORY_DELETE_ARRAY(varBuffer);
+    
     if (sqlBulkFetchPossible && sqlQueryType == SQL_SELECT_NON_UNIQUE)
     {
         MEMORY_ALLOC_ARRAY(varBuffer, BYTE, srvrGlobal->m_FetchBufferSize);
-        memset(varBuffer, 0, sizeof(BYTE)*srvrGlobal->m_FetchBufferSize);
     }
     else
     {
+        // KAS This probably needs to be removed if I end up using the input buffer for the
+        // quad pointers to point too.
         MEMORY_ALLOC_ARRAY(varBuffer, BYTE, totalMemLen);
-        memset(varBuffer, 0, sizeof(BYTE)*totalMemLen);
+    }
+    if (varBuffer == NULL)
+    {
+        // Handle Memory Overflow execption here
+        exit(0);
     }
 
     *(Int32 *)SQLDesc = totalMemLen;
@@ -6896,7 +7133,7 @@ SQLRETURN BuildSQLDesc2withRowsets(
 
     if (SqlDescInfo != NULL)
     {
-        delete [] SqlDescInfo;
+        MEMORY_DELETE_ARRAY(SqlDescInfo);
         SqlDescInfo = NULL;
     }
 
@@ -7145,11 +7382,11 @@ SQLRETURN FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
     pDesc = &pSrvrStmt->outputDesc;
     columnCount = pSrvrStmt->columnCount;
     estTotalLength = pSrvrStmt->estRowLength * maxRowCnt;
-    outputDataValue->_buffer = allocGlobalBuffer(estTotalLength + 1);
+    MEMORY_ALLOC_ARRAY(outputDataValue->_buffer, unsigned char, estTotalLength + 1);
     if (outputDataValue->_buffer == NULL)
     {
         /*
-        // Need Handle Memory Overflow execption here
+        // Handle Memory Overflow execption here
         */
         exit(0);
     }
@@ -7271,57 +7508,7 @@ ret:
     CLI_DEBUG_RETURN_SQL(retcode);
 }  // end FETCHPERF
 
-
 //================================================================================
-
-__thread BYTE *pGlobalBuffer = NULL;
-__thread Int32 GlobalBufferLen = 0;
-
-extern "C" Int32 getGlobalBufferLength()
-{
-    return GlobalBufferLen;
-}  // end getGlobalBufferLength
-
-//---------------------------------------------------------------
-
-extern "C" BYTE* getGlobalBuffer()
-{
-    return pGlobalBuffer;
-}  // end getGlobalBufferLength
-
-//---------------------------------------------------------------
-
-extern "C" BYTE* allocGlobalBuffer(Int32 size)
-{
-    SRVRTRACE_ENTER(FILE_INTF+27);
-
-    if (size > GlobalBufferLen)
-    {
-        if (pGlobalBuffer != NULL)
-        {
-            delete[] pGlobalBuffer;
-            pGlobalBuffer = NULL;
-            GlobalBufferLen = 0;
-        }
-        if ((pGlobalBuffer = new (std::nothrow)BYTE[size]) != NULL)
-            GlobalBufferLen = size;
-    }
-    SRVRTRACE_EXIT(FILE_INTF+27);
-    return pGlobalBuffer;
-}
-
-extern "C" void releaseGlobalBuffer()
-{
-    SRVRTRACE_ENTER(FILE_INTF+28);
-    if (pGlobalBuffer != NULL)
-    {
-        delete[] pGlobalBuffer;
-        pGlobalBuffer = NULL;
-        GlobalBufferLen = 0;
-    }
-    SRVRTRACE_EXIT(FILE_INTF+28);
-    return;
-}
 
 //-----------------------------------------------------------------------------------------
 
@@ -7347,12 +7534,14 @@ SQLRETURN FETCH2bulk(SRVR_STMT_HDL *pSrvrStmt)
         {
             if( srvrGlobal->m_FetchBufferSize/pSrvrStmt->outputDescVarBufferLen  < pSrvrStmt->maxRowCnt )
             {
-                if (pSrvrStmt->outputDescVarBuffer != NULL)
-                    MEMORY_DELETE_ARRAY(pSrvrStmt->outputDescVarBuffer);
+                MEMORY_DELETE_ARRAY(pSrvrStmt->outputDescVarBuffer);
                 pSrvrStmt->outputDescVarBuffer = NULL;
-                Int64 totOutputDescVarBufferLen = pSrvrStmt->maxRowCnt*pSrvrStmt->outputDescVarBufferLen; // Will this be overflow?
-                MEMORY_ALLOC_ARRAY(pSrvrStmt->outputDescVarBuffer, BYTE, totOutputDescVarBufferLen);
-                memset(pSrvrStmt->outputDescVarBuffer, 0, sizeof(BYTE)*totOutputDescVarBufferLen);
+                MEMORY_ALLOC_ARRAY(pSrvrStmt->outputDescVarBuffer, BYTE, pSrvrStmt->maxRowCnt*pSrvrStmt->outputDescVarBufferLen);
+                if (pSrvrStmt->outputDescVarBuffer == NULL)
+                {
+                    // Handle Memory Overflow exception here
+                    exit(0);
+                }
 
                 SetIndandVarPtr(&pSrvrStmt->outputDesc
                         , bRWRS

@@ -110,6 +110,7 @@
        <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXPreparedStatement" destdir="${native.src}" />
        <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXResultSet" destdir="${native.src}" />
        <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXStatement" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.TrafT2NativeInterface" destdir="${native.src}" />
     </target>
 
     <target name="native" depends="jni" >

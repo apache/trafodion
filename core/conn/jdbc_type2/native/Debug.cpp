@@ -39,6 +39,42 @@
 #include "Debug.h"
 #include "org_trafodion_jdbc_t2_DataWrapper.h"
 
+#ifdef TRACING_MEM_LEAK
+void AddMemTrace(long ptr, const char* file, int line)
+{
+    CMemInfo *newMemInfo = new CMemInfo(ptr, file, line);
+    gMemInfoMap[ptr] = newMemInfo;
+}
+
+void RemoveMemTrace(long ptr, const char* file, int line)
+{
+    CMemInfo *tmpPtr = NULL;
+    MemInfoMap_t::iterator it = gMemInfoMap.find(ptr);
+    if(it != gMemInfoMap.end()) {
+        tmpPtr = it->second;
+        gMemInfoMap.erase(it);
+        delete tmpPtr;
+    }
+}
+
+void LogMemLeak()
+{
+    FILE *tFile = fopen(TRACE_LOG_FILE_NAME, "a+");
+
+    for(MemInfoMap_t::iterator it = gMemInfoMap.begin(); it != gMemInfoMap.end(); ++it)
+    {
+        fprintf(tFile,
+                "Leaking Memory: 0x%08x.\t@%s: %d\n",
+                it->first,
+                it->second->_file,
+                it->second->_line);
+        fflush(tFile);
+    }
+
+    fclose(tFile);
+}
+#endif
+
 #ifdef _DEBUG
 
 #include <stdio.h>

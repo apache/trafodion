@@ -139,18 +139,26 @@ typedef struct JNICache_def
 
 	~JNICache_def()
 	{
-	    MEMORY_DELETE_ARRAY(charsetInfo);
+        MEMORY_DELETE_ARRAY(charsetInfo);
+#ifdef TRACING_MEM_LEAK
+        LogMemLeak();
+#endif
 	}
 } JNICache_def;
 
 extern char *gJNILayerErrorMsgs[];
-extern JNIEnv *gJEnv;
-extern JNICache_def gJNICache;
 extern const char *defaultEncodingOption;
+
+extern JNICache_def gJNICache;
+#ifdef TRACING_MEM_LEAK
+extern MemInfoMap_t gMemInfoMap;
+#endif
+extern JNIEnv *gJEnv;
 
 #ifdef NSK_PLATFORM
 //typedef long long Int64;
 #else
 typedef __int64 Int64;
 #endif
+
 #endif /* JDBCDRIVERGLOBAL_H */

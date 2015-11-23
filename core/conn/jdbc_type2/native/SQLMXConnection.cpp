@@ -257,6 +257,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_close
         break;
     }
     MEMORY_DELETE_OBJ(jdbcConnect);
+
     FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -768,6 +769,8 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
         FUNCTION_RETURN_VOID(("Prepare COMMIT WORK Transaction Statement Failed"));
     }
 
+    MEMORY_DELETE_ARRAY(inputValue.dataValue._buffer);
+    
     // Assign the module Information
     nullModule.version = SQLCLI_ODBC_MODULE_VERSION;
     nullModule.module_name = NULL;

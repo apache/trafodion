@@ -729,7 +729,7 @@ odbc_SQLSvc_ExecDirect_sme_(
             out_error_desc_def = exception_->u.SQLError.errorList._buffer;
             for(int i=0; i<listLen; i++, out_error_desc_def++, stmt_error_desc_def++) {
                 int errTxtLen = strlen(stmt_error_desc_def->errorText) + 1;
-                out_error_desc_def->errorText = new char[errTxtLen];
+                MEMORY_ALLOC_ARRAY(out_error_desc_def->errorText, char, errTxtLen);
                 out_error_desc_def->sqlcode = stmt_error_desc_def->sqlcode;
                 out_error_desc_def->rowId = stmt_error_desc_def->rowId;
                 out_error_desc_def->errorDiagnosticId= stmt_error_desc_def->errorDiagnosticId;
@@ -1624,7 +1624,7 @@ odbc_SQLSvc_Prepare2_sme_(
         // cleanup all memory allocated in the previous operations
         pSrvrStmt->cleanupAll();
         pSrvrStmt->sqlStringLen = strlen(sqlString) + 1;
-        MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText , char, pSrvrStmt->sqlStringLen);
+        MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText, char, pSrvrStmt->sqlStringLen);
 
         strncpy(pSrvrStmt->sqlStringText, sqlString, pSrvrStmt->sqlStringLen);
         pSrvrStmt->sqlStmtType = (short)sqlStmtType;
@@ -1657,12 +1657,12 @@ odbc_SQLSvc_Prepare2_sme_(
                 }
                 else
                 {
-                    char *RGWarningOrError;
-                    RGWarningOrError = new char[256];
+                    char *RGWarningOrError = NULL;
+                    MEMORY_ALLOC_ARRAY(RGWarningOrError, char, 256);
                     sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
                     sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
                     GETMXCSWARNINGORERROR(1, "01000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
-                    delete RGWarningOrError;
+                    MEMORY_DELETE_ARRAY(RGWarningOrError);
                 }
                 break;
             case SQL_SUCCESS:
@@ -1685,12 +1685,12 @@ odbc_SQLSvc_Prepare2_sme_(
                 }
                 else
                 {
-                    char *RGWarningOrError;
-                    RGWarningOrError = new char[256];
+                    char *RGWarningOrError = NULL;
+                    MEMORY_ALLOC_ARRAY(RGWarningOrError, char, 256);
                     sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
                     sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
                     GETMXCSWARNINGORERROR(-1, "HY000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
-                    delete RGWarningOrError;
+                    MEMORY_DELETE_ARRAY(RGWarningOrError);
                 }
                 break;
             case PROGRAM_ERROR:
@@ -1815,8 +1815,7 @@ odbc_SQLSvc_Execute2withRowsets_sme_(
                 // rePrepare2() call in SrvrConnect.cpp (returnCode could be 0).
                 if ((*returnCode == 0) && (pSrvrStmt->sqlWarningOrErrorLength > 0) && pSrvrStmt->reprepareWarn == FALSE) // To preserve warning returned at prepare time
                 {
-                    if (pSrvrStmt->sqlWarningOrError != NULL)
-                        delete pSrvrStmt->sqlWarningOrError;
+                    MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                     pSrvrStmt->sqlWarningOrErrorLength = 0;
                     pSrvrStmt->sqlWarningOrError = NULL;
                 }
@@ -1898,8 +1897,7 @@ odbc_SQLSvc_Execute2withRowsets_sme_(
 
                             if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
                             {
-                                if (pSrvrStmt->sqlWarningOrError != NULL)
-                                    delete pSrvrStmt->sqlWarningOrError;
+                                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                                 pSrvrStmt->sqlWarningOrErrorLength = 0;
                                 pSrvrStmt->sqlWarningOrError = NULL;
                             }
@@ -1925,8 +1923,7 @@ odbc_SQLSvc_Execute2withRowsets_sme_(
                             }
                             if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
                             {
-                                if (pSrvrStmt->sqlWarningOrError != NULL)
-                                    delete pSrvrStmt->sqlWarningOrError;
+                                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                                 pSrvrStmt->sqlWarningOrErrorLength = 0;
                                 pSrvrStmt->sqlWarningOrError = NULL;
                             }
@@ -1945,8 +1942,7 @@ odbc_SQLSvc_Execute2withRowsets_sme_(
                             {
                                 if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
                                 {
-                                    if (pSrvrStmt->sqlWarningOrError != NULL)
-                                        delete pSrvrStmt->sqlWarningOrError;
+                                    MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                                     pSrvrStmt->sqlWarningOrErrorLength = 0;
                                     pSrvrStmt->sqlWarningOrError = NULL;
                                 }
@@ -1979,8 +1975,7 @@ odbc_SQLSvc_Execute2withRowsets_sme_(
                         case SQL_ERROR:
                             if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
                             {
-                                if (pSrvrStmt->sqlWarningOrError != NULL)
-                                    delete pSrvrStmt->sqlWarningOrError;
+                                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                                 pSrvrStmt->sqlWarningOrErrorLength = 0;
                                 pSrvrStmt->sqlWarningOrError = NULL;
                             }
@@ -2028,8 +2023,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
 
     if (pSrvrStmt->sqlWarningOrErrorLength > 0) // To preserve warning returned at prepare time
     {
-        if (pSrvrStmt->sqlWarningOrError != NULL)
-            delete pSrvrStmt->sqlWarningOrError;
+        MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
         pSrvrStmt->sqlWarningOrErrorLength = 0;
         pSrvrStmt->sqlWarningOrError = NULL;
     }
@@ -2039,7 +2033,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
     if(pSrvrStmt->bSQLValueListSet)
         pSrvrStmt->cleanupSQLValueList();
 
-    MEMORY_ALLOC_ARRAY(tmpSqlString, char, tmpSqlStringLen);
+    MEMORY_ALLOC_ARRAY(tmpSqlString, char, tmpSqlStringLen+1);
     strcpy(tmpSqlString, pSrvrStmt->sqlStringText);
 
     // cleanup all memory allocated in the previous operations
@@ -2048,6 +2042,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
 
     MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText, char, pSrvrStmt->sqlStringLen+1);
     strcpy(pSrvrStmt->sqlStringText, tmpSqlString);
+    MEMORY_DELETE_ARRAY(tmpSqlString);
 
     pSrvrStmt->stmtType      = tmpStmtType;
     pSrvrStmt->sqlStmtType   = tmpSqlStmtType;
@@ -2126,9 +2121,9 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
             }
             else
             {
-                char *RGWarningOrError;
+                char *RGWarningOrError = NULL;
 
-                RGWarningOrError = new char[256];
+                MEMORY_ALLOC_ARRAY(RGWarningOrError, char, 256);
                 sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
                 sprintf( RGWarningOrError
                         , "The query's estimated cost: %.50s exceeded resource management attribute limit set."
@@ -2140,7 +2135,7 @@ rePrepare2( SRVR_STMT_HDL *pSrvrStmt
                         , sqlWarningOrErrorLength
                         , sqlWarningOrError
                         );
-                delete RGWarningOrError;
+                MEMORY_DELETE_ARRAY(RGWarningOrError);
             }
             break;
         case PROGRAM_ERROR:
@@ -2230,8 +2225,7 @@ odbc_SQLSvc_Execute2_sme_(
             {
                 if ((*returnCode == 0) && (pSrvrStmt->sqlWarningOrErrorLength > 0)) // To preserve warning returned at prepare time
                 {
-                    if (pSrvrStmt->sqlWarningOrError != NULL)
-                        delete pSrvrStmt->sqlWarningOrError;
+                    MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                     pSrvrStmt->sqlWarningOrErrorLength = 0;
                     pSrvrStmt->sqlWarningOrError = NULL;
                 }
@@ -2303,8 +2297,7 @@ odbc_SQLSvc_Execute2_sme_(
 
                         if (pSrvrStmt->sqlWarningOrErrorLength > 0) // overwriting warning returned at prepare time
                         {
-                            if (pSrvrStmt->sqlWarningOrError != NULL)
-                                delete pSrvrStmt->sqlWarningOrError;
+                            MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                             pSrvrStmt->sqlWarningOrErrorLength = 0;
                             pSrvrStmt->sqlWarningOrError = NULL;
                         }
@@ -2343,8 +2336,7 @@ odbc_SQLSvc_Execute2_sme_(
                     case SQL_ERROR:
                         if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
                         {
-                            if (pSrvrStmt->sqlWarningOrError != NULL)
-                                delete pSrvrStmt->sqlWarningOrError;
+                            MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
                             pSrvrStmt->sqlWarningOrErrorLength = 0;
                             pSrvrStmt->sqlWarningOrError = NULL;
                         }
@@ -2406,7 +2398,7 @@ odbc_SQLSrvr_FetchPerf_sme_(
             if (pSrvrStmt->sqlWarningOrErrorLength > 0 &&
                     pSrvrStmt->sqlWarningOrError != NULL)
             {
-                delete pSrvrStmt->sqlWarningOrError;
+                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
             }
             pSrvrStmt->sqlWarningOrErrorLength = 0;
             pSrvrStmt->sqlWarningOrError = NULL;
@@ -2426,7 +2418,7 @@ odbc_SQLSrvr_FetchPerf_sme_(
 
             if(pSrvrStmt->outputDataValue._length > 0 &&
                     pSrvrStmt->outputDataValue._buffer != NULL)
-                delete pSrvrStmt->outputDataValue._buffer;
+                MEMORY_DELETE_ARRAY(pSrvrStmt->outputDataValue._buffer);
 
             pSrvrStmt->outputDataValue._length = 0;
             pSrvrStmt->outputDataValue._buffer = NULL;
@@ -2536,8 +2528,7 @@ odbc_SQLSrvr_FetchPerf_sme_(
                 GETSQLWARNINGORERROR2(pSrvrStmt);
                 *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
                 memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
-                if (pSrvrStmt->outputDataValue._buffer != NULL)
-                    delete pSrvrStmt->outputDataValue._buffer;
+                MEMORY_DELETE_ARRAY(pSrvrStmt->outputDataValue._buffer);
                 pSrvrStmt->outputDataValue._buffer = NULL;
                 pSrvrStmt->outputDataValue._length = 0;
 
@@ -2587,8 +2578,7 @@ ret:
         if (*returnCode != SQL_SUCCESS &&
                 *returnCode != SQL_SUCCESS_WITH_INFO)
         {
-            if (pSrvrStmt->outputDataValue._buffer != NULL)
-                delete pSrvrStmt->outputDataValue._buffer;
+            MEMORY_DELETE_ARRAY(pSrvrStmt->outputDataValue._buffer);
             pSrvrStmt->outputDataValue._length = 0;
             pSrvrStmt->outputDataValue._buffer = NULL;
         }

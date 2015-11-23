@@ -4030,7 +4030,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
      * To make this work, we should overload all setXXX methods of Statement 
      * and PreparedStatement, and DataWrapper should be replaced by Row 
      * */
-	void setFetchOutputs(Row[] row, int rowsFetched, boolean endOfData) throws SQLException {
+	void setFetchOutputs(ObjectArray[] row, int rowsFetched, boolean endOfData) throws SQLException {
 		// numRows_ contain the number of rows in the ArrayList. In case of
 		// TYPE_FORWARD_ONLY,
 		// the numRows_ is reset to 0 whenever this method is called.

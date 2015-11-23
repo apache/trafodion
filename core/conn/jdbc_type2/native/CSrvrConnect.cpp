@@ -90,13 +90,22 @@ SRVR_CONNECT_HDL::~SRVR_CONNECT_HDL()
     sqlClose();
     cleanupSQLMessage();
 
+#ifdef TRACING_MEM_LEAK 
+    FILE *pStmtTraceLog = fopen("stmt_trace.log", "w+");
     for (MapOfSrvrStmt::iterator iter = mapOfSrvrStmt.begin(); iter != mapOfSrvrStmt.end(); )
     {
         MapOfSrvrStmt::iterator current = iter;
+        SRVR_STMT_HDL *tmpStmt = (SRVR_STMT_HDL*)current->second;
+        fprintf(pStmtTraceLog, "stmtId: 0x%08x not closed.\n", tmpStmt);
+        fprintf(pStmtTraceLog, "query text: %s.\n", tmpStmt->sqlStringText);
+        fprintf(pStmtTraceLog, "Or query text: %s.\n\n", tmpStmt->sqlString.dataValue._buffer);
+        fflush(pStmtTraceLog);
         iter++;
         MEMORY_DELETE(current->second);
         mapOfSrvrStmt.erase(current);
     }
+    fclose(pStmtTraceLog);
+#endif
 
     FUNCTION_RETURN_VOID((NULL));
 }

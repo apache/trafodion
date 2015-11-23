@@ -49,7 +49,16 @@ char *gJNILayerErrorMsgs[] =
     NULL
 };
 
-JNIEnv *gJEnv = NULL;
-JNICache_def gJNICache;
-
 const char *defaultEncodingOption = "DEFAULT";
+
+/* Do NOT mess up the order of the global variables below,
+ * the order affects the initialization order on process
+ * startup and destruction order when process exits, changing
+ * the order may cause running into core dump especially when
+ * memory tracing is on.
+ * */
+#ifdef TRACING_MEM_LEAK
+MemInfoMap_t gMemInfoMap;
+#endif
+JNICache_def gJNICache;
+JNIEnv *gJEnv = NULL;
