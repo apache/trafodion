@@ -573,7 +573,7 @@ class InterfaceResultSet {
         throws SQLException
 
     {
-        Row[] rowArray;
+        ObjectArray[] rowArray;
         Object[] objectArray;
         Object columnValue;
 
@@ -585,7 +585,7 @@ class InterfaceResultSet {
         int byteLen = 0;
         int maxRowLen = rs.connection_.ic_.getTransportBufferSize(); // maxRowLen
 
-        rowArray = new Row[rowsAffected];
+        rowArray = new ObjectArray[rowsAffected];
 
         // get the number of colums
         columnCount = rs.getNoOfColumns();
@@ -638,7 +638,7 @@ class InterfaceResultSet {
                 }
                 objectArray[columnIndex] = columnValue;
             }
-            rowArray[rowIndex] = new Row(columnCount, objectArray);
+            rowArray[rowIndex] = new ObjectArray(columnCount, objectArray);
         }
         rs.setFetchOutputs(rowArray, rowsAffected, endOfData);
     }
@@ -650,7 +650,6 @@ class InterfaceResultSet {
         Object[] objectArray;
         Object columnValue;
         DataWrapper[] rowArray = new DataWrapper[rowsAffected];
-        //Row[] rowArray = new Row[rowsAffected];
 
         int columnCount = rs.getNoOfColumns();
         int rowIndex;

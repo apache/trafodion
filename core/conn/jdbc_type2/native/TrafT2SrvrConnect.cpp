@@ -148,8 +148,11 @@ odbc_SQLSrvr_Prepare_ame_(
         bPrepareWithRowsets = IDL_TRUE;
     }
 
-    MEMORY_ALLOC_ARRAY(sqlWarningOrError, BYTE, MAX_ERROR_MSG_LEN);
-    memset(sqlWarningOrError, 0, sizeof(BYTE) * MAX_ERROR_MSG_LEN);
+    MEMORY_ALLOC_ARRAY(sqlWarningOrError, BYTE, 1024);
+    if(sqlWarningOrError == NULL)
+        exit(1);
+
+    memset(sqlWarningOrError, 0, sizeof(sqlWarningOrError));
 
     if(bPrepareWithRowsets)
     {
@@ -228,8 +231,12 @@ odbc_SQLSrvr_Fetch_ame_(
 
     bool firstFetch = false;
 
-    MEMORY_ALLOC_ARRAY(sqlWarningOrError, BYTE, MAX_ERROR_MSG_LEN);
-    memset(sqlWarningOrError, 0, sizeof(BYTE) * MAX_ERROR_MSG_LEN);
+    MEMORY_ALLOC_ARRAY(sqlWarningOrError, BYTE, 1024);
+    if(sqlWarningOrError == NULL)
+    {
+        // Exception should throw up to Java layer here.
+        exit(1);
+    }
 
     SRVR_STMT_HDL *pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
     if(pSrvrStmt == NULL)
@@ -453,8 +460,12 @@ odbc_SQLSrvr_Execute2_ame_(
 
     SRVR_STMT_HDL *pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
 
-    MEMORY_ALLOC_ARRAY(sqlWarningOrError, BYTE, MAX_ERROR_MSG_LEN);
-    memset(sqlWarningOrError, 0, sizeof(BYTE) * MAX_ERROR_MSG_LEN);
+    MEMORY_ALLOC_ARRAY(sqlWarningOrError, BYTE, 1024);
+    if(sqlWarningOrError == NULL)
+    {
+        // Exception should throw up to Java layer here.
+        exit(1);
+    }
 
     if(pSrvrStmt == NULL)
     {

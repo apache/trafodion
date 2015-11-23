@@ -103,17 +103,4 @@ odbc_SQLSrvr_EndTransaction_param_res_(
         , /* In    */ ERROR_DESC_LIST_def *sqlWarning
         );
 
-CEE_status
-FormatSQLDescSeq(
-        SQLItemDescList_def *ODBCDesc
-        , IDL_char *SQLDesc
-        , IDL_long SQLDescLength
-        , IDL_long sqlQueryType = SQL_UNKNOWN);
-
-void
-setWarningOrErrors(
-        ExceptionStruct *exception
-        , const BYTE *WarningOrError
-        , IDL_long returnCode);
-
 #endif

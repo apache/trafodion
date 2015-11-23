@@ -1290,7 +1290,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 
 			if (rowsAffected == 0) {
 				if (endOfData == true) {
-					rsResultSet_[result_set_offset].setFetchOutputs(new Row[0], 0, true);
+					rsResultSet_[result_set_offset].setFetchOutputs(new ObjectArray[0], 0, true);
 				}
 			} else {
 				 if(rsResultSet_[result_set_offset].keepRawBuffer_ == true)

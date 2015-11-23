@@ -357,7 +357,7 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
               MEMORY_DELETE(rowCount._buffer);
        MEMORY_ALLOC_ARRAY(rowCount._buffer,int, inputRowCnt);
        rowCount._length = 0;
-    }
+        }
     memset(rowCount._buffer,0,inputRowCnt*sizeof(int));
 
     sqlStmtType = inSqlStmtType;
@@ -402,7 +402,6 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
     case SQL_SUCCESS_WITH_INFO:
         outValueList->_buffer = outputValueList._buffer;
         outValueList->_length = outputValueList._length;
-
         //MFC update srvrGlobal if any CQD/catalog/schema is set
         if (this->sqlString.dataValue._buffer != NULL)
         {
@@ -479,7 +478,7 @@ SQLRETURN SRVR_STMT_HDL::Close(unsigned short inFreeResourceOpt)
     SQLRETURN rc;
 
     if (stmtType == INTERNAL_STMT) CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
-    //cleanupSQLMessage();
+    cleanupSQLMessage();
     freeResourceOpt = inFreeResourceOpt;
     rc = FREESTATEMENT(this);
     if (inFreeResourceOpt == SQL_DROP)
@@ -651,23 +650,13 @@ void  SRVR_STMT_HDL::cleanupSQLDescList(void)
     outputDescList._length = 0;
     outputDescVarBufferLen = 0;
 
-    if (inputDescBuffer != NULL)
-    {
-        delete inputDescBuffer;
-        inputDescBuffer = NULL;
-        inputDescBufferLength = 0;
-    }
-    if (outputDescBuffer != NULL)
-    {
-        delete outputDescBuffer;
-        outputDescBuffer = NULL;
-        outputDescBufferLength = 0;
-    }
-    if (SqlDescInfo != NULL)
-    {
-        delete SqlDescInfo;
-        SqlDescInfo = NULL;	
-    }
+    MEMORY_DELETE_ARRAY(inputDescBuffer);
+    inputDescBufferLength = 0;
+
+    MEMORY_DELETE_ARRAY(outputDescBuffer);
+    outputDescBufferLength = 0;
+
+    MEMORY_DELETE_ARRAY(SqlDescInfo);
 
     FUNCTION_RETURN_VOID((NULL));
 }
@@ -679,11 +668,7 @@ void  SRVR_STMT_HDL::cleanupAll(void)
     MEMORY_DELETE_ARRAY(sqlString.dataValue._buffer);
     sqlString.dataValue._length = 0;
     
-    if(sqlStringText != NULL)
-    {
-        delete[] sqlStringText;
-        sqlStringText = NULL;
-    }
+    MEMORY_DELETE_ARRAY(sqlStringText);
 
     cleanupSQLMessage();
     cleanupSQLDescList();
@@ -692,7 +677,6 @@ void  SRVR_STMT_HDL::cleanupAll(void)
     inputValueList._length = 0;
     inputValueVarBuffer = NULL;
     MEMORY_DELETE_ARRAY(rowCount._buffer);
-        rowCount._buffer = NULL;
     rowCount._length = 0;
     w_release();
     r_release();
@@ -700,46 +684,20 @@ void  SRVR_STMT_HDL::cleanupAll(void)
     MEMORY_DELETE_ARRAY(IRD);
     MEMORY_DELETE_ARRAY(fetchQuadField);
     MEMORY_DELETE_ARRAY(batchQuadField);
-    if (sqlPlan != NULL)
-    {
-        delete sqlPlan;
-        sqlPlan = NULL;
-        sqlPlanLen = 0;
-    }
+    
+    MEMORY_DELETE_ARRAY(sqlPlan);
+    sqlPlanLen = 0;
 
-    if (inputQuadList != NULL)
-    {
-        delete[] inputQuadList;
-        inputQuadList = NULL;
-    }
-    if (inputQuadList_recover != NULL)
-    {
-        delete[] inputQuadList_recover;
-        inputQuadList_recover = NULL;
-    }
-    if(errRowsArray != NULL)
-    {
-        delete errRowsArray;
-        errRowsArray = NULL;
-    }
-    if (sqlWarningOrError != NULL)
-    {
-        delete sqlWarningOrError;
-        sqlWarningOrError = NULL;
-    }
+    MEMORY_DELETE_ARRAY(inputQuadList);
+    MEMORY_DELETE_ARRAY(inputQuadList_recover);
+    MEMORY_DELETE_ARRAY(outputQuadList);
+   
+    MEMORY_DELETE_ARRAY(errRowsArray);
+    
+    MEMORY_DELETE_ARRAY(sqlWarningOrError);
     sqlWarningOrErrorLength = 0;
-    if (outputQuadList != NULL)
-    {
-        delete[] outputQuadList;
-        outputQuadList = NULL;
-    }
 
     exPlan = UNAVAILABLE;
-    
-    if(SpjProxySyntaxString != NULL)
-        delete[] SpjProxySyntaxString;
-    SpjProxySyntaxString = NULL;
-    SpjProxySyntaxStringLen = 0;
 
     current_holdableCursor = SQL_NONHOLDABLE;
     holdableCursor = SQL_NONHOLDABLE;
@@ -1389,9 +1347,9 @@ char* SRVR_STMT_HDL::w_allocate(size_t size)
         return m_wbuffer;
     }
 
-    if (m_wbuffer != NULL)
-        delete m_wbuffer;
-    m_wbuffer = new char[size];
+    MEMORY_DELETE_ARRAY(m_wbuffer);
+    
+    MEMORY_ALLOC_ARRAY(m_wbuffer, char, size);
     if (m_wbuffer != NULL)
         m_wbuffer_length = size;
     else
@@ -1407,9 +1365,9 @@ char* SRVR_STMT_HDL::r_allocate(size_t size)
         return m_rbuffer;
     }
 
-    if (m_rbuffer != NULL)
-        delete m_rbuffer;
-    m_rbuffer = new char[size];
+    MEMORY_DELETE_ARRAY(m_rbuffer);
+    
+    MEMORY_ALLOC_ARRAY(m_rbuffer, char, size);
     if (m_rbuffer != NULL)
         m_rbuffer_length = size;
     else
@@ -1420,33 +1378,31 @@ char* SRVR_STMT_HDL::r_allocate(size_t size)
 
 char* SRVR_STMT_HDL::w_assign(char* buffer, int length)
 {
-    if(m_wbuffer != NULL)
-        delete m_wbuffer;
+    MEMORY_DELETE_ARRAY(m_wbuffer);
+    
     m_wbuffer = buffer;
     m_wbuffer_length = length;
 }
 
 char* SRVR_STMT_HDL::r_assign(char* buffer, int length)
 {
-    if(m_rbuffer != NULL)
-        delete m_rbuffer;
+    MEMORY_DELETE_ARRAY(m_rbuffer);
+    
     m_rbuffer = buffer;
     m_rbuffer_length = length;
 }
 
 void SRVR_STMT_HDL::w_release()
 {
-    if(m_wbuffer != NULL)
-        delete m_wbuffer;
-    m_wbuffer = NULL;
+    MEMORY_DELETE_ARRAY(m_wbuffer);
+    
     m_wbuffer_length = 0;
 }
 
 void SRVR_STMT_HDL::r_release()
 {
-    if(m_rbuffer != NULL)
-        delete m_rbuffer;
-    m_rbuffer = NULL;
+    MEMORY_DELETE_ARRAY(m_rbuffer);
+    
     m_rbuffer_length = 0;
 }
 

@@ -23,6 +23,7 @@
 
 #include <platform_ndcs.h>
 #include <sqlcli.h>
+#include "Debug.h"
 #include "SQLWrapper.h"
 
 
@@ -367,8 +368,7 @@ Int32 SRVR::WSQL_EXEC_Fetch(
 
     if (num_ptr_pairs > 0)
     {
-        //		ptr_pairs = new struct SQLCLI_PTR_PAIRS[num_ptr_pairs];
-        ptr_pairs = (struct SQLCLI_PTR_PAIRS*)allocWSQLBuffer(num_ptr_pairs * sizeof(struct SQLCLI_PTR_PAIRS));
+        ptr_pairs = (struct SQLCLI_PTR_PAIRS*)allocWSQLBuffer(num_ptr_pairs * sizeof(struct SQLCLI_PTR_PAIRS)); // has this ever been freed?
         if (ptr_pairs == NULL)
             return 999;
     }
@@ -408,8 +408,7 @@ Int32 SRVR::WSQL_EXEC_FetchClose(
 
     if (num_ptr_pairs > 0)
     {
-        //		ptr_pairs = new struct SQLCLI_PTR_PAIRS[num_ptr_pairs];
-        ptr_pairs = (struct SQLCLI_PTR_PAIRS*)allocWSQLBuffer(num_ptr_pairs * sizeof(struct SQLCLI_PTR_PAIRS));
+        ptr_pairs = (struct SQLCLI_PTR_PAIRS*)allocWSQLBuffer(num_ptr_pairs * sizeof(struct SQLCLI_PTR_PAIRS)); // has this ever been freed?
         if (ptr_pairs == NULL)
             return 999;
     }
@@ -780,7 +779,8 @@ static BYTE* allocWSQLBuffer(Int32 size)
     {
         Int32 len = size + size/2;
         releaseWSQLBuffer(pWSQLBuffer, WSQLBufferLen);
-        if ((pWSQLBuffer = new BYTE[len]) != NULL)
+        MEMORY_ALLOC_ARRAY(pWSQLBuffer, BYTE, len);
+        if (pWSQLBuffer != NULL)
             WSQLBufferLen = len;
     }
     return pWSQLBuffer;
@@ -790,7 +790,7 @@ static void releaseWSQLBuffer(BYTE *&pWSQLBuffer, Int32 &WSQLBufferLen)
 {
     if (pWSQLBuffer != NULL)
     {
-        delete pWSQLBuffer;
+        MEMORY_DELETE_ARRAY(pWSQLBuffer);
         pWSQLBuffer = NULL;
         WSQLBufferLen = 0;
     }

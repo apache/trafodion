@@ -1958,7 +1958,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 				FUNCTION_RETURN_NUMERIC(FALSE,("convertBigDecimalToSQLBigNum() failed"));
 				goto func_exit;
 			}
-			pB = new BYTE[bytesLength];
+			MEMORY_ALLOC_ARRAY(pB, BYTE, bytesLength);
 			wrapperInfo->jenv->GetByteArrayRegion(bigNumAsBytes, 0, bytesLength, (jbyte *)pB);
 			if(_SQLDT_NUM_BIG_S == FSDataType)
 			{
@@ -1969,8 +1969,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 				DEBUG_OUT(DEBUG_LEVEL_DATA,("_SQLDT_NUM_BIG_U: precision(%ld)>targetLength(%ld)",precision,targetLength));
 			}
 			memcpy(targetDataPtr, pB, bytesLength);
-			delete [] pB;
-			pB = NULL;
+			MEMORY_DELETE_ARRAY(pB);
 			if(_SQLDT_NUM_BIG_U == FSDataType)
 			{
 				DEBUG_OUT(DEBUG_LEVEL_DATA,("SQLTYPECODE_NUMERIC: _SQLDT_NUM_BIG_U: targetData = '%Ld', scale = '%ld'",*(char *)targetDataPtr, scale));
@@ -3657,7 +3656,8 @@ func_exit:
 
 	jboolean getSqlStmtType(unsigned char* sql)
 	{
-		char *p = new char[strlen((const char *)sql)+1];
+		char *p = NULL;
+		MEMORY_ALLOC_ARRAY(p, char, strlen((const char *)sql)+1);
 		memset(p, '\0', strlen((const char *)sql)+1);
 		strncpy(p, (const char *)sql, strlen((const char *)sql)+1);
 		/*
@@ -3676,7 +3676,7 @@ func_exit:
 		{
 			result = JNI_FALSE;
 		}
-		delete [] p;
+		MEMORY_DELETE_ARRAY(p);
 		p = NULL;
 		return result;
 

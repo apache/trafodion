@@ -117,14 +117,6 @@
      ? TRUE : FALSE)
 
 
-extern "C" Int32 getGlobalBufferLength();
-
-extern "C" BYTE* getGlobalBuffer();
-
-extern "C" BYTE* allocGlobalBuffer(Int32 size);
-
-extern "C" void releaseGlobalBuffer();
-
 extern SQLRETURN GETSQLWARNINGORERROR2(SRVR_STMT_HDL* pSrvrStmt);
 
 extern SQLRETURN GETSQLWARNINGORERROR2forRowsets(SRVR_STMT_HDL* pSrvrStmt);
