@@ -1,0 +1,16 @@
+sqstop
+if [ -f $MY_SQROOT/sql/scripts/swhbase ]
+then swhbase <<EOF
+disable_all 'TRAFODION._DTM_.*'
+y
+drop_all 'TRAFODION._DTM_.*'
+y
+EOF
+else hbase shell <<EOF
+disable_all 'TRAFODION._DTM_.*'
+y
+drop_all 'TRAFODION._DTM_.*'
+y
+EOF
+fi
+
