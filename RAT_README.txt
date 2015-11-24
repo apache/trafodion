@@ -123,6 +123,13 @@ copyrights which are covered by MIT
  $MY_SQROOT/../sql/qmscommon/expat/* 
 
 
+The following files are open source from The Regents of the University of 
+California which are covered by BDS license
+
+core/sql/common/swscanf.cpp
+core/sql/common/swsprintf.cpp
+core/sql/parser/ulexer.h
+
 -------------------------------------------------------------------
 
 The following files in dcs directory have their own BSD license 
