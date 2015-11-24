@@ -3245,9 +3245,7 @@ Lng32 HSGlobalsClass::Initialize()
             if (sampleTblPercent > 100) sampleTblPercent=100;
             if (sampleTblPercent < 0)   sampleTblPercent=0;
             samplePercentX100 = (short) (sampleTblPercent * 100); 
-               // saved for automation: percent * 100.  Note that if DP2 sampling
-               // is enabled, this value may actually be adjusted, however, we 
-               // want to save the unadjusted value.
+               // saved for automation: percent * 100.  
           }
       }
     else
@@ -3594,96 +3592,6 @@ Lng32 createSampleOption(Lng32 sampleType, double samplePercent, NAString &sampl
 }
 
 
-/**********************************************/
-/* FUNCTION: enableDp2SamplingIfSuitable()    */
-/* PURPOSE: helper method that will           */
-/*          (a) determine if sampling % is    */
-/*              appropriate for Dp2 sampling  */
-/*          (b) check if minimal rowcount     */
-/*              per partition is > 10         */
-/*          (c) if not, return FALSE          */
-/*          (d) if YES, check for varchars    */ 
-/*              and adjust sampling % or do   */
-/*              not use DP2 sampling.         */
-/*          (e) if using DP2 sampling, set    */
-/*              CQD ALLOW_DP2_ROW_SAMPLING.   */
-/*          (f) return TRUE or FALSE.         */
-/* INPUT:  objDef - pointer to source table   */ 
-/*           object.                          */
-/* OUTPUT: samplePercent (may be adjusted)    */
-/*         sampleRowCnt  (may be adjusted)    */
-/* RETCODE: NABoolean - TRUE if DP2 sampling  */
-/*                      enabled.              */
-/**********************************************/
-NABoolean enableDp2SamplingIfSuitable(HSTableDef *objDef, 
-                                      double &samplePercent, Int64 &sampleRowCnt,
-                                      Int64 minRowCtPerPartition)
-{
-  HSLogMan *LM = HSLogMan::Instance();
-  NABoolean dp2SamplingUsed = FALSE;
-
-  // (a) Experiments have shown that if sampling % > 5, DP2 sampling does not 
-  // provide much benefit.  So the default setting for ALLOW_DP2_ROW_SAMPLING 
-  // (system) will not allow DP2 sampling above 5%.  Setting allow_dp2_sampling 
-  // to ON allows the user to force dp2Sampling.
-  const double MAX_SAMPLE_FRACTION_IN_DP2_SYSTEM = 5;
-  if ((samplePercent < MAX_SAMPLE_FRACTION_IN_DP2_SYSTEM &&
-       CmpCommon::getDefault(ALLOW_DP2_ROW_SAMPLING) == DF_SYSTEM) ||
-       CmpCommon::getDefault(ALLOW_DP2_ROW_SAMPLING) == DF_ON)
-  {
-    Lng32 varcharLength = objDef->getTotalVarcharLength();
-
-    // Unconditionally test the feasibility of performing DP2 sampling.
-    // DP2 sampling is not recommended when #rows per partition
-    // is less than 10.
-    {
-
-      // Do not use DP2 sampling if the minimal rowcount per partition is equal to
-      // or less than 10
-      if (minRowCtPerPartition > 10) 
-      {
-        dp2SamplingUsed = TRUE;
-
-        // DP2 sampling tends to retrieve a smaller sample than expected if
-        // the table contains varchars.  Increase the sampling ratio by
-        // assuming that all varchars are half full.
-        // this is the average number of rows in a block
-        if ( varcharLength > 0 ) {
-
-           Lng32 recLen = objDef->getRecordLength();             
-           Lng32 blockSize = objDef->getBlockSize();
-
-           Lng32 dp2_calc_num_rows_per_block =  blockSize/recLen ;
-           float expected_avg_num_rows_per_block =  ((float) blockSize)/(recLen - (varcharLength/2));
-           float adjustment_factor = 
-             (expected_avg_num_rows_per_block - dp2_calc_num_rows_per_block)/expected_avg_num_rows_per_block ;
-           double oldsamplePercent = samplePercent;
-           samplePercent = samplePercent*(1+adjustment_factor);
-           if (samplePercent > 100) samplePercent = 100;
-           sampleRowCnt  = (Int64)((double)sampleRowCnt *(samplePercent/oldsamplePercent));
-   
-           if (LM->LogNeeded())
-           {
-             sprintf(LM->msg, "%s %f %s %f", 
-                              "\t\tSAMPLING %% INCREASED.\n\t\tOLD SAMPLING %% =",
-                              oldsamplePercent, 
-                              "\n\t\tNEW SAMPLING %%  = %f \n", 
-                              samplePercent); 
-             LM->Log(LM->msg);
-           }
-        }
-      }
-    }
-    if (dp2SamplingUsed == TRUE) 
-    {
-      LM->Log("\t\tDP2 ROW SAMPLING ENABLED.\n");
-      HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING 'ON'");   // step (c)
-    }
-  }
-  return dp2SamplingUsed;   // step (d)
-}
-
-
 /***********************************************/
 /* METHOD:  HSSample makeTableName() member    */
 /* PURPOSE: Creates a unique sample table name */
@@ -3786,7 +3694,6 @@ void HSSample::makeTableName(NABoolean isPersSample)
 /*              rowCountIsEstimate = TRUE.     */
 /* INPUT:   sampleRowCnt - the size of the     */
 /*              sample table to create.        */
-/*              Adjusted if DP2 sampling used. */
 /* RETCODE:  0 - successful                    */
 /*           non-zero otherwise                */
 /***********************************************/
@@ -3803,7 +3710,6 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     Lng32 retcode = 0;
     NAString dml, insertType, sampleOption;
     char intStr[30];
-    NABoolean dp2SamplingUsed = FALSE;
     NABoolean forceNoPartitioning = TRUE;
 
     HSTranMan *TM = HSTranMan::Instance();
@@ -3812,11 +3718,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
 
     LM->StartTimer("Create/populate sample table");
     (void)getTimeDiff(TRUE);
-
-
-    // Enable DP2 sampling when suitable - may adjust 'samplePercent' & 'sampleRowCnt'.
-    dp2SamplingUsed = enableDp2SamplingIfSuitable(objDef, samplePercent, sampleRowCnt, 
-                                                  minRowCtPerPartition);     
+     
     sampleRowCount = sampleRowCnt;  // Save sample row count for HSSample object.
 
     // Create sample option based on sampling type, using 'samplePercent'.
@@ -3857,7 +3759,8 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // need to use a vanilla INSERT statement. Otherwise, we can use SIDETREE
     // INSERTS for better performance. A current bug in the HBase interface
     // requires the use of Upsert.
-    if (hs_globals->isHbaseTable)
+    // For Hive tables the sample table used is a Trafodion table
+    if (hs_globals->isHbaseTable || hs_globals->isHiveTable)
       {
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
@@ -3994,8 +3897,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     //plan issues, the cqd should be removed.                              //Workaround: 10-040706-7608
     if (!(TM->InTransaction()))                                            //Workaround: 10-040706-7608
       HSFuncExecQuery("CONTROL QUERY DEFAULT PLAN_STEALING RESET");        //Workaround: 10-040706-7608
-    if (dp2SamplingUsed)
-      HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
+    
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS RESET");
     HSFuncExecQuery("CONTROL QUERY DEFAULT POS_NUM_OF_PARTNS RESET");
     
@@ -4029,15 +3931,13 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       //    (b) user has not specified the rowcount and
       //    (c) we appear to get a meaningful rowcount for the source table 
       //        (source table rowcount >= rows inserted into sample table) and
-      //    (d) dp2 sampling has not been used
-      //    (e) CLUSTER sampling not used
+      //    (d) CLUSTER sampling not used
       // we set the actualRowCount to the value obtained from the statistics table
       // This works since every row of the source table is scanned for EID sampling
       // and the number of rows scanned is recorded in the stats area.
       if (rowCountIsEstimate &&
           !(hs_globals->optFlags & ROWCOUNT_OPT) &&
           (sourceTableRowCount > sampleRowCount) &&
-          !(dp2SamplingUsed) &&
           (hs_globals->optFlags & SAMPLE_REQUESTED) != SAMPLE_RAND_2) 
         {
           tableRowCnt = sourceTableRowCount;
@@ -4923,7 +4823,6 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
 // sample table. The maximum number of rows we will actually read must be based
 // on the amount of memory allocated to hold their values.
 //
-// Note: row count may be adjusted up if DP2 sampling and heavy amount of varchars.
 Int64 HSGlobalsClass::getInternalSortMemoryRequirements(NABoolean performISForMC)
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -4941,17 +4840,6 @@ Int64 HSGlobalsClass::getInternalSortMemoryRequirements(NABoolean performISForMC
      // now get memory requirements for multi-column groups
      getMCMemoryRequirements(multiGroup, rows);
   }
-
-  // Double rows to read if we are sampling with DP2 and more than half the 
-  // row data may be varchars.  DP2 row sampling can be thrown off in this
-  // case, resulting in many more rows read than expected, so we need to have
-  // memory to store these rows.   -- Disabled for now. --
-#if 0
-  if (sampleRowCount > 0 &&
-      sampleRowCount*100/actualRowCount < 5 && // DP2 sampling may be enabled.
-      (float) cumuVarCharSize/(float) cumuElementSize > 0.5) 
-    rows *= 2;  
-#endif
 
   return rows;
 }
@@ -5396,7 +5284,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         mapInternalSortTypes(singleGroup);
         Int64 maxRowsToRead = getInternalSortMemoryRequirements(TRUE); 
-          // row count may be adjusted up if DP2 sampling and heavy amount of varchars.
 
         if (trySampleTableBypassForIS && multiGroup ) {
 
@@ -5496,8 +5383,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
               if (LM->LogNeeded())
                 LM->Log("Internal sort: reading sample directly from base table; no sample table created");
               *hssample_table = getTableName(user_table->data(), nameSpace);
-              enableDp2SamplingIfSuitable(objDef, sampleTblPercent, sampleRowCount,
-                                          minRowCtPerPartition_); 
                 // sampleTblPercent and sampleRowCount may get adjusted.
               retcode = createSampleOption(optFlags & SAMPLE_REQUESTED, 
                                            sampleTblPercent, *sampleOption, 
@@ -5576,7 +5461,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         HSFuncExecQuery("CONTROL QUERY DEFAULT FLOATTYPE RESET");
         HSFuncExecQuery("CONTROL QUERY DEFAULT LIMIT_MAX_NUMERIC_PRECISION RESET");
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DP2_ROW_SAMPLING RESET");
       }
 
                                           /*=================================*/
