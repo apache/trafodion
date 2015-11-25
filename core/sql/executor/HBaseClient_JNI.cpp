@@ -449,6 +449,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_LIST_ALL       ].jm_name      = "listAll";
     JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/ByteArrayList;";
+    JavaMethods_[JM_GET_REGION_STATS       ].jm_name      = "getRegionStats";
+    JavaMethods_[JM_GET_REGION_STATS       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/ByteArrayList;";
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
@@ -1460,6 +1462,62 @@ ByteArrayList* HBaseClient_JNI::listAll(const char* pattern)
   
   jenv_->PopLocalFrame(NULL);
   return hbaseTables;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+ByteArrayList* HBaseClient_JNI::getRegionStats(const char* tblName)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStats(%s) called.", tblName);
+
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+       return NULL;
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return NULL;
+  }
+  jstring js_tblName = jenv_->NewStringUTF(tblName);
+  if (js_tblName == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DROP_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS].jm_full_name;
+  jobject jByteArrayList = 
+    jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGION_STATS].methodID, js_tblName);
+
+  jenv_->DeleteLocalRef(js_tblName);  
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(jenv_);
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionStats()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  if (jByteArrayList == NULL) {
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  ByteArrayList* regionInfo = new (heap_) ByteArrayList(heap_, jByteArrayList);
+  jenv_->DeleteLocalRef(jByteArrayList);
+  if (regionInfo->init() != BAL_OK)
+    {
+      NADELETE(regionInfo, ByteArrayList, heap_);
+      jenv_->PopLocalFrame(NULL);
+      return NULL;
+    }
+  
+  jenv_->PopLocalFrame(NULL);
+  return regionInfo;
 }
 
 //////////////////////////////////////////////////////////////////////////////

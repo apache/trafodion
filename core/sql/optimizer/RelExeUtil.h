@@ -87,6 +87,10 @@ public:
       stmtText_ = NULL;
   };
 
+  GenericUtilExpr(OperatorTypeEnum otype) 
+       : RelExpr(otype, NULL, NULL, NULL)
+  {};
+
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   // method to do code generation
@@ -491,6 +495,7 @@ public:
     GET_METADATA_INFO_        = 12,
     GET_VERSION_INFO_         = 13,
     SUSPEND_ACTIVATE_         = 14,
+    REGION_STATS_         = 15,
     SHOWSET_DEFAULTS_         = 18,
     AQR_                      = 19,
     DISPLAY_EXPLAIN_COMPLEX_  = 20,
@@ -526,6 +531,9 @@ public:
          stoi_(NULL)
   {
   };
+
+  ExeUtilExpr()
+       : GenericUtilExpr(REL_EXE_UTIL) {};
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
@@ -1654,6 +1662,58 @@ private:
   Lng32 type_;
 
   AQRTask task_;
+};
+
+class ExeUtilRegionStats : public ExeUtilExpr 
+{
+public:
+  
+  ExeUtilRegionStats(const CorrName &objectName,
+                     NABoolean summaryOnly,
+                     NABoolean isIndex,
+                     NABoolean forDisplay,
+                     RelExpr * child = NULL,
+                     CollHeap *oHeap = CmpCommon::statementHeap());
+  
+  ExeUtilRegionStats():
+       summaryOnly_(FALSE),
+       isIndex_(FALSE),
+       displayFormat_(FALSE)
+  {}
+ 
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // a method used for recomputing the outer references (external dataflow
+  // input values) that are needed by this operator.
+  virtual void recomputeOuterReferences();
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  virtual const char 	*getVirtualTableName();
+  static const char * getVirtualTableNameStr() 
+  { return "EXE_UTIL_REGION_STATS__";}
+  virtual desc_struct 	*createVirtualTableDesc();
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
+
+ virtual NABoolean aqrSupported() { return TRUE; }
+
+private:
+  ItemExpr * inputColList_;
+
+  NABoolean summaryOnly_;
+
+  NABoolean isIndex_;
+
+  NABoolean displayFormat_;
+
+  NABoolean errorInParams_;
 };
 
 class ExeUtilLongRunning : public ExeUtilExpr 

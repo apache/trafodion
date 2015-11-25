@@ -729,8 +729,6 @@ public class HBaseClient {
 	    for (HTableDescriptor htd : htdl) {
 		String tblName = htd.getNameAsString();
 
-                //                System.out.println(tblName);
-
                 byte[] b = tblName.getBytes();
                 hbaseTables.add(b);
 	    }
@@ -739,6 +737,61 @@ public class HBaseClient {
             cleanup();
             
             return hbaseTables;
+    }
+
+
+    public ByteArrayList getRegionStats(String tableName) 
+             throws MasterNotRunningException, IOException {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.getRegionStats(" + tableName + ") called.");
+
+            HBaseAdmin admin = new HBaseAdmin(config);
+            HTable htbl = new HTable(config, tableName);
+            ByteArrayList regionInfo = new ByteArrayList();
+            HRegionInfo hregInfo = null;
+
+            try {
+                TrafRegionStats rsc = new TrafRegionStats(htbl, admin);
+                
+                NavigableMap<HRegionInfo, ServerName> locations
+                    = htbl.getRegionLocations();
+ 
+                for (Map.Entry<HRegionInfo, ServerName> entry: 
+                         locations.entrySet()) {
+                
+                    hregInfo = entry.getKey();                    
+                    byte[] regionName = hregInfo.getRegionName();
+                    String encodedRegionName = hregInfo.getEncodedName();
+                    String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
+                    SizeInfo regionSizeInfo = rsc.getRegionSizeInfo(regionName);
+                    int  numStores           = regionSizeInfo.numStores;
+                    int  numStoreFiles       = regionSizeInfo.numStoreFiles;
+                    Long storeUncompSize     = regionSizeInfo.storeUncompSize;
+                    Long storeFileSize       = regionSizeInfo.storeFileSize;
+                    Long memStoreSize        = regionSizeInfo.memStoreSize;
+                    Long readRequestsCount   = regionSizeInfo.readRequestsCount;
+                    Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+
+                    String oneRegion;
+                    //                    oneRegion  = "/hbase/data/hbase/default/" + tableName + "/" + ppRegionName + "|";
+                    oneRegion  = tableName + "/" + ppRegionName + "|";
+                    oneRegion += String.valueOf(numStores) + "|";
+                    oneRegion += String.valueOf(numStoreFiles) + "|";
+                    oneRegion += String.valueOf(storeUncompSize) + "|";
+                    oneRegion += String.valueOf(storeFileSize) + "|";
+                    oneRegion += String.valueOf(memStoreSize) + "|";
+                    oneRegion += String.valueOf(readRequestsCount) + "|";
+                    oneRegion += String.valueOf(writeRequestsCount) + "|";
+                    
+                    regionInfo.add(oneRegion.getBytes());
+
+                }
+
+            }
+            finally {
+                admin.close();
+            }
+
+            return regionInfo;
     }
 
     public boolean copy(String currTblName, String oldTblName)
