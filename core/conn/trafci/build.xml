@@ -148,8 +148,8 @@
 
        <replace file="${utils.dir}/trafci.cmd" token="@prodver@" value="${my_env.TRAFODION_VER_PROD}"/>
        <replace file="${utils.dir}/trafci.cmd" token="@copyrighthdr@" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
-       <replace file="${utils.dir}/trafci.cmd" token="##prodver##" value="${my_env.TRAFODION_VER_PROD}"/>
-       <replace file="${utils.dir}/trafci.cmd" token="##copyrighthdr##" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
+       <replace file="${utils.dir}/trafci.sh" token="##prodver##" value="${my_env.TRAFODION_VER_PROD}"/>
+       <replace file="${utils.dir}/trafci.sh" token="##copyrighthdr##" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
 
       <copy todir="${deploy.dir}/bin">
            <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, trafci.cmd-tmpl"/>
