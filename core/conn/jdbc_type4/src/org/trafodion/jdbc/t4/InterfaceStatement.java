@@ -1368,10 +1368,11 @@ class InterfaceStatement {
 			Arrays.fill(stmt.batchRowCount_, -3); // fill with failed
 			HPT4Messages.throwSQLException(stmt_.connection_.props_, er.errorList);
 		}
-	    //3164
-	    if (batchException) {
-	    	HPT4Messages.throwSQLException(stmt_.connection_.props_, er.errorList);
-	    }
+		// 3164
+		// if (batchException) {
+		// HPT4Messages.throwSQLException(stmt_.connection_.props_,
+		// er.errorList);
+		// }
 	}
 
 	protected void setTransactionStatus(TrafT4Connection conn, String sql) {
