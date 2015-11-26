@@ -141,7 +141,7 @@ export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_JAR=hbase-trx-cdh5_3-${TRAFODION_VER}.jar
+export HBASE_TRX_JAR=hbase-trx-hbase_98_4-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
     export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
