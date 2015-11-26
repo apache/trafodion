@@ -127,7 +127,7 @@ public class TrxTransactionState  extends TransactionState{
 	    }
 	    catch (NoSuchMethodException exc_nsm2) {
 		sb_sqm_98_4 = false;
-                LOG.info("Got info of Class ScanQueryMatcher for HBase version" + VersionInfo.getVersion());
+		LOG.info("Got info of Class ScanQueryMatcher for HBase version" + VersionInfo.getVersion());
 	    }
 	}
 	if (sb_sqm_98_1) {
