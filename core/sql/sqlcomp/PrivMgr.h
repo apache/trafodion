@@ -83,6 +83,9 @@ class PrivMgr
       {return std::to_string(static_cast<long long int>(value));}
     static inline std::string UIDToString(const int64_t value)  
       {return std::to_string(static_cast<long long int>(value));}
+    static bool getAuthNameFromAuthID(
+      const int32_t authID,
+      std::string &authName);
     
     static const char * getSQLOperationName(SQLOperation operation);
     static const char * getSQLOperationCode(SQLOperation operation);

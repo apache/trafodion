@@ -501,8 +501,8 @@ public:
       const int64_t objectUID,
       const std::string &objectName,
       const ComObjectType objectType,
+      const int32_t grantorUID,
       const int32_t granteeUID,
-      const std::string &granteeName,
       const PrivMgrBitmap &objectPrivs,
       const PrivMgrBitmap &grantablePrivs);
 

@@ -1239,6 +1239,9 @@ public class HBaseClient {
         for (int i =0; i < regArr.length; i++) 
           logger.debug("Region Path is " + regArr[i].getPath());
       }
+
+      if (regArr.length == 0)
+         return true;
       // get random region from the region array
       int regInd = 0;
       regInd = tblName.hashCode() % regArr.length;

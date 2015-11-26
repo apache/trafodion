@@ -1720,8 +1720,8 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
                           createDandI,
                           minRowCtPerPartition
                          );
-      // sampleName output, actualRows & sampleRows will get modified if necessary
-      //  (based on isEstimate and the use of DP2 sampling respectively).
+      // sampleName output & actualRows will get modified if necessary
+      //  (based on isEstimate).
     if (!retcode)
     {
 

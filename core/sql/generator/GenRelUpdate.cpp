@@ -490,7 +490,7 @@ static short genHbaseUpdOrInsertExpr(
 		"unexpected type of base table column");
       
       const NAColumn *nac = bc->getNAColumn();
-      if (HbaseAccess::isEncodingNeededForSerialization(bc))
+      if ((NOT isAligned) && HbaseAccess::isEncodingNeededForSerialization(bc))
 	{
 	  ie = new(generator->wHeap()) CompEncode
 	    (ie, FALSE, -1, CollationInfo::Sort, TRUE);
@@ -2268,6 +2268,8 @@ short HbaseInsert::codeGen(Generator *generator)
 
   ValueIdList returnRowVIDList;
   NABoolean upsertColsWereSkipped = FALSE;
+  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
     {
       const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
@@ -2299,7 +2301,7 @@ short HbaseInsert::codeGen(Generator *generator)
       ItemExpr * ie = new(generator->wHeap())
 	Cast(child1Expr, &givenType);
 
-      if (HbaseAccess::isEncodingNeededForSerialization
+      if ((NOT isAlignedFormat) && HbaseAccess::isEncodingNeededForSerialization
 	  (assignExpr->child(0)->castToItemExpr()))
 	{
 	  ie = new(generator->wHeap()) CompEncode
@@ -2320,7 +2322,6 @@ short HbaseInsert::codeGen(Generator *generator)
   ULng32 insertRowLen    = 0;
   ExpTupleDesc * tupleDesc   = 0;
   ExpTupleDesc::TupleDataFormat tupleFormat;
-  NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
   if (isAlignedFormat)
     tupleFormat = ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
@@ -2530,7 +2531,7 @@ short HbaseInsert::codeGen(Generator *generator)
 	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
 
       if (getTableDesc()->getNATable()->hasSerializedEncodedColumn())
-	constrTree = generator->addCompDecodeForDerialization(constrTree);
+	constrTree = generator->addCompDecodeForDerialization(constrTree, isAlignedFormat);
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &insConstraintExpr);

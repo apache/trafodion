@@ -47,6 +47,7 @@
 #include "CmpContext.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "logmxevent_traf.h"
+#include "ComUser.h"
 
 
 // ==========================================================================
@@ -241,6 +242,62 @@ int32_t diagsMark = pDiags_->mark();
   return PRIV_PARTIALLY_INITIALIZED;
 }
 
+
+// ----------------------------------------------------------------------------
+// static method: getAuthNameFromAuthID
+//
+// Converts the authorization ID into its corresponding database name
+//
+//   authID - ID to convert
+//   authName - returned name
+//
+// returns:
+//   true - conversion successful
+//   false - conversion failed, ComDiags setup with error information
+// ----------------------------------------------------------------------------
+bool PrivMgr::getAuthNameFromAuthID(
+ const int32_t authID, 
+ std::string &authName)
+{
+  switch (authID)
+  {
+    case SYSTEM_AUTH_ID:
+      authName = SYSTEM_AUTH_NAME;
+      break;  
+    case PUBLIC_AUTH_ID:
+      authName = PUBLIC_AUTH_NAME;
+      break;  
+    case SUPER_USER:
+      authName = DB__ROOT;
+      break;
+    case DB_ROOTROLE_ID:
+      authName = DB_ROOTROLE_NAME;
+      break;
+    case HIVE_ROLE_ID:
+      authName = DB__HIVEROLE;
+      break;
+    case HBASE_ROLE_ID:
+      authName = DB__HBASEROLE;
+      break;
+    default:
+    {
+      int32_t length = 0;
+      char authNameFromMD[MAX_DBUSERNAME_LEN + 1];
+
+      Int16 retcode = ComUser::getAuthNameFromAuthID(authID,authNameFromMD,
+                                               MAX_DBUSERNAME_LEN,length);
+      if (retcode != 0)
+      {
+        *CmpCommon::diags() << DgSqlCode(-20235)
+                            << DgInt0(retcode)
+                            << DgInt1(authID);
+        return false;
+      }
+      authName = authNameFromMD;
+    }
+  }
+  return true;
+}
 
 // *****************************************************************************
 // *                                                                           *

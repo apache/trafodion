@@ -2892,7 +2892,8 @@ short ExpGenerator::generateKeyEncodeExpr(const IndexDesc * indexDesc,
       if (handleSerialization)
 	{
 	  NAColumn * nac = indexDesc->getNAFileSet()->getIndexKeyColumns()[i];
-	  if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
+          NABoolean isAlignedRowFormat = indexDesc->getNAFileSet()->isSqlmxAlignedRowFormat();
+	  if ((!isAlignedRowFormat) && CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
 	    {
 	      if (desc_flag)
 		{
