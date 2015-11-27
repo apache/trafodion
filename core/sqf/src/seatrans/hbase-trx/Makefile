@@ -60,7 +60,7 @@ jdk_1_7_apache:
 	cp -pf target/$(BLD_HBASE_APACHE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-build_all: jdk_1_7_apache jdk_1_7_cdh jdk_1_7_hdp
+build_all: jdk_1_7_apache jdk_1_7_cdh jdk_1_7_hdp 
 #build_all: jdk_1_7_apache jdk_1_7_cdh
 
 build_chk_apache:
