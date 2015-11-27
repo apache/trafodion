@@ -107,6 +107,7 @@ public class TrxTransactionState  extends TransactionState{
                 c98_1 = ScanQueryMatcher.class.getConstructor(new Class[] { Scan.class, ScanInfo.class,
                         java.util.NavigableSet.class, ScanType.class, long.class, long.class, long.class });
             } catch (Exception e) {
+                LOG.error("reflect 0.98.1 ScanQueryMatcher constructor exception : " + e.getMessage());
                 e.printStackTrace();
             }
         } else if (version.contains("0.98.4-")) {
@@ -116,6 +117,7 @@ public class TrxTransactionState  extends TransactionState{
                 c98_4 = ScanQueryMatcher.class.getConstructor(new Class[] { Scan.class, ScanInfo.class, 
                         java.util.NavigableSet.class, ScanType.class, long.class, long.class, long.class, RegionCoprocessorHost.class });
             } catch (Exception e) {
+                LOG.error("get 0.98.4 ScanQueryMatcher constructor exception : " + e.getMessage());
                 e.printStackTrace();
             }
         } else if (version.contains("0.98.9-")) {
@@ -125,6 +127,7 @@ public class TrxTransactionState  extends TransactionState{
                 c98_9 = ScanQueryMatcher.class.getConstructor(new Class[] { Scan.class, ScanInfo.class, 
                         java.util.NavigableSet.class, ScanType.class, long.class, long.class, long.class, long.class, RegionCoprocessorHost.class });
             } catch (Exception e) {
+                LOG.error("get 0.98.9 ScanQueryMatcher constructor exception : " + e.getMessage());
                 e.printStackTrace();
             }
         } else {
