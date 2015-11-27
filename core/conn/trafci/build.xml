@@ -145,6 +145,11 @@
            tofile="${utils.dir}/trafci.cmd"
            overwrite="true">
        </copy>
+       <copy file="${utils.dir}/trafci.sh-tmpl"
+           tofile="${utils.dir}/trafci.sh"
+           overwrite="true">
+       </copy>
+    	
 
        <replace file="${utils.dir}/trafci.cmd" token="@prodver@" value="${my_env.TRAFODION_VER_PROD}"/>
        <replace file="${utils.dir}/trafci.cmd" token="@copyrighthdr@" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
