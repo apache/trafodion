@@ -19,7 +19,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 
--- Tests for hbase timestamp and hbase version functionality
+-- Tests to retrieve region space and access stats
 
 obey TEST002(clean_up);
 
@@ -59,10 +59,33 @@ set schema t002sch;
 invoke table(region stats ());
 invoke table(region stats (t002t1));
 
-select * from table(region stats(t002t1));
-select * from table(region stats(index t002t1i1));
-select * from table(region stats(t002t2));
-select * from table(region stats(index t002t2i1));
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(t002t1));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(index t002t1i1));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(t002t2));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(index t002t2i1));
 
 select left(trim(schema_name) || '.' || trim(object_name), 14),
  sum(store_file_size), sum(read_requests_count), sum(write_requests_count) 
@@ -80,7 +103,11 @@ get region stats for
       (get tables in schema t002sch, no header, return full names)x(a));
 
 -- stats for all indexes on a table
-select *
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
  from table(region stats (using (select * from (
    get indexes on table t002t1, no header, return full names) x(a) )));
 get region stats for 
