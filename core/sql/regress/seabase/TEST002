@@ -88,7 +88,9 @@ select left(trim(schema_name) || '.' || trim(object_name), 14),
  from table(region stats(index t002t2i1));
 
 select left(trim(schema_name) || '.' || trim(object_name), 14),
- sum(store_file_size), sum(read_requests_count), sum(write_requests_count) 
+ sum(store_file_size), 
+ 'ReadRequestsCount: '  || cast(sum(read_requests_count) as varchar(10)),
+ 'WriteRequestsCount: ' || cast(sum(write_requests_count) as varchar(10))
  from table(region stats (using (select * from (
    get tables in schema t002sch, no header, return full names) x(a) ))) 
  group by 1 order by 2 desc;
