@@ -317,7 +317,14 @@ void MdamTrace::setLevel(enum MdamTraceLevel l)
 #endif // if MDAM_TRACE
 // LCOV_EXCL_STOP
 
-static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsByCol,const CollIndex&  lastColumnPosition, CollIndex&  noOfmissingKeyColumns, CollIndex&  presentKeyColumns)
+enum restrictCheckStrategy { MAJORITY_WITH_PREDICATES=1, TOTAL_UECS=2, BOTH=3 };
+
+static NABoolean checkMDAMadditionalRestriction(
+    const ColumnOrderList& keyPredsByCol,
+    const CollIndex& lastColumnPosition, 
+    const Histograms& hist,
+    restrictCheckStrategy strategy,
+    CollIndex&  noOfmissingKeyColumns, CollIndex&  presentKeyColumns)
 {
    KeyColumns::KeyColumn::KeyColumnType typeOfRange = KeyColumns::KeyColumn::EMPTY;
    CollIndex index = 0;
@@ -331,8 +338,21 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
    if ( mtd_mdam_uec_threshold < 0 )
      checkLeadingDivColumns = FALSE;
 
+   CostScalar totalRC = hist.getRowCount().getCeiling();
+
+   float totalUEC_threshold = 1;
+
+   Lng32 minRC = (ActiveSchemaDB()->getDefaults()).getAsLong(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD);
+
+   if ( totalRC > minRC )
+     (ActiveSchemaDB()->getDefaults()).getFloat(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD, totalUEC_threshold);
+
+   totalUEC_threshold *= totalRC.getValue();
+
    NABoolean isLeadingDivisionColumn = FALSE;
    NABoolean isLeadingSaltColumn = FALSE;
+
+   CostScalar totalUecsForKeylessKeyColumns = 1;
 
    for (index = 0; index < lastColumnPosition; index++)
    {
@@ -367,6 +387,11 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
            )
            noOfmissingKeyColumns++;
 
+        // accumulate the product of uecs for columns without predicates
+                   
+        totalUecsForKeylessKeyColumns *= hist.getColStatsForColumn(
+                   keyPredsByCol.getKeyColumnId(index)).getTotalUec().getCeiling();
+
      } else {
 
         checkLeadingDivColumns = FALSE;
@@ -374,8 +399,21 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
 
      }
    }     
-   if(presentKeyColumns > noOfmissingKeyColumns) return TRUE;
-   return FALSE;
+   switch ( strategy ) {
+     case MAJORITY_WITH_PREDICATES:
+        return (presentKeyColumns > noOfmissingKeyColumns);
+
+     case TOTAL_UECS:
+        return ( totalUecsForKeylessKeyColumns < totalUEC_threshold );
+
+     case BOTH:
+        return ( presentKeyColumns > noOfmissingKeyColumns &&
+                 totalUecsForKeylessKeyColumns < totalUEC_threshold );
+
+     default:
+       return FALSE;
+  }
+  return FALSE;
 }
 
 // stack allocated only
@@ -8710,12 +8748,25 @@ void MDAMCostWA::computeDisjunct()
 
   CollIndex noOfmissingKeyColumnsTot = 0;
   CollIndex presentKeyColumnsTot = 0;
+
+
+  const IndexDesc *idesc = optimizer_.getFileScan().getIndexDesc();
+  const ColStatDescList& csdl = idesc->getPrimaryTableDesc()->getTableColStats();
+  Histograms hist(csdl);
+	 
+  Lng32 checkOption = (ActiveSchemaDB()->getDefaults()).getAsLong(MDAM_APPLY_RESTRICTION_CHECK);
+
   if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() != OptDefaults::MINIMUM
      && (!mdamForced_)
 	 && (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
-	 && (CmpCommon::getDefault(MDAM_APPLY_RESTRICTION_CHECK) == DF_ON )
-	 &&
-   (!checkMDAMadditionalRestriction(keyPredsByCol,optimizer_.computeLastKeyColumnOfDisjunct(keyPredsByCol),noOfmissingKeyColumnsTot,presentKeyColumnsTot))
+	 && checkOption >= 1 
+	 && (!checkMDAMadditionalRestriction(
+                                    keyPredsByCol,
+                                    optimizer_.computeLastKeyColumnOfDisjunct(keyPredsByCol),
+                                    hist,
+                                    (restrictCheckStrategy)checkOption,
+                                    noOfmissingKeyColumnsTot,
+                                    presentKeyColumnsTot))
    )
   {
         
