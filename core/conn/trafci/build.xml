@@ -157,7 +157,7 @@
        <replace file="${utils.dir}/trafci.sh" token="##copyrighthdr##" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
 
       <copy todir="${deploy.dir}/bin">
-           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, trafci.cmd-tmpl"/>
+           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, *-tmpl"/>
       </copy>
 
       <copy todir="${deploy.dir}/lib">
