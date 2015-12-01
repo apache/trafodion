@@ -352,7 +352,10 @@ static NABoolean checkMDAMadditionalRestriction(
    NABoolean isLeadingDivisionColumn = FALSE;
    NABoolean isLeadingSaltColumn = FALSE;
 
-   CostScalar totalUecsForKeylessKeyColumns = 1;
+   CostScalar totalUecsForPredicatelessKeyColumns = 1;
+   CostScalar totalUecsForCurrentPredicatelessKeyColumnGroup = 1;
+
+   ValueIdSet currentPredicatelessKeyColumnGroup;
 
    for (index = 0; index < lastColumnPosition; index++)
    {
@@ -366,15 +369,15 @@ static NABoolean checkMDAMadditionalRestriction(
      isLeadingDivisionColumn = FALSE;
      isLeadingSaltColumn = FALSE;
 
+     ValueId columnVid = keyPredsByCol.getKeyColumnId(index);
+
      if ( checkLeadingDivColumns )
      {
        // Check if the key column is a leading divisioning column
-       isLeadingDivisionColumn = 
-            keyPredsByCol.getKeyColumnId(index).isDivisioningColumn();
+       isLeadingDivisionColumn = columnVid.isDivisioningColumn();
 
        // Check if the key column is a leading salted column
-       isLeadingSaltColumn =
-             keyPredsByCol.getKeyColumnId(index).isSaltColumn();
+       isLeadingSaltColumn = columnVid.isSaltColumn();
      }
 
      if (typeOfRange == KeyColumns::KeyColumn::EMPTY) {
@@ -387,28 +390,61 @@ static NABoolean checkMDAMadditionalRestriction(
            )
            noOfmissingKeyColumns++;
 
-        // accumulate the product of uecs for columns without predicates
-                   
-        totalUecsForKeylessKeyColumns *= hist.getColStatsForColumn(
-                   keyPredsByCol.getKeyColumnId(index)).getTotalUec().getCeiling();
+        // accumulate the product of uecs for columns without predicates in the current
+        // group
+        totalUecsForCurrentPredicatelessKeyColumnGroup *= hist.getColStatsForColumn(
+                   columnVid).getTotalUec().getCeiling();
 
+        // accumulate the column valud Id at the same time for MC UEC lookup later on.
+        currentPredicatelessKeyColumnGroup.insert(columnVid);
      } else {
 
         checkLeadingDivColumns = FALSE;
         presentKeyColumns++;
 
+        // If the set of key columns without predicate is not empty, fetch the MC UEC 
+        // for the entire set. If the MC UEC exists, replace the current accumualted
+        // total UEC with the MC UEC.
+        //
+        // We will set the set to empty so that the fetching MC UEC logic will not kick in 
+        // until a new key column without predicates is seen.
+        if ( currentPredicatelessKeyColumnGroup.entries() > 0 ) {
+
+           // fetch MC UEC from key coluymns for column set currentPredicatelessKeyColumnGroup 
+           const MultiColumnUecList* MCUL = hist.getColStatDescList().getUecList();
+
+           ValueIdSet theLargestSubset = 
+                   MCUL->largestSubset(currentPredicatelessKeyColumnGroup.convertToBaseIds());
+
+           if ( theLargestSubset.entries() > 1 &&
+                theLargestSubset.entries() == currentPredicatelessKeyColumnGroup.entries() ) 
+           {
+              CostScalar mcUEC = MCUL->lookup(theLargestSubset);
+
+              if ( mcUEC != csMinusOne )
+                 totalUecsForCurrentPredicatelessKeyColumnGroup = mcUEC;
+           }
+
+           currentPredicatelessKeyColumnGroup.clear();
+        }
+
+        totalUecsForPredicatelessKeyColumns *= 
+                totalUecsForCurrentPredicatelessKeyColumnGroup;
+
+        totalUecsForCurrentPredicatelessKeyColumnGroup = 1;
      }
    }     
+
    switch ( strategy ) {
      case MAJORITY_WITH_PREDICATES:
         return (presentKeyColumns > noOfmissingKeyColumns);
 
      case TOTAL_UECS:
-        return ( totalUecsForKeylessKeyColumns < totalUEC_threshold );
+        return ( totalUecsForPredicatelessKeyColumns < totalUEC_threshold );
 
      case BOTH:
         return ( presentKeyColumns > noOfmissingKeyColumns &&
-                 totalUecsForKeylessKeyColumns < totalUEC_threshold );
+                 totalUecsForPredicatelessKeyColumns < totalUEC_threshold );
 
      default:
        return FALSE;
