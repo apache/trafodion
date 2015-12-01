@@ -95,10 +95,20 @@ select left(trim(schema_name) || '.' || trim(object_name), 14),
    get tables in schema t002sch, no header, return full names) x(a) ))) 
  group by 1 order by 2 desc;
 
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+ sum(store_file_size), 
+ 'ReadRequestsCount: '  || cast(sum(read_requests_count) as varchar(10)),
+ 'WriteRequestsCount: ' || cast(sum(write_requests_count) as varchar(10))
+ from table(region statistics (using (select * from (
+   get tables in schema t002sch, no header, return full names) x(a) ))) 
+ group by 1 order by 2 desc;
+
 get region stats for table t002t1;
 get region stats for index t002t1i1;
 get region stats for table t002t2;
 get region stats for index t002t2i1;
+
+get region statistics for table t002t1;
 
 get region stats for 
     (select * from 

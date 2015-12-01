@@ -1030,7 +1030,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
 // used in QAT tests
   ParKeyWord("STATEMENT",          TOK_STATEMENT,   NONRESTOKEN_),
   ParKeyWord("STATIC",             TOK_STATIC,      NONRESTOKEN_),
-  ParKeyWord("STATISTICS",         TOK_STATISTICS,  SECOND_|NONRESTOKEN_),
+  ParKeyWord("STATISTICS",         TOK_STATISTICS,  NONRESTOKEN_),
   ParKeyWord("STATS",              TOK_STATS,       NONRESTOKEN_),
   ParKeyWord("STATUS",             TOK_STATUS,      NONRESTOKEN_),
   ParKeyWord("STDDEV",             TOK_STDDEV,      NONRESTOKEN_),

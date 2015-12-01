@@ -3470,13 +3470,15 @@ static const ComTdbVirtTableColumnInfo comTdbRegionStatsVirtTableColumnInfo[] =
     { "WRITE_REQUESTS_COUNT",          11, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
   };
 
+#define STATS_NAME_MAX_LEN 256
+#define STATS_REGION_NAME_MAX_LEN 512
 struct ComTdbRegionStatsVirtTableColumnStruct
 {
-  char   catalogName[256];
-  char   schemaName[256];
-  char   objectName[256];
+  char   catalogName[STATS_NAME_MAX_LEN];
+  char   schemaName[STATS_NAME_MAX_LEN];
+  char   objectName[STATS_NAME_MAX_LEN];
   Int64  regionNum;
-  char   regionName[512];
+  char   regionName[STATS_REGION_NAME_MAX_LEN];
   Lng32  numStores;
   Lng32  numStoreFiles;
   Int64  storeFileUncompSize;

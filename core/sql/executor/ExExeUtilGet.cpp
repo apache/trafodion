@@ -5404,8 +5404,8 @@ ExExeUtilRegionStatsTcb::ExExeUtilRegionStatsTcb(
   
   tableName_ = new(glob->getDefaultHeap()) char[2000];
 
-  // get hbase rootdir location
-  hbaseRootdir_ = new(glob->getDefaultHeap()) char[1000];
+  // get hbase rootdir location. Max linux pathlength is 1024.
+  hbaseRootdir_ = new(glob->getDefaultHeap()) char[1030];
   strcpy(hbaseRootdir_, "/hbase");
 
   step_ = INITIAL_;
@@ -5708,6 +5708,25 @@ ExExeUtilRegionStatsFormatTcb::ExExeUtilRegionStatsFormatTcb(
   step_ = INITIAL_;
 }
 
+static NAString removeTrailingBlanks(char * name, Lng32 maxLen)
+{
+  NAString nas;
+  
+  if (! name)
+    return nas;
+
+  Lng32 i = maxLen;
+  while ((i > 0) && (name[i-1] == ' '))
+    {
+      i--;
+    }
+
+  if (i > 0)
+    nas = NAString(name, i);
+
+  return nas;
+}
+
 short ExExeUtilRegionStatsFormatTcb::initTotals()
 {
   statsTotals_->numStores                 = 0;
@@ -5724,11 +5743,14 @@ short ExExeUtilRegionStatsFormatTcb::initTotals()
 short ExExeUtilRegionStatsFormatTcb::computeTotals()
 {
   str_pad(statsTotals_->catalogName, sizeof(statsTotals_->catalogName), ' ');
-  str_cpy_and_null(statsTotals_->catalogName, catName_, strlen(catName_), '\0', ' ', TRUE);
+  str_cpy_all(statsTotals_->catalogName, catName_, strlen(catName_));
+
   str_pad(statsTotals_->schemaName, sizeof(statsTotals_->schemaName), ' ');
-  str_cpy_and_null(statsTotals_->schemaName, schName_, strlen(schName_), '\0', ' ', TRUE);
+  str_cpy_all(statsTotals_->schemaName, schName_, strlen(schName_));
+
   str_pad(statsTotals_->objectName, sizeof(statsTotals_->objectName), ' ');
-  str_cpy_and_null(statsTotals_->objectName, objName_, strlen(objName_), '\0', ' ', TRUE);
+  str_cpy_all(statsTotals_->objectName, objName_, strlen(objName_));
+
   str_pad(statsTotals_->regionName, sizeof(statsTotals_->regionName), ' ');
 
   for (Int32 currIndex = 0; currIndex < regionInfoList_->getSize(); currIndex++)
@@ -5877,11 +5899,14 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            NAString objName = statsTotals_->catalogName;
+            NAString objName = 
+              removeTrailingBlanks(statsTotals_->catalogName, STATS_NAME_MAX_LEN);
             objName += ".";
-            objName += statsTotals_->schemaName;
+            objName +=
+              removeTrailingBlanks(statsTotals_->schemaName, STATS_NAME_MAX_LEN);
             objName += ".";
-            objName += statsTotals_->objectName;
+            objName += 
+              removeTrailingBlanks(statsTotals_->objectName, STATS_NAME_MAX_LEN);
 
             str_sprintf(buf, "  ObjectName:              %s", objName.data());
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
@@ -5985,7 +6010,7 @@ short ExExeUtilRegionStatsFormatTcb::work()
                 break;
               }
             
-            if (populateStats(currIndex_, TRUE))
+            if (populateStats(currIndex_))
               {
                 step_ = HANDLE_ERROR_;
                 break;
@@ -6016,7 +6041,8 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            str_sprintf(buf, "  RegionName:         %s", stats_->regionName);
+            str_sprintf(buf, "  RegionName:         %s", 
+                        removeTrailingBlanks(stats_->regionName, STATS_REGION_NAME_MAX_LEN).data(), TRUE);
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
             
