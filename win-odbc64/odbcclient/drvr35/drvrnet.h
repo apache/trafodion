@@ -128,7 +128,7 @@ typedef struct _SQLFetchDataValue
 {
 	IDL_unsigned_long	numberOfElements;
 	IDL_unsigned_long	numberOfRows;
-	IDL_unsigned_long*	rowAddress;
+	LONG_PTR*	rowAddress;
 } SQLFetchDataValue;
 
 
