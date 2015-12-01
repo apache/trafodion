@@ -2160,7 +2160,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDflt__(MC_SKEW_SENSITIVITY_THRESHOLD,        "0.1"),
 
 
-  DDkwd__(MDAM_APPLY_RESTRICTION_CHECK,	"OFF"),
+  DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "2"),
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -2180,6 +2180,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDkwd__(MDAM_SCAN_METHOD,			"ON"),
 
   DDflt0_(MDAM_SELECTION_DEFAULT,		"0.5"),
+
+  DDflt0_(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD, "10000"),
+  DDflt0_(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD,	 "0.01"),
+
   DDkwd__(MDAM_TRACING,			        "OFF"),
 
   // controls the max. number of probes at which MDAM under NJ plan will be
