@@ -22,54 +22,43 @@ under the License.
  */
 package org.trafodion.dcs.master;
 
-import java.net.InetAddress;
-
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
-
-import java.util.Scanner;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
-import java.util.Date;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.HashMap;
-
 import java.text.DateFormat;
-
-import org.apache.zookeeper.*;
-import org.apache.zookeeper.data.Stat;
-
-import org.apache.hadoop.conf.Configuration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Scanner;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.trafodion.dcs.master.RunningServer;
-import org.trafodion.dcs.master.RegisteredServer;
-import org.trafodion.dcs.master.Metrics;
-import org.trafodion.dcs.script.ScriptManager;
-import org.trafodion.dcs.script.ScriptContext;
-import org.trafodion.dcs.Constants;
-import org.trafodion.dcs.zookeeper.ZkClient;
-import org.trafodion.dcs.util.*;
-
+import org.apache.hadoop.conf.Configuration;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.data.Stat;
 import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.trafodion.dcs.Constants;
+import org.trafodion.dcs.script.ScriptContext;
+import org.trafodion.dcs.script.ScriptManager;
+import org.trafodion.dcs.util.Bytes;
+import org.trafodion.dcs.util.DcsNetworkConfiguration;
+import org.trafodion.dcs.util.JdbcT4Util;
+import org.trafodion.dcs.util.RetryCounter;
+import org.trafodion.dcs.util.RetryCounterFactory;
+import org.trafodion.dcs.zookeeper.ZkClient;
 
 public class ServerManager implements Callable {
     private static final Log LOG = LogFactory.getLog(ServerManager.class);
@@ -458,9 +447,8 @@ public class ServerManager implements Callable {
         if (LOG.isDebugEnabled())
             LOG.debug("Reading " + parentZnode
                     + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING);
-        List<String> children = getChildren(parentZnode
-                + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING,
-                new RunningWatcher());
+		String path = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING;
+		List<String> children = getChildren(path, new RunningWatcher());
 
         if (!children.isEmpty()) {
             for (String child : children) {
@@ -486,10 +474,16 @@ public class ServerManager implements Callable {
                 // If we are DcsMaster follower that is taking over from failed
                 // one then ignore timestamp issues described above.
                 // See MasterLeaderElection.elect()
-                if (master.isFollower() == false) {
-                    if (serverStartTimestamp < startupTimestamp)
-                        continue;
-                }
+		if (master.isFollower() == false) {
+			Stat stat = zkc.exists(path + "/" + child, new RunningWatcher());
+			if (stat == null || stat.getCtime() < startupTimestamp){
+				if(stat == null)
+					LOG.warn("Node "+path + "/" + child + " in Zookeeper does not exist!");
+				else
+					LOG.warn("Node creation time[" + stat.getCtime() + "] is eariler than Master node creation time[" + startupTimestamp + "]");
+				continue;
+			}
+		}
 
                 if (!runningServers.contains(child)) {
                     if (LOG.isDebugEnabled())

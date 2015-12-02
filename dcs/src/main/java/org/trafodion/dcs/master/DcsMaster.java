@@ -22,22 +22,11 @@ under the License.
  */
 package org.trafodion.dcs.master;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.NetworkInterface;
-import java.nio.charset.Charset;
-import java.util.Enumeration;
-import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
@@ -46,22 +35,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper.States;
-
-import org.apache.hadoop.util.StringUtils;
-
 import org.trafodion.dcs.Constants;
+import org.trafodion.dcs.master.listener.ListenerService;
+import org.trafodion.dcs.rest.DcsRest;
 import org.trafodion.dcs.util.DcsConfiguration;
 import org.trafodion.dcs.util.DcsNetworkConfiguration;
 import org.trafodion.dcs.util.InfoServer;
 import org.trafodion.dcs.util.VersionInfo;
-import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.zookeeper.ZKConfig;
-import org.trafodion.dcs.master.listener.ListenerService;
-import org.trafodion.dcs.rest.DcsRest;
+import org.trafodion.dcs.zookeeper.ZkClient;
 
 public class DcsMaster implements Runnable {
     private static final Log LOG = LogFactory.getLog(DcsMaster.class);
@@ -215,12 +200,12 @@ public class DcsMaster implements Runnable {
         try {
             netConf = new DcsNetworkConfiguration(conf);
             serverName = netConf.getHostName();
-	    if (serverName == null) {
+            if (serverName == null) {
                 LOG.error("DNS Interface [" + conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE)
-	    			+ "] configured in dcs.site.xml is not found!");
+			+ "] configured in dcs.site.xml is not found!");
 		System.exit(1);
             }
-
+            
             // Wait to become the leader of all DcsMasters
             mle = new MasterLeaderElection(this);
             isLeader.await();
@@ -231,6 +216,13 @@ public class DcsMaster implements Runnable {
                     + ":" + startTime;
             zkc.create(path, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE,
                     CreateMode.EPHEMERAL);
+            Stat stat = zkc.exists(path, false);
+			if (stat == null) {
+				LOG.error("Node [" + path + "] does not exist!");
+				throw new Exception("Node [" + path + "] does not exist!");
+			}
+            long currCTime = stat.getCtime();
+            
             LOG.info("Created znode [" + path + "]");
 
             int requestTimeout = conf.getInt(
@@ -259,7 +251,7 @@ public class DcsMaster implements Runnable {
 
             pool = Executors.newSingleThreadExecutor();
             serverManager = new ServerManager(this, conf, zkc, netConf,
-                    startTime, metrics);
+            		currCTime, metrics);
             Future future = pool.submit(serverManager);
             future.get();// block
 
