@@ -98,6 +98,9 @@ TCPIPV4.*
 TCPIPV6.*
 TCPIPV4_os.*
 TCPIPV6_os.*
+swscanf.cpp
+swsprintf.cpp
+ulexer.h
 
 
 

@@ -23,7 +23,7 @@
 -->
 
 <!--Arbortext, Inc., 1988-2014, v.4002-->
-<!DOCTYPE book PUBLIC "-//Hewlett-Packard ESS//DTD DocBook Extension//EN"
+<!DOCTYPE book PUBLIC "-//Apache Software Foundation (ASF)//DTD DocBook Extension//EN"
  "ess.dtd">
 <book>
 <title>Trafodion SQL Reference Manual</title>
@@ -34,8 +34,8 @@
 <abstract condition="hidden">
 <para>Last updated: 4/24/2015</para>
 </abstract>
-<copyright><year>2015</year><holder>Hewlett-Packard Development Company,
-L.P.</holder></copyright>
+<copyright><year>2015</year><holder>Apache Software Foundation (ASF)
+</holder></copyright>
 <legalnotice>
 <!--WRITER'S NOTE: HP legal notice for open source release-->
 <title>Legal Notice</title>
@@ -9197,8 +9197,8 @@ and external objects.</para></listitem>
 <itemizedlist>
 <listitem><para>This GET HBASE OBJECTS statement displays the Trafodion
 user objects in HBase:</para>
-<screen><computeroutput>Trafodion Conversational Interface 1.1.0
-(c) Copyright 2014 Hewlett-Packard Development Company, LP.
+<screen><computeroutput>Apache Trafodion Conversational Interface 1.3.0 
+(c) Copyright (c) 2015 Apache Software Foundation
 >></computeroutput><userinput>get user hbase objects;</userinput><computeroutput
 >
 

@@ -65,9 +65,6 @@ import java.util.logging.LogRecord;
  * Description: JDBC Type 4 Driver
  * </p>
  * <p>
- * Copyright: Copyright (c) 2004-2007
- * </p>
- * <p>
  * </p>
  */
 public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseMetaData {
