@@ -170,9 +170,10 @@ class ConnectReply {
                 indexArr[index] = index;
                 maxIndex = Math.max(maxIndex, index);
                 server = servers.get(index);
+                nodeRegisteredPath = registeredPath + "/" + server;
                 if(LOG.isDebugEnabled())
                     LOG.debug(clientSocketAddress + ": " + "server selected in search 1 " + server );
-                data = isServerAvalible(registeredPath + "/" + server);
+                data = isServerAvalible(nodeRegisteredPath);
                 if(data != null){
                 	found = true;
                 	break;
@@ -185,10 +186,11 @@ class ConnectReply {
                 for(index=maxIndex+1; index<length; index++){
                     if (indexArr[index] != index){
                         server = servers.get(index);
+                        nodeRegisteredPath = registeredPath + "/" + server;
                         if(LOG.isDebugEnabled())
                             LOG.debug(clientSocketAddress + ": " + "server selected in search 1 " + server );
                             
-                        data = isServerAvalible(registeredPath + "/" + server);
+                        data = isServerAvalible(nodeRegisteredPath);
                         if(data != null){
                         	found = true;
                         	break;
@@ -203,10 +205,11 @@ class ConnectReply {
                 for(index=0; index<maxIndex; index++){
                     if (indexArr[index] != index){
                         server = servers.get(index);
+                        nodeRegisteredPath = registeredPath + "/" + server;
                         if(LOG.isDebugEnabled())
                             LOG.debug(clientSocketAddress + ": " + "server selected in search 2 " + server );
                             
-                        data = isServerAvalible(registeredPath + "/" + server);
+                        data = isServerAvalible(nodeRegisteredPath);
                         if(data != null){
                         	found = true;
                         	break;
