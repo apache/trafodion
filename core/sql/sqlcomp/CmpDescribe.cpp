@@ -854,20 +854,10 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   }
   else  // special virtual table
     {
-      ExplainFunc explainF;
-      StatisticsFunc statisticsF;
       HiveMDaccessFunc hiveMDF;
       const NAString& virtualTableName =
         d->getDescribedTableName().getQualifiedNameObj().getObjectName();
-      if (virtualTableName == explainF.getVirtualTableName())
-        {
-          tabledesc = explainF.createVirtualTableDesc();
-        }
-      else if (virtualTableName == statisticsF.getVirtualTableName())
-        {
-          tabledesc = statisticsF.createVirtualTableDesc();
-        }
-      else if (strncmp(virtualTableName.data(), "HIVEMD_", 7) == 0)
+      if (strncmp(virtualTableName.data(), "HIVEMD_", 7) == 0)
         {
           NAString mdType = virtualTableName;
           mdType = mdType.strip(NAString::trailing, '_');
@@ -2572,6 +2562,13 @@ short CmpDescribeSeabaseTable (
   const NAString& tableName =
     dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
  
+  if (CmpCommon::context()->isUninitializedSeabase())
+     {
+       *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum());
+
+      return -1;
+    }
+
   // set isExternalTable to allow Hive External tables to be described
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   bindWA.setAllowExternalTables (TRUE);
