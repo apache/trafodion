@@ -38,9 +38,9 @@ create index t002t1i1 on t002t1(b);
 create index t002t1i2 on t002t1(c);       
 insert into t002t1 values (1,2, 3);
 
-sh swhbase flush 'TRAFODION.T002SCH.T002T1';
-sh swhbase flush 'TRAFODION.T002SCH.T002T1I1';
-sh swhbase flush 'TRAFODION.T002SCH.T002T1I2';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1I1';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1I2';
 
 select * from t002t1;
 
@@ -49,8 +49,8 @@ create table t002t2(a int not null primary key, b int not null)
 create index t002t2i1 on t002t2(b);       
 insert into t002t2 values (1,2);
 
-sh swhbase flush 'TRAFODION.T002SCH.T002T2';
-sh swhbase flush 'TRAFODION.T002SCH.T002T2I1';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
 
 select * from t002t2;
 
