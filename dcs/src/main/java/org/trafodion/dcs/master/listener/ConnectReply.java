@@ -171,8 +171,8 @@ class ConnectReply {
                 maxIndex = Math.max(maxIndex, index);
                 server = servers.get(index);
                 nodeRegisteredPath = registeredPath + "/" + server;
-                if(LOG.isDebugEnabled())
-                    LOG.debug(clientSocketAddress + ": " + "server selected in search 1 " + server );
+ 		if(LOG.isDebugEnabled())
+                    LOG.debug(clientSocketAddress + ": " + " index " + index + " server picked " + server );
                 data = isServerAvalible(nodeRegisteredPath);
                 if(data != null){
                 	found = true;
