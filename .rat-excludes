@@ -53,7 +53,7 @@ Sortingicons.psd*
 # licenses
 license*.txt*
 LICENSE.rtf*
-LICENSE-bds2
+LICENSE-bsd2
 LICENSE-bsd4
 LICENSE-js
 LICENSE-salesforce
@@ -110,6 +110,9 @@ resource.hm*
 swscanf.cpp
 swsprintf.cpp
 ulexer.h
+# Compiler GUI files
+usage.csv
+Resource.qrc
 #phoenix tests - MIT licensed from Salesforce
 AlterTableTest.java
 ArithmeticQueryTest.java
