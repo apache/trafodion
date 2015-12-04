@@ -1468,7 +1468,10 @@ NABoolean ExOperStats::operator==(ExOperStats * other)
        statType() == ExOperStats::BMO_STATS ||
        statType() == ExOperStats::UDR_BASE_STATS ||
        statType() == ExOperStats::REPLICATOR_STATS ||
-       statType() == ExOperStats::REORG_STATS) 
+       statType() == ExOperStats::REORG_STATS || 
+       statType() == ExOperStats::HBASE_ACCESS_STATS ||
+       statType() == ExOperStats::HDFSSCAN_STATS) 
+
   {
     if (getId()->tdbId_ == other->getId()->tdbId_)
       return TRUE;
@@ -1949,6 +1952,12 @@ void ExFragRootOperStats::merge(ExOperStats * other)
       break;
     case BMO_STATS:
       merge((ExBMOStats *)other);
+      break;
+    case HBASE_ACCESS_STATS:
+      merge((ExHbaseAccessStats *)other);
+      break;
+    case HDFSSCAN_STATS:
+      merge((ExHdfsScanStats *)other);
       break;
     default:
       // do nothing - This type of stat has no merge data
@@ -5403,7 +5412,7 @@ void ExMeasStats::merge(ExHbaseAccessStats* other)
   exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
   exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
   exeDp2Stats()->incDiskReads(other->hbaseCalls());
-  exeDp2Stats()->incProcessBusyTime(other->getTimer().getTime());
+  exeDp2Stats()->incProcessBusyTime(other->getHbaseTimer().getTime());
   fsDp2MsgsStats() ->incMessageBytes(0);
 }
 
@@ -6691,7 +6700,10 @@ NABoolean ExStatisticsArea::merge(ExOperStats * other, UInt16 statsMergeType)
         other->statType() != ExOperStats::BMO_STATS &&
         other->statType() != ExOperStats::PERTABLE_STATS &&
         other->statType() != ExOperStats::UDR_BASE_STATS &&
+        other->statType() != ExOperStats::HBASE_ACCESS_STATS &&
+        other->statType() != ExOperStats::HDFSSCAN_STATS &&
         other->statType() != ExOperStats::REORG_STATS)
+
         // Ignore stats and return as if merge is done
         return TRUE;
       while ((stat = getNext()) != NULL)
