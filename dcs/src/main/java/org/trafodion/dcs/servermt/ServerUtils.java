@@ -209,7 +209,7 @@ public final class ServerUtils  {
                 updateStateToConnected();
             }
             else if (serverState == ServerConstants.SERVER_STATE_DISCONNECTED){
-                updateStateDisconnected();
+                //updateStateDisconnected();
                 updateServerStateAvailable();
             }
             else if (serverState == ServerConstants.SERVER_STATE_CONNECT_FAILED){
