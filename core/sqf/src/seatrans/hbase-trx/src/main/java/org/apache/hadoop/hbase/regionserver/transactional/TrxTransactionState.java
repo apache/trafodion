@@ -94,6 +94,9 @@ public class TrxTransactionState  extends TransactionState{
     static java.lang.reflect.Constructor c98_1 = null;
     static java.lang.reflect.Constructor c98_4 = null;
 
+    static Constructor scaninfoConstructor = null;
+    static Object[] scaninfoArgs = null;
+
     static {
 	sb_sqm_98_1 = true;
 	try {
@@ -136,6 +139,40 @@ public class TrxTransactionState  extends TransactionState{
 	if (sb_sqm_98_4) {
 	    LOG.info("Got info of Class ScanQueryMatcher for HBase 98.4");
 	}
+	
+	
+	Class scaninfoClazz = null;
+        try {
+            scaninfoClazz = Class.forName("org.apache.hadoop.hbase.regionserver.ScanInfo");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        Class[] types = null;
+
+        try {
+            types = new Class[] { byte[].class, int.class, int.class, long.class, boolean.class, long.class, KVComparator.class };
+            scaninfoConstructor = scaninfoClazz.getConstructor(types);
+            scaninfoArgs = new Object[] { null, 0, 1, HConstants.FOREVER, false, 0, KeyValue.COMPARATOR };
+            if (LOG.isTraceEnabled())
+                LOG.trace("Created ScanInfo instance before HBase 98.8");
+        } catch (Exception e) {
+            Class clazz = null;
+            try {
+                clazz = Class.forName("org.apache.hadoop.hbase.KeepDeletedCells");
+            } catch (ClassNotFoundException e1) {
+                throw new RuntimeException(e1.getMessage());
+            }
+            types = new Class[] { byte[].class, int.class, int.class, long.class, clazz, long.class, KVComparator.class };
+            try {
+                scaninfoConstructor = scaninfoClazz.getConstructor(types);
+                scaninfoArgs = new Object[] { null, 0, 1, HConstants.FOREVER, Enum.valueOf(clazz, "FALSE"), 0, KeyValue.COMPARATOR };
+                if (LOG.isTraceEnabled())
+                    LOG.trace("Created ScanInfo instance after HBase 98.8");
+            } catch (Exception e1) {
+                LOG.error("Created ScanInfo instance ERROR");
+                throw new RuntimeException(e1.getMessage());
+            }
+        }
     }
 
     /**
@@ -662,44 +699,10 @@ public class TrxTransactionState  extends TransactionState{
             //Store.ScanInfo scaninfo = new Store.ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, Cell.COMPARATOR);
             //after hbase 0.98.8, ScanInfo instance need KeepDeletedCells as param instead of boolean
             ScanInfo scaninfo = null;
-            Class scaninfoClazz = null;
             try {
-                scaninfoClazz = Class.forName("org.apache.hadoop.hbase.regionserver.ScanInfo");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e.getMessage());
-            }
-            Class[] types = null;
-            Object[] args = null;
-            try {
-                types = new Class[] { byte[].class, int.class, int.class, long.class, boolean.class, long.class, KVComparator.class };
-                Constructor constructor = scaninfoClazz.getConstructor(types);
-                args = new Object[] { null, 0, 1, HConstants.FOREVER, false, 0, KeyValue.COMPARATOR };
-                scaninfo = (ScanInfo) constructor.newInstance(args);
-
-                if (LOG.isTraceEnabled())
-                    LOG.trace("Created ScanInfo instance before HBase 98.8");
+                scaninfo = (ScanInfo) scaninfoConstructor.newInstance(scaninfoArgs);
             } catch (Exception e) {
-                Class clazz = null;
-                try {
-                    clazz = Class.forName("org.apache.hadoop.hbase.KeepDeletedCells");
-                } catch (ClassNotFoundException e1) {
-                    throw new RuntimeException(e1.getMessage());
-                }
-                types = new Class[] { byte[].class, int.class, int.class, long.class, clazz, long.class, KVComparator.class };
-                Constructor constructor = null;
-                try {
-                    constructor = scaninfoClazz.getConstructor(types);
-                } catch (Exception e1) {
-                    throw new RuntimeException(e1.getMessage());
-                }
-                args = new Object[] { null, 0, 1, HConstants.FOREVER, Enum.valueOf(clazz, "FALSE"), 0, KeyValue.COMPARATOR };
-                try {
-                    scaninfo = (ScanInfo) constructor.newInstance(args);
-                } catch (Exception e1) {
-                    throw new RuntimeException(e1.getMessage());
-                }
-                if (LOG.isTraceEnabled())
-                    LOG.trace("Created ScanInfo instance after HBase 98.8");
+                throw new RuntimeException(e.getMessage());
             }
 
             try {
