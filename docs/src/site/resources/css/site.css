@@ -21,8 +21,8 @@
 * @@@ END COPYRIGHT @@@ 
  */
  
- .color-highlight {
-	color: #225E9B;
+.color-highlight {
+	color: red;
 }
 
 body {
@@ -41,7 +41,14 @@ body[class*="page-themes-bootswatch"] .color-highlight {
 	margin-top: 10px;
 }
 
-/*h1, */h2 {
+h1 {
+  margin-top: 50px;
+  color: #1a334c;
+  border-bottom: 1px gray;
+  width:100%; 
+}
+
+h2 {
   margin-top: 30px;
 }
 
@@ -60,6 +67,14 @@ h3, h4, h5, h6 {
     margin-bottom: 10px;
 }
 
+/* Override the default static position to ensure correct placement on small screens */
+/* Bottom gives space between the box and the following text. */
+.carousel-caption {
+  position: relative;
+  bottom: 5px;
+}
+
+/* Color of the heading in the text box */
 .carousel-caption a {
   color: white;
 }

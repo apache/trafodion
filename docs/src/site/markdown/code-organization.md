@@ -11,40 +11,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+This page describes how the Trafodion source tree is organized.
 
-# Code Organization
-The Trafodion source repository is organized as follows:
+**Under Construction**
 
-## Connectivity ##
-<span>
-  <table>
-    <tr>
-      <th>Directory</th>
-      <th>Contains</th>
-    </tr>
-    <tr>
-      <td><code>core/conn/jdbc_type2</code></td>
-      <td>JDBC type-4 client-side driver</td>
-    </tr>
-    <tr>
-      <td><code>jdbc_type4</code></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td><code>odb</code></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td><code>odbc</code></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td><code>security_dll</code></td>
-      <td></td>
-    </tr>
-    <tr>
-       <td><code>unixodbc</code></td>
-       <td></td>
-    </tr>
-  </table>
-</span>
+# Connectivity
+
+Directory                                       | Contains
+------------------------------------------------|----------------------------------------------
+**```core/conn/jdbc_type2```**                  | JDBC type-4 client-side driver
+**```jdbc_type4````**                           | |
+**```odb```**                                   | |
+**```odbc```**                                  | |
+**```security_dll```**                          | |
+**```unixodbc```**                              | |
