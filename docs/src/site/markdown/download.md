@@ -12,7 +12,7 @@
   limitations under the 
   License.
 -->
-This page describes how you download and install the Trafodion product environment.  Please refer to [Create Development Environment](create-dev-environment.html] if you want to set up a Trafodion development environment (which includes the installation of a stand-alone Hadoop environment) based on the Trafodion source code.
+This page describes how you download and install the Trafodion product environment.  Please refer to [Create Development Environment](create-dev-environment.html) if you want to set up a Trafodion development environment (which includes the installation of a stand-alone Hadoop environment) based on the Trafodion source code.
 
 # Prerequisite
 Trafodion is installed onto an existing Hadoop environment. 
@@ -27,7 +27,7 @@ Not yet available.
 Build your own binaries from the Trafodion source code as follows:
 
 1. [Setup Build Environment](setup-build-environment.html).
-2. [Build Trafodion](build.html) \— use **```make package```**.
+2. [Build Trafodion](build.html) — use **```make package```**.
 
 # Install
 Please refer to the [Install](install.html) instructions.

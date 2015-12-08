@@ -108,7 +108,7 @@ Command                                        | Usage
 **```install_local_hadoop -p rand```**         | Start with any random port number range between 9000 and 49000.
 **```install_local_hadoop -p <port>```**       | Start with the specified port number.
 
-For a list of ports that get configured and their default values, please refer to [Port Assignments](port-assignments.html).
+For a list of ports that get configured and their default values, please refer to [Port Assignments](port-assignment.html).
 
 ### Sample Procedure
 Start a new **```ssh```** session and ensure that the Trafodion environmental variables are loaded.
@@ -150,4 +150,4 @@ You need to do the following each time you download new source code.
     sqgen
 
 # Manage
-Please refer to [Manage Development Environment](manage-dev-environment) for instructions.
+Please refer to [Manage Development Environment](manage-dev-environment.html) for instructions.

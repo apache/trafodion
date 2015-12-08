@@ -19,9 +19,9 @@ The Trafodion product environment is installed using the Trafodion Installer, wh
 # Preparation
 The Trafodion Installer assumes that you've performed the following steps before a Trafodion install:
 
-1. **Cluster Requirements**: ensure that you cluster meets the Trafodion requirements.
+1. **Cluster Requirements**: Ensure that your cluster meets the Trafodion requirements.
 2. **Security Requirements**: Create the user ID that is used to run the Trafodion Installer. Review and configure LDAP, if desired.
-3. **Prepare PC**: install software used when installing Trafodion on your PC.
+3. **PC Tools**: Install software used when installing Trafodion on your PC.
 4. **Install Hadoop**: Install Hadoop software supported by Trafodion.
 5. **Validate Hadoop**: Validate that required Hadoop services are running.
 
@@ -32,10 +32,10 @@ You use the following user IDs and passwords during the Trafodion installation.
 
 Logon                              | User ID                    | Password                    | Description                                         
 -----------------------------------|----------------------------|-----------------------------|--------------------------------------------------------
-Cloudera Manager Web GUI logon | **```admin (default)```**  | **```admin (default)```**   | After installing Cloudera, you will be instructed to log on to the Cloudera Manager Web GUI. Use the default user ID and password (**```admin```**, **```admin```**). If you already had Cloudera installed, please use your previously defined user ID and password.
-Ambari Web GUI logon           | **```admin (default)```**  | **```admin (default)```**   | After downloading and setting up the Ambari repository, you will be instructed to log on to the Ambari Web GUI. Use the default user ID and password (**```admin```**, **```admin```**). If you already had Ambari installed, please use your previously defined user ID and password.
-User ID with sudo Access       | **```<sudo-username>```**  | **```<password>```**        | In the installation steps, you may be instructed to use **```sudo```** or **```sudo userid```** access. You will be using your user ID, which has been enabled with **```sudo```** access and [passwordless ssh](passwordless-ssg.html) to all nodes of the cluster.
-Trafodion Logon                | **```trafodion```**        | **```traf123 (default)```** | The Trafodion installer **automatically creates** this user IDwhen Trafodion is installed. Do not create this user ID manually.
+Cloudera Manager Web GUI logon | **```admin (default)```**  | **```admin (default)```**   | Cloudera only. After installing Cloudera, you will be instructed to log on to the Cloudera Manager Web GUI. Use the default user ID and password (**```admin```**, **```admin```**). If you already had Cloudera installed, please use your previously defined user ID and password.
+Ambari Web GUI logon           | **```admin (default)```**  | **```admin (default)```**   | Hortonworks only. After downloading and setting up the Ambari repository, you will be instructed to log on to the Ambari Web GUI. Use the default user ID and password (**```admin```**, **```admin```**). If you already had Ambari installed, please use your previously defined user ID and password.
+User ID with sudo Access       | **```<sudo-username>```**  | **```<password>```**        | In the installation steps, you may be instructed to use **```sudo```** or **```sudo userid```** access. You will be using your user ID, which has been enabled with **```sudo```** access and [passwordless ssh](passwordless-ssh.html) to all nodes of the cluster.
+Trafodion Logon                | **```trafodion```**        | **```traf123 (default)```** | The Trafodion installer **automatically creates** this user ID when Trafodion is installed. Do not create this user ID manually.
 VNC Server Logon               | **```trafodion```**        | **```traf123 (default)```** | After installing Trafodion, you will be instructed to log on to the VNC server at port 1. Use the **```trafodion```** user ID and **```password```**.
 
 # Install Procedure
@@ -53,9 +53,6 @@ Follow these steps if you have an older version of Trafodion that you want to up
 </td></tr></table>
 
 ## Installation
-
-<table><tr><td><strong>NOTE</strong><br /> If performing an upgrade: Please refer to [Upgrading Trafodion](#Upgrading_Trafodion) before proceeding.</td></tr></table>
-
 At a high level, the following instructions consist of a single step:
 
 Command                     | User ID                   | Comments
@@ -188,6 +185,7 @@ Perform a quick sanity check using the Trafodion Conversational Interface (**```
     TEST1
     
     --- SQL operation complete.
+    >> drop table test1;
     >> exit;
 
 The SQL commands above should run successfully.

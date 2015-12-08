@@ -21,18 +21,20 @@ Documents do **not** include version information as part of the file name.
 
 Document                  | Source Format         | Source Tree                                    | Output Format
 --------------------------|-----------------------|------------------------------------------------|----------------------------
-Client Installation Guide | word                  | ```docs/src/resources/docs```              | PDF
-Command Interface Guide   | word                  | ```docs/src/resources/docs```              | PDF
+Client Installation Guide | word                  | External (Word)                                | PDF
+Command Interface Guide   | word                  | External (Word)                                | PDF
 DCS Reference Guide       | asciidoc              | ```dcs/src/main/asciidoc```                 | Web Book, PDF
 DCS APIs                  | javadoc               | ```dcs/src/main/java```                     | Web Book
-odb User Guide            | word                  | ```docs/src/resources/docs```              | PDF
+odb User Guide            | word                  | External (Word)                                | PDF
 REST Reference Guide      | asciidoc              | ```core/rest/src/main/asciidoc```          | Web Book, PDF
 REST APIs                 | javadoc               | ```core/rest/src/main/java```               | Web Book
-SQL Reference Manual      | word                  | ```docs/src/resources/docs```              | PDF
+SQL Reference Manual      | word                  | External (Word)                                | PDF
 
 ## Web
 
-The documentation is copied to the **```docs/target/docs```** directory on a per-release basis. This directory is referred to as the **release document directory** below.
+**```docs/target/docs```** contains the **latest** version of the document. This practice makes it possible to link to a document in instructional text.
+
+In addition, the documentation is copied to the **```docs/target/docs```** directory on a per-release basis. This directory is referred to as the **release document directory** below.
 
 **Example**
 
@@ -71,11 +73,12 @@ File/Directory               | Content
 ## Word Documents
 Do the following:
 
-1. Edit the document in **```docs/src/resources/docs```**.
-2. Save a PDF version of the document in **```docs/src/resources/docs```**.
+1. Edit the document.
+2. Save a PDF version.
 3. Build the web site using **```mvn clean site```** against the **```docs```** directory.
-
-The Word and PDF files will be copied to **```docs/target/docs```** directory. You will need to move the files to the final **Release Document Directory**; refer to [Publishing](#Publishing) below.
+4. Create the **Release Document Directory**, if needed.
+5. Copy the PDF files to the **Release Document Directory**.
+6. Copy and overwrite the PDF to the **```docs/target/docs```** directory — latest version of the document.
 
 ## Asciidoc Documents
 Please refer to DCS [Contributing to Documentation](https://github.com/apache/incubator-trafodion/blob/master/dcs/src/main/asciidoc/_chapters/appendix_contributing_to_documentation.adoc) guidance for information about working on asciidoc-based documentation.
@@ -102,12 +105,12 @@ You will need to copy/move the documentation from its generated location to the 
 
 Document                  | Populate Release Document Directory
 --------------------------|------------------------------------------
-Client Installation Guide | Delete **```.docx```*** file, copy the **```.pdf```** file in **```docs/target/docs```** to the **Release Document Directory**.
-Command Interface Guide   | Delete **```.docx```*** file, copy the **```.pdf```** file in **```docs/target/docs```** to the **Release Document Directory**.
+Client Installation Guide | Copy the **```.pdf```** file to **```docs/target/docs```** and **Release Document Directory**.
+Command Interface Guide   | Copy the **```.pdf```** file to **```docs/target/docs```** and **Release Document Directory**.
 DCS Reference Guide       | Copy **```dcs/target/site/```** to the **Release Document Directory**.
-odb User Guide            | Delete **```.docx```*** file, copy the **```.pdf```** file in **```docs/target/docs```** to the **Release Document Directory**.
+odb User Guide            | Copy the **```.pdf```** file to **```docs/target/docs```** and **Release Document Directory**.
 REST Reference Guide      | Copy **```core/rest/target/site/```** to the **Release Document Directory**.
-SQL Reference Manual      | Delete **```.docx```*** file, copy the **```.pdf```** file in **```docs/target/docs```** to the **Release Document Directory**.
+SQL Reference Manual      | Copy the **```.pdf```** file to **```docs/target/docs```** and **Release Document Directory**.
 
 **Example — Publishing the DCS Reference Guide**
 

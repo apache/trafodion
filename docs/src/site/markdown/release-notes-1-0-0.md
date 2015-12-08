@@ -14,7 +14,7 @@
 
 This is the source-only release of the Apache Trafodion (incubating) project. This release provides a number of new features and improvements across the project plus a large number of bug fixes.
 
-Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
+Build instructions are available [here](build.html).
 
 # Supported Platforms
 The following platforms are supported in this release.
@@ -153,6 +153,7 @@ This release contains the following new features.
 This release contains fixes to around 85 defects, including 25 critical defects, 54 high defects, and 10 medium and low defects. Those defects were filed through [Launchpad](https://launchpad.net/trafodion/+milestone/r1.1).
 
 # Known Issues
+All defect are located in [Launchpad](https://bugs.launchpad.net/trafodion). 
 
 ## Getting TM error 97 when tables split or get moved
 

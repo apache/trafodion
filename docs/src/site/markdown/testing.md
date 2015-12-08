@@ -149,7 +149,7 @@ Further instructions for setting up and running the test can be found in source 
 # Functional Tests
 
 ## Phoenix
-The Phoenix tests provides basic functional tests for Trafodion. These tests were originally adapted from their counterpart at [salesforce.com](salesforce.com).
+The Phoenix tests provides basic functional tests for Trafodion. These tests were originally adapted from their counterpart at salesforce.com.
 
 The tests are executed using Maven with a Python wrapper. You can run them the same way on your own workstation instance just like the way Jenkins runs them. Do the following:
 

@@ -12,7 +12,7 @@
   limitations under the 
   License.
 -->
-This page describes how you setup the Trafodion build environment.
+This page describes how you set up the Trafodion build environment.
 
 # Supported Platforms
 Red Hat or Centos 6.x (6.4 or later) versions are supported as development and production platforms.
@@ -75,7 +75,7 @@ Trafodion requires that several tools are installed in order to build. These too
 Tool                                   | Description
 ---------------------------------------|-----------------------------------------------------------------
 **Bison**                              | General-purpose parser generator.
-**ICU**                                | Setup of C/C++ and Java libraries providing Unicode and Globalization support for software applications.
+**ICU**                                | Set of C/C++ and Java libraries providing Unicode and Globalization support for software applications.
 **LLVM**                               | Collection of modular and reusable compiler and tool-chain technologies.
 **Maven**                              | Build tool that is only installed if compatible version does not exist.
 **MPICH**                              | An implementation of the Message Passing Interface (MPI) standard.  For use in Trafodion, MPICH must be built to force sockets to be used in both internode and intranode message passing.
@@ -151,7 +151,7 @@ Please refer to [Build Tools Manual Installation](build-tools-manual.html).
 ## Verify Maven
 Check that Maven is installed.
 
-    maven --version
+    mvn --version
 
 If Maven is not found, then you should add Maven to your **```PATH```** environmental variable in **```.bashrc```** or **```.profile```**.
 

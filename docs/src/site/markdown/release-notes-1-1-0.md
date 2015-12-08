@@ -14,7 +14,7 @@
 
 This is the source-only release of the Apache Trafodion (incubating) project. In addition to including a number of new features and improvements across the project, the focus of this release is to comply with Apache release guidelines.
 
-Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
+Build instructions are available [here](build.html).
 
 # Supported Platforms
 The following platforms are supported in this release.
@@ -105,7 +105,7 @@ This release contains the following new features.
         <ul>
           <li>Support for HP Data Services Manager (HP DSM), a unified, browser-based tool for management of Hadoop, Vertica, and now Trafodion data services. **NOTE**: The version of HP DSM that integrates with Trafodion is not yet available.</li>
           <li>Stability and overhead optimizations to reduce the overhead of capturing and maintaining query performance information (in repository tables).</li>
-          <li>Query cancel for DDL, update statistics, and additional child query operations. For details, see the CONTROL QUERY CANCEL statement in the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manaual.pdf).</li>        
+          <li>Query cancel for DDL, update statistics, and additional child query operations. For details, see the CONTROL QUERY CANCEL statement in the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manual.pdf).</li>        
         </ul>
       </td>
       <td></td>
@@ -117,7 +117,7 @@ This release contains the following new features.
           <li>Security subsystem hardening improvements including performance and QA testing.</li>
           <li>Security enhancements for the Trafodion metadata, data loader, and Data Connectivity Services (DCS).</li>
           <li>Upgrade authorization.</li>
-          <li>Ability to grant privileges on behalf of a role using the GRANTED BY clause. For details, see the GRANT statements in the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manaual.pdf).</li>
+          <li>Ability to grant privileges on behalf of a role using the GRANTED BY clause. For details, see the GRANT statements in the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manual.pdf).</li>
         </ul>
       </td>
       <td></td>

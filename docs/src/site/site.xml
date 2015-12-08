@@ -263,11 +263,13 @@
       <item href="documentation.html" name="Documentation"/>
       <item href="faq.html" name="FAQ"/>
       <item href="release-notes.html" name="Release Notes"/>
+      <!-- 
       <item href="http:divider" name=""/>
       <item href="udf-tutorial.html" name="UDF API Tutorial"/>
+      -->
     </menu>
     <menu name="Features">
-      <item href="architecture.html" name="Architecture Overview"/>
+      <item href="architecture-overview.html" name="Architecture Overview"/>
       <item href="http:divider" name=""/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/security-ansi-schemas" name="ANSI Schema Support"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/ustat-automation" name="Automated Update Statistics"/>

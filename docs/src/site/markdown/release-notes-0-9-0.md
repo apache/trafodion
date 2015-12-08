@@ -14,7 +14,7 @@
 
 This is the source-only release of the Apache Trafodion (incubating) project. This release provides support for HBase 0.98 and many new product features.
 
-Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
+Build instructions are available [here](build.html).
 
 # Supported Platforms
 The following platforms are supported in this release.

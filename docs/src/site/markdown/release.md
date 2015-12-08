@@ -19,7 +19,7 @@ This page describes how to create a Trafodion release. You have to be a Trafodio
 ## Create PGP Key
 If you haven't done so already, then you need to create a PGP key so that you can sign the release. Please refer to: http://www.apache.org/dev/openpgp.html#generate-key.
 
-Please remember to store your private key is a secure place.
+Please remember to store your private key in a secure place.
 
 **Example**
 
@@ -28,7 +28,7 @@ Please remember to store your private key is a secure place.
     gpg -K (shows private key)
 
 ### Upload Public Key
-Upload your public key to a public key server. We recommend using http://pgp.mit.edu/keyserver.
+Upload your public key to a public key server. We recommend using https://pgp.mit.edu/.
 
 **Example**
 
@@ -96,7 +96,7 @@ Trafodion uses git as its repository.  When a new version is created, mark the r
 Once completed, a new source tar file exist in the distribution directory. 
 
 ### Create Artifact Checksums and Signatures
-**Assumption**: You've already created the signing key and registered it at the http://pgp.mit.edu/public repository.
+**Assumption**: You've already created the signing key and registered it at the https://pgp.mit.edu/ repository.
 
     gpg --armor --output apache-trafodion-x.x.x-incubating-src.tar.gz.asc --detach-sig apache-trafodion-x.x.x-incubating-src.tar.gz
     gpg --verify apache-trafodion-x.x.x-incubating-src.tar.gz.asc
@@ -127,7 +127,7 @@ Compare the two versions; for example, by using BCompare and the "Folder Compare
 **Note:**  The git version will have some additional git folders and the distribution directory.
 
 ## Verify Apache Requirements
-Verify checksums and signatures using the [Verify Signature](#Verify_Signature) instructions below.
+Verify checksums and signatures using the [Verify Signature](#Verify_Signatures) instructions below.
 
 Ensure that the high-level directory contains valid version of:
 
@@ -185,7 +185,7 @@ Check signatures and checksums.
     # Expect:
       gpg: requesting key A44C5A05 from hkp server pgpkeys.mit.edu
       gpg: /home/centos/.gnupg/trustdb.gpg: trustdb created
-      gpg: key A44C5A05: public key "Roberta Marton (CODE SIGNING KEY) <rmarton@apache.org>" imported
+      gpg: key A44C5A05: public key "Jane Doe (CODE SIGNING KEY) <jdoe@apache.org>" imported
     
     # Verify signature
     gpg --verify apache-trafodion-x.x.x-incubating-src.tar.gz.asc

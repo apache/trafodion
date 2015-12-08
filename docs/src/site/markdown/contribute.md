@@ -22,7 +22,7 @@ This page describes how you can contribute to the Trafodion project.
  
 First of all, a big **Thank You** from us for your interest in evaluating and/or using Trafodion. We truly appreciate it! Trafodion exists and continues to improve thanks to you. But you can help us and yourself more!
  
-We are a community of volunteers working with the guidelines and policies of the Apache Software Foundation (the Apache Way) in mind. In that spirit, we welcome any kind of input you can provide to create better products. These contributions, whether you think of reporting bugs, supplying code enhancements, making improvements to our documentation, answering questions in our mailing lists, or anywhere else are valuable to everyone. Because each of these helps all of us make Trafodion better.
+We are a community of volunteers working with the guidelines and policies of the Apache Software Foundation (the Apache Way) in mind. In that spirit, we welcome any kind of input you can provide to create better products. These contributions, whether you think of reporting bugs, supplying code enhancements, making improvements to our documentation, answering questions in our [mailing lists](mail-lists.html), or anywhere else are valuable to everyone. Because each of these helps all of us make Trafodion better.
  
 Your first step toward more involvement in our project is to subscribe to one or more of our [mailing lists](mail-lists.html). Next, please consider making your first contribution by simply sending an e-mail to our community discussing; for example:
  
@@ -52,7 +52,7 @@ Want to be even more involved? Some areas you could consider:
 * Detailed and constructive feedback
 * Articles (case studies, white papers, etc) and presentations (speeches) about how our products helps or helped you.
  
-These are just ideas to get you started. If you feel we missed something there, please let us know (via our [mailing lists](mail-lists.html) ). Together, we can grow Trafodion and its community.
+These are just ideas to get you started. If you feel we missed something there, please let us know via our mailing lists. Together, we can grow Trafodion and its community.
  
 ----
  

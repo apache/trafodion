@@ -34,7 +34,7 @@ Before installing Cloudera Manager, a minimum of 20 GB is needed to support the 
 
 Check the available space for **```/var```** as follows:
 
-* Start a putty or VNC terminal window agains the node where Cloudera Manager will be installed.
+* Start a putty or VNC terminal window against the node where Cloudera Manager will be installed.
 * As a user with **```root```** privileges, verify that 20 GB of space is available to **```/var```**.
 
     cd /var
@@ -76,7 +76,7 @@ The Trafodion installer prompts you to set up an authentication configuration fi
 
 If you wish to manually set up the authentication configuration file and enable security, then please refer to [Enabling Security Features in Trafodion](enable-secure-trafodion.html).
 
-# PC Installation
+# PC Tools
 If you are using a Windows PC, then additional PC software may be needed throughout the installation process. It is recommended that you pre-install the PC software that you need before continuing with the Trafodion installation.
 
 Install the following software:

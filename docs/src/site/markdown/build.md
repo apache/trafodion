@@ -34,7 +34,7 @@ The source code for Apache Trafodion can be downloaded from [Apache Trafodion In
      cd <trafodion download directory>
      tar -xzf <tar file>
 
-# Setup Environmental Variables
+# Set Up Environmental Variables
 Start a new **```ssh```** session. Use the following commands to set up the Trafodion environmental variables.
 
     cd <Trafodion source directory>

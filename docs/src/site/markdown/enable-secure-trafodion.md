@@ -12,7 +12,7 @@
   limitations under the 
   License.
 -->
-This page describes how to Trafodion security.
+This page describes how to enable Trafodion security.
 
 # Introduction
 If you do not enable security in Trafodion, a client interface to Trafodion may request a username and password, but Trafodion ignores the user name and password entered in the client interface, and the session runs as the database **```root```** user, **```DB__ROOT```**, without restrictions. If you want to restrict users, restrict access to certain users only, or restrict access to an object or operation, then you must enable security, which enforces authentication and authorization. You can enable security during installation by answering the installer's prompts or after installation by running the **```traf_authentication_setup```** script, which enables both authentication and authorization. For more information, see [Authentication Setup Script](#Authentication_Setup_Script) below.

@@ -14,7 +14,7 @@
 
 This is the source-only release of the Apache Trafodion (incubating) project. This release provides product-level collection of query statistics and critical bug fixes above [1.0.0](release-notes-1-0-0.html).
 
-Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
+Build instructions are available [here](build.html).
 
 # Supported Platforms
 The following platforms are supported in this release.
@@ -76,7 +76,7 @@ This release contains the following new features.
         <ul>
           <li>[Multi-Temperature Data](https://cwiki.apache.org/confluence/display/TRAFODION/Cmp-divisioning) (Complete But Not Tested)</li>
         </ul>
-        For more information about automated update statistics and index support enhancements, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manaual.pdf).
+        For more information about automated update statistics and index support enhancements, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manual.pdf).
       </td>
       <td></td>
     </tr>
@@ -103,7 +103,7 @@ This release contains the following new features.
           <li>[Backup/Restore](https://wiki.trafodion.org/wiki/index.php/Backup_and_Restore). (Complete But Not Tested)</li>
           <li>Thread-Safe JDBC Type 2 Driver. (Complete But Not Tested)</li>
         </ul>
-        For more information about the new UNLOAD statement, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manaual.pdf).
+        For more information about the new UNLOAD statement, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manual.pdf).
       </td>
       <td></td>
     </tr>
@@ -116,7 +116,7 @@ This release contains the following new features.
           <li>[Event Handling](https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability#Logging_Events) through UDFs and log4cpp.</li>
           <li>Collection of session and query statistics in [Repository Tables](https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability) (disabled by default)</li>
         </ul>
-        For more information about gathering SQL runtime statistics and canceling an executing query, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manaual.pdf).
+        For more information about gathering SQL runtime statistics and canceling an executing query, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manual.pdf).
       </td>
       <td></td>
     </tr>
@@ -129,7 +129,7 @@ This release contains the following new features.
           <li>[Privilege checking for utilities](https://blueprints.launchpad.net/trafodion/+spec/security-privilege-updates).</li>
           <li>[Metadata Query Invalidation](https://blueprints.launchpad.net/trafodion/+spec/ddl-query-invalidation) (that is, detection and propagation of privilege changes to SQL compilers).</li>
         </ul>
-        For more information about ANSI schema support and privilege and authorization updates in this release, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manaual.pdf).
+        For more information about ANSI schema support and privilege and authorization updates in this release, see the [Trafodion SQL Reference Manual](docs/Trafodion_SQL_Reference_Manual.pdf).
       </td>
       <td></td>
     </tr>
@@ -143,6 +143,7 @@ This release contains fixes to around 85 defects, including 25 critical defects,
 # Known Issues
 
 Release 1.0.1 provides fixes to these bugs:
+
 * **[1415165](https://bugs.launchpad.net/trafodion/+bug/1415165)**: MXOSRVR memory leak when stats are enabled
 * **[1421727](https://bugs.launchpad.net/trafodion/+bug/1421727)**: Default/aggregated stats type not publishing query stats
 * **[1416539](https://bugs.launchpad.net/trafodion/+bug/1416539)** Snapshot scan installer additions

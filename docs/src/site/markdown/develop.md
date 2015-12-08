@@ -26,23 +26,23 @@ You need to register as a Trafodion contributor before you can help us develop T
     <tr>
        <td><strong>Individual Contributor License Agreement (ICLA)</strong></td>
        <td>You should sign the ICLA before contributing content to the Trafodion source tree. (Required to become a committer.)</td>
-       <td><a href="https://www.apache.org/licenses/icla.txt" target="_blank">ICLA Agreement</a><br />
-           <a href="http://www.apache.org/licenses/" target="_blank">Approval Process</a>
+       <td><a href="https://www.apache.org/licenses/icla.txt">ICLA Agreement</a><br />
+           <a href="http://www.apache.org/licenses/">Approval Process</a>
        </td>
     </tr>
     <tr>
        <td><strong>Source Control</strong></td>
        <td>You must have a git account in order to contribute to the Trafodion source. If you haven't already done so, please join git.</td>
-       <td><a href="https://github.com/join" target="_blank">Git Signup</a></td>
+       <td><a href="https://github.com/join">Git Signup</a></td>
     </tr>
     <tr>
        <td><strong>Defect Tracking</strong></td>
        <td>In order to have certain permissions, including assigning issues to yourself, you need to be a Contributor in the project. Be sure to sign up for a JIRA account if you don't have one.</td> 
-       <td><a href="https://issues.apache.org/jira/secure/Signup!default.jsp" target="_blank">Jira Signup</a></td>
+       <td><a href="https://issues.apache.org/jira/secure/Signup!default.jspa">Jira Signup</a></td>
     </tr>
 </table>
 
-Please send an e-mail to the [Trafodion development list](mail-lists.hmtl) with the approved ICLA attached. Include your git and Jira IDs.
+Please send an e-mail to the [Trafodion development list](mail-lists.html) with the approved ICLA attached. Include your git and Jira IDs.
    
 Wait for the response and then you're ready to help us develop Trafodion.
 
@@ -61,56 +61,56 @@ You use the following tools and guidelines to develop Trafodion:
        <td><strong>Trafodion Architecture</strong></td>
        <td>Document</td>
        <td>Please review the Trafodion architecture to ensure that you understand how the different components related to each other.</td>
-       <td><a href="architecture-overview.html" target="_blank">Trafodion Architecture</a></td>
+       <td><a href="architecture-overview.html">Trafodion Architecture</a></td>
     </tr>
     <tr>
        <td><strong>Defect Tracking</strong></td>
        <td>Jira</td>
        <td>View all the Trafodion defects and enhancements requests in the Jira system hosted by Apache.</td>
-       <td><a href="https://issues.apache.org/jira/browse/TRAFODION" target="_blank">Trafodion Jiras</a></td>
+       <td><a href="https://issues.apache.org/jira/browse/TRAFODION">Trafodion Jiras</a></td>
     </tr>
     <tr>
        <td><strong>Defect Management</strong></td>
        <td>Document</td>
        <td>Please read about our approach to defect management. Mostly, any changes you'll make will be in response to a defect reported in Jira.</td>
-       <td><a href="defect-management.html" target="_blank">Defect Management</a></td>
+       <td><a href="defect-management.html">Defect Management (TBD)</a></td>
     </tr>
     <tr>
        <td><strong>Git Tools</strong></td>
        <td>git</td>
-       <td><p>Most of the Trafodion development is done on Linux. Development of the web site and/or documentation can successfully be done on Windows.</p><p>Please download the appropriate tool version; Linux or Windows.</p><p>Then, please refer to <a href="https://help.github.com/articles/set-up-git/" target="_blank">GitHub Documentation</a> for information on how to set up your git environment. Ensure that you register your <a href="https://github.com/settings/ssh" target="_blank">ssh keys</a>.</p></td>
-       <td><a href="http://git-scm.com/downloads" target="_blank">Download git</a></td>
+       <td><p>Most of the Trafodion development is done on Linux. Development of the web site and/or documentation can successfully be done on Windows.</p><p>Please download the appropriate tool version; Linux or Windows.</p><p>Then, please refer to <a href="https://help.github.com/articles/set-up-git/">GitHub Documentation</a> for information on how to set up your git environment. Ensure that you register your <a href="https://github.com/settings/ssh">ssh keys</a>.</p></td>
+       <td><a href="http://git-scm.com/downloads">Download git</a></td>
     </tr>
     <tr>
        <td><strong>Code Repository</strong></td>
        <td>git</td>
        <td>The full Trafodion source tree can be retrieved from either of these repositories.</td>
-       <td><a href="https://git-wip-us.apache.org/repos/asf/incubator-trafodion.git" target="_blank">Apache Repository</a><br /><a href="https://github.com/apache/incubator-trafodion" target="_blank">GitHub Mirror</a>
+       <td><a href="https://git-wip-us.apache.org/repos/asf/incubator-trafodion.git">Apache Repository</a><br /><a href="https://github.com/apache/incubator-trafodion">GitHub Mirror</a>
        </td>
     <tr>
     </tr>
        <td><strong>Code Organization</strong></td>
        <td>Document</td>
        <td>Please familiarize yourself with the Trafodion code organization.</td>
-       <td><a href="code-organization.html" target="_blank">Code Organization</a></td>
+       <td><a href="code-organization.html">Code Organization</a></td>
     </tr>
     <tr>
        <td><strong>C++ Coding Guidelines</strong></td>
        <td>Document</td>
        <td>Please read the coding guidelines for the Trafodion C++ code before making changes.</td>
-       <td><a href="cplusplus-coding-guidelines.html" target="_blank">C++ Coding Guidelines</a></td>
+       <td><a href="cplusplus-coding-guidelines.html">C++ Coding Guidelines</a></td>
     </tr>
     <tr>
        <td><strong>Debugging Tips</strong></td>
        <td>Document</td>
        <td>Documented tips describing how to debug your code in unit testing.</td>
-       <td><a href="debugging-tips.html" target="_blank">Debugging Tips</a></td>
+       <td><a href="debugging-tips.html">Debugging Tips (TBD)</a></td>
     </tr>
     <tr>
        <td><strong>Testing</strong></td>
        <td>Document</td>
        <td>Trafodion has a rich set of test suites for each of its components. You'll need to run the tests before submitting a code change for review.</td>
-       <td><a href="testing.html" target="_blank">How to Test</a></td>
+       <td><a href="testing.html">How to Test</a></td>
     </tr>
     <tr>
        <td><strong>Code Reviews</strong></td>
@@ -118,15 +118,15 @@ You use the following tools and guidelines to develop Trafodion:
        <td>
           <p>We use GitHub pull-requests for code review. All of the activity on github is captured in ASF JIRA and/or ASF project mail archives by ASF INFRA team automation. In this way, we do not depend on github for accurate history of where contributions come from.</p>
           <p>Each pull-request title should start with a JIRA ID in brackets, so that activity can be logged to the correct JIRA issue.</p>
-          <p>Regardless of the title, the pull-request activity is also logged to the <a href="http://mail-archives.apache.org/mod_mbox/incubator-trafodion-codereview/" target="_blank">code-review mail list</a>.</p>
+          <p>Regardless of the title, the pull-request activity is also logged to the <a href="http://mail-archives.apache.org/mod_mbox/incubator-trafodion-codereview/">code-review mail list</a>.</p>
        </td>
-       <td><a href="https://github.com/apache/incubator-trafodion/pulls" target="_blank">Current Pull Requests</a></td>
+       <td><a href="https://github.com/apache/incubator-trafodion/pulls">Current Pull Requests</a></td>
     </tr>
   </body>
 </table>
 
 # Initial Setup
-This set of tasks is performed **after** downloading the git tools. Refer to [Development Tools](#development_tools) above.
+This set of tasks is performed **after** downloading the git tools. Refer to [Development Environment](#development_environment) above.
 
 You should not have to perform these tasks more than once.
 
@@ -187,7 +187,7 @@ Perform the following steps to commit your changes.
     git push trafdeveloper_fork TRAFODION-1507
 
 ## Create Pull Request
-You changed code needs to be reviewed by a Trafodion committer. Therefore, you need to create a pull request for your private repository; for example: <https://github.com/trafdeveloper/incubator-trafodion>.
+Your changed code needs to be reviewed by a Trafodion committer. Therefore, you need to create a pull request for your private repositoryc.
 
     # Generate pull request
     git pull-request
@@ -204,11 +204,11 @@ Ensure that you include the Jira ID at the beginning of the title in your pull r
 The pull request gets reviewed by the committers and once you get a consensus, then the committer merges your changes into the main incubator-trafodion branch.
 
 ## Address Review Comments
-Follow the GitHub conversation on you pull request (you should be automatically subscribed). Respond to questions and issues.
+Follow the GitHub conversation on your pull request (you should be automatically subscribed). Respond to questions and issues.
 
 If you need to make additional changes, then do the following:
 
-1. Checkout the code: **<code>git checkout TRAFODION-1507</code>**
+1. Check out the code: **<code>git checkout TRAFODION-1507</code>**
 2. Make the requested changes.
 3. Run regression tests.
 4. Commit the changes: **<code>git commit -a</code>**
@@ -238,8 +238,8 @@ There are two approaches to reviewing logs.
 ### Approach 2
 
 * Go to: <http://traf-logs.esgyn.com/PullReq/>
-* Click on the number of the pull request. Example: <http://traf-logs.esgyn.com/PullReq/18/>. The next directory level is the build number. With multiple commits or re-tests, it is possible for a pull request to have multiple builds.
+* Click on the number of the pull request. The next directory level is the build number. With multiple commits or re-tests, it is possible for a pull request to have multiple builds.
 * Under the build number is a directory for each specific job. Example: <http://traf-logs.esgyn.com/PullReq/18/35/regress-seabase-ahw2.2/>
 
 ## More Information
-The check tests do not include all of the automated daily tests. If you (or another contributor) want, you can run additional tests on the pull request. Refer [automated test setup](automated-tests.html) for more information.
+The check tests do not include all of the automated daily tests. If you (or another contributor) want, you can run additional tests on the pull request. Refer [automated test setup (TBD)](automated-tests.html) for more information.

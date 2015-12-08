@@ -14,7 +14,7 @@
 
 This is the first release of the Apache Trafodion (incubating) project. In addition to including a number of new features and improvements across the project, the focus of this release is to comply with Apache release guidelines.
 
-Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
+Build instructions are available [here](build.html).
 
 # Supported Platforms
 The following platforms are supported in this release.
