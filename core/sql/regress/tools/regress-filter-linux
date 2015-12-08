@@ -320,10 +320,6 @@ s/^\([A-Za-z0-9]\+\.m[df]?\)[ ]\+([A-Za-z]:\\\\.\+\\\\\(.\+\..\+\..\+\))/\1 (\2)
 /^[A-Za-z0-9]*\.mdf[ ]*([A-Za-z0-9]*\.[A-Za-z0-9]*\.[A-Za-z0-9]*)/s/[ ]*([A-Za-z0-9]*\.[A-Za-z0-9]*/ (#CAT.#SCH/
 s/^NonStop SQL\/MX \([A-Za-z\/ +]*\) [0-9][0-9]*\.[0-9][0-9]*$/\1 #n.#n/
 /^Copyright (c).*All Rights Reserved. *$/s/[0-9]/#/g
-/^Copyright (c).*All Rights Reserved. *$/s/Tandem[^.]*\./#CPQ#TDM#./
-/^Copyright (c).*All Rights Reserved. *$/s/Compaq[^.]*\./#CPQ#TDM#./
-/^(c) Copyright [0-9][0-9][0-9][0-9] Hewlett-Packard Development Company.*$/s/^.*$/Copyright (c) ####-#### #CPQ#TDM#\.  All Rights Reserved./
-/^(c) Copyright [0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9] Hewlett-Packard Development Company.*$/s/^.*$/Copyright (c) ####-#### #CPQ#TDM#\.  All Rights Reserved./
 s/^Copyright (c) .*/Copyright (c) ######/
 /^[Hh]istory file .* Access is denied/d
 s/^\(MESSAGEFILE     [ 	]*\).*/\1#f/
@@ -366,7 +362,6 @@ s/^\([ ][ ]*[0-9][0-9]*[ ][ ]*[0-9][0-9]*[ ][ ]*CAT.SCH\)[A-Z][0-9A-Z][0-9A-Z]\(
 s/^--- SQL operation completed with errors./--- SQL operation failed with errors./
 # Filter out Microsoft compiler and linker information
 s/Microsoft (R) .*/Microsoft (R) xxxxxx/g
-s/Copyright (C) Microsoft Corp.*/Copyright (C) Microsoft Corp xxxxxx/g
 
 #Added for nist test nist586
 s/nist586\.mdf.*/nist586.mdf/g

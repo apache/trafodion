@@ -1,8 +1,14 @@
+# List of files to exclude from RAT, see RAT_README.txt for details
+# this file
+.rat-excludes*
+# git files
+.gitignore
+.gitattributes
+# test files
 EXPECTED*
 DIFF*
 eqat*
 qat*
-.gitignore
 .data*
 sample_events*
 FILTER*
@@ -12,53 +18,53 @@ expected*
 COMPARE*
 expat*
 regress*
-.gitignore
-.qrc
 regtest_*
+montest_readme.txt
+test-requirements.txt*
+# protocol buffers
 dtm*.*.pb.cc
 protobuf*
+# make
 package.exclude.*
-jdbct2.jar.version*
-jdbct4.jar.version*
-genvers*
+package.exclude
+# readme files
 readme*
 README*
-package.exclude
+RAT_README.txt
+readme.md
+run_me*
+# documentation and build info 
 eclipse.*cproject*
+eclipse.project
+doxygen_tmudr.1.6.config
+# Files needed by txn coprocesser - hbase
 Hbase_server.skeleton.cpp*
 __init__.py*
-run_me*
+# SQL messages file
 SqlciErrors.txt
-doxygen_tmudr.1.6.config
+# DCS config files
 backup-masters
 servers
-stylesheet.css
-license*.txt*
-demo*.css*
-Sortingicons.psd*
+# jquery
 jquery-ui.css*
 jquery-ui.js*
 jquery-ui.structure.css*
 jquery-ui.theme.css*
 jquery-1.11.0.js*
-test-requirements.txt*
-SetCertificateDirReg_os.sln*
-SetCertificateDirReg.rc*
-.props*
-.sln*
+demo*.css*
+Sortingicons.psd*
+# licenses
+license*.txt*
 LICENSE.rtf*
-.ism*
-resource.h*
-resource.hm*
-.rat-excludes*
-RAT_README.txt
-readme.md
-eclipse.project
-usage.csv
-montest_readme.txt
-Resource.qrc
+LICENSE-bsd2
+LICENSE-bsd4
+LICENSE-js
+LICENSE-salesforce
+# win generated
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
+SetCertificateDirReg_os.sln*
+SetCertificateDirReg.rc*
 odbccp32.props
 UpdateDSN_os.sln
 UpdateDSN*.vcxproj*
@@ -98,6 +104,60 @@ TCPIPV4.*
 TCPIPV6.*
 TCPIPV4_os.*
 TCPIPV6_os.*
+.props*
+.sln*
+.ism*
+resource.h*
+resource.hm*
+# BSD licensed files
+swscanf.cpp
+swsprintf.cpp
+ulexer.h
+# Compiler GUI files
+usage.csv
+Resource.qrc
+#phoenix tests - MIT licensed from Salesforce
+AlterTableTest.java
+ArithmeticQueryTest.java
+AutoCommitTest.java
+BaseTest.java
+BinaryRowKeyTest.java
+CoalesceFunctionTest.java
+CompareDecimalToLongTest.java
+CreateTableTest.java
+CustomEntityDataTest.java
+DeleteRangeTest.java
+DescColumnSortOrderTest.java
+DistinctCountTest.java
+ExecuteStatementsTest.java
+ExtendedQueryExecTest.java
+FunkyNamesTest.java
+GroupByCaseTest.java
+IndexTest.java
+IsNullTest.java
+KeyOnlyTest.java
+MultiCfQueryExecTest.java
+OrderByTest.java
+ProductMetricsTest.java
+QueryExecTest.java
+QueryExecWithoutSCNTest.java
+QueryPlanTest.java
+ReadIsolationLevelTest.java
+SaltedTableTest.java
+SaltedTableUpsertSelectTest.java
+SaltedTableVarLengthRowKeyTest.java
+ServerExceptionTest.java
+SkipScanQueryTest.java
+StatementHintsTest.java
+StddevTest.java
+ToCharFunctionTest.java
+ToNumberFunctionTest.java
+TopNTest.java
+UpsertBigValuesTest.java
+UpsertSelectAutoCommitTest.java
+UpsertSelectTest.java
+UpsertValuesTest.java
+VariableLengthPKTest.java
 
 
 

@@ -118,8 +118,6 @@ then
     ((err += $?))
     cp ../../license.txt	license.txt
     ((err += $?))
-    cp ../../LICENSE	LICENSE
-    ((err += $?))
     cd ..
     # do the tar
     cp -rf linux64 PkgTmp
