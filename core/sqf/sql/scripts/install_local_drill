@@ -1,0 +1,114 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+##############################################################################
+##
+## Install a sand-boxed version of Apache Drill, to be used together
+## with the setup created in install_local_hadoop.
+## This will share the zookeeper instance with HBase and it will
+## use custom ports determined by install_local_hadoop.
+##
+##############################################################################
+
+# location of local Hadoop components, we will add Drill here
+MY_SW_ROOT=$MY_SQROOT/sql/local_hadoop
+
+# Download info for Drill
+DRILL_VERSION=1.2.0
+DRILL_MIRROR_URL=http://archive.apache.org/dist/drill/drill-${DRILL_VERSION}
+DRILL_ID=apache-drill-${DRILL_VERSION}
+DRILL_TAR=${DRILL_ID}.tar.gz
+
+if [[ -d ${MY_SW_ROOT}/${DRILL_TAR} ]]; then
+  echo "Drill is already downloaded to ${MY_SW_ROOT}/${DRILL_TAR}, exiting..."
+  exit 0
+fi
+
+if [[ ! -d "$MY_SW_ROOT" ]]; then
+  echo "Could not find directory $MY_SW_ROOT"
+  exit 1
+fi
+
+cd $MY_SW_ROOT
+
+if [ -f $MY_LOCAL_SW_DIST/${DRILL_TAR} ]; then
+  cp $MY_LOCAL_SW_DIST/${DRILL_TAR} .
+  echo "Copied Drill tar file from: $MY_LOCAL_SW_DIST/${DRILL_TAR}"
+else
+  wget ${DRILL_MIRROR_URL}/${DRILL_TAR}
+  echo "Downloaded Drill tar file: ${DRILL_MIRROR_URL}/${DRILL_TAR}"
+fi
+
+if [[ ! -f $DRILL_TAR ]]; then
+  echo "Unable to download Drill tar file ${DRILL_MIRROR_URL}/${DRILL_TAR}"
+  exit 1
+fi
+
+tar -xzf ${DRILL_TAR}
+ln -s ${DRILL_ID} drill
+
+cat <<EOF >${MY_SQROOT}/sql/scripts/swdrill
+#!/bin/sh
+$MY_SW_ROOT/drill/bin/drill-conf "\$@"
+EOF
+
+cat <<EOF >${MY_SQROOT}/sql/scripts/swstartdrill
+#!/bin/sh
+${MY_SW_ROOT}/drill/bin/drillbit.sh --config $MY_SW_ROOT/drill/conf start
+EOF
+
+cat <<EOF >${MY_SQROOT}/sql/scripts/swstopdrill
+#!/bin/sh
+${MY_SW_ROOT}/drill/bin/drillbit.sh --config $MY_SW_ROOT/drill/conf stop
+EOF
+
+chmod +x ${MY_SQROOT}/sql/scripts/sw*drill
+
+# pick up environment variables with the relevant port numbers
+. ${MY_SQROOT}/sql/scripts/sw_env.sh
+
+# customize the embedded Drill configuration to use custom
+# port numbers and files local to ${MY_SW_ROOT}
+cd $MY_SW_ROOT/drill/conf
+mv drill-override.conf drill-override.conf.orig
+cat <<EOF >drill-override.conf
+drill.exec: {
+  cluster-id: "local_hadoop_drill",
+  zk.connect: "localhost:${MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM}",
+  sys.store.provider.local.path: "${MY_SW_ROOT}/data/drill",
+  sys.store.provider.zk.blobroot: "file://${MY_SW_ROOT}/data/drill/blobroot",
+  tmp.directories: "${MY_SW_ROOT}/data/drill/tmp",
+  trace.directory: "${MY_SW_ROOT}/data/drill/log",
+  http.port: "${MY_DRILL_INFO_PORT_NUM}",
+  rpc.user.server.port: "${MY_DRILL_RPC_PORT_NUM}",
+  rpc.bit.server.port: "${MY_DRILL_BIT_PORT_NUM}"
+}
+EOF
+
+# copy the Drill JDBC driver into the external_libs folder for UDRs
+mkdir -p ${MY_SQROOT}/udr/external_libs
+cp ${MY_SW_ROOT}/drill/jars/jdbc-driver/drill-jdbc-all-${DRILL_VERSION}.jar ${MY_SQROOT}/udr/external_libs
+
+echo "Installed a local copy of Drill. Start a drillbit with the"
+echo "swstartdrill command, connect with swdrill."
+
+exit 0
