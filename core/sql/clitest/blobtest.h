@@ -1,0 +1,32 @@
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include "BaseTypes.h"
+#include "NAAssert.h"
+#include "stdlib.h"
+#include "stdio.h"
+#include "sqlcli.h"
+#include "ComDiags.h"
+#include "ex_stdh.h"
+#include "memorymonitor.h"
+#include "ex_exe_stmt_globals.h"
+#include "ex_esp_frag_dir.h"
+#include "ComTdb.h"
+#include "ex_tcb.h"
+#include "ex_split_bottom.h"
+#include "ex_send_bottom.h"
+#include "NAExit.h"
+#include "ExSqlComp.h"
+#include "Globals.h"
+#include "Int64.h"
+#include "SqlStats.h"
+#include "ComUser.h"
+#include "ExpError.h"
+#include "ComSqlId.h"
+#include "ex_globals.h"
+#include "ex_tcb.h"
+#include "ExExeUtil.h"
+#include "Globals.h"
+#include "Context.h"
+
+Int32 extractLengthOfBlobColumn(CliGlobals *cliglob, Int64 &lengthOfLob,char *lobColumnName, char *tableName);
