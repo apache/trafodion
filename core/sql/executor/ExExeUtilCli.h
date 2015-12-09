@@ -100,7 +100,11 @@ private:
                             Lng32 * outputBufLen = NULL,
                             NABoolean nullTerminate = TRUE,
                             Int64 * rowsAffected = NULL);
-
+  Lng32 executeImmediateExecNoDealloc(const char * stmt,
+                            char * outputBuf = NULL,
+                            Lng32 * outputBufLen = NULL,
+                            NABoolean nullTerminate = TRUE,
+                            Int64 * rowsAffected = NULL);
   Lng32 prepare(const char * stmtStr,
 		SQLMODULE_ID * module,
 		SQLSTMT_ID * stmt,

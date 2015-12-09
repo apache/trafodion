@@ -15583,15 +15583,15 @@ exe_util_populate_in_memory_statistics : TOK_GENERATE TOK_STATISTICS TOK_FOR TOK
 	       }
 
 /* type relx */
-exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
+exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
                {
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
-
+		 Int64 returnLengthAddr = atoInt64($8->data());
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
-		    NULL, NULL, 0, 0);
+		    returnLengthAddr, NULL, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -15614,9 +15614,9 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 */
 	       }
 
-              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ')'
+              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-                 if (NOT (($8->getOperatorType() == ITM_DYN_PARAM) ||
+		 /* if (NOT (($8->getOperatorType() == ITM_DYN_PARAM) ||
                           ($8->getOperatorType() == ITM_CONSTANT)))
                    {
                      YYERROR;
@@ -15626,23 +15626,24 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
                           ($11->getOperatorType() == ITM_CONSTANT)))
                    {
                      YYERROR;
-                   }
-
-                 ItemExpr * bufaddr = $8;
+		     }*/
+		 Int64 bufAddr = atoInt64($8->data());
+		 Int64 bufSize = atoInt64($11->data());
+		 /* ItemExpr * bufaddr = $8;
 		 bufaddr = new (PARSERHEAP()) 
 		   Cast(bufaddr, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
 
 		 ItemExpr * bufsize = $11;
 		 bufsize = new (PARSERHEAP()) 
 		   Cast(bufsize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-
+		 */
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_BUFFER_,
-		    bufaddr, bufsize, 0, 0);
+		    bufAddr, bufSize, 0, 0);
 
 		 $$ = lle;
 	       }

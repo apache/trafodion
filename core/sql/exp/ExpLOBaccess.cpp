@@ -2769,7 +2769,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_ReadCursor:
-      if (subOperation == Lob_Memory)
+      if ((subOperation == Lob_Memory) || (subOperation == Lob_Buffer))
 	err = lobPtr->readCursor(source, sourceLen, handleIn, handleInLen, retOperLen);
       else if (subOperation == Lob_File)
 	err = lobPtr->readCursor(source, -1, handleIn, handleInLen, retOperLen);

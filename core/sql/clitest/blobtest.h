@@ -28,5 +28,10 @@
 #include "ExExeUtil.h"
 #include "Globals.h"
 #include "Context.h"
+Int32 extractLobHandle(CliGlobals *cliglob, char *& lobHandle, 
+		       char *lobColumnName, char *tableName);
 
-Int32 extractLengthOfBlobColumn(CliGlobals *cliglob, Int64 &lengthOfLob,char *lobColumnName, char *tableName);
+Int32 extractLengthOfLobColumn(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfLob,char *lobColumnName, char *tableName);
+
+Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfLob, 
+			 char *lobColumnName, char *tableName);

@@ -22,7 +22,8 @@
 #######################################################################
 
 CPPSRC := \
-        blobtest.cpp 
+        blobtest.cpp \
+	vers_libclitest.cpp
        
 CPPSRC += mpisetup.cpp 
 SRCPATH := clitest bin 

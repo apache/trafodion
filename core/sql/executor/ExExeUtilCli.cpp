@@ -759,7 +759,8 @@ Lng32 ExeCliInterface::getPtrAndLen(short entry, char* &ptr, Lng32 &len, short**
   if (datatype == REC_BYTE_V_ASCII ||
       datatype == REC_BYTE_V_ASCII_LONG ||
       datatype == REC_BYTE_V_DOUBLE ||
-      datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH)
+      datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH ||
+      datatype == SQLTYPECODE_VARCHAR_LONG)
     {
 
       // Depending on value of len, first 2 or 4 bytes of data indicate
@@ -1048,6 +1049,77 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
   return ((cliRetcode != -1) ? cliRetcode : retcode);
 }
 
+
+Lng32 ExeCliInterface::executeImmediateExecNoDealloc(const char * stmtStr,
+					   char * outputBuf,
+					   Lng32 * outputBufLen,
+					   NABoolean nullTerminate,
+					   Int64 * rowsAffected 
+					   )
+{
+  Lng32 retcode = 0;
+
+  retcode = exec();
+  if (retcode < 0)
+    {
+      deallocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
+      return retcode;
+    }
+
+  retcode = fetch();
+  if (retcode < 0)
+    {
+      deallocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
+      return retcode;
+    }
+
+  if ((outputBuf) &&
+      (outputBufLen))
+    {
+      *outputBufLen = 0;
+      if (retcode != 100)
+	{
+	  char * ptr;
+	  Lng32 len;
+	  getPtrAndLen(1, ptr, len);
+
+	  str_cpy_all(outputBuf, ptr, len);
+	  
+	  if (nullTerminate)
+	    outputBuf[len] = 0;
+	  *outputBufLen = len;
+	}
+    }
+
+  Lng32 cliRetcode = -1;
+  if (retcode >= 0)
+  {
+    cliRetcode = retcode;
+    if (rowsAffected)
+    {
+      Int64 tmpRowsAffected = 0;
+      retcode = SQL_EXEC_GetDiagnosticsStmtInfo2(NULL, SQLDIAG_ROW_COUNT,
+        &tmpRowsAffected, NULL,
+        0, NULL);
+
+      if(retcode == EXE_NUMERIC_OVERFLOW) 
+      {
+        GetRowsAffected(rowsAffected);
+      }
+      else
+        *rowsAffected = tmpRowsAffected;
+    }
+  }
+
+  clearGlobalDiags();
+
+  retcode = close();
+
+  /*deallocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
+
+  clearGlobalDiags();*/
+  return ((cliRetcode != -1) ? cliRetcode : retcode);
+}
 Lng32 ExeCliInterface::executeImmediate(const char * stmtStr,
 				       char * outputBuf,
 				       Lng32 * outputBufLen,

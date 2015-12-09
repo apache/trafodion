@@ -28,7 +28,7 @@ EARLY_DLLS:= -ljsig
 
 DEP_LIBS += tdm_sqlcli arkcmp_dll clitest
 
-CPPSRC += vprocsqlci.cpp
+CPPSRC += vprocclitestdriver.cpp
 
 
 SRCPATH := clitest bin

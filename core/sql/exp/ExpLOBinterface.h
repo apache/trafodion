@@ -265,6 +265,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 				  Int64 cusrorBytes,
 				  char *cursorId,
 				  Int64 &requestTag,
+				  LobsSubOper so,
 				  Lng32 checkStatus,
 				  Lng32 waitedOp,
 

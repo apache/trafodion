@@ -3680,11 +3680,14 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
      handle,
      handleLen,
      (toType_ == TO_BUFFER_ ? ComTdbExeUtilLobExtract::TO_BUFFER_ :
-      (toType_ == TO_STRING_ ? ComTdbExeUtilLobExtract::TO_STRING_ :
-       (toType_ == TO_FILE_ ? ComTdbExeUtilLobExtract::TO_FILE_ :
+      (toType_ == RETRIEVE_LENGTH_ ? ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_ :
+       (toType_ == TO_STRING_ ? ComTdbExeUtilLobExtract::TO_STRING_ :
+	(toType_ == TO_FILE_ ? ComTdbExeUtilLobExtract::TO_FILE_ :
 	(toType_ == TO_EXTERNAL_FROM_STRING_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_ :
 	 (toType_ == TO_EXTERNAL_FROM_FILE_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_ :
-	  ComTdbExeUtilLobExtract::NOOP_))))),
+	  ComTdbExeUtilLobExtract::NOOP_)))))),
+     bufAddr_,
+     extractSize_,
      intParam_,
      intParam2_,
      lst,
@@ -3741,7 +3744,7 @@ if (handleInStringFormat_)
     {
       exe_util_tdb->setRetrieveLength(TRUE);
     }
-  exe_util_tdb->setBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
+  exe_util_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
   generator->setCriDesc(returnedDesc, Generator::UP);

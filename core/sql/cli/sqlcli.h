@@ -825,6 +825,7 @@ enum SQLATTRQUERY_TYPE {
      approach to extract data from SQL tables into extrenal files */
   SQL_SELECT_UNLOAD = 19
   
+  
 
 };
 
@@ -837,7 +838,9 @@ enum SQLATTR_SUBQUERY_TYPE
   SQL_DESCRIBE_QUERY = 4,
   SQL_DISPLAY_EXPLAIN = 5,
   SQL_STMT_HBASE_LOAD = 6,
-  SQL_STMT_HBASE_UNLOAD = 7
+  SQL_STMT_HBASE_UNLOAD = 7,
+  /* Used to denote lob access */
+  SQL_LOB_EXTRACT = 8
 };
 
 

@@ -792,6 +792,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 				  char *cursorId,
 				  
 				  Int64 &requestTag,
+				  LobsSubOper so,
 				  Lng32 checkStatus,
 				  Lng32 waitedOp,
 
@@ -810,7 +811,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
   
   LobsOper lo;
 
-  //if (lobHandle == NULL)
+  if (lobHandle == NULL)
     {
       if (oper == 1)
 	lo = Lob_OpenDataCursorSimple;
@@ -821,7 +822,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
       else
 	return -1;
     }
-  /*else
+  else
     {
       if (oper == 1)
 	lo = Lob_OpenCursor;
@@ -832,7 +833,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
       else
 	return -1;
     }
-*/
+
   if (checkStatus)
     lo = Lob_Check_Status;
   else
@@ -852,7 +853,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 		   lobData, inLen, 
 		   cursorBytes,cursorId,
 		   lo,
-		   Lob_Memory,
+		   so,
                    waitedOp,
 		   lobGlob,
 		   0,

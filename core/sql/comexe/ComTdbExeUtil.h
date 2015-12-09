@@ -2655,7 +2655,7 @@ public:
   enum ExtractToType
   {
     TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
-    TO_EXTERNAL_FROM_FILE_,  NOOP_
+    TO_EXTERNAL_FROM_FILE_, RETRIEVE_LENGTH_,NOOP_
   };
   
 
@@ -2668,8 +2668,10 @@ public:
      char * handle,
      Lng32 handleLen,
      ExtractToType toType,
-     Int64 size,
-     Int64 size2,
+     Int64 bufAddr,
+     Int64 extractSize,
+     Int64 intParam1,
+     Int64 intParam2,
      Int32 lobStorageType,
      char * stringParam1,
      char * stringParam2,
@@ -2702,7 +2704,7 @@ public:
   Lng32 getLobHdfsPort() { return lobHdfsPort_; }
 
   ExtractToType getToType() { return (ExtractToType)toType_; }
-
+ 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
@@ -2751,9 +2753,13 @@ public:
   {(v ? flags_ |= APPEND_OR_CREATE : flags_ &= ~APPEND_OR_CREATE); };
   NABoolean appendOrCreate() { return (flags_ & APPEND_OR_CREATE) != 0; };
 
-  void setRowSize(Int64 rowSize) { rowSize_ = rowSize; };
-  void setBufSize(Int64 bufSize) { bufSize_ = bufSize;};
-  
+  void setExtractSize(Int64 extractSize) { extractSize_ = extractSize; };
+  Int64 getExtractSize() { return extractSize_;}
+  void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
+  Int64 getTotalBufSize() { return totalBufSize_;};
+  void setBufAddr(Int64 bufAddr) {bufAddr_ = bufAddr;};
+  Int64 getBufAddr() { return bufAddr_;};
+
 private:
   enum
   {
@@ -2773,8 +2779,11 @@ private:
   short toType_;                                           // 08-09
   Int32 flags_;    
   Lng32 handleLen_;
-  Int64 rowSize_; // row size
-  Int64 bufSize_; // buf size
+  Int64 extractSize_; // as passed in via syntax size
+  Int64 totalBufSize_; // buf size
+  Int64 bufAddr_ ; //buffer addressed as passed in by user via syntax
+  Int64 intParam1_;
+  Int64 intParam2_;
   Lng32 lobStorageType_ ; // valid when  extract is from a file.
   Lng32 lobHdfsPort_;
   NABasicPtr lobHdfsServer_;

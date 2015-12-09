@@ -66,25 +66,92 @@
 #include "Context.h"
 #include "blobtest.h"
 
-// DEFINE_DOVERS(clitest)
-
-int main()
+//DEFINE_DOVERS(clitestdriver)
+// 
+int main(int argc, const char * argv[])
 {
+
+  if ((argc < 2) || (argc > 2))
+    {
+      cout << "Error -  provide an option: " << endl;
+      cout << "Usage : clitestdriver <option number>" << endl;
+      cout << "TEST            : OPTION        "<<endl;
+      cout << "--------------------------------"<<endl;
+      cout << "Blob test          1 "<< endl;
+      return 0;
+    }
+  Int32 retcode = 0;
   SQLCTX_HANDLE defContext = 0;
   Lng32 retCode = SQL_EXEC_CreateContext(&defContext, NULL, 0);
-
-  if(retCode == 0){
-    cerr << "success -- new handle:" << defContext << endl;
-  }
-  else{
-    cerr << "error -- " << endl;
-   
-  }
-  CliGlobals * cliGlob = GetCliGlobals();
-  //extract length of blob column from a table with 1 lob column.
-  Int64 lengthOfLob= 0;
-  retCode = extractLengthOfBlobColumn(cliGlob, lengthOfLob,(char *)"c2",(char *)"tlob1");
  
+  int option = atoi(argv[1]);
+
+  if(retcode != 0 )
+    cout << "Error creating a CLI context error " << endl;
+   
+  
+  CliGlobals * cliGlob = GetCliGlobals();
+  char tablename[50] = {'\0'};
+  char columnname[50] = {'\0'};
+ 
+  switch (option) 
+    {
+    case 1:
+      {
+	cout <<"***********"  <<endl;
+	cout << "Blob test " << endl;
+	cout <<"***********"  <<endl;
+	cout << " Extract from a lob column in a lob table" << endl << endl;
+	cout << " Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << " Table name : " << tablename << endl;
+	cout << "Input lob column name to extract from :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+
+      //extract lob handle
+      
+      char *lobHandle = new char[1024];
+      str_cpy_all(lobHandle," ",1024);
+      cout << "Extracting  lob handle for column " << columnname << "..." << endl;
+      retcode = extractLobHandle(cliGlob, lobHandle, (char *)"c2",(char *)"tlob1");
+      if (retcode)
+	{
+	  cout << "extractLobHandle returned " << retcode <<endl;
+	
+	  delete lobHandle;
+	  return retcode;
+	}
+      cout << "LOB handle for "<< columnname << ": " << lobHandle << endl;
+      //extract length of lob column from a table with 1 lob column.
+
+      cout << "Extracting LOB data length for the above handle..." << endl;
+      Int64 lengthOfLob= 0;
+      retCode = extractLengthOfLobColumn(cliGlob, lobHandle, lengthOfLob,(char *)"c2",(char *)"tlob1");
+      if (retcode)
+	{
+	  cout << "extractLengthOfLobColumn returned " << retcode <<endl;
+	 
+	  delete lobHandle;
+	  return retcode;
+	}
+      cout << "LOB data length :" << lengthOfLob << endl;
+      //extract lob data to buffer
+      cout << "Extracting lob data into user buffer in a loop ..." << endl;
+      retCode = extractLobToBuffer(cliGlob,lobHandle, lengthOfLob,(char *)"c2",(char *)"tlob1");
+      if (retcode)
+	{
+	  cout << "extractLobToBuffer returned " << retcode <<endl;
+
+	  delete lobHandle;
+	  return retcode;
+	}
+      delete lobHandle;
+      return retcode;
+      }
+     
+      break;
+    }
   
   
   return 0;
