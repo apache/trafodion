@@ -58,6 +58,9 @@ INIT_TRAFODION="N"
 START="N"
 SQCONFIG=""
 DCS_SERVERS_PARM="2"
+ENABLE_HA="false"
+FLOATING_IP=""
+BACKUP_DCS_NODES=""
 LDAP_SECURITY="N"
 SCANNER_MODE="N"
 
@@ -257,6 +260,7 @@ package=$(tar -tzf $TRAF_PACKAGE | grep build-version.txt | wc -l )
 if [ $package -eq 0 ]; then
    
    # assume user specified a trafodion core tar file
+   UTT_INSTALL="Y"
    TRAF_BUILD=$TRAF_PACKAGE
    TRAF_PACKAGE=""
    
@@ -307,6 +311,7 @@ if [ $package -eq 0 ]; then
    
 else
    # user specifed a package file
+   UTT_INSTALL="N"
    TRAF_BUILD=""
    DCS_BUILD=""
    REST_BUILD=""
@@ -317,6 +322,7 @@ echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
+echo "export UTT_INSTALL=\"$UTT_INSTALL\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 #Hadoop user name
@@ -456,7 +462,7 @@ fi
 #DCS Servers
 
 DCS_SERVERS_PARM=$(($node_count * 8))
-echo -n "Total number of client connections per node, default [$DCS_SERVERS_PARM]: "
+echo -n "Total number of client connections per cluster, default [$DCS_SERVERS_PARM]: "
 read answer
 
 if [ ! -z $answer ]; then
@@ -464,6 +470,85 @@ if [ ! -z $answer ]; then
 fi
 
 echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Enable HA
+
+echo -n "Enable High Avalability (Y/N), default is N: "
+read answer
+
+if [[ ! -z $answer ]]; then
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+      ENABLE_HA="true"
+   else
+      ENABLE_HA="false"
+   fi
+else
+   ENABLE_HA="false"
+fi
+
+echo "export ENABLE_HA=\"$ENABLE_HA\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Add Floating IP if HA Enabled
+if [[ "$ENABLE_HA" == "true" ]]; then
+   echo -n "Enter Floating IP address for DCS HA, default [$FLOATING_IP]: "
+   read answer
+
+   if [ -z $answer ]; then
+      if [[ -z $FLOATING_IP ]]; then
+         echo "***ERROR: Floating IP address not given." 
+         echo "***ERROR: Install will contiune but WITHOUT High Avalability"
+         echo "***ERROR: HA can be configured later, or kill this script and start over."
+         sed -i '/ENABLE_HA\=/d' $LOCAL_TRAF_CONFIG
+         echo "export ENABLE_HA=\"false\"" >> $LOCAL_TRAF_CONFIG     
+      fi      
+   else
+      FLOATING_IP="$answer"
+   fi
+   echo "export FLOATING_IP=\"$FLOATING_IP\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+
+#==============================================
+#Add Floating IP if HA Enabled
+if [[ "$ENABLE_HA" == "true" ]]; then
+   echo -n "Enter interface for Floating IP address (example: eth0), default [$INTERFACE]: "
+   read answer
+
+   if [ -z $answer ]; then
+      if [[ -z $INTERFACE ]]; then
+         echo "***ERROR: Floating IP interface was not given."
+         echo "***ERROR: Install will contiune but WITHOUT High Avalability"
+         echo "***ERROR: HA can be configured later, or kill this script and start over."
+         sed -i '/ENABLE_HA\=/d' $LOCAL_TRAF_CONFIG
+         echo "export ENABLE_HA=\"false\"" >> $LOCAL_TRAF_CONFIG
+      fi
+   else
+      INTERFACE="$answer"
+   fi
+   echo "export INTERFACE=\"$INTERFACE\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#Add Backup DCS Master nodes if HA Enabled
+if [[ "$ENABLE_HA" == "true" ]]; then
+   echo -n "Enter DCS Backup Master Nodes for DCS HA, default [$BACKUP_DCS_NODES]: "
+   read answer 
+  
+   if [[ -z "$answer" ]]; then 
+      if [[ -z "$BACKUP_DCS_NODES" ]]; then
+         echo "***ERROR: Backup DCS Nodes not given."
+         echo "***ERROR: Install will contiune but WITHOUT High Avalability"
+         echo "***ERROR: HA can be configured later, or kill this script and start over."
+         sed -i '/ENABLE_HA\=/d' $LOCAL_TRAF_CONFIG
+         echo "export ENABLE_HA=\"false\"" >> $LOCAL_TRAF_CONFIG 
+      fi
+   else
+      BACKUP_DCS_NODES="$answer"
+   fi
+   echo "export BACKUP_DCS_NODES=\"$BACKUP_DCS_NODES\"" >> $LOCAL_TRAF_CONFIG
+fi 
 
 #==============================================
 #Simple security
