@@ -94,6 +94,8 @@ public class TrxTransactionState  extends TransactionState{
     static java.lang.reflect.Constructor c98_1 = null;
     static java.lang.reflect.Constructor c98_4 = null;
 
+    static Class keepDeletedCellsClazz = null;
+    static Class scaninfoClazz = null;
     static Constructor scaninfoConstructor = null;
     static Object[] scaninfoArgs = null;
 
@@ -141,7 +143,6 @@ public class TrxTransactionState  extends TransactionState{
 	}
 	
 	
-	Class scaninfoClazz = null;
         try {
             scaninfoClazz = Class.forName("org.apache.hadoop.hbase.regionserver.ScanInfo");
         } catch (ClassNotFoundException e) {
@@ -156,16 +157,16 @@ public class TrxTransactionState  extends TransactionState{
             if (LOG.isTraceEnabled())
                 LOG.trace("Created ScanInfo instance before HBase 98.8");
         } catch (Exception e) {
-            Class clazz = null;
+            
             try {
-                clazz = Class.forName("org.apache.hadoop.hbase.KeepDeletedCells");
+                keepDeletedCellsClazz = Class.forName("org.apache.hadoop.hbase.KeepDeletedCells");
             } catch (ClassNotFoundException e1) {
                 throw new RuntimeException(e1.getMessage());
             }
-            types = new Class[] { byte[].class, int.class, int.class, long.class, clazz, long.class, KVComparator.class };
+            types = new Class[] { byte[].class, int.class, int.class, long.class, keepDeletedCellsClazz, long.class, KVComparator.class };
             try {
                 scaninfoConstructor = scaninfoClazz.getConstructor(types);
-                scaninfoArgs = new Object[] { null, 0, 1, HConstants.FOREVER, Enum.valueOf(clazz, "FALSE"), 0, KeyValue.COMPARATOR };
+                scaninfoArgs = new Object[] { null, 0, 1, HConstants.FOREVER, Enum.valueOf(keepDeletedCellsClazz, "FALSE"), 0, KeyValue.COMPARATOR };
                 if (LOG.isTraceEnabled())
                     LOG.trace("Created ScanInfo instance after HBase 98.8");
             } catch (Exception e1) {
