@@ -262,6 +262,10 @@ public class TrxTransactionState  extends TransactionState{
         return writeOrdering.size() > 0;
     }
 
+    public int writeSize() {
+       return writeOrdering.size();
+    }
+
     public synchronized void addDelete(final Delete delete) {
         if (LOG.isTraceEnabled()) LOG.trace("addDelete -- ENTRY: delete: " + delete.toString());
 
