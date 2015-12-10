@@ -447,6 +447,7 @@ static const QueryString getTrafRoles[] =
   {" select distinct auth_db_name "},
   {"   from %s.\"%s\".%s "},
   {"  where auth_type = 'R' "},
+  {" union select * from (values ('PUBLIC')) "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -1986,6 +1987,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
               case ComTdbExeUtilGetMetadataInfo::ROLES_:
                 {
                   qs = getTrafRoles;
+
                   sizeOfqs = sizeof(getTrafRoles);
 
                   param_[0] = cat;
