@@ -714,7 +714,7 @@ ItemExpr* ItemExpr::getConstantInVEG()
 
 ItemExpr * ItemExpr::createMirrorPred(ItemExpr *compColPtr, 
                                       ItemExpr * compColExprPtr, 
-                                      ValueIdSet underlyingCols)
+                                      const ValueIdSet &underlyingCols)
 {
    CMPASSERT(compColPtr->getOperatorType() == ITM_BASECOLUMN);
    ValueIdSet eics = ((BaseColumn *)compColPtr)->getEIC();
@@ -5943,6 +5943,40 @@ void FuncDependencyConstraint::unparse(NAString &result,
   result += ")";
 }
 
+
+// -----------------------------------------------------------------------
+// member functions for class CheckOptConstraint
+// -----------------------------------------------------------------------
+CheckOptConstraint::~CheckOptConstraint() {}
+
+Int32 CheckOptConstraint::getArity() const { return 0; }
+
+ItemExpr * CheckOptConstraint::copyTopNode(ItemExpr *derivedNode,
+                                           CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) CheckOptConstraint(checkPreds_);
+  else
+    result = derivedNode;
+
+  return OptConstraint::copyTopNode(result, outHeap);
+}
+
+const NAString CheckOptConstraint::getText() const
+{
+  return "CheckOptConstraint";
+}
+
+void CheckOptConstraint::unparse(NAString &result,
+                                 PhaseEnum phase,
+                                 UnparseFormatEnum form,
+                                 TableDesc * tabId) const
+{
+  result += "CheckOptConstraint";
+  checkPreds_.unparse(result,phase,form);
+}
 
 // -----------------------------------------------------------------------
 // member functions for class RefOptConstraint

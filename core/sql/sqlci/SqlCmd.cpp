@@ -642,6 +642,7 @@ char * SqlCmd::replacePattern(SqlciEnv * sqlci_env, char * str)
 	    }
 
 	  j = 0;
+          skipChar = FALSE;
 	  state = CONSUME_CHAR;
 	  break;
 

@@ -101,7 +101,7 @@ cleantests:
 	cd ../dcs/src/test/pytests && $(RM) -r odbc* tox.ini config.ini .tox .testrep* env.sh test_p2.pyc 
 	cd ../dcs/src/test/jdbc_test && $(RM) -r jdbcprop pom.xml  target
 	cd ../tests/phx && $(RM) -r jdbcprop *.log pom.xml target
-	
+
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
@@ -158,7 +158,7 @@ version:
 # create links and files needed as prerequisite for the build
 sqroot:
 	./bldenvchk.sh;
-	cd sqf && $(MAKE) setupdir
+	cd sqf && $(MAKE) setupdir 2>&1 | sed -e "s/$$/	##(setupdir)/";exit $${PIPESTATUS[0]}
 
 # Check for absolute filenames used as dynamic linked libraries
 find-absolute-dlls:

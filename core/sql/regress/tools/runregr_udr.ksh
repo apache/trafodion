@@ -850,6 +850,13 @@ if [ $LINUX -ne 0 ]; then
    export CLASSPATH=$MY_SQROOT/export/lib/hpt4jdbc.jar:$CLASSPATH:.
 fi
 
+export JDBC_T4_URL="jdbc:t4jdbc://localhost:23400/:"
+if [ -r $MY_SQROOT/sql/scripts/swenv.sh ]; then
+  # use a custom port for the JDBC Type 4 driver
+  . $MY_SQROOT/sql/scripts/swenv.sh
+  export JDBC_T4_URL="jdbc:t4jdbc://localhost:${MY_DCS_MASTER_PORT}/:"
+fi
+
 # if the regressions are running on NSK, start the ODBC server if
 # we are not running diffs_only
 if [ $USE_NDCS -ne 0 -a $DIFFS_ONLY -eq 0 -a $SEABASE_REGRESS -eq 0 ]; then
