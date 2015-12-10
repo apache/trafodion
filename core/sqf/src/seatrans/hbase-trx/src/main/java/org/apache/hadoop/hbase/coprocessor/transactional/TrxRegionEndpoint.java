@@ -2931,7 +2931,7 @@ CoprocessorService, Coprocessor {
         this.skipWal = config.getBoolean(CONF_SKIP_WAL, DEFAULT_SKIP_WAL);
         this.fullEditInCommit = config.getBoolean(CONF_COMMIT_EDIT, DEFAULT_COMMIT_EDIT);
 	m_regionName = this.regionInfo.getRegionNameAsString();
-	m_isTrafodionMetadata = m_regionName.contains("_MD_");
+	m_isTrafodionMetadata = m_regionName.contains("TRAFODION._MD_.");
 
         LOG.info ("TRX Endpoint coprocessor, " 
 		  + " region: " + m_regionName 
