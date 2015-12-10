@@ -24,7 +24,6 @@
 package org.apache.hadoop.hbase.regionserver.transactional;
 
 import java.io.IOException;
-
 import java.lang.Class;
 
 import java.lang.reflect.Constructor;
@@ -55,6 +54,7 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValue.KVComparator;
 import org.apache.hadoop.hbase.KeyValue.Type;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Delete;
@@ -70,6 +70,7 @@ import org.apache.hadoop.hbase.regionserver.ScanInfo;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.hbase.util.VersionInfo;
 import org.apache.hadoop.io.DataInputBuffer;
 
 /**
@@ -82,6 +83,11 @@ public class TrxTransactionState  extends TransactionState{
     static boolean sb_sqm_98_4;
     static java.lang.reflect.Constructor c98_1 = null;
     static java.lang.reflect.Constructor c98_4 = null;
+
+    static Class keepDeletedCellsClazz = null;
+    static Class scaninfoClazz = null;
+    static Constructor scaninfoConstructor = null;
+    static Object[] scaninfoArgs = null;
 
     static {
 	sb_sqm_98_1 = true;
@@ -116,15 +122,48 @@ public class TrxTransactionState  extends TransactionState{
 	    }
 	    catch (NoSuchMethodException exc_nsm2) {
 		sb_sqm_98_4 = false;
+                LOG.info("Got info of Class ScanQueryMatcher for HBase version" + VersionInfo.getVersion());
 	    }
 	}
-
 	if (sb_sqm_98_1) {
 	    LOG.info("Got info of Class ScanQueryMatcher for HBase 98.1");
 	}
 	if (sb_sqm_98_4) {
 	    LOG.info("Got info of Class ScanQueryMatcher for HBase 98.4");
 	}
+	
+	
+        try {
+            scaninfoClazz = Class.forName("org.apache.hadoop.hbase.regionserver.ScanInfo");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        Class[] types = null;
+
+        try {
+            types = new Class[] { byte[].class, int.class, int.class, long.class, boolean.class, long.class, KVComparator.class };
+            scaninfoConstructor = scaninfoClazz.getConstructor(types);
+            scaninfoArgs = new Object[] { null, 0, 1, HConstants.FOREVER, false, 0, KeyValue.COMPARATOR };
+            if (LOG.isTraceEnabled())
+                LOG.trace("Created ScanInfo instance before HBase 98.8");
+        } catch (Exception e) {
+            
+            try {
+                keepDeletedCellsClazz = Class.forName("org.apache.hadoop.hbase.KeepDeletedCells");
+            } catch (ClassNotFoundException e1) {
+                throw new RuntimeException(e1.getMessage());
+            }
+            types = new Class[] { byte[].class, int.class, int.class, long.class, keepDeletedCellsClazz, long.class, KVComparator.class };
+            try {
+                scaninfoConstructor = scaninfoClazz.getConstructor(types);
+                scaninfoArgs = new Object[] { null, 0, 1, HConstants.FOREVER, Enum.valueOf(keepDeletedCellsClazz, "FALSE"), 0, KeyValue.COMPARATOR };
+                if (LOG.isTraceEnabled())
+                    LOG.trace("Created ScanInfo instance after HBase 98.8");
+            } catch (Exception e1) {
+                LOG.error("Created ScanInfo instance ERROR");
+                throw new RuntimeException(e1.getMessage());
+            }
+        }
     }
 
     /**
@@ -221,6 +260,10 @@ public class TrxTransactionState  extends TransactionState{
 
     public boolean hasWrite() {
         return writeOrdering.size() > 0;
+    }
+
+    public int writeSize() {
+       return writeOrdering.size();
     }
 
     public synchronized void addDelete(final Delete delete) {
@@ -649,8 +692,14 @@ public class TrxTransactionState  extends TransactionState{
             super.setSequenceID(Long.MAX_VALUE);
             
             //Store.ScanInfo scaninfo = new Store.ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, Cell.COMPARATOR);
-            ScanInfo scaninfo = new ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, KeyValue.COMPARATOR);
-            
+            //after hbase 0.98.8, ScanInfo instance need KeepDeletedCells as param instead of boolean
+            ScanInfo scaninfo = null;
+            try {
+                scaninfo = (ScanInfo) scaninfoConstructor.newInstance(scaninfoArgs);
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+
             try {
 		if (sb_sqm_98_1) {
 		    try {
