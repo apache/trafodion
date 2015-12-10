@@ -391,7 +391,7 @@ else
     MY_START_PORT=`expr 24000 + $MY_START_PORT '*' 200`
   elif [ $MY_START_PORT == "rand" ]; then
     # pick a random number between 12000 and 24000 that is divisible by 200
-    MY_START_PORT=`expr $RANDOM '%' 50 '*' 200 + 12000`
+    MY_START_PORT=`expr $RANDOM '%' 60 '*' 200 + 12000`
   fi
   echo "# Using non-standard port range from MY_START_PORT env var: $MY_START_PORT..."
 fi

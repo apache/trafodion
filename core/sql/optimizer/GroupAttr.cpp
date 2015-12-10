@@ -343,6 +343,13 @@ void GroupAttributes::addConstraint(ItemExpr *c)
                 const ValueIdSet &occPreds =
                   ((CheckOptConstraint *) occ.getItemExpr())->getCheckPreds();
 
+                // Note that the check for inclusion of value ids of
+                // the predicates is not very useful. A more useful
+                // check would be whether the existing predicates
+                // imply the new ones or vice versa, but that would be
+                // much more complicated code and is not required at
+                // this point.
+
                 if (occPreds.contains(cc->getCheckPreds()))
                   {
                     // this is no news, delete this useless new constraint
@@ -684,18 +691,37 @@ NABoolean GroupAttributes::tryToEliminateOrderColumnBasedOnEqualsPred(
       if (col.getItemExpr()->getOperatorType() == ITM_INVERSE)
         col = col.getItemExpr()->child(0).getValueId();
 
-      // convert col from a VEGRef to a base column, if needed,
-      // the ScanKey method below wants a real column as input
+      // Convert col from a VEGRef to a base column, if needed,
+      // the ScanKey method below wants a real column as input.
+      // Make sure to pick the base column that is actually
+      // referenced in the check predicates, in case there are
+      // multiple base columns in the VEG.
       if (col.getItemExpr()->getOperatorType() == ITM_VEG_REFERENCE)
         {
           const ValueIdSet &vegMembers =
             static_cast<VEGReference *>(col.getItemExpr())->
             getVEG()->getAllValues();
+          ValueId dummy;
+
           for (ValueId b=vegMembers.init();
                vegMembers.next(b);
                vegMembers.advance(b))
-            if (b.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
-              col = b;
+            if (checkPreds.referencesTheGivenValue(b, dummy))
+              {
+                // Use this column for comparison. Note that
+                // we can have a situation with a VEG(T1.a, T2.b)
+                // and a check predicate T1.a = const. The (computed)
+                // check predicate got added later, so "const" is
+                // not a VEG member. This should not cause trouble,
+                // however, since an operator must ensure that
+                // a) the VEG members it produces are equal (it needs to
+                //    make sure the comparison pred is evaluated), and
+                // b) that the predicate applies.
+                // So, we cannot have the situation where T1.a=const
+                // and T2.b != const in the output of this operator.
+                col = b;
+                break;
+              }
         }
 
       for (ValueId p = checkPreds.init();
@@ -727,7 +753,7 @@ NABoolean GroupAttributes::tryToEliminateOrderColumnBasedOnEqualsPred(
                           ValueIdSet(p)));
             }
         }
-    }
+    } // predicates or check constraints are supplied
 
   return result;
 }
