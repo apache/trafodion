@@ -23,19 +23,19 @@
 SERVER_JAR=${MY_SQROOT}/export/lib/spj_mgmt.jar
 SQLCI=${MY_SQROOT}/export/bin32/sqlci
 CP=/bin/cp
-MANAGEABILITY_CATALOG=TRAFODION
+CATALOG_NAME=TRAFODION
 CIS_SCHEMA="_SPJ_"
 
 
 function dropAndCreateSchema {
-    echo "Creating Schema for CI Server Component"
+    echo "Creating Schema for SPJ_MGMT"
     sqlci << sqlciEOF
 
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'on';
       cqd CAT_IGNORE_DOES_NOT_EXIST_ERROR 'on';
 
-      DROP SCHEMA $MANAGEABILITY_CATALOG.$CIS_SCHEMA CASCADE;
-      CREATE SCHEMA $MANAGEABILITY_CATALOG.$CIS_SCHEMA;
+      DROP SCHEMA $CATALOG_NAME.$CIS_SCHEMA CASCADE;
+      CREATE SCHEMA $CATALOG_NAME.$CIS_SCHEMA;
 
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'off';
       cqd CAT_IGNORE_DOES_NOT_EXIST_ERROR 'off';
@@ -46,14 +46,14 @@ sqlciEOF
 
 function createProcedures {
 
-    echo "Creating Procedures in  schema '$MANAGEABILITY_CATALOG.$CIS_SCHEMA' "
+    echo "Creating Procedures in  schema '$CATALOG_NAME.$CIS_SCHEMA' "
     sqlci << procEOF
 
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'on';
       cqd CAT_IGNORE_DOES_NOT_EXIST_ERROR 'on';
 
       -- Creating Procedures 
-      set schema $MANAGEABILITY_CATALOG.$CIS_SCHEMA; 
+      set schema $CATALOG_NAME.$CIS_SCHEMA; 
 
       DROP LIBRARY SPJMGMT CASCADE;
       CREATE LIBRARY SPJMGMT FILE '${SERVER_JAR}';
@@ -129,9 +129,9 @@ function createProcedures {
       GRANT EXECUTE ON PROCEDURE RMREX TO PUBLIC;
 
       CREATE PROCEDURE GETFILE (
-      IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
+      IN FILENAME VARCHAR(256) CHARACTER SET UTF8,
       IN OFFSET INTEGER,
-      OUT FILEDATA VARCHAR(102400) CHARACTER SET ISO88591,
+      OUT FILEDATA VARCHAR(51200) CHARACTER SET UTF8,
       OUT DATALENGTH LARGEINT)
       EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.get (java.lang.String,int,java.lang.String[],long[])'
       EXTERNAL SECURITY DEFINER

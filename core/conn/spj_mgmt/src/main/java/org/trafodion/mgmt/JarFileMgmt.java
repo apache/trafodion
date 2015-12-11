@@ -109,6 +109,7 @@ public class JarFileMgmt {
 		String nodes = System.getenv("MY_NODES");
 		if (nodes != null && !"".equals(nodes.trim())) {
 			execShell("pdcp " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
+			execShell("pdsh " + nodes + " chmod 755 " + userPath + fileName.trim());
 		}
 	}
 

@@ -35,7 +35,7 @@ include macros.gmk
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb
+all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb spj_mgmt
 
 package: pkg-product pkg-client
 
@@ -204,3 +204,6 @@ eclipseclean:
 
 trafinstall:
 	cd $(MY_SQROOT)/sql/scripts && install_traf_components
+
+spj_mgmt: 
+	cd conn/spj_mgmt && $(MAKE) all
