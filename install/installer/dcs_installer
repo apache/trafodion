@@ -146,7 +146,8 @@ echo "***INFO: untarring build file $DCS_BUILD_FILE"
 tar -xzf $DCS_BUILD_FILE
 
 # get the dcs install directory name which is imbedded in the tar file
-DCS_DIR=$(tar -tf $DCS_BUILD_FILE | grep --max-count=1 bin | sed -e "s@\(^.*\)/bin/@\1@"")
+DCS_DIR=$(tar -tf $DCS_BUILD_FILE | grep --max-count=1 bin | sed -e "s@\(^.*\)/bin/@\1@")
+
 DCS_DIR=$DCS_INSTALL_PATH/$DCS_DIR
 
 # set env var in sqenvcom.sh for DCS install directory
