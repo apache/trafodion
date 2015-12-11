@@ -3552,7 +3552,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		}
 		TrafT4ResultSet resultSet;
 		HPT4Desc[] outputDesc;
-		Row[] rows;
+		ObjectArray[] rows;
 		String[] rowValue;
 
 		clearWarnings();
@@ -3564,19 +3564,19 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 				"TABLE_TYPE", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
-		rows = new Row[3];
+		rows = new ObjectArray[3];
 
 		// Populate the rows
 		rowValue = new String[1];
 
 		rowValue[0] = new String("SYSTEM TABLE");
-		rows[0] = new Row(1, rowValue);
+		rows[0] = new ObjectArray(1, rowValue);
 
 		rowValue[0] = new String("TABLE");
-		rows[1] = new Row(1, rowValue);
+		rows[1] = new ObjectArray(1, rowValue);
 
 		rowValue[0] = new String("VIEW");
-		rows[2] = new Row(1, rowValue);
+		rows[2] = new ObjectArray(1, rowValue);
 
 		resultSet.setFetchOutputs(rows, 3, true);
 		return resultSet;
@@ -4920,7 +4920,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		}
 		TrafT4ResultSet resultSet;
 		HPT4Desc[] outputDesc;
-		Row[] rows;
+		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
@@ -4943,7 +4943,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 				"BASE_TYPE", false, Types.SMALLINT, (short) 0, (short) 0, 0, null, null, null, 130, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
-		rows = new Row[0];
+		rows = new ObjectArray[0];
 
 		// Populate the rows
 		resultSet.setFetchOutputs(rows, 0, true);
@@ -5274,7 +5274,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		}
 		TrafT4ResultSet resultSet;
 		HPT4Desc[] outputDesc;
-		Row[] rows;
+		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
@@ -5295,7 +5295,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 				"SUPERTYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
-		rows = new Row[0];
+		rows = new ObjectArray[0];
 
 		// Populate the rows
 		resultSet.setFetchOutputs(rows, 0, true);
@@ -5319,7 +5319,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		}
 		TrafT4ResultSet resultSet;
 		HPT4Desc[] outputDesc;
-		Row[] rows;
+		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
@@ -5336,7 +5336,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 				"SUPERTABLE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
-		rows = new Row[0];
+		rows = new ObjectArray[0];
 
 		// Populate the rows
 		resultSet.setFetchOutputs(rows, 0, true);
@@ -5364,7 +5364,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		}
 		TrafT4ResultSet resultSet;
 		HPT4Desc[] outputDesc;
-		Row[] rows;
+		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
@@ -5415,7 +5415,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 				"SOURCE_DATA_TYPE", false, Types.SMALLINT, (short) 0, (short) 0, 0, null, null, null, 130, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
-		rows = new Row[0];
+		rows = new ObjectArray[0];
 
 		// Populate the rows
 		resultSet.setFetchOutputs(rows, 0, true);
