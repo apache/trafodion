@@ -474,7 +474,7 @@ echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
 #==============================================
 #Enable HA
 
-echo -n "Enable High Avalability (Y/N), default is N: "
+echo -n "Enable High Availability (Y/N), default is N: "
 read answer
 
 if [[ ! -z $answer ]]; then
@@ -498,7 +498,7 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    if [ -z $answer ]; then
       if [[ -z $FLOATING_IP ]]; then
          echo "***ERROR: Floating IP address not given." 
-         echo "***ERROR: Install will contiune but WITHOUT High Avalability"
+         echo "***ERROR: Install will continue but WITHOUT High Availability"
          echo "***ERROR: HA can be configured later, or kill this script and start over."
          sed -i '/ENABLE_HA\=/d' $LOCAL_TRAF_CONFIG
          echo "export ENABLE_HA=\"false\"" >> $LOCAL_TRAF_CONFIG     
@@ -519,7 +519,7 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    if [ -z $answer ]; then
       if [[ -z $INTERFACE ]]; then
          echo "***ERROR: Floating IP interface was not given."
-         echo "***ERROR: Install will contiune but WITHOUT High Avalability"
+         echo "***ERROR: Install will contiune but WITHOUT High Availability"
          echo "***ERROR: HA can be configured later, or kill this script and start over."
          sed -i '/ENABLE_HA\=/d' $LOCAL_TRAF_CONFIG
          echo "export ENABLE_HA=\"false\"" >> $LOCAL_TRAF_CONFIG
@@ -539,7 +539,7 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    if [[ -z "$answer" ]]; then 
       if [[ -z "$BACKUP_DCS_NODES" ]]; then
          echo "***ERROR: Backup DCS Nodes not given."
-         echo "***ERROR: Install will contiune but WITHOUT High Avalability"
+         echo "***ERROR: Install will contiune but WITHOUT High Availability"
          echo "***ERROR: HA can be configured later, or kill this script and start over."
          sed -i '/ENABLE_HA\=/d' $LOCAL_TRAF_CONFIG
          echo "export ENABLE_HA=\"false\"" >> $LOCAL_TRAF_CONFIG 

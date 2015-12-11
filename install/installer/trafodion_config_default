@@ -152,3 +152,5 @@ export FLOATING_IP=""
 #If HA enabled the set the DCS Backup nodes
 export BACKUP_DCS_NODES=""
 
+#If HA enabled then set INTERFACE to match the interface of the floating ip
+export INTERFACE=""
