@@ -2201,7 +2201,7 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
  Lng32 handleLen,
  ExtractToType toType,
  Int64 bufAddr,
- Int64 extractSize,
+ Int64 extractSizeAddr,
  Int64 intParam1,
  Int64 intParam2,
  Lng32 lobStorageType,
@@ -2234,7 +2234,7 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
     handleLen_(handleLen),
     toType_((short)toType),
     bufAddr_(bufAddr),
-    extractSize_(extractSize),
+    extractSizeIOAddr_(extractSizeAddr),
     lobStorageType_(lobStorageType),
     stringParam1_(stringParam1),
     stringParam2_(stringParam2),
@@ -2257,7 +2257,7 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
       {
 	// extractSize_ is irrelevant since the whole lob will be read into the output file
 	// bufAddr_ is not passed in by user. It is a CQD value LOB_OUTPUT_SIZE
-	extractSize_ = 0;
+	extractSizeIOAddr_ = 0;
 	bufAddr_ = 0;
 	
       }

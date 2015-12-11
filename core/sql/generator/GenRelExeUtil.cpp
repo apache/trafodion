@@ -3687,7 +3687,7 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
 	 (toType_ == TO_EXTERNAL_FROM_FILE_ ? ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_ :
 	  ComTdbExeUtilLobExtract::NOOP_)))))),
      bufAddr_,
-     extractSize_,
+     extractSizeAddr_,
      intParam_,
      intParam2_,
      lst,

@@ -3029,6 +3029,7 @@ short ExExeUtilLobExtractTcb::work()
 	      {
 		so = Lob_Buffer;
 		lobData_ =  (char *)lobTdb().getBufAddr();
+		lobDataSpecifiedExtractLen_ = *((Int64 *)(lobTdb().dataExtractSizeIOAddr()));
 		step_ = OPEN_CURSOR_;
 	      }
 	  }
@@ -3080,7 +3081,7 @@ short ExExeUtilLobExtractTcb::work()
 	  {
 	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
 	      so = Lob_Buffer;
-	    lobDataSpecifiedExtractLen_ = lobTdb().getExtractSize();
+	    lobDataSpecifiedExtractLen_ = *((Int64 *)(lobTdb().dataExtractSizeIOAddr()));
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
 	       lobName_, 
@@ -3131,6 +3132,9 @@ short ExExeUtilLobExtractTcb::work()
             if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
 	      {
 		str_sprintf(statusString_," Success: LOB data length returned : %d", lobDataOutputLen);
+	       
+		//lobTdb().setExtractSizeIOAddr((Int64)(&lobDataOutputLen));
+		memcpy((char *)lobTdb().dataExtractSizeIOAddr(), (char *)&lobDataOutputLen,sizeof(Int64));
 		step_ = RETURN_STATUS_;
 	      }
 	  }
@@ -3182,7 +3186,7 @@ short ExExeUtilLobExtractTcb::work()
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-	    Lng32 size = MINOF((Lng32)lobTdb().extractSize_, (Lng32)remainingBytes_);
+	    Lng32 size = MINOF((Lng32)lobTdb().dataExtractSizeIOAddr(), (Lng32)remainingBytes_);
 
 	    moveRowToUpQueue(&lobData_[currPos_], size);
 
@@ -3487,12 +3491,12 @@ short ExExeUtilFileExtractTcb::work()
 	  break;
 
 
-	case RETURN_STRING_:
+	  /*case RETURN_STRING_:
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-	    Lng32 size = MINOF((Lng32)lobTdb().extractSize_, (Lng32)remainingBytes_);
+	    Lng32 size = MINOF((Lng32)lobTdb().dataExtractSizeIOAddr(), (Lng32)remainingBytes_);
 
 	    // eval expression to convert lob data to sql row.
 	    // TBD.
@@ -3507,7 +3511,7 @@ short ExExeUtilFileExtractTcb::work()
 
 	    return WORK_RESCHEDULE_AND_RETURN;
 	  }
-	  break;
+	  break;*/
 
 	case HANDLE_ERROR_:
 	  {

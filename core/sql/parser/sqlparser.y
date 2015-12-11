@@ -15616,34 +15616,19 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' 
 
               | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 /* if (NOT (($8->getOperatorType() == ITM_DYN_PARAM) ||
-                          ($8->getOperatorType() == ITM_CONSTANT)))
-                   {
-                     YYERROR;
-                   }
+		 /* TOK_LOCATION points to a user allocated data buffer ehich needs to be enough to hold alreast TOK_SIZE worth of data .
+TOK_SIZE points to the address of an Int64 container This size is the input specified by user for length to extract. One return, it will give the caller the size that was extracted */
 
-                 if (NOT (($11->getOperatorType() == ITM_DYN_PARAM) ||
-                          ($11->getOperatorType() == ITM_CONSTANT)))
-                   {
-                     YYERROR;
-		     }*/
 		 Int64 bufAddr = atoInt64($8->data());
-		 Int64 bufSize = atoInt64($11->data());
-		 /* ItemExpr * bufaddr = $8;
-		 bufaddr = new (PARSERHEAP()) 
-		   Cast(bufaddr, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-
-		 ItemExpr * bufsize = $11;
-		 bufsize = new (PARSERHEAP()) 
-		   Cast(bufsize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-		 */
+		 Int64 sizeAddr = atoInt64($11->data());
+		 
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_BUFFER_,
-		    bufAddr, bufSize, 0, 0);
+		    bufAddr, sizeAddr, 0, 0);
 
 		 $$ = lle;
 	       }

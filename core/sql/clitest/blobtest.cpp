@@ -50,7 +50,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
   char *lobFinalBuf = new char[lengthOfLob];
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobExtractLen = 10;
+  Int64 lobExtractLen = 1000;
   char *lobDataBuf = new char[lobExtractLen];
   
   str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE %Ld) ", lobHandle, (Int64)lobDataBuf, lobExtractLen);
@@ -72,7 +72,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
       FILE * lobFileId = fopen("lob_output_file","w");
   
       int byteCount=fwrite(lobFinalBuf,sizeof(char),lengthOfLob, lobFileId);
-      cout << "Wrote " << byteCount << " bytes to file lob_output_file" << endl;
+      cout << "Writing " << byteCount << " bytes from user buffer to file lob_output_file in current directory" << endl;
 
       fclose(lobFileId);
     }
@@ -86,3 +86,46 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
 }
 
 
+Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *filename,Int64 &lengthOfLob, 
+				char *lobColumnName, char *tableName)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // Extract lob data into a buffer.
+  char * query = new char [500];
+  
+  
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobExtractLen = 1000;
+  char *lobDataBuf = new char[lobExtractLen];
+  Int64 *inputOutputAddr = &lobExtractLen;
+
+  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE %Ld) ", lobHandle, (Int64)lobDataBuf, inputOutputAddr);
+ 
+ 
+  retcode = cliInterface.executeImmediatePrepare(query);
+  short i = 0;
+  FILE * lobFileId = fopen(filename,"a+");
+  int byteCount = 0;
+  while ((retcode != 100) && !(retcode<0))
+    {    
+      retcode = cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
+      if (!retcode)
+	{
+	  byteCount=fwrite(lobDataBuf,sizeof(char),*inputOutputAddr, lobFileId);
+	 cout << "Wrote " << byteCount << " bytes to file : " << filename << endl;
+	}
+    }
+  
+
+  fclose(lobFileId);
+
+ 
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}

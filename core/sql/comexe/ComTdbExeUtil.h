@@ -2753,8 +2753,8 @@ public:
   {(v ? flags_ |= APPEND_OR_CREATE : flags_ &= ~APPEND_OR_CREATE); };
   NABoolean appendOrCreate() { return (flags_ & APPEND_OR_CREATE) != 0; };
 
-  void setExtractSize(Int64 extractSize) { extractSize_ = extractSize; };
-  Int64 getExtractSize() { return extractSize_;}
+  void setExtractSizeIOAddr(Int64 ext_addr){ extractSizeIOAddr_ = ext_addr;};
+  Int64 dataExtractSizeIOAddr() { return extractSizeIOAddr_;}
   void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
   Int64 getTotalBufSize() { return totalBufSize_;};
   void setBufAddr(Int64 bufAddr) {bufAddr_ = bufAddr;};
@@ -2779,7 +2779,7 @@ private:
   short toType_;                                           // 08-09
   Int32 flags_;    
   Lng32 handleLen_;
-  Int64 extractSize_; // as passed in via syntax size
+  Int64 extractSizeIOAddr_; // as passed in via syntax size
   Int64 totalBufSize_; // buf size
   Int64 bufAddr_ ; //buffer addressed as passed in by user via syntax
   Int64 intParam1_;

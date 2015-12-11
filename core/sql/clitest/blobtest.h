@@ -35,3 +35,5 @@ Int32 extractLengthOfLobColumn(CliGlobals *cliglob, char * lobHandle, Int64 &len
 
 Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfLob, 
 			 char *lobColumnName, char *tableName);
+Int32 extractLobToFileInChunks(CliGlobals *cliglob, char * lobHandle, char *filename, Int64 &lengthOfLob, 
+			 char *lobColumnName, char *tableName);
