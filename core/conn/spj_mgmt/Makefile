@@ -27,11 +27,11 @@ CP :=/bin/cp -f
 INSTALL_INCLUDEDIR := ${MY_SQROOT}/export/include
 all:
 	@$(MAVEN) package
-	${CP} target/spj_init-*.jar ${INSTALL_LIBDIR}/spj_init.jar
-	${CP} src/main/resources/init_spj.sql ${INSTALL_SCRIPTSDIR}/
-	@chmod +x ${INSTALL_SCRIPTSDIR}/init_spj.sql
+	${CP} target/spj_mgmt-*.jar ${INSTALL_LIBDIR}/spj_mgmt.jar
+	${CP} src/main/resources/init_spj.sh ${INSTALL_SCRIPTSDIR}/
+	@chmod +x ${INSTALL_SCRIPTSDIR}/init_spj.sh
 clean:
-	@rm ${INSTALL_LIBDIR}/spj_init.jar
-	@rm -f ${INSTALL_SCRIPTSDIR}/init_spj.sql
+	@rm ${INSTALL_LIBDIR}/spj_mgmt.jar
+	@rm -f ${INSTALL_SCRIPTSDIR}/init_spj.sh
 	@$(MAVEN) clean
 cleanall: clean

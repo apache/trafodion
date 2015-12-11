@@ -20,7 +20,7 @@
 *
 * @@@ END COPYRIGHT @@@
  */
-package com.traf.mgmt;
+package org.trafodion.mgmt;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -41,7 +41,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xerial.snappy.Snappy;
 
 public class JarFileMgmt {
 	private static final Logger LOG = LoggerFactory.getLogger(JarFileMgmt.class);
@@ -176,7 +175,7 @@ public class JarFileMgmt {
 			byte bArray[] = new byte[MaxDataSize];
 			int bytesRead = rAFile.read(bArray, 0, MaxDataSize);
 			if (bytesRead != -1) {
-				fileData[0] = new String(Snappy.compress(Arrays.copyOf(bArray, bytesRead)), CHARTSET);
+				fileData[0] = new String(Arrays.copyOf(bArray, bytesRead), CHARTSET);
 				fileLength[0] = file.length();
 				LOG.info("Download: " + fileName + ", offset:" + offset + ",compressed length:" + fileData[0].length()
 						+ ",file length:" + fileLength[0]);
@@ -307,8 +306,7 @@ public class JarFileMgmt {
 			FileOutputStream fos = null;
 			try {
 				fos = new FileOutputStream(fname, (appendFlag == 0));
-
-				fos.write(Snappy.uncompress(Arrays.copyOf(data, data.length)));
+				fos.write(Arrays.copyOf(data, data.length));
 				fos.flush();
 			} finally {
 				if (fos != null)
@@ -344,7 +342,7 @@ public class JarFileMgmt {
 			LOG.error("Cant get your traf installation path!");
 			throw new SQLException("Cant get your traf installation path!");
 		}
-		File file = new File(root + "/spj/" + user);
+		File file = new File(root + "/udr/lib/" + user);
 		if (!file.exists()) {
 			file.mkdirs();
 		} else if (!file.isDirectory()) {
@@ -372,7 +370,7 @@ public class JarFileMgmt {
 		String user = null;
 		try {
 			st = conn.createStatement();
-			rs = st.executeQuery("values(current_user)");
+			rs = st.executeQuery("values(session_user)");
 			if (rs.next()) {
 				user = rs.getString(1);
 			}
@@ -395,8 +393,8 @@ public class JarFileMgmt {
 				}
 			}
 		}
-
-		return user;
+		
+		return user.replaceAll("[\\\\/]", "_");
 	}
 
 	private static File[] getFiles(String pattern, File dir) {

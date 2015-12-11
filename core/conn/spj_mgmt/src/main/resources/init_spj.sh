@@ -20,12 +20,11 @@
 #
 # @@@ END COPYRIGHT @@@
 
-SERVER_JAR=${MY_SQROOT}/export/lib/spj_init.jar
-CI_SERVER_LOG=${MY_SQROOT}/ciserver/cislog
+SERVER_JAR=${MY_SQROOT}/export/lib/spj_mgmt.jar
 SQLCI=${MY_SQROOT}/export/bin32/sqlci
 CP=/bin/cp
 MANAGEABILITY_CATALOG=TRAFODION
-CIS_SCHEMA=DEFAULT_SPJ
+CIS_SCHEMA="_SPJ_"
 
 
 function dropAndCreateSchema {
