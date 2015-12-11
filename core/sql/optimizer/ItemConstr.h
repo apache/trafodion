@@ -376,6 +376,45 @@ private:
 };
 
 // -----------------------------------------------------------------------
+// Internal check constraint, e.g. a predicate used in synthesizing
+// physical properties like a sort order. These may be needed to validate
+// that a given sort order does indeed satisfy a requirement.
+// -----------------------------------------------------------------------
+class CheckOptConstraint : public OptConstraint
+{
+  // ITM_CHECK_OPT_CONSTRAINT
+public:
+
+  // ctor for unique constraints discovered by the optimizer
+  CheckOptConstraint(const ValueIdSet &checkPreds)
+    : OptConstraint(ITM_CHECK_OPT_CONSTRAINT), checkPreds_(checkPreds) {}
+
+  // convert the other kind of u.c. into this internal kind
+  //##useful extra info for Optimizer at some future point...
+
+  virtual ~CheckOptConstraint();
+
+  // get the degree of this node (it is a leaf).
+  virtual Int32 getArity() const;
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  // accessor functions
+  const ValueIdSet &getCheckPreds() { return checkPreds_; }
+
+  // get a printable string that identifies the operator
+  const NAString getText() const;
+  void unparse(NAString &result,PhaseEnum phase,UnparseFormatEnum form,
+               TableDesc * tabId = NULL) const;
+
+private:
+
+  ValueIdSet checkPreds_;
+
+}; // CheckOptConstraint
+
+// -----------------------------------------------------------------------
 //
 // Auxiliary classes and definitions used by the
 // referential integrity constraints, UniqueConstraint and RefConstraint.

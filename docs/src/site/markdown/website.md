@@ -20,7 +20,7 @@ This page describes how to change the Trafodion web pages. Please refer to the [
 
 **Publication:** https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git
 
-You develop and test all changes in the Trafodion source tree. Once checked in and built, the content of ```docs/target``` plus different [documentation](document.html) are copied to https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git. The changes are then pushed out by Apache [svnpubsub](http://svn.apache.org/viewvc/subversion/trunk/tools/server-side/svnpubsub/), thereby populating http://incubator.trafodion.apache.org.
+You develop and test all changes in the Trafodion source tree. Once checked in and built, the content of ```docs/target``` plus different [documentation](document.html) are copied to https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git. The changes are then pushed out by Apache gitpubsub, thereby populating http://incubator.trafodion.apache.org.
 
 # Making Changes
 The following information helps you understand how to make changes to the web-site content.
@@ -78,11 +78,12 @@ The website files are located in **```docs/target```**. Open **```index.html```*
 
 Do the following:
 
-1. Check in your changes to the Trafodion source tree.
-2. Build Trafodion.
+1. Wait for the changes to be committed to the Trafodion master branch.
+2. Build Trafodion site (mvn site).
 3. If there are documentation changes: Follow the [documentation publishing](document.html#Publishing) instructions.
-3. ```svn checkout``` https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git
-4. Copy content of ```docs/target``` into the svn ```asf-site``` directory.
-5. ```svn commit``` the changes. 
+3. ```git clone``` https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git
+4. Copy content of ```docs/target``` into the incubator-trafodion-site directory. Commit changes.
+5. Push them back to the apache origin repo to the ```asf-site``` branch.
 
-Once committed, Apache [svnpubsub](http://svn.apache.org/viewvc/subversion/trunk/tools/server-side/svnpubsub/) takes care of populating http://incubator.trafodion.apache.org with your new changes.
+Once pushed, Apache gitpubsub takes care of populating http://incubator.trafodion.apache.org with your new changes.
+If they don't show up, pushing another empty (or whitespace change) commit may work to trigger the automation.

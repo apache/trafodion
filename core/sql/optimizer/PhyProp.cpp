@@ -262,7 +262,7 @@ PhysicalProperty::enforceCoverageByGroupAttributes (const GroupAttributes * grou
   // complifyAndRemoveUncoveredSuffix() had only characteristic output
   // in the argument. Now characteristic input is also added.
   coveringSet += groupAttr->getCharacteristicOutputs();
-  newSortKey.complifyAndRemoveUncoveredSuffix(coveringSet);
+  newSortKey.complifyAndRemoveUncoveredSuffix(coveringSet, groupAttr);
 
   if (newSortKey.isEmpty())
   {

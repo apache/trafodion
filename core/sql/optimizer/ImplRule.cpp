@@ -1296,17 +1296,16 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
 	if (resultNeedsToBeOrdered)
 	{
 	  ValueIdList sortKey = idesc->getOrderOfKeyValues();
-	  // Remove from the sort key any columns that are covered by
-	  // constants or input values.
-	  sortKey.removeCoveredExprs(
-          before->getGroupAttr()->getCharacteristicInputs());
 
-	  // make sure it satisfies the required order and also
-	  // determine the scan direction
+	  // Make sure it satisfies the required order and also
+	  // determine the scan direction. If computed column predicates
+          // select only one salt or division value, for example,
+          // then make use of this to satisfy order requirements.
           if ((rppForMe->getSortKey() != NULL) AND
               ((oc = sortKey.satisfiesReqdOrder(
                        *rppForMe->getSortKey(),
-                       before->getGroupAttr())) == DIFFERENT_ORDER))
+                       before->getGroupAttr(),
+                       &bef->getComputedPredicates())) == DIFFERENT_ORDER))
             indexQualifies = FALSE;
 
           // hbase does not support inverse order scan
@@ -1318,7 +1317,8 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
               (rppForMe->getArrangedCols() != NULL) AND
               NOT sortKey.satisfiesReqdArrangement(
                     *rppForMe->getArrangedCols(),
-                    before->getGroupAttr()))
+                    before->getGroupAttr(),
+                    &bef->getComputedPredicates()))
             indexQualifies = FALSE;
 	}
 
