@@ -110,7 +110,7 @@ cd $HOME/trafodion_downloads
      <td>
         <p>The scripts is run without parameters. Instead, you'll be prompted for information.</p>
         <p><strong>NOTE</strong></p>
-        <p>The trafodion_install script automatically invokes the <a href="scanner.html">Trafodion Scanner</a> to check the cluster for attributes that commonly cause installation issues, runtime performance problems, and so on. Also, various system information is collected for future reference, such as to aid with troubleshooting. The installation will abort if any configuration errors are discovered. You will need to correct such errors before re-running the <strong><code>trafodion_install</code></strong>script.</p>
+        <p>The <strong><code>trafodion_install</code></strong> script automatically checks the cluster for attributes that commonly cause installation issues, runtime performance problems, and so on. Also, various system information is collected for future reference, such as to aid with troubleshooting. The installation will abort if any configuration errors are discovered. You will need to correct such errors before re-running the <strong><code>trafodion_install</code></strong> script.</p>
      </td>
      <td>
        <pre>
