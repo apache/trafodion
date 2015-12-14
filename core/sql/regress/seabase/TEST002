@@ -1,0 +1,144 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- Tests to retrieve region space and access stats
+
+obey TEST002(clean_up);
+
+log LOG002 clear;
+obey TEST002(setup);
+obey TEST002(dml);
+log;
+exit;
+
+?section setup
+create schema t002sch;
+set schema t002sch;
+create table t002t1(a int not null primary key, 
+     b int not null, c int not null);
+create index t002t1i1 on t002t1(b);       
+create index t002t1i2 on t002t1(c);       
+insert into t002t1 values (1,2, 3);
+
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1I1';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1I2';
+
+select * from t002t1;
+
+create table t002t2(a int not null primary key, b int not null)
+  salt using 4 partitions;
+create index t002t2i1 on t002t2(b);       
+insert into t002t2 values (1,2);
+
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
+
+select * from t002t2;
+
+?section dml
+set schema t002sch;
+invoke table(region stats ());
+invoke table(region stats (t002t1));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(t002t1));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(index t002t1i1));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(t002t2));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats(index t002t2i1));
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+ sum(store_file_size), 
+ 'ReadRequestsCount: '  || cast(sum(read_requests_count) as varchar(10)),
+ 'WriteRequestsCount: ' || cast(sum(write_requests_count) as varchar(10))
+ from table(region stats (using (select * from (
+   get tables in schema t002sch, no header, return full names) x(a) ))) 
+ group by 1 order by 2 desc;
+
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+ sum(store_file_size), 
+ 'ReadRequestsCount: '  || cast(sum(read_requests_count) as varchar(10)),
+ 'WriteRequestsCount: ' || cast(sum(write_requests_count) as varchar(10))
+ from table(region statistics (using (select * from (
+   get tables in schema t002sch, no header, return full names) x(a) ))) 
+ group by 1 order by 2 desc;
+
+get region stats for table t002t1;
+get region stats for index t002t1i1;
+get region stats for table t002t2;
+get region stats for index t002t2i1;
+
+get region statistics for table t002t1;
+
+get region stats for 
+    (select * from 
+      (get tables in schema t002sch, no header, return full names)x(a));
+
+-- stats for all indexes on a table
+select left(trim(schema_name) || '.' || trim(object_name), 14),
+  region_num, region_name, num_stores, num_store_files,
+  store_file_uncomp_size, store_file_size, mem_store_size,
+  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
+  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
+ from table(region stats (using (select * from (
+   get indexes on table t002t1, no header, return full names) x(a) )));
+get region stats for 
+  (select * from 
+    (get indexes on table t002t1, no header, return full names)x(a));
+
+-- return summary stats only
+get region stats for table t002t1, summary;
+get region stats for index t002t1i1, summary;
+get region stats for table t002t2, summary;
+get region stats for index t002t2i1, summary;
+
+get region stats for 
+  (select * from 
+    (get tables in schema t002sch, no header, return full names)x(a)), summary;
+
+?section clean_up
+set schema t002sch;
+drop table t002t1 cascade;
+drop table t002t2 cascade;
+drop schema t002sch;
+

@@ -290,7 +290,7 @@ public:
     ex_GET_VERSION_INFO  = 118,
     ex_SUSPEND_ACTIVATE  = 121,
     ex_DISK_LABEL_STATISTICS = 122,
-    ex_GET_DISK_LABEL_STATS = 123,
+    ex_REGION_STATS = 123,
     ex_GET_FORMATTED_DISK_STATS = 124,
     ex_SHOW_SET = 125,
     ex_AQR = 126,

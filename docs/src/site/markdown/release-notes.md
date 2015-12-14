@@ -12,20 +12,13 @@
   limitations under the License.
 -->
 
-# Release Notes
 The following releases have been created for Trafodion.
 
-<span>
-  <table>
-    <tr>
-      <th>Release</th>
-      <th>Description</th>
-      <th>Date</th>
-    </tr>
-    <tr>
-      <td><a href="release-notes-1-3-0.html"><strong>1.3.0</strong></a></td>
-      <td>First Apache Release.</td>
-      <td>November 16, 2015</td>
-    </tr>
-  </table>
-</span>
+Release                               | Description                                                           | Date
+--------------------------------------|-----------------------------------------------------------------------|--------------
+**[1.3.0](release-notes-1-3-0.html)** | First Apache release.                                                 | Pending
+**[1.1.0](release-notes-1-1-0.html)** | Major feature enhancements. Non-Apache release.                       | April 2015
+**[1.0.1](release-notes-1-0-1.html)** | Defect repair. Non-Apache release.                                    | February 2015
+**[1.0.0](release-notes-1-0-0.html)** | Performance, stability, and new features. Non-Apache release.         | January 2015
+**[0.9.0](release-notes-0-9-0.html)** | HBase 0.98 and many feature improvements. Non-Apache release.         | October 2014
+**[0.8.0](release-notes-0-8-0.html)** | Initial release. Basic SQL and ACID transactions. Non-Apache release. | June 2014

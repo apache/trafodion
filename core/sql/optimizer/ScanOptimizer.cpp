@@ -408,7 +408,7 @@ static NABoolean checkMDAMadditionalRestriction(
         //
         // We will set the set to empty so that the fetching MC UEC logic will not kick in 
         // until a new key column without predicates is seen.
-        if ( currentPredicatelessKeyColumnGroup.entries() > 0 ) {
+        if ( currentPredicatelessKeyColumnGroup.entries() > 1 ) {
 
            // fetch MC UEC from key coluymns for column set currentPredicatelessKeyColumnGroup 
            const MultiColumnUecList* MCUL = hist.getColStatDescList().getUecList();
@@ -416,8 +416,7 @@ static NABoolean checkMDAMadditionalRestriction(
            ValueIdSet theLargestSubset = 
                    MCUL->largestSubset(currentPredicatelessKeyColumnGroup.convertToBaseIds());
 
-           if ( theLargestSubset.entries() > 1 &&
-                theLargestSubset.entries() == currentPredicatelessKeyColumnGroup.entries() ) 
+           if ( theLargestSubset.entries() == currentPredicatelessKeyColumnGroup.entries() ) 
            {
               CostScalar mcUEC = MCUL->lookup(theLargestSubset);
 

@@ -122,7 +122,8 @@ Implementation-Version-6: date $buildDate
 EOF
 	cat > $TMPFILEJ2 <<EOF
 #!/bin/sh
-echo "Implementation-Version-1: Version \$*"
+VER_PROD=`echo \$TRAFODION_VER_PROD | sed 's/ /_/'`
+echo "Implementation-Version-1: Version \$* \$VER_PROD"
 cat \$MY_SQROOT/export/include/SCMBuildMan.mf
 EOF
 	chmod +x $TMPFILEJ2

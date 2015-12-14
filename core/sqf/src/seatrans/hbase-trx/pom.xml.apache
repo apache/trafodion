@@ -63,6 +63,8 @@
     <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
     <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <protobuf.version>2.5.0</protobuf.version>                                                                                              
+    <protocVersion>2.5.0</protocVersion>                                                                                                    
     <java.version>1.7</java.version>
     <trx-suffix>apache</trx-suffix>
   </properties>
@@ -338,6 +340,8 @@ if we can combine these profiles somehow -->
                   <goal>protoc</goal>
                 </goals>
                 <configuration>
+                  <protobuf.version>2.5.0</protobuf.version>
+                  <protocVersion>2.5.0</protocVersion>
                   <imports>
                     <param>${basedir}/src/main/protobuf</param>
                     <param>${basedir}/hbase-protocol/src/main/protobuf</param>

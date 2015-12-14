@@ -205,6 +205,12 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
       bindWA->setErrStatus();
       return FALSE;
     }
+  if (outColArray->entries() == 0)
+    {
+      *(CmpCommon::diags()) << DgSqlCode(-11155);
+      bindWA->setErrStatus();
+      return FALSE;
+    }
 
   tmudfNode->setOutputParams(outColArray);
 
@@ -1037,8 +1043,8 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
 
           constVal->getOffsetsInBuffer(nullIndOffset, vcLenOffset, dataOffset);
           result->nonConstActualParameters().getColumn(i).getType().setOffsets(
-               (nullIndOffset > 0 ? nextOffset + nullIndOffset : -1),
-               (vcLenOffset   > 0 ? nextOffset + vcLenOffset   : -1),
+               (nullIndOffset >= 0 ? nextOffset + nullIndOffset : -1),
+               (vcLenOffset   >= 0 ? nextOffset + vcLenOffset   : -1),
                nextOffset + dataOffset);
 
           nextOffset += totalSize;

@@ -66,7 +66,7 @@
         <column>About</column>
         <column>Using</column>
         <column>Features</column>
-        <column>Reference</column>
+        <column>Contributing</column>
       </bottomNav>
       <bottomDescription>
         <![CDATA[
@@ -94,9 +94,13 @@
             <body />
           </sections>
         </index>
+        <advocate><shortTitle>Advocate</shortTitle></advocate>
         <architecture-overview><shortTitle>Architecture Overview</shortTitle></architecture-overview>
+        <build><shortTitle>Build Trafodion</shortTitle></build>
+        <build-tools-manual><shortTitle>Build Tools Manual Installation</shortTitle></build-tools-manual>
+        <code><shortTitle>Modify Code</shortTitle></code>
         <contribute>
-           <shortTitle>How to Contribute</shortTitle>
+           <shortTitle>Contribute</shortTitle>
            <toc>false</toc>
           <sections>
             <body />
@@ -104,23 +108,119 @@
             <body />
           </sections>
         </contribute>
+        <cplusplus-coding-guidelines>
+           <shortTitle>C++ Coding Guidelines</shortTitle>
+           <!--  Smaller than standard due to long headings -->
+           <tocTopMax>5</tocTopMax>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>      
+        </cplusplus-coding-guidelines>
+        <create-dev-environment>
+           <shortTitle>Create Development Environment</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+           <!--  Smaller than standard due to long headings -->
+           <tocTopMax>5</tocTopMax>
+        </create-dev-environment>
         <develop>
-           <shortTitle>How to Develop</shortTitle>
+           <shortTitle>Develop</shortTitle>
           <sections>
             <body />
           </sections>
         </develop>
+        <document><shortTitle>Modify Documentation</shortTitle></document>
+        <documentation><shortTitle>Documentation Library</shortTitle></documentation>
+        <download><shortTitle>Download</shortTitle></download>
+        <enable-secure-trafodion><shortTitle>Enabling Security Features in Trafodion</shortTitle></enable-secure-trafodion>
         <faq>
           <toc>top</toc>
           <shortTitle>Frequently Asked Questions</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
           <tocTopFlatten>false</tocTopFlatten>
         </faq>
+        <install>
+          <shortTitle>Install</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>
+        </install>
+        <install-preparation>
+          <shortTitle>Install Preparation</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>
+        </install-preparation>
         <issue-tracking><toc>false</toc></issue-tracking>
-        <license><toc>false</toc></license>
-        <mail-lists><toc>false</toc></mail-lists>
+        <ldapcheck><shortTitle>ldapcheck</shortTitle></ldapcheck>
+        <ldapconfigcheck><shortTitle>ldapconfigcheck</shortTitle></ldapconfigcheck>
+        <license><shortTitle>License</shortTitle><toc>false</toc></license>
+        <mail-lists><shortTitle>Mailing Lists</shortTitle><toc>false</toc></mail-lists>
+        <management><shortTitle>Managing Trafodion</shortTitle><toc>false</toc></management>
+        <manage-dev-environment>
+           <shortTitle>Manage Development Environment</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+           <!--  Smaller than standard due to long headings -->
+           <tocTopMax>5</tocTopMax>
+        </manage-dev-environment>
+        <new-features><shortTitle>New Features</shortTitle></new-features>
+        <performance><shortTitle>Performance</shortTitle></performance>
+        <presentations><shortTitle>Presentations</shortTitle><toc>false</toc></presentations>
+        <port-assignment>
+          <toc>false</toc>
+          <shortTitle>Port Assignment</shortTitle>
+        </port-assignment>
+        <quickstart><shortTitle>Quick Start</shortTitle></quickstart>
         <release-notes><toc>false</toc></release-notes>
+        <release-notes-1-3-0>
+           <shortTitle>Release 1.3.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-3-0>
+        <release-notes-1-1-0>
+           <shortTitle>Release 1.1.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-1-0>
+        <release-notes-1-0-1>
+           <shortTitle>Release 1.0.1</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-0-1>
+        <release-notes-1-0-0>
+           <shortTitle>Release 1.0.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-1-0-0>
+        <release-notes-0-9-0>
+           <shortTitle>Release 0.9.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-0-9-0>
+        <release-notes-0-8-0>
+           <shortTitle>Release 0.8.0</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </release-notes-0-8-0>
+        <roadmap><shortTitle>Roadmap</shortTitle></roadmap>
+        <setup-build-environment>
+           <shortTitle>Setup Build Environment</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+           <!--  Smaller than standard due to long headings -->
+           <tocTopMax>5</tocTopMax>
+        </setup-build-environment>
+        <tests>
+          <shortTitle>Modify Tests</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>
+        </tests>
+        <testing>
+          <shortTitle>Testing</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>
+        </testing>
+        <traf_authentication_config><shortTitle>.traf_authentication_config Configuration File</shortTitle></traf_authentication_config>
         <website>
-           <shortTitle>How to Update Web Site</shortTitle>
+           <shortTitle>Modify Web Site</shortTitle>
            <tocTopFlatten>false</tocTopFlatten>
            <sections>
               <body />
@@ -137,6 +237,9 @@
     <breadcrumbs>
       <item name="Trafodion" href="index.html"/>
     </breadcrumbs>
+    <links>
+      <item name="Download" href="download.html"/>
+    </links>
     <menu name="About">
       <item href="index.html" name="Project Overview"/>
       <item href="new-features.html" name="New Features"/>
@@ -150,45 +253,69 @@
       <item href="source-repository.html" name="Source Repository"/>
       <item href="issue-tracking.html" name="Issue Tracking"/>
       <item href="license.html" name="License"/>
-      <item href="http:divider" name=""/>
-      <item href="download.html" name="Download"/>
-      <item href="install.html" name="Install"/>
     </menu>
     <menu name="Using">
-      <item href="faq.html" name="F.A.Q."/>
       <item href="quickstart.html" name="Quick Start"/>
+      <item href="download.html" name="Download"/>
+      <item href="install.html" name="Install"/>
+      <item href="management.html" name="Managing Trafodion"/>
+      <item href="http:divider" name=""/>
+      <item href="documentation.html" name="Documentation"/>
+      <item href="faq.html" name="FAQ"/>
+      <item href="release-notes.html" name="Release Notes"/>
+      <!-- 
       <item href="http:divider" name=""/>
       <item href="udf-tutorial.html" name="UDF API Tutorial"/>
+      -->
     </menu>
     <menu name="Features">
-      <item href="architecture.html" name="Architecture Overview"/>
-      <item href="technology-previews.html" name="Technology Preview"/>
-    </menu>
-    <menu name="Documentation">
-      <item href="documentation.html" name="Documenation Library"/>
+      <item href="architecture-overview.html" name="Architecture Overview"/>
       <item href="http:divider" name=""/>
-      <item href="release-notes.html" name="Release Notes"/>
-      <item href="install.html" name="Installation Guide"/>
-      <item href="docs/apache_trafodion_client_installation_guide.pdf" name="Client Installation Guide"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/security-ansi-schemas" name="ANSI Schema Support"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/ustat-automation" name="Automated Update Statistics"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/bulkunload" name="Bulk Unload"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability#Logging_Events" name="Event Handling"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/hybrid-query-cache" name="Hybrid Query Cache"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/identity-column" name="Identity Column"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Creating_Statistics_During_Bulk_Load" name="Immediate Update Statistics"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/lob-support" name="Large Object (LOB)"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/ddl-query-invalidation" name="Metadata Query Invalidation"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Cmp-divisioning" name="Multi-Temperature Data"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/access-external-hbase-tables" name="Native HBase Tables"/>
+      <item href="docs/Trafodion_odb_User_Guide.pdf" name="ODB"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/sql-query-cancel" name="Query Cancel"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/security-privilege-updates" name="Privilege Checking"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability" name="Repository"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/enable-get-statistics-thru-rms" name="Runtime Management System"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/sequence-numbers" name="Sequence Numbers"/>
+      <item href="https://blueprints.launchpad.net/trafodion/+spec/skew-buster" name="Skew Buster"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface" name="Table-Oriented UDF"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Data_Loading#Trickle_Loading_Data_Into_Trafodion_Tables" name="Trickle Load"/>
       <item href="http:divider" name=""/>
-      <item href="docs/apache_trafodion_reference_guide.pdf" name="SQL Reference Guide"/>
-      <item href="connectivity-reference" name="Connectivity Reference Guide"/>
-      <item href="docs/apache_trafodion_trafci_guide.pdf" name="Command Interface Guide"/>
-      <item href="rest-reference" name="REST Reference Guide"/>
-      <item href="http:divider" name=""/>
-      <item href="docs/apache_trafodion_odb_user_guide.pdf" name="ODB User Guide"/>
-      <item href="data-loading.html" name="Data Loading Guide"/>
-      <item href="open-cart.html" name="Opencart Demo Guide"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Backup_and_Restore" name="Backup/Restore Utility"/>
+      <item href="https://wiki.trafodion.org/wiki/index.php/Metadata_Cleanup" name="Metadata Cleanup Utility"/>
     </menu>
     <menu name="Contributing">
-      <item href="contribute.html" name="How to Contribute"/>
-      <item href="develop.html" name="How to Develop"/>
-      <item href="release.html" name="How to Test"/>
-      <item href="release.html" name="How to Release"/>
-      <item href="website.html" name="How to Update Web Site"/>
-      <item href="wiki.html" name="How to Update Wiki Pages"/>
+      <item href="contribute.html" name="Contribute"/>
+      <item href="advocate.html" name="Advocate"/>
+      <item href="develop.html" name="Develop"/>
+      <item href="testing.html" name="Test"/>
+      <item href="merge.html" name="Merge"/>
+      <item href="release.html" name="Release"/>
       <item href="http:divider" name=""/>
-      <item href="design-papers.html" name="Design Paper Template"/>
+      <item href="create-dev-environment.html" name="Create Dev Environment"/>
+      <item href="manage-dev-environment.html" name="Manage Dev Environment"/>
+      <item href="setup-build-environment.html" name="Setup Build Environment"/>
+      <item href="build.html" name="Build Trafodion"/>
+      <item href="http:divider" name=""/>
+      <item href="code.html" name="Modify Code"/>
+      <item href="tests.html" name="Modify Tests"/>
+      <item href="document.html" name="Modify Documentation"/>
+      <item href="website.html" name="Modify Web Site"/>
+      <item href="wiki.html" name="Modify Wiki Pages"/>
+      <item href="http:divider" name=""/>
+      <item href="cplusplus-coding-guidelines.html" name="C++ Coding Guidelines"/>
+      <!-- item href="design-papers.html" name="Design Paper Template"/ -->
     </menu>
     <menu name="Apache">
       <item href="http://incubator.apache.org/projects/trafodion.html" name="Status Page" target="_blank"/>
