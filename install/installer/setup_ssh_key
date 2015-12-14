@@ -1,5 +1,4 @@
 #!/bin/bash
-#
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,25 +19,9 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
-DCS_STOP_CMD=${DCS_INSTALL_DIR}/bin/stop-dcs.sh
-
-if [ -z ${DCS_INSTALL_DIR} ]; then
-   echo "DCS Install dir location not set via the env variable DCS_INSTALL_DIR."
-   exit 1;
-fi
-
-if [ ! -e ${DCS_STOP_CMD} ]; then
-   echo "${DCS_STOP_CMD} not found."
-   exit 1;
-fi
-
-if [[ ! -z $ENABLE_HA ]]; then
-   ${DCS_INSTALL_DIR}/bin/scripts/dcsunbind.sh
-fi
-
-echo "Shutting down the DCS environment now"
-cd ${DCS_INSTALL_DIR}
-${DCS_STOP_CMD}
-cds
+echo -e 'y\n' | ssh-keygen -t rsa -N "" -f $HOME/.ssh/id_rsa
+cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
+echo localhost $(cat /etc/ssh/ssh_host_rsa_key.pub) >> $HOME/.ssh/known_hosts
+echo "NoHostAuthenticationForLocalhost=yes" >> $HOME/.ssh/config
+chmod 600 $HOME/.ssh/config
