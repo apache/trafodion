@@ -3389,7 +3389,7 @@ BOOL CStmt::setFetchOutputPerf(long rowsFetched, SQL_DataValue_def*& outputDataV
     m_FetchDataValue.numberOfRows = rowsFetched;
     if(rowsFetched > 0)
     {
-        m_FetchDataValue.rowAddress = new unsigned long[rowsFetched];
+        m_FetchDataValue.rowAddress = new LONG_PTR[rowsFetched];
         if (m_FetchDataValue.rowAddress != NULL)
             return TRUE;
         else
@@ -3616,7 +3616,7 @@ BOOL CStmt::setFetchOutputPerf(SQL_DataValue_def*& outputDataValue, long rowsFet
 
     if (rowsFetched > 0)
     {
-        m_FetchDataValue.rowAddress = new unsigned long[rowsFetched];
+        m_FetchDataValue.rowAddress = new LONG_PTR[rowsFetched];
         m_SwapInfo = new char*[rowsFetched];
         m_SwapInfo_NumRows = rowsFetched;
         for (int i = 0; i < rowsFetched; i++)
@@ -4640,7 +4640,7 @@ unsigned long CStmt::getNumberOfRows(void)
 void CStmt::setRowAddress( unsigned long row, BYTE* address)
 {
     if (row <= m_FetchDataValue.numberOfRows)
-        m_FetchDataValue.rowAddress[row] = (unsigned long)address;
+        m_FetchDataValue.rowAddress[row] = (LONG_PTR)address;
 }
 
 BYTE* CStmt::getRowAddress( unsigned long row)

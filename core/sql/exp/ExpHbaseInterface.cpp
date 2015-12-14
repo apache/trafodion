@@ -1568,3 +1568,19 @@ Lng32 ExpHbaseInterface_JNI::getBlockCacheFraction(float& frac)
   retCode_ = client_->getBlockCacheFraction(frac);
   return retCode_;
 }
+
+ByteArrayList * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblName)
+{
+  if (client_ == NULL)
+    {
+      if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+        return NULL;
+    }
+  
+  ByteArrayList* regionStats = client_->getRegionStats(tblName.val);
+  if (regionStats == NULL)
+    return NULL;
+  
+  return regionStats;
+}
+

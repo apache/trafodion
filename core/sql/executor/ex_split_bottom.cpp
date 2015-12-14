@@ -115,6 +115,12 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
   // ExStatisticsArea.
   if (getCollectStats()) 
   {
+    glob->setStatsEnabled(TRUE);
+#ifdef _DEBUG
+    if (getenv("DISABLE_STATS"))
+       glob->setStatsEnabled(FALSE);
+#endif
+
     ExStatisticsArea* statsArea;
     StatsGlobals *statsGlobals = espInstanceDir->getStatsGlobals();
     if (statsGlobals == NULL || getCollectStatsType() == ALL_STATS || 
@@ -123,6 +129,7 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
       statsArea = new(espInstanceDir->getLocalStatsHeap())
         ExStatisticsArea(espInstanceDir->getLocalStatsHeap(), 
               numOfParentInstances, getCollectStatsType());
+      statsArea->setStatsEnabled(glob->statsEnabled());
       glob->setStatsArea(statsArea);
       result->allocateStatsEntry();
     }
@@ -136,6 +143,7 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
       statsArea = new(espInstanceDir->getStatsHeap())
         ExStatisticsArea(espInstanceDir->getStatsHeap(), numOfParentInstances,
 		       getCollectStatsType());
+      statsArea->setStatsEnabled(glob->statsEnabled());
       StmtStats *ss = glob->castToExEspStmtGlobals()->setStmtStats();
       if ( ss != NULL)
         ss->setStatsArea(statsArea);
@@ -147,6 +155,9 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
                 savedPriority, savedStopMode);
     }
   }
+  else
+    glob->setStatsEnabled(FALSE);
+         
 
   if (cpuLimit_ > 0)
   {

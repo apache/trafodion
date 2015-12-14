@@ -24,7 +24,12 @@
 use strict;
 use Exporter ();
 
-use Parse::RecDescent;
+# Uncomment if using the RecDescent Parser
+# The Parse::RecDescent code is open source code licensed under GNU
+# At this time Apache does not support GNU licenses so the code that
+# uses RecDescent is commented out.  If a decision is made to use this
+# code, then the licensing issues needs to be resolved.
+# use Parse::RecDescent;
 
 package sqnodes;
 
@@ -406,7 +411,8 @@ sub verifyParse
 
 };
 
-my $parse = new Parse::RecDescent ($grammar) || die "Bad grammar! No biscuit!\n";
+# Uncomment if using the RecDescent Parser
+#my $parse = new Parse::RecDescent ($grammar) || die "Bad grammar! No biscuit!\n";
 
 sub parseStmt
 {
@@ -414,10 +420,72 @@ sub parseStmt
 # Set RD_TRACE to get detail trace of parsing steps.
 #    $::RD_TRACE = 1;
 
+    chomp($_);
     $stmt = $_;
     resetVars();
-    $parse->statement($stmt);
+    my @KeyValues=split(';',$stmt);
+
+    # Assuming the statement type to be 1, i.e. containing
+    # node_id, node_name, cores, processors, roles
+    $::g_sqStmtType = 1;
+
+    for (my $i = 0; $i <= $#KeyValues; $i++) {
+
+	my $KeyValue=$KeyValues[$i];
+	if ($::g_sqParseDebugFlag) {
+	    print "KeyValues[$i]=", $KeyValue, "\n";
+	}
+	my @KeyValuePair = split('=', $KeyValue);
+	my $Key = $KeyValuePair[0];
+	my $Value = $KeyValuePair[1];
+	if ($::g_sqParseDebugFlag) {
+	    print "Key: ", $Key, " Value: ", $Value, "\n";
+	}
+
+	if ($Key eq 'node-id') {
+	    $::g_sqNodeId = $Value;
+	}
+	elsif ($Key eq 'node-name') {
+	    $::g_sqNodeName = $Value;
+	}
+	elsif ($Key eq 'cores') {
+	    @::g_sqCores = split('-', $Value);
+	    if ($::g_sqParseDebugFlag) {
+		print "cores=@::g_sqCores\n";
+	    };
+	}
+	elsif ($Key eq 'processors') {
+	    $::g_sqProcessors = $Value;
+	}
+	elsif ($Key eq 'roles') {
+	    @::g_sqRoles = split(',', $Value);
+	    if ($::g_sqParseDebugFlag) {
+		my $numRoles = @::g_sqRoles + 0;
+		print "numRoles=$numRoles roles=@::g_sqRoles\n";
+	    }
+	}
+    }
+
     sqnodes::verifyParse();
+    
+    if ($errors != 0) { # Had errors
+        return 1;
+    }
+}
+
+sub parseStmtRecursiveDescent
+{
+# Not using the RecDescent Parser, so return an error 
+    return 1;
+# Set RD_TRACE to get detail trace of parsing steps.
+#    $::RD_TRACE = 1;
+
+    $stmt = $_;
+    resetVars();
+# Uncomment if using the RecDescent Parser
+#    $parse->statement($stmt);
+    sqnodes::verifyParse();
+    
     if ($errors != 0) { # Had errors
         return 1;
     }

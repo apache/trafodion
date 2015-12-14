@@ -920,6 +920,7 @@ Roles
 DB__HBASEROLE
 DB__HIVEROLE
 DB__ROOTROLE
+PUBLIC
 T135_ROLE1
 
 --- SQL operation complete.
@@ -1336,6 +1337,7 @@ Roles
 DB__HBASEROLE
 DB__HIVEROLE
 DB__ROOTROLE
+PUBLIC
 
 --- SQL operation complete.
 >>

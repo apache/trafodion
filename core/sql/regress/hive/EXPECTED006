@@ -10,6 +10,9 @@
 >>cqd HIVE_MAX_STRING_LENGTH '25' ;
 
 --- SQL operation complete.
+>>cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+
+--- SQL operation complete.
 >>cqd mode_seahive 'ON';
 
 --- SQL operation complete.

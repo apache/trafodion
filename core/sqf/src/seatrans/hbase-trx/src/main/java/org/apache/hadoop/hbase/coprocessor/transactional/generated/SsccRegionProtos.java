@@ -1516,15 +1516,15 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         return true;
@@ -2701,15 +2701,15 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasCommitId()) {
-
+          
           return false;
         }
         return true;
@@ -6428,23 +6428,23 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasRow()) {
-
+          
           return false;
         }
         if (!hasFamily()) {
-
+          
           return false;
         }
         if (!hasQualifier()) {
@@ -8230,39 +8230,39 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasRow()) {
-
+          
           return false;
         }
         if (!hasFamily()) {
-
-         return false;
+          
+          return false;
         }
         if (!hasQualifier()) {
-
+          
           return false;
         }
         if (!hasValue()) {
-
+          
           return false;
         }
         if (!hasPut()) {
-
+          
           return false;
         }
         if (!getPut().isInitialized()) {
-
+          
           return false;
         }
         return true;
@@ -11006,20 +11006,20 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         for (int i = 0; i < getDeleteCount(); i++) {
           if (!getDelete(i).isInitialized()) {
-
+            
             return false;
           }
         }
@@ -12745,22 +12745,23 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasDelete()) {
-
+          
           return false;
         }
         if (!getDelete().isInitialized()) {
+          
           return false;
         }
         return true;
@@ -14362,23 +14363,23 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasGet()) {
-
+          
           return false;
         }
         if (!getGet().isInitialized()) {
-
+          
           return false;
         }
         return true;
@@ -15899,23 +15900,23 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasScan()) {
-
+          
           return false;
         }
         if (!getScan().isInitialized()) {
-
+          
           return false;
         }
         return true;
@@ -17458,31 +17459,31 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasScannerId()) {
-
+          
           return false;
         }
         if (!hasNumberOfRows()) {
-
+          
           return false;
         }
         if (!hasCloseScanner()) {
-
+          
           return false;
         }
         if (!hasNextCallSeq()) {
-
+          
           return false;
         }
         return true;
@@ -19503,23 +19504,23 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasPut()) {
-
+          
           return false;
         }
         if (!getPut().isInitialized()) {
-
+          
           return false;
         }
         return true;
@@ -21247,20 +21248,20 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         for (int i = 0; i < getPutCount(); i++) {
           if (!getPut(i).isInitialized()) {
-
+            
             return false;
           }
         }
@@ -22988,19 +22989,19 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasTmId()) {
-
+          
           return false;
         }
         return true;
@@ -24568,27 +24569,27 @@ public final class SsccRegionProtos {
 
       public final boolean isInitialized() {
         if (!hasRegionName()) {
-
+          
           return false;
         }
         if (!hasTransactionId()) {
-
+          
           return false;
         }
         if (!hasStartId()) {
-
+          
           return false;
         }
         if (!hasInterpreterClassName()) {
-
+          
           return false;
         }
         if (!hasScan()) {
-
+          
           return false;
         }
         if (!getScan().isInitialized()) {
-
+          
           return false;
         }
         return true;

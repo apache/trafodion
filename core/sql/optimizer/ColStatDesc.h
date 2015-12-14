@@ -93,7 +93,7 @@ public:
 // LCOV_EXCL_STOP
 
   // given a ValueIdSet of table columns, returns the stored groupUec (if
-  // it exists), else returns 0
+  // it exists), else returns csMinusOne
   CostScalar lookup (const ValueIdSet & key) const ;
 
   void initializeMCUecForUniqueIndxes(TableDesc &table,

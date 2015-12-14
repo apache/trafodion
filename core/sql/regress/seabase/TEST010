@@ -133,6 +133,10 @@ explain options 'f' xx;
 prepare xx from select * from t010t1 order by b;
 explain options 'f' xx;
 
+-- should see no sort operator when selecting from one salt bucket
+prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+explain options 'f' xx;
+
 -- selectPred should present due to the 2nd disjunct b='1'
 prepare xx from select * from t010t1 where a=1 or b='1';
 explain xx;

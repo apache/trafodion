@@ -2778,3 +2778,30 @@ void ComTdbExeUtilHBaseBulkUnLoad::displayContents(Space * space,ULng32 flag)
     }
 }
 
+ComTdbExeUtilRegionStats::ComTdbExeUtilRegionStats
+(
+     char * tableName,
+     ex_expr_base * input_expr,
+     ULng32 input_rowlen,
+     ex_cri_desc * work_cri_desc,
+     const unsigned short work_atp_index,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size)
+     : ComTdbExeUtil(ComTdbExeUtil::REGION_STATS_,
+		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+		     tableName, strlen(tableName),
+		     input_expr, input_rowlen,
+		     NULL, 0,
+		     NULL,
+		     work_cri_desc, work_atp_index,
+		     given_cri_desc, returned_cri_desc,
+		     down, up, 
+		     num_buffers, buffer_size),
+       flags_(0)
+{
+  setNodeType(ComTdb::ex_REGION_STATS);
+}

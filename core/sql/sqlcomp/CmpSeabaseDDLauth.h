@@ -83,7 +83,7 @@ class CmpSeabaseDDLauth
      ComIdClass     getAuthType() const       { return authType_; }
 
      bool  isAuthValid() const     { return authValid_; }
-     bool  isPublic() const        { return false; }
+     bool  isPublic() const        { return authID_ == PUBLIC_USER; }
      bool  isRole()   const        { return authType_ == COM_ROLE_CLASS; }
      bool  isUser()   const        { return authType_ == COM_USER_CLASS; }
      static bool isRoleID(Int32 authID); 

@@ -24,7 +24,7 @@
 -->
 
 <!--Arbortext, Inc., 1988-2014, v.4002-->
-<!DOCTYPE book PUBLIC "-//Hewlett-Packard ESS//DTD DocBook Extension//EN"
+<!DOCTYPE book PUBLIC "-//Apache Software Foundation (ASF)//DTD DocBook Extension//EN"
  "ess.dtd">
 <book>
 <title>Trafodion Client Installation Guide</title>
@@ -35,7 +35,7 @@
 <abstract condition="hidden">
 <para>Last updated: 04/21/2015</para>
 </abstract>
-<copyright><year>2015</year><holder>Hewlett-Packard Development Company,
+<copyright><year>2015</year><holder>Apache Software Foundation (ASF),
 L.P.</holder></copyright>
 <legalnotice>
 <!--WRITER'S NOTE: HP legal notice for open source release-->
@@ -2899,7 +2899,7 @@ role="select:quotedtitle page"/></para></listitem>
 >basicsql.cpp</filename>:</para>
 <programlisting><![CDATA[// @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2010-2015 Apache Software Foundation (ASF)
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.

@@ -69,6 +69,7 @@ public:
     GET_MAINTAIN_INFO_       = 9,
     GET_STATISTICS_          = 10,
     USER_LOAD_               = 11,
+    REGION_STATS_        = 12,
     LONG_RUNNING_            = 13,
     GET_METADATA_INFO_       = 14,
     GET_VERSION_INFO_        = 15,
@@ -3452,6 +3453,124 @@ private:
   NABasicPtr   snapshotSuffix_;                         // 30 - 37
   char         fillersExeUtilHbaseUnLoad_[16];          // 38 - 53
 };
+
+static const ComTdbVirtTableColumnInfo comTdbRegionStatsVirtTableColumnInfo[] =
+  {
+    { "CATALOG_NAME",                   0, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "SCHEMA_NAME",                    1, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "OBJECT_NAME",                    2, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NUM",                     3, COM_USER_COLUMN, REC_BIN64_SIGNED,  4, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NAME",                    4, COM_USER_COLUMN, REC_BYTE_F_ASCII,  512, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORES",                     5, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORE_FILES",                6, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_UNCOMP_SIZE",         7, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_SIZE",                8, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "MEM_STORE_SIZE",                 9, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "READ_REQUESTS_COUNT",           10, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "WRITE_REQUESTS_COUNT",          11, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
+  };
+
+#define STATS_NAME_MAX_LEN 256
+#define STATS_REGION_NAME_MAX_LEN 512
+struct ComTdbRegionStatsVirtTableColumnStruct
+{
+  char   catalogName[STATS_NAME_MAX_LEN];
+  char   schemaName[STATS_NAME_MAX_LEN];
+  char   objectName[STATS_NAME_MAX_LEN];
+  Int64  regionNum;
+  char   regionName[STATS_REGION_NAME_MAX_LEN];
+  Lng32  numStores;
+  Lng32  numStoreFiles;
+  Int64  storeFileUncompSize;
+  Int64  storeFileSize;
+  Int64  memStoreSize;
+  Int64  readRequestsCount;
+  Int64  writeRequestsCount;
+};
+
+
+class ComTdbExeUtilRegionStats : public ComTdbExeUtil
+{
+  friend class ExExeUtilRegionStatsTcb;
+  friend class ExExeUtilRegionStatsPrivateState;
+
+public:
+  ComTdbExeUtilRegionStats()
+       : ComTdbExeUtil()
+  {}
+  
+  ComTdbExeUtilRegionStats(
+       char * tableName,
+       ex_expr_base * input_expr,
+       ULng32 input_rowlen,
+       ex_cri_desc * work_cri_desc,
+       const unsigned short work_atp_index,
+       ex_cri_desc * given_cri_desc,
+       ex_cri_desc * returned_cri_desc,
+       queue_index down,
+       queue_index up,
+       Lng32 num_buffers,
+       ULng32 buffer_size
+       );
+  
+  //  Long pack (void *);
+  //  Lng32 unpack(void *, void * reallocator);
+  
+  void setIsIndex(NABoolean v)
+  {(v ? flags_ |= IS_INDEX : flags_ &= ~IS_INDEX); };
+  NABoolean isIndex() { return (flags_ & IS_INDEX) != 0; };
+
+  void setDisplayFormat(NABoolean v)
+  {(v ? flags_ |= DISPLAY_FORMAT : flags_ &= ~DISPLAY_FORMAT); };
+  NABoolean displayFormat() { return (flags_ & DISPLAY_FORMAT) != 0; };
+
+  void setSummaryOnly(NABoolean v)
+  {(v ? flags_ |= SUMMARY_ONLY : flags_ &= ~SUMMARY_ONLY); };
+  NABoolean summaryOnly() { return (flags_ & SUMMARY_ONLY) != 0; };
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilRegionStats);}
+
+  virtual const char *getNodeName() const 
+  { 
+    return "GET_REGION_STATS";
+  };
+
+  static int getVirtTableNumCols()
+  {
+    return sizeof(comTdbRegionStatsVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo);
+  }
+
+  static ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
+  {
+    return (ComTdbVirtTableColumnInfo*)comTdbRegionStatsVirtTableColumnInfo;
+  }
+
+  static int getVirtTableNumKeys()
+  {
+    return 0;
+  }
+
+  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
+  {
+    return NULL;
+  }
+
+private:
+  enum
+  {
+    IS_INDEX       = 0x0001,
+    DISPLAY_FORMAT = 0x0002,
+    SUMMARY_ONLY   = 0x0004
+  };
+
+  UInt32 flags_;                                     // 00-03
+
+  char fillersComTdbExeUtilRegionStats_[76];      // 04-79
+};
+
 #endif
 
 
