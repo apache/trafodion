@@ -2285,8 +2285,17 @@ short HbaseInsert::codeGen(Generator *generator)
 	  (NOT col->isSystemColumn()) &&
           (NOT col->isIdentityColumn()))
 	{
-	  upsertColsWereSkipped = TRUE;
-	  continue;
+          if (NOT isAlignedFormat) {
+             upsertColsWereSkipped = TRUE;
+             continue;
+          }
+          else {
+             ComDiagsArea *da = CmpCommon::diags();
+             *da << DgSqlCode(-7001)
+             << DgString0("is missing for upsert or")
+             << DgString1(col->getFullColRefNameAsAnsiString());
+             GenExit();
+          }
 	}
 
       if (returnRow)
