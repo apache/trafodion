@@ -208,14 +208,25 @@ fi
 #=================================================
 # Cycle through all nodes to create known_hosts file, even if only one node
 echo "***INFO: Creating known_hosts file for all nodes"
+NODES_SHORT=""
 for node in $NODE_LIST
-do
-    sudo su $TRAF_USER --command "ssh -q -oStrictHostKeyChecking=no $node hostname"
-    if [ $? -ne 0 ]; then
-        echo "***ERROR: Unable to ssh to node $node"
-        exit -1
-    fi
+do 
+   newNode=$(ssh -q -n $node hostname -s) 
+
+   NODES_SHORT="$NODES_SHORT $newNode"
 done
+
+NODES_LONG=""
+for node in $NODE_LIST
+do 
+   newNode=$(ssh -q -n $node hostname -f) 
+
+   NODES_LONG="$NODES_LONG $newNode"
+done
+
+./traf_createPasswordLessSSH --nodes "$NODE_LIST"
+./traf_createPasswordLessSSH --nodes "$NODES_SHORT"
+./traf_createPasswordLessSSH --nodes "$NODES_LONG"
 
 if [ "$node_count" -ne 1 ]; then
     # Copy known_hosts file to all other nodes
