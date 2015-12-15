@@ -325,7 +325,7 @@
       <!-- item href="design-papers.html" name="Design Paper Template"/ -->
     </menu>
     <menu name="Apache">
-      <item href="http://incubator.apache.org/projects/trafodion.html" name="Status Page" target="_blank"/>
+      <item href="http://incubator.apache.org/projects/trafodion.html" name="Project Status" target="_blank"/>
       <item href="http://www.apache.org/foundation/how-it-works.html" name="Apache Foundation" target="_blank"/>
       <item href="http://www.apache.org/licenses/" name="Apache License" target="_blank"/>
       <item href="http://www.apache.org/security/" name="Apache Security" target="_blank"/>
