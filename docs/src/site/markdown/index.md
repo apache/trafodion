@@ -11,12 +11,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+<!-- Need a better picture, removed for now
 #### [Next Hadoop Wave][revolution]
 
 [![Next Hadoop Wave](images/carousel/revolution.png)][revolution]
 
 Trafodion brings enterprise-class operational workloads to Hadoop! You can now run all of your data workloads on a single platform based on Hadoop.
-
+-->
 
 #### [Hadoop-Scale with SQL Access][scale]
 
