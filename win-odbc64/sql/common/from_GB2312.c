@@ -42,13 +42,6 @@
  * $EndLog$
  */
 
-/*
- * COPYRIGHT NOTICE
- *
- * Copyright (c) 1990, 1991, 1992, 1993 Open Software Foundation, Inc.
- * ALL RIGHTS RESERVED (OSF/1).  See /usr/include/COPYRIGHT.OSF1 .
- */
-
 #include "fcconv.h"
 #include "multi-byte.h"
 
