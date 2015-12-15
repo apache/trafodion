@@ -70,8 +70,8 @@ function Check_VirtualIP_InUse_And_Unbind {
 
 gv_float_internal_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
 gv_float_external_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
-gv_float_interface=`python $HOME/ah/parse_dcs_site.py|cut -d$'\n' -f1`
-gv_port=0
+gv_float_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
+gv_port=23400
 gv_externalip_set=1
 gv_internalip_set=1
 

@@ -274,26 +274,26 @@ function configure_route_tables {
     fi
 
 
-    dcsEcho "Deleting and Adding from rule for the internal ip to the rules table"
+    dcsEcho "Deleting and Adding FROM rule for the internal ip to the rules table"
     sudo /sbin/ip rule del from $gv_float_internal_ip/32 tab 2
     status=$?
     if [[ $status -ne 0 && $status -ne 2 ]]; then
-       dcsEcho "Failed to delete from rule in the rules table - status is $status"
+       dcsEcho "Failed to delete FROM rule in the rules table - status is $status"
        exit $gv_error
     fi
 
     sudo /sbin/ip rule add from $gv_float_internal_ip/32 tab 2
     status=$?
     if [[ $status -ne 0 && $status -ne 2 ]]; then
-dcsEcho "Failed to add the from rule to the rules table - status is $status"
+dcsEcho "Failed to add the FROM rule to the rules table - status is $status"
        exit $gv_error
     fi
 
-    dcsEcho "Deleting and Adding to rule for the internal ip to the rules table"
+    dcsEcho "Deleting and Adding TO rule for the internal ip to the rules table"
     sudo /sbin/ip rule del to $gv_float_internal_ip/32 tab 2
     status=$?
     if [[ $status -ne 0 && $status -ne 2 ]]; then
-       dcsEcho "Failed to delete the to rule in the rules table - status is $status"
+       dcsEcho "Failed to delete the TO rule in the rules table - status is $status"
        exit $gv_error
     fi
 

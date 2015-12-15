@@ -24,8 +24,11 @@
 import os
 from xml.dom import minidom
 
-name = os.environ.get('DCS_INSTALL_DIR')
-doc = minidom.parse(name+"/conf/dcs-site.xml")
+dcsconfig_dir = os.environ.get('DCS_CONF_DIR')
+if (dcsconfig_dir == null)
+   name = os.environ.get('DCS_INSTALL_DIR')
+   dcsconfig_dir=name+"/conf"   
+doc = minidom.parse(dcsconfig_dir+"/dcs-site.xml")
 props = doc.getElementsByTagName("property")
 for prop in props:
         pname = prop.getElementsByTagName("name")[0]

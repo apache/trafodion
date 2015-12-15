@@ -33,6 +33,12 @@ actual_dcsserver_cnt=0
 down_dcsserver_cnt=0
 activeMaster=`hostname`
 
+if [ -e $SQ_PDSH ]; then
+   L_PDSH="$SQ_PDSH $MY_NODES "
+else
+   L_PDSH=
+fi
+
 tmp_ps=`mktemp -t`
 if [[ $? != 0 ]]; then
     echo "Error while getting a temporary file. Exiting."
@@ -52,6 +58,11 @@ if [[ $sq_stat == 0 ]]; then
 
  if [ -d $DCS_INSTALL_DIR ];then
 
+### Get the configured primary node for DcsMaster
+  if [ -s ${DCS_INSTALL_DIR}/conf/master ]; then
+     primary_dcsmaster=`cat ${DCS_INSTALL_DIR}/conf/master | /bin/egrep -v '^#|^$'`
+  fi
+
 ### Get the configured number of DcsMaster's
   if [ -s ${DCS_INSTALL_DIR}/conf/backup-masters ]; then
      let backup_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/backup-masters`
@@ -68,18 +79,18 @@ if [[ $sq_stat == 0 ]]; then
    fi
 
 ### Check if there are any DcsMaster and DcsServer's that are started 
-   if [ -e $SQ_PDSH ]; then
-     actual_dcsmaster_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsMaster |wc -l` 
-     actual_dcsserver_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsServer |wc -l` 
-   else
-     actual_dcsmaster_cnt=`$jpscmd |grep DcsMaster |wc -l`
-     actual_dcsserver_cnt=`$jpscmd |grep DcsServer |wc -l`
-   fi
+   actual_dcsmaster_cnt=`$L_PDSH $jpscmd |grep DcsMaster |wc -l` 
+   actual_dcsserver_cnt=`$L_PDSH $jpscmd |grep DcsServer |wc -l` 
 
 ### Get the node where the active master is running
-   if [[ -e $SQ_PDSH && ! -z $ENABLE_HA ]]; then
+   if [[ ! -z $CLUSTERNAME ]]; then
+     if [[ ! -z $ENABLE_HA ]]; then
+        echo " This cluster \"$CLUSTERNAME\" is configured for HA"
         gv_float_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
-        activeMaster=`$SQ_PDSH $MY_NODES /sbin/ip addr show |grep $gv_float_interface$ |cut -d':' -f1`
+        activeMaster=`$L_PDSH /sbin/ip addr show |grep $gv_float_interface$ |cut -d':' -f1`
+     else
+        activeMaster=`$L_PDSH $jpscmd |grep DcsMaster |cut -d":" -f1`
+     fi
    fi
 
    if ( [ "$cfg_dcsserver_cnt" '!=' "$actual_dcsserver_cnt" ] ); then
@@ -109,16 +120,22 @@ if [[ $sq_stat == 0 ]]; then
    echo "ls $dcsznode"|$DCS_INSTALL_DIR/bin/dcs zkcli > $dcstmp
    zkport=`cat $dcstmp | /usr/bin/head -n 1 | cut -d ":" -f2`
    if [ ! -z "$zkport" ]; then
-     echo "Zookeeper is listening on port $zkport"
+     echo "Zookeeper is listening on port \"$zkport\""
    else
      echo "Zookeeper is not started..."
      exit 1
    fi
    masterport=`cat $dcstmp | /usr/bin/tail -n 1 | cut -d ":" -f4`
    if [ ! -z "$masterport" ]; then
-     echo "DcsMaster is listening host \"$activeMaster\" using port \"$masterport\""
+     echo "DcsMaster is listening on port \"$masterport\""
+     if [[ ! -z $primary_dcsmaster ]]; then
+        echo "Primary DcsMaster configured to run on node \"$primary_dcsmaster\""
+     fi
+     if [[ ! -z $activeMaster ]]; then
+        echo "Active DcsMaster is on node \"$activeMaster\""
+     fi
      if [[ ! -z $list_of_backups ]]; then
-        echo "Backup Masters configured to run on nodes: " $list_of_backups
+        echo "Backup DcsMasters configured to run on nodes \"$list_of_backups\""
      fi
      echo
    fi
