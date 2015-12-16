@@ -2267,7 +2267,6 @@ short HbaseInsert::codeGen(Generator *generator)
   NAColumn *col;
 
   ValueIdList returnRowVIDList;
-  NABoolean upsertColsWereSkipped = FALSE;
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
@@ -2277,26 +2276,6 @@ short HbaseInsert::codeGen(Generator *generator)
       ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
 
       col = tgtValueId.getNAColumn( TRUE );
-
-      // if upsert stmt and this assign was not specified by user, skip it. 
-      // If used, it will overwrite existing values if this row exists in the table.
-      if ((isUpsert()) &&
-	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
-	  (NOT col->isSystemColumn()) &&
-          (NOT col->isIdentityColumn()))
-	{
-          if (NOT isAlignedFormat) {
-             upsertColsWereSkipped = TRUE;
-             continue;
-          }
-          else {
-             ComDiagsArea *da = CmpCommon::diags();
-             *da << DgSqlCode(-7001)
-             << DgString0("is missing for upsert or")
-             << DgString1(col->getFullColRefNameAsAnsiString());
-             GenExit();
-          }
-	}
 
       if (returnRow)
 	returnRowVIDList.insert(tgtValueId);
@@ -2358,7 +2337,7 @@ short HbaseInsert::codeGen(Generator *generator)
   if (addDefaultValues) 
     {
       expGen->addDefaultValues(insertVIDList,
-			       (upsertColsWereSkipped ? colArray : getIndexDesc()->getAllColumns()),
+			       getIndexDesc()->getAllColumns(),
 			       tupleDesc);
     }
 
