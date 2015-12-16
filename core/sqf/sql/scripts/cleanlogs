@@ -39,23 +39,29 @@ function usage() {
 }
 
 function core_logs() {
+ if [[ ! -z $L_PDSH ]]; then
    $L_PDSH rm -f ${MY_SQROOT}/logs/*.err
    $L_PDSH rm -f ${MY_SQROOT}/logs/*.log
    $L_PDSH rm -f ${MY_SQROOT}/logs/*log.[0-9]*
+ fi
 }
 
 function dcs_logs() {
+ if [[ ! -z $L_PDSH ]]; then
    $L_PDSH rm -f ${DCS_INSTALL_DIR}/logs/*.log
    $L_PDSH rm -f ${DCS_INSTALL_DIR}/logs/*.log.[0-9]*
    $L_PDSH rm -f ${DCS_INSTALL_DIR}/logs/*.out
    $L_PDSH rm -f ${DCS_INSTALL_DIR}/logs/*.out.[0-9]*
+ fi
 }
 
 function rest_logs() {
+ if [[ ! -z $L_PDSH ]]; then
    $L_PDSH rm -f ${REST_INSTALL_DIR}/logs/*.log
    $L_PDSH rm -f ${REST_INSTALL_DIR}/logs/*.log.[0-9]*
    $L_PDSH rm -f ${REST_INSTALL_DIR}/logs/*.out
    $L_PDSH rm -f ${REST_INSTALL_DIR}/logs/*.out.[0-9]*
+ fi
 }
 
 function all_logs() {
