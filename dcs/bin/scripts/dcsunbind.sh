@@ -34,9 +34,9 @@ function check_node {
 	       # check if another interface is bound to this virtual ip address
 	       echo "$myifport" | grep "$tempinterface"  > /dev/null
 	       if [ $? -eq 1 -o "$1" != "$gv_myhostname" ]; then
-                   unbindip = `echo "$myifport" | awk '{print $2}' `
+                   unbindip=`echo "$myifport" | awk '{print $2}'`
 		   unbindlb=`echo "$myifport"|awk '{print $NF}'`
-		   echo "External ip $gv_float_external_ip is already in use on node $1 bound to interface $myinterface($unbindlb) - unbind..."
+		   echo "External ip $gv_float_external_ip is in use on node $1 bound to interface $myinterface($unbindlb) - unbind..."
 		   $SQ_PDSH -S -w $1 sudo /sbin/ip addr del $unbindip dev $myinterface label $unbindlb
                    status=$?
 		   if [ $status -ne 0 ]; then
@@ -45,8 +45,6 @@ function check_node {
                    else
                       echo "Unbind successful"
                    fi
-	       else
-	           echo "External ip $gv_float_external_ip is already bound to $myinterface on node $1 - skip unbind"
 	       fi # endif node+name match
 	    fi # endif looking for external ip
         fi #endif checking external ip is set or not
@@ -71,20 +69,24 @@ function Check_VirtualIP_InUse_And_Unbind {
 gv_float_internal_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
 gv_float_external_ip=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f2`
 gv_float_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
-gv_port=23400
+gv_port=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f3`
+if [[ -z $gv_port ]]; then
+   gv_port=23400
+fi
+awscmd=/usr/local/bin/aws
 gv_externalip_set=1
 gv_internalip_set=1
 
 if [[ ! -z $AWS_CLOUD ]]; then
    #Get the network interface
-   NETWORKINTERFACE=`aws ec2 describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
+   NETWORKINTERFACE=`$awscmd ec2 describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
 
    # Get the attachment id for the network interface
-   ATTACH_ID=`aws ec2 describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
+   ATTACH_ID=`$awscmd ec2 describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
 
    echo "Detaching attachment Id:" $ATTACH_ID
    if [ ! -z "$ATTACH_ID" ]; then
-      aws ec2 detach-network-interface --attachment-id $ATTACH_ID
+      $awscmd ec2 detach-network-interface --attachment-id $ATTACH_ID
       echo "Detached interface :" $NETWORKINTERFACE
    fi
 else

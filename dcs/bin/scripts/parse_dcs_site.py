@@ -25,13 +25,17 @@ import os
 from xml.dom import minidom
 
 dcsconfig_dir = os.environ.get('DCS_CONF_DIR')
-if (dcsconfig_dir == null)
+if not dcsconfig_dir:
    name = os.environ.get('DCS_INSTALL_DIR')
    dcsconfig_dir=name+"/conf"   
 doc = minidom.parse(dcsconfig_dir+"/dcs-site.xml")
 props = doc.getElementsByTagName("property")
 for prop in props:
         pname = prop.getElementsByTagName("name")[0]
+        if (pname.firstChild.data == "dcs.master.port"):
+           pvalue = prop.getElementsByTagName("value")[0]
+           dcsPort=pvalue.firstChild.data
+           print("%s" % (dcsPort))
         if (pname.firstChild.data == "dcs.master.floating.ip.external.ip.address"):
            pvalue = prop.getElementsByTagName("value")[0]
            float_ipaddress=pvalue.firstChild.data
