@@ -155,13 +155,13 @@ int main(int argc, const char * argv[])
     
      case 2:
       {
-	cout <<"***********"  <<endl;
+	cout <<"*************************************"  <<endl;
 	cout << "Blob test extract to file in chunks " << endl;
-	cout <<"***********"  <<endl;
-	cout << " Extract from a lob column in a lob table" << endl << endl;
-	cout << " Input lob table name :" << endl;
+	cout <<"************************************"  <<endl;
+	cout << "Extract from a lob column in a lob table" << endl << endl;
+	cout << "Input lob table name :" << endl;
 	cin.getline(tablename,40);
-	cout << " Table name : " << tablename << endl;
+	cout << "Table name : " << tablename << endl;
 	cout << "Input lob column name to extract from :" << endl;
 	cin.getline(columnname,40); 
 	cout << "Column Name : " << columnname << endl;
