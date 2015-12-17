@@ -200,17 +200,17 @@ fi
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store       >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table promotion   >>${MY_LOG_FILE} 2>&1
 
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds                        >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/item                   >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/customer               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/customer_demographics  >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/household_demographics >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/customer_address       >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds                        >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/item                   >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/customer               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/customer_demographics  >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/household_demographics >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/customer_address       >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
 
   cd $MY_TPCDS_DATA_DIR
 
