@@ -322,7 +322,7 @@ MY_CMD=$0
 MY_IMPLICIT_Y=
 NOACTION=
 VERBOSE=
-MISSING_P_VAL="ERROR: -p option should be followed by <start port num>, rand or fromDisplay"
+MISSING_P_VAL="ERROR: -p option should be followed by <start port num>, rand, fromDisplay or available"
 
 # process command line arguments
 ################################
@@ -336,7 +336,7 @@ do
       exit 1
     fi
     MY_START_PORT=$1
-    if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" ]; then
+    if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" -a $MY_START_PORT != "available" ]; then
       test $MY_START_PORT -gt 0 >/dev/null 2>&1
       if [ $? -ne 0 ]; then
         echo "$MISSING_P_VAL"
@@ -360,7 +360,7 @@ do
 *)  echo "ERROR: Unexpected argument $1"
     echo
     cat <<EOF
-Syntax: $0 [ -p [<starting port num> | rand | fromDisplay ] ]  [-y]  [-n] [-v]
+Syntax: $0 [ -p [<starting port num> | rand | fromDisplay | available ] ]  [-y]  [-n] [-v]
 EOF
     exit 1
     ;;
@@ -392,6 +392,35 @@ else
   elif [ $MY_START_PORT == "rand" ]; then
     # pick a random number between 12000 and 24000 that is divisible by 200
     MY_START_PORT=`expr $RANDOM '%' 60 '*' 200 + 12000`
+  elif [ $MY_START_PORT == "available" ]; then
+     # pickup one from available ports
+
+     portMsg=`python findPort.py`
+
+     missingPort=`echo $portMsg | cut -d':' -f 1-1`
+
+     if [[ $missingPort != "Port ranges not in use" ]]; then
+        echo "No free port available, exit"
+        exit 1
+     fi
+ 
+     ports=`echo $portMsg | cut -d':' -f 2-2`
+     port_arr=($ports)
+     num_ports=${#port_arr[@]}
+ 
+     echo "Available ports detected: ${port_arr[*]}"
+     echo "Total number of free ports: $num_ports"
+ 
+     if [ $num_ports -eq 0 ]; then
+       echo "No free ports available, exit."
+       exit 1
+     fi
+
+     random_port_index=`python -c "import random; print random.randint(0,${#port_arr[@]}-1)"`
+     echo "Port index randomely chosen: $random_port_index"
+ 
+     MY_START_PORT="${port_arr[$random_port_index]}"
+     echo "Port chosen: $MY_START_PORT"
   fi
   echo "# Using non-standard port range from MY_START_PORT env var: $MY_START_PORT..."
 fi
@@ -456,6 +485,7 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_DRILL_BIT_PORT_NUM=31011
 else
   # fs.default.name
+
   MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
   MY_HADOOP_SHUFFLE_PORT_NUM=`expr $MY_START_PORT + 62`
   MY_YARN_RESMAN_PORT_NUM=`expr $MY_START_PORT + 132`
@@ -523,6 +553,8 @@ MY_HADOOP_TASK_TRACKER_PORT_NUM=`expr $MY_START_PORT + 60`
 # dfs.backup.address (50100)
 # dfs.backup.http.address (50105)
 # mapred.job.tracker (???)
+
+listports > $MY_SW_SCRIPTS_DIR/sw_ports
 
 if [[ -n "$VERBOSE" ]]; then
   listports
