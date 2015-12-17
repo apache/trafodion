@@ -1137,7 +1137,6 @@ public class DatabaseQuery extends QueryWrapper
                sessObj.setCurrentStmtObj(null);
                super.setQueryRowCount(ps);
                sessObj.setQryEndTime();
-               
             }
             
             resetQryObj();
@@ -1156,7 +1155,6 @@ public class DatabaseQuery extends QueryWrapper
          if (qryObj.getQueryId()==SessionDefaults.SHOW_SERVICE)
             return; 
          fetchResults(stmt.getResultSet());
-         
       }
       else
       {
@@ -1166,6 +1164,8 @@ public class DatabaseQuery extends QueryWrapper
          sessObj.setQryEndTime();
       }
     
+      stmt.close();
+      sessObj.setStmtObj(sessObj.getConnObj().createStatement());
       resetQryObj();
    }
 
