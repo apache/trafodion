@@ -380,6 +380,8 @@ class ExpHbaseInterface : public NABasicObject
                                    Int32 partns,
                                    ARRAY(const char *)& nodeNames) = 0;
 
+  // get regions and size
+  virtual ByteArrayList* getRegionStats(const HbaseStr& tblName) = 0;
 
 protected:
   enum 
@@ -679,6 +681,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                    Int32 partns,
                                    ARRAY(const char *)& nodeNames) ;
 
+  virtual ByteArrayList* getRegionStats(const HbaseStr& tblName);
 
 private:
   bool  useTRex_;

@@ -50,6 +50,7 @@ cqd AUTO_QUERY_RETRY 'OFF';
 cqd HIVE_MAX_STRING_LENGTH '25' ;
 cqd mode_seahive 'ON';
 cqd CALL_EMBEDDED_ARKCMP 'OFF';
+cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 ------------------------------------------------------------
 -- Testing query plan invalidation in the compiler, but
 -- not the executor. Perform DML/DDL operations on a

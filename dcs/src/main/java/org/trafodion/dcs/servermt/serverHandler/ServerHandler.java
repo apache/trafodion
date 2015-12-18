@@ -100,6 +100,7 @@ public final class ServerHandler implements Callable {
     public int instance;
     public int serverThread;
     public String serverName;
+    public String extHostAddress;
     public int serverState= ServerConstants.SERVER_STATE_INIT;
 
     public byte[] cert;
@@ -114,6 +115,7 @@ public final class ServerHandler implements Callable {
         this.zkc = zkc;
         this.netConf = netConf;
         this.hostName = netConf.getHostName();
+        this.extHostAddress = netConf.getExtHostAddress();
         this.requestTimeout = conf.getInt(Constants.DCS_SERVER_LISTENER_REQUEST_TIMEOUT,Constants.DEFAULT_SERVER_LISTENER_REQUEST_TIMEOUT);
         this.connectingTimeout = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT) * 1000;
         this.selectorTimeout = conf.getInt(Constants.DCS_SERVER_LISTENER_SELECTOR_TIMEOUT,Constants.DEFAULT_SERVER_LISTENER_SELECTOR_TIMEOUT);

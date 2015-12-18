@@ -472,23 +472,22 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
 
     lv_error = TMSTATS(pv_nid, &lv_stats, pv_reset);
 
-    if(json==false) {
-        if (lv_error)
-            printf("Node %d\t**Error %d.", pv_nid, lv_error);
-        else
-        {
-            printf("Node %d:", pv_nid);
-            print_counters(&lv_stats.iv_counts);
-            print_txnStats(&lv_stats.iv_txn);
+    if (lv_error) {
+        printf("Node %d\t**Error %d.\n", pv_nid, lv_error);
+    }
 
-            // Pool statistics
-            printf("\n  Txn Pool:\t");
-            print_poolStats(lv_stats.iv_transactionPool_stats);
-            printf("\n  Thrd Pool:\t");
-            print_poolStats(lv_stats.iv_threadPool_stats);
-            printf("\n  RMMsg Pool:\t");
-            print_poolStats(lv_stats.iv_RMMessagePool_stats);
-        }
+    else if(json==false) {
+        printf("Node %d:", pv_nid);
+        print_counters(&lv_stats.iv_counts);
+        print_txnStats(&lv_stats.iv_txn);
+
+        // Pool statistics
+        printf("\n  Txn Pool:\t");
+        print_poolStats(lv_stats.iv_transactionPool_stats);
+        printf("\n  Thrd Pool:\t");
+        print_poolStats(lv_stats.iv_threadPool_stats);
+        printf("\n  RMMsg Pool:\t");
+        print_poolStats(lv_stats.iv_RMMessagePool_stats);
         printf("\n");
     } 
     else {
@@ -496,6 +495,7 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
         printf(",\"txnStats\":{\"txnBegins\": %ld", lv_stats.iv_counts.iv_begin_count);
         printf(",\"txnAborts\": %ld", lv_stats.iv_counts.iv_abort_count);
         printf(",\"txnCommits\": %ld}}", lv_stats.iv_counts.iv_commit_count);
+        printf("\n");
     }
 } //process_tmstats_node
 

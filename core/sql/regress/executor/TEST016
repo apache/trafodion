@@ -27,6 +27,8 @@
 -- To do:
 -- Revision history:
 
+?section cleanup
+
 drop table t016t1 cascade;
 drop table t016t2 cascade;
 drop table t016t3 cascade;
@@ -40,6 +42,8 @@ drop table t016err;
 drop mvgroup mvg_016;
 
 drop procedure rs016;
+
+?section tests
 
 #ifNT
 control query default ARKCMP_FAKE_HW 'ON';
@@ -315,3 +319,4 @@ drop table t016_2535_3;
 
 log;
 
+obey TEST016(cleanup);

@@ -1,7 +1,7 @@
 >>
 >>sh sqlci -i"TEST021(s0)" >> LOG021;
-Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
-(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section s0
 >>initialize trafodion, drop;
 
@@ -15,8 +15,8 @@ End of MXCI Session
 
 >>
 >>sh sqlci -i"TEST021(s1)" >> LOG021;
-Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
-(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section s1
 >>initialize trafodion;
 
@@ -28,8 +28,8 @@ End of MXCI Session
 
 >>
 >>sh sqlci -i"TEST021(s11)" >> LOG021;
-Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
-(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section s11
 >>create table t021 (a int not null);
 
@@ -73,8 +73,8 @@ End of MXCI Session
 
 >>
 >>sh sqlci -i"TEST021(s2)" >> LOG021;
-Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
-(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section s2
 >>set parserflags 131072;
 
@@ -124,8 +124,8 @@ End of MXCI Session
 
 >>
 >>sh sqlci -i"TEST021(s3)" >> LOG021;
-Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
-(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section s3
 >>initialize trafodion, upgrade;
 Metadata Upgrade: started
@@ -174,10 +174,10 @@ End of MXCI Session
 
 >>
 >>sh sqlci -i"TEST021(s4)" >> LOG021;
-Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
-(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section s4
->>select * from trafodion."_MD_".indexes;
+select * from trafodion."_MD_".indexes;
 
 BASE_TABLE_UID        KEYTAG       IS_UNIQUE    KEY_COLCOUNT  NONKEY_COLCOUNT  IS_EXPLICIT  INDEX_UID
 --------------------  -----------  -----------  ------------  ---------------  -----------  --------------------

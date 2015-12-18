@@ -15171,7 +15171,8 @@ FileScan::synthPhysicalProperty(const Context* myContext,
   // ---------------------------------------------------------------------
   sortOrderVEG.removeCoveredExprs(getGroupAttr()->getCharacteristicInputs());
   sortOrderVEG.complifyAndRemoveUncoveredSuffix(
-    getGroupAttr()->getCharacteristicOutputs()) ;
+       getGroupAttr()->getCharacteristicOutputs(),
+       getGroupAttr());
 
   // ---------------------------------------------------------------------
   // if this is a reverse scan, apply an inversion function to

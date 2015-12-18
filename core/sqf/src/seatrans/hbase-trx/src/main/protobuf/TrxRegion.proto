@@ -35,6 +35,7 @@ import "Client.proto";
 message AbortTransactionRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message AbortTransactionResponse {
@@ -45,6 +46,7 @@ message AbortTransactionResponse {
 message AbortTransactionMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message AbortTransactionMultipleResponse {
@@ -65,7 +67,8 @@ message BeginTransactionResponse {
 message CommitRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  optional bool ignoreUnknownTransactionException = 3;
+  required int32 participantNum = 3;
+  optional bool ignoreUnknownTransactionException = 4;
 }
 
 message CommitResponse {
@@ -76,7 +79,8 @@ message CommitResponse {
 message CommitMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
-  optional bool ignoreUnknownTransactionException = 3;
+  required int32 participantNum = 3;
+  optional bool ignoreUnknownTransactionException = 4;
 }
 
 message CommitMultipleResponse {
@@ -87,6 +91,7 @@ message CommitMultipleResponse {
 message CommitRequestRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message CommitRequestResponse {
@@ -98,6 +103,7 @@ message CommitRequestResponse {
 message CommitRequestMultipleRequest{
   repeated bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message CommitRequestMultipleResponse {
@@ -109,6 +115,7 @@ message CommitRequestMultipleResponse {
 message CommitIfPossibleRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  required int32 participantNum = 3;
 }
 
 message CommitIfPossibleResponse {

@@ -25,6 +25,16 @@
 #  Install DCS on a Trafodion cluster
 #==========================================
 
+export TRAF_CONFIG="/etc/trafodion/trafodion_config"
+
+if [ $node_count -eq 1 ]; then
+    TRAF_PDSH=""
+    TRAF_PDCP=""
+else
+    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
+    TRAF_PDCP="pdcp -R ssh $MY_NODES"
+fi
+
 function print_usage {
 cat << EOF
 This script will install/configure the specified DCS build.
@@ -136,7 +146,8 @@ echo "***INFO: untarring build file $DCS_BUILD_FILE"
 tar -xzf $DCS_BUILD_FILE
 
 # get the dcs install directory name which is imbedded in the tar file
-DCS_DIR=$(tar -tf $DCS_BUILD_FILE | grep LICENSE | sed -e "s@\(^.*\)/LICENSE.txt@\1@")
+DCS_DIR=$(tar -tf $DCS_BUILD_FILE | grep --max-count=1 bin | sed -e "s@\(^.*\)/bin/@\1@")
+
 DCS_DIR=$DCS_INSTALL_PATH/$DCS_DIR
 
 # set env var in sqenvcom.sh for DCS install directory
@@ -180,6 +191,36 @@ cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.dns.in
 cp dcs-site.temp dcs-site.xml
 rm dcs-site.temp 2>/dev/null
 
+if [[ "$ENABLE_HA" == "true" ]]; then
+   rm dcs-site.temp 2>/dev/null
+   cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.master.floating.ip</name>\n    <value>true</value>\n  </property>\n</configuration>@" > dcs-site.temp
+   cp dcs-site.temp dcs-site.xml
+   rm dcs-site.temp 2>/dev/null
+
+   rm dcs-site.temp 2>/dev/null
+   cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.master.floating.ip.external.interface</name>\n    <value>$INTERFACE</value>\n  </property>\n</configuration>@" > dcs-site.temp
+   cp dcs-site.temp dcs-site.xml
+   rm dcs-site.temp 2>/dev/null
+
+   rm dcs-site.temp 2>/dev/null
+   cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.master.floating.ip.external.ip.address</name>\n    <value>$FLOATING_IP</value>\n  </property>\n</configuration>@" > dcs-site.temp
+   cp dcs-site.temp dcs-site.xml
+   rm dcs-site.temp 2>/dev/null
+fi
+
+if [[ "$ENABLE_HA" == "true" ]]; then
+   echo "***INFO: modifying $DCS_DIR/conf/backup-masters file"
+   
+   for node in $BACKUP_DCS_NODES
+   do
+       echo $node >> $DCS_DIR/conf/backup-masters
+   done
+   
+   if [[ $node_count -gt 1 ]]; then
+      $TRAF_PDCP $DCS_DIR/conf/backup-masters $DCS_DIR/conf/backup-masters
+   fi
+fi
+
 
 echo "***INFO: creating $DCS_DIR/conf/servers file"
 rm servers 2>/dev/null
@@ -196,6 +237,16 @@ do
     echo $node_name $node_servers >> servers
     (( count++ ))
 done
+
+if [[ "$ENABLE_HA" == "true" ]]; then
+   newHName="HNAME=$FLOATING_IP:23400"
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
+
+   if [[ $node_count -gt 1 ]]; then
+      $TRAF_PDCP $SQ_ROOT/trafci/bin/trafci $SQ_ROOT/trafci/bin/trafci
+   fi
+fi
+
 
 echo "***INFO: End of DCS install."
 

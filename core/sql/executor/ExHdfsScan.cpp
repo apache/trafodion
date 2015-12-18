@@ -598,7 +598,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                      "too many bites.");
 
             if (hdfsStats_)
-	      hdfsStats_->getTimer().start();
+	      hdfsStats_->getHdfsTimer().start();
 
 	    retcode = 0;
 	    
@@ -650,7 +650,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    );
                   
                 if (hdfsStats_)
-                  hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getTimer().stop());
+                  hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
 	          
 	        if (retcode < 0)
 	          {

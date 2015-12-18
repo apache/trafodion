@@ -299,8 +299,7 @@ class HSHiveTableDef : public HSTableDef
       }
     Lng32 getTotalVarcharLength() const
       {
-        // Used in determination of whether dp2 sampling should be used, and
-        // also for row count estimation for sq tables. Not needed for hive.
+        // Used for row count estimation for sq tables. Not needed for hive.
         return 0;
       }
     Lng32 getBlockSize() const
@@ -407,8 +406,7 @@ class HSHbaseTableDef : public HSTableDef
       }
     Lng32 getTotalVarcharLength() const
       {
-        // Used in determination of whether dp2 sampling should be used, and
-        // also for row count estimation for sq tables. Not needed for HBase.
+        // Used for row count estimation for sq tables. Not needed for HBase.
         return 0;
       }
     Lng32 getBlockSize() const

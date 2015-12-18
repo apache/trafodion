@@ -3275,6 +3275,125 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
   return 0;
 }
 
+////////////////////////////////////////////////////////////////////
+// class ExeUtilRegionStats
+////////////////////////////////////////////////////////////////////
+const char * ExeUtilRegionStats::getVirtualTableName()
+{ return ("EXE_UTIL_REGION_STATS__"); }
+
+desc_struct *ExeUtilRegionStats::createVirtualTableDesc()
+{
+  desc_struct * table_desc = NULL;
+  if (displayFormat_)
+    table_desc = ExeUtilExpr::createVirtualTableDesc();
+  else
+    table_desc = Generator::createVirtualTableDesc(
+	 getVirtualTableName(),
+	 ComTdbExeUtilRegionStats::getVirtTableNumCols(),
+	 ComTdbExeUtilRegionStats::getVirtTableColumnInfo(),
+	 ComTdbExeUtilRegionStats::getVirtTableNumKeys(),
+	 ComTdbExeUtilRegionStats::getVirtTableKeyInfo());
+  return table_desc;
+}
+
+short ExeUtilRegionStats::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const int work_atp = 1;
+  const int exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+  ex_expr * input_expr = 0;
+  ULng32 inputRowLen = 0;
+
+  if (inputColList_)
+    {
+      ValueIdList inputVIDList;
+      ItemExpr * inputExpr = new(generator->wHeap())
+        Cast(inputColList_, 
+             new (generator->wHeap())
+             SQLVarChar(inputColList_->getValueId().getType().getNominalSize(),
+                        inputColList_->getValueId().getType().supportsSQLnull()));
+      
+      inputExpr->bindNode(generator->getBindWA());
+      inputVIDList.insert(inputExpr->getValueId());
+      
+      expGen->
+        processValIdList(inputVIDList,
+                         ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+                         inputRowLen,
+                         work_atp,
+                         exe_util_row_atp_index
+                         );
+      
+      expGen->
+        generateContiguousMoveExpr(inputVIDList,
+                                   0, // don't add conv nodes
+                                   work_atp,
+                                   exe_util_row_atp_index,
+                                   ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+                                   inputRowLen,
+                                   &input_expr);
+    }
+
+  char * tableName = space->AllocateAndCopyToAlignedSpace
+    (generator->genGetNameAsAnsiNAString(getTableName()), 0);
+
+  ComTdbExeUtilRegionStats * exe_util_tdb = new(space) 
+    ComTdbExeUtilRegionStats(
+         tableName,
+	 input_expr,
+	 inputRowLen,
+	 workCriDesc,
+	 exe_util_row_atp_index,
+	 givenDesc,
+	 returnedDesc,
+	 (queue_index)64,
+	 (queue_index)64,
+	 4, 
+	 64000); 
+  generator->initTdbFields(exe_util_tdb);
+
+  exe_util_tdb->setIsIndex(isIndex_);
+
+  exe_util_tdb->setDisplayFormat(displayFormat_);
+
+  exe_util_tdb->setSummaryOnly(summaryOnly_);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+  
+  // users should not start a transaction.
+  generator->setTransactionFlag(0);
+  
+  return 0;
+}
+
+
 // See ControlRunningQuery
 
 /////////////////////////////////////////////////////////
