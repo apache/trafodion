@@ -432,7 +432,6 @@ else
 
      MY_START_PORT="${port_arr1[$random_port_index]}"
      echo "Port chosen: $MY_START_PORT"
-
   fi
   echo "# Using non-standard port range from MY_START_PORT env var: $MY_START_PORT..."
 fi
