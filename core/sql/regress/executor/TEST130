@@ -427,6 +427,7 @@ drop table tlob130txt2;
 drop table tlob130bin2; 
 sh rm TMP130;
 sh rm tlob130txt2;
+sh rm lobc2out.jpg;
 sh rm TEST130_argfile;
 drop schema trafodion.lob130 cascade;
 
