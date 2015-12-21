@@ -71,12 +71,12 @@ sub update_file {
             print OUTFILE;
         }
         elsif( /SOFTWARE\\\\ODBC\\\\ODBCINST.INI\\\\TRAF ODBC /) {
-        	s/(\d+)\.(\d+)/$major.$minor/;
-        	print OUTFILE;
+            s/(\d+)\.(\d+)/$major.$minor/;
+            print OUTFILE;
         }
         elsif( /DRIVER_NAME\[\] = "TRAF ODBC / ) {
-        	s/(\d+)\.(\d+)/$major.$minor/;
-        	print OUTFILE;
+            s/(\d+)\.(\d+)/$major.$minor/;
+            print OUTFILE;
         }
         else {
             print OUTFILE;
@@ -96,5 +96,81 @@ sub update_file {
 foreach $file (@resource_files) {
     update_file $file
 }
+
+# update the version in build_os.bat
+sub update_build_os {
+    my $infile = $_[0];
+    print  "Update " , $infile, "\n";
+    my $outfile = $infile + '.tmp';
+    open( INFILE, $infile ) or die "Error: Can't open $infile - $!";
+    open( OUTFILE, ">$outfile" ) or die "Error: Can't open $outfile - $!";
+
+    while ( <INFILE> ) {
+        if (/TFODBC64-/) {
+            s/(\d+)\.(\d+)\.(\d+)/$major.$minor.$sp/;
+            print OUTFILE;
+        }
+        else {
+            print OUTFILE;
+        }
+    }
+
+
+    close( INFILE ) or warn "Warning: Can't close $infile - $!";
+    close( OUTFILE ) or warn "Warning: Can't close $outfile - $!";
+
+    unless ( rename $outfile, $infile ) {
+
+        print "Error: Updating Version for $infile failed.\n";
+        exit 1;
+    }
+}
+
+update_build_os "build_os.bat";
+
+# update the version in inno setup script
+sub update_innosetup_script {
+    my $infile = $_[0];
+    print  "Update " , $infile, "\n";
+    my $outfile = $infile + '.tmp';
+    open( INFILE, $infile ) or die "Error: Can't open $infile - $!";
+    open( OUTFILE, ">$outfile" ) or die "Error: Can't open $outfile - $!";
+
+    while ( <INFILE> ) {
+        # update MyAppname
+        if ( /MyAppName "Trafodion ODBC64/ ) {
+            s/(\d+)\.(\d+)/$major.$minor/;
+            print OUTFILE;
+        }
+        # update MyAppVersion
+        elsif ( /MyAppVersion "/) {
+            s/(\d+)\.(\d+)\.(\d+)/$major.$minor.$sp/;
+            print OUTFILE;
+        }
+        # update the MyDriverName
+        elsif ( /MyDriverName "TRAF ODBC / ) {
+            s/(\d+)\.(\d+)/$major.$minor/;
+            print OUTFILE;
+        }
+        # update DefaultDirName
+        elsif ( /TRAF ODBC / ) {
+            s/(\d+)\.(\d+)/$major.$minor/;
+            print OUTFILE;
+        }
+        else {
+            print OUTFILE;
+        }
+    }
+
+    close( INFILE ) or warn "Warning: Can't close $infile - $!";
+    close( OUTFILE ) or warn "Warning: Can't close $outfile - $!";
+
+    unless ( rename $outfile, $infile ) {
+
+        print "Error: Updating Version for $infile failed.\n";
+        exit 1;
+    }
+}
+update_innosetup_script "../Install/win64_installer/installer.iss";
 
 exit 0;

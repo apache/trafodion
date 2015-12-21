@@ -219,6 +219,11 @@
           <tocTopFlatten>false</tocTopFlatten>
         </testing>
         <traf_authentication_config><shortTitle>.traf_authentication_config Configuration File</shortTitle></traf_authentication_config>
+        <uninstall>
+          <shortTitle>Uninstall</shortTitle>
+          <!-- Use H1 headings only for the TOC -->
+          <tocTopFlatten>false</tocTopFlatten>
+        </uninstall>
         <website>
            <shortTitle>Modify Web Site</shortTitle>
            <tocTopFlatten>false</tocTopFlatten>
@@ -258,9 +263,11 @@
       <item href="quickstart.html" name="Quick Start"/>
       <item href="download.html" name="Download"/>
       <item href="install.html" name="Install"/>
+      <item href="uninstall.html" name="Uninstall"/>
       <item href="management.html" name="Managing Trafodion"/>
       <item href="http:divider" name=""/>
       <item href="documentation.html" name="Documentation"/>
+      <item href="port-assignment.html" name="Port Assignments"/>
       <item href="faq.html" name="FAQ"/>
       <item href="release-notes.html" name="Release Notes"/>
       <!-- 
@@ -318,7 +325,7 @@
       <!-- item href="design-papers.html" name="Design Paper Template"/ -->
     </menu>
     <menu name="Apache">
-      <item href="http://incubator.apache.org/projects/trafodion.html" name="Status Page" target="_blank"/>
+      <item href="http://incubator.apache.org/projects/trafodion.html" name="Project Status" target="_blank"/>
       <item href="http://www.apache.org/foundation/how-it-works.html" name="Apache Foundation" target="_blank"/>
       <item href="http://www.apache.org/licenses/" name="Apache License" target="_blank"/>
       <item href="http://www.apache.org/security/" name="Apache Security" target="_blank"/>

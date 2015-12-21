@@ -68,6 +68,25 @@ Typically, you'll use Eclipse to develop and build the website pages. The config
 
 The website files are located in **```docs/target```**. Open **```index.html```** from your browser and test your changes. For example, you want to validate the page layout, page navigation, links, and review the overall content on the pages you modified or added/deleted.
 
+## Tables
+markdown supports a simple format for tables. You can use markdown-style writing in such tables.
+
+    Table Header   | Table Header
+    ---------------|---------------
+    Text           | Text
+    Text           | Text
+
+However, no special formatting can be done; for example, creating a bulleted list in a cell. If you need tables with such formatting, then you will need to define the table in raw HTML format. No markdown-style writing is supported for HTML tables; use pure HTML tagging instead.
+
+## Callout Boxes
+You can create a simple callout box using an HTML table. Example:
+
+    <table><tr><td><strong>NOTE</strong><br />Whatever you want to say here.</td></tr></table>
+
+Generates:
+
+<table><tr><td><strong>NOTE</strong><br />Whatever you want to say here.</td></tr></table>
+
 ----
 
 # Publishing
