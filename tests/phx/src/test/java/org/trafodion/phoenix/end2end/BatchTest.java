@@ -50,7 +50,7 @@ public class BatchTest extends BaseTest {
     private static final String strUpsert = "UPSERT USING LOAD INTO " + BATCH_TEST_TABLE + " VALUES (?,?)";
     private static final String strUpdate = "UPDATE " + BATCH_TEST_TABLE + "SET (ID, NAME) = (?,?)";
     private static final String strDelete = "DELETE FROM " + BATCH_TEST_TABLE;
-    private static final String strSelect = "SELECT * FROM " + BATCH_TEST_TABLE;
+    private static final String strSelect = "SELECT * FROM " + BATCH_TEST_TABLE + " ORDER BY ID ASCENDING";
 
     private void cleanTable() {
         try {
