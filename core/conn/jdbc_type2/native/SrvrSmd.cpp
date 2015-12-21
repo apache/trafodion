@@ -357,6 +357,7 @@ void odbc_SQLSvc_GetSQLCatalogs_sme_(
 			}
 
 			SQLValue = (SQLValue_def *)outputValueList->_buffer;
+			/* //useless and doesn't be included in MXOS server
 
 			if (SQLValue->dataInd == -1)
 			{
@@ -364,6 +365,7 @@ void odbc_SQLSvc_GetSQLCatalogs_sme_(
 			    exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_SCHEMA_VERSION;
 			    FUNCTION_RETURN_VOID(("SQLValue->dataInd == -1"));
 			}
+			*/
 	    }
 	 }
 
