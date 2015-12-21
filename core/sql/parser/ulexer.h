@@ -1,34 +1,4 @@
-/**********************************************************************
-// @@@ START COPYRIGHT @@@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-//
-// @@@ END COPYRIGHT @@@
-**********************************************************************/
-// ULexer.h -- define interfaces for Unicode lexical analyzer class (tcr)
-
-// Flex (version 2.5.4a and earlier) does not support Unicode. Our attempts
-// at extending flex to generate a Unicode scanner were unsuccessful. So, we 
-// hand-code a Unicode scanner for SQL/MX but retain the flex C++ scanner
-// class interface (defined in flexlexer.h)
-
-
-// The original flex C++ scanner class interface has these copyrights:
+/**********************************************************************/
 // Copyright (c) 1993 The Regents of the University of California.
 // All rights reserved.
 //
@@ -46,6 +16,13 @@
 // its contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 
+
+// ULexer.h -- define interfaces for Unicode lexical analyzer class (tcr)
+
+// Flex (version 2.5.4a and earlier) does not support Unicode. Our attempts
+// at extending flex to generate a Unicode scanner were unsuccessful. So, we 
+// hand-code a Unicode scanner for SQL/MX but retain the flex C++ scanner
+// class interface (defined in flexlexer.h)
 
 // This file defines ULexer, an abstract class which specifies the
 // external interface provided to Unicode C++ lexer objects, and yyULexer,

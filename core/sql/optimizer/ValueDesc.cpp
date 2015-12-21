@@ -931,7 +931,8 @@ ValueIdList ValueIdList::findNJEquiJoinCols(
 // Otherwise, return the length of the prefix seen so far. If there
 // were no matches, then we will return 0.
 // -----------------------------------------------------------------------
-Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet)
+Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet,
+                                                  const GroupAttributes *ga)
 {
   // if the set's empty, clearly it doesn't cover anything!
   if ( vidSet.entries() == 0 ) return 0 ;
@@ -1024,6 +1025,12 @@ Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet)
           (*this)[i] = inverseCol->getValueId();
         }
       } // end if the simp. set contains the simp. expresssion
+      else if (ga && ga->canEliminateOrderColumnBasedOnEqualsPred(thisVid))
+      {
+        // if this column is constrained to a single value, then
+        // simply remove it from "this"
+        removeAt(i--);
+      }
       else
         return i;
     }
@@ -1040,10 +1047,11 @@ Int32 ValueIdList::complifyAndCheckPrefixCovered (const ValueIdSet& vidSet)
 // corresponding versions in the provided set.
 // For the remaining suffix, remove those items from this list.
 // ---------------------------------------------------------------------
-void ValueIdList::complifyAndRemoveUncoveredSuffix (const ValueIdSet& vidSet)
+void ValueIdList::complifyAndRemoveUncoveredSuffix (const ValueIdSet& vidSet,
+                                                    const GroupAttributes *ga)
 {
   // last covered id in this list
-  Int32 index = complifyAndCheckPrefixCovered(vidSet);
+  Int32 index = complifyAndCheckPrefixCovered(vidSet, ga);
   Int32 i = (Int32)entries() - 1;  // index of last key column
 
   // Remove all entries following the index
@@ -1263,52 +1271,72 @@ void ValueIdList::replaceVEGExpressions
 } // ValueIdList::replaceVEGExpressions()
 
 OrderComparison ValueIdList::satisfiesReqdOrder(const ValueIdList & reqdOrder,
-						const GroupAttributes *) const
+                                                GroupAttributes *ga,
+                                                const ValueIdSet *preds) const
 {
-  NAUnsigned numCols = reqdOrder.entries();
+  NAUnsigned numReqdEntries = reqdOrder.entries();
   OrderComparison allCols = SAME_ORDER; // sort order comparison of all columns together
   OrderComparison oneCol;  // one column compared with its counterpart
 
-  // is the actual sort key as long as the required one?
-  //
-  // Note the following comparison does not consider duplications.
-  // such as this=[a, c] and reqOrder=[a, a, c]
-  // See OptPhysRelExpr.cpp for a fix for a case regarding union sort keys
-  // (search for 10-020913-1676)
-  if (entries() < numCols)
-    return DIFFERENT_ORDER;
+  CollIndex thisIx = 0;
+  CollIndex reqdIx = 0;
 
-  //Orignal condition: if (!OSIM_isNTbehavior() || (OSIM_isNTbehavior() && OSIM_runningSimulation()))
-  //For new OSIM, there won't be OSIM_isNTbehavior(), OSIM_isLinuxbehavior() or OSIM_isNSKbehavior(),
-  //we will assume OSIM_isLinuxbehavior() is always TRUE.
-  //
-  //The else block below never gets executed, 
-  //if it is to be executed under certain conditions, 
-  //please separate it from this if-conditon.
-  if (TRUE)
-  {
-  ItemExpr *ie = (*this)[0].getItemExpr();
-  ItemExpr * reqdExpr = reqdOrder[0].getItemExpr();
-  CollIndex i = 0;
-  CollIndex j = 0;
-  CollIndex numEntries = entries();
+  ValueIdList tempThis(*this);
 
-  if (numEntries < numCols)
+  // if group attributes are provided, remove any constant expressions,
+  // since those should not appear in the requirements and since they
+  // are not relevant to the ordering
+  if (ga)
+    tempThis.removeCoveredExprs(ga->getCharacteristicInputs());
+
+  CollIndex numActEntries = tempThis.entries();
+
+  // we assume that reqdOrder went through a RequirementGenerator
+  // and is therefore already optimized (e.g. no duplicate columns)
+
+  // is the actual sort key at least as long as the required one?
+  if (numActEntries < numReqdEntries)
      return DIFFERENT_ORDER;
 
-  for (CollIndex startCol = 0; startCol < numCols; startCol++)
+  for (CollIndex reqdIx = 0; reqdIx < numReqdEntries; reqdIx++)
   {
-     if ((reqdOrder[j] == (*this)[i]))
+     NABoolean done = FALSE;
+ 
+     // compare the next required order column with one or more
+     // ValueIds in tempThis
+     while (!done)
      {
-	oneCol = SAME_ORDER;
-     }
-     else
-     {
-        oneCol = reqdOrder[j].getItemExpr()->
-        sameOrder((*this)[i].getItemExpr());
+       // make sure we have enough columns in "tempThis"
+       if (thisIx >= numActEntries)
+         return DIFFERENT_ORDER;
+
+       // compare the next column of tempThis with the required order
+       oneCol = reqdOrder[reqdIx].getItemExpr()->sameOrder(
+            tempThis[thisIx].getItemExpr());
+
+       done = TRUE;
+
+       // If we didn't find the column, then try to find an equals
+       // predicate that equates the column to a constant, so that
+       // we can skip over it. This typically happens with computed
+       // columns such as salt or division that don't have associated
+       // VEGs, which are handled by tempThis.removeCoveredExprs() above.
+       if (oneCol == DIFFERENT_ORDER &&
+           ga &&
+           (numActEntries-thisIx) > (numReqdEntries-reqdIx) && // extra cols in this
+           ga->tryToEliminateOrderColumnBasedOnEqualsPred(tempThis[thisIx],
+                                                          preds))
+       {
+         // this is a predicate of the form col = const
+         // and col is our current ValueId in tempThis,
+         // therefore skip over it and try again
+         thisIx++;
+         done = FALSE;
+       }
      }
 
-     if (startCol == 0)
+
+     if (reqdIx == 0)
         allCols = oneCol;
      else
         allCols = combineOrderComparisons(allCols,oneCol);
@@ -1316,43 +1344,15 @@ OrderComparison ValueIdList::satisfiesReqdOrder(const ValueIdList & reqdOrder,
      if (allCols == DIFFERENT_ORDER)
         return allCols;
 
-     i++; j++;
-  }
-  }
-  else{
-  for (CollIndex i = 0; i < numCols; i++)
-    {
-      if ((reqdOrder[i] == (*this)[i]))
-	{
-	  oneCol = SAME_ORDER;
-	}
-      else
-	{
-	  // if the expressions are not exactly the same, try to match similar
-	  // expressions that result in the same sorting order, like a and a+1
-	  oneCol = reqdOrder[i].getItemExpr()->
-	    sameOrder((*this)[i].getItemExpr());
-	}
-
-      // the first column determines whether we do the same order or the
-      // inverse order or nothing, all other columns have to follow that
-      // decision
-      if (i == 0)
-	allCols = oneCol;
-      else
-	allCols = combineOrderComparisons(allCols,oneCol);
-
-      // did we already loose it?
-      if (allCols == DIFFERENT_ORDER)
-	return allCols;
-    }
+     thisIx++;
   }
   return allCols;
 }
 
 NABoolean ValueIdList::satisfiesReqdArrangement(
      const ValueIdSet &reqdArrangement,
-     const GroupAttributes * ga) const
+     GroupAttributes * ga,
+     const ValueIdSet *preds) const
 {
   // ---------------------------------------------------------------------
   // check requirement for arrangement of data (check whether the required
@@ -1363,6 +1363,12 @@ NABoolean ValueIdList::satisfiesReqdArrangement(
   ValueIdSet arrCols(reqdArrangement);
   NABoolean found = TRUE;
   CollIndex startCol = 0;
+
+  // if group attributes are provided, remove any constant expressions,
+  // since those should not appear in the requirements and since they
+  // are not relevant to the ordering
+  if (ga)
+    arrCols.removeCoveredExprs(ga->getCharacteristicInputs());
 
   // walk along the sort key, as long as all columns in the sort
   // keys are part of the required set of arranged columns
@@ -1401,6 +1407,16 @@ NABoolean ValueIdList::satisfiesReqdArrangement(
 		  arrCols -= x;
 		}
 	    }
+
+          if ((NOT found) && ga)
+            {
+              // if this column is constrained to a single value,
+              // we can skip over it and continue (we set found to
+              // true but don't remove anything from arrCols)
+              found = ga->tryToEliminateOrderColumnBasedOnEqualsPred(
+                   (*this)[i],
+                   preds);
+            }
 	}
     }
 
@@ -2930,6 +2946,7 @@ ValueIdSet ValueIdSet::createMirrorPreds(ValueId &computedCol,
   CMPASSERT( iePtr->getOperatorType() == ITM_BASECOLUMN );
 
   ItemExpr *compExpr = ((BaseColumn *) iePtr)->getComputedColumnExpr().getItemExpr();
+  ItemExpr *prevPred = NULL;
 
   for (ValueId kpv = init(); next(kpv); advance(kpv))  
    {
@@ -2947,7 +2964,44 @@ ValueIdSet ValueIdSet::createMirrorPreds(ValueId &computedCol,
            {
              ItemExpr * newPred = piePtr->createMirrorPred(iePtr, compExpr, underlyingCols);
              if (newPred != NULL)
-                newComputedPreds += newPred->getValueId();
+               {
+                 // look for the following pattern, which is common
+                 // when a range of values falls within one division
+                 // col1 >= const1 AND col1 <= const1
+                 // and transform this into the single predicate col1 = const1
+                 if (prevPred)
+                   {
+                     OperatorTypeEnum prevOp = prevPred->getOperatorType();
+                     OperatorTypeEnum newOp = newPred->getOperatorType();
+                     NABoolean neg1, neg2;
+                     ConstValue *prevConst = prevPred->child(1)->castToConstValue(neg1);
+                     ConstValue *newConst = newPred->child(1)->castToConstValue(neg2);
+
+                     if ((prevOp == ITM_GREATER_EQ && newOp  == ITM_LESS_EQ ||
+                          newOp  == ITM_GREATER_EQ && prevOp == ITM_LESS_EQ) &&
+                         prevPred->child(0) == newPred->child(0) &&
+                         prevConst && newConst &&
+                         prevConst->duplicateMatch(*newConst) && neg1 == neg2 &&
+                         static_cast<BiRelat *>(prevPred)->getSpecialNulls() ==
+                         static_cast<BiRelat *>(newPred)->getSpecialNulls())
+                       {
+                         // make the <= or >= predicate of the pattern into an = predicate
+                         BiRelat *newEqualPred = new(CmpCommon::statementHeap())
+                           BiRelat(ITM_EQUAL,
+                                   newPred->child(0),
+                                   newPred->child(1));
+                         newEqualPred->setSpecialNulls(
+                              static_cast<BiRelat *>(newPred)->getSpecialNulls());
+                         newEqualPred->synthTypeAndValueId();
+
+                         newComputedPreds -= prevPred->getValueId();
+                         newPred = newEqualPred;
+                       }
+                   }
+
+                 newComputedPreds += newPred->getValueId();
+                 prevPred = newPred;
+               }
              break;
            }
          case ITM_ASSIGN:

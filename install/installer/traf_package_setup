@@ -70,47 +70,28 @@ if [[ $SUSE_LINUX == "false" ]]; then
 
    if [[ $EPEL_INSTALLED == 0 ]]; then
       echo "***INFO: ... EPEL rpm"
-      if [[ "$EPEL_RPM" != "" ]]; then
-         if [ $node_count -ne 1 ]; then
-            for node in $NODE_LIST
-            do
-               scp -q $EPEL_RPM $(whoami)@$node:$HOME
-               if [[ $? -gt 1 ]]; then
-                  echo "***ERROR: Unable to find $EPEL_RPM or unable to copy."
-                  exit -1
-               fi
-            done
-         else
-            cp -rf $EPEL_RPM $HOME
-         fi
-      else
-         if [[ $internetAccess == "true" ]]; then
-            epel_rpm="epel-release-6-8.noarch.rpm"
-            wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
-            if [ $node_count -ne 1 ]; then
-               for node in $NODE_LIST
-               do
-                  scp -q $LOCAL_WORKDIR/$epel_rpm $(whoami)@$node:$HOME
-                  if [[ $? -gt 1 ]]; then
-                     echo "***ERROR: Unable to find $EPEL_RPM or unable to copy."
-                     exit -1
-                  fi
-               done
-            else
-               cp -rf $epel_rpm $HOME
-            fi
+      epel_rpm="epel-release-6-8.noarch.rpm"
+      echo "***INFO: Downloading EPEL repo, since not installed."
+      
+      wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+      if [ $? != 0 ]; then
+         echo "***ERROR: Can't download EPEL rpm $epel_rpm"
+         echo "***ERROR: Will need to download and install EPEL rpm on each node of cluster"
+         echo
+         exit -1
+      fi
 
-            if [ $? != 0 ]; then
-               echo "***ERROR: Can't download EPEL rpm $epel_rpm"
-               echo "***ERROR: Please check http_proxy settings in .bashrc file"
-               echo
+      if [ $node_count -ne 1 ]; then
+         for node in $NODE_LIST
+         do
+            scp -q $LOCAL_WORKDIR/$epel_rpm $(whoami)@$node:$HOME
+            if [[ $? -gt 1 ]]; then
+               echo "***ERROR: Unable to find $EPEL_RPM or unable to copy."
                exit -1
-            fi 
-         else
-            echo "***ERROR: No EPEL RPM installed"
-            echo "***ERROR: No internet access to do automatic install."
-            exit -1         
-         fi
+            fi
+         done
+      else
+         cp -rf $epel_rpm $HOME
       fi
    fi
 
@@ -125,7 +106,6 @@ if [[ $SUSE_LINUX == "false" ]]; then
         fi
      fi
    done
-
 else
    echo 
    echo

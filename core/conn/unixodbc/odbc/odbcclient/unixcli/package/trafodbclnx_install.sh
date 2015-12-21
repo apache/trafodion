@@ -40,7 +40,7 @@ ETC_DIR=
 #INCLUDE_DIR=
 SAMPLE_DIR=
 #package files, excluding this file
-pkgfiles=(libtrafodbc_l64.so TRAFDSN MD5SUM LICENSE connect_test.cpp license.txt libicuucNv44.so.44 libicudataNv44.so.44)
+pkgfiles=(libtrafodbc_l64.so TRAFDSN MD5SUM connect_test.cpp license.txt libicuucNv44.so.44 libicudataNv44.so.44)
 
 #check whether the package directory has all files (or this script is invoked form "PkgTmp" dir)
 function check_package {

@@ -167,11 +167,16 @@ public class BatchTest extends BaseTest {
             } while((e = e.getNextException()) != null);
         }
         
+        // Commented out, because right now, the entire batch will
+        // fail. Trafodion cannot detect duplicate rows in a batch
+        // and process the remaining rows. See TRAFODION-1701.
+
         //assertArrayEquals(expectedStatusArray, statusArray);
 
         int rowCount = 0;
         ResultSet rs = conn.createStatement().executeQuery(strSelect);
         while(rs.next()) {
+            // Same as above, see TRAFODION-1701.
             //System.out.println("ID = " + rs.getString(1) + ", Name = " + rs.getString(2));
             //assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
             //assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));

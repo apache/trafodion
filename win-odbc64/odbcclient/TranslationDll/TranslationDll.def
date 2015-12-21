@@ -21,7 +21,7 @@
 
 ; TranslationDll.def : Declares the module parameters for the DLL.
 
-;DESCRIPTION "ODBC Translation DLL, Copyright 2015 by Hewlett-Packard Development Company, L.P."
+;DESCRIPTION "ODBC Translation DLL, Copyright (c) 2015 Apache Software Foundation"
 LIBRARY hp_translation03
 EXPORTS
 	SQLDriverToDataSource @1

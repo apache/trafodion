@@ -43,6 +43,7 @@
 -- @@@ END COPYRIGHT @@@
 
 control query default robust_query_optimization 'minimum';
+cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 
 create schema sch;
 set schema sch;

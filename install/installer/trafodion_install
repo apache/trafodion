@@ -682,9 +682,14 @@ do
    fi
 done
 
-#Set Max kernel pid 
 
-$TRAF_PDSH sudo sysctl -w kernel.pid_max=65535 2>&1 > /dev/null
+if [[ $ENABLE_HA == "true" ]]; then
+   $LOCAL_WORKDIR/traf_add_sudoAccess
+fi
+
+#Set Max kernel pid
+
+$TRAF_PDSH sudo /sbin/sysctl -w kernel.pid_max=65535 2>&1 > /dev/null
 
 
 #Create install directory

@@ -177,6 +177,21 @@ UserException excp(NULL,0);
 CmpSeabaseDDLauth::AuthStatus 
 CmpSeabaseDDLauth::getAuthDetails(const char *pAuthName, bool isExternal)
 {
+  // If the authname is a special PUBLIC authorization ID, set it up
+  std::string authName = pAuthName;
+  if (authName == PUBLIC_AUTH_NAME)
+  {
+    setAuthCreator(SUPER_USER);
+    setAuthCreateTime(0);
+    setAuthDbName(PUBLIC_AUTH_NAME);
+    setAuthExtName(PUBLIC_AUTH_NAME);
+    setAuthID(PUBLIC_AUTH_ID);
+    setAuthRedefTime(0);
+    setAuthType(COM_ROLE_CLASS);
+    setAuthValid(false);
+    return STATUS_GOOD;
+  }
+
   try
   {
     NAString whereClause ("where ");
