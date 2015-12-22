@@ -45,6 +45,7 @@ SqlciErrors.txt
 # DCS config files
 backup-masters
 servers
+master
 # jquery
 jquery-ui.css*
 jquery-ui.js*
