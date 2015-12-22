@@ -19,12 +19,9 @@
 #
 # @@@ END COPYRIGHT @@@
 
-LIBDIR := lib
-JAVAC := $(JAVA_HOME)/bin/javac
 INSTALL_LIBDIR := ${MY_SQROOT}/export/lib
 INSTALL_SCRIPTSDIR := ${MY_SQROOT}/sql/scripts
 CP :=/bin/cp -f
-INSTALL_INCLUDEDIR := ${MY_SQROOT}/export/include
 all:
 	@$(MAVEN) package
 	${CP} target/spj_mgmt-*.jar ${INSTALL_LIBDIR}/spj_mgmt.jar
