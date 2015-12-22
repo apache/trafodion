@@ -20,7 +20,7 @@
 *
 * @@@ END COPYRIGHT @@@
  */
-package org.trafodion.mgmt;
+package org.trafodion.spjmgmt;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -42,8 +42,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JarFileMgmt {
-	private static final Logger LOG = LoggerFactory.getLogger(JarFileMgmt.class);
+public class FileMgmt {
+	private static final Logger LOG = LoggerFactory.getLogger(FileMgmt.class);
 	private static final String url = "jdbc:default:connection";
 	// 100Mb
 	private static final long MAX_JAR_FILE_SIZE = 104857600;

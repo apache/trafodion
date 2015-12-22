@@ -21,15 +21,14 @@
 # @@@ END COPYRIGHT @@@
 
 SERVER_JAR=${MY_SQROOT}/export/lib/spj_mgmt.jar
-SQLCI=${MY_SQROOT}/export/bin32/sqlci
-CP=/bin/cp
+CI=sqlci
 CATALOG_NAME=TRAFODION
 CIS_SCHEMA="_SPJ_"
 
 
 function dropAndCreateSchema {
     echo "Creating Schema for SPJ_MGMT"
-    sqlci << sqlciEOF
+    ${CI} << sqlciEOF
 
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'on';
       cqd CAT_IGNORE_DOES_NOT_EXIST_ERROR 'on';
@@ -47,7 +46,7 @@ sqlciEOF
 function createProcedures {
 
     echo "Creating Procedures in  schema '$CATALOG_NAME.$CIS_SCHEMA' "
-    sqlci << procEOF
+    ${CI} << procEOF
 
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'on';
       cqd CAT_IGNORE_DOES_NOT_EXIST_ERROR 'on';
@@ -60,7 +59,7 @@ function createProcedures {
    
       CREATE PROCEDURE HELP (
       INOUT COMMANDNAME VARCHAR(2560) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.help (java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.help (java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
@@ -73,7 +72,7 @@ function createProcedures {
       IN FILEDATA VARCHAR(102400) CHARACTER SET ISO88591,
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
       IN CREATEFLAG INTEGER)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.put(java.lang.String,java.lang.String,int)'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.put(java.lang.String,java.lang.String,int)'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
@@ -85,7 +84,7 @@ function createProcedures {
       CREATE PROCEDURE LS (
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.ls(java.lang.String,java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.ls(java.lang.String,java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
@@ -96,7 +95,7 @@ function createProcedures {
       
       CREATE PROCEDURE LSALL (
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.lsAll(java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.lsAll(java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
@@ -107,7 +106,7 @@ function createProcedures {
       
       CREATE PROCEDURE RM (
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.rm(java.lang.String)'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.rm(java.lang.String)'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
@@ -119,7 +118,7 @@ function createProcedures {
       CREATE PROCEDURE RMREX (
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.rmRex(java.lang.String, java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.rmRex(java.lang.String, java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
@@ -133,7 +132,7 @@ function createProcedures {
       IN OFFSET INTEGER,
       OUT FILEDATA VARCHAR(51200) CHARACTER SET UTF8,
       OUT DATALENGTH LARGEINT)
-      EXTERNAL NAME 'com.traf.mgmt.JarFileMgmt.get (java.lang.String,int,java.lang.String[],long[])'
+      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.get (java.lang.String,int,java.lang.String[],long[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
