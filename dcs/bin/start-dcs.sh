@@ -39,7 +39,7 @@ fi
 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" start zookeeper
 
-master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master`
+master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master|tail -n 1`
 errCode=$?
 if [ $errCode -ne 0 ]
 then
