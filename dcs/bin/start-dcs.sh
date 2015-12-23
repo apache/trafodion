@@ -46,7 +46,16 @@ then
   exit $errCode
 fi
 
-if [ "$master" == "" ] || [ "$master" == "$(hostname -f)" ] ; then
+if [ -z "$master" ] ; then
+  if [ ! -z "${DCS_PRIMARY_MASTER}" ] && [ -s ${DCS_PRIMARY_MASTER} ] ; then
+    master_node=`cat ${DCS_PRIMARY_MASTER}| egrep -v '^#|^$'`
+    if [ ! -z "$master_node" ] ; then
+      master=`echo $master_node | awk '{print $1}'`
+    fi
+  fi
+fi
+
+if [ "$master" == "" ] || [ "$master" == "localhost" ] || [ "$master" == "$(hostname -f)" ] ; then
   "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" start master 
 else
   remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} start master"

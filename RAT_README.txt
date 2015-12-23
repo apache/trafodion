@@ -60,6 +60,7 @@ $MY_SQROOT/../sql/bin/SqlciErrors.txt
 
 dcs/conf/servers 
 dcs/conf/backup-masters 
+dcs/conf/master
                  :  Apache Trafodion DCS default configuration file
                  -> configuration file do not handle comments
 

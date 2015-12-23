@@ -112,6 +112,49 @@ private:
 #pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
+// DESCRIPTION: Call SQL CLI to execute a SQL statement. The caller is
+//          responsible for all error checking and recovery.
+// INPUTS:  stmt = statement descriptor for the SQL query
+//          srcDesc = source descriptor pointing to the 
+//               text string of SQL query.
+//          doPrintPlan = if true, the plan for the query will be
+//                printed after the statement is prepared but before
+//                execution; if false we do a single CLI ExecDirect call
+// -----------------------------------------------------------------------
+
+Lng32 HSExecDirect( SQLSTMT_ID * stmt
+                  , SQLDESC_ID * srcDesc
+                  , NABoolean doPrintPlan
+                  )
+{
+  Lng32 retcode = 0;
+
+  if (doPrintPlan)
+    {
+      retcode = SQL_EXEC_Prepare(stmt, srcDesc);
+      if (retcode >= 0) // ignore warnings
+        {
+          if (doPrintPlan)
+            {
+              HSLogMan *LM = HSLogMan::Instance();
+              if (LM->LogNeeded()) 
+                {
+                  printPlan(stmt);
+                }
+            } 
+          retcode = SQL_EXEC_ExecFetch(stmt,0,0);
+        }
+    }
+  else
+    {
+      retcode = SQL_EXEC_ExecDirect(stmt, srcDesc, 0, 0);
+    }
+
+  return retcode;
+}
+
+
+// -----------------------------------------------------------------------
 // DESCRIPTION: Execute a standalone dml/ddl statement.
 // INPUTS:  dml = text string of SQL query.
 //          sqlcode = the error to issue upon failure, or HS_WARNING if
@@ -227,7 +270,7 @@ Lng32 HSFuncExecQuery( const char *dml
   if (!doRetry)
   {
     // execute immediate this statement
-    retcode = SQL_EXEC_ExecDirect(&stmt, &srcDesc, 0, 0);
+    retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
     // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
     if (retcode >= 0) retcode = 0;
     // If sqlcode is HS_WARNING, then this means failures should be returned as
@@ -258,7 +301,7 @@ Lng32 HSFuncExecQuery( const char *dml
       }
 
       // execute immediate this statement
-      retcode = SQL_EXEC_ExecDirect(&stmt, &srcDesc, 0, 0);
+      retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
 
       // filter retcode for HSHandleError
       HSFilterWarning(retcode);
@@ -319,10 +362,6 @@ Lng32 HSFuncExecQuery( const char *dml
       if (srcTabRowCount)
       {
         getRowCountFromStats(srcTabRowCount, tabDef) ;
-        // printing plan for insert...selects
-        if (LM->LogNeeded()) {
-          printPlan(&stmt) ;
-        }
       }
     }
   return retcode;
