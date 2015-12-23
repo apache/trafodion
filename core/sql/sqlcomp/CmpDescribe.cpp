@@ -2798,6 +2798,7 @@ short CmpDescribeSeabaseTable (
   NABoolean isDivisioned = FALSE;
   ItemExpr *saltExpr;
   LIST(NAString) divisioningExprs;
+  LIST(NABoolean) divisioningExprAscOrders;
 
   if (naTable->getClusteringIndex())
     {
@@ -2817,9 +2818,11 @@ short CmpDescribeSeabaseTable (
                 }
               else if (nac->isDivisioningColumn() && !withoutDivisioning)
                 {
+                  NABoolean divColIsAsc = naf->getIndexKeyColumns().isAscending(i);
                   // any other case of computed column is treated as divisioning for now
                   isDivisioned = TRUE;
                   divisioningExprs.insert(NAString(nac->getComputedColumnExprString()));
+                  divisioningExprAscOrders.insert(divColIsAsc);
                 }
             }
           if (NOT nac->isSystemColumn())
@@ -2960,6 +2963,8 @@ short CmpDescribeSeabaseTable (
               if (d > 0)
                 divByClause += ", ";
               divByClause += divisioningExprs[d];
+              if (!divisioningExprAscOrders[d])
+                divByClause += " DESC";
             }
           outputShortLine(space, divByClause.data());
           divByClause = "     NAMED AS (";
