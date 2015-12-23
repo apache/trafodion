@@ -48,7 +48,7 @@ public class FileMgmt {
 	// 100Mb
 	private static final long MAX_JAR_FILE_SIZE = 104857600;
 	private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static final int MaxDataSize = 102400;
+	private static final int MaxDataSize = 12800;
 	private static final String CHARTSET = "ISO-8859-1";
 
 	/**
