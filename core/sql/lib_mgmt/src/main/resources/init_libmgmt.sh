@@ -23,11 +23,12 @@
 SERVER_JAR=${MY_SQROOT}/export/lib/spj_mgmt.jar
 CI=sqlci
 CATALOG_NAME=TRAFODION
-CIS_SCHEMA="_LIBMGR_"
+LIB_SCHEMA="DB__LIBMGR"
 DB__LIBMGRROLE=DB__LIBMGRROLE
+LIB_NAME=DB__LIBNAME
 
 function dropAndCreateSchema {
-    echo "Creating Schema for SPJ_MGMT"
+    echo "Creating Schema for ${LIB_SCHEMA}"
     ${CI} << sqlciEOF
 
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'on';
@@ -54,15 +55,15 @@ function createProcedures {
       -- Creating Procedures 
       set schema $CATALOG_NAME.$CIS_SCHEMA; 
 
-      DROP LIBRARY SPJMGMT CASCADE;
-      CREATE LIBRARY SPJMGMT FILE '${SERVER_JAR}';
+      DROP LIBRARY ${LIB_NAME} CASCADE;
+      CREATE LIBRARY ${LIB_NAME} FILE '${SERVER_JAR}';
       CREATE ROLE ${DB__LIBMGRROLE};
    
       CREATE PROCEDURE HELP (
       INOUT COMMANDNAME VARCHAR(2560) CHARACTER SET ISO88591)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.help (java.lang.String[])'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -75,7 +76,7 @@ function createProcedures {
       IN CREATEFLAG INTEGER)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.put(java.lang.String,java.lang.String,int)'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -87,7 +88,7 @@ function createProcedures {
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.ls(java.lang.String,java.lang.String[])'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -98,7 +99,7 @@ function createProcedures {
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.lsAll(java.lang.String[])'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -109,7 +110,7 @@ function createProcedures {
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.rm(java.lang.String)'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -121,7 +122,7 @@ function createProcedures {
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.rmRex(java.lang.String, java.lang.String[])'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -135,7 +136,7 @@ function createProcedures {
       OUT DATALENGTH LARGEINT)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.get (java.lang.String,int,java.lang.String[],long[])'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
