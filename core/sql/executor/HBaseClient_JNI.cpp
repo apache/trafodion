@@ -449,6 +449,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_LIST_ALL       ].jm_name      = "listAll";
     JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/ByteArrayList;";
+    JavaMethods_[JM_GET_REGION_STATS       ].jm_name      = "getRegionStats";
+    JavaMethods_[JM_GET_REGION_STATS       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/ByteArrayList;";
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
@@ -1465,6 +1467,62 @@ ByteArrayList* HBaseClient_JNI::listAll(const char* pattern)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
+ByteArrayList* HBaseClient_JNI::getRegionStats(const char* tblName)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getRegionStats(%s) called.", tblName);
+
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+       return NULL;
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return NULL;
+  }
+  jstring js_tblName = jenv_->NewStringUTF(tblName);
+  if (js_tblName == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DROP_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_REGION_STATS].jm_full_name;
+  jobject jByteArrayList = 
+    jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGION_STATS].methodID, js_tblName);
+
+  jenv_->DeleteLocalRef(js_tblName);  
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(jenv_);
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getRegionStats()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  if (jByteArrayList == NULL) {
+    jenv_->PopLocalFrame(NULL);
+    return NULL;
+  }
+
+  ByteArrayList* regionInfo = new (heap_) ByteArrayList(heap_, jByteArrayList);
+  jenv_->DeleteLocalRef(jByteArrayList);
+  if (regionInfo->init() != BAL_OK)
+    {
+      NADELETE(regionInfo, ByteArrayList, heap_);
+      jenv_->PopLocalFrame(NULL);
+      return NULL;
+    }
+  
+  jenv_->PopLocalFrame(NULL);
+  return regionInfo;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::copy(const char* currTblName, const char* oldTblName)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::copy(%s,%s) called.", currTblName, oldTblName);
@@ -2048,14 +2106,14 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
   jshort j_rowIDLen = rowIDLen;
 
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_ADD_TO_HFILE_DB].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_ADD_TO_HFILE_DB].methodID, 
             j_rowIDLen, jRowIDs, jRows);
   if (hbs)
   {
-    hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+    hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
     hbs->incHbaseCalls();
   }
   jenv_->DeleteLocalRef(jRowIDs);
@@ -2616,7 +2674,7 @@ HTableClient_JNI *HBaseClient_JNI::startGet(NAHeap *heap, const char* tableName,
   jlong j_ts = timestamp;
   
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
 
   tsRecentJMFromJNI = JavaMethods_[JM_START_GET].jm_full_name;
   jint jresult = jenv_->CallIntMethod(javaObj_, 
@@ -2624,7 +2682,7 @@ HTableClient_JNI *HBaseClient_JNI::startGet(NAHeap *heap, const char* tableName,
 	(jlong)htc, js_tblName, (jboolean)useTRex, j_tid, jba_rowID, 
             j_cols, j_ts);
   if (hbs) {
-      hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+      hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
       hbs->incHbaseCalls();
   }
 
@@ -2727,7 +2785,7 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   jlong j_ts = timestamp;
   jshort jRowIDLen = rowIDLen; 
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
 
   jint jresult;
   if (rowIDs != NULL) {
@@ -2744,7 +2802,7 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
             j_cols);
   }
   if (hbs) {
-      hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+      hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
       hbs->incHbaseCalls();
   }
 
@@ -2845,10 +2903,15 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
   if (jenv_ == NULL)
      if (initJVM() != JOI_OK)
          return HBC_ERROR_INIT_PARAM;
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
+  }
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBTI_PARAM));
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_PARAM;
   }
 
@@ -2856,29 +2919,21 @@ HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
   tsRecentJMFromJNI = JavaMethods_[JM_GET_HBTI].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GET_HBTI].methodID,
                                               js_tblName, jHtabInfo);
-  jboolean isCopy;
-  jint* arrayElems = jenv_->GetIntArrayElements(jHtabInfo, &isCopy);
-  indexLevels = arrayElems[0];
-  blockSize = arrayElems[1];
-  if (isCopy == JNI_TRUE)
-    jenv_->ReleaseIntArrayElements(jHtabInfo, arrayElems, JNI_ABORT);
-
-  jenv_->DeleteLocalRef(js_tblName);
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
+    jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_GET_HBTI_EXCEPTION;
   }
-
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
-    return HBC_ERROR_GET_HBTI_EXCEPTION;
-  }
-
+  jboolean isCopy;
+  jint* arrayElems = jenv_->GetIntArrayElements(jHtabInfo, &isCopy);
+  indexLevels = arrayElems[0];
+  blockSize = arrayElems[1];
+  if (isCopy == JNI_TRUE)
+     jenv_->ReleaseIntArrayElements(jHtabInfo, arrayElems, JNI_ABORT);
+  jenv_->PopLocalFrame(NULL);
   return HBC_OK;  // Table exists.
 }
 
@@ -2941,14 +2996,14 @@ HBC_RetCode HBaseClient_JNI::insertRow(NAHeap *heap, const char *tableName,
   jboolean j_asyncOperation = asyncOperation;
  
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_INSERT_ROW].methodID, 
                	j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow, j_ts, j_checkAndPut, j_asyncOperation);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation)
-         hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+         hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
     getExceptionDetails();
@@ -3032,14 +3087,14 @@ HBC_RetCode HBaseClient_JNI::insertRows(NAHeap *heap, const char *tableName,
   jboolean j_asyncOperation = asyncOperation;
  
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_INSERT_ROWS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_INSERT_ROWS].methodID, 
                	j_htc, js_tblName, j_useTRex, j_tid, j_rowIDLen, jRowIDs, jRows, j_ts, j_af, j_asyncOperation);
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation)
-         hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+         hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
     getExceptionDetails();
@@ -3144,7 +3199,7 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
   jboolean j_asyncOperation = asyncOperation;
  
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HBC_DIRECT_CHECKANDUPDATE_ROW].methodID, 
                	j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, jRow,
@@ -3152,7 +3207,7 @@ HBC_RetCode HBaseClient_JNI::checkAndUpdateRow(NAHeap *heap, const char *tableNa
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation)
-         hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+         hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
     getExceptionDetails();
@@ -3237,7 +3292,7 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
   jlong j_ts = timestamp;
   jboolean j_asyncOperation = asyncOperation;
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DELETE_ROW].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_HBC_DELETE_ROW].methodID, j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, 
@@ -3245,7 +3300,7 @@ HBC_RetCode HBaseClient_JNI::deleteRow(NAHeap *heap, const char *tableName,
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation) 
-         hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+         hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
     getExceptionDetails();
@@ -3320,7 +3375,7 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
   jlong j_ts = timestamp;
   jboolean j_asyncOperation = asyncOperation;
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_DIRECT_DELETE_ROWS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_HBC_DIRECT_DELETE_ROWS].methodID, j_htc, js_tblName, j_useTRex, j_tid, 
@@ -3328,7 +3383,7 @@ HBC_RetCode HBaseClient_JNI::deleteRows(NAHeap *heap, const char *tableName,
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation) 
-         hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+         hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
     getExceptionDetails();
@@ -3419,7 +3474,7 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
   jlong j_ts = timestamp;
   jboolean j_asyncOperation = asyncOperation;
   if (hbs)
-    hbs->getTimer().start();
+    hbs->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_HBC_CHECKANDDELETE_ROW].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_HBC_CHECKANDDELETE_ROW].methodID, j_htc, js_tblName, j_useTRex, j_tid, jba_rowID, 
@@ -3427,7 +3482,7 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
   if (hbs) {
       hbs->incHbaseCalls();
       if (!asyncOperation) 
-         hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
+         hbs->incMaxHbaseIOTime(hbs->getHbaseTimer().stop());
   }
   if (jenv_->ExceptionCheck()) {
     getExceptionDetails();
@@ -3762,7 +3817,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
    }
 
   if (hbs_)
-      hbs_->getTimer().start();
+      hbs_->getHbaseTimer().start();
 
   tsRecentJMFromJNI = JavaMethods_[JM_SCAN_OPEN].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(
@@ -3776,7 +3831,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 
   if (hbs_)
   {
-    hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+    hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
     hbs_->incHbaseCalls();
   }
 
@@ -3849,14 +3904,14 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LI
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   if (hbs_)
-    hbs_->getTimer().start();
+    hbs_->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_DELETE].jm_full_name;
   jboolean j_asyncOperation = FALSE;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts, j_asyncOperation);
   if (hbs_)
     {
-      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+      hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -4068,7 +4123,7 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
   jint j_ncr = numCacheRows;
 
   if (hbs_)
-    hbs_->getTimer().start();
+    hbs_->getHbaseTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_COPROC_AGGR].jm_full_name;
   jarray jresult = (jarray)jenv_->CallObjectMethod(javaObj_, 
               JavaMethods_[JM_COPROC_AGGR].methodID, j_tid, 
@@ -4076,7 +4131,7 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
               jba_colname, j_cb, j_ncr);
   if (hbs_)
     {
-      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+      hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -5244,14 +5299,14 @@ HTC_RetCode HTableClient_JNI::fetchRows()
    }
    jlong jniObject = (jlong)this;
    if (hbs_)
-     hbs_->getTimer().start();
+     hbs_->getHbaseTimer().start();
    tsRecentJMFromJNI = JavaMethods_[JM_FETCH_ROWS].jm_full_name;
    jint jRowsReturned = jenv_->CallIntMethod(javaObj_, 
              JavaMethods_[JM_FETCH_ROWS].methodID,
              jniObject);
    if (hbs_)
     {
-      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+      hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -5383,7 +5438,7 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
     getExceptionDetails();
     if (hbs_)
-       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+       hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
     return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
   }
   jint jtimeout = timeout;
@@ -5394,7 +5449,7 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
       logError(CAT_SQL_HBASE, "HTableClient_JNI::completeAsyncOperation()", getLastError());
       jenv_->PopLocalFrame(NULL);
       if (hbs_)
-         hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+         hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
       return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
    }
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_COMPLETE_PUT].methodID,
@@ -5405,7 +5460,7 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
     logError(CAT_SQL_HBASE, "HTableClient_JNI::completeAsyncOperation()", getLastError());
     jenv_->PopLocalFrame(NULL);
     if (hbs_)
-       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+       hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
     return HTC_ERROR_COMPLETEASYNCOPERATION_EXCEPTION;
   }
   if (jresult == false) {
@@ -5413,7 +5468,7 @@ HTC_RetCode HTableClient_JNI::completeAsyncOperation(Int32 timeout, NABoolean *r
      return HTC_ERROR_ASYNC_OPERATION_NOT_COMPLETE;
   }
   if (hbs_)
-     hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+     hbs_->incMaxHbaseIOTime(hbs_->getHbaseTimer().stop());
   jboolean *returnArray = jenv_->GetBooleanArrayElements(jresultArray, NULL);
   for (int i = 0; i < resultArrayLen; i++) 
       resultArray[i] = returnArray[i]; 

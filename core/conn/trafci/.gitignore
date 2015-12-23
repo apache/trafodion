@@ -1,3 +1,4 @@
 buildId
 temp/
 utils/trafci.cmd
+utils/trafci.sh

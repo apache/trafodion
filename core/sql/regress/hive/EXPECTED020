@@ -13,6 +13,9 @@
 >>cqd traf_enable_orc_format 'ON';
 
 --- SQL operation complete.
+>>cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+
+--- SQL operation complete.
 >>
 >>prepare explainIt from
 +>  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
@@ -35,7 +38,7 @@
 >>invoke hive.hive.store_orc;
 
 -- Definition of hive table STORE_ORC
--- Definition current  Mon Oct 26 16:10:15 2015
+-- Definition current  Fri Dec  4 19:48:03 2015
 
   (
     S_STORE_SK                       INT

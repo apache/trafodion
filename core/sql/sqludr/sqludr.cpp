@@ -7761,7 +7761,7 @@ void UDR::processData(UDRInvocationInfo &info,
  *
  *  This method is called in debug Trafodion builds when certain
  *  flags are set in the UDR_DEBUG_FLAGS CQD (CONTROL QUERY DEFAULT).
- *  See https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface#Debugging_UDF_code
+ *  See https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial%3A+The+object-oriented+UDF+interface#Tutorial:Theobject-orientedUDFinterface-DebuggingUDFcode
  *  for details.
  *
  *  The default implementation prints out the process id and then

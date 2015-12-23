@@ -513,6 +513,7 @@ public:
   HBC_RetCode dropAll(const char* pattern, bool async);
   HBC_RetCode copy(const char* currTblName, const char* oldTblName);
   ByteArrayList* listAll(const char* pattern);
+  ByteArrayList* getRegionStats(const char* tblName);
   static HBC_RetCode flushAllTablesStatic();
   HBC_RetCode flushAllTables();
   HBC_RetCode exists(const char* fileName);
@@ -597,6 +598,7 @@ private:
    ,JM_DROP
    ,JM_DROP_ALL
    ,JM_LIST_ALL
+   ,JM_GET_REGION_STATS
    ,JM_COPY
    ,JM_EXISTS
    ,JM_FLUSHALL

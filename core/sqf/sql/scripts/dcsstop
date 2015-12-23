@@ -34,6 +34,10 @@ if [ ! -e ${DCS_STOP_CMD} ]; then
    exit 1;
 fi
 
+if [[ ! -z $ENABLE_HA ]]; then
+   ${DCS_INSTALL_DIR}/bin/scripts/dcsunbind.sh
+fi
+
 echo "Shutting down the DCS environment now"
 cd ${DCS_INSTALL_DIR}
 ${DCS_STOP_CMD}

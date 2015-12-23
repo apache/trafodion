@@ -286,7 +286,7 @@
          use="true"
          windowtitle="${Name} ${version} API"
          doctitle="${Name} ${version} API"
-         bottom="Copyright &amp;copy; ${year} The Hewlett Packard Company"
+         bottom="Copyright &amp;copy; ${year} Apache Software Foundation"
          >
     	<packageset dir="${java.src.dir}">
           <include name="com/hp/**"/>

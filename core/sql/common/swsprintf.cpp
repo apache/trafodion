@@ -1,47 +1,5 @@
-/**********************************************************************
-// @@@ START COPYRIGHT @@@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-//
-// @@@ END COPYRIGHT @@@
-**********************************************************************/
-
 /* -*-C++-*-
- *****************************************************************************
- *
- * File:         swsprintf.h
- * Description:  SQL/MX wide-char swsprintf() function, adapted from NetBSD vfprintf.c
- *               found at http://www.ajk.tele.fi/libc/stdio/vfprintf.c.html#vfprintf.
- * Created:      2/13/2002
- * Language:     C++
- * Limitation:   Floating point numbers are not supported. 
- *
- *
- *
- *
- *****************************************************************************
- */
-
-/* <- Back to the Main Page 
- */
-/*	$NetBSD: vfprintf.c,v 1.18 1997/04/02 12:50:25 kleink Exp $	*/
-
-/*-
+ *-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
@@ -77,6 +35,25 @@
  * SUCH DAMAGE.
  */
 
+/*	$NetBSD: vfprintf.c,v 1.18 1997/04/02 12:50:25 kleink Exp $	*/
+
+/*****************************************************************************
+ *
+ * File:         swsprintf.h
+ * Description:  SQL/MX wide-char swsprintf() function, adapted from NetBSD vfprintf.c
+ *               found at http://www.ajk.tele.fi/libc/stdio/vfprintf.c.html#vfprintf.
+ * Created:      2/13/2002
+ * Language:     C++
+ * Limitation:   Floating point numbers are not supported. 
+ *
+ *
+ *
+ *
+ *****************************************************************************
+ */
+
+/* <- Back to the Main Page 
+ */
 /* commented out because of static data structure */
 //#if defined(LIBC_SCCS) && !defined(lint)
 ///*static char *sccsid = "from: @(#)vfprintf.c	5.50 (Berkeley) 12/16/92";*/

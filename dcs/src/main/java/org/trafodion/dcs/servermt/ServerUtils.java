@@ -187,7 +187,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         zkc.sync(threadRegisteredPath,null,null);
@@ -209,7 +209,7 @@ public final class ServerUtils  {
                 updateStateToConnected();
             }
             else if (serverState == ServerConstants.SERVER_STATE_DISCONNECTED){
-                updateStateDisconnected();
+                //updateStateDisconnected();
                 updateServerStateAvailable();
             }
             else if (serverState == ServerConstants.SERVER_STATE_CONNECT_FAILED){
@@ -261,7 +261,7 @@ public final class ServerUtils  {
                     1,                                  //Nid
                     processId(),
                     server.serverName,
-                    server.hostName,
+                    server.extHostAddress,
                     server.fport));
             stat = zkc.exists(threadRegisteredPath, false);
             if(stat != null)
@@ -304,7 +304,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
@@ -325,7 +325,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
@@ -346,7 +346,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
@@ -367,7 +367,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
@@ -388,7 +388,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
@@ -408,7 +408,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
@@ -425,7 +425,7 @@ public final class ServerUtils  {
                 1,                                  //Nid
                 processId(),
                 server.serverName,
-                server.hostName,
+                server.extHostAddress,
                 server.fport));
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);

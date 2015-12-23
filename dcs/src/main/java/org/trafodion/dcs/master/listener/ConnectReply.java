@@ -163,29 +163,21 @@ class ConnectReply {
             for(int i=0; i < randomPicks; i++){
                 while(true){
                     index = random.nextInt();
-                    index = index > 0? index : -index;
+                    index = Math.abs(index);
                     index %= length;
                     if (indexArr[index] != index) break;
                 }
                 indexArr[index] = index;
-                maxIndex = index > maxIndex ? index : maxIndex;
+                maxIndex = Math.max(maxIndex, index);
                 server = servers.get(index);
-                if(LOG.isDebugEnabled())
-                    LOG.debug(clientSocketAddress + ": " + " index " + index + " server picked " + server );
-                
                 nodeRegisteredPath = registeredPath + "/" + server;
-                stat = zkc.exists(nodeRegisteredPath,false);
-                if(stat != null){
-                    data = zkc.getData(nodeRegisteredPath, false, stat);
-                    if (false == (new String(data)).startsWith("AVAILABLE:"))
-                        continue;
-                    else {
-                        found = true;
-                        break;
-                    }
-                }
-                else
-                    continue;
+ 		if(LOG.isDebugEnabled())
+                    LOG.debug(clientSocketAddress + ": " + " index " + index + " server picked " + server );
+                data = isServerAvalible(nodeRegisteredPath);
+                if(data != null){
+                	found = true;
+                	break;
+                }else continue;
             }
 //
 // search sequentially for AVAILABLE server starting from highest random index + 1 to length
@@ -194,22 +186,15 @@ class ConnectReply {
                 for(index=maxIndex+1; index<length; index++){
                     if (indexArr[index] != index){
                         server = servers.get(index);
+                        nodeRegisteredPath = registeredPath + "/" + server;
                         if(LOG.isDebugEnabled())
                             LOG.debug(clientSocketAddress + ": " + "server selected in search 1 " + server );
                             
-                        nodeRegisteredPath = registeredPath + "/" + server;
-                        stat = zkc.exists(nodeRegisteredPath,false);
-                        if(stat != null){
-                            data = zkc.getData(nodeRegisteredPath, false, stat);
-                            if (false == (new String(data)).startsWith("AVAILABLE:"))
-                                continue;
-                            else {
-                                found = true;
-                                break;
-                            }
-                        }
-                        else
-                            continue;
+                        data = isServerAvalible(nodeRegisteredPath);
+                        if(data != null){
+                        	found = true;
+                        	break;
+                        }else continue;
                     }
                 }
             }
@@ -220,22 +205,15 @@ class ConnectReply {
                 for(index=0; index<maxIndex; index++){
                     if (indexArr[index] != index){
                         server = servers.get(index);
+                        nodeRegisteredPath = registeredPath + "/" + server;
                         if(LOG.isDebugEnabled())
                             LOG.debug(clientSocketAddress + ": " + "server selected in search 2 " + server );
                             
-                        nodeRegisteredPath = registeredPath + "/" + server;
-                        stat = zkc.exists(nodeRegisteredPath,false);
-                        if(stat != null){
-                            data = zkc.getData(nodeRegisteredPath, false, stat);
-                            if (false == (new String(data)).startsWith("AVAILABLE:"))
-                                continue;
-                            else {
-                                found = true;
-                                break;
-                            }
-                        }
-                        else
-                            continue;
+                        data = isServerAvalible(nodeRegisteredPath);
+                        if(data != null){
+                        	found = true;
+                        	break;
+                        }else continue;
                     }
                 }
             }
@@ -335,4 +313,15 @@ class ConnectReply {
         }
     return replyException;
     }
+    
+	private byte[] isServerAvalible(String serverPath) throws KeeperException, InterruptedException {
+        Stat stat = zkc.exists(serverPath,false);
+        if(stat != null){
+            byte[] data = zkc.getData(serverPath, false, stat);
+            if(data != null && new String(data).startsWith("AVAILABLE:")){
+            	return data;
+            }
+        }
+		return null;
+	}
 }

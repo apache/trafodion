@@ -1,41 +1,4 @@
-/* -*-C++-*-
-// @@@ START COPYRIGHT @@@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-//
-// @@@ END COPYRIGHT @@@
- *****************************************************************************
- *
- * File:         swscanf.h
- * Description:  SQL/MX wide-char swscanf() function, modified based on 
- *               NetBSD __svfscanf.c found at 
- *               http://www.ajk.tele.fi/libc/stdio/vfscanf.c.html#__svfscanf
- * Created:      2/13/2002
- * Language:     C++
- * Limitation:   
- *
- *
- *
- *
- *****************************************************************************
- */
-
-/*-
+/* -*-C++-*- 
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -69,6 +32,22 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ */
+
+ /*****************************************************************************
+  *
+  * File:         swscanf.h
+  * Description:  SQL/MX wide-char swscanf() function, modified based on 
+  *               NetBSD __svfscanf.c found at 
+  *               http://www.ajk.tele.fi/libc/stdio/vfscanf.c.html#__svfscanf
+  * Created:      2/13/2002
+  * Language:     C++
+  * Limitation:   
+  *
+  *
+  *
+  *
+  *****************************************************************************
  */
 
 //LCOV_EXCL_START  // Used only by .../sqlutils/metamigr/MIGRATE.cpp which is not used in SQ

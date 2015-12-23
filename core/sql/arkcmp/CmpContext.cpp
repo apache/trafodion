@@ -837,7 +837,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // NAMemory.h.
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageSQLText sqltext(data, data_len, CTXTHEAP, charset, op);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(sqltext);
         copyFrags = TRUE;
         break;
@@ -848,7 +848,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ex_control_tcb::work() for setting compiler CQDs
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageCompileStmt compileStmt(data, data_len, op, CTXTHEAP, charset);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(compileStmt);
         copyData = TRUE;
         break;
@@ -858,7 +858,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ContextCli::createMxcmpSession() to set user id
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageDatabaseUser databaseUserStmt(data, data_len, CTXTHEAP);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(databaseUserStmt);
         copyData = TRUE;
         break;
@@ -870,7 +870,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         CmpMessageDDL ddlStmt(data, data_len, CTXTHEAP, charset,
                              parentQid, parentQidLen);
  
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(ddlStmt);
         copyData = TRUE;
         break;
@@ -880,7 +880,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ExDescribeTcb::work() to get statement explain
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageDescribe describeStmt(data, data_len, CTXTHEAP, charset);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(describeStmt);
         copyData = TRUE;
         break;
@@ -890,7 +890,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ContextCli::endMxcmpSession()
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageEndSession endSessionStmt(data, data_len, CTXTHEAP);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(endSessionStmt);
         copyData = TRUE;
         break;
@@ -900,7 +900,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         // request is from ExDescribeTcb::work() for getting compiler CQDs
         cmpStatement = new CTXTHEAP CmpStatement(this);
         CmpMessageSetTrans setTransStmt(data, data_len, CTXTHEAP);
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(setTransStmt);
         copyData = TRUE;
         break;
@@ -913,7 +913,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         //ISP request is passed as data argument
         CMPASSERT(data);
         CmpMessageISPRequest & ispRequest = *(CmpMessageISPRequest *)data;
-        Set_SqlParser_Flags(parserFlags);
+        Assign_SqlParser_Flags(parserFlags);
         //process request
         rs = cmpStatement->process(ispRequest);
         copyData = TRUE;
@@ -937,7 +937,7 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
             cmpStatement = new CTXTHEAP CmpStatement(this);
             CMPASSERT(FALSE);
          }
-         Set_SqlParser_Flags(parserFlags);//What is this for??
+         Assign_SqlParser_Flags(parserFlags);//What is this for??
          //process request
          rs = cmpStatement->process(ispGetNext);
          copyData = TRUE;

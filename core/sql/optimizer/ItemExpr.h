@@ -601,8 +601,8 @@ public:
   ItemExpr* constFold();
 
   ItemExpr * createMirrorPred(ItemExpr *compColPtr, 
-                                        ItemExpr *compColExprPtr,
-                                        ValueIdSet underlyingCols);
+                              ItemExpr *compColExprPtr,
+                              const ValueIdSet &underlyingCols);
   //Does 'this' ItemExpr evaluate to constant e.g.
   //If we go by the strict definition then
   //Sin(Cos(1)+1) will return TRUE.

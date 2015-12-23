@@ -410,6 +410,10 @@ const NAString ExeUtilExpr::getText() const
       result = "GET_QID";
       break;
 
+    case REGION_STATS_:
+      result = "REGION_STATS";
+      break;
+      
    default:
 
       result = "ADD_TO_EXEUTILEXPR::GETTEXT()";
@@ -3089,7 +3093,129 @@ RelExpr * ExeUtilAQR::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
-// See ControlRunningQuery
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilRegionStats
+// -----------------------------------------------------------------------
+ExeUtilRegionStats::ExeUtilRegionStats
+(const CorrName &objectName,
+ NABoolean summaryOnly,
+ NABoolean isIndex,
+ NABoolean forDisplay,
+ RelExpr * child,
+ CollHeap *oHeap)
+     : ExeUtilExpr(REGION_STATS_, objectName,
+		   NULL, child, NULL, CharInfo::UnknownCharSet, oHeap),
+       summaryOnly_(summaryOnly),
+       isIndex_(isIndex),
+       displayFormat_(forDisplay),
+       errorInParams_(FALSE),
+       inputColList_(NULL)
+{
+}
+
+RelExpr * ExeUtilRegionStats::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilRegionStats *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilRegionStats(getTableName(),
+                                              summaryOnly_, isIndex_, 
+                                              displayFormat_,
+                                              NULL,
+                                              outHeap);
+  else
+    result = (ExeUtilRegionStats *) derivedNode;
+
+  result->errorInParams_ = errorInParams_;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class ExeUtilRegionStats
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilRegionStats::bindNode(BindWA *bindWA)
+{
+  if (errorInParams_)
+    {
+      *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("GET ");
+
+      bindWA->setErrStatus();
+      return this;
+    }
+
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  if (getTableName().getQualifiedNameObj().getObjectName().isNull())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("REGION STATS");
+      
+      bindWA->setErrStatus();
+      return this;
+    }
+
+  if (! child(0))
+    {
+      NATable * naTable = bindWA->getNATable(getTableName());
+      if ((!naTable) || (bindWA->errStatus()))
+        return this;
+    }
+
+  RelExpr * childExpr = NULL;
+  
+  if (getArity() > 0)
+    {
+      childExpr = child(0)->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	return NULL;
+
+      if ((childExpr->getRETDesc() == NULL) ||
+	  (childExpr->getRETDesc()->getDegree() > 1) ||
+	  (childExpr->getRETDesc()->getType(0).getTypeQualifier() != NA_CHARACTER_TYPE))
+	{
+	  *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("REGION STATS ");
+	  
+	  bindWA->setErrStatus();
+	  return this;
+	}
+
+      inputColList_ = childExpr->getRETDesc()->getValueId(0).getItemExpr();
+
+      setChild(0, NULL);
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+
+  if (childExpr)
+    {
+      RelExpr * re = new(PARSERHEAP()) Join
+	(childExpr, boundExpr, REL_TSJ_FLOW, NULL);
+      ((Join*)re)->doNotTransformToTSJ();
+      ((Join*)re)->setTSJForWrite(TRUE);
+      
+      boundExpr = re->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	return NULL;
+    }
+
+  return boundExpr;
+}
+
+void ExeUtilRegionStats::recomputeOuterReferences()
+{
+  if (inputColList_)
+    {
+      ValueIdSet outerRefs = getGroupAttr()->getCharacteristicInputs(); 
+      outerRefs += inputColList_->getValueId();
+      
+      getGroupAttr()->setCharacteristicInputs(outerRefs);
+    }
+} // ExeUtilRegionStats::recomputeOuterReferences()  
 
 
 // -----------------------------------------------------------------------

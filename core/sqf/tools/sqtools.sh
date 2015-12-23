@@ -953,7 +953,9 @@ function cdt {
 function cdc {
     cd /local/cores/$UID
 }
-
+function cdj {
+    cd $MY_SQROOT/../sql/src/main/java/org/trafodion/sql
+}
 # ls variants
 function lst {
 ls -lsrt $*

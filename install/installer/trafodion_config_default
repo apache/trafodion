@@ -143,3 +143,14 @@ export LDAP_SECURITY="N"
 #Name of LDAP Config file
 export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 
+#HA configuraton enabled, if want to enable set to true and add valid floating IP address.
+export ENABLE_HA="false"
+
+#Floating IP address for HA configuration only if ENABLE_HA is set to true
+export FLOATING_IP=""
+
+#If HA enabled the set the DCS Backup nodes
+export BACKUP_DCS_NODES=""
+
+#If HA enabled then set INTERFACE to match the interface of the floating ip
+export INTERFACE=""

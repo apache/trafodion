@@ -192,6 +192,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -1840,6 +1854,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 2    .    3    root                                                  1.00E+002
 1    .    2    sort                                                  1.00E+002
 .    .    1    trafodion_scan                  T010T1                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
 
 --- SQL operation complete.
 >>
@@ -3515,6 +3543,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -5169,6 +5211,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 2    .    3    root                                                  1.00E+002
 1    .    2    sort                                                  1.00E+002
 .    .    1    trafodion_scan                  T010T1                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
 
 --- SQL operation complete.
 >>
@@ -6835,6 +6891,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -8484,6 +8554,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should see no sort operator when selecting from one salt bucket
+>>prepare xx from select * from t010t3 where (a,b) = (1,'b') order by c;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    trafodion_scan                  T010T3                1.00E+000
+
+--- SQL operation complete.
+>>
 >>-- selectPred should present due to the 2nd disjunct b='1'
 >>prepare xx from select * from t010t1 where a=1 or b='1';
 
@@ -10097,7 +10181,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 1    .    2    root                                                  1.00E+009
-.    .    1    trafodion_index_scan            T010IX1               1.00E+009
+.    .    1    trafodion_scan                  T010T4                1.00E+009
 
 --- SQL operation complete.
 >>execute s;

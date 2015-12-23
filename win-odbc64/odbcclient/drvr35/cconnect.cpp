@@ -928,7 +928,7 @@ INT_PTR CALLBACK ConnectDialogProc(
 	{
 	case WM_INITDIALOG:
 		connectFieldItems = (CONNECT_FIELD_ITEMS *)lParam;
-		SetWindowLongPtr(hwndDlg,GWLP_USERDATA,(long)connectFieldItems);
+		SetWindowLongPtr(hwndDlg,GWLP_USERDATA,(LONG_PTR)connectFieldItems);
 	    retCode = SetDlgItemText(hwndDlg, IDC_LOGIN_ID, connectFieldItems->loginId);
   		retCode = SetDlgItemText(hwndDlg, IDC_PASSWORD, connectFieldItems->password);
   		retCode = SetDlgItemText(hwndDlg, IDC_CATALOG, connectFieldItems->catalog);
@@ -1123,7 +1123,7 @@ INT_PTR CALLBACK ChangePwdProc(
 	{
 	case WM_INITDIALOG:
 		connectFieldItems = (CONNECT_FIELD_ITEMS *)lParam;
-		SetWindowLongPtr(hwndDlg,GWLP_USERDATA,(long)connectFieldItems);
+		SetWindowLongPtr(hwndDlg,GWLP_USERDATA,(LONG_PTR)connectFieldItems);
   		retCode = SetDlgItemText(hwndDlg, IDC_USERNAME, connectFieldItems->loginId);
 		hwndOwner = GetDesktopWindow(); 
 
@@ -1789,13 +1789,13 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 			if (hinst != NULL) {
 				DialogRetCode = DialogBoxParam(hinst,
 					MAKEINTRESOURCE(IDD_CONNECT_DIALOG),
-					WindowHandle, ConnectDialogProc, (long)&connectFieldItems);
+					WindowHandle, ConnectDialogProc, (LONG_PTR)&connectFieldItems);
 				FreeLibrary(hinst);
 			}
 			else {
 				DialogRetCode = DialogBoxParam(gDrvrGlobal.gModuleHandle,
 					MAKEINTRESOURCE(IDD_CONNECT_DIALOG),
-					WindowHandle, ConnectDialogProc, (long)&connectFieldItems);
+					WindowHandle, ConnectDialogProc, (LONG_PTR)&connectFieldItems);
 			}
 		}
 

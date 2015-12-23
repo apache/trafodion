@@ -462,10 +462,24 @@ do
 
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
          checkClouderaVersion
+         checkRoleGroups
       fi
       break;
    fi
 done
+}
+
+function checkRoleGroups {
+
+   regionGroup1=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v10/clusters/$CLUSTER_NAME/services/hbase/roleConfigGroups | grep displayName | grep "RegionServer Group 1" | wc -l)
+
+   if [[ $regionGroup1 -ge "1" ]]; then
+      errorFound=1
+      echo "Cloudera HBase Role Groups" >> $ERROR_LOG
+      echo "***ERROR: Cloudera has more than the default Region Group." >> $ERROR_LOG
+      echo "***ERROR: This must be fixed for install to continue" >> $ERROR_LOG
+   fi
+
 }
 
 function checkClouderaVersion {

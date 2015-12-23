@@ -1528,7 +1528,6 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
 PrivStatus PrivMgrPrivileges::grantObjectPriv(
       const ComObjectType objectType,
       const int32_t granteeID,
-      const std::string &granteeName,
       const PrivObjectBitmap privsBitmap,
       const PrivObjectBitmap grantableBitmap)
 {
@@ -1540,6 +1539,15 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
     return STATUS_ERROR;
   }
 
+  // get the associated grantorName and granteeName
+  std::string grantorName;
+  if (!getAuthNameFromAuthID(grantorID_, grantorName))
+    return STATUS_ERROR;
+
+  std::string granteeName;
+  if (!getAuthNameFromAuthID(granteeID, granteeName))
+    return STATUS_ERROR;
+
   // set up the values of the row to insert
   ObjectPrivsMDRow row;
   row.objectUID_ = objectUID_;
@@ -1548,9 +1556,9 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   row.granteeID_ = granteeID;
   row.granteeName_ = granteeName;
   row.granteeType_ = USER_GRANTEE_LIT;
-  row.grantorID_ = SYSTEM_AUTH_ID;
-  row.grantorName_ = "_SYSTEM";
-  row.grantorType_ = SYSTEM_GRANTOR_LIT;
+  row.grantorID_ = grantorID_;
+  row.grantorName_ = grantorName;
+  row.grantorType_ = (grantorID_ == SYSTEM_USER) ? SYSTEM_GRANTOR_LIT : USER_GRANTOR_LIT;
   row.privsBitmap_ = privsBitmap;
   row.grantableBitmap_ = grantableBitmap;
 

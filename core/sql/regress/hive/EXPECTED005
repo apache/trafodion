@@ -16,6 +16,9 @@
 >>cqd CALL_EMBEDDED_ARKCMP 'OFF';
 
 --- SQL operation complete.
+>>cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+
+--- SQL operation complete.
 >>------------------------------------------------------------
 >>-- Testing query plan invalidation in the compiler, but
 >>-- not the executor. Perform DML/DDL operations on a
