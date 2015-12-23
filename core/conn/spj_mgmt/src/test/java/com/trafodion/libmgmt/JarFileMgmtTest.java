@@ -20,7 +20,7 @@
 *
 * @@@ END COPYRIGHT @@@
  */
-package com.trafodion.mgmt;
+package com.trafodion.libmgmt;
 
 public class JarFileMgmtTest {
 

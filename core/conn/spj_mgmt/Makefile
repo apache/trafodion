@@ -24,11 +24,11 @@ INSTALL_SCRIPTSDIR := ${MY_SQROOT}/sql/scripts
 CP :=/bin/cp -f
 all:
 	@$(MAVEN) package
-	${CP} target/spj_mgmt-*.jar ${INSTALL_LIBDIR}/spj_mgmt.jar
-	${CP} src/main/resources/init_spj.sh ${INSTALL_SCRIPTSDIR}/
-	@chmod +x ${INSTALL_SCRIPTSDIR}/init_spj.sh
+	${CP} target/spj_mgmt-*.jar ${INSTALL_LIBDIR}/lib_mgmt.jar
+	${CP} src/main/resources/init_libmgmt.sh ${INSTALL_SCRIPTSDIR}/
+	@chmod +x ${INSTALL_SCRIPTSDIR}/init_libmgmt.sh
 clean:
-	@rm ${INSTALL_LIBDIR}/spj_mgmt.jar
-	@rm -f ${INSTALL_SCRIPTSDIR}/init_spj.sh
+	@rm ${INSTALL_LIBDIR}/lib_mgmt.jar
+	@rm -f ${INSTALL_SCRIPTSDIR}/init_libmgmt.sh
 	@$(MAVEN) clean
 cleanall: clean

@@ -24,7 +24,7 @@
 	-->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.trafodion</groupId>
-	<artifactId>spj_mgmt</artifactId>
+	<artifactId>lib_mgmt</artifactId>
 	<version>${env.TRAFODION_VER}</version>
 	<dependencies>
 		<dependency>

@@ -23,8 +23,8 @@
 SERVER_JAR=${MY_SQROOT}/export/lib/spj_mgmt.jar
 CI=sqlci
 CATALOG_NAME=TRAFODION
-CIS_SCHEMA="_SPJ_"
-SPJ_EXECROLE=SPJ_EXECROLE
+CIS_SCHEMA="_LIBMGR_"
+DB__LIBMGRROLE=DB__LIBMGRROLE
 
 function dropAndCreateSchema {
     echo "Creating Schema for SPJ_MGMT"
@@ -56,91 +56,91 @@ function createProcedures {
 
       DROP LIBRARY SPJMGMT CASCADE;
       CREATE LIBRARY SPJMGMT FILE '${SERVER_JAR}';
-      CREATE ROLE ${SPJ_EXECROLE};
+      CREATE ROLE ${DB__LIBMGRROLE};
    
       CREATE PROCEDURE HELP (
       INOUT COMMANDNAME VARCHAR(2560) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.help (java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.help (java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE HELP TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE HELP TO ${DB__LIBMGRROLE};
       
       CREATE PROCEDURE PUT (
       IN FILEDATA VARCHAR(102400) CHARACTER SET ISO88591,
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
       IN CREATEFLAG INTEGER)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.put(java.lang.String,java.lang.String,int)'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.put(java.lang.String,java.lang.String,int)'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE PUT TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE PUT TO ${DB__LIBMGRROLE};
       
       CREATE PROCEDURE LS (
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.ls(java.lang.String,java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.ls(java.lang.String,java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE LS TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE LS TO ${DB__LIBMGRROLE};
       
       CREATE PROCEDURE LSALL (
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.lsAll(java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.lsAll(java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE LSALL TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE LSALL TO ${DB__LIBMGRROLE};
       
       CREATE PROCEDURE RM (
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.rm(java.lang.String)'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.rm(java.lang.String)'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE RM TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE RM TO ${DB__LIBMGRROLE};
       
       CREATE PROCEDURE RMREX (
       IN FILENAME VARCHAR(256) CHARACTER SET ISO88591,
       OUT FILENAMES VARCHAR(10240) CHARACTER SET ISO88591)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.rmRex(java.lang.String, java.lang.String[])'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.rmRex(java.lang.String, java.lang.String[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE RMREX TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE RMREX TO ${DB__LIBMGRROLE};
 
       CREATE PROCEDURE GETFILE (
       IN FILENAME VARCHAR(256) CHARACTER SET UTF8,
       IN OFFSET INTEGER,
       OUT FILEDATA VARCHAR(51200) CHARACTER SET UTF8,
       OUT DATALENGTH LARGEINT)
-      EXTERNAL NAME 'org.trafodion.spjmgmt.FileMgmt.get (java.lang.String,int,java.lang.String[],long[])'
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.get (java.lang.String,int,java.lang.String[],long[])'
       EXTERNAL SECURITY DEFINER
       LIBRARY SPJMGMT
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
       ;
-      GRANT EXECUTE ON PROCEDURE GETFILE TO ${SPJ_EXECROLE};
+      GRANT EXECUTE ON PROCEDURE GETFILE TO ${DB__LIBMGRROLE};
       
       cqd CAT_IGNORE_ALREADY_EXISTS_ERROR 'off';
       cqd CAT_IGNORE_DOES_NOT_EXIST_ERROR 'off';

@@ -20,7 +20,7 @@
 *
 * @@@ END COPYRIGHT @@@
  */
-package org.trafodion.spjmgmt;
+package org.trafodion.libmgmt;
 
 import java.io.File;
 import java.io.FileFilter;
