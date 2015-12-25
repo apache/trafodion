@@ -1145,7 +1145,7 @@ short do_ExecSMD(
         0,
         0,
         sqlStmtType,
-        false,false);
+        false,true);
 
     *stmtId = (long)pSrvrStmt;
     SQLValue_def *sqlString = NULL;
