@@ -1879,8 +1879,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 	public boolean isValid(int timeout) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+		return !this.ic_.isClosed();
 	}
 
 	public void setClientInfo(String name, String value)
