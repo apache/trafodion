@@ -41,6 +41,8 @@
 #include "SQLMXCommonFunctions.h"
 #include "org_trafodion_jdbc_t2_SQLMXDatabaseMetaData.h"
 #include "Debug.h"
+#define SQL_API_JDBC                    9999
+#define SQL_API_SQLTABLES_JDBC          SQL_API_SQLTABLES + SQL_API_JDBC
 
 JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCatalogs
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, 
@@ -50,7 +52,7 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCa
 	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCatalogs",("..."));
 
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId, txid, autoCommit, txnMode,
-		SQL_API_SQLTABLES, catalogPattern, 
+		SQL_API_SQLTABLES_JDBC, catalogPattern,
 		NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 1, NULL, NULL, NULL);
 
 	FUNCTION_RETURN_PTR(rc, (NULL));
@@ -70,7 +72,7 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getSc
 		DebugJString(jenv,schemaPattern)));
 
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
-		SQL_API_SQLTABLES, NULL, schemaPattern, 
+		SQL_API_SQLTABLES_JDBC, NULL, schemaPattern,
 		NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 1, NULL, NULL, NULL);
 	
 	FUNCTION_RETURN_PTR(rc, (NULL));
