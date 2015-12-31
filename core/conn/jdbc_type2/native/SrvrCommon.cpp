@@ -1102,6 +1102,7 @@ short do_ExecSMD(
     odbc_SQLSvc_SQLError ModuleError;
     char *odbcAppVersion = "3";
     CLEAR_ERROR(ModuleError);
+    char cunique[100] = "\0";
 
     char catalogNmNoEsc[MAX_ANSI_NAME_LEN+1];
     char schemaNmNoEsc[MAX_ANSI_NAME_LEN+1];
@@ -1652,7 +1653,6 @@ short do_ExecSMD(
 		    convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
 		    convertWildcard(metadataId, TRUE, tableNm, expTableNm);
 		    convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
-		    char cunique[100] = "\0";
 		    if( inputParam[5] != NULL )
 		    {
 		        sprintf(cunique, " and index.IS_UNIQUE=1");
