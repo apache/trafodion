@@ -1657,13 +1657,9 @@ short do_ExecSMD(
 		    {
 		        sprintf(cunique, " and index.IS_UNIQUE=1");
 		    }
-		    if( strcmp(schemaNmNoEsc, "") != 0 )
-		        sprintf(tableName2, " and obj.SCHEMA_NAME='%s'", schemaNmNoEsc);
-		    if( strcmp(tableNmNoEsc, "") != 0 )
-		        sprintf(tableName3, " and obj.OBJECT_NAME='%s'", tableNmNoEsc);
-		    inputParam[0] = tableName2;
+		    inputParam[0] = schemaNmNoEsc;
 		    inputParam[1] = expSchemaNm;
-		    inputParam[2] = tableName3;
+		    inputParam[2] = tableNmNoEsc;
 		    inputParam[3] = expTableNm;
 		    inputParam[4] = NULL;
 		    snprintf((char *)sqlString->dataValue._buffer, totalSize,
@@ -1680,9 +1676,11 @@ short do_ExecSMD(
 		    "left join TRAFODION.\"_MD_\".OBJECTS idxobj on index.index_uid=idxobj.object_UID "
 		    "left join TRAFODION.\"_MD_\".COLUMNS cols on cols.column_name<>'SYSKEY' and idxobj.object_uid=cols.object_uid "
 		    "left join TRAFODION.\"_MD_\".KEYS keys on cols.object_uid=keys.object_uid and cols.COLUMN_NAME=keys.COLUMN_NAME and keys.column_name<>'SYSKEY' "
-		    "where 1=1 %s%s%s"
-		    "FOR READ UNCOMMITTED ACCESS order by INDEX_NAME, ORDINAL_POSITION;",
-		    cunique, inputParam[0], inputParam[2]);
+		    "where 1=1 %s"
+		    " and (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+		    " and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+		    " FOR READ UNCOMMITTED ACCESS order by INDEX_NAME, ORDINAL_POSITION;",
+		    cunique, inputParam[0], inputParam[1], inputParam[2],  inputParam[3]);
 		    break;
             }
     if (pSrvrStmt == NULL)
