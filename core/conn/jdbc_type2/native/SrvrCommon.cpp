@@ -1634,6 +1634,56 @@ short do_ExecSMD(
                         tableParam[0], inputParam[0], inputParam[1],
                         inputParam[2], inputParam[3]);
                     break;
+	case SQL_API_SQLSTATISTICS:
+		    if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc)
+		        || !checkIfWildCard(tableNm, tableNmNoEsc)) && !metadataId)
+		    {
+		        executeException->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+		        executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+		        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+		    }
+
+		    if (strcmp(catalogNm,"") == 0)
+		        strcpy(tableName1,SEABASE_MD_CATALOG);
+		    else
+		        strcpy(tableName1, catalogNm);
+		    tableParam[0] = tableName1;
+		    convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+		    convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+		    convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+		    convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+		    char cunique[100] = "\0";
+		    if( inputParam[5] != NULL )
+		    {
+		        sprintf(cunique, " and index.IS_UNIQUE=1");
+		    }
+		    if( strcmp(schemaNmNoEsc, "") != 0 )
+		        sprintf(tableName2, " and obj.SCHEMA_NAME='%s'", schemaNmNoEsc);
+		    if( strcmp(tableNmNoEsc, "") != 0 )
+		        sprintf(tableName3, " and obj.OBJECT_NAME='%s'", tableNmNoEsc);
+		    inputParam[0] = tableName2;
+		    inputParam[1] = expSchemaNm;
+		    inputParam[2] = tableName3;
+		    inputParam[3] = expTableNm;
+		    inputParam[4] = NULL;
+		    snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		    "select "
+		    "obj.CATALOG_NAME TABLE_CAT, obj.SCHEMA_NAME TABLE_SCHEM, obj.OBJECT_NAME TABLE_NAME,"
+		    "cast((case when index.IS_UNIQUE=0 then 1 else 0 end) as smallint) NON_UNIQUE, "
+		    "cast(NULL as varchar(32)) INDEX_QUALIFIER, idxobj.OBJECT_NAME INDEX_NAME, "
+		    "cast(-2 as smallint) TYPE, cols.COLUMN_NUMBER ORDINAL_POSITION, "
+		    "substr(cols.COLUMN_NAME,0,CHAR_LENGTH(cols.COLUMN_NAME)) COLUMN_NAME, "
+		    "cast((case when keys.ORDERING=0 then 'A' else 'D' end) as varchar(4)) ASC_OR_DESC,"
+		    "cast(-2 as int) CARDINALITY, cast(-2 as int) PAGES, cast(NULL as varchar(10)) FILTER_CONDITION "
+		    "from TRAFODION.\"_MD_\".OBJECTS obj "
+		    "left join TRAFODION.\"_MD_\".INDEXES index on obj.object_uid=index.BASE_TABLE_UID "
+		    "left join TRAFODION.\"_MD_\".OBJECTS idxobj on index.index_uid=idxobj.object_UID "
+		    "left join TRAFODION.\"_MD_\".COLUMNS cols on cols.column_name<>'SYSKEY' and idxobj.object_uid=cols.object_uid "
+		    "left join TRAFODION.\"_MD_\".KEYS keys on cols.object_uid=keys.object_uid and cols.COLUMN_NAME=keys.COLUMN_NAME and keys.column_name<>'SYSKEY' "
+		    "where 1=1 %s%s%s"
+		    "FOR READ UNCOMMITTED ACCESS order by INDEX_NAME, ORDINAL_POSITION;",
+		    cunique, inputParam[0], inputParam[2]);
+		    break;
             }
     if (pSrvrStmt == NULL)
     {

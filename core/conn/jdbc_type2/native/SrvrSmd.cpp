@@ -272,6 +272,7 @@ void odbc_SQLSvc_GetSQLCatalogs_sme_(
 	char userCatalogNm[MAX_ANSI_NAME_LEN+1];
 	char guardianNm[36]; // 8+1+8+1+8+1+8+1
 	char inParam[MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+3]; // catalog len + '.' + schema len + '.' + table len +'\0'
+	char uniqueness_str[2] = "1";
 
 	char MapDataType[2] = "0";
 	tmpBuf[0] = '\0';
@@ -300,6 +301,15 @@ void odbc_SQLSvc_GetSQLCatalogs_sme_(
 		inputParam[2] = schemaNmNoEsc;
 		inputParam[3] = expSchemaNm;
 	    inputParam[4] = NULL;
+	    if(uniqueness == 0)
+	    {
+	        uniqueness_str[0] = '0';
+		inputParam[5] = uniqueness_str;
+            }
+	    else
+	    {
+	        inputParam[5] = NULL;
+	    }
 
 	sqlStmtType = TYPE_SELECT;
 

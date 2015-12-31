@@ -353,7 +353,7 @@ public class ServerApiGetCatalogs {
                     case ServerConstants.SQL_API_SQLSTATISTICS:
                         if(LOG.isDebugEnabled())
                             LOG.debug(serverWorkerName + ". getIndexInfo (catalogNm :" + catalogNm + ", schemaNm :" + schemaNm + ", tableNm :" + tableNm + ", uniqueness :" + ((uniqueness == 1)? true : false) + ", true)");
-                        rs = dbmd.getIndexInfo(catalogNm, schemaNm, tableNm, (uniqueness == 1)? true : false, true);
+                        rs = dbmd.getIndexInfo(catalogNm, schemaNm, tableNm, (uniqueness == 0)? true : false, true);
                        break;
                     default:
                         throw new SQLException(serverWorkerName + ". Unknown APIType sent by the Client : [" + APIType + "]", "HY024");

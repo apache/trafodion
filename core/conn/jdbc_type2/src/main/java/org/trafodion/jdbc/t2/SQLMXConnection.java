@@ -3414,8 +3414,7 @@ public SQLXML createSQLXML() throws SQLException {
     }
 
 public boolean isValid(int timeout) throws SQLException {
-        // TODO Auto-generated method stub
-        return false;
+        return !isClosed_;
     }
 
 public void setClientInfo(String name, String value)
