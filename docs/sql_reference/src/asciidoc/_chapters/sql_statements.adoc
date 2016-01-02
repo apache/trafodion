@@ -2109,3 +2109,1707 @@ ORDERNUM PARTNUM UNIT_PRICE QTY_ORDERED PARTDESC
 
 --- SQL operation complete.
 ----
+
+<<<
+[[create_role_statement]]
+== CREATE ROLE Statement
+
+* <<create_role_syntax,Syntax Description of CREATE ROLE>>
+* <<create_role_considerations,Considerations for CREATE ROLE>>
+* <<create_role_examples,Examples of CREATE ROLE>>
+
+The CREATE ROLE statement creates an SQL role. See <<Roles,Roles>>.
+
+```
+CREATE ROLE role-name [ WITH ADMIN grantor ]
+
+grantor is:
+   database-username
+```
+
+[[create_role_syntax]]
+=== Syntax Description of CREATE ROLE
+
+* `_role-name_`
++
+is an SQL identifier that specifies the new role. _role-name_ is a regular or delimited
+case-insensitive identifier.
+See <<Case_Insensitive_Delimited_Identifiers,Case-Insensitive Delimited Identifiers>>.
+_role-name_ cannot be an existing role name, and it cannot be a registered database username. However,
+_role-name_ can be a configured directory-service username.
+
+* `WITH ADMIN _grantor_`
++
+specifies a role owner other than the current user. This is an optional clause.
+
+* `_grantor_`
+
+specifies a registered database username to whom you assign the role owner.
+
+[[create_role_considerations]]
+=== Considerations for CREATE ROLE
+
+* To create a role, you must either be DB ROOT or have been granted the MANAGE_ROLES component privilege for SQL_OPERATIONS.
+* PUBLIC, _SYSTEM, NONE, and database usernames beginning with DB are reserved. You cannot specify a _role-name_ with any such name.
+
+[[create_role_ownership]]
+==== Role Ownership
+
+You can give role ownership to a user by specifying the user in the WITH ADMIN _grantor_ clause with the _grantor_ as the user.
+
+The role owner can perform these operations:
+
+* Grant and revoke the role to users.
+* Drop the role.
+
+Role ownership is permanent. After you create the role, the ownership of the role cannot be changed or assigned to another user.
+
+[[create_role_examples]]
+=== Examples of CREATE ROLE
+
+* To create a role and assign the current user as the role owner:
++
+[source,sql]
+----
+CREATE ROLE clerks;
+----
+
+* To create a role and assign another user as the role owner:
++
+[source,sql]
+----
+CREATE ROLE sales WITH ADMIN cmiller;
+----
+
+<<<
+[[create_schema_statement]]
+== CREATE SCHEMA Statement
+
+* <<create_schema_syntax,Syntax Description of CREATE SCHEMA>>
+* <<create_schema_considerations,Considerations for CREATE SCHEMA>>
+* <<create_schema_examples,Examples of CREATE SCHEMA>>
+
+The CREATE SCHEMA statement creates a schema in the database. See <<Schemas,Schemas>>.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements
+inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements,
+AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+CREATE [schema-class] SCHEMA schema-clause
+
+schema-class is:
+   [ PRIVATE | SHARED ]
+
+schema-clause is:
+   { schema-name [AUTHORIZATION authid] | AUTHORIZATION authid }
+
+```
+
+[[create_schema_syntax]]
+=== Syntax Description of CREATE SCHEMA
+
+* `_schema-class_`
++
+indicates whether access to the schema is restricted to the authorization ID by default (PRIVATE) or whether
+any database user may add objects to the schema (SHARED). The default class is PRIVATE.
++
+NOTE: Schemas created in Trafodion Release 0.9 or earlier are SHARED schemas.
+
+* `_schema-name_`
++
+is a name for the new schema and is an SQL identifier that specifies a unique name that is not currently a schema name.
+This parameter is optional. However, if you do not specify a schema name, you must specify the authorization clause. If
+a schema name is not provided, the authorization ID is used for the schema name. If the authorization ID name matches an
+existing schema, the CREATE SCHEMA command fails.
+
+* `_authid_`
++
+is the name of the database user or role will own and administer the schema. If this clause is not present, the current
+user becomes the schema owner.
+
+[[create_schema_considerations]]
+=== Considerations for CREATE SCHEMA
+
+[[create_schema_reserved_schema_names]]
+==== Reserved Schema Names
+
+Schema names that begin with a leading underscore (_) are reserved for future use.
+
+[[create_schema_authorization_clause]]
+==== AUTHORIZATION Clause
+
+The AUTHORIZATION clause is optional. If you omit this clause, the current user becomes the schema owner.
+
+NOTE: An authorization ID is assigned to a schema name even if authorization is not enabled for the Trafodion database.
+However, no enforcement occurs unless authorization is enabled.
+
+The schema owner can perform operations on the schema and on objects within the schema. For example:
+
+* Alter DDL of objects
+* Drop the schema
+* Drop objects
+* Manage objects with utility commands such as UPDATE STATISTICS and PURGEDATA
+
+[[create_schema_who_can_create_a_schema]]
+==== Who Can Create a Schema
+
+The privilege to create a schema is controlled by the component privilege CREATE_SCHEMA for the SQL_OPERATIONS component.
+By default, this privilege is granted to PUBLIC, but it can be revoked by DB ROOT.
+
+<<<
+When authorization is initialized, these authorization IDs are granted the CREATE_SCHEMA privilege:
+
+* PUBLIC
+* DB ROOT
+* DB ROOTROLE
+
+DB ROOT or anyone granted the DB_ROOTROLE role can grant the CREATE_SCHEMA privilege.
+
+[[create_schema_examples]]
+=== Examples of CREATE SCHEMA
+
+* This example creates a private schema schema named MYSCHEMA, which will be owned by the current user:
++
+[source,sql]
+----
+CREATE SCHEMA myschema;
+----
+
+* This example creates a shared schema and designates CliffG as the schema owner:
++
+[source,sql]
+----
+CREATE SHARED SCHEMA hockey_league AUTHORIZATION "CliffG";
+----
+
+* This example creates a private schema and designates the role DBA as the schema owner:
++
+[source,sql]
+----
+CREATE PRIVATE SCHEMA contracts AUTHORIZATION DBA;
+----
++
+Users with the role DBA granted to them can grant access to objects in the CONTRACTS schema to other users and roles.
+
+* This example creates a schema named JSMITH:
++
+[source,sql]
+----
+CREATE PRIVATE SCHEMA AUTHORIZATION JSmith;
+----
+
+<<<
+[[create_table_statement]]
+== CREATE TABLE Statement
+
+* <<create_table_syntax,Syntax Description of CREATE TABLE>>
+* <<create_table_considerations,Considerations for CREATE TABLE>>
+* <<create_table_examples,Examples of CREATE TABLE>>
+
+The CREATE TABLE statement creates a Trafodion SQL table, which is a mapping of a relational SQL table to an HBase table.
+The CREATE VOLATILE TABLE statement creates a temporary Trafodion SQL table that exists only during an SQL session. The
+CREATE TABLE AS statement creates a table based on the data attributes of a SELECT query and populates the table using the
+data returned by the SELECT query. See <<Tables,Tables>>.
+
+NOTE: DDL statements are not currently supported in transactions. That
+means that you cannot run this statement inside a user-defined
+transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run
+this statement, AUTOCOMMIT must be turned ON (the default) for the
+session.
+
+```
+CREATE [VOLATILE] TABLE IF NOT EXISTS table
+    { table-spec | like-spec }
+    [SALT USING num PARTITIONS [ON (column[, column]...)]]
+    [STORE BY {PRIMARY KEY | (key-column-list)}]
+    [HBASEOPTIONS (hbase-options-list)]
+    [LOAD IF EXISTS | NO LOAD]
+    [AS select-query]
+
+table-spec is:
+    (table-element [,table-element]...)
+
+table-element is:
+    column-definition
+  | [CONSTRAINT constraint-name] table-constraint
+
+column-definition is:
+    column data-type
+    [DEFAULT default | NO DEFAULT]
+    [[CONSTRAINT constraint-name] column-constraint]...
+```
+<<<
+```
+data-type is:
+    CHAR[ACTER] [(length [CHARACTERS])]
+          [CHARACTER SET char-set-name]
+	  [UPSHIFT] [[NOT]CASESPECIFIC]
+  | CHAR[ACTER] VARYING (length [CHARACTERS])
+          [CHARACTER SET char-set-name]
+          [UPSHIFT] [[NOT]CASESPECIFIC]
+  | VARCHAR (length) [CHARACTER SET char-set-name]
+          [UPSHIFT] [[NOT]CASESPECIFIC]
+  | NCHAR (length) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+  | NCHAR VARYING(length [CHARACTERS]) [UPSHIFT] [[NOT] CASESPECIFIC]
+  | NUMERIC [(precision [,scale])] [SIGNED|UNSIGNED]
+  | SMALLINT [SIGNED|UNSIGNED]
+  | INT[EGER] [SIGNED|UNSIGNED]
+  | LARGEINT
+  | DEC[IMAL] [(precision [,scale])] [SIGNED|UNSIGNED]
+  | FLOAT [(precision)]
+  | REAL
+  | DOUBLE PRECISION
+  | DATE
+  | TIME [(time-precision)]
+  | TIMESTAMP [(timestamp-precision)]
+  | INTERVAL { start-field TO end-field | single-field }
+
+default is:
+    literal
+  | NULL
+  | CURRENTDATE
+  | CURRENTTIME
+  | CURRENTTIMESTAMP
+
+column-constraint is:
+    NOT NULL
+  | UNIQUE
+  | PRIMARY KEY [ASC[ENDING] | DESC[ENDING]]
+  | CHECK (condition)
+  | REFERENCES ref-spec
+
+table-constraint is:
+    UNIQUE (column-list)
+  | PRIMARY KEY (key-column-list)
+  | CHECK (condition)
+  | FOREIGN KEY (column-list) REFERENCES ref-spec
+
+ref-spec is:
+    referenced-table [(column-list)]
+```
+<<<
+```
+column-list is:
+    column-name [,column-name]...
+
+key-column-list is:
+    column-name [ASC[ENDING] | DESC[ENDING]]
+    [,column-name [ASC[ENDING] | DESC[ENDING]]]...
+
+like-spec is:
+    LIKE source-table [include-option]
+
+hbase-options-list is:
+    hbase-option = 'value'[, hbase-option = 'value']...
+```
+
+[[create_table_syntax]]
+=== Syntax Description of CREATE TABLE
+
+* `VOLATILE`
++
+specifies a volatile table, which is a table limited to the session that creates the table. After the session ends, the
+table is automatically dropped. See <<create_volatile_table_considerations,Considerations for CREATE VOLATILE TABLE>>.
+
+* `IF NOT EXISTS`
++
+creates an HBase table if it does not already exist when the table is created. This option does not apply to volatile tables.
+
+* `_table_`
++
+specifies the ANSI logical name of the table. See <<Database_Object_Names,Database Object Names>>. This name must be
+unique among names of tables and views within its schema.
+
+* `SALT USING _num_ PARTITIONS [ON (_column_[, _column_]&#8230;)]`
++
+pre-splits the table into multiple regions when the table is created. Salting adds a hash value of the row key as a key
+prefix, thus avoiding hot spots for sequential keys. The number of partitions that you specify can be a function of the
+number of region servers present in the HBase cluster. You can specify a number from 2 to 1024. If you do not specify
+columns, the default is to use all primary key columns.
+
+<<<
+* `STORE BY { PRIMARY KEY | (_key-column-list_)}`
++
+specifies a set of columns on which to base the clustering key. The clustering key determines the order of rows within
+the physical file that holds the table. The storage order has an effect on how you can partition the object.
+
+** `PRIMARY KEY`
++
+bases the clustering key on the primary key columns.
+
+** `_key-column-list_`
++
+bases the clustering key on the columns in the _key-column-list_. The key columns in _key-column-list_ must be specified
+as NOT NULL and must be the same as the primary key columns that are defined on the table. If STORE BY is not specified,
+then the clustering key is the PRIMARY KEY.
+
+* `HBASE_OPTIONS (_hbase-option_ = '_value_'[, _hbase-option_ = '_value_']&#8230;)`
++
+a list of HBase options to set for the table.
+
+** `_hbase-option_ = '_value_'`
++
+is one of the these HBase options and its assigned value:
++
+[cols="35%,65%",options="header"]
+|===
+| HBase Option                                | Accepted Values^1^
+| BLOCKCACHE                                  | 'true' \| 'false'
+| BLOCKSIZE                                   | '65536' \| '_positive-integer_'
+| BLOOMFILTER                                 | 'NONE' \| 'ROW' \| 'ROWCOL'
+| CACHE_BLOOMS_ON_WRITE                       | 'true' \| 'false'
+| CACHE_DATA_ON_WRITE                         | 'true' \| 'false'
+| CACHE_INDEXES_ON_WRITE                      | 'true' \| 'false'
+| COMPACT                                     | 'true' \| 'false'
+| COMPACT_COMPRESSION                         | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
+| COMPRESSION                                 | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
+| DATA_BLOCK_ENCODING                         | 'DIFF' \| 'FAST_DIFF' \| 'NONE' \| 'PREFIX'
+| DURABILITY                                  | 'USE_DEFAULT' \| 'SKIP_WAL' \| 'ASYNC_WAL' \| 'SYNC_WAL' \| 'FSYNC_WAL'
+| EVICT_BLOCKS_ON_CLOSE                       | *'true'* \| 'false'
+| IN_MEMORY                                   | *'true'* \| 'false'
+| KEEP_DELETED_CELLS                          | *'true'* \| 'false'
+| MAX_FILESIZE                                | '_positive-integer_'
+| MAX_VERSIONS                                | '1' \| '_positive-integer_'
+| MEMSTORE_FLUSH_SIZE                         | '_positive-integer_'
+| MIN_VERSIONS                                | '0' \| '_positive-integer_'
+| PREFIX_LENGTH_KEY                           | '_positive-integer_', which should be less than maximum length of the
+key for the table. It applies only if the SPLIT_POLICY is `KeyPrefixRegionSplitPolicy`.
+| REPLICATION_SCOPE                           | '0' \| '1'
+| SPLIT_POLICY                                | 'org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy' \|
+'org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy' \|
+'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy'
+| TTL                                         | '-1' (forever) \| '_positive-integer_'
+|===
+
+1. Values in boldface are default values.
+
+* `LOAD IF EXISTS`
++
+loads data into an existing table. Must be used with AS _select-query_.
+See <<create_table_considerations_for_load_if_exists_and_no_load_options_of_create_table_as,
+Considerations For LOAD IF EXISTS and NO LOAD options of CREATE TABLE AS>>.
+
+* `NO LOAD`
++
+creates a table with the CREATE TABLE AS statement, but does not load data into the table. 
+See <<create_table_considerations_for_load_if_exists_and_no_load_options_of_create_table_as,
+Considerations for LOAD IF EXISTS and NO LOAD options of CREATE TABLE AS>>.
+
+* `AS _select-query_`
++
+specifies a select query which is used to populate the created table. A select query can be any SQL select statement.
+
+<<<
+* `_column data-type_`
++
+specifies the name and data type for a column in the table. At least one column definition is required in a
+CREATE TABLE statement.
+
+** _column_ is an SQL identifier. _column_ must be unique among column names in the table. If the name is a Trafodion
+SQL reserved word, you must delimit it by enclosing it in double quotes. Such delimited parts are case-sensitive.
+For example: "join".
+
+** _data-type_ is the data type of the values that can be stored in _column_. A default value must be of the same type as
+the column, including the character set for a character column. See "Data Types" Data type also includes case specific
+information, such as UPSHIFT.
+
+* `[NOT] CASESPECIFIC`
++
+specifies that the column contains strings that are not case specific. The default is CASESPECIFIC. Comparison between two
+values is done in a case insensitive way only if both are case insensitive. This applies to comparison in a binary predicate,
+LIKE predicate, and POSITION/REPLACE string function searches.
+See <<create_table_examples,Examples of CREATE TABLE>>.
+
+* `DEFAULT _default_ | NO DEFAULT`
++
+specifies a default value for the column or specifies that the column does not have a default value.
+See <<DEFAULT_Clause,DEFAULT Clause>>.
+
+* `CONSTRAINT _constraint-name_`
++
+specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be
+unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
+Trafodion SQL expands the constraint name by using the schema for _table_. See <<Constraint_Names,Constraint Names>> and
+<<Database_Object_Names,Database Object Names>>.
+
+* `NOT NULL`
++
+is a column constraint that specifies that the column cannot contain nulls. If you omit NOT NULL, nulls are allowed in
+the column. If you specify both NOT NULL and NO DEFAULT, each row inserted in the table must include a value for the column.
+See <<Null,Null>>.
+
+<<<
+* `UNIQUE, or, UNIQUE (_column-list_)`
++
+is a column or table constraint, respectively, that specifies that the column or set of columns cannot contain more than
+one occurrence of the same value or set of values. If you omit UNIQUE, duplicate values are allowed unless the column is
+part of the PRIMARY KEY.
+
+** _column-list_ cannot include more than one occurrence of the same column. In addition, the set of columns that you
+specify on a UNIQUE constraint cannot match the set of columns on any other UNIQUE constraint for the table or on the
+PRIMARY KEY constraint for the table. All columns defined as unique must be specified as NOT NULL.
++
+A UNIQUE constraint is enforced with a unique index. If there is already a unique index on _column-list_, Trafodion SQL
+uses that index. If a unique index does not exist, the system creates a unique index.
+
+* `PRIMARY KEY [ASC[ENDING] | DESC[ENDING]], or, PRIMARY KEY (_key-column-list_)`
++
+is a column or table constraint, respectively, that specifies a column or set of columns as the primary key for the table.
+_key-column-list_ cannot include more than one occurrence of the same column.
++
+ASCENDING and DESCENDING specify the direction for entries in one column within the key. The default is ASCENDING.
++
+The PRIMARY KEY value in each row of the table must be unique within the table. A PRIMARY KEY defined for a set of columns
+implies that the column values are unique and not null. You can specify PRIMARY KEY only once on any CREATE TABLE statement.
++
+Trafodion SQL uses the primary key as the clustering key of the table to avoid creating a separate, unique index to implement
+the primary key constraint.
++
+A PRIMARY KEY constraint is required in Trafodion SQL.
+
+<<<
+* `CHECK (_condition_)`
++
+is a constraint that specifies a condition that must be satisfied for each row in the table.
+See <<Search_Condition,Search Condition>>.
++
+You cannot refer to the CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP function in a CHECK constraint, and you cannot use
+subqueries in a CHECK constraint.
+
+* `REFERENCES _ref-spec_`
++
+specifies a REFERENCES column constraint. The maximum combined length of the columns for a REFERENCES constraint is 2048 bytes.
++
+_ref-spec_ is:
++
+`_referenced-table_ [(_column-list_)]`
+
+** _referenced-table_ is the table referenced by the foreign key in a referential constraint. _referenced-table_ cannot be a view.
+_referenced-table_ cannot be the same as _table_. _referenced-table_ corresponds to the foreign key in the _table_.
+
+** _column-list_ specifies the column or set of columns in the _referenced-table_ that corresponds to the foreign key in _table_.
+The columns in the column list associated with REFERENCES must be in the same order as the columns in the column list associated
+with FOREIGN KEY. If _column-list_ is omitted, the referenced table's PRIMARY KEY columns are the referenced columns.
++
+A table can have an unlimited number of referential constraints, and you can specify the same foreign key in more than one
+referential constraint, but you must define each referential constraint separately. You cannot create self-referencing foreign
+key constraints.
+
+* `FOREIGN KEY (_column-list_) REFERENCES _ref-spec_`
++
+is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called
+a foreign key) in _table_ can contain only values that match those in a column or set of columns in the table specified in the
+REFERENCES clause.
++
+The two columns or sets of columns must have the same characteristics (data type, length, scale, precision). Without the FOREIGN
+KEY clause, the foreign key in _table_ is the column being defined; with the FOREIGN KEY clause, the foreign key is the column or
+set of columns specified in the FOREIGN KEY clause. For information about _ref-spec_, see REFERENCES _ref-spec_.
+
+<<<
+* `LIKE _source-table_ [_include-option_]&#8230;`
++
+directs Trafodion SQL to create a table like the existing table, _source-table_, omitting constraints (with the exception of the NOT
+NULL and PRIMARY KEY constraints) and partitions unless the _include-option_ clauses are specified.
+
+** `_source-table_`
++
+is the ANSI logical name for the existing table and must be unique among names of tables and views within its schema.
+
+** `_include-option_`
+
+*** `WITH CONSTRAINTS`
++
+directs Trafodion SQL to use constraints from _source-table_. Constraint names for _table_ are randomly generated unique names.
++
+When you perform a CREATE TABLE LIKE, whether or not you include the WITH CONSTRAINTS clause, the target table will have all
+the NOT NULL column constraints that exist for the source table with different constraint names.
+
+*** `WITH PARTITIONS`
++
+directs Trafodion SQL to use partition definitions from _source-table_. Each new table partition resides on the same volume
+as its original _source-table_ counterpart. The new table partitions do not inherit partition names from the original table.
+Instead, Trafodion SQL generates new names based on the physical file location.
++
+If you specify the LIKE clause and the SALT USING _num_ PARITIONS clause, you cannot specify WITH PARTITIONS.
+
+<<<
+[[create_table_considerations]]
+=== Considerations for CREATE TABLE
+
+The following subsections provide considerations for various CREATE TABLE options:
+
+* <<create_table_authorization_and_availability_requirements,Authorization and Availability Requirements>>
+* <<create_volatile_table_considerations,Considerations for CREATE VOLATILE TABLE>>
+* <<create_table_considerations_for_create_table_like,Considerations for CREATE TABLE &#8230; LIKE>>
+* <<create_table_considerations_for_load_if_exists_and_no_load_options_of_create_table_as,
+Considerations for LOAD IF EXISTS and NO LOAD options of CREATE TABLE AS>>
+* <<create_table_considerations_for_create_table_as,Considerations for CREATE TABLE AS>>
+
+[[create_table_authorization_and_availability_requirements]]
+==== Authorization and Availability Requirements
+
+[[create_table_required_privileges]]
+===== Required Privileges
+
+To issue a CREATE TABLE statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are creating the table in a shared schema.
+* You are the private schema owner.
+* You have the CREATE or CREATE_TABLE component privilege for the SQL_OPERATIONS component.
+
+NOTE: In this case, if you create a table in a private schema, it will be owned by the schema owner.
+
+<<<
+[[create_table_privileges_needed_to_create_a_referential_integrity_constraint]]
+===== Privileges Needed to Create a Referential Integrity Constraint
+
+To create a referential integrity constraint (that is, a constraint on he table that refers to a column in another table),
+one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the referencing and referenced tables.
+* You have these privileges on the referencing and referenced table:
+** For the referencing table, you have the CREATE or CREATE_TABLE component privilege for the SQL_OPERATIONS component.
+** For the referenced table, you have the REFERENCES (or ALL) privilege on the referenced table through your username
+or through a granted role.
+
+If the constraint refers to the other table in a query expression, you must also have SELECT privileges on the other table.
+
+
+[[create_volatile_table_considerations]]
+==== Considerations for CREATE VOLATILE TABLE
+
+* Volatile temporary tables are closely linked to the session. Their namespace is unique across multiple concurrent
+sessions, and therefore allow multiple sessions to use the same volatile temporary table names simultaneously without
+any conflicts.
+* Volatile tables support creation of indexes.
+* Volatile tables are partitioned by the system. The number of partitions is limited to four partitions by default.
+The partitions will be distributed across the cluster. The default value is four partitions regardless of the system
+configuration.
+* Statistics are not automatically updated for volatile tables. If you need statistics, you must explicitly run
+UPDATE STATISTICS.
+* Volatile tables can be created and accessed using one-part, two-part, or three-part names. However, you must use the
+same name (one part, two part, or three part) for any further DDL or DML statements on the created volatile table.
+See <<create_table_examples,Examples of CREATE TABLE>>.
+* Trafodion SQL allows users to explicitly specify primary key and STORE BY clauses on columns that contain null values.
+
+<<<
+* Trafodion SQL does not require that the first column in a volatile table contain not null values and be the primary key.
+Instead, Trafodion SQL attempts to partition the table, if possible, using an appropriate suitable key column as the
+primary and partitioning key. For more information,
+see <<create_table_how_trafodion_sql_selects_suitable_keys_for_volatile_tables,
+How Trafodion SQL Selects Suitable Keys for Volatile Tables>>.
+
+[[create_table_restrictions_for_create_volatile_table]]
+===== Restrictions for CREATE VOLATILE TABLE
+
+These items are not supported for volatile tables:
+
+* ALTER statement
+* User constraints
+* Creating views
+* Creating non-volatile indexes on a volatile table or a volatile index on a non-volatile table
+* CREATE TABLE LIKE operations
+
+[[create_table_how_trafodion_sql_supports_nullable_keys_for_volatile_tables]]
+===== How Trafodion SQL Supports Nullable Keys for Volatile Tables
+
+* Allows nullable keys in primary key, STORE BY, and unique constraints.
+* A null value is treated as the highest value for that column.
+* A null value as equal to other null values and only one value is allowed for that column.
+
+[[create_table_how_trafodion_sql_selects_suitable_keys_for_volatile_tables]]
+===== How Trafodion SQL Selects Suitable Keys for Volatile Tables
+
+Trafodion SQL searches for the first suitable column in the list of columns of the table being created. Once the column
+is located, the table is partitioned on it. The searched columns in the table might be explicitly specified (as in a
+CREATE TABLE statement) or implicitly created (as in a CREATE TABLE AS SELECT statement).
+
+The suitable key column is selected only if no primary key or STORE BY clause has been specified in the statement. If any
+of these clauses have been specified, they are used to select the key columns.
+
+<<<
+Trafodion SQL follows these guidelines to search for and select suitable keys:
+
+* A suitable column can be a nullable column.
+* Certain data types in Trafodion SQL cannot be used as a partitioning key. Currently, this includes any floating point
+columns (REAL, DOUBLE PRECISION, and FLOAT).
+* Trafodion SQL searches for a suitable column according to this predefined order:
+** Numeric columns are chosen first, followed by fixed CHAR, DATETIME, INTERVAL, and VARCHAR data types.
+** Within numeric data types, the order is binary NUMERIC (LARGEINT, INTEGER, SMALLINT), and DECIMAL.
+** An unsigned column is given preference over a signed column.
+** A non-nullable column is given preference over a nullable column.
+** If all data types are the same, the first column is selected.
+* If a suitable column is not located, the volatile table becomes a non-partitioned table with a system-defined SYSKEY as its primary key.
+* If a suitable column is located, it becomes the partitioning key where the primary key is _suitable_column_, SYSKEY.
+This causes the table to be partitioned while preventing the duplicate key and null-to-non-null errors.
+
+The list below shows the order of precedence, from low to high, of data types when Trafodion SQL searches for a suitable
+key. A data type appearing later has precedence over previously-appearing data types. Data types that do not appear in
+the list below cannot be chosen as a key column.
+
+<<<
+Precedence of Data Types (From Low to High): 
+
+* VARCHAR
+* INTERVAL
+* DATETIME
+* CHAR(ACTER)
+* DECIMAL (signed, unsigned)
+* SMALLINT (signed, unsigned)
+* INTEGER (signed,unsigned)
+* LARGEINT (signed only)
+
+[[create_table_creating_nullable_constraints_in_a_volatile_table]]
+===== Creating Nullable Constraints in a Volatile Table
+
+These examples show the creation of nullable constraints (primary key, STORE BY, and unique) in a volatile table:
+
+[source,sql]
+----
+create volatile table t (a int, primary key(a));
+create volatile table t (a int, store by primary key);
+create volatile table t (a int unique);
+----
+
+[[create_table_creating_a_volatile_table_with_a_nullable_primary_key]]
+===== Creating a Volatile Table With a Nullable Primary Key
+
+This example creates a volatile table with a nullable primary key:
+
+[source,sql]
+----
+>>create volatile table t (a int, primary key(a));
+
+--- SQL operation complete.
+----
+
+<<<
+Only one unique null value is allowed:
+[source,sql]
+----
+>>insert into t values (null);
+
+--- 1 row(s) inserted.
+
+>>insert into t values (null);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+----
+
+[[create_table_examples_for_selecting_suitable_keys_for_volatile_tables]]
+===== Examples for Selecting Suitable Keys for Volatile Tables
+
+These examples show the order by which Trafodion SQL selects a suitable key based on the precedence rules described in
+<<create_table_how_trafodion_sql_selects_suitable_keys_for_volatile_tables,
+How Trafodion SQL Selects Suitable Keys for Volatile Tables>>:
+
+* Selects column a as the primary and partitioning key:
++
+[source,sql]
+----
+create volatile table t (a int);
+----
+
+* Selects column b because int has a higher precedence than char:
++
+[source,sql]
+----
+create volatile table t (a char(10), b int);
+----
+
+* Selects column b because not null has precedence over nullable columns:
++
+[source,sql]
+----
+create volatile table t (a int, b int not null);
+----
+
+* Selects column b because int has precedence over decimal:
++
+[source,sql]
+----
+create volatile table t (a decimal(10), b int);
+----
+
+* Selects the first column, a, because both columns have the same data type:
++
+[source,sql]
+----
+create volatile table t (a int not null, b int not null);
+----
+
+<<<
+* Selects column b because char has precedence over date:
++
+[source,sql]
+----
+create volatile table t (a date, b char(10));
+----
+
+* Selects column b because the real data type is not part of the columns to be examined:
++
+[source,sql]
+----
+create volatile table t (a real, b date);
+----
+
+* Does not select any column as the primary/partitioning key. SYSKEY is used automatically.
++
+[source,sql]
+----
+create volatile table t (a real, b double precision not null);
+----
+Similar examples would be used for CREATE TABLE AS SELECT queries.
+
+[[create_table_considerations_for_create_table_like]]
+==== Considerations for CREATE TABLE &#8230; LIKE
+
+The CREATE TABLE LIKE statement does not create views, owner information, or privileges for the new table based on the
+source table. Privileges associated with a new table created by using the LIKE specification are defined as if the new
+table is created explicitly by the current user.
+
+[[create_table_like_and_file_attributes]]
+===== CREATE TABLE &#8230; LIKE and File Attributes
+
+CREATE TABLE &#8230; LIKE creates a table like another table, with the exception of file attributes. File attributes
+include COMPRESSION, and so on. If you do not include the attribute value as part of the CREATE TABLE &#8230; LIKE
+command, SQL creates the table with the default value for the attributes and not the value from the source object.
+For example, to create a table like another table that specifies compression, you must specify the compression attribute
+value as part of the CREATE TABLE&#8230; LIKE statement. In the following example, the original CREATE TABLE statement
+creates a table without compression. However, in the CREATE TABLE &#8230; LIKE statement, compression is specified.
+
+[source,sql]
+----
+-- Original Table create table NPTEST
+
+(FIRST_NAME CHAR(12) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL
+, LAST_NAME CHAR(24) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL
+, ADDRESS CHAR(128) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+, ZIP INT DEFAULT 0
+, PHONE CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+, SSN LARGEINT NO DEFAULT NOT NULL
+, INFO1 CHAR(128) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+, INFO2 CHAR(128) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+, primary key (SSN,first_name,last_name)
+)
+
+max table size 512
+
+-- CREATE TABLE LIKE
+
+create table LSCE002 like NPTEST ATTRIBUTE compression type hardware;
+----
+
+[[create_table_considerations_for_create_table_as]]
+==== Considerations for CREATE TABLE AS
+
+These considerations apply to CREATE TABLE AS:
+
+* Access to the table built by CREATE TABLE AS will be a full table scan because a primary and clustering key cannot
+be easily defined.
+* Compile time estimates and runtime information is not generated for CREATE TABLE AS tables.
+* You cannot manage CREATE TABLE AS tables using WMS compile time or runtime rules.
+* You cannot specify a primary key for a CREATE TABLE AS table without explicitly defining all the columns in the
+CREATE TABLE statement.
+* You cannot generate an explain plan for a CREATE TABLE AS &#8230;INSERT/SELECT statement. You can, however, use the
+EXPLAIN plan for a CREATE TABLE AS &#8230; INSERT/SELECT statement if you use the NO LOAD option.
+* You cannot use the ORDER BY clause in a CREATE TABLE AS statement. The compiler transparently orders the selected
+rows to improve the efficiency of the insert.
+
+<<<
+[[create_table_considerations_for_load_if_exists_and_no_load_options_of_create_table_as]]
+===== Considerations for LOAD IF EXISTS and NO LOAD options of CREATE TABLE AS
+
+The LOAD IF EXISTS option in a CREATE TABLE AS statement causes data to be loaded into an existing table. If you do not
+specify the LOAD IF EXISTS option and try to load data into an existing table, the CREATE TABLE AS statement fails to
+execute. Use the LOAD IF EXISTS option with the AS clause in these scenarios:
+
+* Running CREATE TABLE AS without re-creating the table. The table must be empty. Otherwise, the CREATE TABLE AS statement
+returns an error. Delete the data in the table by using a DELETE statement before issuing the CREATE TABLE AS statement.
+* Using CREATE TABLE AS to incrementally add data to an existing table. You must start a user-defined transaction before
+issuing the CREATE TABLE AS statement. If you try to execute the CREATE TABLE AS statement without starting a user-defined
+transaction, an error is returned, stating that data already exists in the table. With a user-defined transaction, newly
+added rows are rolled back if an error occurs.
+
+The NO LOAD option in a CREATE TABLE AS statement creates a table with the CREATE TABLE AS statement, but does not load data
+into the table. The option is useful if you must create a table to review its structure and to analyze the SELECT part of the
+CREATE TABLE AS statement with the EXPLAIN statement. You can also use EXPLAIN to analyze the implicated INSERT/SELECT part of
+the CREATE TABLE AS &#8230; NO LOAD statement. For example:
+
+[source,sql]
+----
+CREATE TABLE ttgt NO LOAD AS (SELECT ...);
+----
+
+[[create_table_trafodion_sql_extensions_to_create_table]]
+=== Trafodion SQL Extensions to CREATE TABLE
+
+This statement is supported for compliance with ANSI SQL:1999 Entry Level. Trafodion SQL extensions to the CREATE TABLE
+statement are ASCENDING, DESCENDING, and PARTITION clauses. CREATE TABLE LIKE is also an extension.
+
+<<<
+[[create_table_examples]]
+=== Examples of CREATE TABLE
+
+* This example creates a table. The clustering key is the primary key.
++
+[source,sql]
+----
+CREATE TABLE SALES.ODETAIL
+( ordernum NUMERIC (6) UNSIGNED NO DEFAULT NOT NULL, partnum NUMERIC (4)
+UNSIGNED NO DEFAULT NOT NULL, unit_price NUMERIC (8,2) NO DEFAULT NOT
+NULL, qty_ordered NUMERIC (5) UNSIGNED NO DEFAULT NOT NULL,
+PRIMARY KEY (ordernum, partnum) );
+----
+
+* This example creates a table like the JOB table with the same constraints:
++
+[source,sql]
+----
+CREATE TABLE PERSNL.JOB_CORPORATE LIKE PERSNL.JOB WITH CONSTRAINTS;
+----
+
+* This is an example of NOT CASESPECIFIC usage:
++
+[source,sql]
+----
+CREATE TABLE T (a char(10) NOT CASESPECIFIC, b char(10));
+INSERT INTO T values ('a', 'A');
+----
+
+* A row is not returned in this example. Constant ‘A’ is case sensitive, whereas column ‘a’ is insensitive.
++
+[source,sql]
+----
+SELECT * FROM T WHERE a = 'A';
+----
+
+* The row is returned in this example. Both sides are case sensitive.
++
+[source,sql]
+----
+SELECT * FROM T WHERE a = 'A' (not casespecific);
+----
+
+* The row is returned in this example. A case sensitive comparison is done because column ‘b’ is case sensitive.
++
+[source,sql]
+----
+SELECT * FROM T WHERE b = 'A';
+----
+
+* The row is returned in this example. A case sensitive comparison is done because column ‘b’ is case sensitive.
++
+[source,sql]
+----
+SELECT * FROM T WHERE b = 'A' (not casespecific);
+----
+
+[[create_table_examples_create_table_as]]
+==== Examples of CREATE TABLE AS
+
+This section shows the column attribute rules used to generate and specify the column names and data types of the table
+being created.
+
+* If _column-attributes_ are not specified, the select list items of the select-query are used to generate the column
+names and data attributes of the created table. If the select list item is a column, then it is used as the name of the
+created column. For example:
++
+[source,sql]
+----
+create table t as select a,b from t1
+----
++
+Table t has 2 columns named (a,b) and the same data attributes as columns from table t1.
+
+* If the select list item is an expression, it must be renamed with an AS clause. An error is returned if expressions are
+not named. For example:
++
+[source,sql]
+----
+create table t as select a+1 as c from t1
+----
++
+Table t has 1 column named (c) and data attribute of (a+1)
++
+[source,sql]
+----
+create table t as select a+1 from t1
+----
++
+An error is returned, expression must be renamed.
+
+* If _column-attributes_ are specified and contains _datatype-info_, then they override the attributes of the select items
+in the select query. These data attributes must be compatible with the corresponding data attributes of the select list items
+in the select-query.
++
+[source,sql]
+----
+create table t(a int) as select b from t1
+----
++
+Table t has one column named "a" with data type "int".
++
+[source,sql]
+----
+create table t(a char(10)) as select a+1 b from t1;
+----
++
+An error is returned because the data attribute of column "a", a char, does not match the data attribute of the select list
+item "b" a numeric.
+
+* If _column-attributes_ are specified and they only contain _column-name_, then the specified column-name override any name
+that was derived from the select query.
++
+[source,sql]
+----
+create table t(c,d) as select a,b from t1
+----
++
+Table t has 2 columns, c and d, which has the data attributes of columns a and b from table t1.
+
+* If _column-attributes_ are specified, then they must contain attributes corresponding to all select list items in the
+_select-query_. An error is returned, if a mismatch exists.
++
+[source,sql]
+----
+create table t(a int) as select b,c from t1
+----
++
+An error is returned. Two items need to be specified as part of the table-attributes.
+
+* The _column-attributes_ must specify either the _column-name datatype-info_ pair or just the _column-name_ for all
+columns. Youcannot specify some columns with just the name and others with name and data type.
++
+[source,sql]
+----
+create table t(a int, b) as select c,d from t1
+----
++
+An error is returned.
+
+In the following example, table t1 is created. Table t2 is created using the CREATE TABLE AS syntax without table attributes:
+
+
+[source,sql]
+----
+CREATE TABLE t1 (c1 int not null primary key, c2 char(50));
+
+CREATE TABLE t2 (c1 int, c2 char (50) UPSHIFT NOT NULL) AS SELECT * FROM t1;
+----
+
+<<<
+[[create_view_statement]]
+== CREATE VIEW Statement
+
+* <<create_view_syntax,Syntax Description of CREATE VIEW>>
+* <<create_view_considerations,Considerations for CREATE VIEW>>
+* <<create_view_examples,Examples of CREATE VIEW>>
+
+The CREATE VIEW statement creates a Trafodion SQL view. See <<Views,Views>>.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
+a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
+must be turned ON (the default) for the session.
+
+```
+CREATE [OR REPLACE] VIEW view
+    [(column-name ] [,column-name ...)]
+        AS query-expr [order-by-clause]
+    [WITH CHECK OPTION]
+```
+
+[[create_view_syntax]]
+=== Syntax Description of CREATE VIEW
+
+* `OR REPLACE`
++
+creates a view if one does not exist or replaces a view if a view of the same name exists. The view being replaced might
+have the same view definition or a different view definition.
+
+* `_view_`
++
+specifies the ANSI logical name of the view. See <<Database_Object_Names,Database Object Names>>. This name must be unique
+among names of tables and views within its schema.
+
+* `(_column-name_ [,_column-name_ ]&#8230;)`
++
+specifies names for the columns of the view. Column names in the list must match one-for-one with columns in the table
+specified by _query-expr_.
++
+<<<
++
+If you omit this clause, columns in the view have the same names as the corresponding columns in _query-expr_. You must
+specify this clause if any two columns in the table specified by _query-expr_ have the same name or if any column of that
+table does not have a name. For example, this query expression SELECT MAX(salary), AVG(salary) AS average_salary FROM
+employee the first column does not have a name.
++
+No two columns of the view can have the same name; if a view refers to more than one table and the select list refers to
+columns from different tables with the same name, you must specify new names for columns that would otherwise have duplicate
+names.
+
+* `AS _query-expr_`
++
+specifies the columns for the view and sets the selection criteria that determines the rows that make up the view. For
+information about character string literals, see <<Character_String_Literals,Character String Literals>>.
+For the syntax and syntax description of _query-expr_, see <<SELECT_Statement,SELECT Statement>>. The CREATE VIEW statement
+provides this restriction with regard to the _query-expr_ syntax: [ANY_N_], [FIRST _N_] select list items are not allowed
+in a view.
+
+* `_order-by-clause_`
++
+specifies the order in which to sort the rows of the final result table. For the syntax and syntax description of the
+_order-by-clause_, see <<SELECT_Statement,SELECT Statement>>. The CREATE VIEW statement restricts the _order-by-clause_
+with regard to the _access-clause_ and _mode-clause_. The _access-mode_ and _mode-clause_ cannot follow the
+_order-by-clause_.
+
+* `WITH CHECK OPTION`
++
+specifies that no row can be inserted or updated in the database through the view unless the row satisfies the view
+definition—that is, the search condition in the WHERE clause of the query expression must evaluate to true for any
+row that is inserted or updated. This option is only allowed for updatable views.
++
+If you omit this option, a newly inserted row or an updated row need not satisfy the view definition, which means that
+such a row can be inserted or updated in the table but does not appear in the view. This check is performed each time a
+row is inserted or updated.
++
+WITH CHECK OPTION does not affect the query expression; rows must always satisfy the view definition.
+
+<<<
+[[create_view_considerations]]
+=== Considerations for CREATE VIEW
+
+* If you specify CREATE OR REPLACE VIEW:
+** A new view is created if a view of the same name does not exist.
+** If a view of same name exists, the old view definition is dropped, and a view with a new definition is created. No check
+will be done to see if the new view is identical to the view it is replacing. The CREATE OR REPLACE VIEW command will
+unilaterally drop the old view definition and replace it with the new view definition.
+** The privileges granted on the old view will be re-granted on the new view. If the re-grant of privileges fails, the
+CREATE OR REPLACE VIEW operation fails.
+** When CREATE OR REPLACE VIEW replaces an existing view, any dependent views will be dropped.
+* You can specify GROUP BY using ordinals to refer to the relative position within the SELECT list.
+For example, GROUP BY 3, 2, 1.
+* Dynamic parameters are not allowed.
+
+[[create_view_effect_of_adding_a_column_on_view_definitions]]
+==== Effect of Adding a Column on View Definitions
+
+The addition of a column to a table has no effect on any existing view definitions or conditions included in constraint
+definitions. Any implicit column references specified by SELECT * in view or constraint definitions are replaced by
+explicit column references when the definition clauses are originally evaluated.
+
+[[create_view_authorization_and_availability_requirements]]
+==== Authorization and Availability Requirements
+
+To issue a CREATE VIEW statement, you must have SELECT privileges on the objects underlying the view or be the owner of
+the objects underlying the view, and one of the following must be true:
+
+* You are DB ROOT.
+* You are creating the view in a shared schema.
+* You are the private schema owner.
+* You have the CREATE or CREATE_VIEW component privilege for the SQL_OPERATIONS component.
++
+NOTE: In this case, if you create a view in a private schema, it will be owned by the schema owner.
+
+When you create a view on a single table, the owner of the view is automatically given all privileges WITH GRANT OPTION
+on the view. However, when you create a view that spans multiple tables, the owner ofthe view is given only SELECT
+privileges WITH GRANT OPTION. If you try to grant privileges to another user on the view other than SELECT, you will
+receive a warning that you lack the grant option for that privilege.
+
+[[create_view_updatable_and_non_updatable_views]]
+==== Updatable and Non-Updatable Views
+
+Single table views can be updatable. Multi-table views cannot be updatable.
+
+To define an updatable view, a query expression must also meet these requirements:
+
+* It cannot contain a JOIN, UNION, or EXCEPT clause.
+* It cannot contain a GROUP BY or HAVING clause.
+* It cannot directly contain the keyword DISTINCT.
+* The FROM clause must refer to exactly one table or one updatable view.
+* It cannot contain a WHERE clause that contains a subquery.
+* The select list cannot include expressions or functions or duplicate column names.
+
+[[create_view_order_by_clause_guidelines]]
+==== ORDER BY Clause Guidelines
+
+The ORDER BY clause can be specified in the SELECT portion of a CREATE VIEW definition. Any SELECT syntax that is valid
+when the SELECT portion is specified on its own is also valid during the view definition. An ORDER BY clause can contain
+either the column name from the SELECT list or from _select-list-index_.
+
+When a DML statement is issued against the view, the rules documented in the following sections are used to apply the
+ORDER BY clause.
+
+<<<
+===== When to Use ORDER BY
+
+An ORDER BY clause is used in a view definition only when the clause is under the root of the Select query that uses that
+view. If the ORDER BY clause appears in other intermediate locations or in a subquery, it is ignored.
+
+Consider this CREATE VIEW statement:
+
+[source,sql]
+----
+create view v as select a from t order by a; select * from v x, v y;
+----
+
+Or this INSERT statement:
+
+[source,sql]
+----
+insert into t1 select * from v;
+----
+
+In these two examples, the ORDER BY clause is ignored during DML processing because the first appears as part of a
+derived table and the second as a subquery selects, both created after the view expansion.
+
+If the same query is issued using explicit derived tables instead of a view, a syntax error is returned:
+
+[source,sql]
+----
+select * from (select a from t order by a) x, (select a from t order by a) y;
+----
+
+This example returns a syntax error because an ORDER BY clause is not supported in a subquery.
+
+The ORDER BY clause is ignored if it is part of a view and used in places where it is not supported. This is different
+than returning an error when the same query was written with explicit ORDER BY clause, as is shown in the preceding examples.
+
+===== ORDER BY in a View Definition With No Override
+
+If the SELECT query reads from the view with no explicit ORDER BY override, the ORDER BY semantics of the view definition
+are used.
+
+In this example, the ordering column is the one specified in the CREATE VIEW statement:
+
+[source,sql]
+----
+create view v as select * from t order by a Select * from v
+----
+
+<<<
+The SELECT query becomes equivalent to:
+
+[source,sql]
+----
+select * from t order by a;
+----
+
+===== ORDER BY in a View Definition With User Override
+
+If a SELECT query contains an explicit ORDER BY clause, it overrides the ORDER BY clause specified in the view definition.
+
+For example:
+
+[source,sql]
+----
+create view v as select a,b from t order by a; select * from v order by b;
+----
+
+In this example, order by b overrides the order by a specified in the view definition. The SELECT query becomes equivalent to:
+
+[source,sql]
+----
+select a,b from t order by b;
+----
+
+==== Nested View Definitions
+
+In case of nested view definitions, the ORDER BY clause in the topmost view definition overrides the ORDER BY clause of any
+nested view definitions.
+
+For example:
+
+[source,sql]
+----
+create view v1 as select a,b from t1 order by a;
+create view v2 as select a,b from v1 order by b;
+select * from v2;
+----
+
+In this example, the ORDER BY specified in the definition of view v2 overrides the ORDER BY specified in the definition of view v1.
+
+The SELECT query becomes equivalent to:
+
+[source,sql]
+----
+select a,b from (select a, b from t) x order by b;
+----
+
+<<<
+[[create_view_examples]]
+=== Examples of CREATE VIEW
+
+* This example creates a view on a single table without a view column list:
++
+[source,sql]
+----
+CREATE VIEW SALES.MYVIEW1 AS
+   SELECT ordernum, qty_ordered FROM SALES.ODETAIL;
+----
+
+* This example replaces the view, MYVIEW1, with a different view definition:
++
+[source,sql]
+----
+CREATE OR REPLACE VIEW SALES.MYVIEW1 AS
+   SELECT ordernum, qty_ordered
+   FROM SALES.ODETAIL WHERE unit_price > 100;
+----
+
+* This example creates a view with a column list:
++
+[source,sql]
+----
+CREATE VIEW SALES.MYVIEW2
+   (v_ordernum, t_partnum) AS SELECT v.ordernum, t.partnum
+FROM SALES.MYVIEW1 v, SALES.ODETAIL t;
+----
+
+* This example creates a view from two tables by using an INNER JOIN:
++
+[source,sql]
+----
+CREATE VIEW MYVIEW4 (v_ordernum, v_partnum) AS
+   SELECT od.ordernum, p.partnum
+   FROM SALES.ODETAIL OD INNER JOIN SALES.PARTS P
+   ON od.partnum = p.partnum;
+----
+
+<<<
+[[create_view_vertical_partition_example]]
+==== Vertical Partition Example
+
+This example creates three logical vertical partitions for a table, vp0, vp1, and vp2 and then creates a view vp to access them.
+
+A view can be used to obtain a composite representation of a set of closely related tables. In the following example
+tables vp0, vp1 and vp2 all have a key column a. This key column is known to contain identical rows for all three tables.
+The three tables vp0, vp1 and vp2 also contain columns b, c and d respectively. We can create a view vp that combines
+these three tables and provides the interface of columns a, b, c and d belonging to a single object.
+
+Trafodion SQL has the ability to eliminate redundant joins in a query. Redundant joins occur when:
+
+* Output of join contains expressions from only one of its two children
+* Every row from this child will match one and only one row from the other child
+
+Suppose tables A and B denote generic tables. To check if the rule "every row from this child will match one and only one row
+from the other child" is true, Trafodion SQL uses the fact that the join of Table A with table or subquery B preserves all the
+rows of A if the join predicate contains an equi-join predicate that references a key of B, and one of the following is true:
+The join is a left outer join where B is the inner table. In this example, for the join between vp0 and vp1,vp0 fills the role
+of table A and vp1 fills the role of table B. For the join between vp1 and vp2, vp1 fills the role of table A and vp2 fills
+the role of table B.
+
+The view vp shown in this example uses left outer joins to combine thethree underlying tables. Therefore, if the select list
+in a query that accesses vp does not contain column d from vp2 then the join to tablevp2 in the view vp will not be performed.
+
+[source,sql]
+----
+create table vp0(a integer not null, b integer, primary key(a));
+create table vp1(a integer not null, c integer, primary key(a));
+create table vp2(a integer not null, d integer, primary key(a));
+
+create view vp(a,b,c,d) as
+   select vp0.a, b, c, d
+   from vp0
+   left outer join vp1 on vp0.a=vp1.a
+   left outer join vp2 on vp0.a=vp2.a;
+
+select a, b from vp; -- reads only vp0
+select a, c from vp; -- reads vp0 and vp1
+select d from vp; -- reads vp0 and vp2
+----
+
+<<<
+[[delete_statement]]
+== DELETE Statement
+
+* <<delete_syntax,Syntax Description of DELETE>>
+* <<delete_considerations,Considerations for DELETE>>
+* <<delete_examples,Examples of DELETE>>
+
+The DELETE statement is a DML statement that deletes a row or rows from a table or an updatable view. Deleting rows from
+a view deletes the rows from the table on which the view is based. DELETE does not remove a table or view, even if you
+delete the last row in the table or view.
+
+Trafodion SQL provides searched DELETE—deletes rows whose selection depends on a search condition.
+
+For the searched DELETE form, if no WHERE clause exists, all rows are deleted from the table or view.
+
+```
+Searched DELETE is:
+
+DELETE FROM table
+
+    [WHERE search-condition ]
+       [[FOR] access-option ACCESS]
+
+access-option is:
+    READ COMMITTED
+```
+
+[[delete_syntax]]
+=== Syntax Description of DELETE
+
+* `_table_`
++
+names the user table or view from which to delete rows. _table_ must be a base table or an updatable view. To refer to a
+table or view, use the ANSI logical name. See <<Database_Object_Names,Database Object Names>>.
+
+* `WHERE _search-condition_`
++
+specifies a search condition that selects rows to delete. Within the search condition, any columns being compared are
+columns in the table or view being deleted from. See <<Search_Condition,Search Condition>>
++
+If you do not specify a search condition, all rows in the table or view are deleted.
+
+* `[FOR] _access-option_ ACCESS`
++
+specifies the access option required for data used to evaluate the search condition.
+See <<Data_Consistency_and_Access_Options,Data Consistency and Access Options>>.
+
+** `READ `COMMITTED
++
+specifies that any data used to evaluate the search condition must come from committed  rows.
++
+The default access option is the isolation level of the containing transaction.
+
+[[delete_considerations]]
+=== Considerations for DELETE
+
+[[delete_authorization_requirements]]
+==== Authorization Requirements
+
+DELETE requires authority to read and write to the table or view being deleted from and authority to read tables or views
+specified in subqueries used in the search condition.
+
+[[delete_transaction-initiation-and-termination]]
+==== Transaction Initiation and Termination
+
+The DELETE statement automatically initiates a transaction if no transaction is active. Otherwise, you can explicitly
+initiate a transaction with the BEGIN WORK statement. When a transaction is started, the SQL statements execute within
+that transaction until a COMMIT or ROLLBACK is encountered or an error occurs.
+
+[[delete_isolation-levels-of-transactions-and-access-options-of-statements]]
+==== Isolation Levels of Transactions and Access Options of Statements
+
+The isolation level of an SQL transaction defines the degree to which the operations on data within that transaction
+are affected by operations of concurrent transactions. When you specify access options for the DML statements within
+a transaction, you override the isolation level of the containing transaction. Each statement then executes with
+its individual access option.
+
+[[delete_examples]]
+=== Examples of DELETE
+
+* Remove all rows from the JOB table:
++
+[source,sql]
+----
+DELETE FROM persnl.job;
+
+--- 10 row(s) deleted.
+----
+
+* Remove from the table ORDERS any orders placed with sales representative 220 by any customer except customer number 1234:
++
+[source,sql]
+----
+DELETE FROM sales.orders
+WHERE salesrep = 220 AND custnum <> 1234;
+
+--- 2 row(s) deleted.
+----
+
+* Remove all suppliers not in Texas from the table PARTSUPP:
++
+[source,sql]
+----
+DELETE FROM invent.partsupp WHERE suppnum IN
+   (SELECT suppnum FROM samdbcat.invent.supplier WHERE state <> 'TEXAS');
+
+--- 41 row(s) deleted.
+----
++
+This statement achieves the same result:
++
+[source,sql]
+---- 
+DELETE FROM invent.partsupp WHERE suppnum NOT IN
+   SELECT suppnum FROM samdbcat.invent.supplier WHERE state = 'TEXAS');
+
+--- 41 row(s) deleted.
+----
+
+* This is an example of a self-referencing DELETE statement, where the table from which rows are deleted is scanned in a subquery:
++
+[source,sql]
+----
+delete from table1 where a in (select a from table1 where b > 200)
+----
+
+<<<
+[[drop_function_statement]]
+== DROP FUNCTION Statement
+
+* <<drop_function_syntax,Syntax Description of DROP FUNCTION>>
+* <<drop_function_considerations,Considerations for DROP FUNCTION>>
+* <<drop_function_examples,Examples of DROP FUNCTION>>
+
+The DROP FUNCTION statement removes a user-defined function (UDF) from the Trafodion database.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
+a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
+must be turned ON (the default) for the session.
+
+```
+DROP FUNCTION [[catalog-name.]schema-name.]function-name
+```
+
+[[drop_function_syntax]]
+=== Syntax Description of DROP FUNCTION
+
+* `[[_catalog-name_.]_schema-name_.]_function-name_`
++
+specifies the ANSI logical name of the function, where each part of the name is a valid SQL identifier with a maximum of
+128 characters. Specify the name of a function that has already been registered in the schema. If you do not fully qualify
+the function name, Trafodion SQL qualifies it according to the schema of the current session. For more information,
+see <<Identifiers,Identifiers>> and <<Database_Object_Names,Database Object Names>>.
+
+<<<
+[[drop_function_considerations]]
+=== Considerations for DROP FUNCTION
+
+[[drop_function_required_privileges]]
+==== Required Privileges
+
+To issue a DROP FUNCTION statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the function.
+* You have the DROP or DROP_ROUTINE component privilege for SQL_OPERATIONS component.
+
+[[drop_function_examples]]
+=== Examples of DROP FUNCTION
+
+* This DROP FUNCTION statement removes the function named ADD2 from the default schema:
++
+[source,sql]
+----
+DROP FUNCTION add2;
+----
+
+* This DROP FUNCTION statement removes the function named MMA5 from the default schema:
++
+[source,sql]
+----
+DROP PROCEDURE mma5;
+----
+
+* This DROP FUNCTION statement removes the function named REVERSE from the default schema:
++
+[source,sql]
+----
+DROP PROCEDURE reverse;
+----
+
+<<<
+[[drop_index_statement]]
+== DROP INDEX Statement
+
+* <<drop_index_syntax,Syntax Description of DROP INDEX>>
+* <<drop_index_considerations,Considerations for DROP INDEX>>
+* <<drop_index_examples,Examples of DROP INDEX>>
+
+The DROP INDEX statement drops a Trafodion SQL index. See <<Indexes,Indexes>>.
+DROP INDEX is a Trafodion SQL extension.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
+a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
+must be turned ON (the default) for the session.
+
+```
+DROP [VOLATILE] INDEX index
+```
+
+[[drop_index_syntax]]
+=== Syntax Description of DROP INDEX
+
+* `_index_`
++
+is the index to drop.
++
+For information, see <<Database_Object_Names,Database Object Names>>.
+
+[[drop_index_considerations]]
+=== Considerations for DROP INDEX
+
+[[drop_index_required_privileges]]
+==== Required Privileges
+
+To issue a DROP INDEX statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the index or the table associated with the index.
+* You have the DROP or DROP_INDEX component privilege for the SQL_OPERATIONS component.
+
+[[drop_index_examples]]
+=== Examples of DROP INDEX
+
+* This example drops an index:
++
+[source,sql]
+----
+DROP INDEX myindex;
+----
+
+* This example drops a volatile index:
++
+[source,sql]
+----
+DROP VOLATILE INDEX vindex;
+----
+
+<<<
+[[drop_library_statement]]
+== DROP LIBRARY Statement
+
+* <<drop_library_syntax,Syntax Description of DROP LIBRARY>>
+* <<drop_library_considerations,Considerations for DROP LIBRARY>>
+* <<drop_library_examples,Examples of DROP LIBRARY>>
+
+The DROP LIBRARY statement removes a library object from the Trafodion database and also removes the library file
+referenced by the library object.
+
+DROP LIBRARY is a Trafodion SQL extension.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
+inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
+AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+DROP LIBRARY [[catalog-name.]schema-name.]library-name [RESTRICT | CASCADE]
+```
+
+[[drop_library_syntax]]
+=== Syntax Description of DROP LIBRARY
+
+* `[[_catalog-name_.]_schema-name_.]_library-name_`
++
+specifies the ANSI logical name of the library object, where each part of the name is a valid SQL identifier with a
+maximum of 128 characters. Specify the name of a library object that has already been registered in the schema. If
+you do not fully qualify the library name, Trafodion SQL qualifies it according to the schema of the current session.
+For more information, see <<Identifiers,Identifiers>> and <<Database_Object_Names,Database Object Names>>.
+
+* `[RESTRICT | CASCADE]`
++
+If you specify RESTRICT, the DROP LIBRARY operation fails if any stored procedures in Java (SPJs) or user-defined
+functions (UDFs) were created based on the specified library.
++
+If you specify CASCADE, any such dependent procedures or functions are removed as part of the DROP LIBRARY operation.
++
+The default value is RESTRICT.
+
+[[drop_library_considerations]]
+=== Considerations for DROP LIBRARY
+
+* RESTRICT requires that all procedures and functions that refer to the library object be dropped before you drop the
+library object. CASCADE automatically drops any procedures or functions that are using the library.
+* If the library filename referenced by the library object does not exist, Trafodion SQL issues a warning.
+
+[[drop_library_required_privileges]]
+==== Required Privileges
+
+To issue a DROP LIBRARY statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the library.
+* You have the DROP or DROP_LIBRARY component privilege for the SQL_OPERATIONS component.
+
+[[drop_library_examples]]
+=== Examples of DROP LIBRARY
+
+* This DROP LIBRARY statement removes the library named SALESLIB from the SALES schema, removes the Sales2.jar file
+referenced by the library, and drops any stored procedures in Java (SPJs) that were created based on this library:
++
+[source,sql]
+----
+DROP LIBRARY sales.saleslib CASCADE;
+----
+
+* This DROP LIBRARY statement removes the library named MYUDFS from the default schema and removes the $TMUDFS library
+file referenced by the library:
++
+[source,sql]
+----
+DROP LIBRARY myudfs RESTRICT;
+----
+
+RESTRICT prevents the DROP LIBRARY operation from dropping any user-defined functions (UDFs) that were created based on
+this library. If any UDFs were created based on this library, the DROP LIBRARY operation fails.
+
+<<<
+[[drop_procedure_statement]]
+== DROP PROCEDURE Statement
+
+* <<drop_procedure_syntax,Syntax Description of DROP PROCEDURE>>
+* <<drop_procedure_considerations,Considerations for DROP PROCEDURE>>
+* <<drop_procedure_examples,Examples of DROP PROCEDURE>>
+
+The DROP PROCEDURE statement removes a stored procedure in Java (SPJ) from the Trafodion database.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
+a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
+must be turned ON (the default) for the session.
+
+```
+DROP PROCEDURE [[catalog-name.]schema-name.]procedure-name
+```
+
+[[drop_procedure_syntax]]
+=== Syntax Description of DROP PROCEDURE
+
+* `[[_catalog-name_.]_schema-name_.]_procedure-name_`
++
+specifies the ANSI logical name of the stored procedure in Java (SPJ), where each part of the name is a valid SQL
+identifier with a maximum of 128 characters. Specify the name of a procedure that has already been registered in the
+schema. If you do not fully qualify the procedure name, Trafodion SQL qualifies it according to the schema of the
+current session.
++
+For more information, see <<Identifiers,Identifiers>> and <<Database_Object_Names,Database Object Names>>.
+
+[[drop_procedure_considerations]]
+=== Considerations for DROP PROCEDURE
+
+[[drop_procedure_required_privileges]]
+==== Required Privileges
+
+To issue a DROP PROCEDURE statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the procedure.
+* You have the DROP or DROP_ROUTINE component privilege for SQL_OPERATIONS component.
+
+[[drop_procedure_examples]]
+=== Examples of DROP PROCEDURE
+
+* This DROP PROCEDURE statement removes the procedure named LOWERPRICE from the SALES schema:
++
+[source,sql]
+----
+DROP PROCEDURE sales.lowerprice;
+----
+
+* This DROP PROCEDURE statement removes the procedure TOTALPRICE from the default schema for the session, which is the SALES schema:
++
+[source,sql]
+----
+SET SCHEMA sales;
+DROP PROCEDURE totalprice;
+----
+
+<<<
+

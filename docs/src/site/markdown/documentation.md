@@ -23,7 +23,7 @@ Trafodion Command Interface Guide              | [Web Book](docs/command_interfa
 Trafodion Database Connectivity Services Guide | [Web Book](docs/dcs_reference/index.html),[API](docs/dcs_reference/apidocs/index.html)
 Trafodion odb User Guide                       | [Web Book](docs/odb/index.html),[PDF](docs/odb/Trafodion_odb_User_Guide.pdf)
 Trafodion REST Server Reference Guide          | [Web Book](docs/rest_reference/index.html),[API](docs/rest_reference/apidocs/index.html)
-Trafodion SQL Reference Manual                 | [PDF](docs/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
+Trafodion SQL Reference Manual                 | [Web Book](docs/sql_reference/index.html),[PDF](docs/sql_reference/Trafodion_SQL_Reference_Manual.pdf)[PDF]
 
 # 1.3.0
 
