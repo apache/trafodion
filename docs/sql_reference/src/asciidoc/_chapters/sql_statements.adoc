@@ -1,0 +1,2111 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sql_statements]]
+= SQL Statements
+
+This section describes the syntax and semantics of Trafodion SQL statements.
+
+Trafodion SQL statements are entered interactively or from script files using a client-based tool, such as the
+Trafodion Command Interface (TrafCI). To install and configure a client application that enables you to connect
+to and use a Trafodion database, see the
+http://trafodion.incubator.apache.org/client_install/index.html[_Trafodion Client Installation_ _Guide_].
+
+[[sql_statements_categories]]
+== Categories
+
+The statements are categorized according to their functionality:
+
+* <<Data_Definition_Language_Statements,Data Definition Language (DDL) Statements>>
+* <<Data_Manipulation_Language_Statements,Data Manipulation Language (DML) Statements>>
+* <<Transaction_Control_Statements,Transaction Control Statements>>
+* <<Data_Control_and_Security_Statements,Data Control and Security Statements>>
+* <<Stored_Procedure_and_User_Defined_Function_Statements,Stored Procedure and User-Defined Function Statements>>
+* <<Prepared_Statements,Prepared Statements>>
+* <<Control_Statements,Control Statements>>
+* <<Object_Naming_Statements,Object Naming Statements>>
+* <<SHOW_GET_and_EXPLAIN_Statements,"SHOW, GET, and EXPLAIN Statements">>
+
+<<<
+[[Data_Definition_Language_Statements]]
+=== Data Definition Language (DDL) Statements
+
+Use these DDL statements to create, drop, or alter the definition of a Trafodion SQL schema or object.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements inside a user-defined
+transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON
+(the default) for the session.
+
+[cols="2*", options="header"]
+|===
+| Statement                                                  | What It Does
+| <<ALTER_LIBRARY_Statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a Trafodion database.
+| <<ALTER_TABLE_Statement,ALTER TABLE Statement>>            | Changes attributes for a table.
+| <<ALTER_USER_Statement,ALTER USER Statement>>              | Changes attributes for a user.
+| <<CREATE_FUNCTION_Statement,CREATE FUNCTION Statement>>    | Registers a user-defined function (UDF) written in C as a functionwithin a Trafodion database.
+| <<CREATE_INDEX_Statement,CREATE INDEX Statement>>          | Creates an index on a table.
+| <<CREATE_LIBRARY_Statement,CREATE LIBRARY Statement>>      | Registers a library object in a Trafodion database.
+| <<CREATE_PROCEDURE_Statement,CREATE PROCEDURE Statement>>  | Registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
+| <<CREATE_ROLE_Statement,CREATE ROLE Statement>>            | Creates a role.
+| <<CREATE_SCHEMA_Statement,CREATE SCHEMA Statement>>        | Creates a schema in the database.
+| <<CREATE_TABLE_Statement,CREATE TABLE Statement>>          | Creates a table.
+| <<CREATE_VIEW_Statement,CREATE VIEW Statement>>            | Creates a view.
+| <<DROP_FUNCTION_Statement,DROP FUNCTION Statement>>        | Removes a user-defined function (UDF) from the Trafodion database.
+| <<DROP_INDEX_Statement,DROP INDEX Statement>>              | Drops an index.
+| <<DROP_LIBRARY_Statement,DROP LIBRARY Statement>>          | Removes a library object from the Trafodion database and also removes the library file
+referenced by the library object.
+| <<DROP_PROCEDURE_Statement,DROP PROCEDURE Statement>>      | Removes a stored procedure in Java (SPJ) from the Trafodion database.
+| <<DROP_ROLE_Statement,DROP ROLE Statement>>                | Drops a role.
+| <<DROP_SCHEMA_Statement,DROP SCHEMA Statement>>            | Drops a schema from the database.
+| <<DROP_TABLE_Statement,DROP TABLE Statement>>              | Drops a table.
+| <<DROP_VIEW_Statement,DROP VIEW Statement>>                | Drops a view.
+| <<REGISTER_USER_Statement,REGISTER USER Statement>>        | Registers a user in the SQL database, associating the user's login name
+with a database username.
+| <<UNREGISTER_USER_Statement, UNREGISTER USER Statement>>   | Removes a database username from the SQL database.
+|===
+
+
+<<<
+[[Data_Manipulation_Language_Statements]]
+=== Data Manipulation Language (DML) Statements
+
+Use these DML statements to delete, insert, select, or update rows in one or more tables:
+
+[cols="2*", options="header"]
+|===
+| Statement                               | What It Does
+| <<DELETE_Statement,DELETE Statement>> | Deletes rows from a table or view.
+| <<INSERT_Statement,INSERT Statement>> | Inserts data into tables and views.
+| <<MERGE_Statement,MERGE Statement>>   | Either performs an upsert operation (that is, updates a table if the row
+exists or inserts into a table if the row does not exist) or updates (merges) matching rows from one table to another.
+| <<SELECT_Statement,SELECT Statement>> | Retrieves data from tables and views.
+| <<TABLE_Statement,TABLE Statement>>   | Equivalent to the query specification SELECT * FROM _table_
+| <<UPDATE_Statement,UPDATE Statement>> | Updates values in columns of a table or view.
+| <<UPSERT_Statement,UPSERT Statement>> | Updates a table if the row exists or inserts into a table if the row does not exist.
+| <<VALUES_Statement,VALUES Statement>> | Displays the results of the evaluation of the expressions and the results of row subqueries
+within the row value constructors.
+|===
+
+[[Transaction_Control_Statements]]
+=== Transaction Control Statements
+
+Use these statements to specify user-defined transactions and to set attributes for the next transaction:
+
+[cols="2*",options="header"]
+|===
+| Statement                                                 | What It Does
+| <<BEGIN_WORK_Statement,BEGIN WORK Statement>>           | Starts a transaction.
+| <<COMMIT_WORK_Statement,COMMIT WORK Statement>>         | Commits changes made during a transaction and ends the transaction.
+| <<ROLLBACK_WORK_Statement,ROLLBACK WORK Statement>>     | Undoes changes made during a transaction and ends the transaction.
+| <<SET_TRANSACTION_Statement,SET TRANSACTION Statement>> | Sets attributes for the next SQL transaction — whether to automatically
+commit database changes.
+|===
+
+<<<
+[[Data_Control_and_Security_Statements]]
+=== Data Control and Security Statements
+
+Use these statements to register users, create roles, and grant and revoke privileges:
+
+[cols="2*",options="header"]
+|===
+| Statement                                                                     | What It Does
+| <<ALTER_USER_Statement,ALTER USER Statement>>                                 | Changes attributes associated with a user who is registered in the database.
+| <<CREATE_ROLE_Statement,CREATE ROLE Statement>>                               | Creates an SQL role.
+| <<DROP_ROLE_Statement,DROP ROLE Statement>>                                   | Deletes an SQL role.
+| <<GRANT_Statement,GRANT Statement>>                                           | Grants access privileges on an SQL object to specified users or roles.
+| <<GRANT_COMPONENT_PRIVILEGE_Statement,GRANT COMPONENT PRIVILEGE Statement>>   | Grants one or more component privileges to a user or role.
+| <<GRANT_ROLE_Statement,GRANT ROLE Statement>>                                 | Grants one or more roles to a user.
+| <<REGISTER_USER_Statement,REGISTER USER Statement>>                           | Registers a user in the SQL database, associating the user's login name with a database username.
+| <<REVOKE_Statement,REVOKE Statement>>                                         | Revokes access privileges on an SQL object from specified users or roles.
+| <<REVOKE_COMPONENT_PRIVILEGE_Statement,REVOKE COMPONENT PRIVILEGE Statement>> | Removes one or more component privileges from a user or role.
+| <<REVOKE_ROLE_Statement,REVOKE ROLE Statement>>                               | Removes one or more roles from a user.
+| <<UNREGISTER_USER_Statement,UNREGISTER USER Statement>>                       | Removes a database username from the SQL database.
+|===
+
+<<<
+[[Stored_Procedure_and_User_Defined_Function_Statements]]
+=== Stored Procedure and User-Defined Function Statements
+
+Use these statements to create and execute stored procedures in Java (SPJs) or create user-defined functions (UDFs) and to modify
+authorization to access libraries or to execute SPJs or UDFs:
+
+[cols="2*",options="header"]
+|===
+| Statement                                                 | What It Does
+| <<ALTER_LIBRARY_Statement,ALTER LIBRARY Statement>>       | Updates the physical filename for a library object in a Trafodion database.
+| <<CALL_Statement,CALL Statement>>                         | Initiates the execution of a stored procedure in Java (SPJ) in a Trafodion database.
+| <<CREATE_FUNCTION_Statement,CREATE FUNCTION Statement>>   | Registers a user-defined function (UDF) written in C as a function within a Trafodion database.
+| <<CREATE_LIBRARY_Statement,CREATE LIBRARY Statement>>     | Registers a library object in a Trafodion database.
+| <<CREATE_PROCEDURE_Statement,CREATE PROCEDURE Statement>> | Registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
+| <<DROP_FUNCTION_Statement,DROP FUNCTION Statement>>       | Removes a user-defined function (UDF) from the Trafodion database.
+| <<DROP_LIBRARY_Statement,DROP LIBRARY Statement>>         | Removes a library object from the Trafodion database and also removes the library file
+referenced by the library object.
+| <<DROP_PROCEDURE_Statement,DROP PROCEDURE Statement>>     | Removes a stored procedure in Java (SPJ) from the Trafodion database.
+| <<GRANT_Statement,GRANT Statement>>                       | Grants privileges for accessing a library object or executing an SPJ or UDF to specified users.
+| <<REVOKE_Statement,REVOKE Statement>>                     | Revokes privileges for accessing a library object or executing an SPJ or UDF from specified users.
+UDF from specified users.
+|===
+
+[[Prepared_Statements]]
+=== Prepared Statements
+
+Use these statements to prepare and execute an SQL statement:
+
+[cols="2*",options="header"]
+|===
+| Statement                                                 | What It Does
+| <<EXECUTE_Statement,EXECUTE Statement>>                   | Executes an SQL statement previously compiled by a PREPARE statement.
+| <<PREPARE_Statement,PREPARE Statement>>                   | Compiles an SQL statement for later use with the EXECUTE statement in the same session.
+|===
+
+
+<<<
+[[Control_Statements]]
+=== Control Statements
+
+Use these statements to control the execution, default options, plans, and performance of DML statements:
+
+[cols="2*",options="header"]
+|===
+| Statement                                                                     | What It Does
+| <<CONTROL_QUERY_CANCEL_Statement,CONTROL QUERY CANCEL Statement>>             | Cancels an executing query that you identify with a query ID.
+| <<CONTROL_QUERY_DEFAULT_Statement,CONTROL QUERY DEFAULT Statement>>           | Changes a default attribute to influence a query plan.
+|===
+
+[[Object_Naming_Statements]]
+=== Object Naming Statements
+
+Use this statements to specify default ANSI names for the schema:
+
+[cols="2*",options="header"]
+|===
+| Statement                                        | What It Does
+| <<SET_SCHEMA_Statement,SET SCHEMA Statement>>    | Sets the default ANSI schema for unqualified object names for the current session.
+|===
+
+<<<
+[[SHOW_GET_and_EXPLAIN_Statements]]
+=== SHOW, GET, and EXPLAIN Statements
+
+Use these statements to display information about database objects or query execution plans:
+
+[cols="2*",options="header"]
+|===
+| Statement                                                               | What It Does
+| <<EXPLAIN_Statement,EXPLAIN Statement>>                                 | Displays information contained in the query execution plan.
+| <<GET_Statement,GET Statement>>                                         | Displays the names of database objects, components, component
+privileges, roles, or users that exist in the Trafodion instance.
+| <<GET_HBASE_OBJECTS_Statement,GET HBASE OBJECTS Statement>>             | Displays a list of HBase objects through an SQL interface
+| <<GET_VERSION_OF_METADATA_Statement,GET VERSION OF METADATA Statement>> | Displays the version of the metadata in the Trafodion instance and
+indicates if the metadata is current.
+| <<GET_VERSION_OF_SOFTWARE_Statement,GET VERSION OF SOFTWARE Statement>> | Displays the version of the Trafodion software that is installed on the
+system and indicates if it is current.
+| <<INVOKE_Statement,INVOKE Statement>>                                   | Generates a record description that corresponds to a row in the
+specified table or view.
+| <<SHOWCONTROL_Statement,SHOWCONTROL Statement>>                         | Displays the CONTROL QUERY DEFAULT attributes in effect.
+| <<SHOWDDL_Statement,SHOWDDL Statement>>                                 | Describes the DDL syntax used to create an object as it exists in the
+metadata, or it returns a description of a user, role, or component in the form of a GRANT statement.
+| <<SHOWDDL_SCHEMA_Statement,SHOWDDL SCHEMA Statement>>                   | Displays the DDL syntax used to create a schema as it exists in the
+metadata and shows the authorization ID that owns the schema.
+| <<SHOWSTATS_Statement,SHOWSTATS Statement>>                             | Displays the histogram statistics for one or more groups of columns
+within a table. These statistics are used to devise optimized access plans.
+
+|===
+
+<<<
+[[ALTER_LIBRARY_Statement]]
+== ALTER LIBRARY Statement
+
+* <<alter_library_syntax,Syntax Description of ALTER LIBRARY>>
+* <<alter_library_considerations,Considerations for ALTER LIBRARY>>
+* <<alter_library_examples,Examples of ALTER LIBRARY>>
+
+The ALTER LIBRARY statement updates the physical filename for a library object in a Trafodion database.
+A library object can be an SPJ's JAR file or a UDF's library file.
+
+ALTER LIBRARY is a Trafodion SQL extension.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside 
+user-defined transaction (`BEGIN WORK&#8230;COMMIT WORK`) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT must be
+turned ON (the default) for the session.
+
+```
+ALTER LIBRARY [[catalog-name.]schema-name.]library-name
+   FILE library-filename
+   [HOST NAME host-name]
+   [LOCAL FILE host-filename]
+```
+
+<<<
+[[alter_library_syntax]]
+=== Syntax Description of ALTER LIBRARY
+
+* `[[_catalog-name_.]_schema-name_.]_library-name_`
++
+specifies the ANSI logical name of the library object, where each part of the name is a valid SQL identifier with a maximum of 128 characters.
+Specify the name of a library object that has already been registered in the schema. If you do not fully qualify the library name, Trafodion SQL
+qualifies it according to the schema of the current session. For more information, see <<Identifiers,Identifiers>> and
+<<_Database_Object_Names,Database Object Names>>.
+
+* `FILE _library-filename_`
++
+specifies the full path of the redeployed library file, which either an SPJ's JAR file or a UDF's library file.
+
+* `HOST NAME _host-name_`
++
+specifies the name of the client host machine where the deployed file resides.
+
+* `LOCAL FILE _host-filename_`
++
+specifies the path on the client host machine where the deployed file is stored.
+
+[[alter_library_considerations]]
+=== Considerations for ALTER LIBRARY
+
+* HOST NAME and LOCAL FILE are position dependent.
+
+==== Required Privileges
+
+To issue an ALTER LIBRARY statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the library.
+* You have the ALTER or ALTER_LIBRARY component privilege for the SQL_OPERATIONS component.
+
+<<<
+[[alter_library_examples]]
+=== Examples of ALTER LIBRARY
+
+* This ALTER LIBRARY statement updates the JAR file (SPJs) for a library named SALESLIB in the SALES schema:
++
+```
+ALTER LIBRARY sales.saleslib FILE Sales2.jar;`
+```
+
+* This ALTER LIBRARY statement updates the library file (UDFs) for a library named MYUDFS in the default schema:
++
+```
+ALTER LIBRARY myudfs FILE $TMUDFLIB;
+```
+
+
+<<<
+[[ALTER_TABLE_Statement]]
+== ALTER TABLE Statement
+
+* <<alter_table_syntax,Syntax Description of ALTER TABLE>>
+* <<alter_table_considerations,Considerations for ALTER TABLE>>
+* <<alter_table_examples,Examples of ALTER TABLE>>
+
+The ALTER TABLE statement changes a Trafodion SQL table. See <<Tables,Tables>>.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this
+statement inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF.
+To run this statement, AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+ALTER TABLE name alter-action
+
+alter-action is:
+
+     ADD [COLUMN] column-definition
+   | ADD IF NOT EXISTS column-definition
+   | ADD [CONSTRAINT constraint-name] table-constraint
+   | DROP CONSTRAINT constraint-name [RESTRICT]
+   | RENAME TO new-name [CASCADE]
+   | DROP COLUMN [IF EXISTS] column-name
+
+column-definition is:
+
+   column-name data-type
+      ([DEFAULT default]
+         [[CONSTRAINT constraint-name] column-constraint])
+
+data-type is:
+
+     CHAR[ACTER] [(length)[CHARACTERS]]
+         [CHARACTER SET char-set-name]
+         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | CHAR[ACTER] VARYING (length)
+         [CHARACTER SET char-set-name]
+         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | VARCHAR (length) [CHARACTER SET char-set-name]
+         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | NUMERIC [(precision [,scale])] [SIGNED|UNSIGNED]
+   | NCHAR [(length) [CHARACTER SET char-set-name]
+         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | NCHAR VARYING(length) [CHARACTER SET char-set-name]
+         [UPSHIFT] [[NOT] CASESPECIFIC]
+   | SMALLINT [SIGNED|UNSIGNED]
+   | INT[EGER] [SIGNED|UNSIGNED]
+   | LARGEINT
+   | DEC[IMAL] [(precision [,scale])] [SIGNED|UNSIGNED]
+   | FLOAT [(precision)]
+   | REAL
+   | DOUBLE PRECISION
+   | DATE
+   | TIME [(time-precision)]
+   | TIMESTAMP [(timestamp-precision)]
+   | INTERVAL { start-field TO end-field | single-field }
+
+default is:
+
+     literal
+   | NULL
+   | CURRENTDATE
+   | CURRENTTIME
+   | CURRENTTIMESTAMP }
+
+column-constraint is:
+
+     NOT NULL
+   | UNIQUE
+   | CHECK (condition)
+   | REFERENCES ref-spec
+
+table-constraint is:
+
+     UNIQUE (column-list)
+   | CHECK (condition)
+   | FOREIGN KEY (column-list) REFERENCES ref-spec
+
+ref-spec is:
+
+   referenced-table [(column-list)]
+
+column-list is:
+
+   column-name[, column-name]...
+```
+
+<<<
+[[alter_table_syntax]]
+=== Syntax Description of ALTER TABLE
+
+* `_name_`
++
+specifies the current name of the object. See <<Database_Object_Names,Database Object Names>>.
+
+* `ADD [COLUMN] _column-definition_`
++
+adds a column to _table_.
++
+The clauses for the _column-definition_ are:
+
+** `_column-name_`
++
+specifies the name for the new column in the table. _column-name_ is an SQL identifier. _column-name_ must be
+unique among column names in the table. If the column name is a Trafodion SQL reserved word, you must
+delimit it by enclosing it in double quotes. For example: `"sql".myview`. See <<Identifiers,Identifiers>>.
+
+** `_data-type_`
++
+specifies the data type of the values that can be stored in _column-name_. See <<Data_Types,Data Types>>
+If a default is not specified, NULL is used.
+
+** `DEFAULT _default_`
++
+specifies a default value for the column or specifies that the column does not have a default value. You can declare the default value
+explicitly by using the DEFAULT clause, or you can enable null to be used as the default by omitting both the DEFAULT and NOT NULL clauses.
+If you omit the DEFAULT clause and specify NOT NULL, Trafodion SQL returns an error. For existing rows of the table, the added column takes
+on its default value.
++
+If you set the default to the datetime value CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP, Trafodion SQL uses January 1, 1 A.D.
+12:00:00.000000 as the default date and time for the existing rows.
++
+For any row that you add after the column is added, if no value is specified for the column as part of the add row operation, the column
+receives a default value based on the current timestamp at the time the row is added.
+
+<<<
+** `[[CONSTRAINT _constraint-name_] _column-constraint_]`
++
+specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be
+unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
+Trafodion SQL expands the constraint name by using the schema for _table_. See <<Database_Object_Names,Database Object Names>>.
++
+If you do not specify a constraint name, Trafodion SQL constructs an SQL identifier as the name for the constraint in the schema
+for _table._ The identifier consists of the fully qualified table name concatenated with a system-generated unique identifier.
+For example, a constraint on table A.B.C might be assigned a name such as A.B.C_123&#8230;_01&#8230;.
+
+*** `_column-constraint_` options:
+
+**** `NOT NULL` 
++
+is a column constraint that specifies that the column cannot contain nulls. If you omit NOT NULL, nulls are allowed in the column.
+If you specify both NOT NULL and NO DEFAULT, then each row inserted in the table must include a value for the column. See <<Null,Null>>.
+
+**** `UNIQUE`
++
+is a column constraint that specifies that the column cannot contain more than one occurrence of the same value. If you omit UNIQUE,
+duplicate values are allowed unless the column is part of the PRIMARY KEY. Columns that you define as unique must be specified as NOT NULL.
+
+**** `CHECK (_condition_)`
++
+is a constraint that specifies a condition that must be satisfied for each row in the table. See <<Search_Condition,Search Condition>>.
+You cannot refer to the CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP function in a CHECK constraint, and you cannot use
+subqueries in a CHECK constraint.
+
+<<<
+**** `REFERENCES _ref-spec_`
++
+specifies a REFERENCES column constraint. The maximum combined length of the columns for a REFERENCES constraint is 2048 bytes. +
+
+***** `_ref-spec_` is:
++
+`_referenced-table_ [(_column-list_)]`
++
+`_referenced-table_` is the table referenced by the foreign key in a referential constraint. _referenced-table_ cannot be a view.
+_referenced-table_ cannot be the same as _table_. _referenced-table_ corresponds to the foreign key in the _table_.
+ +
+`_column-list_` specifies the column or set of columns in the _referenced-table_ that corresponds to the foreign key in _table_. The
+columns in the column list associated with REFERENCES must be in the same order as the columns in the column list associated with FOREIGN
+KEY. If _column-list_ is omitted, the referenced table's PRIMARY KEY columns are the referenced columns.
++
+A table can have an unlimited number of referential constraints, and you can specify the same foreign key in more than one referential
+constraint, but you must define each referential constraint separately. You cannot create self-referencing foreign key constraints.
+
+* `ADD [CONSTRAINT _constraint-name_] _table-constraint_`
++
+adds a constraint to the table and optionally specifies _constraint-name_ as the name for the constraint. The new constraint
+must be consistent with any data already present in the table. 
+
+<<<
+** `CONSTRAINT _constraint-name_`
++
+specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be unique among constraint
+names in its schema. If you omit the schema portions of the name you specify in _constraint-name_, Trafodion SQL expands the constraint
+name by using the schema for table. See <<Database_Object_Names,Database Object Names>>. 
++
+If you do not specify a constraint name, Trafodion SQL constructs an SQL identifier as the name for the constraint in the schema for table. The
+identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. For example, a constraint on table
+A.B.C might be assigned a name such as A.B.C_123&#8230;_01&#8230;.
++
+** `_table-constraint_` options:
+
+*** `UNIQUE (_column-list_)`
++
+is a table constraint that specifies that the column or set of columns cannot contain more 
+than one occurrence of the same value or set of values.
++
+`_column-list_` cannot include more than one occurrence of the same column. In addition, the set of columns that you specify on a UNIQUE
+constraint cannot match the set of columns on any other UNIQUE constraint for the table or on the PRIMARY KEY constraint for the table.
+All columns defined as unique must be specified as NOT NULL.
++
+A UNIQUE constraint is enforced with a unique index. If there is already a unique index on _column-list_, Trafodion SQL uses that index. If a
+unique index does not exist, the system creates a unique index.
+
+*** `CHECK (_condition_)`
++
+is a constraint that specifies a condition that must be satisfied for each row in the table.
+See <<Search_Condition,Search Condition>>. You cannot refer to the CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP function in a CHECK
+constraint, and you cannot use subqueries in a CHECK constraint.
+
+<<<
+*** `FOREIGN KEY (_column-list_) REFERENCES _ref-spec_ NOT ENFORCED`
++
+is a table constraint that specifies a referential constraint for the table, declaring that a column or set of columns (called a foreign key)
+in _table_ can contain only values that match those in a column or set of columns in the table specified in the REFERENCES
+clause. However, because NOT ENFORCED is specified, this relationship is not checked.
++
+The two columns or sets of columns must have the same characteristics (data type, length, scale, precision). Without the FOREIGN KEY clause,
+the foreign key in _table_ is the column being defined; with the FOREIGN KEY clause, the foreign key is the column or set of columns specified in
+the FOREIGN KEY clause. For information about _ref-spec_, see REFERENCES _ref-spec_ NOT ENFORCED.
+
+* `DROP CONSTRAINT _constraint-name_ [RESTRICT]`
++
+drops a constraint from the table. +
++
+If you drop a constraint, Trafodion SQL drops its dependent index if Trafodion SQL originally created the same index. If the constraint uses
+an existing index, the index is not dropped. +
+
+** `CONSTRAINT _constraint-name_`
++
+specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be unique among constraint
+names in its schema. If you omit the schema portions of the name you specify in _constraint-name_, Trafodion SQL expands the constraint
+name by using the schema for table. See <<Database_Object_Names,Database Object Names>>.
++
+If you do not specify a constraint name, Trafodion SQL constructs an SQL identifier as the name for the constraint in the schema for table. The
+identifier consists of the fully qualified table name concatenated with a system-generated unique identifier. For example, a constraint on table
+A.B.C might be assigned a name such as A.B.C_123&#8230;_01&#8230;.
+
+* `RENAME TO _new-name_ [CASCADE]`
++
+changes the logical name of the object within the same schema.
+
+** `_new-name_`
++
+specifies the new name of the object after the RENAME TO operation occurs.
+
+<<<
+** `CASCADE`
++
+specifies that indexes and constraints on the renamed object will be renamed.
+
+* `ADD IF NOT EXISTS _column-definition_`
++
+adds a column to _table_ if it does not already exist in the table.
++
+The clauses for the _column-definition_ are the same as described in ADD [COLUMN] _column-definition_.
+
+* `DROP COLUMN [IF EXISTS] _column-name_`
++
+drops the specified column from _table_, including the column’s data. You cannot drop a primary key column.
+
+<<<
+[[alter_table_considerations]]
+=== Considerations for ALTER TABLE
+
+[[effect_of_adding_a_column_on_view_definitions]]
+==== Effect of Adding a Column on View Definitions
+
+The addition of a column to a table has no effect on existing view definitions. Implicit column references specified by SELECT * in view
+definitions are replaced by explicit column references when the definition clauses are originally evaluated.
+
+[[authorization_and_availability_requirements]]
+==== Authorization and Availability Requirements
+
+ALTER TABLE works only on user-created tables.
+
+===== Required Privileges
+
+To issue an ALTER TABLE statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the table.
+* You have the ALTER or ALTER_TABLE component privilege for the SQL_OPERATIONS component.
+
+===== Privileges Needed to Create a Referential Integrity Constraint
+
+To create a referential integrity constraint (that is, a constraint on the table that refers to a column in another table), one of the
+following must be true:
+
+* You are DB ROOT.
+* You are the owner of the referencing and referenced tables.
+* You have these privileges on the referencing and referenced table:
+** For the referencing table, you have the ALTER or ALTER_TABLE component privilege for the SQL_OPERATIONS component.
+** For the referenced table, you have the REFERENCES (or ALL) privilege on the referenced table through your username or through a granted role.
+
+If the constraint refers to the other table in a query expression, you must also have SELECT privileges on the other table.
+
+[[alter_table_examples]]
+===  Example of ALTER TABLE
+
+This example adds a column:
+
+[source,sql]
+----
+ALTER TABLE persnl.project
+   ADD COLUMN projlead
+      NUMERIC (4) UNSIGNED
+----
+
+<<<
+[[alter_user_statement]]
+== ALTER USER Statement
+
+* <<alter_user_syntax,Syntax Description of ALTER USER>>
+* <<alter_user_considerations,Considerations for ALTER USER>>
+* <<alter_user_examples,Examples of ALTER USER>>
+
+The ALTER USER statement changes attributes associated with a user who is registered in the database.
+
+ALTER USER is a Trafodion SQL extension.
+
+[source,text,subs="quotes"]
+----
+ALTER USER database-username alter-action[, alter-action]
+
+alter-action is:
+     SET EXTERNAL NAME directory-service-username
+   | SET { ONLINE | OFFLINE }
+----
+
+<<<
+[[alter_user_syntax]]
+=== Syntax Description of ALTER USER
+
+* `_database-username_`
++
+is the name of a currently registered database user.
+
+* `SET EXTERNAL NAME`
++
+changes the name that identifies the user in the directory service. This is also the name the user specifies when
+connecting to the database.
+
+** `_directory-service-username_`
++
+specifies the new name of the user in the directory service.
+
+* _directory-service-username_ is a regular or delimited case-insensitive
+identifier. See <<Case_Insensitive_Delimited_Identifiers,Case-Insensitive Delimited Identifiers>>.
+
+* SET { ONLINE | OFFLINE }
++
+changes the attribute that controls whether the user is allowed to connect to the database. +
+
+** `ONLINE`
++
+specifies that the user is allowed to connect to the database.
+
+** `OFFLINE`
++
+specifies that the user is not allowed to connect to the database.
+
+<<<
+[[alter_user_considerations]]
+=== Considerations for ALTER USER
+
+Only a user with user administrative privileges (that is, a user who has been granted the MANAGE_USERS component privilege)
+can do the following:
+
+* Set the EXTERNAL NAME for any user
+* Set the ONLINE | OFFLINE attribute for any user
+
+Initially, DB_ROOT is the only database user who has been granted the MANAGE_USERS component privilege.
+
+[[alter_user_examples]]
+=== Examples of ALTER USER
+
+* To change a user's external name:
++
+[source,sql]
+----
+ALTER USER ajones SET EXTERNAL NAME "Americas\ArturoJones";
+----
+
+* To change a user's attribute to allow the user to connect to the database:
++
+[source,sql]
+----
+ALTER USER ajones SET ONLINE;
+----
+
+<<<
+[[begin_work_statement]]
+== BEGIN WORK Statement
+
+* <<begin_work_considerations,Considerations for BEGIN WORK>>
+* <<begin_work_examples,Example of BEGIN WORK>>
+
+The BEGIN WORK statement enables you to start a transaction explicitly—where the transaction consists of the set of operations
+defined by the sequence of SQL statements that begins immediately after BEGIN WORK and ends with the next COMMIT or ROLLBACK
+statement. See <<Transaction_Management,Transaction Management>>. BEGIN WORK will raise an error if a transaction is currently active.
+
+BEGIN WORK is a Trafodion SQL extension.
+
+```
+BEGIN WORK
+```
+
+[[begin_work_considerations]]
+=== Considerations for BEGIN WORK
+
+BEGIN WORK starts a transaction. COMMIT WORK or ROLLBACK WORK ends a transaction.
+
+<<<
+[[begin_work_examples]]
+=== Example of BEGIN WORK
+
+Group three separate statements—two INSERT statements and an UPDATE statement—that update the database within a single transaction:
+
+[source,sql]
+----
+--- This statement initiates a transaction.
+BEGIN WORK;
+
+--- SQL operation complete.
+
+INSERT INTO sales.orders VALUES (125, DATE '2008-03-23', DAT '2008-03-30', 75, 7654);
+
+--- 1 row(s) inserted.
+
+INSERT INTO sales.odetail VALUES (125, 4102, 25000, 2);
+
+--- 1 row(s) inserted.
+
+UPDATE invent.partloc SET qty_on_hand = qty_on_hand - 2 WHERE partnum = 4102 AND loc_code = 'G45';
+
+--- 1 row(s) updated.
+
+--- This statement ends a transaction.
+COMMIT WORK;
+
+--- SQL operation complete.
+----
+
+<<<
+[[call_statement]]
+== CALL Statement
+
+* <<call_syntax,Syntax Description of CALL>>
+* <<call_considerations,Considerations for CALL>>
+* <<call_examples,Examples of CALL>>
+
+The CALL statement invokes a stored procedure in Java (SPJ) in a Trafodion SQL database.
+
+```
+CALL procedure-ref ([argument-list])
+
+procedure-ref is:
+   [[catalog-name.]schema-name.]procedure-name
+
+argument-list is:
+   SQL-expression[, SQL-expression]...
+```
+
+[[call_syntax]]
+=== Syntax Description of CALL
+
+* `_procedure-ref_`
++
+specifies an ANSI logical name of the form:
++
+`[[_catalog-name_.]_schema-name_.]_procedure-name_`
++
+where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information, see
+<<Identifiers,Identifiers>> and <<Database_Object_Names,Database Object Names>>.
++
+If you do not fully qualify the procedure name, Trafodion SQL qualifies it according to the schema of the current session.
+
+* `_argument-list_`
++
+accepts arguments for IN, INOUT, or OUT parameters. The arguments consist of SQL expressions, including dynamic parameters,
+separated by commas:
++
+`_SQL-expression_[\{, _SQL-expression_}&#8230;]`
++
+<<<
++
+Each expression must evaluate to a value of one of these data types:
++
+** Character value
+** Date-time value
+** Numeric value
++
+Interval value expressions are disallowed in SPJs. For more information, see
+<<call_input_parameter_arguments,Input Parameter Arguments>> and
+<<call_output_parameter_arguments,Output Parameter Arguments>>.
++
+Do not specify result sets in the argument list.
+
+[[call_considerations]]
+=== Considerations for CALL
+
+[[call_usage_restrictions]]
+==== Usage Restrictions
+
+You can use a CALL statement as a stand-alone SQL statement in applications or command-line interfaces,
+such as TrafCI. You cannot use a CALL statement inside a compound statement or with rowsets.
+
+[[call_required_privileges]]
+==== Required Privileges
+
+To issue a CALL statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the stored procedure.
+* You have the EXECUTE (or ALL) privileges, either directly through your username or through a granted role.
+For more information, see the <<GRANT_Statement,GRANT Statement>>.
+
+When the stored procedure executes, it executes as the Trafodion ID.
+
+<<<
+[[call_input_parameter_argument]]
+==== Input Parameter Arguments
+
+You pass data to an SPJ by using IN or INOUT parameters. For an IN
+parameter argument, use one of these SQL expressions:
+
+* Literal
+* SQL function (including CASE and CAST expressions)
+* Arithmetic or concatenation operation
+* Scalar subquery
+* Dynamic parameter (for example, ?) in an application
+* Named (for example, ?param) or unnamed (for example, ?) parameter in TrafCI
+
+For an INOUT parameter argument, you can use only a dynamic, named, or unnamed parameter. For more information, see
+<<Expressions,Expressions>>.
+
+[[call_output_parameter_arguments]]
+==== Output Parameter Arguments
+
+An SPJ returns values in OUT and INOUT parameters. Output parameter arguments must be dynamic parameters in an
+application (for example, ?) or named or unnamed parameters in HPDCI (for example, ?param or ?). Each
+calling application defines the semantics of the OUT and INOUT parameters in its environment.
+
+[[call_data_conversion_parameter_arguments]]
+==== Data Conversion of Parameter Arguments
+
+Trafodion SQL performs an implicit data conversion when the data type of a parameter argument is compatible with
+but does not match the formal data type of the stored procedure. For stored procedure input values,
+the conversion is from the actual argument value to the formal parameter type. For stored procedure output values,
+the conversion is from the actual output value, which has the data type of the formal parameter, to the declared
+type of the dynamic parameter.
+
+[[call_null_input_and_output]]
+==== Null Input and Output
+
+You can pass a null value as input to or output from an SPJ, provided that the corresponding Java data type of the
+parameter supports nulls. If a null is input or output for a parameter that does not support nulls, Trafodion SQL
+returns an error.
+
+[[call_transaction_semantics]]
+==== Transaction Semantics
+
+The CALL statement automatically initiates a transaction if no active transaction exists. However, the failure of
+a CALL statement does not always automatically abort the transaction.
+
+[[call_examples]]
+=== Examples of CALL
+
+* In TrafCI, execute an SPJ named MONTHLYORDERS, which has one IN parameter represented by a literal and one OUT
+parameter represented by an unnamed parameter, ?:
++
+[source,sql]
+----
+CALL sales.monthlyorders(3,?);
+----
+
+<<<
+* This CALL statement executes a stored procedure, which accepts one IN parameter (a date literal), returns one OUT
+parameter (a row from the column, NUM_ORDERS), and returns two result sets:
++
+[source,sql]
+----
+CALL sales.ordersummary('01/01/2001', ?);
+
+NUM_ORDERS
+--------------------
+                  13
+
+ORDERNUM   NUM_PARTS      AMOUNT          ORDER_DATE LAST_NAME
+---------- -------------- --------------- ---------- ------------------
+    100210              4        19020.00 2006-04-10 HUGHES
+    100250              4        22625.00 2006-01-23 HUGHES
+    101220              4        45525.00 2006-07-21 SCHNABL
+    200300              3        52000.00 2006-02-06 SCHAEFFER
+    200320              4         9195.00 2006-02-17 KARAJAN
+    200490              2         1065.00 2006-03-19 WEIGL
+.
+.
+.
+
+--- 13 row(s) selected.
+
+ORDERNUM   PARTNUM  UNIT_PRICE   QTY_ORDERED PARTDESC
+---------- -------- ------------ ----------- ------------------
+    100210     2001      1100.00           3 GRAPHIC PRINTER,M1
+    100210     2403       620.00           6 DAISY PRINTER,T2
+    100210      244      3500.00           3 PC GOLD, 30 MB
+    100210     5100       150.00          10 MONITOR BW, TYPE 1
+    100250     6500        95.00          10 DISK CONTROLLER
+    100250     6301       245.00          15 GRAPHIC CARD, HR
+.
+.
+.
+
+--- 70 row(s) selected.
+
+--- SQL operation complete.
+----
+
+<<<
+[[commit_work_statement]]
+== COMMIT WORK Statement
+
+* <<commit_work_considerations,Considerations for COMMIT WORK>>
+* <<commit_work_examples,Example of COMMIT WORK>>
+
+The COMMIT WORK statement commits any changes to objects made during the current transaction and ends
+the transaction. See <<Transaction_Management,Transaction Management>>.
+
+WORK is an optional keyword that has no effect.
+
+COMMIT WORK issued outside of an active transaction generates error 8605.
+
+```
+COMMIT [WORK]
+```
+
+[[commit_work_considerations]]
+=== Considerations for COMMIT WORK
+
+BEGIN WORK starts a transaction. COMMIT WORK or ROLLBACK WORK ends a transaction.
+
+<<<
+[[commit_work_examples]]
+=== Example of COMMIT WORK
+
+Suppose that your application adds information to the inventory. You have received 24 terminals from
+a new supplier and want to add the supplier and update the quantity on hand. The part number for the
+terminals is 5100, and the supplier is assigned supplier number 17. The cost of each terminal is $800.
+
+The transaction must add the order for terminals to PARTSUPP, add the supplier to the SUPPLIER table,
+and update QTY_ON_HAND in PARTLOC. After the INSERT and UPDATE statements execute successfully,
+you commit the transaction, as shown:
+
+[source,sql]
+----
+-- This statement initiates a transaction.
+BEGIN WORK;
+
+--- SQL operation complete.
+
+-- This statement inserts a new entry into PARTSUPP.
+INSERT INTO invent.partsupp
+VALUES (5100, 17, 800.00, 24);
+
+--- 1 row(s) inserted.
+
+-- This statement inserts a new entry into SUPPLIER.
+INSERT INTO invent.supplier
+VALUES (17, 'Super Peripherals','751 Sanborn Way',
+ 'Santa Rosa', 'California', '95405');
+
+--- 1 row(s) inserted.
+
+-- This statement updates the quantity in PARTLOC.
+UPDATE invent.partloc
+SET qty_on_hand = qty_on_hand + 24
+WHERE partnum = 5100 AND loc_code = 'G43';
+
+--- 1 row(s) updated.
+
+-- This statement ends a transaction.
+COMMIT WORK;
+
+--- SQL operation complete.
+----
+
+<<<
+[[control_query_cancel_statement]]
+== CONTROL QUERY CANCEL Statement
+
+The CONTROL QUERY CANCEL statement cancels an executing query that you identify with a query ID.
+You can execute the CONTROL QUERY CANCEL statement in a client-based tool like TrafCI or through any ODBC or JDBC
+application.
+
+CONTROL QUERY CANCEL is a Trafodion SQL extension.
+
+```
+CONTROL QUERY CANCEL QID query-id [COMMENT 'comment-text']
+```
+
+[[control_query_cancel_syntax]]
+=== Syntax Description of CONTROL QUERY CANCEL
+
+* `_query-id_`
++
+specifies the query ID of an executing query, which is a unique identifier generated by the SQL compiler.
+
+* `'_comment-text_'`
++
+specifies an optional comment to be displayed in the canceled query’s error message.
+
+[[control_query_cancel_considerations]]
+=== Considerations for CONTROL QUERY CANCEL
+
+[[control_query_cancel_benefitsl]]
+==== Benefits of CONTROL QUERY CANCEL
+
+For many queries, the CONTROL QUERY CANCEL statement allows the termination of the query without stopping the
+master executor process (MXOSRVR). This type of cancellation has these benefits over standard ODBC/JDBC cancel
+methods:
+
+* An ANSI-defined error message is returned to the client session, and SQLSTATE is set to HY008.
+* Important cached objects persist after the query is canceled, including the master executor process and its
+compiler, the compiled statements cached in the master, and the compiler’s query cache and its cached metadata
+and histograms.
+* The client does not need to reestablish its connection, and its prepared statements are preserved.
+* When clients share connections using a middle-tier application server, the effects of canceling one client’s
+executing query no longer affect other clients sharing the same connection.
+
+[[control_query_cancel_restrictions]]
+==== Restrictions on CONTROL QUERY CANCEL
+
+Some executing queries may not respond to a CONTROL QUERY CANCEL statement within a 60-second interval. For those
+queries, Trafodion SQL stops their ESP processes if there are any. If this action allows the query to be canceled,
+you will see all the benefits listed above.
+
+If the executing query does not terminate within 120 seconds after the CONTROL QUERY CANCEL statement is issued,
+Trafodion SQL stops the master executor process, terminating the query and generating a lost connection error.
+In this case, you will not see any of the benefits listed above. Instead, you will lose your connection and will
+need to reconnect and re-prepare the query. This situation often occurs with the CALL, DDL, and utility statements
+and rarely with other statements.
+
+The CONTROL QUERY CANCEL statement does not work with these statements:
+
+* Unique queries, which operate on a single row and a single partition
+* Queries that are not executing, such as a query that is being compiled
+* CONTROL QUERY DEFAULT, BEGIN WORK, COMMIT WORK, ROLLBACK WORK, and EXPLAIN statements
+* Statically compiled metadata queries
+* Queries executed in anomalous conditions, such as queries without runtime statistics or without a query ID
+
+[[control_query_cancel_required_privileges]]
+==== Required Privileges
+
+To issue a CONTROL QUERY CANCEL statement, one of the following must be true:
+
+* You are DB ROOT.
+* You own (that is, issued) the query.
+* You have the QUERY_CANCEL component privilege for the SQL_OPERATIONS component.
+
+<<<
+[[control_query_cancel_examples]]
+=== Example of CONTROL QUERY CANCEL
+
+This CONTROL QUERY CANCEL statement cancels a specified query and provides a comment concerning the cancel
+operation:
+
+[source,sql]
+----
+control query cancel qid
+MXID11000010941212288634364991407000000003806U3333300_156016_S1 comment
+'Query is consuming too many resources.';
+----
+
+In a separate session, the client that issued the query will see this
+error message indicating that the query has been canceled:
+
+[source,sql]
+----
+>>execute s1;
+
+*** ERROR[8007] The operation has been canceled. Query is consuming too many resources.
+----
+
+<<<
+[[control_query_default_statement]]
+== CONTROL QUERY DEFAULT Statement
+
+The CONTROL QUERY DEFAULT statement changes the default settings for the current process. You can execute
+the CONTROL QUERY DEFAULT statement in a client-based tool like TrafCI or through any ODBC or JDBC application.
+
+CONTROL QUERY DEFAULT is a Trafodion SQL extension.
+
+```
+{ CONTROL QUERY DEFAULT | CQD } control-default-option
+
+control-default-option is:
+  attribute {'attr-value' | RESET}
+```
+
+[[control_query_default_syntax]]
+=== Syntax Description of CONTROL QUERY DEFAULT
+
+* `_attribute_`
++
+is a character string that represents an attribute name. For descriptions of these attributes,
+see <<Control_Query_Default_Attributes,Control Query Default (CQD) Attributes>>.
+
+* `_attr-value_`
++
+is a character string that specifies an attribute value. You must specify _attr-value_ as a quoted string—even
+if the value is a number.
+
+* `RESET`
+
+specifies that the attribute that you set by using a CONTROL QUERY DEFAULT statement in the current session is
+to be reset to the value or values in effect at the start of the current session.
+
+<<<
+[[control_query_default_considerations]]
+=== Considerations for CONTROL QUERY DEFAULT
+
+[[control_query_default_scope]]
+==== Scope of CONTROL QUERY DEFAULT
+
+The result of the execution of a CONTROL QUERY DEFAULT statement stays in effect until the current process
+terminates or until the execution of another statement for the same attribute overrides it.
+
+CQDs are applied at compile time, so CQDs do not affect any statements that are already prepared. For example:
+
+[source,sql]
+----
+PREPARE x FROM SELECT * FROM t;
+CONTROL QUERY DEFAULT SCHEMA 'myschema';
+EXECUTE x;                              -- uses the default schema SEABASE
+SELECT * FROM t2;                       -- uses MYSCHEMA;
+PREPARE y FROM SELECT * FROM t3;
+CONTROL QUERY DEFAULT SCHEMA 'seabase';
+EXECUTE y;                              -- uses MYSCHEMA;
+----
+
+[[control_query_default_examples]]
+=== Examples of CONTROL QUERY DEFAULT
+
+* Change the maximum supported length of the column names to 200 for the current process:
++
+[source,sql]
+----
+CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH '200';
+----
+
+* Reset the HBASE_MAX_COLUMN_NAME_LENGTH attribute to its initial value in the current process:
++
+[source,sql]
+----
+CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH RESET;
+----
+
+<<<
+[[create_function_statement]]
+== CREATE FUNCTION Statement
+
+* <<create_function_syntax,Syntax Description of CREATE FUNCTION>>
+* <<create_function_considerations,Considerations for CREATE FUNCTION>>
+* <<create_function_examples,Examples of CREATE FUNCTION>>
+
+The CREATE FUNCTION statement registers a user-defined function (UDF) written in C as a function within
+a Trafodion database. Currently, Trafodion supports the creation of _scalar UDFs_, which return a single
+value or row when invoked. Scalar UDFs are invoked as SQL expressions in the SELECT list or WHERE clause
+of a SELECT statement.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this
+statement inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run
+this statement, AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+CREATE FUNCTION function-ref ([parameter-declaration[, parameter-declaration]...])
+    {RETURN | RETURNS}
+       (return-parameter-declaration[, return-parameter-declaration]...)
+    EXTERNAL NAME 'character-string-literal'
+    LIBRARY [[catalog-name.]schema-name.]library-name
+    [LANGUAGE C]
+    [PARAMETER STYLE SQL]
+    [NO SQL]
+    [NOT DETERMINISTIC | DETERMINISTIC]
+    [FINAL CALL | NO FINAL CALL]
+    [NO STATE AREA | STATE AREA size]
+    [NO PARALLELISM | ALLOW ANY PARALLELISM]
+
+function-ref is:
+   [[catalog-name.]schema-name.]function-name
+
+parameter-declaration is:
+   [IN] [sql-parameter-name] sql-datatype
+
+return-parameter-declaration is:
+   [OUT] [sql-parameter-name] sql-datatype
+```
+
+<<<
+[[create_function_syntax]]
+=== Syntax Description of CREATE FUNCTION
+
+* `_function-ref_ ( [_parameter-declaration_[,_parameter-declaration_]&#8230;] )`
++
+specifies the name of the function and any SQL parameters that correspond to the signature of the external function.
+
+** `_function-ref_`
++
+specifies an ANSI logical name of the form:
++
+`[[_catalog-name_.]_schema-name_.]_function-name_`
++
+where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information, see
+<<Identifiers,Identifiers>> and <<Database_Object_Names,Database Object Names>>.
++
+Specify a name that is unique and does not exist for any procedure or function in the same schema.
++
+If you do not fully qualify the function name, Trafodion SQL qualifies it according to the schema of the current session.
+
+** `_parameter-declaration_`
++
+specifies an SQL parameter that corresponds to the signature of the external function:
++
+`[IN] [_sql-parameter-name_] _sql-datatype_`
+
+*** `IN`
++
+specifies that the parameter passes data to the function.
+
+*** `_sql-parameter-name_`
++
+specifies an SQL identifier for the parameter. For more information, see <<Identifiers,Identifiers>>.
+
+<<<
+*** `_sql-datatype_`
++
+specifies an SQL data type that corresponds to the data type of the parameter in the signature of the
+external function. _sql-datatype_ is one of the supported SQL data types in Trafodion. See
+<<Data_Types,Data Types>>.
+
+* `{RETURN | RETURNS} (_return-parameter-declaration_[,_return-parameter-declaration_]&#8230;)`
++
+specifies the type of output of the function.
+
+** `_return-parameter-declaration_`
++
+specifies an SQL parameter for an output value:
++
+`[OUT] [_sql-parameter-name_] _sql-datatype_`
+
+*** `OUT`
++
+specifies that the parameter accepts data from the function.
+
+*** `_sql-parameter-name_`
++
+specifies an SQL identifier for the return parameter. For more information, see <<Identifiers,Identifiers>>.
++
+*** `_sql-datatype_`
++
+specifies an SQL data type for the return parameter. _sql-datatype_ is one of the supported SQL data types in
+Trafodion. See <<Data_Types,Data Types>>.
+
+* `EXTERNAL NAME '_method-name_'`
++
+specifies the case-sensitive name of the external function’s method.
+
+* `LIBRARY [[_catalog-name_.]_schema-name_.]_library-name_`
++
+specifies the ANSI logical name of a library containing the external function. If you do not fully qualify the
+library name, Trafodion SQL qualifies it according to the schema of the current session.
+
+* `LANGUAGE C`
++
+specifies that the external function is written in the C language. This clause is optional.
+
+* `PARAMETER STYLE SQL`
++
+specifies that the run-time conventions for arguments passed to the external function are those of the SQL
+language. This clause is optional.
+
+* `NO SQL`
++
+specifies that the function does not perform SQL operations. This clause is optional.
+
+* `DETERMINISTIC | NOT DETERMINISTIC`
++
+specifies whether the function always returns the same values for OUT parameters for a given set of argument
+values (DETERMINISTIC, the default behavior) or does not return the same values (NOT ETERMINISTIC). If the
+function is deterministic, Trafodion SQL is not required to execute the function each time to produce results;
+instead, Trafodion SQL caches the results and reuses them during subsequent executions, thus optimizing the execution.
+
+* `FINAL CALL | NO FINAL CALL`
++
+specifies whether or not a final call is made to the function. A final call enables the function to free up
+system resources. The default is FINAL CALL.
+
+* `NO STATE AREA | STATE AREA _size_`
++
+specifies whether or not a state area is allocated to the function. _size_ is an integer denoting memory in
+bytes. Acceptable values range from 0 to 16000. The default is NO STATE AREA.
+
+* `NO PARALLELISM | ALLOW ANY PARALLELISM`
++
+specifies whether or not parallelism is applied when the function is invoked. The default is ALLOW ANY PARALLELISM.
+
+<<<
+[[create_function_considerations]]
+=== Considerations for CREATE FUNCTION
+
+[[create_function_required_privileges]]
+==== Required Privileges
+
+To issue a CREATE FUNCTION statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are creating the function in a shared schema, and you have the USAGE (or ALL) privilege on the library that
+will be used in the creation of the function. The USAGE privilege provides you with read access to the library’s
+underlying library file.
+* You are the private schema owner and have the USAGE (or ALL) privilege on the library that will be used in the
+creation of the function. The USAGE privilege provides you with read access to the library’s underlying library file.
+* You have the CREATE or CREATE_ROUTINE component level privilege for the SQL_OPERATIONS component and have the
+USAGE (or ALL) privilege on the library that will be used in the creation of the function. The USAGE
+privilege provides you with read access to the library’s underlying library file.
++
+NOTE: In this case, if you create a function in a private schema, it will be owned by the schema owner.
+
+<<<
+[[create_function_examples]]
+=== Examples of CREATE FUNCTION
+
+* This CREATE FUNCTION statement creates a function that adds two integers:
++
+[source,sql]
+----
+create function add2 (int, int)
+       returns (total_value int)
+       external name 'add2'
+       library myudflib;
+----
+
+* This CREATE FUNCTION statement creates a function that returns the minimum, maximum, and average values of
+five input integers:
++
+[source,sql]
+----
+create function mma5 (int, int, int, int, int)
+       returns (min_value int, max_value int, avg_value int)
+       external name 'mma5'
+       library myudflib;
+----
+
+* This CREATE FUNCTION statement creates a function that reverses an input string of at most 32 characters:
++
+[source,sql]
+----
+create function reverse (varchar(32))
+       returns (reversed_string varchar(32))
+       external name 'reverse'
+       library myudflib;
+----
+
+<<<
+[[create_index_statement]]
+== CREATE INDEX Statement
+
+* <<create_index_syntax,Syntax Description of CREATE INDEX>>
+* <<create_index_considerations,Considerations for CREATE INDEX>>
+* <<create_index_examples ,Examples of CREATE INDEX>>
+
+The CREATE INDEX statement creates an SQL index based on one or more columns of a table or table-like object.
+The CREATE VOLATILE INDEX statement creates an SQL index with a lifespan that is limited to the SQL session that
+the index is created. Volatile indexes are dropped automatically when the session ends. See <<Indexes,Indexes>>.
+
+CREATE INDEX is a Trafodion SQL extension.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
+inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
+AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+CREATE [VOLATILE] INDEX index ON table
+   (column-name [ASC[ENDING] | DESC[ENDING]]
+   [,column-name [ASC[ENDING] | DESC[ENDING]]]...)
+   [HBASE_OPTIONS (hbase-options-list)]
+   [SALT LIKE TABLE]
+
+hbase-options-list is:
+   hbase-option = 'value'[, hbase-option = 'value']...
+```
+
+[[create_index_syntax]]
+=== Syntax Description of CREATE INDEX
+
+* `_index_`
++
+is an SQL identifier that specifies the simple name for the new index. You cannot qualify _index_ with its schema
+name. Indexes have their own namespace within a schema, so an index name might be the same as a table or constraint
+name. However, no two indexes in a schema can have the same name.
+
+* `_table_`
++
+is the name of the table for which to create the index. See <<Database_Object_Names,Database Object Names>>.
+
+* `_column-name_ [ASC[ENDING] | DESC[ENDING]] [,_column-name_ [ASC[ENDING] | DESC[ENDING]]]&#8230;`
++
+specifies the columns in _table_ to include in the index. The order of the columns in the index need not correspond
+to the order of the columns in the table.
++
+ASCENDING or DESCENDING specifies the storage and retrieval order for rows in the index. The default is ASCENDING.
++
+Rows are ordered by values in the first column specified for the index. If multiple index rows share the same value
+for the first column, the values in the second column are used to order the rows, and so forth. If duplicate index
+rows occur in a nonunique index, their order is based on the sequence specified for the columns of the key of the
+underlying table. For ordering (but not for other purposes), nulls are greater than other values.
+
+* `HBASE_OPTIONS (_hbase-option_ = '_value_'[, _hbase-option_ = '_value_']&#8230;)`
++
+a list of HBase options to set for the index. These options are applied independently of any HBase options set for
+the index’s table.
+
+// TODO: The Word document did not list all default values. 
+** `_hbase-option_ = '_value_'`
++
+is one of the these HBase options and its assigned value:
++
+[cols="35%,65%",options="header"]
+|===
+| HBase Option           | Accepted Values^1^
+| BLOCKCACHE             | 'true' \| 'false'
+| BLOCKSIZE              | *'65536'( \| '_positive-integer_'
+| BLOOMFILTER            | 'NONE' \| 'ROW' \| 'ROWCOL'
+| CACHE_BLOOMS_ON_WRITE  | 'true' \| 'false'
+| CACHE_DATA_ON_WRITE    | 'true' \| 'false'
+| CACHE_INDEXES_ON_WRITE | 'true' \| 'false'
+| COMPACT                | 'true' \| 'false'
+| COMPACT_COMPRESSION    | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
+| COMPRESSION            | 'GZ' \| 'LZ4' \| 'LZO' \| 'NONE' \| 'SNAPPY'
+| DATA_BLOCK_ENCODING    | 'DIFF' \| 'FAST_DIFF' \| 'NONE' \| 'PREFIX'
+| DURABILITY             | 'USE_DEFAULT' \| 'SKIP_WAL' \| 'ASYNC_WAL' \| 'SYNC_WAL' \| 'FSYNC_WAL'
+| EVICT_BLOCKS_ON_CLOSE  | *'true'* \| 'false'
+| IN_MEMORY              | *'true'* \| 'false'
+| KEEP_DELETED_CELLS     | *'true'* \| 'false'
+| MAX_FILESIZE           | '_positive-integer_'
+| MAX_VERSIONS           | '1' \| '_positive-integer_'
+| MEMSTORE_FLUSH_SIZE    | '_positive-integer_'
+| MIN_VERSIONS           | '0' \| '_positive-integer_'
+| PREFIX_LENGTH_KEY      | '_positive-integer_', which should be less than maximum length of the key for the table.
+It applies only if the SPLIT_POLICY is `KeyPrefixRegionSplitPolicy`.
+| REPLICATION_SCOPE      | '0' \| *'1'*
+| SPLIT_POLICY           | 'org.apache.hadoop.hbase.regionserver. +
+ConstantSizeRegionSplitPolicy' \| +
+'org.apache.hadoop.hbase.regionserver. +
+IncreasingToUpperBoundRegionSplitPolicy' \| +
+'org.apache.hadoop.hbase.regionserver. +
+KeyPrefixRegionSplitPolicy'
+| TTL                    | '-1' (forever) \| '_positive-integer_'
+|===
++
+^1^ Values in boldface are default values.
+
+* `SALT LIKE TABLE`
++
+causes the index to use the same salting scheme (that is,
+`SALT USING _num_ PARTITIONS [ON (_column_[, _column_]&#8230;)])` as its base table.
+
+<<<
+[[create_index_considerations]]
+=== Considerations for CREATE INDEX
+
+Indexes are created under a single transaction. When an index is created, the following steps occur:
+
+* Transaction begins (either a user-started transaction or a system-started transaction).
+* Rows are written to the metadata.
+* Physical labels are created to hold the index (as non audited).
+* The base table is locked for read shared access which prevents inserts, updates, and deletes on the base table from occurring.
+* The index is loaded by reading the base table for read uncommitted access using side tree inserts.
++
+NOTE: A side tree insert is a fast way of loading data that can perform specialized optimizations because the
+partitions are not audited and empty.
+
+* After load is complete, the index audit attribute is turned on and it is attached to the base table (to bring the index online).
+* The transaction is committed, either by the system or later by the requestor.
+
+If the operation fails after basic semantic checks are performed, the index no longer exists and the entire transaction
+is rolled back even if it is a user-started transaction.
+
+[[create_index_authorization_and_availability_requirements]]
+==== Authorization and Availability Requirements
+
+An index always has the same security as the table it indexes.
+
+CREATE INDEX locks out INSERT, DELETE, and UPDATE operations on the table being indexed. If other processes have rows in the table locked
+when the operation begins, CREATE INDEX waits until its lock request is granted or timeout occurs.
+
+You cannot access an index directly.
+
+<<<
+[[create_index_required_priviges]]
+==== Required Privileges
+
+To issue a CREATE INDEX statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are creating the table in a shared schema.
+* You are the private schema owner.
+* You are the owner of the table.
+* You have the ALTER, ALTER_TABLE, CREATE, or CREATE_INDEX component privilege for the SQL_OPERATIONS component.
++
+NOTE: In this case, if you create an index in a private schema, it will be owned by the schema owner.
+
+[[create_index_limits]]
+==== Limits on Indexes
+
+For nonunique indexes, the sum of the lengths of the columns in the index plus the sum of the length of
+the clustering key of the underlying table cannot exceed 2048 bytes.
+
+No restriction exists on the number of indexes per table.
+
+[[create_index_examples]]
+=== Examples of CREATE INDEX
+
+* This example creates an index on two columns of a table:
++
+[source,sql]
+----
+CREATE INDEX xempname
+ON persnl.employee (last_name, first_name);
+----
+
+<<<
+[[create_library_statement]]
+== CREATE LIBRARY Statement
+
+* <<create_library_syntax,Syntax Description of CREATE LIBRARY>>
+* <<create_library_considerations,Considerations for CREATE LIBRARY>>
+* <<create_library_examples,Examples of CREATE LIBRARY>>
+
+The CREATE LIBRARY statement registers a library object in a Trafodion database. A library object
+can be an SPJ's JAR file or a UDF's library file.
+
+CREATE LIBRARY is a Trafodion SQL extension.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run
+this statement inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT
+is OFF. To run this statement, AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+CREATE LIBRARY [[catalog-name.]schema-name.]library-name
+   FILE 'library-filename'
+   [HOST NAME 'host-name']
+   [LOCAL FILE 'host-filename']
+```
+
+[[create_library_syntax]]
+=== Syntax Description of CREATE LIBRARY
+
+* `[[_catalog-name_.]_schema-name_.]_library-name_`
++
+specifies the ANSI logical name of the library object, where each part of the name is a valid SQL
+identifier with a maximum of 128 characters. Specify a name that is unique and does not exist for
+libraries in the same schema. If you do not fully qualify the library name, Trafodion SQ qualifies
+it according to the schema of the current session. For more information, see <<Identifiers,Identifiers>>
+and <<Database_Object_Names,Database Object Names>>.
+
+<<<
+* `FILE '_library-filename_'`
++
+specifies the full path of a deployed library file, which either an SPJ's JAR file or a UDF's library file.
++
+NOTE: Make sure to upload the library file to the Trafodion cluster and then copy the library file to the
+same directory on all the nodes in the cluster before running the CREATE LIBRARY statement. Otherwise, you
+will see an error message indicating that the JAR or DLL file was not found.
+
+* `HOST NAME '_host-name_'`
++
+specifies the name of the client host machine where the deployed file resides.
+
+* `LOCAL FILE '_host-filename_'`
++
+specifies the path on the client host machine where the deployed file is stored.
+
+[[create_library_considerations]]
+=== Considerations for CREATE LIBRARY
+
+* A library object cannot refer to a library file referenced by another library object. If the _library-filename_
+is in use by another library object, the CREATE LIBRARY command will fail.
+* The _library-filename_ must specify an existing file. Otherwise, the CREATE LIBRARY command will fail.
+* The CREATE LIBRARY command does not verify that the specified _library-filename_ is a valid executable file.
+* HOST NAME and LOCAL FILE are position dependent.
+
+<<<
+[[create_library_required_privileges]]
+==== Required Privileges
+
+To issue a CREATE LIBRARY statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are creating the library in a shared schema and have the MANAGE_LIBRARY privilege.
+* You are the private schema owner and have the MANAGE_LIBRARY privilege.
+* You have the CREATE or CREATE_LIBRARY component privilege for the SQL_OPERATIONS component and have
+the MANAGE_LIBRARY privilege.
++
+NOTE: In this case, if you create a library in a private schema, it will be owned by the schema owner.
+
+[[create_library_examples]]
+=== Examples of CREATE LIBRARY
+
+* This CREATE LIBRARY statement registers a library named SALESLIB in the SALES schema for a JAR file (SPJs):
++
+[source,sql]
+----
+CREATE LIBRARY sales.saleslib FILE '/opt/home/trafodion/spjjars/Sales.jar';
+----
+
+* This CREATE LIBRARY statement registers a library named MYUDFS in the default schema for a library file (UDFs):
++
+[source,sql]
+----
+CREATE LIBRARY myudfs FILE $UDFLIB;
+----
+
+<<<
+[[create_procedure_statement]]
+== CREATE PROCEDURE Statement
+
+* <<create_procedure_syntax,Syntax Description of CREATE PROCEDURE>>
+* <<create_procedure_considerations,Considerations for CREATE PROCEDURE>>
+* <<create_procedure_examples,Examples of CREATE PROCEDURE>>
+
+The CREATE PROCEDURE statement registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
+inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
+AUTOCOMMIT must be turned ON (the default) for the session.
+
+```
+CREATE PROCEDURE procedure-ref([sql-parameter-list])
+   EXTERNAL NAME 'java-method-name [java-signature]'
+   LIBRARY [[catalog-name.]schema-name.]library-name
+   [EXTERNAL SECURITY external-security-type]
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   [NO SQL | CONTAINS SQL | MODIFIES SQL DATA | READS SQL DATA]
+   [DYNAMIC RESULT SETS integer]
+   [TRANSACTION REQUIRED | NO TRANSACTION REQUIRED]
+   [DETERMINISTIC | NOT DETERMINISTIC]
+   [NO ISOLATE | ISOLATE]
+
+procedure-ref is:
+   [[catalog-name.]schema-name.]procedure-name
+
+sql-parameter-list is:
+   sql-parameter[, sql-parameter]...
+
+sql-parameter is:
+   [parameter-mode] [sql-identifier] sql-datatype
+
+parameter-mode is:
+   IN
+ | OUT
+ | INOUT
+
+java-method-name is:
+   [package-name.]class-name.method-name
+
+java-signature is:
+   ([java-parameter-list])
+
+java-parameter-list is:
+   java-datatype[, java-datatype]...
+
+external-security-type is:
+   DEFINER
+ | INVOKER
+```
+
+NOTE: Delimited variables in this syntax diagram are case-sensitive. Case-sensitive variables include _java-method-name_,
+_java-signature_, and _class-file-path_, and any delimited part of the _procedure-ref_.
+The remaining syntax is not case-sensitive.
+
+<<<
+[[create_procedure_syntax]]
+=== Syntax Description of CREATE PROCEDURE
+
+* `_procedure-ref_([_sql-parameter_[, _sql-parameter_]&#8230;])`
++
+specifies the name of the stored procedure in Java (SPJ) and any SQL parameters that correspond to the signature of
+the SPJ methaod.
+
+** `_procedure-ref_`
++
+specifies an ANSI logical name of the form:
++
+`[[_catalog-name_.]_schema-name_.]_procedure-name_`
++
+where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information,
+see <<Identifiers,Identifiers>> and <<Database_Object_Names,Database Object Names>>.
++
+Specify a name that is unique and does not exist for any procedure or function in the same schema. Trafodion SQL
+does not support the overloading of procedure names. That is, you cannot register the same procedure name more than
+once with different underlying SPJ methods.
++
+If you do not fully qualify the procedure name, Trafodion SQL qualifies it according to the schema of the current session.
+
+** _sql-parameter_
++
+specifies an SQL parameter that corresponds to the signature of the SPJ method:
++
+`[_parameter-mode_] [_sql-identifier_] _sql-datatype_`
+
+*** `_parameter-mode_`
++
+specifies the mode IN, OUT, or INOUT of a parameter. The default is IN.
+
+**** `IN`
++
+specifies a parameter that passes data to an SPJ.
+
+**** `OUT`
++
+specifies a parameter that accepts data from an SPJ. The parameter must be an array.
+
+**** `INOUT`
++
+specifies a parameter that passes data to and accepts data from an SPJ. The parameter must be an array.
+
+*** `_sql-identifier_`
++
+specifies an SQL identifier for the parameter. For more information, see <<Identifiers,Identifiers>>.
+
+*** `_sql-datatype_`
++
+specifies an SQL data type that corresponds to the Java parameter of the SPJ method.
++
+_sql-datatype_ can be:
++
+[cols="60%,40%",options="header"]
+|===
+| SQL Data Type | Maps to Java Data Type&#8230;
+| CHAR[ACTER] +
+CHAR[ACTER] VARYING +
+VARCHAR +
+PIC[TURE] X^1^ +
+NCHAR +
+NCHAR VARYING +
+NATIONAL CHAR[ACTER] +
+NATIONAL CHAR[ACTER] VARYING | java.lang.String
+| DATE | java.sql.Date
+| TIME | java.sql.Time
+| TIMESTAMP | java.sql.Timestamp
+| DEC[IMAL]^2^ +
+PIC[TURE] S9^3^ +
+NUMERIC (including NUMERIC with a precision greater than eighteen)^2^ | java.math.BigDecimal
+| SMALLINT^2^ | short
+| INT[EGER]^2^ | int or java.lang.Integer^4^
+| LARGEINT^2^ | long or java.lang.Long^4^
+| FLOAT | double or java.lang.Double^4^
+| REAL | float or java.lang.Float^4^
+| DOUBLE PRECISION | double or java.lang.Double^4^
+|===
++
+1. The Trafodion database stores PIC X as a CHAR data type.
+2. Numeric data types of SQL parameters must be SIGNED, which is the default in the Trafodion database.
+3. The Trafodion database stores PIC S9 as a DECIMAL or NUMERIC data type.
+4. By default, the SQL data type maps to a Java primitive type. The SQL data type maps to a Java wrapper class
+only if you specify the wrapper class in the Java signature of the EXTERNAL NAME clause.
++
+For more information, see <<Data_Types,Data Types>>.
+
+* `EXTERNAL NAME '_java-method-name_ [_java-signature_]'`
+
+** `_java-method-name_`
++
+specifies the case-sensitive name of the SPJ method of the form:
++
+`[_package-name_.]_class-name_._method-name_`
++
+The Java method must exist in a Java class file, _class-name_.class, within a library registered in the database.
+The Java method must be defined as public and static and have a return type of void.
++
+If the class file that contains the SPJ method is part of a package, you must also specify the package name.
+If you do not specify the package name, the CREATE PROCEDURE statement fails to register the SPJ.
+
+** `_java-signature_`
++
+specifies the signature of the SPJ method and consists of:
++
+`([_java-datatype_[, _java-datatype_]&#8230;])`
++
+The Java signature is necessary only if you want to specify a Java wrapper class (for example, java.lang.Integer) instead of a Java
+primitive data type (for example, int). An SQL data type maps to a Java primitive data type by default.
++
+The Java signature is case-sensitive and must be placed within parentheses, such as (java.lang.Integer, java.lang.Integer).
+The signature must specify each of the parameter data types in the order they appear in the Java method definition within
+the class file. Each Java data type that corresponds to an OUT or INOUT parameter must befollowed by empty square
+brackets ([ ]), such as java.lang.Integer[].
+
+<<<
+*** `_java-datatype_`
++
+specifies a mappable Java data type. For the mapping of the Java data types to SQL data types, see _sql-datatype_.
+
+* `LIBRARY [[_catalog-name_.]_schema-name_.]_library-name_`
++
+specifies the ANSI logical name of a library containing the SPJ method. If you do not fully qualify the library name,
+Trafodion SQL qualifies it according to the schema of the current session.
+
+* `EXTERNAL SECURITY _external-security-type_`
++
+determines the privileges, or rights, that users have when executing (or calling) the SPJ. An SPJ can have one of these
+types of external security:
+
+** INVOKER determines that users can execute, or invoke, the stored procedure using the privileges of the user who invokes
+the stored procedure. This behavior is referred to as _invoker rights_ and is the default behavior if EXTERNAL SECURITY is
+not specified. Invoker rights allow a user who has the execute privilege on the SPJ to call the SPJ using his or her existing
+privileges. In this case, the user must be granted privileges to access the underlying database objects on which the SPJ operates.
++
+NOTE: Granting a user privileges to the underlying database objects gives the user direct access to those database objects,
+which could pose a risk to more sensitive or critical data to which users should not have access. For example, an SPJ
+might operate on a subset of the data in an underlying database object, but that database object might contain other
+more sensitive or critical data to which users should not have access.
+
+** DEFINER determines that users can execute, or invoke, the stored procedure using the privileges of the user who created
+the stored procedure. This behavior is referred to as _definer rights_. The advantage of definer rights is that users are
+allowed to manipulate data by invoking the stored procedure without having to be granted privileges to the underlying
+database objects. That way, users are restricted from directly accessing or manipulating more sensitive or critical data in
+the database. However, be careful about the users to whom you grant execute privilege on an SPJ with definer external security
+because those users will be able to execute the SPJ without requiring privileges to the underlying database objects.
+
+<<<
+* `LANGUAGE JAVA`
++
+specifies that the external user-defined routine is written in the Java language.
+
+* `PARAMETER STYLE JAVA`
++
+specifies that the run-time conventions for arguments passed to the external user-defined routine are those of the Java language.
+
+* `NO SQL`
++
+specifies that the SPJ cannot perform SQL operations.
+
+* `CONTAINS SQL | MODIFIES SQL DATA | READS SQL DATA`
++
+specifies that the SPJ can perform SQL operations. All these options behave the same as CONTAINS SQL, meaning that the SPJ
+can read and modify SQL data. Use one of these options to register a method that contains SQL statements. If you do not specify
+an SQL access mode, the default is CONTAINS SQL.
+
+* `DYNAMIC RESULT SETS _integer_`
++
+specifies the maximum number of result sets that the SPJ can return. This option is applicable only if the method signature
+contains a java.sql.ResultSet[] object. If the method contains a result set object, the valid range is 1 to 255 inclusive.
+The actual number of result sets returned by the SPJ method can be less than or equal to this number. If you do not specify
+this option, the default value is 0 (zero), meaning that the SPJ does not return result sets.
+
+* `TRANSACTION REQUIRED | NO TRANSACTION REQUIRED`
++
+determines whether the SPJ must run in a transaction inherited from the calling application (TRANSACTION REQUIRED, the default
+option) or whether the SPJ runs without inheriting the calling application’s transaction (NO TRANSACTION REQUIRED). Typically,
+you will want the stored procedure to inherit the transaction from the calling application. However, if the SPJ method does
+not access the database or if you want the stored procedure to manage its own transactions, you should set the stored
+procedure’s transaction attribute to NO TRANSACTION REQUIRED. For more information, see
+<<Effects_of_the_Transaction_Attribute_on_SPJs,Effects of the Transaction Attribute on SPJs>>.
+
+<<<
+* `DETERMINISTIC | NOT DETERMINISTIC`
++
+specifies whether the SPJ always returns the same values for OUT and INOUT parameters for a given set of argument values
+(DETERMINISTIC) or does not return the same values (NOT DETERMINISTIC, the default option). If you specify DETERMINISTIC,
+Trafodion SQL is not required to call the SPJ each time to produce results; instead, Trafodion SQL caches the results and
+reuses them during subsequent calls, thus optimizing the CALL statement.
+
+* `NO ISOLATE | ISOLATE`
++
+specifies that the SPJ executes either in the environment of the database server (NO ISOLATE) or in an isolated environment
+(ISOLATE, the default option). Trafodion SQL allows both options but always executes the SPJ in the UDR server process (ISOLATE).
+
+[[create_procedure_considerations]]
+=== Considerations for CREATE PROCEDURE
+
+[[create_procedure_required_privileges]]
+==== Required Privileges
+
+To issue a CREATE PROCEDURE statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are creating the procedure in a shared schema, and you have the USAGE (or ALL) privilege on the library that will be
+used in the creation of the stored procedure. The USAGE privilege provides you with read access to the library’s underlying
+JAR file, which contains the SPJ Java method.
+* You are the private schema owner and have the USAGE (or ALL) privilege on the library that will be used in the creation of
+the stored procedure. The USAGE privilege provides you with read access to the library’s underlying JAR file, which contains
+the SPJ Java method.
+* You have the CREATE or CREATE_ROUTINE component level privilege for the SQL_OPERATIONS component and have the USAGE (or ALL)
+privilege on the library that will be used in the creation of the stored procedure. The USAGE privilege provides you with read
+access to the library’s underlying JAR file, which contains the SPJ Java method.
++
+NOTE: In this case, if you create a stored procedure in a private schema, it will be owned by the schema owner.
+
+<<<
+[[effects_of_the_transaction_attribute_on_spjs]]
+==== Effects of the Transaction Attribute on SPJs
+
+===== Transaction Required
+
+_Using Transaction Control Statements or Methods_
+
+If you specify TRANSACTION REQUIRED (the default option), a CALL statement automatically initiates a transaction if there is
+no active transaction. In this case, you should not use transaction control statements (or equivalent JDBC transaction methods)
+in the SPJ method. Transaction control statements include COMMIT WORK and ROLLBACK WORK, and the equivalent JDBC transaction
+methods are Connection.commit() and Connection.rollback(). If you try to use transaction control statements or methods in an
+SPJ method when the stored procedure’s transaction attribute is set to TRANSACTION REQUIRED, the transaction control statements
+or methods in the SPJ method are ignored, and the Java virtual machine (JVM) does not report any errors or warnings. When the
+stored procedure’s transaction attribute is set to TRANSACTION REQUIRED, you should rely on the transaction control statements
+or methods in the application that calls the stored procedure and allow the calling application to manage the transactions.
+
+_Committing or Rolling Back a Transaction_
+
+If you do not use transaction control statements in the calling application, the transaction initiated by the CALL statement
+might not automatically commit or roll back changes to the database. When AUTOCOMMIT is ON (the default setting), the database
+engine automatically commits or rolls back any changes made to the database at the end of the CALL statement execution. However,
+when AUTOCOMMIT is OFF, the current transaction remains active until the end of the client session or until you explicitly commit
+or roll back the transaction. To ensure an atomic unit of work when calling an SPJ, use the COMMIT WORK statement in the calling
+application to commit the transaction when the CALL statement succeeds, and use the ROLLBACK WORK statement to roll back the
+transaction when the CALL statement fails.
+
+<<<
+===== No Transaction Required
+
+In some cases, you might not want the SPJ method to inherit the transaction from the calling application. Instead, you might want
+the stored procedure to manage its own transactions or to run without a transaction. Not inheriting the calling application’s
+transaction is useful in these cases:
+
+* The stored procedure performs several long-running operations, such as multiple DDL or table maintenance operations, on the
+database. In this case, you might want to commit those operations periodically from within the SPJ method to avoid locking tables
+for a long time.
+* The stored procedure performs certain SQL operations that must run without an active transaction. For example, INSERT, UPDATE,
+and DELETE statements with the WITH NO ROLLBACK option are rejected when a transaction is already active, as is the case when a
+stored procedure inherits a transaction from the calling application. The PURGEDATA utility is also rejected when a transaction
+is already active.
+* The stored procedure does not access the database. In this case, the stored procedure does not need to inherit the transaction
+from the calling application. By setting the stored procedure’s transaction attribute to NO TRANSACTION REQUIRED, you can avoid
+the overhead of the calling application’s transaction being propagated to the stored procedure.
+
+In these cases, you should set the stored procedure’s transaction attribute to NO TRANSACTION REQUIRED when creating the stored
+procedure.
+
+If you specify NO TRANSACTION REQUIRED and if the SPJ method creates a JDBC default connection, that connection will have autocommit
+enabled by default. You can either use the autocommit transactions or disable autocommit (conn.setAutoCommit(false);) and use the
+JDBC transaction methods, Connection.commit() and Connection.rollback(), to commit or roll back work where needed.
+
+<<<
+[[create_procedure_examples]]
+=== Examples of CREATE PROCEDURE
+
+* This CREATE PROCEDURE statement registers an SPJ named LOWERPRICE, which does not accept any arguments:
++
+[source,sql]
+----
+SET SCHEMA SALES;
+
+CREATE PROCEDURE lowerprice()
+   EXTERNAL NAME 'Sales.lowerPrice'
+   LIBRARY saleslib
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   MODIFIES SQL DATA;
+----
++
+Because the procedure name is not qualified by a catalog and schema, Trafodion SQL qualifies it according to the current
+session settings, where the catalog is TRAFODION (by default) and the schema is set to SALES. Since the procedure needs
+to be able to read and modify SQL data, MODIFIES SQL DATA is specified in the CREATE PROCEDURE statement.
++
+To call this SPJ, use this CALL statement:
++
+[source,sql]
+----
+CALL lowerprice();
+----
++
+The LOWERPRICE procedure lowers the price of items with 50 or fewer orders by 10 percent in the database.
+
+* This CREATE PROCEDURE statement registers an SPJ named TOTALPRICE, which accepts three input parameters and returns a numeric value, the
+total price to an INOUT parameter:
++
+[source,sql]
+----
+CREATE PROCEDURE trafodion.sales.totalprice(IN qty NUMERIC (18),
+                                            IN rate VARCHAR (10),
+                                            INOUT price NUMERIC (18,2))
+   EXTERNAL NAME 'Sales.totalPrice'
+   LIBRARY sales.saleslib
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   NO SQL;
+----
++
+<<<
++
+To call this SPJ in TrafCI, use these statements:
++
+[source,sql]
+----
+SET PARAM ?p 10.00;
+CALL sales.totalprice(23, 'standard', ?p);
+
+p
+--------------------
+              253.97
+
+--- SQL operation complete.
+----
++
+Since the procedure does not read and modify any SQL data, NO SQL is specified in the CREATE PROCEDURE statement.
+
+* This CREATE PROCEDURE statement registers an SPJ named MONTHLYORDERS, which accepts an integer value for the month
+and returns the number of orders:
++
+[source,sql]
+----
+CREATE PROCEDURE sales.monthlyorders(IN INT, OUT number INT)
+   EXTERNAL NAME 'Sales.numMonthlyOrders (int, java.lang.Integer[])'
+   LIBRARY sales.saleslib
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA;
+----
++
+Because the OUT parameter is supposed to map to the Java wrapper class, java.lang.Integer, you must specify the Java
+signature in the EXTERNAL NAME clause. To invoke this SPJ, use this CALL statement:
++
+[source,sql]
+----
+CALL sales.monthlyorders(3, ?);
+
+ORDERNUM
+-----------
+          4
+
+--- SQL operation complete.
+----
+
+<<<
+* This CREATE PROCEDURE statement registers an SPJ named ORDERSUMMARY, which accepts a date (formatted as a string) and
+returns information about the orders on or after that date.
++
+[source,sql]
+----
+CREATE PROCEDURE sales.ordersummary(IN on_or_after_date VARCHAR (20),
+                                    OUT num_orders LARGEINT)
+   EXTERNAL NAME 'Sales.orderSummary (int, long[])'
+   LIBRARY sales.saleslib
+   EXTERNAL SECURITY invoker
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA
+   DYNAMIC RESULT SETS 2;
+----
++
+To invoke this SPJ, use this CALL statement:
++
+[source,sql]
+----
+CALL neo.sales.ordersummary('01-01-2014', ?);
+----
++
+The ORDERSUMMARY procedure returns this information about the orders on or after the specified date, 01-01-2014:
++
+[source,sql]
+----
+NUM_ORDERS
+--------------------
+                  13
+
+ORDERNUM NUM_PARTS            AMOUNT               ORDER_DATE LAST_NAME
+-------- -------------------- -------------------- ---------- --------------------
+  100210                    4             19020.00 2014-04-10 HUGHES
+  100250                    4             22625.00 2014-01-23 HUGHES
+  101220                    4             45525.00 2014-07-21 SCHNABL
+  ... ... ... ... ...
+
+--- 13 row(s) selected.
+
+ORDERNUM PARTNUM UNIT_PRICE QTY_ORDERED PARTDESC
+-------- ------- ---------- ----------- ------------------
+  100210     244    3500.00           3 PC GOLD, 30 MB
+  100210    2001    1100.00           3 GRAPHIC PRINTER,M1
+  100210    2403     620.00           6 DAISY PRINTER,T2
+  ... ... ... ... ...
+
+--- 70 row(s) selected.
+
+--- SQL operation complete.
+----

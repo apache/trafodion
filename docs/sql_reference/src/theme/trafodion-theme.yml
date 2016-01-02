@@ -1,0 +1,52 @@
+title_page:
+  align: left
+  title_font_size: 36
+  title_font_color: #3188ac
+  subtitle_font_size: 18
+#  background_image: cover.png
+
+page:
+  layout: portrait
+# top,right,bottom,left
+  margin: [0.75in, 0.5in, 0.75in, 0.5in]
+  size: letter
+base:
+  font_color: #333333
+  line_height_length: 17
+  line_height: $base_line_height_length / $base_font_size
+vertical_rhythm: $base_line_height_length
+heading:
+  font_color: #3188ac
+  font_size: 17
+  font_style: bold
+  line_height: 1.2
+  margin_bottom: $vertical_rhythm
+link:
+  font_color: #002FA7
+outline_list:
+  indent: $base_font_size * 1.5
+header:
+  height: 0.75in
+  line_height: 1
+  recto_content:
+    center: '{document-title}'
+  verso_content:
+    center: '{document-title}'
+footer:
+  height: 0.75in
+  line_height: 1
+  recto_content:
+    right: '{chapter-title} | *{page-number}*'
+  verso_content:
+    left: '*{page-number}* | {chapter-title}'
+image:
+  align: center
+caption:
+  align: center
+  font_color: #FF0000
+  font_size: 10
+table:
+  even_row_background_color: #f9f9f9
+  border_width: 0
+code:
+  font_family: Courier
