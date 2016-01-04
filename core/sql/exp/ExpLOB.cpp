@@ -579,12 +579,13 @@ ExpLOBiud::ExpLOBiud(OperatorTypeEnum oper_type,
 ////////////////////////////////////////////////////////
 ExpLOBinsert::ExpLOBinsert(){};
 ExpLOBinsert::ExpLOBinsert(OperatorTypeEnum oper_type,
-			   Attributes ** attr, 
+			   Lng32 numAttrs,
+			   Attributes ** attr,			   
 			   Int64 objectUID,
 			   short descSchNameLen,
 			   char * descSchName,
 			   Space * space)
-  : ExpLOBiud(oper_type, 2, attr, objectUID, descSchNameLen, descSchName, space),
+  : ExpLOBiud(oper_type, numAttrs, attr, objectUID, descSchNameLen, descSchName, space),
     //    objectUID_(objectUID),
     //    descSchNameLen_(descSchNameLen),
     liFlags_(0)
@@ -657,8 +658,10 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     so = Lob_Memory;
   else if (fromLob())
     so = Lob_Foreign_Lob;
+  else if (fromBuffer())
+    so = Lob_Buffer;
 
-  Int64 tempLobLen = getOperand(1)->getLength();
+  
 
   Lng32 waitedOp = 0;
 #ifdef __EID
@@ -691,7 +694,10 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
       str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
       
     }
- 
+  if (so == Lob_Buffer)
+    {
+      memcpy(&lobLen, op_data[2],sizeof(Int64));
+    }
   LobsOper lo ;
  
   if (lobOperStatus == CHECK_STATUS_)
@@ -806,6 +812,11 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
     }
     else
       lobData = op_data[1];
+  if (fromBuffer())
+    {
+      memcpy(&lobLen, op_data[2],sizeof(Int64)); // user specified buffer length
+      memcpy(lobData,op_data[1],sizeof(Int64)); // user buffer address
+    }
   LobsOper lo ;
  
   if (lobOperStatus == CHECK_STATUS_)
@@ -822,6 +833,8 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
     so = Lob_Memory;
   else if (fromLob())
     so = Lob_Foreign_Lob;
+  else if(fromBuffer())
+    so = Lob_Buffer;
 
  
   Lng32 waitedOp = 0;
@@ -1108,27 +1121,27 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   short sSchNameLen = 0;
   char sSchName[500];
 
- if (getOperand(2)->getNullFlag() &&
-     nullValue_)
-   {
-     ex_expr::exp_return_type err = insertDesc(op_data, h, diagsArea);
-     if (err == ex_expr::EXPR_ERROR)
-       return err;
+  if (getOperand(2)->getNullFlag() &&
+      nullValue_)
+    {
+      ex_expr::exp_return_type err = insertDesc(op_data, h, diagsArea);
+      if (err == ex_expr::EXPR_ERROR)
+	return err;
      
-     char * handle = op_data[0];
-     Lng32 handleLen = getOperand(0)->getLength();
-     err = insertData(handleLen, handle, op_data, h, diagsArea);
+      char * handle = op_data[0];
+      handleLen = getOperand(0)->getLength();
+      err = insertData(handleLen, handle, op_data, h, diagsArea);
      
-     return err;
+      return err;
 
-   }
- else
-   {
-     lobHandle = op_data[2];
+    }
+  else
+    {
+      lobHandle = op_data[2];
 
-     handleLen = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
-   }
-
+      handleLen = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+    }
+     
   extractFromLOBhandle(&sFlags, &sLobType, &sLobNum, &sUid,
 		       &sDescSyskey, &sDescTS, 
 		       &sSchNameLen, sSchName,
@@ -1171,6 +1184,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     so = Lob_Memory;
   else if (fromLob())
     so = Lob_Foreign_Lob;
+  else if (fromBuffer())
+    so= Lob_Buffer;
 
   Lng32 waitedOp = 0;
 #ifdef __EID
@@ -1190,7 +1205,11 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   //  Int64 offset = 0;
   Int64 lobLen = getOperand(1)->getLength();
   char * data = op_data[1];
-
+  if (fromBuffer())
+    {
+      memcpy(&lobLen, op_data[3],sizeof(Int64)); // user specified buffer length
+      memcpy(data,op_data[1],sizeof(Int64)); // user buffer address
+    }
   if (isAppend())
     {
       rc = ExpLOBInterfaceUpdateAppend
@@ -1199,7 +1218,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 getLobHdfsPort(),
 	 tgtLobName, 
 	 lobStorageLocation(),
-	 handleLen, op_data[2],
+	 handleLen, lobHandle,
 	 &outHandleLen_, outLobHandle_,
 	 requestTag_,
 	 getExeGlobals()->lobGlobals()->xnId(),
@@ -1222,7 +1241,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 getLobHdfsPort(),
 	 tgtLobName, 
 	 lobStorageLocation(),
-	 handleLen, op_data[2],
+	 handleLen, lobHandle,
 	 &outHandleLen_, outLobHandle_,
 	 requestTag_,
 	 getExeGlobals()->lobGlobals()->xnId(),
@@ -1563,12 +1582,13 @@ ex_expr::exp_return_type ExpLOBconvertHandle::eval(char *op_data[],
 ////////////////////////////////////////////////////////
 ExpLOBload::ExpLOBload(){};
 ExpLOBload::ExpLOBload(OperatorTypeEnum oper_type,
+		       Lng32 numAttrs,
 		       Attributes ** attr, 
 		       Int64 objectUID,
 		       short descSchNameLen,
 		       char * descSchName,
 		       Space * space)
-  : ExpLOBinsert(oper_type, attr, objectUID, 
+  : ExpLOBinsert(oper_type, numAttrs,attr, objectUID, 
 		 descSchNameLen, descSchName, space),
     llFlags_(0)
 {

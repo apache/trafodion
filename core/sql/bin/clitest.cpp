@@ -79,6 +79,10 @@ int main(int argc, const char * argv[])
       cout << "-------------------------------------------"<<endl;
       cout << "Blob test extract to buffer         1      "<< endl;
       cout << "Blob test extract to file in chunks 2      "<< endl;
+      cout << "Blob test to insert to lob column   3     "<< endl;
+      cout << "Blob test to update lob column      4     "<< endl;
+      cout << "Blob test to append to lob column   5      "<< endl;
+
       return 0;
     }
   Int32 retcode = 0;
@@ -211,8 +215,50 @@ int main(int argc, const char * argv[])
       }
      
       break;
+    
+    case 3:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test insert lobdata from a buffer " << endl;
+	cout << "Input lob table name (1st int column, 2nd blob column:" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name : " << tablename << endl;
+	retcode = insertBufferToLob(cliGlob,tablename);
+	return retcode;
+      }
+      break;
+    case 4:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test update lobdata from a buffer " << endl;
+	cout << "Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name (1st int column ,2nd blob column): " << tablename << endl;
+	cout << "Input lob column name to update :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+	retcode = updateBufferToLob(cliGlob,tablename,columnname);
+	return retcode;
+      }
+      break;
+    case 5:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test update append lobdata from a buffer " << endl;
+	cout << "Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name (1st int column , 2nd blob column: " << tablename << endl;
+	cout << "Input lob column name to update :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+	retcode = updateAppendBufferToLob(cliGlob,tablename,columnname);
+	return retcode;
+      }
+      break;
     }
-  
   
   return 0;
   

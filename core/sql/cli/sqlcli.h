@@ -409,7 +409,9 @@ enum SQLTYPE_CODE {
 
     /* LONG VARCHAR/ODBC CHARACTER VARYING */
     SQLTYPECODE_VARCHAR_LONG  = -1,		/* ## NEGATIVE??? */
-
+    /* BLOB TYPE */
+    SQLTYPECODE_BLOB  = -602,
+    SQLTYPECODE_CLOB  = -603,
     /* no ANSI value 13 */
 
     /* BIT */

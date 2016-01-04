@@ -492,7 +492,11 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
   Int64 savedTgtLobLen = tgtLobLen;
   Ex_Lob_Error status;
   Int64 cliError = -1;
-
+  Int64 srcLen = 0;
+  if(so == Lob_Memory)
+    srcLen = strlen(srcLobData);
+  else if (so == Lob_Buffer)
+    srcLen = tgtLobLen;
   err = ExLobsOper(tgtLobName, 
                    lobHandle, handleLen, 
 		   lobHdfsServer, lobHdfsPort, // hdfs server/port
@@ -500,7 +504,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 		   tgtDescSyskey, dummyParam, operLen,
                    0, dummyParam, status, cliError,
                    lobStorageLocation, Lob_HDFS_File,
-                   srcLobData, strlen(srcLobData), //strlen(srcLobData),
+                   srcLobData, srcLen, //strlen(srcLobData),
 		   0,NULL,
                    Lob_Append,
                    so,
@@ -570,6 +574,11 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
   Int64 savedTgtLobLen = tgtLobLen;
   Ex_Lob_Error status;
   Int64 cliError = -1;
+  Int64 sourceLen = 0;
+  if(so == Lob_Memory)
+    sourceLen = strlen(srcLobData);
+  else if (so == Lob_Buffer)
+    sourceLen = tgtLobLen;
 
   err = ExLobsOper(tgtLobName, 
                    lobHandle, handleLen, 
@@ -578,7 +587,7 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 		   tgtDescSyskey, dummyParam, operLen,
                    0, dummyParam, status, cliError,
                    lobStorageLocation, Lob_HDFS_File,
-                   srcLobData, strlen(srcLobData), //strlen(srcLobData),
+                   srcLobData, sourceLen, 
 		   0,NULL,
                    Lob_Update,
                    so,

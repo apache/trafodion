@@ -37,3 +37,6 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
 			 char *lobColumnName, char *tableName);
 Int32 extractLobToFileInChunks(CliGlobals *cliglob, char * lobHandle, char *filename, Int64 &lengthOfLob, 
 			 char *lobColumnName, char *tableName);
+Int32 insertBufferToLob(CliGlobals *cliglob,char *tbaleName);
+Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName);
+Int32 updateAppendBufferToLob(CliGlobals *cliGlob, char *tableName, char *columnName);

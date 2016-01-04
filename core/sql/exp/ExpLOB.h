@@ -430,7 +430,15 @@ class ExpLOBiud : public ExpLOBoper {
   {
     (v) ? liudFlags_ |= FROM_STRING: liudFlags_ &= ~FROM_STRING;
   };
+  NA_EIDPROC NABoolean fromBuffer()
+  {
+    return ((liudFlags_ & FROM_BUFFER) != 0);
+  };
 
+  NA_EIDPROC inline void setFromBuffer(NABoolean v)
+  {
+    (v) ? liudFlags_ |= FROM_BUFFER: liudFlags_ &= ~FROM_BUFFER;
+  };
   NA_EIDPROC NABoolean fromFile()
   {
     return ((liudFlags_ & FROM_FILE) != 0);
@@ -481,7 +489,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_FILE          = 0x0004,
     FROM_LOAD          = 0x0008,
     FROM_LOB           = 0x0010,
-    FROM_EXTERNAL      = 0x0020
+    FROM_EXTERNAL      = 0x0020,
+    FROM_BUFFER        = 0x0040
   };
 
   Lng32 liudFlags_;
@@ -491,6 +500,7 @@ class ExpLOBiud : public ExpLOBoper {
 class ExpLOBinsert : public ExpLOBiud {
 public:
   ExpLOBinsert(OperatorTypeEnum oper_type,
+	       Lng32 numAttrs,
 	       Attributes ** attr, 
 	       Int64 objectUID,
 	       short descSchNameLen,
@@ -870,6 +880,7 @@ public:
 class ExpLOBload : public ExpLOBinsert {
 public:
   ExpLOBload(OperatorTypeEnum oper_type,
+	     Lng32 numAttrs,
 	     Attributes ** attr, 
 	     Int64 objectUID,
 	     short descSchNameLen,

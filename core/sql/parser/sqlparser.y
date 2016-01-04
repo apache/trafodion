@@ -12680,9 +12680,14 @@ insert_obj_to_lob_function :
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
 				}			       
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION  value_expression',' TOK_SIZE value_expression')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBinsert( bufAddr, bufSize, LOBoper::BUFFER_, FALSE);
 				}
                           | TOK_FILETOLOB '(' character_literal_sbyte ')'
 			        {
@@ -12708,45 +12713,55 @@ insert_obj_to_lob_function :
 update_obj_to_lob_function : 
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::STRING_, FALSE);
 				}
 			  | TOK_STRINGTOLOB '(' value_expression ',' TOK_APPEND ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,NULL, LOBoper::STRING_, TRUE);
 				}
                           | TOK_FILETOLOB '('character_literal_sbyte ')'
 			        {
 				 
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,LOBoper::FILE_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,NULL,LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '('character_literal_sbyte ',' TOK_APPEND ')'
 			        {
 				 
-				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, LOBoper::FILE_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, NULL,LOBoper::FILE_, TRUE);
 				}
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION  value_expression ',' TOK_SIZE value_expression ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, FALSE);
 				}
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ',' TOK_APPEND')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ',' TOK_APPEND')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, TRUE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, TRUE);
 				}
 
 			  | TOK_EXTERNALTOLOB '(' literal ')'
 			        {
                                   YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::EXTERNAL_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_EXTERNALTOLOB '(' literal ',' literal ')'
 			        {
                                   YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, LOBoper::EXTERNAL_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, NULL,LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ',' TOK_APPEND ')'
 			        {
 				  YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::LOAD_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::LOAD_, TRUE);
 				}
 
 select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
@@ -19720,7 +19735,7 @@ set_clause : identifier '=' value_expression
 					ColReference(new (PARSERHEAP()) ColRefName(*$1, PARSERHEAP()));
 				      
 				      LOBupdate * nlu = 
-					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, 
+					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, lu->child(2),
 								     lu->getObj(), lu->isAppend());
 				      
 				      rc = nlu;

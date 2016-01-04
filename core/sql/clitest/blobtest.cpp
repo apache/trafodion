@@ -129,3 +129,94 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *fil
   return retcode;
 
 }
+
+
+Int32 insertBufferToLob(CliGlobals *cliglob, char *tableName)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // Extract lob data into a buffer.
+  char * query = new char [500];
+  
+ 
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobInsertLen = 10;
+  char *lobDataBuf = new char[lobInsertLen];
+  memcpy(lobDataBuf, "xxxxxyyyyy",10);
+  str_sprintf(query,"insert into %s values (1, buffertolob (LOCATION %Ld, SIZE %Ld))", tableName,(Int64)lobDataBuf, lobInsertLen);
+ 
+ 
+  retcode = cliInterface.executeImmediate(query);
+  if (retcode <0)
+    return retcode;
+
+  retcode = cliInterface.executeImmediate("commit work");
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}
+
+
+Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // Extract lob data into a buffer.
+  char * query = new char [500];
+  
+ 
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobUpdateLen = 10;
+  char *lobDataBuf = new char[lobUpdateLen];
+  memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
+  str_sprintf(query,"update %s set %s= buffertolob(LOCATION %Ld, SIZE %Ld)", tableName,columnName, (Int64)lobDataBuf, lobUpdateLen);
+ 
+ 
+  retcode = cliInterface.executeImmediate(query);
+  if (retcode <0)
+    return retcode;
+
+  retcode = cliInterface.executeImmediate("commit work");
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}
+
+
+
+Int32 updateAppendBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // Extract lob data into a buffer.
+  char * query = new char [500];
+  
+ 
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobUpdateLen = 10;
+  char *lobDataBuf = new char[lobUpdateLen];
+  memcpy(lobDataBuf, "aaaaabbbbbccccc",15);
+  str_sprintf(query,"update %s set %s=buffertolob (LOCATION %Ld, SIZE %Ld,append)", tableName, columnName,(Int64)lobDataBuf, lobUpdateLen);
+ 
+ 
+  retcode = cliInterface.executeImmediate(query);
+  if (retcode <0)
+    return retcode;
+
+  retcode = cliInterface.executeImmediate("commit work");
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}
