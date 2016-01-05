@@ -76,7 +76,6 @@ public class JAXBContextResolver implements ContextResolver<JAXBContext> {
 		  cTypes);
 	}
 
-	@Override
 	public JAXBContext getContext(Class<?> objectType) {
 		return (types.contains(objectType)) ? context : null;
   }

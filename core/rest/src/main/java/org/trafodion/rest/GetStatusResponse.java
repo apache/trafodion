@@ -20,7 +20,7 @@
 *
 * @@@ END COPYRIGHT @@@                                                          */
 
-package org.trafodion.dcs.rest;
+package org.trafodion.rest;
 
 import java.io.IOException;
 

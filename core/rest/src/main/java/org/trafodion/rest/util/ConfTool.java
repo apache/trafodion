@@ -21,7 +21,7 @@ under the License.
 * @@@ END COPYRIGHT @@@
  */
 
-package org.trafodion.dcs.util;
+package org.trafodion.rest.util;
 
 import org.apache.hadoop.conf.Configuration;
 import org.trafodion.rest.util.RestConfiguration;
