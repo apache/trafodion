@@ -53,7 +53,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
   Int64 lobExtractLen = 1000;
   char *lobDataBuf = new char[lobExtractLen];
   
-  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE %Ld) ", lobHandle, (Int64)lobDataBuf, lobExtractLen);
+  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE %Ld) ", lobHandle, (Int64)lobDataBuf, &lobExtractLen);
  
  
   retcode = cliInterface.executeImmediatePrepare(query);

@@ -760,7 +760,10 @@ Lng32 ExeCliInterface::getPtrAndLen(short entry, char* &ptr, Lng32 &len, short**
       datatype == REC_BYTE_V_ASCII_LONG ||
       datatype == REC_BYTE_V_DOUBLE ||
       datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH ||
-      datatype == SQLTYPECODE_VARCHAR_LONG)
+      datatype == SQLTYPECODE_VARCHAR_LONG ||
+      datatype == SQLTYPECODE_BLOB ||
+      datatype == SQLTYPECODE_CLOB
+      )
     {
 
       // Depending on value of len, first 2 or 4 bytes of data indicate

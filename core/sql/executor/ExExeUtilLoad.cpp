@@ -2923,7 +2923,8 @@ short ExExeUtilLobExtractTcb::work()
 		   }
 		if  (lobTdb().retrieveLength())
 		  {
-		    str_cpy_all((char *)lobTdb().getBufAddr(), (char *)&lobDataLen_,sizeof(Int64));
+		    if ((lobTdb().getBufAddr() != -1) && (lobTdb().getBufAddr() != 0))
+		      str_cpy_all((char *)lobTdb().getBufAddr(), (char *)&lobDataLen_,sizeof(Int64));
 		    str_sprintf(statusString_," LOB Length : %d", lobDataLen_);
 		    step_ = RETURN_STATUS_;
 		    break;	
