@@ -64,6 +64,7 @@ Microsoft(R) and Windows(R) are U.S. registered trademarks of Microsoft Corporat
 include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
 include::asciidoc/_chapters/sql_statements.adoc[]
+include::asciidoc/_chapters/sql_utilities.adoc[]
 
 = Appendix
 
