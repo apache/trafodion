@@ -49,7 +49,7 @@ The key process logs are as follows...(replace <user> with the user that started
 
 [[trouble-tools-builtin-webmaster]]
 ==== DcsMaster Web Interface
-The DcsMaster starts a web-interface on port 40010 by default.
+The DcsMaster starts a web-interface on port 24400 by default.
               
 The DcsMaster web UI lists created DcsServers (e.g., build info, zookeeper quorum, metrics, etc.).  Additionally, 
 the available DcsServers in the cluster are listed along with selected high-level metrics (listenerRequests, listenerCompletedRequests,
@@ -58,7 +58,7 @@ The DcsMaster web UI allows navigation to each DcsServer's web UI.
               
 [[trouble-tools-builtin-webserver]]
 ==== DcsServer Web Interface
-DcsServers starts a web-interface on port 40030 by default.
+DcsServers starts a web-interface on port 24420 by default.
               
 The DcsServer web UI lists its server metrics (build info, zookeeper quorum, usedHeap, maxHeap, etc.).
 

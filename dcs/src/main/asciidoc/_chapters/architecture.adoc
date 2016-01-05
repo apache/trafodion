@@ -78,20 +78,7 @@ functions such as listening for clients and restarting DcsServers. So, while the
 a time without the DcsMaster, it should be restarted as soon as possible.     
 
 === High Availability 
-DcsMaster backup servers may be configured by adding host names to the _conf/backup-masters_ file. They are started
-and stopped automatically by the _bin/master-backup.sh_ script whenever DCS is started or stopped. Every backup 
-DcsMaster follows the current leader DcsMaster watching for it to fail. If failure of the leader occurs the first
-backup DcsMaster in line for succession checks to see if floating IP is enabled. If enabled it executes
-the _bin/scripts/dcsbind.sh_ script to add a floating IP address to an interface on its node. It then continues
-with normal initialization and eventually starts listening for new client connections. It may take
-several seconds for the takeover to complete. When a failed node is restored a new DcsMaster backup may
-be started manually by executing the _bin/dcs-daemon.sh_ script on the restored node e.g.,
-
-----
->bin/dcs-daemon.sh start master
-----
-
-The newly created DcsMaster backup process will take its place at the back of the line waiting for the current DcsMaster leader to fail.
+Please refer to section <<ha.configurations, High Availability>>
          
 [[master-processes]]
 === Processes
