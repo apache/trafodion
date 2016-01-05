@@ -1,0 +1,297 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#==========================================
+# Install Trafodion build on a Cluster System
+#==========================================
+# Default values
+
+# This is the directory where all the Trafodion install scripts and
+# tar files are initially downloaded to
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+echo $TRAF_WORKDIR
+# input parameter defaults
+typeset NODES="$HOSTNAME"
+typeset DCS_SERVERS_PARM=""
+export PDSH="pdsh -R exec"
+export PDSH_SSH_CMD="ssh -q -n %h"
+export PDCP="pdcp -R ssh"
+
+TRAF_CONFIG=/etc/trafodion/trafodion_config
+source $TRAF_CONFIG
+#============================================
+
+#Info for log file
+
+echo "***INFO: Log file location $INSTALL_LOG"
+
+echo "***INFO: ***Log File: traf_config script***" >> $INSTALL_LOG
+echo >> $INSTALL_LOG
+echo "***INFO: Working directory: $TRAF_WORKDIR" >> $INSTALL_LOG
+echo "***INFO: Build: $BUILD_FILE" >> $INSTALL_LOG
+echo "***INFO: Install Path: $SQ_ROOT" >> $INSTALL_LOG
+echo "***INFO: DCS Build: $DCS_BUILD" >> $INSTALL_LOG
+echo "***INFO: Path to SQCONFIG: $SQCONFIG" >> $INSTALL_LOG
+echo "***INFO: Number of DCS Servers: $DCS_SERVERS_PARM" >> $INSTALL_LOG
+echo "***INFO: Run init_trafodion: $INIT_TRAFODION" >> $INSTALL_LOG
+echo "***INFO: Start Trafodion: $START" >> $INSTALL_LOG
+echo "***INFO: User Id: $USER_NAME" >> $INSTALL_LOG
+echo "***INFO: Hadoop UI URL: $URL_PORT" >> $INSTALL_LOG
+echo >> $INSTALL_LOG
+
+#============================================
+# Check if logged in as trafodion
+
+userId=$(whoami)
+
+if [[ "$userId" != "$TRAF_USER" ]]; then
+   echo "***ERROR: Logged in as user '$userId'" | tee -a $INSTALL_LOG
+   echo "***ERROR: Must be logged in as user 'trafodion'" | tee -a $INSTALL_LOG
+   echo "***ERROR: Exiting..." | tee -a $INSTALL_LOG
+   exit -1
+fi
+
+#============================================
+echo "*************************"
+echo "*************************"
+echo " Trafodion Configuration"
+echo "*************************"
+echo "*************************"
+#============================================
+# Check if an existing instance is up
+process_count=$(cstat -noheader 2>/dev/null | wc -l)
+if [ "$process_count" -ne 0 ]; then
+    echo "***ERROR: There appears to be $process_count Trafodion processes still running." | tee -a $INSTALL_LOG
+    echo "***ERROR: You can verify this with the 'cstat' command." | tee -a $INSTALL_LOG
+    echo "***ERROR: Please stop the current instance with sqstop before" | tee -a $INSTALL_LOG
+    echo "***ERROR: installing a new Trafodion build." | tee -a $INSTALL_LOG
+    exit -1
+fi
+
+#============================================
+# Create install directory
+mkdir -p $SQ_ROOT
+echo $SQ_ROOT
+
+if [[ -f $HOME/sqenvcom.sh ]]; then
+   echo "****INFO: Copying over sqenvcom.sh"
+   cp -rf $HOME/sqenvcom.sh $SQ_ROOT
+fi
+
+cd $SQ_ROOT
+
+# untar Trafodion build into install directory
+echo "***INFO: untarring build file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
+tar -xzf $TRAF_BUILD 2>&1 | tee -a $INSTALL_LOG
+if [ "$?" != "0" ]; then
+    echo "***ERROR: There was a problem untarring the Trafodion build file.  Check install log files for details." | tee -a $INSTALL_LOG
+    exit -1;
+fi
+
+
+#============================================
+# If an sqconfig file was specified, then we'll use it instead of the default
+if [ "$SQCONFIG" != "" ]; then
+    SQCONFIG_MASTER="$SQCONFIG"
+    if [[ ! -f "$SQCONFIG" ]]; then
+        echo "***ERROR: Specified SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+        exit -1
+    fi
+else
+    if [ "$node_count" -ne "1" ]; then
+        # For clusters this sqconfig file was generated when the Trafodion user was added
+        SQCONFIG_MASTER=$HOME/sqconfig
+        if [[ ! -f "$SQCONFIG_MASTER" ]]; then
+           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+           exit -1
+        fi
+    else
+        # For single node, we use the sqconfig in the build
+        SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
+         if [[ ! -f "$SQCONFIG_MASTER" ]]; then
+           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+           exit -1
+        fi
+    fi
+fi
+#============================================
+
+echo "***INFO: modifying .bashrc to set Trafodion environment variables" | tee -a $INSTALL_LOG
+cd $HOME
+cp .bashrc bashrc_temp
+# NOTE: have to use '@' as delimiter because the usual slash '/' doesn't work
+#       because $SQ_ROOT's value has slashes in it
+sed -e "s@export SQ_HOME=.*@export SQ_HOME=$SQ_ROOT@" <bashrc_temp >$HOME/.bashrc
+
+cp .bashrc bashrc_temp
+sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOME/.bashrc
+
+# Delete any existing MY_NODES and NODE_LIST from .bashrc
+#cp .bashrc bashrc_temp
+#grep -vE "MY_NODES|NODE_LIST" bashrc_temp > $HOME/.bashrc
+
+if [[ $node_count == "1" ]]; then
+
+   # since sqgen uses the existence of /usr/bin/pdsh to determine multi-node cluster
+   # and sqgen uses the existence of /usr/bin/pdcp to determine if it needs to copy
+   # files we will check for these here and warn the user to remove/rename these to
+   # head-off the confusing errors when running sqgen
+   if [ -f /usr/bin/pdsh ] || [ -f /usr/bin/pdcp ]; then
+      echo "***ERROR: This is a single node cluster yet /usr/bin/pdsh or /usr/bin/pdcp is installed on it." | tee -a $INSTALL_LOG
+      echo "***       Please uninstall or rename /usr/bin/pdsh and /usr/bin/pdcp temporarily." | tee -a $INSTALL_LOG
+      echo "***       Please reinstall or rename after successful install." | tee -a $INSTALL_LOG
+      exit -1
+   fi
+fi
+
+cp .bashrc bashrc_temp
+sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <bashrc_temp >$HOME/.bashrc
+cp .bashrc bashrc_temp
+sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <bashrc_temp >$HOME/.bashrc
+
+# re-source .bashrc to pick up these changes
+source ~/.bashrc
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying .bashrc file to all nodes" | tee -a $INSTALL_LOG
+    $PDCP $MY_NODES -x $HOSTNAME $HOME/.bashrc $HOME
+fi
+
+
+#==========================================
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying sqconfig file ($SQCONFIG_MASTER) to $SQ_ROOT/sql/scripts/sqconfig" | tee -a $INSTALL_LOG
+    cp $SQCONFIG_MASTER $SQ_ROOT/sql/scripts/sqconfig
+fi
+
+cd $SQ_ROOT
+
+#=================================================
+
+if [ "$node_count" -ne "1" ]; then
+   echo "***INFO: Creating $SQ_ROOT directory on all nodes" | tee -a $INSTALL_LOG
+   $PDSH $MY_NODES -x $HOSTNAME $PDSH_SSH_CMD mkdir -p $SQ_ROOT
+   if [[ -f $HOME/sqenvcom.sh ]]; then
+      echo "****INFO: Copying over sqenvcom.sh"
+      $PDCP $MY_NODES $HOME/sqenvcom.sh $SQ_ROOT
+   fi
+fi
+
+#==========================================
+# install dcs
+
+$TRAF_WORKDIR/installer/dcs_installer --dcs_build $DCS_BUILD --dcs_servers $DCS_SERVERS_PARM
+if [ "$?" != "0" ]; then
+    echo "***ERROR: DCS install failed.  Check install log files for details." | tee -a $INSTALL_LOG
+    exit -1;
+fi
+
+#==========================================
+# install REST Server
+
+if [ ! -z $REST_BUILD ]; then
+   $TRAF_WORKDIR/installer/rest_installer --rest_build $REST_BUILD
+   if [ "$?" != "0" ]; then
+       echo "***ERROR: REST Server install failed.  Check install log files for details." | tee -a $INSTALL_LOG
+       exit -1;
+   fi
+fi
+
+#==========================================
+echo "***INFO: starting sqgen" | tee -a $INSTALL_LOG
+cd $MY_SQROOT/sql/scripts
+sqgen
+SQGEN_RC=$?
+if [ "$SQGEN_RC" != "0" ]; then
+    echo "***ERROR: sqgen failed with RC=$SQGEN_RC. Check install log file for details." | tee -a $INSTALL_LOG
+    exit -1;
+fi
+#==========================================
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying $HOME/sqcert directory to all nodes" | tee -a $INSTALL_LOG
+    $PDCP $MY_NODES -x $HOSTNAME -r $HOME/sqcert $HOME
+fi
+
+#==========================================
+
+if [ "$node_count" -ne "1" ]; then
+   echo "***INFO: copying install to all nodes" | tee -a $INSTALL_LOG
+   $PDCP $MY_NODES -x $HOSTNAME -r $SQ_ROOT $SQ_ROOT/..
+
+   if [ "$?" != "0" ]; then
+      echo "***ERROR: Unable to copy Trafodion install to all machines in this cluster.  Check install log files for details." | tee -a $INSTALL_LOG
+      exit -1;
+   fi
+fi
+
+#=========================================
+ # get first node listed in MY_NODES
+
+ if [[ "$node_count" -eq "1" ]]; then
+    STARTING_NODE=$NODE_LIST
+ else
+    STARTING_NODE=$(echo $MY_NODES | awk '{print $2}')
+ fi
+
+#==========================================
+#Copying traf_authentication_conf to scripts directory
+if [[ "$LDAP_SECURITY" == "Y" ]]; then
+   if [ "$node_count" -ne "1" ]; then
+      echo "***INFO: Copying $LDAP_AUTH_FILE to all nodes" | tee -a $INSTALL_LOG
+      $PDCP $MY_NODES -r $HOME/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/traf_authentication_config
+      if [ "$?" != "0" ]; then
+        echo "***ERROR: Unable to copy $LDAP_AUTH_FILE to all machines in this cluster.  Check install log files for details." | tee -a $INSTALL_LOG
+         exit -1;
+      fi
+   else
+      echo "***INFO: Copying $LDAP_AUTH_FILE to scripts directory." | tee -a $INSTALL_LOG
+      cp -rf $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/traf_authentication_config
+   fi
+
+   #Check traf_authentication_config for errors
+   echo "***INFO: Checking LDAP Configuration file for errors."
+   ldapconfigcheck -file $SQ_ROOT/sql/scripts/traf_authentication_config
+   if [ "$?" != "0" ]; then
+      echo "***ERROR: traf_authentication_config not configured correctly."
+      echo "***ERROR: Install will continue WITHOUT simple security turned on."
+      echo "***ERROR: Please review wiki for manual steps to setup simple security."
+   else
+      if [[ $LDAP_LEVEL == "1" ]]; then
+         echo "TLS_CACERT $HOME/$LDAP_CERT_BASE" > $HOME_DIR/$TRAF_USER/.ldaprc
+         echo "TLS_REQCERT demand" >> $HOME_DIR/$TRAF_USER/.ldaprc
+      fi
+      echo "***INFO: Enabling security. Running traf_authentication_setup"
+      ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts; traf_authentication_setup --setup --file traf_authentication_config"
+
+      if [[ $? != "0" ]]; then
+         echo "***WARNING: Error during script traf_authentication_setup"
+         echo "***WARNING: Install will continue WITHOUT simple security turned on."
+         echo "***WARNING: Please review wiki for manual steps to setup simple security."
+      fi
+   fi
+fi
+
+#==========================================
+echo "***INFO: Installation setup completed successfully." | tee -a $INSTALL_LOG

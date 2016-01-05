@@ -1876,7 +1876,10 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDflt_0_1(HIST_DEFAULT_SEL_FOR_LIKE_WILDCARD,	"0.10"),
   DDflt_0_1(HIST_DEFAULT_SEL_FOR_PRED_EQUAL,	"0.01"),
   DDflt_0_1(HIST_DEFAULT_SEL_FOR_PRED_RANGE,	"0.3333"),
+
+  // control the amount of data in each partition of the persistent sample tble.
   DDflt1_(HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD, "10240000"),
+
   DDkwd__(HIST_FREQ_VALS_NULL_FIX,              "ON"),
   DDkwd__(HIST_INCLUDE_SKEW_FOR_NON_INNER_JOIN,      "ON"),
   DDkwd__(HIST_INTERMEDIATE_REDUCTION,      "OFF"),
@@ -1929,10 +1932,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  XDDkwd__(HIST_PREFETCH,                        "ON"),
  XDDkwd__(HIST_REMOVE_TRAILING_BLANKS,          "ON"), // should remove after verifying code is solid
   DDansi_(HIST_ROOT_NODE,                            ""),
- XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "50000"),
+ XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
   DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
   DDvol__(HIST_SCRATCH_VOL,                     ""),
-  DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "104857600"),
+  // control the amount of data in each partition of the sample tble.
+  DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "10240000"),
   DDflt_0_1(HIST_SKEW_COST_ADJUSTMENT,            "0.2"),
   DDkwd__(HIST_SKIP_MC_FOR_NONKEY_JOIN_COLUMNS,   "OFF"),
   DDui___(HIST_TUPLE_FREQVAL_LIST_THRESHOLD,     "40"),
@@ -2156,7 +2160,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDflt__(MC_SKEW_SENSITIVITY_THRESHOLD,        "0.1"),
 
 
-  DDkwd__(MDAM_APPLY_RESTRICTION_CHECK,	"OFF"),
+  DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "2"),
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -2176,6 +2180,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   XDDkwd__(MDAM_SCAN_METHOD,			"ON"),
 
   DDflt0_(MDAM_SELECTION_DEFAULT,		"0.5"),
+
+  DDflt0_(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD, "10000"),
+  DDflt0_(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD,	 "0.2"),
+
   DDkwd__(MDAM_TRACING,			        "OFF"),
 
   // controls the max. number of probes at which MDAM under NJ plan will be
@@ -3311,7 +3319,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
-  DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "OFF"),   
+  DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
   DDkwd__(TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,        "OFF"),
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),

@@ -317,7 +317,14 @@ void MdamTrace::setLevel(enum MdamTraceLevel l)
 #endif // if MDAM_TRACE
 // LCOV_EXCL_STOP
 
-static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsByCol,const CollIndex&  lastColumnPosition, CollIndex&  noOfmissingKeyColumns, CollIndex&  presentKeyColumns)
+enum restrictCheckStrategy { MAJORITY_WITH_PREDICATES=1, TOTAL_UECS=2, BOTH=3 };
+
+static NABoolean checkMDAMadditionalRestriction(
+    const ColumnOrderList& keyPredsByCol,
+    const CollIndex& lastColumnPosition, 
+    const Histograms& hist,
+    restrictCheckStrategy strategy,
+    CollIndex&  noOfmissingKeyColumns, CollIndex&  presentKeyColumns)
 {
    KeyColumns::KeyColumn::KeyColumnType typeOfRange = KeyColumns::KeyColumn::EMPTY;
    CollIndex index = 0;
@@ -331,8 +338,24 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
    if ( mtd_mdam_uec_threshold < 0 )
      checkLeadingDivColumns = FALSE;
 
+   CostScalar totalRC = hist.getRowCount().getCeiling();
+
+   float totalUEC_threshold = 1;
+
+   Lng32 minRC = (ActiveSchemaDB()->getDefaults()).getAsLong(MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD);
+
+   if ( totalRC > minRC )
+     (ActiveSchemaDB()->getDefaults()).getFloat(MDAM_TOTAL_UEC_CHECK_UEC_THRESHOLD, totalUEC_threshold);
+
+   totalUEC_threshold *= totalRC.getValue();
+
    NABoolean isLeadingDivisionColumn = FALSE;
    NABoolean isLeadingSaltColumn = FALSE;
+
+   CostScalar totalUecsForPredicatelessKeyColumns = 1;
+   CostScalar totalUecsForCurrentPredicatelessKeyColumnGroup = 1;
+
+   ValueIdSet currentPredicatelessKeyColumnGroup;
 
    for (index = 0; index < lastColumnPosition; index++)
    {
@@ -346,15 +369,15 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
      isLeadingDivisionColumn = FALSE;
      isLeadingSaltColumn = FALSE;
 
+     ValueId columnVid = keyPredsByCol.getKeyColumnId(index);
+
      if ( checkLeadingDivColumns )
      {
        // Check if the key column is a leading divisioning column
-       isLeadingDivisionColumn = 
-            keyPredsByCol.getKeyColumnId(index).isDivisioningColumn();
+       isLeadingDivisionColumn = columnVid.isDivisioningColumn();
 
        // Check if the key column is a leading salted column
-       isLeadingSaltColumn =
-             keyPredsByCol.getKeyColumnId(index).isSaltColumn();
+       isLeadingSaltColumn = columnVid.isSaltColumn();
      }
 
      if (typeOfRange == KeyColumns::KeyColumn::EMPTY) {
@@ -367,15 +390,65 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
            )
            noOfmissingKeyColumns++;
 
+        // accumulate the product of uecs for columns without predicates in the current
+        // group
+        totalUecsForCurrentPredicatelessKeyColumnGroup *= hist.getColStatsForColumn(
+                   columnVid).getTotalUec().getCeiling();
+
+        // accumulate the column valud Id at the same time for MC UEC lookup later on.
+        currentPredicatelessKeyColumnGroup.insert(columnVid);
      } else {
 
         checkLeadingDivColumns = FALSE;
         presentKeyColumns++;
 
+        // If the set of key columns without predicate is not empty, fetch the MC UEC 
+        // for the entire set. If the MC UEC exists, replace the current accumualted
+        // total UEC with the MC UEC.
+        //
+        // We will set the set to empty so that the fetching MC UEC logic will not kick in 
+        // until a new key column without predicates is seen.
+        if ( currentPredicatelessKeyColumnGroup.entries() > 1 ) {
+
+           // fetch MC UEC from key coluymns for column set currentPredicatelessKeyColumnGroup 
+           const MultiColumnUecList* MCUL = hist.getColStatDescList().getUecList();
+
+           ValueIdSet theLargestSubset = 
+                   MCUL->largestSubset(currentPredicatelessKeyColumnGroup.convertToBaseIds());
+
+           if ( theLargestSubset.entries() == currentPredicatelessKeyColumnGroup.entries() ) 
+           {
+              CostScalar mcUEC = MCUL->lookup(theLargestSubset);
+
+              if ( mcUEC != csMinusOne )
+                 totalUecsForCurrentPredicatelessKeyColumnGroup = mcUEC;
+           }
+
+           currentPredicatelessKeyColumnGroup.clear();
+        }
+
+        totalUecsForPredicatelessKeyColumns *= 
+                totalUecsForCurrentPredicatelessKeyColumnGroup;
+
+        totalUecsForCurrentPredicatelessKeyColumnGroup = 1;
      }
    }     
-   if(presentKeyColumns > noOfmissingKeyColumns) return TRUE;
-   return FALSE;
+
+   switch ( strategy ) {
+     case MAJORITY_WITH_PREDICATES:
+        return (presentKeyColumns > noOfmissingKeyColumns);
+
+     case TOTAL_UECS:
+        return ( totalUecsForPredicatelessKeyColumns < totalUEC_threshold );
+
+     case BOTH:
+        return ( presentKeyColumns > noOfmissingKeyColumns &&
+                 totalUecsForPredicatelessKeyColumns < totalUEC_threshold );
+
+     default:
+       return FALSE;
+  }
+  return FALSE;
 }
 
 // stack allocated only
@@ -553,11 +626,22 @@ private:
   // Estimated rows iff multiple probes
   CostScalar multiProbesDataRows_;
   // >>>>>>>>>>>>>>>>> Current prefix related members <<<<<<<<<<<<<<<<<
-  // # of subsets of each effective probe
+  // # of subsets of each effective probe at the current level
   CostScalar prefixSubsets_;
+  // cumulative # of subsets of each effective probe
+  // Why do we care? MDAM is a recursive algorithm. It first materializes
+  // values for the first key column. For each of those, it materializes 
+  // values for the second key column. And so on. Each of these levels adds
+  // progressively more cost which we must take into account. If we look
+  // only at prefixSubsets_ (that is, the current column level), we may be
+  // misled into thinking that adding more levels of column traversal is
+  // free. Which it is not. Moreover, as the number of rows approaches the
+  // total number of rows in the table, it is akin to adding an additional
+  // table scan.
+  CostScalar cumulativePrefixSubsets_;
   // # of subset seeks of each effective probe
   CostScalar prefixSubsetsAsSeeks_;
-  // # of rows of all probes.
+  // # of rows of all probes at the current column level
   CostScalar prefixRows_;
   // # of seeks of all probes.
   CostScalar prefixRqsts_;
@@ -8710,12 +8794,25 @@ void MDAMCostWA::computeDisjunct()
 
   CollIndex noOfmissingKeyColumnsTot = 0;
   CollIndex presentKeyColumnsTot = 0;
+
+
+  const IndexDesc *idesc = optimizer_.getFileScan().getIndexDesc();
+  const ColStatDescList& csdl = idesc->getPrimaryTableDesc()->getTableColStats();
+  Histograms hist(csdl);
+	 
+  Lng32 checkOption = (ActiveSchemaDB()->getDefaults()).getAsLong(MDAM_APPLY_RESTRICTION_CHECK);
+
   if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() != OptDefaults::MINIMUM
      && (!mdamForced_)
 	 && (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON )
-	 && (CmpCommon::getDefault(MDAM_APPLY_RESTRICTION_CHECK) == DF_ON )
-	 &&
-   (!checkMDAMadditionalRestriction(keyPredsByCol,optimizer_.computeLastKeyColumnOfDisjunct(keyPredsByCol),noOfmissingKeyColumnsTot,presentKeyColumnsTot))
+	 && checkOption >= 1 
+	 && (!checkMDAMadditionalRestriction(
+                                    keyPredsByCol,
+                                    optimizer_.computeLastKeyColumnOfDisjunct(keyPredsByCol),
+                                    hist,
+                                    (restrictCheckStrategy)checkOption,
+                                    noOfmissingKeyColumnsTot,
+                                    presentKeyColumnsTot))
    )
   {
         
@@ -8797,6 +8894,7 @@ MDAMOptimalDisjunctPrefixWA::MDAMOptimalDisjunctPrefixWA
   ,lastColumnPosition_(optimizer.computeLastKeyColumnOfDisjunct(keyPredsByCol))
   ,firstColOverlaps_(FALSE)
   ,prefixSubsets_(csOne) // MDAM subsets
+  ,cumulativePrefixSubsets_(csZero)
   ,prefixSubsetsAsSeeks_(csOne) // MDAM subsets for all probes
   ,prefixRows_(0)
   ,prefixRqsts_(csOne)
@@ -9537,10 +9635,13 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
   CostScalar seqKBytesPerScan;
   Cost *scmCost = NULL;
 
+  cumulativePrefixSubsets_ += prefixSubsets_;
+
   MDAM_DEBUG2(MTL2, "Disjunct: %d, Prefix Column: %d", disjunctIndex_, prefixColumnPosition_);
   MDAM_DEBUG1(MTL2, "Incoming Probes: %f:", incomingProbes_.value());
   MDAM_DEBUG1(MTL2, "Disjunct Failed Probes: %f:", failedProbes_.value());
   MDAM_DEBUG1(MTL2, "Prefix Subsets: %f:", prefixSubsets_.value());
+  MDAM_DEBUG1(MTL2, "Cumulative Prefix Subsets: %f:", cumulativePrefixSubsets_.value());
   MDAM_DEBUG1(MTL2, "Prefix Requests (probes * Subsets): %f:", prefixRqsts_.value());
   MDAM_DEBUG1(MTL2, "Prefix Rows: %f:", prefixRows_.value());
   MDAM_DEBUG1(MTL2, "Prefix Seeks %f:", prefixSeeks_.value());
@@ -9555,7 +9656,10 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
     CostScalar rowSizeFactor = optimizer_.scmRowSizeFactor(rowSize);
     CostScalar outputRowSizeFactor = optimizer_.scmRowSizeFactor(outputRowSize);
 
-    CostScalar scmPrefixRows = prefixRows_ * rowSizeFactor;
+    // adding cumulativePrefixSubsets_ represents the row handling costs of the probes of
+    // the MDAM algorithm as it traverses over key columns; the algorithm is recursive
+    // and thus has cumulative costs
+    CostScalar scmPrefixRows = (prefixRows_ + cumulativePrefixSubsets_) * rowSizeFactor;
     CostScalar scmPrefixOutputRows = prefixRows_ * outputRowSizeFactor;
 
     CostScalar rowSizeFactorSeqIO = optimizer_.scmRowSizeFactor(rowSize, 
@@ -9681,6 +9785,19 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
         //  This is a heuristics in that we unconditionally include the last key column 
         //  with IN list (OR preds) predicate without going through the cost comparison 
         //  step.
+        //
+        // Updated comments: The commentary above is incorrect but I don't know quite
+        // what to do with it yet. MDAM at run time is a recursive algorithm. In the 
+        // example above, it will materialize values in the A column, and for each one,
+        // do a subset access on the second column. So the cost is a sum of the
+        // materialization cost on the first column and the subset access on the second.
+        // If there is a third key column C with no predicates on it, it would be 
+        // inefficient to go MDAM to the last column position; rather it would be better
+        // to use B as the stop column. That is, do subsets on each distinct value of (A,B),
+        // rather than do subsets on each distinct (A,B,C). The larger the UEC of C, the
+        // more gross the inefficiency. Unfortunately, the code below will cause us to 
+        // go MDAM to column C. In reference to the comments above, we need to devise
+        // a better way to estimate cost in the presence of RangeSpecs.
         if ( (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
               optimizer_.getDisjuncts().containsOrPredsInRanges() &&
               prefixColumnPosition_ == (lastColumnPosition_ - 1) 
@@ -9728,14 +9845,20 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
       optSeeks_ = prefixSeeks_;
       optSeqKBRead_ = prefixKBRead_;
       optKeyPreds_.insert(prefixKeyPreds_); // is a copy more efficient?
-      // changing for stopColumn_ logic to flow throgh.
-      // Now it will consider all the coulmns present in the disjunct.
-      if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON)
-	// && !missingKeyColumnExists())
-	//&& mdamForced_)
-	stopColumn_ = lastColumnPosition_ - 1;
-      else
-	stopColumn_ = prefixColumnPosition_;
+
+      // Note: Formerly there was code here that would set stopColumn_
+      // to the last column position if the CQD RANGESPEC_TRANSFORMATION
+      // was on. This is incorrect; it would cause us to use MDAM to 
+      // traverse through all columns always, even though it may be
+      // grossly inefficient to do so. (See commentary earlier in this
+      // method.) As it stands now, so long as there are no RangeSpec
+      // key predicates, this code will correctly pick the stop column.
+      // If there are RangeSpec predicates, code earlier in this method
+      // may cause us to only consider MDAM traversing on all columns.
+      // We can improve this later by improving how RangeSpec predicates
+      // are costed for MDAM.
+      stopColumn_ = prefixColumnPosition_;
+
       prevColChosen_ = TRUE;
 
       delete pMinCost_;

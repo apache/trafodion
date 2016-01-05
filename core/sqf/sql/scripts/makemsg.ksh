@@ -51,7 +51,7 @@ function GetSQcnfg {
 
 }
 
-if [ -f $SQ_PDCP ]; then
+if [ -n "$MY_NODES" -a -e $SQ_PDCP ]; then
 
     GetSQcnfg
 

@@ -1,0 +1,677 @@
+>>obey TEST002(setup);
+>>create schema t002sch;
+
+--- SQL operation complete.
+>>set schema t002sch;
+
+--- SQL operation complete.
+>>create table t002t1(a int not null primary key, 
++>     b int not null, c int not null);
+
+--- SQL operation complete.
+>>create index t002t1i1 on t002t1(b);
+
+--- SQL operation complete.
+>>create index t002t1i2 on t002t1(c);
+
+--- SQL operation complete.
+>>insert into t002t1 values (1,2, 3);
+
+--- 1 row(s) inserted.
+>>
+>>sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1';
+>>sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1I1';
+>>sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T1I2';
+>>
+>>select * from t002t1;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2            3
+
+--- 1 row(s) selected.
+>>
+>>create table t002t2(a int not null primary key, b int not null)
++>  salt using 4 partitions;
+
+--- SQL operation complete.
+>>create index t002t2i1 on t002t2(b);
+
+--- SQL operation complete.
+>>insert into t002t2 values (1,2);
+
+--- 1 row(s) inserted.
+>>
+>>sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2';
+>>sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
+>>
+>>select * from t002t2;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>obey TEST002(dml);
+>>set schema t002sch;
+
+--- SQL operation complete.
+>>invoke table(region stats ());
+
+-- Definition of Trafodion table TRAFODION.T002SCH.EXE_UTIL_REGION_STATS__
+-- Definition current  Tue Dec  1 20:28:59 2015
+
+  (
+    CATALOG_NAME                     CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SCHEMA_NAME                      CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OBJECT_NAME                      CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REGION_NUM                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REGION_NAME                      CHAR(512 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUM_STORES                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUM_STORE_FILES                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STORE_FILE_UNCOMP_SIZE           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STORE_FILE_SIZE                  LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MEM_STORE_SIZE                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , READ_REQUESTS_COUNT              LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , WRITE_REQUESTS_COUNT             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>invoke table(region stats (t002t1));
+
+-- Definition of Trafodion table TRAFODION.T002SCH.EXE_UTIL_REGION_STATS__
+-- Definition current  Tue Dec  1 20:29:01 2015
+
+  (
+    CATALOG_NAME                     CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SCHEMA_NAME                      CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , OBJECT_NAME                      CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REGION_NUM                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REGION_NAME                      CHAR(512 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUM_STORES                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUM_STORE_FILES                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STORE_FILE_UNCOMP_SIZE           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STORE_FILE_SIZE                  LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MEM_STORE_SIZE                   LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , READ_REQUESTS_COUNT              LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , WRITE_REQUESTS_COUNT             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++>  region_num, region_name, num_stores, num_store_files,
++>  store_file_uncomp_size, store_file_size, mem_store_size,
++>  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
++>  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
++> from table(region stats(t002t1));
+
+(EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1/d8e501bc4b1e00c4a363ddbfddb73ce6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   2                0                       0                     0                     0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+
+--- 1 row(s) selected.
+>>
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++>  region_num, region_name, num_stores, num_store_files,
++>  store_file_uncomp_size, store_file_size, mem_store_size,
++>  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
++>  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
++> from table(region stats(index t002t1i1));
+
+(EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I1/6ecaf721eab09f276a465486204b9224                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+
+--- 1 row(s) selected.
+>>
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++>  region_num, region_name, num_stores, num_store_files,
++>  store_file_uncomp_size, store_file_size, mem_store_size,
++>  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
++>  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
++> from table(region stats(t002t2));
+
+(EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T2                                                               1  TRAFODION.T002SCH.T002T2/08950a2e799b5158e7bc01f7d381da15                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
+T002SCH.T002T2                                                               2  TRAFODION.T002SCH.T002T2/8f5f1f95e9f83eb80059038985b55e56                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   2                0                       0                     0                     0  ReadRequestsCount: 1           WriteRequestsCount: 1         
+T002SCH.T002T2                                                               3  TRAFODION.T002SCH.T002T2/74c3d257b6633eeb7097c587dadd2e1e                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
+T002SCH.T002T2                                                               4  TRAFODION.T002SCH.T002T2/eb2ed476df0e857b6a8eaa9618b1923b                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
+
+--- 4 row(s) selected.
+>>
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++>  region_num, region_name, num_stores, num_store_files,
++>  store_file_uncomp_size, store_file_size, mem_store_size,
++>  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
++>  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
++> from table(region stats(index t002t2i1));
+
+(EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T2                                                               1  TRAFODION.T002SCH.T002T2I1/94aaac02a94952f6bd9b33f408f8c0dc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+
+--- 1 row(s) selected.
+>>
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++> sum(store_file_size), 
++> 'ReadRequestsCount: '  || cast(sum(read_requests_count) as varchar(10)),
++> 'WriteRequestsCount: ' || cast(sum(write_requests_count) as varchar(10))
++> from table(region stats (using (select * from (
++>   get tables in schema t002sch, no header, return full names) x(a) ))) 
++> group by 1 order by 2 desc;
+
+(EXPR)                                                    (EXPR)                (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T2                                                               0  ReadRequestsCount: 1           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+
+--- 2 row(s) selected.
+>>
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++> sum(store_file_size), 
++> 'ReadRequestsCount: '  || cast(sum(read_requests_count) as varchar(10)),
++> 'WriteRequestsCount: ' || cast(sum(write_requests_count) as varchar(10))
++> from table(region statistics (using (select * from (
++>   get tables in schema t002sch, no header, return full names) x(a) ))) 
++> group by 1 order by 2 desc;
+
+(EXPR)                                                    (EXPR)                (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T2                                                               0  ReadRequestsCount: 1           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+
+--- 2 row(s) selected.
+>>
+>>get region stats for table t002t1;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  2
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T1/d8e501bc4b1e00c4a363ddbfddb73ce6
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  2
+  WriteRequestsCount: 1
+
+
+--- SQL operation complete.
+>>get region stats for index t002t1i1;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1I1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T1I1/6ecaf721eab09f276a465486204b9224
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 1
+
+
+--- SQL operation complete.
+>>get region stats for table t002t2;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T2
+  NumRegions:              4
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          8
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  1
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T2/08950a2e799b5158e7bc01f7d381da15
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+  RegionNum:          2
+  RegionName:         TRAFODION.T002SCH.T002T2/8f5f1f95e9f83eb80059038985b55e56
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  1
+  WriteRequestsCount: 1
+
+  RegionNum:          3
+  RegionName:         TRAFODION.T002SCH.T002T2/74c3d257b6633eeb7097c587dadd2e1e
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+  RegionNum:          4
+  RegionName:         TRAFODION.T002SCH.T002T2/eb2ed476df0e857b6a8eaa9618b1923b
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+
+--- SQL operation complete.
+>>get region stats for index t002t2i1;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T2I1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T2I1/94aaac02a94952f6bd9b33f408f8c0dc
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 1
+
+
+--- SQL operation complete.
+>>
+>>get region statistics for table t002t1;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  2
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T1/d8e501bc4b1e00c4a363ddbfddb73ce6
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  2
+  WriteRequestsCount: 1
+
+
+--- SQL operation complete.
+>>
+>>get region stats for 
++>    (select * from 
++>      (get tables in schema t002sch, no header, return full names)x(a));
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  2
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T1/d8e501bc4b1e00c4a363ddbfddb73ce6
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  2
+  WriteRequestsCount: 1
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T2
+  NumRegions:              4
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          8
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  1
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T2/08950a2e799b5158e7bc01f7d381da15
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+  RegionNum:          2
+  RegionName:         TRAFODION.T002SCH.T002T2/8f5f1f95e9f83eb80059038985b55e56
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  1
+  WriteRequestsCount: 1
+
+  RegionNum:          3
+  RegionName:         TRAFODION.T002SCH.T002T2/74c3d257b6633eeb7097c587dadd2e1e
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+  RegionNum:          4
+  RegionName:         TRAFODION.T002SCH.T002T2/eb2ed476df0e857b6a8eaa9618b1923b
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 0
+
+
+--- SQL operation complete.
+>>
+>>-- stats for all indexes on a table
+>>select left(trim(schema_name) || '.' || trim(object_name), 14),
++>  region_num, region_name, num_stores, num_store_files,
++>  store_file_uncomp_size, store_file_size, mem_store_size,
++>  'ReadRequestsCount: ' || cast(read_requests_count as varchar(10)),
++>  'WriteRequestsCount: ' || cast(write_requests_count as varchar(10))
++> from table(region stats (using (select * from (
++>   get indexes on table t002t1, no header, return full names) x(a) )));
+
+(EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
+--------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
+
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I1/6ecaf721eab09f276a465486204b9224                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I2/b36b08f5d1152de7006cc11bc2c07e26                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+
+--- 2 row(s) selected.
+>>get region stats for 
++>  (select * from 
++>    (get indexes on table t002t1, no header, return full names)x(a));
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1I1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T1I1/6ecaf721eab09f276a465486204b9224
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 1
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1I2
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 1
+
+Stats Details
+=============
+
+  RegionNum:          1
+  RegionName:         TRAFODION.T002SCH.T002T1I2/b36b08f5d1152de7006cc11bc2c07e26
+  NumStores:          2
+  NumStoreFiles:      0
+  UncompressedSize:   0 (less than 1MB)
+  StoreFileSize:      0 (less than 1MB)
+  MemStoreSize:       0 (less than 1MB)
+  ReadRequestsCount:  0
+  WriteRequestsCount: 1
+
+
+--- SQL operation complete.
+>>
+>>-- return summary stats only
+>>get region stats for table t002t1, summary;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  2
+  TotalWriteRequestsCount: 1
+
+--- SQL operation complete.
+>>get region stats for index t002t1i1, summary;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1I1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  0
+  TotalWriteRequestsCount: 1
+
+--- SQL operation complete.
+>>get region stats for table t002t2, summary;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T2
+  NumRegions:              4
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          8
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  1
+  TotalWriteRequestsCount: 1
+
+--- SQL operation complete.
+>>get region stats for index t002t2i1, summary;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T2I1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  1
+  TotalWriteRequestsCount: 1
+
+--- SQL operation complete.
+>>
+>>get region stats for 
++>  (select * from 
++>    (get tables in schema t002sch, no header, return full names)x(a)), summary;
+
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T1
+  NumRegions:              1
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          2
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  2
+  TotalWriteRequestsCount: 1
+
+Stats Summary
+=============
+
+  ObjectName:              TRAFODION.T002SCH.T002T2
+  NumRegions:              4
+  RegionsLocation:         /hbase/data/default
+  TotalNumStores:          8
+  TotalNumStoreFiles:      0
+  TotalUncompressedSize:   0
+  TotalStoreFileSize:      0
+  TotalMemStoreSize:       0
+  TotalReadRequestsCount:  1
+  TotalWriteRequestsCount: 1
+
+--- SQL operation complete.
+>>
+>>log;

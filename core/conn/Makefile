@@ -38,4 +38,5 @@ pkg-clients:
 	tar -zcvf $(CLIENT_TAR) clients
 clean:	
 	$(RM) -rf $(MY_SQROOT)/../conn/clients 
+	$(RM) -f $(MY_SQROOT)/../conn/*.mf
 	$(RM) -f $(CLIENT_TAR)

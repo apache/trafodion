@@ -79,7 +79,7 @@
        <delete file="${utils.dir}/trafci.cmd"/> 
     </target>
 
-    <target name="init" depends="clean">
+    <target name="init">
        <mkdir dir="${temp.dir}"/>
        <mkdir dir="${tempsrc.dir}"/>
        <mkdir dir="${tempinstall.dir}"/>
@@ -145,12 +145,19 @@
            tofile="${utils.dir}/trafci.cmd"
            overwrite="true">
        </copy>
+       <copy file="${utils.dir}/trafci.sh-tmpl"
+           tofile="${utils.dir}/trafci.sh"
+           overwrite="true">
+       </copy>
+    	
 
        <replace file="${utils.dir}/trafci.cmd" token="@prodver@" value="${my_env.TRAFODION_VER_PROD}"/>
        <replace file="${utils.dir}/trafci.cmd" token="@copyrighthdr@" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
+       <replace file="${utils.dir}/trafci.sh" token="##prodver##" value="${my_env.TRAFODION_VER_PROD}"/>
+       <replace file="${utils.dir}/trafci.sh" token="##copyrighthdr##" value="${my_env.PRODUCT_COPYRIGHT_HEADER}"/>
 
       <copy todir="${deploy.dir}/bin">
-           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, trafci.cmd-tmpl"/>
+           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh, *-tmpl"/>
       </copy>
 
       <copy todir="${deploy.dir}/lib">
@@ -161,9 +168,9 @@
            <fileset dir="${samples.dir}" excludes="**/*.contrib*, *.db"/>
       </copy>
 
-      <jar destfile="${deploy.dir}/${installer.file}">
+      <jar destfile="${deploy.dir}/${installer.file}" update="true">
             <fileset dir="${installclasses.dir}" />
-            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh" />
+            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh ${installer.file}" />
             <manifest>
                <attribute name="Main-Class" value="Installer" />
             </manifest>
@@ -173,7 +180,7 @@
 
       <tar destfile="${deploy.dir}/${tar.file}" basedir="${deploy.dir}" includes="*.jar,README">
       </tar> 
-      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README"/>
+      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README" update="yes"/>
     </target>
     <target name="dist" depends="deploy">
       <exec dir="${utils.dir}" executable="sh">

@@ -3635,6 +3635,173 @@ class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state
  protected:
 };
 
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilRegionStatsTdb
+// -----------------------------------------------------------------------
+class ExExeUtilRegionStatsTdb : public ComTdbExeUtilRegionStats
+{
+public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExExeUtilRegionStatsTdb()
+  {}
+
+  NA_EIDPROC virtual ~ExExeUtilRegionStatsTdb()
+  {}
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDB's
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the ComTdbDLL instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  // 
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilRegionStatsTcb
+// -----------------------------------------------------------------------
+class ExExeUtilRegionStatsTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilRegionStatsTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilRegionStatsTcb(const ComTdbExeUtilRegionStats & exe_util_tdb,
+				ex_globals * glob = 0);
+
+  ~ExExeUtilRegionStatsTcb();
+
+  virtual short work();
+
+  ExExeUtilRegionStatsTdb & getDLStdb() const
+  {
+    return (ExExeUtilRegionStatsTdb &) tdb;
+  };
+
+private:
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    COLLECT_STATS_,
+    POPULATE_STATS_BUF_,
+    RETURN_STATS_BUF_,
+    HANDLE_ERROR_,
+    DONE_
+  };
+  Step step_;
+
+protected:
+  Int64 getEmbeddedNumValue(char* &sep, char endChar, 
+                            NABoolean adjustLen = TRUE);
+
+  short collectStats(char * tableName);
+  short populateStats(Int32 currIndex, NABoolean nullTerminate = FALSE);
+
+  char * hbaseRootdir_;
+
+  char * tableName_;
+
+  char * inputNameBuf_;
+
+  char * statsBuf_;
+  Lng32 statsBufLen_;
+  ComTdbRegionStatsVirtTableColumnStruct* stats_;  
+
+  ExpHbaseInterface * ehi_;
+  ByteArrayList * regionInfoList_;
+
+  Int32 currIndex_;
+
+  char * catName_;
+  char * schName_;
+  char * objName_;
+  char * regionName_;
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilRegionStatsFormatTcb
+// -----------------------------------------------------------------------
+class ExExeUtilRegionStatsFormatTcb : public ExExeUtilRegionStatsTcb
+{
+  friend class ExExeUtilRegionStatsTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilRegionStatsFormatTcb(const ComTdbExeUtilRegionStats & exe_util_tdb,
+                                      ex_globals * glob = 0);
+
+  virtual short work();
+
+private:
+  enum Step
+  {
+    INITIAL_,
+    COLLECT_STATS_,
+    EVAL_INPUT_,
+    COMPUTE_TOTALS_,
+    RETURN_SUMMARY_,
+    RETURN_DETAILS_,
+    POPULATE_STATS_BUF_,
+    RETURN_REGION_INFO_,
+    HANDLE_ERROR_,
+    DONE_
+  };
+
+  Step step_;
+
+  char * statsTotalsBuf_;
+  ComTdbRegionStatsVirtTableColumnStruct* statsTotals_;  
+
+  short initTotals();
+  short computeTotals();
+};
+
+////////////////////////////////////////////////////////////////////////////
+class ExExeUtilRegionStatsPrivateState : public ex_tcb_private_state
+{
+  friend class ExExeUtilRegionStatsTcb;
+  
+public:	
+  ExExeUtilRegionStatsPrivateState();
+  ~ExExeUtilRegionStatsPrivateState();	// destructor
+protected:
+};
+
 #endif
 
 

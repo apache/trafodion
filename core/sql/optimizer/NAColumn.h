@@ -398,6 +398,14 @@ public:
     return hbaseColFlags_;
   }
 
+  void resetSerialization() {
+     hbaseColFlags_ &= SEABASE_SERIALIZED;
+  }
+
+  enum {
+    SEABASE_SERIALIZED = 0x0001
+  };
+
 private:
   enum referencedState { NOT_REFERENCED, REFERENCED_ANYWHERE, REFERENCED_FOR_MULTI_INTERVAL_HISTOGRAM, REFERENCED_FOR_SINGLE_INTERVAL_HISTOGRAM };
 
@@ -632,6 +640,9 @@ public:
   // column to find the maximum value currently in use. Columns
   // are deleted during alter table drop column.
   ULng32 getMaxTrafHbaseColQualifier() const;
+
+  NAString getColumnNamesAsString(char separator) const;
+  NAString getColumnNamesAsString(char separator, UInt32 ct) const;
 
 private:
 

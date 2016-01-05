@@ -794,10 +794,19 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
    for (size_t r = 0; r < roleIDs.size(); r++)
    {
+      int32_t roleID = roleIDs[r]; 
+
+      // if the roleID is PUBLIC return an error
+      if (roleID == PUBLIC_AUTH_ID)
+      {
+         *pDiags_ << DgSqlCode (-CAT_IS_NOT_A_ROLE)
+                  << DgString0(PUBLIC_AUTH_NAME);
+         return STATUS_ERROR;
+      }
+
       // For each role ID we loop through the list of grantees.
       // Most of the WHERE clause is known for this role (only 
       // difference is the grantee), so build the header now.
-      int32_t roleID = roleIDs[r]; 
       std::string whereClauseHeader(" WHERE ROLE_ID = ");
       
       whereClauseHeader += authIDToString(roleID);

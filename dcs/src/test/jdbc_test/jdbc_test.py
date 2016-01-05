@@ -56,6 +56,8 @@ def ArgList():
     _export_str5 = None
     _jdbc_type = None
     _tests = None
+    _dbmaj = None
+    _dbmin = None
 
 #----------------------------------------------------------------------------
 # Tracking all of the global variables in here.
@@ -153,7 +155,7 @@ def generate_pom_xml(appid, jdbccp, jdbc_version):
 #----------------------------------------------------------------------------
 # Generate propfile
 #----------------------------------------------------------------------------
-def generate_t4_propfile(propfile, target, user, pw, role, dsn, schema, appname, jdbc_version):
+def generate_t4_propfile(propfile, target, user, pw, role, dsn, schema, appname, jdbc_version, db_maj, db_min):
     fd = open(propfile, 'w')
     fd.write('url=jdbc:t4jdbc://' + target + '/\n')
     fd.write('user=' + user + '\n')
@@ -163,13 +165,15 @@ def generate_t4_propfile(propfile, target, user, pw, role, dsn, schema, appname,
     fd.write('schema=' + schema + '\n')
     fd.write('serverDataSource=' + dsn + '\n')
     fd.write('trafjdbc_version=' + jdbc_version + '\n')
+    fd.write('db_major=' + db_maj + '\n')
+    fd.write('db_minor=' + db_min + '\n')
     fd.write('sessionName=' + appname + '\n')
     fd.write('applicationName=' + appname + '\n')
     fd.write('batchBinding=500\n')
 
     fd.close()
 
-def generate_t2_propfile(propfile, user, pw, role, dsn, schema, appname, jdbc_version):
+def generate_t2_propfile(propfile, user, pw, role, dsn, schema, appname, jdbc_version, db_maj, db_min):
     fd = open(propfile, 'w')
     fd.write('url=jdbc:sql:\n')
     fd.write('user=' + user + '\n')
@@ -179,6 +183,8 @@ def generate_t2_propfile(propfile, user, pw, role, dsn, schema, appname, jdbc_ve
     fd.write('schema=' + schema + '\n')
     fd.write('serverDataSource=' + dsn + '\n')
     fd.write('trafjdbc_version=' + jdbc_version + '\n')
+    fd.write('db_major=' + db_maj + '\n')
+    fd.write('db_minor=' + db_min + '\n')
     fd.write('sessionName=' + appname + '\n')
     fd.write('applicationName=' + appname + '\n')
     fd.write('batchBinding=500\n')
@@ -242,6 +248,12 @@ def prog_parse_args():
         optparse.make_option('', '--jdbctype', action='store', type='string',
           dest='jdbctype', default='T4',
           help='jdbctype, defaulted to T4'),
+        optparse.make_option('', '--dbmaj', action='store', type='string',
+          dest='dbmaj', default='2',
+          help='DB major version, defaulted to 2'),
+        optparse.make_option('', '--dbmin', action='store', type='string',
+          dest='dbmin', default='0',
+          help='DB minor version, defaulted to 0'),
         optparse.make_option('', '--export1', action='store', type='string',
           dest='exportstr1', default='NONE',
           help='any export string, defaulted to NONE'),
@@ -311,6 +323,8 @@ def prog_parse_args():
     ArgList._jdbc_classpath = options.jdbccp
     ArgList._prop_file = os.path.abspath(options.propfile)
     ArgList._jdbc_type = options.jdbctype
+    ArgList._dbmaj = options.dbmaj
+    ArgList._dbmin = options.dbmin
     ArgList._export_str1 = options.exportstr1
     ArgList._export_str2 = options.exportstr2
     ArgList._export_str3 = options.exportstr3
@@ -321,9 +335,9 @@ def prog_parse_args():
     # Automatically generate the prop file if the user did not specify one
     if options.propfile == DEFAULT_PROP_FILE:
         if options.jdbctype == 'T2':
-            generate_t2_propfile(ArgList._prop_file, ArgList._user, ArgList._pw, ArgList._role, ArgList._dsn, ArgList._schema, ArgList._appid, ArgList._jdbc_version)
+            generate_t2_propfile(ArgList._prop_file, ArgList._user, ArgList._pw, ArgList._role, ArgList._dsn, ArgList._schema, ArgList._appid, ArgList._jdbc_version, ArgList._dbmaj, ArgList._dbmin)
         elif options.jdbctype == 'T4':
-            generate_t4_propfile(ArgList._prop_file, ArgList._target, ArgList._user, ArgList._pw, ArgList._role, ArgList._dsn, ArgList._schema, ArgList._appid, ArgList._jdbc_version)
+            generate_t4_propfile(ArgList._prop_file, ArgList._target, ArgList._user, ArgList._pw, ArgList._role, ArgList._dsn, ArgList._schema, ArgList._appid, ArgList._jdbc_version, ArgList._dbmaj, ArgList._dbmin)
 
     # Generate the pom.xml file from the template according to target type
     generate_pom_xml(ArgList._appid, ArgList._jdbc_classpath, ArgList._jdbc_version)
@@ -340,6 +354,7 @@ def prog_parse_args():
     print 'prop file:             ', ArgList._prop_file
     print 'jdbc type:             ', ArgList._jdbc_type
     print 'jdbc version:          ', ArgList._jdbc_version
+    print 'DB version:            ', ArgList._dbmaj + "." + ArgList._dbmin
     print 'export string 1:       ', ArgList._export_str1
     print 'export string 2:       ', ArgList._export_str2
     print 'export string 3:       ', ArgList._export_str3

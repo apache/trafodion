@@ -37,7 +37,7 @@ if [[ $HADOOP_TYPE == "cloudera" ]]; then
    grep -r "hostname" tempFile > tempFile2
 
    if [[ -d /opt/cloudera/parcels/CDH ]]; then
-      HADOOP_PATH="/opt/cloudera/parcles/CDH/lib/hbase/lib"
+      HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
    else
       HADOOP_PATH="/usr/lib/hbase/lib"
    fi

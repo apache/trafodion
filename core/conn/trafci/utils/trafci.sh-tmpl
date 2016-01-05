@@ -27,6 +27,8 @@
 #
 
 TRAFCI_CLASSPATH="##TRAFCI_CLASSPATH##"
+export TRAFODION_VER_PROD="##prodver##"
+export PRODUCT_COPYRIGHT_HEADER="##copyrighthdr##"
 
 #  Internally used variables.
 #  Name of the main Trafodion Command Interface class.

@@ -150,7 +150,13 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      colInfoArray[i].columnClass = COM_USER_COLUMN;
 
      const NAType * naType = tableCol->getType();
-
+     if ((naType->getFSDatatype() == REC_BLOB) || (naType->getFSDatatype() == REC_CLOB))
+     {
+      *CmpCommon::diags() << DgSqlCode(CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+                              << DgColumnName(col_name);
+      processReturn();
+      return -1;
+     }
      Lng32 precision = 0;
      Lng32 scale = 0;
      Lng32 dtStart = 0; 
@@ -412,7 +418,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   NAString extIndexName = indexName.getExternalName(TRUE);
   NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
-
+  NABoolean alignedFormatNotAllowed = FALSE; 
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
     return;
@@ -557,6 +563,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
     {
       CollIndex idx = naTable->allColFams().index(indexColFam);
       genTrafColFam(idx, trafColFam);
+      alignedFormatNotAllowed = TRUE;
     }
   else
     trafColFam = indexColFam;
@@ -612,20 +619,34 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
       return;
     }
+  ParDDLFileAttrsCreateIndex &fileAttribs =
+    createIndexNode->getFileAttributes();
 
   NABoolean alignedFormat = FALSE;
-  if (CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON) {
-     if (naTable->hasSerializedColumn())
-        alignedFormat = FALSE;
-     else
-     if (isSeabaseReservedSchema(tableName))
-        alignedFormat = FALSE;
-     else
+  if (fileAttribs.isRowFormatSpecified() == TRUE)
+    {
+      if (fileAttribs.getRowFormat() == ElemDDLFileAttrRowFormat::eALIGNED)
+        {
+          if (alignedFormatNotAllowed)
+          {
+             *CmpCommon::diags() << DgSqlCode(-4223)
+                                 << DgString0("Column Family specification on columns of an aligned format index is");
+             processReturn();
+          }
+          alignedFormat = TRUE;
+        }
+    }
+  else if(CmpCommon::getDefault(TRAF_INDEX_ALIGNED_ROW_FORMAT) == DF_ON)
+    {
+      if ( NOT isSeabaseReservedSchema(tableName))
         alignedFormat = TRUE;
-  }
+    }
   else
   if (naTable->isSQLMXAlignedTable())
     alignedFormat = TRUE;
+
+  if (alignedFormatNotAllowed)
+     alignedFormat = FALSE;
 
   if ((naTable->hasSecondaryIndexes()) &&
       (NOT createIndexNode->isVolatile()))

@@ -431,7 +431,7 @@ else
 # command to run JDBC tests
 cd $JDBCTEST_DIR
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
-  --target=localhost:$MY_DCS_MASTER_PORT \\
+  --target=localhost:$MY_DCS_MASTER_PORT --dbmaj=\$TRAFODION_VER_MAJOR --dbmin=\$TRAFODION_VER_MINOR \\
   --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
 EOF
     chmod +x $MY_SQROOT/sql/scripts/swjdbc
@@ -454,6 +454,7 @@ fi
 # End setup of PyODBC test
 
 source $HOME/.trafodion
+
 cds
 
 echo | tee -a ${MY_LOG_FILE}

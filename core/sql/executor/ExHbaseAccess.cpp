@@ -338,6 +338,10 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
     keyColValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (insDelPreCondExpr())
     insDelPreCondExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (insConstraintExpr())
+    insConstraintExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
+  if (updConstraintExpr())
+    updConstraintExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (hbaseFilterValExpr())
     hbaseFilterValExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   
@@ -1834,6 +1838,26 @@ short ExHbaseAccessTcb::evalInsDelPreCondExpr()
   return 0; 
 }
 
+short ExHbaseAccessTcb::evalConstraintExpr(ex_expr *expr, UInt16 tuppIndex,
+                                  char * tuppRow)
+{
+  if (expr == NULL) {
+     return 1;
+  }
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+  if ((tuppRow) && (tuppIndex > 0))
+    workAtp_->getTupp(tuppIndex).setDataPointer(tuppRow);
+  else
+    workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_).setDataPointer(convertRow_);
+  exprRetCode = expr->eval(pentry_down->getAtp(), workAtp_);
+  if (exprRetCode == ex_expr::EXPR_ERROR)
+     return -1;
+  else if (exprRetCode == ex_expr::EXPR_TRUE)
+     return 1;
+  else
+     return 0;
+}
 
 short ExHbaseAccessTcb::evalRowIdAsciiExpr(const char * inputRowIdVals,
 					   char * rowIdBuf, // input: buffer where rowid is created

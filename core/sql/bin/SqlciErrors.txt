@@ -99,7 +99,7 @@
 1097 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified partition $0~String0 does not exist.
 1098 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Partition key ($0~String0) already specified for object $1~TableName.
 1099 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~Int0 is unnamed.  You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.
-1100 ZZZZZ 99999 ADVANCED CRTCL DIALOUT Table $0~TableName could not be selected. $1~String0$2~String1
+1100 ZZZZZ 99999 ADVANCED MAJOR DBADMIN LOB Column  $0~ColumnName cannot be specified in alter operation
 1101 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Table $0~TableName could not be updated. $1~String0$2~String1
 1102 ZZZZZ 99999 ADVANCED CRTCL DIALOUT Rows could not be inserted into table $0~TableName. $1~String0$2~String1
 1103 ZZZZZ 99999 ADVANCED CRTCL DIALOUT Rows could not be deleted from table $0~TableName. $1~String0$2~String1
@@ -273,7 +273,7 @@
 1279 42000 99999 BEGINNER MAJOR DBADMIN A volatile DDL statement cannot be used on regular objects.
 1280 42000 99999 BEGINNER MAJOR DBADMIN A regular DDL statement cannot be used on volatile objects.
 1281 ZZZZZ 99999 BEGINNER INFRM LOGONLY
-1282 ZZZZZ 99999 BEGINNER INFRM LOGONLY
+1282 ZZZZZ 99999 BEGINNER INFRM LOGONLY A LOB column cannot be specified in a volatile table
 1283 0A000 99999 BEGINNER INFRM LOGONLY The specified constraint or file option is not supported on a volatile table.
 1284 ZZZZZ 99999 BEGINNER MINOR DBADMIN Table $0~TableName cannot be dropped because it was specified to be NOT DROPPABLE.
 1285 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName cannot be dropped because it contains NOT DROPPABLE table $1~TableName.
@@ -330,7 +330,7 @@
 1336 ZZZZZ 99999 ADVANCED MAJOR DBADMIN INITIALIZE SQL must specify a $0~String0 statement for the $1~String1.  INITIALIZE SQL fails.
 1337 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a reserved authorization identifier.
 1338 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Role $0~string0 is not defined in the database.
-1339 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a role.
+1339 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a grantable role.
 1340 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 is not a user.
 1341 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User owns one or more catalogs.
 1342 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot unregister user.  User owns one or more schemas.
@@ -439,7 +439,7 @@
 1529 ZZZZZ 99999 BEGINNER MINOR DBADMIN Sequence Generator $0~string0 not found in metadata table $1~String1.
 1530 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Failed to add the LDAP default configuration.
 1540 ZZZZZ 99999 BEGINNER MINOR DBADMIN The NO POPULATE clause is not allowed for index $0~String0 on volatile table $1~TableName.
-1541 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of BLOB datatype as a key of the base table or an index is not allowed.
+1541 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of BLOB/CLOB datatype as a key of the base table or an index is not allowed.
 1550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Failed to create UDF $0~string0 with $0~int0 parameters. A scalar UDF can have a maximum of 32 parameters.
 1551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN ---- Reserved for UDF ----
 1552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN ---- Reserved for UDF ----
@@ -2033,6 +2033,7 @@ drop the default context
 11152 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to convert TypeInfo $0~int0 for column or parameter number $1~int1 from UDF compiler interface into an SQL internal type. Details: $2~string0.
 11153 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to produce a query plan. This could be related to a TMUDF that failed to negotiate a query plan with the optimizer. One possible reason: $0~string0.
 11154 ZZZZZ 99999 BEGINNER MINOR LOGONLY Ordinal number $0~int0 used in $1~string0 clause of a UDF must be an integer ranging from 1 to the number of columns ($2~int1 in this case).
+11155 ZZZZZ 99999 BEGINNER MINOR LOGONLY A TMUDF must produce at least one output column.
 11200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -----First Language Manager Error -----
 11201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Language Manager initialization failed. Details: Errors occurred while loading Java class $0~String0.
 11202 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Language Manager initialization failed. Details: Unable to initialize the Java virtual machine. $0~string0
@@ -3088,7 +3089,7 @@ $3~String1.
 20232 ZZZZZ 99999 ADVANCED MAJOR DIALOUT This operation cannot be done on a nonaudited table that contains data.
 20233 ZZZZZ 99999 BEGINNER MINOR LOGONLY No partition could be found in volume $0~string0 for the specified object.
 20234 ZZZZZ 99999 BEGINNER MINOR LOGONLY Partition $0~string0 could not be found.
-20235 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error returned while converting user ID to username, status: $0~int0 userid: $1~int1.  
+20235 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error returned while converting auth ID to auth name, status: $0~int0 ID: $1~int1.  
 20236 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error returned while converting username to user ID, status: $0~int0, username: $1~string0.
 20237 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error occurred: invalid username specified, username: $0~string0.
 20238 ZZZZZ 99999 BEGINNER MINOR LOGONLY A user-defined transaction has been started. The MODIFY utility cannot perform the partition management operation.

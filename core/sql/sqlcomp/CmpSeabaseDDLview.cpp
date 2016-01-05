@@ -66,6 +66,7 @@
 static bool checkAccessPrivileges(
    const ParTableUsageList & vtul,
    const ParViewColTableColsUsageList & vctcul,
+   NABoolean viewCreator,
    PrivMgrBitmap & privilegesBitmap,
    PrivMgrBitmap & grantableBitmap);
 
@@ -367,6 +368,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 // Parameters:
 //    createViewNode - for list of objects and isUpdatable/isInsertable flags
 //    cliInterface - used to get UID of referenced object
+//    viewCreator - determines which authID to use to gather privs
 //    privilegeBitmap - returns privileges this user has on the view
 //    grantableBitmap - returns privileges this user can grant
 //
@@ -376,17 +378,18 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 // ****************************************************************************
 short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewNode,
 				           ExeCliInterface * cliInterface,
+                                           NABoolean viewCreator,
                                            PrivMgrBitmap &privilegesBitmap,
                                            PrivMgrBitmap &grantableBitmap)
 {
+  if (!isAuthorizationEnabled())
+    return 0;
+
   // set all bits to true initially, we will be ANDing with privileges
   // from all referenced objects 
   // default table and view privileges are the same, set up default values
   PrivMgr::setTablePrivs(privilegesBitmap);
   PrivMgr::setTablePrivs(grantableBitmap);
-
-  if (!isAuthorizationEnabled())
-    return 0;
 
   const ParViewUsages &vu = createViewNode->getViewUsages();
   const ParTableUsageList &vtul = vu.getViewTableUsageList();
@@ -394,7 +397,7 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
 
   // If DB__ROOT, no need to gather privileges
   if (!ComUser::isRootUserID() && 
-      !checkAccessPrivileges(vtul,vctcul,privilegesBitmap,grantableBitmap))
+      !checkAccessPrivileges(vtul,vctcul,viewCreator,privilegesBitmap,grantableBitmap))
     return -1;
 
   // If view is not updatable or insertable, turn off privs in bitmaps
@@ -539,9 +542,12 @@ short CmpSeabaseDDL::getListOfDirectlyReferencedObjects (
   return 0;
 }
 
+// ----------------------------------------------------------------------------
+// method: createSeabaseView
+// ----------------------------------------------------------------------------
 void CmpSeabaseDDL::createSeabaseView(
-				      StmtDDLCreateView * createViewNode,
-				      NAString &currCatName, NAString &currSchName)
+  StmtDDLCreateView * createViewNode,
+  NAString &currCatName, NAString &currSchName)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -712,16 +718,55 @@ void CmpSeabaseDDL::createSeabaseView(
   PrivMgrBitmap grantableBitmap;
   privilegesBitmap.set();
   grantableBitmap.set();
+
+  // The view creator may not be the same as the view owner.
+  // For shared schemas, the view creator is always the same as the view owner.
+  // For private schemas, the view owner is the schema owner. However, the 
+  // user that is issuing the CREATE statement is not always the schema owner.
+  NABoolean viewOwnerIsViewCreator  = 
+    ((schemaClass == COM_SCHEMA_CLASS_SHARED) ? TRUE : 
+      ((ComUser::getCurrentUser() == schemaOwnerID) ? TRUE : FALSE));
+ 
+  // Gather privileges for the view creator
+  NABoolean viewCreator = TRUE;
   if (gatherViewPrivileges(createViewNode, 
                            &cliInterface, 
+                           viewCreator,
                            privilegesBitmap, 
                            grantableBitmap))
     {
       processReturn();
-
       deallocEHI(ehi); 
-	  
       return;
+    }
+
+  PrivMgrBitmap ownerPrivBitmap;
+  PrivMgrBitmap ownerGrantableBitmap;
+  ownerPrivBitmap.set();
+  ownerGrantableBitmap.set();
+
+  // If view owner is the same as view creator, owner and creator privileges
+  // are the same
+  if (viewOwnerIsViewCreator)
+    {
+      ownerPrivBitmap = privilegesBitmap;
+      ownerGrantableBitmap = grantableBitmap; 
+    }
+ 
+  // If view creator is not the same as the view owner, gather the
+  // view owner privileges
+  else
+    {
+      if (gatherViewPrivileges(createViewNode, 
+                               &cliInterface, 
+                               !viewCreator,
+                               ownerPrivBitmap, 
+                               ownerGrantableBitmap))
+        {
+          processReturn();
+          deallocEHI(ehi); 
+          return;
+        }
     }
 
   NAString viewText(STMTHEAP);
@@ -791,43 +836,44 @@ void CmpSeabaseDDL::createSeabaseView(
   // grant privileges for view
   if (isAuthorizationEnabled())
     {
-      char authName[MAX_AUTHNAME_LEN+1];
-      Int32 lActualLen = 0;
-      Int16 status = ComUser::getAuthNameFromAuthID( (Int32) objectOwnerID
-                                                   , (char *)&authName
-                                                   , MAX_AUTHNAME_LEN
-                                                   , lActualLen );
-      if (status != FEOK)
-        {
-          *CmpCommon::diags() << DgSqlCode(-20235)
-                              << DgInt0(status)
-                              << DgInt1(objectOwnerID);
-
-          deallocEHI(ehi);
-
-          processReturn();
-
-          return;
-       }
-
       // Initiate the privilege manager interface class
       NAString privMgrMDLoc;
       CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
       PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), 
                                     CmpCommon::diags());
 
+      // Calculate the view owner (grantee)
+      int32_t grantee = (viewOwnerIsViewCreator) 
+         ? ComUser::getCurrentUser() : schemaOwnerID;
+      
+      // Grant view ownership - grantor is the SYSTEM
       retcode = privInterface.grantObjectPrivilege 
        (objUID, std::string(extViewName.data()), COM_VIEW_OBJECT, 
-        objectOwnerID, std::string(authName), 
-        privilegesBitmap, grantableBitmap);
+        SYSTEM_USER, grantee,
+        ownerPrivBitmap, ownerGrantableBitmap);
       if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
         {
           deallocEHI(ehi);
-
           processReturn();
-
           return;
         }
+
+      // if the view creator is different than view owner, assign creator 
+      // privileges (assigned by view owner to view creator)
+      if (!viewOwnerIsViewCreator)
+        {
+          retcode = privInterface.grantObjectPrivilege
+           (objUID, std::string(extViewName.data()), COM_VIEW_OBJECT,
+            schemaOwnerID, ComUser::getCurrentUser(),
+            privilegesBitmap, grantableBitmap);
+          if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
+            {
+              deallocEHI(ehi);
+              processReturn();
+              return;
+            }
+          }
+ 
       if (replacingView)
       {
          PrivStatus privStatus = privInterface.insertPrivRowsForObject(objUID,viewPrivsRows);
@@ -1372,7 +1418,9 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 // * Function: checkAccessPrivileges                                           *
 // *                                                                           *
 // *   This function determines if a user has the requesite privileges to      *
-// * access the referenced objects that comprise the view.                     *
+// * access the referenced objects that comprise the view. In addition it      *
+// * returns the privileges bitmap containing privileges to be granted to the  *
+// * view.                                                                     *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -1383,6 +1431,10 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 // *                                                                           *
 // *  <vctcul>                 const ParViewColTableColsUsageList &   In       *
 // *    is a reference to the list of columns used by the view.                *
+// *                                                                           *
+// *  <viewCreator>            NABoolean                              In       *
+// *    If TRUE, gather privileges for the view creator, if FALSE,             *
+// *    gather privileges for the view owner                                   *
 // *                                                                           *
 // *  <privilegesBitmap>       PrivMgrBitmap &                        Out      *
 // *    passes back the union of privileges the user has on the referenced     *
@@ -1404,17 +1456,22 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 static bool checkAccessPrivileges(
    const ParTableUsageList & vtul,
    const ParViewColTableColsUsageList & vctcul,
+   NABoolean viewCreator,
    PrivMgrBitmap & privilegesBitmap,
    PrivMgrBitmap & grantableBitmap)
    
 {
+  BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
+  bool missingPrivilege = false;
+  NAString extUsedObjName;
 
-BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
-bool missingPrivilege = false;
-NAString extUsedObjName;
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
+  PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()),
+                                CmpCommon::diags());
 
-// generate the lists of privileges and grantable privileges
-// a side effect is to return an error if basic privileges are not granted
+  // generate the lists of privileges and grantable privileges
+  // a side effect is to return an error if basic privileges are not granted
    for (CollIndex i = 0; i < vtul.entries(); i++)
    {
       if (vtul[i].getSpecialType() == ExtendedQualName::SG_TABLE)
@@ -1426,39 +1483,61 @@ NAString extUsedObjName;
       const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
       const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
       const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
-      const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
+      NAString extUsedObjName = usedObjName.getExternalName(TRUE);
       CorrName cn(objectNamePart,STMTHEAP, schemaNamePart,catalogNamePart);
  
       NATable *naTable = bindWA.getNATable(cn);
       if (naTable == NULL)
       {
-         SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");
+          SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");
          return false; 
       }
-      // Grab privileges from the NATable structure
-      PrivMgrUserPrivs *privs = naTable->getPrivInfo();
-      if (privs == NULL) 
-      {         
-         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-         return false;
+      PrivMgrUserPrivs privs;
+      PrivMgrUserPrivs *pPrivInfo = NULL;
+
+      // If gathering privileges for the view creator, the NATable structure
+      // contains the privileges we want to use to create bitmaps
+      if (viewCreator)
+        pPrivInfo = naTable->getPrivInfo();
+      
+      // If the view owner is not the view creator, then we need to get schema
+      // owner privileges from PrivMgr.
+      else 
+      {
+        PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+                                                           naTable->getObjectType(),
+                                                           naTable->getSchemaOwner(),
+                                                           privs);
+
+        if (retcode == STATUS_ERROR)
+        {         
+           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+           return false;
+        }
+        pPrivInfo = &privs;
       }
 
       // Requester must have at least select privilege
-      if ( !privs->hasSelectPriv() )
+      if ( !pPrivInfo->hasSelectPriv() )
          missingPrivilege = true;
 
-     // Summarize privileges
-      privilegesBitmap &= privs->getObjectBitmap();
-      grantableBitmap &= privs->getGrantableBitmap();
+      // Summarize privileges
+      privilegesBitmap &= pPrivInfo->getObjectBitmap();
+      grantableBitmap &= pPrivInfo->getGrantableBitmap();
    }
    
-   if (!missingPrivilege)
-      return true;
-   
+   //  To create a view you need at least select privilege, noSelectPriv
+   //  is true if the auth ID does not have select privilege at the object
+   //  level.  The view can still be created if select exists at the column
+   //  level.
+   bool noObjPriv = missingPrivilege;
    missingPrivilege = false;   
       
-PrivColumnBitmap colPrivBitmap;
-PrivColumnBitmap colGrantableBitmap;
+   // Gather column level privs to attach to the bitmap.
+   // Even though privileges are granted on the column, they show up as
+   // object privileges on the view.
+   PrivColumnBitmap colPrivBitmap;
+   PrivColumnBitmap colGrantableBitmap;
 
    PrivMgrPrivileges::setColumnPrivs(colPrivBitmap);
    PrivMgrPrivileges::setColumnPrivs(colGrantableBitmap);
@@ -1498,32 +1577,50 @@ PrivColumnBitmap colGrantableBitmap;
       }
       int32_t usedColNumber = naCol->getPosition();
      
-      // Grab privileges from the NATable structure
-      PrivMgrUserPrivs *privs = naTable->getPrivInfo();
-      if (privs == NULL) 
+      PrivMgrUserPrivs privs;
+      PrivMgrUserPrivs *pPrivInfo = NULL;
+      if (viewCreator)
+        pPrivInfo = naTable->getPrivInfo();
+      else
+      {
+        PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+                                                           naTable->getObjectType(),
+                                                           naTable->getOwner(),
+                                                           privs);
+
+        if (retcode == STATUS_ERROR)
+        {
+           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+           return false;
+        }
+        pPrivInfo = &privs;
+      }
+
+      if (pPrivInfo == NULL) 
       {         
          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
          return false;
       }
-      // If the user is missing SELECT on at least one column-level privilege,
-      // view cannot be created.  No need to proceed.
-      if (!privs->hasColSelectPriv(usedColNumber))
+
+      // If the user is missing SELECT at the object level and on at least one 
+      // column-level privilege, view cannot be created.  No need to proceed.
+      if (noObjPriv && !pPrivInfo->hasColSelectPriv(usedColNumber))
       {
          missingPrivilege = true;
          break;
       }        
       
-      colPrivBitmap &= privs->getColumnPrivBitmap(usedColNumber);
-      colGrantableBitmap &= privs->getColumnGrantableBitmap(usedColNumber);
+      colPrivBitmap &= pPrivInfo->getColumnPrivBitmap(usedColNumber);
+      colGrantableBitmap &= pPrivInfo->getColumnGrantableBitmap(usedColNumber);
    }
   
-   if (missingPrivilege || vctcul.entries() == 0)
-   {
-      *CmpCommon::diags() << DgSqlCode(-4481)
-                          << DgString0("SELECT")
-                          << DgString1(extUsedObjName.data());
-      return false;
-   }
+   if ((noObjPriv && missingPrivilege) || vctcul.entries() == 0)
+     {
+        *CmpCommon::diags() << DgSqlCode(-4481)
+                            << DgString0("SELECT")
+                            << DgString1(extUsedObjName.data());
+        return false;
+     }
   
    for (size_t i = FIRST_DML_COL_PRIV; i <= LAST_DML_COL_PRIV; i++ )
    {

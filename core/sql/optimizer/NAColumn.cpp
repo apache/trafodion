@@ -838,3 +838,27 @@ Int32 NAColumnArray::getColumnPosition(NAColumn& nc) const
   return -1;
 }
 
+NAString NAColumnArray::getColumnNamesAsString(char separator) const
+{
+   return getColumnNamesAsString(separator, entries());
+}
+
+NAString NAColumnArray::getColumnNamesAsString(char separator, UInt32 ct) const
+{
+  NAString nmList;
+
+  if ( ct == 0 )
+    return NAString();
+
+  if ( ct > entries() )
+    ct = entries();
+
+  for (CollIndex i = 0; i < ct-1; i++)
+  {
+     nmList += ToAnsiIdentifier(at(i)->getColName());
+     nmList += separator;
+  }
+     
+  nmList += ToAnsiIdentifier(at(ct-1)->getColName());
+  return nmList;
+}

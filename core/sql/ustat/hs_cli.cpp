@@ -112,6 +112,49 @@ private:
 #pragma warn(770)  // warning elimination
 
 // -----------------------------------------------------------------------
+// DESCRIPTION: Call SQL CLI to execute a SQL statement. The caller is
+//          responsible for all error checking and recovery.
+// INPUTS:  stmt = statement descriptor for the SQL query
+//          srcDesc = source descriptor pointing to the 
+//               text string of SQL query.
+//          doPrintPlan = if true, the plan for the query will be
+//                printed after the statement is prepared but before
+//                execution; if false we do a single CLI ExecDirect call
+// -----------------------------------------------------------------------
+
+Lng32 HSExecDirect( SQLSTMT_ID * stmt
+                  , SQLDESC_ID * srcDesc
+                  , NABoolean doPrintPlan
+                  )
+{
+  Lng32 retcode = 0;
+
+  if (doPrintPlan)
+    {
+      retcode = SQL_EXEC_Prepare(stmt, srcDesc);
+      if (retcode >= 0) // ignore warnings
+        {
+          if (doPrintPlan)
+            {
+              HSLogMan *LM = HSLogMan::Instance();
+              if (LM->LogNeeded()) 
+                {
+                  printPlan(stmt);
+                }
+            } 
+          retcode = SQL_EXEC_ExecFetch(stmt,0,0);
+        }
+    }
+  else
+    {
+      retcode = SQL_EXEC_ExecDirect(stmt, srcDesc, 0, 0);
+    }
+
+  return retcode;
+}
+
+
+// -----------------------------------------------------------------------
 // DESCRIPTION: Execute a standalone dml/ddl statement.
 // INPUTS:  dml = text string of SQL query.
 //          sqlcode = the error to issue upon failure, or HS_WARNING if
@@ -227,7 +270,7 @@ Lng32 HSFuncExecQuery( const char *dml
   if (!doRetry)
   {
     // execute immediate this statement
-    retcode = SQL_EXEC_ExecDirect(&stmt, &srcDesc, 0, 0);
+    retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
     // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
     if (retcode >= 0) retcode = 0;
     // If sqlcode is HS_WARNING, then this means failures should be returned as
@@ -258,7 +301,7 @@ Lng32 HSFuncExecQuery( const char *dml
       }
 
       // execute immediate this statement
-      retcode = SQL_EXEC_ExecDirect(&stmt, &srcDesc, 0, 0);
+      retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0);
 
       // filter retcode for HSHandleError
       HSFilterWarning(retcode);
@@ -319,10 +362,6 @@ Lng32 HSFuncExecQuery( const char *dml
       if (srcTabRowCount)
       {
         getRowCountFromStats(srcTabRowCount, tabDef) ;
-        // printing plan for insert...selects
-        if (LM->LogNeeded()) {
-          printPlan(&stmt) ;
-        }
       }
     }
   return retcode;
@@ -544,7 +583,10 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
     // If the table is a native one, convert the fully qualified user table name NT
     // to a fully qualified external table name ET. The sample table will be created
     // like ET.
-    if ( HSGlobalsClass::isNativeCat(objDef->getCatName(HSTableDef::EXTERNAL_FORMAT))) {
+    NABoolean isNativeTable =  
+      HSGlobalsClass::isNativeCat(objDef->getCatName(HSTableDef::EXTERNAL_FORMAT));
+
+    if ( isNativeTable ) {
       userTabName = ComConvertNativeNameToTrafName(
                       objDef->getCatName(HSTableDef::EXTERNAL_FORMAT),
                       objDef->getSchemaName(HSTableDef::EXTERNAL_FORMAT),
@@ -558,7 +600,11 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
     if (objDef->getObjectFormat() == SQLMX)
       {
-        tableOptions = " WITH PARTITIONS";
+        
+        // Do not emit the WITH PARTITIONS clause for native table. 
+        // Rather, the SALT USING clause will be used. 
+        if ( !isNativeTable ) 
+           tableOptions = " WITH PARTITIONS";
         // If a transaction is running, the table needs to be created as audited.
         // Otherwise, create table as non-audited.
         if (TM->InTransaction())
@@ -1713,8 +1759,8 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
                           createDandI,
                           minRowCtPerPartition
                          );
-      // sampleName output, actualRows & sampleRows will get modified if necessary
-      //  (based on isEstimate and the use of DP2 sampling respectively).
+      // sampleName output & actualRows will get modified if necessary
+      //  (based on isEstimate).
     if (!retcode)
     {
 
@@ -5130,9 +5176,9 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
     // 4. The table is an hbase table.
     // In any of these case, the sample table will be single partitioned.
     if (objDef->getObjectFormat() == SQLMP
-             // Set by HSTableDef::getLabelInfo().
+        // Set by HSTableDef::getLabelInfo().
         || (usePOS == FALSE && userDefinedScratchVols == FALSE)
-        || (HSGlobalsClass::isHbaseCat(objDef->getCatName())))
+        || HSGlobalsClass::isTrafodionCatalog(objDef->getCatName()) )
      {
         numPartitionsNeeded = 1;
 
@@ -5144,93 +5190,136 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
           }
       }
     else
-      {
-        numPartitionsNeeded = (Lng32) ceil((double)sampleRowCount
+     // if the table is a native HBase or Hive table
+     if ( HSGlobalsClass::isNativeCat(objDef->getCatName()) )
+     {
+
+           usePOS = FALSE;
+
+           numPartitionsNeeded = (Lng32) ceil((double)sampleRowCount
                                                      *
                                            objDef->getRecordLength()
                                                      /
                                            scratchVolThreshold
                                          );
 
+           NADefaults &defs = CmpCommon::context()->schemaDB_->getDefaults();
 
-        // For both IUS and RUS, make sure the number of partitions of the source table
-        // is a multiple of numPartitionsNeeded.
-        if ( CmpCommon::getDefault(USTAT_USE_GROUPING_FOR_SAMPLING) == DF_ON )
-        {
+           NABoolean fakeEnv= FALSE;
+           ComUInt32 numConfiguredESPs = defs.getTotalNumOfESPsInCluster(fakeEnv);
 
-          Lng32 tblPartns = objDef->getNumPartitions();
+           numPartitionsNeeded = MINOF(numConfiguredESPs, numPartitionsNeeded);
+           numPartitionsNeeded = MAXOF(1, numPartitionsNeeded);
 
-          if ( tblPartns < numPartitionsNeeded )
-            numPartitionsNeeded = tblPartns;
+           LM->Log("SYSKEY primary key.");
 
-          if ( numPartitionsNeeded > 0 )
-            while ( tblPartns % numPartitionsNeeded != 0 )
-              numPartitionsNeeded++;
+           snprintf(LM->msg, sizeof(LM->msg), "Partitions Needed: %d (TableType=%s, ~SampleSet=%d, RecLen=%d, threshold=%d)"
+                            , numPartitionsNeeded
+                            , "NATIVE"
+                            , (Lng32)sampleRowCount
+                            , (Lng32)objDef->getRecordLength()
+                            , scratchVolThreshold);
+  
+           LM->Log(LM->msg);
 
-          // Force to take the default code path of local node POS mode
-          // (which is identical to multi-node POS for SQ) to set the number of
-          // partitions for POS. That is, the # of partns of the sample table
-          // is specified via CQD POS_NUM_OF_PARTNS.
-          usePOSMultiNode = FALSE;
-          usePOSLocalNodeWithTableSize = FALSE;
+           if ( numPartitionsNeeded > 1 ) {
+               tableOptions +=" salt using ";
+               snprintf(tempStr, sizeof(tempStr), "%d", numPartitionsNeeded);
+               tableOptions += tempStr;
+               tableOptions +=" partitions on( ";
+               NAFileSet *naSet = objDef->getNATable()->getClusteringIndex();
+               tableOptions +=  naSet->getBestPartitioningKeyColumns(',');
+               tableOptions +=" ) ";
+           }
 
-        } else
-        {
+           return tableOptions;
 
-        // part of fix/workaround to bugzilla 2784: we need to guard against
-        // partitioning the sample table in a way that mxcmp is unable to
-        // generate a parallel plan for the sideinsert to populate it.
-        // For now, choosing numPartitionsNeeded to be even is safe.
-        if (((numPartitionsNeeded % 2) != 0) AND (numPartitionsNeeded > 1))
-          --numPartitionsNeeded;
+        } else {
 
-        // If POS is going to be uzed, there are 3 possibilities
-        // 1. estimated Number of partitions of sample table is less than
-        // number of partitions on local node, assuming each partition holds
-        // at most HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // (100MB/10MB is defaul) bytes of data.
-        // In this case we set POS to LOCAL_NODE and create exactly as many
-        // partitions as needed.
-        // 2. If case 1. is not true, (i.e. data in sample table will not fit on
-        // node, if we have HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // bytes of data in each partition and 1 partition per disk) we heuristically
-        // multiply HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // by 3 and see if the sample table will now fit in the local node. If it
-        // does we set POS to LOCAL_NODE and provide POS with the sample table size.
-        // POS will create one partition in each disk on the local node and automatically
-        // adjust the extent size based on the sample table size. If the number of partitions
-        // in the source table is less than or equal to the number of partitions in the local
-        // node we choose this option too as we do not want the sample table to have more partitions
-        // than the base table.
-        // 3. If the sample table will not fit in the local node even when
-        // HIST_SCRATCH_VOL_THRESHOLD is multiplied by 3, then we set POS to MULTI_NODE and
-        // provide it with the sample table size. POS will create a sample table
-        // with one partition in each available disk in the multi-node with the appropriate
-        // extent size based on sample table size.
+           numPartitionsNeeded = (Lng32) ceil((double)sampleRowCount
+                                                     *
+                                           objDef->getRecordLength()
+                                                     /
+                                           scratchVolThreshold
+                                         );
 
-        NAString *localNodeName = getLocalNodeName();
-        NodeToCpuVolMapDB *volumeCache = ActiveSchemaDB()->getNodeToCpuVolMapDB();
-        Lng32 numVolsInLocalNode = volumeCache->getTotalNumOfVols(localNodeName);
-        if ( (numVolsInLocalNode > 0) &&
-             (numPartitionsNeeded > numVolsInLocalNode))
-        {
-          if ((numPartitionsNeeded < 3*numVolsInLocalNode) ||
-              (objDef->getNumPartitions() <= numVolsInLocalNode))
-          {
-            usePOSLocalNodeWithTableSize = TRUE;
-            numPartitionsNeeded = numVolsInLocalNode;
-          }
-          else
-            usePOSMultiNode = TRUE ;
-
-            sampleTableSizeInMB = (Lng32) ceil((double)sampleRowCount
-                                                           *
-                                               objDef->getRecordLength()
-                                                           /
-                                                     MB_IN_BYTES);
-        }
-       } // end of not IUS
-      }
+           // For both IUS and RUS, make sure the number of partitions of the source table
+           // is a multiple of numPartitionsNeeded.
+           if ( CmpCommon::getDefault(USTAT_USE_GROUPING_FOR_SAMPLING) == DF_ON )
+           {
+   
+             Lng32 tblPartns = objDef->getNumPartitions();
+   
+             if ( tblPartns < numPartitionsNeeded )
+               numPartitionsNeeded = tblPartns;
+   
+             if ( numPartitionsNeeded > 0 )
+               while ( tblPartns % numPartitionsNeeded != 0 )
+                 numPartitionsNeeded++;
+   
+             // Force to take the default code path of local node POS mode
+             // (which is identical to multi-node POS for SQ) to set the number of
+             // partitions for POS. That is, the # of partns of the sample table
+             // is specified via CQD POS_NUM_OF_PARTNS.
+             usePOSMultiNode = FALSE;
+             usePOSLocalNodeWithTableSize = FALSE;
+   
+           } else {
+   
+           // part of fix/workaround to bugzilla 2784: we need to guard against
+           // partitioning the sample table in a way that mxcmp is unable to
+           // generate a parallel plan for the sideinsert to populate it.
+           // For now, choosing numPartitionsNeeded to be even is safe.
+           if (((numPartitionsNeeded % 2) != 0) AND (numPartitionsNeeded > 1))
+             --numPartitionsNeeded;
+   
+           // If POS is going to be uzed, there are 3 possibilities
+           // 1. estimated Number of partitions of sample table is less than
+           // number of partitions on local node, assuming each partition holds
+           // at most HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
+           // (100MB/10MB is defaul) bytes of data.
+           // In this case we set POS to LOCAL_NODE and create exactly as many
+           // partitions as needed.
+           // 2. If case 1. is not true, (i.e. data in sample table will not fit on
+           // node, if we have HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
+           // bytes of data in each partition and 1 partition per disk) we heuristically
+           // multiply HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
+           // by 3 and see if the sample table will now fit in the local node. If it
+           // does we set POS to LOCAL_NODE and provide POS with the sample table size.
+           // POS will create one partition in each disk on the local node and automatically
+           // adjust the extent size based on the sample table size. If the number of partitions
+           // in the source table is less than or equal to the number of partitions in the local
+           // node we choose this option too as we do not want the sample table to have more partitions
+           // than the base table.
+           // 3. If the sample table will not fit in the local node even when
+           // HIST_SCRATCH_VOL_THRESHOLD is multiplied by 3, then we set POS to MULTI_NODE and
+           // provide it with the sample table size. POS will create a sample table
+           // with one partition in each available disk in the multi-node with the appropriate
+           // extent size based on sample table size.
+   
+           NAString *localNodeName = getLocalNodeName();
+           NodeToCpuVolMapDB *volumeCache = ActiveSchemaDB()->getNodeToCpuVolMapDB();
+           Lng32 numVolsInLocalNode = volumeCache->getTotalNumOfVols(localNodeName);
+           if ( (numVolsInLocalNode > 0) &&
+                (numPartitionsNeeded > numVolsInLocalNode))
+           {
+             if ((numPartitionsNeeded < 3*numVolsInLocalNode) ||
+                 (objDef->getNumPartitions() <= numVolsInLocalNode))
+             {
+               usePOSLocalNodeWithTableSize = TRUE;
+               numPartitionsNeeded = numVolsInLocalNode;
+             }
+             else
+               usePOSMultiNode = TRUE ;
+   
+               sampleTableSizeInMB = (Lng32) ceil((double)sampleRowCount
+                                                              *
+                                                  objDef->getRecordLength()
+                                                              /
+                                                        MB_IN_BYTES);
+           }
+          } // end of USTAT_USE_GROUPING_FOR_SAMPLING is OFF
+     } // end of non hive tables
                                    /*=========================================*/
                                    /*   FLOAT PRIMARY KEY - NO PARTITIONING   */
                                    /*=========================================*/

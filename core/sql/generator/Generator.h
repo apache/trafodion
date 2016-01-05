@@ -1632,7 +1632,7 @@ public:
   void setPlanExpirationTimestamp(Int64 t);
   Int64 getPlanExpirationTimestamp() { return planExpirationTimestamp_; }
 
-  ItemExpr * addCompDecodeForDerialization(ItemExpr * ie);
+  ItemExpr * addCompDecodeForDerialization(ItemExpr * ie, NABoolean isAlignedFormat);
 
   void setHBaseNumCacheRows(double rowsAccessed, 
                             ComTdbHbaseAccess::HbasePerfAttributes * hbpa,

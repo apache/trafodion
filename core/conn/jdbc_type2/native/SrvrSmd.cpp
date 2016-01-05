@@ -357,13 +357,6 @@ void odbc_SQLSvc_GetSQLCatalogs_sme_(
 			}
 
 			SQLValue = (SQLValue_def *)outputValueList->_buffer;
-
-			if (SQLValue->dataInd == -1)
-			{
-			    exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
-			    exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_INVALID_SCHEMA_VERSION;
-			    FUNCTION_RETURN_VOID(("SQLValue->dataInd == -1"));
-			}
 	    }
 	 }
 

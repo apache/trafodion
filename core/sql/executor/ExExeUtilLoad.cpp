@@ -2979,11 +2979,12 @@ short ExExeUtilLobExtractTcb::work()
 		LobTgtFileFlags tgtFlags = Lob_Error_Or_Create;
 		if (lobTdb().errorIfNotExists() && !lobTdb().truncateExisting())
 		  tgtFlags = Lob_Append_Or_Error;
-		if (lobTdb().truncateExisting() && !lobTdb().errorIfNotExists())
-		  tgtFlags = Lob_Truncate_Or_Create;
-		if (lobTdb().errorIfNotExists() && lobTdb().truncateExisting())
+		if (lobTdb().truncateExisting() &&lobTdb().errorIfNotExists() )
 		  tgtFlags = Lob_Truncate_Or_Error;
-		
+		if (lobTdb().truncateExisting() && !lobTdb().errorIfNotExists())
+		  tgtFlags = Lob_Truncate_Or_Create;		
+		if(lobTdb().appendOrCreate())
+		  tgtFlags = Lob_Append_Or_Create;
 		retcode = ExpLOBInterfaceSelect(lobGlobs, 
 						lobName_,
 						lobLoc_,

@@ -3718,7 +3718,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
   NABoolean isVerticalPartition;
   NABoolean hasRemotePartition = FALSE;
   CollIndex numClusteringKeyColumns = 0;
-
+  NABoolean tableAlignedRowFormat = table->isSQLMXAlignedTable();
   // get hbase table index level and blocksize. costing code uses index_level
   // and block size to estimate cost. Here we make a JNI call to read index level
   // and block size. If there is a need to avoid reading from Hbase layer,
@@ -3777,27 +3777,10 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       // is this an index or is it really a VP?
       isVerticalPartition = indexes_desc->body.indexes_desc.isVerticalPartition;
       NABoolean isPacked = indexes_desc->body.indexes_desc.isPacked;
+      NABoolean indexAlignedRowFormat = (indexes_desc->body.indexes_desc.rowFormat == COM_ALIGNED_FORMAT_TYPE);
 
       NABoolean isNotAvailable =
 	indexes_desc->body.indexes_desc.notAvailable;
-/*
-      RowFormatEnum rowFormat;
-      switch (indexes_desc->body.indexes_desc.rowFormat)
-      {
-        case COM_PACKED_FORMAT_TYPE:
-           rowFormat = SQLMX_ROW_FORMAT;
-           break;
-        case COM_ALIGNED_FORMAT_TYPE:
-           rowFormat = SQLMX_ALIGNED_ROW_FORMAT;
-           break;
-        case COM_HBASE_FORMAT_TYPE:
-           rowFormat = SQLMX_HBASE_FORMAT;
-           break;
-        default:
-           rowFormat = SQLMX_UNKNOWN_FORMAT;
-      }
-*/
-
 
       ItemExprList hbaseSaltColumnList(CmpCommon::statementHeap());
       Int64 numOfSaltedPartitions = 0;
@@ -3833,13 +3816,14 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
           indexColumn = colArray.getColumn(tablecolnumber);
           
           if ((table->isHbaseTable()) &&
-              (indexes_desc->body.indexes_desc.keytag != 0))
+              ((indexes_desc->body.indexes_desc.keytag != 0) || 
+                (indexAlignedRowFormat  && indexAlignedRowFormat != tableAlignedRowFormat)))
             {
               newIndexColumn = new(heap) NAColumn(*indexColumn);
               newIndexColumn->setIndexColName(keys_desc->body.keys_desc.keyname);
               newIndexColumn->setHbaseColFam(keys_desc->body.keys_desc.hbaseColFam);
               newIndexColumn->setHbaseColQual(keys_desc->body.keys_desc.hbaseColQual);
-              
+              newIndexColumn->resetSerialization(); 
               saveNAColumns.insert(indexColumn);
               newColumns.insert(newIndexColumn);
               indexColumn = newIndexColumn;
@@ -3930,14 +3914,15 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
           indexColumn = colArray.getColumn(tablecolnumber);
 
 	  if ((table->isHbaseTable()) &&
-	      (indexes_desc->body.indexes_desc.keytag != 0))
+	      ((indexes_desc->body.indexes_desc.keytag != 0) || 
+               (indexAlignedRowFormat  && indexAlignedRowFormat != tableAlignedRowFormat)))
 	    {
 	      newIndexColumn = new(heap) NAColumn(*indexColumn);
 	      if (non_keys_desc->body.keys_desc.keyname)
 		newIndexColumn->setIndexColName(non_keys_desc->body.keys_desc.keyname);
 	      newIndexColumn->setHbaseColFam(non_keys_desc->body.keys_desc.hbaseColFam);
 	      newIndexColumn->setHbaseColQual(non_keys_desc->body.keys_desc.hbaseColQual);
-	      
+              newIndexColumn->resetSerialization(); 
 	      indexColumn = newIndexColumn;
               newColumns.insert(newIndexColumn);
 	    }
@@ -5524,7 +5509,6 @@ NATable::NATable(BindWA *bindWA,
 
   if (hasLobColumn())
     {
-//    Memory Leak
       // read lob related information from lob metadata
       short *lobNumList = new (heap_) short[getColumnCount()];
       short *lobTypList = new (heap_) short[getColumnCount()];
