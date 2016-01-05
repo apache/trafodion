@@ -63,7 +63,12 @@ FLOATING_IP=""
 BACKUP_DCS_NODES=""
 LDAP_SECURITY="N"
 SCANNER_MODE="N"
-DCS_PRIMARY_MASTER_NODE=`hostname`
+DCS_PRIMARY_MASTER_NODE=`hostname -f`
+CLOUD_CONFIG="N"
+CLOUD_TYPE=""
+AWS_CLOUD=""
+OPEN_STACK=""
+OTHER_CLOUD=""
 
 LDAP_LEVEL="0"
 #==============================================
@@ -160,15 +165,13 @@ echo "export SQCONFIG=\"$SQCONFIG\"" >> $LOCAL_TRAF_CONFIG
 #==============================================
 #Check if customer is using cloud environment and get the type of cloud being used
 #Get the CLOUD_CONFIG and CLOUD_TYPE
-echo -n "Is this a cloud environment (Y/N), default is N: "
+echo -n "Is this a cloud environment (Y/N), default is [$CLOUD_CONFIG]: "
 read answer
 
 if [ ! -z $answer ]; then
    if [[ "${answer}" =~ ^[Yy]$ ]]; then
          CLOUD_CONFIG="Y"
-      fi
-   else 
-      CLOUD_CONFIG="N"
+   fi
 fi
 
 echo "export CLOUD_CONFIG=\"$CLOUD_CONFIG\"" >> $LOCAL_TRAF_CONFIG
@@ -177,7 +180,7 @@ if [[ "$CLOUD_CONFIG" == "Y" ]]; then
   echo -n "Specify the type of cloud being used (1: AWS(Amazon cloud), 2: OpenStack, 3: Other): "
   read answer1
   if [[ -z "$answer1" ]]; then
-     echo "***ERROR: Must specify the type of Cloud being used."
+     echo "***ERROR: User must specify the type of Cloud being used."
      exit -1
   else
      CLOUD_TYPE=$answer1
@@ -513,7 +516,7 @@ echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
 #==============================================
 #Get the node name where the customer would like to start DcsMaster process
 
-echo -n "Specify the node of DcsMaster process, default [$DCS_PRIMARY_MASTER_NODE]: "
+echo -n "Enter the node of primary DcsMaster, default [$DCS_PRIMARY_MASTER_NODE]: "
 read answer
 
 if [ ! -z $answer ]; then

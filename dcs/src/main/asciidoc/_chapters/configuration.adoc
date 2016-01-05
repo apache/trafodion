@@ -127,13 +127,13 @@ All servers listed in this file will be started and stopped when DCS start or st
 
 The  _backup-masters_ file lists all hosts that you would have running
 backup DcsMaster processes, one host per line. All servers listed in this file will be started 
-and stopped during DCS start or stop is run.
+and stopped when DCS start or stop is run.
 
 ==== _master_ 
 
 The  _master_ file lists the host of the primary DcsMaster process. Only one host is allowed to 
 be the primary master. The server listed in this file will be started 
-and stopped during DCS start or stop is run.
+and stopped when DCS start or stop is run.
  
 ==== ZooKeeper and DCS 
 See section <<zookeeper,Zookeeper>> for ZooKeeper setup for DCS.
@@ -158,9 +158,9 @@ found in the _logs_ subdirectory. Check them out
 especially if DCS had trouble starting.
 
 DCS also puts up a UI listing vital attributes and metrics. By default its deployed on the DcsMaster 
-host at port 40010 (DcsServers put up an informational http server at 40030+their instance number). 
+host at port 24410 (DcsServers put up an informational http server at 24430+their instance number). 
 If the DcsMaster were running on a host named `master.example.org` on the default port, to see the
-DcsMaster's homepage you'd point your browser at  _http://master.example.org:40010_.
+DcsMaster's homepage you'd point your browser at  _http://master.example.org:24410_.
  
 To stop DCS after exiting the DCS shell enter
 ----
@@ -304,7 +304,7 @@ include::../../../../target/asciidoc/dcs-default.adoc[]
 
 === _dcs-env.sh_
 Set DCS environment variables in this file. Examples include options to pass the JVM on start of
-an DCS daemon such as heap size and garbarge collector configs. You can also set configurations for DCS configuration, log directories,
+an DCS daemon such as heap size and garbage collector configs. You can also set configurations for DCS configuration, log directories,
 niceness, ssh options, where to locate process pid files, etc. Open the file at _conf/dcs-env.sh_ and peruse its content.
 Each option is fairly well documented.  Add your own environment variables here if you want them read by DCS daemons on startup.
   
@@ -430,15 +430,15 @@ Use _rsync_ to copy the content of the  _conf_ directory to all nodes of the clu
 == High Availability(HA) Configuration 
 The master configuration file for DcsMaster may be configured by adding the host name to the _conf/master_ file. If the master is 
 configured to start on the remote node then, during start of dcs the primary master will be started on the remote 
-node. If the _conf/master_ file is empty then the primary master will be the host where the dcs start script was run.
+node. If the _conf/master_ file is empty then the primary master will be started on the host where the dcs start script was run.
 Similarly, DcsMaster backup servers may be configured by adding host names to the _conf/backup-masters_ file. They are
 started and stopped automatically by the _bin/master-backup.sh_ script whenever DCS is started or stopped. Every backup 
-DcsMaster follows the current leader DcsMaster watching for it to fail. If failure of the leader occurs the first
+DcsMaster follows the current leader DcsMaster watching for it to fail. If failure of the leader occurs, first
 backup DcsMaster in line for succession checks to see if floating IP is enabled. If enabled it executes
 the _bin/scripts/dcsbind.sh_ script to add a floating IP address to an interface on its node. It then continues
 with normal initialization and eventually starts listening for new client connections. It may take
 several seconds for the take over to complete. When a failed node is restored a new DcsMaster backup may
-be started manually by executing the _bin/dcs-daemon.sh_ script on the restored node
+be started manually by executing the _bin/dcs-daemon.sh_ script on the restored node.
 
 ----
 >bin/dcs-daemon.sh start master

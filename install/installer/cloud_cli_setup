@@ -50,7 +50,7 @@ if [[ ! -z $AWS_CLOUD ]]; then
           $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
        fi
 
-       $TRAF_PDSH sudo rm -f $HOME/awscli-bundle 
+       $TRAF_PDSH sudo rm -rf $HOME/awscli-bundle 
        rm -f $HOME/awscli-bundle.zip
 
        ###### Execute 'aws configure' command as a Trafodion Id
