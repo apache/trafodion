@@ -12,6 +12,7 @@ page:
   size: letter
 base:
   font_color: #333333
+  font_size: 10
   line_height_length: 17
   line_height: $base_line_height_length / $base_font_size
 vertical_rhythm: $base_line_height_length
@@ -50,3 +51,4 @@ table:
   border_width: 0
 code:
   font_family: Courier
+  font_size: 10
