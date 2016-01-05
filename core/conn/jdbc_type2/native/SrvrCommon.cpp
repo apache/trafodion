@@ -1702,8 +1702,7 @@ tableNm, tableNmNoEsc)) && !metadataId)
                     snprintf((char *)sqlString->dataValue._buffer, totalSize,
                             "select obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEM,"
                             "obj.OBJECT_NAME PROCEDURE_NAME, cols.COLUMN_NAME COLUMN_NAME, "
-                            "cast((case when cols.DIRECTION='I' then 1 when cols.DIRECTION='N' then 2 when cols.DIRECTION='O' then 3 e
-lse 0 end) as smallint) COLUMN_TYPE, "
+                            "cast((case when cols.DIRECTION='I' then 1 when cols.DIRECTION='N' then 2 when cols.DIRECTION='O' then 3 else 0 end) as smallint) COLUMN_TYPE, "
                             "cols.FS_DATA_TYPE DATA_TYPE, cols.SQL_DATA_TYPE TYPE_NAME, "
                             "cols.COLUMN_PRECISION \"PRECISION\", cols.COLUMN_SIZE LENGTH, cols.COLUMN_SCALE SCALE, "
                             "cast(1 as smallint) RADIX, cols.NULLABLE NULLABLE, cast(NULL as varchar(10)) REMARKS, "
@@ -1712,8 +1711,6 @@ lse 0 end) as smallint) COLUMN_TYPE, "
                             "cols.NULLABLE IS_NULLABLE, cols.COLUMN_NAME SPECIFIC_NAME"
                             " from TRAFODION.\"_MD_\".OBJECTS obj "
                             " left join TRAFODION.\"_MD_\".COLUMNS cols on obj.OBJECT_UID=cols.OBJECT_UID "
-			    " left join TRAFODION.\"_MD_\".KEYS keys on cols.COLUMN_NAME=keys.COLUMN_NAME and cols.OBJECT_UID=keys.OBJ
-ECT_UID"
                             " where "
                             " (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
                             " and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
