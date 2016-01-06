@@ -2895,7 +2895,19 @@ short ExExeUtilLobExtractTcb::work()
 	    else
 	      if ((lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_) || (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_))
 	      step_ = RETRIEVE_LOB_LENGTH_;
-	    
+	      else
+		{
+		  // invalid "toType"
+		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+		  ComDiagsArea * da = up_entry->getDiagsArea();
+		  ExRaiseSqlError(getMyHeap(),
+				  &da,
+				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
+		  step_ = CANCEL_;
+		
+		break;
+
+		}
 	    break;
 	  }
 	case RETRIEVE_LOB_LENGTH_ : 
@@ -3128,8 +3140,7 @@ short ExExeUtilLobExtractTcb::work()
 	    remainingBytes_ = (Lng32)lobDataOutputLen;
 	    currPos_ = 0;
 
-            /*if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_)
-              step_ = INSERT_FROM_STRING_;*/
+            
             if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
 	      {
 		str_sprintf(statusString_," Success: LOB data length returned : %d", lobDataOutputLen);
@@ -3137,6 +3148,19 @@ short ExExeUtilLobExtractTcb::work()
 		//lobTdb().setExtractSizeIOAddr((Int64)(&lobDataOutputLen));
 		memcpy((char *)lobTdb().dataExtractSizeIOAddr(), (char *)&lobDataOutputLen,sizeof(Int64));
 		step_ = RETURN_STATUS_;
+	      }
+	    else
+	      {
+		// No other "toType" shoudl reach here - i.e TO_FILE_ or TO_STRING
+		ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+		ComDiagsArea * da = up_entry->getDiagsArea();
+		ExRaiseSqlError(getMyHeap(),
+				&da,
+				(ExeErrorCode)(EXE_INTERNAL_ERROR));
+		step_ = CANCEL_;
+		
+		break;
+		
 	      }
 	  }
 	  break;
@@ -3490,29 +3514,6 @@ short ExExeUtilFileExtractTcb::work()
 	    step_ = COLLECT_STATS_;
 	  }
 	  break;
-
-
-	  /*case RETURN_STRING_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    Lng32 size = MINOF((Lng32)lobTdb().dataExtractSizeIOAddr(), (Lng32)remainingBytes_);
-
-	    // eval expression to convert lob data to sql row.
-	    // TBD.
-
-	    moveRowToUpQueue(&lobData_[currPos_], size);
-
-	    remainingBytes_ -= size;
-	    currPos_ += size;
-
-	    if (remainingBytes_ <= 0)
-	      step_ = READ_CURSOR_;
-
-	    return WORK_RESCHEDULE_AND_RETURN;
-	  }
-	  break;*/
 
 	case HANDLE_ERROR_:
 	  {

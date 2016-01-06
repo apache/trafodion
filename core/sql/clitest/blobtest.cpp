@@ -63,8 +63,6 @@ Int32 extractLobHandle(CliGlobals *cliglob, char *& lobHandle,
   
   retcode = cliInterface.executeImmediate(query,lobHandle,&lobHandleLen,FALSE);
 
-  if (retcode)
-    return retcode;
   lobHandle[lobHandleLen]='\0';
   delete query;
   
@@ -182,7 +180,13 @@ Int32 insertBufferToLob(CliGlobals *cliglob, char *tableName)
  
   retcode = cliInterface.executeImmediate(query);
   if (retcode <0)
-    return retcode;
+    {
+      cliInterface.executeImmediate("rollback work");
+      delete query;
+      delete lobDataBuf;
+    
+      return retcode;
+    }
 
   retcode = cliInterface.executeImmediate("commit work");
   delete query;
@@ -212,7 +216,12 @@ Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName)
  
   retcode = cliInterface.executeImmediate(query);
   if (retcode <0)
-    return retcode;
+    {
+      cliInterface.executeImmediate("rollback work");
+      delete query;
+      delete lobDataBuf;
+      return retcode;
+    }
 
   retcode = cliInterface.executeImmediate("commit work");
   delete query;
@@ -243,7 +252,12 @@ Int32 updateAppendBufferToLob(CliGlobals *cliglob, char *tableName, char *column
  
   retcode = cliInterface.executeImmediate(query);
   if (retcode <0)
-    return retcode;
+    {
+      cliInterface.executeImmediate("rollback work");
+      delete query;
+      delete lobDataBuf;
+      return retcode;
+    }
 
   retcode = cliInterface.executeImmediate("commit work");
   delete query;

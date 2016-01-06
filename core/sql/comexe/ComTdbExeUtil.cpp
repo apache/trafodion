@@ -2245,15 +2245,7 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
     flags_(0)
 {
   setNodeType(ComTdb::ex_LOB_EXTRACT);
-  if ((toType_ == ExtractToType::TO_BUFFER_) || (toType_ == ExtractToType::TO_STRING_))
-    {
-      /*// intparam1 contains the rowsize passed in via syntax
-      // intparam2 constains the total buf size user has allocated
-      rowSize_ = intParam1;
-      bufSize_ = intParam2; */
-      
-    }
-    else if (toType_ == ExtractToType::TO_FILE_)
+  if (toType_ == ExtractToType::TO_FILE_)
       {
 	// extractSize_ is irrelevant since the whole lob will be read into the output file
 	// bufAddr_ is not passed in by user. It is a CQD value LOB_OUTPUT_SIZE
