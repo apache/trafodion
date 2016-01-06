@@ -301,7 +301,7 @@ void odbc_SQLSvc_GetSQLCatalogs_sme_(
 		inputParam[2] = schemaNmNoEsc;
 		inputParam[3] = expSchemaNm;
 	    inputParam[4] = NULL;
-	    if(uniqueness == 0)
+	    if(uniqueness == SQL_INDEX_UNIQUE)
 	    {
 	        uniqueness_str[0] = '0';
 		inputParam[5] = uniqueness_str;

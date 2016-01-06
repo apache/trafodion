@@ -1676,11 +1676,11 @@ short do_ExecSMD(
 		    "left join TRAFODION.\"_MD_\".OBJECTS idxobj on index.index_uid=idxobj.object_UID "
 		    "left join TRAFODION.\"_MD_\".COLUMNS cols on cols.column_name<>'SYSKEY' and idxobj.object_uid=cols.object_uid "
 		    "left join TRAFODION.\"_MD_\".KEYS keys on cols.object_uid=keys.object_uid and cols.COLUMN_NAME=keys.COLUMN_NAME and keys.column_name<>'SYSKEY' "
-		    "where 1=1 %s"
+		    " where 1=1 "
 		    " and (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
 		    " and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
-		    " FOR READ UNCOMMITTED ACCESS order by INDEX_NAME, ORDINAL_POSITION;",
-		    cunique, inputParam[0], inputParam[1], inputParam[2],  inputParam[3]);
+		    " %s FOR READ UNCOMMITTED ACCESS order by INDEX_NAME, ORDINAL_POSITION;",
+		    inputParam[0], inputParam[1], inputParam[2],  inputParam[3], cunique);
 		    break;
             }
     if (pSrvrStmt == NULL)
