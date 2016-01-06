@@ -30,34 +30,34 @@ if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
     TRAF_PDCP=""
 else
-    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
+    TRAF_PDSH="pdsh $MY_NODES"
     TRAF_PDCP="pdcp -R ssh $MY_NODES"
 fi
 
 ###### Setting up CLI for AWS as sudo id
 if [[ ! -z $AWS_CLOUD ]]; then
     ###### Check if aws configuration file exist for Trafodion Id
-    AWSCONFIG_DIR=$(sudo su $TRAF_USER --login --command "$(/bin/ls -d $HOME/.aws)" 2>/dev/null)
-    if [[ -z $AWSCONFIG_DIR ]]; then
+    AWSCONFIG_DIR=`sudo su $TRAF_USER --login --command "ls -altr | grep -w ".aws" | wc -l" `
+    if [[ $AWSCONFIG_DIR == 0 ]]; then
        cd $HOME
        curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
        unzip $HOME/awscli-bundle.zip
 
        if [[ $node_count -gt "1" ]]; then
-          $TRAF_PDCP $HOME/awscli-bundle $HOME
-          $TRAF_PDSH sudo $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+          $TRAF_PDCP -r $HOME/awscli-bundle $HOME
+          $TRAF_PDSH "sudo $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws" | tee -a $INSTALL_LOG
        else 
-          $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+          $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws | tee -a $INSTALL_LOG
        fi
 
-       $TRAF_PDSH sudo rm -rf $HOME/awscli-bundle 
+       $TRAF_PDSH "sudo rm -rf $HOME/awscli-bundle"
        rm -f $HOME/awscli-bundle.zip
 
        ###### Execute 'aws configure' command as a Trafodion Id
        sudo su $TRAF_USER --login --command "/usr/local/bin/aws configure"
 
        ###### Copy the .aws folder to all nodes in the cluster for Trafodion Id
-       sudo su $TRAF_USER --login --command "$TRAF_PDCP $HOME/.aws $HOME"
+       sudo su $TRAF_USER --login --command "$TRAF_PDCP -r $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
     else
        echo "AWS Configuration already exist for Trafodion Id"
        echo -n "Do you want to overwrite the configuration (Y/N), default is N: "
@@ -68,7 +68,7 @@ if [[ ! -z $AWS_CLOUD ]]; then
              sudo su $TRAF_USER --login --command "/usr/local/bin/aws configure"
 
              ###### Copy the .aws folder to all nodes in the cluster for Trafodion Id
-             sudo su $TRAF_USER --login --command "$TRAF_PDCP $HOME/.aws $HOME"
+             sudo su $TRAF_USER --login --command "$TRAF_PDCP -r  $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
          fi
        fi
     fi
