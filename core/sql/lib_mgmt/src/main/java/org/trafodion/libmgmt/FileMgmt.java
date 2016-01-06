@@ -59,12 +59,12 @@ public class FileMgmt {
 	 */
 	public static void help(String[] helps) {
 		String[] help = new String[] {
-				"PUT - Upload a JAR. SHOWDDL PROCEDURE DEFAULT_SPJ.PUT for more info.",
-				"LS - List JARs. SHOWDDL PROCEDURE DEFAULT_SPJ.LS for more info.",
-				"LSALL - List all JARs. SHOWDDL PROCEDURE DEFAULT_SPJ.LSALL for more info.",
-				"RM - Remove a JAR. SHOWDDL PROCEDURE DEFAULT_SPJ.RM for more info.",
-				"RMREX - Remove JARs by a perticular pattern. SHOWDDL PROCEDURE DEFAULT_SPJ.RMREX for more info.",
-				"GETFILE - Download a JAR. SHOWDDL PROCEDURE DEFAULT_SPJ.GETFILE for more info."
+				"PUT - Upload a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]PUT for more info.",
+				"LS - List JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LS for more info.",
+				"LSALL - List all JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info.",
+				"RM - Remove a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.",
+				"RMREX - Remove JARs by a perticular pattern. SHOWDDL PROCEDURE [SCHEMA NAME.]RMREX for more info.",
+				"GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info."
 		};
 		List<String> index = new ArrayList<String>(help.length);
 		index.add("PUT");

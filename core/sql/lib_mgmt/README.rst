@@ -20,38 +20,38 @@
    # @@@ END COPYRIGHT @@@
 
 =============================
-Trafodion Core README
+Trafodion lib_mgmt README
 =============================
 
 How to build and initialize default SPJs 
 
   Build
-cd $MY_SQROOT/../conn/spj_init    
-make clean && make all  
+cd $MY_SQROOT/../sql/lib_mgmt
+make clean && make all
 
   Initialization
 
-cds && ./init_spj.sql 
+cds && ./init_libmgmt.sql
 
    SPJ Example
 
-DEFAULT_SPJ.HELP(INOUT COMMANDNAME VARCHAR)
+DB_LIBMGR.HELP(INOUT COMMANDNAME VARCHAR)
  
 E.g.
  
 trafci>set param ?p1 help;
  
-trafci>call DEFAULT_SPJ.HELP(?p1)
+trafci>call DB_LIBMGR.HELP(?p1)
  
-PUT - Upload a JAR. SHOWDDL PRODURE DEFAULT_SPJ.PUT for more info.
+PUT - Upload a JAR. SHOWDDL PRODURE [SCHEMA NAME.]PUT for more info.
  
-LS - List JARs. SHOWDDL PRODURE DEFAULT_SPJ.LS for more info.
+LS - List JARs. SHOWDDL PRODURE [SCHEMA NAME.]LS for more info.
  
-LSALL - List all JARs. SHOWDDL PRODURE DEFAULT_SPJ.LSALL for more info. 
+LSALL - List all JARs. SHOWDDL PRODURE [SCHEMA NAME.]LSALL for more info. 
  
-RM - Remove a JAR. SHOWDDL PRODURE DEFAULT_SPJ.RM for more info.  
+RM - Remove a JAR. SHOWDDL PRODURE [SCHEMA NAME.]RM for more info.
 
-RMREX - Remove JARs by a perticular pattern. SHOWDDL PRODURE DEFAULT_SPJ.RMREX for more info. 
+RMREX - Remove JARs by a perticular pattern. SHOWDDL PRODURE [SCHEMA NAME.]RMREX for more info.
 
-GETFILE - Download a JAR. SHOWDDL PRODURE DEFAULT_SPJ.GETFILE for more info.
+GETFILE - Download a JAR. SHOWDDL PRODURE [SCHEMA NAME.]GETFILE for more info.
 
