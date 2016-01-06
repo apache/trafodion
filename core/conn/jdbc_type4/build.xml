@@ -27,10 +27,11 @@
 	</tstamp>
 
 	<!-- input -->
-        <exec executable="/bin/sh">
-            <arg line="getBuildInfo"/>
-        </exec>
-        <property file="buildId"/>
+	<exec executable="git" outputproperty="bldId">
+	        <arg value="rev-parse" />
+	        <arg value="--short" />
+	        <arg value="HEAD" />
+	</exec>
 	<property name="vproc.str" value="Traf_JDBC_Type4_Build_${bldId}" />
 	<property name="my_sqroot" value="../../sqf"/>
 	<property id="basedir" name="basedir" value="."/>
