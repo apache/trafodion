@@ -1975,7 +1975,7 @@ short do_ExecFetchAppend(
     pSrvrStmt = createSrvrStmt(dialogueId,
         stmtLabel,
         &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMX",
+        NULL,
         SQLCLI_ODBC_MODULE_VERSION,
         1234567890,
         sqlStmtType,
