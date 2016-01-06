@@ -1666,10 +1666,11 @@ tableNm, tableNmNoEsc)) && !metadataId)
                         " from TRAFODION.\"_MD_\".OBJECTS obj "
                         " where "
                         " (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+			" and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
                         " and obj.OBJECT_TYPE='UR' "
                         " order by obj.OBJECT_NAME"
                         " FOR READ UNCOMMITTED ACCESS;",
-                        inputParam[0], inputParam[1]);
+                        inputParam[0], inputParam[1], inputParam[2], inputParam[3]);
                     break;
                 case SQL_API_SQLPROCEDURECOLUMNS:
                     if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(
