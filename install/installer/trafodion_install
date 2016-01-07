@@ -783,7 +783,7 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
 fi
 
 # Install and configure CLI for Cloud environments
-if  [ "$ENABLE_HA" == "true" ] && [ $CLOUD_CONFIG == "Y" ]; then
+if  [ "$ENABLE_HA" == "true" ] && [[ $CLOUD_CONFIG == "Y" ]]; then
   echo "***INFO: Install and configure CLI for Cloud"   
   $TRAF_WORKDIR/installer/cloud_cli_setup
 fi

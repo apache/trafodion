@@ -225,21 +225,17 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
 
    ######Copy HA configuration to all nodes in the cluster
-   if [[ $node_count -gt 1 ]]; then
-      $TRAF_PDCP $DCS_DIR/conf/dcs-site.xml $DCS_DIR/conf/dcs-site.xml
-      $TRAF_PDCP $DCS_DIR/conf/backup-masters $DCS_DIR/conf/backup-masters
-   fi
+   #Following lines are being copied by the caller script. Will remove these lines later
+   #if [[ $node_count -gt 1 ]]; then
+   #   $TRAF_PDCP $DCS_DIR/conf/dcs-site.xml $DCS_DIR/conf/dcs-site.xml
+   #   $TRAF_PDCP $DCS_DIR/conf/backup-masters $DCS_DIR/conf/backup-masters
+   #   $TRAF_PDCP $SQ_ROOT/trafci/bin/trafci $SQ_ROOT/trafci/bin/trafci
+   #fi
 else
    ######Configure trafci wrapper script 
    sed -i -e "s/HNAME=localhost:23400/$DCS_PRIMARY_MASTER_NODE:23400/g" $SQ_ROOT/trafci/bin/trafci
 
 fi
-
-###### Copy trafci to all nodes in the cluster
-if [[ $node_count -gt 1 ]]; then
-   $TRAF_PDCP $SQ_ROOT/trafci/bin/trafci $SQ_ROOT/trafci/bin/trafci
-fi
-
 
 echo "***INFO: creating $DCS_DIR/conf/servers file"
 rm servers 2>/dev/null
