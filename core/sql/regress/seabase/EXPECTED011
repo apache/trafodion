@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Fri Oct  2 02:48:09 2015
+-- Definition current  Wed Jan  6 23:31:01 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -142,7 +142,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212310514090586565
+PLAN_ID .................. 212318883062781505
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -174,13 +174,13 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
-  HBASE_FILTER_PREDS ..... ON
+  HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   QUERY_CACHE ............ 0
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 645219028244664647
+  ObjectUIDs ............. 5568224739891142318
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -203,6 +203,8 @@ DESCRIPTION
   cache_size ........... 100
   probes ................. 1
   rows_accessed ......... 11
+  column_retrieved ....... #1:1,#1:2
+  pushed_down_rpn ........ (#1:1>=?)(#1:1<?)AND
   key_columns ............ A
 
 --- SQL operation complete.
@@ -1264,7 +1266,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Fri Oct  2 02:50:03 2015
+-- Definition current  Wed Jan  6 23:33:14 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1446,7 +1448,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000001146212310514063700975000000000206U3333300_1922_EXPLSTMT
+MXID11000009891212318883040903421000000000206U3333300_1923_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1498,7 +1500,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000001146212310514063700975000000000206U3333300_1933_EXPLSTMT2
+MXID11000009891212318883040903421000000000206U3333300_1934_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -2071,7 +2073,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t011t7;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Fri Oct  2 02:50:45 2015
+-- Definition current  Wed Jan  6 23:34:21 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2088,7 +2090,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t011t7;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Fri Oct  2 02:50:46 2015
+-- Definition current  Wed Jan  6 23:34:25 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2105,7 +2107,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t011t7;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Fri Oct  2 02:50:47 2015
+-- Definition current  Wed Jan  6 23:34:28 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE

@@ -2808,53 +2808,51 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
       (hbaseAccessTdb().listOfHbaseFilterColNames()->numEntries() == 0))
     return 0;
 
-  if (! hbaseFilterValExpr())
-    return 0;
+  if (hbaseFilterValExpr()){// with pushdown V2 it can be null if we have only unary operation
+		  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
 
-  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+		  workAtp_->getTupp(hbaseAccessTdb().hbaseFilterValTuppIndex_)
+			.setDataPointer(hbaseFilterValRow_);
 
-  workAtp_->getTupp(hbaseAccessTdb().hbaseFilterValTuppIndex_)
-    .setDataPointer(hbaseFilterValRow_);
-  
-  ex_expr::exp_return_type evalRetCode =
-    hbaseFilterValExpr()->eval(pentry_down->getAtp(), workAtp_);
-  if (evalRetCode == ex_expr::EXPR_ERROR)
-    {
-      return -1;
-    }
+		  ex_expr::exp_return_type evalRetCode =
+			hbaseFilterValExpr()->eval(pentry_down->getAtp(), workAtp_);
+		  if (evalRetCode == ex_expr::EXPR_ERROR)
+			{
+			  return -1;
+			}
 
-  ExpTupleDesc * hfrTD =
-    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-    (hbaseAccessTdb().hbaseFilterValTuppIndex_);
-  
-  hbaseFilterValues_.clear();
-  for (Lng32 i = 0; i <  hfrTD->numAttrs(); i++)
-    {
-      Attributes * attr = hfrTD->getAttr(i);
-  
-      if (attr)
-	{
-	  NAString value(getHeap());
-	  if (attr->getNullFlag())
-	    {
-	      char nullValChar = 0;
+		  ExpTupleDesc * hfrTD =
+			hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+			(hbaseAccessTdb().hbaseFilterValTuppIndex_);
 
-	      short nullVal = *(short*)&hbaseFilterValRow_[attr->getNullIndOffset()];
+		  hbaseFilterValues_.clear();
+		  for (Lng32 i = 0; i <  hfrTD->numAttrs(); i++)
+			{
+			  Attributes * attr = hfrTD->getAttr(i);
 
-	      if (nullVal)
-		nullValChar = -1;
-	      value.append((char*)&nullValChar, sizeof(char));
-	    }	  
+			  if (attr)
+			{
+			  NAString value(getHeap());
+			  if (attr->getNullFlag())
+				{
+				  char nullValChar = 0;
 
-	  char * colVal = &hbaseFilterValRow_[attr->getOffset()];
+				  short nullVal = *(short*)&hbaseFilterValRow_[attr->getNullIndOffset()];
 
-	  value.append(colVal,
-		       attr->getLength(&hbaseFilterValRow_[attr->getVCLenIndOffset()]));
+				  if (nullVal)
+				nullValChar = -1;
+				  value.append((char*)&nullValChar, sizeof(char));
+				}
 
-	  hbaseFilterValues_.insert(value);
-	}
-    }
+			  char * colVal = &hbaseFilterValRow_[attr->getOffset()];
 
+			  value.append(colVal,
+					   attr->getLength(&hbaseFilterValRow_[attr->getVCLenIndOffset()]));
+
+			  hbaseFilterValues_.insert(value);
+			}
+			}
+  }
   setupListOfColNames(hbaseAccessTdb().listOfHbaseFilterColNames(),
 		      hbaseFilterColumns_);
 
