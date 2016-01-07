@@ -99,7 +99,7 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     moduleName[0] = '\0';
     inputDescName[0] = '\0';
     outputDescName[0] = '\0';
-    isClosed = FALSE;
+    isClosed = TRUE;
     IPD = NULL;
     IRD = NULL;
     useDefaultDesc = FALSE;
