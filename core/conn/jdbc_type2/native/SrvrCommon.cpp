@@ -1119,33 +1119,14 @@ short do_ExecSMD(
 
     // Setup module filenames for MX metadata
     //Module version is changed from 0 to "SQLCLI_ODBC_MODULE_VERSION" R3.0
-    if (strncmp(stmtLabel, "SQL_GETTYPEINFO",15) == 0)
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXGTI",
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-    else if (strncmp(stmtLabel, "SQL_JAVA_",9) == 0)
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXJAVA",
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-    else
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        NULL,
-        0,
-        0,
-        sqlStmtType,
-        false,false);
+    pSrvrStmt = createSrvrStmt(dialogueId,
+    stmtLabel,
+    &sqlcode,
+    NULL,
+    0,
+    0,
+    sqlStmtType,
+    false,true);
 
     *stmtId = (long)pSrvrStmt;
     SQLValue_def *sqlString = NULL;
@@ -1991,36 +1972,14 @@ short do_ExecFetchAppend(
     long                totalLength=0;
 
     // Setup module filenames for MX metadata
-    if (strncmp(stmtLabel, "SQL_GETTYPEINFO",15) == 0) {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXGTI",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
-    else if (strncmp(stmtLabel, "SQL_JAVA_",9) == 0) {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXJAVA",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
-    else {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMX",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
+    pSrvrStmt = createSrvrStmt(dialogueId,
+        stmtLabel,
+        &sqlcode,
+        NULL,
+        SQLCLI_ODBC_MODULE_VERSION,
+        1234567890,
+        sqlStmtType,
+        false,true);
 
     if (pSrvrStmt == NULL){
         executeException->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
