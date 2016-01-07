@@ -5882,6 +5882,7 @@ float NADefaults::computeNumESPsPerCore(NABoolean aggressive)
 
    if ( aggressive ) {
       float totalMemory = gpLinux->totalMemoryAvailable(); // per Node, in KB
+      totalMemory /= 1024; // per Node, in MB
       totalMemory /= 1024; // per Node, in GB
       totalMemory /= coresPerNode ; // per core, in GB
       totalMemory /= 2; // per core, 2GB per ESP
