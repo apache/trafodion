@@ -3111,7 +3111,11 @@ void ValueIdSet::replaceVEGExpressions
           if (iePtr != exprId.getItemExpr())  // a replacement was done
 	    {
 	      subtractElement(exprId);        // remove existing ValueId
-	      newExpr += iePtr->getValueId(); // replace with a new one
+	      //insert new expression(s)
+	      if (iePtr->getOperatorType() == ITM_AND)
+	    	  iePtr->convertToValueIdSet(newExpr, NULL, ITM_AND, FALSE, FALSE);
+	      else
+	    	  newExpr += iePtr->getValueId(); // replace with a new one
 	    }
 	}
       else // delete the ValueId of the VEGPredicate/VEGReference from the set
@@ -6326,6 +6330,7 @@ ValueIdSet& ValueIdSet::intersectSetDeep(const ValueIdSet & v)
     }
   return *this;
 }
+
 
 // --------------------------------------------------------------------
 // return true iff ValueIdSet has predicates that guarantee
