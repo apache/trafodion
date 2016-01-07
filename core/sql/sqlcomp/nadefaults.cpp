@@ -5845,6 +5845,18 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
         }
      }
      break;
+
+     case AGGRESSIVE_ESP_ALLOCATION_PER_CORE:
+     {
+        NABoolean useAgg = (getToken(attrEnum) == DF_ON);
+        float numESPsPerCore = computeNumESPsPerCore(useAgg);
+        char valuestr[WIDEST_CPUARCH_VALUE];
+        ftoa_(numESPsPerCore, valuestr);
+        NAString val(valuestr);
+        insert(MAX_ESPS_PER_CPU_PER_OP, val, errOrWarn);
+     }
+     break;
+
       default:  break;
       }
     }	  // code to valid overwrite (insert)
