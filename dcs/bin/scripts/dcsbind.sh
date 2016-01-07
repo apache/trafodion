@@ -354,7 +354,7 @@ dcsEcho "gv_float_external_ip :" $gv_float_external_ip
 dcsEcho "gv_float_internal_ip :" $gv_float_internal_ip
 
 #Check if AWS_CLOUD environment variable defined
-if [[ -z $AWS_CLOUD ]]; then
+if [[ $AWS_CLOUD == "false" ]]; then
     Check_VirtualIP_InUse_Unbind
     BindFloatIp
 else
