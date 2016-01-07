@@ -3817,10 +3817,10 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
                 char temp1[40];  // way more space than needed, but it's safe
                 Lng32 wcs = (Lng32)workableCacheSize;  
                 sprintf(temp1,"'%d'",wcs);
-                NAString minCQD = "CONTROL QUERY HBASE_NUM_CACHE_ROWS_MIN ";
+                NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
                 minCQD += temp1;
                 HSFuncExecQuery(minCQD); 
-                NAString maxCQD = "CONTROL QUERY HBASE_NUM_CACHE_ROWS_MAX ";
+                NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
                 maxCQD += temp1;
                 HSFuncExecQuery(maxCQD); 
                 HBaseCQDsUsed = TRUE;  // remember to reset these later          
