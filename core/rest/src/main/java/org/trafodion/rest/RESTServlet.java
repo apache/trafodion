@@ -165,6 +165,13 @@ public class RESTServlet implements RestConstants {
 
 	    if( ! children.isEmpty()) {
 	        for(String child : children) {
+	        	
+	        	//If dcsstop.sh is executed and rest server is not restarted, the nodes get appended to the
+	        	//existing list and we end with duplicate entries for the same servers with different timestamps
+	        	//Since the runningServers are only for the DcsServers, it is ok and not expensive to reconstruct 
+	        	//the list every time
+	        	runningServers.clear();
+	        	
 	            //If stop-dcs.sh is executed and DCS_MANAGES_ZK then zookeeper is stopped abruptly.
 	            //Second scenario is when ZooKeeper fails for some reason regardless of whether DCS
 	            //manages it. When either happens the DcsServer running znodes still exist in ZooKeeper

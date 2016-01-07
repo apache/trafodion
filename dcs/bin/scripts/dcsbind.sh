@@ -90,6 +90,7 @@ if  [ -z $gv_float_external_ip ] ; then
    exit $gv_ok
 fi
 
+
 }
 
 function check_node {
@@ -229,13 +230,106 @@ fi
 
 }
 
+function configure_route_tables {
+    gv_default_interface=eth0
+    bcast=`/sbin/ip addr show $gv_default_interface | grep "inet .*$gv_default_interface\$" | awk '{print $4}'`
+    status=$?
+    if [ $status -ne 0 ]; then
+       dcsEcho "Failed to get the broadcast address for $gv_default_interface - status is $status"
+       exit $gv_error
+    fi
+    dcsEcho "broadcast address to use $bcast"
+
+    mask=`/sbin/ip addr show $gv_default_interface | grep "inet .*$gv_default_interface\$" | awk '{print $2}' | cut -d'/' -f2`
+    status=$?
+    if [ $status -ne 0 ]; then
+       dcsEcho "Failed to get the mask for $gv_default_interface - status is $status"
+       exit $gv_error
+    fi
+    dcsEcho "mask to use $mask"
+
+    dcsEcho "Associating the internal ip address to the interface"
+    sudo /sbin/ip addr add $gv_float_internal_ip/$mask broadcast $bcast dev $gv_float_external_interface
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+       dcsEcho "Failed to associate the floating ip to the interface - status is $status"
+       exit $gv_error
+    fi
+
+    dcsEcho "Bringing the interface up"
+    sudo /sbin/ip link set $gv_float_external_interface up
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+       dcsEcho "Failed to bring interface up - status is $status"
+       exit $gv_error
+    fi
+
+    dcsEcho "Adding gateway address to the interface"
+    GATEWAY_IP=`netstat -rn |grep "^0.0.0.0"|awk '{print $2}'`
+    sudo /sbin/ip route add default via $GATEWAY_IP dev $gv_float_external_interface tab 2
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+       dcsEcho "Failed to add the gateway address to the interface - status is $status"
+       exit $gv_error
+    fi
+
+
+    dcsEcho "Deleting and Adding FROM rule for the internal ip to the rules table"
+    sudo /sbin/ip rule del from $gv_float_internal_ip/32 tab 2
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+       dcsEcho "Failed to delete FROM rule in the rules table - status is $status"
+       exit $gv_error
+    fi
+
+    sudo /sbin/ip rule add from $gv_float_internal_ip/32 tab 2
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+dcsEcho "Failed to add the FROM rule to the rules table - status is $status"
+       exit $gv_error
+    fi
+
+    dcsEcho "Deleting and Adding TO rule for the internal ip to the rules table"
+    sudo /sbin/ip rule del to $gv_float_internal_ip/32 tab 2
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+       dcsEcho "Failed to delete the TO rule in the rules table - status is $status"
+       exit $gv_error
+    fi
+
+    sudo /sbin/ip rule add to $gv_float_internal_ip/32 tab 2
+    status=$?
+    if [[ $status -ne 0 && $status -ne 2 ]]; then
+       dcsEcho "Failed to add the to rule to the rules table - status is $status"
+       exit $gv_error
+    fi
+
+    dcsEcho "Flushing the route cache"
+    sudo /sbin/ip route flush cache
+    status=$?
+    if [ $status -ne 0 ]; then
+       dcsEcho "Failed to flush the cache - status is $status"
+       exit $gv_error
+    fi
+
+    dcsEcho "Probing the network"
+    sudo /sbin/arping -U -w 3 -c 3 -I $gv_float_external_interface $gv_float_external_ip
+    status=$?
+    if [ $status -ne 0 ]; then
+       dcsEcho "Failed to send packets across the network - status is $status"
+       exit $gv_error
+    fi
+}
+
 #########################################################
 # MAIN portion of dcsbind begins here
 #########################################################
 
 gv_float_external_interface=""
 gv_float_external_ip=""
+gv_float_internal_ip=""
 gv_port=0
+awscmd=/usr/local/bin/aws
 
 gv_ok=0
 gv_warn=1
@@ -250,11 +344,44 @@ GetOpts $1 $2 $3 $4 $5 $6 $7 $8 $9
 
 dcsEcho "dcsbind invoked with parameters -i $gv_float_external_interface -a $gv_float_external_ip -p $gv_port"
 
-
 ValidateParams
 CheckSudo
 GetFloatingIpAdrress
-Check_VirtualIP_InUse_Unbind
-BindFloatIp
+
+gv_float_internal_ip=`echo $gv_float_external_ip`
+
+dcsEcho "gv_float_external_ip :" $gv_float_external_ip
+dcsEcho "gv_float_internal_ip :" $gv_float_internal_ip
+
+#Check if AWS_CLOUD environment variable defined
+if [[ -z $AWS_CLOUD ]]; then
+    Check_VirtualIP_InUse_Unbind
+    BindFloatIp
+else
+    device_index_to_use=`echo $gv_float_external_interface | sed -e "s@eth\([0-9][0-9]*\)@\1@"`
+    dcsEcho "Using device index $device_index_to_use for $gv_float_external_interface"
+
+    # Get instance Id of the instance
+    INSTANCEID=`$awscmd ec2 describe-instances |grep -i instances |grep -i $gv_myhostname |cut -f8`
+    dcsEcho "Using Instance id $INSTANCEID"
+
+    # Get the network interface configured for the vpc
+    NETWORKINTERFACE=`$awscmd ec2 describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
+    dcsEcho "Using network interface $NETWORKINTERFACE"
+
+    # Get the attachment id for the network interface
+    ATTACH_ID=`$awscmd ec2 describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
+    if [ ! -z "$ATTACH_ID" ]; then
+        dcsEcho "Detaching attachment Id:" $ATTACH_ID
+        $awscmd ec2 detach-network-interface --attachment-id $ATTACH_ID
+    fi
+
+    dcsEcho "Going to attach network interface $NETWORKINTERFACE to the another instance"
+    sleep 10
+    NEWATTACH_ID=`$awscmd ec2 attach-network-interface --network-interface-id $NETWORKINTERFACE --instance-id $INSTANCEID --device-index $device_index_to_use`
+    dcsEcho "New attachment Id " $NEWATTACH_ID
+    sleep 10
+    configure_route_tables
+fi
 
 exit $gv_ok
