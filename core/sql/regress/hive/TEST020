@@ -35,6 +35,7 @@ set schema hive.hive;
 cqd HIVE_MAX_STRING_LENGTH '20' ;
 cqd mode_seahive 'ON';
 cqd traf_enable_orc_format 'ON';
+cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 
 prepare explainIt from
   select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,

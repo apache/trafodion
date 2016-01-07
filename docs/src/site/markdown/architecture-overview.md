@@ -11,6 +11,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+This page provides information about the Trafodion architecture.
+
+# Introduction
 
 Trafodion provides an operational SQL engine on top of Hadoop -- a solution targeted toward operational workloads in the Hadoop Big Data environment. Included are:
 

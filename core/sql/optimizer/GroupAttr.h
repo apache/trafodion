@@ -246,6 +246,10 @@ public:
   Cardinality getMaxNumOfRows() const
                    { Cardinality x,y; hasCardConstraint(x,y); return y; }
 
+  NABoolean canEliminateOrderColumnBasedOnEqualsPred(ValueId col) const;
+  NABoolean tryToEliminateOrderColumnBasedOnEqualsPred(ValueId col,
+                                                       const ValueIdSet *preds);
+
   // ---------------------------------------------------------------------
   // Methods on group persistent estimates
   // ---------------------------------------------------------------------

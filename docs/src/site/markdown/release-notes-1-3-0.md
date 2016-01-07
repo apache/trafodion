@@ -12,12 +12,11 @@
   limitations under the License.
 -->
 
-# Release 1.3.0
 This is the first release of the Apache Trafodion (incubating) project. In addition to including a number of new features and improvements across the project, the focus of this release is to comply with Apache release guidelines.
 
-Build instructions are available [here](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61316378).
+Build instructions are available [here](build.html).
 
-## Supported Platforms
+# Supported Platforms
 The following platforms are supported in this release.
 
 <span>
@@ -95,7 +94,7 @@ This release contains the following new features.
   </table>
 </span>
 
-## Improvements
+# Improvements
 This release contains the following improvements.
 
 <span>
@@ -138,13 +137,13 @@ This release contains the following improvements.
   </table>
 </span>
 
-## Fixes
+# Fixes
 
 This release contains fixes for 114 bugs.
 
-## Known Issues
+# Known Issues
 
-### HBase Lease Timeout Patch
+## HBase Lease Timeout Patch
 
 HBase uses a lease mechanism to protect against memory leaks in Region Servers caused by potential client instabilities that would open scanners, but die before having the opportunity to close cleanly and release resources. This mechanism relies on a server side timer, configured by the 'hbase.client.scanner.timeout.period' parameter in 'hbase-site.xml'. If a client fails to call 'next()' within the timeout period, the server will assume the client died, and will force close the server side scanner and release resources. However, in Trafodion, there are legitimate use cases where client is busy doing heavy processing, and needs more time than specified in the default scanner timeout value.  Increasing the 'hbase.client.scanner.timeout.period' value has the side effect of weakening the safety mechanism previously described. 
 
@@ -154,7 +153,7 @@ The HBase community agrees that the correct behavior of this safety feature shou
       <name>hbase.trafodion.patchclientscanner.enabled</name>
       <value>true</value> 
       <description>
-        Enable a Trafodion feature to allow a client to reset the HBase scanner and resume where it left off instead of throwing an exception upon expiry of the HBase hbase.client.scanner.timeout.period timer.
+        Enable a Trafodion feature to allow a client to reset the HBase scanner and resume where it left off instead of throwing an exception upon expiration of the HBase hbase.client.scanner.timeout.period timer.
       </description>
     </property>
     

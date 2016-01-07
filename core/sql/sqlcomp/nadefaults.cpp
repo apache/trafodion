@@ -1932,7 +1932,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  XDDkwd__(HIST_PREFETCH,                        "ON"),
  XDDkwd__(HIST_REMOVE_TRAILING_BLANKS,          "ON"), // should remove after verifying code is solid
   DDansi_(HIST_ROOT_NODE,                            ""),
- XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "50000"),
+ XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
   DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
   DDvol__(HIST_SCRATCH_VOL,                     ""),
   // control the amount of data in each partition of the sample tble.

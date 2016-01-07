@@ -45,6 +45,7 @@ obey TEST130(setup);
 
 
 ?section clnup
+set schema trafodion.lob130;
 drop table t130lob1 cascade;
 drop table t130lob2 cascade;
 drop table t130lob3 cascade;
@@ -52,8 +53,8 @@ drop table t130lob4 cascade;
 
 
 ?section setup
-create schema trafodion.lob;
-set schema trafodion.lob;
+create schema trafodion.lob130;
+set schema trafodion.lob130;
 create table t130lob1 (c1 blob);
 create table t130lob2 (c1 int not null, c2 blob , primary key (c1));
 create table t130lob3 (c1 int not null,
@@ -427,7 +428,7 @@ drop table tlob130bin2;
 sh rm TMP130;
 sh rm tlob130txt2;
 
-drop schema trafodion.lob;
+drop schema trafodion.lob130 cascade;
 
 exit;
 

@@ -326,7 +326,7 @@ short ExExeUtilTcb::extractObjectParts(
 
 NABoolean ExExeUtilTcb::isUpQueueFull(short size)
 {
-  if ((qparent_.up->getSize() - qparent_.up->getLength()) < 5)
+  if ((qparent_.up->getSize() - qparent_.up->getLength()) < size)
     return TRUE;
   else
     return FALSE;
@@ -335,8 +335,9 @@ NABoolean ExExeUtilTcb::isUpQueueFull(short size)
 short ExExeUtilTcb::moveRowToUpQueue(const char * row, Lng32 len, 
 				     short * rc, NABoolean isVarchar)
 {
-  return ex_tcb::moveRowToUpQueue(&qparent_, exeUtilTdb().tuppIndex_,
-                                  row, len, rc, isVarchar);
+  short retcode = ex_tcb::moveRowToUpQueue(&qparent_, exeUtilTdb().tuppIndex_,
+                                           row, len, rc, isVarchar);
+  return  retcode;
 }
 
 char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf)

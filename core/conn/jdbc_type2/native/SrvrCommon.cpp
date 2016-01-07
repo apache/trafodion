@@ -670,7 +670,7 @@ void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, ch
                         break;
                     case '_':
                     case '%':
-                        *out++ = '\\';
+                        //*out++ = '\\';
                         break;
                     default:
                         break;
@@ -717,7 +717,7 @@ void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, ch
                         break;
                     case '_':
                     case '%':
-                        *out++ = '\\';
+                        //*out++ = '\\';
                         break;
                     default:
                         break;

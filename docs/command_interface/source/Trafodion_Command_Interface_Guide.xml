@@ -24,7 +24,7 @@
 -->
 
 <!--Arbortext, Inc., 1988-2014, v.4002-->
-<!DOCTYPE book PUBLIC "-//Hewlett-Packard ESS//DTD DocBook Extension//EN"
+<!DOCTYPE book PUBLIC "-//Apache Software Foundation (ASF)//DTD DocBook Extension//EN"
  "ess.dtd">
 <book>
 <title>Trafodion Command Interface Guide</title>
@@ -35,8 +35,8 @@
 <abstract condition="hidden">
 <para>Last updated: 5/28/2014</para>
 </abstract>
-<copyright><year>2014</year><holder>Hewlett-Packard Development Company,
-L.P.</holder></copyright>
+<copyright><year>2015</year><holder> Apache Software Foundation (ASF),
+</holder></copyright>
 <legalnotice>
 <!--WRITER'S NOTE: HP legal notice for open source release-->
 <title>Legal Notice</title>
@@ -749,8 +749,8 @@ trafci.cmd -h 16.123.456.78:23400 -u user1 ‑p xxxxxx</programlisting>
 ./trafci.sh -h 16.123.456.78:23400 -u user1 -p xxxxxx</programlisting>
 <para>TrafCI launches and prompts you to enter an SQL statement or
 an interface command:</para>
-<programlisting>Welcome to Trafodion Command Interface 
-Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
+<programlisting>Welcome to Apache Trafodion Command Interface 
+Copyright(C) 2015 Apache Software Foundation (ASF)
 
 Connected to Trafodion
 
@@ -775,8 +775,8 @@ of three retries, before it closes the session.</para>
 you to reenter the host name. For example:</para>
 <screen><computeroutput>trafci –h dd 
 
-Welcome to Trafodion Command Interface 
-Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
+Welcome to Apache Trafodion Command Interface 
+Copyright(C) 2015 Apache Software Foundation
 
 Unknown Host: dd
 
@@ -796,8 +796,8 @@ name and password. After three unsuccessful retries, the session is
 terminated:</para>
 <screen><computeroutput>trafci –h 172.16.1.1 –u user1 –p x
  
-Welcome to Trafodion Command Interface 
-Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
+Welcome to Apache Trafodion Command Interface 
+Copyright(C) 2015 Apache Software Foundation
 
 *** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2014-03-12 16:23:44]
 
@@ -1048,7 +1048,7 @@ Password:
 
 --- SQL operation complete.
 
-C:\Program Files (x86)\Hewlett-Packard\Trafodion Command Interface\bin>_</programlisting>
+C:\Program Files (x86)\Apache Software Foundation\Apache Trafodion Command Interface\bin>_</programlisting>
 </section>
 <section>
 <title>Example of Running an Interface Command With ‑q or ‑sql</title>
@@ -1133,8 +1133,8 @@ did not specify <literal>‑h</literal>, <literal>‑u</literal>, and <literal
 >‑p</literal><phrase condition="hidden">, and <literal>‑dsn</literal
 ></phrase> on the command line), and runs the commands in the script
 file:</para>
-<programlisting>Welcome to Trafodion Command Interface 
-Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
+<programlisting>Welcome to Apache Trafodion Command Interface 
+Copyright(C) 2015 Apache Software Foundation
 
 Host Name/IP Address: 16.123.456.78:23400
 User Name: user1
@@ -1204,8 +1204,8 @@ they are ignored.</para>
 <!--WRITER'S NOTE: Updated based on the current behavior (2/4/2014):-->
 <programlisting>./trafci.sh ‑version
 
-Welcome to Trafodion Command Interface 
-Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
+Welcome to Apache Trafodion Command Interface 
+Copyright(C) 2015 Apache Software Foundation
 
 Trafodion JDBC Type 4 Driver    : Traf_JDBC_Type4_Build_40646
 Trafodion Command Interface     : TrafCI_Build_40646</programlisting>
@@ -2790,7 +2790,7 @@ at a command prompt. For example:</para>
 </itemizedlist>
 <section id="i1005875">
 <title>Example of a Perl Program (sample.pl)</title>
-<programlisting>use lib 'C:\\Program Files (x86)\\Hewlett-Packard\\Trafodion Command Interface\\lib\\perl';
+<programlisting>use lib 'C:\\Program Files (x86)\\Apache Software Foundation\\Apache Trafodion Command Interface\\lib\\perl';
 use Session;
 
 # create a new session 
@@ -2815,7 +2815,7 @@ $sess->disconnect();
 <programlisting>import os
 import sys
 ## Modify this path 
-sys.path.append("C:\\Program Files (x86)\\Hewlett-Packard\\Trafodion Command Interface\\lib\\python")
+sys.path.append("C:\\Program Files (x86)\\Apache Software Foundation\\Apache Trafodion Command Interface\\lib\\python")
 import Session
 
 # create a new session
@@ -3353,7 +3353,7 @@ names, TrafCI uses the current catalog and schema.</para></listitem>
 <listitem><para>is the directory of the JAR file on the client workstation.
 If you omit the directory, TrafCI searches for the JAR file in the
 same location as the TrafCI Windows launch file, <filename>trafci.cmd</filename
->, in <filename class="directory">C:\Program Files (x86)\Hewlett-Packard\Trafodion
+>, in <filename class="directory">C:\Program Files (x86)\Apache Software Foundation\Apache Trafodion
 Command Interface\bin</filename>.</para></listitem>
 </varlistentry>
 <varlistentry><term><replaceable>jar-file-name</replaceable></term>
@@ -4732,7 +4732,7 @@ the folder. </para>
 Volume in drive C is E-Client
 Volume Serial Number is DC4F-5B3B
 
-Directory of c:\Program Files (x86)\Hewlett-Packard\Trafodion Command Interface\bin
+Directory of c:\Program Files (x86)\Apache Software Foundation\Apache Trafodion Command Interface\bin
 
 05/11/2014 01:17 PM  &lt;DIR>
 05/11/2014 01:17 PM  &lt;DIR>
@@ -4974,7 +4974,7 @@ names, TrafCI uses the current catalog and schema.</para></listitem>
 <listitem><para>is the directory of the JAR file on the client workstation.
 If you omit the directory, TrafCI searches for the JAR file in the
 same location as the TrafCI Windows launch file, <filename>trafci.cmd</filename
->, in <filename class="directory">C:\Program Files (x86)\Hewlett-Packard\Trafodion
+>, in <filename class="directory">C:\Program Files (x86)\Apache Software Foundation\Apache Trafodion
 Command Interface\bin</filename>.</para></listitem>
 </varlistentry>
 <varlistentry><term><replaceable>jar-file-name</replaceable></term>
@@ -9825,9 +9825,9 @@ SQL>
 > parameter, the VERSION command displays only TrafCI and the Trafodion
 JDBC Type 4 Driver versions.</para>
 <!--WRITER'S NOTE: Updated output based on the current behavior (5/28/2014).-->
-<programlisting>C:\Program Files (x86)\Hewlett-Packard\Trafodion Command Interface\bin>trafci -noconnect
-Welcome to Trafodion Command Interface
-Copyright(C) 2013–2014 Hewlett-Packard Development Company, L.P.
+<programlisting>C:\Program Files (x86)\Apache Software Foundation\Apache Trafodion Command Interface\bin>trafci -noconnect
+Welcome to Apache Trafodion Command Interface
+Copyright(C) 2015 Apache Software Foundation
 
 Not connected.
 

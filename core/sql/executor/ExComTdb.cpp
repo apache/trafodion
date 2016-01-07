@@ -696,6 +696,13 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
+   case ex_REGION_STATS:
+    {
+      GetVTblPtr(vtblptr,ExExeUtilRegionStatsTdb);
+
+      break;
+    }
+
 #endif
     default:
       ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId"); // LCOV_EXCL_LINE

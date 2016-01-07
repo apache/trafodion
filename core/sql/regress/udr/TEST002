@@ -230,6 +230,24 @@ from udf(timeseries(table(select * from t002_Timeseries
                     'VAL2', 'FLi',
                     'VAL2', 'LLi'));
 
+-- JDBC queries through a TMUDF. Note that this requires the Trafodion T4
+-- driver jar to exist in $MY_SQROOT/udr/external_libs.
+sh mkdir -p $$MY_SQROOT$$/udr/external_libs;
+sh cp $$MY_SQROOT$$/export/lib/jdbcT2.jar $$MY_SQROOT$$/udr/external_libs;
+
+-- with default ports, $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$ should be
+-- 'jdbc:t4jdbc://localhost:23400/:'
+prepare s_traf from
+select *
+from udf(jdbc('jdbcT4.jar',
+              'org.trafodion.jdbc.t4.T4Driver',
+              $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$,
+              'any', -- no user id
+              'any', -- no password
+              'source',
+              'select * from (values (''Hello'', ''World''), (''Hallo'', ''Welt'')) T(a,b)'));
+execute s_traf;
+
 -- negative tests
 
 select * from udf(timeseries());

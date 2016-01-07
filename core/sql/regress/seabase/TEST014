@@ -40,6 +40,7 @@ cqd query_cache '0';
 obey TEST014(test_ddl_disable_partition);
 
 log;
+obey TEST014(clean_up);
 exit;
 
 ?section clean_up
