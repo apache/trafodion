@@ -263,7 +263,6 @@ public abstract class BaseTest {
     protected static final String TABLE_WITH_SALTING = "TABLE_WITH_SALTING";
     protected static final String INDEX_DATA_SCHEMA = "INDEX_TEST";
     protected static final String INDEX_DATA_TABLE = "INDEX_DATA_TABLE";
-    protected static final String BATCH_TEST_TABLE = "BATCH_TEST_TABLE";
 
     protected static final String NAME_SEPARATOR = ".";
 
@@ -777,10 +776,6 @@ public abstract class BaseTest {
         builder_SQ.put("SumDoubleTest","create table SumDoubleTest" +
 /* TRAF */      "   (id varchar(128) not null primary key, d DOUBLE PRECISION, f FLOAT, ud DOUBLE PRECISION, uf FLOAT, i integer, de decimal)");
         
-        builder_PH.put(BATCH_TEST_TABLE, "CREATE TABLE BATCH_TEST_TABLE(ID INT NOT NULL PRIMARY KEY, NAME VARCHAR(128))");
-        builder_TR.put(BATCH_TEST_TABLE, "CREATE TABLE BATCH_TEST_TABLE(ID INT NOT NULL PRIMARY KEY, NAME VARCHAR(128))");
-        builder_SQ.put(BATCH_TEST_TABLE, "CREATE TABLE BATCH_TEST_TABLE(ID INT NOT NULL PRIMARY KEY, NAME VARCHAR(128))");
-
         tableDDLMap_PH = builder_PH.build();
         tableDDLMap_TR = builder_TR.build();
         tableDDLMap_SQ = builder_SQ.build();
