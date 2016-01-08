@@ -3718,6 +3718,9 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
 
     LM->StartTimer("Create/populate sample table");
     (void)getTimeDiff(TRUE);
+
+    NABoolean EspCQDUsed = FALSE;
+    NABoolean HBaseCQDsUsed = FALSE;
      
     sampleRowCount = sampleRowCnt;  // Save sample row count for HSSample object.
 
@@ -3762,6 +3765,68 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // For Hive tables the sample table used is a Trafodion table
     if (hs_globals->isHbaseTable || hs_globals->isHiveTable)
       {
+        // The optimal degree of parallelism for the LOAD or UPSERT is
+        // the number of partitions of the original table. Force that.
+        // Note that when the default for AGGRESSIVE_ESP_ALLOCATION_PER_CORE
+        // is permanently changed to 'ON', we may be able to remove this CQD.
+        if (hs_globals->objDef->getNumPartitions() > 1)
+          {
+            char temp[40];  // way more space than needed, but it's safe
+            sprintf(temp,"'%d'",hs_globals->objDef->getNumPartitions());
+            NAString EspsCQD = "CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS ";
+            EspsCQD += temp;
+            HSFuncExecQuery(EspsCQD);
+            EspCQDUsed = TRUE;  // remember to reset later
+          }
+
+        // If the table is very large, we risk HBase time-outs because the
+        // sample scan doesn't return rows fast enough. In this case, we
+        // want to reduce the HBase row cache size to a smaller number to
+        // force more frequent returns. Experience shows that a value of
+        // '10' worked well with a 17.7 billion row table with 128 regions
+        // on six nodes (one million row sample). We'll assume a workable
+        // HBase cache size value scales linearly with the sampling ratio.
+        // That is, we'll assume the model:
+        //
+        //   workable value = (sample row count / actual row count) * c,
+        //   where c is chosen so that we get 10 when the sample row count
+        //   is 1,000,000 and the actual row count is 17.7 billion.
+        //
+        //   Solving for c, we get c = 10 * (17.7 billion/1 million).
+        //
+        // Note that the Generator does a similar calculation in
+        // Generator::setHBaseNumCacheRows. The calculation here is more
+        // conservative because we care more about getting UPDATE STATISTICS
+        // done without a timeout, trading off possible speed improvements
+        // by using a smaller cache size.
+        //
+        // Note that when we move to HBase 1.1, with its heartbeat protocol,
+        // this time-out problem goes away and we can remove these CQDs.
+        if (hs_globals->isHbaseTable)
+          {
+            double sampleRatio = (double)(sampleRowCnt) / hs_globals->actualRowCount;
+            double calibrationFactor = 10 * (17700000000/1000000);
+            Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
+            if (workableCacheSize < 1)
+              workableCacheSize = 1;  // can't go below 1 unfortunately
+
+            Int32 max = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
+            if ((workableCacheSize < 10000) && // don't bother if 10000 works
+                (max == 10000))  // don't do it if user has already set this CQD
+              {
+                char temp1[40];  // way more space than needed, but it's safe
+                Lng32 wcs = (Lng32)workableCacheSize;  
+                sprintf(temp1,"'%d'",wcs);
+                NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
+                minCQD += temp1;
+                HSFuncExecQuery(minCQD); 
+                NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
+                maxCQD += temp1;
+                HSFuncExecQuery(maxCQD); 
+                HBaseCQDsUsed = TRUE;  // remember to reset these later          
+              }
+          }          
+
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
             insertType = "LOAD WITH NO OUTPUT, NO RECOVERY, NO POPULATE INDEXES, NO DUPLICATE CHECK INTO ";
@@ -3903,6 +3968,16 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     
     // Reset the IDENTITY column override CQD
     HSFuncExecQuery("CONTROL QUERY DEFAULT OVERRIDE_GENERATED_IDENTITY_VALUES RESET");                                                                      
+
+    if (HBaseCQDsUsed)
+      {
+        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+      }
+    if (EspCQDUsed)
+      {
+        HSFuncExecQuery("CONTROL QUERY DEFAULT PARALLEL_NUM_ESPS RESET");
+      }
 
     if (retcode) TM->Rollback();
     else         TM->Commit();
