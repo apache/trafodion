@@ -62,7 +62,7 @@ if [[ ! -z $AWS_CLOUD ]]; then
        ###### Copy the .aws folder to all nodes in the cluster for Trafodion Id
        sudo su $TRAF_USER --login --command "$TRAF_PDCP $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
        echo
-       echo "***INFO: AWS configuration located in $HOME_DIR/$TRAF_DIR/.aws"
+       echo "***INFO: AWS configuration located in $HOME_DIR/$TRAF_USER/.aws"
        echo
     else
        echo "AWS Configuration already exist for Trafodion Id"
@@ -79,7 +79,7 @@ if [[ ! -z $AWS_CLOUD ]]; then
              ###### Copy the .aws folder to all nodes in the cluster for Trafodion Id
              sudo su $TRAF_USER --login --command "$TRAF_PDCP $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
              echo
-             echo "***INFO: AWS configuration located in $HOME_DIR/$TRAF_DIR/.aws"
+             echo "***INFO: AWS configuration located in $HOME_DIR/$TRAF_USER/.aws"
              echo
          fi
        fi
