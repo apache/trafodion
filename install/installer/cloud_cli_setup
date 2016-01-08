@@ -31,7 +31,7 @@ if [ $node_count -eq 1 ]; then
     TRAF_PDCP=""
 else
     TRAF_PDSH="pdsh $MY_NODES"
-    TRAF_PDCP="pdcp -R ssh $MY_NODES"
+    TRAF_PDCP="pdcp -r $MY_NODES"
 fi
 
 ###### Setting up CLI for AWS as sudo id
@@ -44,7 +44,7 @@ if [[ ! -z $AWS_CLOUD ]]; then
        unzip $HOME/awscli-bundle.zip
 
        if [[ $node_count -gt "1" ]]; then
-          $TRAF_PDCP -r $HOME/awscli-bundle $HOME
+          $TRAF_PDCP $HOME/awscli-bundle $HOME
           $TRAF_PDSH "sudo $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws" | tee -a $INSTALL_LOG
        else 
           $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws | tee -a $INSTALL_LOG
@@ -54,10 +54,16 @@ if [[ ! -z $AWS_CLOUD ]]; then
        rm -f $HOME/awscli-bundle.zip
 
        ###### Execute 'aws configure' command as a Trafodion Id
+       echo
+       echo "***INFO: Configuring AWS keys for executing CLI commands"
+       echo
        sudo su $TRAF_USER --login --command "/usr/local/bin/aws configure"
 
        ###### Copy the .aws folder to all nodes in the cluster for Trafodion Id
-       sudo su $TRAF_USER --login --command "$TRAF_PDCP -r $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
+       sudo su $TRAF_USER --login --command "$TRAF_PDCP $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
+       echo
+       echo "***INFO: AWS configuration located in $HOME_DIR/$TRAF_DIR/.aws"
+       echo
     else
        echo "AWS Configuration already exist for Trafodion Id"
        echo -n "Do you want to overwrite the configuration (Y/N), default is N: "
@@ -65,10 +71,16 @@ if [[ ! -z $AWS_CLOUD ]]; then
        if [ ! -z $answer ]; then
          if [[ "${answer}" =~ ^[Yy]$ ]]; then
              ###### Execute 'aws configure' command as a Trafodion id
+             echo
+             echo "***INFO: Configuring AWS keys for executing CLI commands"
+             echo
              sudo su $TRAF_USER --login --command "/usr/local/bin/aws configure"
 
              ###### Copy the .aws folder to all nodes in the cluster for Trafodion Id
-             sudo su $TRAF_USER --login --command "$TRAF_PDCP -r  $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
+             sudo su $TRAF_USER --login --command "$TRAF_PDCP $HOME_DIR/$TRAF_USER/.aws $HOME_DIR/$TRAF_USER"
+             echo
+             echo "***INFO: AWS configuration located in $HOME_DIR/$TRAF_DIR/.aws"
+             echo
          fi
        fi
     fi
