@@ -11928,7 +11928,7 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
       // value is needed to retrieve a row.
       //only if needed. If there is already a non nullable non added non nullable with default columns in the set, we should not need to add
       //any other columns.
-      if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MEDIUM){ //only enable column retrieval optimization with DF_MEDIUM
+      if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MEDIUM && getMdamKeyPtr() == NULL){ //only enable column retrieval optimization with DF_MEDIUM and not for MDAM scan
           bool needAddingNonNullableColumn = true; //assume we need to add one non nullable column
 		  for (ValueId vid = retColRefSet_.init();// look for each column in th eresult set if one match the criteria non null non added non nullable with default
 				  retColRefSet_.next(vid);
