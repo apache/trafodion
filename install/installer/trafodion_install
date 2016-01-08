@@ -718,7 +718,7 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
       $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
       if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
          echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
-         $TRAF_PCP $LDAP_CERT $HOME
+         $TRAF_PDCP $LDAP_CERT $HOME
          $TRAF_PDSH sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
          $TRAF_PDSH sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
          $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
