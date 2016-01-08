@@ -286,13 +286,16 @@ public class TransactionState {
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
-            if (LOG.isTraceEnabled()) LOG.trace("Added new trRegion to participatingRegions [" + trRegion.getRegionInfo().getRegionNameAsString() + "], endKey: "
-                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
-
+           if (LOG.isTraceEnabled()) LOG.trace("Added new trRegion (#" + participatingRegions.size()
+                        + ") to participatingRegions ["        + trRegion.getRegionInfo().getRegionNameAsString()
+                        + "], endKey: "        + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) 
+                        + " and transaction [" + transactionId + "]");
         }
         else {
-            if (LOG.isTraceEnabled()) LOG.trace("trRegion already present in participatinRegions [" + trRegion.getRegionInfo().getEncodedName() + "], endKey: "
-                  + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) + " and transaction [" + transactionId + "]");
+           if (LOG.isTraceEnabled()) LOG.trace("trRegion already present in (" + participatingRegions.size()
+                       + ") participatinRegions ["    + trRegion.getRegionInfo().getEncodedName()
+                       + "], endKey: "        + Hex.encodeHexString(trRegion.getRegionInfo().getEndKey()) 
+                       + " and transaction [" + transactionId + "]");
         }
 
         return added;

@@ -2007,14 +2007,7 @@ public class TransactionManager {
              }
           } catch (Exception e) {
             LOG.error("exception in doCommit for transaction: " + transactionState.getTransactionId() + " "  + e);
-              // This happens on a NSRE that is triggered by a split
-  /*            try {
-                  abort(transactionState);
-              } catch (Exception abortException) {
-
-                  LOG.warn("Exeption during abort", abortException);
-              }
-  */
+            // This happens on a NSRE that is triggered by a split
             throw new CommitUnsuccessfulException(e);
           }
 
