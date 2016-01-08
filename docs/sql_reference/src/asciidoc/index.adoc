@@ -66,6 +66,8 @@ include::asciidoc/_chapters/introduction.adoc[]
 include::asciidoc/_chapters/sql_statements.adoc[]
 include::asciidoc/_chapters/sql_utilities.adoc[]
 include::asciidoc/_chapters/sql_language_elements.adoc[]
+include::asciidoc/_chapters/sql_clauses.adoc[]
+include::asciidoc/_chapters/sql_functions_and_expressions.adoc[]
 
 = Appendix
 

@@ -1,0 +1,1612 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sql_functions_and_expressions]]
+= SQL Functions and Expressions
+
+This section describes the syntax and semantics of specific functions
+and expressions that you can use in Trafodion SQL statements. The
+functions and expressions are categorized according to their
+functionality.
+
+[[standard_normalization]]
+== Standard Normalization
+
+For datetime functions, the definition of standard normalization is: If
+the ending day of the resulting date is invalid, the day will be rounded
+DOWN to the last day of the result month.
+
+== Aggregate (Set) Functions
+
+An aggregate (or set) function operates on a group or groups of rows
+retrieved by the SELECT statement or the subquery in which the aggregate
+function appears.
+
+
+[cols="25%,75%"]
+|===
+| <<avg_function,AVG Function>>                 | Computes the average of a group of numbers derived from the evaluation
+of the expression argument of the function.
+| <<count_function,COUNT Function>>             | Counts the number of rows that result from a query (by using
+*) or the number of rows that contain a distinct value in the one-column
+table derived from the expression argument of the function (optionally
+distinct values).
+| <<max/maximum_function,MAX/MAXIMUM Function>> | Determines a maximum value from the group of values derived from the
+evaluation of the expression argument.
+| <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
+evaluation of the expression argument.
+| <<stddev_function,STDDEV Function>>           | Computes the statistical standard deviation of a group of numbers
+derived from the evaluation of the expression argument of the function.
+The numbers can be weighted.
+| <<sum_function,SUM Function>>                 | Computes the sum of a group of numbers derived from the evaluation of
+the expression argument of the function.
+"VARIANCE Function" 
+Computes the statistical variance of a group of numbers derived from the
+evaluation of the expression argument of the function. The numbers can
+be weighted.
+|===
+
+
+Columns and expressions can be arguments of an aggregate function. The
+expressions cannot contain aggregate functions or subqueries.
+
+An aggregate function can accept an argument specified as DISTINCT,
+which eliminates duplicate values before the aggregate function is
+applied. See <<distinct_aggregate_functions,DISTINCT Aggregate Functions>>.
+
+If you include a GROUP BY clause in the SELECT statement, the columns
+you refer to in the select list must be either grouping columns or
+arguments of an aggregate function. If you do not include
+a GROUP BY clause but you specify an aggregate function in the select
+list, all rows of the SELECT result table form the one and only group.
+
+See the individual entry for the function.
+
+[[character_string_functions]]
+== Character String Functions
+
+These functions manipulate character strings and use a character value
+expression as an argument or return a result of a character data type.
+Character string functions treat each single-byte or multibyte character
+in an input string as one character, regardless of the byte length of
+the character.
+
+
+[cols="25%,75%"]
+|===
+| <<ascii_function,ASCII Function>>                       | Returns the ASCII code value of the first character of a character value
+expression.
+| <<char_function,CHAR Function>>                         | Returns the specified code value in a character set.
+| <<char_length_function,CHAR_LENGTH Function>>           | Returns the number of characters in a string. You can also use
+CHARACTER_LENGTH.
+| <<code_value_function,CODE_VALUE Function>>             | Returns an unsigned integer that is the code point of the first
+character in a character value expression that can be associated with
+one of the supported character sets.
+| <<concat_function,CONCAT Function>>                     | Returns the concatenation of two character value expressions as a string
+value. You can also use the concatenation operator (\|\|).
+| <<insert_function,INSERT Function>>                     | Returns a character string where a specified number of characters within
+the character string have been deleted and then a second character
+string has been inserted at a specified start position.
+| <<lcase_function,LCASE Function>>                       | Downshifts alphanumeric characters. You can also use LOWER.
+| <<left_function,LEFT Function>>                         | Returns the leftmost specified number of characters from a character expression.
+| <<locate_function,LOCATE Function>>                     | Returns the position of a specified substring within a character string.
+You can also use POSITION.
+| <<lower_function,LOWER Function>>                       | Downshifts alphanumeric characters. You can also use LCASE.
+| <<lpad_function,LPAD Function>>                         | Replaces the leftmost specified number of characters in a character
+expression with a padding character.
+| <<ltrim_function,LTRIM Function>>                       | Removes leading spaces from a character string.
+| <<octet_length_function,OCTET_LENGTH Function>>         | Returns the length of a character string in bytes.
+| <<position_function,POSITION Function>>                 | Returns the position of a specified substring within a character string.
+You can also use LOCATE.
+| <<repeat_function,REPEAT Function>>                     | Returns a character string composed of the evaluation of a character
+expression repeated a specified number of times.
+| <<replace_function,REPLACE Function>>                   | Returns a character string where all occurrences of a specified
+character string in the original string are replaced with another
+character string.
+| <<right_function,RIGHT Function>>                       | Returns the rightmost specified number of characters from a character
+expression.
+| <<rpad_function,RPAD Function>>                         | Replaces the rightmost specified number of characters in a character
+expression with a padding character.
+| <<rtrim_function,RTRIM Function>>                       | Removes trailing spaces from a character string.
+| <<space_function,SPACE Function>>                       | Returns a character string consisting of a specified number of spaces.
+| <<substring/substr_function,SUBSTRING/SUBSTR Function>> | Extracts a substring from a character string.
+| <<translate_function,TRANSLATE Function>>               | Translates a character string from a source character set to a target
+character set.
+| <<trim_function,TRIM Function>>                         | Removes leading or trailing characters from a character string.
+| <<ucase_function,UCASE Function>>                       | Upshifts alphanumeric characters. You can also use UPSHIFT or UPPER.
+| <<upper_function,UPPER Function>>                       | Upshifts alphanumeric characters. You can also use UPSHIFT or UCASE.
+| <<upshift_function,UPSHIFT Function>>                   | Upshifts alphanumeric characters. You can also use UPPER or UCASE.
+|===
+
+See the individual entry for the function.
+
+[[datetime_functions]]
+== Datetime Functions
+
+These functions use either a datetime value expression as an argument or
+return a result of datetime data type:
+
+[cols="25%,75%"]
+|===
+| <<add_months_function,ADD_MONTHS Function>>                               | Adds the integer number of months specified by _intr_expr_ 
+to _datetime_expr_ and normalizes the result.
+| <<converttimestamp_function,CONVERTTIMESTAMP Function>>                   | Converts a Julian timestamp to a TIMESTAMP value.
+| <<current_function,CURRENT Function>> | Returns the current timestamp. You can also use the
+<<current_timestamp_function,CURRENT_TIMESTAMP Function>>. 
+| <<current_date_function,CURRENT_DATE Function>>                           | Returns the current date.
+| <<current_time_function,CURRENT_TIME Function>>                           | Returns the current time.
+| <<current_timestamp_function,CURRENT_TIMESTAMP Function>> | Returns the current timestamp. You can also use the <<current_function,CURRENT Function>>.
+| <<date_add_function,DATE_ADD Function>>                                   | Adds the interval specified by _interval_expression_
+to _datetime_expr_.
+| <<date_part_function_of_an_interval,DATE_PART Function (of an Interval)>> | Extracts the datetime field specified by _text_ from the interval value
+specified by interval and returns the result as an exact numeric value.
+| <<date_part_function_of_a_timestamp,DATE_PART Function (of a Timestamp)>> | Extracts the datetime field specified by _text_ from the datetime value
+specified by timestamp and returns the result as an exact numeric value.
+| <<date_sub_function,DATE_SUB Function>>                                   | Subtracts the specified _interval_expression_ from
+_datetime_expr._
+| <<date_trunc_function,DATE_TRUNC Function>>                               | Returns the date with the time portion of the day truncated.
+| <<dateadd_function,DATEADD Function>>                                     | Adds the interval specified by _datepart_ and _num_expr_
+to _datetime_expr_.
+| <<datediff_function,DATEDIFF Function>>                                   | Returns the integer value for the number of _datepart_ units of time
+between _startdate_ and _enddate_.
+| <<dateformat_function,DATEFORMAT Function>>                               | Formats a datetime value for display purposes.
+| <<day_function,DAY Function>>                                             | Returns an integer value in the range 1 through 31 that represents the
+corresponding day of the month. You can also use DAYOFMONTH.
+| <<dayname_function,DAYNAME Function>>                                     | Returns the name of the day of the week from a date or timestamp
+expression.
+| <<dayofmonth_function,DAYOFMONTH Function>>                               | Returns an integer value in the range 1 through 31 that represents the
+corresponding day of the month. You can also use DAY.
+| <<dayofweek_function,DAYOFWEEK Function>>                                 | Returns an integer value in the range 1 through 7 that represents the
+corresponding day of the week.
+| <<dayofyear_function,DAYOFYEAR Function>>                                 | Returns an integer value in the range 1 through 366 that represents the
+corresponding day of the year.
+| <<extract_function,EXTRACT Function>>                                     | Returns a specified datetime field from a datetime value expression or
+an interval value expression.
+| <<hour_function,HOUR Function>>                                           | Returns an integer value in the range 0 through 23 that represents the
+corresponding hour of the day.
+| <<juliantimestamp_function,JULIANTIMESTAMP Function>>                     | Converts a datetime value to a Julian timestamp.
+| <<minute_function,MINUTE Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
+corresponding minute of the hour.
+| <<month_function,MONTH Function>>                                         | Returns an integer value in the range 1 through 12 that represents the
+corresponding month of the year.
+| <<monthname_function,MONTHNAME Function>>                                 | Returns a character literal that is the name of the month of the year
+(January, February, and so on).
+| <<quarter_function,QUARTER Function>>                                     | Returns an integer value in the range 1 through 4 that represents the
+corresponding quarter of the year.
+| <<second_function,SECOND Function>>                                       | Returns an integer value in the range 0 through 59 that represents the
+corresponding second of the minute.
+| <<timestampadd_function,TIMESTAMPADD Function>>                           | Adds the interval of time specified by _interval-ind_ and
+_num_expr_ to _datetime_expr_.
+| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_
+units of time between _startdate_ and _enddate_.
+| <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
+corresponding week of the year.
+| <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
+|===
+
+See the individual entry for the function.
+
+[[mathematical_functions]]
+== Mathematical Functions
+
+Use these mathematical functions within an SQL numeric value expression:
+
+[cols="25%,75%"]
+|===
+| <<abs_function,ABS Function>>         | Returns the absolute value of a numeric value expression. 
+| <<acos_function,ACOS Function>>       | Returns the arccosine of a numeric value expression as an angle expressed in radians.
+| <<asin_function,ASIN Function>>       | Returns the arcsine of a numeric value expression as an angle expressed in radians.
+| <<atan_function,ATAN Function>>       | Returns the arctangent of a numeric value expression as an angle expressed in radians.
+| <<atan2_function,ATAN2 Function>>     | Returns the arctangent of the x and y coordinates, specified by two numeric value expressions, as an angle expressed in radians.
+| <<ceiling_function,CEILING Function>> | Returns the smallest integer greater than or equal to a numeric value expression.
+| <<cos_function,COS Function>>         | Returns the cosine of a numeric value expression, where the expression is an angle expressed in radians.
+| <<cosh_function,COSH Function>>       | Returns the hyperbolic cosine of a numeric value expression, where the expression is an angle expressed in radians.
+| <<degrees_function,DEGREES Function>> | Converts a numeric value expression expressed in radians to the number of degrees.
+| <<exp_function,EXP Function>>         | Returns the exponential value (to the base e) of a numeric value expression.
+| <<floor_function,FLOOR Function>>     | Returns the largest integer less than or equal to a numeric value  expression.
+| <<log_function,LOG Function>>         | Returns the natural logarithm of a numeric value expression.
+| <<log10_function,LOG10 Function>>     | Returns the base 10 logarithm of a numeric value expression.
+| <<mod_function,MOD Function>>         | Returns the remainder (modulus) of an integer value expression divided by an integer value expression.
+| <<nullifzero_function,NULLIFZERO Function>> | Returns the value of the operand unless it is zero, in which case it returns NULL.
+| <<pi_function,PI Function>>           | Returns the constant value of pi as a floating-point value.
+| <<power_function,POWER Function>>     | Returns the value of a numeric value expression raised to the power of an integer value expression. You can also use the exponential operator \*\*.
+| <<radians_function,RADIANS Function>> | Converts a numeric value expression expressed in degrees to the number of radians.
+| <<round_function,ROUND Function>>     | Returns the value of _numeric_expr_ round to _num_ places to the right of the decimal point.
+| <<sign_function,SIGN Function>>       | Returns an indicator of the sign of a numeric value expression. If value is less than zero, returns -1 as the indicator. If value is zero,
+returns 0. If value is greater than zero, returns 1.
+| <<sin_function,SIN Function>>         | Returns the sine of a numeric value expression, where the expression is an angle expressed in radians.
+| <<sinh_function,SINH Function>>       | Returns the hyperbolic sine of a numeric value expression, where the expression is an angle expressed in radians.
+| <<sqrt_function,SQRT Function>>       | Returns the square root of a numeric value expression.
+| <<tan_function,TAN Function>>         | Returns the tangent of a numeric value expression, where the expression is an angle expressed in radians.
+| <<tanh_function,TANH Function>>       | Returns the hyperbolic tangent of a numeric value expression, where the expression is an angle expressed in radians.
+| <<zeroifnull_dunction,ZEROIFNULL Function>> | Returns the value of the operand unless it is NULL, in which case it returns zero.
+|===
+
+See the individual entry for the function.
+
+[[sequence_functions]]
+== Sequence Functions
+
+Sequence functions operate on ordered rows of the intermediate result
+table of a SELECT statement that includes a SEQUENCE BY clause. Sequence
+functions are categorized generally as difference, moving, offset, or
+running.
+
+Some sequence functions, such as ROWS SINCE, require sequentially
+examining every row in the history buffer until the result is computed.
+Examining a large history buffer in this manner for a condition that has
+not been true for many rows could be an expensive operation. In
+addition, such operations may not be parallelized because the entire
+sorted result set must be available to compute the result of the
+sequence function.
+
+[[difference_sequence_functions]]
+=== Difference sequence functions
+
+[cols="25%,75%"]
+|===
+| <<diff1_function,DIFF1 Function>> | Calculates differences between values of a column expression in the current row and previous rows.
+| <<diff2_function,DIFF2 Function>> | Calculates differences between values of the result of DIFF1 of the current row and DIFF1 of previous rows.
+|===
+
+[[moving_sequence_functions]]
+=== Moving sequence functions
+
+[cols="25%,75%"]
+|===
+| <<movingcount_function,MOVINGCOUNT Function>>       | Returns the number of nonnull values of a column expression in the current window.
+| <<movingmax_function,MOVINGMAX Function>>           | Returns the maximum of nonnull values of a column expression in the current window.
+| <<movingmin_function,MOVINGMIN Function>>           | Returns the minimum of nonnull values of a column expression in the current window.
+| <<movingstddev_function,MOVINGSTDDEV Function>>     | Returns the standard deviation of nonnull values of a column expression in the current window.
+| <<movingsum_function,MOVINGSUM Function>>           | Returns the sum of nonnull values of a column expression in the current window.
+| <<movingvariance_function,MOVINGVARIANCE Function>> | Returns the variance of nonnull values of a column expression in the current window.
+|===
+
+Offset sequence function
+=== Offset sequence function
+
+[cols="25%,75%"]
+|===
+| <<offset_function,OFFSET Function>> | Retrieves columns from previous rows.
+|===
+
+<<<
+[[running_sequence_functions]]
+=== Running sequence functions
+
+[cols="25%,75%"]
+|===
+| <<rank/runningrank_function,RANK/RUNNINGRANK Function>> | Returns the rank of the given value of an intermediate result table ordered by a SEQUENCE BY clause in a SELECT statement
+| <<runningavg_function,RUNNINGAVG Function>>             | Returns the average of nonnull values of a column expression up to and including the current row.
+| <<runningcount_function,RUNNINGCOUNT Function>>         | Returns the number of rows up to and including the current row.
+| <<runningmax_function,RUNNINGMAX Function>>             | Returns the maximum of values of a column expression up to and including the current row.
+| <<runningmin_function,RUNNINGMIN Function>>             | Returns the minimum of values of a column expression up to and including the current row.
+| <<runningrank_function,RUNNINGRANK Function>>           | Returns the rank of the given value of an intermediate result table ordered by a SEQUENCE BY clause in a SELECT statement.
+| <<runningstddev_function,RUNNINGSTDDEV Function>>       | Returns the standard deviation of nonnull values of a column expression up to and including the current row.
+| <<runningsum_function,RUNNINGSUM Function>>             | Returns the sum of nonnull values of a column expression up to and including the current row.
+| <<runningvariance_function,RUNNINGVARIANCE Function>>   | Returns the variance of nonnull values of a column expression up to and including the current row.
+|===
+
+[[other_sequence_functions]]
+=== Other sequence functions
+
+[cols="25%,75%"]
+|===
+| <<lastnotnull_function,LASTNOTNULL Function>>               | Returns the last nonnull value for the specified column expression. If only null values have been returned, returns null.
+| <<rows_since_function,ROWS SINCE Function>>                 | Returns the number of rows counted since the specified condition was last true.
+| <<rows_since_changed_function,ROWS SINCE CHANGED Function>> | Returns the number of rows counted since the specified set of values last changed.
+| <<this_function,THIS Function>>                             | Used in ROWS SINCE to distinguish between the value of the column in the current row and the value of the column in previous rows.
+|===
+
+See <<sequence_by_clause,SEQUENCE BY Clause>> and the individual entry for each function.
+
+<<<
+[[other_functions_and_expressions]]
+== Other Functions and Expressions
+
+Use these other functions and expressions in an SQL value expression:
+
+
+[cols="25%,75%"]
+|===
+| <<authname_function,AUTHNAME Function>>                         | Returns the authorization name associated with the specified authorization ID number.
+| <<bitand_function,BITAND Function>>                             | Performs 'and' operation on corresponding bits of the two operands.
+| <<case_expression,CASE (Conditional) Expression>>               | A conditional expression. The two forms of the CASE expression are simple and searched.
+| <<cast_expression,CAST Expression>>                             | Converts a value from one data type to another data type that you specify.
+| <<coalesce_function,COALESCE Function>>                         | Returns the value of the first expression in the list that does not have a NULL value or if all 
+the expressions have NULL values, the function returns a NULL value.
+| <<converttohex_function,CONVERTTOHEX Function>>                 | Converts the specified value expression to hexadecimal for display purposes.
+| <<current_user_function,CURRENT_USER Function>>                 | Returns the database username of the current user who invoked the function.
+| <<decode_function,DECODE Function>>                             | Compares _expr_ to each _test_expr_ value one by one in the order provided.
+| <<explain_function,EXPLAIN Function>>                           | Generates a result table describing an access plan for a SELECT, INSERT, DELETE, or UPDATE statement.
+| <<isnull_function,ISNULL Function>>                             | Returns the first argument if it is not null, otherwise it returns the second argument.
+| <<nullif_function,NULLIF Function>>                             | Returns the value of the first operand if the two operands are not equal, otherwise it returns NULL.
+| <<nvl_function,NVL Function>>                                   | Returns the value of the first operand unless it is NULL, in which case it returns the value of the second operand.
+| <<user_function,USER Function>>                                 | Returns either the database username of the current user who invoked the function or the database username 
+associated with the specified user ID number.
+|===
+
+See the individual entry for the function.
+
+<<<
+[[abs_function]]
+== ABS Function
+
+The ABS function returns the absolute value of a numeric value
+expression. ABS is a Trafodion SQL extension.
+
+```
+ABS (numeric-expression)
+```
+
+* `_numeric-expression_`
++
+is an SQL numeric value expression that specifies the value for the
+argument of the ABS function. The result is returned as an unsigned
+numeric value if the precision of the argument is less than 10 or as a
+LARGEINT if the precision of the argument is greater than or equal to
+10. See <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[examples_of_abs]]
+=== Examples of ABS
+
+* This function returns the value 8:
++
+```
+ABS (-20 + 12)
+```
+
+<<<
+[[acos_function]]
+== ACOS Function
+
+The ACOS function returns the arccosine of a numeric value expression as
+an angle expressed in radians.
+
+ACOS is a Trafodion SQL extension. 
+
+```
+ACOS (numeric-expression)
+```
+
+* `_numeric-expression_`
++
+is an SQL numeric value expression that specifies the value for the
+argument of the ACOS  function. The range for the value of the argument is 
+from -1 to +1. See <<numeric_value_expressions,Numeric Value_Expressions>>.
+
+[[examples_of_acos]]
+=== Examples of ACOS
+
+* The ACOS function returns the value 3.49044274380724416E-001 or
+approximately 0.3491 in radians (which is 20 degrees).
++
+```
+ACOS (0.9397)
+```
+
+* This function returns the value 0.3491. The function ACOS is the
+inverse of the function COS.
++
+```
+ACOS (COS (0.3491))
+```
+
+<<<
+[[add_months_function]]
+=== ADD_MONTHS Function
+
+The ADD_MONTHS function adds the integer number of months specified by
+_int_expr_ to _datetime_expr_ and normalizes the result. ADD_MONTHS is a Trafodion SQL
+extension.
+
+```
+ADDMONTHS (datetimeexpr, intexpr [, int2 ])
+```
+
+* `_datetime_expr_`
++
+is an expression that evaluates to a datetime value of type DATE or
+TIMESTAMP. The return value is the same type as the _datetime_expr._ See
+<<datetime_value_expressions,Datetime Value Expressions>>.
+
+* `_int_expr_`
++
+is an SQL numeric value expression of data type SMALLINT or INTEGER that
+specifies the number of months. See <<numeric_value_expressions,
+Numeric Value Expressions>>.
+
+* `_int2_`
++
+is an unsigned integer constant. If _int2_ is omitted or is the literal
+0, the normalization is the standard normalization. If _int2_ is the
+literal 1, the normalization includes the standard normalization and if
+the starting day (the day part of _datetime_expr_) is the last day of
+the starting month, then the ending day (the day part of the result
+value) is set to the last valid day of the result month. See
+<<standard_normalization,Standard Normalization>>. See
+<<numeric_value_expressions,Numeric Value Expressions>> .
+
+<<<
+[[examples_of_add_months]]
+=== Examples of ADD_MONTHS
+
+* This function returns the value DATE '2007-03-31':
++
+```
+ADD_MONTHS(DATE '2007-02-28', 1, 1)
+```
+
+* This function returns the value DATE '2007-03-28':
++
+```
+ADD_MONTHS(DATE '2007-02-28', 1, 0)
+```
+
+* This function returns the value DATE '2008-03-28':
++
+```
+ADD_MONTHS(DATE '2008-02-28', 1, 1)
+```
+
+* This function returns the timestamp '2009-02-28 00:00:00':
++
+```
+ADD_MONTHS(timestamp'2008-02-29 00:00:00',12,1)
+```
+
+<<<
+[[ascii_function]]
+== ASCII Function
+
+The ASCII function returns the integer that is the ASCII code of the
+first character in a character string expression associated with either
+the ISO8891 character set or the UTF8 character set.
+
+ASCII is a Trafodion SQL extension.
+
+```
+ASCII (character-expression) 
+```
+
+* `_character-expression`
++
+is an SQL character value expression that specifies a string of
+characters. See <<character_value_expressions,Character Value Expressions>>.
+
+[[considerations_for_ascii]]
+=== Considerations For ASCII
+
+For a string expression in the UTF8 character set, if the value of the
+first byte in the string is greater than 127, Trafodion SQL returns this
+error message:
+
+```
+ERROR[8428] The argument to function ASCII is not valid.
+```
+
+[[examples_of_ascii]]
+=== Examples of ASCII
+
+* Select the column JOBDESC and return the ASCII code of the first
+character of the job description:
++
+```
+SELECT jobdesc, ASCII (jobdesc) FROM persnl.job;
+
+JOBDESC           (EXPR)
+----------------- --------
+MANAGER                 77
+PRODUCTION SUPV         80
+ASSEMBLER               65
+SALESREP                83
+...                    ...
+
+--- 10 row(s) selected.
+```
+
+<<<
+[[asin_function]]
+== ASIN Function
+
+The ASIN function returns the arcsine of a numeric value expression as
+an angle expressed in radians.
+
+ASIN is a Trafodion SQL extension.
+
+```
+ASIN (numeric-expression)
+```
+
+* `_numeric-expression_`
++
+is an SQL numeric value expression that specifies the value for the
+argument of the ASIN function. The range for the value of the argument is
+from -1 to +1. See <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[considerations_for_ascii]]
+=== Considerations for ASCII
+
+For a string expression in the UTF8 character set, if the value of the
+first byte in the string is greater than 127, Trafodion SQL returns this
+error message:
+
+```
+ERROR[8428] The argument to function ASCII is not valid.
+```
+
+[[examples_of_ascii]]
+=== Examples of ASCII
+
+* Select the column JOBDESC and return the ASCII code of the first
+character of the job description:
++
+```
+SELECT jobdesc, ASCII (jobdesc) FROM persnl.job;
+
+JOBDESC           (EXPR)
+----------------- --------
+MANAGER                 77
+PRODUCTION SUPV         80
+ASSEMBLER               65
+SALESREP                83
+...                    ...
+
+--- 10 row(s) selected.
+```
+
+<<<
+[[asin_function]]
+== ASIN Function
+
+The ASIN function returns the arcsine of a numeric value expression as
+an angle expressed in radians.
+
+ASIN is a Trafodion SQL extension.
+
+```
+ASIN (numeric-expression)
+```
+
+* `_numeric-expression_`
++
+is an SQL numeric value expression that specifies the value for the
+argument of the ASIN function. The range for the value of the argument
+is from -1 to +1. See <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[examples_of_asin]]
+=== Examples of ASIN
+
+* This function returns the value 3.49044414403046400e-001 or
+approximately 0.3491 in radians (which is 20 degrees):
++
+```
+ASIN(0.3420)
+```
+
+* This function returns the value 0.3491. The function ASIN is the
+inverse of the function SIN.
++
+```
+ASIN(SIN(0.3491))
+```
+
+<<<
+[[atan_function]]
+== ATAN Function
+
+The ATAN function returns the arctangent of a numeric value expression
+as an angle expressed in radians.
+
+ATAN is a Trafodion SQL extension.
+
+```
+ATAN ( numeric-expression )
+```
+
+* `_numeric-expression _`
+
+is an SQL numeric value expression that specifies the value for the
+argument of the atan function. See <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[examples_of_atan]]
+=== Examples of ATAN
+
+* This function returns the value 8.72766423249958272E-001 or
+approximately 0.8727 in radians (which is 50 degrees):
++
+```
+ATAN (1.192)
+```
+
+* This function returns the value 0.8727. The function ATAN is the
+inverse of the function TAN.
++
+```
+ATAN (TAN (0.8727))
+```
+
+<<<
+[[atan2_function]]
+== ATAN2 Function
+
+The ATAN2 function returns the arctangent of the x and y coordinates,
+specified by two numeric value expressions, as an angle expressed in
+radians.
+
+ATAN2 is a Trafodion SQL extension.
+
+```
+ATAN2 (numeric-expression-x,numeric-expression-y)
+```
+
+* `_numeric-expression-x_, _numeric-expression-y_`
+
+are SQL numeric value expressions that specify the value for the x and y
+coordinate arguments of the ATAN2 function. See
+<<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[examples_of_atan2]]
+=== Examples of ATAN2
+
+* This function returns the value 2.66344329881899520E+000, or
+approximately 2.6634:
++
+```
+ATAN2 (1.192,-2.3)
+```
+
+<<<
+[[authname_function]]
+== AUTHNAME Function
+
+The AUTHNAME function returns the name of the authorization ID that is
+associated with the specified authorization ID number.
+
+```
+AUTHNAME (auth-id)
+```
+
+* `_auth-id_`
++
+is the 32-bit number associated with an authorization ID. See
+<<authorization_ids,Authorization IDs>>.
+
+The AUTHNAME function is similar to the <<user function,USER Function>>.
+
+[[considerations_for_authname]]
+=== Considerations for AUTHNAME
+
+* This function can be specified only in the top level of a SELECT statement.
+* The value returned is string data type VARCHAR(128) and is in ISO8859-1 encoding.
+
+[[examples_of_authname]]
+=== Examples of AUTHNAME
+
+* This example shows the authorization name associated with the
+authorization ID number, 33333:
++
+```
+>>SELECT AUTHNAME (33333) FROM (values(1)) x(a);
+
+(EXPR)
+-------------------------
+DB ROOT
+
+--- 1 row(s) selected.
+```
+
+<<<
+[[avg_function]]
+== AVG Function
+
+AVG is an aggregate function that returns the average of a set of
+numbers.
+
+```
+AVG ([ALL | DISTINCT] expression)
+```
+
+* `ALL | DISTINCT`
++
+specifies whether duplicate values are included in the computation of
+the AVG of the _expression_. The default option is ALL, which causes
+duplicate values to be included. If you specify DISTINCT, duplicate
+values are eliminated before the AVG function is applied.
+
+* `_expression_`
++
+specifies a numeric or interval value _expression_ that determines the
+values to average. The _expression_ cannot contain an aggregate function
+or a subquery. The DISTINCT clause specifies that the AVG function
+operates on distinct values from the one-column table derived from the
+evaluation of _expression_.
+
+See <<numeric_value_expressions,Numeric Value Expressions>> and
+<<interval_value_expressions,Interval Value Expressions>>.
+
+[[considerations_for_avg]]
+=== Considerations for AVG
+
+[[data-type-of-the-result]]
+==== Data Type of the Result
+
+The data type of the result depends on the data type of the argument. If
+the argument is an exact numeric type, the result is LARGEINT. If the
+argument is an approximate numeric type, the result
+is DOUBLE PRECISION. If the argument is INTERVAL data type, the result
+is INTERVAL with the same precision as the argument.
+
+The scale of the result is the same as the scale of the argument. If the
+argument has no scale, the result is truncated.
+
+
+[[operands-of-the-expression]]
+==== Operands of the Expression
+
+The expression includes columns from the rows of the SELECT result table
+but cannot include an aggregate function. These expressions are valid:
+
+```
+AVG (SALARY)
+AVG (SALARY * 1.1)
+AVG (PARTCOST * QTY_ORDERED)
+```
+
+[[nulls]]
+==== Nulls
+
+All nulls are eliminated before the function is applied to the set of
+values. If the result table is empty, AVG returns NULL.
+
+[[examples_of_avg]]
+==== Examples of AVG
+
+* Return the average value of the SALARY column:
++
+```
+SELECT AVG (salary) FROM persnl.employee;
+
+(EXPR)
+---------------------
+             49441.52
+
+--- 1 row(s) selected.
+```
+
+* Return the average value of the set of unique SALARY values:
++
+```
+SELECT AVG(DISTINCT salary) AS Avg_Distinct_Salary FROM persnl.employee;
+
+AVG_DISTINCT_SALARY
+---------------------
+             53609.89
+
+--- 1 row(s) selected.
+```
+
+* Return the average salary by department:
++
+```
+SELECT deptnum, AVG (salary) AS "AVERAGE SALARY"
+FROM persnl.employee
+WHERE deptnum < 3000 GROUP BY deptnum;
+
+Dept/Num "AVERAGE SALARY"
+-------- ---------------------
+    1000              52000.17
+    2000              50000.10
+    1500              41250.00
+    2500              37000.00
+
+--- 4 row(s) selected.
+```
+
+<<<
+[[bitand_function]]
+== BITAND Function
+
+The BITAND function performs an AND operation on corresponding bits of
+the two operands. If both bits are 1, the result bit is 1. Otherwise the
+result bit is 0.
+
+```
+BITAND (expression, expression)
+```
+
+* `_expression_`
++
+The result data type is a binary number. Depending on the precision of
+the operands, the data type of the result can either be an INT (32-bit
+integer) or a LARGEINT (64-bit integer).
++
+If the max precision of either operand is greater than 9, LARGEINT is
+chosen (numbers with precision greater than 9 are represented by
+LARGEINT). Otherwise, INT is chosen.
++
+If both operands are unsigned, the result is unsigned. Otherwise, the
+result is signed. Both operands are converted to the result data type
+before performing the bit operation.
+
+[[considerations_for_bitand]]
+=== Considerations for BITAND
+
+BITAND can be used anywhere in an SQL query where an expression could be
+used. This includes SELECT lists, WHERE predicates, VALUES clauses, SET
+statement, and so on.
+
+This function returns a numeric data type and can be used in arithmetic
+expressions.
+
+Numeric operands can be positive or negative numbers. All numeric data
+types are allowed with the exceptions listed in the
+<<restrictions_for_bitand,Restrictions for BITAND>> section.
+
+[[restrictions_for_bitand]]
+==== Restrictions for BITAND
+
+The following are BITAND restrictions:
+
+* Must have two operands
+* Operands must be binary or decimal exact numerics
+* Operands must have scale of zero
+* Operands cannot be floating point numbers
+* Operands cannot be an extended precision numeric (the maximum precision of an extended numeric data type is 128)
+
+
+[[examples_of_bitand]]
+=== Examples of BITAND
+
+```
+>>select bitand(1,3) from (values(1)) x(a);
+
+(EXPR)
+--------------
+             1
+
+--- 1 row(s) selected
+
+>>select 1 & 3 from (values(1)) x(a);
+
+(EXPR)
+--------------
+             1
+
+--- 1 row(s) selected
+
+>>select bitand(1,3) + 0 from (values(1)) x(a);
+
+(EXPR)
+--------------
+             1
+
+--- 1 row(s) selected
+```
+
+<<<
+[[case_expression]]
+== CASE (Conditional) Expression
+
+The CASE expression is a conditional expression with two forms: simple
+and searched.
+
+In a simple CASE expression, Trafodion SQL compares a value to a
+sequence of values and sets the CASE expression to the value associated
+with the first match &#8212; if a match exists. If no match exists, Trafodion
+SQL returns the value specified in the ELSE clause (which can be null).
+
+In a searched CASE expression, Trafodion SQL evaluates a sequence of
+conditions and sets the CASE expression to the value associated with the
+first condition that is true &#8212; if a true condition exists. If no true
+condition exists, Trafodion SQL returns the value specified in the ELSE
+clause (which can be null).
+
+*Simple CASE is*:
+
+```
+CASE case-expression
+   WHEN expression-1 THEN {result-expression-1 | NULL}
+   WHEN expression-2 THEN {result-expression-2 | NULL}
+   ...
+   WHEN expression-n THEN {result-expression-n | NULL}
+                      [ELSE {result-expression | NULL}]
+END
+```
+
+*Searched CASE is*:
+
+```
+CASE
+   WHEN _condition-1_ THEN {_result-expression-1_ | NULL}
+   WHEN _condition-2_ THEN {_result-expression-2_ | NULL}
+   ...
+   WHEN _condition-n_ THEN {_result-expression-n_ | NULL}
+                     [ELSE {_result-expression_ | NULL}]
+END
+```
+
+* `_case-expression_`
++
+specifies a value expression that is compared to the value expressions
+in each WHEN clause of a simple CASE. The data type of each _expression_
+in the WHEN clause must be comparable to the data type of
+_case-expression_.
+
+* `_expression-1_ &#8230; _expression-n_`
++
+specifies a value associated with each _result-expression_. If the
+value of an _expression_ in a WHEN clause matches the value of
+_case-expression_, simple CASE returns the associated
+_result-expression_ value. If no match exists, the CASE expression
+returns the value expression specified in the ELSE clause, or NULL if
+the ELSE value is not specified.
+
+* `_result-expression-1_ &#8230; _result-expression-n_`
++
+specifies the result value expression associated with each _expression_
+in a WHEN clause of a simple CASE, or with each _condition_ in a WHEN
+clause of a searched CASE. All of the _result-expressions_ must have
+comparable data types, and at least one of the
+_result-expressions_ must return nonnull.
+
+* `_result-expression_`
++
+follows the ELSE keyword and specifies the value returned if none of the
+expressions in the WHEN clause of a simple CASE are equal to the case
+expression, or if none of the conditions in the WHEN clause of a
+searched CASE are true. If the ELSE _result-expression_ clause is not
+specified, CASE returns NULL. The data type of _result-expression_ must
+be comparable to the other results.
+
+* `_condition-1_ &#8230; _condition-n_`
+
+specifies conditions to test for in a searched CASE. If a _condition_ is
+true, the CASE expression returns the associated _result-expression_
+value. If no _condition_ is true, the CASE expression returns the value
+expression specified in the ELSE clause, or NULL if the ELSE value is
+not specified.
+
+[[considerations_for_case]]
+=== Considerations for CASE
+
+[[data_type_of_the_case_expression]]
+==== Data Type of the CASE Expression
+
+The data type of the result of the CASE expression depends on the data
+types of the result expressions. If the results all have the same data
+type, the CASE expression adopts that data type. If the results have
+comparable but not identical data types, the CASE expression adopts the
+data type of the union of the result expressions. This result data type
+is determined in these ways.
+
+[[character_data_type]]
+==== Character Data Type
+
+If any data type of the result expressions is variable-length character
+string, the result data type is variable-length character string with
+maximum length equal to the maximum length of the result expressions.
+
+Otherwise, if none of the data types is variable-length character
+string, the result data type is fixed-length character string with length
+equal to the maximum of the lengths of the result expressions.
+
+[[numeric_data_type]]
+==== Numeric Data Type
+
+If all of the data types of the result expressions are exact numeric,
+the result data type is exact numeric with precision and scale equal to
+the maximum of the precisions and scales of the result expressions.
+
+For example, if _result-expression-1_ and _result-expression-2_ have
+data type NUMERIC(5) and _result-expression-3_ has data type
+NUMERIC(8,5), the result data type is NUMERIC(10,5).
+
+If any data type of the result expressions is approximate numeric, the
+result data type is approximate numeric with precision equal to the
+maximum of the precisions of the result expressions.
+
+[[datetime_data_type]]
+==== Datetime Data Type
+
+If the data type of the result expressions is datetime, the result data
+type is the same datetime data type.
+
+[[interval_data_type]]
+==== Interval Data Type
+
+If the data type of the result expressions is interval, the result data
+type is the same interval data type (either year-month or day-time) with
+the start field being the most significant of the start fields of the
+result expressions and the end field being the least significant of the
+end fields of the result expressions.
+
+[[examples_of_case]]
+=== Examples of CASE
+
+* Use a simple CASE to decode JOBCODE and return NULL if JOBCODE does
+not match any of the listed values:
++
+```
+SELECT
+  last_name
+, first_name
+, CASE jobcode
+    WHEN 100 THEN 'MANAGER'
+    WHEN 200 THEN 'PRODUCTION SUPV'
+    WHEN 250 THEN 'ASSEMBLER'
+    WHEN 300 THEN 'SALESREP'
+    WHEN 400 THEN 'SYSTEM ANALYST'
+    WHEN 420 THEN 'ENGINEER'
+    WHEN 450 THEN 'PROGRAMMER'
+    WHEN 500 THEN 'ACCOUNTANT'
+    WHEN 600 THEN 'ADMINISTRATOR ANALYST'
+    WHEN 900 THEN 'SECRETARY'
+    ELSE NULL
+  END
+FROM persnl.employee;
+
+LAST_NAME            FIRST_NAME      (EXPR)
+-------------------- --------------- -----------------
+GREEN                ROGER           MANAGER
+HOWARD               JERRY           MANAGER
+RAYMOND              JANE            MANAGER
+...
+CHOU                 JOHN            SECRETARY
+CONRAD               MANFRED         PROGRAMMER
+HERMAN               JIM             SALESREP
+CLARK                LARRY           ACCOUNTANT
+HALL                 KATHRYN         SYSTEM ANALYST
+...
+
+--- 62 row(s) selected.
+```
+
+* Use a searched CASE to return LAST_NAME, FIRST_NAME and a value based
+on SALARY that depends on the value of DEPTNUM:
++
+```
+SELECT
+  last_name
+, first_name
+, deptnum
+, CASE
+    WHEN deptnum = 9000 THEN salary * 1.10
+    WHEN deptnum = 1000 THEN salary * 1.12 ELSE salary
+  END
+FROM persnl.employee;
+
+LAST_NAME        FIRST_NAME   DEPTNUM (EXPR)
+---------------- ------------ ------- -------------------
+GREEN            ROGER           9000         193050.0000
+HOWARD           JERRY           1000         153440.1120
+RAYMOND          JANE            3000         136000.0000
+...
+
+--- 62 row(s) selected.
+```
+
+<<<
+[[cast_expression]]
+== CAST Expression
+
+The CAST expression converts data to the data type you specify.
+
+```
+CAST ({expression | NULL} AS data-type) 
+```
+
+* `_expression_ | NULL`
++
+specifies the operand to convert to the data type _data-type_.
++
+If the operand is an _expression_, then _data-type_ depends on the
+data type of _expression_ and follows the rules outlined in
+<<valid_conversions_for_cast,Valid Conversions for CAST >>.
++
+If the operand is NULL, or if the value of the _expression_ is null, the
+result of CAST is NULL, regardless of the data type you specify.
+
+* `_data-type_`
++
+specifies a data type to associate with the operand of CAST. See
+<<data_types,Data Types>>.
++
+When casting data to a CHAR or VARCHAR data type, the resulting data
+value is left justified. Otherwise, the resulting data value is right
+justified. Further, when you are casting to a CHAR or VARCHAR data type,
+you must specify the length of the target value.
+
+[[considerations_for_cast]]
+=== Considerations for CAST
+
+* Fractional portions are discarded when you use CAST of a numeric value to an INTERVAL type.
+* Depending on how your file is set up, using CAST might cause poor
+query performance by preventing the optimizer from choosing the most
+efficient plan and requiring the executor to perform a complete table or
+index scan.
+
+[[valid_conversions_for_cast]]
+==== Valid Conversions for CAST
+
+* An exact or approximate numeric value to any other numeric data type.
+* An exact or approximate numeric value to any character string data type.
+* An exact numeric value to either a single-field year-month or day-time interval such as INTERVAL DAY(2).
+* A character string to any other data type, with one restriction:
+
+The contents of the character string to be converted must be consistent
+in meaning with the data type of the result. For example, if you are
+converting to DATE, the contents of the character string must be 10
+characters consisting of the year, a hyphen, the month, another hyphen,
+and the day.
+
+* A date value to a character string or to a TIMESTAMP (Trafodion SQL fills in the time part with 00:00:00.00).
+* A time value to a character string or to a TIMESTAMP (Trafodion SQL fills in the date part with the current date).
+* A timestamp value to a character string, a DATE, a TIME, or another TIMESTAMP with different fractional seconds precision.
+* A year-month interval value to a character string, an exact numeric,
+or to another year-month INTERVAL with a different start field precision.
+* A day-time interval value to a character string, an exact numeric, or
+to another day-time INTERVAL with a different start field precision.
+
+[[examples_of_cast]]
+=== Examples of CAST
+
+* In this example, the fractional portion is discarded:
++
+```
+CAST (123.956 as INTERVAL DAY(18))
+```
+
+* This example returns the difference of two timestamps in minutes:
++
+```
+CAST((d.step_end - d.step_start) AS INTERVAL MINUTE)
+```
+
+* Suppose that your database includes a log file of user information.
+This example converts the current timestamp to a character string and
+concatenates the result to a character literal. Note the length must be
+specified.
++
+```
+INSERT INTO stats.logfile (user_key, user_info)
+VALUES (001, 'User JBrook, executed at ' || CAST (CURRENT_TIMESTAMP AS CHAR(26)));
+```
+
+<<<
+[[ceiling_function]]
+== CEILING Function
+
+The CEILING function returns the smallest integer, represented as a
+FLOAT data type, greater than or equal to a numeric value expression.
+
+CEILING is a Trafodion SQL extension.
+
+```
+CEILING (numeric-expression)
+```
+
+* `_numeric-expression_`
++
+is an SQL numeric value expression that specifies the value for the
+argument of the CEILING function.
+See <<numeric_value_expressions,Numeric Value Expressions>>.
+
+[[examples_of_ceiling]]
+=== Examples of CEILING
+
+* This function returns the integer value 3.00000000000000000E+000,
+represented as a FLOAT data type:
++
+```
+CEILING (2.25)
+```
+
+<<<
+[[char_function]]
+=== CHAR Function
+
+The CHAR function returns the character that has the specified code
+value, which must be of exact numeric with scale 0.
+
+CHAR is a Trafodion SQL extension.
+
+```
+CHAR(code-value, [,char-set-name])
+```
+
+* `_code-value_`
++
+is a valid code value in the character set in use.
+
+* `_char-set-name_`
++
+can be ISO88591 or UTF8. The returned character will be associated with
+the character set specified by _char-set-name_.
++
+The default for _char-set-name_ is ISO88591.
+
+[[considerations_for_char]]
+=== Considerations for CHAR
+
+* For the ISO88591 character set, the return type is VARCHAR(1).
+* For the UTF8 character set, the return type is VARCHAR(1).
+
+[[examples_of_char]]
+=== Examples of CHAR
+
+* Select the column CUSTNAME and return the ASCII code of the first
+character of the customer name and its CHAR value:
++
+```
+SELECT custname, ASCII (custname), CHAR (ASCII (custname))
+FROM sales.customer;
+
+CUSTNAME           (EXPR) ( EXPR)
+------------------ ------- -------
+CENTRAL UNIVERSITY      67 C
+BROWN MEDICAL CO        66 B
+STEVENS SUPPLY          83 S
+PREMIER INSURANCE       80 P
+...                    ... ...
+
+--- 15 row(s) selected.
+```
+
+<<<
+[[char_length_function]]
+== CHAR_LENGTH Function
+
+The CHAR_LENGTH function returns the number of characters in a string.
+You can also use CHARACTER_LENGTH. Every character, including multibyte
+characters, counts as one character.
+
+```
+CHAR[ACTER]_LENGTH (string-value-expression)
+```
+
+* `_string-value-expression_`
++
+specifies the string value expression for which to return the length in
+characters. Trafodion SQL returns the result as a two-byte signed
+integer with a scale of zero. If _string-value-expression_ is null,
+Trafodion SQL returns a length of
+null. See <<character_value_expressions,Character Value Expressions>>.
+
+[[considerations_for_char_length]]
+=== Considerations for CHAR_LENGTH
+
+[[char_and_varchar_operands]]
+==== CHAR and VARCHAR Operands
+
+For a column declared as fixed CHAR, Trafodion SQL returns the maximum
+length of that column. For a VARCHAR column, Trafodion SQL returns the
+actual length of the string stored in that column.
+
+[[examples_of_char_length]]
+=== Examples of CHAR_LENGTH
+
+
+* This function returns 12 as the result. The concatenation operator is
+denoted by two vertical bars (\|\|).
++
+```
+CHAR_LENGTH ('ROBERT' || ' ' || 'SMITH')
+```
+
+* The string '' is the null (or empty) string. This function returns 0
+(zero):
++
+```
+CHAR_LENGTH ('')
+```
+
+* The DEPTNAME column has data type CHAR(12). Therefore, this function
+always returns 12:
++
+```
+CHAR_LENGTH (deptname)
+```
+
+* The PROJDESC column in the PROJECT table has data type VARCHAR(18).
+This function returns the actual length of the column value &#8212; not 18 for
+shorter strings &#8212; because it is a VARCHAR value:
++
+```
+SELECT CHAR_LENGTH (projdesc) FROM persnl.project;
+
+(EXPR)
+----------
+        14
+        13
+        13
+        17
+         9
+         9
+
+--- 6 row(s) selected.
+```
+
+<<<
+[[coalesce_function]]
+== COALESCE Function
+
+The COALESCE function returns the value of the first expression in the
+list that does not have a NULL value or if all the expressions have NULL
+values, the function returns a NULL value.
+
+```
+COALESCE (expr1, expr2, ...)
+```
+
+* `_expr1_`
++
+an expression to be compared.
+
+* `_expr2_`
++
+an expression to be compared.
+
+[[examples_of_coalesce]]
+=== Examples of COALESCE
+
+* COALESCE returns the value of the first operand that is not NULL:
++
+```
+SELECT COALESCE (office_phone, cell_phone, home_phone, pager, fax_num, '411')
+from emptbl;
+```
+
+<<<
+[[code_value_function]]
+== CODE_VALUE Function
+
+The CODE_VALUE function returns an unsigned integer (INTEGER UNSIGNED)
+that is the code point of the first character in a character value
+expression that can be associated with one of the supported character
+sets.
+
+CODE_VALUE is a Trafodion SQL extension.
+
+```
+CODE_VALUE(character-value-expression)
+   character-set
+
+* `_character-value-expression_`
++
+is a character string.
+
+
+[[examples_of_code_value_function]]
+=== Examples of CODE_VALUE Function
+
+* This function returns 97 as the result:
++
+```
+>>select code_value('abc') from (values(1))x;
+
+(EXPR)
+----------
+        97
+```
+
+<<<
+[[concat_function]]
+=== CONCAT Function
+
+The CONCAT function returns the concatenation of two character value
+expressions as a character string value. You can also use the
+concatenation operator (\|\|).
+
+CONCAT is a Trafodion SQL extension.
+
+```
+CONCAT (character-expr-1, character-expr-2)
+```
+
+* `_character-expr-1_, _character-expr-2_`
++
+are SQL character value expressions (of data type CHAR or VARCHAR) that
+specify two strings of characters. Both character value expressions must
+be either ISO8859-1 character expressions or UTF8 character expressions.
+The result of the CONCAT function is the concatenation of
+_character-expr-1_ with _character-expr-2_. The result type is CHAR if
+both expressions are of type CHAR and it is VARCHAR if either of the
+expressions is of type VARCHAR.
+See <<character_value_expressions,Character Value Expressions>>.
+
+
+[[concatenation_operator]]
+=== Concatenation Operator (\|\|)
+
+The concatenation operator, denoted by two vertical bars (||),
+concatenates two string values to form a new string value. To indicate
+that two strings are concatenated, connect the strings with two vertical
+bars (\|\|):
+
+```
+character-expr-1 || character-expr-2
+```
+
+An operand can be any SQL value expression of data type CHAR or VARCHAR.
+
+[[considerations_for_concat]]
+=== Considerations for CONCAT
+
+[[operands]]
+=== Operands
+
+
+A string value can be specified by any character value expression, such
+as a character string literal, character string function, column
+reference, aggregate function, scalar subquery, CASE expression, or CAST
+expression. The value of the operand must be of type CHAR or VARCHAR.
+
+If you use the CAST expression, you must specify the length of CHAR or
+VARCHAR.
+
+
+[[sql-parameters]]
+=== SQL Parameters
+
+
+You can concatenate an SQL parameter and a character value expression.
+The concatenated parameter takes on the data type attributes of the
+character value expression. Consider this example, where ?p is assigned
+a string value of '5 March':
+
+?p || ' 2002'
+
+The type assignment of the parameter ?p becomes CHAR(5), the same data
+type as the character literal ' 2002'. Because you assigned a string
+value of more than five characters to ?p, Trafodion SQL returns a
+truncation warning, and the result of the concatenation is 5 Mar 2002.
+
+To specify the type assignment of the parameter, use the CAST expression
+on the parameter as:
+
+CAST(?p AS CHAR(7)) || '2002'
+
+In this example, the parameter is not truncated, and the result of the
+concatenation is 5 March 2002.
+
+[[examples_of_concat]]
+=== Examples of CONCAT
+
+
+* Insert information consisting of a single character string. Use the
+CONCAT function to construct and insert the value:
+
+
+INSERT INTO stats.logfile (user_key, user_info)
+
+VALUES (001, CONCAT ('Executed at ',
+
+
+CAST (CURRENT_TIMESTAMP AS CHAR(26))));
+
+* Use the concatenation operator || to construct and insert the value:
+
+
+INSERT INTO stats.logfile (user_key, user_info)
+
+VALUES (002, 'Executed at ' ||
+
+CAST (CURRENT_TIMESTAMP AS CHAR(26)));
+
+<<<
+[[converttohex_function]]
+== CONVERTTOHEX Function
+
+The CONVERTTOHEX function converts the specified value expression to
+hexadecimal for display purposes.
+
+CONVERTTOHEX is a Trafodion SQL extension.
+
+CONVERTTOHEX (_expression_)
+
+_expression_
+
+is any numeric, character, datetime, or interval expression.
+
+The primary purpose of the CONVERTTOHEX function is to eliminate any
+doubt as to the exact value in a column. It is particularly useful for
+character expressions where some characters may be from character sets
+that are not supported by the client terminal's locale or may be control
+codes or other non-displayable characters.
+
+[[considerations_for_converttohex]]
+==== Considerations for CONVERTTOHEX
+
+Although CONVERTTOHEX is usable on datetime and interval expressions,
+the displayed output shows the internal value and is, consequently, not
+particularly meaningful to general users and is subject to change in
+future releases.
+
+CONVERTTOHEX returns ASCII characters in ISO8859-1 encoding.
+
+[[examples_of_converttohex]]
+=== Examples of CONVERTTOHEX
+
+* Display the contents of a smallint, integer, and largeint in
+hexadecimal:
++
+```
+CREATE TABLE EG (S1 smallint, I1 int, L1 largeint);
+
+INSERT INTO EG VALUES( 37, 2147483647, 2305843009213693951);
+
+SELECT CONVERTTOHEX(S1), CONVERTTOHEX(I1), CONVERTTOHEX(L1) from EG;
+
+(EXPR) (EXPR)    EXPR)
+------ -------- ----------------
+0025   7FFFFFFF 1FFFFFFFFFFFFFFF
+```
+
+* Display the contents of a CHAR(4) column, a VARCHAR(4) column, and a
+CHAR(4) column that uses the UTF8 character set. The varchar column does
+not have a trailing space character as the fixed-length columns have:
++
+```
+CREATE TABLE EG_CH (FC4 CHAR(4), VC4 VARCHAR(4), FC4U CHAR(4) CHARACTER SET UTF8);
+
+INSERT INTO EG_CH values('ABC', 'abc', _UTF8'abc');
+
+SELECT CONVERTTOHEX(FC4), CONVERTTOHEX(VC4), CONVERTTOHEX(FC4U) from EG_CH;
+
+(EXPR)   (EXPR)   (EXPR)
+-------- -------- ----------------
+41424320   616263 0061006200630020
+```
+
+* Display the internal values for a DATE column, a TIME column, a
+TIMESTAMP(2) column, and a TIMESTAMP(6) column:
++
+```
+CREATE TABLE DT (D1 date, T1 time, TS1 timestamp(2), TS2 timestamp(6) );
+INSERT INTO DT values(current_date, current_time, current_timestamp, current_timestamp);
+
+SELECT CONVERTTOHEX(D1), CONVERTTOHEX(T1), CONVERTTOHEX(TS1), CONVERTTOHEX(TS2) from DT;
+
+(EXPR)      (EXPR)    (EXPR)                    (EXPR)
+----------- --------- ------------------------- -------------------------
+   07D8040F    0E201E    07D8040F0E201E00000035    07D8040F0E201E00081ABB
+``
+
+* Display the internal values for an INTERVAL YEAR column, an INTERVAL
+YEAR(2) TO MONTH column, and an INTERVAL DAY TO SECOND column:
++
+```
+CREATE TABLE IVT ( IV1 interval year, IV2 interval year(2) to month, IV3 interval day to second);
+
+INSERT INTO IVT values( interval '1' year, interval '3-2' year(2) to
+month, interval '31:14:59:58' day to second);
+
+SELECT CONVERTTOHEX(IV1), CONVERTTOHEX(IV2), CONVERTTOHEX(IV3) from IVT;
+
+(EXPR) (EXPR)   (EXPR)
+------ -------- -----------------------
+  0001     0026        0000027C2F9CB780
+```
