@@ -36,8 +36,9 @@ fi
 
 ###### Setting up CLI for AWS as sudo id
 
+if [[ ! -z $AWS_CLOUD ]]; then
 ###### Check for existence of aws  
-if [[ ! -d /usr/local/aws ]]; then
+    if [[ ! -d /usr/local/aws ]]; then
        cd $HOME
        curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
        unzip $HOME/awscli-bundle.zip
@@ -51,10 +52,9 @@ if [[ ! -d /usr/local/aws ]]; then
 
        $TRAF_PDSH "sudo rm -rf $HOME/awscli-bundle"
        rm -f $HOME/awscli-bundle.zip
-fi
+    fi
 
 ###### Check for existence of .aws for trafodion id
-if [[ ! -z $AWS_CLOUD ]]; then
     ###### Check if aws configuration file exist for Trafodion Id
     AWSCONFIG_DIR=`sudo su $TRAF_USER --login --command "ls -altr | grep -w ".aws" | wc -l" `
     if [[ $AWSCONFIG_DIR == 0 ]]; then
