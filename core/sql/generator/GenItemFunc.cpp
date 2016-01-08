@@ -2814,6 +2814,7 @@ short LOBinsert::codeGen(Generator * generator)
   ExpLOBinsert * li =
     new(generator->getSpace()) ExpLOBinsert
     (getOperatorType(), 
+     getArity()+1,
      attr, 
      objectUID_,
      (short)insertedTableSchemaName().length(),
@@ -2830,6 +2831,8 @@ short LOBinsert::codeGen(Generator * generator)
     li->setFromLob(TRUE);
   else if (obj_ == LOBoper::EXTERNAL_)
     li->setFromExternal(TRUE);
+  else if (obj_ ==LOBoper::BUFFER_)
+    li->setFromBuffer(TRUE);
 
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
@@ -2897,6 +2900,8 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromLob(TRUE);
   else if (obj_ == LOBoper::EXTERNAL_)
     lu->setFromExternal(TRUE);
+  else if (obj_ == LOBoper::BUFFER_)
+    lu->setFromBuffer(TRUE);
 
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
@@ -2997,6 +3002,7 @@ short LOBload::codeGen(Generator * generator)
   ExpLOBload * ll =
     new(generator->getSpace()) ExpLOBload
     (getOperatorType(), 
+     getArity()+1,
      attr, 
      objectUID_,
      (short)insertedTableSchemaName().length(),
@@ -3011,6 +3017,7 @@ short LOBload::codeGen(Generator * generator)
     ll->setFromLoad(TRUE);
   else if (obj_ == LOBoper::LOB_)
     ll->setFromLob(TRUE);
+  
 
   ll->lobNum() = lobNum();
   ll->setLobStorageType(lobStorageType());

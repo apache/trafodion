@@ -6462,7 +6462,6 @@ const NAType *LOBinsert::synthesizeType()
 
   if ((obj_ == STRING_) ||
       (obj_ == FILE_) ||
-      (obj_ == BUFFER_) ||
       (obj_ == EXTERNAL_) ||
       (obj_ == LOAD_))
     {
@@ -6483,6 +6482,16 @@ const NAType *LOBinsert::synthesizeType()
 			      << DgString1("LOB");
 	  return NULL;
 	}
+    }
+  else if (obj_ == BUFFER_)
+    {
+     if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	{
+	  // 4043 The operand of a $0~String0 function must be blob
+	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
+			      << DgString1("LARGEINT");
+	  return NULL;
+	} 
     }
   else 
     {
@@ -6517,9 +6526,10 @@ const NAType *LOBupdate::synthesizeType()
   ValueId vid2 = child(1)->getValueId();
   const NAType &typ2 = (NAType&)vid2.getType();
 
+ 
+
   if ((obj_ == STRING_) ||
       (obj_ == FILE_) ||
-      (obj_ == BUFFER_) ||
       (obj_ == EXTERNAL_))
     {
       if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
@@ -6539,6 +6549,25 @@ const NAType *LOBupdate::synthesizeType()
 			      << DgString1("LOB");
 	  return NULL;
 	}
+    }
+  else if (obj_ == BUFFER_)
+    {
+     if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+	{
+	  // 4043 The operand of a $0~String0 function must be blob
+	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+			      << DgString1("LARGEINT");
+	  return NULL;
+	} 
+      ValueId vid3 = child(2)->getValueId();
+      const  NAType &typ3 = (NAType&)vid3.getType();
+      if (typ3.getTypeQualifier() != NA_NUMERIC_TYPE)
+	{
+	  // 4043 The operand of a $0~String0 function must be blob
+	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+			      << DgString1("LARGEINT");
+	  return NULL;
+	} 
     }
   else 
     {
