@@ -9321,6 +9321,32 @@ convDoIt(char * source,
   };
   break;
 
+// gb2312 -> utf8
+  case CONV_GBK_F_UTF8_V:
+  {
+    char * targetbuf = new char[sourceLen*4+1];
+    size_t sl = sourceLen;
+    int convLen = gbkToUtf8( source, sl, targetbuf, sl*4);
+    int copyLen = 0;
+    if (convLen > 0) {
+      copyLen = (convLen< targetLen) ? convLen: targetLen;
+      str_cpy_all(target, targetbuf, copyLen);
+    //  if (convLen > targetLen)
+
+    }
+    else {
+      // LCOV_EXCL_START
+      convLen = 0;
+      copyLen = 0;
+      // LCOV_EXCL_STOP
+    }
+
+    if ( varCharLen )
+       setVCLength(varCharLen, varCharLenSize, copyLen);
+    delete targetbuf;
+
+  };
+  break;
 // 5/10/98: sjis -> unicode
   case CONV_SJIS_F_UNICODE_F: 
   case CONV_SJIS_F_UNICODE_V: 

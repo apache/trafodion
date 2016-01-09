@@ -5207,6 +5207,18 @@ const NAType *Translate::synthesizeType()
          err4106arg = SQLCHARSETSTRING_UTF8;
        break;
 
+     case GBK_TO_UTF8:
+       if (translateSource->getCharSet() == CharInfo::GBK || translateSource->getCharSet() == CharInfo::UnknownCharSet )
+         charsetTarget = CharInfo::UTF8;
+       else
+       {
+            if( CmpCommon::getDefaultString(HIVE_FILE_CHARSET) ==  CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) )
+              err4106arg = SQLCHARSETCODE_GB2312;
+            else
+             charsetTarget = CharInfo::UTF8;
+       }
+       break;
+
      case ISO88591_TO_UTF8:
        if (translateSource->getCharSet() == CharInfo::ISO88591)
        {

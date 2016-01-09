@@ -1542,7 +1542,9 @@ enum conv_case_index {
   CONV_UTF8_F_UCS2_V                   =248,
 
   CONV_BLOB_BLOB                       =249,
-  CONV_BLOB_ASCII_F                    =250
+  CONV_BLOB_ASCII_F                    =250,
+
+  CONV_GBK_F_UTF8_V                    =251
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {

@@ -30,6 +30,10 @@
 //       but also used by the ODBC build and maybe others.
 
 #include <limits.h>
+#include <iconv.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "multi-byte.h"
 #include "fcconv.h"
 #include "csconvert.h"
@@ -1274,4 +1278,42 @@ char * findStartOfChar( char *someByteInChar, char *startOfBuffer )
           ( ( *rtnv & 0xC0 ) != 0xC0 ) )
      rtnv-- ;
   return rtnv ;
+}
+/* A method to do character set conversion , using Glibc iconv */
+int code_convert(const char *from_charset,const char *to_charset,char *inbuf, size_t inlen, char *outbuf,size_t outlen)
+{
+  iconv_t cd;
+  int rc;
+  char **pin = &inbuf;
+  char **pout = &outbuf;
+
+  cd = iconv_open(to_charset,from_charset);
+  if (cd==0) return -1;
+  memset(outbuf,0,outlen);
+  if (iconv(cd,pin,(size_t*)&inlen,pout,(size_t *)&outlen)==-1) 
+  {
+    iconv_close(cd);
+    return -1;
+  }
+  iconv_close(cd);
+  return outlen;
+}
+/* from gbk to utf8 */
+int gbk2utf8(char *inbuf,size_t inlen,char *outbuf,size_t outlen)
+{
+  return code_convert("gbk","utf-8",inbuf,inlen,outbuf,outlen);
+}
+
+int gbkToUtf8(char* gbkString, size_t gbklen, 
+              char* result ,size_t outlen, int addNullAtEnd)
+{
+
+   int finalLength = gbk2utf8 ( gbkString, gbklen,  result, outlen);
+   
+   if (finalLength == -1 ) return 0;
+   
+   if ( addNullAtEnd > 0 )
+      result[finalLength] = 0;
+
+   return finalLength;
 }
