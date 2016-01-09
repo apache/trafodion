@@ -182,7 +182,7 @@
               <sourceHighlighter>coderay</sourceHighlighter>
               <outputDirectory>${basedir}/target</outputDirectory>
               <attributes>
-                <pdf-stylesdir>${basedir}/src/theme</pdf-stylesdir>
+                <pdf-stylesdir>${basedir}/../css</pdf-stylesdir>
                 <pdf-style>trafodion</pdf-style>
                 <icons>font</icons>
                 <pagenums/>
