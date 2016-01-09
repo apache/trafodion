@@ -329,7 +329,7 @@ gv_float_external_interface=""
 gv_float_external_ip=""
 gv_float_internal_ip=""
 gv_port=0
-awscmd=/usr/local/bin/aws
+awscmd="/usr/local/bin/aws ec2 --output text "
 
 gv_ok=0
 gv_warn=1
@@ -354,7 +354,7 @@ dcsEcho "gv_float_external_ip :" $gv_float_external_ip
 dcsEcho "gv_float_internal_ip :" $gv_float_internal_ip
 
 #Check if AWS_CLOUD environment variable defined
-if [[ -z $AWS_CLOUD ]]; then
+if [[ $AWS_CLOUD != "true" ]]; then
     Check_VirtualIP_InUse_Unbind
     BindFloatIp
 else
@@ -362,23 +362,23 @@ else
     dcsEcho "Using device index $device_index_to_use for $gv_float_external_interface"
 
     # Get instance Id of the instance
-    INSTANCEID=`$awscmd ec2 describe-instances |grep -i instances |grep -i $gv_myhostname |cut -f8`
+    INSTANCEID=`$awscmd describe-instances |grep -i instances |grep -i $gv_myhostname |cut -f8`
     dcsEcho "Using Instance id $INSTANCEID"
 
     # Get the network interface configured for the vpc
-    NETWORKINTERFACE=`$awscmd ec2 describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
+    NETWORKINTERFACE=`$awscmd describe-network-interfaces| grep -i networkinterfaces| grep -i $gv_float_internal_ip|cut -f5`
     dcsEcho "Using network interface $NETWORKINTERFACE"
 
     # Get the attachment id for the network interface
-    ATTACH_ID=`$awscmd ec2 describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
+    ATTACH_ID=`$awscmd describe-network-interfaces --network-interface-ids $NETWORKINTERFACE |grep -i attachment |cut -f3`
     if [ ! -z "$ATTACH_ID" ]; then
         dcsEcho "Detaching attachment Id:" $ATTACH_ID
-        $awscmd ec2 detach-network-interface --attachment-id $ATTACH_ID
+        $awscmd detach-network-interface --attachment-id $ATTACH_ID
     fi
 
     dcsEcho "Going to attach network interface $NETWORKINTERFACE to the another instance"
     sleep 10
-    NEWATTACH_ID=`$awscmd ec2 attach-network-interface --network-interface-id $NETWORKINTERFACE --instance-id $INSTANCEID --device-index $device_index_to_use`
+    NEWATTACH_ID=`$awscmd attach-network-interface --network-interface-id $NETWORKINTERFACE --instance-id $INSTANCEID --device-index $device_index_to_use`
     dcsEcho "New attachment Id " $NEWATTACH_ID
     sleep 10
     configure_route_tables

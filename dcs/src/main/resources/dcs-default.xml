@@ -324,51 +324,6 @@
   </property>
   <!-- End of properties that are directly mapped from ZooKeeper's zoo.cfg -->
   <property>
-    <name>dcs.rest.port</name>
-    <value>8080</value>
-    <description>The port for the dcs REST server.</description>
-  </property>
-  <property>
-    <name>dcs.rest.readonly</name>
-    <value>false</value>
-    <description>
-    Defines the mode the REST server will be started in. Possible values are:
-    false: All HTTP methods are permitted - GET/PUT/POST/DELETE.
-    true: Only the GET method is permitted.
-    </description>
-  </property>
-  <property>
-    <name>dcs.rest.threads.max</name>
-    <value>100</value>
-    <description>
-        The maximum number of threads of the REST server thread pool.
-        Threads in the pool are reused to process REST requests. This
-        controls the maximum number of requests processed concurrently.
-        It may help to control the memory used by the REST server to
-        avoid out of memory issues. If the thread pool is full, incoming requests
-        will be queued up and wait for some free threads. The default
-        is 100.
-    </description>
-  </property>
-  <property>
-    <name>dcs.rest.threads.min</name>
-    <value>2</value>
-    <description>
-        The minimum number of threads of the REST server thread pool.
-        The thread pool always has at least these number of threads so
-        the REST server is ready to serve incoming requests. The default
-        is 2.
-    </description>
-  </property>
-  <property>
-    <name>dcs.rest.refresh.seconds</name>
-    <value>5</value>
-    <description>
-        Time in seconds between refresh of the REST server page. Set to 0
-        to disable automatic refresh. The default is 5.
-    </description>
-  </property>
-  <property>
     <name>dcs.server.user.program.statistics.interval.time</name>
     <value>60</value>
     <description>
