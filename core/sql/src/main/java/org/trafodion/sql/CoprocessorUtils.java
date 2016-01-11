@@ -22,7 +22,7 @@ public class CoprocessorUtils {
             String path = System.getenv("MY_SQROOT") + "/etc/trafcoprocess.properties";
             config = new PropertiesConfiguration(path);
         } catch (Exception e) {
-            logger.info("error when finding trafcoprocess.properties");
+            logger.error("error when finding trafcoprocess.properties");
             e.printStackTrace();
         }
 
