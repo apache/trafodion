@@ -12,24 +12,25 @@ Hadoop.
 To get started using Apache Trafodion: 
 
   - documentation for this release can be viewed on the Apache Trafodion 
-    wiki page: 
-      https://cwiki.apache.org/confluence/display/TRAFODION/Documentation
+    web page: 
+      http://trafodion.apache.org/documentation.html
 
   - release notes describing changes for release 1.3.0 can be viewed:
-      https://cwiki.apache.org/confluence/display/TRAFODION/Software
+      http://trafodion.apache.org/release-notes-1-3-0.html      
 
   - the latest Apache Trafodion can be downloaded from Apache incubator
     distribution site or accessed from git
 
-    - download site:
+    = download site:
       https://dist.apache.org/repos/dist/release/incubator/trafodion
 
-    - git site:
+    = git site:
       git@github.com:apache/incubator-trafodion  
 
   - To build and try out Apache Trafodion, please following our build 
     instructions as described:
-      https://cwiki.apache.org/confluence/display/TRAFODION/Using+the+Software
+      http://trafodion.apache.org/download.html
+
 
 =============================
 Cryptographic software notice
