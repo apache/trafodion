@@ -236,9 +236,7 @@ public class HBaseClient {
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc);
-            for (String str : desc.getCoprocessors()) {
-                logger.debug(tblName + "has coprocessor : " + str);
-            }
+
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
@@ -490,10 +488,8 @@ public class HBaseClient {
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-        CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc);
-        for (String str : desc.getCoprocessors()) {
-            logger.debug(tblName + "has coprocessor : " + str);
-        }
+            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc);
+
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
