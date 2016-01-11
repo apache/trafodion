@@ -2519,6 +2519,10 @@ short RelRoot::codeGen(Generator * generator)
        {
          root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_HBASE_UNLOAD);
        }
+       else if (exeUtil->getExeUtilType() == ExeUtilExpr::LOB_EXTRACT_)
+	 {
+	   root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_EXTRACT);
+	 }
 
       else if (exeUtil->isExeUtilQueryType())
 	{

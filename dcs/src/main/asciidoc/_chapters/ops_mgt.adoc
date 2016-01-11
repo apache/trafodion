@@ -35,3 +35,31 @@ and <<configuration,configuration>> but is a distinct topic in itself.
 [[tools]]
 == Tools and Utilities 
 Here we list tools for administration, analysis, and debugging.
+
+[[client-server-connectivity]]
+=== DcsMaster and mxosrvr unable to communicate via the interface specified in _conf/_dcs_site.xml_
+Symptoms are: When connection are viewed using DCS webUI, the server will be in "CONNECTING" state and the state does not change to "CONNECTED". 
+
+When such issues are seen, validate network communication works by using the linux utility 'netcat(nc)'command. 
+----
+From the first node, type 'nc  -l <any port number>'. This utility is now running in server mode listening for incoming connections on the specified port.
+
+From the second node, type ‘nc <external IP of the first node> <the listening port specified on the first node>’.
+Start entering some text on the client node and hit enter. The message you typed should reach the server on the first node. 
+
+To exit , Press Ctrl-D , both the client and server will exit.
+----
+
+Another test would be to enable verbose when using ssh by using the public or private IP address
+----
+ssh -v <private IP address OR public IP address>
+----
+
+The third test would be to use linux tool 'traceroute'
+----
+traceroute <privateIP or public IP address>
+----
+
+
+
+

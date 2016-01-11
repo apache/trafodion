@@ -854,8 +854,12 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDes
        return LOB_DESC_APPEND_ERROR;
     }
 
-   
-    err = writeLobData(data, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
+    char *inputAddr = data;
+    if (so == Lob_Buffer)
+      {
+	inputAddr = (char *)(*(long *)data);
+      }
+    err = writeLobData(inputAddr, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
     if (err != LOB_OPER_OK)
       return err;
     return LOB_OPER_OK;
@@ -882,6 +886,10 @@ Ex_Lob_Error ExLob::insertData(char *data, Int64 size, LobsSubOper so,Int64 head
     }
 
     char *inputAddr = data;
+    if (so == Lob_Buffer)
+      {
+	inputAddr = (char *)(*(long *)data);
+      }
     Int64 inputSize = desc.getSize();
     Int64 tgtOffset = desc.getOffset();
     err = writeLobData(inputAddr, inputSize,so, tgtOffset, 
@@ -926,9 +934,13 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
     if (cliErr < 0 || cliErr == 100) { // some error or EOD.
        return LOB_DESC_UPDATE_ERROR;
     }
-
+    char *inputAddr = data;
+    if (so == Lob_Buffer)
+      {
+	inputAddr = (char *)(*(long *)data);
+      }
    
-    err = writeLobData(data, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
+    err = writeLobData(inputAddr, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
     if (err != LOB_OPER_OK)
       return err;
     return LOB_OPER_OK;
@@ -2769,7 +2781,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_ReadCursor:
-      if (subOperation == Lob_Memory)
+      if ((subOperation == Lob_Memory) || (subOperation == Lob_Buffer))
 	err = lobPtr->readCursor(source, sourceLen, handleIn, handleInLen, retOperLen);
       else if (subOperation == Lob_File)
 	err = lobPtr->readCursor(source, -1, handleIn, handleInLen, retOperLen);
@@ -2805,7 +2817,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Append:
-      if (subOperation == Lob_Memory)
+      if ((subOperation == Lob_Memory) ||(subOperation == Lob_Buffer))
 	err = lobPtr->append(source, sourceLen, subOperation, descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize);
       else if (subOperation == Lob_File)
 	err = lobPtr->append(source, -1, subOperation, descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize);
@@ -2814,7 +2826,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Update:
-      if (subOperation == Lob_Memory)
+      if ((subOperation == Lob_Memory)||(subOperation == Lob_Buffer))
 	err = lobPtr->update(source, sourceLen, subOperation, descNumIn, retOperLen, lobMaxSize, lobMaxChunkMemSize);
       else if (subOperation == Lob_File)
 	err = lobPtr->update(source, -1, subOperation,descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize); 

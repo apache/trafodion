@@ -173,7 +173,6 @@ public class ZkClient implements Watcher {
 		return zk;
 	}
 	
-	@Override
 	public void process(WatchedEvent event) {
 		if(event.getState() == Watcher.Event.KeeperState.SyncConnected) {
 			connectedSignal.countDown();

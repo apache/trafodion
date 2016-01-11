@@ -498,7 +498,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    bytesLeft_, // max bytes
                    cursorId_, 
 		       
-                   requestTag_, 
+                   requestTag_, Lob_Memory,
                    0, // not check status
                    (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
 		       
@@ -531,7 +531,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                        hdfo->getBytesToRead(), // max bytes
                        cursorId, 
                            
-                       requestTag_, 
+                       requestTag_, Lob_Memory,
                        0, // not check status
                        (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
                            
@@ -637,7 +637,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    0, NULL,		       
                    0, cursorId_,
 		       
-                   requestTag_, 
+                   requestTag_, Lob_Memory,
                    0, // not check status
                    (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
 		       
@@ -1149,7 +1149,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    0,NULL, //handle not relevant for non lob access
                    0, cursorId_,
 		       
-                   requestTag_, 
+                   requestTag_, Lob_Memory,
                    0, // not check status
                    (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
 		       

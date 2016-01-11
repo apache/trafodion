@@ -1119,33 +1119,14 @@ short do_ExecSMD(
 
     // Setup module filenames for MX metadata
     //Module version is changed from 0 to "SQLCLI_ODBC_MODULE_VERSION" R3.0
-    if (strncmp(stmtLabel, "SQL_GETTYPEINFO",15) == 0)
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXGTI",
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-    else if (strncmp(stmtLabel, "SQL_JAVA_",9) == 0)
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXJAVA",
-        SQLCLI_ODBC_MODULE_VERSION,
-        1234567890,
-        sqlStmtType,
-        false,true);
-    else
-        pSrvrStmt = createSrvrStmt(dialogueId,
-        stmtLabel,
-        &sqlcode,
-        NULL,
-        0,
-        0,
-        sqlStmtType,
-        false,false);
+    pSrvrStmt = createSrvrStmt(dialogueId,
+    stmtLabel,
+    &sqlcode,
+    NULL,
+    0,
+    0,
+    sqlStmtType,
+    false,true);
 
     *stmtId = (long)pSrvrStmt;
     SQLValue_def *sqlString = NULL;
@@ -1634,6 +1615,96 @@ short do_ExecSMD(
                         tableParam[0], inputParam[0], inputParam[1],
                         inputParam[2], inputParam[3]);
                     break;
+                case SQL_API_SQLPROCEDURES:
+                    if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(
+tableNm, tableNmNoEsc)) && !metadataId)
+                    {
+                        executeException->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                        executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+                        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+                    }
+
+                    if (strcmp(catalogNm,"") == 0)
+                        strcpy(tableName1,SEABASE_MD_CATALOG);
+                    else
+                        strcpy(tableName1, catalogNm);
+                    tableParam[0] = tableName1;
+                    convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+                    convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+                    convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+                    convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+                    inputParam[0] = schemaNmNoEsc;
+                    inputParam[1] = expSchemaNm;
+                    inputParam[2] = tableNmNoEsc;
+                    inputParam[3] = expTableNm;
+                    inputParam[4] = NULL;
+
+                    snprintf((char *)sqlString->dataValue._buffer, totalSize,
+                        "select obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEM, "
+			"obj.OBJECT_NAME PROCEDURE_NAME, cast(NULL as varchar(10)) R1,cast(NULL as varchar(10)) R2,"
+                        "cast(NULL as varchar(10)) R3, cast(NULL as varchar(10)) REMARKS,"
+			"cast(case when routines.UDR_TYPE = 'P' then 1"
+			" when routines.UDR_TYPE = 'F' or routines.UDR_TYPE = 'T'"
+			" then 2 else 0 end as smallint) PROCEDURE_TYPE, "
+                        "obj.OBJECT_NAME SPECIFIC_NAME "
+                        " from TRAFODION.\"_MD_\".OBJECTS obj "
+			" left join TRAFODION.\"_MD_\".ROUTINES routines on obj.OBJECT_UID = routines.UDR_UID"
+                        " where "
+                        " (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+			" and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+                        " and obj.OBJECT_TYPE='UR' "
+                        " order by obj.OBJECT_NAME"
+                        " FOR READ UNCOMMITTED ACCESS;",
+                        inputParam[0], inputParam[1], inputParam[2], inputParam[3]);
+                    break;
+                case SQL_API_SQLPROCEDURECOLUMNS:
+                    if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(
+tableNm, tableNmNoEsc)) && !metadataId)
+                    {
+                        executeException->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                        executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+                        FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+                    }
+
+                    if (strcmp(catalogNm,"") == 0)
+                        strcpy(tableName1,SEABASE_MD_CATALOG);
+                    else
+                        strcpy(tableName1, catalogNm);
+                    tableParam[0] = tableName1;
+                    convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+                    convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+                    convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+		            convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+                    convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
+                    convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
+                    inputParam[0] = schemaNmNoEsc;
+                    inputParam[1] = expSchemaNm;
+                    inputParam[2] = tableNmNoEsc;
+                    inputParam[3] = expTableNm;
+                    inputParam[4] = columnNmNoEsc;
+                    inputParam[5] = expColumnNm;
+                    inputParam[6] = NULL;
+
+                    snprintf((char *)sqlString->dataValue._buffer, totalSize,
+                            "select obj.CATALOG_NAME PROCEDURE_CAT, obj.SCHEMA_NAME PROCEDURE_SCHEM,"
+                            "obj.OBJECT_NAME PROCEDURE_NAME, cols.COLUMN_NAME COLUMN_NAME, "
+                            "cast((case when cols.DIRECTION='I' then 1 when cols.DIRECTION='N' then 2 when cols.DIRECTION='O' then 3 else 0 end) as smallint) COLUMN_TYPE, "
+                            "cols.FS_DATA_TYPE DATA_TYPE, cols.SQL_DATA_TYPE TYPE_NAME, "
+                            "cols.COLUMN_PRECISION \"PRECISION\", cols.COLUMN_SIZE LENGTH, cols.COLUMN_SCALE SCALE, "
+                            "cast(1 as smallint) RADIX, cols.NULLABLE NULLABLE, cast(NULL as varchar(10)) REMARKS, "
+                            "cols.DEFAULT_VALUE COLUMN_DEF, cols.FS_DATA_TYPE SQL_DATA_TYPE, cast(0 as smallint) SQL_DATETIME_SUB, "
+                            "cols.COLUMN_SIZE CHAR_OCTET_LENGTH, cols.COLUMN_NUMBER ORDINAL_POSITION, "
+                            "cols.NULLABLE IS_NULLABLE, cols.COLUMN_NAME SPECIFIC_NAME"
+                            " from TRAFODION.\"_MD_\".OBJECTS obj "
+                            " left join TRAFODION.\"_MD_\".COLUMNS cols on obj.OBJECT_UID=cols.OBJECT_UID "
+                            " where "
+                            " (obj.SCHEMA_NAME = '%s' or trim(obj.SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+                            " and (obj.OBJECT_NAME = '%s' or trim(obj.OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+                            " and (cols.COLUMN_NAME = '%s' or trim(cols.COLUMN_NAME) LIKE '%s' ESCAPE '\\')"
+                            " order by cols.COLUMN_NUMBER"
+                            " FOR READ UNCOMMITTED ACCESS;"
+                        ,inputParam[0], inputParam[1], inputParam[2], inputParam[3], inputParam[4], inputParam[5]);
+                    break;
             }
     if (pSrvrStmt == NULL)
     {
@@ -1991,36 +2062,14 @@ short do_ExecFetchAppend(
     long                totalLength=0;
 
     // Setup module filenames for MX metadata
-    if (strncmp(stmtLabel, "SQL_GETTYPEINFO",15) == 0) {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXGTI",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
-    else if (strncmp(stmtLabel, "SQL_JAVA_",9) == 0) {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMXJAVA",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
-    else {
-        pSrvrStmt = createSrvrStmt(dialogueId,
-            stmtLabel,
-            &sqlcode,
-            "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMX",
-            SQLCLI_ODBC_MODULE_VERSION,
-            1234567890,
-            sqlStmtType,
-            false,true);
-    }
+    pSrvrStmt = createSrvrStmt(dialogueId,
+        stmtLabel,
+        &sqlcode,
+        NULL,
+        SQLCLI_ODBC_MODULE_VERSION,
+        1234567890,
+        sqlStmtType,
+        false,true);
 
     if (pSrvrStmt == NULL){
         executeException->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;

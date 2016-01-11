@@ -5330,8 +5330,8 @@ RelExpr * ExeUtilLobExtract::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap
 
   result->handle_ = handle_;
   result->toType_ = toType_;
-  result->bufAddrExpr_ = bufAddrExpr_;
-  result->bufSizeExpr_ = bufSizeExpr_;
+  result->bufAddr_ = bufAddr_;
+  result->extractSizeAddr_ = extractSizeAddr_;
   result->intParam_ = intParam_;
   result->intParam2_ = intParam2_;
   result->stringParam_ = stringParam_;

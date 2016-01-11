@@ -161,7 +161,7 @@ create table tlob130bin1 (c1 int not null, c2 blob, primary key (c1));
 sh cp $scriptsdir/executor/deep.jpg $rundir/executor/;
 sh cp $scriptsdir/executor/anoush.jpg $rundir/executor/;
 sh cp $scriptsdir/executor/lob_input_* $rundir/executor/;
-
+sh cp $scriptsdir/executor/TEST130_argfile $rundir/executor/;
 -- inserts
 -- first line
 insert into tlob130txt1 values (1, filetolob('lob_input_a1.txt'));
@@ -340,7 +340,7 @@ sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdf
 obey t130_extract_command;
 
 
-
+sh clitestdriver 2 < TEST130_argfile 2>&1 | tee -a LOG130;
 
 ------------------------------------------------------------------------------
 obey TEST130(lob_misc_cleanup);
@@ -427,8 +427,10 @@ drop table tlob130txt2;
 drop table tlob130bin2; 
 sh rm TMP130;
 sh rm tlob130txt2;
-
+sh rm lobc2out.jpg;
+sh rm TEST130_argfile;
 drop schema trafodion.lob130 cascade;
+
 
 exit;
 
