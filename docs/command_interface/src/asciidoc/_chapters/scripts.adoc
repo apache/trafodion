@@ -62,9 +62,9 @@ specific statements or commands without removing them from the script file.
 
 To denote a comment in a script file, use two hyphens before the comment:
 
-====
-*-- _comment_*
-====
+```
+-- comment
+```
 
 The end of the line marks the end of the comment.
 
@@ -74,7 +74,7 @@ The end of the line marks the end of the comment.
 To create sections of commands within a script file, put a section header at the beginning of each section:
 
 ====
-*?SECTION _section-name_*
+?SECTION section-name
 ====
 
 The `_section-name_` cannot begin with a number or an underscore. Each section name in a script file should be unique
@@ -98,50 +98,48 @@ in TrafCI. To run a script file when launching TrafCI, see <<trafci_run_script, 
 This `@` command runs a script file, `sch_invent.sql`, that creates tables in the inventory schema:
 
 ====
-*@C:\ddl_scripts\sch_invent.sql*
+@C:\ddl_scripts\sch_invent.sql
 ====
 
 NOTE: If the script file is outside the directory of the `trafci.cmd` or `trafci.sh` file (by default, the `bin` directory),
 you must specify the full path of the script file in the `@` or `OBEY` command.
 
-====
-`SQL>`*@C:\ddl_scripts\sch_invent.sql* +
-`SQL>`*-- CREATE SCHEMA* +
-`SQL>`*CREATE SCHEMA INVENT;* +
 ```
+SQL>@C:\ddl_scripts\sch_invent.sql
+SQL>-- CREATE SCHEMA
+SQL>CREATE SCHEMA INVENT;
+
 --- SQL operation complete.
-====
-<<<
-====
-`SQL>`*-- CREATE TABLES/VIEWS in SCHEMA INVENT SQL>SET SCHEMA INVENT;*
-```
+
+SQL>-- CREATE TABLES/VIEWS in SCHEMA INVENT
+SQL> SET SCHEMA INVENT;
+
+--- SQL operation complete.
+
+SQL>CREATE TABLE INVENT.supplier (
++> suppnum NUMERIC (4) UNSIGNED
++> NO DEFAULT
++> NOT NULL
++> ,suppname CHARACTER (18)
++> NO DEFAULT
++> NOT NULL
++> ,street CHARACTER (22)
++> NO DEFAULT
++> NOT NULL
++> ,city CHARACTER (14)
++> NO DEFAULT
++> NOT NULL
++> ,state CHARACTER (12)
++> NO DEFAULT
++> NOT NULL
++> ,postcode CHARACTER (10)
++> NO DEFAULT
++> NOT NULL
++> ,PRIMARY KEY (suppnum)
++> );
+
 --- SQL operation complete.
 ```
-`SQL>`*CREATE TABLE INVENT.supplier (* +
-`&#43;>` *suppnum NUMERIC (4) UNSIGNED* +
-`&#43;>` *NO DEFAULT* +
-`&#43;>` *NOT NULL* +
-`&#43;>` *,suppname CHARACTER (18)* +
-`&#43;>` *NO DEFAULT* +
-`&#43;>` *NOT NULL* +
-`&#43;>` *,street CHARACTER (22)* +
-`&#43;>` *NO DEFAULT* +
-`&#43;>` *NOT NULL* +
-`&#43;>` *,city CHARACTER (14)* +
-`&#43;>` *NO DEFAULT* +
-`&#43;>` *NOT NULL* +
-`&#43;>` *,state CHARACTER (12)* +
-`&#43;>` *NO DEFAULT* +
-`&#43;>` *NOT NULL* +
-`&#43;>` *,postcode CHARACTER (10)* +
-`&#43;>` *NO DEFAULT* +
-`&#43;>` *NOT NULL* +
-`&#43;>` *,PRIMARY KEY (suppnum)* +
-`&#43;>` *);*
-```
---- SQL operation complete.
-```
-====
 
 For more information about the `@` and `OBEY` commands, see the <<cmd_at_sign, @ Command>> and
 the <<cmd_obey, OBEY Command>>.

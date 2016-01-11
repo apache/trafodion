@@ -36,12 +36,12 @@ see <<install, Install and Configure>>.
 Before launching TrafCI from Perl or Python, set these login environment variables:
 
 
-[cols="45%,55%",options="header"]
+[cols="45%l,55%",options="header"]
 |===
 |Environment Variable                            | Description
-| `TRAFCI_PERL_JSERVER=_JavaServer_jar_path_`    | Specifies the Perl JavaServer JAR location.
-| `TRAFCI_PYTHON_JSERVER=_Jython_jar_path_`      | Specifies the Jython JAR file location.
-| `TRAFCI_PERL_JSERVER_PORT=_port_number_`       | Specifies the port on which the JavaServer is listening.
+| TRAFCI_PERL_JSERVER=<JavaServer_jar_path>      | Specifies the Perl JavaServer JAR location.
+| TRAFCI_PYTHON_JSERVER=<Jython_jar_path>        | Specifies the Jython JAR file location.
+| TRAFCI_PERL_JSERVER_PORT=<port_number>         | Specifies the port on which the JavaServer is listening.
 |===
 
 
@@ -71,11 +71,11 @@ the system or user by including them in the System Properties.
 
 At each command prompt, enter one of these commands:
 
-====
-*set TRAFCI_PERL_JSERVER=_absolute-path-of-JavaServer.jar_* +
-*set TRAFCI_PYTHON_JSERVER=_absolute-path-of-Jython.jar_* +
-*set TRAFCI_PERL_JSERVER_PORT=_portnumber_*
-====
+```
+set TRAFCI_PERL_JSERVER=<absolute-path-of-JavaServer.jar>
+set TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+set TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
 
 === Set Login Environment Variables in the System Properties
 
@@ -121,22 +121,21 @@ for each user by including the variables in the user profile on a Linux or UNIX 
 
 ==== Set Login Environment Variables on the Command Line
 
-
 At each command prompt in any shell except the C shell, enter one of these commands:
 
-====
-*export TRAFCI_PERL_JSERVER=_absolute-path-of-JavaServer.jar_* +
-*export TRAFCI_PYTHON_JSERVER=_absolute-path-of-Jython.jar_* +
-*export TRAFCI_PERL_JSERVER_PORT=_portnumber_*
-====
+```
+export TRAFCI_PERL_JSERVER=<absolute-path-of-JavaServer.jar>
+export TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+export TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
 
 At each command prompt in the C shell, enter one of these commands:
 
-====
-*setenv TRAFCI_PERL_SERVER=_absolute-path-of-JavaServer.jar_* +
-*setenv TRAFCI_PYTHON_JSERVER=_absolute-path-of-Jython.jar_* +
-*setenv TRAFCI_PERL_JSERVER_PORT=_portnumber_*
-====
+```
+setenv TRAFCI_PERL_SERVER=<absolute-path-of-JavaServer.jar>
+setenv TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+setenv TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
 
 ==== Setting Login Environment Variables in the User Profile
 
@@ -146,28 +145,28 @@ To set the login environment variables in the user profile:
 +
 *Example*
 +
-====
-*vi .profile*
-====
+```
+vi .profile
+```
 
 2.  Add these `export` commands (or `setenv` commands for the C shell) to the user profile.
 +
 *Example*
 +
-====
-*export TRAFCI_PERL_JSERVER=_absolute-path-of-JavaServer.jar_* +
-*export TRAFCI_PYTHON_JSERVER=_absolute-path-of-Jython.jar_* +
-*export TRAFCI_PERL_JSERVER_PORT=_portnumber_*
-====
+```
+export TRAFCI_PERL_JSERVER=<absolute-path-of-JavaServer.jar>
+export TRAFCI_PYTHON_JSERVER=<absolute-path-of-Jython.jar>
+export TRAFCI_PERL_JSERVER_PORT=<portnumber>
+```
 +
 <<<
 3.  To activate the changes, either log out and log in again or execute the user profile.
 +
 *Example*
 +
-====
-*. .profile*
-====
+```
+. .profile
+```
 
 == Perl and Python Wrapper Scripts
 
@@ -175,11 +174,11 @@ The Perl or Python wrapper scripts enable you to run SQL statements and script f
 multiple connections within Perl or Python programs. The Perl wrapper script is `trafci.pl`, and the Python wrapper
 script is `trafci.py`. By default, these wrapper scripts are located in the `bin` directory:
 
-[cols="30%h,70%",options="header"]
+[cols="30%h,70%l",options="header"]
 |===
 | Operating System | Directory                                                         
-| Windows          | `_trafci-installation-directory_\Trafodion Command Interface\bin` 
-| Linux/Unix       | `_trafci-installation-directory_/trafci/bin`
+| Windows          | <trafci-installation-directory>\Trafodion Command Interface\bin
+| Linux/Unix       | <trafci-installation-directory>/trafci/bin
 |===
 
 _trafci-installation-directory_ is the directory where you installed the TrafCI software files.
@@ -188,17 +187,16 @@ _trafci-installation-directory_ is the directory where you installed the TrafCI 
 
 You can launch the Perl or Python wrapper scripts as shown below:
 
-[cols="15%h,50%,35%",options="header"]
+[cols="15%h,50%l,35%l",options="header"]
 |===
-| Language | Launch Command                              | Example
-| Perl     | *perl trafci.pl _perl-script-filename_*     | `>`*perl trafci.pl example.pl*
-| Python   | *python trafci.py _python-script-filename_* | `>`*python trafci.py example.py*
+| Language | Launch Command                            | Example
+| Perl     | perl trafci.pl <perl-script-filename>     | > perl trafci.pl example.pl
+| Python   | python trafci.py <python-script-filename> | > python trafci.py example.py
 |===
 
 <<<
 === Example Perl Program (`sample.pl`)
 
-====
 [source,perl]
 ----
 use lib 'C:\\Program Files (x86)\\Apache Software Foundation\\Trafodion Command Interface\\lib\\perl';
@@ -221,12 +219,10 @@ $retval=$sess->execute("get statistics"); print $retval;
 print "\n\nSession 1: Disconnecting first session. \n\n";
 $sess->disconnect();
 ----
-====
 
 <<<
 === Example Python Program (`sample.py`)
 
-====
 [source,python]
 ----
 import os import sys
@@ -259,4 +255,4 @@ sess.disconnect()
 del sess
 sess=None
 ----
-====
+

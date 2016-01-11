@@ -35,7 +35,7 @@ http://trafodion.incubator.apache.org/docs/client_install/index.html[_Trafodion 
 === Set PATH on Windows
 
 1.  Right-click the *Computer* icon on your desktop, and then select *Properties*. 
-The *Control Panel->System and Security->System* window appears.
+The *Control Panel>System and Security>System* window appears.
 2.  In the left navigation bar, click the *Advanced* system settings link.
 3.  In the *System Properties* dialog box, click the *Environment Variables* button.
 4.  Under _System variables_, select the variable named *Path*, and then click *Edit*:
@@ -47,9 +47,9 @@ image:{images}/path2.jpg[image]
 +
 image:{images}/varval2.jpg[image]
 +
-====
-*"C:\Program Files (x86)\Java\jre7\bin";*
-====
+```
+"C:\Program Files (x86)\Java\jre7\bin";
+```
 +
 NOTE: Check that no space exists after the semicolon (;) in the path. If there are spaces in the directory name, delimit the entire directory
 path in double quotes (") before the semicolon.
@@ -61,25 +61,25 @@ path in double quotes (") before the semicolon.
 === Set PATH on Linux
 1.  Open the user profile (`.profile` or `.bash_profile` for the Bash shell) in the `$HOME` directory.
 +
-====
-*vi .profile*
-====
+```
+vi .profile
+```
 
 2.  In the user profile, set the `PATH` environment variable to include path of the Java bin
 directory. 
 +
-====
-*export PATH=/opt/java1.7/jre/bin:$PATH*
-====
+```
+export PATH=/opt/java1.7/jre/bin:$PATH
+```
 +
 NOTE: Place the path of the Java bin directory before `$PATH`, and check that no space exists after the colon (`:`) in the path. 
 In the C shell, use the `setenv` command instead of export.
 
 3.  To activate the changes, either log out and log in again or execute the user profile.
 +
-====
-*. .profile*
-====
+```
+. .profile
+```
 
 == Test TrafCI Launch
 1.  Launch TrafCI and verify that you can connect to the database. For

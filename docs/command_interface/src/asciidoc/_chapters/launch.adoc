@@ -35,7 +35,7 @@ See <<install_verify, Verify and Set Java Path>>.
 
 1.  Find the Windows launch file, `trafci.cmd`, in the `bin` folder:
 +
-image:{images}/winbin.jpg[alt="Navigate to bin folder"]
+image:{images}/winbin.jpg[width=400,height=400,alt="Navigate to bin folder"]
 
 2.  Double-click the `trafci.cmd` file.
 +
@@ -47,7 +47,7 @@ See <<trafci_login, Log In to Database Platform>>.
 === Create `trafci.cmd` Shortcut
 To enable a user to launch TrafCI from a shortcut icon on the desktop:
 
-1.  Right-click the desktop and select *New->Shortcut*:
+1.  Right-click the desktop and select *New>Shortcut*:
 +
 image:{images}/shortct1.jpg[width=400,height=400,alt="Select trafci.cmd file"]
 +
@@ -72,7 +72,7 @@ image:{images}/shortct3.jpg[width=400,height=400,alt="Name shortcut"]
 image:{images}/shortct4.jpg[width=400,height=400,alt="Select properties"]
 
   b.  Select the *Shortcut* tab.
-  c.  In the *Target* box, insert a space after `"...\Trafodion Command Interface\bin\trafci.cmd"`
+  c.  In the *Target* box, insert a space after `"&#8230;\Trafodion Command Interface\bin\trafci.cmd"`
 and add the optional launch parameters:
 +
 image:{images}/shortct5.jpg[width=400,height=400,alt="Add optional launch parameters"]
@@ -91,11 +91,11 @@ See <<trafci_login, Log In to Database Platform>>.
 
 In the terminal window, enter:
 
-====
-*./_trafci-installation-directory_/trafci/bin/trafci.sh*
-====
+```
+./<trafci-installation-directory>/trafci/bin/trafci.sh
+```
 
-_trafci-installation-directory_ is the directory where you installed the TrafCI software files.
+_<trafci-installation-directory>_ is the directory where you installed the TrafCI software files.
 For more information,
 see the http://trafodion.incubator.apache.org/docs/latest/client_install/index.html[_Trafodion Client Installation Guide_].
 
@@ -106,16 +106,16 @@ To enable a user to launch TrafCI anywhere on the client workstation:
 1.  Open the user profile (`.profile` or `.bash_profile` for the Bash shell) in the
 `$HOME` directory.
 +
-====
-*cd $HOME* +
-*vi .profile*
-====
+```
+cd $HOME 
+vi .profile
+```
 
 2.  In the user profile, set the PATH environment variable to include the path of the `trafci.sh` file.
 +
-====
-*export PATH=/_trafci-installation-directory_/trafci/bin/: ...*
-====
+```
+export PATH=/<trafci-installation-directory>/trafci/bin/: ...
+```
 +
 _trafci-installation-directory_ is the directory where you installed the TrafCI software files.
 For more information, 
@@ -126,17 +126,17 @@ NOTE: In the C shell, use the `setenv` command instead of `export`.
 
 3.  To activate the changes, either log out and log in again or execute the user profile.
 +
-====
-*. .profile*
-====
+```
+. .profile
+```
 +
 <<<
 
 4.  On the command line, execute the `trafci.sh` file to launch TrafCI:
 +
-====
-*trafci.sh*
-====
+```
+trafci.sh
+```
 +
 TrafCI appears, prompting you to enter the host name or IP address of the database platform, your user name, and password.
 See <<trafci_login, Log In to Database Platform>>.
@@ -144,18 +144,18 @@ See <<trafci_login, Log In to Database Platform>>.
 NOTE: To enable all users to launch TrafCI anywhere on the system, create a symbolic link to the
 `trafci.sh` file in the `/usr/bin` or `/usr/local/bin` directory:
 +
-====
-*ln -s ./_trafci-installation-directory_/trafci/bin/trafci.sh /usr/bin/trafci.sh*
-====
+```
+ln -s ./<trafci-installation-directory>/trafci/bin/trafci.sh /usr/bin/trafci.sh
+```
 
 [[trafci_preset]]
 === Preset the Optional Launch Parameters
 
 To preset the optional launch parameters for each session, use an `alias` in the shell command.
 
-====
-*alias trafci='trafci.sh -h 16.123.456.78:37800 -u user1 -p xxxxxx'*
-====
+```
+alias trafci='trafci.sh -h 16.123.456.78:37800 -u user1 -p xxxxxx'
+```
 
 You can add the alias, trafci, to the user profile, or you can enter it at a command prompt.
 For more information about the optional launch parameters,
@@ -172,36 +172,34 @@ If you launch TrafCI and do not specify login parameters on the command line, fo
 1.  After you launch TrafCI, TrafCI shows the welcome banner and prompts you to enter the host name
 or IP address of the database platform:
 +
-====
-*Host Name/IP Address: _*
-====
+```
+Host Name/IP Address: _
+```
 +
 Enter a host name:
 +
-====
-*_host-name_[._domain-name_][:_port-number_]*
-====
+```
+host-name[.domain-name][:port-number]
+```
 +
 * If you do not specify the domain name, TrafCI uses the domain of the client workstation.
 * If you do not specify a port number, TrafCI uses the default port umber, which is `37800`.
 +
 Or enter an IP address:
 +
-====
-*_IP-address_[:_port-number_]*
-====
+```
+IP-address[:port-number]
+```
 
 2.  Enter your directory-service (or LDAP) user name. User names are case-insensitive.
 3.  Enter your password. Passwords are case-sensitive.
 4.  After you finish logging in to the database platform, the SQL prompt appears:
 +
-====
 ```
 Connected to Trafodion
 
 SQL>
 ```
-====
 
 At the prompt, you can enter an SQL statement or an interface command.
 For more information, see <<run_interactive, Run Interactive Commands in TrafCI>>.
@@ -220,22 +218,21 @@ To avoid entering a host name, user name, or password each time you launch TrafC
 
 *Example: Windows Login*
 
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
- +
-*trafci.cmd -h 16.123.456.78:37800 -u user1 -p xxxxxx*
-====
+```
+cd <trafci-installation-directory>\Trafodion Command Interface\bin
+
+trafci.cmd -h 16.123.456.78:37800 -u user1 -p xxxxxx
+```
 
 *Example: Linux Login*
-====
-*cd _trafci-installation-directory_/trafci/bin* +
- +
-*./trafci.sh -h 16.123.456.78:37800 -u user1 -p xxxxxx*
-====
+```
+cd <trafci-installation-directory>/trafci/bin
+
+./trafci.sh -h 16.123.456.78:37800 -u user1 -p xxxxxx
+```
 
 TrafCI launches and prompts you to enter an SQL statement or an interface command:
 
-====
 ```
 Welcome to Trafodion Command Interface
 Copyright(C) 2013–2105 Apache Software Foundation
@@ -244,7 +241,6 @@ Connected to Trafodion
 
 SQL>
 ```
-====
 
 For more information about the login parameters, see <<trafci_optional_params, Use Optional Launch Parameters>>.
 
@@ -264,9 +260,9 @@ TrafCI applies the retry logic as follows:
 +
 *Example*
 +
-====
-`$` *trafci –h dd* <- _dd is invalid_
-``` 
+```
+$ trafci –h dd # dd is invalid
+
 Welcome to Trafodion Command Interface
 Copyright(C) 2013–2105 Apache Software
  
@@ -278,8 +274,8 @@ User Name: user1
 Password:
  
 Connected to Trafodion SQL>
+
 ```
-====
 
 <<<
 * If you specify an invalid user name or password, TrafCI prompts you to reenter the user name
@@ -290,27 +286,26 @@ After three unsuccessful retries, the session is terminated:
 +
 *Example*
 +
-====
-`$` *trafci –h 172.16.1.1 –u user1 –p x*
 ```
+$ trafci –h 172.16.1.1 –u user1 –p x
+
 Welcome to Trafodion Command Interface 
 Copyright(C) 2013–2105 Apache Software 
 
-** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:23:44]
+**** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:23:44]
 
 User Name: user1
 Password:
 
-** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:25:28]
+**** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:25:28]
 
 User Name: user1
 Password: 
 
-** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:26:36] +
+**** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:26:36]
 
 Press any key to close this session
 ```
-====
 
 <<<
 * If all the login parameters that you specify are invalid, TrafCI prompts you to enter the host
@@ -322,17 +317,17 @@ applies only when no prior connection has been established (`-noconnect`).
 For example, if you specify the CONNECT command with a valid user name and host name, then
 TrafCI prompts for the user name and password only.
 +
-====
-`SQL>` *connect user1/xxx@172.16.1.1*
 ```
-com.hp.jdbc.HPT4Exception: ** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:35:15]
+SQL> connect user1/xxx@172.16.1.1
+
+com.hp.jdbc.HPT4Exception: **** ERROR[8837] CLI Authentication : User: user1 : invalid username or password [2105-03-12 16:35:15]
 
 User Name: user1 
 Password: abc  
 
 Connected to Trafodion SQL>
 ```
-====
+
 
 * TrafCI does not prompt you to reenter the login values in these cases:
 * When you include the `-q` or `-version` parameter on the command line.
@@ -348,19 +343,19 @@ to connect to the Trafodion database.
 
 To customize how you launch and log in to TrafCI, use the optional parameters described in the table below on the command line:
 
-====
-*trafci{.sh | .cmd} [optional-parameter]...*
-====
+```
+trafci{.sh | .cmd} [optional-parameter]...
+```
 
-_optional-parameter_
-[role="indented"]
+* `_optional-parameter_`
++
 is one of the launch or login parameters. For details, see the following table.
-
++
 [cols="2*",options="header"]
 |===
 | Launch or Login Parameter                       | Description
-| `{-h \| -host} _host-name_[:_port-number_]` +
-`{-h \| -host} _IP-address_[:_port-number_]`      | Specifies the host name or IP address of the database 
+| `{-h \| -host} host-name[:port-number]` +
+`{-h \| -host} IP-address[:port-number]`          | Specifies the host name or IP address of the database 
 platform to which you want the client to connect. 
 The _host-name_ should include the domain name of the database platform if it is different from the domain
 of the client workstation. If you do not specify a port number, TrafCI uses the default port number, which 
@@ -429,23 +424,22 @@ Use `-q` or `-sql` with the `CREATE SCHEMA` statement to create a schema when la
 
 * On Windows, in the *Command Prompt* window, enter:
 +
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
-*trafci.cmd -q "create schema persnl"*
-====
+```
+cd _trafci-installation-directory_\Trafodion Command Interface\bin
+trafci.cmd -q "create schema persnl"
+```
 
 * On Linux or UNIX, in the terminal window, enter:
 +
-====
-*cd _trafci-installation-directory_/trafci/bin* +
-*./trafci.sh -q "create schema persnl"*
-====
+```
+cd _trafci-installation-directory_/trafci/bin
+./trafci.sh -q "create schema persnl"
+```
 
 After you enter the SQL statement, TrafCI launches and prompts you to log in by default
 (if you did not specify `-h`, `-u`, and `-p` on the command line), runs the SQL statement,
 and then returns to the command prompt:
 
-====
 ```
 Host Name/IP Address: 16.123.456.78:37800 User Name: user1
 
@@ -453,9 +447,8 @@ Password:
 
 --- SQL operation complete.
 
-C:\Program Files (x86)\Apache Software Foundation\Trafodion Command Interface\bin>_
+C:\Program Files (x86)\Apache Software Foundation\Trafodion Command Interface\bin>
 ```
-====
 
 <<<
 *Example*
@@ -464,17 +457,17 @@ Use `-q` or `-sql` with the `PRUN` command to run multiple script files simultan
 
 * On Windows, in the *Command Prompt* window, enter:
 +
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
-*trafci.cmd -q "prun"*
-====
+```
+cd <trafci-installation-directory>\Trafodion Command Interface\bin
+trafci.cmd -q "prun"
+```
 
 * On Linux, in the terminal window, enter:
 +
-====
-*cd _trafci-installation-directory_/trafci/bin* +
-*./trafci.sh -q "prun"*
-====
+```
+cd <trafci-installation-directory>/trafci/bin
+./trafci.sh -q "prun"
+```
 
 After you enter the interface command, TrafCI launches and prompts you to log in by default (if you did not specify
 `-h`, `-u`, and `-p` on the command line), and runs the command.\ The parallel run (`PRUN`) operation prompts you to
@@ -507,19 +500,19 @@ For more information, <<script_create, Create a Script File>>.
 
 * On Windows, in the *Command Prompt* window, enter:
 +
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
-*trafci.cmd -s settings.txt*
-====
+```
+cd <trafci-installation-directory>\Trafodion Command Interface\bin
+trafci.cmd -s settings.txt
+```
 +
 Specify the full path of the script file if it is outside the directory of `trafci.cmd`.
 
 * On Linux, in the terminal window, enter:
 +
-====
-*cd _trafci-installation-directory_/trafci/bin* +
-*./trafci.sh -s settings.txt*
-====
+```
+cd <trafci-installation-directory>/trafci/bin +
+./trafci.sh -s settings.txt
+```
 +
 Specify the full path of the script file if it is outside the directory of `trafci.sh`.
 
@@ -527,7 +520,6 @@ Specify the full path of the script file if it is outside the directory of `traf
 TrafCI launches and prompts you to log in by default (if you did not specify `-h`, `-u`, and `-p`
 on the command line), and runs the commands in the script file:
 
-====
 ```
 Welcome to Trafodion Command Interface
 Copyright(C) 2013–2105 Apache Software Foundation
@@ -546,7 +538,6 @@ SQL>SET SQLPROMPT *
 
 2:14:57 PM *SET SQLTERMINATOR .
 ```
-====
 
 <<<
 [[trafci_noconnect]]
@@ -560,17 +551,17 @@ be run without a connection.
 
 * On Windows, in the *Command Prompt* window, enter:
 +
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
-*trafci.cmd -noconnect*
-====
+```
+cd <trafci-installation-directory>\Trafodion Command Interface\bin 
+trafci.cmd -noconnect
+```
 
 * On Linux, in the terminal window, enter:
 +
-====
-*cd _trafci-installation-directory_/trafci/bin* +
-*./trafci.sh -noconnect*
-====
+```
+cd <trafci-installation-directory>/trafci/bin
+./trafci.sh -noconnect
+```
 
 <<<
 [[trafci_with_version]]
@@ -582,19 +573,18 @@ option. If other parameters are included with the `-version` parameter, they are
 
 * On Windows, in the *Command Prompt* window, enter:
 +
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
-*trafci.cmd -version*
-====
+```
+cd <trafci-installation-directory>\Trafodion Command Interface\bin
+trafci.cmd -version
+```
 
 * On Linux, in the terminal window, enter:
 +
-====
-*cd _trafci-installation-directory_/trafci/bin* +
-*./trafci.sh -version*
-====
-
-====
+```
+cd <trafci-installation-directory>/trafci/bin
+./trafci.sh -version
+```
++
 ```
 Welcome to Trafodion Command Interface
 Copyright(C) 2013–2105 Apache Software Foundation
@@ -602,7 +592,6 @@ Copyright(C) 2013–2105 Apache Software Foundation
 Trafodion JDBC Type 4 Driver : Traf_JDBC_Type4_Build_40646 Trafodion
 Command Interface : TrafCI_Build_40646
 ```
-====
 
 <<<
 [[trafci_help]]
@@ -615,17 +604,17 @@ To display a list of acceptable list of parameters, including proper usage infor
 
 * On Windows, in the *Command Prompt* window, enter:
 +
-====
-*cd _trafci-installation-directory_\Trafodion Command Interface\bin* +
-*trafci -help*
-====
+```
+cd <trafci-installation-directory>\Trafodion Command Interface\bin
+trafci -help
+```
 
 * On Linux, in the terminal window, enter:
 +
-====
-*cd _trafci-installation-directory_/trafci/bin* +
-*./trafci.sh -help*
-====
+```
+cd <trafci-installation-directory>/trafci/bin
+./trafci.sh -help
+```
 
 [[trafci_quit]]
 == Exit TrafCI
@@ -637,9 +626,9 @@ To exit TrafCI, enter one of these commands at a prompt:
 
 *Example*
 
-====
-`SQL>` *quit*
-====
+```
+SQL> QUIT
+```
 
 These commands are not case-sensitive and do not require a terminator before you press *Enter*.
 After you enter one of these commands, TrafCI immediately quits running and disappears from the screen.
