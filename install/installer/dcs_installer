@@ -191,7 +191,13 @@ cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.dns.in
 cp dcs-site.temp dcs-site.xml
 rm dcs-site.temp 2>/dev/null
 
+#Configure the dcs primary node
+echo $DCS_PRIMARY_MASTER_NODE > $DCS_DIR/conf/master
+
+
 if [[ "$ENABLE_HA" == "true" ]]; then
+
+   ######Configure dcs-site.xml file
    rm dcs-site.temp 2>/dev/null
    cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.master.floating.ip</name>\n    <value>true</value>\n  </property>\n</configuration>@" > dcs-site.temp
    cp dcs-site.temp dcs-site.xml
@@ -206,21 +212,30 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.master.floating.ip.external.ip.address</name>\n    <value>$FLOATING_IP</value>\n  </property>\n</configuration>@" > dcs-site.temp
    cp dcs-site.temp dcs-site.xml
    rm dcs-site.temp 2>/dev/null
-fi
 
-if [[ "$ENABLE_HA" == "true" ]]; then
+   ######Configure the backup masters file
    echo "***INFO: modifying $DCS_DIR/conf/backup-masters file"
-   
    for node in $BACKUP_DCS_NODES
    do
        echo $node >> $DCS_DIR/conf/backup-masters
    done
    
-   if [[ $node_count -gt 1 ]]; then
-      $TRAF_PDCP $DCS_DIR/conf/backup-masters $DCS_DIR/conf/backup-masters
-   fi
-fi
+   ######Configure trafci wrapper script to use Floating IP address
+   newHName="HNAME=$FLOATING_IP:23400"
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
 
+   ######Copy HA configuration to all nodes in the cluster
+   #Following lines are being copied by the caller script. Will remove these lines later
+   #if [[ $node_count -gt 1 ]]; then
+   #   $TRAF_PDCP $DCS_DIR/conf/dcs-site.xml $DCS_DIR/conf/dcs-site.xml
+   #   $TRAF_PDCP $DCS_DIR/conf/backup-masters $DCS_DIR/conf/backup-masters
+   #   $TRAF_PDCP $SQ_ROOT/trafci/bin/trafci $SQ_ROOT/trafci/bin/trafci
+   #fi
+else
+   ######Configure trafci wrapper script 
+   sed -i -e "s/HNAME=localhost:23400/$DCS_PRIMARY_MASTER_NODE:23400/g" $SQ_ROOT/trafci/bin/trafci
+
+fi
 
 echo "***INFO: creating $DCS_DIR/conf/servers file"
 rm servers 2>/dev/null
@@ -237,16 +252,6 @@ do
     echo $node_name $node_servers >> servers
     (( count++ ))
 done
-
-if [[ "$ENABLE_HA" == "true" ]]; then
-   newHName="HNAME=$FLOATING_IP:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
-
-   if [[ $node_count -gt 1 ]]; then
-      $TRAF_PDCP $SQ_ROOT/trafci/bin/trafci $SQ_ROOT/trafci/bin/trafci
-   fi
-fi
-
 
 echo "***INFO: End of DCS install."
 

@@ -733,6 +733,12 @@ Lng32 getAnsiTypeFromFSType(Lng32 datatype)
    case REC_DATETIME:
       numeric_value = SQLTYPECODE_DATETIME;
       break;
+   case REC_BLOB:
+     numeric_value = SQLTYPECODE_BLOB;
+     break;
+   case REC_CLOB:
+     numeric_value = SQLTYPECODE_CLOB;
+     break;
 
    case REC_INT_YEAR:
    case REC_INT_MONTH:
@@ -832,6 +838,13 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
      return COM_DATETIME_SDT_LIT;
      break;
 
+   case REC_BLOB:
+     return COM_BLOB_SDT_LIT;
+     break;
+   case REC_CLOB:
+     return COM_CLOB_SDT_LIT;
+     break;
+
    case REC_INT_YEAR:
    case REC_INT_MONTH:
    case REC_INT_YEAR_MONTH:
@@ -847,12 +860,7 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
    case REC_INT_DAY_SECOND:
      return COM_INTERVAL_SDT_LIT;
      break;
-   case REC_BLOB:
-     return COM_BLOB_SDT_LIT;
-     break;
-   case REC_CLOB:
-       return COM_CLOB_SDT_LIT;
-     break;
+   
    default:
       // error
       break;
@@ -1081,7 +1089,12 @@ Lng32 getFSTypeFromANSIType(Lng32 ansitype)
    case SQLTYPECODE_DATETIME:
       datatype = REC_DATETIME;
       break;
-
+   case SQLTYPECODE_BLOB:
+     datatype = REC_BLOB;
+     break;
+   case SQLTYPECODE_CLOB:
+     datatype = REC_CLOB;
+     break;
    default:
       // error
       datatype = ansitype;

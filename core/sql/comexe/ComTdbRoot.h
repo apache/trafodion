@@ -362,7 +362,8 @@ class ComTdbRoot : public ComTdb
     HDFS_ACCESS                 = 0x00000008,
     EXE_UTIL_RWRS              = 0x00000010,
     EMBEDDED_COMPILER          = 0x00000020,
-    HIVE_ACCESS                = 0x00000040
+    HIVE_ACCESS                = 0x00000040,
+    EXE_LOB_ACCESS             = 0x00000080
   };
 
   // Use these values in 16-bit rtFlags3_
@@ -628,7 +629,8 @@ public:
     SQL_DESCRIBE_QUERY = 4,
     SQL_DISPLAY_EXPLAIN = 5,
     SQL_STMT_HBASE_LOAD = 6,
-    SQL_STMT_HBASE_UNLOAD = 7
+    SQL_STMT_HBASE_UNLOAD = 7,
+    SQL_STMT_LOB_EXTRACT = 8
    };
   
   ComTdbRoot();
@@ -843,7 +845,9 @@ public:
 
    NABoolean isEmbeddedCompiler() const
     {return ((rtFlags2_ & EMBEDDED_COMPILER) != 0);};
- 
+    NABoolean isLobExtract() const
+    {return ((rtFlags2_ & EXE_LOB_ACCESS) != 0);};
+
   char * getSnapshotScanTempLocation () { return snapshotscanTempLocation_; }
   Queue * getListOfSnapshotScanTables() { return listOfSnapshotScanTables_; }
 
@@ -996,6 +1000,10 @@ public:
   void setEmbeddedCompiler(NABoolean v)
     { 
       (v ? rtFlags2_ |= EMBEDDED_COMPILER : rtFlags2_ &= ~EMBEDDED_COMPILER); 
+    }
+  void setLobAccess(NABoolean v)
+    { 
+      (v ? rtFlags2_ |= EXE_LOB_ACCESS : rtFlags2_ &= ~EXE_LOB_ACCESS); 
     }
   NABoolean hdfsAccess() const
     {return ((rtFlags2_ & HDFS_ACCESS) != 0);};

@@ -2947,7 +2947,7 @@ public:
   Lng32 lobType_;
   char * lobData_;
   char * lobData2_;
-  Int64 lobDataExtractLen_;
+  Int64 lobDataSpecifiedExtractLen_;
   Int64 lobDataLen_;
   Lng32 remainingBytes_;
   Lng32 currPos_;

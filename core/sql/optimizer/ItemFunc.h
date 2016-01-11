@@ -2700,10 +2700,10 @@ public:
  };
 
  LOBoper(OperatorTypeEnum otype,
-	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL, 
+	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL,ItemExpr *val3Ptr = NULL, 
 	 ObjectType obj = NOOP_)
    : BuiltinFunction(otype,  CmpCommon::statementHeap(),
-                     2, val1Ptr, val2Ptr),
+                     3, val1Ptr, val2Ptr,val3Ptr),
    obj_(obj),
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
@@ -2758,7 +2758,7 @@ class LOBinsert : public LOBoper
 	   ObjectType fromObj, 
 	   NABoolean isAppend = FALSE,
 	   OperatorTypeEnum otype = ITM_LOBINSERT)
-   : LOBoper(otype, val1Ptr, val2Ptr,fromObj),
+   : LOBoper(otype, val1Ptr, val2Ptr,NULL,fromObj),
     objectUID_(-1),
     append_(isAppend),
     lobSize_(0),
@@ -2814,7 +2814,7 @@ class LOBselect : public LOBoper
  public:
   
  LOBselect(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ObjectType toObj)
-   : LOBoper(ITM_LOBSELECT, val1Ptr, val2Ptr, toObj)
+   : LOBoper(ITM_LOBSELECT, val1Ptr, val2Ptr,NULL,toObj)
     {
     };
   
@@ -2858,9 +2858,10 @@ class LOBupdate : public LOBoper
   
   LOBupdate(ItemExpr *val1Ptr,
 	    ItemExpr *val2Ptr,
+	    ItemExpr *val3Ptr,
 	    ObjectType fromObj, 
 	    NABoolean isAppend = FALSE)
-    : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr, fromObj),
+    : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr,val3Ptr,fromObj),
     objectUID_(-1),
     lobSize_(0),
     append_(isAppend)
@@ -2903,7 +2904,7 @@ class LOBconvert : public LOBoper
  public:
   
  LOBconvert(ItemExpr *val1Ptr, ObjectType toObj,  Lng32 tgtSize = 32000) 
-   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL,toObj),
+   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL,NULL,toObj),
     tgtSize_(tgtSize)     
     {};
   
@@ -2931,7 +2932,7 @@ class LOBconvertHandle : public LOBoper
  public:
   
  LOBconvertHandle(ItemExpr *val1Ptr, ObjectType toObj)
-   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL,toObj)
+   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL,NULL,toObj)
     {};
   
   // copyTopNode method
@@ -2970,7 +2971,7 @@ class LOBextract : public LOBoper
  public:
   
  LOBextract(ItemExpr *val1Ptr, Lng32 tgtSize = 1000)
-   : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL,EXTRACT_),
+   : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL,NULL,EXTRACT_),
     tgtSize_(tgtSize)
     {};
   

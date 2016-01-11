@@ -2621,7 +2621,7 @@ ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
   lobData_= NULL;
   lobData2_= NULL;
 
-  lobDataExtractLen_ = 0; // default. Actual value set from tdb below
+  lobDataSpecifiedExtractLen_ = 0; // default. Actual value set from tdb below
   lobDataLen_= 0;
   
   remainingBytes_= 0;
@@ -2639,9 +2639,9 @@ short ExExeUtilLobExtractTcb::work()
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
-  Int64 lobDataLen = 0;
-  Int64 outLobLen = 0;
+  Int64 lobDataOutputLen = 0;
   Int64 requestTag = -1;
+  LobsSubOper so;
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -2890,7 +2890,24 @@ short ExExeUtilLobExtractTcb::work()
 
 	      }
 	    
-	    step_ = RETRIEVE_LOB_LENGTH_;	    
+	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
+	      step_ = EXTRACT_LOB_DATA_;
+	    else
+	      if ((lobTdb().getToType() == ComTdbExeUtilLobExtract::RETRIEVE_LENGTH_) || (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_))
+	      step_ = RETRIEVE_LOB_LENGTH_;
+	      else
+		{
+		  // invalid "toType"
+		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+		  ComDiagsArea * da = up_entry->getDiagsArea();
+		  ExRaiseSqlError(getMyHeap(),
+				  &da,
+				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
+		  step_ = CANCEL_;
+		
+		break;
+
+		}
 	    break;
 	  }
 	case RETRIEVE_LOB_LENGTH_ : 
@@ -2908,7 +2925,7 @@ short ExExeUtilLobExtractTcb::work()
 	   
 		//Retrieve the total length of this lob using the handle info and return to the caller
 		Int64 dummy = 0;
-		cliRC = SQL_EXEC_LOBcliInterface(lobHandle_, lobHandleLen_,NULL,NULL,NULL,NULL,LOB_CLI_SELECT_LOBLENGTH,LOB_CLI_ExecImmed, 0,&lobDataLen, &dummy, &dummy,0,0);
+		cliRC = SQL_EXEC_LOBcliInterface(lobHandle_, lobHandleLen_,NULL,NULL,NULL,NULL,LOB_CLI_SELECT_LOBLENGTH,LOB_CLI_ExecImmed, 0,&lobDataLen_, &dummy, &dummy,0,0);
 		if (cliRC < 0)
 		   {
 		     getDiagsArea()->mergeAfter(diags);
@@ -2918,7 +2935,9 @@ short ExExeUtilLobExtractTcb::work()
 		   }
 		if  (lobTdb().retrieveLength())
 		  {
-		    str_sprintf(statusString_," LOB Length : %d", lobDataLen);
+		    if ((lobTdb().getBufAddr() != -1) && (lobTdb().getBufAddr() != 0))
+		      str_cpy_all((char *)lobTdb().getBufAddr(), (char *)&lobDataLen_,sizeof(Int64));
+		    str_sprintf(statusString_," LOB Length : %d", lobDataLen_);
 		    step_ = RETURN_STATUS_;
 		    break;	
 		  }
@@ -2934,13 +2953,14 @@ short ExExeUtilLobExtractTcb::work()
 	    Int64 uid, inDescSyskey, descPartnKey;
 	    short schNameLen;
 	    char schName[1024];
+	    
 	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
 					     &inDescSyskey, &descPartnKey, 
 					     &schNameLen, (char *)schName,
 					     (char *)lobHandle_, (Lng32)lobHandleLen_);
 	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
 
-	    lobDataExtractLen_ = lobTdb().bufSize_; 
+	    lobDataSpecifiedExtractLen_ = lobTdb().totalBufSize_; 
 	    
 	    
 	   
@@ -2976,6 +2996,7 @@ short ExExeUtilLobExtractTcb::work()
 
 	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_)
 	      {
+		so = Lob_File;
 		LobTgtFileFlags tgtFlags = Lob_Error_Or_Create;
 		if (lobTdb().errorIfNotExists() && !lobTdb().truncateExisting())
 		  tgtFlags = Lob_Append_Or_Error;
@@ -2994,12 +3015,12 @@ short ExExeUtilLobExtractTcb::work()
 						lobHandleLen_,
 						lobHandle_,
 						requestTag,
-						Lob_File,
+						so,
 						((LOBglobals *)lobGlobs)->xnId(),
 						0,0,					       					
-						0, lobDataLen, outLobLen, 
+						0, lobDataLen_, lobDataOutputLen, 
 						lobTdb().getFileName(),
-						lobDataExtractLen_,
+						lobDataSpecifiedExtractLen_,
 						(Int32)tgtFlags
 						);
 		if (retcode <0)
@@ -3014,8 +3035,15 @@ short ExExeUtilLobExtractTcb::work()
 		    step_ = HANDLE_ERROR_;
 		    break;
 		  }
-		str_sprintf(statusString_, "Success. Targetfile :%s  Length : %Ld", lobTdb().getFileName(), outLobLen);
+		str_sprintf(statusString_, "Success. Targetfile :%s  Length : %Ld", lobTdb().getFileName(), lobDataOutputLen);
 		step_ = RETURN_STATUS_;
+	      }
+	    else if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
+	      {
+		so = Lob_Buffer;
+		lobData_ =  (char *)lobTdb().getBufAddr();
+		lobDataSpecifiedExtractLen_ = *((Int64 *)(lobTdb().dataExtractSizeIOAddr()));
+		step_ = OPEN_CURSOR_;
 	      }
 	  }
 	  break;
@@ -3036,11 +3064,11 @@ short ExExeUtilLobExtractTcb::work()
                0, // cursor bytes 
                NULL, //cursor id
 	       requestTag_, 
+	       Lob_Buffer,
 	       0, // not check status
 	       1, // waited op
-
-	       0, lobDataExtractLen_, 
-	       lobDataLen_, lobData_, 
+	       0, lobDataSpecifiedExtractLen_, 
+	       lobDataOutputLen, lobData_, 
 	       1, // open
 	       2); // must open
 
@@ -3064,6 +3092,9 @@ short ExExeUtilLobExtractTcb::work()
 
 	case READ_CURSOR_:
 	  {
+	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
+	      so = Lob_Buffer;
+	    lobDataSpecifiedExtractLen_ = *((Int64 *)(lobTdb().dataExtractSizeIOAddr()));
 	    retcode = ExpLOBInterfaceSelectCursor
 	      (lobGlobs,
 	       lobName_, 
@@ -3071,16 +3102,18 @@ short ExExeUtilLobExtractTcb::work()
 	       lobType_,
 	       lobTdb().getLobHdfsServer(),
 	       lobTdb().getLobHdfsPort(),
-
 	       lobHandleLen_, lobHandle_,
                0 , //cursor bytes,
 	       NULL, //cursor id
 	       requestTag_, 
+	       so,
 	       0, // not check status
 	       1, // waited op
-
-	       0, lobDataExtractLen_, 
-	       lobDataLen_, lobData_, 
+	       0, 
+	       lobDataSpecifiedExtractLen_, 
+	       //lobDataLen_, lobData_, 
+	       lobDataOutputLen,
+	       lobData_,
 	       2, // read
 	       0); // open type not applicable
 
@@ -3098,19 +3131,37 @@ short ExExeUtilLobExtractTcb::work()
 		break;
 	      }
 
-	    if (lobDataLen_ == 0)
+	    if (lobDataOutputLen == 0)
 	      {
 		step_ = CLOSE_CURSOR_;
 		break;
 	      }
 
-	    remainingBytes_ = (Lng32)lobDataLen_;
+	    remainingBytes_ = (Lng32)lobDataOutputLen;
 	    currPos_ = 0;
 
-            if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_)
-              step_ = INSERT_FROM_STRING_;
-            else
-              step_ = RETURN_STRING_;
+            
+            if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_BUFFER_)
+	      {
+		str_sprintf(statusString_," Success: LOB data length returned : %d", lobDataOutputLen);
+	       
+		//lobTdb().setExtractSizeIOAddr((Int64)(&lobDataOutputLen));
+		memcpy((char *)lobTdb().dataExtractSizeIOAddr(), (char *)&lobDataOutputLen,sizeof(Int64));
+		step_ = RETURN_STATUS_;
+	      }
+	    else
+	      {
+		// No other "toType" shoudl reach here - i.e TO_FILE_ or TO_STRING
+		ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+		ComDiagsArea * da = up_entry->getDiagsArea();
+		ExRaiseSqlError(getMyHeap(),
+				&da,
+				(ExeErrorCode)(EXE_INTERNAL_ERROR));
+		step_ = CANCEL_;
+		
+		break;
+		
+	      }
 	  }
 	  break;
 
@@ -3128,10 +3179,11 @@ short ExExeUtilLobExtractTcb::work()
                0, //cursor bytes
                NULL, //cursor id
 	       requestTag_, 
+	       so,
 	       0, // not check status
 	       1, // waited op
 
-	       0, lobDataExtractLen_, 
+	       0, lobDataSpecifiedExtractLen_, 
 	       lobDataLen_, lobData_, 
 	       3, // close
                0); // open type not applicable
@@ -3149,7 +3201,6 @@ short ExExeUtilLobExtractTcb::work()
 		step_ = HANDLE_ERROR_;
 		break;
 	      }
-
 	    step_ = DONE_;
 	  }
 	  break;
@@ -3160,7 +3211,7 @@ short ExExeUtilLobExtractTcb::work()
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-	    Lng32 size = MINOF((Lng32)lobTdb().rowSize_, (Lng32)remainingBytes_);
+	    Lng32 size = MINOF((Lng32)lobTdb().dataExtractSizeIOAddr(), (Lng32)remainingBytes_);
 
 	    moveRowToUpQueue(&lobData_[currPos_], size);
 
@@ -3168,7 +3219,10 @@ short ExExeUtilLobExtractTcb::work()
 	    currPos_ += size;
 
 	    if (remainingBytes_ <= 0)
-	      step_ = READ_CURSOR_;
+	      {
+		step_ = READ_CURSOR_;
+		qparent_.down->removeHead();
+	      }
 
 	    return WORK_RESCHEDULE_AND_RETURN;
 	  }
@@ -3182,7 +3236,15 @@ short ExExeUtilLobExtractTcb::work()
        
 	    short rc; 
 	    moveRowToUpQueue(statusString_, 200, &rc);
-	    step_ = DONE_ ;
+
+	    if ((so == Lob_Buffer) && (remainingBytes_ >= 0))
+	      {
+		step_ = READ_CURSOR_;
+		qparent_.down->removeHead();
+		return WORK_RESCHEDULE_AND_RETURN;
+	      }
+	    else
+	      step_ = DONE_ ;
 	  }
 	  break;
 	case HANDLE_ERROR_:
@@ -3295,12 +3357,12 @@ short ExExeUtilFileExtractTcb::work()
 
 	    lobType_ =  lobTdb().lobStorageType_; //(Lng32)Lob_External_HDFS_File;
 
-	    lobDataExtractLen_ = lobTdb().bufSize_; 
+	    lobDataSpecifiedExtractLen_ = lobTdb().totalBufSize_; 
 	   
 
 	    // allocate 2 buffers for double buffering.
-	    lobData_ = new(getHeap()) char[(UInt32)lobDataExtractLen_];
-	    lobData2_ = new(getHeap()) char[(UInt32)lobDataExtractLen_];
+	    lobData_ = new(getHeap()) char[(UInt32)lobDataSpecifiedExtractLen_];
+	    lobData2_ = new(getHeap()) char[(UInt32)lobDataSpecifiedExtractLen_];
 
 	    eodReturned_ = FALSE;
 
@@ -3323,10 +3385,11 @@ short ExExeUtilFileExtractTcb::work()
 	       0, NULL, // handleLen, handle
                0, NULL, //cursor bytes, cursor id
 	       requestTag_, 
+	       Lob_File,
 	       0, // not check status
 	       1, // waited op
 
-	       0, lobDataExtractLen_, 
+	       0, lobDataSpecifiedExtractLen_, 
 	       lobDataLen_, lobData_, 
 	       1, // open
 	       2); // must open
@@ -3369,10 +3432,11 @@ short ExExeUtilFileExtractTcb::work()
 	       0, NULL,
                0, NULL ,//cursor bytes, cursor id
 	       requestTag_, 
+	       Lob_File,
 	       0, // not check status
 	       1, // waited op
 
-	       0, lobDataExtractLen_, 
+	       0, lobDataSpecifiedExtractLen_, 
 	       lobDataLen_, lobData_, 
 	       2, // read
 	       0); // open type not applicable
@@ -3400,7 +3464,7 @@ short ExExeUtilFileExtractTcb::work()
 		break;
 	      }
 
-	    if (lobDataLen_ < lobDataExtractLen_)
+	    if (lobDataLen_ < lobDataSpecifiedExtractLen_)
 	      {
 		// EOD with data: return data and then close cursor
 		eodReturned_ = TRUE;
@@ -3426,10 +3490,10 @@ short ExExeUtilFileExtractTcb::work()
 	       0, NULL,
                0, NULL, //cursor bytes, cursor id
 	       requestTag_, 
+	       Lob_File,
 	       0, // not check status
 	       1, // waited op
-
-	       0, lobDataExtractLen_, 
+	       0, lobDataSpecifiedExtractLen_, 
 	       lobDataLen_, lobData_, 
 	       3, // close
                0); // open type not applicable
@@ -3448,29 +3512,6 @@ short ExExeUtilFileExtractTcb::work()
 	      }
 
 	    step_ = COLLECT_STATS_;
-	  }
-	  break;
-
-
-	case RETURN_STRING_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    Lng32 size = MINOF((Lng32)lobTdb().rowSize_, (Lng32)remainingBytes_);
-
-	    // eval expression to convert lob data to sql row.
-	    // TBD.
-
-	    moveRowToUpQueue(&lobData_[currPos_], size);
-
-	    remainingBytes_ -= size;
-	    currPos_ += size;
-
-	    if (remainingBytes_ <= 0)
-	      step_ = READ_CURSOR_;
-
-	    return WORK_RESCHEDULE_AND_RETURN;
 	  }
 	  break;
 
@@ -3576,10 +3617,10 @@ short ExExeUtilFileLoadTcb::work()
 
 	    lobType_ =  lobTdb().lobStorageType_; //(Lng32)Lob_HDFS_File;
 
-	    lobDataExtractLen_ = lobTdb().bufSize_; 
+	    lobDataSpecifiedExtractLen_ = lobTdb().totalBufSize_; 
 	    
 
-	    lobData_ = new(getHeap()) char[(UInt32)lobDataExtractLen_];
+	    lobData_ = new(getHeap()) char[(UInt32)lobDataSpecifiedExtractLen_];
 
 	    srcFileRemainingBytes_ = 0;
 
@@ -3667,7 +3708,7 @@ short ExExeUtilFileLoadTcb::work()
 		break;
 	      }
 	      
-	    Int64 length = MINOF(srcFileRemainingBytes_, lobDataExtractLen_);
+	    Int64 length = MINOF(srcFileRemainingBytes_, lobDataSpecifiedExtractLen_);
 
 	    indata_.read (lobData_, (std::streamsize)length);
 	      
