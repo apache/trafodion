@@ -69,10 +69,53 @@
     <asciidoctor.maven.plugin.version>1.5.2.1</asciidoctor.maven.plugin.version>
     <asciidoctorj.pdf.version>1.5.0-alpha.10.1</asciidoctorj.pdf.version>
     <asciidoctorj.version>1.5.3.2</asciidoctorj.version>
+    <rubygems.prawn.version>2.0.2</rubygems.prawn.version>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>rubygems-proxy-releases</id>
+      <name>RubyGems.org Proxy (Releases)</name>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  
+  <dependencies>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>prawn</artifactId>
+      <version>${rubygems.prawn.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>1.0.10</version>
+        <configuration>
+          <!-- align JRuby version with AsciidoctorJ to avoid redundant downloading -->
+          <jrubyVersion>${jruby.version}</jrubyVersion>
+          <gemHome>${project.build.directory}/gems</gemHome>
+          <gemPath>${project.build.directory}/gems</gemPath>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>initialize</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -135,6 +178,8 @@
               <sourceHighlighter>coderay</sourceHighlighter>
               <outputDirectory>${basedir}/target</outputDirectory>
               <attributes>
+                <pdf-stylesdir>${basedir}/../css</pdf-stylesdir>
+                <pdf-style>trafodion</pdf-style>
                 <icons>font</icons>
                 <pagenums/>
                 <toc/>

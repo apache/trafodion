@@ -44,9 +44,9 @@ http://confluence.dbvis.com/pages/viewpage.action?pageId=3146120[_How do I chang
 Edit the `_DbVisualizer-Install-Dir_\resources\dbvis-custom.prefs` file and
 disable the `ConnectionValidationSelect` option as shown below:
 
-====
-*dbvis.generic.-ConnectionValidationSelect=disabled*
-====
+```
+dbvis.generic.-ConnectionValidationSelect=disabled
+```
 
 ==== DbVisualizer 9.2 (or a later version)
 Set the *Physical Connection* property to keep your connections alive. Follow these steps:
@@ -68,15 +68,15 @@ image:{images}/DbVisualizer_Driver_Manager.jpg[image]
 * Use the Open File icon and locate the Trafodion JDBC Type-4 Driver.
 * Use the JDBC URL format:
 +
-====
-*jdbc:t4jdbc://_host-name or ip-address_:37800/:*
-====
+```
+jdbc:t4jdbc://<host-name or ip-address>:37800/:
+```
 
 <<<
 === Connect to Trafodion
 
 Create a new connection by selecting the Trafodion JDBC Type-4 Driver and filling in the connection parameters. Edit the database URL to match
-your Trafodion system’s host name and port number: `jdbc:t4jdbc://_host-name or ip-address_:37800/:`
+your Trafodion system’s host name and port number: `jdbc:t4jdbc://<host-name or ip-address>:37800/:`
 
 image:{images}/Database_Connection_in_DbVisualizer.jpg[image]
 

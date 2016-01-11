@@ -29,11 +29,11 @@ The distribution file for odb is packaged within the Trafodion clients tar file,
 on the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
 Use this distribution file to install odb:
 
-[cols="35%,35%,30%",options="header"]
+[cols="35%l,35%l,30%",options="header"]
 |===
 | Distribution File    | File Contents | Client Operating System
-| `odb64_linux.tar.gz` | `README` +
-`/bin/odb64luo` | 64-bit Linux
+| odb64_linux.tar.gz | README +
+/bin/odb64luo | 64-bit Linux
 |===
 
 == Installation Requirements
@@ -54,6 +54,7 @@ Follow these instructions to download and install odb on the client workstation.
 
 To uninstall odb, please refer to <<odb_uninstall, Uninstalling odb>>.
 
+<<<
 [[odb_download]]
 === Download odb
 
@@ -63,9 +64,9 @@ To uninstall odb, please refer to <<odb_uninstall, Uninstalling odb>>.
 4.  Place the `clients-1.3.*_n_*.tar.gz` file into the download folder.
 5.  Unpack the `clients-1.3.*_n_*.tar.gz` file.
 +
-====
-*tar -xzf clients-1.3.0.tar.gz*
-====
+```
+tar -xzf clients-1.3.0.tar.gz
+```
 +
 The package file contains the `odb64_linux.tar.gz` distribution file, which is extracted to the clients subdirectory.
 
@@ -77,9 +78,9 @@ The package file contains the `odb64_linux.tar.gz` distribution file, which is e
 1.  Change the directory to the clients subdirectory.
 2.  Unpack the contents of the `odb64_linux.tar.gz` file to a location on your client workstation:
 +
-====
-*tar -xzf odb64_linux.tar.gz*
-====
+```
+tar -xzf odb64_linux.tar.gz
+```
 +
 The command extracts these files:
 +
@@ -93,6 +94,6 @@ The command extracts these files:
 
 To uninstall odb, delete the `README` and `/bin/odb64luo` files from their installed location.
 
-====
-*rm -rf _odb-installation-directory_*
-====
+```
+rm -rf odb-installation-directory
+```

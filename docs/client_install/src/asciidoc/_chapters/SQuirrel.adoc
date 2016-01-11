@@ -41,7 +41,7 @@ Use the *Add Driver* function and register the Trafodion JDBC Type-4 Driver:
 2. Click on the *List Drivers* button to find the JDBC Driver Class Name.
 3. Set the properties as shown below:
 +
-image:{images}/Add_Driver_SQuirreL.jpg[image]
+image:{images}/Add_Driver_SQuirreL.jpg[alt="SQuirreL Add Driver Dialog Box"]
 +
 * Name: `Trafodion`
 * Example URL: `jdbc:t4jdbc://_host-name or ip-address_:37800/:`
@@ -51,18 +51,20 @@ image:{images}/Add_Driver_SQuirreL.jpg[image]
 
 Use the Add Alias dialog box and create an alias for your Trafodion System:
 
-image:{images}/Add_Alias_SQuirreL.jpg[image]
+image:{images}/Add_Alias_SQuirreL.jpg[alt="SQuirreL Add Alias Dialog Box"]
 
 1. Edit the connection *URL* to match your Trafodion system's host name and port number:
 +
-====
-*jdbc:t4jdbc://_host-name or ip-address_:37800/:*
-====
+```
+jdbc:t4jdbc://<host-name or ip-address>:37800/:
+```
 
 2. Click on the *Properties* button for the alias.
++
+<<<
 3. In the *Schemas* tab, select the option *Load all and cache all Schemas*.
 +
-image:{images}/Properties_for_Alias_SQuirreL.jpg[image]
+image:{images}/Properties_for_Alias_SQuirreL.jpg[width=400,height=400,alt="SQuirreL Properties Dialog Box"]
 
 Once you have a successful connection, use the SQL tab and run a query to confirm the connection.
 

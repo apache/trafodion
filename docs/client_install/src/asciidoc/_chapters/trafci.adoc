@@ -29,10 +29,10 @@ The distribution file for the Trafodion Command Interface (TrafCI) is packaged w
 `clients-1.3.*_n_*.tar.gz`, on the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
 Use this distribution file to install TrafCI:
 
-[cols="35%,35%,30%",options="header"]
+[cols="35%l,35%,30%",options="header"]
 |===
 | Distribution File | Description | Client Operating System
-| `trafci.zip`      | Zip file    | Windows or Linux
+| trafci.zip        | Zip file    | Windows or Linux
 |===
 
 The distribution zip file contains this installer file: `trafciInstaller.jar`, an executable JAR file.
@@ -68,37 +68,37 @@ To display the version of the JDBC driver that is already installed on the clien
 1.  Change the directory to the lib directory, which contains the JDBC driver JAR file:
 * On Windows, enter this command:
 +
-====
-*cd _jdbc-installation-directory_\lib*
-====
+```
+cd jdbc-installation-directory\lib
+```
 +
 `_jdbc-installation-directory_` is the directory where you installed the JDBC driver.
 
 * On Linux, enter this command:
 +
-====
-*cd _jdbc-installation-directory_/lib*
-====
+```
+cd jdbc-installation-directory/lib
+```
 +
 `_jdbc-installation-directory_` is the directory where you installed the JDBC driver.
 
 2.  Enter this command to return version information:
 +
-====
-*java -jar jdbcT4.jar*
-====
+```
+java -jar jdbcT4.jar
+```
 +
-====
-`C:\>` *cd "\<user-specified directory>\lib"* +
-`C:\<user-specified directory>\lib>` *java -jar jdbcT4.jar*
 ```
+C:\> cd "\<user-specified directory>\lib"
+C:\<user-specified directory>\lib> java -jar jdbcT4.jar
 Traf_JDBC_Type4_Build_40894
+
+C:\<user-specified directory>\lib>
 ```
-`C:\<user-specified directory>\lib>`
-====
 
 If the JAR file is inaccessible or the returned version is not supported, see <<trafci_install_jdbct4, Install/Verify JDBC Type-4 Driver>>.
 
+<<<
 [[trafci_perl_python]]
 === Install Perl or Python
 
@@ -134,23 +134,24 @@ To uninstall TrafCI, see <<trafci_uninstall, Uninstall_TrafCI>>.
 2.  Open a Web browser and navigate to the Trafodion downloads site http://trafodion.incubator.apache.org/download/html
 3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodion clients tar file to your workstation.
 4.  Place the `clients-1.3.*_n_*.tar.gz` file into the download folder.
++
+<<<
 5.  Unpack the `clients-1.3.*_n_*.tar.gz` file.
 +
-====
-*tar -xzf clients-1.3.0.tar.gz*
-====
+```
+tar -xzf clients-1.3.0.tar.gz
+```
 +
 The package file contains the trafci.zip distribution file, which is extracted to the clients subdirectory.
 
 6.  Change the directory to the clients subdirectory.
-+
-<<<
+
 7.  Extract the contents of the `trafci.zip` file to a location on your client workstation by using the unzip command (or the WinZip extract
 tool):
 +
-====
-*unzip trafci.zip*
-====
+```
+unzip trafci.zip
+```
 +
 The command extracts these files:
 +
@@ -174,6 +175,7 @@ Wizard Graphical User Interface (GUI) or from the command line:
 NOTE: On Linux, to run the Installer Wizard, you must have the X Window system installed on the client workstation. If the client workstation
 does not have the X Window system, see <<trafci_cmd_install, Command-Line Installation Steps>>.
 
+<<<
 ===== Launching the Installer Wizard
 
 1.  Locate the `trafciInstaller.jar` file in the folder where you extracted the contents of the distribution (`.zip`) file.
@@ -182,18 +184,17 @@ does not have the X Window system, see <<trafci_cmd_install, Command-Line Instal
 4.  Proceed to <<trafci_using_wizard, Using the Installer Wizard>>.
 5.  At a command prompt, change to the directory where you extracted the installer files:
 +
-====
-*cd _installer-directory_*
-====
+```
+cd installer-directory
+```
 +
 `_installer-directory_` is the directory where you extracted the installer file, `trafciInstaller.jar`.
-+
-<<<
+
 6.  Launch the Installer Wizard by entering:
 +
-====
-*java -jar trafciInstaller.jar*
-====
+```
+java -jar trafciInstaller.jar
+```
 
 7.  Proceed to <<trafci_using_wizard, Using the Installer Wizard>>.
 
@@ -209,8 +210,7 @@ image:{images}/InstallerWizardWelcome.jpg[image]
 source extensions
 * *Core Components* for a quick installation of the core TrafCI files
 * *Optional Components* if you have already installed the core TrafCI files but want to install only the optional open source extensions
-+
-<<<
+
 2.  After you have selected the components you wish to install, browse and select the JDBC JAR file and then specify an installation directory
 where you will install TrafCI.
 +
@@ -235,8 +235,7 @@ The Installer Wizard displays the directory where TrafCI is installed.
 The Installer Wizard dialog box shows which components are available for you to download and install.
 +
 image:{images}/OptionalComponents.jpg[image]
-+
-<<<
+
 11.  Select the optional components to be downloaded and installed. Each optional component is installed if the component box is checked.
 +
 If you want to change the download URL for the extensions, click *Edit URL*, and this dialog box appears:
@@ -254,8 +253,7 @@ image:{images}/ProxySettings.jpg[image]
 14.  Click *Detect Proxy Server(s)* to try to auto-detect your proxy settings. If TrafCI detects one or more proxy servers, it displays
 them in a drop-down menu next to the *Detect Proxy Server(s)* button.
 15.  Click *Install* to start the installation.
-+
-<<<
+
 16.  After the core TrafCI files are installed, the *Installation Status* dialog box appears indicating how many files were extracted to the
 installation directory:
 +
@@ -284,32 +282,29 @@ image:{images}/InstallComplete.jpg[image]
 
 2.  Before launching the command-line installer, see the command options below:
 +
-====
 ```
 java -jar trafciInstaller.jar -help
 Usage: java -jar <installer jar> [ -help] | <-cm|-silent>
    [-jdbcFile <jdbc filename>] [-installDir <install dir>] ]
 ```
-====
 +
 The `-silent` option installs the client without prompting you for options.
 +
-====
-*java -jar trafciInstaller.jar -silent -jdbcFile "C:\JDBC\lib\jdbcT4.jar" -installDir C:\TRAFCI*
-====
+```
+java -jar trafciInstaller.jar -silent -jdbcFile "C:\JDBC\lib\jdbcT4.jar" -installDir C:\TRAFCI
+```
 +
-`-jdbcFile` and `-installDir` are optional parameters. If you do not specify those parameters, you will be prompted to enter them during
+_-jdbcFile_ and _-installDir_ are optional parameters. If you do not specify those parameters, you will be prompted to enter them during
 installation.
 
 3.  Launch the command-line installer by entering this command:
 +
-====
-*java -jar trafciInstaller.jar cm*
-====
+```
+java -jar trafciInstaller.jar cm
+```
 +
 The command-line installer starts and prompts you to enter the type of installation:
 +
-====
 ```
 /home/myname/trafcitemp>java -jar trafciInstaller.jar cm
 ********************************************************************
@@ -323,7 +318,6 @@ Type Y for a standard installation, or N for optional components only.
 
 Standard Installation [Y]:
 ```
-====
 +
 * For a standard installation, type *Y* and press *Enter*.
 * To install the optional components only, type *N*, press *Enter*, and proceed to Step 7.
@@ -332,26 +326,21 @@ NOTE: All items in square brackets are default values. Press Enter to accept the
 
 4.  Enter the full directory path and file name of the JDBC driver JAR file, `jdbcT4.jar`, which is located in the JDBC driver lib directory:
 +
-====
 ```
 JDBC Type 4 Driver JAR File
 --------------------------------
 Enter the location and file name:
 ```
-====
 5.  Enter an existing directory where you would like to install TrafCI:
 +
-====
 ```
 Trafodion Command Interface
 --------------------------------
 Enter the installation directory:
 ```
-====
 +
 The installation status appears, indicating how many files are installed in the installation directory:
 +
-====
 ```
 Extracted 18 files from the
 /home/myname/trafcitemp/trafciInstaller.jar archive into the
@@ -359,65 +348,59 @@ Extracted 18 files from the
 Core TRAFCI files installed.
 Do you want to install the optional components? [Y]:
 ```
-====
+
 6.  If you do not wish to download and install the optional components, type *N* at the prompt and press Enter, and your installation
 is complete. Otherwise, type *Y*, press *Enter*, and proceed through the remainder of the installation.
 7.  Type *Y* and press *Enter* if you agree to the terms. If you are doing an optional install only, you are prompted to enter a valid TrafCI
 installation directory:
 +
-====
-`Do you agree to these terms? (Y or N):` *Y* +
 ```
+Do you agree to these terms? (Y or N): Y
+
 Enter your installation directory:
 ```
-====
-+
-<<<
+
 8.  If you do not require a proxy server, type *N*, press *Enter*, and proceed to Step 10. Otherwise, type *Y*, press *Enter*,
 and proceed to Step 9.
 +
-====
 ```
 Use a proxy server? [N]:
 ```
-====
 
 9.  When prompted to auto-detect proxy servers, type *Y* and press *Enter* to direct TrafCI to detect your proxy settings.
 If TrafCI finds proxy servers, it displays them. If you type *N* and press *Enter*, TrafCI prompts you to enter the proxy server and port:
 +
-====
-`Use a proxy server? [Y]:` *Y* +
-`Attempt to auto-detect proxy server(s)? [Y]:` *N* +
-`Enter the proxy server (do not include the port):` *myproxyserver.com* +
-`Enter the proxy port:` *8080*
-====
+```
+Use a proxy server? [Y]: Y
+Attempt to auto-detect proxy server(s)? [Y]: N
+Enter the proxy server (do not include the port): myproxyserver.com
+Enter the proxy port: 8080
+```
 
 10.  You are prompted to select which optional components you wish to download and install. You can also change the download URL.
 +
-====
-`Install Perl JavaServer extensions? [Y]:` *Y* +
 ```
+Install Perl JavaServer extensions? [Y]: Y
+
 Perl JavaServer requires 3 files: Java.pm, JavaArray.pm, and JavaServer.jar
 http://search.cpan.org/src/METZZO/Java-4.7/[URL of the folder which contains these files [http://search.cpan.org/src/METZZO/Java-4.7/]:]
-```
-`Install Perl XML SAX Module? [Y]:` *Y* +
-```
+
+Install Perl XML SAX Module? [Y]: Y
+
 Perl SAX XML Module URL (PerlSAX.pm)
-```
-`Install Jython, a Java implementation of Python? [Y]:` *Y* +
-```
+
+Install Jython, a Java implementation of Python? [Y]: Y
+
 Jython URL (jython_installer-2.2.jar)
 ```
-====
 
 11.  The setup proceeds to download and install the optional open-sourcecomponents. As each component is retrieved, dots (.) are printed to
 indicate the progress of the download.
 +
-====
 ```
 Downloading Perl JavaServer [1 of 3] - Java.pm
 ......................... 100%
-Downloading Perl JavaServer [2 of 3] - JavaArray.pm1 +
+Downloading Perl JavaServer [2 of 3] - JavaArray.pm1
 ......................... 100%
 Downloading Perl JavaServer [3 of 3] - JavaServer.jar
 ......................... 100%
@@ -430,7 +413,6 @@ Sucessfully Installed Jython. Successfully added settings.py
 Trafodion Command Interface Installation Complete.
 /home/myname/trafcitemp>
 ```
-====
 
 [[trafci_uninstall]]
 === Uninstall TrafCI
@@ -444,45 +426,48 @@ If you used the executable JAR file, `trafciInstaller.jar`, to install TrafCI, d
 
 After downloading and running the installer file, verify that the TrafCI software files are installed in the correct locations:
 
-[cols="15%,20%,65%",options="header"]
+[cols="15%l,20%l,65%",options="header"]
 |===
 | Folder       | Files               | Description
-| `bin`        | `trafci`            |
-|              | `trafci.cmd`        | Windows launch file.
-|              | `trafci.pl`         | Perl wrapper script. trafci-perl.pl is renamed trafci.pl. To run this script, see the _Trafodion Command Interface Guide_.
-|              | `trafci.py`         | Python wrapper script. `trafci-python.py` is renamed as `trafci.py`. To run this script, see the http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
-|              | `trafci.sh`         | Linux launch file.
-|              | `trafci-perl.pl`    | Perl wrapper script. This script has been modified to invoke trafci.pl. This script is retained for backward compatibility.
-|              | `trafci-python.py`  | Python wrapper script. This script has been modified to invoke trafci.py. This script is retained for backward compatibility.
-| `lib`        | `trafci.jar`        | Product JAR file.
-| `lib/perl`   | `Session.pm`        | Product file.
-| `lib/python` | `Session.py`        | Product file.
-| `samples`    | `README`            | Readme file that describes how to use the sample scripts.
-|              | `arrayDML.pl`       | Sample Perl program that executes DML statements and returns results in an array format.
-|              | `sample.pl`         | Sample Perl program that supports multiple sessions in one script. 
-|              | `sample.sql`        | Sample SQL script.
-|              | `sampleDDL.py`      | Sample Python file that uses Jython to execute DDL statements.
-|              | `sampleDML.py`      | Sample Python file that uses Jython to execute DML statements.
-|              | `sampleTables.pl`   | Sample Perl file that lists all tables and respective rowcounts. The file accepts a wildcard argument on the command line.
-|              | `sampleTables.py`   | Sample Python file that lists all tables and respective rowcounts. The file accepts a wildcard argument on the command line.
+| bin          | trafci            |
+|              | trafci.cmd        | Windows launch file.
+|              | trafci.pl         | Perl wrapper script. _trafci-perl.pl_ is renamed _trafci.pl_. To run this script, see the
+http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+|              | trafci.py         | Python wrapper script. trafci-python.py is renamed as trafci.py. To run this script, see the
+http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+|              | trafci.sh         | Linux launch file.
+|              | trafci-perl.pl    | Perl wrapper script. This script has been modified to invoke trafci.pl. This script is retained for backward compatibility.
+|              | trafci-python.py  | Python wrapper script. This script has been modified to invoke trafci.py. This script is retained for backward compatibility.
+| lib          | trafci.jar        | Product JAR file.
+| lib/perl     | Session.pm        | Product file.
+| lib/python   | Session.py        | Product file.
+| samples      | README            | Readme file that describes how to use the sample scripts.
+|              | arrayDML.pl       | Sample Perl program that executes DML statements and returns results in an array format.
+|              | sample.pl         | Sample Perl program that supports multiple sessions in one script. 
+|              | sample.sql        | Sample SQL script.
+|              | sampleDDL.py      | Sample Python file that uses Jython to execute DDL statements.
+|              | sampleDML.py      | Sample Python file that uses Jython to execute DML statements.
+|              | sampleTables.pl   | Sample Perl file that lists all tables and respective rowcounts. The file accepts a wildcard argument on the command line.
+|              | sampleTables.py   | Sample Python file that lists all tables and respective rowcounts. The file accepts a wildcard argument on the command line.
 |===
 
+<<<
 === Test Launching TrafCI
 
 Before launching TrafCI, make sure that you have set the Java path to the correct location. For more information, see:
 
-* <<jdbct4_path_windows, Setting the PATH to a Supported Java Version on Windows>>
+* <<jdbct4_path_windows, Setting the PATH to a Supported >>
 * <<jdbct4_path_linux, Setting the PATH to a Supported Java Version on Linux>>
 
 If you did not set the Java path on your client workstation and you try to launch TrafCI, you might see the following error message appear
 momentarily in the TrafCI window before the TrafCI window disappears:
 
-====
 ```
 'java' is not recognized as an internal or external command, operable program or batch file.
 ```
-====
+
 
 For information about setting up the client, such as choosing the look and feel of the interface or presetting launch parameters, see the
-_Trafodion Command Interface Guide_.
+http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+
 

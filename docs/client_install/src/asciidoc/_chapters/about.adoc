@@ -36,64 +36,127 @@ new multi-threaded, ODBC-based command-line tool for parallel data loading and e
 == Notation Conventions
 This list summarizes the notation conventions for syntax presentation in this manual.
 
-[cols="15%,30%,25%,30%",options="header"]
-|===
-| Notation | Usage | Example | Notes
-| UPPERCASE LETTERS | Uppercase letters indicate keywords and reserved words. Type these items exactly as shown. Items not enclosed in brackets are required. | SELECT | 
-| _Italic Letters_ | Italic letters, regardless of font, indicate variable items that you supply. Items not enclosed in brackets are required. | _file-name_ | 
-| `Computer Type` | Computer type letters within text indicate case-sensitive keywords and reserved words. Type these items exactly as shown. Items not enclosed in
-brackets are required. | `myfile.sh` | 
-| *Bold Text* | Bold text in an example indicates user input typed at the terminal. | `ENTER RUN CODE:` +
- ?**123** +
- `CODE RECEIVED: 123.00` | The user must press the Return key after typing the input.
-| [ ] Brackets | Brackets enclose optional syntax items. |
-DATETIME [__start-field__ TO] +
-_end-field_
-| A group of items enclosed in brackets is a list from which you can choose one item or none.
+* UPPERCASE LETTERS
++
+Uppercase letters indicate keywords and reserved words. Type these items exactly as shown. Items not enclosed in brackets are required. 
++
+```
+SELECT
+```
 
+* lowercase letters
++
+Lowercase letters, regardless of font, indicate variable items that you supply. Items not enclosed in brackets are required.
++
+```
+file-name
+```
+
+<<<
+* &#91; &#93; Brackets 
++
+Brackets enclose optional syntax items.
++
+```
+DATETIME [start-field TO] end-field
+```
++
+A group of items enclosed in brackets is a list from which you can choose one item or none.
++
 The items in the list can be arranged either vertically, with aligned brackets on each side of the list, or horizontally, enclosed in a pair of brackets and separated by vertical lines.
++
+For example: 
++
+```
+DROP SCHEMA schema [CASCADE]
+DROP SCHEMA schema [ CASCADE | RESTRICT ]
+```
 
-For example:
-
-`DROP SCHEMA _schema_ [CASCADE]` +
-`DROP SCHEMA _schema_ [ CASCADE \| RESTRICT ]`
-| { } Braces | Braces enclose required syntax items. | `FROM { __grantee__[, __grantee__]...}` | A group of items enclosed in braces is a list from which you are required to choose one item.
-
+* { } Braces 
++
+Braces enclose required syntax items.
++
+```
+FROM { grantee [, grantee ] ... }
+```
++ 
+A group of items enclosed in braces is a list from which you are required to choose one item.
++
 The items in the list can be arranged either vertically, with aligned braces on each side of the list, or horizontally, enclosed in a pair of braces and separated by vertical lines.
-
++
 For example:
++
+```
+INTERVAL { start-field TO end-field }
+{ single-field } 
+INTERVAL { start-field TO end-field | single-field }
+``` 
+* | Vertical Line 
++
+A vertical line separates alternatives in a horizontal list that is enclosed in brackets or braces.
+```
+{expression | NULL} 
+```
 
-`INTERVAL { _start-field_ TO _end-field_ }` +
-`{ _single-field_ }` +
-`INTERVAL { _start-field_ TO _end-field_ \| _single-field_ }` 
---
-| \| Vertical Line | A vertical line separates alternatives in a horizontal list that is enclosed in brackets or braces. | `{__expression__ \| NULL}` |
-| … Ellipsis | An ellipsis immediately following a pair of brackets or braces indicates that you can repeat the enclosed sequence of syntax items any number of times. |
-`ATTRIBUTE[S] _attribute_ [, __attribute__]...` +
-`{, __sql-expression__}...`
-| An ellipsis immediately following a single syntax item indicates that you can repeat that syntax item any number of times.
-
+<<<
+* &#8230; Ellipsis
++
+An ellipsis immediately following a pair of brackets or braces indicates that you can repeat the enclosed sequence of syntax items any number of times.
++
+```
+ATTRIBUTE[S] attribute [, attribute] ...
+{, sql-expression } ...
+```
++ 
+An ellipsis immediately following a single syntax item indicates that you can repeat that syntax item any number of times.
++
 For example:
+```
+expression-n ...
+```
 
-`__expression-n__…`
-| Punctuation | Parentheses, commas, semicolons, and other symbols not previously described must be typed as shown. |
-DAY (__datetime-expression__)` +
-`@__script-file__` | Quotation marks around a symbol such as a bracket or brace indicate the symbol is a required character that you must type as shown.
-
+* Punctuation
++
+Parentheses, commas, semicolons, and other symbols not previously described must be typed as shown.
++
+```
+DAY (datetime-expression)
+@script-file 
+```
++
+Quotation marks around a symbol such as a bracket or brace indicate the symbol is a required character that you must type as shown.
++
 For example:
++
+```
+"{" module-name [, module-name] ... "}"
+```
 
-`"{" _module-name_ [, __module-name__]... "}"`
-| Item Spacing | Spaces shown between items are required unless one of the items is a punctuation symbol such as a parenthesis or a comma. |
-`DAY (__datetime-expression__) DAY(__datetime-expression__)` | If there is no space between two items, spaces are not permitted. In this example, no spaces are permitted between the period and any other items:
+* Item Spacing
++
+Spaces shown between items are required unless one of the items is a punctuation symbol such as a parenthesis or a comma.
++
+```
+DAY (datetime-expression) DAY(datetime-expression)
+```
++
+If there is no space between two items, spaces are not permitted. In this example, no spaces are permitted between the period and any other items:
++
+```
+myfile.sh
+```
 
-`__myfile__.sh`
-
-| Line Spacing | If the syntax of a command is too long to fit on a single line, each continuation line is indented three spaces and is separated from the preceding line by a blank line.
-
-This spacing distinguishes items in a continuation line from items in a vertical list of selections. | 
-`_match-value_ [NOT] LIKE _pattern_`
-   [ESCAPE __esc-char-expression__] |
-|===
+<<<
+* Line Spacing
++
+If the syntax of a command is too long to fit on a single line, each continuation line is indented three spaces and is separated from the preceding line by a blank line.
++
+This spacing distinguishes items in a continuation line from items in a vertical list of selections. 
++
+```
+match-value [NOT] LIKE _pattern
+   [ESCAPE esc-char-expression] 
+```
 
 == Publishing History
 [cols="2*",options="header"]
