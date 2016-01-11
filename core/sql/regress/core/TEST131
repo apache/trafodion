@@ -67,9 +67,9 @@ sh sqlci -i"TEST131(priv_cancel)" -u"SQL_User7"  ;
 
 set schema $$TEST_SCHEMA$$;
 
-drop table T131c;
-drop table T131b;
-drop table T131a;
+drop table if exists T131c;
+drop table if exists T131b;
+drop table if exists T131a;
 revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
 revoke role role131  from sql_user7;
 revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;

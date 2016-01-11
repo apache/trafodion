@@ -69,10 +69,10 @@ drop role user3_role;
 
 -- create function to display bitmaps as a bitmap rather than longs
 -- use the same function from TEST140
-sh rm -f ./etest140.dll;
-sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
+sh rm -f ./etest141.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
   2>&1 | tee LOG140-SECONDARY;
-set pattern $$DLL$$ etest140.dll;
+set pattern $$DLL$$ etest141.dll;
 set pattern $$QUOTE$$ '''';
 
 create schema t141_udr;

@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,12 +20,14 @@
 #
 # @@@ END COPYRIGHT @@@
 
-if [ "$scriptsdir" != "" ]; then
-  $scriptsdir/tools/runregr $*
-elif [ -x ../tools/runregr ]; then
-  ../tools/runregr $*
-else
-  echo "run runregr from regress/tools directory"
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
 fi
 
-
+sed "
+s/CURRENT DIRECTORY .*/CURRENT DIRECTORY  currdir/g
+s/MESSAGEFILE      .*/MESSAGEFILE        msgdir/g
+s/MESSAGEFILE VRSN .*/MESSAGEFILE VRSN   msgvers/g
+" $fil

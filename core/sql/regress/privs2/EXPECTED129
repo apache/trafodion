@@ -145,7 +145,7 @@ GRANT SELECT(A), INSERT(A) ON
 
 --- 1000 row(s) inserted.
 >>
->>update statistics for table t129_a on uniq ;
+>>update statistics for table t129_a on every column ;
 
 --- SQL operation complete.
 >>

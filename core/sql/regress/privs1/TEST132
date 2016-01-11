@@ -59,10 +59,10 @@ drop schema t132sch cascade;
 create shared schema t132sch;
 
 -- Prepare library file
-sh rm -f ./etest140.dll;
-sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
+sh rm -f ./etest132.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest132.cpp
   2>&1 | tee LOG132-SECONDARY;
-set pattern $$DLL$$ etest140.dll;
+set pattern $$DLL$$ etest132.dll;
 
 ?section test_libraries
 -- =================================================================
@@ -107,7 +107,7 @@ get privileges on component sql_operations for "PUBLIC";
 set schema t132sch;
 log LOG132;
 get libraries in schema t132sch;
-create library t132_l1 file 'udrtest135.dll';
+create library t132_l1 file 'etest132.dll';
 get libraries in schema t132sch;
 drop library t132_l1;
 get libraries in schema t132sch;
