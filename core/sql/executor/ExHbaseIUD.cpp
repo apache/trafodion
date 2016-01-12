@@ -4324,8 +4324,11 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 
 	    if (step_ == DONE)
 	       step_ = SETUP_UMD;
-	    else 
+	    else { 
+               // It is ok to call close more than once
+               ehi_->close();
 	       step_ = NOT_STARTED;
+            }
 	  }
 	  break;
 	} // switch
