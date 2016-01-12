@@ -1304,16 +1304,22 @@ int gbk2utf8(char *inbuf,size_t inlen,char *outbuf,size_t outlen)
   return code_convert("gbk","utf-8",inbuf,inlen,outbuf,outlen);
 }
 
+/* convert gbk string into UTF8 */
 int gbkToUtf8(char* gbkString, size_t gbklen, 
               char* result ,size_t outlen, int addNullAtEnd)
 {
-
+   int originalOutlen = outlen;
    int finalLength = gbk2utf8 ( gbkString, gbklen,  result, outlen);
    
    if (finalLength == -1 ) return 0;
    
+   //the result is allocated with lenght originalOutlen + 1
+   //so no overrun is possible
    if ( addNullAtEnd > 0 )
-      result[finalLength] = 0;
+   {
+      if(originalOutlen >= finalLength )
+        result[finalLength] = 0;
+   }
 
    return finalLength;
 }

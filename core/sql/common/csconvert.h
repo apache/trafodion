@@ -108,7 +108,7 @@ int  UTF16ToLocale( const enum cnv_version version,
 
 NA_EIDPROC
 int gbkToUtf8(char* gbkString, size_t gbklen,
-              char* result ,size_t outlen, int addNullAtEnd=FALSE);
+              char* result ,size_t outlen, bool addNullAtEnd=FALSE);
 
 /*
  * LocaleCharToUCS4() converts the FIRST char in the input string to its

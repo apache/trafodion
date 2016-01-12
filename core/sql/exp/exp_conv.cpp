@@ -9331,8 +9331,9 @@ convDoIt(char * source,
     if (convLen > 0) {
       copyLen = (convLen< targetLen) ? convLen: targetLen;
       str_cpy_all(target, targetbuf, copyLen);
-    //  if (convLen > targetLen)
-
+      //if the target length is not enough, instead of truncate, raise a SQL Error
+      if (convLen > targetLen)
+         ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
     }
     else {
       // LCOV_EXCL_START
