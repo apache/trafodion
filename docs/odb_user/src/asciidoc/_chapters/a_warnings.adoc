@@ -39,17 +39,14 @@ command as long as you want. However, you can _hard code_ limits as follows:
 3.  Some Linux/UNIX systems (notably the Linux Loader) have huge default stack size. Due to this
 extremely large value, you can have errors like this when starting tens/hundreds of threads:
 +
-====
 ```
 Error starting cmd thread #: cannot allocate memory
 ```
-====
 +
 If you get this error, then check your default stack size:
 +
-====
-$ *ulimit -a*
 ```
+$ ulimit -a
 core file size                         (blocks, -c) 0
 data seg size                          (kbytes, -d) unlimited
 max nice                                       (-e) 0
@@ -67,30 +64,30 @@ max user processes                             (-u) 2047
 virtual memory                         (kbytes, -v) unlimited
 file locks                                     (-x) unlimited
 ```
-====
 +
 In the example above, the `stack size` value is the problem. Reset it to a reasonable value. (The value will be reset to the initial value when you start a new session).
 +
+<<<
++
 *Example*
 +
-====
-`$` *ulimit -s 4096*
-====
+```
+$ ulimit -s 4096
+```
 
 4. If you get errors such as:
 +
-====
-`C:\Users\felici>` *odb64luo -u xx -p yy -d oraxe -l src=region.tbl.gz:tgt=region:fs=^|:truncate*
 ```
+C:\Users\felici> odb64luo -u xx -p yy -d oraxe -l src=region.tbl.gz:tgt=region:fs=^|:truncate
+
 odb [2012-10-11 13:27:22]: starting ODBC connection(s)... 0 
 [0] odb(5020) - [Oracle][ODBC]Optional feature not implemented. (State: HYC00 Native Err: 0)
 ```
-====
 +
 Try adding `-nocatnull` to your command line. When the backend database doesn’t use catalogs, 
 then you should use an *empty string* as catalog name.
 +
-NOTE: Some flawed ODBC Drivers unfortunately want NULL here -- instead of *empty strings* as it should be.
+NOTE: Some flawed ODBC Drivers unfortunately want NULL here &#8212; instead of *empty strings* as it should be.
 
 5.  You can have errors loading `TIME(N)` fields with` N>0` under Trafodion because the
 ODBC Driver does not manage the field display size when `N>0`.

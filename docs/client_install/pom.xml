@@ -210,7 +210,7 @@
                 --> 
                 <!-- Copy the PDF file to its target directories -->
                 <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/client_install/Trafodion_Client_Installation_Guide.pdf" />
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/clint_install/Trafodion_Client_Installation_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/client_install/Trafodion_Client_Installation_Guide.pdf" />
                 <!-- Copy the Web Book files to their target directories -->
                 <copy todir="${basedir}/../target/docs/client_install">
                   <fileset dir="${basedir}/target/site">

@@ -29,9 +29,9 @@ To start the odb SQL Interpreter you have to use `-I` (uppercase i) switch with 
 
 *Example*
 
-====
-`$` *odb64luo –u user –p xx –d dsn –I MFTEST*
-====
+```
+$ odb64luo –u user –p xx –d dsn –I MFTEST
+```
 
 The optional `-I` argument (`MFTEST` in this example) is used to specify the `*.odbrc*` section containing
 commands to be automatically executed when odb starts. See <sql_run_commands, Run Commands When Interpreter Starts>>.
@@ -41,15 +41,12 @@ commands to be automatically executed when odb starts. See <sql_run_commands, Ru
 1. *It uses `mreadline` library* to manage command line editing and history. History will keep track of
 the whole *command*, not just… lines: if you enter a SQL command in more than one line:
 +
-====
-[source,sql]
-----
+```
 S01_Maurizio@TRAFODION64[MFTEST]SQL> select
-S01_Maurizio@TRAFODION64[MFTEST]...> count(*)
+S01_Maurizio@TRAFODION64[MFTEST]...> count()
 S01_Maurizio@TRAFODION64[MFTEST]...> from
 S01_Maurizio@TRAFODION64[MFTEST]...> t1;
-----
-====
+```
 +
 When you press the up arrow key the whole command (up to semi-colon) will be ready for editing and/or re-run.
 +
@@ -65,9 +62,9 @@ command is automatically updated.
 2. *History is saved* when you exit the SQL Interpreter in a file identified by the `ODB_HIST` environment variable.
 You can change the number of commands saved in the history file (default `100`):
 +
-====
-`S01_Maurizio@TRAFODION64[MFTEST]SQL>` *set hist 200*
-====
+```
+S01_Maurizio@TRAFODION64[MFTEST]SQL> SET HIST 200
+```
 
 3. *Customizable prompt*. You can personalize your prompt through the set prompt command.
 Under Unix/Linux/Cygwin you can use the standard ANSI codes to create color prompts.
@@ -76,24 +73,21 @@ See <<sql_custom_prompt, Customize Interpreter Prompt>>.
 4. *Multi-threaded odb instances* can be run from within the single-threaded Interpreter with the `odb` keyword.
 This runs another odb instance using the same credentials, data source, and connection attributes used to start the interpreter:
 +
-====
-`S01_Maurizio@TRAFODION64[MFTEST]SQL>` *odb -l* 
 ```
+S01_Maurizio@TRAFODION64[MFTEST]SQL> odb -l 
 src=myfile:tgt=mytable:parallel=8:...
-```
-`S01_Maurizio@TRAFODION64[MFTEST]SQL>` *odb -e* 
-```
+
+S01_Maurizio@TRAFODION64[MFTEST]SQL> odb -e 
 src=mytable:tgt=myfile:parallel=8:...
 ```
-====
 
 5.  *Define Aliases* with parameter substitution.
 +
 *Example*
 +
-====
-`root@MFDB[MFDB]SQL>` *set alias count "select row count from &1;"*
-====
+```
+root@MFDB[MFDB]SQL> SET ALIAS count "SELECT ROW COUNT FROM &1;"
+```
 +
 When you call the alias `count` the first argument will be substituted to `&1`.
 You can use *up to nine* positional parameters (`&1` to `&9`).
@@ -118,10 +112,9 @@ will be just prepared, not executed.
 +
 *Examples*
 +
-====
-`S01_Maurizio@MFTEST[MFTEST]SQL>` *ls .* << list all objects in the current
-[source,sql]
-----
+```
+S01_Maurizio@MFTEST[MFTEST]SQL> ls . # list all objects in the current
+
 schema
 TABLE : CITIES
 TABLE : CUSTOMER
@@ -134,23 +127,22 @@ TABLE : REGION
 TABLE : SUPPLIER
 TABLE : T1
 VIEW : V_CITIES
-----
-`S01_Maurizio@MFTEST[MFTEST]SQL>` *ls -t %S << list tables (-t) ending with S CITIES ORDERS* +
-`S01_Maurizio@MFTEST[MFTEST]SQL>` *ls -v << list views (-v) V_CITIES* +
-`S01_Maurizio@MFTEST[MFTEST]SQL>` *ls -s << list schemas (-s)* +
- +
+
+S01_Maurizio@MFTEST[MFTEST]SQL> ls -t %S << list tables (-t) ending with S CITIES ORDERS
+S01_Maurizio@MFTEST[MFTEST]SQL> ls -v << list views (-v) V_CITIES
+S01_Maurizio@MFTEST[MFTEST]SQL> ls -s << list schemas (-s)
+
 ... and so on ...
-====
+```
 +
 <<<
 12.  To get tables DDL, you can use either `ls –T <table>` or `ls -D <table>`.
 +
 *Examples*
 +
-====
-`mauro pglocal[PUBLIC] (09:12:56) SQL>` *ls -T tpch.orders*
-[source,sql]
-----
+```
+mauro pglocal[PUBLIC] (09:12:56) SQL> ls -T tpch.orders
+
 Describing: postgres.TPCH.orders
 +---------------+-------------+----+-------+---------------+
 |COLUMN         |TYPE         |NULL|DEFAULT|INDEX          |
@@ -165,10 +157,8 @@ Describing: postgres.TPCH.orders
 |o_shippriority |int4         |NO  |       |               |
 |o_comment      |varchar(80)  |NO  |       |               |
 +---------------+-------------+----+-------+---------------+
-----
-`mauro pglocal[PUBLIC] (09:13:20) SQL>` *ls -D tpch.orders*
-[source,sql]
-----
+
+mauro pglocal[PUBLIC] (09:13:20) SQL> ls -D tpch.orders
 CREATE TABLE postgres.TPCH.orders ( o_orderkey int8
 ,o_custkey int8
 ,o_orderstatus bpchar(1)
@@ -180,8 +170,7 @@ CREATE TABLE postgres.TPCH.orders ( o_orderkey int8
 ,o_comment varchar(80)
 ,primary key (o_orderkey)
 );
-----
-====
+```
 
 13.  You can *define your own variables* or use odb internal variables or environment variables directly from the Interpreter.
 +
@@ -193,9 +182,9 @@ at the end of the truncated string.
 +
 *Example*
 +
-====
-`MFELICI [MAURIZIO] (03:30:32) SQL>` *select [first 5] * from part;*
 ```
+MFELICI [MAURIZIO] (03:30:32) SQL> select [first 5]  from part;
+
 P_PARTKEY|P_NAME                         |P_MFGR         |P_BRAND|P_TYPE         | P_SIZE   |P_CONTAINER|P_RETAILPRICE|P_COMMENT
 ---------+-------------------------------+---------------+-------+---------------+----------+-------+----------------+--------------
 33       |maroon beige mint cyan peru    |Manufacturer#2>|Brand#>|ECONOMY PLATED>|        16|LG PKG>|          933.03|ly eve
@@ -204,16 +193,15 @@ P_PARTKEY|P_NAME                         |P_MFGR         |P_BRAND|P_TYPE        
 81       |misty salmon cornflower dark f>|Manufacturer#5>|Brand#>|ECONOMY BRUSHE>|        21|MED BA>|          981.08|ove the furious
 136      |cornsilk blush powder tan rose |Manufacturer#2>|Brand#>|SMALL PLATED S>|         2|WRAP B>|         1036.13|kages print c>
 ```
-====
 
 15. You can `set plm` to print one field per row. This is useful when you have to carefully analyze few records.
 +
 *Example*
 +
-====
-`MFELICI [MAURIZIO] (03:38:12) SQL>` *set plm on* +
-`MFELICI [MAURIZIO] (03:38:12) SQL>` *select &#42; from part where p_partkey =136;*
 ```
+MFELICI [MAURIZIO] (03:38:12) SQL> SET PLM ON
+MFELICI [MAURIZIO] (03:38:12) SQL> select * from part where p_partkey =136;
+
 P_PARTKEY    136
 P_NAME      :cornsilk blush powder tan rose P_MFGR :Manufacturer#2
 P_BRAND     :Brand#22
@@ -222,21 +210,20 @@ P_SIZE       2
 P_CONTAINER :WRAP BAG P_RETAILPRICE:1036.13
 P_COMMENT   :kages print carefully
 ```
-====
 
 16. Check the rest on your own.
 
 <<<
 === odb SQL Interpreter help
 
-====
-`mauro pglocal[PUBLIC] (06:51:20) SQL>` *help*
 ```
+`mauro pglocal[PUBLIC] (06:51:20) SQL>` *help
+
 All the following are case insensitive:
   h | help                : print this help
   i | info                : print database info
   q | quit                : exit SQL Interpreter
-  c | connect { no | [user[/pswd][;opts;...] (re/dis)connect using previous or new user
+  c | connect { no | [user[/pswd][;opts;&#8230;] (re/dis)connect using previous or new user
   odb odb_command         : will run an odb instance using the same DSN/credentials
   ls -[type] [pattern]    : list objects. Type=(t)ables, (v)iews, s(y)nonyns, (s)chemas
                           : (c)atalogs, syst(e)m tables, (l)ocal temp, (g)lobal temp
@@ -244,7 +231,7 @@ All the following are case insensitive:
                           : (D)table DDL, (T)table desc
   print <string>          : print <string>
   !cmd                    : execute the operating system cmd
-  @file [&0]... [&9]      : execute the sql script in file
+  @file [&0]...[&9]       : execute the sql script in file
   set                     : show all settings
   set alias [name] [cmd|-]: show/set/change/delete aliases
   set chsch [cmd]         : show/set change schema command
@@ -257,7 +244,7 @@ All the following are case insensitive:
   set nocatalog [on|off]  : show/enable/disable "no catalog" database mode)
   set nocatnull [on|off]  : show/enable/disable "no catalog as null" database mode)
   set noschema [on|off]   : show/enable/disable "no schema" database mode)
-  set nullstr [<string>]  : show/set string used to display NULLs (* to make it Null)
+  set nullstr [<string>]  : show/set string used to display NULLs ( to make it Null)
   set pad [fit|full|off]  : show/set column padding
   set param name [value|-]: show/set/change/delete a parameter
   set pcn [on|off]        : show/enable/disable printing column names
@@ -280,8 +267,8 @@ mreadline keys:
   Control-D  : input end (exit) - DEL right   Control-V  : Edit current line
   Control-L  : Lowercase Line                 Control-X  : Kill line
   Control-U  : Uppercase Line #               Control-G  : load history entry #
+
 ```
-====
 
 <<<
 [[sql_run_commands]]
@@ -296,7 +283,6 @@ then odb looks for a file named `.odbrc` (*nix) or `_odbrc` (Windows) under your
 The *_Initialization File_* contains *_Sections_* identified by names between square brackets.
 For example, the following section is named `MFTEST`:
 
-====
 ```
 [MFTEST]
 set pcn on
@@ -309,11 +295,10 @@ set alias count "select row count from &1;"
 set alias size "select sum(current_eof) from table (disk label statistics (&1) );" 
 set alias ll "select left(object_name, 40) as object_name, sum(row_count) as nrows, 
 count(partition_num) as Nparts, sum(current_eof) as eof from table(disk label statistics( 
-using (select * from (get tables in schema &catalog.&schema, no header, return full names) 
+using (select  from (get tables in schema &catalog.&schema, no header, return full names) 
 s(b) ))) group by object_name order by object_name;"
 set schema TRAFODION.MAURIZIO;
 ```
-====
 
 the odb SQL Interpreter automatically runs all commands in the section identified by the `-I` argument (for example `-I MFTEST`).
 A section named `DEFAULT` will be executed when `-I` has no arguments.
@@ -326,11 +311,11 @@ You can define your prompt through the `set prompt` command when running the SQL
 executed interactively or included in your (`$ODB_INI`) *_Initialization File_*. `set prompt` recognizes and expands
 the following variables:
 
-* `*%U*` -> User name
-* `*%D*` -> Data Source name
-* `*%S*` -> Schema name
-* `*%T*` -> Current Time
-* `*%M*` -> odb mode:
+* `*%U*` &#8212;> User name
+* `*%D*` &#8212;> Data Source name
+* `*%S*` &#8212;> Schema name
+* `*%T*` &#8212;> Current Time
+* `*%M*` &#8212;> odb mode:
 +
 `SQL` when running sql commands
 +
@@ -342,15 +327,15 @@ the following variables:
 
 *Example*
 
-====
-*set prompt "Prompt for %U connected via %D to %S in %M mode > "*
-====
+```
+SET PROMPT "Prompt for %U connected via %D to %S in %M mode > "
+```
 
 Generates the following prompt:
 
-====
-`Prompt for S01_Maurizio connected via CIV to CIV03 in SQL mode >`
-====
+```
+Prompt for S01_Maurizio connected via CIV to CIV03 in SQL mode >
+```
 
 Under Cygwin, Unix and Linux (and probably under Windows too using ANSI.SYS driver - not tested),
 you can use standard ANSI escape color codes.
@@ -358,20 +343,20 @@ you can use standard ANSI escape color codes.
 <<<
 *Example*
 
-====
-*set prompt "\^A^[[01;32m\^A%U@%D^A\^[[01;34m^A[%S]\^A^[[00m\	^A (%T) %M> "*
-====
+```
+set prompt "\^A^[[01;32m\^A%U@%D^A\^[[01;34m^A[%S]\^A^[[00m\ ^A (%T) %M> "
+```
 
 Where:
 
 1. *^A* is a _real_ Control-A (ASCII 001 and 002) before and after each color code sequence.
 2. *^[* is a _real_ Escape Character. The meaning of the ANSI color codes are:
 +
-*^[[01;32m* -> green
+*^[[01;32m* &#8212;> green
 +
-*^[[01;34m* -> blue
+*^[[01;34m* &#8212;> blue
 +
-*^[[00m* --> reset.
+*^[[00m* &#8212;> reset.
 
 *Example Prompt*
 

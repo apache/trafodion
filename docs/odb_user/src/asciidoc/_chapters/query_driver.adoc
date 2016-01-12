@@ -31,10 +31,10 @@ of output with `–c` odb option.
 
 *Example*
 
-====
-`$` *./odb64luo -u mauro -p xxx -d pglocal -x 3:"select count(&#42;) from tpch.region" \* +
-*-f 5:Q01.sql -f 3:Q02.sql -T 4 -q –c*
-====
+```
+$ ./odb64luo -u mauro -p xxx -d pglocal -x 3:"select count(*) from tpch.region" \
+-f 5:Q01.sql -f 3:Q02.sql -T 4 -q –c
+```
 
 This command runs:
 
@@ -48,16 +48,15 @@ This command runs:
 <<<
 The command produces the following output:
 
-====
-[source,sql]
-----
+```
+
 odb [2011-12-12 08:08:43]: starting (4) threads...
 Thread id,Proc id,Thread Exec#,Script
 Cmd#,File,Label,Command,Rows,Rsds,Prepare(s),Exec(s),1st
 Fetch(s),Fetch(s),Total(s),STimeline,ETimeline
-1,1,0,0,(none),,"select count(*) from tpch.region",1,20,0.000,0.109,0.000,0.000,0.109,94,203
-0,0,0,0,(none),,"select count(*) from tpch.region",1,20,0.000,0.125,0.000,0.000,0.125,94,219
-2,2,0,0,(none),,"select count(*) from tpch.region",1,20,0.000,0.109,0.000,0.000,0.109,110,219
+1,1,0,0,(none),,"select count() from tpch.region",1,20,0.000,0.109,0.000,0.000,0.109,94,203
+0,0,0,0,(none),,"select count() from tpch.region",1,20,0.000,0.125,0.000,0.000,0.125,94,219
+2,2,0,0,(none),,"select count() from tpch.region",1,20,0.000,0.109,0.000,0.000,0.109,110,219
 2,6,1,0,Q01.sql,,"SELECT L_RETURNFLAG, L_LINESTATUS,SUM(L_QUANTITY)>",4,234,0.000,136.297,0.000,0.000,136.297,141,136438
 2,10,2,0,Q02.sql,,"SELECT S_ACCTBAL, S_NAME, N_NAME,P_PARTKEY,P_MF>",0,274,0.000,0.468,0.000,0.016,0.484,136438,136922
 0,4,1,0,Q01.sql,,"SELECT L_RETURNFLAG, L_LINESTATUS,SUM(L_QUANTITY)>",4,234,0.000,139.667,0.016,0.016,139.683,0,139683
@@ -72,7 +71,7 @@ odb statistics:
         End timestamp: 2011-12-12 08:12:17
 	Elapsed [Start->End] (s): 214.173
 ----
-====
+```
 
 <<<
 The CSV output columns have the following meaning:
@@ -80,7 +79,7 @@ The CSV output columns have the following meaning:
 [cols="30%,70%",options="header"]
 |===
 | Column         | Meaning
-| `Thread ID`    | Thread ID. Number of threads limited to 4 -> thread id values are 0, 1, 2, 3
+| `Thread ID`    | Thread ID. Number of threads limited to 4 &#8212;> thread id values are 0, 1, 2, 3
 | `Proc ID`      | Execution number. 11 executions in the 0-10 range.
 | `Thread Exec#` | Progressive number (starting from 0) of execution for a specific thread.
 | `Script Cmd#`  | If your script contains multiple SQL statement, then they are numbered starting from zero.
@@ -104,16 +103,15 @@ The CSV output columns have the following meaning:
 Sometimes it’s not easy to recognize a query by reading the first 30 characters. Therefore, odb lets you
 assign a label to a generic query using:
 
-====
-*set qlabel <label>*
-====
+```
+SET QLABEL <label>
+```
 
 *Example*
 
-====
-`~/Devel/odb $` *cat script.sql*
-[source,sql]
-----
+```
+~/Devel/odb $ cat script.sql
+
 -- Trafodion TPC-H Query 1 SET QLABEL Q01
 SELECT
    L_RETURNFLAG
@@ -127,15 +125,13 @@ SELECT
    S_ACCTBAL
    , S_NAME
    ...
-----
-====
+```
 
 Running this script includes the Query Label in the CSV output:
 
-====
-`~/Devel/odb $` *./odb64luo -u mauro -p xxx -d pglocal -f script.sql -q -c*
-[source,sql]
-----
+```
+~/Devel/odb $ ./odb64luo -u mauro -p xxx -d pglocal -f script.sql -q -c
+
 odb [2011-12-12 09:06:28]: starting (1) threads...
 Thread id,Proc id,Thread Exec#,Script
 Cmd#,File,Label,Command,Rows,Rsds,Prepare(s),Exec(s),1st
@@ -149,8 +145,8 @@ odb statistics:
         Start timestamp: 2011-12-12 09:06:28
         End timestamp: 2011-12-12 09:07:11
 	Elapsed [Start->End] (s): 43.118
-----
-====
+
+```
 
 <<<
 [[query_driver_all_scripts_path]]
@@ -186,8 +182,8 @@ the target path. This is how the executions will be assigned to threads:
 |===
 | 3+^h| Standard Assignment (es. -P 3:) 3+^h| Round-Robin Assignment (es. -P -3:)
 | h| Thread 1 h| Thread 2 h| Thread 3 h| Thread 1 h| Thread 2 h| Thread 3 
-| nth execution | ...           | ...           |               | ...           | ...           | 
-| 4th execution | `Script4.sql` | `Script4.sql` | `...`         | `Script2.sql` | `Script3.sql` | `...`
+| nth execution | &#8230;           | &#8230;           |               | &#8230;           | &#8230;           | 
+| 4th execution | `Script4.sql` | `Script4.sql` | `&#8230;`         | `Script2.sql` | `Script3.sql` | `&#8230;`
 | 3rd execution | `Script3.sql` | `Script3.sql` | `Script3.sql` | `Script3.sql` | `Script4.sql` | `Script1.sql`
 | 2nd execution | `Script2.sql` | `Script2.sql` | `Script2.sql` | `Script4.sql` | `Script1.sql` | `Script2.sql`
 | 1st execution | `Script1.sql` | `Script1.sql` | `Script1.sql` | `Script1.sql` | `Script2.sql` | `Script3.sql`
@@ -204,9 +200,9 @@ This way the execution order is not predictable.
 [cols="45%,55%",options="header"]
 |===
 | odb Command Line                                  | Action
-| `odb64luo... -S 3: test/queries/* -Z -c –q`       | Executes three times (`3:`) all files in the `test/queries` directory
+| `odb64luo&#8230; -S 3: test/queries/* -Z -c –q`       | Executes three times (`3:`) all files in the `test/queries` directory
 serially (`-S`) and in random order (`-Z`).
-| `odb64luo... -P 3: test/queries/* -Z –T 5 - c -q` | Executes three times (`3:`) all files in the `test/queries` directory in
+| `odb64luo&#8230; -P 3: test/queries/* -Z –T 5 - c -q` | Executes three times (`3:`) all files in the `test/queries` directory in
 parallel (`-P`), using five threads (`-T 5`) and in random order (`-Z`).
 |===
 
@@ -216,9 +212,9 @@ You can stop odb after a given timeout (assuming the execution is not already co
 
 *Example*
 
-====
-`~/Devel/odb $` *./odb64luo -S /home/mauro/scripts/&#42;.sql –maxtime 7200*
-====
+```
+~/Devel/odb $ ./odb64luo -S /home/mauro/scripts/*.sql –maxtime 7200
+```
 
 The command executes, *serially,*( all scripts with extension `.sql` under
 `/home/mauro/scripts/`; if the execution is not completed after two hours (7200 seconds), then odb stops.
@@ -231,9 +227,9 @@ This argument introduces a `<delay>` millisecond pause between two consecutive e
 
 *Example*
 
-====
-`~/src/C/odb $` *./odb64luo -f 5:script1.sql -c -q -ttime 75 -T 2*
-====
+```
+~/src/C/odb $ ./odb64luo -f 5:script1.sql -c -q -ttime 75 -T 2
+```
 
 This command runs five times `script1.sql` using two threads. Each thread waits 75 milliseconds before starting
 the next execution within a thread. You can also use a *_random thinking time_* in a given `min:max` range.
@@ -242,9 +238,9 @@ the next execution within a thread. You can also use a *_random thinking time_* 
 
 The following command starts commands within a thread with a random delay between 50 and 500 milliseconds:
 
-====
-`~/src/C/odb $` *./odb64luo -f 5:script1.sql -c -q -ttime 50:500 -T 2*
-====
+```
+~/src/C/odb $ ./odb64luo -f 5:script1.sql -c -q -ttime 50:500 -T 2
+```
 
 == Starting Threads Gracefully
 
@@ -252,9 +248,9 @@ You might want to wait a little before starting the next thread. This can be obt
 
 *Example*
 
-====
-`~/src/C/odb $` *./odb64luo -f 5:script1.sql -c -q -delay 200 -T 2*
-====
+```
+~/src/C/odb $ ./odb64luo -f 5:script1.sql -c -q -delay 200 -T 2
+```
 
 This command runs five times `script1.sql` using two threads. Each thread will be started 200 milliseconds after the other.
 
@@ -269,9 +265,9 @@ Each thread will re-loop the same number of times.
 
 *Example*
 
-====
-`~/src/C/odb $` *&#42;./&#42;odb64luo -f 5:script1.sql -c -q -M 75 -T 2 -L 3*
-====
+```
+~/src/C/odb $ *./*odb64luo -f 5:script1.sql -c -q -M 75 -T 2 -L 3
+```
 
 re-loops three times (`-L 3`) the same five executions, using two threads (`-T 2`) with a 75 millisecond pause (`-M 75`) between two
 consecutive executions in the same thread.

@@ -29,10 +29,10 @@ You can load a data file using `-l` option.
 
 *Example*
 
-====
-`$` *odb64luo –u user –p xx –d dsn –l src=customer.tbl:tgt=TRAFODION.MAURIZIO.CUSTOMER \*
-*:fs=\|:rows=1000:loadcmd=UL:truncate:parallel=4*
-====
+```
+$ odb64luo –u user –p xx –d dsn –l src=customer.tbl:tgt=TRAFODION.MAURIZIO.CUSTOMER \
+:fs=\|:rows=1000:loadcmd=UL:truncate:parallel=4
+```
 
 This command:
 
@@ -46,7 +46,6 @@ This command:
 
 === Data Loading Operators
 
-====
 ```
 -l src=[-]file:tgt=table[:map=mapfile][:fs=fieldsep][:rs=recsep][:soe]
    [:skip=linestoskip][:ns=nullstring][:ec=eschar][:sq=stringqualifier]
@@ -56,8 +55,8 @@ This command:
    [:pre=\{@sqlfile}|\{[sqlcmd]}][:post=\{@sqlfile}|\{[sqlcmd]}][:ifempty]
    [:direct][:bad=[+]badfile][:tpar=#tables][:maxlen=#bytes][:time]
    [:xmltag=[+]element][:xmlord][:xmldump][:loadcmd=IN|UP|UL]
+
 ```
-====
 
 <<<
 The following table describes each data loading operator:
@@ -79,9 +78,9 @@ The following table describes each data loading operator:
 | `fs=<char>\|<code>` | This is the field separator. You can define the field separator: +
  +
 - as normal character (for example `fs=,`) +
-- as ASCII decimal (for example `fs=44` - `44` means comma) +
-- as ASCII octal value (for example `fs=054` – `054` means comma) +
-- as ASCII hex value (for example `fs=x2C` – `x2C` means comma) +
+- as ASCII decimal (for example `fs=44` &#8212; `44` means comma) +
+- as ASCII octal value (for example `fs=054` &#8212; `054` means comma) +
+- as ASCII hex value (for example `fs=x2C` &#8212; `x2C` means comma) +
  +
 Default field separator is `,` (comma)
 | `rs=<char>\|<code>` | This is the record separator. You can define the record separator the
@@ -112,7 +111,7 @@ If you add a `+` sign in front of the file-name, odb  *appends* to `<file>`inste
 | `ifempty` | Loads the target table only if it contains no records.
 | `norb` | Loads `WITH NO ROLLBACK`.
 | `nomark` | Don’t print the number of records loaded so far during loads.
-| `soe` | Stop On Error -- stop as soon as odb encounters an error.
+| `soe` | Stop On Error &#8212; stop as soon as odb encounters an error.
 | `parallel=num` | Number of loading threads. odb uses: +
  +
 - one thread to read from the input file and +
@@ -171,15 +170,15 @@ parallel load threads. You can limit this number using `-T` option.
 <<<
 *Example*
 
-====
-`$` *odb64luo –u user –p xx –d dsn –T 5 \* +
-*-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.CUSTOMER:fs=\* +
-*|:rows=m2:truncate:norb:parallel=4 \* +
-*-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.ORDERS:fs=\* +
-*|:rows=1000:truncate:norb:parallel=4 \* +
-*-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.LINEITEM:fs=\* +
-*|:rows=m10:truncate:norb:parallel=4*
-====
+```
+$ odb64luo –u user –p xx –d dsn –T 5 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.CUSTOMER:fs=\
+|:rows=m2:truncate:norb:parallel=4 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.ORDERS:fs=\
+|:rows=1000:truncate:norb:parallel=4 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.LINEITEM:fs=\
+|:rows=m10:truncate:norb:parallel=4
+```
 
 The above command truncates and loads the CUSTOMER, ORDERS and LINEITEM tables. The input files have the same name as the
 target tables -– in lower case). Loads are distributed among available threads this way:
@@ -198,15 +197,15 @@ If you want to load more than one table in parallel you should use a number of t
 NOTE: You can load gzipped files without any special option. odb automatically checks input files and decompress them on the fly when
 needed.
 
-odb using one single loading thread (`parallel=1`) is faster than without parallel -- if you do not specify
+odb using one single loading thread (`parallel=1`) is faster than without parallel &#8212; if you do not specify
 parallel, odb uses one thread to both read from file and write into the target table:
 
-`Read buffer #1->Write Buffer #1->Read Buffer #2->Write Buffer #2->Read Buffer #3->Write Buffer#3->...`
+`Read buffer #1>Write Buffer #1>Read Buffer #2>Write Buffer #2>Read Buffer #3>Write Buffer#3>&#8230;`
 
 `parallel=1` defines that there is one thread to read from file and one thread to write:
 
-* `Read buffer #1->Read Buffer #2->Read Buffer #3->...`
-* `Write Buffer #1->Write Buffer #2-> Write Buffer #3->...`
+* `Read buffer #1>Read Buffer #2>Read Buffer #3>&#8230;`
+* `Write Buffer #1>Write Buffer #2>Write Buffer #3>&#8230;`
 
 Reading from file is *normally* much faster than writing via ODBC so a single _reading thread_ can serve different _loading threads_.
 One could ask: what the _right_ number of loading threads is?
@@ -214,7 +213,7 @@ One could ask: what the _right_ number of loading threads is?
 In order to define the right number of loading threads you should run a few test and monitor the _Wait Cycles_ reported by odb.
 Wait Cycles represent the number of times the _reading thread_ had to wait for one _loading thread_ to become available.
 
-* When you have high _Wait Cycles/Total Cycles” ratio..._ it’s better to increase the number of writers.
+* When you have high _Wait Cycles/Total Cycles” ratio&#8230;_ it’s better to increase the number of writers.
 * When the _Wait Cycles/Total Cycles_ is less than 5%, adding more loading threads is useless or counterproductive.
 
 <<<
@@ -236,7 +235,7 @@ odb provides mapping/transformation capabilities though *mapfiles*. By specifyin
 * Extract substrings
 * Replace input file strings. For example: insert `Maurizio Felici` when you read `MF`
 * Generate random values
-* … and much more
+* &#8230; and much more
 
 A generic _mapfile_ contains:
 
@@ -247,6 +246,7 @@ Mappings use the following syntax:
 
 `<colname>:<field>[:transformation operator]`
 
+<<<
 Where:
 
 * `<colname>` is the target table column name. (Case sensitive)
@@ -267,11 +267,11 @@ First input field is `0` (zero), second input field is `1` and so on
 * `NRAND:<PREC>:<SCALE>` generates/loads a random NUMERIC field with precision `<PREC>` and scale `<SCALE>`
 * `DSRAND:<file>` selects and loads a random line from `<file>`
 * `TXTRAND:<MIN_LENGTH>:<MAX_LENGTH>:<file>:` selects and loads a random portion of test from `<file>` with length between `<MIN_LENGTH>` and `<MAX_LENGTH>`
-* `LSTRAND:<VALUE1,VALUE2,…>` selects and loads a random value from `<VALUE1,VALUE2,…>`
-* `EMRAND:<MIN_ULENGTH>:<MAX_ULENGTH>:<MIN_DLENGTH>:<MAX_DLENGTH>:<SUFFIX1,SUFFIX2,…>` generates and loads a string made of `local@domain.suffix` where:
+* `LSTRAND:<VALUE1,VALUE2,&#8230;>` selects and loads a random value from `<VALUE1,VALUE2,&#8230;>`
+* `EMRAND:<MIN_ULENGTH>:<MAX_ULENGTH>:<MIN_DLENGTH>:<MAX_DLENGTH>:<SUFFIX1,SUFFIX2,&#8230;>` generates and loads a string made of `local@domain.suffix` where:
 ** local is a string of random characters (`a-z`, `A-Z`, `0-9`) with length between `<MIN_ULENGTH>` and `<MAX_ULENGTH>`
 ** domain is a string of random characters (`a-z`, `A-Z`, `0-9`) with length between `<MIN_DLENGTH>` and `<MAX_DLENGTH>`
-** suffix is a randomly selected suffix from `<SUFFIX1,SUFFIX2,…>`
+** suffix is a randomly selected suffix from `<SUFFIX1,SUFFIX2,&#8230;>`
 * `CDATE`: to load the current date (`YYYY-MM-DD`)
 * `CTIME`: to load the current time (`hh:mm:ss`)
 * `CTSTAMP`: to load the current timestamp (`YYYY-MM-SS hh:mm:ss`)
@@ -312,14 +312,14 @@ If the input file string doesn’t match `<READ>`, then it is loaded as is.
 See <<load_mapfiles_ignore, Use mapfiles to Ignore and/or Transform Fields When Loading>>
 * `TOUPPER`. Converts the string read from the input file to uppercase before loading.
 +
-Example: `proGRAmMEr -> PROGRAMMER`
+Example: `proGRAmMEr &#8212;> PROGRAMMER`
 * `TOLOWER`. Converts the string read from the input file to lowercase before loading.
 +
-Example: `proGRAmMEr -> programmer`
+Example: `proGRAmMEr &#8212;> programmer`
 * `FIRSTUP`. Converts the first character of the string read from the input file to uppercase and
 the remaining characters to lowercase before loading.
 +
-Example: `proGRAmMEr -> Programmer`
+Example: `proGRAmMEr &#8212;> Programmer`
 
 <<<
 
@@ -332,33 +332,28 @@ with `H` and all `p` with `P`
 ** `WORK:7:translit:Gp\r:HP\d` behaves like the previous example but also deletes all `carriage returns` (`\r`)
 ** `CSUBSTR`. This operator is somehow similar to `SUBSTR` but instead of using fixed position to extract substrings
 will use delimiting characters. For example, suppose your input fields (comma is the field separator) are:
-+ 
-`… other fields…,name_Maurizio.programmer,…other fields`
 +
-`… other fields…,_name_Lucia.housewife, …other fields…`
-+
-`… other fields…,first_name_Giovanni.farmer,… other fields…`
-+
-`… other fields…,_Antonella,… other fields…`
-+
-`… other fields…,Martina,…other fields…`
-+
-`… other fields…,Marco.student, …other fields…`
+```
+... other fields...,name_Maurizio.programmer,...other fields
+... other fields...,_name_Lucia.housewife, ...other fields...
+... other fields...,first_name_Giovanni.farmer,... other fields...
+... other fields...,_Antonella,... other fields...
+... other fields...,Martina,...other fields...
+... other fields...,Marco.student, ...other fields...
+```
 +
 Using a transformation like: `NAME:4:CSUBSTR:95:46` (where `95` is the ASCII code for `_` and 46 is the ASCII code for `.`)
 results in loading the following values into the target (`NAME`) column: +
 +
-`Maurizio`
-+
-`Lucia`
-+
-`Giovanni`
-+
-`Antonella`
-+
-`Martina`
-+
-`Marco`
+```
+Maurizio
+Lucia
+Giovanni
+Antonella
+Martina
+Marco
+```
+
 * `COMP`. Transform a packed binary `COMP` into a target database number.
 +
 For example: `hex 80 00 00 7b` is loaded as `-123`
@@ -374,7 +369,6 @@ For example: `hex 31 32 33 34 35 36` is loaded as `+.123456`
 
 The following example explains mapfile usage to skip/transform or generate fields. Suppose you have a target table like this:
 
-====
 ```
 +------+---------------+----+-------+------------+
 |COLUMN|TYPE           |NULL|DEFAULT|INDEX       |
@@ -385,16 +379,15 @@ The following example explains mapfile usage to skip/transform or generate field
 |BDATE |DATE           |YES |       |            |
 +------+---------------+----+-------+------------+
 ```
-====
 
 And an input file like this:
 
-====
-uno,00,*51*,due,_Maurizio_,tre,[underline]#07 Mar 1959#, ignore,remaining, fields +
-uno,00,*46*,due,_Lucia_,tre,[underline]#13 Oct 1964#, ignore, this +
-uno,00,*34*,due,_Giovanni_,tre,[underline]#30 Mar 1976# +
-uno,00,*48*,due,_Antonella_,tre,[underline]#24 Apr 1962#
-====
+```
+uno,00,51,due,_Maurizio_,tre,[underline]#07 Mar 1959#, ignore,remaining, fields
+uno,00,46,due,_Lucia_,tre,[underline]#13 Oct 1964#, ignore, this
+uno,00,34,due,_Giovanni_,tre,[underline]#30 Mar 1976#
+uno,00,48,due,_Antonella_,tre,[underline]#24 Apr 1962#
+```
 
 * *Bold text* represents age.
 * _Italics  text_ represents name.
@@ -405,28 +398,27 @@ In addition: you need to *_convert date format_* and replace all occurrances of 
 
 The following map file accomplishes these goals:
 
-====
-`~/Devel/odb $` *cat test/load_map/ml1.map* +
-`# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat` +
-`ID:seq:1`                  <- _Inserts into ID column a sequence starting from 1_ +
-`NAME:4:REPLACE:Lucia:Lucy` <- _Loads field #4 into NAME and replace all occurrences of Lucia with Lucy_ +
-`AGE:2`                     <- _Loads field #2 (they start from zero) into AGE_ +
-`BDATE:6:DCONV:d.b.y`       <- _Loads field #6 into BDATE converting date format from `dd mmm yyyy`_
-====
+```
+~/Devel/odb $ cat test/load_map/ml1.map
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat
+ID:seq:1                  <- Inserts into ID column a sequence starting from 1
+NAME:4:REPLACE:Lucia:Lucy <- Loads field #4 into NAME and replace all occurrences of Lucia with Lucy
+AGE:2                     <- Loads field #2 (they start from zero) into AGE 
+BDATE:6:DCONV:d.b.y       <- Loads field #6 into BDATE converting date format from dd mmm yyyy
+```
 
 <<<
 Load as follows:
 
-====
-`$` *odb64luo –u user –p xx –d dsn \* +
-  *-l src=frends.dat:tgt=TRAFODION.MFTEST.FRIENDS:map=ml1.map:fs=,*
-====
+```
+$ odb64luo –u user –p xx –d dsn \
+  -l src=frends.dat:tgt=TRAFODION.MFTEST.FRIENDS:map=ml1.map:fs=,
+```
 
 == Use mapfiles to Load Fixed Format Files
 
 Suppose you have a target table like this:
 
-====
 ```
 +------+---------------+----+-------+------------+
 |COLUMN|TYPE           |NULL|DEFAULT|INDEX       |
@@ -436,11 +428,9 @@ Suppose you have a target table like this:
 |BDATE |DATE           |YES |       |            |
 +------+---------------+----+-------+------------+
 ```
-====
 
 And an input file like this:
 
-====
 ```
 GiovanniXXX30 Mar 1976YFarmer
 Lucia   XXX13 Oct 1964YHousewife
@@ -448,26 +438,25 @@ Martina XXX28 Oct 1991Y?
 Marco   XXX06 Nov 1994Y?
 MaurizioXXX07 Mar 1959YProgrammer
 ```
-====
 
 You want to load the fixed-position fields into the appropriate columns and to *_convert date format_*.
 Null values in the input file are represented by question marks. In this case you can use a mapfile like
 this:
 
-====
-`~/Devel/odb $` *cat test/fixed/ff.map* +
-`NAME:FIXED:0:8`                <- _insert into NAME characters starting at position 0, length 8_ +
-`BDATE:FIXED:11:11:DCONV:d.b.y` <- _insert into BDATE characters starting at col 11, length 11 and convert date_ +
-`JOB:FIXED:23:10`               <- _insert into JOB characters starting at position 23, length 10_
-====
+```
+~/Devel/odb $ cat test/fixed/ff.map
+NAME:FIXED:0:8                <- insert into NAME characters starting at position 0, length 8
+BDATE:FIXED:11:11:DCONV:d.b.y <- insert into BDATE characters starting at col 11, length 11 and convert date
+JOB:FIXED:23:10               <- insert into JOB characters starting at position 23, length 10
+```
 
 <<<
 Load as follows:
 
-====
-`$` *odb64luo –u user –p xx –d dsn \* +
-*-l src=frends1.dat:tgt=TRAFODION.MFTEST.FRIENDS1:map=ff.map:ns=\?:pc=32*
-====
+```
+$ odb64luo –u user –p xx –d dsn \ 
+-l src=frends1.dat:tgt=TRAFODION.MFTEST.FRIENDS1:map=ff.map:ns=\?:pc=32
+```
 
 Where: `pc=32` identify the pad character in the input file (`space` = ASCII 32) and `ns=?` defines
 the null string in the input file.
@@ -479,9 +468,7 @@ the odb capabilities in this area through an example.
 
 Suppose you want to fill with test data a table like this:
 
-====
-[source,sql]
-----
+```
 CREATE TABLE TRAFODION.MAURIZIO."PERSON"
 ( PID BIGINT SIGNED NOT NULL
 , FNAME CHAR(20) NOT NULL
@@ -498,15 +485,14 @@ CREATE TABLE TRAFODION.MAURIZIO."PERSON"
 , PRIMARY KEY (PID)
 )
 ;
-----
-====
+```
 
 <<<
 You can use a mapfile like this:
 
-====
-`~/Devel/odb $` *cat person.map PID:SEQ:100*
 ```
+~/Devel/odb $ cat person.map PID:SEQ:100
+
 FNAME:DSRAND:datasets/first_names.txt 
 LNAME:DSRAND:datasets/last_names.txt 
 COUNTRY:DSRAND:datasets/countries.txt
@@ -518,39 +504,37 @@ EMPL:DSRAND:datasets/fortune500.txt
 NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt 
 LOADTS:CTSTAMP
 ```
-====
 
 Where:
 
-* `PID:SEQ:100` -- Loads a sequence starting from `100` into `PID`
-* `FNAME:DSRAND:datasets/first_names.txt` -- Loads `FNAME` with a randomly selected value from `first_names.txt`.
+* `PID:SEQ:100` &#8212; Loads a sequence starting from `100` into `PID`
+* `FNAME:DSRAND:datasets/first_names.txt` &#8212; Loads `FNAME` with a randomly selected value from `first_names.txt`.
 There are plenty of sample datasets available to generate all sort of data using _realistic_ values.
-* `LNAME:DSRAND:datasets/last_names.txt` -- Loads `LNAME` with a random value from `last_names.txt`.
-* `COUNTRY:DSRAND:datasets/countries.txt` -- Loads `COUNTRY` with a random value from `countries.txt`.
-* `CITY:DSRAND:datasets/cities.txt` -- Loads `CITY` with a random value from `cities.txt`.
-* `BDATE:DRAND:1800:2012` -- Generates and loads into `BDATE` a random date between `1800-01-01` and `2012-12-31`.
-* `SEX:LSTRAND:M,F,U` -- Loads `SEX` with a random value in the `M`, `F`, `U` range.
-* `EMAIL:EMRAND:3:12:5:8:com,edu,org,net` -- Generates and loads a `local@domain.suffix email` addresses where:
+* `LNAME:DSRAND:datasets/last_names.txt` &#8212; Loads `LNAME` with a random value from `last_names.txt`.
+* `COUNTRY:DSRAND:datasets/countries.txt` &#8212; Loads `COUNTRY` with a random value from `countries.txt`.
+* `CITY:DSRAND:datasets/cities.txt` &#8212; Loads `CITY` with a random value from `cities.txt`.
+* `BDATE:DRAND:1800:2012` &#8212; Generates and loads into `BDATE` a random date between `1800-01-01` and `2012-12-31`.
+* `SEX:LSTRAND:M,F,U` &#8212; Loads `SEX` with a random value in the `M`, `F`, `U` range.
+* `EMAIL:EMRAND:3:12:5:8:com,edu,org,net` &#8212; Generates and loads a `local@domain.suffix email` addresses where:
 * `local` is made of 3 to 12 random characters.
 * `domain` is made of 5 to 8 random characters.
 * `suffix` is `com`, `ord`, `edu`, or `net`.
-* `SALARY:NRAND:9:2` -- Generate and loads a random NUMERIC(9,2).
-* `EMPL:DSRAND:datasets/fortune500.txt` -- Loads `EMPL` with a random value from `fortune500.txt`.
-* `NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt` -- Loads `NOTES` with a random section of `lorem_ipsum.txt`
+* `SALARY:NRAND:9:2` &#8212; Generate and loads a random NUMERIC(9,2).
+* `EMPL:DSRAND:datasets/fortune500.txt` &#8212; Loads `EMPL` with a random value from `fortune500.txt`.
+* `NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt` &#8212; Loads `NOTES` with a random section of `lorem_ipsum.txt`
 with length between 20 and 80 characters`
-* `LOADTS:CTSTAMP` -- Loads the current timestamp into `LOADTS`.
+* `LOADTS:CTSTAMP` &#8212; Loads the current timestamp into `LOADTS`.
 
 You generate and load test data with a command like this:
 
-====
-`$` *./ odb64luo -l src=nofile:tgt=traf.maurizio.person:max=1000000:* +
-*map=person.map:rows=5000:parallel=8:loadcmd=U*
-====
+```
+$ ./ odb64luo -l src=nofile:tgt=traf.maurizio.person:max=1000000:
+map=person.map:rows=5000:parallel=8:loadcmd=U
+```
 
 Please note `src=nofile” (it means _there is no input file_) and `max=1000000` (generate and load one million rows). The above command
 has generated and loaded 1M rows of _realistic_ data in about ten seconds:
 
-====
 ```
 [0] odb Loading statistics:
 [0] Target table: TRAFODION.MAURIZIO.PERSON
@@ -568,7 +552,6 @@ has generated and loaded 1M rows of _realistic_ data in about ten seconds:
 [0] Load Performances(ODBC): 42,243.161 KiB/s
 [0] Reader Total/Wait Cycles: 200/16
 ```
-====
 <<<
 [[load_default_values]]
 == Load Default Values
@@ -576,9 +559,7 @@ has generated and loaded 1M rows of _realistic_ data in about ten seconds:
 The simpler way to load database generated defaults is to ignore the associated columns in the map file. For example, suppose you have a
 table like this under Trafodion:
 
-====
-[source,sql]
-----
+```
 create table TRAFODION.maurizio.dtest
 ( id largeint generated by default as identity not null
 , fname char(10)
@@ -587,27 +568,24 @@ create table TRAFODION.maurizio.dtest
 , comment varchar(100)
 )
 ;
-----
-====
+```
 
 If you have an input file containing:
 
-====
-ignoreme,*Maurizio*,xyz,_commentM_, ignore,remaining, fields +
-ignoreme,*Lucia*,xyz,_commentL_, ignore, this +
-ignoreme,*Giovanni*,xyz,_commentG_, ignoreme,Antonella,xyz,commentA
-====
+```
+ignoreme,Maurizio,xyz,_commentM_, ignore,remaining, fields
+ignoreme,Lucia,xyz,_commentL_, ignore, this
+ignoreme,Giovanni,xyz,_commentG_, ignoreme,Antonella,xyz,commentA
+```
 
 * *Bold text* represents `fname`.
 * _Italic text_ represents `comment`.
 
 and a map-file like this:
 
-====
 ```
 FNAME:1 BDATE:CDATE COMMENT:4
 ```
-====
 
 Then:
 
@@ -627,34 +605,30 @@ to identify the file to be loaded into that specific database field.
 
 Suppose you have a table like this (MySQL):
 
-====
-[source,sql]
-----
+```
 create table pers.myphotos
 ( id integer
 , image mediumblob
 , phts timestamp
 )
 ;
-----
-====
+```
 
 Then, you can load a file like this:
 
-====
-`$` *cat myphotos.csv*
 ```
+$ cat myphotos.csv
+
 001,@/home/mauro/images/image1.jpg,2012-10-21 07:31:21
 002,@/home/mauro/images/image2.jpg,2012-10-21 07:31:21
 003,@/home/mauro/images/image3.jpg,2012-10-21 07:31:21
 ```
-====
 
 by running a command like this:
 
-====
-`$` *odb64luo –u user –p xx –d dsn -l src=myphotos.csv:tgt=pers.myphotos:em=\@*
-====
+```
+$ odb64luo –u user –p xx –d dsn -l src=myphotos.csv:tgt=pers.myphotos:em=\@
+```
 
 odb onsiders the string following the “em” character as the path of the file to be loaded in that specific field.
 
@@ -672,10 +646,8 @@ This reduces memory usage and increase performances because of the reduced netwo
 
 Given the following table:
 
-====
-`~/Devel/odb $` *./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.USR.TMX*
-[source,sql]
-----
+```
+~/Devel/odb $ ./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.USR.TMX
 odb [2015-04-20 21:41:38]: starting ODBCconnection(s)... 0
 Connected to Trafodion
 CREATE TABLE TRAFODION.USR."TMX"
@@ -684,15 +656,14 @@ CREATE TABLE TRAFODION.USR."TMX"
 , PRIMARY KEY (ID)
 )
 ;
-----
-====
+```
 
 <<<
 And an input file that contains:
 
-====
-`~/Devel/odb $` *cat tmx.dat*
 ```
+~/Devel/odb $ cat tmx.dat
+
 1,Maurizio
 2,Lucia
 3,Martina
@@ -704,22 +675,21 @@ And an input file that contains:
 9,Josef
 10,Some other name
 ```
-====
 
 The max length of the second field in this file is:
 
-====
-`~/Devel/odb $` *awk -F\, 'BEGIN\{max=0} \{if(NF==2)\{len=length($i);if(len>max)max=len}}* +
-*END\{print max}' tmx.dat* +
+```
+~/Devel/odb $ awk -F\, 'BEGIN\{max=0} \{if(NF==2)\{len=length($i);if(len>max)max=len}} 
+END\{print max}' tmx.dat
 15
-====
+```
 
 <<<
 In this case you can use `:maxlen=15` to limit the amount of the ODBC buffer:
 
-====
-`~/Devel/odb $` *./odb64luo -u xxx -p xxx -d traf -l src=tmx.dat:tgt=usr.tmx:truncate:maxlen=15*
 ```
+~/Devel/odb $ ./odb64luo -u xxx -p xxx -d traf -l src=tmx.dat:tgt=usr.tmx:truncate:maxlen=15
+
 odb [2015-04-20 21:46:11]:starting ODBC connection(s)... 0
 Connected to Trafodion
 [0.0.0]--- 0 row(s) deleted in 0.052s (prep 0.012s, exec 0.040s, fetch 0.000s/0.000s)
@@ -741,14 +711,13 @@ Connected to Trafodion
        [0] Load throughput (ODBC): 9.766 KiB/s
 odb [2015-04-20 21:46:12]: exiting. Session Elapsed time 1.294 seconds (00:00:01.294)
 ```
-====
 
 <<<
 If you do not specify this parameter odb allocates the buffer for the max possible length of each field:
 
-====
-`~/Devel/odb $` *./odb64luo -u xxx -p xxx -d traf -l src=tmx.dat:tgt=usr.tmx:truncate*
 ```
+~/Devel/odb $ ./odb64luo -u xxx -p xxx -d traf -l src=tmx.dat:tgt=usr.tmx:truncate
+
 odb [2015-04-20 21:47:13]: starting ODBC connection(s)... 0
 Connected to Trafodion
 [0.0.0]--- 10 row(s) deleted in 0.107s (prep 0.012s, exec 0.095s, fetch 0.000s/0.000s)
@@ -763,14 +732,13 @@ Connected to Trafodion
        [0] Total number of columns: 2
        [0] Total bytes read: 99
        [0] Average input row size: 9.9 B
-       [0] ODBC row size: *411 B (data) + 16 B (len ind)*
+       [0] ODBC row size: 411 B (data) + 16 B (len ind)
        [0] Rowset size: 100
-       [0] Rowset buffer size: *41.70 KiB*
+       [0] Rowset buffer size: 41.70 KiB
        [0] Load throughput (real data): 3.021 KiB/s
        [0] Load throughput (ODBC): 125.427 KiB/s
 odb [2015-04-20 21:47:14]: exiting. Session Elapsed time 1.373 seconds (00:00:01.373)
 ```
-====
 
 <<<
 == Extract Tables
@@ -778,12 +746,12 @@ You can use odb to extract tables from a database and write them to standard fil
 
 *Example*
 
-====
-`$` *odb64luo –u user –p xx –d dsn –T 3 \* +
-*-e src=TRAFODION.MAURIZIO.LIN%:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip: \* +
-*-e src=TRAFODION.MAURIZIO.REGION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip \* +
-*-e src=TRAFODION.MAURIZIO.NATION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip*
-====
+```
+$ odb64luo –u user –p xx –d dsn –T 3 \
+-e src=TRAFODION.MAURIZIO.LIN%:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip: \
+-e src=TRAFODION.MAURIZIO.REGION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip \
+-e src=TRAFODION.MAURIZIO.NATION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip
+```
 
 The example above:
 
@@ -796,7 +764,6 @@ The example above:
 
 === Extraction Options
 
-====
 ```
 -e {src={table|-file}|sql=<customsql>}:tgt=[+]file[:pwhere=where_cond]
    [:fs=fieldsep][:rs=recsep][:sq=stringqualifier][:ec=escape_char][:soe]
@@ -806,7 +773,6 @@ The example above:
    [:pre={@sqlfile}|{[sqlcmd]}[:mpre=\{@sqlfile}|{[sqlcmd]}[:post={@sqlfile}|{[sqlcmd]}]
    [tpar=#tables][:time][:nts][:cols=[-]columns]][:maxlen=#bytes][:xml]
 ```
-====
 
 <<<
 The following table describes each extract operator:
@@ -875,11 +841,8 @@ Default is the empty string (two field separators one after the other)
 - `gzpar=wb6h`: Huffman compression only +
 - `gzpar=wb6R`: Run-length encoding only
 | `trim[=<params>]` | Accept the following optional parameters: +
-- `c` trims leading footnote:[The following characters are considered _spaces_: `blank`, `tab`, `new line`, `carriage return`, `form feed`, and `vertical tab`.]
-from CHAR footnoteref:[note2,When the source table column is defined as NOT NULL and the specific field contains only blanks, odb leaves in the output file
-one single blank. This helps to distinguish between NULL fields (`<field_sep><field_sep>`) and NOT NULL fields containing all blanks
-(`<field_sep><blank><field_sep>`).]. +
-- `C` trims trailing spaces from CHAR footnoteref:[note2] +
+- `c` trims^1^ from CHAR^2^. +
+- `C` trims trailing spaces from CHAR^2^ +
 - `v` trims leading spaces from VARCHAR fields +
 - `V` trims trailing spaces from VARCHAR fields +
 - `d` trims trailing zeros after decimal sign. Example: `12.3000` is extracted as `12.3`. +
@@ -887,8 +850,8 @@ one single blank. This helps to distinguish between NULL fields (`<field_sep><fi
  +
 *Trim Examples* +
  +
-`:trim=cC`  -> _trims leading/trailing spaces from CHAR fields_. +
-`:trim=cCd` -> _trims leading/trailing spaces from CHARs and trailing decimal zeroes_. +
+`:trim=cC` &#8212;> _trims leading/trailing spaces from CHAR fields_. +
+`:trim=cCd` &#8212;> _trims leading/trailing spaces from CHARs and trailing decimal zeroes_. +
  +
 If you do not specify any argument for this operator odb uses `cCvV`. In other words `:trim:` is a shortcut for `:trim=cCvV:`.
 | `nomark` | Don't print the number of records extracted so far by each thread.
@@ -921,7 +884,7 @@ NOTE: The where condition is limited to columns in the source table. +
 For example: you want to extract records with `TRANS_TS > 1999-12-12 09:00:00` from the source table TRAFODION.MAURO.MFORDERS
 using eight parallel streams to a single, gzipped, file having the same name as the source table: +
  +
-`src=trafodion.mauro.mforders:tgt=%t.gz:gzip:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]...` +
+`src=trafodion.mauro.mforders:tgt=%t.gz:gzip:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]&#8230;` +
  +
 You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
 | `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error
@@ -944,7 +907,7 @@ odb calculates min()/max() value for `<column>` and assign to each <parallel> th
  +
 For example, if you have: +
  +
-`...:splitby=emp_id:parallel=4...` +
+`&#8230;:splitby=emp_id:parallel=4&#8230;` +
  +
 with `min(emp_id)=1` and `max(emp_id)=1000`, the four threads extract the following rows: +
  +
@@ -979,6 +942,11 @@ command (enclosed between square brackets) on the *source system* immediately af
 | `time` | odb prints a _timeline_ (milliseconds from start).
 |===
 
+1. The following characters are considered _spaces_: `blank`, `tab`, `new line`, `carriage return`, `form feed`, and `vertical tab`.
+2. When the source table column is defined as NOT NULL and the specific field contains only blanks, odb leaves in the output file
+one single blank. This helps to distinguish between NULL fields (`<field_sep><field_sep>`) and NOT NULL fields containing all blanks
+(`<field_sep><blank><field_sep>`).
+
 <<<
 == Extract a List of Tables
 
@@ -986,20 +954,20 @@ You can use odb to extract all tables listed in a file.
 
 *Example*
 
-====
-`~/Devel/odb $` *cat tlist.txt*
 ```
+~/Devel/odb $ cat tlist.txt
+
 # List of tables to extract src=TRAFODION.MAURIZIO.ORDERS
 src=TRAFODION.MAURIZIO.CUSTOMER src=TRAFODION.MAURIZIO.PART
 src=TRAFODION.MAURIZIO.LINEITEM
+
 ```
-====
 
 You can extract all these tables by running:
 
-====
-`$` *odb64luo –u user –p xx –d dsn -e src=-tlist.txt:tgt=%t_%d%m:rows=m20:sq=\”*
-====
+```
+$ odb64luo –u user –p xx –d dsn -e src=-tlist.txt:tgt=%t_%d%m:rows=m20:sq=\”
+```
 
 Please note the `src=-tlist.txt`.
 
@@ -1013,7 +981,6 @@ The target table has to be be created in advance and should have a compatible st
 
 === Copy Operators
 
-====
 ```
 -cp src={table|-file:tgt=schema[.table][pwhere=where_cond][:soe][:nts]
    [:truncate][:rows=#rowset][:nomark][:max=#max_rec][:fwc][:bpwc=#]
@@ -1023,8 +990,8 @@ The target table has to be be created in advance and should have a compatible st
    [:loaders=#loaders][:tpar=#tables][:cols=[-]columns]
    [sql={[sqlcmd]|@sqlfile|-file}[:bind=auto|char|cdef]
    [tmpre={@sqlfile}|{[sqlcmd]}][seq=field#[,start]]
+
 ```
-====
 
 Complete list of the Copy Operators:
 
@@ -1041,7 +1008,7 @@ Complete list of the Copy Operators:
 - `%t/%T`: Expands to the (lower/upper case) source table name. +
 - `%s/%S`: Expands to the (lower/upper case) source schema name. +
 - `%c/%C`: Expands to the (lower/upper case) source catalog name.
-| `sql={[sqlcmd]\|@sqlfile\|-file}` | odb uses a generic SQL -- instead of a _real_ table –- as source.
+| `sql={[sqlcmd]\|@sqlfile\|-file}` | odb uses a generic SQL &#8212; instead of a _real_ table &#8212; as source.
 | `max=num` | This is the max number of records to copy. Default is to copy all ecords in the source table.
 | `rows=<num>\|k<num>\|m<num>` | Defines the size of the I/O buffer for each copy thread. You can
 define the size of this buffer in two different ways: +
@@ -1079,14 +1046,14 @@ If you specify `parallel=4` and the source table is made of 32 partitions, then 
 You want to copy records with `TRANS_TS > 1999-12-12 09:00:00` from the source table TRAFODION.MAURO.MFORDERS using eight parallel
 streams to a target table having the same name as the source table: +
  +
-`src=trafodion.mauro.mforders:tgt=trafodion.dest_schema.%t:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]...` +
+`src=trafodion.mauro.mforders:tgt=trafodion.dest_schema.%t:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]&#8230;` +
  +
 You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
 | `commit=auto\|end\|#rows\|x#rs` | Defines how odb will commit the inserts. You have the following choices: +
  +
-- `auto` (Default) -- Commits every single insert (see also rows load operator). `end` commits when all rows (assigned to a given thread) have been inserted. +
-- `#rows` -- Commits every `#rows` copied rows. +
-- `x#rs` -- Commits every `#rs` rowsets copied. (See `:rows`)
+- `auto` (Default) &8212; Commits every single insert (see also rows load operator). `end` commits when all rows (assigned to a given thread) have been inserted. +
+- `#rows` &#8212; Commits every `#rows` copied rows. +
+- `x#rs` &#8212; Commits every `#rs` rowsets copied. (See `:rows`)
 | `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store
 inserted rows _directly_ into the Read-Only Storage (ROS). See Vertica’s documentation.
 | `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of
@@ -1098,7 +1065,7 @@ error messages printed to the standard error.
  +
 For example, if you have: +
  +
-`...:splitby=emp_id:parallel=4...` +
+`&#8230;:splitby=emp_id:parallel=4&#8230;` +
  +
 with `min(emp_id)=1` and `max(emp_id)=1000`, then the four threads extracts the following rows: +
  +
@@ -1137,9 +1104,9 @@ You can optionally define the sequence start value. (Default: 1)
 When copying data from one data source to another, odb needs user/password/dsn for both source and target system.
 User credentials and DSN for the target system are specified this way:
 
-====
-`$` *odb64luo –u src_user:tgt_user –p src_pwd:tgt:pwd –d src_dsn:tgt_dsn ... -cp src=...:tgt=...*
-====
+```
+$ odb64luo –u src_user:tgt_user –p src_pwd:tgt:pwd –d src_dsn:tgt_dsn ... -cp src=...:tgt=...
+```
 
 <<<
 == Copy a List of Tables
@@ -1148,23 +1115,22 @@ You can use odb to copy a list of tables from one database to another.
 
 *Example*
 
-====
-`~/Devel/odb $` *cat tlist.txt* 
 ```
+~/Devel/odb $ cat tlist.txt 
+
 # List of tables to extract
 src=TRAFODION.MAURIZIO.ORDERS
 src=TRAFODION.MAURIZIO.CUSTOMER
 src=TRAFODION.MAURIZIO.PART
 src=TRAFODION.MAURIZIO.LINEITEM
 ```
-====
 
 You can extract all these tables by running:
 
-====
-`$` *odb64luo –u user1:user2 –p xx:yy –d dsn1:dsn2 \* +
-*-cp src=-tlist.txt:tgt=tpch.stg_%t:rows=m2:truncate:parallel=4 -T 8*
-====
+```
+$ odb64luo –u user1:user2 –p xx:yy –d dsn1:dsn2 \
+-cp src=-tlist.txt:tgt=tpch.stg_%t:rows=m2:truncate:parallel=4 -T 8
+```
 
 Please note the `src=-tlist.txt`. This command copies:
 
@@ -1185,16 +1151,15 @@ file.
 
 Usinge different _splitby columns_.
 
-====
-`~/Devel/odb $` *cat tlist2.txt*
 ```
+~/Devel/odb $ cat tlist2.txt
+
 # List of tables to extract and their “splitby columns” 
 src=TRAFODION.MAURIZIO.ORDERS:splitby=O_ORDERKEY 
 src=TRAFODION.MAURIZIO.CUSTOMER:splitby=C_CUSTOMERKEY 
 src=TRAFODION.MAURIZIO.PART:splitby=P_PARTKEY 
 src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
 ```
-====
 
 
 == Case-Sensitive Table and Column Names
@@ -1207,26 +1172,23 @@ odb maintains table/column case sensitiveness when they are enclosed in double q
 The following commans create a `TRAFODION.MAURIZIO.Names` table made of three columns:
 “name”, “NAME” and “Name”.
 
-====
-[source,sql]
-----
+```
 create table trafodion.maurizio."Names"
 ( "name" char(10)
 , "NAME" char(10)
 , "Name" char(10)
 )
 no partitions;
-----
-====
+```
 
 Double quotes have to be escaped under *nix. A few examples:
 
-====
-`~/Devel/odb $` *./odb64luo -i T:trafodion.maurizio.\"Names\"* +
-`~/Devel/odb $` *./odb64luo -x "select * from trafodion.maurizio.\"Names\""* +
-`~/Devel/odb $` *./odb64luo -l src=names.txt:tgt=trafodion.maurizio.* +
-*\"Names\":map=names.map:pc=32*
-====
+```
+~/Devel/odb $ ./odb64luo -i T:trafodion.maurizio.\"Names\"
+~/Devel/odb $ ./odb64luo -x "select  from trafodion.maurizio.\"Names\""
+~/Devel/odb $ ./odb64luo -l src=names.txt:tgt=trafodion.maurizio.
+\"Names\":map=names.map:pc=32
+```
 
 You can omit double quotes around column names when using _mapfiles_.
 

@@ -23,16 +23,16 @@ Trafodion Command Interface Guide              | [Web Book](docs/command_interfa
 Trafodion Database Connectivity Services Guide | [Web Book](docs/dcs_reference/index.html),[API](docs/dcs_reference/apidocs/index.html)
 Trafodion odb User Guide                       | [Web Book](docs/odb/index.html),[PDF](docs/odb/Trafodion_odb_User_Guide.pdf)
 Trafodion REST Server Reference Guide          | [Web Book](docs/rest_reference/index.html),[API](docs/rest_reference/apidocs/index.html)
-Trafodion SQL Reference Manual                 | [Web Book](docs/sql_reference/index.html),[PDF](docs/sql_reference/Trafodion_SQL_Reference_Manual.pdf)[PDF]
+Trafodion SQL Reference Manual                 | [Web Book](docs/sql_reference/index.html),[PDF](docs/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
 
 # 1.3.0
 
 Document                                       | Formats
 -----------------------------------------------|-----------------------------------
 Trafodion Client Installation Guide            | [Web Book](docs/1.3.0/client_install/index.html),[PDF](docs/1.3.0/client_install/Trafodion_Client_Installation_Guide.pdf)
-Trafodion Command Interface Guide              | [Web Book](command_interface/index.html),[PDF](docs/1.3.0/command_interface/Trafodion_Command_Interface_Guide.pdf)
+Trafodion Command Interface Guide              | [Web Book](docs/1.3.0/command_interface/index.html),[PDF](docs/1.3.0/command_interface/Trafodion_Command_Interface_Guide.pdf)
 Trafodion Database Connectivity Services Guide | [Web Book](docs/1.3.0/dcs_reference/index.html),[API](docs/1.3.0/dcs_reference/apidocs/1.3.0/index.html)
 Trafodion odb User Guide                       | [Web Book](docs/1.3.0/odb/index.html),[PDF](docs/1.3.0/odb/Trafodion_odb_User_Guide.pdf)
 Trafodion REST Server Reference Guide          | [Web Book](docs/1.3.0/rest_reference/index.html),[API](docs/1.3.0/rest_reference/apidocs/1.3.0/index.html)
-Trafodion SQL Reference Manual                 | [PDF](docs/1.3.0/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
+Trafodion SQL Reference Manual                 | [Web Book](docs/1.3.0/sql_reference/index.html),[PDF](docs/1.3.0/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
 

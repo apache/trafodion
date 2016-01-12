@@ -27,9 +27,8 @@
 == Get Help
 The following command shows the odb help:
 
-====
-`~/Devel/odb $` *./odb64luo -h*
 ```
+~/Devel/odb $ ./odb64luo -h
 odb version 1.3.0
 Build: linux, amd64, gcc generic m64, uodbc, mreadline, dynamic gzip, dynamic libhdfs, dynamic libxml2 [Mar 30 2015 00:29:25]
    -h: print this help
@@ -152,9 +151,7 @@ Data pipe options [connection required]:
       * loaders: default 1 load threads for each extraction thread
       * bpc: default 1,bpwc: default 4
 ```
-====
 <<<
-====
 ```
 Table diff options [connection required]:
    -diff src={table|-file}:tgt=table:[key=columns][:output=[+]file][:pwhere=where_cond]
@@ -166,7 +163,6 @@ Table diff options [connection required]:
       * bpc: default 1,bpwc: default 4
       * print: default is Inserted Deleted Changed
 ```
-====
 
 <<<
 == Connect to Database
@@ -176,9 +172,9 @@ Normally you have to provide the following information: user, password and ODBC 
 
 *Example*
 
-====
-`$` *./odb64luo –u user –p password –d dsn ...*
-====
+```
+$ ./odb64luo –u user –p password –d dsn ...
+```
 
 You can provide Driver-specific connection attributes using th `-ca` command line option.
 
@@ -203,19 +199,19 @@ NOTE: Command-line options take precedence over environment variables.
 == List ODBC Drivers and Data Sources
 You can list available drivers with `-lsdrv`:
 
-====
-`~/Devel/odb $` *./odb64luo -lsdrv* +
-`Trafodion - Description=Trafodion ODBC Stand Alone Driver` +
-`...`
-====
+```
+~/Devel/odb $ ./odb64luo -lsdrv
+Trafodion - Description=Trafodion ODBC Stand Alone Driver +
+...
+```
 
 You can list locally configured data sources with `-lsdsn`:
 
-====
-`~/Devel/odb $` *./odb64luo -lsdsn traf - Trafodion* +
-`VMFELICI – Vertica` +
-`...`
-====
+```
+~/Devel/odb $ ./odb64luo -lsdsn traf - Trafodion
+VMFELICI – Vertica +
+...
+```
 
 <<<
 == Obtain Database Information
@@ -224,9 +220,9 @@ It’s a simple way to check your credentials and database connection.
 
 *Example*
 
-====
-`~/mauro/odb $` *./odb64luo -u xxx -p xxx -d traf -i*
 ```
+~/mauro/odb $ ./odb64luo -u xxx -p xxx -d traf -i
+
 odb [2015-04-20 21:20:47]: starting ODBC connection(s)... 0
        [odb version 1.3.0]
        Build: linux, amd64, gcc generic m64, uodbc, mreadline, dynamic gzip, dynamic libhdfs, dynamic libxml2 [Apr 8 2015 16:47:49]
@@ -245,7 +241,7 @@ odb [2015-04-20 21:20:47]: starting ODBC connection(s)... 0
        Connection Packet Size (SQL_ATTR_PACKET_SIZE): 0
 odb [2015-04-20 21:20:48]: exiting. Session Elapsed time 0.229 seconds (00:00:00.229)
 ```
-====
+
 
 <<<
 == List Database Objects
@@ -253,7 +249,9 @@ The previous section used the `-i` option without any argument.
 
 This option accepts arguments with the following syntax:
 
-`[TYPE:][CATALOG.SCHEMA][.OBJECT]`
+```
+[TYPE:][CATALOG.SCHEMA][.OBJECT]
+```
 
 where type can be:
 
@@ -293,9 +291,9 @@ where type can be:
 
 *Extended Examples*
 
-====
-`~/mauro/odb $` *./odb64luo -u MFELICI -p xxx -d MFELICI -i T:TRAFODION.MAURIZIO.T%*
 ```
+~/mauro/odb $ ./odb64luo -u MFELICI -p xxx -d MFELICI -i T:TRAFODION.MAURIZIO.T%
+
 odb [2011-12-07 14:43:51]: starting (1) ODBC connection(s)... 1
 Describing: TRAFODION.MAURIZIO.T1
 +------+--------------+----+-------+-------+
@@ -313,7 +311,6 @@ Describing: TRAFODION.MAURIZIO.T11
 |NAME  |CHAR(10)      |YES |       |       |
 +------+--------------+----+-------+-------+
 ```
-====
 
 The `INDEX` column (when using type `T`) contains the following information:
 
@@ -322,6 +319,7 @@ The `INDEX` column (when using type `T`) contains the following information:
 * `(U)nique o (M)ultiple` values allowed.
 * `(+)` means that more than one index includes that field.
 
+<<<
 == Perform Actions on Multiple Database Objects
 odb uses extended SQL syntax to execute actions on multiple objects: `&<type>:<path>` - where `<type>` is one
 of the object types listed in the previous section.
@@ -346,23 +344,21 @@ The `–x` switch can be used to run generic SQL commands. You can also use `–
 
 *Example*
 
-====
-`~/Devel/odb $` *./odb64luo -x "select count(&#42;) from customer"*
 ```
+~/Devel/odb $ ./odb64luo -x "select count(*) from customer"
+
 150000
 [0.0.0]--- 1 row(s) selected in 0.137s (prep 0.000s, exec 0.137s, 1st fetch 0.000s,
 fetch 0.000s)
 ```
-====
 
 The meaning of `[0.0.0]` will be explained later.
 
 <<<
 
-====
-`~/Devel/odb $` *cat script.sql*
-[source,sql]
-----
+```
+~/Devel/odb $ cat script.sql
+
 SELECT COUNT(*) FROM T1;
 -- This is a comment
 SELECT 
@@ -385,15 +381,13 @@ GROUP BY
 ORDER BY
         L_RETURNFLAG, L_LINESTATUS
 ;
-----
-====
+```
 
 <<<
 
-====
-`~/Devel/odb $` *./odb64luo -f script.sql*
-[source,sql]
-----
+```
+~/Devel/odb $ ./odb64luo -f script.sql
+
 [0.0.0]Executing: 'SELECT COUNT(*) FROM T1;'
 5
 [0.0.0]--- 1 row(s) selected in 0.015s (prep 0.000s, exec 0.015s, 1st fetch -0.000s,
@@ -411,8 +405,8 @@ A,F,37734107.00,56586554400.73,53758257134.8700,55909065222.827692,25.522006,
 R,F,37719753.00,56568041380.90,53741292684.6040,55889619119.831932,25.505794,
 38250.854626,0.050009,1478870
 [0.0.1]--- 4 row(s) selected in 21.344s (prep 0.000s, exec 21.344s, 1st fetch 0.000s, fetch 0.000s)
-----
-====
+```
+
 
 <<<
 You can use the `-q` switch to omit selected output components.
@@ -421,9 +415,9 @@ You can use the `-q` switch to omit selected output components.
 
 `–q` cmd will not print the *_commands_* being executed:
 
-====
-`~/Devel/odb $` *./odb64luo -f script.sql –q cmd*
 ```
+~/Devel/odb $ ./odb64luo -f script.sql –q cmd
+
 5
 [0.0.0]--- 1 row(s) selected in 0.015s (prep 0.000s, exec 0.015s, 1st fetch -0.000s,
 fetch -0.000s)
@@ -436,14 +430,12 @@ R,F,37719753.00,56568041380.90,53741292684.6040,55889619119.831932,25.505794,
 [0.0.1]--- 4 row(s) selected in 21.344s (prep 0.000s, exec 21.344s, 1st fetch 0.000s,
 fetch 0.000s)
 ```
-====
 
 While `-q` res will nit print the *_results_*:
 
-====
-`~/Devel/odb $` *./odb64luo -f script.sql –q res*
-[source,sql]
-----
+```
+~/Devel/odb $ ./odb64luo -f script.sql –q res
+
 [0.0.0]Executing: 'SELECT COUNT(*) FROM T1;'
 [0.0.0]--- 1 row(s) selected in 0.015s (prep 0.000s, exec 0.015s, 1st fetch -0.000s,
 fetch -0.000s)
@@ -456,20 +448,18 @@ AVG_DISC, COUNT(*) AS COUNT_ORDER FROM LINEITEM WHERE L_SHIPDATE <= DATE '1998-1
 L_LINESTATUS;'
 [0.0.1]--- 4 row(s) selected in 21.344s (prep 0.000s, exec 21.344s, 1st fetch 0.000s,
 fetch 0.000s)
-----
-====
+```
 
 `-q all` (or just `-q`) will not print neither the *_commands_* nor the *_results_*:
 
-====
-`~/Devel/odb $` *./odb64luo -f script.sql -q all*
 ```
+~/Devel/odb $ ./odb64luo -f script.sql -q all
+
 [0.0.0]--- 1 row(s) selected in 0.015s (prep 0.000s, exec 0.015s, 1st fetch -0.000s,
 fetch -0.000s)
 [0.0.1]--- 4 row(s) selected in 21.344s (prep 0.000s, exec 21.344s, 1st fetch 0.000s,
 fetch 0.000s)
 ```
-====
 
 This is often used with odb as query driver.
 
@@ -486,10 +476,10 @@ It means: read the script to be executed from the _standard input_.
 The following command will _copy_ table definitions from one system to
 another recreating, on the target system, the same table structures as in the source system:
 
-====
-`$` *odb64luo –u u1 -p p1 -d SRC -i t:TRAFODION.CIV04 -x "SHOWDDL &1" \* +
-*| odb64luo –u u2 –p p2 -d TGT -f -*
-====
+```
+$ odb64luo –u u1 -p p1 -d SRC -i t:TRAFODION.CIV04 -x "SHOWDDL &1" \
+| odb64luo –u u2 –p p2 -d TGT -f -
+```
 
 <<<
 == Shell Script "here document" Syntax
@@ -500,7 +490,6 @@ Use the `-f -` (read commands from standard input) odb syntax.
 
 *Example*
 
-====
 ```
 odb64luo -f - <<-EOF 2>&1 | tee -a $\{LOG}
    drop table &t:TRAFODION.maurizio.ml%;
@@ -515,7 +504,6 @@ odb64luo -f - <<-EOF 2>&1 | tee -a $\{LOG}
    ) no partitions;
 EOF
 ```
-====
 
 <<<
 == Parallelize Multiple Commands and Scripts
@@ -523,10 +511,13 @@ EOF
 odb uses threads to run multiple commands in parallel. Each command (`-x`) or
 script (`-f`) will be executed, independently from the others, using a different thread.
 
-.Running a command and script in parallel
-====
-`~/Devel/odb $` *./odb64luo -x "select count(&#42;) from types" -f script1.sql*
-====
+*Example*
+
+Running scripts in parallel.
+
+```
+~/Devel/odb $ ./odb64luo -x "select count(&#42;) from types" -f script1.sql
+```
 
 Uses two _independent_ threads executed in parallel. The first thread will run `select count(*) from types` and the other `script1.sql`.
 
@@ -536,11 +527,14 @@ You can also run *_multiple copies_* of the same command by adding `<num>:` befo
 The following command runs the instances of `select count(*) from types `, five instances
 of `script1.sql` and three instances of `script2.sql` in parallel using `3 + 5 + 3 = 11` threads in total:
 
-.Running eleven commands and scripts in parallel
-====
-`~/Devel/odb $` *./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \*
-*-f 3:script2.sql -q*
+*Example*
+
+Running eleven commands and scripts in parallel
+
 ```
+~/Devel/odb $ ./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \
+-f 3:script2.sql -q
+
 [1.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 [0.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 [2.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
@@ -553,20 +547,20 @@ of `script1.sql` and three instances of `script2.sql` in parallel using `3 + 5 +
 [9.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 [10.0.0]--- 1 row(s) selected in 0.001s prep 0.000s, exec 0.001s, fetch 0.000s/0.000s)
 ```
-====
 
 The first number in `[*1*.0.0]` is the *_thread ID_*. Thread IDs are assigned by odb starting from zero.
 
 You can limit the maximum number of threads with `-T` option.
 
+<<<
 *Example*
 
 The following command runs the same 11 commands/scripts limiting the number of threads (*and ODBC connections*) to 4:
 
-====
-`~/Devel/odb $` *./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \*
-*-f 3:script2.sql -q -T 4*
 ```
+~/Devel/odb $ ./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \
+-f 3:script2.sql -q -T 4
+
 [1.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 [0.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 [2.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
@@ -579,7 +573,7 @@ The following command runs the same 11 commands/scripts limiting the number of t
 [0.2.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 [1.2.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
 ```
-====
+
 
 The thread ID is now in the 0-3 range because the 11 *_executions_* were *_queued_* into four threads.
 odb offers several alternatives to queue `M` executions in `N(<M)` threads. See below.
@@ -592,17 +586,17 @@ The command in the following example creates `1 + 3 + 3 = 7` threads. Each threa
 
 *Example*
 
-====
-`~/src/C/odb $` *./odb64luo -f script1.sql -f 3:script2.sql -x 3:"<mysqlcmd>"*
-====
+```
+~/src/C/odb $ ./odb64luo -f script1.sql -f 3:script2.sql -x 3:"<mysqlcmd>"
+```
 
 You can limit the max number of threads using `–T`.
 
 *Example*
 
-====
-`~/src/C/odb $` *./odb64luo -f script1.sql -f 3:script2.sql -x 3:"<mysqlcmd>" -T 2*
-====
+```
+~/src/C/odb $ ./odb64luo -f script1.sql -f 3:script2.sql -x 3:"<mysqlcmd>" -T 2
+```
 
 This command creates just two threads to execute the seven commands/scripts. odb will never create
 more threads than needed:
@@ -610,8 +604,8 @@ more threads than needed:
 *Example*
 
 ====
-`~/Devel/odb $` *./odb64luo -f 2:script1.sql -f 3:script2.sql -T 8 -c -q* +
-`odb [main(1017)] - Warning: won't be created more thread (8) than needed (5).`
+~/Devel/odb $ ./odb64luo -f 2:script1.sql -f 3:script2.sql -T 8 -c -q
+odb [main(1017)] - Warning: won't be created more thread (8) than needed (5).
 ====
 
 <<<
@@ -620,9 +614,9 @@ By default, executions are distributed in round-robin across threads.
 
 *Example*
 
-====
-`~/src/C/odb $` *./odb64luo -f script1.sql -f 3:script2.sql -x 3:"<mysqlcmd>" -T 3*
-====
+```
+~/src/C/odb $ ./odb64luo -f script1.sql -f 3:script2.sql -x 3:"<mysqlcmd>" -T 3
+```
 
 Using the command above, the execution queue will be as follows:
 
@@ -675,10 +669,9 @@ odb let you to use two kinds of variables:
 You can mix internal and environment variables in your scripts. If a variable is not expanded to a valid
 Internal/Environment variable the text will remain unchanged.
 
-====
-`~/Devel/odb $` *cat scr.sql set param region1 ASIA*
-[source,sql]
-----
+```
+~/Devel/odb $ cat scr.sql set param region1 ASIA
+	    
 -- region1 is defined as an internal odb parameter
 select * from tpch.region where r_name = '&region1';
 -- region2 is defined as an environment variable
@@ -687,19 +680,19 @@ select * from tpch.region where r_name = '$region2';
 select * from tpch.region where r_name = '$region2' or r_name = '&region1';
 -- region3 variable does not exists so it won’t be not expanded
 select * from tpch.region where r_name = '&region3';
-----
-====
+```
+
 After you define `region2` at operating system level:
 
-====
-`~/Devel/odb $` *export region2=AMERICA*
-====
+```
+~/Devel/odb $ export region2=AMERICA
+```
 
 Output:
 
-====
-`~/Devel/odb $` *./odb64luo -u mauro -p xx -d pglocal -f scr.sql*
 ```
+~/Devel/odb $ ./odb64luo -u mauro -p xx -d pglocal -f scr.sql
+
 odb [2011-12-12 08:01:31]: starting (1) ODBC connection(s)... 1 [0.0.0]Executing:
 'select * from tpch.region where r_name = 'ASIA';' 2,ASIA,ges. thinly even pinto beans ca
 [0.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, 1st fetch 0.000s, fetch 0.000s)
@@ -711,26 +704,24 @@ even requests.s2,ASIA,ges. thinly even pinto beans ca
 [0.0.3]Executing: 'select * from tpch.region where r_name = '&region3';'
 [0.0.3]--- 0 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, 1st fetch 0.000s, fetch 0.000s)
 ```
-====
+
 
 <<<
 == Thread ID, Thread Execution#, and Script Command#
 Consider a script containing two commands:
 
-====
-`~/odb $` *cat script.sql*
-[source,sql]
-----
+```
+~/odb $ cat script.sql
+
 SELECT COUNT(*) FROM ORDERS;
 SELECT COUNT(*) FROM SUPPLIER;
-----
-====
+```
 
 Running this script ten times using two threads yields:
 
-====
-`~/odb $` *./odb64luo -f 10:script.sql -q -T 2*
 ```
+~/odb $ ./odb64luo -f 10:script.sql -q -T 2
+
 [0.0.0]--- 1 row(s) selected in 0.102s (prep 0.022s, exec 0.044s, 1st fetch 0.037s, fetch 0.037s)
 [1.0.0]--- 1 row(s) selected in 0.125s (prep 0.022s, exec 0.068s, 1st fetch 0.036s, fetch 0.036s)
 [0.0.1]--- 1 row(s) selected in 0.520s (prep 0.022s, exec 0.048s, 1st fetch 0.450s, fetch 0.450s)
@@ -752,7 +743,6 @@ Running this script ten times using two threads yields:
 [1.4.0]--- 1 row(s) selected in 0.133s (prep 0.023s, exec 0.074s, 1st fetch 0.035s, fetch 0.035s)
 [1.4.1]--- 1 row(s) selected in 0.098s (prep 0.017s, exec 0.064s, 1st fetch 0.016s, fetch 0.016s)
 ```
-====
 
 <<<
 The numbers between square brackets have the following meaning:
@@ -766,7 +756,7 @@ commands; this value is 0 or 1.
 *Example*
 
 `*[0.3.1]*` means that the *first thread* (_thread id=0_) was executing its *fourth job*
-(_thread execution#=3_) and -- more specifically -- the *second command* in that script
+(_thread execution#=3_) and &#8212; more specifically #&8212; the *second command* in that script
 (_script command#=1_).
 
 <<<
@@ -783,9 +773,9 @@ special cases where you want to use different DSN for different threads. In thes
 
 *Example*
 
-====
-`$` *./odb64luo ... –d MYDSN –ndsn 4*
-====
+```
+$ ./odb64luo ... –d MYDSN –ndsn 4
+```
 
 It will use the following (round-robin) DSN/thread association: `MYDSN1` for the first thread, `MYDSN2` for the
 second thread and so on. The fifth thread (if any) will use `MYDSN1` again. You can use a sequential
@@ -825,23 +815,21 @@ Normally odb prints query results using a very basic CSV format.
 
 *Example*
 
-====
-`$` *./odb64luo -x "select s_suppkey, s_name, s_phone from tpch.supplier limit 5*
-[source,sql]
-----
+```
+$ ./odb64luo -x "select s_suppkey, s_name, s_phone from tpch.supplier limit 5
+
 1,Supplier#000000001,27-918-335-1736
 2,Supplier#000000002,15-679-861-2259
 3,Supplier#000000003,11-383-516-1199
 4,Supplier#000000004,25-843-787-7479
 5,Supplier#000000005,21-151-690-3663
-----
-====
+```
 
 Adding the option `-pad` you generates the output in table format:
 
-====
-`$` *./odb64luo -x "select s_suppkey, s_name, s_phone from tpch.supplier limit 5" -pad*
 ```
+$ ./odb64luo -x "select s_suppkey, s_name, s_phone from tpch.supplier limit 5" -pad
+
 s_suppkey      |s_name                   |s_phone
 ---------------+-------------------------+---------------
 1              |Supplier#000000001       |27-918-335-1736
@@ -850,7 +838,6 @@ s_suppkey      |s_name                   |s_phone
 4              |Supplier#000000004       |25-843-787-7479
 5              |Supplier#000000005       |21-151-690-3663
 ```
-====
 
 <<<
 == Extract Table DDL
@@ -860,18 +847,16 @@ You can extract DDL from one or several tables using either the `-i D…` or
 
 *Example*
 
-====
-`$` *./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.SEABASE.REGIONS*
-[source,sql]
-----
+```
+$ ./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.SEABASE.REGIONS
+
 odb [2015-04-20 21:25:35]: starting ODBC connection(s)... 0 
 Connected to Trafodion
 
 CREATE TABLE TRAFODION.SEABASE."REGIONS" ( REGION_ID INTEGER NOT NULL
 , REGION_NAME VARCHAR(25)
 );
-----
-====
+```
 
 The `&` wildcard allows you to extract the DDL for multiple objects.
 
@@ -879,10 +864,9 @@ The `&` wildcard allows you to extract the DDL for multiple objects.
 
 The following command will extract the DDL for all tables in schema `tpch` starting with `P`:
 
-====
-`$` *./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.TPCH.P%*
-[source,sql]
-----
+```
+$ ./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.TPCH.P%
+
 odb [2015-04-20 21:33:43]: starting ODBC connection(s)... 0 
 Connected to Trafodion
 
@@ -907,8 +891,7 @@ CREATE TABLE TRAFODION.TPCH."PARTSUPP" ( PS_PARTKEY BIGINT NOT NULL
 );
 
 odb [2015-04-20 21:33:45]: exiting. Session Elapsed time 2.069 seconds (00:00:02.069)
-----
-====
+```
 
 You should consider possible differences in text column length semantic when porting DDLs from one database to another; 
 some databases use "character oriented" text columns length while others use a "byte oriented" semantic. 
@@ -919,10 +902,9 @@ You can ask odb to multiply text column length when printing DDL using the switc
 <<<
 *Example*
 
-====
-`$` *./odb64luo -u xxx -p xxx -d traf -i U2,4:TRAFODION.TPCH.P%*
-[source,sql]
-----
+```
+$ ./odb64luo -u xxx -p xxx -d traf -i U2,4:TRAFODION.TPCH.P%
+
 odb [2015-04-20 21:35:17]: starting ODBC connection(s)... 0 
 Connected to Trafodion
 
@@ -947,8 +929,7 @@ CREATE TABLE TRAFODION.TPCH."PARTSUPP" ( PS_PARTKEY BIGINT NOT NULL
 );
 
 odb [2015-04-20 21:35:18]: exiting. Session Elapsed time 1.620 seconds (00:00:01.620)
-----
-====
+```
 
 The command in the above example  multiplies the length of "non-wide" text fields by 2 and
 the length of wide text fields by 4.

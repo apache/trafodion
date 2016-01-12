@@ -33,18 +33,18 @@ linked to the unixODBC driver manager.
 
 odb executables use the following naming convention, `*_odbAABCC_*`, where:
 
-* `**AA**` can be 64 (bit) (32 bit is not currently supported).
-* `**B**` identifies the platform/compiler:
-** `l` = Linux/gcc
-** `w` = Windows/MS Visual Studio (not yet tested)
-* `**CC**` identifies the ODBC Driver Manager to which odb was linked:
-** `uo` = unixODBC Driver Manager
-** `ms` = Microsoft ODBC Driver Manager (not yet tested)
+* `*AA*` can be 64 (bit) (32 bit is not currently supported).
+* `*B*` identifies the platform/compiler:
+* `l` = Linux/gcc
+* `w` = Windows/MS Visual Studio (not yet tested)
+* `*CC*` identifies the ODBC Driver Manager to which odb was linked:
+* `uo` = unixODBC Driver Manager
+* `ms` = Microsoft ODBC Driver Manager (not yet tested)
 
 So, for example:
 
-* `**odb64luo**` is the 64-bit executable for Linux linked with the unixODBC Driver Manager.
+* `*odb64luo*` is the 64-bit executable for Linux linked with the unixODBC Driver Manager.
 
-This document contains examples run with the `**odb64luo**` executable.
+This document contains examples run with the `*odb64luo*` executable.
 
 

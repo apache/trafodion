@@ -44,13 +44,13 @@ You can have multiple _triplets_ working in parallel on different section of the
 
 *Example*
 
-====
-`$` *odb64luo -u mailto:maurizio.felici@hp.com[MFELICI:maurizio.felici@hp.com] \* +
-*-d MFELICI:VMFELICI \* +
-*-p xx:yy –diff src=trafodion.maurizio.lineitem:tgt=mftest.lineitem:&#42; \* +
-*key=l_orderkey,l_linenumber*:output=lineitem.diff:* +
-*rows=m2:print=IDC:&#42;splitby=l_orderkey&#42;:parallel=8*
-====
+```
+$ odb64luo -u mailto:maurizio.felici@hp.com[MFELICI:maurizio.felici@hp.com] \
+-d MFELICI:VMFELICI \
+-p xx:yy –diff src=trafodion.maurizio.lineitem:tgt=mftest.lineitem:&#42; \
+key=l_orderkey,l_linenumber:output=lineitem.diff:
+rows=m2:print=IDC:&#42;splitby=l_orderkey&#42;:parallel=8
+```
 
 The command above compares two tables using eight streams (`parallel=8`) made of three threads each.
 
@@ -68,9 +68,9 @@ For these rows odb can print the original source version (`C` rows) and/or the m
 
 odb output when comparing two tables:
 
-====
-`$` *cat lineitem.diff*
 ```
+$ cat lineitem.diff
+
 DTYPE,L_ORDERKEY,L_LINENUMBER,L_SUPPKEY,L_PARTKEY,L_QUANTITY,L_EXTENDEDPRICE,L_DISCOUNT,L_TAX,L_RETURNFLAG,
 L_LINESTATUS,L_SHIPDATE,L_COMMITDATE,L_RECEIPTDATE,L_SHIPINSTRUCT,L_SHIPMODE,L_COMMENT
 D,4532896,1,5974,100953,42.00,82065.90,0.03,0.00,R,F,1994-12-15,1995-01-17,1995-01-07,COLLECT COD,TRUCK,leep across the ca
@@ -83,6 +83,9 @@ C,1652227,3,2298,87281,28.00,35511.84,0.06,0.05,R,F,1993-05-04,1993-03-12,1993-0
 U,1652227,3,2298,87281,99.99,35511.84,0.06,0.05,R,F,1993-05-04,1993-03-12,1993-05-12,TAKE BACK RETURN,MAIL,lly final acco
 D,3456226,1,8161,148160,22.00,26579.52,0.06,0.02,A,F,1994-06-26,1994-06-08,1994-07-10,DELIVER IN PERSON,FOB,uriously. furio
 D,3456226,2,6293,108762,20.00,35415.20,0.10,0.05,R,F,1994-05-07,1994-06-03,1994-05-15,NONE,RAIL,ously bold requests along the b
+```
+<<<
+```
 D,3456226,3,4542,159511,33.00,51826.83,0.05,0.03,A,F,1994-07-04,1994-05-15,1994-07-26,NONE,FOB,wake carefully al
 D,3456226,4,154,95135,33.00,37294.29,0.04,0.08,A,F,1994-05-27,1994-05-10,1994-06-14,DELIVER IN PERSON,AIR,ests. unusual dependencies wake fluffily
 D,3456226,5,9027,126514,31.00,47755.81,0.08,0.01,R,F,1994-06-13,1994-06-18,1994-07-10,TAKE BACK RETURN,FOB,according to the arefully regular instruct
@@ -98,13 +101,11 @@ I,9999999,5,9027,126514,31.00,47755.81,0.08,0.01,R,F,1994-06-13,1994-06-18,1994-
 I,9999999,6,8477,110943,14.00,27355.16,0.03,0.01,R,F,1994-07-03,1994-05-28,1994-07-13,TAKE BACK RETURN,FOB,onic accounts. ironic, pend
 I,9999999,7,1773,4272,34.00,39993.18,0.08,0.00,A,F,1994-05-01,1994-05-29,1994-05-15,TAKE BACK RETURN,MAIL,ounts are finally ca
 ```
-====
 
 As you can see the first column defines the type of difference.
 
 == Diff Operators
 
-====
 ```
 -diff
 src={table|-file}:tgt=table:[key=columns][:output=[+]file][:pwhere=where_cond]
@@ -113,7 +114,6 @@ src={table|-file}:tgt=table:[key=columns][:output=[+]file][:pwhere=where_cond]
 [:print=[I][D][C]][:ns=nullstring][:es=emptystring][:fwc][:uncommitted]
 [:pre={@sqlfile}|{[sqlcmd]}][:post={@sqlfile}|{[sqlcmd]}][tpar=#tables]
 ```
-====
 
 Detailed Descriptions of the Copy Operators:
 
@@ -125,7 +125,7 @@ Detailed Descriptions of the Copy Operators:
 - A single table (for example: TRAFODION.MFTEST.LINEITEM) +
 - A file containing a list of tables to compare (`-` should precede the filename)
 | `tgt=<CAT.SCH.TAB>`        | Target table.
-| `key=column[,column,...]`  | Define show to order records extracted from both source and target table.
+| `key=column[,column,&#8230;]`  | Define show to order records extracted from both source and target table.
 *If you do not specify any key column, then odb uses the Primary Key.*
 | `output=[+]file`           | Output file where the differences are reported. You can use stdout to print odb
 output on the standard output. A `+` sign in front of the file-name tells odb to *append* to an existing file. +
@@ -134,9 +134,9 @@ Default value: `stdout`
 | `fs=<char>\|<code>`        | Field separator of the output file. You can define the field separator as follows: +
  +
 - Normal character (for example `fs=,`) +
-- ASCII decimal (for example `fs=44` -- 44 means comma) +
-- ASCII octal value (for example `fs=054` -– 054 means comma) +
-- ASCII hex value (for example fs=`x2C` -– x2C means comma) +
+- ASCII decimal (for example `fs=44` &#8212; 44 means comma) +
+- ASCII octal value (for example `fs=054` &#8212; 054 means comma) +
+- ASCII hex value (for example fs=`x2C` &#8212; x2C means comma) +
  +
 The default field separator is `,` (comma).
 | `rs=<char>\|<code>`        | Record separator used in the output file. You can define the
@@ -163,7 +163,7 @@ calculates min()/max() value for `<column>` and assigns it to each <parallel> th
  +
 *Example* +
  +
-`...:splitby=emp_id:parallel=4...` +
+`&#8230;:splitby=emp_id:parallel=4&#8230;` +
  +
 with `min(emp_id)=1` and `max(emp_id)=1000`, the four threads will extract the following rows: +
  +
@@ -192,7 +192,7 @@ satisfying the where condition. +
 For example: you want to compare rows with `TRANS_TS > 1999-12-12 09:00:00` from the source table
 TRAFODION.MAURO.MFORDERS using eight parallel streams to a target table having the same name as the source table: +
  +
-`src=trafodion.mauro.mforders:tgt=trafodion.dest_schema.%t:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12- 12 09:00:00’]...` +
+`src=trafodion.mauro.mforders:tgt=trafodion.dest_schema.%t:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12- 12 09:00:00’]&#8230;` +
  +
 You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
 | `quick` | Limits the comparison to the columns in the key option (PK by default). This is a fast way to check for new/missing records but
