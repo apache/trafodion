@@ -4768,13 +4768,14 @@ ULng32 hashColPosList(const CollIndexSet &colSet)
 
 
 // ----------------------------------------------------------------------------
-// method: lookupObjectUid
+// method: lookupObjectUidByName
 //
 // Calls DDL manager to get the object UID for the specified object
 //
 // params:
 //    qualName - name of object to lookup
 //    objectType - type of object
+//    reportError - whether to set diags area when not found
 //
 // returns:
 //   -1 -> error found trying to read metadata including object not found
@@ -4782,12 +4783,11 @@ ULng32 hashColPosList(const CollIndexSet &colSet)
 //
 // the diags area contains details of any error detected
 //
-// *** recent change - move this function up in this file and move resetting
-//     of ComDiagsArea to the caller ***
 // ----------------------------------------------------------------------------      
-Int64 lookupObjectUid( const QualifiedName& qualName
-                     , ComObjectType objectType
-                     )
+static Int64 lookupObjectUidByName( const QualifiedName& qualName
+                                  , ComObjectType objectType
+                                  , NABoolean reportError
+                                  )
 {
   ExeCliInterface cliInterface(STMTHEAP);
   Int64 objectUID = 0;
@@ -4805,7 +4805,11 @@ Int64 lookupObjectUid( const QualifiedName& qualName
                                   qualName.getCatalogName().data(),
                                   qualName.getSchemaName().data(),
                                   qualName.getObjectName().data(),
-                                  comObjectTypeLit(objectType));
+                                  comObjectTypeLit(objectType),
+                                  NULL,
+                                  NULL,
+                                  FALSE,
+                                  reportError);
 
   cmpSBD.switchBackCompiler();
 
@@ -4820,21 +4824,17 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName)
           corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
    QualifiedName extObjName (adjustedName, 3, STMTHEAP);
 
-   Lng32 diagsMark = CmpCommon::diags()->mark();
-   objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
+   objectUID_ = lookupObjectUidByName(extObjName, COM_BASE_TABLE_OBJECT, FALSE);
 
    // If the objectUID is not found, then the table is not externally defined
    // in Trafodion, set the objectUID to 0
    // If an unexpected error occurs, then return with the error
    if (objectUID_ <= 0)
      {
-       if (CmpCommon::diags()->contains(-1389))
-         {
-           CmpCommon::diags()->rewind(diagsMark, TRUE);
-           objectUID_ = 0;
-         }
-       else
+       if (CmpCommon::diags()->mainSQLCODE() < 0)
          return FALSE;
+       else
+         objectUID_ = 0;
      }
 
    return TRUE;
@@ -6759,17 +6759,14 @@ void NATable::setupPrivInfo()
 // the uid for a metadata table is requested, since 0 is usually stored for
 // these tables.
 // 
-// On return, the "Object Not Found" error (1389) is filtered out from 
-// CmpCommon::diags().
 Int64 NATable::lookupObjectUid()
 {
-    Lng32 diagsMark = CmpCommon::diags()->mark();
-
     QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
-    objectUID_ = ::lookupObjectUid(qualName, objectType_);
+    objectUID_ = lookupObjectUidByName(qualName, objectType_, FALSE);
 
-    if (CmpCommon::diags()->contains(-1389))
-      CmpCommon::diags()->rewind(diagsMark, TRUE);
+    if (objectUID_ <= 0 && CmpCommon::diags()->mainSQLCODE() >= 0)
+      // object not found, no serious error
+      objectUID_ = 0;
 
     return objectUID_.get_value();
 }
@@ -8337,12 +8334,10 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
       // add its objectUID to the set.
       if (0 == objectUIDs.entries())
       {
-        // ignore any errors returned
-        Lng32 diagsMark = CmpCommon::diags()->mark();
-        Int64 ouid = lookupObjectUid(
+        Int64 ouid = lookupObjectUidByName(
                        toRemove->getQualifiedNameObj(), 
-                       ot); 
-        CmpCommon::diags()->rewind(diagsMark);
+                       ot,
+                       FALSE); 
         if (ouid > 0)
           objectUIDs.insert(ouid);
       }
