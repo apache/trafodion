@@ -308,9 +308,9 @@ SQL_USER7
 >>
 >>-- expect error 8031 since the query is not running.
 >>obey cancel_cmd;
->>control query cancel qid MXID11000010365212299077168091428000000000206U3334000_38_S1;
+>>control query cancel qid MXID11000006223212317056413926129000000000206U3334000_52_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000010365212299077168091428000000000206U3334000_38_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000006223212317056413926129000000000206U3334000_52_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -457,13 +457,13 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
->>drop table T131c;
+>>drop table if exists T131c;
 
 --- SQL operation complete.
->>drop table T131b;
+>>drop table if exists T131b;
 
 --- SQL operation complete.
->>drop table T131a;
+>>drop table if exists T131a;
 
 --- SQL operation complete.
 >>revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;

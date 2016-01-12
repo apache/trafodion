@@ -100,7 +100,7 @@ insert into t129_a (uniq,c100,c10,c1)
     transpose 0,1,2,3,4,5,6,7,8,9 as x1
   ;
 
-update statistics for table t129_a on uniq ;
+update statistics for table t129_a on every column ;
 
 grant select on t129_a to sql_user1 ;
 grant select on t129_starter to sql_user1 ;
