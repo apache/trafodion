@@ -2,3 +2,5 @@
 /bin/
 /.classpath
 /.project
+/src/main/java/org/trafodion/libmgmt/Vproc.java
+/antrun/

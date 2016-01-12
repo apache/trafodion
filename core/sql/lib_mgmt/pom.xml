@@ -22,6 +22,7 @@
 	*
 	* @@@ END COPYRIGHT @@@
 	-->
+
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.trafodion</groupId>
 	<artifactId>lib_mgmt</artifactId>
@@ -34,9 +35,41 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
+	<properties>
+		<maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
+	</properties>
 
 	<build>
 		<plugins>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>${maven.antrun.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>generate</id>
+						<phase>generate-sources</phase>
+						<configuration>
+							<target>
+								<property name="vproc.dir"
+									value="${basedir}/src/main/java/org/trafodion/libmgmt" />
+								<property name="vproc.str" value="Traf_libmgmt_Build_" />
+								<exec executable="git" outputproperty="rev_head">
+									<arg value="rev-parse" />
+									<arg value="--short" />
+									<arg value="HEAD" />
+								</exec>
+								<copy file="${vproc.dir}/Vproc.java.tmpl" tofile="${vproc.dir}/Vproc.java"
+									overwrite="true" />
+								<replace file="${vproc.dir}/Vproc.java" token="@@@VPROC@@@"
+									value="${vproc.str}${rev_head}" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -46,6 +79,13 @@
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
+					<archive>
+						<manifest>
+							<addClasspath>false</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>org.trafodion.libmgmt.Vproc</mainClass>
+						</manifest>
+					</archive>
 				</configuration>
 				<executions>
 					<execution>
