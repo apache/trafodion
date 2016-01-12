@@ -1306,7 +1306,7 @@ int gbk2utf8(char *inbuf,size_t inlen,char *outbuf,size_t outlen)
 
 /* convert gbk string into UTF8 */
 int gbkToUtf8(char* gbkString, size_t gbklen, 
-              char* result ,size_t outlen, int addNullAtEnd)
+              char* result ,size_t outlen, bool addNullAtEnd)
 {
    int originalOutlen = outlen;
    int finalLength = gbk2utf8 ( gbkString, gbklen,  result, outlen);
@@ -1315,7 +1315,7 @@ int gbkToUtf8(char* gbkString, size_t gbklen,
    
    //the result is allocated with lenght originalOutlen + 1
    //so no overrun is possible
-   if ( addNullAtEnd > 0 )
+   if ( addNullAtEnd )
    {
       if(originalOutlen >= finalLength )
         result[finalLength] = 0;
