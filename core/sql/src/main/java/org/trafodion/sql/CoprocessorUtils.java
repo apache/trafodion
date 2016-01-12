@@ -40,7 +40,7 @@ public class CoprocessorUtils {
     private static void init() {
         Configuration config = null;
         try {
-            String path = System.getenv("MY_SQROOT") + "/etc/trafcoprocess.properties";
+            String path = System.getenv("MY_SQROOT") + "/etc/traf_coprocessor.properties";
             config = new PropertiesConfiguration(path);
         } catch (Exception e) {
             logger.error("error when finding trafcoprocess.properties");
