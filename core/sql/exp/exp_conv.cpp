@@ -9322,18 +9322,18 @@ convDoIt(char * source,
   break;
 
 // gb2312 -> utf8
+// JIRA 1720
   case CONV_GBK_F_UTF8_V:
   {
-    char * targetbuf = new char[sourceLen*4+1];
-    size_t sl = sourceLen;
-    int convLen = gbkToUtf8( source, sl, targetbuf, sl*4);
     int copyLen = 0;
+    int convLen = gbkToUtf8( source, sourceLen, target, targetLen);
     if (convLen > 0) {
-      copyLen = (convLen< targetLen) ? convLen: targetLen;
-      str_cpy_all(target, targetbuf, copyLen);
+      copyLen = convLen; 
       //if the target length is not enough, instead of truncate, raise a SQL Error
       if (convLen > targetLen)
-         ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
+        ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
     }
     else {
       // LCOV_EXCL_START
@@ -9341,11 +9341,6 @@ convDoIt(char * source,
       copyLen = 0;
       // LCOV_EXCL_STOP
     }
-
-    if ( varCharLen )
-       setVCLength(varCharLen, varCharLenSize, copyLen);
-    delete targetbuf;
-
   };
   break;
 // 5/10/98: sjis -> unicode

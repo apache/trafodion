@@ -1279,8 +1279,9 @@ char * findStartOfChar( char *someByteInChar, char *startOfBuffer )
      rtnv-- ;
   return rtnv ;
 }
+
 /* A method to do character set conversion , using Glibc iconv */
-int code_convert(const char *from_charset,const char *to_charset,char *inbuf, size_t inlen, char *outbuf,size_t outlen)
+static int code_convert(const char *from_charset,const char *to_charset,char *inbuf, size_t inlen, char *outbuf,size_t outlen)
 {
   iconv_t cd;
   int rc;
@@ -1298,23 +1299,16 @@ int code_convert(const char *from_charset,const char *to_charset,char *inbuf, si
   iconv_close(cd);
   return outlen;
 }
-/* from gbk to utf8 */
-int gbk2utf8(char *inbuf,size_t inlen,char *outbuf,size_t outlen)
-{
-  return code_convert("gbk","utf-8",inbuf,inlen,outbuf,outlen);
-}
 
 /* convert gbk string into UTF8 */
 int gbkToUtf8(char* gbkString, size_t gbklen, 
               char* result ,size_t outlen, bool addNullAtEnd)
 {
    int originalOutlen = outlen;
-   int finalLength = gbk2utf8 ( gbkString, gbklen,  result, outlen);
+   int finalLength = code_convert( "gbk","utf-8", gbkString, gbklen,  result, outlen);
    
    if (finalLength == -1 ) return 0;
    
-   //the result is allocated with lenght originalOutlen + 1
-   //so no overrun is possible
    if ( addNullAtEnd )
    {
       if(originalOutlen >= finalLength )
