@@ -55,3 +55,9 @@ RMREX - Remove JARs by a perticular pattern. SHOWDDL PRODURE [SCHEMA NAME.]RMREX
 
 GETFILE - Download a JAR. SHOWDDL PRODURE [SCHEMA NAME.]GETFILE for more info.
 
+ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.
+
+ALTERLIB - Update a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ALTERLIB for more info.
+
+DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info.
+

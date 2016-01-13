@@ -64,7 +64,10 @@ public class FileMgmt {
 				"LSALL - List all JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info.",
 				"RM - Remove a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.",
 				"RMREX - Remove JARs by a perticular pattern. SHOWDDL PROCEDURE [SCHEMA NAME.]RMREX for more info.",
-				"GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info."
+				"GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.",
+				"ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.",
+				"ALTERLIB - Update a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ALTERLIB for more info.",
+				"DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info."
 		};
 		List<String> index = new ArrayList<String>(help.length);
 		index.add("PUT");
