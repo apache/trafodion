@@ -103,6 +103,103 @@ public class FileMgmt {
 
 	}
 
+	/** create a library
+	 * @param libName library name
+	 * @param fileName related file name
+	 * @param hostName host name
+	 * @param localFile local file
+	 * @throws SQLException
+	 */
+	public static void addLib(String libName, String fileName, String hostName,
+			String localFile) throws SQLException {
+		checkFileName(fileName);
+		Connection conn = getConn();
+		Statement st = null;
+		try {
+			st = conn.createStatement();
+			String userPath = getCodeFilePath(conn);
+			String sql = "create library " + libName + " file '" + userPath
+					+ fileName + "'";
+			if (hostName != null) {
+				sql += " HOST NAME '" + hostName + "'";
+			}
+			if (localFile != null) {
+				sql += " LOCAL FILE '" + localFile + "'";
+			}
+			st.execute(sql);
+		} finally {
+			if (st != null) {
+				try {
+					st.close();
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+
+	/**
+	 * change the library related attribute
+	 *
+	 * @param libName
+	 *            library name
+	 * @param fileName
+	 *            uploaded file's name
+	 * @param hostName
+	 * @param localFile
+	 * @throws SQLException
+	 */
+	public static void alterLib(String libName, String fileName,
+			String hostName, String localFile) throws SQLException {
+		checkFileName(fileName);
+		Connection conn = getConn();
+		Statement st = null;
+		String userPath = getCodeFilePath(conn);
+		String sql = "alter library " + libName + " FILE '" + userPath
+				+ fileName + "'";
+
+		if (hostName != null) {
+			sql += " HOST NAME '" + hostName + "'";
+		}
+		if (localFile != null) {
+			sql += " LOCAL FILE '" + localFile + "'";
+		}
+		try {
+			st = conn.createStatement();
+			st.execute(sql);
+		} finally {
+			if (st != null)
+				st.close();
+		}
+	}
+
+	/**
+	 * drop the library
+	 *
+	 * @param libName
+	 * @param isdefault
+	 *            true is RESTRICT false is CASCADE
+	 * @throws SQLException
+	 */
+	public static void dropLib(String libName, String mode) throws SQLException {
+		String sql = null;
+		Connection con = getConn();
+		Statement st = null;
+		try {
+			st = con.createStatement();
+			sql = "drop library " + libName;
+			if (mode != null)
+				if (mode.trim().equalsIgnoreCase("RESTRICT"))
+					sql += " RESTRICT";
+				else if (mode.trim().equalsIgnoreCase("CASCADE"))
+					sql += " CASCADE";
+
+			st.execute(sql);
+		} finally {
+			if (st != null)
+				st.close();
+		}
+	}
+
 	public static void syncJar(String userPath, String fileName) throws SQLException, IOException {
 		checkFileName(fileName);
 		LOG.info("syncJars " + fileName);
