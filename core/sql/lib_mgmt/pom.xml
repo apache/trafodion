@@ -50,18 +50,27 @@
 						<phase>generate-sources</phase>
 						<configuration>
 							<target>
-								<property name="vproc.dir"
-									value="${basedir}/src/main/java/org/trafodion/libmgmt" />
-								<property name="vproc.str" value="Traf_libmgmt_Build_" />
-								<exec executable="git" outputproperty="rev_head">
-									<arg value="rev-parse" />
-									<arg value="--short" />
-									<arg value="HEAD" />
-								</exec>
-								<copy file="${vproc.dir}/Vproc.java.tmpl" tofile="${vproc.dir}/Vproc.java"
-									overwrite="true" />
-								<replace file="${vproc.dir}/Vproc.java" token="@@@VPROC@@@"
-									value="${vproc.str}${rev_head}" />
+<property name="vproc.dir"
+	value="${basedir}/src/main/java/org/trafodion/libmgmt" />
+<property name="manifest.file" value="${basedir}/src/main/resources/MANIFEST.MF" />
+<property name="vproc.str" value="Traf_libmgmt_Build_" />
+<property file="${env.MY_SQROOT}/export/include/SCMBuildMan.mf"/>
+<exec executable="git" outputproperty="rev_head">
+	<arg value="rev-parse" />
+	<arg value="--short" />
+	<arg value="HEAD" />
+</exec>
+<echo file="${manifest.file}" append="false">Manifest-Version: 1.0</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Main-Class: org.trafodion.libmgmt.Vproc</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Vproc: Traf_JDBC_Type4_Build_${rev_head}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-1: Version 1.0.0</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-2: ${Implementation-Version-2}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-3: ${Implementation-Version-3}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-4: ${Implementation-Version-4}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-5: ${Implementation-Version-5}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-6: ${Implementation-Version-6}${line.separator}</echo>
+<copy file="${vproc.dir}/Vproc.java.tmpl" tofile="${vproc.dir}/Vproc.java" overwrite="true" />
+<replace file="${vproc.dir}/Vproc.java" token="@@@VPROC@@@" value="${vproc.str}${rev_head}" />
 							</target>
 						</configuration>
 						<goals>
@@ -80,11 +89,7 @@
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
 					<archive>
-						<manifest>
-							<addClasspath>false</addClasspath>
-							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>org.trafodion.libmgmt.Vproc</mainClass>
-						</manifest>
+						<manifestFile>${basedir}/src/main/resources/MANIFEST.MF</manifestFile>
 					</archive>
 				</configuration>
 				<executions>

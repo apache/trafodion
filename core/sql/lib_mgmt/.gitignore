@@ -4,3 +4,4 @@
 /.project
 /src/main/java/org/trafodion/libmgmt/Vproc.java
 /antrun/
+/src/main/resources/MANIFEST.MF
