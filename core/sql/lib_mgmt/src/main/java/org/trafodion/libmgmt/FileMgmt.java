@@ -28,6 +28,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -405,13 +407,23 @@ public class FileMgmt {
 			String fname = userPath + fileName;
 			checkFile(fname, data.length);
 			FileOutputStream fos = null;
+			FileChannel channel = null;
+			FileLock lock = null;
 			try {
 				fos = new FileOutputStream(fname, (appendFlag == 0));
+				channel = fos.getChannel();
+				lock = channel.tryLock();
 				fos.write(Arrays.copyOf(data, data.length));
 				fos.flush();
 			} finally {
 				if (fos != null)
 					fos.close();
+				if(lock != null){
+					lock.release();
+				}
+				if(channel !=null){
+					channel.close();
+				}
 			}
 
 			syncJar(userPath, fileName);
