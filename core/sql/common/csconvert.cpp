@@ -1281,21 +1281,24 @@ char * findStartOfChar( char *someByteInChar, char *startOfBuffer )
 }
 
 /* A method to do character set conversion , using Glibc iconv */
-static int code_convert(const char *from_charset,const char *to_charset,char *inbuf, size_t inlen, char *outbuf,size_t outlen)
+static int charsetConvert(const char *srcCharset,const char *targetCharset,char *inputbuf, size_t inputlen, char *outbuf,size_t outlen)
 {
-  iconv_t cd;
-  int rc;
-  char **pin = &inbuf;
-  char **pout = &outbuf;
+  char **ptrin = &inputbuf;
+  char **ptrout = &outbuf;
 
-  cd = iconv_open(to_charset,from_charset);
-  if (cd==0) return -1;
-  memset(outbuf,0,outlen);
-  if (iconv(cd,pin,(size_t*)&inlen,pout,(size_t *)&outlen)==-1) 
+  iconv_t cd;
+  cd = iconv_open(targetCharset,srcCharset);
+
+  if (cd==0) 
+    return -1;
+
+  if (iconv(cd,ptrin,(size_t*)&inputlen,ptrout,(size_t *)&outlen) == -1) 
   {
+    //error occurs
     iconv_close(cd);
     return -1;
   }
+
   iconv_close(cd);
   return outlen;
 }
@@ -1305,14 +1308,15 @@ int gbkToUtf8(char* gbkString, size_t gbklen,
               char* result ,size_t outlen, bool addNullAtEnd)
 {
    int originalOutlen = outlen;
-   int finalLength = code_convert( "gbk","utf-8", gbkString, gbklen,  result, outlen);
+   int finalLength = charsetConvert( "gbk","utf-8", gbkString, gbklen,  result, outlen);
    
-   if (finalLength == -1 ) return 0;
+   if (finalLength == -1 ) 
+     return 0;
    
    if ( addNullAtEnd )
    {
-      if(originalOutlen >= finalLength )
-        result[finalLength] = 0;
+     if(originalOutlen >= finalLength )
+       result[finalLength] = 0;
    }
 
    return finalLength;
