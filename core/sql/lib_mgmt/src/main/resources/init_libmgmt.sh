@@ -76,7 +76,7 @@ function createProcedures {
       IN HOSTNAME VARCHAR(1024) CHARACTER SET UTF8,
       IN LOCALFILE VARCHAR(1024) CHARACTER SET UTF8)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.addLib (java.lang.String,java.lang.String,java.lang.String,java.lang.String)'
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       EXTERNAL SECURITY DEFINER
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
@@ -89,7 +89,7 @@ function createProcedures {
       IN MODETYPE VARCHAR(1024) CHARACTER SET ISO88591)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.dropLib (java.lang.String,java.lang.String)'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
@@ -103,7 +103,7 @@ function createProcedures {
       IN LOCALFILE VARCHAR(1024) CHARACTER SET UTF8)
       EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.alterLib (java.lang.String,java.lang.String,java.lang.String,java.lang.String)'
       EXTERNAL SECURITY DEFINER
-      LIBRARY SPJMGMT
+      LIBRARY ${LIB_NAME}
       LANGUAGE JAVA
       PARAMETER STYLE JAVA
       READS SQL DATA
