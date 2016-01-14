@@ -159,6 +159,14 @@ You create a task branch to make changes to the Trafodion source. Typically, we 
     # Checkout source
     git checkout -b TRAFODION-1507 origin/master
    
+<table><tr><td>
+  <p><strong>Note</strong></p>
+  <p>The source tar file has been signed with pgp key A44C5A05, which is included in the download location's
+     <a href="https://dist.apache.org/repos/dist/release/incubator/trafodion/KEYS">KEYS file</a>
+  </p>
+</td></tr></table>
+
+
 ## Change Recipes
 The procedure to make changes depends on what type of problem or feature you're working on.
 

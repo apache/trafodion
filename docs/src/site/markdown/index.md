@@ -37,8 +37,28 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 [scale]: http://trafodion.apache.org
 [stack]: index.html
 
-
 ---
+
+## News
+
+
+<table><tr><td>
+  <p><h5>The Apache Trafodion team is happy to announce the first Apache release &#8212; version 1.3.0-incubating!</h5></p>
+  <p><strong>How to get started with Apache Trafodion:</strong>
+     <ul>
+       <li><a href="http://trafodion.apache.org/documentation.html">Release Documentation</a></li>
+       <li><a href="http://trafodion.apache.org/release-notes-1-3-0.html">Release Notes</a></li>
+       <li><a href="https://trafodion.apache.org/download.html#Binaries">Download</a></li>
+       <li><a href="git@github.com:apache/incubator-trafodion">git Site</a></li>
+       <li><a href="http://trafodion.apache.org/download.html">Build Instructions</a></li>
+     </ul>
+   </p>
+   <p><h5>The Trafodion team thanks all our contributors and mentors who made the release possible!</h5></p>
+
+</td></tr></table>
+---
+
+## About
 
 Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop. 
 

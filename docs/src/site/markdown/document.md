@@ -28,7 +28,7 @@ DCS APIs                  | javadoc               | ```dcs/src/main/java/```    
 odb User Guide            | asciidoc              | ```docs/odb/```                                | Web Book, PDF
 REST Reference Guide      | asciidoc              | ```core/rest/src/main/asciidoc/```             | Web Book
 REST APIs                 | javadoc               | ```core/rest/src/main/java/```                 | Web Book
-SQL Reference Manual      | word                  | External (Word)                                | PDF
+SQL Reference Manual      | asciidoc              | ```/docs/sql_reference/```                     | Web Book, PDF
 
 ## Source Tree Organization
 
@@ -60,7 +60,6 @@ File/Directory                                | Content
   
 # Making Changes
 
-## AsciiDoc Documents
 Please refer to the following web sites for guidance for information about working on asciidoc-based documentation.
 
 * [DCS Contributing to Documentation](https://github.com/apache/incubator-trafodion/blob/master/dcs/src/main/asciidoc/_chapters/appendix_contributing_to_documentation.adoc) 
@@ -69,22 +68,16 @@ Please refer to the following web sites for guidance for information about worki
 
 Once you've made the desired changes, then do the following:
 
-### DCS and REST
+## DCS and REST
 
 1. Build the document using **```mvn clean site```** against the directory containing the document; for example: **```dcs```** or **```core/rest```**.
 2. Verify the content in the generated **```target```** directory. The **```target/index.html```** file provides the entry point for the web book; the **```target/apidocs/index.html```** file contains the entry point for API documentation.
 
-### Other Documents
+## Other Documents
 
 1. Build the document using **```mvn clean site```** against the directory containing the document; for example: **```docs/client_install```** or **```docs/odb_user```**.
 2. Verify the content in the generated **```target```** directory. The **```target/index.pdf```** file contains the PDF version of the document while 
 **```target/site/index.html```** contains the web-book version of the document. 
-
-## Word Documents
-Do the following:
-
-1. Edit the document.
-2. Save a PDF version.
 
 # Build Trafodion Document Tree
 The external version of the Trafodion Document Tree is published to http://trafodion.incubator.apache.org/docs. Please refer to [Publish](#publish) below.
@@ -100,12 +93,12 @@ The Trafodion Document Tree consists of **Version Directories**:
 
 Version Directory           | Content                                           | Web Site Directory
 ----------------------------|---------------------------------------------------|----------------------------------------------------
-**```latest```**            | Known place for the latest version of a document. | **```trafodion.incubator.apache.org/docs/latest```**
-**```<version>```**         | Release-specific version of a document.           | **```trafodion.incubator.apache.org/docs/<version>```**
+**```latest```**            | Known place for the latest version of a document. | **```trafodion.incubator.apache.org/docs/<document-name>```**
+**```<version>```**         | Release-specific version of a document.           | **```trafodion.incubator.apache.org/docs/<version>/<document-directory>```**
 
 * **```latest```**: Provides a well-known place for each document. This practice makes it possible to link to a document in instructional text, web sites, and
 other documents.
-* **```<version```**: Provides per-release versions of documents. Previous versions are kept in the web site's SVN repository ensuring that N versions of the documentation
+* **```<version>```**: Provides per-release versions of documents. Previous versions are kept in the web site's SVN repository ensuring that N versions of the documentation
 are available.
 
 ## Document Directories
@@ -176,13 +169,7 @@ The build version of the Trafodion Document Tree is populated as follows:
   </tr>
   <tr>
     <td><strong>SQL Reference Guide Guide</strong></td>
-    <td>
-      <ol>
-         <li>Create Version Directories, if needed.</li>
-         <li>Create Document Directories, if needed.</li>
-         <li>Copy the PDF version of the document to the appropriate Document Directories.</li>          
-      </ol>
-    </td>
+    <td>Run maven <strong><code>post-site</code></strong> build step.</td>
   </tr>
 </table>
 
