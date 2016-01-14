@@ -329,11 +329,14 @@ gv_float_external_interface=""
 gv_float_external_ip=""
 gv_float_internal_ip=""
 gv_port=0
-awscmd="/usr/local/bin/aws ec2 --output text "
 
 gv_ok=0
 gv_warn=1
 gv_error=-1
+
+if [[ $ENABLE_HA != "true" ]]; then
+  exit $gv_ok
+fi
 
 gv_externalip_set=1
 gv_internalip_set=1
@@ -358,6 +361,7 @@ if [[ $AWS_CLOUD != "true" ]]; then
     Check_VirtualIP_InUse_Unbind
     BindFloatIp
 else
+    awscmd="/usr/local/bin/aws ec2 --output text "
     device_index_to_use=`echo $gv_float_external_interface | sed -e "s@eth\([0-9][0-9]*\)@\1@"`
     dcsEcho "Using device index $device_index_to_use for $gv_float_external_interface"
 
