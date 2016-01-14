@@ -48,6 +48,7 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "logmxevent_traf.h"
 #include "ComUser.h"
+#include "NAUserId.h"
 
 
 // ==========================================================================
@@ -101,7 +102,8 @@ PrivMgr::PrivMgr(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags,
    PrivMDStatus authorizationEnabled)
-: metadataLocation_ (metadataLocation),
+: trafMetadataLocation_ ("TRAFODION.\"_MD_\""),
+  metadataLocation_ (metadataLocation),
   pDiags_(pDiags),
   authorizationEnabled_(authorizationEnabled)
   
@@ -261,17 +263,17 @@ bool PrivMgr::getAuthNameFromAuthID(
 {
   switch (authID)
   {
-    case SYSTEM_AUTH_ID:
+    case SYSTEM_USER:
       authName = SYSTEM_AUTH_NAME;
       break;  
-    case PUBLIC_AUTH_ID:
+    case PUBLIC_USER:
       authName = PUBLIC_AUTH_NAME;
       break;  
     case SUPER_USER:
       authName = DB__ROOT;
       break;
-    case DB_ROOTROLE_ID:
-      authName = DB_ROOTROLE_NAME;
+    case ROOT_ROLE_ID:
+      authName = DB__ROOTROLE;
       break;
     case HIVE_ROLE_ID:
       authName = DB__HIVEROLE;

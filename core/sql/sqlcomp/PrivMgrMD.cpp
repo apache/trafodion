@@ -207,8 +207,8 @@ PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
                                                            operationCodes,
                                                            ComUser::getRootUserID(),
                                                            ComUser::getRootUserName(),
-                                                           DB_ROOTROLE_ID,
-                                                           DB_ROOTROLE_NAME,-1);
+                                                           ROOT_ROLE_ID,
+                                                           DB__ROOTROLE,-1);
                                                            
    if (privStatus != STATUS_GOOD)
       return privStatus;
@@ -223,7 +223,7 @@ std::vector<std::string> CSOperationCodes;
                                                            CSOperationCodes,
                                                            ComUser::getRootUserID(),
                                                            ComUser::getRootUserName(),
-                                                           PUBLIC_AUTH_ID,
+                                                           PUBLIC_USER,
                                                            PUBLIC_AUTH_NAME,0);
                                       
    if (privStatus != STATUS_GOOD)
@@ -264,7 +264,6 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
   const std::string &colsLocation,
   std::vector<std::string> &tablesCreated,
   std::vector<std::string> &tablesUpgraded)
-
 {
   PrivStatus retcode = STATUS_GOOD;
 
@@ -296,7 +295,7 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
     schemaCommand += metadataLocation_;
     cliRC = cliInterface.executeImmediate(schemaCommand.c_str());
     if (cliRC < 0)
-      return STATUS_ERROR;
+      throw STATUS_ERROR;
   }
     
   // Create or upgrade the tables
@@ -332,17 +331,6 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
 
         cliRC = createTable(tableName.c_str(), tableDefinition.tableDDL, 
                             cliInterface, pDiags_);
-
-        // Temp code to verify error handling
-        if (CmpCommon::getDefault(CAT_TEST_BOOL) == DF_ON) 
-        {
-          std::string schemaName ("SCHEMA_PRIVILEGES");
-          if (tableName.find(schemaName) !=std::string::npos)
-          {
-            *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-            cliRC = -CAT_NOT_AUTHORIZED;
-          }
-        }
 
         // If create was successful, set flags to load default data
         if (cliRC < 0)
@@ -1290,7 +1278,7 @@ PrivStatus PrivMgrMDAdmin::updatePrivMgrMetadata(
    
 {
    
-PrivStatus privStatus = STATUS_GOOD;
+   PrivStatus privStatus = STATUS_GOOD;
 
    if (shouldPopulateObjectPrivs)
    {
@@ -1301,9 +1289,9 @@ PrivStatus privStatus = STATUS_GOOD;
    }
    
     
-CmpSeabaseDDLrole role;
+   CmpSeabaseDDLrole role;
     
-   role.createStandardRole(DB__ROOTROLE,DB_ROOTROLE_ID);
+   role.createStandardRole(DB__ROOTROLE,ROOT_ROLE_ID);
    role.createStandardRole(DB__HIVEROLE,HIVE_ROLE_ID);
    role.createStandardRole(DB__HBASEROLE,HBASE_ROLE_ID);
    

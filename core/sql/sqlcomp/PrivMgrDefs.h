@@ -299,15 +299,6 @@ inline bool isDMLPrivType(PrivType privType)
 #define PUBLIC_GRANTEE_LIT                     "P "
 #define USER_GRANTEE_LIT                       "U "
 
-#define SYSTEM_AUTH_ID          -2
-#define PUBLIC_AUTH_ID          -1
-
-#define PUBLIC_AUTH_NAME "PUBLIC"
-#define SYSTEM_AUTH_NAME "_SYSTEM"
-
-#define DB_ROOTROLE_NAME "DB__ROOTROLE"
-#define DB_ROOTROLE_ID 1000000
-
 #define MAX_SQL_IDENTIFIER_NAME_LEN 256
 
 #endif
