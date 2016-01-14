@@ -21,13 +21,18 @@ Trafodion is installed onto an existing Hadoop environment.
 The Trafodion product environment is installed using the Trafodion Installer, which operates on Trafodion binaries only.
 
 ## Binaries
-Not yet available.
+Download the Trafodion binaries from: https://dist.apache.org/repos/dist/release/incubator/trafodion/apache-trafodion-1.3.0-incubating
 
 ## Source
 Build your own binaries from the Trafodion source code as follows:
 
 1. [Setup Build Environment](setup-build-environment.html).
 2. [Build Trafodion](build.html) — use **```make package```**.
+
+Git site: git@github.com:apache/incubator-trafodion
+
+The source tar file has been signed with pgp key A44C5A05 which is included in the download location’s KEYS file:
+https://dist.apache.org/repos/dist/release/incubator/trafodion/KEYS
 
 # Install
 Please refer to the [Install](install.html) instructions.

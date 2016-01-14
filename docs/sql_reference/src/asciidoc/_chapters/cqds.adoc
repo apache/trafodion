@@ -1,0 +1,349 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+<<<
+<<<
+[[cqd_attributes]]
+= Control Query Default (CQD) Attributes
+
+This section describes CQDs that are used to override system-level
+default settings.
+
+[[hbase_environment_cqds]]
+== HBase Environment CQDs
+
+Defines the HBase interface.
+
+[[cqd_hbase_interface]]
+=== HBASE_INTERFACE
+
+[cols="25%h,75%"]
+|===
+| Category                    | HBase
+| Description                 | Interface to use to access HBase. 
+| Values                      | Specify one of these values: +
+ +
+- JNI to use a JNI interface +
+- JNI_TRX to use a transactional interface with HBase-trx via JNI. +
+ +
+ The default value is JNI_TRX.
+|===
+
+[[hive_environment_cqds]]
+== Hive Environment CQDs
+
+[[hive_max_string_length]]
+=== HIVE_MAX_STRING_LENGTH
+
+[cols="25%h,75%"]
+|===
+| Category                    | Hive
+| Description                 | Maximum supported string length for the _string_ data type in Hive. All
+string columns in Hive tables get converted to VARCHAR(_n_ BYTES)
+CHARACTER SET UTF8, with _n_ being the value of this CQD.
+| Values                      | The default value is 32000.
+|===
+
+<<<
+[[managing_histograms]]
+== Managing Histograms
+
+[[cache_histograms_refresh_interval]]
+=== CACHE_HISTOGRAMS_REFRESH_INTERVAL
+
+[cols="25%h,75%"]
+|===
+| Category                    | Historgrams
+| Description                 | Defines the time interval after which timestamps for cached histograms
+are checked to be refreshed.
+| Values                      | Unsigned integer. Unit is seconds. +
+ +
+The default value is '3600' (1 hour).
+| Usage       | Histogram statistics are cached so that the compiler can avoid access to
+the metadata tables, thereby reducing compile times. The timestamp of
+the tables are checked against those of the cached histograms at an
+interval specified by this CQD, in order to see if the cached histograms
+need to be refreshed. +
+ +
+You can increase the interval to reduce the impact on compile times as
+long as you do not need to obtain fresh statistics more frequently in
+order to improve query performance. It may
+ +
+be that the default interval is too long and you would rather refresh
+the statistics more frequently than the default one hour, in order to
+improve query performance at the cost of increased compile times.
+ +
+This setting depends on how frequently you are updating statistics on
+tables. There is no point in refreshing statistics frequently when
+statistics are not being updated during that time. On the other hand if
+you are updating statistics, or generating them for the first time on
+freshly loaded tables frequently enough, and you want these to be picked
+up immediately by the compiler because you have seen this to have a
+dramatic impact on plan quality, then you can make the refresh more
+frequent.
+| Production Usage            | Not applicable.
+| Impact                      | Longer histogram refresh intervals can improve compile times. However,
+the longer the refresh interval the more obsolete the histograms. That
+could result in poor performance for queries that could leverage
+recently updated statistics.
+| Level                       | System or Service Not applicable
+| Addressing the Real Problem | Not applicable.
+|===
+
+<<<
+[[hist_no_stats_refresh_interval]]
+=== HIST_NO_STATS_REFRESH_INTERVAL
+
+[cols="25%h,75%"]
+|===
+| Category                    | Historgrams
+| Description                 | Defines the time interval after which the fake histograms in the cache should be refreshed unconditionally.
+| Values                      | Integer. Unit is seconds. +
+ +
+The default value is '3600' (1 hour).
+| Usage                       | Histogram statistics are "fake" when update statistics is not being run,
+but instead the customer is updating the histogram tables directly with
+statistics to guide the optimizer. This may be done if the data in the
+table is very volatile (such as for temporary tables), update statistics
+is not possible because of constant flush and fill of the table
+occurring, and statistics are manually set to provide some guidance to
+the optimizer to generate a good plan.
+ +
+If these fake statistics are updated constantly to reflect the data
+churn, this default can be set to 0. This would ensure that the
+histograms with fake statistics are not cached, and are always
+refreshed. If these fake statistics are set and not touched again, then
+this interval could be set very high.
+| Production Usage            | Not applicable.
+| Impact                      | Setting a high interval improves compilation time. However, if statistics are being updated, the compiler may be working with obsolete
+histogram statistics, potentially resulting in poorer plans.
+| Level                       | Service.
+| Conflicts/Synergies         | Not applicable.
+| Addressing the Real Problem | Not applicable.
+|===
+
+[[hist_prefetch]]
+=== HIST_PREFETCH
+
+[cols="25%h,75%"]
+|===
+| Category                    | Historgrams
+| Description                 | Influences the compiler to pre-fetch the histograms and save them in cache.
+| Values                      | 'ON'    Pre-fetches the histograms. +
+'OFF'   Does not pre-fetch the histograms. +
+ +
+ The default value is 'ON'.
+| Usage                       | You may want to turn this off if you don't want to pre-fetch a large number of histograms, many of which may not be used.
+| Production Usage            | Not applicable.
+| Impact                      | Though it makes compilation time faster, it may result in the histogram cache to be filled with histograms that may never be used.
+| Level                       | System or Service.
+| Conflicts/Synergies         | Use this CQD with CACHE_HISTOGRAMS. If CACHE_HISTOGRAMS is OFF, then this CQD has no effect.
+| Addressing the Real Problem | Not applicable.
+|===
+
+[[hist_rowcount_requiring_stats]]
+=== HIST_ROWCOUNT_REQUIRING_STATS
+
+[cols="25%h,75%"]
+|===
+| Category                    | Historgrams
+| Description                 | Specifies the minimum row count for which the optimizer needs histograms, in order to compute better cardinality estimates. The
+optimizer does not issue any missing statistics warnings for tables whose size is smaller than the value of this CQD.
+| Values                      | Integer. +
+ +
+The default value is '50000'.
+| Usage                       | Use this CQD to reduce the number of statistics warnings.
+| Production Usage            | Not applicable.
+| Impact                      | Missing statistics warnings are not displayed for smaller tables, which in most cases don't impact plan quality much.
+However, there may be some exceptions where missing statistics on small tables could result in less than optimal plans.
+| Level                       | System
+| Conflicts/Synergies         | Use this CQD with HIST_MISSING_STATS_WARNING_LEVEL. If the warning level CQD is 0, then this CQD does not have any effect. Also, for tables
+having fewer rows than set in this CQD, no warnings are displayed irrespective of the warning level.
+| Addressing the Real Problem | Not applicable.
+|===
+
+<<<
+[[optimizer]]
+== Optimizer
+
+[[join_order_by_user]]
+=== JOIN_ORDER_BY_USER
+
+[cols="25%h,75%"]
+|===
+| Category                    | Influencing Query Plans
+| Description                 | Enables or disables the join order in which the optimizer joins the tables to be the sequence of the tables in the FROM clause of the query.
+| Values                      | 'ON'   Join order is forced. +
+ +
+'OFF'   Join order is decided by the optimizer. +
+ +
+The default value is 'OFF'.
+| Usage                       | When set to ON, the optimizer considers only execution plans that have the join order matching the sequence of the tables in the FROM clause.
+| Production Usage            | This setting is to be used only for forcing a desired join order that was not generated by default by the optimizer. It can be used as a
+workaround for query plans with inefficient join order.
+| Impact                      | Because you are in effect forcing the optimizer to use a plan that joins the table in the order specified in the FROM clause,
+the plan generated may not be the optimal one.
+| Level                       | Query
+| Conflicts/Synergies         | Not applicable.
+| Addressing the Real Problem | Not applicable.
+|===
+
+[[mdam_scan_method]]
+=== MDAM_SCAN_METHOD
+
+[cols="25%h,75%"]
+|===
+| Category                    | Influencing Query Plans
+| Description                 | Enables or disables the Multi-Dimensional Access Method.
+| Values                      | 'ON'    MDAM is considered. +
+'OFF'   MDAM is disabled. +
+ +
+The default value is 'ON'.
+| Usage                       | In certain situations, the optimizer might choose MDAM inappropriately, causing poor performance.
+In such situations you may want to turn MDAM OFF for the query it is effecting.
+| Production Usage            | Not applicable.
+| Impact                      | Table scans with predicates on non-leading clustering key column(s) could benefit from MDAM access method if
+the leading column(s) has a small number of distinct values. Turning MDAM off results in a longer scan time for such queries.
+| Level                       | Set this CQD at the query level when MDAM is not working efficiently for a specific query.
+However, there may be cases (usually a defect) where a larger set of queries is being negatively impacted by MDAM.
+In those cases you may want to set it at the service or system level.
+| Conflicts/Synergies         | Not applicable.
+| Addressing the Real Problem | Not applicable.
+|===
+
+[[subquery_unnesting]]
+=== SUBQUERY_UNNESTING
+
+[cols="25%h,75%"]
+|===
+| Category                    | Influencing Query Plans
+| Description                 | Controls the optimizer's ability to transform nested sub-queries into regular join trees.
+| Values                      | 'ON'    Subquery un-nesting is considered. +
+'OFF'   Subquery un-nesting is disabled. +
+ +
+The default value is 'ON'.
+| Usage                       | Use this control to disable subquery un-nesting in the rare situation when un-nesting results in an inefficient query execution plan.
+| Production usage            | Not applicable.
+| Impact                      | In general, subquery un-nesting results in more efficient execution plans for queries with nested sub-queries.
+Use only as a workaround for observed problems due to un-nesting.
+| Level                       | Query
+| Conflicts/Synergies         | Not applicable.
+| Addressing the Real Problem | Not applicable.
+|===
+
+<<<
+[[managing_schemas]]
+== Managing Schemas
+
+[[schema]]
+=== SCHEMA
+
+[cols="25%h,75%"]
+|===
+| Category                    | Schema controls
+| Description                 | Sets the default schema for the session.
+| Values                      | SQL identifier. +
+ +
+The default is SEABASE. 
+| Usage                       | A SET SCHEMA statement, or a CONTROL QUERY DEFAULT SCHEMA statement, can be used to override the default schema name.
+| Production Usage            | It is a convenience so you do not have to type in two-part names.
+| Impact                      | Not applicable.
+| Level                       | Any.
+| Conflicts/Synergies         | Alternately you can use the SET SCHEMA statement.
+| Addressing the Real Problem | Not applicable.
+|===
+
+<<<
+[[transaction_control_and_locking]]
+== Transaction Control and Locking
+
+[[block_to_prevent_halloween]]
+=== BLOCK_TO_PREVENT_HALLOWEEN
+
+[cols="25%h,75%"]
+|===
+| Category                    | Runtime controls
+| Description                 | A self-referencing insert is one which inserts into a target table and
+also scans from the same target table as part of the query that produces
+rows to be inserted. Inconsistent results are produced by the insert
+statement if the statement scans rows which have been inserted by the
+same statement. This is sometimes called the "Halloween problem."
+Trafodion prevents the Halloween problem using one of two methods: 1)
+the blocking method uses a SORT operation to ensure all rows have been
+scanned before any are inserted, or 2) the disk process (ESAM) locks
+method tracks the rows which have already been inserted and the SCAN
+operator skips these rows. +
+ +
+The compiler chooses the blocking method in cases in which static
+analysis of the plan indicates that the disk process locks method cannot
+be used. However, the compiler does not evaluate one condition that
+would prevent the use of the disk process locks method: the AUTOCOMMIT
+setting in which the statement is executed. Instead the compiler assumes
+that the statement is executed with the default setting for AUTOCOMMIT,
+'ON'. If AUTOCOMMIT is set to 'OFF' and self-referencing insert
+statement which uses the disk process locks method is executed, then a
+runtime error (SQLCODE 8107) is raised. +
+ +
+This CQD is used to force the compiler to use the blocking method to
+prevent error 8107.
+| Values                       | 'OFF'   The compiler is free to choose which method to use to prevent the Halloween problem. +
+'ON'    The compiler is forced to use the blocking method. +
+ +
+The default value is 'ON'.
+| Usage                        | Change this default to 'ON' if error 8107 is raised for a self-referencing insert statement which is
+executed in a session with AUTOCOMMIT set to 'OFF'.
+| Production Usage             | Not applicable.
+| Impact                       | Using the 'ON' value in conditions that require it allows successful completion of the insert statement.
+Using the 'ON' value when not required can decrease performance of some self-referencing insert statements.
+| Level                        | If self-referencing insert statements which execute with AUTOCOMMIT 'OFF' can be restricted to a service level,
+then this default should be set to 'ON' only for that service level. Otherwise the setting should be made for the system.
+| Conflicts/Synergies          | Not applicable.
+| Addressing the Real Problem  | Not applicable.
+|===
+
+<<<
+[[upd_ordered]]
+=== UPD_ORDERED
+
+[cols="25%h,75%"]
+|===
+| Category                    | Influencing Query Plans
+| Description                 | Controls whether rows should be inserted, updated, or deleted in clustering key order.
+| Values                      | 'ON'    The optimizer generates and considers plans where the rows are inserted, updated, or deleted in clustering key order. +
+'OFF'   The optimizer does not generate plans where the rows must be inserted, updated, or deleted in clustering key order.
+ +
+The default value is 'ON'.
+| Usage                       | Inserting, updating or deleting rows in the clustering key order is most efficient and highly recommended. Turning this CQD OFF may result in
+saving the data sorting cost but at the expense of having less efficient random I/O Insert/Update/Delete operations. +
+ +
+If you know that the data is already sorted in clustering key order, or is mostly in clustering key order,
+so that it would not result in random I/O, you could set this CQD to OFF.
+| Production Usage            | Not applicable.
+| Impact                      | If turned OFF, the system may perform large number of inefficient Random I/Os when performing Insert/Update/Delete operations.
+| Level                       | Query
+| Conflicts/Synergies         | Not applicable.
+| Addressing the Real Problem | Not applicable.
+|===
+
