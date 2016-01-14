@@ -19,6 +19,8 @@
 #
 # @@@ END COPYRIGHT @@@
 
+# If running test from a regress directory and SQLMX_REGRESS is not set, 
+# assume SQLMX_REGRESS is 1.
 if [ "$SQLMX_REGRESS" = "" ]; then
   export SQLMX_REGRESS=0
   pwd=`echo $PWD | tr A-Z a-z`
@@ -29,16 +31,7 @@ if [ "$SQLMX_REGRESS" = "" ]; then
   fi
 fi
 
-unset USEUNIXFS
-
-# Set these ONLY if not already set.
-#
-if [   "$VOLUME" = "" ]; then
-  test `uname` = "SunOS" &&
-  export VOLUME=\$DATA
-fi
-
-# Set these if not already set OR if we're in a runrgr|runqat|run* script.
+# Set these if not already set OR if we're in a run* script.
 #
 if [   "$SQL_ERROR_MSGBOX" = ""	-o $SQLMX_REGRESS -ne 0 ]; then
   export SQL_ERROR_MSGBOX=0				# no popup!
@@ -50,7 +43,7 @@ if [   "$YYERROR_QUIET" = ""	-o $SQLMX_REGRESS -ne 0 ]; then
   export YYERROR_QUIET=1				# quiet yacc!
 fi
 
-# Set these ONLY if we're in a runrgr|runqat|run* script.
+# Set these ONLY if we're in a run* script.
 #
 if [ $SQLMX_REGRESS -ne 0 ]; then
 
@@ -59,20 +52,8 @@ if [ $SQLMX_REGRESS -ne 0 ]; then
   export SQL_MXCI_CASE_INSENSITIVE_LOG='U'		# force Uppercase LOG ..
   export SQL_MXCI_CASE_INSENSITIVE_OBEY='U'		# ..and OBEY file names
 
-  # (When not in REGRESS, for this you should use the standard
-  # DEFAULTS table standard mechanism, e.g. by doing, once only:
-  #	OBEY init_sql_dev(NADefaults);  )
-  #
-  if [ "$SQLMX_NAMETYPE" != "NSK" ]; then
-    schema=${TEST_SCHEMA:-'cat.sch'}
-    export SQL_MXCI_INITIALIZATION="set schema $schema"
-  else
-    loc=`echo $NSK_VOL.$NSK_SUBVOL | sed -e 's/^\.//' -e 's/\.$//'`
-    export SQL_MXCI_INITIALIZATION="set mploc $loc"
-  fi
-
-  test "$scriptsdir" = "" && export scriptsdir=W:/regress
-  test "$rundir"     = "" && export rundir=W:/regress
+  test "$scriptsdir" = "" && export scriptsdir=$MY_SQROOT/../sql/regress
+  test "$rundir"     = "" && export rundir=$MY_SQROOT/../sql/regress/rundir
 
   dbgvars=`env | grep -i -e _DEBUG -e SQLMX_REGRESS_JAVA`
   if [ "$dbgvars" != "" ]; then
@@ -86,24 +67,3 @@ if [ $SQLMX_REGRESS -ne 0 ]; then
   fi
 
 fi
-
-#
-# modify values below to match w:/common/ComVersionDefs.h whenever you make a version
-# number change.
-
-export VERS_CURR_MXV=2600
-export VERS_CURR_SCHEMA_VERSION=2600
-export VERS_CURR_SYSTEM_SCHEMA_VERSION=2600
-export VERS_CURR_PLAN_VERSION=2600
-
-export VERS_OSMXV=2600                # Oldest supported mxv
-export VERS_OSSV=2400                 # Oldest supported schema version for ugdg
-export VERS_OSSSV=2400                # Oldest supported system schema version for ugdg
-export VERS_OSPV=2600                 # Oldest supported plan version
-
-export VERS_FAKE_UPREV_MXV=3000
-export VERS_FAKE_OSMXV=3000           # Oldest supported mxv
-export VERS_FAKE_OSSV=2400            # Oldest supported schema version
-export VERS_FAKE_OSPV=3000            # Oldest supported plan version
-
-export SYSMOD_SUFFIX=N29_000          # The system module suffix

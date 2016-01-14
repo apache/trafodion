@@ -1,0 +1,1229 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+= Load, Extract, Copy
+== Load Files
+You can load a data file using `-l` option.
+
+*Example*
+
+```
+$ odb64luo –u user –p xx –d dsn –l src=customer.tbl:tgt=TRAFODION.MAURIZIO.CUSTOMER \
+:fs=\|:rows=1000:loadcmd=UL:truncate:parallel=4
+```
+
+This command:
+
+* Loads the file named `customer.tbl` (`src=customer.tbl`)
+* in the table `TRAFODION.MAURIZIO.CUSTOMER` (`tgt=TRAFODION.MAURIZIO.CUSTOMER`)
+* using `|` (vertical bar) as a field separator (`fs=\|`)
+* using `1000 rows` as rowset buffer (`rows=1000`)
+* using `UPSERT USING LOAD` syntax to achieve better throughput as described in http://trafodion.incubator.apache.org/load.html[Trafodion Data Loading]
+* truncating the target table before loading (`truncate`)
+* using `4 parallel threads` to load the target table (`parallel=4`)
+
+=== Data Loading Operators
+
+```
+-l src=[-]file:tgt=table[:map=mapfile][:fs=fieldsep][:rs=recsep][:soe]
+   [:skip=linestoskip][:ns=nullstring][:ec=eschar][:sq=stringqualifier]
+   [:pc=padchar][:em=embedchar][:errmax=#max_err][:commit=auto|end|#rows|x#rs]
+   [:rows=#rowset][:norb][:full][:max=#max_rec][:truncate][:show][:bpc=#][:bpwc=#]
+   [:nomark][:parallel=number][:iobuff=#size][:buffsz=#size]][:fieldtrunc=\{0-4}]
+   [:pre=\{@sqlfile}|\{[sqlcmd]}][:post=\{@sqlfile}|\{[sqlcmd]}][:ifempty]
+   [:direct][:bad=[+]badfile][:tpar=#tables][:maxlen=#bytes][:time]
+   [:xmltag=[+]element][:xmlord][:xmldump][:loadcmd=IN|UP|UL]
+
+```
+
+<<<
+The following table describes each data loading operator:
+
+[cols="35%,65%",options="header"]
+|===
+| Load option   | Meaning
+| `src=<file>`  | Input file. You can use the following keywords for this field: +
+ +
+- `%t` expand to the (lower case) table name +
+- `%T` expand to the (upper case) table name +
+- `%s/%S` expand to the schema name +
+- `%c/%C` expand to the catalog name +
+- `stdin` load reading from the standard input +
+- `-<file>` to load all files listed in `<file>` +
+- `[hdfs][@host,port[,user]].<hdfspath>` to load files from Hadoop File System (via `libhdfs.so`) +
+- `[mapr][@host,port[,user]].<maprpath>` to load files from MapR File System (via `libMapRClient.so`)
+| `tgt=<CAT.SCH.TAB>` | This is the target table
+| `fs=<char>\|<code>` | This is the field separator. You can define the field separator: +
+ +
+- as normal character (for example `fs=,`) +
+- as ASCII decimal (for example `fs=44` &#8212; `44` means comma) +
+- as ASCII octal value (for example `fs=054` &#8212; `054` means comma) +
+- as ASCII hex value (for example `fs=x2C` &#8212; `x2C` means comma) +
+ +
+Default field separator is `,` (comma)
+| `rs=<char>\|<code>` | This is the record separator. You can define the record separator the
+same way as the field separator. Default record separator is `\n` (new line)
+| `pc=<char\|code>` | Pad character used when loading fixed format files. You can use the same
+notation as the field separator.
+| `map=<mapfile>` | Uses mapfile to map source file to target table columns. See <<load_map_fields, Map Source File Fields to Target Table Columns>>.
+| `skip=num` | Skips a given number of lines when loading. This can be useful to skip headers in the source file.
+| `max=num` | The max number of records to load. Default is to load all records in the input file
+| `ns=<nullstring>` | odb inserts NULL when it finds nullstring in the input file. By default the nullstring is the empty string
+| `sq=<char>\|<code>` | The string qualifier character used to enclose strings. You can define the escape character the same way as the field separator.
+| `ec=<char>\|<code>` | The character used as escape character. You can define the escape character the same way as the field separator. +
+ +
+Default is `\` (back slash).
+| `rows=<num>\|k<num>\|m<num>` | This defines the size of the I/O buffer for each loading thread. +
+ +
+You can define the size of this buffer in two different ways: +
+ +
+1. number of rows (for example: `rows=100` means 100 rows as IO buffer) +
+2.* buffer size in kB or MB (for example: `rows=k512` (512 kB buffer) or `rows=m20` (20MB buffer)) +
+ +
+Default value is `100`.
+| `bad=[+]file` | Where to write rejected rows. If you omit this parameter, then rejected rows is printed to standard error together with the error returned by
+the ODBC Driver. +
+ +
+If you add a `+` sign in front of the file-name, odb  *appends* to `<file>`instead of *create* the `<file>`.
+| `truncate` | Truncates the target table before loading.
+| `ifempty` | Loads the target table only if it contains no records.
+| `norb` | Loads `WITH NO ROLLBACK`.
+| `nomark` | Don’t print the number of records loaded so far during loads.
+| `soe` | Stop On Error &#8212; stop as soon as odb encounters an error.
+| `parallel=num` | Number of loading threads. odb uses: +
+ +
+- one thread to read from the input file and +
+- as many threads as the parallel argument to write via ODBC. This option is database independent.
+| `errmax=num` | odb orints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error
+| `commit=auto\|end\|#rows\|x#rs` | Defines how odb commits the inserts. You have the following choices: +
+ +
+- `auto` (default): Commit every single insert (see also rows load operator). +
+- `end`: Commit when all rows (assigned to a given thread) have been inserted. +
+- `#rows`: Commit every `#rows` inserted rows. +
+- `x#rs`: Commit every `#rs` rowsets (see `rows`)
+| `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store inserted rows *directly* into
+the Read-Only Storage (ROS). See Vertica’s documentation.
+| `fieldtrunc=\{0-4}` | Defines how odb manages fields longer than the destination target column: +
+ +
+- `fieldtrunc=0` (default): Truncates input string, print a warning and load the truncated field if the target column is a text field. +
+- `fieldtrunc=1`: Like `fieldtrunc=0` but no warning message is printed. +
+- `fieldtrunc=2`: Prints an error message and does NOT load the row. +
+- `fieldtrunc=3`: Like `fieldtrunc=0` but tries to load the field even if the target column is NOT a text field. +
+- `fieldtrunc=4`: Like fieldtrunc=3 but no warnings are printed. +
+ +
+WARNING: the last two options could bring to unwanted resilts. For example, an input string like `2001-10-2345` is loaded as a valid
+2001-10-23 if the target field is a `DATE`.
+| `em=<char>\|<code>` | Character used to embed binary files. See <<load_default_values, Load Default Values>>. You can define
+the embed character the same way as the field separator. No default value.
+| `pre={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either `sqlfile` script or `sqlcmd` (enclosed between square brackets)
+on the *target system* immediately before loading the target table. You can, for example, CREATE the target table before loading it. +
+ +
+Target table is not loaded if SQL execution fails and `Stop On Error (soe)` is set.
+| `post={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either `sqlfile` script or `sqlcmd` (enclosed between square brackets)
+on the *target system* immediately after the target table has been loaded. You can, for example, update database stats after loading a table.
+| `tpar=num` | odb loads `num` tables in parallel when `src` is a list of files to be loaded.
+| `show` | odb prints what would be loaded in each column but no data is actually loaded. This is useful if you want to see how the input file
+_fits_ into the target tables, Normally used to analyze the first few rows of CSV files (use `:max`). This option forces: +
+ +
+- `parallel` to `1`. +
+- `rows` to `1`. +
+- `ifempty` to `false`. +
+- `truncate` to `false`.
+| `maxlen=#bytes` | odb limits the amount of memory allocated in the ODBC buffers for CHAR/VARCHAR fields to `#bytes`.
+| `time` | odb prints a *timeline* (milliseconds from start) for each insert.
+| `bpc=#` | Bytes allocated in the ODBC buffer for each (non wide) CHAR/VARCHAR column length unit. (Default: 1)
+| `bwpc=#` | Bytes allocated in the ODBC buffer for each (wide) CHAR/VARCHAR column length unit. (Default: 4)
+| `Xmltag=[+]tag` | Input file is XML. Load all _XML nodes_ under the one specified with this option. If a plus sign is
+specified, then odb loads node-attributes values.
+| `xmlord` | By default, odb _matches_ target table columns with XML node or attributes using their names. If this option is specified, then
+odb loads the first node/attribute to the first column, the second node/attribute to the second column and so on without checking node/attribute names.
+| `xmldump` | odb does not load the XML file content. Instead, XML attribute/tage names are printed to standard output so you can check
+what is going to be loaded.
+| `loadcmd` | SQL operation to be used for load. (Default: `INSERT`). `UPSERT` and `UPSERT USING LOAD` are also available for Trafodion.
+|===
+
+You can load multiple files using different `-l` options. By default odb creates as many threads (and ODBC connections) as the sum of
+parallel load threads. You can limit this number using `-T` option.
+
+<<<
+*Example*
+
+```
+$ odb64luo –u user –p xx –d dsn –T 5 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.CUSTOMER:fs=\
+|:rows=m2:truncate:norb:parallel=4 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.ORDERS:fs=\
+|:rows=1000:truncate:norb:parallel=4 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.LINEITEM:fs=\
+|:rows=m10:truncate:norb:parallel=4
+```
+
+The above command truncates and loads the CUSTOMER, ORDERS and LINEITEM tables. The input files have the same name as the
+target tables -– in lower case). Loads are distributed among available threads this way:
+
+[cols="10%,18%,18%,18%,18%,18%",options="header"]
+|===
+| Load Order | Thread 0              | Thread 1                        | Thread2                         | Thread3                         | Thread4
+| Third      | Read `lineitem.tbl`   | Load `TRAFODION.MAURO.LINEITEM` | Load `TRAFODION.MAURO.LINEITEM` | Load `TRAFODION.MAURO.LINEITEM` | Load `TRAFODION.MAURO.LINEITEM`
+| Second     | Read `orders.tbl`     | Load `TRAFODION.MAURO.ORDERS`   | Load `TRAFODION.MAURO.ORDERS`   | Load `TRAFODION.MAURO.ORDERS`   | Load `TRAFODION.MAURO.ORDERS`
+| First      | Read `customer.tbl`   | Load `TRAFODION.MAURO.CUSTOMER` | Load `TRAFODION.MAURO.CUSTOMER` | Load `TRAFODION.MAURO.CUSTOMER` | Load `TRAFODION.MAURO.CUSTOMER`
+|===
+
+If you want to load more than one table in parallel you should use a number of threads defined as:
+`(parallel + 1) * tables_to_load_in_parallel`
+
+NOTE: You can load gzipped files without any special option. odb automatically checks input files and decompress them on the fly when
+needed.
+
+odb using one single loading thread (`parallel=1`) is faster than without parallel &#8212; if you do not specify
+parallel, odb uses one thread to both read from file and write into the target table:
+
+`Read buffer #1>Write Buffer #1>Read Buffer #2>Write Buffer #2>Read Buffer #3>Write Buffer#3>&#8230;`
+
+`parallel=1` defines that there is one thread to read from file and one thread to write:
+
+* `Read buffer #1>Read Buffer #2>Read Buffer #3>&#8230;`
+* `Write Buffer #1>Write Buffer #2>Write Buffer #3>&#8230;`
+
+Reading from file is *normally* much faster than writing via ODBC so a single _reading thread_ can serve different _loading threads_.
+One could ask: what the _right_ number of loading threads is?
+
+In order to define the right number of loading threads you should run a few test and monitor the _Wait Cycles_ reported by odb.
+Wait Cycles represent the number of times the _reading thread_ had to wait for one _loading thread_ to become available.
+
+* When you have high _Wait Cycles/Total Cycles” ratio&#8230;_ it’s better to increase the number of writers.
+* When the _Wait Cycles/Total Cycles_ is less than 5%, adding more loading threads is useless or counterproductive.
+
+<<<
+[[load_map_fields]]
+== Map Source File Fields to Target Table Columns
+
+odb, _by default_, assumes that input files contain as many fields as the target table columns, and that file fields and target
+table columns are in the same order. This means that the first field in the input file is loaded in the first table column,
+second input field goes to the second column and so on.
+
+If this basic assumption is not true and you need more flexibility to _link_ input fields to target table columns, then
+odb provides mapping/transformation capabilities though *mapfiles*. By specifying `map=<mapfile>` load option you can:
+
+* Associate any input file field to any table column
+* Skip input file fields
+* Generate sequences
+* Insert constants
+* Transform dates/timestamp formats
+* Extract substrings
+* Replace input file strings. For example: insert `Maurizio Felici` when you read `MF`
+* Generate random values
+* &#8230; and much more
+
+A generic _mapfile_ contains:
+
+* *Comments* (line starting with `#`)
+* *Mappings* to link input file fields to the corresponding target table columns.
+
+Mappings use the following syntax:
+
+`<colname>:<field>[:transformation operator]`
+
+<<<
+Where:
+
+* `<colname>` is the target table column name. (Case sensitive)
+* `<field>` is one of the following:
+* The ordinal position (`_starting from zero_`) of the input file field.
++
+First input field is `0` (zero), second input field is `1` and so on
+* `CONST:<CONSTANT>` to load a constant value
+* `SEQ:<START>` to generate/load a sequence starting from `<START>`
+* `IRAND:<MIN>:<MAX>` to generate/load a random integer between `<MIN>` and `<MAX>`
+
+<<<
+
+* `DRAND:<MIN_YEAR>:<MAX_YEAR>` to generate/load a random date (`YYYY-MM-DD`) between `<MIN_YEAR>` and `<MAX_YEAR>`
+* `TMRAND`: to generate/load a random time (`hh:mm:ss`) between `00:00:00` and `23:59:59`
+* `TSRAND`: to generate/load a random timestamp (`YYYY-MM-DD hh:mm:ss`) between midnight UTC –- 01 Jan 1970 and the current timestamp
+* `CRAND:<LENGTH>` generates/loads a string of `<LENGTH>` characters randomly selected in the following ranges: `a-z`, `A-Z`, `0-9`
+* `NRAND:<PREC>:<SCALE>` generates/loads a random NUMERIC field with precision `<PREC>` and scale `<SCALE>`
+* `DSRAND:<file>` selects and loads a random line from `<file>`
+* `TXTRAND:<MIN_LENGTH>:<MAX_LENGTH>:<file>:` selects and loads a random portion of test from `<file>` with length between `<MIN_LENGTH>` and `<MAX_LENGTH>`
+* `LSTRAND:<VALUE1,VALUE2,&#8230;>` selects and loads a random value from `<VALUE1,VALUE2,&#8230;>`
+* `EMRAND:<MIN_ULENGTH>:<MAX_ULENGTH>:<MIN_DLENGTH>:<MAX_DLENGTH>:<SUFFIX1,SUFFIX2,&#8230;>` generates and loads a string made of `local@domain.suffix` where:
+** local is a string of random characters (`a-z`, `A-Z`, `0-9`) with length between `<MIN_ULENGTH>` and `<MAX_ULENGTH>`
+** domain is a string of random characters (`a-z`, `A-Z`, `0-9`) with length between `<MIN_DLENGTH>` and `<MAX_DLENGTH>`
+** suffix is a randomly selected suffix from `<SUFFIX1,SUFFIX2,&#8230;>`
+* `CDATE`: to load the current date (`YYYY-MM-DD`)
+* `CTIME`: to load the current time (`hh:mm:ss`)
+* `CTSTAMP`: to load the current timestamp (`YYYY-MM-SS hh:mm:ss`)
+* `FIXED:<START>:<LENGTH>` to load fixed format fields made of `<LENGTH>` characters starting at `<START>`.
++
+NOTE: `<START>` starts from zero.
+* `EMPTYASNULL`: loads empty strings in the input file as NULLs (default is to load empty string as empty strings)
+* `EMPTYASCONST:<CONSTANT>`: loads empty fields in the input file as `<CONSTANT>`
+* `NULL`: inserts `NULL`
+* `:transformation operators` (optional):
+* `SUBSTR:<START>:<END>`. For example, if you have an input field containing `Tib:student` a transformation rule
+like `SUBSTR:3:6`m then `Tib` is loaded into the database.
+* `TSCONV:<FORMAT>`. Converts timestamps from the input file format defined through `<FORMAT>` to
+`YYYY-MM-DD HH:MM:SS` before loading. The input format is defined through any combination of the following characters:
++
+[cols="15%,85%",options="header"]
+|===
+| Char   | Meaning
+| `b`    | abbreviated month name
+| `B`    | full month name
+| `d`    | day of the month
+| `H`    | hour (24 hour format)
+| `m`    | month number
+| `M`    | Minute
+| `S`    | Second
+| `y`    | year (four digits)
+| `D#`   | #decimal digits
+| `.`    | ignore a single char
+| `_`    | ignore up to the next digit
+|===
+* `DCONV:<FORMAT>`. Converts dates from the input file format defined through `<FORMAT>` to `YYYY-MM-DD` (see `TSCONV` operator). +
+ +
+Example: `DCONV:B.d.y` converts `August,24 1991` to `1991-08-24`
+* `TCONV:<FORMAT>`. Converts times from the input file format defined through `<FORMAT>` to `HH:MM:SS` (see `TSCONV` operator).
+* `REPLACE:<READ>:<WRITTEN>`. Loads the string `<WRITTEN>` when the input file fields contains `<READ>`.
+If the input file string doesn’t match `<READ>`, then it is loaded as is.
++
+See <<load_mapfiles_ignore, Use mapfiles to Ignore and/or Transform Fields When Loading>>
+* `TOUPPER`. Converts the string read from the input file to uppercase before loading.
++
+Example: `proGRAmMEr &#8212;> PROGRAMMER`
+* `TOLOWER`. Converts the string read from the input file to lowercase before loading.
++
+Example: `proGRAmMEr &#8212;> programmer`
+* `FIRSTUP`. Converts the first character of the string read from the input file to uppercase and
+the remaining characters to lowercase before loading.
++
+Example: `proGRAmMEr &#8212;> Programmer`
+
+<<<
+
+* `TRANSLIT:<LIST OF CHARS>:<LIST OF CHARS>`. Lets you to delete or change any character with another.
++
+*Examples*
++
+** `WORK:7:translit:Gp:HP` loads the seventh input field into the target column named `WORK` and replaces all `G`
+with `H` and all `p` with `P`
+** `WORK:7:translit:Gp\r:HP\d` behaves like the previous example but also deletes all `carriage returns` (`\r`)
+** `CSUBSTR`. This operator is somehow similar to `SUBSTR` but instead of using fixed position to extract substrings
+will use delimiting characters. For example, suppose your input fields (comma is the field separator) are:
++
+```
+... other fields...,name_Maurizio.programmer,...other fields
+... other fields...,_name_Lucia.housewife, ...other fields...
+... other fields...,first_name_Giovanni.farmer,... other fields...
+... other fields...,_Antonella,... other fields...
+... other fields...,Martina,...other fields...
+... other fields...,Marco.student, ...other fields...
+```
++
+Using a transformation like: `NAME:4:CSUBSTR:95:46` (where `95` is the ASCII code for `_` and 46 is the ASCII code for `.`)
+results in loading the following values into the target (`NAME`) column: +
++
+```
+Maurizio
+Lucia
+Giovanni
+Antonella
+Martina
+Marco
+```
+
+* `COMP`. Transform a packed binary `COMP` into a target database number.
++
+For example: `hex 80 00 00 7b` is loaded as `-123`
+* `COMP3:PRECISION:SCALE`. Transform a packed binary `COMP-3` format into a target database number.
++
+For example: `hex 12 34 56 78 90 12 34 56 78 9b` is loaded as `-1234567890123456.789`
+* `ZONED:PRECISION:SCALE`. Transform a packed binary `ZONED` format into a target database number.
++
+For example: `hex 31 32 33 34 35 36` is loaded as `+.123456`
+
+[[load_mapfiles_ignore]]
+== Use mapfiles to Ignore and/or Transform Fields When Loading
+
+The following example explains mapfile usage to skip/transform or generate fields. Suppose you have a target table like this:
+
+```
++------+---------------+----+-------+------------+
+|COLUMN|TYPE           |NULL|DEFAULT|INDEX       |
++------+---------------+----+-------+------------+
+|ID    |INTEGER SIGNED |NO  |       |mf_pkey 1 U |
+|NAME  |CHAR(10)       |YES |       |            |
+|AGE   |SMALLINT SIGNED|YES |       |            |
+|BDATE |DATE           |YES |       |            |
++------+---------------+----+-------+------------+
+```
+
+And an input file like this:
+
+```
+uno,00,51,due,_Maurizio_,tre,[underline]#07 Mar 1959#, ignore,remaining, fields
+uno,00,46,due,_Lucia_,tre,[underline]#13 Oct 1964#, ignore, this
+uno,00,34,due,_Giovanni_,tre,[underline]#30 Mar 1976#
+uno,00,48,due,_Antonella_,tre,[underline]#24 Apr 1962#
+```
+
+* *Bold text* represents age.
+* _Italics  text_ represents name.
+* [underline]#Underline text# represents birth date.
+
+You want to load the marked fields into the appropriate column, *_generate_* a unique key for ID and ignore the fields in black text.
+In addition: you need to *_convert date format_* and replace all occurrances of `Lucia` with `Lucy`.
+
+The following map file accomplishes these goals:
+
+```
+~/Devel/odb $ cat test/load_map/ml1.map
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat
+ID:seq:1                  <- Inserts into ID column a sequence starting from 1
+NAME:4:REPLACE:Lucia:Lucy <- Loads field #4 into NAME and replace all occurrences of Lucia with Lucy
+AGE:2                     <- Loads field #2 (they start from zero) into AGE 
+BDATE:6:DCONV:d.b.y       <- Loads field #6 into BDATE converting date format from dd mmm yyyy
+```
+
+<<<
+Load as follows:
+
+```
+$ odb64luo –u user –p xx –d dsn \
+  -l src=frends.dat:tgt=TRAFODION.MFTEST.FRIENDS:map=ml1.map:fs=,
+```
+
+== Use mapfiles to Load Fixed Format Files
+
+Suppose you have a target table like this:
+
+```
++------+---------------+----+-------+------------+
+|COLUMN|TYPE           |NULL|DEFAULT|INDEX       |
++------+---------------+----+-------+------------+
+|NAME  |CHAR(10)       |YES |       |            |
+|JOB   |CHAR(10)       |YES |       |            |
+|BDATE |DATE           |YES |       |            |
++------+---------------+----+-------+------------+
+```
+
+And an input file like this:
+
+```
+GiovanniXXX30 Mar 1976YFarmer
+Lucia   XXX13 Oct 1964YHousewife
+Martina XXX28 Oct 1991Y?
+Marco   XXX06 Nov 1994Y?
+MaurizioXXX07 Mar 1959YProgrammer
+```
+
+You want to load the fixed-position fields into the appropriate columns and to *_convert date format_*.
+Null values in the input file are represented by question marks. In this case you can use a mapfile like
+this:
+
+```
+~/Devel/odb $ cat test/fixed/ff.map
+NAME:FIXED:0:8                <- insert into NAME characters starting at position 0, length 8
+BDATE:FIXED:11:11:DCONV:d.b.y <- insert into BDATE characters starting at col 11, length 11 and convert date
+JOB:FIXED:23:10               <- insert into JOB characters starting at position 23, length 10
+```
+
+<<<
+Load as follows:
+
+```
+$ odb64luo –u user –p xx –d dsn \ 
+-l src=frends1.dat:tgt=TRAFODION.MFTEST.FRIENDS1:map=ff.map:ns=\?:pc=32
+```
+
+Where: `pc=32` identify the pad character in the input file (`space` = ASCII 32) and `ns=?` defines
+the null string in the input file.
+
+== Generate and Load Data
+
+odb can generate and load data for testing purposes. The following example illustrates
+the odb capabilities in this area through an example.
+
+Suppose you want to fill with test data a table like this:
+
+```
+CREATE TABLE TRAFODION.MAURIZIO."PERSON"
+( PID BIGINT SIGNED NOT NULL
+, FNAME CHAR(20) NOT NULL
+, LNAME CHAR(20) NOT NULL
+, COUNTRY VARCHAR(40) NOT NULL
+, CITY VARCHAR(40) NOT NULL
+, BDATE DATE NOT NULL
+, SEX CHAR(1) NOT NULL
+, EMAIL VARCHAR(40) NOT NULL
+, SALARY NUMERIC SIGNED(9,2) NOT NULL
+, EMPL VARCHAR(40) NOT NULL
+, NOTES VARCHAR(80)
+, LOADTS TIMESTAMP(0)
+, PRIMARY KEY (PID)
+)
+;
+```
+
+<<<
+You can use a mapfile like this:
+
+```
+~/Devel/odb $ cat person.map PID:SEQ:100
+
+FNAME:DSRAND:datasets/first_names.txt 
+LNAME:DSRAND:datasets/last_names.txt 
+COUNTRY:DSRAND:datasets/countries.txt
+CITY:DSRAND:datasets/cities.txt 
+BDATE:DRAND:1800:2012 SEX:LSTRAND:M,F,U
+EMAIL:EMRAND:3:12:5:8:com,edu,org,net 
+SALARY:NRAND:9:2 
+EMPL:DSRAND:datasets/fortune500.txt 
+NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt 
+LOADTS:CTSTAMP
+```
+
+Where:
+
+* `PID:SEQ:100` &#8212; Loads a sequence starting from `100` into `PID`
+* `FNAME:DSRAND:datasets/first_names.txt` &#8212; Loads `FNAME` with a randomly selected value from `first_names.txt`.
+There are plenty of sample datasets available to generate all sort of data using _realistic_ values.
+* `LNAME:DSRAND:datasets/last_names.txt` &#8212; Loads `LNAME` with a random value from `last_names.txt`.
+* `COUNTRY:DSRAND:datasets/countries.txt` &#8212; Loads `COUNTRY` with a random value from `countries.txt`.
+* `CITY:DSRAND:datasets/cities.txt` &#8212; Loads `CITY` with a random value from `cities.txt`.
+* `BDATE:DRAND:1800:2012` &#8212; Generates and loads into `BDATE` a random date between `1800-01-01` and `2012-12-31`.
+* `SEX:LSTRAND:M,F,U` &#8212; Loads `SEX` with a random value in the `M`, `F`, `U` range.
+* `EMAIL:EMRAND:3:12:5:8:com,edu,org,net` &#8212; Generates and loads a `local@domain.suffix email` addresses where:
+* `local` is made of 3 to 12 random characters.
+* `domain` is made of 5 to 8 random characters.
+* `suffix` is `com`, `ord`, `edu`, or `net`.
+* `SALARY:NRAND:9:2` &#8212; Generate and loads a random NUMERIC(9,2).
+* `EMPL:DSRAND:datasets/fortune500.txt` &#8212; Loads `EMPL` with a random value from `fortune500.txt`.
+* `NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt` &#8212; Loads `NOTES` with a random section of `lorem_ipsum.txt`
+with length between 20 and 80 characters`
+* `LOADTS:CTSTAMP` &#8212; Loads the current timestamp into `LOADTS`.
+
+You generate and load test data with a command like this:
+
+```
+$ ./ odb64luo -l src=nofile:tgt=traf.maurizio.person:max=1000000:
+map=person.map:rows=5000:parallel=8:loadcmd=U
+```
+
+Please note `src=nofile” (it means _there is no input file_) and `max=1000000` (generate and load one million rows). The above command
+has generated and loaded 1M rows of _realistic_ data in about ten seconds:
+
+```
+[0] odb Loading statistics:
+[0] Target table: TRAFODION.MAURIZIO.PERSON
+[0] Source: nofile
+[0] Pre-loading time: 2.911 s
+[0] Loading time: 7.466 s
+[0] Total records read: 1,000,000
+[0] Total records inserted: 1,000,000
+[0] Total number of columns: 12
+[0] Total bytes read: 3,963
+[0] Average input row size: 0.0 B
+[0] ODBC row size: 323 B (data) + 88 B (len ind) [0] Rowset size: 5,000
+[0] Rowset buffer size: 2,006.83 KiB
+[0] Load Performances (real data): 0.518 KiB/s
+[0] Load Performances(ODBC): 42,243.161 KiB/s
+[0] Reader Total/Wait Cycles: 200/16
+```
+<<<
+[[load_default_values]]
+== Load Default Values
+
+The simpler way to load database generated defaults is to ignore the associated columns in the map file. For example, suppose you have a
+table like this under Trafodion:
+
+```
+create table TRAFODION.maurizio.dtest
+( id largeint generated by default as identity not null
+, fname char(10)
+, lname char(10) default 'Felici'
+, bdate date
+, comment varchar(100)
+)
+;
+```
+
+If you have an input file containing:
+
+```
+ignoreme,Maurizio,xyz,_commentM_, ignore,remaining, fields
+ignoreme,Lucia,xyz,_commentL_, ignore, this
+ignoreme,Giovanni,xyz,_commentG_, ignoreme,Antonella,xyz,commentA
+```
+
+* *Bold text* represents `fname`.
+* _Italic text_ represents `comment`.
+
+and a map-file like this:
+
+```
+FNAME:1 BDATE:CDATE COMMENT:4
+```
+
+Then:
+
+* First column (`ID`) is loaded with its default value (not in the map file)
+* Second column (`FNAME`) is loaded with the second input field from file (`FNAME:1`)
+* Third column (`LNAME`) is loaded with its default value (not in the map file)
+* Fourth column (`BDATE`) is loaded with the Current Data generated by odb (`BDATE:CDATE`)
+* Fifth column (`COMMENT`) is loaded with the fifth column in the input file (`COMMENT:4`)
+
+[[load_binary_files]]
+== Loading Binary Files
+Assuming that your backend database (and your ODBC Driver) supports BLOB data types, or equivalent,
+you can use odb to directly load binary (or any other) files into a database column using the `[:em=char]` symbol
+to identify the file to be loaded into that specific database field.
+
+*Example*
+
+Suppose you have a table like this (MySQL):
+
+```
+create table pers.myphotos
+( id integer
+, image mediumblob
+, phts timestamp
+)
+;
+```
+
+Then, you can load a file like this:
+
+```
+$ cat myphotos.csv
+
+001,@/home/mauro/images/image1.jpg,2012-10-21 07:31:21
+002,@/home/mauro/images/image2.jpg,2012-10-21 07:31:21
+003,@/home/mauro/images/image3.jpg,2012-10-21 07:31:21
+```
+
+by running a command like this:
+
+```
+$ odb64luo –u user –p xx –d dsn -l src=myphotos.csv:tgt=pers.myphotos:em=\@
+```
+
+odb onsiders the string following the “em” character as the path of the file to be loaded in that specific field.
+
+NOTE: odb does not load rows where the size of the input file is greater than the target database column.
+
+<<<
+== Reduce the ODBC Buffer Size
+odb allocates memory for the ODBC buffers during load/extract operations based on the max possible length of the
+source/target columns.
+
+If you have a column defined as `VARCHAR(2000`), then odb allocates enough space for 2,000 characters in the ODBC buffer.
+
+If you know in advance that you never will load/extract 2,000 characters, then you can limit the amount of space allocated by odb.
+This reduces memory usage and increase performances because of the reduced network traffic.
+
+Given the following table:
+
+```
+~/Devel/odb $ ./odb64luo -u xxx -p xxx -d traf -i D:TRAFODION.USR.TMX
+odb [2015-04-20 21:41:38]: starting ODBCconnection(s)... 0
+Connected to Trafodion
+CREATE TABLE TRAFODION.USR."TMX"
+( ID INTEGER NOT NULL
+, NAME VARCHAR(400)
+, PRIMARY KEY (ID)
+)
+;
+```
+
+<<<
+And an input file that contains:
+
+```
+~/Devel/odb $ cat tmx.dat
+
+1,Maurizio
+2,Lucia
+3,Martina
+4,Giovanni
+5,Marco
+6,Roland
+7,Randy
+8,Paul
+9,Josef
+10,Some other name
+```
+
+The max length of the second field in this file is:
+
+```
+~/Devel/odb $ awk -F\, 'BEGIN\{max=0} \{if(NF==2)\{len=length($i);if(len>max)max=len}} 
+END\{print max}' tmx.dat
+15
+```
+
+<<<
+In this case you can use `:maxlen=15` to limit the amount of the ODBC buffer:
+
+```
+~/Devel/odb $ ./odb64luo -u xxx -p xxx -d traf -l src=tmx.dat:tgt=usr.tmx:truncate:maxlen=15
+
+odb [2015-04-20 21:46:11]:starting ODBC connection(s)... 0
+Connected to Trafodion
+[0.0.0]--- 0 row(s) deleted in 0.052s (prep 0.012s, exec 0.040s, fetch 0.000s/0.000s)
+[0] 10 records inserted [commit]
+[0] odb version 1.3.0 Load(2) statistics:
+       [0] Target table: (null).USR.TMX
+       [0] Source: tmx.dat
+       [0] Pre-loading time: 1.254 s (00:00:01.254)
+       [0] Loading time: 0.026 s(00:00:00.026)
+       [0] Total records read: 10
+       [0] Total records inserted: 10
+       [0] Total number of columns: 2
+       [0] Total bytes read: 99
+       [0] Average input row size: 9.9 B
+       [0] ODBC row size: *26 B (data) + 16 B (len ind)*
+       [0] Rowset size: 100
+       [0] Rowset buffer size: *4.10 KiB*
+       [0] Load throughput (real data): 3.718 KiB/s
+       [0] Load throughput (ODBC): 9.766 KiB/s
+odb [2015-04-20 21:46:12]: exiting. Session Elapsed time 1.294 seconds (00:00:01.294)
+```
+
+<<<
+If you do not specify this parameter odb allocates the buffer for the max possible length of each field:
+
+```
+~/Devel/odb $ ./odb64luo -u xxx -p xxx -d traf -l src=tmx.dat:tgt=usr.tmx:truncate
+
+odb [2015-04-20 21:47:13]: starting ODBC connection(s)... 0
+Connected to Trafodion
+[0.0.0]--- 10 row(s) deleted in 0.107s (prep 0.012s, exec 0.095s, fetch 0.000s/0.000s)
+[0] 10 records inserted [commit]
+[0] odb version 1.3.0 Load(2) statistics:
+       [0] Target table: (null).USR.TMX
+       [0] Source: tmx.dat
+       [0] Pre-loading time: 1.330 s (00:00:01.330)
+       [0] Loading time: 0.032 s(00:00:00.032)
+       [0] Total records read: 10
+       [0] Total records inserted: 10
+       [0] Total number of columns: 2
+       [0] Total bytes read: 99
+       [0] Average input row size: 9.9 B
+       [0] ODBC row size: 411 B (data) + 16 B (len ind)
+       [0] Rowset size: 100
+       [0] Rowset buffer size: 41.70 KiB
+       [0] Load throughput (real data): 3.021 KiB/s
+       [0] Load throughput (ODBC): 125.427 KiB/s
+odb [2015-04-20 21:47:14]: exiting. Session Elapsed time 1.373 seconds (00:00:01.373)
+```
+
+<<<
+== Extract Tables
+You can use odb to extract tables from a database and write them to standard files (or named pipes).
+
+*Example*
+
+```
+$ odb64luo –u user –p xx –d dsn –T 3 \
+-e src=TRAFODION.MAURIZIO.LIN%:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip: \
+-e src=TRAFODION.MAURIZIO.REGION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip \
+-e src=TRAFODION.MAURIZIO.NATION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip
+```
+
+The example above:
+
+* Extracts tables `REGION`, `NATION`, and all tables starting with `LIN` from `TRAFODION.MAURIZIO` schema.
+* Saves data into files `ext_%t.csv.gz` (`%t` is expanded to the real table name).
+* Compresses the output file (gzip) on the fly (uncompressed data never lands to disk).
+* Trims text fields.
+* Used a 10 MB IO buffer.
+* Uses three threads (ODBC connection) for the extraction process.
+
+=== Extraction Options
+
+```
+-e {src={table|-file}|sql=<customsql>}:tgt=[+]file[:pwhere=where_cond]
+   [:fs=fieldsep][:rs=recsep][:sq=stringqualifier][:ec=escape_char][:soe]
+   [:ns=nullstring][es=emptystring][:rows=#rowset][:nomark][:binary][:fwc]
+   [:max=#max_rec][:trim=[cCvVdt]][:rtrim][:cast][:multi][:efs=string]
+   [:parallel=number][:gzip][:gzpar=wb??][:uncommitted][:splitby=column]
+   [:pre={@sqlfile}|{[sqlcmd]}[:mpre=\{@sqlfile}|{[sqlcmd]}[:post={@sqlfile}|{[sqlcmd]}]
+   [tpar=#tables][:time][:nts][:cols=[-]columns]][:maxlen=#bytes][:xml]
+```
+
+<<<
+The following table describes each extract operator:
+
+[cols="30%,70%",options="header",]
+|===
+| Extract option | Meaning 
+| `src=<CAT.SCH.TAB>\|-file` | Defines the source table(s). You can use: +
+ +
+- a single table name (for example TRAFODION.MFTEST.LINEITEM) +
+- a group of tables (for example TRAFODION.MFTEST.LIN%) +
+- a file containing a list of tables to extract (`-` should precede the filename)
+| `sql=<sql>` | A custom SQL command you can use to extract data. This is *alternative* to `src=`.
+| `tgt=[+]file` | Output file. You can use the following keywords for this field: +
+ +
+- `%t/%T` expands to the (lower/upper case) table name +
+- `%s/%S` expands to the (lower/upper case) schema name +
+- `%c/%C` expands to the (lower/upper case) catalog name +
+- `%d` expands to the extraction date (YYYYMMDD format) +
+- `%D` expands to the extraction date (YYYY-MM-DD format) +
+- `%m` expands to the extraction time (hhmmss format) +
+- `%M` expands to the extraction time (hh:mm:ss format) +
+- `stdout` prints the extracted records to the standard output. +
+ +
+If you add a `+` sign in front of the file-name, then odb *appends* to `file` instead of *creates* `file`. +
+ +
+`hdfs./<hdfspath>/<file>` to write exported table under the Hadoop File Distributed System (HDFS).
+| `fs=<char>\|<code>` | Field separator. You can define the field separator as: +
+ +
+- a normal character (for example `fs=,`) +
+- ASCII decimal (for example `fs=44` - 44 means comma) +
+- ASCII octal value (for example `fs=054` – 054 means comma) +
+- ASCII hex value (for example `fs=x2C` – x2C means comma) +
+ +
+The default field separator is `,` (comma)
+| `rs=<char>\|<code>` | Record separator. You can define the record separator the same way as the field separator. +
+ +
+ The default record separator is `\n` (new line)
+| `max=num` | Max number of records to extract. +
+ +
+ The default is to extract all records
+| `sq=<char>\|<code>` | The string qualifier character used to enclose strings. You can
+define the string qualifier the same way as the field separator
+| `ec=<char>\|<code>` | Character used as escape character. You can define the
+escape character the same way as the field separator. +
+ +
+ Default is `\` (back slash).
+| `rows=<num>\|k<num>\|m<num>` | Defines the size of the I/O buffer for each extraction thread. You
+can define the size of this buffer in two different ways: +
+ +
+- number of rows (for example: `rows=100` means 100 rows as IO buffer) +
+- buffer size in kB or MB (for example: `rows=k512` (512 kB buffer) or `rows=m20` (20MB buffer))
+| `ns=<nullstring>` |  How odb represents NULL values in the output file. +
+ +
+Default is the empty string (two field separators one after the other)
+| `es=<emptystring>` | How odb represents VARCHAR empty strings (NOT NULL with zero
+length) values in the output file. +
+ +
+Default is the empty string (two field separators one after the other)
+| `gzpar=<params>` | This are extra parameters you can pass to _tune_ the gzip compression algorithm. +
+ +
+ *Examples* +
+ +
+- `gzpar=wb9`: max compression (slower) +
+- `gzpar=wb1`: basic compression (faster) +
+- `gzpar=wb6h`: Huffman compression only +
+- `gzpar=wb6R`: Run-length encoding only
+| `trim[=<params>]` | Accept the following optional parameters: +
+- `c` trims^1^ from CHAR^2^. +
+- `C` trims trailing spaces from CHAR^2^ +
+- `v` trims leading spaces from VARCHAR fields +
+- `V` trims trailing spaces from VARCHAR fields +
+- `d` trims trailing zeros after decimal sign. Example: `12.3000` is extracted as `12.3`. +
+- `t` trims decimal portion from TIME/TIMESTAMP fields. For example: `1999-12-19 12:00:21.345` is extracted as `1999-12-19 12:00:21`. +
+ +
+*Trim Examples* +
+ +
+`:trim=cC` &#8212;> _trims leading/trailing spaces from CHAR fields_. +
+`:trim=cCd` &#8212;> _trims leading/trailing spaces from CHARs and trailing decimal zeroes_. +
+ +
+If you do not specify any argument for this operator odb uses `cCvV`. In other words `:trim:` is a shortcut for `:trim=cCvV:`.
+| `nomark` | Don't print the number of records extracted so far by each thread.
+| `soe` | Stop On Error. odb stop as soon as it encounters an error.
+| `parallel=num` | odb uses as many threads as the parallel argument to extract data from partitioned source tables. *You have to use splitby.* +
+ +
+Each thread takes care of a specific range of the source table partitions. For example if you specify `parallel=4` and the source table
+is made of 32 partitions, then odb starts *four* threads (four ODBC connections): +
+ +
+- thread 0 extracts partitions 0-7 +
+- thread 1 extracts partitions 8-15 +
+- thread 2 extracts partitions 16-23 +
+- thread 3 extracts partitions 24-31
+| `multi` | This option can be used in conjunction with parallel operator to write as many ouput files as the number of extraction
+threads. Output file names are built adding four digits at the end of the file identified by the `tgt` operator. +
+ +
+For example, with `src=trafodion.mauro.orders:tgt=%t.csv:parallel=4:multi` +
+ +
+odb writes into the following output files: +
+ +
+- `orders.csv.0001` +
+- `orders.csv.0002` +
+- `orders.csv.0003` +
+- `orders.csv.0004`
+| `pwhere=<where condition>` | This option is used in conjunction with parallel limiting the
+extraction to records satisfying the where condition. +
+ +
+NOTE: The where condition is limited to columns in the source table. +
+ +
+For example: you want to extract records with `TRANS_TS > 1999-12-12 09:00:00` from the source table TRAFODION.MAURO.MFORDERS
+using eight parallel streams to a single, gzipped, file having the same name as the source table: +
+ +
+`src=trafodion.mauro.mforders:tgt=%t.gz:gzip:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]&#8230;` +
+ +
+You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
+| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error
+| `uncommitted` | Adds FOR READ UNCOMMITTED ACCESS to the select(s) command(s)
+| `rtrim` | RTRIM() CHAR columns on the server. From a functional point of view this is equivalent to `trim=C` but `rtrim` is executed on the server so
+it saves both client CPU cycles and network bandwidth.
+| `cast` | Performs a (server side) cast to VARCHAR for all non-text columns. Main scope of this operator is to _move_ CPU cycles from the client to
+the database server. It increases network traffic. To be used when: +
+ +
+- the extraction process is CPU bound on the client AND +
+- network has a lot of available bandwidth AND +
+- database server CPUs are not _under pressure_. +
+ +
+Tests extracting a table full of NUMERIC(18,4), INT and DATES shows: +
+ +
+- client CPU cycles down ~50% on the client +
+- network traffic up ~40%
+| `splitby=<column>` | This operator let you to use parallel extract from any database. *<column> has to be a SINGLE, numeric column*.
+odb calculates min()/max() value for `<column>` and assign to each <parallel> thread the extraction of the rows in its _bucket_. +
+ +
+For example, if you have: +
+ +
+`&#8230;:splitby=emp_id:parallel=4&#8230;` +
+ +
+with `min(emp_id)=1` and `max(emp_id)=1000`, the four threads extract the following rows: +
+ +
+`thread #0 emp_id >=1 and emp_id < 251` +
+`thread #1 emp_id >=251 and emp_id < 501` +
+`thread #2 emp_id >=501 and emp_id < 751` +
+`thread #3 emp_id >=751 and emp_id < 1001` (odb uses max(emp_id) + 1) +
+ +
+If the values are not equally distributed, then data extraction is deskewed.
+| `pre={@sqlfile}\|{[sqlcmd]` | odb runs a *single instance* of either the `sqlfile` script or `sqlcmd` SQL
+command (enclosed between square brackets) on the *source system* immediately before table extraction. +
+ +
+Source table won’t be extracted if SQL execution fails and Stop On Error is set.
+| `mpre={@sqlfile}\|{[sqlcmd]}` | Each odb thread runs either sqlfile script or sqlcmd SQL command (enclosed between
+square brackets)on the *source system* immediately before table extraction. You can use `mpre` to set database specific
+features *for each extraction thread*. +
+ +
+*Examples* +
+ +
+1. You want *Trafodion* to ignore missing stats warning. Then you can run via `mpre` a SQL script containing: +
+ +
+`control query default HIST_MISSING_STATS_WARNING_LEVEL '0';` +
+ +
+2.  You want *Oracle* to extract dates in the `YYYY-MM-DD hh:mm:ss` format. Then you can run via `mpre` a script containing: +
+ +
+`ALTER SESSION SET NLS_DATE_FORMAT='YYYY-MM-DD HH:MI:SS'`
+| `post={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either a `sqlfile` script or `sqlcmd` SQL
+command (enclosed between square brackets) on the *source system* immediately after table extraction.
+| `tpar=num` | odb extracts `num` tables in parallel when `src` is a list of files to be loaded.
+| `maxlen=#bytes` | odb limits the amount of memory allocated in the ODBC buffers for CHAR/VARCHAR fields to `#bytes`.
+| `xml` | Writes output file in XML format
+| `time` | odb prints a _timeline_ (milliseconds from start).
+|===
+
+1. The following characters are considered _spaces_: `blank`, `tab`, `new line`, `carriage return`, `form feed`, and `vertical tab`.
+2. When the source table column is defined as NOT NULL and the specific field contains only blanks, odb leaves in the output file
+one single blank. This helps to distinguish between NULL fields (`<field_sep><field_sep>`) and NOT NULL fields containing all blanks
+(`<field_sep><blank><field_sep>`).
+
+<<<
+== Extract a List of Tables
+
+You can use odb to extract all tables listed in a file.
+
+*Example*
+
+```
+~/Devel/odb $ cat tlist.txt
+
+# List of tables to extract src=TRAFODION.MAURIZIO.ORDERS
+src=TRAFODION.MAURIZIO.CUSTOMER src=TRAFODION.MAURIZIO.PART
+src=TRAFODION.MAURIZIO.LINEITEM
+
+```
+
+You can extract all these tables by running:
+
+```
+$ odb64luo –u user –p xx –d dsn -e src=-tlist.txt:tgt=%t_%d%m:rows=m20:sq=\”
+```
+
+Please note the `src=-tlist.txt`.
+
+<<<
+== Copy Tables From One Database to Another
+
+odb can directly copy tables from one data-source to another. For example, from Trafodion to Teradata or vice-versa).
+Data *_never lands to disk_* when using this option.
+
+The target table has to be be created in advance and should have a compatible structure.
+
+=== Copy Operators
+
+```
+-cp src={table|-file:tgt=schema[.table][pwhere=where_cond][:soe][:nts]
+   [:truncate][:rows=#rowset][:nomark][:max=#max_rec][:fwc][:bpwc=#]
+   [:parallel=number][errmax=#max_err][:commit=auto|end|#rows|x#rs][:time]
+   [:direct][:uncommitted][:norb][:splitby=column][:pre={@sqlfile}|{[sqlcmd]}]
+   [:post={@sqlfile}|{[sqlcmd]}][:mpre={@sqlfile}|{[sqlcmd]}][:ifempty]
+   [:loaders=#loaders][:tpar=#tables][:cols=[-]columns]
+   [sql={[sqlcmd]|@sqlfile|-file}[:bind=auto|char|cdef]
+   [tmpre={@sqlfile}|{[sqlcmd]}][seq=field#[,start]]
+
+```
+
+Complete list of the Copy Operators:
+
+[cols="30%,70%",options="header",]
+|===
+| Copy Operator | Meaning
+| `src=<CAT.SCH.TAB>\|-file` | Defines the source table(s). You can use: +
+ +
+- a single table (for example: TRAFODION.MFTEST.LINEITEM) +
+- a group of tables (for example: TRAFODION.MFTEST.LIN%) +
+- a file containing a list of tables to copy (‘-‘ should precede the filename)
+| `tgt=<CAT.SCH.TAB>` | Target table(s). You can use the following keywords for this field: +
+ +
+- `%t/%T`: Expands to the (lower/upper case) source table name. +
+- `%s/%S`: Expands to the (lower/upper case) source schema name. +
+- `%c/%C`: Expands to the (lower/upper case) source catalog name.
+| `sql={[sqlcmd]\|@sqlfile\|-file}` | odb uses a generic SQL &#8212; instead of a _real_ table &#8212; as source.
+| `max=num` | This is the max number of records to copy. Default is to copy all ecords in the source table.
+| `rows=<num>\|k<num>\|m<num>` | Defines the size of the I/O buffer for each copy thread. You can
+define the size of this buffer in two different ways: +
+ +
+- number of rows (for example: `rows=100` means 100 rows as IO buffer) +
+- buffer size in kB or MB (for example: `rows=k512` (512 kB buffer) or `rows=m20` (20MB buffer))
+| `truncate` | Truncates the target table before loading.
+| `ifempty` | Loads the target table only if empty.
+| `nomark` | Don’t print the number of records loaded so far during loads.
+| `soe` | Stop On Error. odb stops as soon as it encounters an error.
+| `parallel=num` | odb uses as many threads as the parallel argument to extract data from partitioned source tables
+*PLUS* an equivalent number of threads to write to the target table. +
+ +
+ *Example* +
+  +
+If you specify `parallel=4` and the source table is made of 32 partitions, then odb start *four* threads
+(four ODBC connections) to read from the source table *PLUS* four threads (four ODBC connections) to write to the target table: +
+ +
+- thread 0 extracts partitions 0-7 from source +
+- thread 1 writes data extracted from thread 0 to target +
+- thread 2 extracts partitions 8-15 from source +
+- thread 3 writes data extracted from thread 2 to target +
+- thread 4 extracts partitions 16-23 from source +
+- thread 5 writes data extracted from thread 4 to target +
+- thread 6 extracts partitions 24-31 from source +
+- thread 7 writes data extracted from thread 6 to target +
+ +
+*You have to specify `splitby`.*
+| `pwhere=<where condition>` | Used in conjunction with parallel to copy only records satisfying the where condition. +
+ +
+*Note:* The where condition is limited to columns in the source table. +
+ +
+*Example* +
+ +
+You want to copy records with `TRANS_TS > 1999-12-12 09:00:00` from the source table TRAFODION.MAURO.MFORDERS using eight parallel
+streams to a target table having the same name as the source table: +
+ +
+`src=trafodion.mauro.mforders:tgt=trafodion.dest_schema.%t:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12-12 09:00:00’]&#8230;` +
+ +
+You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
+| `commit=auto\|end\|#rows\|x#rs` | Defines how odb will commit the inserts. You have the following choices: +
+ +
+- `auto` (Default) &8212; Commits every single insert (see also rows load operator). `end` commits when all rows (assigned to a given thread) have been inserted. +
+- `#rows` &#8212; Commits every `#rows` copied rows. +
+- `x#rs` &#8212; Commits every `#rs` rowsets copied. (See `:rows`)
+| `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store
+inserted rows _directly_ into the Read-Only Storage (ROS). See Vertica’s documentation.
+| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of
+error messages printed to the standard error.
+| `uncommitted` | Adds `FOR READ UNCOMMITTED ACCESS` to the `select(s) command(s)`.
+| `splitby=<column>` | Lets you to use parallel copy from any database.
+*<column> has to be a SINGLE, numeric column*. odb calculates min()/max() value for `<column>` and assigns to each
+`<parallel>` thread the extraction of the rows in its _bucket_. +
+ +
+For example, if you have: +
+ +
+`&#8230;:splitby=emp_id:parallel=4&#8230;` +
+ +
+with `min(emp_id)=1` and `max(emp_id)=1000`, then the four threads extracts the following rows: +
+ +
+`thread #0 emp_id >=1 and emp_id < 251` +
+`thread #1 emp_id >=251 and emp_id < 501` +
+`thread #2 emp_id >=501 and emp_id < 751` +
+`thread #3 emp_id >=751 and emp_id < 1001 (odb uses max(emp_id) + 1)` +
+ +
+If the values are not equally distributed data extraction is deskewed.
+| `pre={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either a `sqlfile` script or `sqlcmd`
+(enclosed between square brackets) on the *target system* immediately before loading the target table.
+You can, for example, CREATE the target table before loading it. +
+ +
+The target table isn'te loaded if SQL execution fails and Stop On Error is set.
+| `mpre={@sqlfile}\|{[sqlcmd]}` | Each odb thread runs either a `sqlfile` script or `sqlcmd`
+(enclosed between square brackets) on the *source system* immediately before
+loading the target table. You can use `mpre` to set database specific features for each thread.
+| `tmpre={@sqlfile}\|{[sqlcm d]}` | Each odb thread runs either a `sqlfile` script or `sqlcmd`
+(enclosed between square brackets) on the *target system* immediately before loading the target table.
+You can use `mpre` to set database specific features for each thread.
+| `post={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either a `sqlfile` script or `sqlcmd`
+(enclosed between square brackets) on the *target system* immediately after the target table has been
+loaded. You can, for example, update database stats after loading a table.
+| `tpar=num` | odb copies `num` tables in parallel when `src` is a list of files to be loaded.
+| `loaders=num` | odb uses `num` load threads for each extract thread. Ddefault is two loaders per extractor,
+| `fwc` | Force Wide Characters. odb considers SQL_CHAR/SQL_VARCHAR fields as they were defined SQL_WCHAR/SQL_WVARCHAR.
+| `bpwc=#` | odb internally allocates 4 bytes/char for SQL_WCHAR/SQL_WVARCHAR columns.
+You can modify the number of bytes allocated for each char using this parameter.
+| `bind=auto\|char\|cdef` | odb can bind columns to ODBC buffer as characters (char) or `C Default` data types (`cdef`).
+The default (`auto`) uses `cdef` if `SRC/TGT` use the same database or char if `SRC/TGT` databases differ.
+| `seq=field#[,start]` | odb adds a sequence when loading the target system on column number `field#`.
+You can optionally define the sequence start value. (Default: 1)
+| `time` | odb prints a _timeline_ (milliseconds from start).
+|===
+
+When copying data from one data source to another, odb needs user/password/dsn for both source and target system.
+User credentials and DSN for the target system are specified this way:
+
+```
+$ odb64luo –u src_user:tgt_user –p src_pwd:tgt:pwd –d src_dsn:tgt_dsn ... -cp src=...:tgt=...
+```
+
+<<<
+== Copy a List of Tables
+
+You can use odb to copy a list of tables from one database to another.
+
+*Example*
+
+```
+~/Devel/odb $ cat tlist.txt 
+
+# List of tables to extract
+src=TRAFODION.MAURIZIO.ORDERS
+src=TRAFODION.MAURIZIO.CUSTOMER
+src=TRAFODION.MAURIZIO.PART
+src=TRAFODION.MAURIZIO.LINEITEM
+```
+
+You can extract all these tables by running:
+
+```
+$ odb64luo –u user1:user2 –p xx:yy –d dsn1:dsn2 \
+-cp src=-tlist.txt:tgt=tpch.stg_%t:rows=m2:truncate:parallel=4 -T 8
+```
+
+Please note the `src=-tlist.txt`. This command copies:
+
+[cols="50%,50%",options="header",]
+|===
+| Source                        | Target 
+| `TRAFODION.MAURIZIO.ORDERS`   | `tpch.stg_orders`
+| `TRAFODION.MAURIZIO.CUSTOMER` | `tpch.stg_customer`
+| `TRAFODION.MAURIZIO.PART`     | `tpch.stg_part`
+| `TRAFODION.MAURIZIO.LINEITEM` | `tpch.stg_lineitem`
+|===
+
+Optionally, you can define any other _command line_ options in the input
+file.
+
+<<<
+*Example*
+
+Usinge different _splitby columns_.
+
+```
+~/Devel/odb $ cat tlist2.txt
+
+# List of tables to extract and their “splitby columns” 
+src=TRAFODION.MAURIZIO.ORDERS:splitby=O_ORDERKEY 
+src=TRAFODION.MAURIZIO.CUSTOMER:splitby=C_CUSTOMERKEY 
+src=TRAFODION.MAURIZIO.PART:splitby=P_PARTKEY 
+src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
+```
+
+
+== Case-Sensitive Table and Column Names
+
+Your database configuration determiens whether you can use case sensitive table/column names.
+odb maintains table/column case sensitiveness when they are enclosed in double quotes.
+
+*Example*
+
+The following commans create a `TRAFODION.MAURIZIO.Names` table made of three columns:
+“name”, “NAME” and “Name”.
+
+```
+create table trafodion.maurizio."Names"
+( "name" char(10)
+, "NAME" char(10)
+, "Name" char(10)
+)
+no partitions;
+```
+
+Double quotes have to be escaped under *nix. A few examples:
+
+```
+~/Devel/odb $ ./odb64luo -i T:trafodion.maurizio.\"Names\"
+~/Devel/odb $ ./odb64luo -x "select  from trafodion.maurizio.\"Names\""
+~/Devel/odb $ ./odb64luo -l src=names.txt:tgt=trafodion.maurizio.
+\"Names\":map=names.map:pc=32
+```
+
+You can omit double quotes around column names when using _mapfiles_.
+
+<<<
+== Determine Appropriate Number of Threads for Load/Extract/Copy/Diff
+
+If you have to load/extract or copy multiple tables in parallel the best option is to use the options
+`:tpar=number` and `:parallel=number`. `:tpar` defines how many tables have to be copied/extracted
+in parallel; `:parallel` defines how many _data streams_ to use for each table. This way, odb automatically
+allocates and start the “right” number of threads.
+
+A rule of thumb when copying/loading or extracting tables is to use as many _data streams_ as:
+`min(number of middletier CPUs, number of source CPUs, number of target CPUs)`
+
+The number of threads started for each _data stream_ depend on the operation type:
+
+[cols="15%h,30%,40%,15%",options="header",]
+|===
+| Operation | Total threads          | Explanation                                                              | Example with `parallel=4`
+| Load      | parallel + 1           | One thread to read from file + one thread per parallel to load.          | 5
+| Extract   | parallel               | One thread per parallel to extract.                                      | 4
+| Copy      | parallel * (1+loaders) | Two threads per parallel: read from source and write to target.          | 12 (if loaders=2)
+| Diff      | parallel * 3           | Three threads per parallel: read from source, read from target, compare. | 12
+|===
+
+== Integrating With Hadoop
+
+There are basically two ways to integrate a generic database with Hadoop using odb:
+
+1.  *Use HIVE (Hadoop DWH) and its ODBC Driver*: odb can access HIVE like any other _normal_
+relational database. For example, you can copy to from HIVE and other databases using odb’s copy option.
+2.  *Add the `hdfs.*` prefix to the input or output file during loads/extracts*: The file is read/written
+from/to Hadoop. odb interacts directly with the HDFS file system using *libhdfs*.
++
+This option is currently available only under Linux.
+
+
+

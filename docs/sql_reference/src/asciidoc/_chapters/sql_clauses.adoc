@@ -1,0 +1,1432 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sql_clauses]]
+=  SQL Clauses
+
+Clauses are used by Trafodion SQL statements to specify default values,
+ways to sample or sort data, how to store physical data, and other
+details.
+
+This section describes:
+
+* <<default_clause,DEFAULT Clause>> specifies a default value for a column being created.
+* <<format_clause,FORMAT Clause>> specifies the format to use.
+* <<sample_clause,SAMPLE Clause>> specifies the sampling method used to select a subset of the intermediate result table of a SELECT statement.
+* <<sequence_by_clause,SEQUENCE BY Clause>> specifies the order in which to sort rows of the intermediate result table for calculating sequence functions.
+* <<transpose_clause,TRANSPOSE Clause>> generates, for each row of the SELECT source table, a row for each item in the transpose item list.
+ 
+[[default_clause]]
+== DEFAULT Clause
+
+The DEFAULT option of the CREATE TABLE or ALTER TABLE _table-name_ ADD
+COLUMN statement specifies a default value for a column being created.
+
+The default value is used when a row is inserted in the table without a value for the column.
+
+```
+DEFAULT default | NO DEFAULT
+
+default is:
+  literal
+| NULL
+| CURRENTDATE
+| CURRENTTIME
+| CURRENTTIMESTAMP
+```
+
+* `NO DEFAULT`
++
+specifies the column has no default value. You cannot specify NO DEFAULT
+in an ALTER TABLE statement. See <<alter_table_statement,ALTER TABLE Statement>>.
+
+[[syntax_for_default_clause]]
+=== Syntax for Default Clause
+
+* `DEFAULT _literal_`
++
+is a literal of a data type compatible with the data type of the
+associated column.
++
+For a character column, _literal_ must be a string literal of no more
+than 240 characters or the length of the column, whichever is less. The
+maximum length of a default value for a character column is 240 bytes
+(minus control characters) or the length of the column, whichever is
+less. Control characters consist of character set prefixes and single
+quote delimiter found in the text itself.
++
+For a numeric column, _literal_ must be a numeric literal that does not
+exceed the defined length of the column. The number of digits to the
+right of the decimal point must not exceed the scale of the column, and
+the number of digits to the left of the decimal point must not exceed
+the number in the length (or length minus scale, if you specified scale
+for the column).
++
+For a datetime column, _literal_ must be a datetime literal with a
+precision that matches the precision of the column.
++
+For an INTERVAL column, _literal_ must be an INTERVAL literal that has
+the range of INTERVAL fields defined for the column.
+
+* `DEFAULT NULL`
++
+specifies NULL as the default. This default can occur only with a column
+that allows null.
+
+* `DEFAULT CURRENT_DATE`
++
+specifies the default value for the column as the value returned by the
+CURRENT_DATE function at the time of the operation that assigns a value
+to the column. This default can occur only with a column whose data type
+is DATE.
+
+* `DEFAULT CURRENT_TIME`
++
+specifies the default value for the column as the value returned by the
+CURRENT_TIME function at the time of the operation that assigns a value
+to the column. This default can occur only with a column whose data type
+is TIME.
+
+* `DEFAULT CURRENT_TIMESTAMP`
++
+specifies the default value for the column as the value returned by the
+CURRENT_TIMESTAMP function at the time of the operation that assigns a
+value to the column. This default can occur only with a column whose
+data type is TIMESTAMP.
+
+[[examples_of_default]]
+=== Examples of DEFAULT
+
+* This example uses DEFAULT clauses on CREATE TABLE to specify default column values:
++
+```
+CREATE TABLE items
+( item_id CHAR(12) NO DEFAULT
+, description CHAR(50) DEFAULT NULL
+, num_on_hand INTEGER DEFAULT 0 NOT NULL
+) ;
+```
+
+* This example uses DEFAULT clauses on CREATE TABLE to specify default column values:
++
+```
+CREATE TABLE persnl.project
+( projcode NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
+, empnum NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
+, projdesc VARCHAR (18) DEFAULT NULL
+, start_date DATE DEFAULT CURRENT_DATE
+, ship_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+, est_complete INTERVAL DAY DEFAULT INTERVAL '30' DAY
+, PRIMARY KEY (projcode)
+) ;
+```
+
+<<<
+[[format_clause]]
+== FORMAT Clause
+
+The FORMAT clause specifies the output format for DATE values. It can
+also be used to specify the length of character output or to specify
+separating the digits of integer output with colons.
+
+* Date Formats:
++
+```
+(FORMAT 'format-string') |
+
+(DATE, FORMAT 'format-string')
+
+format-string for Date Formats is:
+  YYYY-MM-DD
+  MM/DD/YYYY
+  YY/MM/DD
+  YYYY/MM/DD
+  YYYYMMDD
+  DD.MM.YYYY
+  DD-MM-YYYY
+  DD-MMM-YYYY
+```
+
+* Other Formats:
++
+```
+(FORMAT 'format-string')
+
+format-string for other formats is:
+  XXX
+  99:99:99:99
+ -99:99:99:99
+```
+
+* `YYYY-MM-DD`
++
+specifies that the FORMAT clause output format is _year-month-day_.
+
+* `MM/DD/YYYY`
++
+specifies that the FORMAT clause output format is _month/day/year_
+
+* `YY/MM/DD`
++
+specifies that the FORMAT clause output format is _year/month/day_.
+
+* `YYYY/MM/DD`
++
+specifies that the FORMAT clause output format is _year/month/day_.
+
+* `YYYYMMDD`
++
+specifies that the FORMAT clause output format is _yearmonthday_.
+
+* `DD.MM.YYYY`
++
+specifies that the FORMAT clause output format is _day.month.year_.
+
+* `DD-MM-YYYY`
++
+specifies that the FORMAT clause output format is _day-month-year_.
+
+* `DD-MMM-YYYY`
++
+specifies that the FORMAT clause output format is _day-month-year_.
+
+* `XXX`
++
+specifies that the FORMAT clause output format is a string format. The
+input must be a numeric or string value.
+
+* `99:99:99:99`
++
+specifies that the FORMAT clause output format is a timestamp. The input
+must be a numeric value.
+
+* `-99:99:99:99`
++
+specifies that the FORMAT clause output format is a timestamp. The input
+must be a numeric value.
+
+[[considerations_for_date_formats]]
+=== Considerations for Date Formats
+
+The expression preceding the (FORMAT ”_format-string_') clause must be
+a DATE value.
+
+The expression preceding the (DATE, FORMAT _'format-string_') clause
+must be a quoted string in the USA, EUROPEAN, or DEFAULT date format.
+
+[[considerations_for_other_formats]]
+==== Considerations for Other Formats
+
+For XXX, the expression preceding the (FORMAT _'format-string_')
+clause must be a numeric value or a string value.
+
+For 99:99:99:99 and -99:99:99:99, the expression preceding the (FORMAT
+_'format-string_') clause must be a numeric value.
+
+[[examples_of_format]]
+=== Examples of FORMAT
+
+* The format string 'XXX' in this example will yield a sample result of abc:
++
+```
+SELECT 'abcde' (FORMAT 'XXX') FROM (VALUES(1)) t;
+```
+
+* The format string 'YYYY-MM_DD' in this example will yield a sample result of 2008-07-17.
++
+```
+SELECT CAST('2008-07-17' AS DATE) (FORMAT 'YYYY-MM-DD') FROM (VALUES(1)) t;
+```
+
+* The format string 'MM/DD/YYYY' in this example will yield a sample result of 07/17/2008.
++
+```
+SELECT '2008-07-17' (DATE, FORMAT 'MM/DD/YYYY') FROM (VALUES(1)) t;
+```
+
+* The format string 'YY/MM/DD' in this example will yield a sample result of 08/07/17.
++
+```
+SELECT '2008-07-17'(DATE, FORMAT 'YY/MM/DD') FROM (VALUES(1)) t;
+```
+
+* The format string 'YYYY/MM/DD' in this example will yield a sample result of 2008/07/17.
++
+```
+SELECT '2008-07-17' (DATE, FORMAT 'YYYY/MM/DD') FROM (VALUES(1)) t;
+```
+
+* The format string 'YYYYMMDD' in this example will yield a sample result`of 20080717.
++
+```
+SELECT '2008-07-17' (DATE, FORMAT 'YYYYMMDD') FROM (VALUES(1)) t;
+```
+
+* The format string 'DD.MM.YYYY' in this example will yield a sample result of 17.07.2008.
++
+```
+SELECT '2008-07-17' (DATE, FORMAT 'DD.MM.YYYY') FROM (VALUES(1)) t;
+```
+
+* The format string 'DD-MMM-YYYY' in this example will yield a sample result of 17–JUL-2008.
++
+```
+SELECT '2008-07-17' (DATE, FORMAT 'DD-MMM-YYYY') FROM (VALUES(1)) t;
+```
+
+* The format string '99:99:99:99' in this example will yield a sample result of 12:34:56:78.
++
+```
+SELECT 12345678 (FORMAT '99:99:99:99') FROM (VALUES(1)) t;
+```
+
+* The format string '-99:99:99:99' in this example will yield a sample result of -12:34:56:78.
++
+```
+SELECT (-12345678) (FORMAT '-99:99:99:99') FROM (VALUES(1)) t;
+```
+
+<<<
+[[sample_clause]]
+== SAMPLE Clause
+
+The SAMPLE clause of the SELECT statement specifies the sampling method
+used to select a subset of the intermediate result table of a SELECT
+statement. The intermediate result table consists of the rows returned
+by a WHERE clause or, if no WHERE clause exists, the FROM clause. See
+<<select_statement,SELECT Statement>>.
+
+SAMPLE is a Trafodion SQL extension.
+
+```
+SAMPLE sampling-methodis:
+  RANDOM percent-size
+| FIRST rows-size
+        [SORT BY colname [ASC[ENDING]|DESC[ENDING]]
+          [,colname [ASC[ENDING] | DESC[ENDING]]]...]
+| PERIODIC rows-size EVERY number-rows ROWS
+           [SORT BY colname [ASC[ENDING] | DESC[ENDING]] 
+             [,colname [ASC[ENDING] | DESC[ENDING]]]...]
+
+percent-size is:
+  percent-result PERCENT [ROWS]
+| BALANCE WHEN condition
+    THEN percent-result PERCENT [ROWS]
+    [WHEN condition THEN percent-result PERCENT [ROWS]]... 
+    [ELSE percent-result PERCENT [ROWS]] END
+
+rows-size is:
+  number-rows ROWS
+| BALANCE WHEN condition THEN number-rows ROWS 
+          [WHEN condition THEN number-rows ROWS]... 
+          [ELSE number-rows ROWS] END
+```
+
+* `RANDOM _percent-size_`
++
+directs Trafodion SQL to choose rows randomly (each row having an
+unbiased probability of being chosen) without replacement from the
+result table. The sampling size is determined by the _percent-size_,
+defined as:
+
+* `_percent-result_ PERCENT [ROWS] | BALANCE WHEN _condition_ THEN
+_percent-result_ PERCENT [ROWS] [WHEN _condition_ THEN _percent-result_
+PERCENT [ROWS]]&#8230; [ELSE _percent-result_ PERCENT [ROWS]] END`
++
+specifies the value of the size for RANDOM sampling by using a percent
+of the result table. The value _percent-result_ must be a numeric
+literal.
++
+You can determine the actual size of the sample. Suppose that _N_ rows
+exist in the intermediate result table. Each row is picked with a
+probability of _r_%, where _r_ is the sample size in PERCENT.
+Therefore, the actual size of the resulting sample is approximately _r_% of _N_. 
+The number of rows picked follows a binomial distribution with
+mean equal to _r_ *c_N_/100.
++
+If you specify a sample size greater than 100 PERCENT, Trafodion SQL
+returns all the rows in the result table plus duplicate rows. The
+duplicate rows are picked from the result table according to the
+specified sampling method. This technique is called oversampling.
+
+** `ROWS`
++
+specifies row sampling. Row sampling is the default.
+
+** `BALANCE`
++
+If you specify a BALANCE expression, Trafodion SQL performs stratified
+sampling. The intermediate result table is divided into disjoint strata
+based on the WHEN conditions.
++
+Each stratum is sampled independently by using the sampling size. For a
+given row, the stratum to which it belongs is determined by the first
+WHEN condition that is true for that row—if a true condition exists. If
+no true condition exists, the row belongs to the ELSE stratum.
+
+* `FIRST _rows-size_ [SORT BY _colname_ [ASC[ENDING] | DESC[ENDING]]
+[,_colname_ [ASC[ENDING] | DESC[ENDING]]]&#8230;]`
++
+directs Trafodion SQL to choose the first rows from the result table.
+You can specify the order of the rows to sample. Otherwise, Trafodion
+SQL chooses an arbitrary order. The sampling size is determined by the
+_rows-size_, defined as:
+
+* `_number-rows_ ROWS | BALANCE WHEN _condition_ THEN _number-rows_ ROWS
+[WHEN _condition_ THEN _number-rows_ ROWS]&#8230; [ELSE _number-rows_ ROWS] END`
++
+specifies the value of the size for FIRST sampling by using the number
+of rows intended in the sample. The value _number-rows_ must be an
+integer literal.
++
+You can determine the actual size of the sample. Suppose that _N_ rows
+exist in the intermediate result table. If the size _s_ of the sample is
+specified as a number of rows, the actual size of the resulting sample
+is the minimum of _s_ and _N_.
+
+* `PERIODIC _rows-size_ EVERY _number-rows_ ROWS [SORT BY _colname_
+[ASC[ENDING] | DESC[ENDING]] [,_colname_ [ASC[ENDING] |
+DESC[ENDING]]]&#8230;]`
++
+directs Trafodion SQL to choose the first rows from each block (or
+period) of contiguous rows. This sampling method is equivalent to a
+separate FIRST sampling for each period, and the _rows-size_ is defined
+as in FIRST sampling.
++
+The size of the period is specified as a number of rows. You can specify
+the order of the rows to sample. Otherwise, Trafodion SQL chooses an
+arbitrary order.
++
+<<<
++
+You can determine the actual size of the sample. Suppose that _N_ rows
+exist in the intermediate result table. If the size _s_ of the sample is
+specified as a number of rows and the size _p_ of the period is
+specified as a number of rows, the actual size of the resulting sample
+is calculated as:
++
+```
+FLOOR (N/p) * s + _minimum_ (MOD (N, p), s)
+```
++
+_minimum_ in this expression is used simply as the mathematical
+minimum of two values.
+
+[[considerations_for_sample]]
+=== Considerations for SAMPLE
+
+[[sample_rows]]
+==== Sample Rows
+
+In general, when you use the SAMPLE clause, the same query returns
+different sets of rows for each execution. The same set of rows is
+returned only when you use the FIRST and PERIODIC sampling methods with
+the SORT BY option, where no duplicates exist in the specified column
+combination for the sort.
+
+[[examples_of_sample]]
+=== Examples of SAMPLE
+
+* Suppose that the data-mining tables SALESPER, SALES, and DEPT have been
+created as:
++
+```
+CREATE TABLE trafodion.mining.salesper
+( empid NUMERIC (4) UNSIGNED NOT NULL
+, dnum NUMERIC (4) UNSIGNED NOT NULL
+, salary NUMERIC (8,2) UNSIGNED
+, age INTEGER
+, sex CHAR (6)
+, PRIMARY KEY (empid) );
+
+CREATE TABLE trafodion.mining.sales
+( empid NUMERIC (4) UNSIGNED NOT NULL
+, product VARCHAR (20)
+, region CHAR (4)
+, amount NUMERIC (9,2) UNSIGNED
+, PRIMARY KEY (empid) );
+
+CREATE TABLE trafodion.mining.dept
+( dnum NUMERIC (4) UNSIGNED NOT NULL
+, name VARCHAR (20)
+, PRIMARY KEY (dnum) );
+```
++
+Suppose, too, that sample data is inserted into this database.
+
+
+* Return the SALARY of the youngest 50 sales people:
++
+```
+SELECT salary 
+FROM salesperson
+SAMPLE FIRST 50 ROWS 
+SORT BY age;
+
+SALARY
+----------- 
+   90000.00
+   90000.00
+   28000.00
+   27000.12
+  136000.00
+   37000.40
+...
+
+--- 50 row(s) selected.
+```
+
+* Return the SALARY of 50 sales people. In this case, the table is
+clustered on EMPID. If the optimizer chooses a plan to access rows using
+the primary access path, the result consists of salaries of the 50 sales
+people with the smallest employee identifiers.
++
+```
+SELECT salary 
+FROM salesperson
+SAMPLE FIRST 50 ROWS;
+
+SALARY
+----------- 
+  175500.00
+  137000.10
+  136000.00
+  138000.40
+   75000.00
+   90000.00
+...
+
+--- 50 row(s) selected.
+```
+
+<<<
+* Return the SALARY of the youngest five sales people, skip the next 15
+rows, and repeat this process until no more rows exist in the
+intermediate result table. You cannot specify periodic sampling with the
+sample size larger than the period.
++
+```
+SELECT salary 
+FROM salesperson
+SAMPLE PERIODIC 5 ROWS 
+EVERY 20 ROWS 
+SORT BY age;
+
+SALARY
+----------- 
+   90000.00
+   90000.00
+   28000.00
+   27000.12
+  136000.00
+   36000.00
+...
+
+--- 17 row(s) selected.
+```
++
+In this example, 62 rows exist in the SALESPERSON table. For each set of
+20 rows, the first five rows are selected. The last set consists of two
+rows, both of which are selected.
+
+* Compute the average salary of a random 10 percent of the sales people.
+You will get a different result each time you run this query because it
+is based on a random sample.
++
+```
+SELECT AVG(salary) 
+FROM salesperson
+SAMPLE RANDOM 10 PERCENT;
+
+(EXPR)
+--------------------
+            61928.57
+
+--- 1 row(s) selected.
+```
+
+<<<
+* This query illustrates sampling after execution of the WHERE clause
+has chosen the qualifying rows. The query computes the average salary of
+a random 10 percent of the sales people over 35 years of age. You will
+get a different result each time you run this query because it
+is based on a random sample.
++
+```
+SELECT AVG(salary) 
+FROM salesperson 
+WHERE age > 35
+SAMPLE RANDOM 10 PERCENT;
+
+(EXPR)
+--------------------
+            58000.00
+
+--- 1 row(s) selected.
+```
+
+* Compute the average salary of a random 10 percent of sales people
+belonging to the CORPORATE department. The sample is taken from the join
+of the SALESPERSON and DEPARTMENT tables. You will get a different
+result each time you run this query because it is based on a random
+sample.
++
+```
+SELECT AVG(salary)
+FROM salesperson S, department D 
+WHERE S.DNUM = D.DNUM AND D.NAME = 'CORPORATE' 
+SAMPLE RANDOM 10 PERCENT;
+
+(EXPR)
+---------------------
+           106250.000
+
+--- 1 row(s) selected.
+```
+
+<<<
+* In this example, the SALESPERSON table is first sampled and then
+joined with the DEPARTMENT table. This query computes the average salary
+of all the sales people belonging to the CORPORATE department in a
+random sample of 10 percent of the sales employees.
++
+```
+SELECT AVG(salary)
+FROM 
+  ( SELECT salary, dnum FROM salesperson SAMPLE RANDOM 10 PERCENT ) AS S
+  , department D 
+WHERE S.DNUM = D.DNUM
+  AND D.NAME = 'CORPORATE';
+
+(EXPR)
+--------------------
+
+37000.000
+
+--- 1 row(s) selected.
+```
++
+The results of this query and some of the results of previous queries
+might return null:
++
+```
+SELECT AVG(salary)
+FROM 
+  ( SELECT salary, dnum FROM salesperson SAMPLE RANDOM 10 PERCENT ) AS S
+  , department D 
+WHERE S.DNUM = D.DNUM AND D.NAME = 'CORPORATE';
+
+(EXPR)
+--------------------
+
+?
+
+--- 1 row(s) selected.
+```
++
+For this query execution, the number of rows returned by the embedded
+query is limited by the total number of rows in the SALESPERSON table.
+Therefore, it is possible that no rows satisfy the search condition in
+the WHERE clause.
+
+
+<<<
+* In this example, both the tables are sampled first and then joined.
+This query computes the average salary and the average sale amount
+generated from a random 10 percent of all the sales people and 20
+percent of all the sales transactions.
++
+```
+SELECT AVG(salary), AVG(amount) 
+FROM ( SELECT salary, empid
+       FROM salesperson
+       SAMPLE RANDOM 10 PERCENT ) AS S,
+  ( SELECT amount, empid FROM sales
+    SAMPLE RANDOM 20 PERCENT ) AS T
+WHERE S.empid = T.empid;
+
+(EXPR)    (EXPR)
+--------- --------- 
+ 45000.00  31000.00
+
+--- 1 row(s) selected.
+```
+
+* This example illustrates oversampling. This query retrieves 150
+percent of the sales transactions where the amount exceeds $1000. The
+result contains every row at least once, and 50 percent of the rows,
+picked randomly, occur twice.
++
+```
+SELECT *
+FROM sales
+WHERE amount > 1000
+SAMPLE RANDOM 150 PERCENT;
+
+EMPID PRODUCT              REGION AMOUNT
+----- -------------------- ------ ----------- 
+    1 PCGOLD, 30MB         E         30000.00
+   23 PCDIAMOND, 60MB      W         40000.00
+   23 PCDIAMOND, 60MB      W         40000.00
+   29 GRAPHICPRINTER, M1   N         11000.00
+   32 GRAPHICPRINTER, M2   S         15000.00
+   32 GRAPHICPRINTER, M2   S         15000.00
+  ... ...                  ...       ...
+
+--- 88 row(s) selected.
+```
+
+<<<
+* The BALANCE option enables stratified sampling. Retrieve the age and
+salary of 1000 sales people such that 50 percent of the result are male
+and 50 percent female.
++
+```
+SELECT age, sex, salary 
+FROM salesperson
+SAMPLE FIRST
+BALANCE 
+  WHEN sex = 'male' THEN 15 ROWS
+  WHEN sex = 'female' THEN 15 ROWS
+  END 
+ORDER BY age;
++
+AGE         SEX    SALARY
+----------- ------ -----------
+         22 male      28000.00
+         22 male      90000.00
+         22 female   136000.00
+         22 male      37000.40
+        ... ...            ...
+
+--- 30 row(s) selected.
+```
+
+* Retrieve all sales records with the amount exceeding $10000 and a
+random sample of 10 percent of the remaining records:
++
+```
+SELECT *
+FROM sales SAMPLE RANDOM
+BALANCE 
+  WHEN amount > 10000 
+  THEN 100 PERCENT 
+  ELSE 10 PERCENT
+END;
+
+PRODUCT              REGION AMOUNT
+-------------------- ------ -----------
+PCGOLD, 30MB         E         30000.00
+PCDIAMOND, 60MB      W         40000.00
+GRAPHICPRINTER, M1   N         11000.00
+GRAPHICPRINTER, M2   S         15000.00
+...                  ...       ...
+MONITORCOLOR, M2     N         10500.00
+...                  ...       ...
+
+--- 32 row(s) selected.
+```
+
+<<<
+* This query shows an example of stratified sampling where the
+conditions are not mutually exclusive:
++
+```
+SELECT *
+FROM sales SAMPLE RANDOM
+BALANCE 
+  WHEN amount > 10000 THEN 100 PERCENT
+  WHEN product = 'PCGOLD, 30MB' THEN 25 PERCENT 
+  WHEN region = 'W' THEN 40 PERCENT
+  ELSE 10 PERCENT END;
+
+PRODUCT              REGION AMOUNT
+-------------------- ------ -----------
+PCGOLD, 30MB         E         30000.00
+PCDIAMOND, 60MB      W         40000.00
+GRAPHICPRINTER, M1   N         11000.00
+GRAPHICPRINTER, M2   S         15000.00
+GRAPHICPRINTER, M3   S         20000.00
+LASERPRINTER, X1     W         42000.00
+...                  ...       ...
+
+--- 30 row(s) selected.
+```
+
+<<<
+[[sequence_by_clause]]
+== SEQUENCE BY Clause
+
+The SEQUENCE BY clause of the SELECT statement specifies the order in
+which to sort the rows
+
+of the intermediate result table for calculating sequence functions.
+This option is used for processing time-sequenced rows in data mining
+applications. See <<select_statement>>.
+
+Sequence by is a Trafodion SQL extension.
+
+```
+SEQUENCE BY colname[ASC[ENDING]|DESC[ENDING]]
+   [,colname [ASC[ENDING] | DESC[ENDING]]]...
+```
+
+* `_colname_`
+_
+names a column in _select-list_ or a column in a table reference in the
+FROM clause of the SELECT statement. _colname_ is optionally qualified
+by a table, view, or correlation name; for example, CUSTOMER.CITY.
+
+* `ASC | DESC`
++
+specifies the sort order. ASC is the default. For ordering an
+intermediate result table on a column that can contain null, nulls are
+considered equal to one another but greater than all other nonnull
+values.
++
+You must include a SEQUENCE BY clause if you include a sequence function
+in the select list of the SELECT statement. Otherwise, Trafodion SQL
+returns an error. Further, you cannot include a SEQUENCE BY clause if no
+sequence function exists in the select list. See
+<<sequence_functions,Sequence Functions>> .
+
+[[considerations_for_sequence_by]]
+=== Considerations for SEQUENCE BY
+
+* Sequence functions behave differently from set (or aggregate)
+functions and mathematical (or scalar) functions.
+* If you include both SEQUENCE BY and GROUP BY clauses in the same
+SELECT statement, the values of the sequence functions must be evaluated
+first and then become input for aggregate functions in the statement.
+** For a SELECT statement that contains both SEQUENCE BY and GROUP BY
+clauses, you can nest the sequence function in the aggregate function:
++
+```
+SELECT 
+  ordernum
+, MAX(MOVINGSUM(qty_ordered, 3)) AS maxmovsum_qty
+, AVG(unit_price) AS avg_price
+FROM odetail 
+SEQUENCE BY partnum 
+GROUP BY ordernum;
+```
+
+* To use a sequence function as a grouping column, you must use a
+derived table for the SEQUENCE BY query and use the derived column in
+the GROUP BY clause:
++
+```
+SELECT 
+  ordernum
+, movsum_qty
+, AVG(unit_price) 
+FROM
+  ( SELECT ordernum, MOVINGSUM(qty_ordered, 3), unit_price 
+    FROM odetail SEQUENCE BY partnum ) 
+  AS tab2 (ordernum, movsum_qty, unit_price) 
+GROUP BY ordernum, movsum_qty;
+```
+
+* To use an aggregate function as the argument to a sequence function,
+you must also use a derived table:
++
+```
+SELECT MOVINGSUM(avg_price,2) 
+FROM
+  ( SELECT ordernum, AVG(unit_price) FROM odetail
+    GROUP BY ordernum)
+AS tab2 (ordernum, avg_price) 
+SEQUENCE BY ordernum;
+```
+
+* Like aggregate functions, sequence functions generate an intermediate
+result. If the query has a WHERE clause, its search condition is applied
+during the generation of the intermediate result. Therefore, you cannot
+use sequence functions in the WHERE clause of a SELECT statement.
+
+** This query returns an error:
++
+```
+SELECT ordernum, partnum, RUNNINGAVG(unit_price) 
+FROM odetail
+WHERE ordernum > 800000 AND RUNNINGAVG(unit_price) > 350 
+SEQUENCE BY qty_ordered;
+```
+
+** Apply a search condition to the result of a sequence function, use a
+derived table for the SEQUENCE BY query, and use the derived column in
+the WHERE clause:
++
+```
+SELECT ordernum, partnum, runavg_price 
+FROM
+  ( SELECT ordernum, partnum, RUNNINGAVG(unit_price) 
+    FROM odetail SEQUENCE BY qty_ordered)
+AS tab2 (ordernum, partnum, runavg_price) 
+WHERE ordernum > 800000 AND
+runavg_price > 350;
+```
+
+[[examples_of_sequence_by]]
+=== Examples of SEQUENCE BY
+
+* Sequentially number each row for the entire result and also number the
+rows for each part number:
++
+```
+SELECT 
+  RUNNINGCOUNT(*) AS RCOUNT
+, MOVINGCOUNT(*,ROWS SINCE (d.partnum<>THIS(d.partnum))) AS MCOUNT
+, d.partnum
+FROM orders o, odetail d 
+WHERE o.ordernum=d.ordernum
+SEQUENCE BY d.partnum, o.order_date, o.ordernum 
+ORDER BY d.partnum, o.order_date, o.ordernum;
+
+RCOUNT               MCOUNT                Part/Num
+-------------------- --------------------- --------
+                   1                     1      212
+                   2                     2      212
+                   3                     1      244
+                   4                     2      244
+                   5                     3      244
+                 ...                   ...      ...
+                  67                     1     7301
+                  68                     2     7301
+                  69                     3     7301
+                  70                     4     7301
+
+--- 70 row(s) selected.
+```
+
+<<<
+* Show the orders for each date, the amount for each order item and the
+moving total for each order, and the running total of all the orders.
+The query sequences orders by date, order number, and part number. (The
+CAST function is used for readability only.)
++
+```
+SELECT 
+  o.ordernum
+, CAST (MOVINGCOUNT(*,ROWS SINCE(THIS(o.ordernum) <> o.ordernum)) AS INT) AS MCOUNT
+, d.partnum
+, o.order_date
+, (d.unit_price * d.qty_ordered) AS AMOUNT
+, MOVINGSUM (d.unit_price * d.qty_ordered, SEQUENCE BY Clause 269 ROWS SINCE(THIS(o.ordernum)<>o.ordernum) ) AS ORDER_TOTAL
+, RUNNINGSUM (d.unit_price * d.qty_ordered) AS TOTAL_SALES
+FROM orders o, odetail d 
+WHERE o.ordernum=d.ordernum
+SEQUENCE BY o.order_date, o.ordernum, d.partnum 
+ORDER BY o.order_date, o.ordernum, d.partnum;
+
+Order/Num  MCOUNT      Part/Num Order/Date AMOUNT     ORDER_TOTAL    TOTAL_SALES
+---------- ----------- -------- ---------- ---------- -------------- --------------
+    100250           1      244 2008-01-23   14000.00       14000.00       14000.00
+    100250           2     5103 2008-01-23    4000.00       18000.00       18000.00
+    100250           3     6500 2008-01-23     950.00       18950.00       18950.00
+    200300           1      244 2008-02-06   28000.00       28000.00       46950.00
+    200300           2     2001 2008-02-06   10000.00       38000.00       56950.00
+    200300           3     2002 2008-02-06   14000.00       52000.00       70950.00
+       ...         ...      ... ...          ...            ...                 ...
+    800660          18     7102 2008-10-09    1650.00      187360.00      113295.00             
+    800660          19     7301 2008-10-09    5100.00     192460.00      1118395.00
+
+--- 69 row(s) selected.
+```
++
+For example, for order number 200300, the ORDER_TOTAL is a moving sum
+within the order date 2008-02-06, and the TOTAL_SALES is a running sum
+for all orders. The current window for the moving sum is defined as ROWS
+SINCE (THIS(o.ordernum)<>o.ordernum), which restricts the ORDER_TOTAL to
+the current order number.
+
+<<<
+* Show the amount of time between orders by calculating the interval between two dates:
++
+```
+SELECT RUNNINGCOUNT(*),o.order_date,DIFF1(o.order_date) 
+FROM orders o
+SEQUENCE BY o.order_date, o.ordernum 
+ORDER BY o.order_date, o.ordernum ;
+
+
+(EXPR)               Order/Date (EXPR)
+-------------------- ---------- -------------
+                   1 2008-01-23             ?
+                   2 2008-02-06            14
+                   3 2008-02-17            11
+                   4 2008-03-03            14
+                   5 2008-03-19            16
+                   6 2008-03-19             0
+                   7 2008-03-27             8
+                   8 2008-04-10            14
+                   9 2008-04-20            10
+                  10 2008-05-12            22
+                  11 2008-06-01            20
+                  12 2008-07-21            50
+                  13 2008-10-09            80
+
+--- 13 row(s) selected.
+```
+
+<<<
+[[transpose_clause]]
+== TRANSPOSE Clause
+
+The TRANSPOSE clause of the SELECT statement generates for each row of
+the SELECT source table a row for each item in the transpose item list.
+The result table of the TRANSPOSE clause has all the columns of the
+source table plus, for each transpose item list, a value column or
+columns and an optional key column.
+
+TRANSPOSE is a Trafodion SQL extension.
+
+```
+TRANSPOSE transpose-set [transpose-set]... 
+  [KEY BY key-colname]
+
+transpose-set is:
+   transpose-item-list AS transpose-col-list
+
+transpose-item-list is:
+  expression-list
+| (expression-list) [,(expression-list)]...
+
+expression-list is:
+  expression [,expression]...
+
+transpose-col-list is:
+  colname | (colname-list)
+
+colname-list is:
+  colname [,colname]...
+```
+
+* `_transpose-item-list_ AS _transpose-col-list_`
++
+specifies a _transpose-set_, which correlates a _transpose-item-list_
+with a _transpose-col-list_. The _transpose-item-list_ can be a list
+of expressions or a list of expression lists enclosed in parentheses.
+The _transpose-col-list_ can be a single column name or a list of column
+names enclosed in parentheses.
++
+For example, in the _transpose-set_ TRANSPOSE (A,X),(B,Y),(C,Z) AS
+(V1,V2), the items in the _transpose-item-list_ are (A,X),(B,Y), and
+(C,Z), and the _transpose-col-list_ is (V1,V2). The number of
+expressions in each item must be the same as the number of value columns
+in the column list.
++
+In the example TRANSPOSE A,B,C AS V, the items are A,B, and C, and the
+value column is V. This form can be thought of as a shorter way of writing TRANSPOSE
+(A),(B),(C) AS (V).
+
+* `_transpose-item-list_`
++
+specifies a list of items. An item is a value expression or a list of
+value expressions enclosed in parentheses.
+
+** `_expression-list_`
++
+specifies a list of SQL value expressions, separated by commas. The
+expressions must have compatible data types.
++
+For example, in the transpose set TRANSPOSE A,B,C AS V, the expressions
+A,B, and C have compatible data types.
+
+** `(_expression-list_) [,(_expression-list_)]&8230;`
++
+specifies a list of expressions enclosed in parentheses, followed by
+another list of expressions enclosed in parentheses, and so on. The
+number of expressions within parentheses must be equal for each list.
+The expressions in the same ordinal position within the parentheses must
+have compatible data types.
++
+For example, in the transpose set TRANSPOSE (A,X),(B,Y),(C,Z) AS
+(V1,V2), the expressions A,B, and C have compatible data types, and the
+expressions X,Y, and Z have compatible data types.
+
+* `_transpose-col-list_`
++
+specifies the columns that consist of the evaluation of expressions in
+the item list as the expressions are applied to rows of the source
+table.
+
+** `_colname_`
++
+is an SQL identifier that specifies a column name. It identifies the
+column consisting of the values in _expression-list_.
++
+For example, in the transpose set TRANSPOSE A,B,C AS V, the column V
+corresponds to the values of the expressions A,B, and C.
+
+** `(_colname-list_)`
++
+specifies a list of column names enclosed in parentheses. Each column
+consists of the values of the expressions in the same ordinal position
+within the parentheses in the transpose item list.
++
+For example, in the transpose set TRANSPOSE (A,X),(B,Y),(C,Z) AS
+(V1,V2), the column V1 corresponds to the expressions A,B, and C, and
+the column V2 corresponds to the expressions X,Y, and Z.
+
+* `KEY BY _key-colname_`
++
+optionally specifies which expression (the value in the transpose column
+list corresponds to) by its position in the item list. _key-colname_ is
+an SQL identifier. The data type of the key column is exact numeric, and
+the value is NOT NULL.
+
+[[considerations_for_transpose]]
+=== Considerations for TRANSPOSE
+
+[[multiple_transpose_clauses_and_sets]]
+==== Multiple TRANSPOSE Clauses and Sets
+
+* Multiple TRANSPOSE clauses can be used in the same query. For example:
++
+```
+SELECT keycol1, valcol1, keycol2, valcol2 
+FROM mytable 
+TRANSPOSE a, b, c AS valcol1 KEY BY keycol1
+TRANSPOSE d, e, f AS valcol2 KEY BY keycol2
+```
+
+* A TRANSPOSE clause can contain multiple transpose sets. For example:
++
+```
+SELECT keycol, valcol1, valcol2 
+FROM mytable 
+TRANSPOSE a, b, c AS valcol1
+          d, e, f AS valcol2 
+KEY BY keycol
+```
+
+[[degree_and_column_order_of_the_transpose_result]]
+==== Degree and Column Order of the TRANSPOSE Result
+
+The degree of the TRANSPOSE result is the degree of the source table
+(the result table derived from the table reference or references in the
+FROM clause and a WHERE clause if specified), plus one if the key column
+is specified, plus the cardinalities of all the transpose column lists.
+
+The columns of the TRANSPOSE result are ordered beginning with the
+columns of the source table, followed by the key column if specified,
+and then followed by the list of column names in the order in which they
+are specified.
+
+[[data_type_of_the_transpose_result]]
+==== Data Type of the TRANSPOSE Result
+
+The data type of each of the value columns is the union compatible data
+type of the corresponding expressions in the _transpose-item-list_.
+You cannot have expressions with data types that are not compatible in a
+_transpose-item-list_.
+
+For example, in TRANSPOSE (A,X),(B,Y),(C,Z) AS (V1,V2), the data type of
+V1 is the union compatible type for A, B, and C, and the data type of V2
+is the union compatible type for X, Y, and Z.
+
+See <<comparable_and_compatible_data_types,Comparable and Compatible Data Types>>.
+
+[[cardinality_of_the_transpose_result]]
+==== Cardinality of the TRANSPOSE Result
+
+The items in each _transpose-item-list_ are enumerated from 1 to N,
+where N is the total number of items in all the item lists in the
+transpose sets.
+
+In this example with a single transpose set, the value of N is 3:
+
+```
+TRANSPOSE (a,x),(b,y),(c,z) AS (v1,v2)
+```
+
+In this example with two transpose sets, the value of N is 5:
+
+```
+TRANSPOSE (a,x),(b,y),(c,z) AS (v1,v2) l,m AS v3
+```
+
+The values 1 to N are the key values _k_i. The items in each
+_transpose-item-list_ are the expression values _v_i.
+
+The cardinality of the result of the TRANSPOSE clause is the cardinality
+of the source table times N, the total number of items in all the
+transpose item lists.
+
+For each row of the source table and for each value in the key values
+_k_i, the TRANSPOSE result contains a row with all the attributes of
+the source table, the key value _k_i in the key column, the expression
+values vi in the value columns of the corresponding transpose set, and
+NULL in the value columns of other transpose sets.
+
+For example, consider this TRANSPOSE clause:
+
+```
+TRANSPOSE (a,x),(b,y),(c,z) AS (v1,v2) 
+           l,m AS v3
+KEY BY k
+```
+
+The value of N is 5. One row of the SELECT source table produces this
+TRANSPOSE result:
+
+[cols="5*",options="header"]
+|===
+| _columns-of-source_ | K | V1           | V2 | V3
+| _source-row_        | 1 | _value-of-A_ | _value-of-X_ | NULL
+| _source-row_        | 2 | _value-of-B_ | _value-of-Y_ | NULL
+| _source-row_        | 3 | _value-of-C_ | _value-of-Z_ | NULL
+| _source-row_        | 4 | NULL         | NULL         | _value-of-L_
+| _source-row_        | 5 | NULL         | NULL         | _value-of-M_
+|===
+
+<<<
+[[examples_of_transpose]]
+=== Examples of TRANSPOSE
+
+* Suppose that MYTABLE has been created as:
++
+```
+CREATE TABLE mining.mytable
+( A INTEGER, B INTEGER, C INTEGER, D CHAR(2), E CHAR(2), F CHAR(2) );
+```
++
+The table MYTABLE has columns A, B, C, D, E, and F with related data.
+The columns A, B, and C are type INTEGER, and columns D, E, and F are
+type CHAR.
++
+[cols="6*",options="header"]
+|====
+| A | B  | C   | D  | E  | F
+| 1 | 10 | 100 | d1 | e1 | f1
+| 2 | 20 | 200 | d2 | e2 | f2
+|====
+
+* Suppose that MYTABLE has only the first three columns: A, B, and C.
+The result of the TRANSPOSE clause has three times as many rows (because
+three items exist in the transpose item list) as rows exist in MYTABLE:
++
+```
+SELECT * FROM mytable 
+TRANSPOSE a, b, c AS valcol KEY BY keycol;
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols="8*",options="header"]
+|===
+| A | B  | C   | D  | E  | F  | KEYCOL | VALCOL
+| 1 | 10 | 100 | d1 | e1 | f1 | 1      | 1
+| 1 | 10 | 100 | d1 | e1 | f1 | 2      | 10
+| 1 | 10 | 100 | d1 | e1 | f1 | 3      | 100
+| 2 | 20 | 200 | d2 | e2 | f2 | 1      | 2
+| 2 | 20 | 200 | d2 | e2 | f2 | 2      | 20
+| 2 | 20 | 200 | d2 | e2 | f2 | 3      | 200
+|===
+
+<<<
+* This query shows that the items in the transpose item list can be any
+valid scalar expressions:
++
+```
+SELECT keycol, valcol, a, b, c FROM mytable 
+TRANSPOSE a + b, c + 3, 6 AS valcol KEY BY keycol;
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols="5*",options="header"]
+|=====
+| KEYCOL | VALCOL | A | B  | C
+| 1      | 1      | 1 | 10 | 100
+| 2      | 103    | 1 | 10 | 100
+| 3      | 6      | 1 | 10 | 100
+| 1      | 22     | 2 | 20 | 200
+| 2      | 203    | 2 | 20 | 200
+| 3      | 6      | 2 | 20 | 200
+|=====
+
+* This query shows how the TRANSPOSE clause can be used with a GROUP BY
+clause. This query is typical of queries used to obtain cross-table
+information, where A, B, and C are the independent variables, and D is
+the dependent variable.
++
+```
+SELECT keycol, valcol, d, COUNT(*) 
+FROM mytable 
+TRANSPOSE a, b, c AS valcol 
+KEY BY keycol 
+GROUP BY keycol, valcol, d;
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols="4*",options="header"]
+|===
+| KEYCOL | VALCOL | D  | COUNT(*)
+| 1      | 1      | d1 | 1
+| 2      | 10     | d1 | 1
+| 3      | 100    | d1 | 1
+| 1      | 2      | d2 | 1
+| 2      | 20     | d2 | 1
+| 3      | 200    | d2 | 1
+|===
+
+<<< 
+* This query shows how to use COUNT applied to VALCOL. The result table
+of the TRANSPOSE query shows the number of distinct values in VALCOL.
++
+```
+SELECT COUNT(DISTINCT valcol) FROM mytable 
+TRANSPOSE a, b, c AS valcol KEY BY keycol 
+GROUP BY keycol;
+
+(EXPR)
+--------------------
+                   2
+                   2
+                   2
+
+--- 3 row(s) selected.
+```
+
+* This query shows how multiple TRANSPOSE clauses can be used in the
+same query. The result table from this query has nine times as many rows
+as rows exist in MYTABLE:
++
+```
+SELECT keycol1, valcol1, keycol2, valcol2 FROM mytable 
+TRANSPOSE a, b, c AS valcol1 KEY BY keycol1
+TRANSPOSE d, e, f AS valcol2 KEY BY keycol2;
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols=",,,",options="header"]
+|===
+| KEYCOL1 | VALCOL1 | KEYCOL2 | VALCOL2
+| 1       | 1       | 1       | d1
+| 1       | 1       | 2       | e1
+| 1       | 1       | 3       | f1
+| 2       | 10      | 1       | d1
+| 2       | 10      | 2       | e1
+| 2       | 10      | 3       | f1
+| 3       | 100     | 1       | d1
+| 3       | 100     | 2       | e1
+| 3       | 100     | 3       | f1
+| 1       | 2       | 1       | d2
+| 1       | 2       | 2       | e2
+| 1       | 2       | 3       | f2
+| 2       | 20      | 1       | d2
+| 2       | 20      | 2       | e2
+| 2       | 20      | 3       | f2
+| 3       | 200     | 1       | d2
+| 3       | 200     | 2       | e2
+| 3       | 200     | 3       | f2
+|===
+
+* This query shows how a TRANSPOSE clause can contain multiple transpose
+sets—that is, multiple _transpose-item-list_ AS _transpose-col-list_.
+The expressions A, B, and C are of type integer, and expressions D, E,
+and F are of type character.
++
+```
+SELECT keycol, valcol1, valcol2 
+FROM mytable 
+TRANSPOSE a, b, c AS valcol1
+          d, e, f AS valcol2 
+KEY BY keycol;
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols="3*",options="header"]
+|===
+| KEYCOL | VALCOL1 | VALCOL2
+| 1      | 1       | ?
+| 2      | 10      | ?
+| 3      | 100     | ?
+| 4      | ?       | d1
+| 5      | ?       | e1
+| 6      | ?       | f1
+| 1      | 2       | ?
+| 2      | 20      | ?
+| 3      | 200     | ?
+| 4      | ?       | d2
+| 5      | ?       | e2
+| 6      | ?       | f2
+|===
++
+A question mark (?) in a value column indicates no value for the given KEYCOL.
+
+* This query shows how the preceding query can include a GROUP BY clause:
++
+```
+SELECT keycol, valcol1, valcol2, COUNT(*) 
+FROM mytable 
+TRANSPOSE a, b, c AS valcol1
+          d, e, f AS valcol2 
+KEY BY keycol
+GROUP BY keycol, valcol1, valcol2;
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols="4*",options="header"]
+|===
+| KEYCOL | VALCOL1 | VALCOL2 | (EXPR)
+| 1      | 1       | ?       | 1
+| 2      | 10      | ?       | 1
+| 3      | 100     | ?       | 1
+| 1      | 2       | ?       | 1
+| 2      | 20      | ?       | 1
+| 3      | 200     | ?       | 1
+| 4      | ?       | d2      | 1
+| 5      | ?       | e2      | 1
+| 6      | ?       | f2      | 1
+| 4      | ?       | d1      | 1
+| 5      | ?       | e1      | 1
+| 6      | ?       | f1      | 1
+|===
+
+* This query shows how an item in the transpose item list can contain a
+list of expressions and that the KEY BY clause is optional:
++
+```
+SELECT * FROM mytable
+TRANSPOSE (1, A, 'abc'), (2, B, 'xyz') AS (VALCOL1, VALCOL2, VALCOL3);
+```
++
+The result table of the TRANSPOSE query is:
++
+[cols="9*",options="header"]
+|===
+| A | B  | C   | D  | E  | F  | VALCOL1 | VALCOL2 | VALCOL3
+| 1 | 10 | 100 | d1 | e1 | f1 | 1       | 1       | abc
+| 1 | 10 | 100 | d1 | e1 | f1 | 2       | 10      | xyz
+| 2 | 20 | 200 | d2 | e2 | f2 | 1       | 2       | abc
+| 2 | 20 | 200 | d2 | e2 | f2 | 2       | 20      | xyz
+|=== 

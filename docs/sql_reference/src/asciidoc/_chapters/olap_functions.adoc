@@ -1,0 +1,1079 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+<<<
+[[olap_functions]]
+=== OLAP Functions
+
+This section describes the syntax and semantics of the On Line
+Analytical Process (OLAP) window functions. The OLAP window functions
+are ANSI compliant.
+
+[[considerations_for_window_functions]]
+=== Considerations for Window Functions
+
+These considerations apply to all window functions.
+
+* `_inline-window-specification_`
++
+The window defined by the _inline-window-specification_ consists of the
+rows specified by the _window-frame-clause_, bounded by the current
+partition. If no PARTITION BY clause is specified, the partition is
+defined to be all the rows of the intermediate result. If a PARTITION BY
+clause is specified, the partition is the set of rows which have the
+same values for the expressions specified in the PARTITION clause.
+
+* `_window-frame-clause_`
++
+DISTINCT is not supported for window functions.
++
+Use of a FOLLOWING term is not supported. Using a FOLLOWING term results
+in an error.
++
+If no _window-frame-clause_ is specified, "ROWS BETWEEN UNBOUNDED
+PRECEDING AND UNBOUNDED FOLLOWING" is assumed. This clause is not
+supported because it involves a FOLLOWING term and will result in an
+error.
++
+"ROWS CURRENT ROW" is equivalent to "ROWS BETWEEN CURRENT ROW AND
+CURRENT ROW".
++
+"ROWS _preceding-row_" is equivalent to "ROWS BETWEEN _preceding-row_
+AND CURRENT ROW".
+
+==== Nulls
+
+All nulls are eliminated before the function is applied to the set of
+values. If the window contains all NULL values, the result of the window
+function is NULL.
+
+If the specified window for a particular row consists of rows that are
+all before the first row of the partition (no rows in the window), the
+result of the window function is NULL.
+
+<<<
+[[order_by_clause_supports_expressions_for_olap_functions]]
+== ORDER BY Clause Supports Expressions For OLAP Functions
+
+The ORDER BY clause of the OLAP functions now supports expressions.
+However, use of multiple OLAP functions with different expressions in
+the same query is not supported. The following examples show how
+expressions may be used in the ORDER BY clause.
+
+```
+SELECT
+  -1 * annualsalary neg_total
+, RANK() OVER (ORDER BY -1 * annualsalary) olap_rank
+FROM employee;
+```
+
+Using an aggregate in the ORDER BY clause:
+
+```
+SELECT
+  num
+, RANK() OVER (ORDER BY SUM(annualsalary)) olap_rank
+FROM employee
+GROUP BY num;
+```
+
+Using multiple functions with the same expression in the ORDER BY clause:
+
+```
+SELECT
+  num
+, workgroupnum
+, RANK() OVER (ORDER BY SUM (annualsalary)*num) olap_rank
+, DENSE_RANK() OVER (ORDER BY SUM (annualsalary)*num) olap_drank
+, ROW_NUMBER() OVER (ORDER BY SUM (annualsalary)*num) olap_mum
+FROM employee
+GROUP BY num, workgroupnum, annualsalary;
+```
+
+Using more functions with the same expression in the ORDER BY clause:
+
+```
+SELECT
+  num
+, workgroupnum
+, annualsalary
+, SUM(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+, AVG(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+, MIN(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+, MAX(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+, VARIANCE(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+, STDDEV(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+, COUNT(AnnualSalary) OVER (ORDER BY SUM(annualsalary)*num ROWS UNBOUNDED PRECEDING)
+FROM employee
+GROUP BY num, workgroupnum, annualsalary;
+```
+
+<<<
+[[limitations_for_window_functions]]
+== Limitations for Window Functions
+
+These limitations apply to all window functions.
+
+* The ANSI _window-clause_ is not supported by Trafodion. Only the
+_inline-window-specification_ is supported. An attempt to use an ANSI
+_window-clause_ will result in a syntax error.
+
+* The _window-frame-clause_ cannot contain a FOLLOWING term, either
+explicitly or implicitly. Because the default window frame clause
+contains an implicit FOLLOWING ("ROWS BETWEEN UNBOUNDED PRECEDING AND
+UNBOUNDED FOLLOWING"), the default is not supported. So, practically,
+the _window-frame-clause_ is not optional. An attempt to use a FOLLOWING
+term, either explicitly or implicitly will result in the "4343" error
+message.
+
+* The window frame units can only be ROWS. RANGE is not supported by
+Trafodion. An attempt to use RANGE will result in a syntax error.
+
+* The ANSI _window-frame-exclusion-specification_ is not supported by
+Trafodion. An attempt to use a _window-frame-exclusion-specification_
+will result in a syntax error.
+
+* Multiple _inline-window-specifications_ in a single SELECT clause are
+not supported. For each window function within a SELECT clause, the
+ORDER BY clause and PARTITION BY specifications must be identical. The
+window frame can vary within a SELECT clause. An attempt to use multiple
+_inline-window-specifications_ in a single SELECT clause will result in
+the "4340" error message.
+
+* The ANSI _null-ordering-specification_ within the ORDER BY clause is
+not supported by Trafodion. Null values will always be sorted as if they
+are greater than all non-null values. This is slightly different than a
+null ordering of NULLS LAST. An attempt to use a
+_null-ordering-specification_ will result in a syntax error.
+
+* The ANSI _filter-clause_ is not supported for window functions by
+Trafodion. The _filter-clause_ applies to all aggregate functions
+(grouped and windowed) and that the _filter-clause_ is not currently
+supported for grouped aggregate functions. An attempt to use a
+_filter-clause_ will result in a syntax error.
+
+* The DISTINCT value for the _set-qualifier-clause_ within a window
+function is not supported. Only the ALL value is supported for the
+_set-qualifier-clause_ within a window function. An attempt to use
+DISTINCT in a window function will result in the "4341" error message.
+
+<<<
+[[avg_window_function]]
+== AVG Window Function
+
+AVG is a window function that returns the average of nonnull values of
+the given expression for the current window specified by the
+_inline-window specification_.
+
+```
+AVG ([ALL] expression) OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+                       [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+
+* `_window-frame-clause_` is:
++
+```
+  ROWS CURRENT ROW
+| ROWS preceding-row
+| ROWS BETWEEN preceding-row AND preceding-row
+| ROWS BETWEEN preceding-row AND CURRENT ROW
+| ROWS BETWEEN preceding-row AND following-row
+| ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+| ROWS BETWEEN CURRENT ROW AND following-row
+| ROWS BETWEEN following-row AND following-row
+```
+
+* `_preceding-row_` is:
++
+```
+  UNBOUNDED PRECEDING
+| unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
++
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+<<<
+* `ALL`
++
+specifies whether duplicate values are included in the computation of
+the AVG of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+* `_expression_`
++
+specifies a numeric or interval value _expression_ that determines the
+values to average. See <<numeric_value_expressions,Numeric Value Expressions>>
+and <<interval_value_expressions,Interval Value Expressions>>.
+
+* `_inline-window-specification_`
++
+specifies_the_window_over_which_the_avg_is_computed. The
+_inline-window-specification_ can contain an optional partition by
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the AVG is
+computed.
+
+<<<
+[[examples_of_avg_window_function]]
+=== Examples of AVG Window Function
+
+* Return the running average value of the SALARY column:
++
+```
+SELECT
+  empnum
+, AVG(salary) OVER (ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the running average value of the SALARY column within each
+department:
++
+```
+SELECT
+  deptnum
+, empnum
+, AVG(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the moving average of salary within each department over a
+window of the last 4 rows:
++
+```
+SELECT
+  deptnum
+, empnum
+, AVG(SALARY) OVER (PARTITION BY deptnum ORDER BY empnum ROWS 3 PRECEDING)
+FROM persnl.employee;
+```
+
+<<<
+[[count_window_function]]
+== COUNT Window Function
+
+COUNT is a window function that returns the count of the non null values
+of the given expression for the current window specified by the
+inline-window-specification.
+
+```
+COUNT {(*) | ([ALL] expression) } OVER inline-window-specification
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+
+* `_window-frame-clause_` is:
++
+```
+  ROW CURRENT ROW
+| ROW preceding-row
+| ROW BETWEEN preceding-row AND preceding-row
+| ROW BETWEEN preceding-row AND CURRENT ROW
+| ROW BETWEEN preceding-row AND following-row
+| ROW BETWEEN CURRENT ROW AND CURRENT ROW
+| ROW BETWEEN CURRENT ROW AND following-row
+| ROW BETWEEN following-row AND following-row
+```
+
+* `_preceding-row_` is:
++
+```
+   UNBOUNDED PRECEDING
+|  unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+* `ALL`
++
+specifies whether duplicate values are included in the computation of
+the COUNT of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+<<<
+* `_expression_`
++
+specifies a value _expression_ that is to be counted. See
+<<expressions,Expressions>>.
+
+* `_inline-window-specification_`
++
+specifies the window over which the COUNT is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the COUNT is
+computed.
+
+<<<
+[[examples_of_count_window_function]]
+=== Examples of COUNT Window Function
+
+* Return the running count of the SALARY column:
++
+```
+SELECT
+  empnum
+, COUNT(salary) OVER (ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the running count of the SALARY column within each department:
++
+```
+SELECT
+  deptnum
+, empnum
+, COUNT(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the moving count of salary within each department over a window
+of the last 4 rows:
++
+```
+SELECT
+  deptnum
+, empnum
+, COUNT(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS 3 PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the running count of employees within each department:
++
+```
+SELECT
+  deptnum
+, empnum
+, COUNT(*) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+
+<<<
+[[dense_rank_window_function]]
+== DENSE_RANK Window Function
+
+DENSE_RANK is a window function that returns the ranking of each row of
+the current partition specified by the inline-window-specification. The
+ranking is relative to the ordering specified in the
+inline-window-specification. The return value of DENSE_RANK starts at 1
+for the first row of the window. Values of the given expression that are
+equal have the same rank. The value of DENSE_RANK advances 1 when the
+value of the given expression changes.
+
+```
+DENSERANK() OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+```
+
+* `_inline-window-specification_`
++
+specifies the window over which the DENSE_RANK is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause and an optional ORDER BY clause. The PARTITION BY clause
+specifies how the intermediate result is partitioned and the ORDER BY
+clause specifies how the rows are ordered within each partition.
+
+[[examples_of_dense_rank_window_function]]
+=== Examples of DENSE_RANK Window Function
+
+* Return the dense rank for each employee based on employee number:
++
+```
+SELECT
+  DENSE_RANK() OVER (ORDER BY empnum)
+, *
+FROM persnl.employee;
+```
+
+* Return the dense rank for each employee within each department based
+on salary:
++
+```
+SELECT
+  DENSE_RANK() OVER (PARTITION BY deptnum ORDER BY salary)
+, *
+FROM persnl.employee;
+```
+
+<<<
+[[max_window_function]]
+=== MAX Window Function
+
+MAX is a window function that returns the maximum value of all non null
+values of the given expression for the current window specified by the
+inline-window-specification.
+
+```
+MAX ([ALL] expression) OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+
+* `_window-frame-clause_` is:
++
+```
+  ROWS CURRENT ROW
+| ROWS preceding-row
+| ROWS BETWEEN preceding-row AND preceding-row
+| ROWS BETWEEN preceding-row AND CURRENT ROW
+| ROWS BETWEEN preceding-row AND following-row
+| ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+| ROWS BETWEEN CURRENT ROW AND following-row
+| ROWS BETWEEN following-row AND following-row
+```
+
+* `_preceding-row_` is:
++
+```
+  UNBOUNDED PRECEDING
+| unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
++
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+* `ALL`
++
+specifies whether duplicate values are included in the computation of
+the MAX of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+<<<
+* `_expression_`
++
+specifies an expression that determines the values over which the MAX is
+computed. See <<expressions,Expressions>>.
+
+* `_inline-window-specification_`
++
+specifies the window over which the MAX is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the MAX is
+computed.
+
+<<<
+[[examples_of_max_window_function]]
+=== Examples of MAX Window Function
+
+* Return the running maximum of the SALARY column:
++
+```
+SELECT
+  empnum
+, MAX(salary) OVER (ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the running maximum of the SALARY column within each department:
++
+```
+SELECT
+  deptnum
+, empnum, MAX(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the moving maximum of salary within each department over a window of the last 4 rows:
++
+```
+SELECT
+  deptnum
+, empnum
+, MAX(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS 3 PRECEDING)
+FROM persnl.employee;
+```
+
+<<<
+[[min_window_function]]
+== MIN Window Function
+
+MIN is a window function that returns the minimum value of all non null
+values of the given expression for the current window specified by the
+inline-window-specification.
+
+```
+MIN ([ALL] expression) OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+
+* `_window-frame-clause_` is:
++
+```
+  ROWS CURRENT ROW
+| ROWS preceding-row
+| ROWS BETWEEN preceding-row AND preceding-row
+| ROWS BETWEEN preceding-row AND CURRENT ROW
+| ROWS BETWEEN preceding-row AND following-row
+| ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+| ROWS BETWEEN CURRENT ROW AND following-row
+| ROWS BETWEEN following-row AND following-row
+```
+
+* `_preceding-row_` is:
++
+```
+  UNBOUNDED PRECEDING
+| unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
++
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+* `ALL1
++
+specifies whether duplicate values are included in the computation of
+the MIN of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+<<<
+* `_expression_`
++
+specifies an expression that determines the values over which the MIN is
+computed See <<expressions,Expressions>>.
+
+* `_inline-window-specification_`
++
+specifies the window over which the MIN is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the MIN is
+computed.
+
+<<<
+[[examples_of_min_window_function]]
+=== Examples of MIN Window Function
+
+* Return the running minimum of the SALARY column:
++
+```
+SELECT
+  empnum
+, MIN(salary) OVER (ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the running minimum of the SALARY column within each department:
++
+```
+SELECT
+  deptnum
+, empnum
+, MIN(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the moving minimum of salary within each department over a window of the last 4 rows:
++
+```
+SELECT
+  deptnum
+, empnum
+, MIN(salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS 3 PRECEDING)
+FROM persnl.employee;
+```
+
+<<<
+[[rank_window_function]]
+== RANK Window Function
+
+RANK is a window function that returns the ranking of each row of the
+current partition specified by the inline-window-specification. The
+ranking is relative to the ordering specified in the
+_inline-window-specification_. The return value of RANK starts at 1 for
+the first row of the window. Values that are equal have the same rank.
+The value of RANK advances to the relative position of the row in the
+window when the value changes.
+
+```
+RANK() OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+```
+
+* `_inline-window-specification_`
++
+specifies the window over which the RANK is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause and an optional ORDER BY clause. The PARTITION BY clause
+specifies how the intermediate result is partitioned and the ORDER BY
+clause specifies how the rows are ordered within each partition.
+
+[[examples_of_rank_window_function]]
+=== Examples of RANK Window Function
+
+* Return the rank for each employee based on employee number:
++
+```
+SELECT
+  RANK() OVER (ORDER BY empnum)
+, *
+FROM persnl.employee;
+```
+
+* Return the rank for each employee within each department based on salary:
++
+```
+SELECT
+  RANK() OVER (PARTITION BY deptnum ORDER BY salary)
+, *
+FROM persnl.employee;
+```
+
+<<<
+[[row_number_window_function]]
+=== ROW_NUMBER Window Function
+
+ROW_NUMBER is a window function that returns the row number of each row
+of the current window specified by the inline-window-specification.
+
+```
+ROWNUMBER () OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+```
+
+* `_inline-window-specification_`
++
+specifies the window over which the ROW_NUMBER is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause and an optional ORDER BY clause. The PARTITION BY clause
+specifies how the intermediate result is partitioned and the ORDER BY
+clause specifies how the rows are ordered within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the ROW_NUMBER is
+computed.
+
+[[examples_of_row_number_window_function]]
+=== Examples of ROW_NUMBER Window Function
+
+* Return the row number for each row of the employee table:
++
+```
+SELECT
+  ROW_NUMBER () OVER(ORDER BY empnum)
+, *
+FROM persnl.employee;
+```
+
+* Return the row number for each row within each department:
++
+```
+SELECT
+  ROW_NUMBER () OVER(PARTITION BY deptnum ORDER BY empnum)
+, *
+FROM persnl.employee;
+```
+
+<<<
+[[stddev_window_function]]
+=== STDDEV Window Function
+
+STDDEV is a window function that returns the standard deviation of non
+null values of the given expression for the current window specified by
+the inline-window-specification.
+
+```
+STDDEV ([ALL] expression) OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+
+* `_window-frame-clause_` is:
++
+```
+  ROWS CURRENT ROW
+| ROWS preceding-row
+| ROWS BETWEEN preceding-row AND preceding-row
+| ROWS BETWEEN preceding-row AND CURRENT ROW
+| ROWS BETWEEN preceding-row AND following-row
+| ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+| ROWS BETWEEN CURRENT ROW AND following-row
+| ROWS BETWEEN following-row AND following-row
+```
+
+* `_preceding-row_` is:
++
+```
+  UNBOUNDED PRECEDING
+| unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
++
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+<<<
+* `ALL`
++
+specifies whether duplicate values are included in the computation of
+the STDDEV of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+* `_expression_`
++
+specifies a numeric or interval value _expression_ that determines the
+values over which STDDEV is computed.
+
+* `_inline-window-specification_`
++
+specifies the window over which the STDDEV is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the STDDEV is
+computed.
+
+[[examples_of_stddev]]
+=== Examples of STDDEV
+
+* Return the standard deviation of the salary for each row of the
+employee table:
++
+```
+SELECT
+  STDDEV(salary) OVER(ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+, *
+FROM persnl.employee;
+```
+
+* Return the standard deviation for each row within each department:
++
+```
+SELECT
+  STDDEV() OVER(PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+, *
+FROM persnl.employee;
+```
+
+<<<
+[[sum_window_function]]
+== SUM Window Function
+
+SUM is a window function that returns the sum of non null values of the
+given expression for the current window specified by the
+inline-window-specification.
+
+```
+SUM ([ALL] expression) OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+
+* `_window-frame-clause_` is:
++
+```
+  ROWS CURRENT ROW
+| ROWS preceding-row
+| ROWS BETWEEN preceding-row AND preceding-row
+| ROWS BETWEEN preceding-row AND CURRENT ROW
+| ROWS BETWEEN preceding-row AND following-row
+| ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+| ROWS BETWEEN CURRENT ROW AND following-row
+| ROWS BETWEEN following-row AND following-row
+```
+* `_preceding-row_` is:
++
+```
+  UNBOUNDED PRECEDING
+| unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
++
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+<<<
+* `ALL`
++
+specifies whether duplicate values are included in the computation of
+the SUM of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+* `_expression_`
++
+specifies a numeric or interval value expression that determines the
+values to sum. See <<expressions,Expressions>>.
+
+* `_inline-window-specification_`
++
+specifies the window over which the SUM is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the SUM is computed.
+
+<<<
+[[examples_of_sum_window_function]]
+=== Examples of SUM Window Function
+
+* Return the running sum value of the SALARY column:
++
+```
+SELECT
+  empnum
+, SUM (salary) OVER (ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the running sum of the SALARY column within each department:
++
+```
+SELECT
+  deptnum
+, empnum, SUM (salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the moving sum of the SALARY column within each department over a window of the last 4 rows:
++
+```
+SELECT
+  deptnum
+, empnum
+, SUM (salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS 3 PRECEDING)
+FROM persnl.employee;
+```
+
+<<<
+[[variance_window_function]]
+== VARIANCE Window Function
+
+VARIANCE is a window function that returns the variance of non null
+values of the given expression for the current window specified by the
+inline-window-specification.
+
+```
+VARIANCE ([ALL] expression) OVER (inline-window-specification)
+```
+
+* `_inline-window-specification_` is:
++
+```
+[PARTITION BY expression [, expression]...]
+[ORDER BY expression [ASC[ENDING] | DESC[ENDING]]
+          [,expression [ASC[ENDING] | DESC[ENDING]]]...]
+[ window-frame-clause ]
+```
+* `_window-frame-clause_` is:
++
+```
+  ROWS CURRENT ROW
+| ROWS preceding-row
+| ROWS BETWEEN preceding-row AND preceding-row
+| ROWS BETWEEN preceding-row AND CURRENT ROW
+| ROWS BETWEEN preceding-row AND following-row
+| ROWS BETWEEN CURRENT ROW AND CURRENT ROW
+| ROWS BETWEEN CURRENT ROW AND following-row
+| ROWS BETWEEN following-row AND following-row
+```
+
+* `_preceding-row_` is:
++
+```
+  UNBOUNDED PRECEDING
+| unsigned-integer PRECEDING
+```
+
+* `_following-row_` is:
++
+```
+  UNBOUNDED FOLLOWING
+| unsigned-integer FOLLOWING
+```
+
+<<<
+* `ALL`
++
+specifies whether duplicate values are included in the computation of
+the VARIANCE of the _expression_. The default option is ALL, which causes
+duplicate values to be included.
+
+* `_expression_`
++
+specifies a numeric or interval value expression that determines the
+values over which the variance is computed.
+See <<expressions,Expressions>>.
+
+* `_inline-window-specification_`
++
+specifies the window over which the VARIANCE is computed. The
+_inline-window-specification_ can contain an optional PARTITION BY
+clause, an optional ORDER BY clause and an optional window frame clause.
+The PARTITION BY clause specifies how the intermediate result is
+partitioned and the ORDER BY clause specifies how the rows are ordered
+within each partition.
+
+* `_window-frame-clause_`
++
+specifies the window within the partition over which the VARIANCE is
+computed.
+
+[[examples_of_variance_window_function]]
+=== Examples of VARIANCE Window Function
+
+* Return the variance of the SALARY column:
++
+```
+SELECT
+  empnum
+, VARIANCE (salary) OVER (ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+* Return the variance of the SALARY column within each department:
++
+```
+SELECT
+  deptnum
+, empnum
+, VARIANCE (salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
+FROM persnl.employee;
+```
+
+

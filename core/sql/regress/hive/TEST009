@@ -44,6 +44,8 @@ exit;
 
 ?section clean_up
 
+-- remove messed up table
+cleanup table "_HV_SCH_T009_".t009t1;
 -- remove schemas from Trafodion
 drop schema if exists "_HV_HIVE_" cascade;
 drop schema if exists "_HV_SCH_T009_" cascade;
@@ -60,6 +62,14 @@ drop schema if exists "_HB__CELL__" cascade;
 -- remove table from hbase
 drop hbase table "baseball";
 
+-- remove special schemas
+set parserflags 131072;
+drop schema "_HBASESTATS_" cascade;
+drop schema "_HIVESTATS_" cascade;
+cleanup table "_HB__CELL__".t028tbl1;
+drop schema "_HB__CELL__" cascade;
+reset parserflags 131072;
+ 
 ?section create_db
 
 -- The version of hive installed does not support special characters
@@ -157,10 +167,10 @@ select count(*) from hive.sch_t009.t009t1;
 sh sqlci -i "TEST009(select_stmts)";
 
 -- drop and recreate external table
-select * from table(natablecacheentries('user','local')) ;
+select catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 1,2,3;
 drop external table t009t1 for hive.sch_t009.t009t1;
 get tables in schema "_HV_SCH_T009_";
-select * from table(natablecacheentries('user','local')) ;
+select * from table(natablecacheentries('user','local')) order by 2,3,4;
 create external table t009t1 for hive.sch_t009.t009t1;
 
 -- select should now succeed
