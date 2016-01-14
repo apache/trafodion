@@ -215,7 +215,7 @@ public class ServerApiSqlExecDirect {
                 throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + dialogueId + "/" + clientData.getDialogueId() + "]");
             }
 //=============================================================================
-            sqlQueryType = SqlUtils.getSqlStmtType(sqlStmtType);
+            sqlQueryType = SqlUtils.getSqlStmtType(sqlString);
 
             try {
                 trafConn = clientData.getTrafConnection();
