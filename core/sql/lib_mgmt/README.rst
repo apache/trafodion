@@ -43,17 +43,17 @@ trafci>set param ?p1 help;
  
 trafci>call DB_LIBMGR.HELP(?p1)
  
-PUT - Upload a JAR. SHOWDDL PRODURE [SCHEMA NAME.]PUT for more info.
+PUT - Upload a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]PUT for more info.
  
-LS - List JARs. SHOWDDL PRODURE [SCHEMA NAME.]LS for more info.
+LS - List JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LS for more info.
  
-LSALL - List all JARs. SHOWDDL PRODURE [SCHEMA NAME.]LSALL for more info. 
+LSALL - List all JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info. 
  
-RM - Remove a JAR. SHOWDDL PRODURE [SCHEMA NAME.]RM for more info.
+RM - Remove a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.
 
-RMREX - Remove JARs by a perticular pattern. SHOWDDL PRODURE [SCHEMA NAME.]RMREX for more info.
+RMREX - Remove JARs by a perticular pattern. SHOWDDL PROCEDURE  [SCHEMA NAME.]RMREX for more info.
 
-GETFILE - Download a JAR. SHOWDDL PRODURE [SCHEMA NAME.]GETFILE for more info.
+GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.
 
 ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.
 
