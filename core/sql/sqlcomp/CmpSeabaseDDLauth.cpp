@@ -185,7 +185,7 @@ CmpSeabaseDDLauth::getAuthDetails(const char *pAuthName, bool isExternal)
     setAuthCreateTime(0);
     setAuthDbName(PUBLIC_AUTH_NAME);
     setAuthExtName(PUBLIC_AUTH_NAME);
-    setAuthID(PUBLIC_AUTH_ID);
+    setAuthID(PUBLIC_USER);
     setAuthRedefTime(0);
     setAuthType(COM_ROLE_CLASS);
     setAuthValid(false);
@@ -287,9 +287,9 @@ bool CmpSeabaseDDLauth::isAuthNameReserved (const NAString &authName)
            authName.operator()(0,strlen(RESERVED_AUTH_NAME_PREFIX)) ==
                                                    RESERVED_AUTH_NAME_PREFIX
            ||
-           authName == "_SYSTEM"
+           authName == SYSTEM_AUTH_NAME
            ||
-           authName == "PUBLIC"
+           authName == PUBLIC_AUTH_NAME
            ||
            authName == "NONE";
 
@@ -717,6 +717,13 @@ Int32 CmpSeabaseDDLuser::getUniqueID()
      newUserID = MIN_USERID + 1;
   else
      newUserID++;
+
+  // We have 966,667 available ID's.  Don't expect to run out of ID's for awhile
+  // but if/when we do, the algorithm needs to change.  Can reuse ID's for users 
+  // that were unregistered.
+  if (newUserID >= MAX_USERID)
+    SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLrole::getUniqueID failed, ran out of available IDs");
+
   return newUserID;
 }
 
@@ -1828,14 +1835,24 @@ Int32 CmpSeabaseDDLrole::getUniqueID()
   char roleIDString[MAX_AUTHID_AS_STRING_LEN];
 
   NAString whereClause ("where auth_id >= ");
-  sprintf(roleIDString,"%d",DB_ROOTROLE_ID);
+  sprintf(roleIDString,"%d",MIN_ROLEID);
+  whereClause += roleIDString;
+  whereClause += " and auth_id < ";
+  sprintf(roleIDString, "%d", MAX_ROLEID);
   whereClause += roleIDString;
 
   newRoleID = selectMaxAuthID(whereClause);
   if (newRoleID == 0)
-     newRoleID = DB_ROOTROLE_ID + 1;
+     newRoleID = ROOT_ROLE_ID + 1;
   else
      newRoleID++;
+
+  // We have 490000 available ID's.  Don't expect to run out of ID's for awhile
+  // but if/when we do, the algorithm needs to change.  Can reuse ID's for roles 
+  // that were dropped.
+  if (newRoleID >= MAX_ROLEID)
+    SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLrole::getUniqueID failed, ran out of available IDs");
+
   return newRoleID;
 }
 
