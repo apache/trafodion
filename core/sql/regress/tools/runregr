@@ -31,12 +31,11 @@
 
 # Set defaults: MX-format tables; sequential execution
 sqlmxtbls=1
-table_format='mx'
+table_format='sb'
 ssd='../tools'
 concurrent_execution=0
 exclusive_execution=0
 log_qualifier=
-compress_on=0
 diffs=0
 
 # Parse command line options.  Options must appear on the command line before
@@ -61,11 +60,6 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
 
-    -compress)
-      compress_on=1
-      shift
-      ;;
-
     -diff)
       diffs=1
       shift
@@ -86,32 +80,21 @@ if [ "$diffs" -eq 1 -a "$table_format" == "sb" ]; then
   export SEABASE_REGRESS_DIFFS=1
 fi
 
-# Override the -compress option with the SQ_FILE_COMPRESSION envvar
-# if SQ_FILE_COMPRESSION is set, the compress_on is TRUE
-if [ $SQ_FILE_COMPRESSION ]; then
-  compress_on=1
-  echo "Running with file compression turned on"
-fi
-
-  export SQLMX_REGRESS=1
-  export SQLMX_NAMETYPE=ANSI
-  echo "Running regressions against MX format objects"
-
-echo ""
+export SQLMX_REGRESS=1
+export SQLMX_NAMETYPE=ANSI
+echo "***** Running SQL regressions *****"
 
 $REGR_PREOP		# you can set this envvar to any command you like
 			# e.g.  export REGR_PREOP="cp $HOME/setupnskenv $RGRT"
 
+export NULL=/dev/null
 export NSK=0
-export LINUX=0
-export WIN=0
-
-    LINUX=1
-    if [ "$scriptsdir" != "" ]; then
-      pushd $scriptsdir/tools
-      . ./setuplnxenv
-      popd
-    fi
+export LINUX=1
+if [ "$scriptsdir" != "" ]; then
+  pushd $scriptsdir/tools > $NULL 
+  . ./setuplnxenv
+  popd > $NULL
+fi
 
 if [ -r $ssd/setupenv ]; then	# second, generic pan-platform setup
   . $ssd/setupenv
@@ -122,38 +105,35 @@ fi
 test "$scriptsdir" = "" && echo Scripts root dir env var \$scriptsdir not set. && exit 1
 test "$rundir" = "" && echo Run root dir env var \$rundir not set. && exit 1
 
-    export mxcmpdir=${mxcmpdir:-$arkcmpdir}
-    export NULL=/dev/null
-    export TEMP=${TMP:-${TEMP:-$rundir/tmp}}
-    test -f $TEMP -a ! -d $TEMP && TEMP=$rundir/tmpdir
-    test ! -d $TEMP && mkdir -p $TEMP
-    test ! -d $TEMP -o ! -w $TEMP && TEMP=/tmp
+export mxcmpdir=${mxcmpdir:-$arkcmpdir}
+export TEMP=${TMP:-${TEMP:-$rundir/tmp}}
+test -f $TEMP -a ! -d $TEMP && TEMP=$rundir/tmpdir
+test ! -d $TEMP && mkdir -p $TEMP
+test ! -d $TEMP -o ! -w $TEMP && TEMP=/tmp
 
-    if [ ! -e $scriptsdir/tools/logsort_linux.exe ]; then
-	if [ "$scriptsdir/tools/logsort_src" != "" ]; then
-	    pushd $scriptsdir/tools/logsort_src
-	    sh makeit_linux.ksh
-	    popd
-	    mv -f $scriptsdir/tools/logsort_src/logsort.exe $scriptsdir/tools/logsort_linux.exe
-	fi
-    fi
+if [ ! -e $scriptsdir/tools/logsort_linux.exe ]; then
+  if [ "$scriptsdir/tools/logsort_src" != "" ]; then
+    pushd $scriptsdir/tools/logsort_src > $NULL
+    sh makeit_linux.ksh
+    popd > $NULL
+    mv -f $scriptsdir/tools/logsort_src/logsort.exe $scriptsdir/tools/logsort_linux.exe
+  fi
+fi
 
-    export LOGSORT=$scriptsdir/tools/logsort_linux.exe
-    export  FILTER=$scriptsdir/tools/regress-filter-linux
+export LOGSORT=$scriptsdir/tools/logsort_linux.exe
+export  FILTER=$scriptsdir/tools/regress-filter-linux
 
-    # ln -sf $MY_SQROOT/sql/regress/tools/sqimport $MY_SQROOT/export/bin${SQ_MBTYPE}/import
-
-    export MAKEPARAMS="$mxcmpdir $mxcidir"
-    export MAKEOBJTYP=o
-    export mxci=$mxcidir/sqlci
-    export mxcmp=$mxcmpdir/tdm_arkcmp
-    export mxudr=$mxcmpdir/tdm_udrserv
-    export javahome=${JAVA_HOME}
-    export java=$javahome/bin/java
-    export javac=$javahome/bin/javac
-    export jar=$javahome/bin/jar
-    export NSK_SYS=NSK
-    linuxinit=$scriptsdir/tools/linuxinit
+export MAKEPARAMS="$mxcmpdir $mxcidir"
+export MAKEOBJTYP=o
+export mxci=$mxcidir/sqlci
+export mxcmp=$mxcmpdir/tdm_arkcmp
+export mxudr=$mxcmpdir/tdm_udrserv
+export javahome=${JAVA_HOME}
+export java=$javahome/bin/java
+export javac=$javahome/bin/javac
+export jar=$javahome/bin/jar
+export NSK_SYS=NSK
+linuxinit=$scriptsdir/tools/linuxinit
 
 # export synonyms for convenience
 export sqlci=$mxci
@@ -171,7 +151,6 @@ export REGRTOOLSDIR=$scriptsdir/tools
 
 export REGRCONCURRENT="$concurrent_execution"
 export REGREXCLUSIVE="$exclusive_execution"
-export REGRCOMPRESS="$compress_on"
 
 # setup up make file script, same for mx and mp
 export MAKESCRIPT=$scriptsdir/tools/makefileall.ksh
@@ -198,91 +177,6 @@ test ! -x $FILTER && chmod +rwx $FILTER		# ensure we can run it
 $FILTER $NULL					# run it (emits errmsg if bad)
 test $? -ne 0 && echo && echo "ERROR: Your copy of $FILTER is broken." && exit 1
 
-  export SQLUSER1=sql_user1
-  export SQLUSER2=sql_user2
-  export SQLUSER3=sql_user3
-  export SQLUSER4=sql_user4
-  export SQLUSER5=sql_user5
-  export SQLUSER6=sql_user6
-  export SQLUSER7=sql_user7
-  export SQLUSER8=sql_user8
-  export SQLUSER9=sql_user9
-  export SQLUSER10=sql_user10
-  export ROLEMGR=role_mgr
-  export SQLUSER1X=$SQLUSER1
-  export SQLUSER2X=$SQLUSER2
-  export SQLUSER3X=$SQLUSER3
-  export SQLUSER4X=$SQLUSER4
-  export SQLUSER5X=$SQLUSER5
-  export SQLUSER6X=$SQLUSER6
-  export SQLUSER7X=$SQLUSER7
-  export SQLUSER8X=$SQLUSER8
-  export SQLUSER9X=$SQLUSER9
-  export SQLUSER10X=$SQLUSER10
-  export ROLEMGRX=$ROLEMGR
-
-# adding quotes around the user name still causes some tests to fail
-# like perhaps executor/test016
-  export SQLUSER1Q=$SQLUSER1
-  export SQLUSER2Q=\"$SQLUSER2\"
-  export SQLUSER3Q=\"$SQLUSER3\"
-  export SQLUSER4Q=\"$SQLUSER4\"
-  export SQLUSER5Q=\"$SQLUSER5\"
-  export SQLUSER6Q=\"$SQLUSER6\"
-  export SQLUSER7Q=\"$SQLUSER7\"
-  export SQLUSER8Q=\"$SQLUSER8\"
-  export SQLUSER9Q=\"$SQLUSER9\"
-  export SQLUSER10Q=\"$SQLUSER10\"
-  export ROLEMGRQ=\"$ROLEMGR\"
-
-if [ $nsk -eq 1 ]; then
- # Verify user accounts exist on NSK
-  bad=0
-  i=1
-  while test $i -lt 11
-  do
-    # The comma after the user-name below specifies the (empty) password
-    # Without the comma, running this script as an alias user (i.e., not as
-    #   super.super) would prompt for a password
-    su SQL.USER$i, -c exit
-    if
-      test $? -eq 1
-    then
-      echo SQL.USER$i not found
-      let bad=1
-    fi
-    let i=$i+1
-  done
-  # Verify role.mgr account exist on NSK
-  gtacl -s -c 'safecom info user ROLE.MGR' | grep THAWED > /dev/null
-  if
-    test $? -eq 1
-  then
-    echo ROLE.MGR not found
-    let bad=1
-  fi
-  if
-    test $bad -eq 1
-  then
-    echo "One or more User Ids are not set up on this machine!! "
-    echo "Create the missing User Ids before running security tests."
-  fi
-elif [ $LINUX -eq 1 -a -z "$SEABASE_REGRESS" ]; then
-  # Make sure users required by tests have been registered in the database
-  if [ -e $scriptsdir/tools/reg_users.log ]; then
-    rm $scriptsdir/tools/reg_users.log
-  fi
-  sqlci -i $scriptsdir/tools/reg_users.sql > $scriptsdir/tools/reg_users.log 2>&1
-  # error 1334 (Object already exists) is the only error that is okay to get
-  grep 'ERROR\['  $scriptsdir/tools/reg_users.log | grep -v 'ERROR\[1334\]'
-  if [[ $? -ne 1 ]]; then
-     echo ""
-     echo "Unexpected error registering users.  See $scriptsdir/tools/reg_users.log"
-     echo ""
-     exit 1
-  fi
-fi
-
 flavor1=
 if [ "$diffs" -ne 1 -o "$table_format" != "sb" ]; then
   echo 'select TESTEXIT;' > $tmplocal.flavor.tmp
@@ -305,29 +199,29 @@ if [ ! -f $tool ]; then
   tool=$scriptsdir/tools/runregr_other.ksh
 fi
 if [ "$diffs" -eq 1 ]; then
-  echo "$tool -diff $*"
+  echo "Command requested: $tool -diff $*"
 else
-  echo "$tool $*"
+  echo "Command requested: $tool $*"
 fi
-echo "$BUILD_FLAVOR_TEXT"
+echo "Build flavor is: $BUILD_FLAVOR_TEXT"
 export PATH="$scriptsdir/tools:$PATH"
 
 # Create the FilteredLogs directory
 FilteredLogs=$scriptsdir/FilteredLogs
 if [ ! -d "$FilteredLogs" ]; then
-echo "Creating directory $FilteredLogs"
-mkdir $FilteredLogs
+  echo "Creating directory $FilteredLogs"
+  mkdir $FilteredLogs
 fi
 
-	if [ ! -d "$FilteredLogs/win" ]; then
-	echo "Creating directory $FilteredLogs/win"
-	mkdir $FilteredLogs/win
-	fi
-	FilteredLogs=$FilteredLogs/win
+if [ ! -d "$FilteredLogs/win" ]; then
+  echo "Creating directory $FilteredLogs/win"
+  mkdir $FilteredLogs/win
+fi
+FilteredLogs=$FilteredLogs/win
 
 if [ ! -d "$FilteredLogs/$REGRBASDIR" ]; then
-echo "Creating directory $FilteredLogs/$REGRBASDIR"
-mkdir $FilteredLogs/$REGRBASDIR
+  echo "Creating directory $FilteredLogs/$REGRBASDIR"
+  mkdir $FilteredLogs/$REGRBASDIR
 fi
 export FilteredLogs="$FilteredLogs/$REGRBASDIR"
 
@@ -337,22 +231,20 @@ rm -f core dumpfile sh_histo ZZSA*
 
 #Establish log, exp and bsl directories
 if [ ! -d "$FilteredLogs/logfiles" ]; then
-echo "Creating directory $FilteredLogs/logfiles"
-mkdir $FilteredLogs/logfiles
+  echo "Creating directory $FilteredLogs/logfiles"
+  mkdir $FilteredLogs/logfiles
 fi
 if [ ! -d "$FilteredLogs/expfiles" ]; then
-echo "Creating directory $FilteredLogs/expfiles"
-mkdir $FilteredLogs/expfiles
+  echo "Creating directory $FilteredLogs/expfiles"
+  mkdir $FilteredLogs/expfiles
 fi
-echo "FilteredLogs:   $FilteredLogs"
+echo "Using the following directory for filtered logs:   $FilteredLogs"
 
 if [ "$diffs" -eq 1 ]; then
-  echo "Running tool with -diff $*"
-  echo "$tool -diff $*"
+  echo "Command executed: $tool -diff $*"
   $tool -diff $*
 else
-   echo "Running tool with $*"
-  echo "$tool $*"
+  echo "Command executed: $tool $*"
   $tool $*
 fi
 
@@ -375,3 +267,4 @@ fi
 
 $REGR_POSTOP		# you can set this envvar to any command you like
 			# e.g.  export REGR_POSTOP="$HOME/bin/rgrCleanup"
+echo "***** Done running regressions *****"

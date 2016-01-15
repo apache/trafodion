@@ -38,6 +38,9 @@ export USE_THREADED_IO=${USE_THREADED_IO:-1}
 export SQ_BUILD_TYPE=${SQ_BUILD_TYPE:-debug}
 export LC_ALL=en_US
 
+echo ""
+echo "Setting up regression environment for Linux"
+
 # Don't source sqenv.sh if already sourced
 if [ "$SQ_STARTUP" == "" ]; then
 
@@ -62,16 +65,16 @@ if [ "$SQ_STARTUP" == "" ]; then
          . ./sqenv.sh
          popd
       else
-         echo "ERROR:  Unable to find / source ${CURR_ROOT}/sqenv.sh"
-         echo "        or ${CURR_ROOT}/sqf/sqenv.sh"
-         echo "Your SQF environment is NOT set correctly"
+         echo "  ERROR:  Unable to find / source ${CURR_ROOT}/sqenv.sh"
+         echo "          or ${CURR_ROOT}/sqf/sqenv.sh"
+         echo "  Your SQF environment is NOT set correctly"
          return 1
       fi
   fi
 fi   # sourcing sqend.sh
 
 if [ -z "$MY_SQROOT" ]; then
-  echo ERROR: MY_SQROOT is not set.
+  echo "  ERROR: MY_SQROOT is not set. "
   return 1
 fi
 
@@ -79,8 +82,7 @@ fi
 # Finally, add the regression variables and make sure the directories
 # actually exist
 #
-echo "MY_SQROOT"
-echo $MY_SQROOT
+echo "  MY_SQROOT is set to: $MY_SQROOT"
 export MY_SQROOT=$MY_SQROOT
 export SQLMX_MODULE_DIR=${MY_SQROOT}/sql/sqlmx/USERMODULES
 export SQLMX_SYSMODULE_DIR=${MY_SQROOT}/sql/sqlmx/SYSTEMMODULES
@@ -104,7 +106,7 @@ fi
 for i in $mxcmpdir $mxcidir $rundir $scriptsdir $mxlibdir
 do
   if [ ! -d $dir ]; then
-    echo "ERROR: $i does not exist or is not a directory."
+    echo "  ERROR: $i does not exist or is not a directory."
     return 1
   fi
 done
@@ -113,12 +115,9 @@ if [ -d $MY_SQROOT/sql/local_hadoop ]; then
   . $(dirname $(which swhadoop))/sw_env.sh
 fi
 
-echo ""
-echo "***********"
-echo ""
-echo "Regression test env vars are now set - cd to $scriptsdir and run!"
-echo ""
-echo "***********"
+echo "  Regression test env vars are now set"
+echo "     cd to $scriptsdir and run!"
+echo "Done setting up environment for Linux"
 echo ""
 
 

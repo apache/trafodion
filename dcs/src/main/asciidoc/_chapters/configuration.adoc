@@ -128,6 +128,12 @@ All servers listed in this file will be started and stopped when DCS start or st
 The  _backup-masters_ file lists all hosts that you would have running
 backup DcsMaster processes, one host per line. All servers listed in this file will be started 
 and stopped when DCS start or stop is run.
+
+==== _master_ 
+
+The  _master_ file lists the host of the primary DcsMaster process. Only one host is allowed to 
+be the primary master. The server listed in this file will be started 
+and stopped when DCS start or stop is run.
  
 ==== ZooKeeper and DCS 
 See section <<zookeeper,Zookeeper>> for ZooKeeper setup for DCS.
@@ -152,9 +158,9 @@ found in the _logs_ subdirectory. Check them out
 especially if DCS had trouble starting.
 
 DCS also puts up a UI listing vital attributes and metrics. By default its deployed on the DcsMaster 
-host at port 40010 (DcsServers put up an informational http server at 40030+their instance number). 
+host at port 24410 (DcsServers put up an informational http server at 24430+their instance number). 
 If the DcsMaster were running on a host named `master.example.org` on the default port, to see the
-DcsMaster's homepage you'd point your browser at  _http://master.example.org:40010_.
+DcsMaster's homepage you'd point your browser at  _http://master.example.org:24410_.
  
 To stop DCS after exiting the DCS shell enter
 ----
@@ -298,7 +304,7 @@ include::../../../../target/asciidoc/dcs-default.adoc[]
 
 === _dcs-env.sh_
 Set DCS environment variables in this file. Examples include options to pass the JVM on start of
-an DCS daemon such as heap size and garbarge collector configs. You can also set configurations for DCS configuration, log directories,
+an DCS daemon such as heap size and garbage collector configs. You can also set configurations for DCS configuration, log directories,
 niceness, ssh options, where to locate process pid files, etc. Open the file at _conf/dcs-env.sh_ and peruse its content.
 Each option is fairly well documented.  Add your own environment variables here if you want them read by DCS daemons on startup.
   
@@ -311,16 +317,20 @@ Edit this file to change rate at which DCS files are rolled and to change the le
 Changes here will require a cluster restart for DCS to notice the change though log levels can be changed for 
 particular daemons via the DCS UI.
 
+=== _master_ 
+A plain-text file which lists host on which the primary master process should be started. Only one host allowed to be the 
+primary master
+
 === _backup-masters_ 
-A plain-text file which lists hosts on which the backup Master process, one host per line, should be started.
+A plain-text file which lists hosts on which the backup master process should be started. Only one host per line is allowed
  
 == Example Configurations 
 
 === Basic Distributed DCS Install
 
 This example shows a basic configuration for a distributed four-node cluster. The nodes are named
-`example1`,`example2`, and so on, through node`example4` in this example. The DCS Master is running
-on the node `example1`. DCS Servers run on nodes `example1`-`example4`. A 3-node ZooKeeper ensemble runs on `example1`,
+`example1`,`example2`, and so on, through node`example4` in this example. The DCS Master is configured to run
+on node `example4`. DCS Servers run on nodes `example1`-`example4`. A 3-node ZooKeeper ensemble runs on `example1`,
 `example2`, and `example3` on the default ports. ZooKeeper data is persisted to the directory
 _/export/zookeeper_. Below we show what the main configuration files, _dcs-site.xml_,
 _servers_, and _dcs-env.sh_, found in the DCS _conf_ directory might look like.
@@ -373,6 +383,14 @@ Alternatively, you can list the nodes followed by the number of mxosrvrs:
   example4 2
 ----
 
+==== _master_
+
+In this file, you list the node that will run primary DcsMasters. 
+[source,console] 
+----
+  example4
+----
+
 ==== _backup-masters_
 
 In this file, you list the nodes that will run backup DcsMasters. In this case, 
@@ -408,36 +426,46 @@ index e70ebc6..96f8c27 100644
  
 Use _rsync_ to copy the content of the  _conf_ directory to all nodes of the cluster.
       
-[[important.configurations]]
-== The Important Configurations 
-Below we list the *important* Configurations. We've divided this section into required configuration 
-and worth-a-look recommended configs.
-      
-=== Required Configurations
-Review the <<os,OS>> section.
+[[ha.configurations]]
+== High Availability(HA) Configuration 
+The master configuration file for DcsMaster may be configured by adding the host name to the _conf/master_ file. If the master is 
+configured to start on the remote node then, during start of dcs the primary master will be started on the remote 
+node. If the _conf/master_ file is empty then the primary master will be started on the host where the dcs start script was run.
+Similarly, DcsMaster backup servers may be configured by adding host names to the _conf/backup-masters_ file. They are
+started and stopped automatically by the _bin/master-backup.sh_ script whenever DCS is started or stopped. Every backup 
+DcsMaster follows the current leader DcsMaster watching for it to fail. If failure of the leader occurs, first
+backup DcsMaster in line for succession checks to see if floating IP is enabled. If enabled it executes
+the _bin/scripts/dcsbind.sh_ script to add a floating IP address to an interface on its node. It then continues
+with normal initialization and eventually starts listening for new client connections. It may take
+several seconds for the take over to complete. When a failed node is restored a new DcsMaster backup may
+be started manually by executing the _bin/dcs-daemon.sh_ script on the restored node.
 
-=== Recommended Configurations
-==== `dcs.master.port`
-The default value is 37800. This is the port the DcsMaster listener binds to
+----
+>bin/dcs-daemon.sh start master
+----   
+
+The newly created DcsMaster backup process will take its place at the back of the line waiting for the current DcsMaster leader to fail.
+   
+=== `dcs.master.port`
+The default value is 23400. This is the port the DcsMaster listener binds to
 waiting for JDBC/ODBC T4 client connections. The value may need to be changed
 if this port number conflicts with other ports in use on your cluster.
            
 To change this configuration, edit _conf/dcs-site.xml_, copy the changed file around the cluster and restart.
 
-==== `dcs.master.port.range`
+=== `dcs.master.port.range`
 The default value is 100. This is the total number of ports that MXOSRVRs will scan trying
 to find an available port to use. You must ensure the value is large enough to support the
 number of MXOSRVRs configured in _conf/servers_. 
 
-==== `dcs.master.floating.ip`
+=== `dcs.master.floating.ip`
 The default value is false. When set to true the floating IP feature in the DcsMaster is enabled via the _bin/dcsbind.sh_ script. 
-This allows backup DcsMaster to takeover and set the floating IP address.
+This allows backup DcsMaster to take over and set the floating IP address.
 
-==== `dcs.master.floating.ip.external.interface`
-There is no default value. You must ensure the value contains the correct interface
-for your networking configuration. 
+=== `dcs.master.floating.ip.external.interface`
+There is no default value. You must ensure the value contains the correct interface for your network configuration. 
 
-==== `dcs.master.floating.ip.external.ip.address`
-There is no default value. It is importatnt that you set this to the dotted IP address appropriate for your network.
+=== `dcs.master.floating.ip.external.ip.address`
+There is no default value. It is important that you set this to the dotted IP address appropriate for your network.
           
-To change this configuration, edit _dcs-site.xml_, copy the changed file around the cluster and restart.
+To change this configuration, edit _dcs-site.xml_, copy the changed file to all nodes in the cluster and restart dcs.

@@ -3782,6 +3782,8 @@ enum DefaultConstants
   // A threshold of minitmal RC above which the above total UEC check will be applied.
   MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD,
 
+  // set to ON to aggressively allocate ESP per core
+  AGGRESSIVE_ESP_ALLOCATION_PER_CORE,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

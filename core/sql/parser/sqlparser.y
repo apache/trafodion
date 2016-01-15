@@ -12680,9 +12680,14 @@ insert_obj_to_lob_function :
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
 				}			       
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION  value_expression',' TOK_SIZE value_expression')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBinsert( bufAddr, bufSize, LOBoper::BUFFER_, FALSE);
 				}
                           | TOK_FILETOLOB '(' character_literal_sbyte ')'
 			        {
@@ -12708,45 +12713,55 @@ insert_obj_to_lob_function :
 update_obj_to_lob_function : 
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::STRING_, FALSE);
 				}
 			  | TOK_STRINGTOLOB '(' value_expression ',' TOK_APPEND ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,NULL, LOBoper::STRING_, TRUE);
 				}
                           | TOK_FILETOLOB '('character_literal_sbyte ')'
 			        {
 				 
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,LOBoper::FILE_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,NULL,LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '('character_literal_sbyte ',' TOK_APPEND ')'
 			        {
 				 
-				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, LOBoper::FILE_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, NULL,LOBoper::FILE_, TRUE);
 				}
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION  value_expression ',' TOK_SIZE value_expression ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, FALSE);
 				}
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ',' TOK_APPEND')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ',' TOK_APPEND')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, TRUE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, TRUE);
 				}
 
 			  | TOK_EXTERNALTOLOB '(' literal ')'
 			        {
                                   YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::EXTERNAL_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_EXTERNALTOLOB '(' literal ',' literal ')'
 			        {
                                   YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, LOBoper::EXTERNAL_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, NULL,LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ',' TOK_APPEND ')'
 			        {
 				  YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::LOAD_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::LOAD_, TRUE);
 				}
 
 select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
@@ -15620,15 +15635,28 @@ exe_util_populate_in_memory_statistics : TOK_GENERATE TOK_STATISTICS TOK_FOR TOK
 	       }
 
 /* type relx */
-exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
+exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
                {
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
-
+		 Int64 returnLengthAddr = atoInt64($8->data());
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
-		    NULL, NULL, 0, 0);
+		    returnLengthAddr, NULL, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' 
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
+		    -1, NULL, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -15651,35 +15679,21 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 */
 	       }
 
-              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ')'
+              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-                 if (NOT (($8->getOperatorType() == ITM_DYN_PARAM) ||
-                          ($8->getOperatorType() == ITM_CONSTANT)))
-                   {
-                     YYERROR;
-                   }
+		 /* TOK_LOCATION points to a user allocated data buffer ehich needs to be enough to hold alreast TOK_SIZE worth of data .
+TOK_SIZE points to the address of an Int64 container This size is the input specified by user for length to extract. One return, it will give the caller the size that was extracted */
 
-                 if (NOT (($11->getOperatorType() == ITM_DYN_PARAM) ||
-                          ($11->getOperatorType() == ITM_CONSTANT)))
-                   {
-                     YYERROR;
-                   }
-
-                 ItemExpr * bufaddr = $8;
-		 bufaddr = new (PARSERHEAP()) 
-		   Cast(bufaddr, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-
-		 ItemExpr * bufsize = $11;
-		 bufsize = new (PARSERHEAP()) 
-		   Cast(bufsize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-
+		 Int64 bufAddr = atoInt64($8->data());
+		 Int64 sizeAddr = atoInt64($11->data());
+		 
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_BUFFER_,
-		    bufaddr, bufsize, 0, 0);
+		    bufAddr, sizeAddr, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -19734,7 +19748,7 @@ set_clause : identifier '=' value_expression
 					ColReference(new (PARSERHEAP()) ColRefName(*$1, PARSERHEAP()));
 				      
 				      LOBupdate * nlu = 
-					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, 
+					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, lu->child(2),
 								     lu->getObj(), lu->isAppend());
 				      
 				      rc = nlu;

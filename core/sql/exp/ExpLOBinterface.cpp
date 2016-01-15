@@ -492,7 +492,11 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
   Int64 savedTgtLobLen = tgtLobLen;
   Ex_Lob_Error status;
   Int64 cliError = -1;
-
+  Int64 srcLen = 0;
+  if(so == Lob_Memory)
+    srcLen = strlen(srcLobData);
+  else if (so == Lob_Buffer)
+    srcLen = tgtLobLen;
   err = ExLobsOper(tgtLobName, 
                    lobHandle, handleLen, 
 		   lobHdfsServer, lobHdfsPort, // hdfs server/port
@@ -500,7 +504,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 		   tgtDescSyskey, dummyParam, operLen,
                    0, dummyParam, status, cliError,
                    lobStorageLocation, Lob_HDFS_File,
-                   srcLobData, strlen(srcLobData), //strlen(srcLobData),
+                   srcLobData, srcLen, //strlen(srcLobData),
 		   0,NULL,
                    Lob_Append,
                    so,
@@ -570,6 +574,11 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
   Int64 savedTgtLobLen = tgtLobLen;
   Ex_Lob_Error status;
   Int64 cliError = -1;
+  Int64 sourceLen = 0;
+  if(so == Lob_Memory)
+    sourceLen = strlen(srcLobData);
+  else if (so == Lob_Buffer)
+    sourceLen = tgtLobLen;
 
   err = ExLobsOper(tgtLobName, 
                    lobHandle, handleLen, 
@@ -578,7 +587,7 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 		   tgtDescSyskey, dummyParam, operLen,
                    0, dummyParam, status, cliError,
                    lobStorageLocation, Lob_HDFS_File,
-                   srcLobData, strlen(srcLobData), //strlen(srcLobData),
+                   srcLobData, sourceLen, 
 		   0,NULL,
                    Lob_Update,
                    so,
@@ -792,6 +801,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 				  char *cursorId,
 				  
 				  Int64 &requestTag,
+				  LobsSubOper so,
 				  Lng32 checkStatus,
 				  Lng32 waitedOp,
 
@@ -810,7 +820,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
   
   LobsOper lo;
 
-  //if (lobHandle == NULL)
+  if (lobHandle == NULL)
     {
       if (oper == 1)
 	lo = Lob_OpenDataCursorSimple;
@@ -821,7 +831,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
       else
 	return -1;
     }
-  /*else
+  else
     {
       if (oper == 1)
 	lo = Lob_OpenCursor;
@@ -832,7 +842,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
       else
 	return -1;
     }
-*/
+
   if (checkStatus)
     lo = Lob_Check_Status;
   else
@@ -852,7 +862,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 		   lobData, inLen, 
 		   cursorBytes,cursorId,
 		   lo,
-		   Lob_Memory,
+		   so,
                    waitedOp,
 		   lobGlob,
 		   0,

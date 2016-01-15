@@ -409,7 +409,9 @@ enum SQLTYPE_CODE {
 
     /* LONG VARCHAR/ODBC CHARACTER VARYING */
     SQLTYPECODE_VARCHAR_LONG  = -1,		/* ## NEGATIVE??? */
-
+    /* BLOB TYPE */
+    SQLTYPECODE_BLOB  = -602,
+    SQLTYPECODE_CLOB  = -603,
     /* no ANSI value 13 */
 
     /* BIT */
@@ -825,6 +827,7 @@ enum SQLATTRQUERY_TYPE {
      approach to extract data from SQL tables into extrenal files */
   SQL_SELECT_UNLOAD = 19
   
+  
 
 };
 
@@ -837,7 +840,9 @@ enum SQLATTR_SUBQUERY_TYPE
   SQL_DESCRIBE_QUERY = 4,
   SQL_DISPLAY_EXPLAIN = 5,
   SQL_STMT_HBASE_LOAD = 6,
-  SQL_STMT_HBASE_UNLOAD = 7
+  SQL_STMT_HBASE_UNLOAD = 7,
+  /* Used to denote lob access */
+  SQL_LOB_EXTRACT = 8
 };
 
 

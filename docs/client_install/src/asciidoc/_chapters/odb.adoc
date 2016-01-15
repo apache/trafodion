@@ -1,0 +1,99 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+= Install odb
+These installation instructions apply to Trafodion Release 1.3.*_n_* and subsequent updates of the product until otherwise indicated.
+
+== Installation Package
+
+The distribution file for odb is packaged within the Trafodion clients tar file, `clients-1.3.*_n_*.tar.gz`,
+on the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
+Use this distribution file to install odb:
+
+[cols="35%l,35%l,30%",options="header"]
+|===
+| Distribution File    | File Contents | Client Operating System
+| odb64_linux.tar.gz | README +
+/bin/odb64luo | 64-bit Linux
+|===
+
+== Installation Requirements
+
+The odb tool runs on 64-bit Linux. On a Linux workstation, odb requires `pthread` libraries, which are usually installed by default. It also
+requires the unixODBC Driver Manager to be installed and configured on the client workstation. For more information, see the
+http://trafodion.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+
+== Installation Instructions
+
+NOTE: Before following these installation instructions, please make sure to install and configure unixODBC on the client workstation. For more
+information, see the http://trafodion.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+
+Follow these instructions to download and install odb on the client workstation.
+
+* <<odb_download, Downloading odb>>
+* <<odb_install, Installing odb>>
+
+To uninstall odb, please refer to <<odb_uninstall, Uninstalling odb>>.
+
+<<<
+[[odb_download]]
+=== Download odb
+
+1.  Create a download folder on the client workstation.
+2.  Open a Web browser and navigate to the Trafodion downloads site http://trafodion.incubator.apache.org/download.html
+3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodion clients tar file to your workstation.
+4.  Place the `clients-1.3.*_n_*.tar.gz` file into the download folder.
+5.  Unpack the `clients-1.3.*_n_*.tar.gz` file.
++
+```
+tar -xzf clients-1.3.0.tar.gz
+```
++
+The package file contains the `odb64_linux.tar.gz` distribution file, which is extracted to the clients subdirectory.
+
+6.  Proceed with <<odb_install, Installing odb>>.
+
+[[odb_install]]
+=== Install odb
+
+1.  Change the directory to the clients subdirectory.
+2.  Unpack the contents of the `odb64_linux.tar.gz` file to a location on your client workstation:
++
+```
+tar -xzf odb64_linux.tar.gz
+```
++
+The command extracts these files:
++
+* `README`
+* `/bin/odb64luo` `odb64luo` is the odb executable.
+
+3.  You are now ready to run the odb executable. For more information, see the http://trafodion.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+
+[[odb_uninstall]]
+=== Uninstall odb
+
+To uninstall odb, delete the `README` and `/bin/odb64luo` files from their installed location.
+
+```
+rm -rf odb-installation-directory
+```

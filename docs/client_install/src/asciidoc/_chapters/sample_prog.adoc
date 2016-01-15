@@ -1,0 +1,75 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[odbc_sample_program]]
+== `basicsql` (Sample ODBC Program)
+This appendix provides the source code for the ODBC sample program, `basicsql,` which is not currently bundled with the ODBC drivers.
+
+This appendix also provides the code for the script files that are needed to build and run the sample program on Windows. See
+<<basicsql_build, Windows Build and Run Files for 'basicsql'>>.
+
+Copy and paste the code from this appendix into the recommended files. To build and run the sample program, see these instructions:
+
+* On Windows: <<win_odbc_run_basicsql, Run Sample Program (`basicsql`)>>.
+* On Linux:  <<linux_odbc_run_basicsql, Run Sample Program (`basicsql`)>>.
+
+=== `basicsql.cpp` Source Code
+You can download the `basicsql.cpp` example from
+http://trafodion.incubator.apache.org/docs/latest/client_install/resources/source/basicsql.cpp.
+
+Alternatively, copy and paste the following code into a file named `basicsql.cpp`:
+
+[source, cplusplus]
+----
+include::{sourcedir}/basicsql.cpp[]
+----
+
+[[basicsql_build]]
+=== Windows Build and Run Files for `basicsql`
+
+The script files that are needed to build and run the sample program on Windows are not currently bundled with the ODBC driver.
+Copy and paste the code from this appendix into the recommended files. To build and run the sample program on Windows,
+see the instructions in <<win_odbc_run_basicsql, Run Sample Program (`basicsql`)>>.
+
+==== `build.bat` (Build Script)
+You can download the `build.bat` example from
+http://trafodion.incubator.apache.org/docs/latest/client_install/resources/source/build.bat.
+
+Alternatively, copy and paste the following code into a file named `build.bat`, which is used to build the sample program on Windows:
+
+----
+include::{sourcedir}/build.bat[]
+----
+
+To build the sample program on Windows, see the instructions in <<win_odbc_run_basicsql, Run Sample Program (`basicsql`)>>.
+
+==== Run `run.bat`
+You can download the `run.bat` example from
+http://trafodion.incubator.apache.org/docs/latest/client_install/resources/source/run.bat.
+
+Alternatively, copy and paste the following code into a file named `run.bat`, which is used to run the sample program on Windows:
+
+----
+include::{sourcedir}/run.bat[]
+----
+
+To run the sample program on Windows, see the instructions in <<win_odbc_run_basicsql, Run Sample Program (`basicsql`)>>.
