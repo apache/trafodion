@@ -78,8 +78,6 @@ public class CoprocessorUtils {
 
     public static void main(String[] args) {
         System.out.println("================CoprocessorUtils.main======================");
-        // String currentAllClassName =
-        // "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.transactional.SsccRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation";
         String currentAllClassName = "";
         HTableDescriptor desc = new HTableDescriptor();
         boolean isMVCC = true;
