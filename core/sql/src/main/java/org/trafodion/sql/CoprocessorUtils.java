@@ -22,16 +22,20 @@
 package org.trafodion.sql;
 
 import java.io.IOException;
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.log4j.Logger;
 
 public class CoprocessorUtils {
-    private static Logger logger = Logger.getLogger(HBaseClient.class.getName());
-    private static String[] coprocessors = null;
+    private static Logger logger = Logger.getLogger(CoprocessorUtils.class.getName());
+    private static List<String> coprocessors = new ArrayList<String>();
+    private static String MVCC = null;
+    private static String SSCC = null;
 
     static {
         init();
@@ -40,20 +44,24 @@ public class CoprocessorUtils {
     private static void init() {
         Configuration config = null;
         try {
-            String path = System.getenv("MY_SQROOT") + "/etc/traf_coprocessor.properties";
+            String path = System.getenv("MY_SQROOT") + "/etc/trafcoprocess.properties";
             config = new PropertiesConfiguration(path);
-        } catch (Exception e) {
+        } catch (ConfigurationException e) {
             logger.error("error when finding trafcoprocess.properties");
             e.printStackTrace();
         }
 
         if (config != null) {
-            coprocessors = config.getStringArray("coprocessors");
+            for (String coprocessor : config.getStringArray("coprocessors")) {
+                coprocessors.add(coprocessor);
+            }
+            MVCC = config.getString("MVCC");
+            SSCC = config.getString("SSCC");
         }
     }
 
-    public static void addCoprocessor(String currentAllClassName, HTableDescriptor desc) throws IOException {
-        if (coprocessors == null) {
+    public static void addCoprocessor(String currentAllClassName, HTableDescriptor desc, boolean isMVCC) throws IOException {
+        if (coprocessors == null || currentAllClassName == null) {
             return;
         }
         for (String coprocess : coprocessors) {
@@ -61,16 +69,27 @@ public class CoprocessorUtils {
                 desc.addCoprocessor(coprocess);
             }
         }
+        if (isMVCC && (currentAllClassName == null || !currentAllClassName.contains(MVCC))) {
+            desc.addCoprocessor(MVCC);
+        } else if (!isMVCC && (currentAllClassName == null || !currentAllClassName.contains(SSCC))) {
+            desc.addCoprocessor(SSCC);
+        }
     }
 
     public static void main(String[] args) {
         System.out.println("================CoprocessorUtils.main======================");
-        //init();
-        if (coprocessors == null) {
-            return;
+        // String currentAllClassName =
+        // "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.transactional.SsccRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation";
+        String currentAllClassName = "";
+        HTableDescriptor desc = new HTableDescriptor();
+        boolean isMVCC = true;
+        addCoprocessor(currentAllClassName, desc, isMVCC);
+
+        List<String> list = desc.getCoprocessors();
+
+        for (String string : list) {
+            System.out.println(string);
         }
-        for (String coprocess : coprocessors) {
-            System.out.println(coprocess);
-        }
+        System.out.println("================CoprocessorUtils.main======================");
     }
 }
