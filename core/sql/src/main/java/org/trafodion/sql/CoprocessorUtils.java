@@ -57,7 +57,7 @@ public class CoprocessorUtils {
             return;
         }
         for (String coprocess : coprocessors) {
-            if (!currentAllClassName.contains(coprocess)) {
+            if (currentAllClassName == null || !currentAllClassName.contains(coprocess)) {
                 desc.addCoprocessor(coprocess);
             }
         }
