@@ -61,7 +61,7 @@ public class CoprocessorUtils {
     }
 
     public static void addCoprocessor(String currentAllClassName, HTableDescriptor desc, boolean isMVCC) throws IOException {
-        if (coprocessors == null || currentAllClassName == null) {
+        if (coprocessors == null) {
             return;
         }
         for (String coprocess : coprocessors) {
