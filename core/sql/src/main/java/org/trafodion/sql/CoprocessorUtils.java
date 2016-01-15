@@ -44,7 +44,7 @@ public class CoprocessorUtils {
     private static void init() {
         Configuration config = null;
         try {
-            String path = System.getenv("MY_SQROOT") + "/etc/trafcoprocess.properties";
+            String path = System.getenv("MY_SQROOT") + "/etc/traf_coprocessor.properties";
             config = new PropertiesConfiguration(path);
         } catch (ConfigurationException e) {
             logger.error("error when finding trafcoprocess.properties");
@@ -76,7 +76,7 @@ public class CoprocessorUtils {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println("================CoprocessorUtils.main======================");
         String currentAllClassName = "";
         HTableDescriptor desc = new HTableDescriptor();
