@@ -6428,14 +6428,14 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '2':	return DF_HIGH;
 	  case '3':	return DF_MAXIMUM;
 	}
-    // HBASE_FILTER_PREDS
-      if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
-    switch (*value.data()){
-      case '0': return DF_OFF;
-      case '1': return DF_MINIMUM;
-      case '2': return DF_MEDIUM;
-      // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
-    }
+      // HBASE_FILTER_PREDS
+        if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      switch (*value.data()){
+        case '0': return DF_OFF;
+        case '1': return DF_MINIMUM;
+        case '2': return DF_MEDIUM;
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
+      }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
          attrEnum == MVQR_PUBLISH_TABLE_LOCATION ||
@@ -6693,13 +6693,13 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case HBASE_FILTER_PREDS:
-    	if(tok == DF_OFF || tok == DF_ON)
-    	{
-    		if (tok == DF_ON)
-    			tok = DF_MINIMUM; // to keep backward compatibility
-    	isValid= TRUE;
-    	}
-    	break;
+        if(tok == DF_OFF || tok == DF_ON)
+        {
+            if (tok == DF_ON)
+                tok = DF_MINIMUM; // to keep backward compatibility
+        isValid= TRUE;
+        }
+        break;
 
     case ROBUST_QUERY_OPTIMIZATION:
       if (tok == DF_MINIMUM || tok == DF_SYSTEM || tok == DF_MAXIMUM ||

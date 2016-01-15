@@ -11222,7 +11222,7 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
 					   ValueIdSet &preds, ValueIdSet &newExePreds)
 {
    if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
-     return 0;
+       return 0;
    // cannot push preds for aligned format row
    NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
@@ -11279,7 +11279,7 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
 //  xp:=  <column>  <op>  <value-expr>
 //  xp:=  <column> is not null (no support for hbase lookup)
 //  xp:=  <column> is null (no support for hbase lookup)
-// 	  (xp:=<column> like <value-expr> not yet implemented)
+//    (xp:=<column> like <value-expr> not yet implemented)
 //  xp:=<xp> OR <xp> (not evaluated in isHbaseFilterPredV2, but by extractHbaseFilterPredV2)
 //  xp:=<xp> AND <xp>(not evaluated in isHbaseFilterPredV2, but by extractHbaseFilterPredV2)
 //
@@ -11289,15 +11289,16 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
 //                            serialized: either the column doesn't need encoding, like
 //                                            an unsigned integer,  or the column
 //                                            was declared with the SERIALIZED option.
-//						it also must not be an added column with default non null.
+//                      it also must not be an added column with default non null.
 //      <op>:              eq, ne, gt, ge, lt, le
 //      <value-expr>:  an expression that only contains const or param values, and
 //                     <value-expr>'s datatype is not a superset of <column>'s datatype.
 //
+// colVID, valueID and op are output parameters.
 /////////////////////////////////////////////////////////////////////////////
 NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
-					 ValueId &colVID, ValueId &valueVID,
-					 NAString &op)
+                     ValueId &colVID, ValueId &valueVID,
+                     NAString &op)
 {
   NABoolean foundBinary = FALSE;
   NABoolean foundUnary = FALSE;
@@ -11312,123 +11313,96 @@ NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
       ItemExpr * child1 = ie->child(1)->castToItemExpr();
 
       if ((ie->child(0)->getOperatorType() == ITM_BASECOLUMN) &&
-	  (NOT hasColReference(ie->child(1))))
-	{
+      (NOT hasColReference(ie->child(1))))
+    {
       foundBinary = TRUE;
-	  colVID = ie->child(0)->getValueId();
-	  valueVID = ie->child(1)->getValueId();
-	}
+      colVID = ie->child(0)->getValueId();
+      valueVID = ie->child(1)->getValueId();
+    }
       else if ((ie->child(1)->getOperatorType() == ITM_BASECOLUMN) &&
-	       (NOT hasColReference(ie->child(0))))
-	{
+           (NOT hasColReference(ie->child(0))))
+    {
       foundBinary = TRUE;
       flipOp = TRUE;
-	  colVID = ie->child(1)->getValueId();
-	  valueVID = ie->child(0)->getValueId();
-	}
+      colVID = ie->child(1)->getValueId();
+      valueVID = ie->child(0)->getValueId();
+    }
       else if ((ie->child(0)->getOperatorType() == ITM_INDEXCOLUMN) &&
-	       (NOT hasColReference(ie->child(1))))
-	{
+           (NOT hasColReference(ie->child(1))))
+    {
       foundBinary = TRUE;
-	  colVID = ie->child(0)->getValueId();
-	  valueVID = ie->child(1)->getValueId();
-	}
+      colVID = ie->child(0)->getValueId();
+      valueVID = ie->child(1)->getValueId();
+    }
       else if ((ie->child(1)->getOperatorType() == ITM_INDEXCOLUMN) &&
-	       (NOT hasColReference(ie->child(0))))
-	{
+           (NOT hasColReference(ie->child(0))))
+    {
       foundBinary = TRUE;
       flipOp = TRUE;
-	  colVID = ie->child(1)->getValueId();
-	  valueVID = ie->child(0)->getValueId();
-	}
-      else if ((ie->child(0)->getOperatorType() == ITM_REFERENCE) &&
-	       (NOT hasColReference(ie->child(1))))
-	{
-      foundBinary = TRUE;
-	  colVID = ie->child(0)->getValueId();
-	  valueVID = ie->child(1)->getValueId();
-	}
-      else if ((ie->child(1)->getOperatorType() == ITM_REFERENCE) &&
-	       (NOT hasColReference(ie->child(0))))
-	{
-      foundBinary = TRUE;
-      flipOp = TRUE;
-	  colVID = ie->child(1)->getValueId();
-	  valueVID = ie->child(0)->getValueId();
-	}
+      colVID = ie->child(1)->getValueId();
+      valueVID = ie->child(0)->getValueId();
+    }
       else if ((ie->child(0)->getOperatorType() == ITM_HBASE_COLUMN_LOOKUP) &&
-	       (NOT hasColReference(ie->child(1))))
-	{
-	  HbaseColumnLookup * hcl = (HbaseColumnLookup*)ie->child(0)->castToItemExpr();
-	  if (hcl->getValueId().getType().getTypeQualifier() == NA_CHARACTER_TYPE)
-	    {
-	      hbaseLookupPred = TRUE;
+           (NOT hasColReference(ie->child(1))))
+    {
+      HbaseColumnLookup * hcl = (HbaseColumnLookup*)ie->child(0)->castToItemExpr();
+      if (hcl->getValueId().getType().getTypeQualifier() == NA_CHARACTER_TYPE)
+        {
+          hbaseLookupPred = TRUE;
 
-	      ItemExpr * newCV = new(generator->wHeap()) ConstValue(hcl->hbaseCol());
-	      newCV = newCV->bindNode(generator->getBindWA());
-	      newCV = newCV->preCodeGen(generator);
+          ItemExpr * newCV = new(generator->wHeap()) ConstValue(hcl->hbaseCol());
+          newCV = newCV->bindNode(generator->getBindWA());
+          newCV = newCV->preCodeGen(generator);
 
-	      foundBinary = TRUE;
-	      colVID = newCV->getValueId();
-	      valueVID = ie->child(1)->getValueId();
-	    }
-	}
+          foundBinary = TRUE;
+          colVID = newCV->getValueId();
+          valueVID = ie->child(1)->getValueId();
+        }
+    }
       else if ((ie->child(1)->getOperatorType() == ITM_HBASE_COLUMN_LOOKUP) &&
-	       (NOT hasColReference(ie->child(0))))
-	{
-	  HbaseColumnLookup * hcl = (HbaseColumnLookup*)ie->child(1)->castToItemExpr();
-	  if (hcl->getValueId().getType().getTypeQualifier() == NA_CHARACTER_TYPE)
-	    {
-	      hbaseLookupPred = TRUE;
+           (NOT hasColReference(ie->child(0))))
+    {
+      HbaseColumnLookup * hcl = (HbaseColumnLookup*)ie->child(1)->castToItemExpr();
+      if (hcl->getValueId().getType().getTypeQualifier() == NA_CHARACTER_TYPE)
+        {
+          hbaseLookupPred = TRUE;
 
-	      ItemExpr * newCV = new(generator->wHeap()) ConstValue(hcl->hbaseCol());
-	      newCV = newCV->bindNode(generator->getBindWA());
-	      newCV = newCV->preCodeGen(generator);
+          ItemExpr * newCV = new(generator->wHeap()) ConstValue(hcl->hbaseCol());
+          newCV = newCV->bindNode(generator->getBindWA());
+          newCV = newCV->preCodeGen(generator);
 
-	      foundBinary = TRUE;
-	      flipOp = TRUE;
-	      colVID = newCV->getValueId();
-	      valueVID = ie->child(0)->getValueId();
-	    }
-	}
+          foundBinary = TRUE;
+          flipOp = TRUE;
+          colVID = newCV->getValueId();
+          valueVID = ie->child(0)->getValueId();
+        }
+    }
     }//end binary operators
   else if (ie && ((ie->getOperatorType() == ITM_IS_NULL)||(ie->getOperatorType() == ITM_IS_NOT_NULL))){//check for unary operators
-	  ItemExpr * child0 = ie->child(0)->castToItemExpr();
-	  if ((ie->child(0)->getOperatorType() == ITM_BASECOLUMN) ||
-		  (ie->child(0)->getOperatorType() == ITM_INDEXCOLUMN)||
-		  (ie->child(0)->getOperatorType() == ITM_REFERENCE)){
-		  foundUnary = TRUE;
-		  colVID = ie->child(0)->getValueId();
-		  valueVID = NULL_VALUE_ID;
-	  }
+      ItemExpr * child0 = ie->child(0)->castToItemExpr();
+      if ((ie->child(0)->getOperatorType() == ITM_BASECOLUMN) ||
+          (ie->child(0)->getOperatorType() == ITM_INDEXCOLUMN)){
+          foundUnary = TRUE;
+          colVID = ie->child(0)->getValueId();
+          valueVID = NULL_VALUE_ID;
+      }
 
   }//end unary operators
 
   //check if found columns belong to table being scanned (so is not an input to the scan node)
   if (foundBinary || foundUnary){
-	ValueId dummyValueId;
-	if (getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(colVID,dummyValueId)){
-		foundBinary=FALSE;
-		foundUnary=FALSE;
-	}
+    ValueId dummyValueId;
+    if (getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(colVID,dummyValueId)){
+        foundBinary=FALSE;
+        foundUnary=FALSE;
+    }
   }
   //check if not an added column with default non null
   if ((foundBinary || foundUnary)&& (NOT hbaseLookupPred)){
-	  NAColumn * nac;
-		switch (colVID.getItemExpr()->getOperatorType()){
-		case ITM_BASECOLUMN:
-			nac = ((BaseColumn*)colVID.getItemExpr())->getNAColumn();
-			break;
-		case ITM_INDEXCOLUMN:
-			nac = ((IndexColumn*)colVID.getItemExpr())->getNAColumn();
-			break;
-		default:
-			break;
-		}
-		if (nac && nac->isAddedColumn() && nac->getDefaultValue()){
-			foundBinary=FALSE;
-			foundUnary=FALSE;
-		}
+        if (colVID.isAddedColumnWithNonNullDefault()){
+            foundBinary=FALSE;
+            foundUnary=FALSE;
+        }
   }
 
   if (foundBinary)
@@ -11438,54 +11412,54 @@ NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
 
       NABoolean generateNarrow = FALSE;
       if (NOT hbaseLookupPred)
-	{
-	  generateNarrow = valueType.errorsCanOccur(colType);
-	  if ((generateNarrow)  || // value not a superset of column
-	      (NOT columnEnabledForSerialization(colVID.getItemExpr())))
-		  foundBinary = FALSE;
-	}
+    {
+      generateNarrow = valueType.errorsCanOccur(colType);
+      if ((generateNarrow)  || // value not a superset of column
+          (NOT columnEnabledForSerialization(colVID.getItemExpr())))
+          foundBinary = FALSE;
+    }
 
       if (foundBinary)
-	{
-	  if (colType.getTypeQualifier() == NA_CHARACTER_TYPE)
-	    {
-	      const CharType &charColType = (CharType&)colType;
-	      const CharType &charValType = (CharType&)valueType;
+    {
+      if (colType.getTypeQualifier() == NA_CHARACTER_TYPE)
+        {
+          const CharType &charColType = (CharType&)colType;
+          const CharType &charValType = (CharType&)valueType;
 
-	      if ((charColType.isCaseinsensitive() || charValType.isCaseinsensitive()) ||
-		  (charColType.isUpshifted() || charValType.isUpshifted()))
-	     foundBinary = FALSE;
-	    }
-	  else if (colType.getTypeQualifier() == NA_NUMERIC_TYPE)
-	    {
-	      const NumericType &numType = (NumericType&)colType;
-	      const NumericType &valType = (NumericType&)valueType;
-	      if (numType.isBigNum() || valType.isBigNum())
-	     foundBinary = FALSE;
-	    }
-	}
+          if ((charColType.isCaseinsensitive() || charValType.isCaseinsensitive()) ||
+          (charColType.isUpshifted() || charValType.isUpshifted()))
+         foundBinary = FALSE;
+        }
+      else if (colType.getTypeQualifier() == NA_NUMERIC_TYPE)
+        {
+          const NumericType &numType = (NumericType&)colType;
+          const NumericType &valType = (NumericType&)valueType;
+          if (numType.isBigNum() || valType.isBigNum())
+         foundBinary = FALSE;
+        }
+    }
 
       if (foundBinary)
-	{
-	  if ((ie) && (((BiRelat*)ie)->addedForLikePred()) &&
-	      (valueVID.getItemExpr()->getOperatorType() == ITM_CONSTANT))
-	    {
-	      // remove trailing '\0' characters since this is being pushed down to hbase.
-	      ConstValue * cv = (ConstValue*)(valueVID.getItemExpr());
-	      char * cvv = (char*)cv->getConstValue();
-	      Lng32 len = cv->getStorageSize() - 1;
-	      while ((len > 0) && (cvv[len] == '\0'))
-		len--;
+    {
+      if ((ie) && (((BiRelat*)ie)->addedForLikePred()) &&
+          (valueVID.getItemExpr()->getOperatorType() == ITM_CONSTANT))
+        {
+          // remove trailing '\0' characters since this is being pushed down to hbase.
+          ConstValue * cv = (ConstValue*)(valueVID.getItemExpr());
+          char * cvv = (char*)cv->getConstValue();
+          Lng32 len = cv->getStorageSize() - 1;
+          while ((len > 0) && (cvv[len] == '\0'))
+            len--;
 
-	      NAString newCVV(cvv, len+1);
+          NAString newCVV(cvv, len+1);
 
-	      ItemExpr * newCV = new(generator->wHeap()) ConstValue(newCVV);
-	      newCV = newCV->bindNode(generator->getBindWA());
-	      newCV = newCV->preCodeGen(generator);
-	      valueVID = newCV->getValueId();
-	    }
+          ItemExpr * newCV = new(generator->wHeap()) ConstValue(newCVV);
+          newCV = newCV->bindNode(generator->getBindWA());
+          newCV = newCV->preCodeGen(generator);
+          valueVID = newCV->getValueId();
+        }
 
-	  ItemExpr * castValue = NULL;
+      ItemExpr * castValue = NULL;
           if (NOT hbaseLookupPred)
             castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &colType);
           else
@@ -11493,237 +11467,169 @@ NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
               castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &valueVID.getType());
             }
 
-	  if ((NOT hbaseLookupPred) &&
-	      (isEncodingNeededForSerialization(colVID.getItemExpr())))
-	    {
-	      castValue = new(generator->wHeap()) CompEncode
-		(castValue, FALSE, -1, CollationInfo::Sort, TRUE, FALSE);
-	    }
+      if ((NOT hbaseLookupPred) &&
+          (isEncodingNeededForSerialization(colVID.getItemExpr())))
+        {
+          castValue = new(generator->wHeap()) CompEncode
+        (castValue, FALSE, -1, CollationInfo::Sort, TRUE, FALSE);
+        }
 
-	  castValue = castValue->bindNode(generator->getBindWA());
-	  castValue = castValue->preCodeGen(generator);
+      castValue = castValue->bindNode(generator->getBindWA());
+      castValue = castValue->preCodeGen(generator);
 
-	  valueVID = castValue->getValueId();
+      valueVID = castValue->getValueId();
 
-	  NAString nullType;
+      NAString nullType;
 
-	  if ((colType.supportsSQLnull()) ||
-	      (valueType.supportsSQLnull()))
-	    {
-	      nullType = "_NULL";
-	    }
-	  else
-	    {
-	      nullType = "";
-	    }
+      if ((colType.supportsSQLnull()) ||
+          (valueType.supportsSQLnull()))
+        {
+          nullType = "_NULL";
+        }
+      else
+        {
+          nullType = "";
+        }
 
-	  // append -NULL to the operator to signify the java code generating pushdown filters to handle NULL semantic logic
-	  if (ie->getOperatorType() == ITM_EQUAL)
-		  op = "EQUAL"+nullType;
-	  else  if (ie->getOperatorType() == ITM_NOT_EQUAL)
-	    op = "NOT_EQUAL"+nullType;
-	  else  if (ie->getOperatorType() == ITM_LESS){
-		  if (flipOp)
-			  op = "GREATER"+nullType;
-		  else
-			  op = "LESS"+nullType;
-	  }
-	  else  if (ie->getOperatorType() == ITM_LESS_EQ){
-		  if (flipOp)
-			  op = "GREATER_OR_EQUAL"+nullType;
-		  else
-			  op = "LESS_OR_EQUAL"+nullType;
-	  }else  if (ie->getOperatorType() == ITM_GREATER){
-		  if (flipOp)
-			  op = "LESS"+nullType;
-		  else
-			  op = "GREATER"+nullType;
-	  }else  if (ie->getOperatorType() == ITM_GREATER_EQ){
-		  if (flipOp)
-			  op = "LESS_OR_EQUAL"+nullType;
-		  else
-			  op = "GREATER_OR_EQUAL"+nullType;
-	  }else
-	    op = "NO_OP"+nullType;
-	}
+      // append -NULL to the operator to signify the java code generating pushdown filters to handle NULL semantic logic
+      if (ie->getOperatorType() == ITM_EQUAL)
+          op = "EQUAL"+nullType;
+      else  if (ie->getOperatorType() == ITM_NOT_EQUAL)
+        op = "NOT_EQUAL"+nullType;
+      else  if (ie->getOperatorType() == ITM_LESS){
+          if (flipOp)
+              op = "GREATER"+nullType;
+          else
+              op = "LESS"+nullType;
+      }
+      else  if (ie->getOperatorType() == ITM_LESS_EQ){
+          if (flipOp)
+              op = "GREATER_OR_EQUAL"+nullType;
+          else
+              op = "LESS_OR_EQUAL"+nullType;
+      }else  if (ie->getOperatorType() == ITM_GREATER){
+          if (flipOp)
+              op = "LESS"+nullType;
+          else
+              op = "GREATER"+nullType;
+      }else  if (ie->getOperatorType() == ITM_GREATER_EQ){
+          if (flipOp)
+              op = "LESS_OR_EQUAL"+nullType;
+          else
+              op = "GREATER_OR_EQUAL"+nullType;
+      }else
+        op = "NO_OP"+nullType;
+    }
     }
   if (foundUnary){
-	  const NAType &colType = colVID.getType();
-	  NAString nullType;
+      const NAType &colType = colVID.getType();
+      NAString nullType;
 
-	  if (colType.supportsSQLnull())
-	    {
-	      nullType = "_NULL";
-	    }
-	  else
-	    {
-	      nullType = "";
-	    }
-	  if (ie->getOperatorType() == ITM_IS_NULL)
-	  		  op = "IS_NULL"+nullType;
-	  else if (ie->getOperatorType() == ITM_IS_NOT_NULL)
-		      op = "IS_NOT_NULL"+nullType;
+      if (colType.supportsSQLnull())
+        {
+          nullType = "_NULL";
+        }
+      else
+        {
+          nullType = "";
+        }
+      if (ie->getOperatorType() == ITM_IS_NULL)
+              op = "IS_NULL"+nullType;
+      else if (ie->getOperatorType() == ITM_IS_NOT_NULL)
+              op = "IS_NOT_NULL"+nullType;
   }
 
   return foundBinary || foundUnary;
 }
 short HbaseAccess::extractHbaseFilterPredsVX(Generator * generator,
-		   ValueIdSet &preds, ValueIdSet &newExePreds){
-	//separate the code that should not belong in the recursive function
-	   if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
-	    return 0;
-	   // check if initial (version 1) implementation
-	   if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MINIMUM)
-	    return extractHbaseFilterPreds(generator,preds,newExePreds);
+           ValueIdSet &preds, ValueIdSet &newExePreds){
+    //separate the code that should not belong in the recursive function
+       if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
+        return 0;
+       // check if initial (version 1) implementation
+       if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MINIMUM)
+        return extractHbaseFilterPreds(generator,preds,newExePreds);
 
-	   // if here, we are DF_MEDIUM
-	   // cannot push preds for aligned format row
-	   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+       // if here, we are DF_MEDIUM
+       // cannot push preds for aligned format row
+       NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-	   if (isAlignedFormat)
-	     return 0;
-	   //recursive function call
-	   opList_.insert("V2");//to instruct the java side that we are dealing with predicate pushdown V2 semantic, add "V2" marker
-	   extractHbaseFilterPredsV2(generator,preds,newExePreds,FALSE,TRUE);
-	   return 0;
+       if (isAlignedFormat)
+         return 0;
+       //recursive function call
+       opList_.insert("V2");//to instruct the java side that we are dealing with predicate pushdown V2 semantic, add "V2" marker
+       extractHbaseFilterPredsV2(generator,preds,newExePreds,FALSE);
+       return 0;
 
 }
 
 // return true if successfull push down of node
 NABoolean HbaseAccess::extractHbaseFilterPredsV2(Generator * generator,
-					   ValueIdSet &preds, ValueIdSet &newExePreds, NABoolean checkOnly, NABoolean isFirstAndLayer )
+                       ValueIdSet &preds, ValueIdSet &newExePreds, NABoolean checkOnly)
 {
 
-	// the isFirstAndLayer is used to allow detecting top level predicate that can still be pushed to executor
-	int addedNode=0;
-	for (ValueId vid = preds.init();
+    // the isFirstAndLayer is used to allow detecting top level predicate that can still be pushed to executor
+    int addedNode=0;
+    for (ValueId vid = preds.init();
        (preds.next(vid));
        preds.advance(vid))
     {
       ItemExpr * ie = vid.getItemExpr();
 
       // if it is AND operation, recurse through left and right children
-      if (ie->getOperatorType() == ITM_AND)
-        {
+      if (ie->getOperatorType() == ITM_AND){
           ValueIdSet leftPreds;
           ValueIdSet rightPreds;
           leftPreds += ie->child(0)->castToItemExpr()->getValueId();
           rightPreds += ie->child(1)->castToItemExpr()->getValueId();
-          if (isFirstAndLayer){
-            NABoolean leftOK  = extractHbaseFilterPredsV2(generator, leftPreds, newExePreds,TRUE, TRUE);
-            NABoolean rightOK = extractHbaseFilterPredsV2(generator, rightPreds, newExePreds,TRUE, TRUE);
-            if (leftOK && rightOK){
-            	if (!checkOnly){
-					extractHbaseFilterPredsV2(generator, leftPreds, newExePreds,FALSE, TRUE);//generate tree
-					extractHbaseFilterPredsV2(generator, rightPreds, newExePreds,FALSE, TRUE);//generate tree
-					opList_.insert("AND"); // insert an AND node since both side are OK to push down
-					if (addedNode>0)opList_.insert("AND"); // if it is not the first node addd to the push down, AND it with the rest
-					addedNode++; // we just pushed it down, so increase the node count pushed down.
-            	}
-            	if (preds.entries()==1)
-            		return TRUE;
-            } else if (leftOK){  // if only left is OK to push down
-            	if(!checkOnly){
-					extractHbaseFilterPredsV2(generator, leftPreds, newExePreds,FALSE, TRUE);//generate left tree
-					newExePreds.insert(rightPreds); //make sure we add the right child to predicates that needs executor evalvaluation
-					if (addedNode>0)opList_.insert("AND"); // if it is not the first node addd to the push down, AND it with the rest
-					addedNode++; // we pushed down left side so mark it
-            	}
-            	if (preds.entries()==1)
-            		return TRUE;
-            } else if (rightOK){// if only right is OK to push down
-            	if(!checkOnly){
-					extractHbaseFilterPredsV2(generator, rightPreds, newExePreds,FALSE, TRUE);//generate right tree
-					newExePreds.insert(leftPreds);//make sure we add the left child to predicates that needs executor evalvaluation
-					if (addedNode>0)opList_.insert("AND"); // if it is not the first node addd to the push down, AND it with the rest
-					addedNode++;// we pushed down right side so mark it
-            	}
-            	if (preds.entries()==1)
-            		return TRUE;
-            } else{
-            	if(!checkOnly){
-            		newExePreds.insert(vid);// we pushed down nothing, make sure the whole node is evaluated by Executor
-            	}
-            	if (preds.entries()==1)
-            		return FALSE;
-
-            }
+          //cannot be first AND layer, both left and right must be pushable to get anything pushed
+          if(extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, TRUE)&&
+             extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, TRUE)){// both left and right child must match
+              if(!checkOnly){
+                  extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, FALSE);//generate tree
+                  extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, FALSE);//generate tree
+                  opList_.insert("AND");
+              }
+            if (preds.entries()==1)
+                return TRUE;
           }
-          else{//if not first AND layer, both left and right must be pushable to get anything pushed
-              if(extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, TRUE, FALSE)&&
-                 extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, TRUE, FALSE)){// both left and right child must match
-            	  if(!checkOnly){
-					  extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, FALSE, FALSE);//generate tree
-					  extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, FALSE, FALSE);//generate tree
-					  opList_.insert("AND");
-            	  }
-              	if (preds.entries()==1)
-              		return TRUE;
-
+          else{
+              if(!checkOnly){
+                  newExePreds.insert(vid);
               }
-              else{
-            	  if(!checkOnly){
-            		  newExePreds.insert(vid);
-            	  }
-                  if (preds.entries()==1)
-                		return FALSE;
-              }
+              if (preds.entries()==1)
+                    return FALSE;
           }
           continue;
-
           // the OR case is easier, as we don t have the case of top level expression that can still be pushed to executor
-        }//end if AND
-        else if(ie->getOperatorType() == ITM_OR){
+      }//end if AND
+      else if(ie->getOperatorType() == ITM_OR){
           ValueIdSet leftPreds;
-		  ValueIdSet rightPreds;
-		  leftPreds += ie->child(0)->castToItemExpr()->getValueId();
-		  rightPreds += ie->child(1)->castToItemExpr()->getValueId();
-          if (isFirstAndLayer){
-            NABoolean leftOK  = extractHbaseFilterPredsV2(generator, leftPreds, newExePreds,TRUE, FALSE);
-            NABoolean rightOK = extractHbaseFilterPredsV2(generator, rightPreds, newExePreds,TRUE, FALSE);
-            if (leftOK && rightOK){
-            	if (!checkOnly){
-					extractHbaseFilterPredsV2(generator, leftPreds, newExePreds,FALSE, FALSE);//generate tree
-					extractHbaseFilterPredsV2(generator, rightPreds, newExePreds,FALSE, FALSE);//generate tree
-					opList_.insert("OR"); // insert an OR node since both side are OK to push down
-					if (addedNode>0)opList_.insert("AND"); // if it is not the first node add to the push down, AND it with the rest
-					addedNode++; // we just pushed it down, so increase the node count pushed down.
-            	}
-            	if (preds.entries()==1)
-            		return TRUE;
-
-            } else{
-            	if(!checkOnly){
-            		newExePreds.insert(vid);// we pushed down nothing, make sure the whole node is evaluated by Executor
-            	}
-            	if (preds.entries()==1)
-            		return FALSE;
-            }
-
-           }else{//if not first AND layer, both left and right must be pushable to get anything pushed
-			  if(extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, TRUE, FALSE)&&
-				 extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, TRUE, FALSE)){// both left and right child must match
-				  if(!checkOnly){
-					  extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, FALSE, FALSE);//generate tree
-					  extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, FALSE, FALSE);//generate tree
-					  opList_.insert("OR");
-				  }
-				  if (preds.entries()==1)
-				   return TRUE;
-			  }
-			  else{// if predicate cannot be pushed down
-				  if(!checkOnly){
-					  newExePreds.insert(vid);
-				  }
-				  if (preds.entries()==1)
-						return FALSE;
-			  }
-            }
-
-		  continue;
-		  }//end if OR
-
-
+          ValueIdSet rightPreds;
+          leftPreds += ie->child(0)->castToItemExpr()->getValueId();
+          rightPreds += ie->child(1)->castToItemExpr()->getValueId();
+          //both left and right must be pushable to get anything pushed
+          if(extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, TRUE)&&
+             extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, TRUE)){// both left and right child must match
+              if(!checkOnly){
+                  extractHbaseFilterPredsV2(generator, leftPreds, newExePreds, FALSE);//generate tree
+                  extractHbaseFilterPredsV2(generator, rightPreds, newExePreds, FALSE);//generate tree
+                  opList_.insert("OR");
+                  if (addedNode>0)opList_.insert("AND"); // if it is not the first node add to the push down, AND it with the rest
+                  addedNode++; // we just pushed it down, so increase the node count pushed down.
+              }
+              if (preds.entries()==1)
+               return TRUE;
+          }
+          else{// if predicate cannot be pushed down
+              if(!checkOnly){
+                  newExePreds.insert(vid);
+              }
+              if (preds.entries()==1)
+                    return FALSE;
+          }
+          continue;
+      }//end if OR
 
       ValueId colVID;
       ValueId valueVID;
@@ -11736,15 +11642,13 @@ NABoolean HbaseAccess::extractHbaseFilterPredsV2(Generator * generator,
           hbaseFilterColVIDlist_.insert(colVID);
           if (valueVID != NULL_VALUE_ID) hbaseFilterValueVIDlist_.insert(valueVID);// don't insert valueID for unary operators.
           opList_.insert(op);
-          if(isFirstAndLayer){
-			if (addedNode>0)opList_.insert("AND"); // if it is not the first node add to the push down, AND it with the rest
-			addedNode++; // we just pushed it down, so increase the node count pushed down.
-          }
+          if (addedNode>0)opList_.insert("AND"); // if it is not the first node add to the push down, AND it with the rest
+          addedNode++; // we just pushed it down, so increase the node count pushed down.
         }else if (!checkOnly){//if not pushable, pass it for executor evaluation.
-        	newExePreds.insert(vid);
+            newExePreds.insert(vid);
         }
       if (preds.entries()==1){
-    	  return isHFP; // if we are not on the first call level, where we can have multiple preds, exit returning the pushability
+          return isHFP; // if we are not on the first call level, where we can have multiple preds, exit returning the pushability
       }
 
     } // end for
@@ -11816,37 +11720,37 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   if (! FileScan::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;
 
-    //compute isUnique:
-    NABoolean isUnique = FALSE;
-    if (listOfRangeRows_.entries() == 0)
-      {
-        if ((searchKey() && searchKey()->isUnique()) &&
-  	  (listOfUniqueRows_.entries() == 0))
-  	isUnique = TRUE;
-        else if ((NOT (searchKey() && searchKey()->isUnique())) &&
-  	       (listOfUniqueRows_.entries() == 1) &&
-  	       (listOfUniqueRows_[0].rowIds_.entries() == 1))
-  	isUnique = TRUE;
-      }
-
-    // executorPred() contains an ANDed list of predicates.
-    // if hbase filter preds are enabled, then extracts those preds from executorPred()
-    // which could be pushed down to hbase.
-    // Do this only for non-unique scan access.
-    ValueIdSet newExePreds;
-    ValueIdSet* originExePreds = new (generator->wHeap())ValueIdSet(executorPred()) ;//saved for futur nullable column check
-
-    if (CmpCommon::getDefault(HBASE_FILTER_PREDS) != DF_MINIMUM){ // the check for V2 and above is moved up before calculating retrieved columns
-		if ((NOT isUnique) &&
-			(extractHbaseFilterPredsVX(generator, executorPred(), newExePreds)))
-		  return this;
-
-		// if some filter preds were found, then initialize executor preds with new exe preds.
-		// newExePreds may be empty which means that all predicates were changed into
-		// hbase preds. In this case, nuke existing exe preds.
-		if (hbaseFilterColVIDlist_.entries() > 0)
-		  setExecutorPredicates(newExePreds);
+  //compute isUnique:
+  NABoolean isUnique = FALSE;
+  if (listOfRangeRows_.entries() == 0)
+    {
+      if ((searchKey() && searchKey()->isUnique()) &&
+    (listOfUniqueRows_.entries() == 0))
+  isUnique = TRUE;
+      else if ((NOT (searchKey() && searchKey()->isUnique())) &&
+         (listOfUniqueRows_.entries() == 1) &&
+         (listOfUniqueRows_[0].rowIds_.entries() == 1))
+  isUnique = TRUE;
     }
+
+  // executorPred() contains an ANDed list of predicates.
+  // if hbase filter preds are enabled, then extracts those preds from executorPred()
+  // which could be pushed down to hbase.
+  // Do this only for non-unique scan access.
+  ValueIdSet newExePreds;
+  ValueIdSet* originExePreds = new (generator->wHeap())ValueIdSet(executorPred()) ;//saved for futur nullable column check
+
+  if (CmpCommon::getDefault(HBASE_FILTER_PREDS) != DF_MINIMUM){ // the check for V2 and above is moved up before calculating retrieved columns
+      if ((NOT isUnique) &&
+          (extractHbaseFilterPredsVX(generator, executorPred(), newExePreds)))
+        return this;
+
+      // if some filter preds were found, then initialize executor preds with new exe preds.
+      // newExePreds may be empty which means that all predicates were changed into
+      // hbase preds. In this case, nuke existing exe preds.
+      if (hbaseFilterColVIDlist_.entries() > 0)
+        setExecutorPredicates(newExePreds);
+  }
 
   ValueIdSet colRefSet;
 
@@ -11930,48 +11834,37 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
       //any other columns.
       if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_MEDIUM && getMdamKeyPtr() == NULL){ //only enable column retrieval optimization with DF_MEDIUM and not for MDAM scan
           bool needAddingNonNullableColumn = true; //assume we need to add one non nullable column
-		  for (ValueId vid = retColRefSet_.init();// look for each column in th eresult set if one match the criteria non null non added non nullable with default
-				  retColRefSet_.next(vid);
-				  retColRefSet_.advance(vid))
-		  {
-			if (originExePreds->isNotNullable(vid)){// it is non nullable
-				NAColumn * nac;
-				switch (vid.getItemExpr()->getOperatorType()){
-				case ITM_BASECOLUMN:
-					nac = ((BaseColumn*)vid.getItemExpr())->getNAColumn();
-					break;
-				case ITM_INDEXCOLUMN:
-					nac = ((IndexColumn*)vid.getItemExpr())->getNAColumn();
-					break;
-				default:
-					break;
-				}
-				if (nac && !(nac->isAddedColumn()  && nac->getDefaultValue())){//check if  added and  with default... notgood
-					needAddingNonNullableColumn = false; // we found one column meeting all criteria
-					break;
-				}
-			}
-		  }
-		  if (needAddingNonNullableColumn){ // ok now we need to add one key column that is not nullable
-			  bool foundAtLeastOneKeyColumnNotNullable = false;
-			  for(int i=getIndexDesc()->getIndexKey().entries()-1; i>=0;i--)// doing reverse search is making sure we are trying to avoid to use _SALT_ column
-				  	  	  	  	  	  	  	  	  	  	  	  	  	  	 // because _SALT_ is physicaly the last column therefore we don't skip columns optimally if using _SALT_ column
-			  {
-				  ValueId vaId = getIndexDesc()->getIndexKey()[i];
-				  if ( (vaId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN	&& !((BaseColumn*)vaId.getItemExpr())->getNAColumn()->getType()->supportsSQLnullPhysical())||
-						  (vaId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN	&& !((IndexColumn*)vaId.getItemExpr())->getNAColumn()->getType()->supportsSQLnullPhysical())
-						  ){ //found good key column candidate?
-					  HbaseAccess::addReferenceFromItemExprTree(vaId.getItemExpr(),TRUE,FALSE,retColRefSet_); // add it
-					  foundAtLeastOneKeyColumnNotNullable = true; //tag we found it
-					  break; // no need to look further
-				  }
-			  }
-			  if (!foundAtLeastOneKeyColumnNotNullable){//oh well, did not find any key column non nullable, let s add all key columns
-				  HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
-			  }
-		  }
+          for (ValueId vid = retColRefSet_.init();// look for each column in th eresult set if one match the criteria non null non added non nullable with default
+                  retColRefSet_.next(vid);
+                  retColRefSet_.advance(vid))
+          {
+            if (originExePreds->isNotNullable(vid)){// it is non nullable
+                if (!vid.isAddedColumnWithNonNullDefault()){//check if  added and  with default... notgood
+                    needAddingNonNullableColumn = false; // we found one column meeting all criteria
+                    break;
+                }
+            }
+          }
+          if (needAddingNonNullableColumn){ // ok now we need to add one key column that is not nullable
+              bool foundAtLeastOneKeyColumnNotNullable = false;
+              for(int i=getIndexDesc()->getIndexKey().entries()-1; i>=0;i--)// doing reverse search is making sure we are trying to avoid to use _SALT_ column
+                                                                         // because _SALT_ is physicaly the last column therefore we don't skip columns optimally if using _SALT_ column
+              {
+                  ValueId vaId = getIndexDesc()->getIndexKey()[i];
+                  if ( (vaId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN && !((BaseColumn*)vaId.getItemExpr())->getNAColumn()->getType()->supportsSQLnullPhysical())||
+                          (vaId.getItemExpr()->getOperatorType() == ITM_INDEXCOLUMN && !((IndexColumn*)vaId.getItemExpr())->getNAColumn()->getType()->supportsSQLnullPhysical())
+                          ){ //found good key column candidate?
+                      HbaseAccess::addReferenceFromItemExprTree(vaId.getItemExpr(),TRUE,FALSE,retColRefSet_); // add it
+                      foundAtLeastOneKeyColumnNotNullable = true; //tag we found it
+                      break; // no need to look further
+                  }
+              }
+              if (!foundAtLeastOneKeyColumnNotNullable){//oh well, did not find any key column non nullable, let s add all key columns
+                  HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+              }
+          }
       }else //end if DF_MEDIUM
-    	  HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+          HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
     }
 
   if ((getMdamKeyPtr()) &&

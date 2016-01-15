@@ -365,417 +365,417 @@ public class HTableClient {
 		table.setAutoFlush(true, true);
 	}
 
-	private enum Op {
-		EQUAL, EQUAL_NULL, NOT_EQUAL, NOT_EQUAL_NULL, LESS, LESS_NULL, LESS_OR_EQUAL, LESS_OR_EQUAL_NULL, GREATER, GREATER_NULL, 
-		GREATER_OR_EQUAL, GREATER_OR_EQUAL_NULL, NO_OP, NO_OP_NULL,IS_NULL, IS_NULL_NULL, IS_NOT_NULL, IS_NOT_NULL_NULL, AND, OR};
-		
-	private Filter SingleColumnValueExcludeOrNotFilter(byte[] columnToFilter, 
-														CompareOp op,
-														ByteArrayComparable comparator, 
-														HashMap<String,Object> columnsToRemove, 
-														Boolean... filterIfMissing){
-		Filter result;
-		boolean fMissing = filterIfMissing.length>0?filterIfMissing[0]:false;//default to false 
-		if ((columnsToRemove == null) || !columnsToRemove.containsKey(new String(columnToFilter))){
-			result = new SingleColumnValueFilter(getFamily(columnToFilter), getName(columnToFilter), op, comparator);
-			((SingleColumnValueFilter)result).setFilterIfMissing(fMissing);
-		}
-		else{
-			result= new SingleColumnValueExcludeFilter(getFamily(columnToFilter), getName(columnToFilter), op, comparator);
-			((SingleColumnValueExcludeFilter)result).setFilterIfMissing(fMissing);
-		}
-		return result;
-	}
-	
-	// construct the hbase filter
-	// optimizes for OR and AND associativity
-	// optimizes for detection of a<? and a>? on nullable and non nullable column equivalent to a<>?
-	// optimize for null check factorization (A not null and (A <op> ?)) or (A not null and A <op2> ?) -> A not null and (A <op> ? or A <op2> ?)
-	//		this is an important optimzation for IN statement on non null column
-	// uses the columnToRemove parametter to know if we need to use the SingleColumnValue Exclude or not method to limit returned columns
-	
-	private Filter constructV2Filter(Object[] colNamesToFilter, 
+    private enum Op {
+        EQUAL, EQUAL_NULL, NOT_EQUAL, NOT_EQUAL_NULL, LESS, LESS_NULL, LESS_OR_EQUAL, LESS_OR_EQUAL_NULL, GREATER, GREATER_NULL, 
+        GREATER_OR_EQUAL, GREATER_OR_EQUAL_NULL, NO_OP, NO_OP_NULL,IS_NULL, IS_NULL_NULL, IS_NOT_NULL, IS_NOT_NULL_NULL, AND, OR};
+        
+    private Filter SingleColumnValueExcludeOrNotFilter(byte[] columnToFilter, 
+                                                        CompareOp op,
+                                                        ByteArrayComparable comparator, 
+                                                        HashMap<String,Object> columnsToRemove, 
+                                                        Boolean... filterIfMissing){
+        Filter result;
+        boolean fMissing = filterIfMissing.length>0?filterIfMissing[0]:false;//default to false 
+        if ((columnsToRemove == null) || !columnsToRemove.containsKey(new String(columnToFilter))){
+            result = new SingleColumnValueFilter(getFamily(columnToFilter), getName(columnToFilter), op, comparator);
+            ((SingleColumnValueFilter)result).setFilterIfMissing(fMissing);
+        }
+        else{
+            result= new SingleColumnValueExcludeFilter(getFamily(columnToFilter), getName(columnToFilter), op, comparator);
+            ((SingleColumnValueExcludeFilter)result).setFilterIfMissing(fMissing);
+        }
+        return result;
+    }
+    
+    // construct the hbase filter
+    // optimizes for OR and AND associativity
+    // optimizes for detection of a<? and a>? on nullable and non nullable column equivalent to a<>?
+    // optimize for null check factorization (A not null and (A <op> ?)) or (A not null and A <op2> ?) -> A not null and (A <op> ? or A <op2> ?)
+    //      this is an important optimzation for IN statement on non null column
+    // uses the columnToRemove parametter to know if we need to use the SingleColumnValue Exclude or not method to limit returned columns
+    
+    private Filter constructV2Filter(Object[] colNamesToFilter, 
                                  Object[] compareOpList, 
                                  Object[] colValuesToCompare,
                                  HashMap<String,Object> columnsToRemove){
-		LinkedList linkedList = new LinkedList();
-		//populate the list with nodes in reverse polish notation order.
-		int k=0;//column index
-		int kk=0;//value index
-		for (int i=1; i<compareOpList.length; i++){ // skip first one containing "V2" marker
-			String opStr = new String((byte[])compareOpList[i]);
-			switch(Op.valueOf(opStr)){
-				
-				case EQUAL:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.EQUAL, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove
-							));
-					k++;kk++;
-					break;
-				case EQUAL_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-										   SingleColumnValueExcludeOrNotFilter(
-												(byte[])colNamesToFilter[k],
-												CompareOp.EQUAL, 
-												new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-												columnsToRemove,
-												true	//filterIfMissing
-												),
-										   SingleColumnValueExcludeOrNotFilter(
-													(byte[])colNamesToFilter[k], 
-													CompareOp.EQUAL, 
-													new BinaryComparator((byte[])colValuesToCompare[kk]),
-													columnsToRemove)));
-					k++;kk++;
-					break;
-				case NOT_EQUAL:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.NOT_EQUAL, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove));
-					k++;kk++;
-					break;
-				case NOT_EQUAL_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k],
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-									columnsToRemove,
-									true), //filterIfMissing,
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k], 
-									CompareOp.NOT_EQUAL, 
-									new BinaryComparator((byte[])colValuesToCompare[kk]),
-									columnsToRemove)));
-					k++;kk++;
-					break;
-				case LESS:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.LESS, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove));
-					k++;kk++;
-					break;
-				case LESS_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k],
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-									columnsToRemove,
-									true), //filterIfMissing,
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k], 
-									CompareOp.LESS, 
-									new BinaryComparator((byte[])colValuesToCompare[kk]),
-									columnsToRemove)));
-					k++;kk++;
-					break;
-				case LESS_OR_EQUAL:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.LESS_OR_EQUAL, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove));
-					k++;kk++;
-					break;
-				case LESS_OR_EQUAL_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k],
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-									columnsToRemove,
-									true), //filterIfMissing,
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k], 
-									CompareOp.LESS_OR_EQUAL, 
-									new BinaryComparator((byte[])colValuesToCompare[kk]),
-									columnsToRemove)));
-					k++;kk++;					
-					break;
-				case GREATER:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.GREATER, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove));
-					k++;kk++;
-					break;
-				case GREATER_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k],
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-									columnsToRemove,
-									true), //filterIfMissing, 
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k], 
-									CompareOp.GREATER, 
-									new BinaryComparator((byte[])colValuesToCompare[kk]),
-									columnsToRemove)));
-					k++;kk++;					
-					break;
-				case GREATER_OR_EQUAL:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.GREATER_OR_EQUAL, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove));
-					k++;kk++;
-					break;
-				case GREATER_OR_EQUAL_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k],
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-									columnsToRemove,
-									true), //filterIfMissing,
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k], 
-									CompareOp.GREATER_OR_EQUAL, 
-									new BinaryComparator((byte[])colValuesToCompare[kk]),
-									columnsToRemove)));
-					k++;kk++;
-					break;
-				case NO_OP:
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.NO_OP, 
-							new BinaryComparator((byte[])colValuesToCompare[kk]),
-							columnsToRemove));
-					k++;kk++;
-					break;
-				case NO_OP_NULL:
-					linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k],
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
-									columnsToRemove,
-									true), //filterIfMissing,
-							SingleColumnValueExcludeOrNotFilter(
-									(byte[])colNamesToFilter[k], 
-									CompareOp.NO_OP, 
-									new BinaryComparator((byte[])colValuesToCompare[kk]),
-									columnsToRemove)));
-					k++;kk++;					
-					break;
-				case IS_NULL:
-					// is null on a non nullable column!
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k], 
-							CompareOp.NO_OP, //exclude everything
-							new BinaryPrefixComparator((new byte[]{})),
-							columnsToRemove));
-					k++;
-					break;
-				case IS_NULL_NULL:
-					// is_null on nullable column: is absent OR has the first byte set to FF indicating NULL.
-					linkedList.addLast(
-							new FilterList(FilterList.Operator.MUST_PASS_ONE, //OR
-									SingleColumnValueExcludeOrNotFilter(
-											(byte[])colNamesToFilter[k],
-											CompareOp.EQUAL, 
-											new NullComparator(),//is absent?
-											columnsToRemove), 
-									SingleColumnValueExcludeOrNotFilter(
-											(byte[])colNamesToFilter[k],
-											CompareOp.EQUAL, 
-											new BinaryPrefixComparator(new byte[]{-1}),//0xFF has null prefix indicator
-											columnsToRemove)));
-					k++;
-					break;
-				case IS_NOT_NULL:
-					// is not null on a non nullable column!
-					// do nothing, always true
-					k++;
-					break;	
-				case IS_NOT_NULL_NULL:
-					// is_not_null on nullable column: is not absent AND has the first byte not set to FF indicating NULL.
-					linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
-							(byte[])colNamesToFilter[k],
-							CompareOp.NOT_EQUAL, 
-							new BinaryPrefixComparator(new byte[]{-1}),// 0xFF has null prefix indicator
-							columnsToRemove,
-							true));//filter if missing (if absent null)
-					k++;
-					break;
-				case AND:
-					linkedList.addLast("AND");
-					break;
-				case OR:
-					linkedList.addLast("OR");
-					break;
-					default:
-			}//switch
-		}//for
-		//evaluate the reverse polish notation list
-		while (linkedList.size()>1){// evaluate until only one element is left in the list
-			//look for first operator (AND or OR)
-			int j=0;
-			while (j<linkedList.size() && !(linkedList.get(j) instanceof String)){
-				j++;
-			}
-			//here j points on the first operator; (all operands are of type Filter)
-			if (j==linkedList.size()){logger.error("j==linkedList.size()");return null;} // should not happen
-			Filter leftOperand;
-			Filter rightOperand;
-			switch(Op.valueOf((String)linkedList.get(j))){
-			case AND:
-				FilterList filterListAnd = new FilterList(FilterList.Operator.MUST_PASS_ALL); //AND filterList
-				//left operand
-				leftOperand = (Filter)linkedList.get(j-2);
-				if (leftOperand instanceof FilterList && ((FilterList)leftOperand).getOperator()==FilterList.Operator.MUST_PASS_ALL){//associativity of AND optimization
-					//for(Filter f:((FilterList)leftOperand).getFilters())
-					//	filterListAnd.addFilter(f);
-					filterListAnd = (FilterList)leftOperand; //more efficient than the 2 lines above (kept commented out for code lisibility)
-				}else{
-					filterListAnd.addFilter(leftOperand);
-				}
-				// right operand
-				rightOperand = (Filter)linkedList.get(j-1);
-				if (rightOperand instanceof FilterList && ((FilterList)rightOperand).getOperator()==FilterList.Operator.MUST_PASS_ALL){//associativity of AND optimization
-					for(Filter f:((FilterList)rightOperand).getFilters())
-						filterListAnd.addFilter(f);					
-				}else{
-					filterListAnd.addFilter(rightOperand);
-				}				
-				// setup evaluated filter
-				linkedList.set(j,filterListAnd); // replace the operator with the constructer filter
-				linkedList.remove(j-1);// remove right operand
-				linkedList.remove(j-2);// remove left operand. warning order matter 
-				break;
-			case OR:
-				FilterList filterListOr = new FilterList(FilterList.Operator.MUST_PASS_ONE); //OR filterList
-				leftOperand = (Filter)linkedList.get(j-2);
-				rightOperand = (Filter)linkedList.get(j-1);
-				//begin detection of null check factorization (A not null and (A <op> ?)) or (A not null and A <op2> ?) -> A not null and (A <op> ? or A <op2> ?)  
-				//the code is doing more than just nullcheck, but any factorization where left operands are identical
-				if (leftOperand instanceof FilterList && rightOperand instanceof FilterList && 
-					((FilterList)leftOperand).getOperator() == FilterList.Operator.MUST_PASS_ALL &&
-					((FilterList)rightOperand).getOperator() == FilterList.Operator.MUST_PASS_ALL &&
-					((FilterList)leftOperand).getFilters().size() == 2 &&
-					((FilterList)rightOperand).getFilters().size() == 2 &&
-					((FilterList)leftOperand).getFilters().get(0) instanceof SingleColumnValueFilter && //cannot be SingleColumnValueExcludeFilter when we have the optimization scenario
-					((FilterList)rightOperand).getFilters().get(0) instanceof SingleColumnValueFilter){//cannot be SingleColumnValueExcludeFilter when we have the optimization scenario
-					SingleColumnValueFilter scvfLeft = (SingleColumnValueFilter)((FilterList)leftOperand).getFilters().get(0);
-					SingleColumnValueFilter scvfRight = (SingleColumnValueFilter)((FilterList)rightOperand).getFilters().get(0);
-					if (scvfLeft.getOperator() == scvfRight.getOperator() && //more general case than just for null check (identical operands)
-						Arrays.equals(scvfLeft.getQualifier(),scvfRight.getQualifier()) &&
-						Arrays.equals(scvfLeft.getFamily(),scvfRight.getFamily()) &&
-						Arrays.equals(scvfLeft.getComparator().getValue(),scvfRight.getComparator().getValue()) &&
-						(scvfLeft.getFilterIfMissing() == scvfRight.getFilterIfMissing())){
-						Filter left = ((FilterList)leftOperand).getFilters().get(1);
-						Filter right = ((FilterList)rightOperand).getFilters().get(1);
-						if (left instanceof FilterList && ((FilterList)left).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
-							//for(Filter f:((FilterList)left).getFilters())
-							//	filterListOr.addFilter(f);
-							filterListOr = (FilterList)left; // more efficient than the 2 lines above (kept commented out for code lisibility)
-						}else{
-							filterListOr.addFilter(left);
-						}
-						// right operand				
-						if (right instanceof FilterList && ((FilterList)right).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
-							for(Filter f:((FilterList)right).getFilters())
-								filterListOr.addFilter(f);					
-						}else{
-							filterListOr.addFilter(right);
-						}										
-						linkedList.set(j,new FilterList(FilterList.Operator.MUST_PASS_ALL,scvfLeft,filterListOr));//resulting factorized AND filter
-						linkedList.remove(j-1);// remove right operand
-						linkedList.remove(j-2);// remove left operand. warning order matter 
-						break;
-					}									
-				}
-				//end detection of null (and more) check factorization
-				//begin detection of RangeSpec a<>? transformed to a<? or a>? to convert it back to a <> ? when we push down
-				//check for <> on non nullable columns
-				if (leftOperand instanceof SingleColumnValueFilter && rightOperand instanceof SingleColumnValueFilter){
-					SingleColumnValueFilter leftscvf = (SingleColumnValueFilter)leftOperand;
-					SingleColumnValueFilter rightscvf = (SingleColumnValueFilter)rightOperand;
-					if (leftscvf.getOperator() == CompareOp.LESS && rightscvf.getOperator()== CompareOp.GREATER && 
-							Arrays.equals(leftscvf.getQualifier(), rightscvf.getQualifier()) &&
-							Arrays.equals(leftscvf.getFamily(), rightscvf.getFamily()) &&
-							Arrays.equals(leftscvf.getComparator().getValue(),rightscvf.getComparator().getValue())
-						){
-						// setup evaluated filter
-						linkedList.set(j,new SingleColumnValueFilter(leftscvf.getFamily(), leftscvf.getQualifier(), CompareOp.NOT_EQUAL, leftscvf.getComparator())); // replace the operator with the constructer filter
-						linkedList.remove(j-1);// remove right operand
-						linkedList.remove(j-2);// remove left operand. warning order matter 						
-						break;
-					}
-				}
-				//check for <> on nullable column
-				if( leftOperand instanceof FilterList && rightOperand instanceof FilterList){
-					//no need to check FilterList size, as all possible case FilterList size is at least 2.
-					if (((FilterList)leftOperand).getFilters().get(1) instanceof SingleColumnValueFilter &&
-						((FilterList)rightOperand).getFilters().get(1) instanceof SingleColumnValueFilter){
-						SingleColumnValueFilter leftscvf = (SingleColumnValueFilter)((FilterList)leftOperand).getFilters().get(1);
-						SingleColumnValueFilter rightscvf = (SingleColumnValueFilter)((FilterList)rightOperand).getFilters().get(1);
-						if (leftscvf.getOperator() == CompareOp.LESS && rightscvf.getOperator()== CompareOp.GREATER && 
-								Arrays.equals(leftscvf.getQualifier(), rightscvf.getQualifier()) &&
-								Arrays.equals(leftscvf.getFamily(), rightscvf.getFamily()) &&
-								Arrays.equals(leftscvf.getComparator().getValue(),rightscvf.getComparator().getValue())
-							){
-							// setup evaluated filter
-							SingleColumnValueFilter nullCheck = new SingleColumnValueFilter(// null checker
-									leftscvf.getFamily(), leftscvf.getQualifier(),
-									CompareOp.EQUAL, 
-									new BinaryPrefixComparator(new byte[]{0x00}));
-							nullCheck.setFilterIfMissing(true);
-							linkedList.set(j,new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
-									nullCheck, 
-									new SingleColumnValueFilter(
-											leftscvf.getFamily(), leftscvf.getQualifier(), 
-											CompareOp.NOT_EQUAL, 
-											leftscvf.getComparator()))); 
-							linkedList.remove(j-1);// remove right operand
-							linkedList.remove(j-2);// remove left operand. warning order matter 						
-							break;
-						}						
-					}
-				}				
-				//end detection of RangeSpec a<>?
-				//now general case...
-				//left operand			    
-				if (leftOperand instanceof FilterList && ((FilterList)leftOperand).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
-					//for(Filter f:((FilterList)leftOperand).getFilters())
-					//	filterListOr.addFilter(f);
-					filterListOr = (FilterList)leftOperand; // more efficient than the 2 lines above (kept commented out for code lisibility)
-				}else{
-					filterListOr.addFilter(leftOperand);
-				}
-				// right operand				
-				if (rightOperand instanceof FilterList && ((FilterList)rightOperand).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
-					for(Filter f:((FilterList)rightOperand).getFilters())
-						filterListOr.addFilter(f);					
-				}else{
-					filterListOr.addFilter(rightOperand);
-				}				
-				// setup evaluated filter
-				linkedList.set(j,filterListOr); // replace the operator with the constructer filter
-				linkedList.remove(j-1);// remove right operand
-				linkedList.remove(j-2);// remove left operand. warning order matter 
-				break;
-				default:
-					logger.error("operator different than OR or AND???");
-					return null;//should never happen
-			}			
-		}
-		// after evaluation, the linkedList contains only one element containing the filter built
-		return (Filter)linkedList.pop();
-	}
-	
-	
+        LinkedList linkedList = new LinkedList();
+        //populate the list with nodes in reverse polish notation order.
+        int k=0;//column index
+        int kk=0;//value index
+        for (int i=1; i<compareOpList.length; i++){ // skip first one containing "V2" marker
+            String opStr = new String((byte[])compareOpList[i]);
+            switch(Op.valueOf(opStr)){
+                
+                case EQUAL:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.EQUAL, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove
+                            ));
+                    k++;kk++;
+                    break;
+                case EQUAL_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                                           SingleColumnValueExcludeOrNotFilter(
+                                                (byte[])colNamesToFilter[k],
+                                                CompareOp.EQUAL, 
+                                                new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                                columnsToRemove,
+                                                true    //filterIfMissing
+                                                ),
+                                           SingleColumnValueExcludeOrNotFilter(
+                                                    (byte[])colNamesToFilter[k], 
+                                                    CompareOp.EQUAL, 
+                                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                                    columnsToRemove)));
+                    k++;kk++;
+                    break;
+                case NOT_EQUAL:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.NOT_EQUAL, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove));
+                    k++;kk++;
+                    break;
+                case NOT_EQUAL_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k],
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                    columnsToRemove,
+                                    true), //filterIfMissing,
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k], 
+                                    CompareOp.NOT_EQUAL, 
+                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                    columnsToRemove)));
+                    k++;kk++;
+                    break;
+                case LESS:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.LESS, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove));
+                    k++;kk++;
+                    break;
+                case LESS_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k],
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                    columnsToRemove,
+                                    true), //filterIfMissing,
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k], 
+                                    CompareOp.LESS, 
+                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                    columnsToRemove)));
+                    k++;kk++;
+                    break;
+                case LESS_OR_EQUAL:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.LESS_OR_EQUAL, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove));
+                    k++;kk++;
+                    break;
+                case LESS_OR_EQUAL_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k],
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                    columnsToRemove,
+                                    true), //filterIfMissing,
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k], 
+                                    CompareOp.LESS_OR_EQUAL, 
+                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                    columnsToRemove)));
+                    k++;kk++;                   
+                    break;
+                case GREATER:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.GREATER, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove));
+                    k++;kk++;
+                    break;
+                case GREATER_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k],
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                    columnsToRemove,
+                                    true), //filterIfMissing, 
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k], 
+                                    CompareOp.GREATER, 
+                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                    columnsToRemove)));
+                    k++;kk++;                   
+                    break;
+                case GREATER_OR_EQUAL:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.GREATER_OR_EQUAL, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove));
+                    k++;kk++;
+                    break;
+                case GREATER_OR_EQUAL_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k],
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                    columnsToRemove,
+                                    true), //filterIfMissing,
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k], 
+                                    CompareOp.GREATER_OR_EQUAL, 
+                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                    columnsToRemove)));
+                    k++;kk++;
+                    break;
+                case NO_OP:
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.NO_OP, 
+                            new BinaryComparator((byte[])colValuesToCompare[kk]),
+                            columnsToRemove));
+                    k++;kk++;
+                    break;
+                case NO_OP_NULL:
+                    linkedList.addLast(new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k],
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}),//check for null indicator = 0 representing non null
+                                    columnsToRemove,
+                                    true), //filterIfMissing,
+                            SingleColumnValueExcludeOrNotFilter(
+                                    (byte[])colNamesToFilter[k], 
+                                    CompareOp.NO_OP, 
+                                    new BinaryComparator((byte[])colValuesToCompare[kk]),
+                                    columnsToRemove)));
+                    k++;kk++;                   
+                    break;
+                case IS_NULL:
+                    // is null on a non nullable column!
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k], 
+                            CompareOp.NO_OP, //exclude everything
+                            new BinaryPrefixComparator((new byte[]{})),
+                            columnsToRemove));
+                    k++;
+                    break;
+                case IS_NULL_NULL:
+                    // is_null on nullable column: is absent OR has the first byte set to FF indicating NULL.
+                    linkedList.addLast(
+                            new FilterList(FilterList.Operator.MUST_PASS_ONE, //OR
+                                    SingleColumnValueExcludeOrNotFilter(
+                                            (byte[])colNamesToFilter[k],
+                                            CompareOp.EQUAL, 
+                                            new NullComparator(),//is absent?
+                                            columnsToRemove), 
+                                    SingleColumnValueExcludeOrNotFilter(
+                                            (byte[])colNamesToFilter[k],
+                                            CompareOp.EQUAL, 
+                                            new BinaryPrefixComparator(new byte[]{-1}),//0xFF has null prefix indicator
+                                            columnsToRemove)));
+                    k++;
+                    break;
+                case IS_NOT_NULL:
+                    // is not null on a non nullable column!
+                    // do nothing, always true
+                    k++;
+                    break;  
+                case IS_NOT_NULL_NULL:
+                    // is_not_null on nullable column: is not absent AND has the first byte not set to FF indicating NULL.
+                    linkedList.addLast(SingleColumnValueExcludeOrNotFilter(
+                            (byte[])colNamesToFilter[k],
+                            CompareOp.NOT_EQUAL, 
+                            new BinaryPrefixComparator(new byte[]{-1}),// 0xFF has null prefix indicator
+                            columnsToRemove,
+                            true));//filter if missing (if absent null)
+                    k++;
+                    break;
+                case AND:
+                    linkedList.addLast("AND");
+                    break;
+                case OR:
+                    linkedList.addLast("OR");
+                    break;
+                    default:
+            }//switch
+        }//for
+        //evaluate the reverse polish notation list
+        while (linkedList.size()>1){// evaluate until only one element is left in the list
+            //look for first operator (AND or OR)
+            int j=0;
+            while (j<linkedList.size() && !(linkedList.get(j) instanceof String)){
+                j++;
+            }
+            //here j points on the first operator; (all operands are of type Filter)
+            if (j==linkedList.size()){logger.error("j==linkedList.size()");return null;} // should not happen
+            Filter leftOperand;
+            Filter rightOperand;
+            switch(Op.valueOf((String)linkedList.get(j))){
+            case AND:
+                FilterList filterListAnd = new FilterList(FilterList.Operator.MUST_PASS_ALL); //AND filterList
+                //left operand
+                leftOperand = (Filter)linkedList.get(j-2);
+                if (leftOperand instanceof FilterList && ((FilterList)leftOperand).getOperator()==FilterList.Operator.MUST_PASS_ALL){//associativity of AND optimization
+                    //for(Filter f:((FilterList)leftOperand).getFilters())
+                    //  filterListAnd.addFilter(f);
+                    filterListAnd = (FilterList)leftOperand; //more efficient than the 2 lines above (kept commented out for code lisibility)
+                }else{
+                    filterListAnd.addFilter(leftOperand);
+                }
+                // right operand
+                rightOperand = (Filter)linkedList.get(j-1);
+                if (rightOperand instanceof FilterList && ((FilterList)rightOperand).getOperator()==FilterList.Operator.MUST_PASS_ALL){//associativity of AND optimization
+                    for(Filter f:((FilterList)rightOperand).getFilters())
+                        filterListAnd.addFilter(f);                 
+                }else{
+                    filterListAnd.addFilter(rightOperand);
+                }               
+                // setup evaluated filter
+                linkedList.set(j,filterListAnd); // replace the operator with the constructer filter
+                linkedList.remove(j-1);// remove right operand
+                linkedList.remove(j-2);// remove left operand. warning order matter 
+                break;
+            case OR:
+                FilterList filterListOr = new FilterList(FilterList.Operator.MUST_PASS_ONE); //OR filterList
+                leftOperand = (Filter)linkedList.get(j-2);
+                rightOperand = (Filter)linkedList.get(j-1);
+                //begin detection of null check factorization (A not null and (A <op> ?)) or (A not null and A <op2> ?) -> A not null and (A <op> ? or A <op2> ?)  
+                //the code is doing more than just nullcheck, but any factorization where left operands are identical
+                if (leftOperand instanceof FilterList && rightOperand instanceof FilterList && 
+                    ((FilterList)leftOperand).getOperator() == FilterList.Operator.MUST_PASS_ALL &&
+                    ((FilterList)rightOperand).getOperator() == FilterList.Operator.MUST_PASS_ALL &&
+                    ((FilterList)leftOperand).getFilters().size() == 2 &&
+                    ((FilterList)rightOperand).getFilters().size() == 2 &&
+                    ((FilterList)leftOperand).getFilters().get(0) instanceof SingleColumnValueFilter && //cannot be SingleColumnValueExcludeFilter when we have the optimization scenario
+                    ((FilterList)rightOperand).getFilters().get(0) instanceof SingleColumnValueFilter){//cannot be SingleColumnValueExcludeFilter when we have the optimization scenario
+                    SingleColumnValueFilter scvfLeft = (SingleColumnValueFilter)((FilterList)leftOperand).getFilters().get(0);
+                    SingleColumnValueFilter scvfRight = (SingleColumnValueFilter)((FilterList)rightOperand).getFilters().get(0);
+                    if (scvfLeft.getOperator() == scvfRight.getOperator() && //more general case than just for null check (identical operands)
+                        Arrays.equals(scvfLeft.getQualifier(),scvfRight.getQualifier()) &&
+                        Arrays.equals(scvfLeft.getFamily(),scvfRight.getFamily()) &&
+                        Arrays.equals(scvfLeft.getComparator().getValue(),scvfRight.getComparator().getValue()) &&
+                        (scvfLeft.getFilterIfMissing() == scvfRight.getFilterIfMissing())){
+                        Filter left = ((FilterList)leftOperand).getFilters().get(1);
+                        Filter right = ((FilterList)rightOperand).getFilters().get(1);
+                        if (left instanceof FilterList && ((FilterList)left).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
+                            //for(Filter f:((FilterList)left).getFilters())
+                            //  filterListOr.addFilter(f);
+                            filterListOr = (FilterList)left; // more efficient than the 2 lines above (kept commented out for code lisibility)
+                        }else{
+                            filterListOr.addFilter(left);
+                        }
+                        // right operand                
+                        if (right instanceof FilterList && ((FilterList)right).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
+                            for(Filter f:((FilterList)right).getFilters())
+                                filterListOr.addFilter(f);                  
+                        }else{
+                            filterListOr.addFilter(right);
+                        }                                       
+                        linkedList.set(j,new FilterList(FilterList.Operator.MUST_PASS_ALL,scvfLeft,filterListOr));//resulting factorized AND filter
+                        linkedList.remove(j-1);// remove right operand
+                        linkedList.remove(j-2);// remove left operand. warning order matter 
+                        break;
+                    }                                   
+                }
+                //end detection of null (and more) check factorization
+                //begin detection of RangeSpec a<>? transformed to a<? or a>? to convert it back to a <> ? when we push down
+                //check for <> on non nullable columns
+                if (leftOperand instanceof SingleColumnValueFilter && rightOperand instanceof SingleColumnValueFilter){
+                    SingleColumnValueFilter leftscvf = (SingleColumnValueFilter)leftOperand;
+                    SingleColumnValueFilter rightscvf = (SingleColumnValueFilter)rightOperand;
+                    if (leftscvf.getOperator() == CompareOp.LESS && rightscvf.getOperator()== CompareOp.GREATER && 
+                            Arrays.equals(leftscvf.getQualifier(), rightscvf.getQualifier()) &&
+                            Arrays.equals(leftscvf.getFamily(), rightscvf.getFamily()) &&
+                            Arrays.equals(leftscvf.getComparator().getValue(),rightscvf.getComparator().getValue())
+                        ){
+                        // setup evaluated filter
+                        linkedList.set(j,new SingleColumnValueFilter(leftscvf.getFamily(), leftscvf.getQualifier(), CompareOp.NOT_EQUAL, leftscvf.getComparator())); // replace the operator with the constructer filter
+                        linkedList.remove(j-1);// remove right operand
+                        linkedList.remove(j-2);// remove left operand. warning order matter                         
+                        break;
+                    }
+                }
+                //check for <> on nullable column
+                if( leftOperand instanceof FilterList && rightOperand instanceof FilterList){
+                    //no need to check FilterList size, as all possible case FilterList size is at least 2.
+                    if (((FilterList)leftOperand).getFilters().get(1) instanceof SingleColumnValueFilter &&
+                        ((FilterList)rightOperand).getFilters().get(1) instanceof SingleColumnValueFilter){
+                        SingleColumnValueFilter leftscvf = (SingleColumnValueFilter)((FilterList)leftOperand).getFilters().get(1);
+                        SingleColumnValueFilter rightscvf = (SingleColumnValueFilter)((FilterList)rightOperand).getFilters().get(1);
+                        if (leftscvf.getOperator() == CompareOp.LESS && rightscvf.getOperator()== CompareOp.GREATER && 
+                                Arrays.equals(leftscvf.getQualifier(), rightscvf.getQualifier()) &&
+                                Arrays.equals(leftscvf.getFamily(), rightscvf.getFamily()) &&
+                                Arrays.equals(leftscvf.getComparator().getValue(),rightscvf.getComparator().getValue())
+                            ){
+                            // setup evaluated filter
+                            SingleColumnValueFilter nullCheck = new SingleColumnValueFilter(// null checker
+                                    leftscvf.getFamily(), leftscvf.getQualifier(),
+                                    CompareOp.EQUAL, 
+                                    new BinaryPrefixComparator(new byte[]{0x00}));
+                            nullCheck.setFilterIfMissing(true);
+                            linkedList.set(j,new FilterList(FilterList.Operator.MUST_PASS_ALL, //AND between if not null and the actual
+                                    nullCheck, 
+                                    new SingleColumnValueFilter(
+                                            leftscvf.getFamily(), leftscvf.getQualifier(), 
+                                            CompareOp.NOT_EQUAL, 
+                                            leftscvf.getComparator()))); 
+                            linkedList.remove(j-1);// remove right operand
+                            linkedList.remove(j-2);// remove left operand. warning order matter                         
+                            break;
+                        }                       
+                    }
+                }               
+                //end detection of RangeSpec a<>?
+                //now general case...
+                //left operand              
+                if (leftOperand instanceof FilterList && ((FilterList)leftOperand).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
+                    //for(Filter f:((FilterList)leftOperand).getFilters())
+                    //  filterListOr.addFilter(f);
+                    filterListOr = (FilterList)leftOperand; // more efficient than the 2 lines above (kept commented out for code lisibility)
+                }else{
+                    filterListOr.addFilter(leftOperand);
+                }
+                // right operand                
+                if (rightOperand instanceof FilterList && ((FilterList)rightOperand).getOperator()==FilterList.Operator.MUST_PASS_ONE){//associativity of OR optimization
+                    for(Filter f:((FilterList)rightOperand).getFilters())
+                        filterListOr.addFilter(f);                  
+                }else{
+                    filterListOr.addFilter(rightOperand);
+                }               
+                // setup evaluated filter
+                linkedList.set(j,filterListOr); // replace the operator with the constructer filter
+                linkedList.remove(j-1);// remove right operand
+                linkedList.remove(j-2);// remove left operand. warning order matter 
+                break;
+            default:
+                logger.error("operator different than OR or AND???");
+                return null;//should never happen
+            }           
+        }
+        // after evaluation, the linkedList contains only one element containing the filter built
+        return (Filter)linkedList.pop();
+    }
+    
+    
 	public boolean startScan(long transID, byte[] startRow, byte[] stopRow,
                                  Object[]  columns, long timestamp,
                                  boolean cacheBlocks, int numCacheRows,
@@ -839,140 +839,140 @@ public class HTableClient {
 	  else
 	    numColsInScan = 0;
 	  if (colNamesToFilter != null) {
-		FilterList list;
-		boolean narrowDownResultColumns = false; //to check if we need a narrow down column filter (V2 only feature)
-		if (compareOpList == null)return false;
-		if (new String((byte[])compareOpList[0]).equals("V2")){ // are we dealing with predicate pushdown V2
-			list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-			HashMap<String,Object> columnsToRemove = new HashMap<String,Object>();
-			//if columnsToRemove not null, we are narrowing down using the SingleColumnValue[Exclude]Filter method
-			//else we will use the explicit FamilyFilter and QualifierFilter
-			//the simplified logic is that we can use the first method if and only if each and every column in the
-			//pushed down predicate shows up only once.
-		    for (int i = 0; i < colNamesToFilter.length; i++) {
-		      byte[] colName = (byte[])colNamesToFilter[i];
-	      
-		      // check if the filter column is already part of the column list, if not add it if we are limiting columns (not *)
-		      if(columns!=null && columns.length > 0){// if not *
-		    	  boolean columnAlreadyIn = false; //assume column not yet in the scan object
-		    	  for (int k=0; k<columns.length;k++){
-		    		  if (Arrays.equals(colName, (byte[])columns[k])){
-		    			  columnAlreadyIn = true;//found already exist
-		    			  break;//no need to look further
-		    		  }
-		    	  }
-		    	  if (!columnAlreadyIn){// column was not already in, so add it
-		    		  scan.addColumn(getFamily(colName),getName(colName));
-		    		  narrowDownResultColumns = true; //since we added a column for predicate eval, we need to remove it later out of result set
-		    		  String strColName = new String(colName);
-		    		  if (columnsToRemove != null && columnsToRemove.containsKey(strColName)){// if we already added this column, it means it shows up more than once
-		    			  columnsToRemove = null; // therefore, use the FamilyFilter/QualifierFilter method
-		    		  }else if (columnsToRemove != null)// else 
-		    			  columnsToRemove.put(strColName,null); // add it to the list of column that should be nuked with the Exclude version of the SingleColumnValueFilter
-		    	  }
-		      }	    	
-		    }
-		    if (columnsToRemove != null)
-		    { //we are almost done checking if Exclude version of SingleColumnnValueFilter can be used. Th elast check s about to know if there is a IS_NULL_NULL
-		      //operation that cannot be using the Exclude method, as it is transformed in a filterList with OR, therefore we cannot guaranty that the SingleColumnValueExcludeFilter
-		      //performing the exclusion will be reached.
-		    	boolean is_null_nullFound = false;
-		    	for (Object o:compareOpList ){
-		    		if (new String((byte[])o).equals("IS_NULL_NULL")){
-		    			is_null_nullFound = true;
-		    			break;
-		    		}		    			
-		    	}
-		    	if (is_null_nullFound){
-		    		columnsToRemove = null; // disable Exclude method version of SingleColumnnValueFilter
-		    	}else
-		    		narrowDownResultColumns = false; // we will use the Exclude version of SingleColumnnValueFilter, so bypass the Family/QualifierFilter method
-		    }
-		    Filter f =constructV2Filter(colNamesToFilter,compareOpList,colValuesToCompare, columnsToRemove);
-		    if (f==null) return false; // error logging done inside constructV2Filter
-		    list.addFilter(f);
-		}//end V2
-		else{// deal with V1
-		    list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-		    
-		    for (int i = 0; i < colNamesToFilter.length; i++) {
-		      byte[] colName = (byte[])colNamesToFilter[i];
-		      byte[] coByte = (byte[])compareOpList[i];
-		      byte[] colVal = (byte[])colValuesToCompare[i];
-	
-		      if ((coByte == null) || (colVal == null)) {
-		        return false;
-		      }
-		      String coStr = new String(coByte);
-		      CompareOp co = CompareOp.valueOf(coStr);
-	
-		      SingleColumnValueFilter filter1 = 
-		          new SingleColumnValueFilter(getFamily(colName), getName(colName), 
-		              co, colVal);
-		      list.addFilter(filter1);
-		    }			
-		}//end V1
-	    // if we added a column for predicate eval, we need to filter down result columns
-	    FilterList resultColumnsOnlyFilter = null;
-	    if (narrowDownResultColumns){  	    	
-  		    HashMap<String,ArrayList<byte[]>> hm = new HashMap<String,ArrayList<byte[]>>(3);//use to deal with multiple family table
-  		    // initialize hm with list of columns requested for output
-  		    	for (int i=0; i<columns.length; i++){ // if we are here we know columns is not null
-  		    		if (hm.containsKey(new String(getFamily((byte[])columns[i])))){
-  		    			hm.get(new String(getFamily((byte[])columns[i]))).add((byte[])columns[i]);
-  		    		}else{
-  		    			ArrayList<byte[]> al = new ArrayList<byte[]>();
-  		    			al.add((byte[])columns[i]);
-  		    			hm.put(new String(getFamily((byte[])columns[i])), al);
-  		    		}	    			
-  		    	}
-  		    	
-  	    	if (hm.size()==1){//only one column family
-  	    		resultColumnsOnlyFilter = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-  	    		if (columns.length == 1){
-  	  	    		resultColumnsOnlyFilter.addFilter(new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName((byte[])columns[0])))); 	    			
-  	    		}else{// more than one column
-  	    			FilterList flColumns = new FilterList(FilterList.Operator.MUST_PASS_ONE);
-  	    			for(int i=0; i<columns.length;i++)
-  	    				flColumns.addFilter(new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName((byte[])columns[i]))));  	    			
-  	    			resultColumnsOnlyFilter.addFilter(flColumns);
-  	    		}  	    		  	    		
-  	    		// note the optimization puting family check at the end
-  	    		resultColumnsOnlyFilter.addFilter(new FamilyFilter(CompareOp.EQUAL, new BinaryComparator(getFamily((byte[])columns[0]))));
-  	    	}else{//more than one column family
-  	    		resultColumnsOnlyFilter = new FilterList(FilterList.Operator.MUST_PASS_ONE);
-  	    		for (Map.Entry<String,ArrayList<byte[]>> entry : hm.entrySet()){//for each column family
-  	    			ArrayList<byte[]> alb = entry.getValue();
-  	    			if (alb.size() == 1){// when only one column for the family
-  	    				resultColumnsOnlyFilter.addFilter(
-  	    						new FilterList(FilterList.Operator.MUST_PASS_ALL,
-  	    									   new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName(alb.get(0)))),
-  	    								       new FamilyFilter(CompareOp.EQUAL, new BinaryComparator(getFamily(alb.get(0)))))
-  	    				);
-  	    			}else{// when multiple columns for the family
-	  	    			FamilyFilter familyFilter = null;
-	  	    			FilterList filterListCol = new FilterList(FilterList.Operator.MUST_PASS_ONE);
-	  	    			for(int j = 0; j<alb.size(); j++){
-	  	    				if (familyFilter == null)
-	  	    					familyFilter = new FamilyFilter(CompareOp.EQUAL, new BinaryComparator(getFamily(alb.get(0))));
-	  	    				filterListCol.addFilter(new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName(alb.get(j)))));	  	    				
-	  	    			}
-  	    				resultColumnsOnlyFilter.addFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,filterListCol,familyFilter));
-  	    			}
-  	    		}
-  	    	}
-  	    	list.addFilter(resultColumnsOnlyFilter); // add column limiting filter
-  	    }//end narrowDownResultColumns
+	        FilterList list;
+	        boolean narrowDownResultColumns = false; //to check if we need a narrow down column filter (V2 only feature)
+	        if (compareOpList == null)return false;
+	        if (new String((byte[])compareOpList[0]).equals("V2")){ // are we dealing with predicate pushdown V2
+	            list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+	            HashMap<String,Object> columnsToRemove = new HashMap<String,Object>();
+	            //if columnsToRemove not null, we are narrowing down using the SingleColumnValue[Exclude]Filter method
+	            //else we will use the explicit FamilyFilter and QualifierFilter
+	            //the simplified logic is that we can use the first method if and only if each and every column in the
+	            //pushed down predicate shows up only once.
+	            for (int i = 0; i < colNamesToFilter.length; i++) {
+	              byte[] colName = (byte[])colNamesToFilter[i];
+	          
+	              // check if the filter column is already part of the column list, if not add it if we are limiting columns (not *)
+	              if(columns!=null && columns.length > 0){// if not *
+	                  boolean columnAlreadyIn = false; //assume column not yet in the scan object
+	                  for (int k=0; k<columns.length;k++){
+	                      if (Arrays.equals(colName, (byte[])columns[k])){
+	                          columnAlreadyIn = true;//found already exist
+	                          break;//no need to look further
+	                      }
+	                  }
+	                  if (!columnAlreadyIn){// column was not already in, so add it
+	                      scan.addColumn(getFamily(colName),getName(colName));
+	                      narrowDownResultColumns = true; //since we added a column for predicate eval, we need to remove it later out of result set
+	                      String strColName = new String(colName);
+	                      if (columnsToRemove != null && columnsToRemove.containsKey(strColName)){// if we already added this column, it means it shows up more than once
+	                          columnsToRemove = null; // therefore, use the FamilyFilter/QualifierFilter method
+	                      }else if (columnsToRemove != null)// else 
+	                          columnsToRemove.put(strColName,null); // add it to the list of column that should be nuked with the Exclude version of the SingleColumnValueFilter
+	                  }
+	              }         
+	            }
+	            if (columnsToRemove != null)
+	            { //we are almost done checking if Exclude version of SingleColumnnValueFilter can be used. Th elast check s about to know if there is a IS_NULL_NULL
+	              //operation that cannot be using the Exclude method, as it is transformed in a filterList with OR, therefore we cannot guaranty that the SingleColumnValueExcludeFilter
+	              //performing the exclusion will be reached.
+	                boolean is_null_nullFound = false;
+	                for (Object o:compareOpList ){
+	                    if (new String((byte[])o).equals("IS_NULL_NULL")){
+	                        is_null_nullFound = true;
+	                        break;
+	                    }                       
+	                }
+	                if (is_null_nullFound){
+	                    columnsToRemove = null; // disable Exclude method version of SingleColumnnValueFilter
+	                }else
+	                    narrowDownResultColumns = false; // we will use the Exclude version of SingleColumnnValueFilter, so bypass the Family/QualifierFilter method
+	            }
+	            Filter f =constructV2Filter(colNamesToFilter,compareOpList,colValuesToCompare, columnsToRemove);
+	            if (f==null) return false; // error logging done inside constructV2Filter
+	            list.addFilter(f);
+	        }//end V2
+	        else{// deal with V1
+	            list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+	            
+	            for (int i = 0; i < colNamesToFilter.length; i++) {
+	              byte[] colName = (byte[])colNamesToFilter[i];
+	              byte[] coByte = (byte[])compareOpList[i];
+	              byte[] colVal = (byte[])colValuesToCompare[i];
+	    
+	              if ((coByte == null) || (colVal == null)) {
+	                return false;
+	              }
+	              String coStr = new String(coByte);
+	              CompareOp co = CompareOp.valueOf(coStr);
+	    
+	              SingleColumnValueFilter filter1 = 
+	                  new SingleColumnValueFilter(getFamily(colName), getName(colName), 
+	                      co, colVal);
+	              list.addFilter(filter1);
+	            }           
+	        }//end V1
+	        // if we added a column for predicate eval, we need to filter down result columns
+	        FilterList resultColumnsOnlyFilter = null;
+	        if (narrowDownResultColumns){           
+	            HashMap<String,ArrayList<byte[]>> hm = new HashMap<String,ArrayList<byte[]>>(3);//use to deal with multiple family table
+	            // initialize hm with list of columns requested for output
+	                for (int i=0; i<columns.length; i++){ // if we are here we know columns is not null
+	                    if (hm.containsKey(new String(getFamily((byte[])columns[i])))){
+	                        hm.get(new String(getFamily((byte[])columns[i]))).add((byte[])columns[i]);
+	                    }else{
+	                        ArrayList<byte[]> al = new ArrayList<byte[]>();
+	                        al.add((byte[])columns[i]);
+	                        hm.put(new String(getFamily((byte[])columns[i])), al);
+	                    }                   
+	                }
+	                
+	            if (hm.size()==1){//only one column family
+	                resultColumnsOnlyFilter = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+	                if (columns.length == 1){
+	                    resultColumnsOnlyFilter.addFilter(new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName((byte[])columns[0]))));                     
+	                }else{// more than one column
+	                    FilterList flColumns = new FilterList(FilterList.Operator.MUST_PASS_ONE);
+	                    for(int i=0; i<columns.length;i++)
+	                        flColumns.addFilter(new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName((byte[])columns[i]))));                   
+	                    resultColumnsOnlyFilter.addFilter(flColumns);
+	                }                               
+	                // note the optimization puting family check at the end
+	                resultColumnsOnlyFilter.addFilter(new FamilyFilter(CompareOp.EQUAL, new BinaryComparator(getFamily((byte[])columns[0]))));
+	            }else{//more than one column family
+	                resultColumnsOnlyFilter = new FilterList(FilterList.Operator.MUST_PASS_ONE);
+	                for (Map.Entry<String,ArrayList<byte[]>> entry : hm.entrySet()){//for each column family
+	                    ArrayList<byte[]> alb = entry.getValue();
+	                    if (alb.size() == 1){// when only one column for the family
+	                        resultColumnsOnlyFilter.addFilter(
+	                                new FilterList(FilterList.Operator.MUST_PASS_ALL,
+	                                               new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName(alb.get(0)))),
+	                                               new FamilyFilter(CompareOp.EQUAL, new BinaryComparator(getFamily(alb.get(0)))))
+	                        );
+	                    }else{// when multiple columns for the family
+	                        FamilyFilter familyFilter = null;
+	                        FilterList filterListCol = new FilterList(FilterList.Operator.MUST_PASS_ONE);
+	                        for(int j = 0; j<alb.size(); j++){
+	                            if (familyFilter == null)
+	                                familyFilter = new FamilyFilter(CompareOp.EQUAL, new BinaryComparator(getFamily(alb.get(0))));
+	                            filterListCol.addFilter(new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(getName(alb.get(j)))));                           
+	                        }
+	                        resultColumnsOnlyFilter.addFilter(new FilterList(FilterList.Operator.MUST_PASS_ALL,filterListCol,familyFilter));
+	                    }
+	                }
+	            }
+	            list.addFilter(resultColumnsOnlyFilter); // add column limiting filter
+	        }//end narrowDownResultColumns
 	    if (samplePercent > 0.0f)
 	      list.addFilter(new RandomRowFilter(samplePercent));
-	    // last optimization is making sure we remove top level filter list if it is singleton MUST_PASS_ALL filterlist
-	    if (list.getFilters().size()==1){
-		    scan.setFilter(list.getFilters().get(0));
-		    if (logger.isTraceEnabled()) logger.trace("Pushed down filter:"+list.getFilters().get(0));
-	    }else{
+        // last optimization is making sure we remove top level filter list if it is singleton MUST_PASS_ALL filterlist
+        if (list.getFilters().size()==1){
+            scan.setFilter(list.getFilters().get(0));
+            if (logger.isTraceEnabled()) logger.trace("Pushed down filter:"+list.getFilters().get(0));
+        }else{
 	    scan.setFilter(list);
-	    if (logger.isTraceEnabled()) logger.trace("Pushed down filter:"+list );
-	    }
+        if (logger.isTraceEnabled()) logger.trace("Pushed down filter:"+list );
+        }
 	  } else if (samplePercent > 0.0f) {
 	    scan.setFilter(new RandomRowFilter(samplePercent));
 	  }

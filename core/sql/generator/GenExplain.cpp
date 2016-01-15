@@ -662,264 +662,247 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
 static void appendListOfColumns(Queue* listOfColNames,ComTdb *tdb, NAString& outNAString){
 
-	if (((ComTdbHbaseAccess*)tdb)->sqHbaseTable()){// if trafodion table
-	  char buf[1000];
+    if (((ComTdbHbaseAccess*)tdb)->sqHbaseTable()){// if trafodion table
+      char buf[1000];
 
-	  listOfColNames->position();
-	  for (Lng32 j = 0; j < listOfColNames->numEntries(); j++)
-	    {
-	      char * currPtr = (char*)listOfColNames->getCurr();
+      listOfColNames->position();
+      for (Lng32 j = 0; j < listOfColNames->numEntries(); j++)
+        {
+          char * currPtr = (char*)listOfColNames->getCurr();
 
-	      Lng32 currPos = 0;
-	      Lng32 jj = 0;
-	      short colNameLen = *(short*)currPtr;
-	      currPos += sizeof(short);
-	      char colFam[100];
-	      while (currPtr[currPos] != ':')
-		{
-		  colFam[jj] = currPtr[currPos];
-		  currPos++;
-		  jj++;
-		}
-	      colFam[jj] = ':';
-	      jj++;
-	      currPos++;
-	      colFam[jj] = 0;
-	      colNameLen -= jj;
+          Lng32 currPos = 0;
+          Lng32 jj = 0;
+          short colNameLen = *(short*)currPtr;
+          currPos += sizeof(short);
+          char colFam[100];
+          while (currPtr[currPos] != ':')
+          {
+            currPos++;
+            jj++;
+          }
+          jj++;
+          currPos++;
+          snprintf(colFam,sizeof(colFam),"%.*s",jj,currPtr+sizeof(short));
+          colNameLen -= jj;
 
-	      NABoolean withAt = FALSE;
-	      char * colName = &currPtr[currPos];
-	      if (colName[0] == '@')
-		{
-		  colNameLen--;
-		  colName++;
-		  withAt = TRUE;
-		}
+          NABoolean withAt = FALSE;
+          char * colName = &currPtr[currPos];
+          if (colName[0] == '@')
+        {
+          colNameLen--;
+          colName++;
+          withAt = TRUE;
+        }
 
-	      Int64 v;
-	      if (colNameLen == sizeof(char))
-		v = *(char*)colName;
-	      else if (colNameLen == sizeof(unsigned short))
-		v = *(UInt16*)colName;
-	      else if (colNameLen == sizeof(Lng32))
-		v = *(ULng32*)colName;
-	      else
-		v = 0;
-	      if (j==0)
-		      str_sprintf(buf, "%s%s%Ld",
-				  colFam,
-				  (withAt ? "@" : ""),
-				  v);
-	      else
-			  str_sprintf(buf, ",%s%s%Ld",
-				  colFam,
-				  (withAt ? "@" : ""),
-				  v);
+          Int64 v;
+          if (colNameLen == sizeof(char))
+        v = *(char*)colName;
+          else if (colNameLen == sizeof(unsigned short))
+        v = *(UInt16*)colName;
+          else if (colNameLen == sizeof(Lng32))
+        v = *(ULng32*)colName;
+          else
+        v = 0;
+          if (j==0)
+              str_sprintf(buf, "%s%s%Ld",
+                  colFam,
+                  (withAt ? "@" : ""),
+                  v);
+          else
+              str_sprintf(buf, ",%s%s%Ld",
+                  colFam,
+                  (withAt ? "@" : ""),
+                  v);
 
-	      outNAString += buf;
+          outNAString += buf;
 
-	      listOfColNames->advance();
-	    } // for
-	}// trafodion tables
-	else
-	{// if hbase native tables
-	  char buf[1000];
+          listOfColNames->advance();
+        } // for
+    }// trafodion tables
+    else
+    {// if hbase native tables
+      char buf[1000];
 
-	  listOfColNames->position();
-	  for (Lng32 j = 0; j < listOfColNames->numEntries(); j++)
-	    {
-	      char * currPtr = (char*)listOfColNames->getCurr();
+      listOfColNames->position();
+      for (Lng32 j = 0; j < listOfColNames->numEntries(); j++)
+        {
+          char * currPtr = (char*)listOfColNames->getCurr();
 
-	      char * colNamePtr = NULL;
+          char * colNamePtr = NULL;
 
-		  Lng32 currPos = 0;
-		  short colNameLen = *(short*)currPtr;
-		  currPos += sizeof(short);
-		  char colName[500];
+          Lng32 currPos = 0;
+          short colNameLen = *(short*)currPtr;
+          currPos += sizeof(short);
+          char colName[500];
+          snprintf(colName,sizeof(colName),"%.*s",colNameLen,currPtr+sizeof(short));
+          colNamePtr = colName;
 
-		  for (Lng32 i = 0; i < colNameLen; i++)
-		    {
-		      colName[i] = currPtr[currPos];
-		      currPos++;
-		    }
-
-		  colName[colNameLen] = 0;
-
-		  colNamePtr = colName;
-
-		  if (j==0)
-			  str_sprintf(buf, "%s",colNamePtr);
-		  else
-			  str_sprintf(buf, ",%s",colNamePtr);
+          if (j==0)
+              str_sprintf(buf, "%s",colNamePtr);
+          else
+              str_sprintf(buf, ",%s",colNamePtr);
 
 
-		  outNAString += buf;
+          outNAString += buf;
 
-	      listOfColNames->advance();
-	    } // for
+          listOfColNames->advance();
+        } // for
 
-	}// hbase native table
-	outNAString +=" ";
+    }// hbase native table
+    outNAString +=" ";
 }
 
 static void appendPushedDownExpression(ComTdb *tdb, NAString& outNAString){
-	// in predicate pushdown V2, the hbaseCompareOps list contains a reverse polish set of operation, were operators are
-	// AND or OR, the rest are operands. this function display the column, operator and replace any constant with ?. it keeps reverse polish format
-	// this can be improved in the future for better readability.
-	char buf[1000];
-	Queue* reversePolishItems = ((ComTdbHbaseAccess *)tdb)->listOfHbaseCompareOps();
-	Queue* pushedDownColumns = ((ComTdbHbaseAccess *)tdb)->listOfHbaseFilterColNames();
-	reversePolishItems->position();
-	pushedDownColumns->position();
+    // in predicate pushdown V2, the hbaseCompareOps list contains a reverse polish set of operation, were operators are
+    // AND or OR, the rest are operands. this function display the column, operator and replace any constant with ?. it keeps reverse polish format
+    // this can be improved in the future for better readability.
+    char buf[1000];
+    Queue* reversePolishItems = ((ComTdbHbaseAccess *)tdb)->listOfHbaseCompareOps();
+    Queue* pushedDownColumns = ((ComTdbHbaseAccess *)tdb)->listOfHbaseFilterColNames();
+    reversePolishItems->position();
+    pushedDownColumns->position();
 
-	for (Lng32 j = 0; j < reversePolishItems->numEntries(); j++){
-		char * currPtr = (char*)reversePolishItems->getCurr();
-		char buf2[1000];
-		if (strcmp(currPtr,"V2")!=0 && strcmp(currPtr,"AND")!=0 && strcmp(currPtr,"OR")!=0){//if an operand (not an operator or V2 marker), get the column name
-			if (((ComTdbHbaseAccess*)tdb)->sqHbaseTable()){// if trafodion table
-				char * currPtr2 = (char*)pushedDownColumns->getCurr();
-			      Lng32 currPos = 0;
-			      Lng32 jj = 0;
-			      short colNameLen = *(short*)currPtr2;
-			      currPos += sizeof(short);
-			      char colFam[100];
-			      while (currPtr2[currPos] != ':')
-				{
-				  colFam[jj] = currPtr2[currPos];
-				  currPos++;
-				  jj++;
-				}
-			      colFam[jj] = ':';
-			      jj++;
-			      currPos++;
-			      colFam[jj] = 0;
-			      colNameLen -= jj;
+    for (Lng32 j = 0; j < reversePolishItems->numEntries(); j++){
+        char * currPtr = (char*)reversePolishItems->getCurr();
+        char buf2[1000];
+        if (strcmp(currPtr,"V2")!=0 && strcmp(currPtr,"AND")!=0 && strcmp(currPtr,"OR")!=0){//if an operand (not an operator or V2 marker), get the column name
+            if (((ComTdbHbaseAccess*)tdb)->sqHbaseTable()){// if trafodion table
+                char * currPtr2 = (char*)pushedDownColumns->getCurr();
+                  Lng32 currPos = 0;
+                  Lng32 jj = 0;
+                  short colNameLen = *(short*)currPtr2;
+                  currPos += sizeof(short);
+                  char colFam[100];
+                  while (currPtr2[currPos] != ':')
+                  {
+                    currPos++;
+                    jj++;
+                  }
+                  jj++;
+                  currPos++;
+                  snprintf(colFam,sizeof(colFam),"%.*s",jj,currPtr2+sizeof(short));
+                  colNameLen -= jj;
 
-			      NABoolean withAt = FALSE;
-			      char * colName = &currPtr2[currPos];
-			      if (colName[0] == '@')
-				{
-				  colNameLen--;
-				  colName++;
-				  withAt = TRUE;
-				}
-			      Int64 v;
-			      if (colNameLen == sizeof(char))
-				v = *(char*)colName;
-			      else if (colNameLen == sizeof(unsigned short))
-				v = *(UInt16*)colName;
-			      else if (colNameLen == sizeof(Lng32))
-				v = *(ULng32*)colName;
-			      else
-				v = 0;
-				  str_sprintf(buf2, "%s%s%Ld",
-					  colFam,
-					  (withAt ? "@" : ""),
-					  v);
+                  NABoolean withAt = FALSE;
+                  char * colName = &currPtr2[currPos];
+                  if (colName[0] == '@')
+                {
+                  colNameLen--;
+                  colName++;
+                  withAt = TRUE;
+                }
+                  Int64 v;
+                  if (colNameLen == sizeof(char))
+                v = *(char*)colName;
+                  else if (colNameLen == sizeof(unsigned short))
+                v = *(UInt16*)colName;
+                  else if (colNameLen == sizeof(Lng32))
+                v = *(ULng32*)colName;
+                  else
+                v = 0;
+                  str_sprintf(buf2, "%s%s%Ld",
+                      colFam,
+                      (withAt ? "@" : ""),
+                      v);
 
-			}else{//native hbase table
-				 char * currPtr2 = (char*)pushedDownColumns->getCurr();
-			      char * colNamePtr1 = NULL;
-				  Lng32 currPos = 0;
-				  short colNameLen = *(short*)currPtr2;
-				  currPos += sizeof(short);
-				  char colName[500];
-				  for (Lng32 i = 0; i < colNameLen; i++)
-				    {
-				      colName[i] = currPtr2[currPos];
-				      currPos++;
-				    }
-				  colName[colNameLen] = 0;
-				  colNamePtr1 = colName;
-				  str_sprintf(buf2, "%s",colNamePtr1);
-			}
-			pushedDownColumns->advance();
-		}
+            }else{//native hbase table
+                 char * currPtr2 = (char*)pushedDownColumns->getCurr();
+                  char * colNamePtr1 = NULL;
+                  Lng32 currPos = 0;
+                  short colNameLen = *(short*)currPtr2;
+                  currPos += sizeof(short);
+                  char colName[500];
+                  snprintf(colName,sizeof(colName),"%.*s",colNameLen,currPtr2+sizeof(short));
+                  colNamePtr1 = colName;
+                  str_sprintf(buf2, "%s",colNamePtr1);
+            }
+            pushedDownColumns->advance();
+        }
 
 
-		char* colNamePtr = buf2;
-		if(strcmp(currPtr,"EQUAL")==0){
-			 str_sprintf(buf, "(%s=?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"NOT_EQUAL")==0){
-			 str_sprintf(buf, "(%s!=?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"LESS")==0){
-			 str_sprintf(buf, "(%s<?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if(strcmp(currPtr,"LESS_OR_EQUAL")==0){
-			 str_sprintf(buf, "(%s<=?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"GREATER")==0){
-			 str_sprintf(buf, "(%s>?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"GREATER_OR_EQUAL")==0){
-			 str_sprintf(buf, "(%s>=?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"NO_OP")==0){//should never happen
-			 str_sprintf(buf, "(%s??)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"EQUAL_NULL")==0){
-			 str_sprintf(buf, "(%s=.?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"NOT_EQUAL_NULL")==0){
-			 str_sprintf(buf, "(%s!=.?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"LESS_NULL")==0){
-			 str_sprintf(buf, "(%s<.?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"LESS_OR_EQUAL_NULL")==0){
-			 str_sprintf(buf, "(%s<=.?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"GREATER_NULL")==0){
-			 str_sprintf(buf, "(%s>.?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"GREATER_OR_EQUAL_NULL")==0){
-			 str_sprintf(buf, "(%s>=.?)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"NO_OP_NULL")==0){
-			 str_sprintf(buf, "(%s?.?)",colNamePtr);//should never happen
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"IS_NULL")==0){
-			 str_sprintf(buf, "(%s is_null)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"IS_NULL_NULL")==0){
-			 str_sprintf(buf, "(%s is_null.)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"IS_NOT_NULL")==0){
-			 str_sprintf(buf, "(%s is_not_null)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"IS_NOT_NULL_NULL")==0){
-			 str_sprintf(buf, "(%s is_not_null.)",colNamePtr);
-			 outNAString += buf;
-		 }
-		 else if (strcmp(currPtr,"AND")==0)
-			  outNAString += "AND";
-		 else if (strcmp(currPtr,"OR")==0)
-			  outNAString += "OR";
+        char* colNamePtr = buf2;
+        if(strcmp(currPtr,"EQUAL")==0){
+             str_sprintf(buf, "(%s=?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"NOT_EQUAL")==0){
+             str_sprintf(buf, "(%s!=?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"LESS")==0){
+             str_sprintf(buf, "(%s<?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if(strcmp(currPtr,"LESS_OR_EQUAL")==0){
+             str_sprintf(buf, "(%s<=?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"GREATER")==0){
+             str_sprintf(buf, "(%s>?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"GREATER_OR_EQUAL")==0){
+             str_sprintf(buf, "(%s>=?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"NO_OP")==0){//should never happen
+             str_sprintf(buf, "(%s??)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"EQUAL_NULL")==0){
+             str_sprintf(buf, "(%s=.?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"NOT_EQUAL_NULL")==0){
+             str_sprintf(buf, "(%s!=.?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"LESS_NULL")==0){
+             str_sprintf(buf, "(%s<.?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"LESS_OR_EQUAL_NULL")==0){
+             str_sprintf(buf, "(%s<=.?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"GREATER_NULL")==0){
+             str_sprintf(buf, "(%s>.?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"GREATER_OR_EQUAL_NULL")==0){
+             str_sprintf(buf, "(%s>=.?)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"NO_OP_NULL")==0){
+             str_sprintf(buf, "(%s?.?)",colNamePtr);//should never happen
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"IS_NULL")==0){
+             str_sprintf(buf, "(%s is_null)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"IS_NULL_NULL")==0){
+             str_sprintf(buf, "(%s is_null.)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"IS_NOT_NULL")==0){
+             str_sprintf(buf, "(%s is_not_null)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"IS_NOT_NULL_NULL")==0){
+             str_sprintf(buf, "(%s is_not_null.)",colNamePtr);
+             outNAString += buf;
+         }
+         else if (strcmp(currPtr,"AND")==0)
+              outNAString += "AND";
+         else if (strcmp(currPtr,"OR")==0)
+              outNAString += "OR";
 
 
-		  reversePolishItems->advance();
-	    }
-	 outNAString +=' ';
-	}
+          reversePolishItems->advance();
+        }
+     outNAString +=' ';
+    }
 
 
 
@@ -1019,28 +1002,28 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
   // get column retrieved
   if (((ComTdbHbaseAccess *)tdb)->listOfFetchedColNames()){
-	  description += "column_retrieved: ";
-	  appendListOfColumns(((ComTdbHbaseAccess *)tdb)->listOfFetchedColNames(),tdb,description);
+      description += "column_retrieved: ";
+      appendListOfColumns(((ComTdbHbaseAccess *)tdb)->listOfFetchedColNames(),tdb,description);
   }
   // get predicate pushed down in Reverse Polish Notation for the AND / OR operators.
   // could transform it standard notation for better readability, but good enough for now...
   // could also evaluate the constants instead of hard coded ?, but good enough for now...
   if (((ComTdbHbaseAccess *)tdb)->listOfHbaseFilterColNames()){
-  	  description += "pushed_down_rpn: ";
-  	 appendPushedDownExpression(tdb, description);
+      description += "pushed_down_rpn: ";
+     appendPushedDownExpression(tdb, description);
     }
   // get pushed down predicate
 
 
 
-/*
+  /*
   // now get columns_retrieved
   description += "columns_retrieved: ";
-  //char buf[27];
+  char buf[27];
   //sprintf(buf, "%d ", retrievedCols().entries());
   sprintf(buf, "%d ", getIndexDesc()->getIndexColumns().entries());
   description += buf;
-*/
+  */
 
   explainTuple->setDescription(description);
 

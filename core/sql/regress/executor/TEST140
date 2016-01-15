@@ -44,14 +44,14 @@ drop table t140b;
 create table t140helper (a int not null, primary key(a));
 insert into t140helper values(1);
 create table t140 (uniq int not null, uniq2 int not null , a int not null, b int not null,
-    c int not null, an int, bn int, cn int, d varchar(10),					primary key (uniq,uniq2)) ;
+    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) ;
 create table t140b (uniq int not null, uniq2 int not null , a int not null, b int not null,
-    c int not null, an int, bn int, cn int, d varchar(10),					primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
+    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
 
 upsert using load 
 into t140
   select  x1,x1,10*x1,100*x1,1000*x1,10*x1+1,100*x1+1, 1000*x1+1, 'aaa'||cast(x1 as varchar(10)) 
-  		 
+         
   from t140helper
 transpose 0,1,2,3,4,5,6,7,8,9 as x1;
 

@@ -6,11 +6,11 @@
 
 --- 1 row(s) inserted.
 >>create table t140 (uniq int not null, uniq2 int not null , a int not null, b int not null,
-+>    c int not null, an int, bn int, cn int, d varchar(10),					primary key (uniq,uniq2)) ;
++>    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) ;
 
 --- SQL operation complete.
 >>create table t140b (uniq int not null, uniq2 int not null , a int not null, b int not null,
-+>    c int not null, an int, bn int, cn int, d varchar(10),					primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
++>    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
 
 --- SQL operation complete.
 >>
@@ -53,7 +53,7 @@
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881178144109
+PLAN_ID .................. 212319563691380188
 ROWS_OUT ................ 33
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select a from t140 where b>500;
@@ -104,7 +104,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.A
 
 
@@ -151,7 +151,7 @@ A
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881179605475
+PLAN_ID .................. 212319563692704671
 ROWS_OUT ................ 33
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an from t140b where b<=200;
@@ -202,7 +202,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643812
+  ObjectUIDs ............. 364316051091596902
   select_list ............ TRAFODION.SCH.T140B.AN
 
 
@@ -236,7 +236,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881179745708
+PLAN_ID .................. 212319563692850447
 ROWS_OUT ................ 33
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an from t140 where b<=200;
@@ -287,7 +287,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -332,7 +332,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881179866410
+PLAN_ID .................. 212319563692995878
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an from t140 where b=200 and an is not null;
@@ -383,7 +383,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(200)
 
@@ -426,7 +426,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881179985030
+PLAN_ID .................. 212319563693127204
 ROWS_OUT ................ 67
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an, a from t140 where b!=500;
@@ -477,7 +477,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -556,7 +556,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881180232505
+PLAN_ID .................. 212319563693323114
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an from t140 where bn=201 and an is not null;
@@ -607,7 +607,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(201)
 
@@ -649,7 +649,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881180365492
+PLAN_ID .................. 212319563693453818
 ROWS_OUT ................ 67
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an, a from t140 where bn!=501;
@@ -700,7 +700,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -794,7 +794,7 @@ A
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212318881180584307
+PLAN_ID .................. 212319563693669223
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.05
 STATEMENT ................ select an from t140 where an between 20 and 40;
@@ -845,7 +845,7 @@ DESCRIPTION
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.SCH
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 5581172586932643718
+  ObjectUIDs ............. 364316051091596819
   select_list ............ TRAFODION.SCH.T140.AN
 
 
