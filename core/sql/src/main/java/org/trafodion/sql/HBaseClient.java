@@ -235,8 +235,7 @@ public class HBaseClient {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc);
-
+            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
@@ -488,8 +487,7 @@ public class HBaseClient {
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc);
-
+            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
