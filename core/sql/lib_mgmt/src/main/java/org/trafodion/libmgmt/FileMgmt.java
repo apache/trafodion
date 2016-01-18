@@ -210,8 +210,14 @@ public class FileMgmt {
 		LOG.info("syncJars " + fileName);
 		String nodes = System.getenv("MY_NODES");
 		if (nodes != null && !"".equals(nodes.trim())) {
-			execShell("pdcp " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
-			execShell("pdsh " + nodes + " chmod 755 " + userPath + fileName.trim());
+			String pdcp = System.getenv("SQ_PDCP");
+			String pdsh = System.getenv("SQ_PDSH");
+			if (pdcp != null) {
+				execShell(pdcp + " " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
+			}
+			if (pdsh != null) {
+				execShell(pdsh + " " + nodes + " chmod 755 " + userPath + fileName.trim());
+			}
 		}
 	}
 
@@ -416,6 +422,8 @@ public class FileMgmt {
 				if (lock != null) {
 					fos.write(data);
 					fos.flush();
+				}else{
+					throw new SQLException("File "+fileName+" is locked, please try again later.");
 				}
 			} finally {
 				if(lock != null){
@@ -429,7 +437,7 @@ public class FileMgmt {
 			}
 
 			syncJar(userPath, fileName);
-
+			LOG.info("PUT method out !!! " + fileName);
 		} catch (Throwable t) {
 			LOG.error(t.getMessage(), t);
 			throw new SQLException(t.getMessage());
