@@ -350,7 +350,6 @@ public class ServerApiSqlFetch {
                                     case ServerConstants.SQLTYPECODE_VARCHAR_WITH_LENGTH:
                                     case ServerConstants.SQLTYPECODE_VARCHAR_LONG:
                                     case ServerConstants.SQLTYPECODE_BITVAR:
-                                    case ServerConstants.SQLTYPECODE_CHAR:
                                     case ServerConstants.SQLTYPECODE_VARCHAR:
                                         byteIndex++;
                                         break;
