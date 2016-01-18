@@ -413,17 +413,19 @@ public class FileMgmt {
 				fos = new FileOutputStream(fname, (appendFlag == 0));
 				channel = fos.getChannel();
 				lock = channel.tryLock();
-				fos.write(Arrays.copyOf(data, data.length));
-				fos.flush();
+				if (lock != null) {
+					fos.write(data);
+					fos.flush();
+				}
 			} finally {
-				if (fos != null)
-					fos.close();
 				if(lock != null){
 					lock.release();
 				}
 				if(channel !=null){
 					channel.close();
 				}
+				if (fos != null)
+					fos.close();
 			}
 
 			syncJar(userPath, fileName);
