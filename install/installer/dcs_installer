@@ -233,7 +233,8 @@ if [[ "$ENABLE_HA" == "true" ]]; then
    #fi
 else
    ######Configure trafci wrapper script 
-   sed -i -e "s/HNAME=localhost:23400/$DCS_PRIMARY_MASTER_NODE:23400/g" $SQ_ROOT/trafci/bin/trafci
+   newHName="HNAME=$DCS_PRIMARY_MASTER_NODE:23400"
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
 
 fi
 
