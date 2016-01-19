@@ -11839,7 +11839,8 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
                   retColRefSet_.advance(vid))
           {
             if (originExePreds->isNotNullable(vid)){// it is non nullable
-                if (!vid.isAddedColumnWithNonNullDefault()){//check if  added and  with default... notgood
+                OperatorTypeEnum operatorType = vid.getItemExpr()->getOperatorType();
+                if ((operatorType == ITM_BASECOLUMN || operatorType == ITM_INDEXCOLUMN) && !vid.isAddedColumnWithNonNullDefault()){//check if  added and  with default... notgood
                     needAddingNonNullableColumn = false; // we found one column meeting all criteria
                     break;
                 }
