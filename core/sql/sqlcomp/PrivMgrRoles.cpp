@@ -797,7 +797,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
       int32_t roleID = roleIDs[r]; 
 
       // if the roleID is PUBLIC return an error
-      if (roleID == PUBLIC_AUTH_ID)
+      if (roleID == PUBLIC_USER)
       {
          *pDiags_ << DgSqlCode (-CAT_IS_NOT_A_ROLE)
                   << DgString0(PUBLIC_AUTH_NAME);
@@ -818,7 +818,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
       {
          // Currently roles cannot be granted to PUBLIC.  This restriction
          // could be lifted in the future.  Grants to _SYSTEM never make sense.
-         if (granteeIDs[g] == SYSTEM_AUTH_ID || granteeIDs[g] == PUBLIC_AUTH_ID)
+         if (granteeIDs[g] == SYSTEM_USER || granteeIDs[g] == PUBLIC_USER)
          {
             *pDiags_ << DgSqlCode(-CAT_NO_GRANT_ROLE_TO_PUBLIC_OR_SYSTEM);
             return STATUS_ERROR;
@@ -961,8 +961,8 @@ MyRow row(fullTableName_);
    row.granteeID_ = granteeID;
    row.granteeName_ = granteeName;
    row.granteeAuthClass_ = PrivAuthClass::USER;
-   row.grantorID_ = SYSTEM_AUTH_ID;
-   row.grantorName_ = "_SYSTEM";
+   row.grantorID_ = SYSTEM_USER;
+   row.grantorName_ = SYSTEM_AUTH_NAME;
    row.grantorAuthClass_ = PrivAuthClass::USER;
    row.grantDepth_ = -1;
    

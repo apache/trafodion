@@ -176,7 +176,6 @@ for dir in $TEST_SUBDIRS; do
          ;;
      privs1)
          pushd privs1
-         echo "runregr -sb $diffStr"
          ./runregr -sb $diffStr
          popd
          ;;

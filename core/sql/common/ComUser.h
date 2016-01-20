@@ -73,9 +73,9 @@ class ComUser
      static Int32 getRootUserID() { return SUPER_USER; }
      static Int32 getPublicUserID() { return PUBLIC_USER; }
      static Int32 getSystemUserID() { return SYSTEM_USER; }
-     static const char * getRootUserName() { return "DB__ROOT"; }
-     static const char * getPublicUserName() { return "PUBLIC"; }
-     static const char * getSystemUserName() { return "_SYSTEM"; }
+     static const char * getRootUserName() { return DB__ROOT; }
+     static const char * getPublicUserName() { return PUBLIC_AUTH_NAME; }
+     static const char * getSystemUserName() { return SYSTEM_AUTH_NAME; }
      static char getAuthType(Int32 authID);
      static Int16 getUserNameFromUserID(Int32 userID,
                                         char *userName,
