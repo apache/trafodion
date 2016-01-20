@@ -120,22 +120,32 @@ public class FileMgmt {
 		checkFileName(fileName);
 		Connection conn = getConn();
 		Statement st = null;
+		String sql = "";
 		try {
 			st = conn.createStatement();
 			String userPath = getCodeFilePath(conn);
-			String sql = "create library " + libName + " file '" + userPath
+			sql = "create library " + libName + " file '" + userPath
 					+ fileName + "'";
-			if (hostName != null) {
+			if (hostName != null && !"".equals(hostName.trim())) {
 				sql += " HOST NAME '" + hostName + "'";
 			}
-			if (localFile != null) {
+			if (localFile != null && !"".equals(localFile.trim())) {
 				sql += " LOCAL FILE '" + localFile + "'";
 			}
 			st.execute(sql);
-		} finally {
+		} catch(SQLException e){
+			LOG.error(sql,e);
+			throw e;
+		}finally {
 			if (st != null) {
 				try {
 					st.close();
+				} catch (Exception e) {
+				}
+			}
+			if (conn != null){
+				try {
+					conn.close();
 				} catch (Exception e) {
 				}
 			}
@@ -162,18 +172,27 @@ public class FileMgmt {
 		String sql = "alter library " + libName + " FILE '" + userPath
 				+ fileName + "'";
 
-		if (hostName != null) {
+		if (hostName != null  && !"".equals(hostName.trim())) {
 			sql += " HOST NAME '" + hostName + "'";
 		}
-		if (localFile != null) {
+		if (localFile != null  && !"".equals(localFile.trim())) {
 			sql += " LOCAL FILE '" + localFile + "'";
 		}
 		try {
 			st = conn.createStatement();
 			st.execute(sql);
+		} catch(SQLException e){
+			LOG.error(sql,e);
+			throw e;
 		} finally {
 			if (st != null)
 				st.close();
+			if (conn != null){
+				try {
+					conn.close();
+				} catch (Exception e) {
+				}
+			}
 		}
 	}
 
@@ -199,9 +218,18 @@ public class FileMgmt {
 					sql += " CASCADE";
 
 			st.execute(sql);
+		} catch(SQLException e){
+			LOG.error(sql,e);
+			throw e;
 		} finally {
 			if (st != null)
 				st.close();
+			if (con != null){
+				try {
+					con.close();
+				} catch (Exception e) {
+				}
+			}
 		}
 	}
 
@@ -289,6 +317,9 @@ public class FileMgmt {
 				LOG.info("Download: " + fileName + ", offset:" + offset + ",compressed length:" + fileData[0].length()
 						+ ",file length:" + fileLength[0]);
 			}
+		} catch(IOException e){
+			LOG.error(fileName,e);
+			throw e;
 		} finally {
 			if (rAFile != null) {
 				try {
@@ -319,6 +350,7 @@ public class FileMgmt {
 			LOG.info("Remove " + fileName + " successfully!");
 			return;
 		} else {
+			LOG.error("No such file[" + fileName + "]");
 			throw new SQLException("No such file[" + fileName + "]");
 		}
 	}
@@ -479,7 +511,7 @@ public class FileMgmt {
 		Connection conn = null;
 		try {
 			conn = DriverManager.getConnection(url);
-			LOG.info("Create connection successfully.  " + conn);
+			LOG.info("Create connection successfully.  " + conn +", autocommit:"+conn.getAutoCommit());
 		} catch (Throwable t) {
 			LOG.error("Error encountered while getting connection ", t);
 			throw new SQLException(t.getMessage());
