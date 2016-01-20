@@ -292,7 +292,7 @@
       <item href="https://blueprints.launchpad.net/trafodion/+spec/ddl-query-invalidation" name="Metadata Query Invalidation"/>
       <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Cmp-divisioning" name="Multi-Temperature Data"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/access-external-hbase-tables" name="Native HBase Tables"/>
-      <item href="docs/Trafodion_odb_User_Guide.pdf" name="ODB"/>
+      <item href="docs/odb_user/index.html" name="ODB"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/sql-query-cancel" name="Query Cancel"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/security-privilege-updates" name="Privilege Checking"/>
       <item href="https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability" name="Repository"/>

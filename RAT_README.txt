@@ -132,6 +132,16 @@ The following files in dcs directory have their own BSD license
  dcs/src/main/resources/dcs-webapps/master/js/lib/jquery-1.11.0.js
 
 -------------------------------------------------------------------------------
+ The following MIT-licensed file was obtained from 
+ https://github.com/asciidoctor/asciidoctor-extensions-lab/blob/master/lib/google-analytics-postprocessor.rb
+
+ It provides a method to add Google Analytics code to asciidoc generated HTML files. Please refer to the 
+ following discussion regarding why this file is part of the source tree rather than obtained from a 
+ dependency: http://discuss.asciidoctor.org/pom-xml-example-for-asciidoctor-extensions-lab-td4195.html
+
+ docs/shared/google-analytics-postprocessor.rb
+
+-------------------------------------------------------------------------------
 
 The following test files from Phoenix are used in our testing.  They have
 their own MIT license

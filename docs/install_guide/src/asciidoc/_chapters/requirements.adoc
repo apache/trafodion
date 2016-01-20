@@ -24,3 +24,27 @@
 ////
 
 = Requirements
+
+The current release of Trafodion has been tested with:
+
+* 64-bit Red Hat Enterprise Linux (RHEL) 6.5, 6.6, and 6.7
+* SUSE SLES 11.3
+* Cloudera CDH 5.2
+* Cloudera CDH 5.3
+* Hortonworks HDP 2.2
+
+Other OS releases may work, too. The Trafodion project is currently working on better support for non-distribution version of Hadoop.
+
+== General Hardware and OS Requirements and Recommendations
+
+Trafodion assumes an environment based on the requirements of the supported Hadoop distributions. Please verify these assumptions on 
+each server you will install Trafodion on:
+
+* `bash` is available for shell-script execution.
+* `sshd` (the `ssh` daemon) is running on each node in the cluster.
+* `ntpd` (the `ntp` daemon) is running and synchronizign time on each node in the cluster.
+* `/etc/hosts` is set up for fully-qualified node names (FQDN).
+* `/etc/resolv.conf` is configured to use a name server tat can resolve commands such as `host -T <FQDN>`. 
+Please attempt to use such a command to validate host-name resolution.
+* The Linux Kernel Firewall (`iptables`) has either been disabled (to check: `service iptables status` (requires sudo access) 
+or [ports required by Trafodion] have been opened
