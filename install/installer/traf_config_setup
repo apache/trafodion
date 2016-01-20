@@ -149,6 +149,10 @@ if [ -f $LOCAL_TRAF_CONFIG ]; then
 	source $LOCAL_TRAF_CONFIG
 fi
 
+if [[ -f $TRAF_CONFIG ]]; then
+   source $TRAF_CONFIG
+fi
+
 if [[ "$suseLinux" -ge "1" ]]; then
    SUSE_LINUX="true"
 else 
@@ -186,7 +190,7 @@ if [[ "$CLOUD_CONFIG" == "Y" ]]; then
      CLOUD_TYPE=$answer1
   fi
   echo "export CLOUD_TYPE=\"$CLOUD_TYPE\"" >> $LOCAL_TRAF_CONFIG
-  case "$CLOUD_TYPE" in 
+  case "$CLOUD_TYPE" in
     1) AWS_CLOUD=true
        echo "export AWS_CLOUD=\"$AWS_CLOUD\"" >> $LOCAL_TRAF_CONFIG
        ;;
@@ -211,7 +215,7 @@ fi
 #==============================================
 # List of Nodes
 
-echo -n "Enter list of nodes (blank separated), default [$NODE_LIST]: "
+echo -n "Enter list of Trafodion nodes (blank separated), default [$NODE_LIST]: "
 read answer
 if [[ -z "$answer" ]]; then
    if [ -z "$NODE_LIST" ]; then
@@ -224,6 +228,33 @@ fi
 
 echo "export NODE_LIST=\"$NODE_LIST\"" >> $LOCAL_TRAF_CONFIG
 node_count=$(echo $NODE_LIST | wc -w)
+
+#==============================================
+echo -n "Are management nodes enabled (Y/N), default is N: "
+read answer
+ 
+if [ -z $answer ]; then
+      echo "export MANAGE_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG
+else
+      if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         echo "export MANAGE_ENABLED=\"Y\"" >> $LOCAL_TRAF_CONFIG
+         #List of Management Nodes
+         echo -n "Enter list management nodes (blank separated), default [$MANAGE_NODES]: "
+         read answer
+         if [[ -z "$answer" ]]; then
+            if [ -z "$MANAGE_NODES" ]; then
+               echo "***ERROR: Must enter list of management nodes."
+               exit -1
+            fi
+         else
+            MANAGE_NODES="$answer"
+         fi
+
+         echo "export MANAGE_NODES=\"$MANAGE_NODES\"" >> $LOCAL_TRAF_CONFIG
+      else
+         echo "export MANAGE_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG
+      fi
+fi
 
 #==============================================
 # Home directory
@@ -328,7 +359,6 @@ if [ $package -eq 0 ]; then
       echo "***ERROR: $DCS_BUILD does not exist"
       exit -1
    fi
-
    #TODO: do a quick sanity check on the file to make sure it is a DCS build tar file
    
    # since it is not a package tar file, we'll need to prompt for the rest build file
@@ -396,7 +426,7 @@ fi
 #==============================================
 #Hadoop URL
 
-echo -n "Enter Hadoop external network URL:port (no 'http://' needed), default is [$URL]: "
+echo -n "Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is [$URL]: "
 read answer
 
 if [ -z  $answer ]; then
@@ -408,13 +438,12 @@ else
    URL=$answer
 fi
 
-validURL=$(curl -s --head $URL | head -n 1 | grep "OK" | wc -l)
+validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
 
 if [[ $validURL -eq "1" ]]; then
    echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
 else
-   echo "***ERROR: Could not access http://$URL"
-   echo "***ERROR: Do not include 'http or https'"
+   echo "***ERROR: Could not access $URL"
    echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
    exit -1
 fi
@@ -514,6 +543,7 @@ fi
 echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
+
 #Get the node name where the customer would like to start DcsMaster process
 
 echo -n "Enter the node of primary DcsMaster, default [$DCS_PRIMARY_MASTER_NODE]: "
@@ -528,7 +558,7 @@ echo "export DCS_PRIMARY_MASTER_NODE=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRA
 #==============================================
 #Enable HA
 
-echo -n "Enable High Availability (Y/N), default is N: "
+echo -n "Enable High Avalability (Y/N), default is N: "
 read answer
 
 if [[ ! -z $answer ]]; then
@@ -544,9 +574,9 @@ fi
 echo "export ENABLE_HA=\"$ENABLE_HA\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
-#Get the floating IP address, interface name and the list of backup nodes to be used 
+#Add Floating IP if HA Enabled
 if [[ "$ENABLE_HA" == "true" ]]; then
-   ######Get the floating IP address 
+   ######Get the floating IP address
    echo -n "Enter floating IP address for setting up HA: "
    read answer1
 
@@ -572,16 +602,16 @@ if [[ "$ENABLE_HA" == "true" ]]; then
 
    ######Get the list of backup nodes to be used
    echo -n "Enter backup nodes for HA (blank seperated): "
-   read answer3 
-  
-   if [[ -z "$answer3" ]]; then 
+   read answer3
+
+   if [[ -z "$answer3" ]]; then
       echo "Backup nodes must be specified."
       exit 1
    else
       BACKUP_DCS_NODES="$answer3"
    fi
    echo "export BACKUP_DCS_NODES=\"$BACKUP_DCS_NODES\"" >> $LOCAL_TRAF_CONFIG
-fi
+fi 
 
 #==============================================
 #Simple security
@@ -678,7 +708,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
       read answer4
       if [[ -z "$answer4" ]]; then
          if [ -z "$LDAP_LEVEL" ]; then
-            echo "***ERROR: Must enter LDAP Encryption level."
+            echo "***ERROR: Much enter LDAP Encryption level."
             exit -1
          fi
       else

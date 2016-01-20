@@ -69,44 +69,16 @@ if [ "$USER" == "$TRAF_USER" ]; then
 fi
 
 #================================
-# validate specified nodes and that we can get to them with passwordless ssh
-echo "***INFO: Checking all nodes in specified node list"
-bad_nodes=""
-MY_NODES=""
-
-for node in $NODE_LIST
-do
-    # use BatchMode so it will just give an error instead of prompting for password
-    ssh -q -oStrictHostKeyChecking=no -oBatchMode=yes $node hostname
-    if [ $? != 0 ]; then
-        bad_nodes="$bad_nodes $node"
-    fi
-    # build MY_NODES env var to be used for pdsh & pdcp commands
-    MY_NODES="$MY_NODES -w $node"
-done
-if [ -n "$bad_nodes" ]; then
-    echo "***ERROR: unable to access all nodes in the node list with passwordless ssh"
-    echo "***ERROR: problem nodes: $bad_nodes"
-    exit -1
-fi
-
-echo "***INFO: Total number of nodes = $node_count"
-if [ $node_count -eq 1 ]; then
+if [ $all_node_count -eq 1 ]; then
     TRAF_PDSH=""
     TRAF_PDCP=""
 else
     # use the -S option to cause pdsh to return largest of
     # the remote command return values so we can tell if one
     # or more of the remote commands failed
-    TRAF_PDSH="pdsh -R exec $MY_NODES ssh -q -n %h"
-    TRAF_PDCP="pdcp -R ssh $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $ALL_NODES ssh -q -n %h"
+    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
 fi
-#==========================================
-#Determine Internet Access
-
-#>>>>>Check for internet access
-internetAccess=true
- 
 #==========================================
 #installing required packages"
 
@@ -140,7 +112,7 @@ echo "$TRAF_USER   soft nofile 8192" >> $TRAF_LIMITS_CONF
 echo "$TRAF_USER   hard nofile 65535" >> $TRAF_LIMITS_CONF
 
 # copy to all nodes
-if [ $node_count -eq 1 ]; then
+if [ $all_node_count -eq 1 ]; then
     sudo cp $TRAF_LIMITS_CONF /etc/security/limits.d/trafodion.conf
     if [ $? != 0 ]; then
        echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to /etc/security/limits.d/trafodion.conf"

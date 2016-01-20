@@ -88,13 +88,13 @@ export PDSH_SSH_CMD="ssh -q -n %h"
 export PDCP="pdcp -R ssh"
 
 
-if [ $node_count -eq 1 ]; then
+if [ $all_node_count -eq 1 ]; then
     TRAF_PDSH=""
 else
     # use the -S option to cause pdsh to return largest of
     # the remote command return values so we can tell if one
     # or more of the remote commands failed
-    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
+    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
 fi
 
 #Check sudo access which is required for "--all" option
@@ -114,7 +114,7 @@ sudo su $TRAF_USER --login --command "vncserver -kill :1"
 
 echo "***INFO: restoring linux system files that were changed"
 echo "***INFO: removing $HBASE_TRX from Hadoop directories"
-if [ $node_count -eq 1 ]; then
+if [ $all_node_count -eq 1 ]; then
    sudo rm /etc/security/limits.d/trafodion.conf 2>/dev/null
    sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
    sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null

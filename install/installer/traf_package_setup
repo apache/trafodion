@@ -40,12 +40,12 @@ echo >> $INSTALL_LOG
 echo "***INFO: Starting Trafodion Package Setup ($timestamp)"
 #========================================
 #Setting up pdsh variables
-if [ $node_count -eq 1 ]; then
+if [ $all_node_count -eq 1 ]; then
     TRAF_PDSH=""
     TRAF_PDCP=""
 else
-    TRAF_PDSH="pdsh -R exec $MY_NODES ssh -q -n %h"
-    TRAF_PDCP="pdcp -R ssh $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $ALL_NODES ssh -q -n %h"
+    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
 fi
 #==========================================
 echo "***INFO: Installing required packages"
@@ -60,7 +60,7 @@ internetAccess="true"
 #================================
 #Checking to see if epel package is installed. 
 if [[ $SUSE_LINUX == "false" ]]; then
-   for node in $NODE_LIST;
+   for node in $ALL_NODE_LIST;
    do
      EPEL_INSTALLED=$(ssh -q -n $node rpm -qa | grep epel | wc -l)
      if [[ $EPEL_INSTALLED == 0 ]]; then
@@ -81,8 +81,8 @@ if [[ $SUSE_LINUX == "false" ]]; then
          exit -1
       fi
 
-      if [ $node_count -ne 1 ]; then
-         for node in $NODE_LIST
+      if [ $all_node_count -ne 1 ]; then
+         for node in $ALL_NODE_LIST
          do
             scp -q $LOCAL_WORKDIR/$epel_rpm $(whoami)@$node:$HOME
             if [[ $? -gt 1 ]]; then
@@ -95,7 +95,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
       fi
    fi
 
-   for node in $NODE_LIST;
+   for node in $ALL_NODE_LIST;
    do
      EPEL_INSTALLED=$( ssh -q -n $node rpm -qa | grep epel | wc -l)
      if [[ $EPEL_INSTALLED == 0 ]]; then
@@ -120,8 +120,8 @@ fi
 
 #install pdsh if not on SUSE Linux
 if [[ $SUSE_LINUX == "false" ]]; then
-   if [ $node_count -ne 1 ]; then
-      for node in $NODE_LIST
+   if [ $all_node_count -ne 1 ]; then
+      for node in $ALL_NODE_LIST
       do
           echo "***INFO: ... pdsh on node $node"
           #if not already installed on this node, then install it
@@ -165,7 +165,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
       for package in $package_list
       do
          echo "***INFO: Checking if $package is installed ..."
-         for node in $NODE_LIST
+         for node in $ALL_NODE_LIST
          do
             installed=`ssh -q -n $node sudo rpm -qa | grep $package | wc -l`
             if [[ $installed -eq "0" ]]; then
@@ -179,7 +179,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
          done
       done
    else
-      for node in $NODE_LIST
+      for node in $ALL_NODE_LIST
       do
          echo "***ERROR: No internet access on $node"
          echo "***ERROR: Missing packages will need to be installed."

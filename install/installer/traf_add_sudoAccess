@@ -23,12 +23,12 @@
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
 
-if [ $node_count -eq 1 ]; then
+if [ $all_node_count -eq 1 ]; then
     TRAF_PDSH=""
     TRAF_PDCP=""
 else
-    TRAF_PDSH="pdsh -R exec $MY_NODES $PDSH_SSH_CMD"
-    TRAF_PDCP="pdcp -R ssh $MY_NODES"
+    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
+    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
 fi
 
 
@@ -44,7 +44,7 @@ echo "## Allow Trafodion id to run commands needed to configure floating IP" >> 
 echo "%trafodion ALL = NOPASSWD: IP, ARP" >> $sudoFile
 
 
-if [[ $node_count -gt "1" ]]; then
+if [[ $all_node_count -gt "1" ]]; then
    $TRAF_PDCP $sudoFile $HOME
    $TRAF_PDSH sudo cp $HOME/$sudoFile /etc/sudoers.d/
    $TRAF_PDSH sudo rm -f $HOME/$sudoFile
