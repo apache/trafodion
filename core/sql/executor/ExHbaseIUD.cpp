@@ -51,7 +51,7 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE_WITH_CLOSE;
+	step_ = CLOSE_AND_DONE;
 
       switch (step_)
 	{
@@ -201,14 +201,14 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-	    step_ = DONE_WITH_CLOSE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
 	case DONE:
-        case DONE_WITH_CLOSE:
+        case CLOSE_AND_DONE:
 	  {
-            if (step_ == DONE_WITH_CLOSE)
+            if (step_ == CLOSE_AND_DONE)
                ehi_->close();
 	    if (handleDone(rc, matches_))
 	      return rc;
@@ -239,7 +239,7 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE_WITH_CLOSE;
+	step_ = CLOSE_AND_DONE;
 
       switch (step_)
 	{
@@ -372,14 +372,14 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-	    step_ = DONE_WITH_CLOSE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
 	case DONE:
-        case DONE_WITH_CLOSE:
+        case CLOSE_AND_DONE:
 	  {
-            if (step_ == DONE_WITH_CLOSE)
+            if (step_ == CLOSE_AND_DONE)
                ehi_->close();
 	    if (handleDone(rc, matches_))
 	      return rc;
@@ -411,7 +411,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE_WITH_CLOSE;
+	step_ = CLOSE_AND_DONE;
 
       switch (step_)
 	{
@@ -701,14 +701,14 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-	    step_ = DONE_WITH_CLOSE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
 	case DONE:
-        case DONE_WITH_CLOSE:
+        case CLOSE_AND_DONE:
 	  {
-            if (step_ == DONE_WITH_CLOSE)
+            if (step_ == CLOSE_AND_DONE)
                ehi_->close();
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
@@ -757,7 +757,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE_WITH_CLOSE;
+	step_ = CLOSE_AND_DONE;
      else if (pentry_down->downState.request == ex_queue::GET_EOD)
           if (currRowNum_ > rowsInserted_)
 	{
@@ -1010,7 +1010,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-	    step_ = DONE_WITH_CLOSE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
@@ -1029,10 +1029,10 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	  break;
 
 	case DONE:
-        case DONE_WITH_CLOSE:
+        case CLOSE_AND_DONE:
 	case ALL_DONE:
 	  {
-            if (step_ == DONE_WITH_CLOSE)
+            if (step_ == CLOSE_AND_DONE)
                ehi_->close();
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
@@ -3868,7 +3868,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE_WITH_CLOSE;
+	step_ = CLOSE_AND_DONE;
       else if (pentry_down->downState.request == ex_queue::GET_EOD) {
          if (numRowsInDirectBuffer() > 0) {
             if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
@@ -4277,7 +4277,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-	    step_ = DONE_WITH_CLOSE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
         case ROW_DONE:
@@ -4288,10 +4288,10 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
           }
           break;
 	case DONE:
-        case DONE_WITH_CLOSE:
+        case CLOSE_AND_DONE:
 	case ALL_DONE:
 	  {
-            if (step_ == DONE_WITH_CLOSE)
+            if (step_ == CLOSE_AND_DONE)
                ehi_->close();
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
