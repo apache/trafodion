@@ -116,8 +116,9 @@ function createProcedures {
       CREATE PROCEDURE PUT (
       IN FILEDATA VARCHAR(102400) CHARACTER SET ISO88591,
       IN FILENAME VARCHAR(256) CHARACTER SET UTF8,
-      IN CREATEFLAG INTEGER)
-      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.put(java.lang.String,java.lang.String,int)'
+      IN CREATEFLAG INTEGER,
+      IN FILEOVERWRITE INTEGER)
+      EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.put(java.lang.String,java.lang.String,int,int)'
       EXTERNAL SECURITY DEFINER
       LIBRARY ${LIB_NAME}
       LANGUAGE JAVA

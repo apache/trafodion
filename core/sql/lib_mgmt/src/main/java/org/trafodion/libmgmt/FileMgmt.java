@@ -473,6 +473,7 @@ public class FileMgmt {
 		names[0] = toXML(files, "ls");
 	}
 
+
 	/**
 	 * upload a JAR file
 	 * 
@@ -480,9 +481,12 @@ public class FileMgmt {
 	 * @param fileName
 	 * @param appendFlag
 	 *            0: append; otherwise overwrite
+	 * @param overwriteOnCreate
+	 *            when appendFlag is not 0, check if file exists and overwriteOnCreate is not 0,
+	 *            throw exception. Otherwise overwrite the file.
 	 * @throws SQLException
 	 */
-	public static void put(String fileData, String fileName, int appendFlag) throws SQLException {
+	public static void put(String fileData, String fileName, int appendFlag, int overwriteOnCreate) throws SQLException, IOException {
 		checkFileName(fileName);
 		try {
 			byte[] data = fileData.getBytes(CHARTSET);
@@ -492,6 +496,10 @@ public class FileMgmt {
 			String userPath = getCodeFilePath(conn);
 			close(conn);
 			String fname = userPath + fileName;
+			if (overwriteOnCreate != 0 && appendFlag != 0
+					&& new File(fname).exists()) {
+				throw new IOException("File " + fileName + " already exists!");
+			}
 			checkFile(fname, data.length);
 			FileOutputStream fos = null;
 			FileChannel channel = null;
