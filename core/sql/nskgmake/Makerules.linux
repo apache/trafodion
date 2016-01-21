@@ -139,7 +139,7 @@ GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB) $(LIBCURL_LIB)
 
 # EXECUTABLES defines the executables that are built for release and debug
 # builds.  Any flavor-specific targets can be added later in this makefile.
-EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv mxlobsrvr sscp ssmp
+EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv mxlobsrvr sscp ssmp clitestdriver
 	# mxCompileUserModule mxsqlcfe mxsqlcofe sqlfe
 
 # LIBS defines the libraries that are built for release and debug builds.
@@ -150,7 +150,7 @@ DLLS := comexe common executor sort sqlmsg \
 	tdm_sqlmxevents tdm_sqlshare tdm_sqlerrormsg \
 	eh lmcomp \
 	sqlcilib cli porting_layer tdm_sqlmxmsg_intl \
-	arkcmp_dll smdio udr_predef
+	arkcmp_dll smdio udr_predef clitest
 
 DLLS += sqlcomp ustat sqlcat parser optimizer generator \
 	tdm_sqllangman arkcmplib qmscommon

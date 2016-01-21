@@ -7577,7 +7577,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       if (pGranteeArray[j]->isPublic())
         {
           grantee = PUBLIC_USER;
-          authName = "PUBLIC";
+          authName = PUBLIC_AUTH_NAME;
         }
       else
         {
@@ -8619,12 +8619,6 @@ void populateRegionDescForEndKey(char* buf, Int32 len, struct desc_struct* targe
    target->body.hbase_region_desc.endKeyLen = len;
 }
 
-void populateRegionDescAsHASH2(char* buf, Int32 len, struct desc_struct* target, NAMemory*)
-{
-   target->header.nodetype = DESC_HBASE_HASH2_REGION_TYPE;
-   populateRegionDescForEndKey(buf, len, target);
-}
-
 void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*)
 {
    target->header.nodetype = DESC_HBASE_RANGE_REGION_TYPE;
@@ -9402,15 +9396,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
       ByteArrayList* bal = ehi->getRegionEndKeys(extNameForHbase);
 
-      // Set the header.nodetype to either HASH2 or RANGE based on whether
-      // the table is salted or not.  
-      if (tableIsSalted && CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_ON) 
-        ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-          assembleDescs(bal, populateRegionDescAsHASH2, STMTHEAP);
-      else
-       if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_ON ) 
-         ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-            assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
+      // create a list of region descriptors
+      ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
+        assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
       delete bal;
 
       // if this is base table or index and hbase object doesn't exist, then this object

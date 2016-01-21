@@ -1706,8 +1706,8 @@ OUT2
 >>
 >>obey TEST100(udrtrace);
 >>log;
-Conversational Interface @version@
-(c) Copyright 2014 Hewlett-Packard Development Company, LP.
+Apache Trafodion Conversational Interface 2.0.0
+Copyright (c) 2015 Apache Software Foundation
 >>?section udrtrace2
 >>--
 >>-- This section will be executed by the mxci fired off while executing

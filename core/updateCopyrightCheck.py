@@ -202,11 +202,12 @@ for line in gitProcess.stdout:
     if parseResult:
         #  The copyright line of interest looks like:
         #
-        #  // (x) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+        #  // (x) <xxxxxxxxx> 1998-2014 Hewlett-Packard Development Company, L.P.
         #
-        #  (It is actually (C), not (x); I obfuscated the comment so this
+        #  (It is actually (C), not (x) and Copyright not <xxxxxxxxx>.
+        #  I obfuscated the comment so this
         #  script wouldn't mistakenly report itself as having multiple
-        #  copyrights :-)
+        #  copyrights and to pass copyright checks from Apache :-)
         #
         #  Of course the comment delimiter will vary with the file language.
         cmdGrep = ['grep',

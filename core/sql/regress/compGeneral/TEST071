@@ -376,6 +376,28 @@ execute s;
 
 select *, "_DIVISION_1_" from mtd2 order by 1, 2, 3;
 
+-- test elimination of division column for single-division queries with order by
+explain options 'f'
+select *
+from mtd1
+where sale_date between date '2000-01-01' and date '2000-01-21'
+order by store_id;
+-- expect no sort operator, for a single division, table is sorted on store_id
+
+explain options 'f'
+select *
+from mtd2
+where sale_date between date '2000-01-01' and date '2000-01-21'
+order by store_id;
+-- expect no sort operator, for a single division, table is sorted on store_id
+
+explain options 'f'
+select *
+from mtd2
+where sale_date between date '2000-01-01' and date '2000-02-21'
+order by store_id;
+-- expect a sort operator, since we are querying more than one division
+
 -- some simple join queries, validate min/max optimization for divisioned table
 
 prepare min_max_opt_query from

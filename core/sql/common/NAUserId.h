@@ -45,9 +45,31 @@
 #define MIN_USERID 33333
 #define MAX_USERID 999999
 #define MIN_ROLEID 1000000
-#define MAX_ROLEID 1499999
+#define MAX_ROLEID 1490000
 #define NA_UserId Int32
 #define NA_AuthID Int32
 #define NA_UserIdDefault 0
+
+// Defines for special users
+#define SYSTEM_AUTH_NAME "_SYSTEM"
+#define DB__ROOT         "DB__ROOT"
+
+// Defines for special roles
+#define PUBLIC_AUTH_NAME "PUBLIC"
+#define DB__HIVEROLE     "DB__HIVEROLE"
+#define DB__HBASEROLE    "DB__HBASEROLE"
+#define DB__ROOTROLE     "DB__ROOTROLE"
+
+#define SUPER_USER_LIT "33333"
+
+#define SYSTEM_USER  -2
+#define PUBLIC_USER  -1
+#define ROOT_USER_ID  33333
+#define SUPER_USER    33333  
+
+#define ROOT_ROLE_ID     1000000
+#define HIVE_ROLE_ID     1490000 
+#define HBASE_ROLE_ID    1490001
+
 
 #endif  /*  NAUSERID_H*/

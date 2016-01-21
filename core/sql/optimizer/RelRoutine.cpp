@@ -1032,6 +1032,8 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
     return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
   else if (funcName == "TIMESERIES")
     return REL_TABLE_MAPPING_BUILTIN_TIMESERIES;
+  else if (funcName == "JDBC")
+    return REL_TABLE_MAPPING_BUILTIN_JDBC;
   else
     // none of the built-in names matched, so it must be a UDF
     return REL_TABLE_MAPPING_UDF;
@@ -1045,6 +1047,8 @@ const NAString PredefinedTableMappingFunction::getText() const
       return "event_log_reader";
     case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
       return "timeseries";
+    case REL_TABLE_MAPPING_BUILTIN_JDBC:
+      return "jdbc_udf";
 
     default:
       CMPASSERT(0);
@@ -1081,33 +1085,37 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
      BindWA *bindWA)
 {
   NARoutine *result = NULL;
+  ComRoutineLanguage lang = COM_LANGUAGE_CPP;
+  ComRoutineParamStyle paramStyle = COM_STYLE_CPP_OBJ;
+  const char *externalName = NULL;
+  // By default, predefined UDRs share a DLL.
+  const char *libraryFileName = "libudr_predef.so";
   NAString libraryPath;
 
   // the libraries for predefined UDRs are in the regular
   // library directory $MY_SQROOT/export/lib${SQ_MBTYPE}
   libraryPath += getenv("MY_SQROOT");
   libraryPath += "/export/lib";
-  libraryPath += getenv("SQ_MBTYPE");
 
   switch (getOperatorType())
     {
     case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+      externalName = "TRAF_CPP_EVENT_LOG_READER";
+      libraryPath += getenv("SQ_MBTYPE");
+      break;
+
     case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
-      {
-        // produce a very simple NARoutine, most of the
-        // error checking and determination of output
-        // columns is done by the compiler interface of
-        // this predefined table mapping function
-        result = new(bindWA->wHeap()) NARoutine(routineName,
-                                                bindWA->wHeap());
-        if (getOperatorType() == REL_TABLE_MAPPING_BUILTIN_LOG_READER)
-          result->setExternalName("TRAF_CPP_EVENT_LOG_READER");
-        else
-          result->setExternalName("TRAF_CPP_TIMESERIES");
-        result->setLanguage(COM_LANGUAGE_CPP);
-        result->setRoutineType(COM_TABLE_UDF_TYPE);
-        result->setParamStyle(COM_STYLE_CPP_OBJ);
-      }
+      externalName = "TRAF_CPP_TIMESERIES";
+      libraryPath += getenv("SQ_MBTYPE");
+      break;
+
+    case REL_TABLE_MAPPING_BUILTIN_JDBC:
+      lang = COM_LANGUAGE_JAVA;
+      paramStyle = COM_STYLE_JAVA_OBJ;
+      externalName = "org.trafodion.sql.udr.predef.JDBCUDR";
+      libraryPath += "/trafodion-sql-";
+      libraryPath += getenv("TRAFODION_VER");
+      libraryPath += ".jar";
       break;
 
     default:
@@ -1118,9 +1126,18 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
       return NULL;
     }
  
-  // by default, predefined UDRs share a DLL
+  // Produce a very simple NARoutine, most of the
+  // error checking and determination of output
+  // columns is done by the compiler interface of
+  // this predefined table mapping function.
 
-  result->setFile("libudr_predef.so");
+  result = new(bindWA->wHeap()) NARoutine(routineName,
+                                          bindWA->wHeap());
+  result->setExternalName(externalName);
+  result->setLanguage(lang);
+  result->setRoutineType(COM_TABLE_UDF_TYPE);
+  result->setParamStyle(paramStyle);
+  result->setFile(libraryFileName);
   result->setExternalPath(libraryPath);
 
   return result;

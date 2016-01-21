@@ -1353,6 +1353,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RANGELOG			/* MV */
 %token <tokval> TOK_REBUILD
 %token <tokval> TOK_REFERENCES
+%token <tokval> TOK_REGION
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
 %token <tokval> TOK_RENAME              /* Tandem extension */
@@ -1368,6 +1369,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_STORE               /* Tandem extension */
 %token <tokval> TOK_STORAGE
 %token <tokval> TOK_STATISTICS          /* Tandem extension non-reserved word */
+%token <tokval> TOK_STATS
 %token <tokval> TOK_UNBOUNDED           /* Tandem extension */
 %token <tokval> TOK_VIEW
 %token <tokval> TOK_VIEWS
@@ -2780,6 +2782,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_maintain_object
 %type <relx>                    exe_util_cleanup_volatile_tables
 %type <relx>                    exe_util_aqr
+%type <relx>                    exe_util_get_region_access_stats
+%type <boolean>                 stats_or_statistics
 %type <aqrOptionsList>          aqr_options_list
 %type <aqrOption>               aqr_option
 %type <uint>                    aqr_task
@@ -5942,7 +5946,9 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
                                           , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
-                                          , RelInternalSP::executeInSameArkcmp | RelInternalSP::suppressDefaultSchema | RelInternalSP::requiresTMFTransaction);
+                                          , RelInternalSP::executeInSameArkcmp | 
+                                            RelInternalSP::suppressDefaultSchema | 
+                                            RelInternalSP::requiresTMFTransaction);
   }
 | TOK_TABLE '(' TOK_RELATEDNESS '(' value_expression_list ')' ')'
   {
@@ -5950,7 +5956,9 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
                                           , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
-                                          , RelInternalSP::executeInSameArkcmp | RelInternalSP::suppressDefaultSchema | RelInternalSP::requiresTMFTransaction);
+                                          , RelInternalSP::executeInSameArkcmp | 
+                                            RelInternalSP::suppressDefaultSchema | 
+                                            RelInternalSP::requiresTMFTransaction);
   }
 | TOK_TABLE '(' TOK_FEATURE_VERSION_INFO '(' value_expression_list ')' ')'
   {
@@ -5958,7 +5966,9 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
                                           , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
-                                          , RelInternalSP::executeInSameArkcmp | RelInternalSP::suppressDefaultSchema | RelInternalSP::requiresTMFTransaction);
+                                          , RelInternalSP::executeInSameArkcmp | 
+                                            RelInternalSP::suppressDefaultSchema | 
+                                            RelInternalSP::requiresTMFTransaction);
   }
 | sp_proxy_stmt_prefix '(' proxy_columns ')' ')'
   {
@@ -5996,8 +6006,30 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
       (handle, 
        ExeUtilLobExtract::TO_STRING_,
        NULL, NULL, 0, 0);
-  }
 
+    $$ = lle;
+  }
+| TOK_TABLE '(' TOK_REGION stats_or_statistics '(' ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilRegionStats(CorrName(""), FALSE, FALSE, FALSE, NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_REGION stats_or_statistics '(' table_name ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilRegionStats(*$6, FALSE, FALSE, FALSE, NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_REGION stats_or_statistics '(' TOK_INDEX table_name ')' ')'
+  {
+    $7->setSpecialType(ExtendedQualName::INDEX_TABLE);
+    $$ = new (PARSERHEAP()) 
+      ExeUtilRegionStats(*$7, FALSE, TRUE, FALSE, NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_REGION stats_or_statistics '(' TOK_USING rel_subquery ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilRegionStats(CorrName("DUMMY"), FALSE, FALSE, FALSE, $7, PARSERHEAP());
+  }
 
 hivemd_identifier : 
                     TOK_ALIAS { $$ = new (PARSERHEAP()) NAString("ALIAS"); }
@@ -12648,9 +12680,14 @@ insert_obj_to_lob_function :
 			        {
 				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
 				}			       
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION  value_expression',' TOK_SIZE value_expression')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBinsert( bufAddr, bufSize, LOBoper::BUFFER_, FALSE);
 				}
                           | TOK_FILETOLOB '(' character_literal_sbyte ')'
 			        {
@@ -12676,45 +12713,55 @@ insert_obj_to_lob_function :
 update_obj_to_lob_function : 
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::STRING_, FALSE);
 				}
 			  | TOK_STRINGTOLOB '(' value_expression ',' TOK_APPEND ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,NULL, LOBoper::STRING_, TRUE);
 				}
                           | TOK_FILETOLOB '('character_literal_sbyte ')'
 			        {
 				 
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,LOBoper::FILE_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL,NULL,LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '('character_literal_sbyte ',' TOK_APPEND ')'
 			        {
 				 
-				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, LOBoper::FILE_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3,NULL, NULL,LOBoper::FILE_, TRUE);
 				}
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION  value_expression ',' TOK_SIZE value_expression ')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, FALSE);
 				}
-			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ',' TOK_APPEND')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ',' TOK_APPEND')'
 			        {
-				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, TRUE);
+				  ItemExpr *bufAddr = $4;
+				  ItemExpr *bufSize = $7;
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufSize = new (PARSERHEAP())
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, TRUE);
 				}
 
 			  | TOK_EXTERNALTOLOB '(' literal ')'
 			        {
                                   YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::EXTERNAL_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_EXTERNALTOLOB '(' literal ',' literal ')'
 			        {
                                   YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, LOBoper::EXTERNAL_, FALSE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, NULL,LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ',' TOK_APPEND ')'
 			        {
 				  YYERROR;
-				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::LOAD_, TRUE);
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::LOAD_, TRUE);
 				}
 
 select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
@@ -14503,6 +14550,11 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
+              | exe_util_get_region_access_stats
+                                {
+				  $$ = finalize($1);
+				}
+
               | TOK_SELECT TOK_UUID '(' ')'
 	                        {
 				  NAString * v = new (PARSERHEAP()) NAString("1");
@@ -15583,15 +15635,28 @@ exe_util_populate_in_memory_statistics : TOK_GENERATE TOK_STATISTICS TOK_FOR TOK
 	       }
 
 /* type relx */
-exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
+exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE
                {
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
-
+		 Int64 returnLengthAddr = atoInt64($8->data());
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
-		    NULL, NULL, 0, 0);
+		    returnLengthAddr, NULL, 0, 0);
+
+		 $$ = lle;
+	       }
+/* type relx */
+exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')' 
+               {
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+		
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::RETRIEVE_LENGTH_,
+		    -1, NULL, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -15614,35 +15679,21 @@ exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
 		 */
 	       }
 
-              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ')'
+              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-                 if (NOT (($8->getOperatorType() == ITM_DYN_PARAM) ||
-                          ($8->getOperatorType() == ITM_CONSTANT)))
-                   {
-                     YYERROR;
-                   }
+		 /* TOK_LOCATION points to a user allocated data buffer ehich needs to be enough to hold alreast TOK_SIZE worth of data .
+TOK_SIZE points to the address of an Int64 container This size is the input specified by user for length to extract. One return, it will give the caller the size that was extracted */
 
-                 if (NOT (($11->getOperatorType() == ITM_DYN_PARAM) ||
-                          ($11->getOperatorType() == ITM_CONSTANT)))
-                   {
-                     YYERROR;
-                   }
-
-                 ItemExpr * bufaddr = $8;
-		 bufaddr = new (PARSERHEAP()) 
-		   Cast(bufaddr, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-
-		 ItemExpr * bufsize = $11;
-		 bufsize = new (PARSERHEAP()) 
-		   Cast(bufsize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-
+		 Int64 bufAddr = atoInt64($8->data());
+		 Int64 sizeAddr = atoInt64($11->data());
+		 
 		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
 
 		 ExeUtilLobExtract * lle =
 		   new (PARSERHEAP ()) ExeUtilLobExtract
 		   (handle, 
 		    ExeUtilLobExtract::TO_BUFFER_,
-		    bufaddr, bufsize, 0, 0);
+		    bufAddr, sizeAddr, 0, 0);
 
 		 $$ = lle;
 	       }
@@ -16174,7 +16225,53 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 		 $$ = de;
 	       }
 
+/* type relx */
+exe_util_get_region_access_stats : TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_TABLE table_name
+               {
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilRegionStats(*$6, FALSE, FALSE, TRUE, NULL, PARSERHEAP());
+	       } 
+             | TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_INDEX table_name
+               {
+                 $6->setSpecialType(ExtendedQualName::INDEX_TABLE);
 
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilRegionStats(*$6, FALSE, TRUE, TRUE, NULL, PARSERHEAP());
+	       } 
+             | TOK_GET TOK_REGION stats_or_statistics TOK_FOR rel_subquery 
+               {
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilRegionStats(
+                        CorrName("DUMMY"), FALSE, TRUE, TRUE, $5, PARSERHEAP());
+	       } 
+             | TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_TABLE table_name ',' TOK_SUMMARY
+               {
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilRegionStats(*$6, TRUE, FALSE, TRUE, NULL, PARSERHEAP());
+	       } 
+             | TOK_GET TOK_REGION stats_or_statistics TOK_FOR TOK_INDEX table_name ',' TOK_SUMMARY
+               {
+                 $6->setSpecialType(ExtendedQualName::INDEX_TABLE);
+
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilRegionStats(*$6, TRUE, TRUE, TRUE, NULL, PARSERHEAP());
+	       } 
+             | TOK_GET TOK_REGION stats_or_statistics TOK_FOR rel_subquery ',' TOK_SUMMARY
+               {
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilRegionStats(
+                        CorrName("DUMMY"), TRUE, TRUE, TRUE, $5, PARSERHEAP());
+	       } 
+
+stats_or_statistics : TOK_STATS
+                      {
+                        $$ = TRUE;
+                      }
+                    | TOK_STATISTICS
+                      {
+                        $$ = TRUE;
+                      }
+ 
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look
  * one token ahead.  This may be necessary in cases where the parser
@@ -19651,7 +19748,7 @@ set_clause : identifier '=' value_expression
 					ColReference(new (PARSERHEAP()) ColRefName(*$1, PARSERHEAP()));
 				      
 				      LOBupdate * nlu = 
-					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, 
+					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, lu->child(2),
 								     lu->getObj(), lu->isAppend());
 				      
 				      rc = nlu;
@@ -22155,18 +22252,25 @@ show_statement:
 		   $2->getOperatorType() == REL_EXE_UTIL ||
 		   $2->getOperatorType() == REL_SCAN)
 		 {
-		   if ($2->getOperatorType() != REL_SCAN)
+                   if ($2->getOperatorType() == REL_EXE_UTIL)
+                     {
+		       c = new(PARSERHEAP())
+			 CorrName(((ExeUtilExpr *)$2)->
+				  getVirtualTableName());
+                       c->setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
+                     }
+		   else if ($2->getOperatorType() == REL_SCAN)
+		     {
+		       Scan* ha = (Scan*)$2;
+		       c = new(PARSERHEAP())
+			 CorrName(ha->getTableName());
+		     }
+                   else
 		     {
 		       c = new(PARSERHEAP())
 			 CorrName(((TableValuedFunction *)$2)->
 				  getVirtualTableName());
 		       c->setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
-		     }
-		   else
-		     {
-		       Scan* ha = (Scan*)$2;
-		       c = new(PARSERHEAP())
-			 CorrName(ha->getTableName());
 		     }
 
 		   $$ = new (PARSERHEAP())
@@ -32853,6 +32957,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RECOVER
                       | TOK_RECOVERY
                       | TOK_REFRESH // MV
+                      | TOK_REGION
                       | TOK_REGISTER
                       | TOK_REINITIALIZE
                       | TOK_RELATED
@@ -32922,6 +33027,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_STATEMENT
                       | TOK_STATIC
                       | TOK_STATISTICS
+                      | TOK_STATS
                       | TOK_STATUS
                       | TOK_STORAGE
                       | TOK_STORE

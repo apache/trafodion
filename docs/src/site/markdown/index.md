@@ -11,12 +11,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+<!-- Need a better picture, removed for now
 #### [Next Hadoop Wave][revolution]
 
 [![Next Hadoop Wave](images/carousel/revolution.png)][revolution]
 
-Trafodion brings enterprise-clas operational workloads to Hadoop! You can now run all of your data workloads on a single platform based on Hadoop.
-
+Trafodion brings enterprise-class operational workloads to Hadoop! You can now run all of your data workloads on a single platform based on Hadoop.
+-->
 
 #### [Hadoop-Scale with SQL Access][scale]
 
@@ -36,8 +37,28 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 [scale]: http://trafodion.apache.org
 [stack]: index.html
 
-
 ---
+
+## News
+
+
+<table><tr><td>
+  <p><h5>The Apache Trafodion team is happy to announce the first Apache release &#8212; version 1.3.0-incubating!</h5></p>
+  <p><strong>How to get started with Apache Trafodion:</strong>
+     <ul>
+       <li><a href="http://trafodion.apache.org/documentation.html">Release Documentation</a></li>
+       <li><a href="http://trafodion.apache.org/release-notes-1-3-0.html">Release Notes</a></li>
+       <li><a href="https://trafodion.apache.org/download.html#Binaries">Download</a></li>
+       <li><a href="git@github.com:apache/incubator-trafodion">git Site</a></li>
+       <li><a href="http://trafodion.apache.org/download.html">Build Instructions</a></li>
+     </ul>
+   </p>
+   <p><h5>The Trafodion team thanks all our contributors and mentors who made the release possible!</h5></p>
+
+</td></tr></table>
+---
+
+## About
 
 Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop. 
 
@@ -80,23 +101,23 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 </center>
 <ul>
 <li><a href="architecture-overview.html">Architecture</a></li>
-<li>Documentation</li>
-<li>Videos</li>
-<li>Frequently asked questions</li>
+<li><a href="documentation.html">Documentation</a></li>
+<li><a href="faq.html">FAQ</a></li>
+<li><a href="roadmap.html">Roadmap</a></li>
 </ul>
 </td>
 <td width="25%" valign="top">
 <center>
 <h2>Use</h2>
 <img src="images/logos/use.png" width="108" height="108"/>
-<h4>Download and Try Trafodion</h4>
+<h4>Download and try Trafodion</h4>
 <div class="customHr">.</div>
 </center>
 <ul>
-<li><a href="index.html">Features</a> and roadmap</li>
-<li>Release Notes</li>
-<li>Download and install</li>
-<li>Quick Start</li>
+<li><a href="download.html">Download</a></li>
+<li><a href="quick-start.html">Quick Start</a></li>
+<li><a href="features.html">Features</a></li>
+<li><a href="release-notes.html">Release Notes</a></li>
 </ul>
 </td>
 <td width="25%" valign="top">
@@ -107,10 +128,10 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 <div class="customHr">.</div>
 </center>
 <ul>
-<li>Development environment</li>
-<li>Software architecture.</li>
-<li>Contribution workflow</li>
-<li>Participation</li>
+<li><a href="develop.html">Develop</a></li>
+<li><a href="test.html">Test</a></li>
+<li><a href="document.html">Document</a></li>
+<li><a href="advocate.html">Advocate</a></li>
 </ul>
 </td>
 <td width="25%" valign="top">
@@ -121,10 +142,10 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 <div class="customHr">.</div>
 </center>
 <ul>
-<li>Join project team</li>
-<li>Community communication</li>
-<li>Conferences and meetups</li>
-<li>Events Calendar</li>
+<li><a href="contribute.html">Join</a></li>
+<li><a href="mail-lists.html">Discuss</a></li>
+<li><a href="calendar.html">Calendar</a></li>
+<li><a href="presentations.html">Presentations</a></li>
 </ul>
 </td>
 </tr>

@@ -353,6 +353,9 @@ THREAD_P DefaultDefault defaultDefaults[] = {
 
 SDDint__(AFFINITY_VALUE,                        "-2"),
 
+// controls the ESP allocation per core. 
+ DDkwd__(AGGRESSIVE_ESP_ALLOCATION_PER_CORE,        "OFF"),
+
 SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if row sampling will use the sample operator in SQL/MX or the
 
  // this should be used for testing only. DML should not be executed on
@@ -1932,7 +1935,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  XDDkwd__(HIST_PREFETCH,                        "ON"),
  XDDkwd__(HIST_REMOVE_TRAILING_BLANKS,          "ON"), // should remove after verifying code is solid
   DDansi_(HIST_ROOT_NODE,                            ""),
- XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "50000"),
+ XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
   DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
   DDvol__(HIST_SCRATCH_VOL,                     ""),
   // control the amount of data in each partition of the sample tble.
@@ -4333,59 +4336,8 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
     case MAX_ESPS_PER_CPU_PER_OP:
       {
-        // set 2 ESPs per node, as a starting point.
-        #define DEFAULT_ESPS_PER_NODE 2
-
-        Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-        Lng32 coresPerNode = 1;        
-          // Make sure the gpClusterInfo points at an NAClusterLinux object.
-          // In osim simulation mode, the pointer can point at a NAClusterNSK
-          // object, for which the method numTSEsForPOS() is not defined.
-        NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
-
-          // number of POS TSE
-        Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
-
-          // cluster nodes
-        Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
-
-          // TSEs per node
-        Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
-
-          // cores per node
-        coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
-
-          // For Linux/nt, we conservatively allocate ESPs per node as follows
-          // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
-          // - 1 ESP per TSE if number of cores is more than double the TSEs
-          // - 1 ESP per 2 TSEs if cores are more than TSEs but less than double the TSEs
-          // - 1 ESP per node. Only possible on NT or workstations
-          //      - number of cores less than TSEs and there are 1 or 2 cpur cores per node
-          //      - number of TSEs is less than cpu cores and there 1 or 2 TSEs per node.
-          //        This case is probable if virtual nodes are used
-
-          // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
-          // in this case we only consider cpu cores
-        if ((coresPerNode <= TSEsPerNode) || (TSEsPerNode == 0))
-        {
-            if (coresPerNode > 1)
-                numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
-        }
-        else if (coresPerNode > (TSEsPerNode*2))
-        {
-             numESPsPerNode = TSEsPerNode;
-        }
-        else if (TSEsPerNode > 1)
-        {
-             numESPsPerNode = TSEsPerNode/2;
-        }
-        else // not really needed since numESPsPerNode is set to 1 from above
-        {
-             numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-        }
-        
-
-        ftoa_((float)(numESPsPerNode)/(float)(coresPerNode), valuestr);
+        float espsPerCore = computeNumESPsPerCore(FALSE);
+        ftoa_(espsPerCore, valuestr);
         strcpy(newValue, valuestr);
         if(reInit)
           ActiveSchemaDB()->
@@ -5893,6 +5845,18 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
         }
      }
      break;
+
+     case AGGRESSIVE_ESP_ALLOCATION_PER_CORE:
+     {
+        NABoolean useAgg = (getToken(attrEnum) == DF_ON);
+        float numESPsPerCore = computeNumESPsPerCore(useAgg);
+        char valuestr[WIDEST_CPUARCH_VALUE];
+        ftoa_(numESPsPerCore, valuestr);
+        NAString val(valuestr);
+        insert(MAX_ESPS_PER_CPU_PER_OP, val, errOrWarn);
+     }
+     break;
+
       default:  break;
       }
     }	  // code to valid overwrite (insert)
@@ -5913,6 +5877,77 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
   return attrEnum;
 
 } // NADefaults::validateAndInsert()
+
+float NADefaults::computeNumESPsPerCore(NABoolean aggressive)
+{
+   #define DEFAULT_ESPS_PER_NODE 2   // for conservation allocation
+   #define DEFAULT_ESPS_PER_CORE 0.5 // for aggressive allocation
+
+     // Make sure the gpClusterInfo points at an NAClusterLinux object.
+     // In osim simulation mode, the pointer can point at a NAClusterNSK
+     // object, for which the method numTSEsForPOS() is not defined.
+   NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
+   assert(gpLinux);		
+
+   // cores per node
+   Lng32 coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
+
+   if ( aggressive ) {
+      float totalMemory = gpLinux->totalMemoryAvailable(); // per Node, in KB
+      totalMemory /= (1024*1024); // per Node, in GB
+      totalMemory /= coresPerNode ; // per core, in GB
+      totalMemory /= 2; // per core, 2GB per ESP
+      return MINOF(DEFAULT_ESPS_PER_CORE, totalMemory);
+   } else {
+      Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+      return (float)(numESPsPerNode)/(float)(coresPerNode);
+   }
+
+// The following lines of code are comment out but retained for possible
+// future references.
+//
+//     // number of POS TSE
+//   Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
+//
+//     // cluster nodes
+//   Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
+//
+//     // TSEs per node
+//   Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
+//
+//
+//
+//     // For Linux/nt, we conservatively allocate ESPs per node as follows
+//     // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
+//     // - 1 ESP per TSE if number of cores is more than double the TSEs
+//     // - 1 ESP per 2 TSEs if cores are more than TSEs but less than double the TSEs
+//     // - 1 ESP per node. Only possible on NT or workstations
+//     //      - number of cores less than TSEs and there are 1 or 2 cpur cores per node
+//     //      - number of TSEs is less than cpu cores and there 1 or 2 TSEs per node.
+//     //        This case is probable if virtual nodes are used
+//
+//     // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
+//     // in this case we only consider cpu cores
+//   if ( coresPerNode <= TSEsPerNode || TSEsPerNode == 0 )
+//   {
+//       if (coresPerNode > 1)
+//           numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
+//   }
+//   else if (coresPerNode > (TSEsPerNode*2))
+//   {
+//        numESPsPerNode = TSEsPerNode;
+//   }
+//   else if (TSEsPerNode > 1)
+//   {
+//        numESPsPerNode = TSEsPerNode/2;
+//   }
+//   else // not really needed since numESPsPerNode is set to 1 from above
+//   {
+//        numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+//   }
+//        
+//   return (float)(numESPsPerNode)/(float)(coresPerNode);
+}
 
 enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 						 Lng32 holdOrRestoreCQD)

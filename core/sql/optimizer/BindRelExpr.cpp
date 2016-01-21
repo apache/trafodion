@@ -1302,6 +1302,11 @@ desc_struct *generateSpecialDesc(const CorrName& corrName)
           StatisticsFunc sf;
           desc = sf.createVirtualTableDesc();
         }
+      else if (corrName.getQualifiedNameObj().getObjectName() == ExeUtilRegionStats::getVirtualTableNameStr())
+        {
+          ExeUtilRegionStats eudss;
+          desc = eudss.createVirtualTableDesc();
+        }
     }
 
   return desc;

@@ -2193,22 +2193,31 @@ static PartitioningFunction * createHash2PartitioningFunction
 
 
 static 
-NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table, NAMemory* heap)
+NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table,
+                               int numSaltBuckets, NAMemory* heap)
 {
    Int32 partns = 0;
+   Int32 numRegions = 0;
    desc_struct* hrk = desc;
  
    while ( hrk ) {
-      partns++;
-      hrk=hrk->header.next;
+     numRegions++;
+     hrk=hrk->header.next;
    }
+
+   if (numSaltBuckets <= 1)
+     partns = numRegions;
+   else
+     partns = numSaltBuckets;
 
    NodeMap* nodeMap = new (heap) 
        NodeMap(heap, partns, NodeMapEntry::ACTIVE, NodeMap::HBASE);
 
    // get nodeNames of region servers by making a JNI call
    // do it only for multiple partition table
-   if (partns > 1 && (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON)) {
+   // TBD: co-location for tables where # of salt buckets and # regions don't match
+   if (partns > 1 && (CmpCommon::getDefault(TRAF_ALLOW_ESP_COLOCATION) == DF_ON) &&
+       (numSaltBuckets <= 1 || numSaltBuckets == numRegions)) {
      ARRAY(const char *) nodeNames(heap, partns);
      if (table->getRegionsNodeName(partns, nodeNames)) {
        for (Int32 p=0; p < partns; p++) {
@@ -2229,13 +2238,15 @@ NodeMap* createNodeMapForHbase(desc_struct* desc, const NATable* table, NAMemory
 
 static 
 PartitioningFunction*
-createHash2PartitioningFunctionForHBase(desc_struct* desc, const NATable * table, 
+createHash2PartitioningFunctionForHBase(desc_struct* desc,
+                                        const NATable * table,
+                                        int numSaltBuckets,
                                         NAMemory* heap)
 {
 
    desc_struct* hrk = desc;
  
-   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, numSaltBuckets, heap);
 
    Int32 partns = nodeMap->getNumEntries();
 
@@ -2634,7 +2645,7 @@ createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
 			                const NAColumnArray & partKeyColArray,
                                         NAMemory* heap)
 {
-   NodeMap* nodeMap = createNodeMapForHbase(desc, table, heap);
+   NodeMap* nodeMap = createNodeMapForHbase(desc, table, -1, heap);
 
    struct desc_struct* 
       partns_desc = ( table->isHbaseCellTable() || table->isHbaseRowTable()) ?
@@ -3842,7 +3853,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                                        order == ASCENDING);
           
           if ( table->isHbaseTable() && 
-               indexColumn->isComputedColumnAlways() ) 
+               indexColumn->isSaltColumn() ) 
             {
               
               // examples of the saltClause string:
@@ -3855,27 +3866,24 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                                                           strlen(saltClause), 
                                                           CharInfo::ISO88591);
               
-              if ( saltExpr &&
-                   saltExpr->getOperatorType() == ITM_HASH2_DISTRIB) {
+              CMPASSERT(saltExpr &&
+                        saltExpr->getOperatorType() == ITM_HASH2_DISTRIB);
                 
-                // get the # of salted partitions from saltClause
-                ItemExprList csList(CmpCommon::statementHeap());
-                saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
-                
-                // get #salted partitions from last ConstValue in the list
-                if ( csList.entries() > 0 ) {
-                  ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
-                  
-                  if ( ct->canGetExactNumericValue() )  {
-                    numOfSaltedPartitions = ct->getExactNumericValue();
-                  }
+              // get the # of salted partitions from saltClause
+              ItemExprList csList(CmpCommon::statementHeap());
+              saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
+
+              // get #salted partitions from last ConstValue in the list
+              if ( csList.entries() > 0 ) {
+                ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
+
+                if ( ct->canGetExactNumericValue() )  {
+                  numOfSaltedPartitions = ct->getExactNumericValue();
                 }
               }
-              
+
               // collect all ColReference objects into hbaseSaltColumnList.
-              CMPASSERT(saltExpr != NULL);
               saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
-              
             }
           
 	  if (isTheClusteringKey)
@@ -4121,22 +4129,21 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
               Int32 splits = findDescEntries(hbd);
 
               // Do Hash2 only if the table is salted orignally 
-              // and the current number of partitions is greater than 1.
+              // and the current number of HBase regions is greater than 1.
               if ( doHash2 )
                  doHash2 = (numOfSaltedPartitions > 0 && splits > 1);
 
-              if ( doHash2 && hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE ) {
+              if ( hbd )
+                if ( doHash2 ) {
 	           partFunc = createHash2PartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
                       table,
-		      heap);
+                      numOfSaltedPartitions,
+                      heap);
 
                    partitioningKeyColumns = hbaseSaltOnColumns;
-
-              } else 
-                if ((!doHash2 && (hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE))
-                      ||
-                (hbd && hbd->header.nodetype == DESC_HBASE_RANGE_REGION_TYPE))
+                }
+                else
 	           partFunc = createRangePartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
                       table,
@@ -4144,7 +4151,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		      heap);
               else {
 
-	        // Range partitioned or single partition table
+	        // no region descriptor, range partitioned or single partition table
 	        partFunc = createRangePartitioningFunction(
 	    	   files_desc->body.files_desc.partns_desc,
 	    	   partitioningKeyColumns,
@@ -4768,13 +4775,14 @@ ULng32 hashColPosList(const CollIndexSet &colSet)
 
 
 // ----------------------------------------------------------------------------
-// method: lookupObjectUid
+// method: lookupObjectUidByName
 //
 // Calls DDL manager to get the object UID for the specified object
 //
 // params:
 //    qualName - name of object to lookup
 //    objectType - type of object
+//    reportError - whether to set diags area when not found
 //
 // returns:
 //   -1 -> error found trying to read metadata including object not found
@@ -4782,12 +4790,11 @@ ULng32 hashColPosList(const CollIndexSet &colSet)
 //
 // the diags area contains details of any error detected
 //
-// *** recent change - move this function up in this file and move resetting
-//     of ComDiagsArea to the caller ***
 // ----------------------------------------------------------------------------      
-Int64 lookupObjectUid( const QualifiedName& qualName
-                     , ComObjectType objectType
-                     )
+static Int64 lookupObjectUidByName( const QualifiedName& qualName
+                                  , ComObjectType objectType
+                                  , NABoolean reportError
+                                  )
 {
   ExeCliInterface cliInterface(STMTHEAP);
   Int64 objectUID = 0;
@@ -4805,7 +4812,11 @@ Int64 lookupObjectUid( const QualifiedName& qualName
                                   qualName.getCatalogName().data(),
                                   qualName.getSchemaName().data(),
                                   qualName.getObjectName().data(),
-                                  comObjectTypeLit(objectType));
+                                  comObjectTypeLit(objectType),
+                                  NULL,
+                                  NULL,
+                                  FALSE,
+                                  reportError);
 
   cmpSBD.switchBackCompiler();
 
@@ -4820,21 +4831,17 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName)
           corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
    QualifiedName extObjName (adjustedName, 3, STMTHEAP);
 
-   Lng32 diagsMark = CmpCommon::diags()->mark();
-   objectUID_ = ::lookupObjectUid(extObjName, COM_BASE_TABLE_OBJECT);
+   objectUID_ = lookupObjectUidByName(extObjName, COM_BASE_TABLE_OBJECT, FALSE);
 
    // If the objectUID is not found, then the table is not externally defined
    // in Trafodion, set the objectUID to 0
    // If an unexpected error occurs, then return with the error
    if (objectUID_ <= 0)
      {
-       if (CmpCommon::diags()->contains(-1389))
-         {
-           CmpCommon::diags()->rewind(diagsMark, TRUE);
-           objectUID_ = 0;
-         }
-       else
+       if (CmpCommon::diags()->mainSQLCODE() < 0)
          return FALSE;
+       else
+         objectUID_ = 0;
      }
 
    return TRUE;
@@ -6759,17 +6766,14 @@ void NATable::setupPrivInfo()
 // the uid for a metadata table is requested, since 0 is usually stored for
 // these tables.
 // 
-// On return, the "Object Not Found" error (1389) is filtered out from 
-// CmpCommon::diags().
 Int64 NATable::lookupObjectUid()
 {
-    Lng32 diagsMark = CmpCommon::diags()->mark();
-
     QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
-    objectUID_ = ::lookupObjectUid(qualName, objectType_);
+    objectUID_ = lookupObjectUidByName(qualName, objectType_, FALSE);
 
-    if (CmpCommon::diags()->contains(-1389))
-      CmpCommon::diags()->rewind(diagsMark, TRUE);
+    if (objectUID_ <= 0 && CmpCommon::diags()->mainSQLCODE() >= 0)
+      // object not found, no serious error
+      objectUID_ = 0;
 
     return objectUID_.get_value();
 }
@@ -8337,12 +8341,10 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
       // add its objectUID to the set.
       if (0 == objectUIDs.entries())
       {
-        // ignore any errors returned
-        Lng32 diagsMark = CmpCommon::diags()->mark();
-        Int64 ouid = lookupObjectUid(
+        Int64 ouid = lookupObjectUidByName(
                        toRemove->getQualifiedNameObj(), 
-                       ot); 
-        CmpCommon::diags()->rewind(diagsMark);
+                       ot,
+                       FALSE); 
         if (ouid > 0)
           objectUIDs.insert(ouid);
       }

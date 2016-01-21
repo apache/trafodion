@@ -81,13 +81,28 @@ if ($verbose) {
 my $lr = `uname -r`;
 $lr =~ s/\s+$//;
 
-if ($verbose) {
+my $linuxdistro = "UnknownLinuxDistro";
+my $dr = "?.?";
+if (-r "/etc/redhat-release") {
+    if ($verbose) {
 	printf "v: cmd:cat /etc/redhat-release\n";
-}
-my $rhrel = `cat /etc/redhat-release`;
-my $rr = "?.?";
-if ($rhrel =~ /^.*release ([0-9][0-9]*)\.([0-9][0-9]*)/) {
-	$rr=$1 . "." . $2
+    }
+    $linuxdistro = "redhat";
+    my $linuxrel = `cat /etc/redhat-release`;
+    if ($linuxrel =~ /^.*release ([0-9][0-9]*)\.([0-9][0-9]*)/) {
+	$dr=$1 . "." . $2
+    }
+} elsif (-r "/etc/SuSE-release") {
+    if ($verbose) {
+	printf "v: cmd:cat /etc/SuSE-release\n";
+    }
+    $linuxdistro = "SuSE";
+    my $susevers = `cat /etc/SuSE-release | grep VERSION | cut -f 2 -d '='`;
+    my $susepatch = `cat /etc/SuSE-release | grep PATCH | cut -f 2 -d '='`;
+    # trim white space
+    $susevers =~ s/^\s+|\s+$//g;
+    $susepatch =~ s/^\s+|\s+$//g;
+    $dr=$susevers . "." . $susepatch
 }
 
 print "MY_SQROOT=$my_sqroot\n";
@@ -106,7 +121,7 @@ if (($mtype =~ /32/) || ($btype =~ /debug/)) {
 	print "SQ_MBTYPE=$sq_mbtype ($mtype-$btype)\n";
 }
 print "linux=$lr\n";
-print "redhat=$rr\n";
+print "$linuxdistro=$dr\n";
 
 # deal with elfs
 my $dir_lib = "export/lib" . $sq_mbtype;

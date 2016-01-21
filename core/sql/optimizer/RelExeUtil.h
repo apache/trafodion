@@ -87,6 +87,10 @@ public:
       stmtText_ = NULL;
   };
 
+  GenericUtilExpr(OperatorTypeEnum otype) 
+       : RelExpr(otype, NULL, NULL, NULL)
+  {};
+
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   // method to do code generation
@@ -491,6 +495,7 @@ public:
     GET_METADATA_INFO_        = 12,
     GET_VERSION_INFO_         = 13,
     SUSPEND_ACTIVATE_         = 14,
+    REGION_STATS_         = 15,
     SHOWSET_DEFAULTS_         = 18,
     AQR_                      = 19,
     DISPLAY_EXPLAIN_COMPLEX_  = 20,
@@ -526,6 +531,9 @@ public:
          stoi_(NULL)
   {
   };
+
+  ExeUtilExpr()
+       : GenericUtilExpr(REL_EXE_UTIL) {};
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
@@ -1656,6 +1664,58 @@ private:
   AQRTask task_;
 };
 
+class ExeUtilRegionStats : public ExeUtilExpr 
+{
+public:
+  
+  ExeUtilRegionStats(const CorrName &objectName,
+                     NABoolean summaryOnly,
+                     NABoolean isIndex,
+                     NABoolean forDisplay,
+                     RelExpr * child = NULL,
+                     CollHeap *oHeap = CmpCommon::statementHeap());
+  
+  ExeUtilRegionStats():
+       summaryOnly_(FALSE),
+       isIndex_(FALSE),
+       displayFormat_(FALSE)
+  {}
+ 
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // a method used for recomputing the outer references (external dataflow
+  // input values) that are needed by this operator.
+  virtual void recomputeOuterReferences();
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  virtual const char 	*getVirtualTableName();
+  static const char * getVirtualTableNameStr() 
+  { return "EXE_UTIL_REGION_STATS__";}
+  virtual desc_struct 	*createVirtualTableDesc();
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
+
+ virtual NABoolean aqrSupported() { return TRUE; }
+
+private:
+  ItemExpr * inputColList_;
+
+  NABoolean summaryOnly_;
+
+  NABoolean isIndex_;
+
+  NABoolean displayFormat_;
+
+  NABoolean errorInParams_;
+};
+
 class ExeUtilLongRunning : public ExeUtilExpr 
 {
 public:
@@ -1870,8 +1930,8 @@ public:
   
  ExeUtilLobExtract(ItemExpr * handle, 
 		   ExtractToType toType,
-		   ItemExpr * bufaddr,
-		   ItemExpr * bufsize,
+		   Int64 bufaddr=0,
+		   Int64 extractSizeAddr=0,
 		   Int64 intParam = 0,
 		   Int64 intParam2 = 0,
 		   char * stringParam = NULL,
@@ -1884,8 +1944,8 @@ public:
 		 NULL, CharInfo::UnknownCharSet, oHeap),
     handle_(handle),
     toType_(toType),
-    bufAddrExpr_(bufaddr),
-    bufSizeExpr_(bufsize),
+    bufAddr_(bufaddr),
+    extractSizeAddr_(extractSizeAddr),
     intParam_(intParam),
     intParam2_(intParam2),
     handleInStringFormat_(TRUE),
@@ -1941,8 +2001,8 @@ public:
   ItemExpr * handle_;
   ExtractToType toType_;
   
-  ItemExpr * bufAddrExpr_;
-  ItemExpr * bufSizeExpr_;
+  Int64 bufAddr_;
+  Int64 extractSizeAddr_;
   
   Int64 intParam_;   // options for create or size limit
   Int64 intParam2_;// options for file behavior

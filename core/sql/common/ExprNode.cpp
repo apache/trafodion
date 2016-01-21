@@ -685,6 +685,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_TABLE_MAPPING_UDF:
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
             case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+            case REL_TABLE_MAPPING_BUILTIN_JDBC:
 	      return TRUE;
 	    default:
 	      return FALSE;

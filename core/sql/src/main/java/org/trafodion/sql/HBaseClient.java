@@ -729,8 +729,6 @@ public class HBaseClient {
 	    for (HTableDescriptor htd : htdl) {
 		String tblName = htd.getNameAsString();
 
-                //                System.out.println(tblName);
-
                 byte[] b = tblName.getBytes();
                 hbaseTables.add(b);
 	    }
@@ -739,6 +737,61 @@ public class HBaseClient {
             cleanup();
             
             return hbaseTables;
+    }
+
+
+    public ByteArrayList getRegionStats(String tableName) 
+             throws MasterNotRunningException, IOException {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.getRegionStats(" + tableName + ") called.");
+
+            HBaseAdmin admin = new HBaseAdmin(config);
+            HTable htbl = new HTable(config, tableName);
+            ByteArrayList regionInfo = new ByteArrayList();
+            HRegionInfo hregInfo = null;
+
+            try {
+                TrafRegionStats rsc = new TrafRegionStats(htbl, admin);
+                
+                NavigableMap<HRegionInfo, ServerName> locations
+                    = htbl.getRegionLocations();
+ 
+                for (Map.Entry<HRegionInfo, ServerName> entry: 
+                         locations.entrySet()) {
+                
+                    hregInfo = entry.getKey();                    
+                    byte[] regionName = hregInfo.getRegionName();
+                    String encodedRegionName = hregInfo.getEncodedName();
+                    String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
+                    SizeInfo regionSizeInfo = rsc.getRegionSizeInfo(regionName);
+                    int  numStores           = regionSizeInfo.numStores;
+                    int  numStoreFiles       = regionSizeInfo.numStoreFiles;
+                    Long storeUncompSize     = regionSizeInfo.storeUncompSize;
+                    Long storeFileSize       = regionSizeInfo.storeFileSize;
+                    Long memStoreSize        = regionSizeInfo.memStoreSize;
+                    Long readRequestsCount   = regionSizeInfo.readRequestsCount;
+                    Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+
+                    String oneRegion;
+                    //                    oneRegion  = "/hbase/data/hbase/default/" + tableName + "/" + ppRegionName + "|";
+                    oneRegion  = tableName + "/" + ppRegionName + "|";
+                    oneRegion += String.valueOf(numStores) + "|";
+                    oneRegion += String.valueOf(numStoreFiles) + "|";
+                    oneRegion += String.valueOf(storeUncompSize) + "|";
+                    oneRegion += String.valueOf(storeFileSize) + "|";
+                    oneRegion += String.valueOf(memStoreSize) + "|";
+                    oneRegion += String.valueOf(readRequestsCount) + "|";
+                    oneRegion += String.valueOf(writeRequestsCount) + "|";
+                    
+                    regionInfo.add(oneRegion.getBytes());
+
+                }
+
+            }
+            finally {
+                admin.close();
+            }
+
+            return regionInfo;
     }
 
     public boolean copy(String currTblName, String oldTblName)
@@ -979,11 +1032,58 @@ public class HBaseClient {
         float defCacheFraction = 0.4f;
         return config.getFloat("hfile.block.cache.size",defCacheFraction);
     }
+
+    // if we make the method below public later, should think about whether this is the
+    // right class to host this method
+
+    // compares two qualifiers as unsigned, lexicographically ordered byte strings
+    static private boolean isQualifierLessThanOrEqual(KeyValue nextKv,
+                                                      KeyValue currKv)
+    {
+       int currLength = currKv.getQualifierLength(); 
+       int currOffset = currKv.getQualifierOffset();
+       byte [] currQual = currKv.getQualifierArray();
+       int nextLength = nextKv.getQualifierLength(); 
+       int nextOffset = nextKv.getQualifierOffset();
+       byte [] nextQual = nextKv.getQualifierArray();   
+
+       // If we later decide we need a performance-critical version of this method,
+       // we should just use a native method that calls C memcmp.
+
+       int minLength = nextLength;
+       if (currLength < nextLength)
+         minLength = currLength;
+
+       for (int i = 0; i < minLength; i++) {
+         // ugh... have to do some gymnastics to make this an
+         // unsigned comparison
+         int nextQualI = nextQual[i+nextOffset];
+         if (nextQualI < 0)
+           nextQualI = nextQualI + 256;
+         int currQualI = currQual[i+currOffset];
+         if (currQualI < 0)
+           currQualI = currQualI + 256;
+
+         if (nextQualI < currQualI)
+           return true;
+         else if (nextQualI > currQualI)
+           return false;
+         // else equal, move on to next byte
+       }
+
+       // the first minLength bytes are the same; the shorter array
+       // is regarded as less
+
+       boolean rc = (nextLength <= currLength);      
+
+       return rc;
+    }
+
     // Estimates row count for tblName by iterating over the HFiles for
     // the table, extracting the KeyValue entry count from the file's
     // trailer block, summing the counts, and dividing by the number of
     // columns in the table. An adjustment is made for the estimated
-    // number of missing (null) values by sampling the first several
+    // number of missing values by sampling the first several
     // hundred KeyValues to see how many are missing.
     public boolean estimateRowCount(String tblName, int partialRowSize,
                                     int numCols, long[] rc)
@@ -998,7 +1098,8 @@ public class HBaseClient {
       final int ROWS_TO_SAMPLE = 500;
       int putKVsSampled = 0;
       int nonPutKVsSampled = 0;
-      int nullCount = 0;
+      int missingKVsCount = 0;
+      int sampleRowCount = 0;
       long totalEntries = 0;   // KeyValues in all HFiles for table
       long totalSizeBytes = 0; // Size of all HFiles for table 
       long estimatedTotalPuts = 0;
@@ -1007,7 +1108,10 @@ public class HBaseClient {
       // Access the file system to go directly to the table's HFiles.
       // Create a reader for the file to access the entry count stored
       // in the trailer block, and a scanner to iterate over a few
-      // hundred KeyValues to estimate the incidence of nulls.
+      // hundred KeyValues to estimate the incidence of missing 
+      // KeyValues. KeyValues may be missing because the column has
+      // a null value, or because the column has a default value that
+      // has not been materialized.
       long nano1, nano2;
       nano1 = System.nanoTime();
       FileSystem fileSystem = FileSystem.get(config);
@@ -1035,36 +1139,65 @@ public class HBaseClient {
           //printQualifiers(reader, 100);
           if (ROWS_TO_SAMPLE > 0 &&
               totalEntries == reader.getEntries()) {  // first file only
-            // Trafodion column qualifiers are ordinal numbers, which
-            // makes it easy to count missing (null) values. We also count
-            // the non-Put KVs (typically delete-row markers) to estimate
-            // their frequency in the full file set.
+
+            // Trafodion column qualifiers are ordinal numbers, but are represented
+            // as varying length unsigned little-endian integers in lexicographical
+            // order. So, for example, in a table with 260 columns, the column
+            // qualifiers (if present) will be read in this order: 
+            // 1 (x'01'), 257 (x'0101'), 2 (x'02'), 258 (x'0201'), 3 (x'03'),
+            // 259 (x'0301'), 4 (x'04'), 260 (x'0401'), 5 (x'05'), 6 (x'06'), 
+            // 7 (x'07'), ...
+            // We have crossed the boundary to the next row if and only if the
+            // next qualifier read is less than or equal to the previous, 
+            // compared unsigned, lexicographically.
+
             HFileScanner scanner = reader.getScanner(false, false, false);
             scanner.seekTo();  //position at beginning of first data block
-            byte currQual = 0;
-            byte nextQual;
-            do {
-              KeyValue kv = scanner.getKeyValue();
-              if (kv.getType() == KeyValue.Type.Put.getCode()) {
-                nextQual = kv.getQualifier()[0];
-                if (nextQual <= currQual)
-                  nullCount += ((numCols - currQual)  // nulls at end of this row
-                              + (nextQual - 1));      // nulls at start of next row
-                else
-                  nullCount += (nextQual - currQual - 1);
-                currQual = nextQual;
-                putKVsSampled++;
-              } else {
-                nonPutKVsSampled++;  // don't count these toward the number
-              }                      //   we want to scan
-            } while ((putKVsSampled + nullCount) < (numCols * ROWS_TO_SAMPLE)
-                     && (more = scanner.next()));
 
-            // If all rows were read, count any nulls at end of last row.
-            if (!more && putKVsSampled > 0)
-              nullCount += (numCols - currQual);
+            // the next line should succeed, as we know the HFile is non-empty
+            KeyValue currKv = scanner.getKeyValue();
+            while ((more) && (currKv.getType() != KeyValue.Type.Put.getCode())) {
+              nonPutKVsSampled++;
+              more = scanner.next();
+              currKv = scanner.getKeyValue();
+            }
+            if (more) {
+              // now we have the first KeyValue in the HFile
 
-            if (logger.isDebugEnabled()) logger.debug("Sampled " + nullCount + " nulls.");
+              int putKVsThisRow = 1;
+              putKVsSampled++;
+              sampleRowCount++;  // we have at least one row
+              more = scanner.next();
+    
+              while ((more) && (sampleRowCount <= ROWS_TO_SAMPLE)) {
+                KeyValue nextKv = scanner.getKeyValue();
+                if (nextKv.getType() == KeyValue.Type.Put.getCode()) {
+                  if (isQualifierLessThanOrEqual(nextKv,currKv)) {
+                    // we have crossed a row boundary
+                    sampleRowCount++;
+                    missingKVsCount += (numCols - putKVsThisRow);
+                    putKVsThisRow = 1;
+                  } else {
+                    putKVsThisRow++;
+                  }
+                  currKv = nextKv;
+                  putKVsSampled++;
+                } else {
+                  nonPutKVsSampled++;  // don't count these toward the number
+                } 
+              more = scanner.next();
+              }
+            }   
+  
+            if (sampleRowCount > ROWS_TO_SAMPLE) {
+              // we read one KeyValue beyond the ROWS_TO_SAMPLE-eth row, so
+              // adjust counts for that
+              putKVsSampled--;
+              sampleRowCount--;
+            }
+
+            if (logger.isDebugEnabled())
+              logger.debug("Sampled " + missingKVsCount + " missing values.");
           }  // code for first file
         } finally {
           reader.close(false);
@@ -1078,7 +1211,7 @@ public class HBaseClient {
         {
           estimatedTotalPuts = (putKVsSampled * totalEntries) / 
                                (putKVsSampled + nonPutKVsSampled);
-          estimatedEntries = ((putKVsSampled + nullCount) * estimatedTotalPuts)
+          estimatedEntries = ((putKVsSampled + missingKVsCount) * estimatedTotalPuts)
                                    / putKVsSampled;
         }
 
@@ -1119,9 +1252,9 @@ public class HBaseClient {
       if (logger.isDebugEnabled()) logger.debug(tblName + " contains a total of " + totalEntries + " KeyValues in all HFiles.");
       if (logger.isDebugEnabled()) logger.debug("Based on a sample, it is estimated that " + estimatedTotalPuts +
                    " of these KeyValues are of type Put.");
-      if (putKVsSampled + nullCount > 0)
+      if (putKVsSampled + missingKVsCount > 0)
         if (logger.isDebugEnabled()) logger.debug("Sampling indicates a null incidence of " + 
-                     (nullCount * 100)/(putKVsSampled + nullCount) +
+                     (missingKVsCount * 100)/(putKVsSampled + missingKVsCount) +
                      " percent.");
       if (logger.isDebugEnabled()) logger.debug("Estimated number of actual values (including nulls) is " + estimatedEntries);
       if (logger.isDebugEnabled()) logger.debug("Estimated row count in HFiles = " + estimatedEntries +

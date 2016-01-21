@@ -384,6 +384,8 @@ private:
   					 Provenance overwriteIfNotYet);
   void		   deleteMe();
 
+  static float computeNumESPsPerCore(NABoolean aggressive);
+
   // get the number of configured ESPs (in float) per node.
   float            getNumOfESPsPerNodeInFloat() const;
 

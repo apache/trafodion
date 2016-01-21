@@ -58,8 +58,17 @@ INIT_TRAFODION="N"
 START="N"
 SQCONFIG=""
 DCS_SERVERS_PARM="2"
+ENABLE_HA="false"
+FLOATING_IP=""
+BACKUP_DCS_NODES=""
 LDAP_SECURITY="N"
 SCANNER_MODE="N"
+DCS_PRIMARY_MASTER_NODE=`hostname -f`
+CLOUD_CONFIG="N"
+CLOUD_TYPE=""
+AWS_CLOUD=""
+OPEN_STACK=""
+OTHER_CLOUD=""
 
 LDAP_LEVEL="0"
 #==============================================
@@ -152,6 +161,42 @@ echo "export TRAF_USER=\"$TRAF_USER\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_WORKDIR=\"$TRAF_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
 echo "export LOCAL_WORKDIR=\"$LOCAL_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
 echo "export SQCONFIG=\"$SQCONFIG\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Check if customer is using cloud environment and get the type of cloud being used
+#Get the CLOUD_CONFIG and CLOUD_TYPE
+echo -n "Is this a cloud environment (Y/N), default is [$CLOUD_CONFIG]: "
+read answer
+
+if [ ! -z $answer ]; then
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+         CLOUD_CONFIG="Y"
+   fi
+fi
+
+echo "export CLOUD_CONFIG=\"$CLOUD_CONFIG\"" >> $LOCAL_TRAF_CONFIG
+
+if [[ "$CLOUD_CONFIG" == "Y" ]]; then
+  echo -n "Specify the type of cloud being used (1: AWS(Amazon cloud), 2: OpenStack, 3: Other): "
+  read answer1
+  if [[ -z "$answer1" ]]; then
+     echo "***ERROR: User must specify the type of Cloud being used."
+     exit -1
+  else
+     CLOUD_TYPE=$answer1
+  fi
+  echo "export CLOUD_TYPE=\"$CLOUD_TYPE\"" >> $LOCAL_TRAF_CONFIG
+  case "$CLOUD_TYPE" in 
+    1) AWS_CLOUD=true
+       echo "export AWS_CLOUD=\"$AWS_CLOUD\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    2) OPEN_STACK=true
+       echo "export OPEN_STACK=\"$OPEN_STACK\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    3) CLOUD_OTHER=true
+       echo "export CLOUD_OTHER=\"$CLOUD_OTHER\"" >> $LOCAL_TRAF_CONFIG
+  esac
+fi
 
 #==============================================
 # Password
@@ -257,6 +302,7 @@ package=$(tar -tzf $TRAF_PACKAGE | grep build-version.txt | wc -l )
 if [ $package -eq 0 ]; then
    
    # assume user specified a trafodion core tar file
+   UTT_INSTALL="Y"
    TRAF_BUILD=$TRAF_PACKAGE
    TRAF_PACKAGE=""
    
@@ -307,6 +353,7 @@ if [ $package -eq 0 ]; then
    
 else
    # user specifed a package file
+   UTT_INSTALL="N"
    TRAF_BUILD=""
    DCS_BUILD=""
    REST_BUILD=""
@@ -317,6 +364,7 @@ echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
+echo "export UTT_INSTALL=\"$UTT_INSTALL\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 #Hadoop user name
@@ -456,7 +504,7 @@ fi
 #DCS Servers
 
 DCS_SERVERS_PARM=$(($node_count * 8))
-echo -n "Total number of client connections per node, default [$DCS_SERVERS_PARM]: "
+echo -n "Total number of client connections per cluster, default [$DCS_SERVERS_PARM]: "
 read answer
 
 if [ ! -z $answer ]; then
@@ -464,6 +512,76 @@ if [ ! -z $answer ]; then
 fi
 
 echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Get the node name where the customer would like to start DcsMaster process
+
+echo -n "Enter the node of primary DcsMaster, default [$DCS_PRIMARY_MASTER_NODE]: "
+read answer
+
+if [ ! -z $answer ]; then
+   DCS_PRIMARY_MASTER_NODE="$answer"
+fi
+
+echo "export DCS_PRIMARY_MASTER_NODE=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Enable HA
+
+echo -n "Enable High Availability (Y/N), default is N: "
+read answer
+
+if [[ ! -z $answer ]]; then
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+      ENABLE_HA="true"
+   else
+      ENABLE_HA="false"
+   fi
+else
+   ENABLE_HA="false"
+fi
+
+echo "export ENABLE_HA=\"$ENABLE_HA\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
+#Get the floating IP address, interface name and the list of backup nodes to be used 
+if [[ "$ENABLE_HA" == "true" ]]; then
+   ######Get the floating IP address 
+   echo -n "Enter floating IP address for setting up HA: "
+   read answer1
+
+   if [[ -z $answer1 ]]; then
+         echo "Floating IP address must be specified."
+         exit 1
+   else
+      FLOATING_IP="$answer1"
+   fi
+   echo "export FLOATING_IP=\"$FLOATING_IP\"" >> $LOCAL_TRAF_CONFIG
+
+   ######Get the interface used by the floating IP address
+   echo -n "Enter interface used for floating IP address: "
+   read answer2
+
+   if [ -z $answer2 ]; then
+      echo "Floating IP address interface name must be specified."
+      exit 1
+   else
+      INTERFACE="$answer2"
+   fi
+   echo "export INTERFACE=\"$INTERFACE\"" >> $LOCAL_TRAF_CONFIG
+
+   ######Get the list of backup nodes to be used
+   echo -n "Enter backup nodes for HA (blank seperated): "
+   read answer3 
+  
+   if [[ -z "$answer3" ]]; then 
+      echo "Backup nodes must be specified."
+      exit 1
+   else
+      BACKUP_DCS_NODES="$answer3"
+   fi
+   echo "export BACKUP_DCS_NODES=\"$BACKUP_DCS_NODES\"" >> $LOCAL_TRAF_CONFIG
+fi
 
 #==============================================
 #Simple security
@@ -560,7 +678,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
       read answer4
       if [[ -z "$answer4" ]]; then
          if [ -z "$LDAP_LEVEL" ]; then
-            echo "***ERROR: Much enter LDAP Encryption level."
+            echo "***ERROR: Must enter LDAP Encryption level."
             exit -1
          fi
       else

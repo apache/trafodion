@@ -2602,7 +2602,7 @@ NA_EIDPROC
 char * tableName() const {return tableName_;}
 
 NA_EIDPROC
-  ExTimeStats &getTimer() { return timer_; }
+  ExTimeStats &getHdfsTimer() { return timer_; }
 NA_EIDPROC
   inline void incBytesRead(Int64 bytesRead) {numBytesRead_ += bytesRead;}
 
@@ -2702,7 +2702,7 @@ class ExHbaseAccessStats : public ExOperStats {
   char * tableName() const {return tableName_;}
   
   NA_EIDPROC
-    ExTimeStats &getTimer() { return timer_; }
+    ExTimeStats &getHbaseTimer() { return timer_; }
   NA_EIDPROC
     inline void incBytesRead(Int64 bytesRead) {numBytesRead_ += bytesRead;}
   
