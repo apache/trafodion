@@ -260,9 +260,10 @@ public class FileMgmt {
 		String nodes = System.getenv("MY_NODES");
 		if (nodes != null && !"".equals(nodes.trim())) {
 			String pdsh = System.getenv("SQ_PDSH");
-			if (pdsh != null) {
-				execShell(pdsh + " " + nodes + " rm -rf " + userPath + fileName.trim());
+			if (pdsh == null) {
+				pdsh = "/usr/bin/pdsh";
 			}
+			execShell(pdsh + " " + nodes + " rm -rf " + userPath + fileName.trim());
 		}
 	}
 
