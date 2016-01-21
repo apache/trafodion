@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -52,6 +53,7 @@ public class FileMgmt {
 	private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static final int MaxDataSize = 12800;
 	private static final String CHARTSET = "ISO-8859-1";
+	private static final String DEL_POSTFIX = ".DELETE";
 
 	/**
 	 * Print help info
@@ -248,6 +250,18 @@ public class FileMgmt {
 			}
 		}
 	}
+	
+	public static void rmJar(String userPath, String fileName) throws SQLException, IOException {
+		checkFileName(fileName);
+		LOG.info("syncJars " + fileName);
+		String nodes = System.getenv("MY_NODES");
+		if (nodes != null && !"".equals(nodes.trim())) {
+			String pdsh = System.getenv("SQ_PDSH");
+			if (pdsh != null) {
+				execShell(pdsh + " " + nodes + " rm -rf " + userPath + fileName.trim());
+			}
+		}
+	}
 
 	private static String execShell(String cmd) throws IOException {
 		Process p = Runtime.getRuntime().exec(cmd);
@@ -337,18 +351,36 @@ public class FileMgmt {
 	 * 
 	 * @param fileName
 	 * @throws SQLException
+	 * @throws IOException 
 	 */
-	public static void rm(String fileName) throws SQLException {
+	public static void rm(String fileName) throws SQLException, IOException {
 		checkFileName(fileName);
 		Connection conn = getConn();
 		LOG.info("Remove " + fileName);
 		String userPath = getCodeFilePath(conn);
 		close(conn);
 		File file = new File(userPath + fileName);
+		File delFile = new File(fileName + DEL_POSTFIX);
+		boolean isSuccess = false;
 		if (file.exists()) {
-			file.delete();
-			LOG.info("Remove " + fileName + " successfully!");
-			return;
+			try {
+				boolean isRenamed = file.renameTo(delFile);
+				if (isRenamed)
+					rmJar(userPath, fileName);
+				else {
+					throw new IOException("Delete " + fileName + " failed. File metrics: CanRead is " + file.canRead()
+							+ ", canWrite is " + file.canWrite() + ", canExecute is " + file.canExecute());
+				}
+				LOG.info("Remove " + fileName + " successfully!");
+				isSuccess = true;
+				return;
+			} finally {
+				if (isSuccess) {
+					delFile.delete();
+				} else {
+					delFile.renameTo(file);
+				}
+			}
 		} else {
 			LOG.error("No such file[" + fileName + "]");
 			throw new SQLException("No such file[" + fileName + "]");
@@ -363,26 +395,38 @@ public class FileMgmt {
 	 * @param names
 	 *            : file names to be deleted
 	 * @throws SQLException
+	 * @throws IOException 
 	 */
-	public static void rmRex(String pattern, String[] names) throws SQLException {
+	public static void rmRex(String pattern, String[] names) throws SQLException, IOException {
 		checkFileName(pattern);
 		Connection conn = getConn();
 		LOG.info("Try to remove files[" + pattern + "]");
 		String userPath = getCodeFilePath(conn);
 		close(conn);
 		File[] files = getFiles(pattern, new File(userPath));
+		File[] delFiles = new File[files.length];
 		StringBuilder sb = new StringBuilder();
 		sb.append("<rmRex>");
 		sb.append(toXML(files, "rmList"));
 		sb.append("<message>");
 		boolean hasError = false;
-		for (File f : files) {
-			try {
-				f.delete();
-			} catch (Exception e) {
-				hasError = true;
-				LOG.error(e.getMessage(), e);
-				sb.append("<error fileName='" + f.getName() + "'>" + e.getMessage() + "</error>");
+		boolean isSuccess = false;
+		try {
+			for (int i = 0; i < files.length; i++) {
+				delFiles[i] = new File(files[i].getAbsolutePath() + DEL_POSTFIX);
+				files[i].renameTo(delFiles[i]);
+			}
+			rmJar(userPath, pattern);
+			isSuccess = true;
+		} finally {
+			if (isSuccess) {
+				for (int i = 0; i < delFiles.length; i++) {
+					delFiles[i].delete();
+				}
+			} else {
+				for (int i = 0; i < delFiles.length; i++) {
+					delFiles[i].renameTo(files[i]);
+				}
 			}
 		}
 		if (!hasError) {
