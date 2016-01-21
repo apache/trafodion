@@ -603,7 +603,7 @@ EOF
 
     export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
 
-    export HBASE_TRX_JAR=hbase-trx-hbase_98_4-${TRAFODION_VER}.jar
+    export HBASE_TRX_JAR=hbase-trx-hbase_98_10-${TRAFODION_VER}.jar
 
     # end of code for Apache Hadoop/HBase installation w/o distro
   else
