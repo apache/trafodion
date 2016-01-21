@@ -237,17 +237,20 @@ public class FileMgmt {
 
 	public static void syncJar(String userPath, String fileName) throws SQLException, IOException {
 		checkFileName(fileName);
-		LOG.info("syncJars " + fileName);
 		String nodes = System.getenv("MY_NODES");
+		LOG.info("syncJars " + fileName + ", MY_NODES=" + nodes);
 		if (nodes != null && !"".equals(nodes.trim())) {
 			String pdcp = System.getenv("SQ_PDCP");
 			String pdsh = System.getenv("SQ_PDSH");
-			if (pdcp != null) {
-				execShell(pdcp + " " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
+			LOG.info("SQ_PDCP=" + pdcp + ", SQ_PDSH=" + pdsh);
+			if (pdcp == null) {
+				pdcp = "/usr/bin/pdcp";
 			}
-			if (pdsh != null) {
-				execShell(pdsh + " " + nodes + " chmod 755 " + userPath + fileName.trim());
+			if (pdsh == null) {
+				pdsh = "/usr/bin/pdsh";
 			}
+			execShell(pdcp + " " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
+			execShell(pdsh + " " + nodes + " chmod 755 " + userPath + fileName.trim());
 		}
 	}
 	
@@ -264,6 +267,7 @@ public class FileMgmt {
 	}
 
 	private static String execShell(String cmd) throws IOException {
+		LOG.info("Processing command: " + cmd);
 		Process p = Runtime.getRuntime().exec(cmd);
 		if (p != null) {
 			StringBuilder sb = new StringBuilder();
