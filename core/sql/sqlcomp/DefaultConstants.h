@@ -3453,7 +3453,7 @@ enum DefaultConstants
   // instead of relying on default cardinality estimate.
   ESTIMATE_HBASE_ROW_COUNT,
 
-  // if ON, then filter predicates could be pushed down to hbase.
+  // if OFF or '0' is disabled, ON or '1' is simple pushdown, '2' is for advance pushdown
   // It will depends on the query on which predicates or sub-predicates could be pushed.
   HBASE_FILTER_PREDS,
 
