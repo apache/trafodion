@@ -34,7 +34,7 @@ if [ ! -e ${DCS_STOP_CMD} ]; then
    exit 1;
 fi
 
-if [[ ! -z $ENABLE_HA ]]; then
+if [[ $ENABLE_HA == "true" ]]; then
    ${DCS_INSTALL_DIR}/bin/scripts/dcsunbind.sh
 fi
 

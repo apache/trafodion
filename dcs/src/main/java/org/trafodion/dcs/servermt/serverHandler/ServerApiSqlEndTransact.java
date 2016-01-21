@@ -127,6 +127,13 @@ public class ServerApiSqlEndTransact {
             dataLength = serverException.lengthOfData();
             availableBuffer = bbBody.capacity() - bbBody.position();
             
+            // If there is no Exception, serverException.lengthOfData() will return 8;
+            // The driver still need read a int will indicate the number of the exception,
+            // which should be 0;
+            // So here, we add extra 4 bytes for it.
+            if (dataLength == 2 * ServerConstants.INT_FIELD_SIZE) {
+                dataLength = dataLength + ServerConstants.INT_FIELD_SIZE;
+            }
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". dataLength :" + dataLength + " availableBuffer :" + availableBuffer);
         
@@ -138,6 +145,11 @@ public class ServerApiSqlEndTransact {
 //===================== build output ==============================================
             serverException.insertIntoByteBuffer(bbBody);
             
+            // if there is no exception, we add a extra 4 bytes which indicate the number of
+            // the exception which should be 0;
+            if (serverException.lengthOfData() == 2 * ServerConstants.INT_FIELD_SIZE) {
+                bbBody.putInt(0);
+            }
             bbBody.flip();
 //=========================Update header================================ 
             hdr.setTotalLength(bbBody.limit());

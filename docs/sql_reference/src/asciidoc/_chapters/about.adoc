@@ -1,0 +1,240 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[About_This_Document]]
+= About This Document
+This manual describes reference information about the syntax of SQL statements, functions, and other
+SQL language elements supported by the Trafodion project’s database software.
+
+Trafodion SQL statements and utilities are entered interactively or from script files using a client-based tool,
+such as the Trafodion Command Interface (TrafCI). To install and configure a client application that enables you
+to connect to and use a Trafodion database, see the
+http://trafodion.incubator.apache.org/client_install/index.html[_Trafodion Client Installation Guide_].
+
+NOTE: In this manual, SQL language elements, statements, and clauses within statements are based on the
+ANSI SQL:1999 standard.
+
+[[Intended_Audience]]
+== Intended Audience
+This manual is intended for database administrators and application programmers who are using SQL to read, update,
+and create Trafodion SQL tables, which map to HBase tables, and to access native HBase and Hive tables.
+
+You should be familiar with structured query language (SQL) and with the American National Standard Database Language SQL:1999.
+
+<<<
+[[New_and_Changed_Information]]
+== New and Changed Information
+This edition includes updates for these new features:
+
+[cols="50%,50%",options="header"]
+|===
+| New Feature                                           | Location in the Manual
+| On Line Analytical Process (OLAP) window functions    | <<olap_functions,OLAP Functions>>
+| Ability to cancel DDL, update statistics, and
+additional child query operations in addition to
+DML statements                                          | <<control_query_cancel_statement,CONTROL QUERY CANCEL Statement>> 
+| Authorization required to run the CONTROL QUERY
+CANCEL Statement                                        | <<control_query_cancel_statement,CONTROL QUERY CANCEL Statement>>
+| Ability to grant privileges on behalf of a role
+using the GRANTED BY clause.                            | <<grant_component_privilege_statement,GRANT COMPONENT PRIVILEGE Statement>>
+| Authorization required for all SHOWDDL commands       | <<showddl_statement,SHOWDDL Statement>> +
+<<SHOWDDL_SCHEMA_Statement,SHOWDDL SCHEMA Statement>>
+| Ability to display the DDL syntax of a library object
+using the SHOWDDL LIBRARY command                       | <<showddl_statement,SHOWDDL Statement>>
+| Listing of HBase objects using the GET HBASE OBJECTS
+command through an SQL interface                        | <<get_hbase_objects_statement,GET HBASE OBJECTS Statement>>
+|===
+
+<<<
+[[Document_Organization]]
+== Document Organization
+
+[cols="50%,50%",options="header"]
+|===
+|Chapter or Appendix                                              | Description
+| <<Introduction,Introduction>>                                   | Introduces Trafodion SQL and covers topics such as data consistency,
+transaction management, and ANSI compliance.
+| <<SQL_Statements,SQL Statements>>                               | Describes the SQL statements supported by Trafodion SQL.
+| <<SQL_Utilities,SQL Utilities>>                                 | Describes the SQL utilities supported by Trafodion SQL.
+| <<SQL_Language Elements,SQL Language Elements>>                 | Describes parts of the language, such as database objects, data types,
+expressions, identifiers, literals, and predicates, which occur within the syntax of Trafodion SQL statements.
+| <<SQL_Clauses,SQL Clauses>>                                     | Describes clauses used by Trafodion SQL statements.
+| <<SQL_Functions_and_Expressions,SQL Functions and Expressions>> | Describes specific functions and expressions that you can use in
+Trafodion SQL statements.
+| <<SQL_Runtime_Statistics,SQL Runtime Statistics>>               | Describes how to gather statistics for active queries or for the Runtime
+Management System (RMS) and describes the RMS counters that are returned.
+| <<OLAP_Functions,OLAP Functions>>                               | Describes specific on line analytical processing functions.
+| <<Reserved_Words,Appendix A: Reserved Words>>                   | Lists the words that are reserved in Trafodion SQL.
+| <<Control_Query_Default,Appendix B: Control Query Default (CQD) Attributes>> |
+Describes the Control Query Default (CQD) attributes that are supported in a Trafodion SQL environment.
+| <<Limits,Appendix C: Limits>>                                  | Describes limits in Trafodion SQL.
+|===
+
+
+<<<
+== Notation Conventions
+This list summarizes the notation conventions for syntax presentation in this manual.
+
+* UPPERCASE LETTERS
++
+Uppercase letters indicate keywords and reserved words. Type these items exactly as shown. Items not enclosed in brackets are required. 
++
+```
+SELECT
+```
+
+* lowercase letters
++
+Lowercase letters, regardless of font, indicate variable items that you supply. Items not enclosed in brackets are required.
++
+```
+file-name
+```
+
+* &#91; &#93; Brackets 
++
+Brackets enclose optional syntax items.
++
+```
+DATETIME [start-field TO] end-field
+```
++
+A group of items enclosed in brackets is a list from which you can choose one item or none.
++
+The items in the list can be arranged either vertically, with aligned brackets on each side of the list, or horizontally, enclosed in a pair of brackets and separated by vertical lines.
++
+For example: 
++
+```
+DROP SCHEMA schema [CASCADE]
+DROP SCHEMA schema [ CASCADE | RESTRICT ]
+```
+
+<<<
+* { } Braces 
++
+Braces enclose required syntax items.
++
+```
+FROM { grantee [, grantee ] ... }
+```
++ 
+A group of items enclosed in braces is a list from which you are required to choose one item.
++
+The items in the list can be arranged either vertically, with aligned braces on each side of the list, or horizontally, enclosed in a pair of braces and separated by vertical lines.
++
+For example:
++
+```
+INTERVAL { start-field TO end-field }
+{ single-field } 
+INTERVAL { start-field TO end-field | single-field }
+``` 
+* | Vertical Line 
++
+A vertical line separates alternatives in a horizontal list that is enclosed in brackets or braces.
+```
+{expression | NULL} 
+```
+* &#8230; Ellipsis
++
+An ellipsis immediately following a pair of brackets or braces indicates that you can repeat the enclosed sequence of syntax items any number of times.
++
+```
+ATTRIBUTE[S] attribute [, attribute] ...
+{, sql-expression } ...
+```
++ 
+An ellipsis immediately following a single syntax item indicates that you can repeat that syntax item any number of times.
++
+For example:
+```
+expression-n ...
+```
+
+<<<
+* Punctuation
++
+Parentheses, commas, semicolons, and other symbols not previously described must be typed as shown.
++
+```
+DAY (datetime-expression)
+@script-file 
+```
++
+Quotation marks around a symbol such as a bracket or brace indicate the symbol is a required character that you must type as shown.
++
+For example:
++
+```
+"{" module-name [, module-name] ... "}"
+```
+
+* Item Spacing
++
+Spaces shown between items are required unless one of the items is a punctuation symbol such as a parenthesis or a comma.
++
+```
+DAY (datetime-expression) DAY(datetime-expression)
+```
++
+If there is no space between two items, spaces are not permitted. In this example, no spaces are permitted between the period and any other items:
++
+```
+myfile.sh
+```
+
+* Line Spacing
++
+If the syntax of a command is too long to fit on a single line, each continuation line is indented three spaces and is separated from the preceding line by a blank line.
++
+This spacing distinguishes items in a continuation line from items in a vertical list of selections. 
++
+```
+match-value [NOT] LIKE _pattern
+   [ESCAPE esc-char-expression] 
+```
+
+<<<
+== Publishing History
+[cols="2*",options="header"]
+|===
+| Product Version                                      | Publication Date
+| Trafodion Release 1.3.0                              | January 2016
+| Trafodion Release 1.1.0                              | April 2015
+| Trafodion Release 1.0.0                              | January 2015
+| Trafodion Release 0.9.0 Beta                         | October 2014
+| Trafodion Release 0.8.1 Beta                         | August 2014
+| Trafodion Release 0.8.0 Beta                         | June 2014
+|===
+
+== Comments Encouraged
+The Trafodion community encourages your comments concerning this document. We are committed to providing documentation that meets your
+needs. Send any errors found, suggestions for improvement, or compliments to:
+
+issues@trafodion.incubator.apache.org
+
+Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
+
