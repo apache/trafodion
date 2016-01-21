@@ -27,8 +27,7 @@ TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
 
 if [ $node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP="/bin/cp"
+    exit 0
 else
     TRAF_PDSH="pdsh $MY_NODES"
     TRAF_PDCP="pdcp -r $MY_NODES"
