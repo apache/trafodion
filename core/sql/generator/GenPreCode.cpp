@@ -4837,7 +4837,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
     }
    NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-  if  (producesOutputs())
+  if  (producesOutputs() || getTableDesc()->getNATable()->hasLobColumn()) 
     {
       retColRefSet_ = getIndexDesc()->getIndexColumns();
     }
@@ -5001,7 +5001,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 
   // flag for hbase tables
   generator->setHdfsAccess(TRUE);
-
+  
   markAsPreCodeGenned();
 
   return this;  

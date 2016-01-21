@@ -302,6 +302,8 @@ Ex_Lob_Error ExLob::putDesc(ExLobDesc &desc, Int64 descNum)
     return err;
 }
 
+
+
 Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operLen)
 { 
     Ex_Lob_Error err;
@@ -1368,7 +1370,16 @@ Ex_Lob_Error ExLob::doSanityChecks(char *dir, LobsStorage storage,
     return LOB_OPER_OK;
 }
 
+Ex_Lob_Error ExLob::getNextFreeOffset(Int32 size,Int64 &freeOffset, Int64 lobMaxSize)
+{
+   Ex_Lob_Error err = LOB_OPER_OK;
+   Lng32 retval = 0;
+   Int32 openFlags = O_RDONLY ;
+   Int64 currentOffset = 0;
 
+   return LOB_OPER_OK;
+
+}
 
 Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset, Int64 lobMaxSize)
 {

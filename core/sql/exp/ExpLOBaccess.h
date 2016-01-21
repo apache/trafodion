@@ -414,6 +414,7 @@ class ExLob
                                 Int64 handleInLen, Int64 handleOutLen, 
                                 Int64 blackBoxLen);
     Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize);
+    Ex_Lob_Error getNextFreeOffset(Int32 size,Int64 &freeOffset, Int64 lobMaxSize);
     Ex_Lob_Error readStats(char *buffer);
     Ex_Lob_Error initStats();
 
@@ -446,7 +447,6 @@ class ExLob
     Ex_Lob_Error readDataFromFile(char *memAddr, Int64 len, Int64 &operLen);
 
     Ex_Lob_Error emptyDirectory();
-
     ExLobStats *getStats() { return &stats_; }
     NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
   public:

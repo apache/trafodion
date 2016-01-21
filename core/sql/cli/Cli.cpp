@@ -93,6 +93,7 @@
 #include "LmLangManagerC.h"
 #include "LmLangManagerJava.h"
 #include "LmRoutine.h"
+#include "CmpDDLCatErrorCodes.h"
 
 #define DISPLAY_DONE_WARNING 1032
 extern Lng32 getTotalTcbSpace(char * tdb, char * otherInfo, 
@@ -9458,11 +9459,11 @@ Lng32 SQLCLI_LOBcliInterface
     ExpLOBoper::ExpGetLOBDescChunksName(schNameLen, schName, uid, lobNum,
 					lobDescChunksNameBuf, lobDescChunksNameLen);
   
-  char lobHdrNameBuf[1024];
-  Lng32 lobHdrNameLen = 1024;
-  char * lobHdrName = 
-    ExpLOBoper::ExpGetLOBHdrName(schNameLen, schName, uid, lobNum,
-				 lobHdrNameBuf, lobHdrNameLen);
+  char lobOffsetsNameBuf[1024];
+  Lng32 lobOffsetsNameLen = 1024;
+  char * lobOffsetsName = 
+    ExpLOBoper::ExpGetLOBOffsetsName(schNameLen, schName, uid, lobNum,
+				 lobOffsetsNameBuf, lobOffsetsNameLen);
 
 
   char * query = new(currContext.exHeap()) char[4096];
@@ -9565,8 +9566,7 @@ Lng32 SQLCLI_LOBcliInterface
 
     case LOB_CLI_CREATE:
       {
-	cliRC = cliInterface->executeImmediate("cqd pos hold;");
-	cliRC = cliInterface->executeImmediate("cqd pos 'OFF';");
+	
 
 	// create lob descriptor handle table salted	
    	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, numChunks int not null, lobLen largeint not null) salt using 8 partitions store by (descPartnKey, syskey) ",
@@ -9581,8 +9581,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
-	    cliInterface->executeImmediate("cqd pos restore;");
-
+	    
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    goto error_return;
@@ -9602,14 +9601,35 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
-	    cliInterface->executeImmediate("cqd pos restore;");
-
+	    
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    goto error_return;
 	  }
 
-	cliInterface->executeImmediate("cqd pos restore;");
+	
+
+	// create lob datafile descriptor unaudited table. Use a cqd 
+	// traf_no_dtm_xn  while doing any dml to this table.
+	//dataState = 1 - indicates  used chunk
+	//dataState = 0 - indicates  unused chunk
+       	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, offset largeint, dataState int , primary key(descPartnKey, descSysKey, chunkNum)) ",
+	lobOffsetsName); 
+
+
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
 	
 	cliRC = 0;
       }
@@ -9626,7 +9646,8 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->executeImmediate(query);
 
 	currContext.resetSqlParserFlags(0x1);
-
+	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+	  cliRC = 0;
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
@@ -9644,13 +9665,34 @@ Lng32 SQLCLI_LOBcliInterface
 
 	currContext.resetSqlParserFlags(0x1);
 
+	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+	  cliRC = 0;
+	
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    goto error_return;
 	  }
+	str_sprintf(query, "drop ghost table %s",
+		    lobOffsetsName);
 
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+	  cliRC = 0;
+	
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
 	
 	cliRC = 0;
       }
@@ -9671,7 +9713,12 @@ Lng32 SQLCLI_LOBcliInterface
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
+	     cliInterface->retrieveSQLDiagnostics(myDiags);
+	    if (myDiags->containsError(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION))
+	      {
+		cliRC = 0;
+		break;
+	      }
 	    goto error_return;
 	  }
 
@@ -9684,11 +9731,15 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->executeImmediate(query);
 
 	currContext.resetSqlParserFlags(0x1);
-
+	
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
+	    if (myDiags->containsError(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION))
+	      {
+		cliRC = 0;
+		break;
+	      }
 	    goto error_return;
 	  }
 
@@ -9750,6 +9801,28 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
+
+	//Insert into the lob offsets table (without transaction)
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn hold;");
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn 'ON';");
+	str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld,1, %Ld, %Ld, 1)",
+		    lobOffsetsName, descPartnKey, descSyskey,
+		    (dataLen ? *dataLen : 0),
+		    (dataOffset ? *dataOffset : 0) );
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
 
 	if (outDescPartnKey)
 	  *outDescPartnKey = descPartnKey;
@@ -9825,7 +9898,8 @@ Lng32 SQLCLI_LOBcliInterface
 	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, %d, %Ld, %Ld, NULL)",
 			lobDescChunksName, descPartnKey, inDescSyskey, 
 			numChunks, (dataLen ? *dataLen : 0),
-			(dataOffset ? *dataOffset : 0));
+			(dataOffset ? *dataOffset : 0)
+			);
 	  }
 	
 	// set parserflags to allow ghost table
@@ -9975,6 +10049,25 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
+
+	//Delete from  lob offsets table (without transaction)
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn hold;");
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn 'ON';");
+	str_sprintf(query, "update table(ghost table %s) set dataState = 0 where descPartnKey = %Ld and syskey = %Ld",lobOffsetsName, descPartnKey, inDescSyskey);
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
 
 	cliRC = 0;
 	//	if (outDescSyskey)
@@ -10343,9 +10436,7 @@ Lng32 SQLCLI_LOBddlInterface
     {
     case LOB_CLI_CREATE:
       {
-	cliRC = cliInterface->executeImmediate("cqd pos hold;");
-	cliRC = cliInterface->executeImmediate("cqd pos 'OFF';");
-
+	
 	// create lob metadata table
 	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) location $system",
 		    //	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) no partition",
@@ -10356,7 +10447,7 @@ Lng32 SQLCLI_LOBddlInterface
 	
 	cliRC = cliInterface->executeImmediate(query);
 
-	cliInterface->executeImmediate("cqd pos restore;");
+
 
 	
 	currContext.resetSqlParserFlags(0x1);
@@ -10457,10 +10548,12 @@ Lng32 SQLCLI_LOBddlInterface
 	cliRC = cliInterface->executeImmediate(query);
 	
 	currContext.resetSqlParserFlags(0x1);
-	
+	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+	  cliRC = 0;
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(&diags);	    
+	    cliInterface->retrieveSQLDiagnostics(&diags);
+	    
 	    goto error_return;
 	  }
 	

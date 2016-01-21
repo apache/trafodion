@@ -225,7 +225,7 @@ public:
 					Int64 uid, Lng32 lobNum, 
 					char * outBuf, Lng32 outBufLen);
 
-  static char * ExpGetLOBHdrName(Lng32 schNameLen, char * schName, 
+  static char * ExpGetLOBOffsetsName(Lng32 schNameLen, char * schName, 
 				 Int64 uid, Lng32 lobNum, 
 				 char * outBuf, Lng32 outBufLen);
 

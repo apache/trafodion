@@ -137,7 +137,7 @@ char * ExpLOBoper::ExpGetLOBDescChunksName(Lng32 schNameLen, char * schName,
   return outBuf;
 }
 
-char * ExpLOBoper::ExpGetLOBHdrName(Lng32 schNameLen, char * schName,
+char * ExpLOBoper::ExpGetLOBOffsetsName(Lng32 schNameLen, char * schName,
 				    Int64 uid, Lng32 num, 
 				    char * outBuf, Lng32 outBufLen)
 {
@@ -146,7 +146,7 @@ char * ExpLOBoper::ExpGetLOBHdrName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBHdr_%020Ld_%04d\"",
+  str_sprintf(outBuf, "%s.\"LOBOffset_%020Ld_%04d\"",
 	      schName, uid, num);
 
   return outBuf;

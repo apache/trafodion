@@ -1875,7 +1875,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       if (colType->getFSDatatype() == REC_BLOB || colType->getFSDatatype() == REC_CLOB)
 	//Cannot allow LOB in primary or clustering key 
 	{
-	  *CmpCommon::diags() << DgSqlCode(CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+	  *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
                               << DgColumnName(colName);
 
           deallocEHI(ehi); 

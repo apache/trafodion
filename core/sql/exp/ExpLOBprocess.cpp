@@ -554,7 +554,7 @@ Ex_Lob_Error ExLob::purgeLob()
     return err;
 } */
 
-   
+ 
 
 Ex_Lob_Error ExLob::insertDesc(ExLobRequest *request) 
 {

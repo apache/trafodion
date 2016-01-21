@@ -787,6 +787,7 @@ short HbaseDelete::codeGen(Generator * generator)
   ex_expr *convert_expr = NULL;
   ex_expr * keyColValExpr = NULL;
   ex_expr *preCondExpr = NULL;
+  ex_expr *lobExpr = NULL;
 
   ex_cri_desc * givenDesc 
     = generator->getCriDesc(Generator::DOWN);
