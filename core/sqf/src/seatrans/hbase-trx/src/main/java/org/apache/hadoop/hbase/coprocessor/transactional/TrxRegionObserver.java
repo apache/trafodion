@@ -92,7 +92,9 @@ public static final String trxkeycommitedTransactionsBySequenceNumber = "commite
 public static final String trxkeycommitPendingTransactions = "commitPendingTransactions";
 public static final String trxkeypendingTransactionsById = "pendingTransactionsById";
 public static final String trxkeyindoubtTransactionsCountByTmid = "indoubtTransactionsCountByTmid";
-public static final String trxkeyClosingVar = "checkClosingVariable";
+public static final String trxkeyCheckBlockAllVar = "checkBlockAllVar";
+public static final String trxkeyCheckBlockNonPhase2Var = "checkBlockNonPhase2Var";
+public static final String trxkeyCheckBlockNewTransVar = "checkBlockNewTransVar";
 public static final String trxkeyScanners = "trxScanners";
 
 public static final String SPLIT_DELAY_NOFLUSH = "hbase.transaction.split.delay.noflush";
@@ -127,7 +129,9 @@ static ConcurrentHashMap<String, Object> trxRegionMap;
 
 private ConcurrentHashMap<String, TrxTransactionState> transactionsById = new ConcurrentHashMap<String, TrxTransactionState>();
 private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
-private AtomicBoolean closing = new AtomicBoolean(false);
+private AtomicBoolean blockAll = new AtomicBoolean(false);
+private AtomicBoolean blockNonPhase2 = new AtomicBoolean(false);
+private AtomicBoolean blockNewTrans = new AtomicBoolean(false);
 private boolean hasClosed = false;
 private boolean hasFlushed = false;
 
@@ -255,14 +259,31 @@ public void start(CoprocessorEnvironment e) throws IOException {
                               this.commitPendingTransactions);
    }
 
-   AtomicBoolean closingCheck = (AtomicBoolean)transactionsRefMap
-                                               .get(regionName+trxkeyClosingVar);
-   if(closingCheck != null) {
-       this.closing = closingCheck;
+   AtomicBoolean blockAllCheck = (AtomicBoolean)transactionsRefMap
+                                               .get(regionName+trxkeyCheckBlockAllVar);
+   if(blockAllCheck != null) {
+       this.blockAll = blockAllCheck;
+    }
+    else {
+       transactionsRefMap.put(regionName+trxkeyCheckBlockAllVar, this.blockAll);
+    }
+   AtomicBoolean blockNonPhase2Check = (AtomicBoolean)transactionsRefMap
+                                               .get(regionName+trxkeyCheckBlockNonPhase2Var);
+   if(blockNonPhase2Check != null) {
+       this.blockNonPhase2 = blockNonPhase2Check;
    }
    else {
-       transactionsRefMap.put(regionName+trxkeyClosingVar, this.closing);
+       transactionsRefMap.put(regionName+trxkeyCheckBlockNonPhase2Var, this.blockNonPhase2);
    }
+
+    AtomicBoolean blockNewTransCheck = (AtomicBoolean)transactionsRefMap
+                                                 .get(regionName+trxkeyCheckBlockNewTransVar);
+    if(blockNewTransCheck != null) {
+        this.blockNewTrans = blockNewTransCheck;
+    }
+    else {
+        transactionsRefMap.put(regionName+trxkeyCheckBlockNewTransVar,this.blockNewTrans);
+    }
 
    @SuppressWarnings("unchecked")
    ConcurrentHashMap<Long,TransactionalRegionScannerHolder> scannersCheck =
@@ -621,24 +642,30 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
     public void preSplit(ObserverContext<RegionCoprocessorEnvironment> c, byte[] splitRow) throws IOException {
         if(LOG.isTraceEnabled()) LOG.trace("preSplit -- ENTRY region: " + regionInfo.getRegionNameAsString());
 
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- transactionsById (" + transactionsById.size() + " ), commitPendingTransactions (" + commitPendingTransactions.size() +"), scanners (" + scanners.size() + ")");
+
+        blockNewTrans.set(true);
+
         if(splitDelayNoFlush) {
             if(!this.earlyDrain)
-              sbHelper.activeWait(transactionsById, activeDelayLen, splitDelayLimit);
-            closing.set(true);
-            sbHelper.pendingWait(commitPendingTransactions, pendingDelayLen);
+               sbHelper.activeWait(transactionsById, activeDelayLen, splitDelayLimit);
+             sbHelper.pendingWait(commitPendingTransactions, pendingDelayLen);  
         }
         else {
+            blockNonPhase2.set(true);
             sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, pendingDelayLen);
-            closing.set(true);
 
             sbHelper.setSplit();
         }
 
+        blockAll.set(true);
         if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + regionInfo.getRegionNameAsString());
     }
 
     @Override
     public void	postSplit(ObserverContext<RegionCoprocessorEnvironment> e, HRegion l, HRegion r) {
+
+        if(LOG.isTraceEnabled()) LOG.trace("postSplit -- ENTRY");
 
         if(splitDelayNoFlush)
           return;
@@ -652,15 +679,20 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
           }
           else {
           try {
-             treL.setClosing(true);
-             treR.setClosing(true);
+             // don't need to set NewTrans flag because blockNonPhase2 will catch up
+             treL.setBlockAll(true);
+             treR.setBlockAll(true);
              Thread readThread = new Thread(new TxnReadThread(treL, sbHelper.getPath(), true));
              readThread.start();
              //treL.readTxnInfo(sbHelper.getPath(), true);
              treR.readTxnInfo(sbHelper.getPath(), true);
              readThread.join();
-             treL.setClosing(false);
-             treR.setClosing(false);
+             treL.setBlockAll(false);
+             treR.setBlockAll(false);
+             treL.setBlockNonPhase2(false);
+             treR.setBlockNonPhase2(false);
+             treL.setNewTrans(false);
+             treR.setNewTrans(false);
              sbHelper.clearSplit();
           } catch (IOException ioe) {
              if(LOG.isErrorEnabled()) LOG.error("Unable to read Transaction Info for transactional split coordination: " + ioe);
@@ -679,7 +711,11 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
             c.getEnvironment().getRegionServerServices().isStopped())
             return;
 
+        if(LOG.isTraceEnabled()) LOG.trace("preClose -- commitPendingTransactions (" + commitPendingTransactions.size() +")");
+
         if (!hasClosed) {
+                blockNonPhase2.set(true);
+
 	        if(LOG.isInfoEnabled()) {
 	            HRegion region = c.getEnvironment().getRegion();
 	            LOG.debug("preClose -- setting close var to true on: " + region.getRegionNameAsString());
@@ -689,7 +725,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
 	        } catch(IOException ioe) {
 	          LOG.error("Encountered exception when calling pendingAndScannersWait(): " + ioe);
 	        }
-	        closing.set(true);
+	        blockAll.set(true);
 	        hasClosed = true;
         }
 
@@ -728,7 +764,9 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
         transactionsRefMap.remove(regionName+trxkeyindoubtTransactionsCountByTmid);
         transactionsRefMap.remove(regionName+trxkeytransactionsById);
         transactionsRefMap.remove(regionName+trxkeycommitPendingTransactions);
-        transactionsRefMap.remove(regionName+trxkeyClosingVar);
+        transactionsRefMap.remove(regionName+trxkeyCheckBlockAllVar);
+        transactionsRefMap.remove(regionName+trxkeyCheckBlockNonPhase2Var);
+        transactionsRefMap.remove(regionName+trxkeyCheckBlockNewTransVar);
         transactionsRefMap.remove(regionName+trxkeyScanners);
     }
 
