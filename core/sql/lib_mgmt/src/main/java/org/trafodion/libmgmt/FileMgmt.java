@@ -602,7 +602,7 @@ public class FileMgmt {
 
 			@Override
 			public boolean accept(File name) {
-				if (name == null || !name.isFile()) {
+				if (name == null || !name.isFile() || name.getName().endsWith(DEL_POSTFIX)) {
 					return false;
 				}
 				return name.getName().trim().toUpperCase().matches(p);
