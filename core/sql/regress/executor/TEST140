@@ -1,0 +1,96 @@
+-- ============================================================================
+-- Test: TEST0140 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Advanced predicate pushdown (V2)
+-- Expected files: EXPECTED140
+-- Table created: t140 t140b t140helper
+-- Limitations:
+-- To do:
+-- Revision history:
+-- ============================================================================
+obey TEST140(clnup);
+log LOG140 clear;
+obey TEST140(ddl);
+obey TEST140(run);
+obey TEST140(clnup);
+exit;
+
+?section clnup
+drop table t140helper;
+drop table t140;
+drop table t140b;
+
+?section ddl
+create table t140helper (a int not null, primary key(a));
+insert into t140helper values(1);
+create table t140 (uniq int not null, uniq2 int not null , a int not null, b int not null,
+    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) ;
+create table t140b (uniq int not null, uniq2 int not null , a int not null, b int not null,
+    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
+
+upsert using load 
+into t140
+  select  x1,x1,10*x1,100*x1,1000*x1,10*x1+1,100*x1+1, 1000*x1+1, 'aaa'||cast(x1 as varchar(10)) 
+         
+  from t140helper
+transpose 0,1,2,3,4,5,6,7,8,9 as x1;
+
+insert into t140 values(11,11,12,102,1002,13,103,1003,'nullabs11');
+insert into t140 values(12,12,22,202,2002,NULL,NULL,2003,'nullabs12');
+insert into t140 values(13,13,32,302,3002,33,303,3003,'nullupd13');
+update t140 set an = null, bn=null where uniq=13;
+insert into t140 values(14,14,42,402,4002,43,403,4003,NULL);
+insert into t140 values(15,15,52,502,5002,53,503,5003,'asd');
+update t140 set d = null where uniq = 15;
+
+?section run
+-- test returned rows with or without adding key column and test of all pushdown functions with null or non null column
+-- only one column retrieved
+explain select a from t140 where b>500;
+select a from t140 where b>=500;
+--verify that the column retrieved for null handling is not the _SALT_ for optimization of skips, salt being the last physical column
+explain select an from t140b where b<=200;
+-- we should have 2 columns retrieved since an is nullable
+explain select an from t140 where b<=200;
+select an from t140 where b<=200;
+-- should not get back 2 column, only one since predicate says an is not null
+explain select an from t140 where b=200 and an is not null;
+select an from t140 where b=200 and an is not null;
+-- should only get 2 column back since a is not null, no need to add key column
+explain select an, a from t140 where b!=500;
+select an, a from t140 where b!=500;
+-- see if we handle null logic correctly
+select a from t140 where bn>=501;
+select an from t140 where bn<=201;
+explain select an from t140 where bn=201 and an is not null;
+select an from t140 where bn=201 and an is not null;
+explain select an, a from t140 where bn!=501;
+select an, a from t140 where bn!=501;
+select a from t140 where an is null;
+select a from t140 where an is not null;
+select a from t140 where a between 20 and 40;
+-- make sure that we only retrieve one column as an cannot be null in the result set.
+explain select an from t140 where an between 20 and 40;
+select an from t140 where an between 20 and 40;
+select an from t140 where an in (21,41,51,61,10);
+
