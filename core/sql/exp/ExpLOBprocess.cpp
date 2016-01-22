@@ -509,6 +509,19 @@ Ex_Lob_Error ExLob::purgeLob()
     return LOB_OPER_OK;
 }
 
+
+Ex_Lob_Error ExLob::getNextFreeOffset(Int64 size, Int64 &dataOffset, Int64 lobMaxSize)
+{
+  dataOffset = 0;
+  // Retrieve the next available, best-fit free offset to write into.
+    
+  if (sourceLen <= 0 || sourceLen > lobMaxSize)
+    {
+      return LOB_MAX_LIMIT_ERROR; //exceeded the size of the max lob size
+    }
+}
+
+
 /*Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset)
 {
     Ex_Lob_Error err = LOB_OPER_OK;

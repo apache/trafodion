@@ -154,7 +154,7 @@ public:
     return NULL;
   };
 
-  ComTdbAccessType getAccessType() { return ComTdbAccessType(accessType_); }
+  ComTdbAccessType getAccessType() const { return ComTdbAccessType(accessType_); }
 
   class HbaseScanRows : public NAVersionedObject
   {

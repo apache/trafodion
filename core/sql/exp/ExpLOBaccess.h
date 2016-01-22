@@ -428,7 +428,7 @@ class ExLob
     hdfsFile *getfdDesc() { return &fdDesc_;}
     char *getDescFileName() { return lobDescFile_; }
     char *getDataFileName() { return lobDataFile_; }
-
+    Ex_Lob_Error getNextFreeOffset(Int64 size, Int64 &dataOffset, Int64 lobMaxSize);
     Ex_Lob_Error print();
     int getErrNo();
 

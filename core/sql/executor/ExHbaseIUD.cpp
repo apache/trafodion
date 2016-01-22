@@ -1851,6 +1851,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	      step_ = HANDLE_ERROR;
 	    else if ((tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_) &&
 		     (! tcb_->scanExpr()) &&
+                     (! tcb_->lobDelExpr()) &&
 		     (NOT tcb_->hbaseAccessTdb().returnRow()))
 	      step_ = DELETE_ROW;
 	    else
@@ -2239,7 +2240,19 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-	    
+
+            // delete entries from LOB desc table, if needed
+            if (tcb_->lobDelExpr())
+              {
+                ex_expr::exp_return_type exprRetCode =
+		  tcb_->lobDelExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_);
+		if (exprRetCode == ex_expr::EXPR_ERROR)
+		  {
+		    step_ = HANDLE_ERROR;
+		    break;
+		  }
+              }
+
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incUsedRows();
 
@@ -3000,6 +3013,18 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 		break;
 	      }
 	    
+            // delete entries from LOB desc table, if needed
+            if (tcb_->lobDelExpr())
+              {
+                ex_expr::exp_return_type exprRetCode =
+		  tcb_->lobDelExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_);
+		if (exprRetCode == ex_expr::EXPR_ERROR)
+		  {
+		    step_ = HANDLE_ERROR;
+		    break;
+		  }
+              }
+
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incUsedRows();
 

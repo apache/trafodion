@@ -205,6 +205,9 @@ protected:
   inline ex_expr *mergeInsertExpr() const 
     { return hbaseAccessTdb().mergeInsertExpr_; }
 
+  inline ex_expr *lobDelExpr() const 
+    { return hbaseAccessTdb().mergeInsertExpr_; }
+
   inline ex_expr *mergeInsertRowIdExpr() const 
     { return hbaseAccessTdb().mergeInsertRowIdExpr_; }
 

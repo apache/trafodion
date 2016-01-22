@@ -9613,7 +9613,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// traf_no_dtm_xn  while doing any dml to this table.
 	//dataState = 1 - indicates  used chunk
 	//dataState = 0 - indicates  unused chunk
-       	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, offset largeint, dataState int , primary key(descPartnKey, descSysKey, chunkNum)) ",
+       	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, offset largeint, dataState int , primary key(descPartnKey, descSysKey, chunkLen)) ",
 	lobOffsetsName); 
 
 
@@ -9622,7 +9622,7 @@ Lng32 SQLCLI_LOBcliInterface
 	
 	cliRC = cliInterface->executeImmediate(query);
 
-	currContext.resetSqlParserFlags(0x1);
+	currContext.resetSqlParserFlags(0x1);x
 
 	if (cliRC < 0)
 	  {
@@ -9916,6 +9916,29 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
+	//Insert into the lob offsets table (without transaction)
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn hold;");
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn 'ON';");
+	str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld,%d, %Ld, %Ld, 1)",
+		    lobOffsetsName, descPartnKey, descSyskey,numChunks
+		    (dataLen ? *dataLen : 0),
+		    (dataOffset ? *dataOffset : 0) );
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+            cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
+
 	cliRC = 0;
 
 	//	if (outDescSyskey)
@@ -9998,6 +10021,51 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
+        // Update the lob offsets table. Set all the previous chunks to be 
+        // unused. Insert the new chunk as the new used chunk.
+        
+        
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn hold;");
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn 'ON';");
+
+        //update old chunks as unused 
+
+	str_sprintf(query, "update table(ghost table %s) set dataState = 0 where descPartnKey = %Ld and descSyskey = %Ld",lobOffsetsName, descPartnKey, inDescSyskey);
+      
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);	
+	cliRC = cliInterface->executeImmediate(query);
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+            cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+
+        //Insert new  chunk offset and length 
+	str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld,1, %Ld, %Ld, 1)",
+		    lobOffsetsName, descPartnKey, descSyskey,
+		    (dataLen ? *dataLen : 0),
+		    (dataOffset ? *dataOffset : 0) );
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+            cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
+
 	// update lob handle with the returned values
 	if (outLobHandle)
 	  {
@@ -10053,7 +10121,7 @@ Lng32 SQLCLI_LOBcliInterface
 	//Delete from  lob offsets table (without transaction)
 	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn hold;");
 	cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn 'ON';");
-	str_sprintf(query, "update table(ghost table %s) set dataState = 0 where descPartnKey = %Ld and syskey = %Ld",lobOffsetsName, descPartnKey, inDescSyskey);
+	str_sprintf(query, "update table(ghost table %s) set dataState = 0 where descPartnKey = %Ld and descSyskey = %Ld",lobOffsetsName, descPartnKey, inDescSyskey);
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
 	
@@ -10063,6 +10131,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
+            cliRC = cliInterface->executeImmediate("cqd traf_no_dtm_xn reset;");
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    goto error_return;
