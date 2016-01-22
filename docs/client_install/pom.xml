@@ -26,12 +26,20 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.trafodion</groupId>
   <artifactId>client-install-guide</artifactId>
-  <version>1.3.0</version>
+  <version>${env.TRAFODION_VER}</version>
   <packaging>pom</packaging>
   <name>Trafodion Client Installation Guide</name>
   <description>This guide describes how to install different Trafodion client applications.</description>
   <url>http://trafodion.incubator.apache.org</url>
   <inceptionYear>2015</inceptionYear>
+
+  <parent>
+    <groupId>org.apache.trafodion</groupId>
+    <artifactId>trafodion</artifactId>
+    <version>1.3.0</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
 
   <licenses>
     <license>
