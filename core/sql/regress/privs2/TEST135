@@ -22,7 +22,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 --
--- This test uses users sql_user1, sql_user2, and sql_user3
+-- This test uses users sql_user1, sql_user2, sql_user3, and sql_user4
 --
 --   Makes sure privileges are granted correctly for new objects
 --   Makes sure privileges are revoked correctly for dropped objects
@@ -34,17 +34,6 @@
 -- ============================================================================
 
 obey TEST135(clean_up);
-set parserflags 64;
-register user sql_user1;
-register user sql_user2;
-register user sql_user3;
-register user sql_user4;
-register user sql_user5;
-register user sql_user6;
-register user sql_user7;
-register user sql_user8;
-register user sql_user9;
-register user sql_user10;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG135 clear;
 sh rm -f LOG135-SECONDARY;
@@ -66,6 +55,10 @@ drop table_mapping function sessionize;
 -- drop database
 drop schema t135sch cascade;
 drop schema t135sch_user3 cascade;
+drop schema t135sch_user4 cascade;
+
+drop role t135_role1;
+drop role t135_role2;
 
 ?section set_up
 -- ============================================================================
@@ -87,7 +80,7 @@ select object_name, grantee_name, grantor_name
 from "_PRIVMGR_MD_".object_privileges
 where 
   object_name in ('TRAFODION.T135SCH.T135_T1', 'TRAFODION.T135SCH.T135_T2', 'TRAFODION.T135SCH.T135_V1', 'TRAFODION.T135SCH.T135_V2', 'TRAFODION.T135SCH.T135_L1', 'TRAFODION.T135SCH.T135_L2', 'TRAFODION.T135SCH.T135_SESSIONIZE', 'TRAFODION.T135SCH.T135_ADD2')
-for read uncommitted access;
+order by 1,3,2 for read uncommitted access;
 
 ?section tbl_tests
 -- ============================================================================
@@ -219,8 +212,31 @@ revoke all on t135_t1 from sql_user3;
 
 sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
 
+-- create some roles
+create role t135_role1;
+create role t135_role2;
+grant role t135_role1, t135_role2 to sql_user4;
+grant select on t135_t1 to t135_role1;
+grant select on t135_v1_t1 to t135_role2; 
+
+-- have sql_user4 create a view based on role privs
+create schema if not exists t135sch_user4 authorization sql_user4;
+sh sqlci -i "TEST135(user4_views)" -u sql_user4;
+
+-- should not be able to revoke user4 from role
+revoke role t135_role1 from sql_user4;
+revoke role t135_role2 from sql_user4;
+
+-- after droppping the view, revokes succeed
+drop view t135sch_user4.t135_v1_user4;
+revoke role t135_role1 from sql_user4;
+revoke role t135_role2 from sql_user4;
+
 drop table t135_t1 cascade;
 drop table t135_t2 cascade;
+
+drop role t135_role1;
+drop role t135_role2;
 
 ?section constraint_tests
 -- ============================================================================
@@ -463,3 +479,15 @@ set schema t135sch_user3;
 log LOG135;
 alter table t135_t3 add constraint t1_t3 foreign key (c1) references t135sch.t135_t1;
 showddl t135_t3;
+
+-- ============================================================================
+?section user4_views
+-- ============================================================================
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+set schema t135sch_user4;
+log LOG135;
+create view t135_v1_user4 as
+  select t135sch.t135_t1.c2, t135sch.t135_v1_t1.c1
+  from t135sch.t135_t1, t135sch.t135_v1_t1;
+showddl t135_v1_user4;
+

@@ -184,11 +184,6 @@ fi
 #-------------------------------------------------------
 skipTheseTests=""
 
-#skip these tests for Seabase
-if [ "$seabase" -ne 0 ]; then
-  skipTheseTests="$skipTheseTests"
-fi
-
 testfiles="$prettyfiles"
 prettyfiles=
 skippedfiles=

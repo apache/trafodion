@@ -4,12 +4,12 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/catman1
+CURRENT DIRECTORY  /mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs2
 LIST_COUNT         4294967295
 LOG FILE           LOG140
-MESSAGEFILE        /opt/home/rmarton/git_ws/core/sqf/export/bin64d/mxcierr ...
+MESSAGEFILE        /mnt/rmarton/gitws/incubator-trafodion/core/sqf/export/ ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2015-05-22 10:41 LINUX:G4T3035.HOUSTON.HP.COM/rmarton} 
+MESSAGEFILE VRSN   {2016-01-21 17:33 LINUX:EDEV05/rmarton} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
@@ -830,7 +830,7 @@ End of MXCI Session
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
 
-TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   SI-----               SI-----             
+TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    -2          DB__ROOT    S----R-               S----R-             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
@@ -899,7 +899,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
 
-TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   SI-----               SI-----             
+TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    -2          DB__ROOT    S----R-               S----R-             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
