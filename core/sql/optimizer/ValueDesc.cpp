@@ -513,6 +513,30 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
   return NULL;  // NT_PORT
 }
 
+
+NABoolean ValueId::isAddedColumnWithNonNullDefault() const{
+  NAColumn * nac = NULL;
+  ItemExpr *ck = getItemExpr();
+  if ( ck == NULL )
+     return FALSE;
+  switch (ck->getOperatorType()){
+  case ITM_BASECOLUMN:
+      nac = ((BaseColumn*)ck)->getNAColumn();
+      break;
+  case ITM_INDEXCOLUMN:
+      nac = ((IndexColumn*)ck)->getNAColumn();
+      break;
+  default:
+      break;
+  }
+  if (nac && nac->isAddedColumn() && nac->getDefaultValue())
+      return TRUE;
+  else
+      return FALSE;
+}
+
+
+
 // Since we *can* have an INSTANTIATE_NULL inside a VEG_REFERENCE, a loop
 // was required for the function below.
 //
@@ -3165,7 +3189,12 @@ void ValueIdSet::replaceVEGExpressions
           if (iePtr != exprId.getItemExpr())  // a replacement was done
 	    {
 	      subtractElement(exprId);        // remove existing ValueId
-	      newExpr += iePtr->getValueId(); // replace with a new one
+          //insert new expression(s)
+          if (iePtr->getOperatorType() == ITM_AND)
+              //The replacement of a RangeSpec could be an AND, convert ANDed predicates into additional values in newExpr.
+              iePtr->convertToValueIdSet(newExpr, NULL, ITM_AND, FALSE, FALSE);
+          else
+              newExpr += iePtr->getValueId(); // replace with a new one
 	    }
 	}
       else // delete the ValueId of the VEGPredicate/VEGReference from the set
@@ -6380,6 +6409,7 @@ ValueIdSet& ValueIdSet::intersectSetDeep(const ValueIdSet & v)
     }
   return *this;
 }
+
 
 // --------------------------------------------------------------------
 // return true iff ValueIdSet has predicates that guarantee

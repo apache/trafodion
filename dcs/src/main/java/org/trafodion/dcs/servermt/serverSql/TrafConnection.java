@@ -384,7 +384,7 @@ public class TrafConnection {
             while (keySetIterator.hasNext()) {
                 key = keySetIterator.next();
                 tstmt = statements.get(key);
-                if (tstmt.getStmtHandle() == stmtHandle);
+                if (tstmt.getStmtHandle() == stmtHandle)
                     return tstmt;
             }
             throw new SQLException("getTrafStatement stmtHandle [" + stmtHandle + "] returns null");

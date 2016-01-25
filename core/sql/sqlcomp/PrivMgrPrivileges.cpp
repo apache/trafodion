@@ -636,7 +636,7 @@ PrivStatus PrivMgrPrivileges::getPrivRowsForObject(
   for (size_t i = 0; i < objectRowList_.size(); i++)
   {
     ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*objectRowList_[i]);
-    if (row.grantorID_ != SYSTEM_AUTH_ID)
+    if (row.grantorID_ != SYSTEM_USER)
     {
       ObjectPrivsRow newRow;
     
@@ -955,7 +955,7 @@ char whereClause[1000];
 
    sprintf(setClause," SET GRANTEE_ID = %d, GRANTEE_NAME = '%s' ",
            newOwnerID,newOwnerName.c_str());
-   sprintf(whereClause," WHERE GRANTOR_ID = %d ",SYSTEM_AUTH_ID);
+   sprintf(whereClause," WHERE GRANTOR_ID = %d ",SYSTEM_USER);
    
    privStatus = objectPrivsTable.updateWhere(setClause,whereClause);
    if (privStatus != STATUS_GOOD)
@@ -1266,7 +1266,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   nameRequested.erase(std::remove(nameRequested.begin(), nameRequested.end(), theQuote), nameRequested.end());
   nameToCheck.erase(std::remove(nameToCheck.begin(), nameToCheck.end(), theQuote), nameToCheck.end());
 
-  if (nameRequested == nameToCheck && grantorID_ == SYSTEM_AUTH_ID)
+  if (nameRequested == nameToCheck && grantorID_ == SYSTEM_USER)
     return STATUS_GOOD;
 
   // If the granting to self or DB__ROOT, return an error
@@ -1467,7 +1467,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
       pObj->describe(traceMsg);
       log (__FILE__, traceMsg, i);
 
-      int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_AUTH_ID : grantorID_;
+      int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_USER : grantorID_;
       int32_t theGrantee = pObj->objectOwner;
       int64_t theUID = pObj->objectUID;
       PrivMgrCoreDesc thePrivs = pObj->updatedPrivs.getTablePrivs();
@@ -1620,7 +1620,7 @@ PrivObjectBitmap grantableBitmap;
    row.granteeID_ = ownerID;
    row.granteeName_ = ownerName;
    row.granteeType_ = USER_GRANTEE_LIT;
-   row.grantorID_ = SYSTEM_AUTH_ID;
+   row.grantorID_ = SYSTEM_USER;
    row.grantorName_ = SYSTEM_AUTH_NAME;  
    row.grantorType_ = COM_SYSTEM_GRANTOR_LIT;
    row.privsBitmap_ = privsBitmap;
@@ -3001,7 +3001,7 @@ bool PrivMgrPrivileges::checkRevokeRestrict (
   {
     PrivType pType = PrivType(i);
 
-    int32_t systemGrantor = SYSTEM_AUTH_ID;
+    int32_t systemGrantor = SYSTEM_USER;
     scanObjectBranch (pType, systemGrantor, rowList);
     // TDB - add a scan for column privileges
   }
@@ -3681,7 +3681,7 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
   // create the list of row pointers from the cached list
   std::vector<int32_t> authIDs = roleIDs;
   authIDs.push_back(granteeID);
-  authIDs.push_back(PUBLIC_AUTH_ID);
+  authIDs.push_back(PUBLIC_USER);
   std::vector<int32_t>::iterator it;
   std::vector<PrivMgrMDRow *> privRowList;
   if (isObjectTable)
@@ -4232,7 +4232,7 @@ void static buildGrantText(
    
 {
 
-   if (grantorID == SYSTEM_AUTH_ID)
+   if (grantorID == SYSTEM_USER)
       grantText += "-- ";
 
    grantText += "GRANT ";
@@ -4251,7 +4251,7 @@ void static buildGrantText(
    else
 
    if (grantorID != objectOwner &&
-       grantorID != SYSTEM_AUTH_ID)
+       grantorID != SYSTEM_USER)
     {
       grantText += " GRANTED BY ";
       bool delimited = isDelimited(grantorName);
@@ -4539,7 +4539,7 @@ static PrivStatus getColRowsForGrantee(
 
   std::vector<int32_t> authIDs = roleIDs;
   authIDs.push_back(granteeID);
-  authIDs.push_back(PUBLIC_AUTH_ID);
+  authIDs.push_back(PUBLIC_USER);
   std::vector<int32_t>::iterator it;
 
   std::vector<PrivMgrMDRow *> privRowList;
@@ -4773,7 +4773,7 @@ std::vector<PrivMgrMDRow *> colRowList;
       ColPrivSpec &colPrivEntry = colPrivsArray[i];
       
       // See if the grantor has been granted WGO at column-level for priv.  
-      for (size_t j = 0; i < colRowList.size(); j++)
+      for (size_t j = 0; j < colRowList.size(); j++)
       {
          ColumnPrivsMDRow &columnRow = static_cast<ColumnPrivsMDRow &> (*colRowList[i]);
          if (columnRow.grantableBitmap_.test(colPrivEntry.privType))
@@ -5401,7 +5401,7 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
 //    coalesce((select auth_db_name from AUTHS where auth_id = object_owner),
 //             'DB__ROOT') --granteeName
 //    USER_GRANTEE_LIT, -- "U"
-//    SYSTEM_AUTH_ID,  -- system grantor ID (-2)
+//    SYSTEM_USER,  -- system grantor ID (-2)
 //    SYSTEM_AUTH_NAME, -- grantorName (_SYSTEM)
 //    SYSTEM_GRANTOR_LIST, -- "S"
 //    case
@@ -5471,7 +5471,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   int64_t sequenceBits = privDesc.getTablePrivs().getPrivBitmap().to_ulong();
 
   // for views, privilegesBitmap is set to 1 (SELECT), wgo to 0 (no)
-  std::string systemGrantor("_SYSTEM");
+  std::string systemGrantor(SYSTEM_AUTH_NAME);
 
   // Generate case stmt for grantable bitmap
   sprintf (buf, "case when object_type = 'BT' then %ld "
@@ -5501,7 +5501,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
           tableName_.c_str(),
           authsLocation.c_str(),
           USER_GRANTEE_LIT,
-          SYSTEM_AUTH_ID, SYSTEM_AUTH_NAME, SYSTEM_GRANTOR_LIT,
+          SYSTEM_USER, SYSTEM_AUTH_NAME, SYSTEM_GRANTOR_LIT,
           privilegesClause.c_str(), grantableClause.c_str(),
           objectsLocation.c_str());
 
