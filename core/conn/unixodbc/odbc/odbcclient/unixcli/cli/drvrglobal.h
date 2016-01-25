@@ -237,25 +237,8 @@ typedef enum ERROR_COMPONENT
 #define NO_STRING								"N"
 #define MAX_CAPSULE_NAME_LENGTH					20
 
-#if defined(__LP64__)
-	#if defined(MXLINUX) || defined(MXIA64LINUX) || defined(MXSUNSPARC)
-	#define	DRIVER_DLL_NAME							"libhpodbc64.so"
-	#elif defined(MXHPUX)
-	#define	DRIVER_DLL_NAME							"libhpodbc64.sl"
-	#elif defined(MXAIX)
-	#define	DRIVER_DLL_NAME							"libhpodbc64.a"
-	#endif
-#else
-	#if defined(MXLINUX) || defined(MXIA64LINUX) || defined(MXSUNSPARC) || defined(MXOSS)
-	#define	DRIVER_DLL_NAME							"libhpodbc.so"
-	#elif defined(MXHPUX)
-	#define	DRIVER_DLL_NAME							"libhpodbc.sl"
-	#elif defined(MXAIX)
-	#define	DRIVER_DLL_NAME							"libhpodbc.a"
-	#endif
-#endif /* defined(__LP64__) */
-
-#define TRACE_DLL_NAME							"traf_odbctrace.dll"
+#define	DRIVER_DLL_NAME			        "libtrafodbc64.so"
+#define TRACE_DLL_NAME			        "traf_odbctrace.dll"
 #define TCPIPV4_DLL_NAME                        "traf_tcpipv4.dll"
 #define TCPIPV6_DLL_NAME                        "traf_tcpipv6.dll"
 
