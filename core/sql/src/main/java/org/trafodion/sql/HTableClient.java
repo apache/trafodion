@@ -778,7 +778,7 @@ public class HTableClient {
     
 	public boolean startScan(long transID, byte[] startRow, byte[] stopRow,
                                  Object[]  columns, long timestamp,
-                                 boolean cacheBlocks, int numCacheRows,
+                                 boolean cacheBlocks, boolean smallScanner, int numCacheRows,
                                  Object[] colNamesToFilter, 
                                  Object[] compareOpList, 
                                  Object[] colValuesToCompare,
@@ -827,6 +827,7 @@ public class HTableClient {
 	  else
               scan.setCacheBlocks(false);
           
+      scan.setSmall(smallScanner);
 	  scan.setCaching(numCacheRows);
 	  numRowsCached = numCacheRows;
 	  if (columns != null) {

@@ -67,19 +67,19 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
+MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2015-03-19 10:15}
+MESSAGEFILE VRSN   {2016-01-23 00:47 LINUX:EDEV05/owhadi} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
 SQL USER DB NAME   DB__ROOT
 SQL USER ID        33333
 TERMINAL CHARSET   ISO88591
-TRANSACTION ID
+TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>
@@ -498,7 +498,8 @@ CONTROL QUERY DEFAULT
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
-  HBASE_FILTER_PREDS            	ON
+  HBASE_SMALL_SCANNER           	SYSTEM
+  HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   SCHEMA                        	AAA.BBB
@@ -541,7 +542,8 @@ CONTROL QUERY DEFAULT
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
-  HBASE_FILTER_PREDS            	ON
+  HBASE_SMALL_SCANNER           	SYSTEM
+  HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
@@ -575,7 +577,8 @@ CONTROL QUERY DEFAULT
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   HBASE_SERIALIZATION           	ON
-  HBASE_FILTER_PREDS            	ON
+  HBASE_SMALL_SCANNER           	SYSTEM
+  HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
@@ -928,19 +931,19 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
+MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2015-03-19 10:15}
+MESSAGEFILE VRSN   {2016-01-23 00:47 LINUX:EDEV05/owhadi} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
 SQL USER DB NAME   DB__ROOT
 SQL USER ID        33333
 TERMINAL CHARSET   ISO88591
-TRANSACTION ID
+TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>							-- *not* $$TEST_SCHEMA$$
@@ -992,19 +995,19 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
+MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2015-03-19 10:15}
+MESSAGEFILE VRSN   {2016-01-23 00:47 LINUX:EDEV05/owhadi} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
 SQL USER DB NAME   DB__ROOT
 SQL USER ID        33333
 TERMINAL CHARSET   ISO88591
-TRANSACTION ID
+TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>						-- still not $$TEST_SCHEMA$$
@@ -1052,19 +1055,19 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+CURRENT DIRECTORY  /mnt/owhadi/workspace/trafodion/incubator-trafodion/core/sqf/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
+MESSAGEFILE        /mnt/owhadi/workspace/trafodion/incubator-trafodion/cor ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2015-03-19 10:15}
+MESSAGEFILE VRSN   {2016-01-23 00:47 LINUX:EDEV05/owhadi} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 SQL USER CONNECTED user not connected
 SQL USER DB NAME   DB__ROOT
 SQL USER ID        33333
 TERMINAL CHARSET   ISO88591
-TRANSACTION ID
+TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>                                                    -- back to $$TEST_SCHEMA$$

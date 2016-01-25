@@ -179,7 +179,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883773450737
+PLAN_ID .................. 212320282637448134
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -214,6 +214,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -223,7 +224,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764906944
+  ObjectUIDs ............. 953725371151598413
   select_list ............ TRAFODION.HBASE.MCSTATPART7.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART7.
                              F)))
@@ -326,7 +327,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883773834175
+PLAN_ID .................. 212320282637741686
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 568.59
 STATEMENT ................ select f,count(f)
@@ -361,6 +362,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -370,7 +372,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764909533
+  ObjectUIDs ............. 953725371151600526
   select_list ............ TRAFODION.HBASE.MCSTATPART5.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.
                              F)))
@@ -473,7 +475,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883774174434
+PLAN_ID .................. 212320282638023675
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -508,6 +510,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -517,7 +520,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764910468
+  ObjectUIDs ............. 953725371151601389
   select_list ............ TRAFODION.HBASE.MCSTATPART3.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART3.
                              F)))
@@ -620,7 +623,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883774449563
+PLAN_ID .................. 212320282638276314
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 523.92
 STATEMENT ................ select f,count(f)
@@ -655,6 +658,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -664,7 +668,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764911379
+  ObjectUIDs ............. 953725371151602308
   select_list ............ TRAFODION.HBASE.MCSTATPART6.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART6.
                              F)))
@@ -767,7 +771,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883774716355
+PLAN_ID .................. 212320282638589572
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 523.92
 STATEMENT ................ select f,count(f)
@@ -802,6 +806,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -811,7 +816,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764912234
+  ObjectUIDs ............. 953725371151603186
   select_list ............ TRAFODION.HBASE.MCSTATPART2.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART2.
                              F)))
@@ -914,7 +919,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883775019433
+PLAN_ID .................. 212320282638883341
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 538.3
 STATEMENT ................ select f,count(f)
@@ -949,6 +954,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -958,7 +964,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764913063
+  ObjectUIDs ............. 953725371151604056
   select_list ............ TRAFODION.HBASE.MCSTATPART1.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART1.
                              F)))
@@ -1061,7 +1067,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212318883775293423
+PLAN_ID .................. 212320282639174313
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -1096,6 +1102,7 @@ DESCRIPTION
   SEABASE_VOLATILE_TABLES  ON
   HBASE_ASYNC_DROP_TABLE   OFF
   HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
@@ -1105,7 +1112,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 1492467077764913972
+  ObjectUIDs ............. 953725371151604853
   select_list ............ TRAFODION.HBASE.MCSTATPART8.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART8.
                              F)))
