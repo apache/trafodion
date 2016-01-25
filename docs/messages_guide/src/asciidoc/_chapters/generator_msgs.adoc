@@ -23,4 +23,37 @@
   */
 ////
 
-= Product Environment Install
+[[generator-messages]]
+= Generator Messages (7000 through 7999)
+
+[[SQL-7001]]
+== SQL 7001
+
+```
+Default value <value> is not valid for column <name>.
+```
+
+*Cause:* You attempted to create a table with an invalid default <value>
+for column <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-7003]]
+== SQL 7003
+
+```
+A plan using cluster sampling could not be produced for this query.
+```
+
+*Cause:* You can use cluster sampling in a query only on a base table
+result set and only if there is no WHERE clause in the SELECT statement.
+This query does not satisfy these conditions.
+
+*Effect:* Trafodion is unable to compile the query.
+
+*Recovery:* Rewrite the query (for example, using nested queries) so
+that cluster sampling is performed on a base table with no WHERE-clause
+predicate.
+

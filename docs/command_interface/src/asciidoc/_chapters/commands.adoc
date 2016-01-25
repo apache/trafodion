@@ -2645,7 +2645,7 @@ The parameter name and value are associated with one of these parameter types:
 
 A prepared statement is one that you SQL compile by using the PREPARE statement.
 For more information about PREPARE, see the
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 After running `SET PARAM` commands in the session:
 
@@ -2655,7 +2655,7 @@ After running `SET PARAM` commands in the session:
 that contains literal values and/or a list of the named parameters set by `SET PARAM`.
 
 The `EXECUTE` statement substitutes parameter values for the parameters in the prepared statement. For more information about `EXECUTE`, see the
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 <<<
 === Syntax
@@ -3046,7 +3046,7 @@ SQL>
 ```
 
 For more information on the STATISTICS command, see the 
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 <<<
 [[cmd_set_time]]
