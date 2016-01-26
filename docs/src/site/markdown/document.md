@@ -72,6 +72,7 @@ Once you have made the desired changes, then do the following:
 
 1. Be sure to source env.sh, so that the TRAFODION_VER environment variable is defined.
 2. Build the document using **```mvn clean site```** in the directory containing the document; for example: **```dcs```** or **```docs/odb_user```**.
+   * If you have not previously built the JDBC drivers, the DCS and REST documents will give spurious errors about missing that dependency. The documents can be built fine, skipping over that dependency using **```mvn -P'!jdbc' site```**.
 3. Verify the content in the generated **```target```** directory. 
    * The **```target/index.html```** file provides the entry point for the web book. 
    * For those that have API documentation, the **```target/apidocs/index.html```** file contains the entry point.
@@ -81,6 +82,7 @@ Once you have made the desired changes, then do the following:
 
 1. Be sure to source env.sh, so that the TRAFODION_VER environment variable is defined.
 2. Build everything using **```mvn clean post-site```** in the top-level directory.
+   * As above, to skip over JDBC dependency, use **```mvn -P'!jdbc' post-site```**.
 3. Verify the contents in the generated **```docs/target```** directory.
    * All documents are in **```docs/target/docs```** directory.
 

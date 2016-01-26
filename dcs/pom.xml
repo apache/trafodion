@@ -798,21 +798,31 @@
       <artifactId>displaytag-export-poi</artifactId>
       <version>${displaytag.version}</version>
     </dependency> 
-    <!-- JDBCT4 dependencies -->    
-    <dependency>    
-      <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
-      <artifactId>t4driver</artifactId>
-      <version>${jdbct4.version}</version>
-    </dependency>
-    <!-- JDBCT2 dependencies -->    
-    <dependency>    
-      <groupId>org.trafodion.jdbc.t2.T2Driver</groupId>
-      <artifactId>t2driver</artifactId>
-      <version>${jdbct2.version}</version>
-    </dependency>
   </dependencies>
   
   <profiles>
+    <!-- JDBC drivers needed for compile, but not site docs 
+	 This allows turning off dependency on command line (-P '!jdbc') -->
+    <profile>
+      <id>jdbc</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+         <!-- JDBCT4 dependencies -->    
+         <dependency>    
+            <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
+            <artifactId>t4driver</artifactId>
+            <version>${jdbct4.version}</version>
+         </dependency>
+         <!-- JDBCT2 dependencies -->    
+         <dependency>    
+            <groupId>org.trafodion.jdbc.t2.T2Driver</groupId>
+            <artifactId>t2driver</artifactId>
+            <version>${jdbct2.version}</version>
+         </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>runSmallTests</id>
       <activation>
