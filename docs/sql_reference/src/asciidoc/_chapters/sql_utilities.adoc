@@ -45,7 +45,7 @@ NOTE: Trafodion SQL utilities are entered interactively or from script
 files using a client-based tool, such as the Trafodion Command Interface
 (TrafCI). To install and configure a client application that enables you
 to connect to and issue SQL utilities, see the
-http://trafodion.incubator.apache.org/client_installation/index.html[_Trafodion Client Installation Guide_].
+http://trafodion.incubator.apache.org/docs/client_installation/index.html[_Trafodion Client Installation Guide_].
 
 <<<
 [[load_statement]]

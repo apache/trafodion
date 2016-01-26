@@ -53,7 +53,7 @@ A summary of the commands used in this procedures to help experienced users:
     user=$(whoami)
 
     # Generate ~/.ssh/id_dsa.pub on each node in the instance
-    for node in $NODE_LIST; do ssh $user@$node "rmdir ~/.ssh; mkdir ~/.ssh; cd ~/.ssh; echo -e 'y\n' | ssh-keygen -t rsa -N '' -f $~/.ssh/id_rsa"; done
+    for node in $NODE_LIST; do ssh $user@$node "rm -rf ~/.ssh; mkdir ~/.ssh; cd ~/.ssh; echo -e 'y\n' | ssh-keygen -t rsa -N '' -f $~/.ssh/id_rsa"; done
 
     # Populate ~/.ssh/authorized_keys file on the master node.
     for node in $NODE_LIST; do ssh $user@$node "cat ~/.ssh/id_dsa.pub" >> ~/.ssh/authorized_keys; done
@@ -89,7 +89,7 @@ The steps below assumes that the **```NODE_LIST```** environmental variable cont
 In this step, you create the authorization key for each node in the instance. This key will be located in the **```~/.ssh/id_dsa.pub```** file. Use the following commands for each node of the instance: 
 
     $ user=$(whoami)
-    $ for node in $NODE_LIST; do ssh $user@$node "rmdir ~/.ssh; mkdir ~/.ssh; cd ~/.ssh; echo -e 'y\n' | ssh-keygen -t rsa -N '' -f $~/.ssh/id_rsa"; done
+    $ for node in $NODE_LIST; do ssh $user@$node "rm -rf ~/.ssh; mkdir ~/.ssh; cd ~/.ssh; echo -e 'y\n' | ssh-keygen -t rsa -N '' -f $~/.ssh/id_rsa"; done
 
 ## Populate the local ```~/.ssh/authorized_keys file```
 In this step, you populate the **```~/.ssh/authorized_keys```** file on master node by copying the content from each node's **```~/.ssh/id_dsa.pub```** file. 

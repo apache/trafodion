@@ -31,7 +31,7 @@ SQL language elements supported by the Trafodion project’s database software.
 Trafodion SQL statements and utilities are entered interactively or from script files using a client-based tool,
 such as the Trafodion Command Interface (TrafCI). To install and configure a client application that enables you
 to connect to and use a Trafodion database, see the
-http://trafodion.incubator.apache.org/client_install/index.html[_Trafodion Client Installation Guide_].
+http://trafodion.incubator.apache.org/docs/client_install/index.html[_Trafodion Client Installation Guide_].
 
 NOTE: In this manual, SQL language elements, statements, and clauses within statements are based on the
 ANSI SQL:1999 standard.

@@ -68,8 +68,7 @@ public class TrafStatement {
     public TrafStatement(String serverWorkerName, String stmtLabel, Connection conn, String sqlString, int sqlStmtType) throws SQLException {
         init();
         this.stmtLabel = stmtLabel;
-        stmtHandle = random.nextInt(1000);
-        stmtHandle = (stmtHandle < 0)? -stmtHandle : stmtHandle;
+        stmtHandle = this.hashCode();
         this.serverWorkerName = serverWorkerName;
         if(LOG.isDebugEnabled())
             LOG.debug(serverWorkerName + ". constructor TrafStatement[" + stmtLabel + "/" + stmtHandle + "]");

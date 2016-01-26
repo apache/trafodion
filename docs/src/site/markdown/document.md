@@ -65,6 +65,7 @@ Please refer to the following web sites for guidance for information about worki
 * [DCS Contributing to Documentation](https://github.com/apache/incubator-trafodion/blob/master/dcs/src/main/asciidoc/_chapters/appendix_contributing_to_documentation.adoc) 
 * [AsciiDoc User Guide](http://www.methods.co.nz/asciidoc/chunked/index.html)
 * [AsciiDoc cheatsheet](http://powerman.name/doc/asciidoc)
+* [PDF Theme](https://github.com/asciidoctor/asciidoctor-pdf/blob/master/docs/theming-guide.adoc)
 
 Once you've made the desired changes, then do the following:
 
