@@ -151,21 +151,19 @@ PrivStatus PrivMgrMDAdmin::initializeComponentPrivileges()
 
 {
 
-// First, let's start with a clean slate.  Drop all components as well as 
-// their respective operations and and any privileges granted.  This should be  
-// a NOP unless PrivMgr metadata was damaged and reintialization is occurring.
-
-PrivMgrComponents components(metadataLocation_,pDiags_);
-
-   components.dropAll();
-   
 // Next, register the component.
 
 PrivStatus privStatus = STATUS_GOOD;
 
+   // First, let's start with a clean slate.  Drop all components as well as 
+   // their respective operations and and any privileges granted.  This should be  
+   // a NOP unless PrivMgr metadata was damaged and reintialization is occurring.
+   PrivMgrComponents components(metadataLocation_,pDiags_);
+   components.dropAll();
+
    privStatus = components.registerComponentInternal(SQL_OPERATION_NAME,
-                                                     SQL_OPERATIONS_COMPONENT_UID,
-                                                     true,"Component for SQL operations");
+                                                     SQL_OPERATIONS_COMPONENT_UID, 
+                                                     true, "Component for SQL operations");
                                              
    if (privStatus != STATUS_GOOD)
       return STATUS_ERROR;  
@@ -525,7 +523,7 @@ bool PrivMgrMDAdmin::isAuthorized (void)
 // method:  getViewsThatReferenceObject
 //
 //  this method gets the list of views associated with the passed in 
-//  objectUID that are owned by the objectOwner.
+//  objectUID that are owned by the granteeID.
 // **************************************************************************** 
 PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   const ObjectUsage &objectUsage,
@@ -536,7 +534,7 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   std::string viewsMDTable = trafMetadataLocation_ + ".VIEWS v";
   std::string roleUsageMDTable = metadataLocation_ + ".ROLE_USAGE";
 
-  // Select all the views that are referenced by the table or view owned by the objectOwner
+  // Select all the views that are referenced by the table or view owned by the granteeID
   std::string selectStmt = "select o.object_uid, o.object_owner, o.catalog_name, o.schema_name, o.object_name, v.is_insertable, v.is_updatable from ";
   selectStmt += objectMDTable;
   selectStmt += ", ";
@@ -551,11 +549,11 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   // only return rows where user owns the view either directly or through one of
   // their granted roles
   selectStmt += " and (o.object_owner = ";
-  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += UIDToString(objectUsage.granteeID);
   selectStmt += "  or o.object_owner in (select role_id from ";
   selectStmt += roleUsageMDTable;
   selectStmt += " where grantee_id = ";
-  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += UIDToString(objectUsage.granteeID);
 
   selectStmt += ")) order by o.create_time ";
 
@@ -746,11 +744,11 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
   selectStmt += UIDToString(objectUsage.objectUID);
   selectStmt += " and u.used_udr_uid = o.object_uid ";
   selectStmt += " and (o.object_owner = ";
-  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += UIDToString(objectUsage.granteeID);
   selectStmt += "  or o.object_owner in (select role_id from ";
   selectStmt += roleUsageMDTable;
   selectStmt += " where grantee_id = ";
-  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += UIDToString(objectUsage.granteeID);
   selectStmt += ")) order by o.create_time ";
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 

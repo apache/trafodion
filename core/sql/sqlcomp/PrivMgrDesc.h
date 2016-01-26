@@ -26,6 +26,7 @@
 
 #include <bitset>
 #include <string>
+#include <vector>
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
 #include "ComSmallDefs.h"
@@ -145,18 +146,30 @@ class PrivMgrCoreDesc
     {
      priv_.reset();
      wgo_.reset();
+     columnOrdinal_ = -1;
     }
 
-    PrivMgrCoreDesc(std::bitset<NBR_OF_PRIVS> privBits,
-                    std::bitset<NBR_OF_PRIVS> wgoBits)
+    PrivMgrCoreDesc(PrivMgrBitmap privBits,
+                    PrivMgrBitmap wgoBits)
     : priv_(privBits)
     , wgo_(wgoBits)
+    , columnOrdinal_ (-1)
     {}
+
+    PrivMgrCoreDesc(PrivMgrBitmap privBits,
+                    PrivMgrBitmap wgoBits,
+                    int32_t columnOrdinal)
+    : priv_(privBits)
+    , wgo_(wgoBits)
+    , columnOrdinal_ (columnOrdinal)
+    {}
+
 
     PrivMgrCoreDesc(const PrivMgrCoreDesc&other)    // copy constructor
     {
       priv_ = other.priv_;
       wgo_ = other.wgo_;
+      columnOrdinal_ = other.columnOrdinal_;
     }
 
     virtual ~PrivMgrCoreDesc()              // destructor
@@ -245,12 +258,14 @@ class PrivMgrCoreDesc
     // -------------------------------------------------------------------
     // Accessors:
     // -------------------------------------------------------------------
-    std::bitset<NBR_OF_PRIVS> getPrivBitmap (void) const { return priv_; }
+    PrivMgrBitmap getPrivBitmap (void) const { return priv_; }
     bool getPriv(const PrivType which) const { return priv_.test(which); }
 
-    std::bitset<NBR_OF_PRIVS> getWgoBitmap (void) const { return wgo_; }
+    PrivMgrBitmap getWgoBitmap (void) const { return wgo_; }
     bool getWgo(const PrivType which) const { return wgo_.test(which); }
     
+    int32_t getColumnOrdinal (void) const { return columnOrdinal_; }
+
     // -------------------------------------------------------------------
     // Mutators:
     // -------------------------------------------------------------------
@@ -304,11 +319,18 @@ class PrivMgrCoreDesc
       setWgo(EXECUTE_PRIV, wgo);
     }
 
+   inline void setColumnOrdinal( const int32_t columnOrdinal ) { columnOrdinal_ = columnOrdinal; }
+   inline void setPrivBitmap (PrivMgrBitmap priv) { priv_ = priv; }
+   inline void setWgoBitmap (PrivMgrBitmap wgo) { wgo_ = wgo; } 
+
+
+
 private:
-   std::bitset<NBR_OF_PRIVS> priv_;  // Bit == True if the privilege is held.
+   PrivMgrBitmap priv_;  // Bit == True if the privilege is held.
 
-   std::bitset<NBR_OF_PRIVS> wgo_;   // == True if the priv is held grantable.
+   PrivMgrBitmap wgo_;   // == True if the priv is held grantable.
 
+   int32_t columnOrdinal_;
 
    // Private helper function to interpret changes to specified privs.
    void interpretChanges( const bool before,         // in
@@ -344,27 +366,23 @@ class PrivMgrDesc
 
 public:
    PrivMgrDesc(const PrivMgrDesc&other)           // copy constructor
-   : tableLevel_(other.tableLevel_),
-     grantee_(other.grantee_)
+   : tableLevel_(other.tableLevel_)
    {}
 
    PrivMgrDesc(const int32_t grantee,
                const int32_t nbrCols = 0    // preset constructor
               )
    : tableLevel_()
-   , grantee_ (grantee)
   {}
 
    //PrivMgrDesc(const int32_t nbrCols);    // preset constructor
    PrivMgrDesc(const PrivMgrDesc &privs,            // preset constructor
                const int32_t grantee)
-   : tableLevel_(privs.tableLevel_),
-     grantee_(grantee)
+   : tableLevel_(privs.tableLevel_)
    {}
 
    PrivMgrDesc(void)
    : tableLevel_()
-   , grantee_(0)
    {}
 
    virtual ~PrivMgrDesc()                 // destructor
@@ -379,7 +397,6 @@ public:
 
       tableLevel_  = other.tableLevel_;
       //columnLevel_ = other.columnLevel_;
-      grantee_ = other.grantee_;
 
       return *this;
    }
@@ -392,7 +409,7 @@ public:
       if ( this == &other )
          return TRUE;
 
-      return ( ( grantee_ == other.grantee_) &&
+      return ( 
 //             ( columnLevel_ == other.columnLevel_ ) &&
                ( tableLevel_  == other.tableLevel_  ) );
    }
@@ -440,7 +457,6 @@ public:
 
    // Accessors
 
-   int32_t   getGrantee() const { return grantee_; }
    PrivMgrCoreDesc getTablePrivs() const { return tableLevel_;}
    PrivMgrCoreDesc &       fetchTablePrivs();
    bool       getOneTablePriv(const PrivType which) const;
@@ -584,9 +600,8 @@ CatPrivs::PrivResult applyTableGrants(const int64_t objectUID,
    // Data members
 private:
 
-   PrivMgrCoreDesc    tableLevel_;
-   //PrivMgrCoreDesc    columnLevel_;
-   int32_t      grantee_;
+   PrivMgrCoreDesc                 tableLevel_;
+   std::vector<PrivMgrCoreDesc>    columnLevel_;
 };
 
 

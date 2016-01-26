@@ -48,8 +48,9 @@ exit;
 revoke select on "_MD_".objects from sql_user1;
 revoke select on "_PRIVMGR_MD_".object_privileges from sql_user1;
 
-drop function sch.t140_translatePrivsBitmap;
-drop library sch.t140_l1;
+set schema t140_shared_views;
+drop function t140_translatePrivsBitmap;
+drop library t140_l1;
 
 drop schema t140_user1_private cascade;
 drop schema t140_user1_shared cascade;
@@ -86,6 +87,7 @@ grant select on "_PRIVMGR_MD_".object_privileges to metadata_access;
 grant select on "_MD_".auths to metadata_access;
 
 create shared schema t140_shared_views;
+set schema t140_shared_views;
 
 -- compile cpp program for function
 sh rm -f ./etest140.dll;
@@ -95,13 +97,12 @@ set pattern $$DLL$$ etest140.dll;
 set pattern $$QUOTE$$ '''';
 
 -- create the library and udf
-set schema sch;
 create library t140_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
 create function t140_translatePrivsBitmap(bitmap largeint) returns (bitmap_string char (20))
 language c parameter style sql external name 'translateBitmap'
 library t140_l1
 deterministic no sql final call allow any parallelism state area size 1024 ;
-grant execute on function sch.t140_translatePrivsBitmap to "PUBLIC";
+grant execute on function t140_translatePrivsBitmap to "PUBLIC";
  
 -- private schema owned by sql_user1
 create schema t140_user1_private authorization sql_user1;
@@ -217,8 +218,8 @@ select distinct
    object_type as type,
    substring(authname(grantor_id),1,10) as grantor,
    substring(authname(grantee_id),1,10) as grantee,
-   sch.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
-   sch.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
+   t140_shared_views.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
+   t140_shared_views.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
 from "_PRIVMGR_MD_".object_privileges 
 where object_uid in 
      (select object_uid

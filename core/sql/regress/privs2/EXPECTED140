@@ -4,14 +4,14 @@ Current Environment
 ----------------------------------
 AUTHENTICATION     disabled
 AUTHORIZATION      enabled
-CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/catman1
+CURRENT DIRECTORY  /mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs2
 LIST_COUNT         4294967295
 LOG FILE           LOG140
-MESSAGEFILE        /opt/home/rmarton/git_ws/core/sqf/export/bin64d/mxcierr ...
+MESSAGEFILE        /mnt/rmarton/gitws/incubator-trafodion/core/sqf/export/ ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2015-05-22 10:41 LINUX:G4T3035.HOUSTON.HP.COM/rmarton} 
+MESSAGEFILE VRSN   {2016-01-21 17:33 LINUX:EDEV05/rmarton} 
 SQL CATALOG        TRAFODION
-SQL SCHEMA         SCH
+SQL SCHEMA         T140_SHARED_VIEWS
 SQL USER CONNECTED user not connected
 SQL USER DB NAME   DB__ROOT
 SQL USER ID        33333
@@ -57,6 +57,9 @@ WARNINGS           on
 >>create shared schema t140_shared_views;
 
 --- SQL operation complete.
+>>set schema t140_shared_views;
+
+--- SQL operation complete.
 >>
 >>-- compile cpp program for function
 >>sh rm -f ./etest140.dll;
@@ -66,9 +69,6 @@ WARNINGS           on
 >>set pattern $$QUOTE$$ '''';
 >>
 >>-- create the library and udf
->>set schema sch;
-
---- SQL operation complete.
 >>create library t140_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
 
 --- SQL operation complete.
@@ -78,7 +78,7 @@ WARNINGS           on
 +>deterministic no sql final call allow any parallelism state area size 1024 ;
 
 --- SQL operation complete.
->>grant execute on function sch.t140_translatePrivsBitmap to "PUBLIC";
+>>grant execute on function t140_translatePrivsBitmap to "PUBLIC";
 
 --- SQL operation complete.
 >>
@@ -234,8 +234,8 @@ TEAMS
 +>   object_type as type,
 +>   substring(authname(grantor_id),1,10) as grantor,
 +>   substring(authname(grantee_id),1,10) as grantee,
-+>   sch.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
-+>   sch.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>   t140_shared_views.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t140_shared_views.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
 +>from "_PRIVMGR_MD_".object_privileges 
 +>where object_uid in 
 +>     (select object_uid
@@ -294,8 +294,8 @@ SQL_USER1
 +>   object_type as type,
 +>   substring(authname(grantor_id),1,10) as grantor,
 +>   substring(authname(grantee_id),1,10) as grantee,
-+>   sch.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
-+>   sch.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>   t140_shared_views.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t140_shared_views.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
 +>from "_PRIVMGR_MD_".object_privileges 
 +>where object_uid in 
 +>     (select object_uid
@@ -314,6 +314,9 @@ OBJECT_NAME                                                                     
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    -2          DB__ROOT    S----R-               S----R-             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
+TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                               LB    -2          DB__ROOT    ---UG--               ---UG--             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    -2          DB__ROOT    ------E               ------E             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    DB__ROOT    -1          ------E               NONE                
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                              BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
@@ -321,7 +324,7 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 
---- 9 row(s) selected.
+--- 12 row(s) selected.
 >>
 >>exit;
 
@@ -454,8 +457,8 @@ Zachary
 +>   object_type as type,
 +>   substring(authname(grantor_id),1,10) as grantor,
 +>   substring(authname(grantee_id),1,10) as grantee,
-+>   sch.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
-+>   sch.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>   t140_shared_views.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t140_shared_views.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
 +>from "_PRIVMGR_MD_".object_privileges 
 +>where object_uid in 
 +>     (select object_uid
@@ -475,6 +478,9 @@ TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                        
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    -2          DB__ROOT    S----R-               S----R-             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
+TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                               LB    -2          DB__ROOT    ---UG--               ---UG--             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    -2          DB__ROOT    ------E               ------E             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    DB__ROOT    -1          ------E               NONE                
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                              BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
@@ -484,7 +490,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 
---- 12 row(s) selected.
+--- 15 row(s) selected.
 >>
 >>exit;
 
@@ -612,6 +618,9 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                        
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_T                                                                                                                          VI    -2          SQL_USER3   S------               NONE                
+TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                               LB    -2          DB__ROOT    ---UG--               ---UG--             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    -2          DB__ROOT    ------E               ------E             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    DB__ROOT    -1          ------E               NONE                
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                              BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
@@ -623,7 +632,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 15 row(s) selected.
+--- 18 row(s) selected.
 >>
 >>exit;
 
@@ -711,6 +720,9 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                        
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_T                                                                                                                          VI    -2          SQL_USER3   S------               NONE                
+TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                               LB    -2          DB__ROOT    ---UG--               ---UG--             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    -2          DB__ROOT    ------E               ------E             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    DB__ROOT    -1          ------E               NONE                
 TRAFODION.T140_SHARED_VIEWS.TEAM_NAMES                                                                                                                            VI    -2          SQL_USER4   S------               NONE                
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    SQL_USER1   SQL_USER2   S------               NONE                
@@ -723,7 +735,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 16 row(s) selected.
+--- 19 row(s) selected.
 >>
 >>exit;
 
@@ -745,8 +757,8 @@ SQL_USER5
 +>   object_type as type,
 +>   substring(authname(grantor_id),1,10) as grantor,
 +>   substring(authname(grantee_id),1,10) as grantee,
-+>   sch.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
-+>   sch.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>   t140_shared_views.t140_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t140_shared_views.t140_translatePrivsBitmap(grantable_bitmap) as grantable_privs
 +>from "_PRIVMGR_MD_".object_privileges 
 +>where object_uid in 
 +>     (select object_uid
@@ -830,11 +842,14 @@ End of MXCI Session
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
 
-TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   SI-----               SI-----             
+TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    -2          DB__ROOT    S----R-               S----R-             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_T                                                                                                                          VI    -2          SQL_USER3   S------               NONE                
+TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                               LB    -2          DB__ROOT    ---UG--               ---UG--             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    -2          DB__ROOT    ------E               ------E             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    DB__ROOT    -1          ------E               NONE                
 TRAFODION.T140_SHARED_VIEWS.TEAM_NAMES                                                                                                                            VI    -2          SQL_USER4   S------               NONE                
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    SQL_USER1   SQL_USER2   SI-----               SI-----             
@@ -854,7 +869,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 23 row(s) selected.
+--- 26 row(s) selected.
 >>
 >>-- user6 tries to grant select to user7
 >>grant select on games to sql_user7 by sql_user6;
@@ -899,11 +914,14 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTOR     GRANTEE     GRANTED_PRIVS         GRANTABLE_PRIVS
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  ----------  --------------------  --------------------
 
-TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   SI-----               SI-----             
+TRAFODION.T140_SHARED_VIEWS.GAMES_BY_PLA                                                                                                                          VI    -2          SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    -2          DB__ROOT    S----R-               S----R-             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    DB__ROOT    SQL_USER1   S------               S------             
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GA                                                                                                                          VI    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_T                                                                                                                          VI    -2          SQL_USER3   S------               NONE                
+TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                               LB    -2          DB__ROOT    ---UG--               ---UG--             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    -2          DB__ROOT    ------E               ------E             
+TRAFODION.T140_SHARED_VIEWS.T140_TRANSLA                                                                                                                          UR    DB__ROOT    -1          ------E               NONE                
 TRAFODION.T140_SHARED_VIEWS.TEAM_NAMES                                                                                                                            VI    -2          SQL_USER4   S------               NONE                
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.GAMES                                                                                                                                BT    SQL_USER1   SQL_USER2   SI-----               SI-----             
@@ -921,6 +939,6 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 21 row(s) selected.
+--- 24 row(s) selected.
 >>
 >>log;

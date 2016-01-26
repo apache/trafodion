@@ -412,6 +412,7 @@ PrivMgrMDAdmin admin(trafMetadataLocation_,metadataLocation_,pDiags_);
                switch (referencedObjectsList[obj]->objectType)
                {
                   case COM_BASE_TABLE_OBJECT:
+                  case COM_VIEW_OBJECT:
                      privType = SELECT_PRIV;
                      break;
                   case COM_USER_DEFINED_ROUTINE_OBJECT:

@@ -62,7 +62,8 @@ class PrivMgrMDAdmin;
 // -----------------------------------------------------------------------
 typedef struct {
   int64_t objectUID;
-  int32_t objectOwner;
+  int32_t granteeID;
+  bool grantorIsSystem;
   std::string objectName;
   ComObjectType objectType;
   PrivMgrDesc originalPrivs;
@@ -78,8 +79,10 @@ typedef struct {
     details += to_string((long long int) objectUID);
     details += ", name is ";
     details += objectName;
-    details += ", owner is ";
-    details += to_string((long long int) objectOwner);
+    details += ", grantee is ";
+    details += to_string((long long int) granteeID);
+    details += ", is owner ";
+    details += (grantorIsSystem) ? "true " : "false ";
   }
 } ObjectUsage;
 
