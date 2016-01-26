@@ -39,6 +39,7 @@ Then, do the following to modify your **```ssh```** environment.
 
 If you need to create your keys first, then do the following.
 
+    rm -rf ~/.ssh
     ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     chmod 600 ~/.ssh/id_rsa.pub 

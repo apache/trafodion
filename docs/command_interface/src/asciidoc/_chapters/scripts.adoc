@@ -45,7 +45,7 @@ that run TrafCI, see <<perl_or_python, Run TrafCI from Perl or Python>>.
 
 Script files support any of the various SQL statements that you can run in TrafCI. For more information about
 SQL statements, see the
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 [[script_commands]]
 == Commands

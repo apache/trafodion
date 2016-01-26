@@ -76,5 +76,3 @@ include::asciidoc/_chapters/SQuirrel.adoc[]
 = Appendix
 include::asciidoc/_chapters/sample_prog.adoc[]
 
-
-

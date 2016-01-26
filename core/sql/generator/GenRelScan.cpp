@@ -2643,7 +2643,8 @@ short HbaseAccess::codeGen(Generator * generator)
 					 ExpTupleDesc::LONG_FORMAT);     // [optional IN] target desc format
 
       work_cri_desc->setTupleDescriptor(hbaseFilterValTuppIndex, hbaseFilterValTupleDesc);
-
+    }
+  if (!hbaseFilterColVIDlist_.isEmpty()){// with unary operator we can have column without value
       genListOfColNames(generator, getIndexDesc(), hbaseFilterColVIDlist_,
 			hbaseFilterColNames);
 

@@ -32,6 +32,7 @@ page:
   margin: [0.75in, 0.5in, 0.75in, 0.5in]
   size: letter
 base:
+# font_family: Noto Serif
   font_color: #333333
   font_size: 10
   line_height_length: 17
