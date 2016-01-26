@@ -1,0 +1,116 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+= Introduction
+
+== Message Handling
+
+Trafodion reports exception condition messages at a Trafodion Database
+Connectivity Service conversational interface (DCS) window and in the
+Trafodion Command Interface (TrafCI).
+
+Most Trafodion  exception condition messages describe error conditions
+for which recovery action is required. Some messages are warnings that
+provide information for which no action is required.
+
+Error messages that appear in response to SQL commands are logged to the
+DCS application's log file if you have used the LOG command to request
+them.
+
+The format of a Trafodion  error is "*** ERROR" followed by the error number
+in brackets, and the descriptive text. Use the error number shown to find
+information about a particular error in this manual. For example, information
+for Trafodion error 1125 can be found under "SQL 1125."
+
+Messages are listed in this manual in numeric order, broken down by the component
+that produced them.
+
+[[viewing-trafodion-database-messages]]
+== Viewing Trafodion Database Messages
+
+The message key is a sequential SQL message number that is returned
+automatically by Trafodion  when an exception condition
+occurs. For example, the following message might be displayed within
+your application development tool while you prepare an embedded SQL
+program:
+
+```
+*** ERROR[1000] A syntax error occurred.
+```
+
+<<<
+This message number is the SQLCODE value (without the sign). In this
+manual, you will find the following message information for ERROR[1000]:
+
+====
+*SQL 1000*
+
+1000 A syntax error occurred.
+
+*Cause:* You specified a statement with incorrect syntax.
+
+*Effect:* The Trafodion  statement fails.
+
+*Recovery:* Correct the syntax and resubmit.
+====
+
+[[sqlstate-and-sqlcode]]
+== SQLSTATE and SQLCODE
+
+SQLSTATE and SQLCODE status codes are returned to indicate either that
+an SQL statement completed successfully or that an exception condition
+was raised during execution of an SQL statement.
+
+The ANSI SQL SQLSTATE variable is a five-character string with a
+two-character class code followed by a three-character subclass code. An
+SQLSTATE value of 00000 indicates successful completion.
+
+Trafodion extends the ANSI SQL SQLSTATE values to include other situations
+not described by the ANSI values. If an ANSI SQL SQLSTATE value exists for
+an error condition, the Trafodion database software returns that value.
+Otherwise, Trafodion returns an SQLSTATE value that is defined by the Trafodion
+database software.
+
+Trafodion also returns a numeric SQLCODE value after SQL statement execution.
+SQLCODE values with negative numbers signify errors.
+
+SQLCODE values with positive numbers other than 0 (successful completion) or 100
+(no data was found) signify warning messages. Trafodion  identifies all messages
+by their unsigned SQLCODE value and their calculated SQLSTATE value. The SQLCODE
+is used to calculate the SQLSTATE value for all Trafodion messages other than
+those for which an ANSI SQL SQLSTATE value exists.
+
+The SQLCODE parameter is a deprecated feature that is supported to
+maintain compatibility with earlier versions of the American standard.
+
+<<sqlstate-values,_SQLSTATE Values_>> identifies the equivalent SQLSTATE and
+SQLCODE values for Trafodion  warning and error messages.
+
+[[getting-help]]
+== Getting Help
+
+Some messages have no recovery and you will be instructed to contact the
+mailt:user@trafodion.incubator.apache.org[Trafodion user mailing list].
+

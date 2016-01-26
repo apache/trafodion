@@ -24,6 +24,7 @@
 
   <publishDate position="none"/>
   <version position="none"/>
+  <googleAnalyticsAccountId>UA-72491210-1</googleAnalyticsAccountId>
   <skin>
     <groupId>lt.velykis.maven.skins</groupId>
     <artifactId>reflow-maven-skin</artifactId>
@@ -41,13 +42,14 @@
 
   <custom>
     <reflowSkin>
-      <!--  Set to false for local testing -->
+      <!--  Set to false for local testing. True means that some sourced in info is kept in the cloud = better performance. -->
       <protocolRelativeURLs>false</protocolRelativeURLs>
       <theme>bootswatch-cerulean</theme>
       <titleTemplate>%1$s %2$s</titleTemplate>
       <skinAttribution>false</skinAttribution>
       <breadcrumbs>true</breadcrumbs>   
       <smoothScroll>true</smoothScroll>
+      <!--  Enable code highlighting -->
       <highlightJs>true</highlightJs>
       <brand>
         <!-- Brand text in top-left part of the site -->
@@ -290,7 +292,7 @@
       <item href="https://blueprints.launchpad.net/trafodion/+spec/ddl-query-invalidation" name="Metadata Query Invalidation"/>
       <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Cmp-divisioning" name="Multi-Temperature Data"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/access-external-hbase-tables" name="Native HBase Tables"/>
-      <item href="docs/Trafodion_odb_User_Guide.pdf" name="ODB"/>
+      <item href="docs/odb_user/index.html" name="ODB"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/sql-query-cancel" name="Query Cancel"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/security-privilege-updates" name="Privilege Checking"/>
       <item href="https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability" name="Repository"/>

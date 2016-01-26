@@ -1,0 +1,935 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[executor-messages]]
+= Executor Messages (8000 through 8999)
+
+[[SQL-8006]]
+== SQL 8006
+
+```
+The stream timed out, but the cursor is still open.
+```
+
+*Cause:* A cursor is still open although its stream timed out.
+
+*Effect:* The operation fails.
+
+*Recovery:* Close the cursor before trying to open it.
+
+[[SQL-8007]]
+== SQL 8007
+
+```
+The operation has been canceled.
+```
+
+*Cause:* You pressed the break key.
+
+*Effect:* The operation stops.
+
+*Recovery:* None.
+
+<<<
+[[SQL-8012]]
+== SQL 8012
+
+```
+8012 Encoding of CONTROL QUERY DEFAULTs: <encoding>.
+```
+
+*Cause:* Trafodion displays an internal CONTROL
+QUERY DEFAULT encoding.
+
+*Effect:* None.
+
+*Recovery:* This is an informational message only; no corrective action
+is needed.
+
+[[SQL-8016]]
+== SQL 8016
+
+```
+An attempt was made to access <name> which has a system version that is incompatible with the version of the accessing software.
+```
+
+*Cause:* You attempted to access a system version that is incompatible
+with the version of the accessing software.
+
+*Effect:* The operation fails.
+
+*Recovery:* The system you are trying to access must be on a system
+version that is compatible with your accessing software. Upgrade that
+system.
+
+<<<
+[[SQL-8017]]
+== SQL 8017
+
+```
+Explain information is not available for this query.
+```
+
+*Cause:* The explain default has been turned off for this query.
+
+*Effect:* Trafodion is not able to display explain
+information.
+
+*Recovery:* Turn the explain default on for this query.
+
+[[SQL-8101]]
+== SQL 8101
+
+```
+The operation is prevented by check constraint <name-1> on table <name-2>.
+```
+
+Where constraint <name-1> is the name of the constraint.
+
+Where table <name-2> is the name of the table.
+
+*Cause:* You attempted to perform an operation on table <name-1> that is
+prevented by check constraint <name-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the data you are attempting to enter to be consistent
+with the constraint.
+
+<<<
+[[SQL-8102]]
+== SQL 8102
+
+```
+The operation is prevented by a unique constraint.
+```
+
+*Cause:* You attempted to perform an operation that is prevented by a
+unique constraint.
+
+*Effect:* Trafodion could not perform the
+operation.
+
+*Recovery:* Make the data you enter unique to be consistent with the
+constraint.
+
+[[SQL-8103]]
+== SQL 8103
+
+```
+The operation is prevented by referential integrity constraint <name-1> on table <name-2>.
+```
+
+Where <name-1> is the name of the constraint.
+
+Where <name-2> is the name of the table.
+
+*Cause:* You attempted to perform an operation on table <name-1> that is
+prevented by referential integrity constraint <name-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the data you are attempting to enter to be consistent
+with the constraint. The data must exist in another table. For example,
+if you are trying to enter a department number for an employee, the
+department number must exist in a department number table.
+
+<<<
+[[SQL-8104]]
+== SQL 8104
+
+```
+The operation is prevented by the check on view <name-1> cascaded from the check option on <name-2>.
+```
+
+Where view <name-1> is the name of the view.
+
+Where <name-2> is the name of the table.
+
+*Cause:* You attempted to perform an operation on table <name-1>. The
+operation has been prevented by the check on view <name-2>, cascaded
+from the check option on the table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the view properties, if appropriate.
+
+[[SQL-8105]]
+== SQL 8105
+
+```
+The operation is prevented by the check option on view <name>.
+```
+
+Where <name> is the name of the view.
+
+*Cause:* You attempted to perform an operation on table name that is
+prevented by the check option on view <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Insert into the base table rather than this view.
+
+<<<
+[[SQL-8302]]
+== SQL 8302
+
+```
+All partitions of <type> <object> are unavailable.
+```
+
+Where <type> is the type of the affected object, such as table.
+
+Where <object> is the fully qualified ANSI name of the affected object.
+
+*Cause:* Late name resolution could not resolve the ANSI name to an
+available partition.
+
+*Effect:* The operation fails.
+
+*Recovery:* Determine why none of the partitions were available, then
+correct the error and resubmit.
+
+[[SQL-8553]]
+== SQL 8553
+
+```
+Stream overflow; subscription rate has fallen too far behind publishing rate.
+```
+
+*Cause:* The table used by the streaming cursor has overflowed.
+
+*Effect:* The cursor or statement is closed.
+
+*Recovery:* Reopen the statement or cursor and resume subscribing.
+
+<<<
+[[SQL-8573]]
+== SQL 8573
+
+8573 The user does not have <level> privilege on table or view <name>.
+
+Where <level> is the user privilege level.
+
+Where <name> is the name of the object.
+
+*Cause:* You attempted to perform an operation on object <name>, for
+which you do not have a sufficient privilege <level>.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Have the system administrator change your privilege
+level, if appropriate.
+
+[[SQL-8576]]
+== SQL 8576
+
+```
+Statement was recompiled.
+```
+
+*Cause:* Trafodion recompiled the statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Recompile the program.
+
+<<<
+[[SQL-8577]]
+== SQL 8577
+
+```
+Table, index or view <name> was not found.
+```
+
+Where <name> is the name of the object.
+
+*Cause:* Trafodion could not find the object
+<name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify the location of the object and resubmit.
+
+[[SQL-8578]]
+== SQL 8578
+
+```
+Similarity check passed.
+```
+
+*Cause:* The similarity check passed.
+
+*Effect:* None.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+<<<
+[[SQL-8579]]
+== SQL 8579
+
+```
+Similarity check failed: <name>
+```
+
+*Cause:* The similarity check failed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-8604]]
+== SQL 8604
+
+```
+Transaction subsystem <name> returned error <number> while starting a transaction.
+```
+
+Where <name> is the subsystem name.
+
+Where <number> is the error number.
+
+*Cause:* Transaction subsystem <name> has returned error <number> while
+starting a transaction.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-8605]]
+== SQL 8605
+
+```
+Committing a transaction which has not started.
+```
+
+*Cause:* You attempted to commit a transaction that has not been
+started.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the transaction is started before
+it is committed, and resubmit.
+
+[[SQL-8606]]
+== SQL 8606
+
+```
+Transaction subsystem <name> returned error <number> on a commit transaction.
+```
+
+Where <name> is the name of the subsystem.
+
+Where <number> is the error number.
+
+*Cause:* Transaction subsystem <name> has returned error <number> while
+committing a transaction.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-8607]]
+== SQL 8607
+
+```
+Rolling back a transaction that has not started.
+```
+
+*Cause:* You attempted to roll back a transaction that has not started.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the sequence of events is
+correct, and resubmit.
+
+[[SQL-8608]]
+== SQL 8608
+
+```
+Transaction subsystem <name> returned error <number> on rollback transaction.
+```
+
+Where <name> is the name of the subsystem.
+
+Where <number> is the error number.
+
+*Cause:* Transaction subsystem <name> has returned error <number> while
+rolling back a transaction.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-8609]]
+== SQL 8609
+
+```
+Waited rollback performed without starting a transaction.
+```
+
+*Cause:* You attempted to perform a waited rollback on a transaction
+that has not started.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the sequence of events is
+correct, and resubmit.
+
+[[SQL-8610]]
+== SQL 8610
+
+```
+Transaction subsystem <name> reported error <number> on a waited rollback transaction.
+```
+
+Where <name> is the name of the subsystem.
+
+Where <number> is the error number.
+
+*Cause:* Transaction subsystem <name> has returned error <number> while
+performing a waited rollback transaction. *Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-8612]]
+== SQL 8612
+
+```
+Transaction mode cannot be set if the transaction is already running.
+```
+
+*Cause:* You attempted to set the transaction mode, but the transaction
+is already running.
+
+*Effect:* The operation fails.
+
+*Recovery:* Abort and restart the transaction if you must change its
+mode.
+
+[[SQL-8613]]
+== SQL 8613
+
+```
+SQL cannot commit or rollback a transaction that was started by application.
+```
+
+*Cause:* An application started a transaction outside of Trafodion that Trafodion could not commit
+or rollback.
+
+*Effect:* The operation fails.
+
+*Recovery:* The application that started the transaction must perform a
+commit or rollback. Trafodion must start any transactions it will later commit or rollback.
+
+<<<
+[[SQL-8808]]
+== SQL 8808
+
+```
+Module file <name> contains corrupted or invalid data.
+```
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion has detected corrupted or
+invalid data in the module file <name>.
+
+*Effect:* Trafodion could not execute the file.
+
+*Recovery:* Recompile the .mdf file, using the Trafodion compiler, to
+create a valid module file.
+
+[[SQL-8809]]
+== SQL 8809
+
+```
+Open of the module file <name> failed with error <number>.
+```
+
+Where <name> is the name of the file.
+
+Where <number> is the error number returned.
+
+*Cause:* Trafodion was unable to open module file
+<name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check the location of the module file and retry the
+operation.
+
+<<<
+[[SQL-8819]]
+== SQL 8819
+
+```
+Begin transaction failed while preparing the statement.
+```
+
+*Cause:* This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+[[SQL-8820]]
+== SQL 8820
+
+```
+Transaction commit failed while closing the statement.
+```
+
+*Cause:* This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-8821]]
+== SQL 8821
+
+```
+Rollback transaction failed during the process of fetching the statement.
+```
+
+*Cause:* This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+[[SQL-8824]]
+== SQL 8824
+
+```
+The input <module-id> does not have a module name.
+```
+
+*Cause:* A module name was not passed into the module ID structure that
+was passed in.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make sure a module name is passed into the module ID
+structure.
+
+<<<
+[[SQL-8826]]
+== SQL 8826
+
+```
+The module could not be added.
+```
+
+*Cause:* This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+[[SQL-8827]]
+== SQL 8827
+
+```
+The request <name> could not be sent.
+```
+
+Where <name> is the name of the request.
+
+*Cause:* Trafodion was unable to send request <name>. 
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the errors that accompany this one to diagnose and
+correct the problem.
+
+<<<
+[[SQL-8832]]
+== SQL 8832
+
+```
+Transaction has not been started.
+```
+
+*Cause:* A transaction has not been started.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that the transaction has been started or start it if
+it has not been.
+
+[[SQL-8833]]
+== SQL 8833
+
+```
+The input parameter is an invalid SQL transaction command.
+```
+
+*Cause:* This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-8834]]
+== SQL 8834
+
+```
+The SQL installation directory could not be found. Operating system error <number>.
+```
+
+Where <number> is the error number.
+
+*Cause:* Trafodion was unable to find the Trafodion installation directory and 
+received an operating system error <number>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Locate the Trafodion installation directory,
+correct your syntax, and resubmit.
+
+[[SQL-8836]]
+== SQL 8836
+
+```
+Application specified an invalid update column for cursor.
+```
+
+*Cause:* There is an error in the program that this code is embedded in.
+The build might not have completed correctly.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that the build was successful and resubmit.
+
+<<<
+[[SQL-8837]]
+== SQL 8837
+
+```
+The user id passed in is invalid.
+```
+
+*Cause:* The value of the user ID passed in is not valid.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make sure that the user ID of the form `group id | name, user id | user name`, 
+and that the password is valid and exists on the current system.
+
+[[SQL-8840]]
+== SQL 8840
+
+```
+Object name provided to CLI is not valid.
+```
+
+*Cause:* The object named provided to CLI is invalid 
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the object name and resubmit.
+
+<<<
+[[SQL-8841]]
+== SQL 8841
+
+```
+User application committed or aborted a transaction started by SQL. This transaction needs to be committed or aborted by calling SQL COMMIT or ROLLBACK WORK.
+```
+
+*Cause:* Trafodion started a transaction that was committed or aborted by an embedded program, 
+rather than by Trafodion.
+
+*Effect:* The operation fails.
+
+*Recovery:* Commit or abort the transaction by calling SQL COMMIT or
+
+ROLLBACKWORK.
+
+[[SQL-8842]]
+== SQL 8842
+
+```
+The cursor, <name>, referenced by this statement is not found or is not updatable.
+```
+
+Where <name> is the name of the cursor.
+
+*Cause:* There is an error in the program that this code is embedded in.
+The build might not have completed successfully.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that the build was successful and resubmit.
+
+<<<
+[[SQL-8846]]
+== SQL 8846
+
+```
+An empty SQL statement was passed in.
+```
+
+*Cause:* The SQL source statement passed to the compiler to do the
+prepare was empty.
+
+*Effect:* The operation fails.
+
+*Recovery:* You must pass in a valid SQL source statement.
+
+[[SQL-8850]]
+== SQL 8850
+
+```
+The table specified in this cursor update or delete statement is different than the table specified in the declare cursor statement.
+```
+
+*Cause:* The table specified in the update or DELETE statement is not
+the same as the one specified in the declare cursor statement, as is
+required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-8860]]
+== SQL 8860
+
+```
+Module file <name> has an obsolete module header.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete module header.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+[[SQL-8861]]
+== SQL 8861
+
+```
+Module file <name> has an obsolete descriptor location table header.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete table header.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+<<<
+[[SQL-8862]]
+== SQL 8862
+
+```
+Module file <name> has an obsolete descriptor location table entry.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete descriptor location
+table entry.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+[[SQL-8863]]
+== SQL 8863
+
+```
+Module file <name> has an obsolete descriptor header.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete descriptor header.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+<<<
+[[SQL-8864]]
+== SQL 8864
+
+```
+Module file <name> has an obsolete descriptor entry.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete descriptor entry.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+[[SQL-8865]]
+== SQL 8865
+
+```
+Module file <name> has an obsolete procedure location table header.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete procedure location table
+header.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+<<<
+[[SQL-8866]]
+== SQL 8866
+
+```
+Module file <name> has an obsolete procedure location table entry.
+```
+
+Where <name> is the file name.
+
+*Cause:* The module file <name> has an obsolete procedure location table
+entry.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+[[SQL-8867]]
+== SQL 8867
+
+```
+An error while reading from file <name>.
+```
+
+Where <name> is the file name.
+
+*Cause:* Trafodion encountered an error while
+reading the module file <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Rebuild the module file and resubmit.
+
+<<<
+[[SQL-8882]]
+== SQL 8882
+
+```
+Containing SQL is not permitted.
+```
+
+*Cause:* A stored procedure registered with the NO SQL attribute
+attempted to access Trafodion.
+
+*Effect:* The corresponding SQL request is rejected.
+
+*Recovery:* Either change the definition of the stored procedure to
+allow SQL access, or determine why the stored procedure contains
+Trafodion  statements that might be called while the stored
+procedure is executing.
+
+[[SQL-8888]]
+== SQL 8888
+
+```
+The underlying insert, update, or delete operation of cursor <cursor-name> is still in progress. Since the cursor is being closed before the operation is complete, all affected rows will be rolled back.
+```
+
+<cursor-name> is the cursor being closed.
+
+*Cause:* A cursor with an underlying insert, delete, or update operation
+was closed before the operation was complete.
+
+*Effect:* The cursor was closed but all rows affected by opening this
+cursor have been rolled back.
+
+*Recovery:* OPEN the cursor again and FETCH all rows until SQLCODE = 100
+is returned.
+
+<<<
+[[SQL-8890]]
+== SQL 8890
+
+```
+The SQL compiler failed to initialize properly. Query results may differ from what is expected, due to different compiler defaults.
+```
+
+*Cause:* The Trafodion compiler failed to correctly initialize.
+
+*Effect:* Query results might be affected.
+
+*Recovery:* Stop the Trafodion  and restart it.
+
+[[SQL-8901]]
+== SQL 8901
+
+```
+The MXUDR server for this statement is no longer running. The statement will be assigned a new MXUDR server if it is executed again.
+```
+
+*Cause:* During execution of a Trafodion statement, an
+attempt was made to contact a nonexistent Trafodion UDR server.
+
+*Effect:* The operation fails.
+
+*Recovery:* Retry the Trafodion statement.
+
+<<<
+[[SQL-8904]]
+== SQL 8904
+
+```
+SQL/MX did not receive a reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
+```
+
+*Cause:* During execution of a Trafodion statement,
+the Trafodion  did not receive an expected reply from
+the Trafodion UDR server.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that the Trafodion UDR server is running. If
+not, the Trafodion statement will acquire a new
+Trafodion UDR server when it is next executed.
+
+

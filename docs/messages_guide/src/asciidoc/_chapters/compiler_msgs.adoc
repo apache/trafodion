@@ -1,0 +1,1549 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[trafodion-compiler-messages]]
+= Trafodion Compiler Messages (2000 through 2999)
+
+This section includes process creation errors, IPC errors, static compilation errors, and miscellaneous errors from the optimizer.
+
+[[SQL-2004]]
+== SQL 2004
+
+```
+Internal error: error from MXCMP; cannot work on this query.
+```
+
+*Cause:* Trafodion received an internal error from the Trafodion compiler.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Report the entire message to mailto:user@trafodion.incubator.apache.org[the Trafodion User mailing list].
+
+[[SQL-2009]]
+== SQL 2009
+
+```
+The user transaction must be rolled back (or committed, if that makes sense in the application) before MXCMP can be restarted and proceed.
+```
+
+*Cause:* An outstanding transaction must be resolved before the Trafodion compiler can be restarted.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-2011]]
+== SQL 2011
+
+```
+Server process could not be created - error <number> while resolving program file name <name>.
+```
+
+Where error <number> is the error number.
+
+Where <name> is the name of the program file.
+
+*Cause:* Trafodion was unable to create a server
+process because of the process control procedure error <number> it
+received while resolving the program file name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the process control procedure error to diagnose and
+correct the problem.
+
+[[SQL-2012]]
+== SQL 2012
+
+```
+Server process <name> could not be created - error <number> <number-1>, TPCError = <number-2>, error detail = <text>.
+```
+
+Where <name> is the name of the server process.
+
+Where <number-1> is the error number.
+
+Where <number-2> is the TPCError.
+
+Where <text> is the error message text.
+
+*Cause:* Trafodion was unable to create server
+process <name> because of the process control procedure error <number>
+it received. More information appears in detail <text>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the process control procedure error to diagnose and correct the problem.
+
+<<<
+[[SQL-2013]]
+== SQL 2013
+
+```
+Server process <name> could not be created - error <number> on program file.
+```
+
+Where <name> is the name of the server process.
+
+Where <number> is the error number.
+
+*Cause:* Trafodion was unable to create server
+process <name> because of the process control procedure error <number>
+it received on the program file.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the process control procedure error to diagnose and correct the problem.
+
+[[SQL-2014]]
+== SQL 2014
+
+```
+Server process <name> could not be created - error <number> on swap file.
+```
+
+Where <name> is the server process name.
+
+Where <number> is the error number.
+
+*Cause:* Trafodion was unable to create server
+process <name> because of the process control procedure error <number>
+it received on the swap file.
+
+*Effect:* Trafodion does not create the server process.
+
+*Recovery:* Use the process control procedure error to diagnose and correct the problem.
+
+<<<
+[[SQL-2020]]
+== SQL 2020
+
+```
+Server process <name> could not be created - unlicensed privileged program.
+```
+
+Where <name> is the server process name.
+
+*Cause:* Trafodion was unable to create server
+process <name> because it is an unlicensed privileged program. The
+server process was configured incorrectly at installation.
+
+*Effect:* The operation fails.
+
+*Recovery:* The server process must be a licensed privileged program.
+Check your configuration.
+
+[[SQL-2029]]
+== SQL 2029
+
+```
+The new min value is greater than the current max value <number>.
+```
+
+Where <number> is the current maximal value.
+
+*Cause:* The new minimal value is greater than the current maximal
+value.
+
+*Effect:* The new minimal value is not set.
+
+*Recovery:* Specify a new minimal value that is less than the current
+maximal value or specify a new maximal value that is greater than the
+new minimal value.
+
+<<<
+[[SQL-2030]]
+== SQL 2030
+
+```
+The new max value is less than the current min value <number>.
+```
+
+Where <number> is the current minimal value.
+
+*Cause:* The new maximal value is smaller than the current minimal
+value.
+
+*Effect:* The new maximal value is not set.
+
+*Recovery:* Specify a new maximal value that is greater than the current
+minimal value.
+
+[[SQL-2033]]
+== SQL 2033
+
+```
+<process-id>: Error <number> while communicating with process <name>.
+```
+
+Where <process-id> identifies the process.
+
+Where <number> is the error number.
+
+Where <name> is the name of the server process.
+
+*Cause:* The Trafodion database <process-id> received process control
+procedure error <number> while communicating with the server process
+<name>.
+
+*Effect:* Trafodion is not able to communicate
+with the process.
+
+*Recovery:* Use the process control procedure error to diagnose and
+correct the problem.
+
+<<<
+[[SQL-2034]]
+== SQL 2034
+
+```
+<process-id>: Error <number> while communicating with server process <name>.
+```
+
+Where <process-id> identifies the process.
+
+Where <number> is the error number.
+
+Where <name> is the name of the server process.
+
+*Cause:* The Trafodion database <process-id> received process control
+procedure error <number> while communicating with server process
+<name>.
+
+*Effect:* Trafodion process is not able to
+communicate with the server process.
+
+*Recovery:* Use the process control procedure error to diagnose and
+correct the problem.
+
+[[SQL-2035]]
+== SQL 2035
+
+```
+<process-id>: Open of process <name> failed - error = <number>.
+```
+
+Where <process-id> identifies the process.
+
+Where <name> is the name of the server process.
+
+Where <number> is the error number.
+
+*Cause:* The Trafodion database <process-id> was unable to open server
+process <name> because of the operating system error <number> it
+received.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the operating system error to diagnose and correct the problem.
+
+<<<
+[[SQL-2038]]
+== SQL 2038
+
+```
+Character set <name> is not supported for SQLCI attribute TERMINAL_CHARSET.
+```
+
+Where <name> is the name of the character set.
+
+*Cause:* You specified a non-ISO88591 character set name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify an ISO88591 character set name.
+
+[[SQL-2050]]
+== SQL 2050
+
+```
+<attribute> is not the name of any DEFAULTS table attribute.
+```
+
+Where <attribute> is the attribute name you specified.
+
+*Cause:* If the SQLSTATE is 42000, this is an error. You attempted to
+set a CONTROL QUERY DEFAULT setting, but the <attribute> name you
+specified is not valid. If the SQLSTATE is 01000, this is a warning. In an earlier Trafodion
+database session, you inserted a row into a DEFAULTS table whose
+<attribute> column value is invalid.
+
+*Effect:* If this is an error, the operation fails. If this is a
+warning, this is an informational message.
+
+*Recovery:* Correct the attribute name and resubmit.
+
+<<<
+[[SQL-2051]]
+== SQL 2051
+
+```
+Either <control-option-name> or value '<value>' is not valid.
+```
+
+*Cause:* You specified an invalid <control-option name> or a valid
+option with an invalid <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-2053]]
+== SQL 2053
+
+```
+Optimizer pass two assertion failure (<failure-text>) in file <filename> at line <line-num>.
+```
+
+*Cause:* This is an informational message that is a result of the
+two-pass mechanism of the optimizer. The optimizer created a simple
+plan, and then while refining that plan, an internal error occurred, so
+the simple plan was not improved. The simple plan is still valid and
+will work.
+
+*Effect:* Your query will use the original, simple plan.
+
+*Recovery:* Informational message only; no corrective action is needed.
+This message will be accompanied by an assertion failure message and,
+possibly, CONTROL QUERY SHAPE information. However, report the entire
+message, and the preceding assertion failure message, to mailto:user@trafodion.incubator.apache.org[the Trafodion User mailing list].
+
+This additional information will also be helpful: the DDL for the tables
+involved, the query that produced this warning, and any CONTROL QUERY
+SHAPE and CONTROL QUERY DEFAULT settings in effect when the error
+occurred.
+
+<<<
+[[SQL-2054]]
+== SQL 2054
+
+```
+HIST_NO_STATS_ROWCOUNT should always be greater than or equal to CQD HIST_NO_STATS_UEC. Present value of HIST_NO_STATS_UEC is '<value>'.
+```
+
+*Cause:* You attempted to set the CQD HIST_NO_STATS_ROWCOUNT value as
+less than the current value of CQD HIST_NO_STATS_UEC.
+
+*Effect:* The current value of the HIST_NO_STATS_ROWCOUNT is retained.
+
+*Recovery:* Set the value of CQD HIST_NO_STATS_ROWCOUNT greater than or
+equal to the value of HIST_NO_STATS_UEC. If you want to use a smaller
+value, reduce the value of CQD HIST_NO_STATS_UEC first. Note that any
+change in either of the two values can have an effect on the plan
+quality.
+
+[[SQL-2055]]
+== SQL 2055
+
+```
+The specified value '<value>' for DEFAULTS attribute <name> is not valid.
+```
+
+*Cause:* You specified an invalid value for the DEFAULTS attribute
+listed in the message.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-2056]]
+== SQL 2056
+
+```
+The value must be a number in the range <value>.
+```
+
+*Cause:* You specified a value outside of the allowed range <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Enter a valid value and resubmit.
+
+[[SQL-2057]]
+== SQL 2057
+
+```
+The value must be a multiple of <value>.
+```
+
+*Cause:* You specified an invalid value for an attribute. It must be a
+multiple of <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-2058]]
+== SQL 2058
+
+```
+DEFAULTS attribute <name> is of type <data-type> but is being converted to <data-type>.
+```
+
+Where <name> is the DEFAULTS attribute name.
+
+Where <data-type> is the attribute name value.
+
+*Cause:* You specified a DEFAULTS attribute name value of <data-type>,
+which is not supported. The item is being converted to <data-type>,
+which is supported.
+
+*Effect:* Because of the conversion, the actual value used might be
+truncated or rounded.
+
+*Recovery:* Specify the value using the expected type, if appropriate.
+
+[[SQL-2059]]
+== SQL 2059
+
+```
+Errors or warnings occurred while reading values from DEFAULTS table <name>.
+```
+
+Where <name> is the name of the table.
+
+*Cause:* You received an error on the DEFAULTS table <name>. A
+previous error message has appeared with specific information.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-2060]]
+== SQL 2060
+
+```
+Procedure <name> has already been defined in this module. The previous definition is being retained and this latest one ignored.
+```
+
+Where <name> is the procedure name.
+
+*Cause:* You defined procedure <name> twice in this module.
+
+*Effect:* Trafodion uses the first definition.
+
+*Recovery:* This is an informational message only; no corrective action
+is needed.
+
+[[SQL-2061]]
+== SQL 2061
+
+```
+Static cursor <name> has already been defined in this module. The previous definition, as a static cursor, is being retained and this latest one ignored.
+```
+
+Where <name> is the cursor name.
+
+*Cause:* You defined the static cursor <name> twice in this module.
+
+*Effect:* Trafodion uses the first static cursor
+definition.
+
+*Recovery:* This is an informational message only; no corrective action
+is needed.
+
+<<<
+[[SQL-2062]]
+== SQL 2062
+
+```
+Static cursor <name> has already been defined in this module. The previous definition, as a dynamic cursor, is being retained and this latest one ignored.
+```
+
+Where <name> is the cursor name.
+
+*Cause:* You defined the static cursor <name> twice in this module.
+
+*Effect:* Trafodion uses the first dynamic cursor
+definition.
+
+*Recovery:* This is an informational message only; no corrective action
+is needed.
+
+[[SQL-2063]]
+== SQL 2063
+
+```
+Dynamic cursor <name> has already been defined in this module. The previous definition, as a static cursor, is being retained and this latest one ignored.
+```
+
+Where <name> is the cursor name.
+
+*Cause:* You defined the dynamic cursor <name> twice in this module.
+
+*Effect:* Trafodion uses the first static cursor
+definition.
+
+*Recovery:* This is an informational message only; no corrective action
+is needed.
+
+<<<
+[[SQL-2064]]
+== SQL 2064
+
+```
+Dynamic cursor <name> has already been defined in this module. The previous definition, as a dynamic cursor, is being retained and this latest one ignored.
+```
+
+Where <name> is the cursor name.
+
+*Cause:* You defined the dynamic cursor <name> twice in this module.
+
+*Effect:* Trafodion uses the first dynamic cursor
+definition.
+
+*Recovery:* This is an informational message only; no corrective action is needed.
+
+[[SQL-2065]]
+== SQL 2065
+
+```
+Statement <name> was not found in module <name>.
+```
+
+Where <name> is the statement name.
+
+Where <name> is the module name.
+
+*Cause:* Trafodion could not find statement <name>
+in module <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-2066]]
+== SQL 2066
+
+```
+Cursor <name> was not found in module <name>.
+```
+
+Where <name> is the cursor name.
+
+Where <name> is the module name.
+
+*Cause:* Trafodion could not find cursor <name> in
+module <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-2067]]
+== SQL 2067
+
+```
+Descriptor <name> has already been defined in this module. The previous definition is being retained and this latest one ignored.
+```
+
+Where <name> is the descriptor name.
+
+*Cause:* You defined the descriptor <name> twice in this module.
+
+*Effect:* Trafodion uses the first definition.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+<<<
+[[SQL-2068]]
+== SQL 2068
+
+```
+A procedure body must be a SELECT, INSERT, UPDATE, DELETE, DECLARE CATALOG, DECLARE SCHEMA, or a static DECLARE CURSOR.
+```
+
+*Cause:* You specified a procedure whose body is invalid. It must be a
+SELECT, INSERT, UPDATE, DELETE, DECLARE CATALOG, DECLARE SCHEMA, or
+static DECLARE CURSOR.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-2069]]
+== SQL 2069
+
+```
+A static cursor declaration may appear only in the body of a procedure.
+```
+
+*Cause:* You specified a static cursor declaration that is outside the
+body of a procedure. It should appear only in the body of a procedure.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-2070]]
+== SQL 2070
+
+```
+Statement is not valid in this context.
+```
+
+*Cause:* In a module definition file, you specified a query statement
+such as SELECT, INSERT, UPDATE, DELETE, or a DDL statement. These
+statements must be embedded in procedures.
+
+*Effect:* Trafodion is unable to compile the
+module.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-2071]]
+== SQL 2071
+
+```
+The name <name> has already been declared or defined in this module. The previous definition, as a <definition-type>, is being retained and this latest one ignored.
+```
+
+Where <name> is the name of the module.
+
+Where <definition-type> is the previous definition
+
+*Cause:* You defined <name> twice in this module in which it was defined
+as a type _definition type_.
+
+*Effect:* Trafodion uses the previous definition.
+
+*Recovery:* Specify a new name for the item and resubmit, if necessary.
+
+<<<
+[[SQL-2072]]
+== SQL 2072
+
+```
+A simple value specification that is a literal is not yet supported.
+```
+
+*Cause:* You specified a simple value as a literal, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-2073]]
+== SQL 2073
+
+```
+Only super ID user can compile system module <name>.
+```
+
+Where <name> is the name of the module.
+
+*Cause:* You attempted to compile a system module that can be compiled
+only by the super ID.
+
+*Effect:* The operation fails and is unable to compile the entire module
+correctly.
+
+*Recovery:* None. Use a different name for your module and recompile.
+
+<<<
+[[SQL-2074]]
+== SQL 2074
+
+```
+The name <name> is reserved for future system modules.
+```
+
+Where <name> is the name of the module.
+
+*Cause:* You attempted to use a name that is reserved for future system
+modules.
+
+*Effect:* The operation fails and is unable to compile the entire module
+correctly.
+
+*Recovery:* None. Use a different name for your module and recompile.
+
+[[SQL-2075]]
+== SQL 2075
+
+```
+The -a <application-name> option is not allowed for system module
+```
+compilation
+
+*Cause:* You specified mxcmp -a <application-name>
+system-moduledefinition-file, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Delete the -a <application-name> and retry the mxcmp
+systemmodule-definition-file command.
+
+<<<
+[[SQL-2076]]
+== SQL 2076
+
+```
+HIST_NO_STATS_UEC should always be less than or equal to CQD HIST_NO_STATS_ROWCOUNT. Present value of HIST_NO_STATS_ROWCOUNT is 'value'.
+```
+
+*Cause:* You attempted to set the CQD HIST_NO_STATS_UEC value as greater
+than the current value of CQD HIST_NO_STATS_ROWCOUNT.
+
+*Effect:* The current value of the HIST_NO_STATS_UEC is retained.
+
+*Recovery:* Set the value of CQD HIST_NO_STATS_UEC less than or equal to
+the value of HIST_NO_STATS_ROWCOUNT. If you want to use a larger value,
+increase the value of CQD HIST_NO_STATS_ROWCOUNT first. Note that any
+change in either of the two values can have an effect on the plan
+quality.
+
+[[SQL-2080]]
+== SQL 2080
+
+```
+Error <number> while reading file: <value> bytes were read from <text> when <value> were expected in module <name>.
+```
+
+*Cause:* Trafodion received error <number> while
+reading module <name>. <value> shows the number of bytes read from
+<text>. The module file is unusable. Either it has been corrupted or
+overwritten.
+
+*Effect:* The operation fails.
+
+*Recovery:* Recompile the module definition file, using the Trafodion
+compiler, to create a valid module file.
+
+<<<
+[[SQL-2081]]
+== SQL 2081
+
+```
+Error <number> while opening file <name> for read.
+```
+
+Where <number> is the error number.
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion received error <number> while
+opening file <name> for read.
+
+*Effect:* Trafodion does not open the file.
+
+*Recovery:* Use the error number to diagnose and correct the problem.
+
+[[SQL-2082]]
+== SQL 2082
+
+```
+Error <number> while opening file <name> for write.
+```
+
+Where <number> is the error number.
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion received error <number> while
+opening file <name> for write.
+
+*Effect:* Trafodion does not open the file.
+
+*Recovery:* Use the error number to diagnose and correct the problem.
+
+<<<
+[[SQL-2083]]
+== SQL 2083
+
+```
+Error <number> while naming or locating file <name>.
+```
+
+Where <number> is the error number.
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion received error <number> while
+naming or locating file <name>.
+
+*Effect:* Trafodion does not name or locate the
+file.
+
+*Recovery:* Use the error to diagnose and correct the problem.
+
+[[SQL-2084]]
+== SQL 2084
+
+```
+Error <number> while writing <value> bytes to file <name>.
+```
+
+*Cause:* Trafodion database software received error <number> while
+writing to file <name>. <value> shows the number of bytes being
+written.
+
+*Effect:* Trafodion does not open the file.
+
+*Recovery:* Use the error to diagnose and correct the problem.
+
+<<<
+[[SQL-2085]]
+== SQL 2085
+
+```
+Error <number> was returned when closing file <name>.
+```
+
+Where <number> is the error number.
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion received error <number> when
+closing file <name>.
+
+*Effect:* Trafodion does not close the file.
+
+*Recovery:* Use the error number to diagnose and correct the problem.
+
+[[SQL-2086]]
+== SQL 2086
+
+```
+The file <name> could not be purged. This file contains the results of a failed compilation and should be purged.
+```
+
+Where <name> is the name of the file.
+
+*Cause:* A compilation failed, and for some reason Trafodion database
+software was not able to purge the module file.
+
+*Effect:* The module file is not valid and should not be used.
+
+*Recovery:* Purge the file from the Trafodion platform.
+
+<<<
+[[SQL-2090]]
+== SQL 2090
+
+```
+The command line argument for module name, <name-1>, is being ignored in favor of module name <name-2> in file <name-3>.
+```
+
+Where <name-1>, <name-2>, and <name-3> are module file names.
+
+*Cause:* Trafodion ignored the command line
+argument for module <name-1>. Instead, it used the second module
+<name-2> in file <name-3>.
+
+*Effect:* None.
+
+*Recovery:* None.
+
+[[SQL-2091]]
+== SQL 2091
+
+```
+The required module statement was not found in file <name>.
+```
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion could not find the required
+module statement in file <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-2092]]
+== SQL 2092
+
+```
+A module statement has already appeared in this file. The previous definition, <name>, is being retained and this latest one ignored.
+```
+
+Where <name> is the name of the file.
+
+*Cause:* You included more than one module statement. <name> will be
+used.
+
+*Effect:* Trafodion ignores the second module
+statement.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-2093]]
+== SQL 2093
+
+```
+A module timestamp statement was not found in file <name>.
+```
+
+Where <name> is the name of the file.
+
+*Cause:* Trafodion did not find a module timestamp
+statement in the module definition file <name>.
+
+*Effect:* Trafodion uses a default timestamp value
+of all zeros.
+
+*Recovery:* Supply a timestamp and resubmit.
+
+<<<
+[[SQL-2094]]
+== SQL 2094
+
+```
+A module timestamp statement has already appeared in this module. The previous timestamp is being retained and this latest one ignored.
+```
+
+*Cause:* You specified a timestamp statement twice in this module.
+
+*Effect:* Trafodion uses the first timestamp.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-2095]]
+== SQL 2095
+
+```
+Module file <name-1>, expected to contain module <name-2>, instead contains <name-3>.
+```
+
+Where <name-1>, <name-2>, and <name-3> are module file names.
+
+*Cause:* Trafodion expected to find the first
+module <name-1>, but instead found the second module <name-2>, in file
+<name-3>.
+
+*Effect:* Only the second module is compiled.
+
+*Recovery:* None.
+
+<<<
+[[SQL-2096]]
+== SQL 2096
+
+```
+A source file statement has already appeared in this module. The previous source file is being retained and this latest one ignored.
+```
+
+*Cause:* The Trafodion compiler was invoked on a module definition file
+that contains more than one SOURCE_FILE statement. A module definition
+can have only one SOURCE_FILE statement that specifies that module's SQL
+source file.
+
+*Effect:* The operation fails.
+
+*Recovery:* Edit the module definition file so that it contains no more
+than one SOURCE_FILE statement, and rerun the Trafodion compiler on the
+module definition.
+
+[[SQL-2097]]
+== SQL 2097
+
+```
+Source file name is over 1024 characters long.
+```
+
+*Cause:* The Trafodion compiler was invoked on a module definition file
+that contains a SOURCE_FILE statement whose _source path name_ has over
+1024 characters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Edit the module definition file so that its SOURCE_FILE
+statement's _source path name_ is no more than 1024 characters long.
+Rerun the Trafodion compiler on the module definition file.
+
+<<<
+[[SQL-2098]]
+== SQL 2098
+
+```
+The <compilation-type> compilation completed with <value> warnings.
+```
+
+*Cause:* <compilation-type> completed with the number of warnings given as <value>.
+
+*Effect:* None.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-2099]]
+== SQL 2099
+
+```
+The <compilation-type> compilation failed with <value> errors and <value> warnings.
+```
+
+*Cause:* <compilation-type> failed with the number of errors and
+warnings given as <value>.
+
+*Effect:* Any statement with an error is not compiled.
+
+*Recovery:* If this is a warning, this is an informational message.
+Otherwise, correct the syntax and resubmit.
+
+<<<
+[[SQL-2100]]
+== SQL 2100
+
+```
+Break was received. The compilation has been aborted.
+```
+
+*Cause:* Trafodion received a break and aborted
+the compilation.
+
+*Effect:* Trafodion does not continue compilation.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-2102]]
+== SQL 2102
+
+```
+This query could not be compiled with 'MINIMUM' optimization level. Suggestion: Retry with 'MEDIUM' optimization level.
+```
+
+*Cause:* Trafodion was unable to compile this
+query using the MINIMUM optimization level.
+
+*Effect:* Trafodion is unable to process this
+query.
+
+*Recovery:* Resubmit the query with MEDIUM optimization level. Precede
+the statement with: CONTROL QUERY DEFAULT OPTIMIZATION-LEVEL 'MEDIUM';
+
+<<<
+[[SQL-2103]]
+== SQL 2103
+
+```
+This query could not be compiled for one/both of the following reasons: a) Use of 'MINIMUM' optimization level, or b) incompatible Control Query Shape specifications.
+```
+
+*Cause:* Trafodion was unable to compile this
+query, either because it was not able to use the MINIMUM optimization
+level or because you used an incompatible CONTROL QUERY SHAPE
+specification.
+
+*Effect:* Trafodion is unable to process this
+query.
+
+*Recovery:* If applicable, resubmit the query with MINIMUM optimization
+level. Precede the statement with:
+
+CONTROL QUERY DEFAULT OPTIMIZATION-LEVEL 'MEDIUM'; Correct the CONTROL
+QUERY SHAPE specification and resubmit.
+
+[[SQL-2104]]
+== SQL 2104
+
+```
+This query could not be compiled for one of two reasons: a) incompatible Control Query Shape (CQS) specifications, or b) 'MEDIUM' optimization level is not sufficient to satisfy the CQS in effect. Suggestion: a) inspect the CQS in effect; or b) raise the optimization level to 'MAXIMUM'. Note that for this query, 'MAXIMUM' optimization level may result in a long compile time.
+```
+
+*Cause:* Trafodion was unable to compile this
+query, either because it was not able to use the MEDIUM optimization
+level or because you used an incompatible CONTROL QUERY SHAPE
+specification.
+
+*Effect:* Trafodion is unable to process this
+query.
+
+*Recovery:* If applicable, use the MAXIMUM optimization level, correct
+the CONTROL QUERY SHAPE specification, and resubmit.
+
+<<<
+[[SQL-2105]]
+== SQL 2105
+
+```
+This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+```
+
+*Cause:* Trafodion was unable to compile this
+query because you used an incompatible CONTROL QUERY SHAPE
+specification.
+
+*Effect:* Trafodion is unable to process this
+query.
+
+*Recovery:* Correct the CONTROL QUERY SHAPE specification and resubmit.
+
+[[SQL-2106]]
+== SQL 2106
+
+```
+This statement could not be compiled since it is too long. Break up large statements into smaller pieces.
+```
+
+*Cause:* Trafodion was unable to compile this
+query because it is too long.
+
+*Effect:* Trafodion is unable to process this
+query.
+
+*Recovery:* Try breaking the statement into smaller pieces.
+
+<<<
+[[SQL-2107]]
+== SQL 2107
+
+```
+This statement could not be compiled. Suggestion: Address the issue(s) raised in the reported warning(s).
+```
+
+*Cause:* Trafodion was unable to compile the
+query.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the warning messages returned by the compiler to
+diagnose and correct the problem.
+
+[[SQL-2108]]
+== SQL 2108
+
+```
+Statement was compiled as if query plan caching were off.
+```
+
+*Cause:* Trafodion attempted to compile this query
+with query caching on but failed. It then successfully compiled this
+query with caching turned off.
+
+*Effect:* Trafodion compiled the query as if query
+plan caching was turned off even though caching is currently on. The
+prepared query can be executed as usual.
+
+*Recovery:* This is an informational message. To prevent this warning,
+turn off query caching before query preparation.
+
+<<<
+[[SQL-2200]]
+== SQL 2200
+
+```
+DEFAULTS attribute <attribute> is read-only.
+```
+
+Where <attribute> is the DEFAULTS attribute.
+
+*Cause:* You attempted to change the DEFAULTS <attribute>, which is
+read-only.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-2201]]
+== SQL 2201
+
+```
+SQL compilation return code is <mxcmp-non-zero-exit-code>.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file that has
+an embedded module definition. An SQL compilation of an embedded module
+definition resulted in a Trafodion compiler nonzero exit code,
+indicating a warning or error.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the Trafodion compiler warning or error message.
+Trace the diagnostic back to the module source file and correct the
+offending source statement. Retry preprocessing, translating, compiling,
+and SQL compiling the application file.
+
+<<<
+[[SQL-2202]]
+== SQL 2202
+
+```
+<application-file> is not an application (ELF or SQL) file.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file that is
+not a Trafodion platform ELF object file.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that the name <application-file> is an ELF object
+file. Verify that the name of <application-file> is spelled correctly,
+and retry the command.
+
+[[SQL-2203]]
+== SQL 2203
+
+```
+Application file <application-pathname> cannot be opened.
+```
+
+*Cause:* You invoked mxCompileUserModule (or mxcmp -a <application-pathname> mdf) on an application that does not exist or is
+inaccessible to the user.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that <application-pathname> exists and is readable by
+the user. Verify that <application-pathname> is spelled correctly, and retry the
+command.
+
+<<<
+[[SQL-2204]]
+== SQL 2204
+
+```
+SQL compilation of <module-name> failed.
+```
+
+Where <module-name> is the name of the module.
+
+*Cause:* You invoked mxCompileUserModule on an application file that has
+embedded module definition(s). The SQL compilation of the named embedded
+module definition produced a Trafodion compiler warning or error.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the Trafodion compiler warning or error. Trace the
+diagnostic back to the source file of the named module. Correct
+offending source statements. Retry preprocessing, translating,
+compiling, and SQL compiling the application file.
+
+[[SQL-2205]]
+== SQL 2205
+
+```
+A temporary filename could not be created.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file that has
+many embedded module definitions. The tool cannot create another
+temporary file name to hold the contents of an embedded module
+definition. The tool used tmpnam() to create a string that is not the
+name of an existing file which tmpnam() could not do.
+
+*Effect:* The operation fails.
+
+*Recovery:* Clean up TMPDIR (the directory where temporary files are
+created) by deleting unused temporary files. Retry the command.
+
+<<<
+[[SQL-2206]]
+== SQL 2206
+
+```
+Temporary file <temp-filename> could not be created.
+```
+
+Where <temp-filename> is the name of the temporary file.
+
+*Cause:* You invoked mxCompileUserModule on an application file that has
+many embedded module definitions.The tool cannot create another
+temporary file to hold the contents of an embedded module definition.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that you have write access to TMPDIR (the directory
+where temporary files are created) and that TMPDIR has free space.
+Delete unused temporary files from TMPDIR and retry the command.
+
+[[SQL-2207]]
+== SQL 2207
+
+```
+-<option> is an unknown command line option.
+```
+
+Where -<option> is the command-line option.
+
+*Cause:* You invoked mxCompileUserModule with an unrecognized
+command-line option.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the allowable command-line options by invoking
+
+mxCompileUserModule. Verify that the desired command-line options are
+spelled correctly and retry the command.
+
+<<<
+[[SQL-2208]]
+== SQL 2208
+
+```
+mxCompileUserModule requires an <application-filename>.
+```
+
+*Cause:* You invoked mxCompileUserModule without supplying an
+application file.
+
+*Effect:* The operation fails.
+
+*Recovery:* Invoke mxCompileUserModule on an application file, such as a
+Trafodion platform ELF object file.
+
+[[SQL-2209]]
+== SQL 2209
+
+```
+<string> is not a valid delimited identifier.
+```
+
+*Cause:* You invoked mxCompileUserModule using a command-line option
+allowing a delimited identifier, but the delimited identifier has an
+invalid character, such as the @ sign.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove invalid characters, such as the @ sign, from the
+delimited identifier and retry the command.
+
+<<<
+[[SQL-2210]]
+== SQL 2210
+
+```
+Delimited identifier has no ending quote.
+```
+
+*Cause:* You invoked mxCompileUserModule using a command-line option
+allowing a delimited identifier, but the delimited identifier has no
+closing quote.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make sure that the delimited identifier has a closing quote
+and retry the command.
+
+[[SQL-2211]]
+== SQL 2211
+
+```
+Lexical error: unknown symbol <character>.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file,
+possibly intending to SQL compile only a subset of its embedded module
+definitions, but you specified an unknown character in the module name
+list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the module name list syntax. Verify that the module
+names are specified correctly and retry the command.
+
+<<<
+[[SQL-2212]]
+== SQL 2212
+
+```
+A syntax error was encountered: expecting <string-1> instead of <string-2>.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file,
+intending to SQL compile only a subset of its embedded module
+definitions, but you specified an unexpected string in the module name
+list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the module name list syntax, especially where
+_string1_ is expected. Verify that the list of module names are
+specified correctly and retry the command.
+
+[[SQL-2213]]
+== SQL 2213
+
+```
+A syntax error was encountered: expecting an identifier instead of <string>.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file,
+possibly intending to SQL compile only a subset of its embedded module
+definitions, but you specified an unexpected string in the module name
+list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the module name list syntax, especially where an
+identifier is expected. Verify that the list of module names are
+specified correctly and retry the command.
+
+<<<
+[[SQL-2214]]
+== SQL 2214
+
+```
+Internal error in mxCompileUserModule in file <filename> at line <linenumber>: <error-message>.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file to SQL
+compile its embedded module definitions. An internal error occurred
+during the operation.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. Contact the Trafodion User Distribution List
+
+[[SQL-2215]]
+== SQL 2215
+
+```
+<identifier> is not a valid regular identifier.
+```
+
+*Cause:* You invoked mxCompileUserModule on an application file,
+possibly intending to SQL compile only a subset of its embedded module
+definitions, but you specified an invalid regular identifier in the
+module name list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Review the module name list syntax, especially where an
+identifier is expected. Verify that the list of module names is
+specified correctly. Verify that regular identifiers used are not SQL
+reserved words and retry the command.
+
+<<<
+[[SQL-2220]]
+== SQL 2220
+
+```
+<mxcmp-path> (MXCMP environment variable) does not exist or is not executable.
+```
+
+Where <mxcmp-path> is the Trafodion compiler environment variable.
+
+*Cause:* You set your Trafodion compiler environment variable to point
+to your own Trafodion compiler and invoked mxCompileUserModule on an
+application file to SQL compile its module definitions. Your Trafodion
+compiler is not executable.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify that your Trafodion compiler exists and is executable
+and retry the command.
+
+[[SQL-2221]]
+== SQL 2221
+
+```
+SQL compiler invocation failed with return code <error-code>.
+```
+
+Where <error-code> is the error message code.
+
+*Cause:* You invoked mxCompileUserModule on an application file to SQL
+compile its module definitions. This command invoked the Trafodion
+compiler, which returned _error code,_ indicating an abnormal
+termination.
+
+*Effect:* The operation fails.
+
+*Recovery:* If the system is heavily loaded, retry the command later. If
+the problem persists under normal system load, report it as an internal
+error and Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+
+<<<
+[[SQL-2222]]
+== SQL 2222
+
+```
+SQL module <module-name> was not found in <application-filename>.
+```
+
+Where <module-name> is the requested module name.
+
+Where <application-filename> is the requested application file.
+
+*Cause:* You invoked mxCompileUserModule on an application file with a
+list of module names to SQL compile. This list includes the named
+module, which cannot be found in the application file.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify the spelling of the module name and retry the
+command.
+
+[[SQL-2223]]
+== SQL 2223
+
+```
+Application file <filename> does not exist or is not readable.
+```
+
+Where <filename> is the name of the application file.
+
+*Cause:* You invoked mxCompileUserModule on the named application file,
+which does not exist or is not readable.
+
+*Effect:* The operation fails.
+
+*Recovery:* Verify the spelling of the application file name and retry
+the command.
+
+<<<
+[[SQL-2233]]
+== SQL 2233
+
+```
+Query involves remote node <nodename> that is currently down. Compiler encountered a file system error <error-num>. It may produce a plan that is suboptimal or of incompatible version.
+```
+
+Where <nodename> is the name of the node such as
+node01.host.com on which the failure occurred.
+
+Where <error-num> is the file system error number.
+
+*Cause:* The <nodename> you specified is not available.
+
+*Effect:* The compiler tried to produce a plan without using that node.
+This might result in a suboptimal plan.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-2900]]
+== SQL 2900
+
+```
+Error in file <filename> at line <number>.
+```
+
+Where <number> is the line number.
+
+*Cause:* An error occurred in file name at line <number>.
+
+*Effect:* Compilation failed because of a syntax error.
+
+*Recovery:* This is a general error that is issued before a more
+specific error. Use the error that follows this one to diagnose and
+correct the problem.

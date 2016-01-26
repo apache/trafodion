@@ -51,7 +51,7 @@ You can continue any SQL statement over multiple lines, breaking that statement 
 within a word, a numeric literal, or a multicharacter operator (for example, `<&#61;`). To break a string
 literal in a DML statement, use a concatenation operator (`||`). For more information, see the
 concatenation operator in the
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 To terminate an SQL statement that spans multiple lines, use the SQL terminator for the session.
 You can also include several SQL statements on the same command line provided that each one is
@@ -303,7 +303,7 @@ the schema in a script file, reset the default schema for the session at the end
 file.
 
 For more information about the SET SCHEMA statement, see the 
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 The `SHOW SCHEMA` command displays the current schema for the session. 
 
@@ -445,7 +445,7 @@ For more information, see the <<cmd_help, HELP Command>>.
 In TrafCI, you can run SQL statements interactively. TrafCI supports all the SQL statements, 
 SQL utilities, and other SQL-related commands that the Trafodion database engine supports. 
 For more information about those SQL statements, see the 
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 To run SQL statements from script files in TrafCI, see <<run_scripts, Run Scripts>>.
 
@@ -583,7 +583,7 @@ SQL> PREPARE empcom FROM
 ```
 
 For the syntax of the PREPARE statement, see the 
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 [[interactive_set_parameters]]
 ==== Setting Parameters
@@ -787,7 +787,7 @@ SQL>
 ```
 
 For the syntax of the EXECUTE statement, see the 
-http://trafodion.incubator.apache.org/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
 <<<
 [[interactive_log_output]]

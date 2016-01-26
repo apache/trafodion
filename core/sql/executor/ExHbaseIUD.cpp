@@ -762,7 +762,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
           if (currRowNum_ > rowsInserted_)
 	{
 	  step_ = PROCESS_INSERT_FLUSH_AND_CLOSE;
-
 	}
         else
         {
@@ -912,11 +911,10 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		break;
 	      }
 
-	    step_ = PROCESS_INSERT;
+	    step_ = PROCESS_INSERT_AND_CLOSE;
 	  }
 	  break;
 
-	case PROCESS_INSERT:
 	case PROCESS_INSERT_AND_CLOSE:
 	case PROCESS_INSERT_FLUSH_AND_CLOSE:
 	  {
@@ -948,8 +946,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	      step_ = FLUSH_BUFFERS;
 	    else if (step_ == PROCESS_INSERT_AND_CLOSE)
 	      step_ = INSERT_CLOSE;
-	    else
-              step_ = ALL_DONE;
 	  }
 	  break;
         case COMPLETE_ASYNC_INSERT:
@@ -4031,9 +4027,9 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		break;
 	    }
 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
-	      step_ = PROCESS_DELETE;
+	      step_ = PROCESS_DELETE_AND_CLOSE;
 	    else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
-	      step_ = PROCESS_UPDATE;
+	      step_ = PROCESS_UPDATE_AND_CLOSE;
 	    else
 	      step_ = HANDLE_ERROR;
 	  }
@@ -4082,7 +4078,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
             step_ = ROW_DONE;
           }
           break;
-	case PROCESS_DELETE:
 	case PROCESS_DELETE_AND_CLOSE:
 	  {
             numRowsInVsbbBuffer_ = patchDirectRowIDBuffers();
@@ -4107,10 +4102,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
-	    if (step_ == PROCESS_DELETE_AND_CLOSE)
-	      step_ = RS_CLOSE;
-	    else
-	      step_ = DONE;
+	    step_ = RS_CLOSE;
 	  }
 	  break;
 
@@ -4181,7 +4173,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    step_ = NEXT_ROW;
 	  }
 	  break;
-	case PROCESS_UPDATE:
 	case PROCESS_UPDATE_AND_CLOSE:
 	  {
             numRowsInVsbbBuffer_ = patchDirectRowBuffers();
@@ -4208,10 +4199,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
-	    if (step_ == PROCESS_UPDATE_AND_CLOSE)
-	      step_ = RS_CLOSE;
-	    else
-	      step_ = DONE;
+	    step_ = RS_CLOSE;
 	  }
 	  break;
       case COMPLETE_ASYNC_OPERATION:
@@ -4251,11 +4239,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
             }
-            if ((lastHandledStep_ == PROCESS_UPDATE_AND_CLOSE)
-                 || (lastHandledStep_ == PROCESS_DELETE_AND_CLOSE))
-              step_ = RS_CLOSE;
-            else
-              step_ = DONE;
+            step_ = RS_CLOSE;
           }
           break;
 	case RS_CLOSE:

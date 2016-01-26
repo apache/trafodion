@@ -31,7 +31,7 @@ This section describes the syntax and semantics of Trafodion SQL statements.
 Trafodion SQL statements are entered interactively or from script files using a client-based tool, such as the
 Trafodion Command Interface (TrafCI). To install and configure a client application that enables you to connect
 to and use a Trafodion database, see the
-http://trafodion.incubator.apache.org/client_install/index.html[_Trafodion Client Installation_ _Guide_].
+http://trafodion.incubator.apache.org/docs/client_install/index.html[_Trafodion Client Installation_ _Guide_].
 
 [[sql_statements_categories]]
 == Categories
@@ -58,7 +58,7 @@ NOTE: DDL statements are not currently supported in transactions. That means tha
 transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON
 (the default) for the session.
 
-[cols="2*", options="header"]
+[cols="2*", options="headhttp://trafodion.apache.org/docs/sql_reference/index.html#limitser"]
 |===
 | Statement                                                  | What It Does
 | <<alter_library_statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a Trafodion database.
@@ -3947,13 +3947,13 @@ in the USING clause than the unnamed parameters in the PREPARE statement, Trafod
 +
 The USING clause does not set parameter values for named parameters (represented by ?_param-name_) in a prepared statement.
 To set parameter values for named parameters, use the SET PARAM command. For more information, see the
-http://trafodion.incubator.apache.org/command_interface/index.html[_Trafodion Command Interface Guide_].
+http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
 
 ** `?_param-name_`
 +
 The value for a ?_param-name_ must be previously specified with the SET PARAM command. The _param-name_ is case-sensitive.
 For information about the SET PARAM command, see the
-http://trafodion.incubator.apache.org/command_interface/index.html[_Trafodion Command Interface Guide_].
+http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
 
 ** `_literal-value_`
 +
@@ -3965,7 +3965,7 @@ _literal-value_ contains leading or trailing spaces, commas, or if it matches an
 set, enclose the _literal-value_ in single quotes.
 
 See the <<prepare_statement,PREPARE Statement>>. For information about the SET PARAM command, see the
-http://trafodion.incubator.apache.org/command_interface/index.html[_Trafodion Command Interface Guide_].
+http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
 
 [[execute_considerations]]
 === Considerations for EXECUTE

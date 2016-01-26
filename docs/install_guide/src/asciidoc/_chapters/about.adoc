@@ -24,30 +24,30 @@
 ////
 
 = About This Document
-This guide describes how to use Trafodion for:
+This guide describes how to install Trafodion for end-user environments. This install allows you to store and query data using Trafodion, either via Trafodion clients
+(see http://trafodion.incubator.apache.org/client_install/index.html[Trafodion Client Installation Guide] or via application code you write.
 
-* *Product Environments*: This install allows you to store and query data using Trafodion, either via Trafodion clients
-(see http://trafodion.incubator.apache.org/client_install.html[Trafodion Installation Guide] or via application code you write.
-* *Build Environments*: This install allows you to build Trafodion from the Trafodion source code.
+If you want to install a Trafodion developer-build environment, then please refer to the 
+http://trafodion.incubator.apache.org/contributor_guide/index.html[Trafodion Contributors' Guide].
 
 == Intended Audience
 This guide is intended for:
 
-* *Product Environments*: Database administrators and support personnel who are installing a Trafodion database for application usage.
+* *Single-Node Install*: Typically used when you want to evalulate Trafodion.
+* *Cluster (Multi-Node) Install*: Typically used when you deploy Trafodion for application usage.
 
-** *Single-Node Install*: Typically used when you want to evalulate Trafodion.
-** *Cluster Install*: Typically used when you deploy Trafodion for application usage.
-
-* *Developer Environments*: Developers working on enhancing the Trafodion source code.
-
-** *Single-Node Install*: Most Trafodion development is done in a single-node environment.
-** *Cluster Install*:  Mostly used for Trafodion quality assurance, performance, and scale testing.
+NOTE: Trafodion can be installed on a single-node or multi-node enviroment. Unless specifically noted, the term *cluster* is used
+to mean both single- and multi-node environments.
 
 The installation instructions applies to a diverse set of platforms:
 
 * *Virtual Machines*: Often used for evaluations and Trafodion development.
 * *Cloud*: Used for Product Environments as well as for Developer Environments.
 * *Bare Metal*: Used for Product Environments as well as for Developer Environments.
+
+NOTE: The term *node* is used to represent a computing platform on which operating system, Hadoop, and Trafodion software is running. 
+Unless specifically qualified (bare-metal node, virtual-machin node, or cloud-node), *node* represents a computing platform in your cluster
+regardless of platform type.
 
 == New and Changed Information
 This is a new guide.
