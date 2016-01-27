@@ -364,6 +364,7 @@ public class TrafConnection {
                 LOG.debug(serverWorkerName + ". closeTrafStatement.containsKey [" + stmtLabel + "] is found ");
             trafStatement = getTrafStatement(stmtLabel, 0);
             trafStatement.closeTStatement();
+            statements.remove(stmtLabel);
         }
         return trafStatement;
     }
