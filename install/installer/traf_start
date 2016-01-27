@@ -47,12 +47,6 @@ else
         exit -1;
     fi
 
-    if [[ $MANAGE_ENABLED == "Y" ]]; then
-       ssh $STARTING_NODE "dcsstop"
-       sleep 15
-       ssh $MANAGE_NODES "dcsstart"
-    fi
-
     # Do init_trafodion if specified
     if [ "$INIT_TRAFODION" == "Y" ] && [ "$UPGRADE_TRAF" == "false" ]; then
         ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt

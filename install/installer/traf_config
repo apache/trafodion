@@ -176,7 +176,7 @@ fi
 
 #==========================================
 
-if [ "$all_node_count" -ne "1" ]; then
+if [ "$node_count" -ne "1" ]; then
     echo "***INFO: copying sqconfig file ($SQCONFIG_MASTER) to $SQ_ROOT/sql/scripts/sqconfig" | tee -a $INSTALL_LOG
     cp $SQCONFIG_MASTER $SQ_ROOT/sql/scripts/sqconfig
 fi

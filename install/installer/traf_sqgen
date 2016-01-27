@@ -42,9 +42,11 @@ if [ "$node_count" -ne "1" ]; then
     $PDCP $ALL_NODES -x $HOSTNAME -r $HOME/sqcert $HOME
 fi
 
+
 #==========================================
 
 if [ "$all_node_count" -ne "1" ]; then
+   
    echo "***INFO: copying install to all nodes" | tee -a $INSTALL_LOG
    $PDCP $ALL_NODES -x $HOSTNAME -r $SQ_ROOT $SQ_ROOT/..
 

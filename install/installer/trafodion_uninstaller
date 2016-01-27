@@ -83,19 +83,6 @@ fi
 timestamp=$(date +%F-%H-%M-%S)
 logsdir="/var/log/trafodion"
 logfile="$logsdir/uninstall_$timestamp.log"
-export PDSH="pdsh -R exec"
-export PDSH_SSH_CMD="ssh -q -n %h"
-export PDCP="pdcp -R ssh"
-
-
-if [ $all_node_count -eq 1 ]; then
-    TRAF_PDSH=""
-else
-    # use the -S option to cause pdsh to return largest of
-    # the remote command return values so we can tell if one
-    # or more of the remote commands failed
-    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
-fi
 
 #Check sudo access which is required for "--all" option
 sudo echo "***INFO: testing sudo access"

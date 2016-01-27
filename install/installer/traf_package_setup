@@ -39,15 +39,6 @@ echo >> $INSTALL_LOG
 
 echo "***INFO: Starting Trafodion Package Setup ($timestamp)"
 #========================================
-#Setting up pdsh variables
-if [ $all_node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP=""
-else
-    TRAF_PDSH="pdsh -R exec $ALL_NODES ssh -q -n %h"
-    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
-fi
-#==========================================
 echo "***INFO: Installing required packages"
 echo "***INFO: Log file located in /var/log/trafodion"
 YUM_LOG=/var/log/trafodion/trafodion_yum_$timestamp.log

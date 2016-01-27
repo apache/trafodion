@@ -69,17 +69,6 @@ if [ "$USER" == "$TRAF_USER" ]; then
 fi
 
 #================================
-if [ $all_node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP=""
-else
-    # use the -S option to cause pdsh to return largest of
-    # the remote command return values so we can tell if one
-    # or more of the remote commands failed
-    TRAF_PDSH="pdsh -R exec $ALL_NODES ssh -q -n %h"
-    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
-fi
-#==========================================
 #installing required packages"
 
 $LOCAL_WORKDIR/traf_package_setup

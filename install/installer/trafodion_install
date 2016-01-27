@@ -63,14 +63,13 @@ fi
 
 function removePassword {
 
-export TRAF_CONFIG="/etc/trafodion/trafodion_config"
-source $TRAF_CONFIG
+ export TRAF_CONFIG="/etc/trafodion/trafodion_config"
+ source $TRAF_CONFIG
 
-$TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
-$TRAF_PDSH sudo sed -i '/TRAF_USER_PASSWORD\=/d' $TRAF_CONFIG
-$TRAF_PDSH sudo sed -i '/PASSWORD\=/d' $TRAF_CONFIG
-$TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
-echo "here"
+ $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
+ $TRAF_PDSH sudo sed -i '/TRAF_USER_PASSWORD\=/d' $TRAF_CONFIG
+ $TRAF_PDSH sudo sed -i '/PASSWORD\=/d' $TRAF_CONFIG
+ $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
 
 }
 
@@ -236,9 +235,6 @@ export TRAF_CONFIG="/etc/trafodion/trafodion_config"
 export TRAF_CONFIG_DIR=$(dirname $TRAF_CONFIG)
 export TRAF_CONFIG_FILE=$(basename $TRAF_CONFIG)
 export TRAF_USER="trafodion"
-export PDSH="pdsh -R exec"
-export PDSH_SSH_CMD="ssh -q -n %h"
-export PDCP="pdcp -R ssh"
 #==============================================
 #Prechecks 
 
@@ -272,7 +268,6 @@ echo "***INFO: Config directory: $TRAF_CONFIG_DIR"
 sudo mkdir -p $TRAF_WORKDIR
 sudo chmod -R 777 $TRAF_WORKDIR
 echo "***INFO: Working directory: $TRAF_WORKDIR"
-
 # copy install scripts into working directory
 sudo cp -r $(cd "$( dirname "$0" )" && pwd)/ $TRAF_WORKDIR
 sudo cp -rf $LOCAL_WORKDIR $TRAF_WORKDIR
@@ -423,14 +418,6 @@ else
 fi
 
 #=============================================
-
-if [ $all_node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP=""
-else
-    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
-    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
-fi
 
 sed -i '/ACCEPT_LICENSE\=/d' $TRAF_CONFIG
 echo "export ACCEPT_LICENSE=\"$ACCEPT_LICENSE\"" >> $TRAF_CONFIG
@@ -722,17 +709,20 @@ $TRAF_PDSH sudo /sbin/sysctl -w kernel.pid_max=65535 2>&1 > /dev/null
 sudo sed -i '/kernel\.pid\_max*/d' /etc/sysctl.conf 2>&1 > /dev/null
 sudo chmod 777 /etc/sysctl.conf
 sudo echo "kernel.pid_max = 65535" >> /etc/sysctl.conf
-sudo chmod 777 /etc/sysctl.conf
-sudo chown $(whoami).$(whoami) /etc/sysctl.conf
-cp /etc/sysctl.conf $HOME 2>&1 > /dev/null
 
-if [[ $node_count -ne "1" ]]; then
+if [[ $all_node_count -ne 1 ]]; then 
+   sudo chmod 777 /etc/sysctl.conf
+   sudo chown $(whoami).$(whoami) /etc/sysctl.conf
+   cp /etc/sysctl.conf $HOME 2>&1 > /dev/null
+
    $TRAF_PDCP $HOME/sysctl.conf $HOME 2>&1 > /dev/null
-fi
 
-$TRAF_PDSH sudo mv $HOME/sysctl.conf /etc/sysctl.conf
-$TRAF_PDSH sudo chown root.root /etc/sysctl.conf
-$TRAF_PDSH sudo chmod 644 /etc/sysctl.conf
+   $TRAF_PDSH sudo mv $HOME/sysctl.conf /etc/sysctl.conf
+   $TRAF_PDSH sudo chown root.root /etc/sysctl.conf
+   $TRAF_PDSH sudo chmod 644 /etc/sysctl.conf
+else
+   sudo chmod 644 /etc/sysctl.conf
+fi
 
 #Create install directory
 if [[ "$all_node_count" -ne "1" ]]; then
@@ -825,7 +815,7 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
 fi
 
 # Install and configure CLI for Cloud environments
-if  [ "$ENABLE_HA" == "true" ] && [[ $CLOUD_CONFIG == "Y" ]]; then
+if  [ "$ENABLE_HA" == "true" ] && [[ $CLOUD_CONFIG == "Y" ]] && [[ $all_node_count -gt 1 ]]; then
   echo "***INFO: Install and configure CLI for Cloud"
   $TRAF_WORKDIR/installer/cloud_cli_setup
 fi
@@ -853,4 +843,3 @@ copyConfig
 removePassword
 echo
 echo
-

@@ -211,35 +211,28 @@ else
    echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   if [ $node_count -eq 1 ]; then
-      TRAF_PDSH=""
-      echo "export TRAF_PDSH=\"\"" >> $TRAF_CONFIG
-   else
-       TRAF_PDSH="pdsh -S $MY_NODES"
-       echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
-   fi
 fi
 source $TRAF_CONFIG
 }
 
 function checkManageNodeList {
 
-if [[ -z $MANAGE_NODES ]]; then
+if [[ -z $MANAGEMENT_NODES ]]; then
    errorFound=1
-   echo "MANAGE NODE LIST" >> $ERROR_LOG
-   echo "***ERROR: MANAGE_NODES variable not set in config file." >> $ERROR_LOG
+   echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+   echo "***ERROR: MANAGEMENT_NODES variable not set in config file." >> $ERROR_LOG
 else
 
    ERROR_NODES=""
    NODES=""
 
-   for node in $MANAGE_NODES
+   for node in $MANAGEMENT_NODES
    do
       newNode=$(ssh -q -n $node hostname)
 
       if [[ $? -ne "0" ]]; then
          errorFound=1
-          echo "MANAGE NODE LIST" >> $ERROR_LOG
+          echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
          echo "***ERROR: Could not ssh to $node." >> $ERROR_LOG
          echo "***ERROR: Please check node names for typos" >> $ERROR_LOG
          majorErrorFound
@@ -249,14 +242,14 @@ else
 
       if [[ "$nodeName" != "$newNode" ]]; then
          errorFound=1
-         echo "MANAGE NODE LIST" >> $ERROR_LOG
+         echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
          echo "***ERROR: Nodes are not named properly." >> $ERROR_LOG
          echo "***ERROR: Nodes can have no special characters other than '-' and '.'" >> $ERROR_LOG
       fi
 
       if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
          errorFound=1
-          echo "MANAGE NODE LIST" >> $ERROR_LOG
+          echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
          echo "***ERROR: Nodes are not named properly." >> $ERROR_LOG
          echo "***ERROR: IP addresses are not supported. Please use node names." >> $ERROR_LOG
       fi
@@ -273,13 +266,13 @@ else
    NODE_LIST=$NODES
  if [[ $error == "1" ]]; then
       errorFound=1
-       echo "MANAGE NODE LIST" >> $ERROR_LOG
+       echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
       echo "***ERROR: $ERROR_NODES does not have sudo access." >> $ERROR_LOG
       echo "***ERROR: Must have sudo access on all nodes." >> $ERROR_LOG
    fi
 
 
-   for node in $MANAGE_NODES
+   for node in $MANAGEMENT_NODES
    do
       ssh -q -n $node echo "***INFO: Testing ssh on $node"
       if [[ $? -ne "0" ]]; then
@@ -297,11 +290,11 @@ else
 
 
    sudo chmod 777 $TRAF_CONFIG
-   sed -i '/MANAGE_NODES\=/d' $TRAF_CONFIG
-   echo "export MANAGE_NODES=\"$MANAGE_NODES\"" >> $TRAF_CONFIG
+   sed -i '/MANAGEMENT_NODES\=/d' $TRAF_CONFIG
+   echo "export MANAGEMENT_NODES=\"$MANAGEMENT_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   manage_node_count=$(echo $MANAGE_NODES | wc -w)
+   manage_node_count=$(echo $MANAGEMENT_NODES | wc -w)
 
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/manage_node_count\=/d' $TRAF_CONFIG
@@ -309,16 +302,16 @@ else
    sudo chmod 777 $TRAF_CONFIG
    
 
-   MY_MANAGE_NODES=""
+   MY_MANAGEMENT_NODES=""
 
-   for node in $MANAGE_NODES
+   for node in $MANAGEMENT_NODES
    do
-      MY_MANAGE_NODES="$MY_MANAGE_NODES -w $node"
+      MY_MANAGEMENT_NODES="$MY_MANAGEMENT_NODES -w $node"
    done
 
    sudo chmod 777 $TRAF_CONFIG
-   sed -i '/MY_MANAGE_NODES\=/d' $TRAF_CONFIG
-   echo "export MY_MANAGE_NODES=\"$MY_MANAGE_NODES\"" >> $TRAF_CONFIG
+   sed -i '/MY_MANAGEMENT_NODES\=/d' $TRAF_CONFIG
+   echo "export MY_MANAGEMENT_NODES=\"$MY_MANAGEMENT_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
 fi
@@ -327,7 +320,7 @@ source $TRAF_CONFIG
 
 function createAllNodes {
 
-ALL_NODE_LIST="$NODE_LIST $MANAGE_NODES"
+ALL_NODE_LIST="$NODE_LIST $MANAGEMENT_NODES"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/ALL_NODE_LIST\=/d' $TRAF_CONFIG
@@ -341,12 +334,35 @@ sed -i '/all_node_count\=/d' $TRAF_CONFIG
 echo "export all_node_count=\"$all_node_count\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 
-ALL_NODES="$MY_MANAGE_NODES $MY_NODES"
+ALL_NODES="$MY_MANAGEMENT_NODES $MY_NODES"
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
 echo "export ALL_NODES=\"$ALL_NODES\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
+
+}
+
+function createPDSH {
+
+source $TRAF_CONFIG
+export PDSH_SSH_CMD="ssh -q -n %h"
+
+if [ $all_node_count -eq 1 ]; then
+    TRAF_PDSH=""
+    TRAF_PDCP=""
+else
+    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
+    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
+fi
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_PDSH\=/d' $TRAF_CONFIG
+echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
+sed -i '/TRAF_PDCP\=/d' $TRAF_CONFIG
+echo "export TRAF_PDCP=\"$TRAF_PDCP\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
 
 }
 
@@ -896,11 +912,13 @@ checkTrafPassword
 
 checkNodeList
 
-if [[ $MANAGE_ENABLED == "Y" ]]; then
+if [[ $MANAGEMENT_ENABLED == "Y" ]]; then
    checkManageNodeList
 fi
 
 createAllNodes
+
+createPDSH
 
 checkJavaVersion
 

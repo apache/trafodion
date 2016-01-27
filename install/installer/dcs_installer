@@ -27,14 +27,6 @@
 
 export TRAF_CONFIG="/etc/trafodion/trafodion_config"
 
-if [ $all_node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP=""
-else
-    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
-    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
-fi
-
 function print_usage {
 cat << EOF
 This script will install/configure the specified DCS build.

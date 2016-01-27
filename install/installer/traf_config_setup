@@ -69,7 +69,8 @@ CLOUD_TYPE=""
 AWS_CLOUD=""
 OPEN_STACK=""
 OTHER_CLOUD=""
-
+MANAGEMENT_ENABLED="N"
+MANAGEMENT_NODES=""
 LDAP_LEVEL="0"
 #==============================================
 
@@ -215,7 +216,7 @@ fi
 #==============================================
 # List of Nodes
 
-echo -n "Enter list of Trafodion nodes (blank separated), default [$NODE_LIST]: "
+echo -n "Enter list of data nodes (blank separated), default [$NODE_LIST]: "
 read answer
 if [[ -z "$answer" ]]; then
    if [ -z "$NODE_LIST" ]; then
@@ -230,30 +231,26 @@ echo "export NODE_LIST=\"$NODE_LIST\"" >> $LOCAL_TRAF_CONFIG
 node_count=$(echo $NODE_LIST | wc -w)
 
 #==============================================
-echo -n "Are management nodes enabled (Y/N), default is N: "
+echo -n "Do you have a set of management nodes (Y/N), default is N: "
 read answer
  
-if [ -z $answer ]; then
-      echo "export MANAGE_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG
-else
-      if [[ "${answer}" =~ ^[Yy]$ ]]; then
-         echo "export MANAGE_ENABLED=\"Y\"" >> $LOCAL_TRAF_CONFIG
-         #List of Management Nodes
-         echo -n "Enter list management nodes (blank separated), default [$MANAGE_NODES]: "
-         read answer
-         if [[ -z "$answer" ]]; then
-            if [ -z "$MANAGE_NODES" ]; then
-               echo "***ERROR: Must enter list of management nodes."
-               exit -1
-            fi
-         else
-            MANAGE_NODES="$answer"
-         fi
 
-         echo "export MANAGE_NODES=\"$MANAGE_NODES\"" >> $LOCAL_TRAF_CONFIG
-      else
-         echo "export MANAGE_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG
+if [[ "${answer}" =~ ^[Yy]$ ]]; then
+   echo "export MANAGEMENT_ENABLED=\"Y\"" >> $LOCAL_TRAF_CONFIG
+   #List of Management Nodes
+   echo -n "Enter list management nodes (blank separated), default [$MANAGEMENT_NODES]: "
+   read answer
+   if [[ -z "$answer" ]]; then
+      if [ -z "$MANAGEMENT_NODES" ]; then
+         echo "***ERROR: Management nodes must be specified."
+         exit -1
       fi
+   else
+      MANAGEMENT_NODES="$answer"
+      echo "export MANAGEMENT_NODES=\"$MANAGEMENT_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+else
+   echo "export MANAGEMENT_ENABLED=\"N\"" >> $LOCAL_TRAF_CONFIG 
 fi
 
 #==============================================
@@ -576,6 +573,7 @@ echo "export ENABLE_HA=\"$ENABLE_HA\"" >> $LOCAL_TRAF_CONFIG
 #==============================================
 #Add Floating IP if HA Enabled
 if [[ "$ENABLE_HA" == "true" ]]; then
+   #Get the floating IP address, interface name and the list of backup nodes to be used
    ######Get the floating IP address
    echo -n "Enter floating IP address for setting up HA: "
    read answer1
@@ -708,7 +706,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
       read answer4
       if [[ -z "$answer4" ]]; then
          if [ -z "$LDAP_LEVEL" ]; then
-            echo "***ERROR: Much enter LDAP Encryption level."
+            echo "***ERROR: Must enter LDAP Encryption level."
             exit -1
          fi
       else
@@ -768,6 +766,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
    fi
 
 fi
+
 #==============================================
 #All items added to config file
 #Will add setup complete flag
@@ -781,5 +780,13 @@ sudo chmod 777 $TRAF_CONFIG_DIR
 sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 echo "***INFO: Configuration file: $TRAF_CONFIG"
+
+
+#==============================================
+#Call user defined prompting script
+
+$LOCAL_WORKDIR/traf_user_prompt | tee -a $INSTALL_LOG
+
+#==============================================
 
 echo "***INFO: Trafodion configuration setup complete"

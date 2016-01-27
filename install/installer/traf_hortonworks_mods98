@@ -33,9 +33,8 @@ export PDSH="pdsh -R exec"
 export PDSH_SSH_CMD="ssh -q -n %h"
 export PDCP="pdcp -R ssh"
 
-TRAF_PDCP="$PDCP $MY_NODES"
-TRAF_PDSH="$PDSH $MY_NODES $PDSH_SSH_CMD"
-
+export PDSH_HADOOP_NODES="$PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD"
+export PDCP_HADOOP_NODES="$PDCP $MY_HADOOP_NODES"
 #=====================================
 # copy Trafodion hbase trx jar to /usr/lib/hbase/lib
 
@@ -82,26 +81,26 @@ fi
 # if more than one node then copy to all nodes
 echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf  $HADOOP_PATH/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/trafodion* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
-    $PDSH $MY_NODES $PDSH_SSH_CMD mkdir -p $LOCAL_WORKDIR 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD mkdir -p $LOCAL_WORKDIR 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf  $HADOOP_PATH/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/trafodion* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
+    $TRAF_PDSH mkdir -p $LOCAL_WORKDIR 2>/dev/null
+    $PDSH_HADOOP_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     cp $UNTAR_DIR/export/lib/$traf_util_jar $LOCAL_WORKDIR
-    $PDCP $MY_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
-    $PDCP $MY_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 $HADOOP_PATH/$traf_util_jar
+    $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
+    $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
+    $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
+    $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+    $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
+    $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$traf_util_jar
 
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
+    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
+    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
 else
     for node in $HADOOP_NODES
     do 
