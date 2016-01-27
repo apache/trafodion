@@ -131,6 +131,17 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 
+  <modules>
+    <module>docs/client_install</module>
+    <module>dcs</module>
+    <module>core/rest</module>
+    <module>docs/command_interface</module>
+    <module>docs/install_guide</module>
+    <module>docs/messages_guide</module>
+    <module>docs/odb_user</module>
+    <module>docs/sql_reference</module>
+  </modules>
+
   <build>
     <resources>
       <resource>
@@ -138,6 +149,7 @@
         <filtering>true</filtering>
       </resource>
     </resources>
+    <outputDirectory>${basedir}/docs/target</outputDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
