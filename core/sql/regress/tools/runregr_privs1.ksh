@@ -184,9 +184,6 @@ fi
 #-------------------------------------------------------
 skipTheseTests="TEST132"
 
-#skip these tests for Seabase
-skipTheseTests="$skipTheseTests"
-
 testfiles="$prettyfiles"
 prettyfiles=
 skippedfiles=

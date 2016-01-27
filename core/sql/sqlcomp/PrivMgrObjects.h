@@ -92,6 +92,10 @@ public:
       const std::string & schemaName, 
       const std::string & objectName);
       
+   PrivStatus fetchObjectOwner(
+      const int64_t objectUID,
+      int_32 & objectOwner);
+
    PrivStatus fetchQualifiedName(
       const int64_t objectUID,
       std::string & qualifiedObjectName);
