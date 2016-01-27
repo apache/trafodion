@@ -146,6 +146,7 @@ public class TrafStatement {
             if (resultSetList.containsKey(key)){
                 if (LOG.isDebugEnabled())
                     LOG.debug(serverWorkerName + ". getNextTResultSet returns true ");
+                ++curKey;
                 return true;
             }
         }
