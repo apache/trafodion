@@ -60,22 +60,33 @@ public class CoprocessorUtils {
         }
     }
 
-    public static void addCoprocessor(String currentAllClassName, HTableDescriptor desc, boolean isMVCC) throws IOException {
+    //boolean as return ,to make sure whether changes take place in HTableDescriptor
+    public static boolean addCoprocessor(String currentAllClassName, HTableDescriptor desc, boolean isMVCC) throws IOException {
+        boolean retVal = false; 
         if (coprocessors == null) {
-            return;
+            return retVal;
         }
         for (String coprocess : coprocessors) {
-            if (currentAllClassName == null || !currentAllClassName.contains(coprocess)) {
+            if ((currentAllClassName == null || !currentAllClassName.contains(coprocess)) && !desc.hasCoprocessor(coprocess)) {
                 desc.addCoprocessor(coprocess);
+                retVal = true;
             }
         }
-        if (isMVCC && (currentAllClassName == null || !currentAllClassName.contains(MVCC))) {
+        
+        if (isMVCC && (currentAllClassName == null || !currentAllClassName.contains(MVCC)) && !desc.hasCoprocessor(MVCC)) {
             desc.addCoprocessor(MVCC);
-        } else if (!isMVCC && (currentAllClassName == null || !currentAllClassName.contains(SSCC))) {
+            retVal = true;
+        } else if (!isMVCC && (currentAllClassName == null || !currentAllClassName.contains(SSCC)) && !desc.hasCoprocessor(SSCC)) {
             desc.addCoprocessor(SSCC);
+            retVal = true;
         }
+
+        return retVal;
     }
 
+    public static boolean addCoprocessor(String currentAllClassName, HTableDescriptor desc) throws IOException {
+        return addCoprocessor(currentAllClassName, desc, true);
+    }
     public static void main(String[] args) throws IOException {
         System.out.println("================CoprocessorUtils.main======================");
         String currentAllClassName = "";

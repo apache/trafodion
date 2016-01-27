@@ -854,6 +854,21 @@ public class HBaseClient {
              if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
           }
+
+          HBaseAdmin admin = new HBaseAdmin(config);
+          HTableDescriptor tblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));
+          if (logger.isDebugEnabled()) logger.debug("check coprocessor num for tbl : "+ tblName+". coprocessor size : "+tblDesc.getCoprocessors().size());
+          boolean added = CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), tblDesc);
+          if (added) {
+              if (logger.isDebugEnabled())
+                  logger.debug("  ==> add coprocessor for table : " + tblName);
+              synchronized (admin) {
+                  admin.disableTable(tblName);
+                  admin.modifyTable(tblName, tblDesc);
+                  admin.enableTable(tblName);
+              }
+          }
+
           if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
           hTableClientsInUse.put(htable.getTableName(), htable);
           htable.setJniObject(jniObject);
