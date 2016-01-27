@@ -7864,12 +7864,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       table = NULL;
     }
 
-  if (0) //(table && (corrName.isHbase() || corrName.isSeabase()))
+  if (table && ((table->isHbaseTable() || table->isSeabaseTable()) && !(table->isSeabaseMDTable())))
     {
-      const NAString * val =
-	ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-      if ( ( (val) && (*val == "ON") ) &&
-	   (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
+      if ((CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
 	{
 	  remove(table->getKey());
 	  table = NULL;
