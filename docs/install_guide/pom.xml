@@ -32,6 +32,13 @@
   <description>This guide describes how to install Trafodion.</description>
   <url>http://trafodion.incubator.apache.org</url>
   <inceptionYear>2015</inceptionYear>
+  <parent>
+    <groupId>org.apache.trafodion</groupId>
+    <artifactId>trafodion</artifactId>
+    <version>1.3.0</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
 
   <licenses>
     <license>

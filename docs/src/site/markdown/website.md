@@ -97,12 +97,12 @@ Generates:
 
 Do the following:
 
-1. Wait for the changes to be committed to the Trafodion master branch.
-2. Build Trafodion site (mvn site).
-3. If there are documentation changes: Follow the [documentation publishing](document.html#Publishing) instructions.
-3. ```git clone``` https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git
-4. Copy content of ```docs/target``` into the incubator-trafodion-site directory. Commit changes.
-5. Push them back to the apache origin repo to the ```asf-site``` branch.
+1. Fetch changes to be published from the Trafodion master branch.
+2. Build Trafodion site (source ./env.sh; mvn post-site).
+3. If there are documentation changes to prior releases, check out those release branch(es) and re-build the affected docs (mvn post-site).
+4. ```git clone``` https://git-wip-us.apache.org/repos/asf/incubator-trafodion-site.git
+5. Copy content of ```docs/target``` into the incubator-trafodion-site directory. Commit changes.
+6. Push them back to the apache origin repo to the ```asf-site``` branch.
 
 Once pushed, Apache gitpubsub takes care of populating http://incubator.trafodion.apache.org with your new changes.
 If they don't show up, pushing another empty (or whitespace change) commit may work to trigger the automation.
