@@ -27,6 +27,7 @@ cqd seabase_volatile_tables 'ON';
 cqd hbase_async_drop_table 'OFF';
 cqd hbase_serialization 'ON';
 --cqd hbase_coprocessors 'OFF';
+cqd hbase_small_scanner 'SYSTEM';
 cqd hbase_filter_preds '2';
 cqd traf_aligned_row_format 'OFF';
 --cqd traf_default_col_charset 'UTF8';

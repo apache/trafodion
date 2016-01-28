@@ -950,6 +950,11 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     description += "OFF " ;
   }
 
+  if ((((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->useSmallScanner())) {
+    description += "small_scanner: " ;
+    description += "ON " ;
+  }
+
   char buf[20];
   if ( getProbes().getValue() > 0.0 ) {
     description += "probes: "; // total number of probes
