@@ -73,6 +73,14 @@ function removePassword {
 
 }
 
+function fixPermissions {
+
+if [[ -d /tmp/hsperfdata_trafodion ]]; then 
+   $TRAF_PDSH sudo chown -R $TRAF_USER.trafodion /tmp/hsperfdata_trafodion
+fi
+
+}
+
 
 function checkHBaseVersion {
 
@@ -652,6 +660,7 @@ $TRAF_PDSH sudo chmod 777 $LOCAL_WORKDIR
 # copy config file to all nodes
 
 copyConfig
+fixPermissions
 
 
 $LOCAL_WORKDIR/traf_sqconfig
