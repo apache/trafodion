@@ -75,6 +75,8 @@ function removePassword {
 
 function fixPermissions {
 
+#Change ownership of this file to be owned by traf user and traf group
+#Errors with JPS will happen if not modified 
 if [[ -d /tmp/hsperfdata_trafodion ]]; then 
    $TRAF_PDSH sudo chown -R $TRAF_USER.trafodion /tmp/hsperfdata_trafodion
 fi
