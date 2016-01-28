@@ -5211,20 +5211,7 @@ const NAType *Translate::synthesizeType()
        if (translateSource->getCharSet() == CharInfo::GBK )
          charsetTarget = CharInfo::UTF8;
        else
-       {
-           /* this is a solution to support GBK before Trafodion can support GBK in total
-            * see jira 1720 for more details
-            * the logic here is:
-            * when HIVE_FILE_CHARSET is not empty, it means the real charset in Hive table is not same as HIVE_DEFAULT_CHARSET
-            * in this case, allow the converting , ignoring the source charset checking above
-            if( CmpCommon::getDefaultString(HIVE_FILE_CHARSET) ==  "" ) 
-              err4106arg = SQLCHARSETCODE_GBK;
-            else
-             charsetTarget = CharInfo::UTF8;
-            */
-		err4106arg = SQLCHARSETSTRING_GBK;
-
-       }
+         err4106arg = SQLCHARSETSTRING_GBK;
        break;
 
      case ISO88591_TO_UTF8:
