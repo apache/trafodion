@@ -398,15 +398,20 @@ public:
   {(v ? flags_ |= UPGRADE_REPOS : flags_ &= ~UPGRADE_REPOS); }
   NABoolean upgradeRepos() { return (flags_ & UPGRADE_REPOS) != 0;}
 
+  void setCleanupAuth(NABoolean v)
+  {(v ? flags_ |= CLEANUP_AUTH : flags_ &= ~CLEANUP_AUTH); }
+  NABoolean cleanupAuth() { return (flags_ & CLEANUP_AUTH) != 0;}
+
  protected:
   enum Flags
   {
-    CREATE_MD_VIEWS      = 0x0001,
-    DROP_MD_VIEWS          = 0x0002,
-    GET_MD_VERSION        = 0x0004,
+    CREATE_MD_VIEWS         = 0x0001,
+    DROP_MD_VIEWS           = 0x0002,
+    GET_MD_VERSION          = 0x0004,
     CREATE_REPOS            = 0x0008,
-    DROP_REPOS                = 0x0010,
-    UPGRADE_REPOS            = 0x0020
+    DROP_REPOS              = 0x0010,
+    UPGRADE_REPOS           = 0x0020,
+    CLEANUP_AUTH            = 0X0040  
   };
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
