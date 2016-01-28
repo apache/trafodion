@@ -5217,11 +5217,13 @@ const NAType *Translate::synthesizeType()
             * the logic here is:
             * when HIVE_FILE_CHARSET is not empty, it means the real charset in Hive table is not same as HIVE_DEFAULT_CHARSET
             * in this case, allow the converting , ignoring the source charset checking above
-            */
-            if( CmpCommon::getDefaultString(HIVE_FILE_CHARSET) ==  "" ) //CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) )
-              err4106arg = SQLCHARSETCODE_GB2312;
+            if( CmpCommon::getDefaultString(HIVE_FILE_CHARSET) ==  "" ) 
+              err4106arg = SQLCHARSETCODE_GBK;
             else
              charsetTarget = CharInfo::UTF8;
+            */
+		err4106arg = SQLCHARSETSTRING_GBK;
+
        }
        break;
 

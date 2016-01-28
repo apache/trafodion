@@ -1311,7 +1311,7 @@ int gbkToUtf8(char* gbkString, size_t gbklen,
    int finalLength = charsetConvert( "gbk","utf-8", gbkString, gbklen,  result, outlen);
    
    if (finalLength == -1 ) 
-     return 0;
+     return -1;
    
    if ( addNullAtEnd )
    {

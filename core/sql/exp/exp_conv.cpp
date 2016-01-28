@@ -9329,16 +9329,20 @@ convDoIt(char * source,
     int convLen = gbkToUtf8( source, sourceLen, target, targetLen);
     if (convLen > 0) {
       copyLen = convLen; 
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
       //if the target length is not enough, instead of truncate, raise a SQL Error
       if (convLen > targetLen)
         ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
-      if ( varCharLen )
-        setVCLength(varCharLen, varCharLenSize, copyLen);
     }
     else {
       // LCOV_EXCL_START
       convLen = 0;
       copyLen = 0;
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      return ex_expr::EXPR_ERROR;
       // LCOV_EXCL_STOP
     }
   };

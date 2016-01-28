@@ -154,3 +154,12 @@ create table tbl_type_temp
      t           timestamp
 )
 row format delimited fields terminated by '|';
+
+drop table tbl_gbk;
+create external table tbl_gbk
+(
+    c1           int,
+    c2           string
+)
+row format delimited fields terminated by '\t'
+location '/user/hive/exttables/tbl_gbk';
