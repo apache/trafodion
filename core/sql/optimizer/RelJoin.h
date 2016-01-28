@@ -135,6 +135,7 @@ public:
   , tsjForSetNFError_(FALSE)
   , tsjForMerge_(FALSE)
   , tsjForMergeWithInsert_(FALSE)
+  , tsjForMergeUpsert_(FALSE)
   , derivedFromRoutineJoin_(FALSE)
   , joinFromPTRule_(FALSE)
   , joinFromMJSynthLogProp_(FALSE)
@@ -597,6 +598,11 @@ public:
   // Mutator for the tsjForMergeWithInsert flag.
   void setTSJForMergeWithInsert(NABoolean tsjForMergeWithInsert)
     { tsjForMergeWithInsert_ = tsjForMergeWithInsert;  }
+
+   NABoolean isTSJForMergeUpsert() const { return tsjForMergeUpsert_; }
+  // Mutator for the tsjForMergeUpsert flag.
+  void setTSJForMergeUpsert(NABoolean tsjForMergeUpsert)
+    { tsjForMergeUpsert_ = tsjForMergeUpsert;  }
 
   // Accessor for the tsjForSideTree flag.
   NABoolean isTSJForSideTreeInsert() const { return tsjForSideTreeInsert_; }
@@ -1067,6 +1073,10 @@ private:
   // this tsj is used to move source rows to target for MERGE sql operator
   // and the merge statement has an INSERT clause. 
   NABoolean tsjForMergeWithInsert_;
+
+   // this tsj is used to flow rows from source RelExpr to merge that is
+  // implementing an upsert.
+  NABoolean tsjForMergeUpsert_;
 
   NABoolean derivedFromRoutineJoin_;
 
