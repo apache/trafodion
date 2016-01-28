@@ -124,7 +124,6 @@ public class PStats implements Runnable {
             }
             String schema = Bytes.toString(zkc.getData(parentZnode
                     + Constants.DEFAULT_ZOOKEEPER_ZNODE_STATS, false, stat));
-            LOG.info("AH:: " + schema);
 
             InetAddress ip = InetAddress.getLocalHost();
             LOG.info("hostname " + ip.getCanonicalHostName());
