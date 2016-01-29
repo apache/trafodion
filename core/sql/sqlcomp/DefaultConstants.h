@@ -3753,6 +3753,8 @@ enum DefaultConstants
 
   UDR_JVM_DEBUG_PORT,
   UDR_JVM_DEBUG_TIMEOUT,
+  //enable HBASE Small Scanner, optimizing scans of size below HFile block size
+  HBASE_SMALL_SCANNER,
 
   TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,
   HBASE_RANGE_PARTITIONING_PARTIAL_COLS,

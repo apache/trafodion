@@ -305,6 +305,7 @@ public class ServerApiSqlExecute {
                     rs = pstmt.executeQuery();
                     if (rs != null) {
                         outDescList = trafStmt.getOutDescList();
+                        trafStmt.closeAllTResultSets();
                         trafStmt.addTResultSet(new TrafResultSet(rs, 0, stmtLabel, 0, trafStmt.getOutDescList(),""));
                     }
                 } else if (isSpj == true) {

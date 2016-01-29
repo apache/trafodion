@@ -67,26 +67,30 @@ Please refer to the following web sites for guidance for information about worki
 * [AsciiDoc cheatsheet](http://powerman.name/doc/asciidoc)
 * [PDF Theme](https://github.com/asciidoctor/asciidoctor-pdf/blob/master/docs/theming-guide.adoc)
 
-Once you've made the desired changes, then do the following:
+Once you have made the desired changes, then do the following:
 
-## DCS and REST
+## Building an Individual Document
 
-1. Build the document using **```mvn clean site```** against the directory containing the document; for example: **```dcs```** or **```core/rest```**.
-2. Verify the content in the generated **```target```** directory. The **```target/index.html```** file provides the entry point for the web book; the **```target/apidocs/index.html```** file contains the entry point for API documentation.
+1. Be sure to source env.sh, so that the TRAFODION_VER environment variable is defined.
+2. Build the document using **```mvn clean site```** in the directory containing the document; for example: **```dcs```** or **```docs/odb_user```**.
+   * If you have not previously built the JDBC drivers, the DCS and REST documents will give spurious errors about missing that dependency. The documents can be built fine, skipping over that dependency using **```mvn -P'!jdbc' site```**.
+3. Verify the content in the generated **```target```** directory. 
+   * The **```target/index.html```** file provides the entry point for the web book. 
+   * For those that have API documentation, the **```target/apidocs/index.html```** file contains the entry point.
+   * For those that have PDF, the **```target/index.pdf```** file contains the PDF version of the document.
 
-## Other Documents
+## Building the Entire Website, including Documents
 
-1. Build the document using **```mvn clean site```** against the directory containing the document; for example: **```docs/client_install```** or **```docs/odb_user```**.
-2. Verify the content in the generated **```target```** directory. The **```target/index.pdf```** file contains the PDF version of the document while 
-**```target/site/index.html```** contains the web-book version of the document. 
+1. Be sure to source env.sh, so that the TRAFODION_VER environment variable is defined.
+2. Build everything using **```mvn clean post-site```** in the top-level directory.
+   * As above, to skip over JDBC dependency, use **```mvn -P'!jdbc' post-site```**.
+3. Verify the contents in the generated **```docs/target```** directory.
+   * All documents are in **```docs/target/docs```** directory.
 
 # Build Trafodion Document Tree
 The external version of the Trafodion Document Tree is published to http://trafodion.incubator.apache.org/docs. Please refer to [Publish](#publish) below.
 
 The build version of the  Trafodion Document Tree is located in **```docs/target/docs```**, which is created when you build the Trafodion web site in Maven. 
-
-<table><tr><td><strong>NOTE</strong><br />Build the web site <strong>before</strong> you use the <strong><code>post-site</code></strong> phase to copy in the document files.
-If you don't, then the web-site build will wipe out the Trafodion Document Tree.</td></tr></table>
 
 ## Version Directories
 
@@ -99,8 +103,7 @@ Version Directory           | Content                                           
 
 * **```latest```**: Provides a well-known place for each document. This practice makes it possible to link to a document in instructional text, web sites, and
 other documents.
-* **```<version>```**: Provides per-release versions of documents. Previous versions are kept in the web site's SVN repository ensuring that N versions of the documentation
-are available.
+* **```<version>```**: Provides per-release versions of documents. Previous versions are kept in the web site's git repository ensuring that previous versions of the documentation are available.
 
 ## Document Directories
 Each document is placed in its own **Document Directory**:
@@ -128,66 +131,13 @@ File/Directory               | Content
 
 The Document Directories are copied under the Version Directories thereby creating the web-accessible Trafodion document tree. 
 
-## Populate Trafodion Documentation Tree
-The build version of the Trafodion Document Tree is populated as follows:
-
-<table>
-  <tr>
-    <th>Document</th>
-    <th>Instructions</th>
-  </tr> 
-  <tr>
-    <td><strong>Client Installation Guide</strong></td>
-    <td>Run maven <strong><code>post-site</code></strong> build step.</td>
-  </tr>
-  <tr>
-    <td><strong>DCS Reference Guide Guide</strong></td>
-    <td>
-      <ol>
-         <li>Create Version Directories, if needed.</li>
-         <li>Create Document Directories, if needed.</li>
-         <li>Copy <strong><code>$SQ_HOME/dcs/target/site/</code></strong> to the appropriate Document Directories.</li>          
-      </ol>
-    </td>
-  </tr>
-  <tr>
-    <td><strong>odb User Guide</strong></td>
-    <td>Run maven <strong><code>post-site</code></strong> build step.</td>
-  </tr>
-  <tr>
-    <td><strong>odb User Guide</strong></td>
-    <td>Run maven <strong><code>post-site</code></strong> build step.</td>
-  </tr>
-  <tr>
-    <td><strong>REST Reference Guide Guide</strong></td>
-    <td>
-      <ol>
-         <li>Create Version Directories, if needed.</li>
-         <li>Create Document Directories, if needed.</li>
-         <li>Copy <strong><code>$SQ_HOME/core/rest/target/site/</code></strong> to the appropriate Document Directories.</li>          
-      </ol>
-    </td>
-  </tr>
-  <tr>
-    <td><strong>SQL Reference Guide Guide</strong></td>
-    <td>Run maven <strong><code>post-site</code></strong> build step.</td>
-  </tr>
-</table>
-
-
 # Publish
 
 <div class="alert alert-dismissible alert-info">
   <button type="button" class="close" data-dismiss="alert">&close;</button>
-  <p style="color:black">Publication is done when a committer is ready to update the external web site. You do <strong>not</strong> perform these steps as part of checking in changes.</p></div>
+  <p style="color:black">Publication is done when a committer is ready to update the external web site. You do <strong>not</strong> publish as part of checking in changes.</p></div>
 
-Do the following: 
-
-1. Build the web site.
-2. Build the different document as described in [Making Changes](#making_changes) above.
-3. Build the Trafodion Document Tree as described in [Build Trafodion Document Tree](#build_trafodion_document_tree) above.
-
-The resulting **```docs/target/docs/```** directory is checked into the web-site SVN branch.
+Refer to [Website Publishing](website.html#publishing) for how the website and documents get published.
 
 
 

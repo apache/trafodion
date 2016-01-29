@@ -1104,7 +1104,7 @@ EOF
 <configuration>
      <property>
          <name>mapreduce.framework.name</name>
-         <value>yarn</value>
+         <value>local</value>
      </property>
      <property>
          <name>mapreduce.jobtracker.http.address</name>

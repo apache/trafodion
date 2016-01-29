@@ -57,6 +57,24 @@ public:
 };
 
 // *****************************************************************************
+// * Class:        ColPrivEntry
+// * Description:  This class represents the privileges and corresponding 
+// *               WGO (with grant option) for a column
+// *****************************************************************************
+class ColPrivEntry
+{
+public:
+   int32_t            columnOrdinal;
+   PrivColumnBitmap   privsBitmap;
+   PrivColumnBitmap   grantableBitmap;
+   bool               isUpdate;
+   ColPrivEntry()
+   : columnOrdinal(0),isUpdate(false){};
+   ColPrivEntry(const PrivMgrMDRow &row);
+   ColPrivEntry(const ColPrivEntry &other);
+};
+
+// *****************************************************************************
 // * Class:         PrivMgrPrivileges
 // * Description:  This class represents the access rights for objects
 // *****************************************************************************
@@ -263,6 +281,11 @@ private:
 // Private functions:
 // -------------------------------------------------------------------
 
+  bool checkColumnRevokeRestrict (
+    int32_t granteeID,
+    const std::vector<ColPrivEntry> &colPrivsToRevoke,
+    std::vector <PrivMgrMDRow *> &rowList );
+
   bool checkRevokeRestrict (
     PrivMgrMDRow &rowIn,
     std::vector<PrivMgrMDRow *> &rowList );
@@ -334,10 +357,20 @@ private:
    const std::vector<int32_t> &roleIDs,
    PrivStatus & privStatus);
 
+  void scanColumnBranch( const PrivType pType,
+    const int32_t& grantor,
+    const std::set<int32_t> &listOfColumnOrdinals,
+    const std::vector<PrivMgrMDRow *> & rowList  );
+
+  void scanColumnPublic(
+    const PrivType pType,
+    const std::set<int32_t> &listOfColumnOrdinals,
+    const std::vector<PrivMgrMDRow *>& rowList );
+
   void scanObjectBranch( 
-    const PrivType pType, // in
-    const int32_t& grantor,              // in
-    const std::vector<PrivMgrMDRow *>& rowList  );   // in
+    const PrivType pType,
+    const int32_t& grantor,
+    const std::vector<PrivMgrMDRow *>& rowList  );
 
   void scanPublic( 
     const PrivType pType, // in

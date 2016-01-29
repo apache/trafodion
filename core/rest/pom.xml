@@ -34,7 +34,7 @@
   <artifactId>rest</artifactId>
   <packaging>jar</packaging>
   <version>${env.TRAFODION_VER}</version>
-  <name>rest</name>
+  <name>Trafodion REST</name>
   <url>http://wiki.trafodion.org</url>
   
   <developers>
@@ -320,7 +320,46 @@
           </execution>
         </executions>
     </plugin> 
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>populate-release-directories</id>
+            <phase>post-site</phase>
+            <configuration>
+              <target name="Populate Release Directories">
+                <!-- The website uses the following organization for the docs/target/docs directory:
+                                       - To ensure a known location, the base directory contains the LATEST version of the web book and the PDF files.
+                  - The know location is docs/target/docs/<document>
+                  - target/docs/<version>/<document> contains version-specific renderings of the documents.
+                  - target/docs/<version>/<document> contains the PDF version and the web book. The web book is named index.html
+                -->
+                <!-- Copy the PDF file to its target directories -->
+                   <!-- None for REST -->
+                <!-- Copy the Web Book files to their target directories -->
+                <copy todir="${basedir}/../../docs/target/docs/rest_reference">
+                  <fileset dir="${basedir}/target/site">
+                    <include name="**/*.*"/>  <!--All sub-directories, too-->
+                  </fileset>
+                </copy>
+                <copy todir="${basedir}/../../docs/target/docs/${project.version}/rest_reference">
+                  <fileset dir="${basedir}/target/site">
+                    <include name="**/*.*"/>  <!--All sub-directories, too-->
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
   </plugins>
+
   <pluginManagement>
   	<plugins>
   		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
@@ -660,16 +699,26 @@
       <artifactId>jettison</artifactId>
       <version>${jettison.version}</version>
     </dependency>
-    <!-- JDBCT4 dependencies -->    
-    <dependency>    
-      <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
-      <artifactId>t4driver</artifactId>
-      <version>${jdbct4.version}</version>
-    </dependency>
  
   </dependencies>
   
   <profiles>
+    <!-- JDBC drivers needed for compile, but not site docs
+         This allows turning off dependency on command line (-P '!jdbc') -->
+    <profile>
+      <id>jdbc</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>    
+        <!-- JDBCT4 dependencies -->    
+        <dependency>    
+          <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
+          <artifactId>t4driver</artifactId>
+          <version>${jdbct4.version}</version>
+        </dependency>
+      </dependencies>    
+    </profile>
     <profile>
       <id>runSmallTests</id>
       <activation>

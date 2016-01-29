@@ -296,7 +296,7 @@ bool PrivMgrCommands::describePrivileges (const PrivMgrObjectInfo &objectInfo,
 // Returns the status of the request
 // The Trafodion diags area contains the error that was encountered
 // ----------------------------------------------------------------------------
-PrivStatus PrivMgrCommands::dropAuthorizationMetadata()
+PrivStatus PrivMgrCommands::dropAuthorizationMetadata(bool doCleanup)
 {
   PrivMgrMDAdmin metadata(getMetadataLocation(),getDiags());
   std::vector<string> tablesToDrop;
@@ -306,7 +306,7 @@ PrivStatus PrivMgrCommands::dropAuthorizationMetadata()
     const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
     tablesToDrop.push_back(tableDefinition.tableName);
   }
-  return metadata.dropMetadata(tablesToDrop);
+  return metadata.dropMetadata(tablesToDrop, doCleanup);
 }
 
 

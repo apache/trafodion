@@ -444,7 +444,7 @@ public:
       const PrivMgrObjectInfo &objectInfo,
       std::string &privilegeText);
 
-   PrivStatus dropAuthorizationMetadata();
+   PrivStatus dropAuthorizationMetadata(bool doCleanup);
    
    PrivStatus dropComponentOperation(
       const std::string & componentName,

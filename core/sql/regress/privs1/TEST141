@@ -38,6 +38,7 @@ obey TEST141(test_private_user);
 obey TEST141(test_private_role);
 obey TEST141(test_shared_user);
 obey TEST141(test_shared_role);
+obey TEST141(test_view_priv_propagation);
 log;
 obey TEST141(clean_up);
 exit;
@@ -315,6 +316,57 @@ sh sqlci -i "TEST141(user2_objects)" -u sql_user2;
 execute get_obj_privs;
 
 -- ============================================================================
+?section test_view_priv_propagation
+-- ============================================================================
+values (user);
+
+-- remove schemas 
+drop schema if exists t141_user1 cascade;
+drop schema if exists t141_user2 cascade;
+drop schema if exists t141_user3 cascade;
+
+-- setup database with private schemas owned by users
+create schema t141_user1 authorization sql_user1;
+create schema t141_user2 authorization sql_user2;
+
+-- create some tables owned by user1
+set schema t141_user1;
+create table u1t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t2 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+
+-- grant privileges to sql_user2 on tables
+grant select, delete on u1t1 to sql_user2;
+grant select, delete on u1t2 to sql_user2 with grant option;
+
+execute get_obj_privs;
+
+-- user2 creates some views
+sh sqlci -i "TEST141(user2_views)" -u sql_user2;
+
+execute get_obj_privs;
+
+-- user1 grants insert privilege on tables
+grant insert on u1t1 to sql_user2;
+grant insert on u1t2 to sql_user2 with grant option;
+
+execute get_obj_privs;
+
+-- remove with grant option for some privileges
+revoke grant option for insert, delete on u1t2 from sql_user2;
+execute get_obj_privs;
+
+-- Add back the with grant option for delete
+grant delete on u1t2 to sql_user2 with grant option;
+execute get_obj_privs;
+
+-- Remove insert, and delete entirely
+revoke insert, delete on u1t1 from sql_user2;
+revoke insert, delete on u1t2 from sql_user2;
+execute get_obj_privs;
+
+-- ============================================================================
 ?section user1_objects
 -- ============================================================================
 -- executed by sql_user1
@@ -392,3 +444,16 @@ create view u3v4 as select c1, c3 from t141_user1.u1t4;
 create view u3v5 as select c1, c3 from t141_user1.u1t3;
 get tables;
 get views;
+
+-- ============================================================================
+?section user2_views
+-- ============================================================================
+-- executed by sql_user2
+log LOG141;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+values (user);
+set schema t141_user2;
+
+create view u2v1 as select * from t141_user1.u1t1;
+create view u2v2 as select * from t141_user1.u1t2;
+
