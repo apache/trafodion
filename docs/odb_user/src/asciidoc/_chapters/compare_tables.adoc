@@ -33,7 +33,7 @@ odb does the following to compare two tables:
 
 Each _comparison stream_ is made up of three threads:
 
-* One thred reading from the source table.
+* One thread reading from the source table.
 * One thread reading from the target table.
 * One thread comparing the source/target buffers.
 
@@ -120,7 +120,7 @@ Detailed Descriptions of the Copy Operators:
 [cols="30%,70%",options="header",]
 |===
 | Diff Operator              | Meaning
-| `src=<CAT.SCH.TAB>\|-file` | Definse the source table(s). You can use: +
+| `src=<CAT.SCH.TAB>\|-file` | Defines the source table(s). You can use: +
  +
 - A single table (for example: TRAFODION.MFTEST.LINEITEM) +
 - A file containing a list of tables to compare (`-` should precede the filename)
@@ -144,7 +144,7 @@ record separator the same way as the field separator. +
  +
 The default record separator is `\n` (new line).
 | `max=num`                  | The max number of records to compare. Default is to compare all records.
-| `rows=<num>\|k<num>\|m<num>` | Definess the size of the I/O buffer for each extraction thread. You
+| `rows=<num>\|k<num>\|m<num>` | Defines the size of the I/O buffer for each extraction thread. You
 can define the size of this buffer in two different ways: +
  +
 - number of rows (for example: `rows=100` means 100 rows as IO buffer) +
@@ -173,7 +173,7 @@ with `min(emp_id)=1` and `max(emp_id)=1000`, the four threads will extract the f
 `thread #3 emp_id >=751 and emp_id < 1001 (odb uses max(emp_id) + 1)` +
  +
 If the values are not equally distributed, then data extraction is deskewed.
-| `print=[I][C][D]`          | Specifie which rows are printed in the output file: +
+| `print=[I][C][D]`          | Specifies which rows are printed in the output file: +
  +
 `I` prints the new rows on target. (Based on *key*.) +
 `D` prints the missing rows on target. (Based on *key*.) +

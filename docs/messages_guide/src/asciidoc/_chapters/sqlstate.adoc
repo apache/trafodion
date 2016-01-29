@@ -50,7 +50,7 @@ text or the SQLCODE value in addition to the SQLSTATE.
 ** In the future, Trafodion might return different SQLSTATE values for error conditions than it does now.
 
 ** In the future, the Trafodion error handling might use a different error path, and therefore return a 
-slightly different SQLCODE and implementationdefined SQLSTATE value for an error.
+slightly different SQLCODE and implementation defined SQLSTATE value for an error.
 
 [[sqlstate-values]]
 == SQLSTATE Values
@@ -185,7 +185,7 @@ numbers) and error messages (negative SQLCODE numbers).
 | 0153V    | 1139    | System-generated column <name> of base table <name> cannot appear in the search condition of a check constraint definition.
 | 0153W    | 1140    | Row-length <num> exceeds the maximum allowed row-length of <num> for table <name>.
 | 0153X    | 1141    | Could not obtain an up-and-audited DAM volume. Please check your system configuration.
-| 0153Y    | 1142    | Attempting to add a column with a NULL, UNIQUE, CHECK, PRIMARY KEY, or FOREIGN KEY constraint defined. This is not supported for a nonaudited table.
+| 0153Y    | 1142    | Attempting to add a column with a NULL, UNIQUE, CHECK, PRIMARY KEY, or FOREIGN KEY constraint defined. This is not supported for a non-audited table.
 | 0153Z    | 1143    | Validation for constraint <name> failed; incompatible data exists in referencing base table <name> and referenced base table <name>. To display the data violating the constraint, please use the following DML statement: <text>
 | 01540    | 1144    | Expected a quoted string in first key clause for column <name> on table <name>, value detected is (<num>).
 | 01541    | 1145    | The catalog name <name> is reserved for the Trafodion metadata.
@@ -229,7 +229,7 @@ numbers) and error messages (negative SQLCODE numbers).
 | 0160M    | 2022    | System error <num> in <name> from <name>, detail <num>.
 | 0160N    | 2023    | Unable to create server process <name>. <name>.
 | 0160P    | 2025    | Unable to create server process <name>. CPU is unavailable; <text>.
-| 0160R    | 2027    |  error <num> while sending a startup message to process <name>.
+| 0160R    | 2027    | Error <num> while sending a startup message to process <name>.
 | 0160S    | 2028    | Unable to create OSS server process <name>. Insufficient resources.
 | 0160T    | 2029    | Unable to create OSS server process <name>. OSS is not running.
 | 0160X    | 2033    | <text>:  error <num> while communicating with process <name>.

@@ -173,7 +173,7 @@ default, the client error message language is English, and the client’s local 
 +
 The *Test Trafodion ODBC Connection* dialog box appears, allowing you to test the connection using the data source that you created.
 9.  Click *Test Connection*.
-10.  When prompted, enter your username and password, and click *OK*.
+10.  When prompted, enter your user name and password, and click *OK*.
 +
 If the connection is successful, you will see `Connected Successfully` in the *Test Trafodion ODBC Connection* dialog box.
 

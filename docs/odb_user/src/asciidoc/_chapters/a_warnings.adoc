@@ -84,7 +84,7 @@ odb [2012-10-11 13:27:22]: starting ODBC connection(s)... 0
 [0] odb(5020) - [Oracle][ODBC]Optional feature not implemented. (State: HYC00 Native Err: 0)
 ```
 +
-Try adding `-nocatnull` to your command line. When the backend database doesn’t use catalogs, 
+Try adding `-nocatnull` to your command line. When the back-end database doesn't use catalogs, 
 then you should use an *empty string* as catalog name.
 +
 NOTE: Some flawed ODBC Drivers unfortunately want NULL here &#8212; instead of *empty strings* as it should be.

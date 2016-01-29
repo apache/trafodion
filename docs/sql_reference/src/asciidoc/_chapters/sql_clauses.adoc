@@ -803,7 +803,7 @@ by a table, view, or correlation name; for example, CUSTOMER.CITY.
 +
 specifies the sort order. ASC is the default. For ordering an
 intermediate result table on a column that can contain null, nulls are
-considered equal to one another but greater than all other nonnull
+considered equal to one another but greater than all other non-null
 values.
 +
 You must include a SEQUENCE BY clause if you include a sequence function

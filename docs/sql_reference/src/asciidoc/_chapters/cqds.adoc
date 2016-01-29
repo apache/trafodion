@@ -75,14 +75,14 @@ CHARACTER SET UTF8, with _n_ being the value of this CQD.
 
 [cols="25%h,75%"]
 |===
-| Category                    | Historgrams
+| Category                    | Histograms
 | Description                 | Defines the time interval after which timestamps for cached histograms
 are checked to be refreshed.
 | Values                      | Unsigned integer. Unit is seconds. +
  +
 The default value is '3600' (1 hour).
 | Usage       | Histogram statistics are cached so that the compiler can avoid access to
-the metadata tables, thereby reducing compile times. The timestamp of
+the metadata tables, thereby reducing compile times. The time stamp of
 the tables are checked against those of the cached histograms at an
 interval specified by this CQD, in order to see if the cached histograms
 need to be refreshed. +
@@ -118,7 +118,7 @@ recently updated statistics.
 
 [cols="25%h,75%"]
 |===
-| Category                    | Historgrams
+| Category                    | Histograms
 | Description                 | Defines the time interval after which the fake histograms in the cache should be refreshed unconditionally.
 | Values                      | Integer. Unit is seconds. +
  +
@@ -149,7 +149,7 @@ histogram statistics, potentially resulting in poorer plans.
 
 [cols="25%h,75%"]
 |===
-| Category                    | Historgrams
+| Category                    | Histograms
 | Description                 | Influences the compiler to pre-fetch the histograms and save them in cache.
 | Values                      | 'ON'    Pre-fetches the histograms. +
 'OFF'   Does not pre-fetch the histograms. +
@@ -168,7 +168,7 @@ histogram statistics, potentially resulting in poorer plans.
 
 [cols="25%h,75%"]
 |===
-| Category                    | Historgrams
+| Category                    | Histograms
 | Description                 | Specifies the minimum row count for which the optimizer needs histograms, in order to compute better cardinality estimates. The
 optimizer does not issue any missing statistics warnings for tables whose size is smaller than the value of this CQD.
 | Values                      | Integer. +
