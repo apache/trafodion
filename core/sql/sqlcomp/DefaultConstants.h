@@ -709,6 +709,7 @@ enum DefaultConstants
                                             // CQDs are delimited by ","
   USTAT_MIN_CHAR_UEC_FOR_IS,     // minimum UEC for char type to use internal sort
   USTAT_MIN_DEC_BIN_UEC_FOR_IS,  // minimum UEC for binary types to use internal sort
+  USTAT_YOULL_LIKELY_BE_SORRY, // minimum row count where explicit NO SAMPLE clause is required
 
 
   // -------------------------------------------------------------------------
