@@ -58,7 +58,7 @@
 
   <properties>
     <hadoop.version>2.4.0</hadoop.version>
-    <hbase.version>0.98.4-hadoop2</hbase.version>
+    <hbase.version>0.98.10-hadoop2</hbase.version>
     <!--<hbase.version>0.98.0.2.1.4.0-632-hadoop2</hbase.version>-->
     <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
     <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
@@ -70,7 +70,7 @@
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-hbase_98_4</artifactId>
+  <artifactId>hbase-trx-hbase_98_10</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>
