@@ -504,7 +504,8 @@ if [ $json_output '==' 1 ]; then
         json_dtm=""\""PROCESS"\"":"\""DTM"\"","\""CONFIGURED"\"":$cfg_dtm_cnt,"\""ACTUAL"\"":$act_dtm_cnt,"\""DOWN"\"":\"${down_dtms[*]}\""
         json_rms=""\""PROCESS"\"":"\""RMS"\"","\""CONFIGURED"\"":$cfg_rms_cnt,"\""ACTUAL"\"":$act_rms_cnt,"\""DOWN"\"":\"${down_rms[*]}\""
         json_mxosrvr=""\""PROCESS"\"":"\""MXOSRVR"\"","\""CONFIGURED"\"":$cfg_mxo_cnt,"\""ACTUAL"\"":$act_mxo_cnt,"\""DOWN"\"":\"${act_mxo_down_cnt}\""
-        echo "[{$json_dtm},{$json_rms},{$json_mxosrvr}]" 
+        json_dcsmaster=""\""PROCESS"\"":"\""DCSMASTER"\"","\""CONFIGURED"\"":$cfg_dcsmaster_cnt,"\""ACTUAL"\"":$actual_dcsmaster_cnt,"\""DOWN"\"":\"${down_dcsmaster_cnt}\""        
+        echo "[{$json_dtm},{$json_rms},{$json_dcsmaster},{$json_mxosrvr}]" 
     elif [[ $sqck_component == "dtm" ]]; then
         json_dtm=""\""PROCESS"\"":"\""DTM"\"","\""CONFIGURED"\"":$cfg_dtm_cnt,"\""ACTUAL"\"":$act_dtm_cnt,"\""DOWN"\"":\"${down_dtms[*]}\""
         echo "[{$json_dtm}]" 
@@ -513,7 +514,8 @@ if [ $json_output '==' 1 ]; then
         echo "[{$json_rms}]" 
     elif [[ $sqck_component == "dcs" ]]; then
         json_mxosrvr=""\""PROCESS"\"":"\""MXOSRVR"\"","\""CONFIGURED"\"":$cfg_mxo_cnt,"\""ACTUAL"\"":$act_mxo_cnt,"\""DOWN"\"":\"${act_mxo_down_cnt}\""
-        echo "[{$json_mxosrvr}]" 
+        json_dcsmaster=""\""PROCESS"\"":"\""DCSMASTER"\"","\""CONFIGURED"\"":$cfg_dcsmaster_cnt,"\""ACTUAL"\"":$actual_dcsmaster_cnt,"\""DOWN"\"":\"${down_dcsmaster_cnt}\""        
+        echo "[{$json_dcsmaster},{$json_mxosrvr}]" 
     fi
 else
     echo
