@@ -7472,6 +7472,12 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
 
+  if (!ComUser::isRootUserID())
+  {
+    *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+    return -1;
+  }
+
   if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
   {
     SEABASEDDL_INTERNAL_ERROR("initialize authorization");
@@ -7504,6 +7510,17 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
   }
   else
   {
+    // make sure authorization status is FALSE in compiler context 
+    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
+    
+    // If any tables were created, go drop them now.
+    // Ignore any returned errors
+    if (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF)
+    {
+      bool doCleanup = true;
+      retcode = privInterface.dropAuthorizationMetadata(doCleanup);
+    }
+
     // Add an error if none yet defined in the diags area
     if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
@@ -7515,10 +7532,18 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
   return cliRC;
 }
 
-void CmpSeabaseDDL::dropSeabaseAuthorization(ExeCliInterface *cliInterface)
+void CmpSeabaseDDL::dropSeabaseAuthorization(
+  ExeCliInterface *cliInterface,
+  NABoolean doCleanup)
 {
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
+
+  if (!ComUser::isRootUserID())
+  {
+    *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+    return;
+  }
 
   if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
   {
@@ -7529,7 +7554,7 @@ void CmpSeabaseDDL::dropSeabaseAuthorization(ExeCliInterface *cliInterface)
   NAString privMgrMDLoc;
   CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
-  PrivStatus retcode = privInterface.dropAuthorizationMetadata(); 
+  PrivStatus retcode = privInterface.dropAuthorizationMetadata(doCleanup); 
   if (retcode == STATUS_ERROR)
   {
     cliRC = -1; 
@@ -8213,7 +8238,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     }
   else if (ddlExpr->dropAuthorization())
     {
-      dropSeabaseAuthorization(&cliInterface);
+      dropSeabaseAuthorization(&cliInterface, FALSE);
+    }
+  else if (ddlExpr->cleanupAuth())
+    {
+       dropSeabaseAuthorization(&cliInterface, TRUE);
     }
   else if (ddlExpr->addSeqTable())
     {

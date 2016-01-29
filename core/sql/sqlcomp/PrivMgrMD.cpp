@@ -80,6 +80,10 @@ static int32_t dropTable (
   ExeCliInterface &cliInterface,
   ComDiagsArea * pDiags);
 
+static void cleanupTable (
+  const char *objectName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea * pDiags);
 static int32_t renameTable (
   const char *originalObjectName,
   const char *newObjectName,
@@ -150,23 +154,28 @@ PrivMgrMDAdmin::~PrivMgrMDAdmin()
 PrivStatus PrivMgrMDAdmin::initializeComponentPrivileges()
 
 {
-
-// Next, register the component.
-
-PrivStatus privStatus = STATUS_GOOD;
+   std::string traceMsg;
+   log(__FILE__, "initializing component privileges", -1);
+   PrivStatus privStatus = STATUS_GOOD;
 
    // First, let's start with a clean slate.  Drop all components as well as 
    // their respective operations and and any privileges granted.  This should be  
    // a NOP unless PrivMgr metadata was damaged and reintialization is occurring.
+
    PrivMgrComponents components(metadataLocation_,pDiags_);
    components.dropAll();
+   
+   // Next, register the component.
 
    privStatus = components.registerComponentInternal(SQL_OPERATION_NAME,
-                                                     SQL_OPERATIONS_COMPONENT_UID, 
-                                                     true, "Component for SQL operations");
+                                                     SQL_OPERATIONS_COMPONENT_UID,
+                                                     true,"Component for SQL operations");
                                              
    if (privStatus != STATUS_GOOD)
+   {
+      log(__FILE__, "ERROR: unable to register SQL_OPERATIONS component", -1);
       return STATUS_ERROR;  
+   }
       
 // Component is registered, now create all the operations associated with
 // the component.  A grant from the system to the grantee (DB__ROOT) will
@@ -191,7 +200,12 @@ std::string DB__ROOTName(ComUser::getRootUserName());
                                                        
       if (privStatus == STATUS_GOOD)
          operationCodes.push_back(codePtr); 
-      //TODO: report warning if not all operations added
+      else
+      {
+         traceMsg = "WARNING unable to create component operation: ";
+         traceMsg += PrivMgr::getSQLOperationName(operation);
+         log(__FILE__, traceMsg, -1);
+      } 
    }
 
 // In the unlikely event no operations were created, we are done.   
@@ -209,7 +223,11 @@ PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
                                                            DB__ROOTROLE,-1);
                                                            
    if (privStatus != STATUS_GOOD)
+   {
+      traceMsg = "ERROR unable to grant DB__ROOTROLE to components";
+      log(__FILE__, traceMsg, -1);
       return privStatus;
+   }
                                       
 // Grant SQL_OPERATIONS CREATE_SCHEMA and SHOW to PUBLIC 
 std::vector<std::string> CSOperationCodes;
@@ -225,7 +243,11 @@ std::vector<std::string> CSOperationCodes;
                                                            PUBLIC_AUTH_NAME,0);
                                       
    if (privStatus != STATUS_GOOD)
+   {
+      traceMsg = "ERROR unable to grant PUBLIC to components";
+      log(__FILE__, traceMsg, -1);
       return privStatus;
+   }
       
 // Verify counts for tables.
 
@@ -237,7 +259,18 @@ int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATI
    if (components.getCount() != 1 ||
        componentOperations.getCount() != static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) ||
        componentPrivileges.getCount() != expectedPrivCount)
+   {
+      std::string message ("Expecting ");
+      message += to_string((long long int)expectedPrivCount);
+      message += " component privileges, instead ";
+      message += to_string((long long int)componentPrivileges.getCount());
+      message += " were found.";
+      traceMsg = "ERROR: ";
+      traceMsg += message;
+      log(__FILE__, message, -1);
+      PRIVMGR_INTERNAL_ERROR(message.c_str());
       return STATUS_ERROR;
+   }
      
    return STATUS_GOOD; 
 
@@ -262,7 +295,11 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
   const std::string &colsLocation,
   std::vector<std::string> &tablesCreated,
   std::vector<std::string> &tablesUpgraded)
+
 {
+  std::string traceMsg;
+  log (__FILE__, "*** Initialize Authorization ***", -1);
+
   PrivStatus retcode = STATUS_GOOD;
 
   // Authorization check
@@ -288,6 +325,8 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
   // Create the privilege manager schema if it doesn't yet exists.
   if (initStatus == PRIV_UNINITIALIZED)
   {
+    log (__FILE__, "Creating _PRIVMGR_MD_ schema", -1);
+
     std::string schemaCommand("CREATE PRIVATE SCHEMA IF NOT EXISTS ");
   
     schemaCommand += metadataLocation_;
@@ -309,6 +348,7 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
     size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
     bool doCreate = (initStatus == PRIV_UNINITIALIZED);
 
+    log (__FILE__, "Creating _PRIVMGR_MD_ tables", -1);
     for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
     {
       const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
@@ -326,13 +366,19 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
       // Create tables for installations or upgrades 
       if (doCreate)
       {
+        traceMsg = ": ";
+        traceMsg = tableName;
+        log (__FILE__, traceMsg, -1);
 
         cliRC = createTable(tableName.c_str(), tableDefinition.tableDDL, 
                             cliInterface, pDiags_);
 
         // If create was successful, set flags to load default data
         if (cliRC < 0)
+        {
+          log (__FILE__, " create failed", -1);
           throw STATUS_ERROR;
+        }
        
         tablesCreated.push_back(tableDefinition.tableName);
 
@@ -377,6 +423,7 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
      // if not need to redo work just performed
      return STATUS_ERROR;
   }
+  log(__FILE__, "*** Initialize authorization completed ***", -1);
   return STATUS_GOOD;
 }
 
@@ -456,8 +503,12 @@ PrivStatus PrivMgrMDAdmin::upgradeMetadata (
 //
 // A cli error is put into the diags area if there is an error
 // ----------------------------------------------------------------------------
-PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objectsToDrop)
+PrivStatus PrivMgrMDAdmin::dropMetadata (
+  const std::vector<std::string> &objectsToDrop,
+  bool doCleanup)
 {
+  std::string traceMsg;
+  log (__FILE__, "*** Drop Authorization ***", -1);
   PrivStatus retcode = STATUS_GOOD;
     
   // Authorization check
@@ -467,24 +518,35 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
      return STATUS_ERROR;
    }
 
-  // See what does and does not exist
-  std::set<std::string> existingObjectList;
-  PrivMDStatus initStatus = authorizationEnabled(existingObjectList);
-
-  // If unable to access metadata, return STATUS_ERROR 
-  //   (pDiags contains error details)
-  if (initStatus == PRIV_INITIALIZE_UNKNOWN)
-    return STATUS_ERROR;
-
-  // If metadata tables don't exist, just return STATUS_GOOD
-  if (initStatus == PRIV_UNINITIALIZED)
-    return STATUS_GOOD;
-
-  // Call Trafodion to drop the schema cascade
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, CmpCommon::context()->sqlSession()->getParentQid());
   Int32 cliRC = 0;
+  if (doCleanup)
+    cleanupMetadata(cliInterface);
+  else
+  {
+    // See what does and does not exist
+    std::set<std::string> existingObjectList;
+    PrivMDStatus initStatus = authorizationEnabled(existingObjectList);
 
-  std::string schemaDDL("DROP SCHEMA ");
+    // If unable to access metadata, return STATUS_ERROR 
+    //   (pDiags contains error details)
+    if (initStatus == PRIV_INITIALIZE_UNKNOWN)
+    {
+      log(__FILE__, "ERROR: unable to access PRIVMGR metadata", -1);
+      return STATUS_ERROR;
+    }
+
+    // If metadata tables don't exist, just return STATUS_GOOD
+    if (initStatus == PRIV_UNINITIALIZED)
+    {
+      log(__FILE__, "WARNING: authorization is not enabled", -1);
+      return STATUS_GOOD;
+    }
+  }
+
+  // Call Trafodion to drop the schema cascade
+
+  std::string schemaDDL("DROP SCHEMA IF EXISTS ");
   schemaDDL += metadataLocation_;
   schemaDDL += "CASCADE";
   cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
@@ -493,15 +555,40 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
     cliInterface.retrieveSQLDiagnostics(pDiags_);
     retcode = STATUS_ERROR;
   }
+  log (__FILE__, "dropping _PRIVMGR_MD_ schema cascade", -1);
   CmpSeabaseDDLrole role;
     
   role.dropStandardRole(DB__ROOTROLE);
   role.dropStandardRole(DB__HIVEROLE);
   role.dropStandardRole(DB__HBASEROLE);
-    
+  log(__FILE__, "dropped roles DB__ROOTROLE, DB_HIVEROLE, DB_HBASEROLE", -1);
+   
 
 //TODO: should notify QI
+  log (__FILE__, "*** drop authorization completed ***", -1);
   return retcode;
+}
+
+// ----------------------------------------------------------------------------
+// Method:  cleanupMetadata
+//
+// This method cleans up the metadata tables used by privilege management
+//
+// Error messages are expected, so they are suppressed
+// ----------------------------------------------------------------------------
+void PrivMgrMDAdmin::cleanupMetadata (ExeCliInterface &cliInterface)
+{
+  std::string traceMsg;
+  log (__FILE__, "cleaning up PRIVMGR tables: ", -1);
+
+  size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
+  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
+  {
+    const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
+    std::string tableName = deriveTableName(tableDefinition.tableName);
+    log (__FILE__, tableName, -1);
+    cleanupTable(tableName.c_str(), cliInterface, pDiags_);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1228,6 +1315,32 @@ static int32_t dropTable (
 }
 
 // ----------------------------------------------------------------------------
+// Method:  cleanupTable
+//
+// This method removes a table through the brute force "cleanup" method.
+//
+// Params:
+//   tableName - fully qualified name of table to drop
+//   cliInterface - a reference to the CLI interface
+//   pDiags - pointer to the diags area
+//
+// This method is called when metadata is corrupt so errors are expected.
+// Error messages are suppressed.
+// ----------------------------------------------------------------------------
+static void cleanupTable (
+  const char *tableName,
+  ExeCliInterface &cliInterface,
+  ComDiagsArea *pDiags)
+{
+  std::string tableDDL("CLEANUP TABLE ");
+  tableDDL += tableName;
+  int32_t diagsMark = pDiags->mark();
+  Int32 cliRC = cliInterface.executeImmediate(tableDDL.c_str());
+  if (cliRC < 0)
+    pDiags->rewind(diagsMark);
+}
+
+// ----------------------------------------------------------------------------
 // Method:  renameTable
 //
 // This method renames a table
@@ -1275,7 +1388,7 @@ PrivStatus PrivMgrMDAdmin::updatePrivMgrMetadata(
    const bool shouldPopulateRoleGrants)
    
 {
-   
+   std::string traceMsg;
    PrivStatus privStatus = STATUS_GOOD;
 
    if (shouldPopulateObjectPrivs)
@@ -1292,6 +1405,7 @@ PrivStatus PrivMgrMDAdmin::updatePrivMgrMetadata(
    role.createStandardRole(DB__ROOTROLE,ROOT_ROLE_ID);
    role.createStandardRole(DB__HIVEROLE,HIVE_ROLE_ID);
    role.createStandardRole(DB__HBASEROLE,HBASE_ROLE_ID);
+   log(__FILE__, "created roles DB__ROOTROLE, DB__HIVEROLE, and DB__HBASEROLE", -1);
    
    if (shouldPopulateRoleGrants)
    {
