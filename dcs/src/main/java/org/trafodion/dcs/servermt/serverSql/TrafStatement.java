@@ -119,6 +119,7 @@ public class TrafStatement {
         try {
             if (curKey != 0){
                 resultSetList.get(curKey).closeTResultSet();
+                resultSetList.remove(curKey);
              }
         } catch (Exception e){}
     }
