@@ -8888,15 +8888,6 @@ bool CmpSeabaseDDL::dropOneTableorView(
 
 char buf [1000];
 
-Lng32 cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
-
-   if (cliRC < 0)
-   {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      
-      return false;
-   }
-
 bool someObjectsCouldNotBeDropped = false;
 
 char volatileString[20] = {0};
@@ -8921,7 +8912,8 @@ char objectTypeString[20] = {0};
                volatileString,objectTypeString,objectName);
                
 // Save the current parserflags setting
-ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   Lng32 cliRC = 0;
 
    try
    {            
@@ -8942,8 +8934,6 @@ ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;
-
-   cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 
    return someObjectsCouldNotBeDropped;
    
