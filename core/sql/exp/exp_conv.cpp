@@ -9327,7 +9327,7 @@ convDoIt(char * source,
   {
     int copyLen = 0;
     int convLen = gbkToUtf8( source, sourceLen, target, targetLen);
-    if (convLen > 0) {
+    if (convLen >= 0) {
       copyLen = convLen; 
       if ( varCharLen )
         setVCLength(varCharLen, varCharLenSize, copyLen);

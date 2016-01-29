@@ -1315,8 +1315,10 @@ int gbkToUtf8(char* gbkString, size_t gbklen,
    
    if ( addNullAtEnd )
    {
-     if(originalOutlen >= finalLength )
+     if(originalOutlen > finalLength )
        result[finalLength] = 0;
+     else
+       return -1;
    }
 
    return finalLength;

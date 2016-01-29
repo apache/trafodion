@@ -216,7 +216,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
     }
 
   if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
-      CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK")
+      (CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" || CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "gbk") && CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) == "UTF8" )
         needTranslate = TRUE;
 
   // source ascii row is a varchar where the data is a pointer to the source data
@@ -798,7 +798,6 @@ short FileScan::codeGenForHive(Generator * generator)
   const Int32 executorPredTuppIndex = 3;
   const Int32 asciiTuppIndex = 4;
   ULng32 asciiRowLen; 
-  ULng32 translateRowLen; 
   ExpTupleDesc * asciiTupleDesc = 0;
 
   ex_cri_desc * work_cri_desc = NULL;
@@ -808,7 +807,6 @@ short FileScan::codeGenForHive(Generator * generator)
   ExpTupleDesc::TupleDataFormat asciiRowFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
   ExpTupleDesc::TupleDataFormat hdfsRowFormat = ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
   ValueIdList asciiVids;
-  ValueIdList transVids;
   ValueIdList executorPredCastVids;
   ValueIdList projectExprOnlyCastVids;
 
@@ -1515,7 +1513,6 @@ short HbaseAccess::genRowIdExpr(Generator * generator,
 	  int res;
 	  ItemExpr * castVal = NULL;
 	  ItemExpr * asciiVal = NULL;
-	  ItemExpr * transVal = NULL;
 	  res = createAsciiColAndCastExpr(generator,
 					  givenType,
 					  asciiVal, castVal);
@@ -1611,7 +1608,6 @@ short HbaseAccess::genRowIdExprForNonSQ(Generator * generator,
 	  int res;
 	  ItemExpr * castVal = NULL;
 	  ItemExpr * asciiVal = NULL;
-	  ItemExpr * transVal = NULL;
 	  res = createAsciiColAndCastExpr(generator,
 					  givenType,
 					  asciiVal, castVal);
