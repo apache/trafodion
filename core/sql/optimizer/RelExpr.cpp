@@ -5189,6 +5189,7 @@ RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->tsjForSetNFError_ = tsjForSetNFError_;
   result->tsjForMerge_ = tsjForMerge_;
   result->tsjForMergeWithInsert_ = tsjForMergeWithInsert_;
+  result->tsjForMergeUpsert_ = tsjForMergeUpsert_;
   result->tsjForSideTreeInsert_ = tsjForSideTreeInsert_;
   result->enableTransformToSTI_ = enableTransformToSTI_;
 

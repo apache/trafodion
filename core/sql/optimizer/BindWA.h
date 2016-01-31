@@ -641,10 +641,11 @@ public:
   // parent's outer references +=
   //     current's outer references
   //     - parent's local references
+  // when keepLocalRefs = TRUE, they are retained (for merge)
   // Note that the + and - operators correspond to the set union and
   // set difference operations.
   // --------------------------------------------------------------------
-  void mergeOuterRefs(const ValueIdSet &other);
+  void mergeOuterRefs(const ValueIdSet &other, NABoolean keepLocalRefs);
 
   // --------------------------------------------------------------------
   // Accessor/mutator method for unresolvedAggregates_
@@ -1203,7 +1204,7 @@ public:
   // --------------------------------------------------------------------
   BindScope *getCurrentScope() const;
   BindScope *getPreviousScope(BindScope *currentScope) const;
-  void removeCurrentScope();
+  void removeCurrentScope(NABoolean keepLocalRefs = FALSE);
 
   BindScope *findNextScopeWithTriggerInfo(BindScope *currentScope = NULL);
   
