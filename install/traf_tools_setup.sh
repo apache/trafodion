@@ -44,6 +44,7 @@
 #   and group services.
 # Thrift: Communications and data serialization tool
 # Maven: Build tool that is only installed if compatible version does not exist
+# log4cxx: standard logging framework for C++
 #
 # Script can be modified to meet the needs of your environment
 # May need root or SUDO access to install tools in desired location
@@ -416,6 +417,42 @@ if [[ ! "$MAVEN_VERSION" =~ "3." ]]; then
 else
   echo "INFO:  Maven is already installed, skipping to next tool" | tee -a $LOGFILE
 fi
+
+# -----------------------------------------------------------------------------
+# install log4cxx, if not installed
+if [[ !  -e /usr/lib64/liblog4cxx.so ]]; then
+  cd $BASEDIR
+  echo
+  echo "INFO: Installing log4cxx on $(date)" | tee -a $LOGFILE
+  if [ -d $TOOLSDIR/apache-log4cxx-0.10.0/lib ]; then
+    echo "INFO: log4cxx is already installed, skipping to next tool" | tee -a $LOGFILE
+  else
+    downloadSource https://dist.apache.org/repos/dist/release/logging/log4cxx/0.10.0/apache-log4cxx-0.10.0.tar.gz apache-log4cxx
+    cd apache-log4cxx-0.10.0
+    echo "INFO:   headerfile patch - per LOG4CXX-360" | tee -a $LOGFILE
+    sed -i '1 i#include <string.h>' src/main/cpp/inputstreamreader.cpp
+    sed -i '1 i#include <string.h>' src/main/cpp/socketoutputstream.cpp
+    sed -i '1 i#include <string.h>' src/examples/cpp/console.cpp
+    sed -i '2 i#include <stdio.h>' src/examples/cpp/console.cpp
+    ./configure --prefix=$TOOLSDIR/apache-log4cxx-0.10.0 >>$LOGFILE 2>&1
+    echo "INFO:   configure complete" | tee -a $LOGFILE
+    make  >>$LOGFILE 2>&1
+    echo "INFO:   make completed" | tee -a $LOGFILE
+    make install  >>$LOGFILE 2>&1
+    if [ ! -d $TOOLSDIR/apache-log4cxx-0.10.0/lib ]; then
+      echo "ERROR:  failed to install log4cxx" | tee -a $LOGFILE
+      echo "  see details in $LOGFILE" | tee -a $LOGFILE
+      exit 2;
+    fi
+    echo "INFO:   make install complete, files placed in $TOOLSDIR"
+  fi
+  echo "INFO: log4cxx installation complete" | tee -a $LOGFILE
+  echo " *********************************************************** " | tee -a $LOGFILE
+else
+  echo "INFO:  log4cxx is already installed, skipping to next tool" | tee -a $LOGFILE
+fi
+
+# -----------------------------------------------------------------------------
 
 echo
 echo "INFO: Completed tools build on $(date)" | tee -a $LOGFILE
