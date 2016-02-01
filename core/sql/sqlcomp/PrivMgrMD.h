@@ -168,7 +168,9 @@ class PrivMgrMDAdmin : public PrivMgr
       const std::string &colsLocation,
       std::vector<std::string> &tablesCreated,
       std::vector<std::string> &tablesUpgraded);
-    PrivStatus dropMetadata(const std::vector<std::string> &objectsToDrop);
+    PrivStatus dropMetadata(
+      const std::vector<std::string> &objectsToDrop,
+      bool doCleanup);
 
     inline void setMetadataLocation (const std::string metadataLocation)
       {metadataLocation_ = metadataLocation;};
@@ -204,6 +206,8 @@ class PrivMgrMDAdmin : public PrivMgr
     }
 
   private:
+
+    void cleanupMetadata(ExeCliInterface &cliInterface);
 
     bool isRoot(std::string userName)
     { return ((userName == "DB__ROOT") ? true : false); }

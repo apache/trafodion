@@ -16190,6 +16190,22 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
                }
 
+             | TOK_INITIALIZE TOK_AUTHORIZATION ',' TOK_CLEANUP
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+							  (char*)stmt->data(),
+							  stmtCharSet);
+
+                 de->setCleanupAuth(TRUE);
+                 $$ = de;
+
+               }
+
              | TOK_INITIALIZE TOK_AUTHORIZATION ',' TOK_DROP
                {
 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;

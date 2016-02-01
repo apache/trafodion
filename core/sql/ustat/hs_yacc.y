@@ -92,7 +92,7 @@ extern int yylex(YYSTYPE * lvalp, void* scanner);
 %token  ON TOK_OFF EVERY COLUMN KEY TO CLEAR VIEWONLY GENERATE INTERVALS
 %token  TOK_SET ROWCOUNT SAMPLE ROWS RANDOM PERIODIC TOK_PERCENT CLUSTERS BLOCKS OF
 %token  EXISTING COLUMNS NECESSARY CREATE REMOVE ALL WITH SKEWED VALUES 
-%token  INCREMENTAL WHERE WHERE_CONDITION PERSISTENT
+%token  INCREMENTAL WHERE WHERE_CONDITION PERSISTENT NO
 %%
 
 /*
@@ -509,6 +509,13 @@ interval_clause :   GENERATE int_number INTERVALS
 ;
 
 sample_clause : sample_clause_init sample_clause_body
+
+              | NO SAMPLE
+                 {
+                   // explicit NO SAMPLE, to override error 
+                   // UERR_YOU_WILL_LIKELY_BE_SORRY on large tables
+                   hs_globals_y->optFlags |= NO_SAMPLE;
+                 }
 ;
 
 sample_clause_init : { 
