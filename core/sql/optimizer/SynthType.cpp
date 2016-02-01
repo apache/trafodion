@@ -5207,6 +5207,13 @@ const NAType *Translate::synthesizeType()
          err4106arg = SQLCHARSETSTRING_UTF8;
        break;
 
+     case GBK_TO_UTF8:
+       if (translateSource->getCharSet() == CharInfo::GBK )
+         charsetTarget = CharInfo::UTF8;
+       else
+         err4106arg = SQLCHARSETSTRING_GBK;
+       break;
+
      case ISO88591_TO_UTF8:
        if (translateSource->getCharSet() == CharInfo::ISO88591)
        {
