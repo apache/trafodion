@@ -25,7 +25,7 @@ outputDirectory=$2
 user=`whoami`
 date=`date`
 cwd=`pwd`
-if [ -d ../../.git ]; then
+if [ -d ../.git ]; then
   revision=`git log -1 --pretty=format:"%h"`
   hostname=`hostname`
   url="git://${hostname}${cwd}"

@@ -1,6 +1,6 @@
 #!/bin/sh
 #/**
-* @@@ START COPYRIGHT @@@
+# @@@ START COPYRIGHT @@@
 #
 #Licensed to the Apache Software Foundation (ASF) under one
 #or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,7 @@
 #specific language governing permissions and limitations
 #under the License.
 #
-* @@@ END COPYRIGHT @@@
+# @@@ END COPYRIGHT @@@
 # */
 # This is used for starting multiple servers on the same machine.
 # run it from 'bin/wms'
