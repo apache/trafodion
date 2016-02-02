@@ -2165,6 +2165,7 @@ CoprocessorService, Coprocessor {
      org.apache.hadoop.hbase.client.Result result = null;
      long transId  = request.getTransactionId();
      long lvAsn = request.getAuditSeqNum();
+     boolean lvAgeCommitted = request.getAgeCommitted();
      try{
         scan = ProtobufUtil.toScan(request.getScan());
         prepareScanner(scan);
@@ -2211,24 +2212,30 @@ CoprocessorService, Coprocessor {
                        String valueString = new String(CellUtil.cloneValue(cell));
                        StringTokenizer st = new StringTokenizer(valueString, ",");
                        if (st.hasMoreElements()) {
-                          String asnToken = st.nextElement().toString() ;
-                          String transidToken = st.nextElement().toString() ;
+                          String asnToken = st.nextElement().toString();
+                          String transidToken = st.nextElement().toString();
+                          String stateToken = st.nextElement().toString();
                           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteTlogEntries transidToken: "
                                     + transidToken + " asnToken: " + asnToken);
                           if (Long.parseLong(asnToken) < lvAsn) {
-                             if (LOG.isTraceEnabled()) LOG.trace("Deleting transid: " + transidToken
-                                 + " from region: " + m_Region.getRegionInfo().getRegionNameAsString());
-                             try {
-                                Delete d = new Delete(result.getRow());
-                                m_Region.delete(d);
-                             }
+                             if ( (stateToken.contains("FORGOTTEN")) ||
+                                  (stateToken.equals("COMMITTED") && (lvAgeCommitted)) ||
+                                  (stateToken.equals("ABORTED") && (lvAgeCommitted))) {
 
-                             catch (Exception e) {
-                                LOG.warn("TrxRegionEndpoint coprocessor: deleteTlogEntries -"
-                                    + " txId " + transidToken + ", Executing delete caught an exception " + e);
-                                throw new IOException(e.toString());
+                                if (LOG.isTraceEnabled()) LOG.trace("Deleting transid: " + transidToken
+                                        + " from region: " + m_Region.getRegionInfo().getRegionNameAsString() + " with state: " + stateToken);
+
+                                try {
+                                   Delete d = new Delete(result.getRow());
+                                   m_Region.delete(d);
+                                }
+                                catch (Exception e) {
+                                   LOG.warn("TrxRegionEndpoint coprocessor: deleteTlogEntries -"
+                                       + " txId " + transidToken + ", Executing delete caught an exception " + e);
+                                   throw new IOException(e.toString());
+                                }
+                                count++;
                              }
-                             count++;
                           } else {
                              if (LOG.isTraceEnabled()) LOG.trace("deleteTlogEntries Ending scan at asn: " + asnToken
                                      + ", transid: " + transidToken +

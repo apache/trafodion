@@ -202,7 +202,7 @@ public class TmAuditTlog {
         endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
     }
 
-    public Integer deleteEntriesOlderThanASNX(final byte[] regionName, final long auditSeqNum) throws IOException {
+    public Integer deleteEntriesOlderThanASNX(final byte[] regionName, final long auditSeqNum, final boolean pv_ageCommitted) throws IOException {
        long threadId = Thread.currentThread().getId();
        if (LOG.isTraceEnabled()) LOG.trace("deleteEntriesOlderThanASNX -- ENTRY auditSeqNum: "
             + auditSeqNum + ", thread " + threadId);
@@ -229,6 +229,7 @@ public class TmAuditTlog {
                         builder.setTransactionId(transactionState.getTransactionId());
                         builder.setScan(ProtobufUtil.toScan(scan));
                         builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName))); //ByteString.copyFromUtf8(Bytes.toString(regionName)));
+                        builder.setAgeCommitted(pv_ageCommitted); 
 
                         instance.deleteTlogEntries(controller, builder.build(), rpcCallback);
                         return rpcCallback.get();
@@ -1173,7 +1174,7 @@ public class TmAuditTlog {
                   try {
                      if (LOG.isTraceEnabled()) LOG.trace("Attempting to remove TLOG writes older than asn " + agedAsn);
 //                     deleteAgedEntries(agedAsn);
-                     deleteEntriesOlderThanASN(agedAsn);
+                     deleteEntriesOlderThanASN(agedAsn, ageCommitted);
                   }
                   catch (Exception e){
                      LOG.error("deleteAgedEntries Exception " + e);
@@ -1388,7 +1389,7 @@ public class TmAuditTlog {
    * Return  : void
    * Purpose : Delete transaction records which are no longer needed
    */
-   public void deleteEntriesOlderThanASN(final long pv_ASN) throws IOException {
+   public void deleteEntriesOlderThanASN(final long pv_ASN, final boolean pv_ageCommitted) throws IOException {
       int loopCount = 0;
       long threadId = Thread.currentThread().getId();
       // This TransactionState object is just a mechanism to keep track of the asynch rpc calls
@@ -1415,7 +1416,7 @@ public class TmAuditTlog {
                   public Integer call() throws IOException {
                      if (LOG.isTraceEnabled()) LOG.trace("before deleteEntriesOlderThanASNX() ASN: "
                          + pv_ASN);
-                     return deleteEntriesOlderThanASNX(regionName, pv_ASN);
+                     return deleteEntriesOlderThanASNX(regionName, pv_ASN, pv_ageCommitted);
                   }
                });
             }

@@ -26558,6 +26558,16 @@ public final class TrxRegionProtos {
      * <code>required int64 auditSeqNum = 4;</code>
      */
     long getAuditSeqNum();
+
+    // required bool ageCommitted = 5;
+    /**
+     * <code>required bool ageCommitted = 5;</code>
+     */
+    boolean hasAgeCommitted();
+    /**
+     * <code>required bool ageCommitted = 5;</code>
+     */
+    boolean getAgeCommitted();
   }
   /**
    * Protobuf type {@code TlogDeleteRequest}
@@ -26636,6 +26646,11 @@ public final class TrxRegionProtos {
             case 32: {
               bitField0_ |= 0x00000008;
               auditSeqNum_ = input.readInt64();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              ageCommitted_ = input.readBool();
               break;
             }
           }
@@ -26748,11 +26763,28 @@ public final class TrxRegionProtos {
       return auditSeqNum_;
     }
 
+    // required bool ageCommitted = 5;
+    public static final int AGECOMMITTED_FIELD_NUMBER = 5;
+    private boolean ageCommitted_;
+    /**
+     * <code>required bool ageCommitted = 5;</code>
+     */
+    public boolean hasAgeCommitted() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>required bool ageCommitted = 5;</code>
+     */
+    public boolean getAgeCommitted() {
+      return ageCommitted_;
+    }
+
     private void initFields() {
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       transactionId_ = 0L;
       scan_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Scan.getDefaultInstance();
       auditSeqNum_ = 0L;
+      ageCommitted_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -26772,6 +26804,10 @@ public final class TrxRegionProtos {
         return false;
       }
       if (!hasAuditSeqNum()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasAgeCommitted()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -26798,6 +26834,9 @@ public final class TrxRegionProtos {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeInt64(4, auditSeqNum_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBool(5, ageCommitted_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -26822,6 +26861,10 @@ public final class TrxRegionProtos {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(4, auditSeqNum_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(5, ageCommitted_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -26952,6 +26995,8 @@ public final class TrxRegionProtos {
         bitField0_ = (bitField0_ & ~0x00000004);
         auditSeqNum_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000008);
+        ageCommitted_ = false;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -27000,6 +27045,10 @@ public final class TrxRegionProtos {
           to_bitField0_ |= 0x00000008;
         }
         result.auditSeqNum_ = auditSeqNum_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.ageCommitted_ = ageCommitted_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -27028,6 +27077,9 @@ public final class TrxRegionProtos {
         if (other.hasAuditSeqNum()) {
           setAuditSeqNum(other.getAuditSeqNum());
         }
+        if (other.hasAgeCommitted()) {
+          setAgeCommitted(other.getAgeCommitted());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -27046,6 +27098,10 @@ public final class TrxRegionProtos {
           return false;
         }
         if (!hasAuditSeqNum()) {
+          
+          return false;
+        }
+        if (!hasAgeCommitted()) {
           
           return false;
         }
@@ -27290,6 +27346,39 @@ public final class TrxRegionProtos {
       public Builder clearAuditSeqNum() {
         bitField0_ = (bitField0_ & ~0x00000008);
         auditSeqNum_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // required bool ageCommitted = 5;
+      private boolean ageCommitted_ ;
+      /**
+       * <code>required bool ageCommitted = 5;</code>
+       */
+      public boolean hasAgeCommitted() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>required bool ageCommitted = 5;</code>
+       */
+      public boolean getAgeCommitted() {
+        return ageCommitted_;
+      }
+      /**
+       * <code>required bool ageCommitted = 5;</code>
+       */
+      public Builder setAgeCommitted(boolean value) {
+        bitField0_ |= 0x00000010;
+        ageCommitted_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool ageCommitted = 5;</code>
+       */
+      public Builder clearAgeCommitted() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        ageCommitted_ = false;
         onChanged();
         return this;
       }
@@ -35262,77 +35351,78 @@ public final class TrxRegionProtos {
       "ionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\014\n\004tmId\030" +
       "\003 \002(\005\"R\n\027RecoveryRequestResponse\022\016\n\006resu" +
       "lt\030\001 \003(\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcept" +
-      "ion\030\003 \001(\010\"h\n\021TlogDeleteRequest\022\022\n\nregion" +
+      "ion\030\003 \001(\010\"~\n\021TlogDeleteRequest\022\022\n\nregion" +
       "Name\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\023\n\004sca" +
-      "n\030\003 \002(\0132\005.Scan\022\023\n\013auditSeqNum\030\004 \002(\003\"e\n\022T" +
-      "logDeleteResponse\022\027\n\006result\030\001 \003(\0132\007.Resu" +
-      "lt\022\r\n\005count\030\002 \002(\003\022\021\n\texception\030\003 \001(\t\022\024\n\014" +
-      "hasException\030\004 \001(\010\"\243\001\n\035TransactionalAggr" +
-      "egateRequest\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtran",
-      "sactionId\030\002 \002(\003\022\036\n\026interpreter_class_nam" +
-      "e\030\003 \002(\t\022\023\n\004scan\030\004 \002(\0132\005.Scan\022\"\n\032interpre" +
-      "ter_specific_bytes\030\005 \001(\014\"I\n\036Transactiona" +
-      "lAggregateResponse\022\022\n\nfirst_part\030\003 \003(\014\022\023" +
-      "\n\013second_part\030\004 \001(\014\"c\n\022TransactionPersis" +
-      "t\022\016\n\006txById\030\001 \003(\003\022\024\n\014seqNoListSeq\030\002 \003(\003\022" +
-      "\024\n\014seqNoListTxn\030\003 \003(\003\022\021\n\tnextSeqId\030\004 \002(\003" +
-      "\"\372\001\n\023TransactionStateMsg\022\014\n\004txId\030\001 \002(\003\022\033" +
-      "\n\003put\030\002 \003(\0132\016.MutationProto\022\036\n\006delete\030\003 " +
-      "\003(\0132\016.MutationProto\022\020\n\010putOrDel\030\004 \003(\010\022\023\n",
-      "\013txnsToCheck\030\005 \003(\003\022\023\n\013startSeqNum\030\006 \002(\003\022" +
-      "\016\n\006seqNum\030\007 \002(\003\022\020\n\010logSeqId\030\010 \002(\003\022\022\n\nrei" +
-      "nstated\030\t \002(\010\022\016\n\006status\030\n \002(\005\022\026\n\016commitP" +
-      "rogress\030\013 \002(\0052\207\017\n\020TrxRegionService\022G\n\020ab" +
-      "ortTransaction\022\030.AbortTransactionRequest" +
-      "\032\031.AbortTransactionResponse\022_\n\030abortTran" +
-      "sactionMultiple\022 .AbortTransactionMultip" +
-      "leRequest\032!.AbortTransactionMultipleResp" +
-      "onse\022G\n\020beginTransaction\022\030.BeginTransact" +
-      "ionRequest\032\031.BeginTransactionResponse\022A\n",
-      "\016checkAndDelete\022\026.CheckAndDeleteRequest\032" +
-      "\027.CheckAndDeleteResponse\0228\n\013checkAndPut\022" +
-      "\023.CheckAndPutRequest\032\024.CheckAndPutRespon" +
-      "se\022;\n\014closeScanner\022\024.CloseScannerRequest" +
-      "\032\025.CloseScannerResponse\022)\n\006commit\022\016.Comm" +
-      "itRequest\032\017.CommitResponse\022G\n\020commitIfPo" +
-      "ssible\022\030.CommitIfPossibleRequest\032\031.Commi" +
-      "tIfPossibleResponse\022V\n\025commitRequestMult" +
-      "iple\022\035.CommitRequestMultipleRequest\032\036.Co" +
-      "mmitRequestMultipleResponse\022A\n\016commitMul",
-      "tiple\022\026.CommitMultipleRequest\032\027.CommitMu" +
-      "ltipleResponse\022>\n\rcommitRequest\022\025.Commit" +
-      "RequestRequest\032\026.CommitRequestResponse\022C" +
-      "\n\006delete\022\033.DeleteTransactionalRequest\032\034." +
-      "DeleteTransactionalResponse\022[\n\016deleteMul" +
-      "tiple\022#.DeleteMultipleTransactionalReque" +
-      "st\032$.DeleteMultipleTransactionalResponse" +
-      "\022:\n\003get\022\030.GetTransactionalRequest\032\031.GetT" +
-      "ransactionalResponse\0228\n\013performScan\022\023.Pe" +
-      "rformScanRequest\032\024.PerformScanResponse\0228",
-      "\n\013openScanner\022\023.OpenScannerRequest\032\024.Ope" +
-      "nScannerResponse\022:\n\003put\022\030.PutTransaction" +
-      "alRequest\032\031.PutTransactionalResponse\022R\n\013" +
-      "putMultiple\022 .PutMultipleTransactionalRe" +
-      "quest\032!.PutMultipleTransactionalResponse" +
-      "\022D\n\017recoveryRequest\022\027.RecoveryRequestReq" +
-      "uest\032\030.RecoveryRequestResponse\022<\n\021delete" +
-      "TlogEntries\022\022.TlogDeleteRequest\032\023.TlogDe" +
-      "leteResponse\022I\n\006GetMax\022\036.TransactionalAg" +
+      "n\030\003 \002(\0132\005.Scan\022\023\n\013auditSeqNum\030\004 \002(\003\022\024\n\014a" +
+      "geCommitted\030\005 \002(\010\"e\n\022TlogDeleteResponse\022" +
+      "\027\n\006result\030\001 \003(\0132\007.Result\022\r\n\005count\030\002 \002(\003\022" +
+      "\021\n\texception\030\003 \001(\t\022\024\n\014hasException\030\004 \001(\010" +
+      "\"\243\001\n\035TransactionalAggregateRequest\022\022\n\nre",
+      "gionName\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\036\n" +
+      "\026interpreter_class_name\030\003 \002(\t\022\023\n\004scan\030\004 " +
+      "\002(\0132\005.Scan\022\"\n\032interpreter_specific_bytes" +
+      "\030\005 \001(\014\"I\n\036TransactionalAggregateResponse" +
+      "\022\022\n\nfirst_part\030\003 \003(\014\022\023\n\013second_part\030\004 \001(" +
+      "\014\"c\n\022TransactionPersist\022\016\n\006txById\030\001 \003(\003\022" +
+      "\024\n\014seqNoListSeq\030\002 \003(\003\022\024\n\014seqNoListTxn\030\003 " +
+      "\003(\003\022\021\n\tnextSeqId\030\004 \002(\003\"\372\001\n\023TransactionSt" +
+      "ateMsg\022\014\n\004txId\030\001 \002(\003\022\033\n\003put\030\002 \003(\0132\016.Muta" +
+      "tionProto\022\036\n\006delete\030\003 \003(\0132\016.MutationProt",
+      "o\022\020\n\010putOrDel\030\004 \003(\010\022\023\n\013txnsToCheck\030\005 \003(\003" +
+      "\022\023\n\013startSeqNum\030\006 \002(\003\022\016\n\006seqNum\030\007 \002(\003\022\020\n" +
+      "\010logSeqId\030\010 \002(\003\022\022\n\nreinstated\030\t \002(\010\022\016\n\006s" +
+      "tatus\030\n \002(\005\022\026\n\016commitProgress\030\013 \002(\0052\207\017\n\020" +
+      "TrxRegionService\022G\n\020abortTransaction\022\030.A" +
+      "bortTransactionRequest\032\031.AbortTransactio" +
+      "nResponse\022_\n\030abortTransactionMultiple\022 ." +
+      "AbortTransactionMultipleRequest\032!.AbortT" +
+      "ransactionMultipleResponse\022G\n\020beginTrans" +
+      "action\022\030.BeginTransactionRequest\032\031.Begin",
+      "TransactionResponse\022A\n\016checkAndDelete\022\026." +
+      "CheckAndDeleteRequest\032\027.CheckAndDeleteRe" +
+      "sponse\0228\n\013checkAndPut\022\023.CheckAndPutReque" +
+      "st\032\024.CheckAndPutResponse\022;\n\014closeScanner" +
+      "\022\024.CloseScannerRequest\032\025.CloseScannerRes" +
+      "ponse\022)\n\006commit\022\016.CommitRequest\032\017.Commit" +
+      "Response\022G\n\020commitIfPossible\022\030.CommitIfP" +
+      "ossibleRequest\032\031.CommitIfPossibleRespons" +
+      "e\022V\n\025commitRequestMultiple\022\035.CommitReque" +
+      "stMultipleRequest\032\036.CommitRequestMultipl",
+      "eResponse\022A\n\016commitMultiple\022\026.CommitMult" +
+      "ipleRequest\032\027.CommitMultipleResponse\022>\n\r" +
+      "commitRequest\022\025.CommitRequestRequest\032\026.C" +
+      "ommitRequestResponse\022C\n\006delete\022\033.DeleteT" +
+      "ransactionalRequest\032\034.DeleteTransactiona" +
+      "lResponse\022[\n\016deleteMultiple\022#.DeleteMult" +
+      "ipleTransactionalRequest\032$.DeleteMultipl" +
+      "eTransactionalResponse\022:\n\003get\022\030.GetTrans" +
+      "actionalRequest\032\031.GetTransactionalRespon" +
+      "se\0228\n\013performScan\022\023.PerformScanRequest\032\024",
+      ".PerformScanResponse\0228\n\013openScanner\022\023.Op" +
+      "enScannerRequest\032\024.OpenScannerResponse\022:" +
+      "\n\003put\022\030.PutTransactionalRequest\032\031.PutTra" +
+      "nsactionalResponse\022R\n\013putMultiple\022 .PutM" +
+      "ultipleTransactionalRequest\032!.PutMultipl" +
+      "eTransactionalResponse\022D\n\017recoveryReques" +
+      "t\022\027.RecoveryRequestRequest\032\030.RecoveryReq" +
+      "uestResponse\022<\n\021deleteTlogEntries\022\022.Tlog" +
+      "DeleteRequest\032\023.TlogDeleteResponse\022I\n\006Ge" +
+      "tMax\022\036.TransactionalAggregateRequest\032\037.T",
+      "ransactionalAggregateResponse\022I\n\006GetMin\022" +
+      "\036.TransactionalAggregateRequest\032\037.Transa" +
+      "ctionalAggregateResponse\022I\n\006GetSum\022\036.Tra" +
+      "nsactionalAggregateRequest\032\037.Transaction" +
+      "alAggregateResponse\022L\n\tGetRowNum\022\036.Trans" +
+      "actionalAggregateRequest\032\037.Transactional" +
+      "AggregateResponse\022I\n\006GetAvg\022\036.Transactio" +
+      "nalAggregateRequest\032\037.TransactionalAggre" +
+      "gateResponse\022I\n\006GetStd\022\036.TransactionalAg" +
       "gregateRequest\032\037.TransactionalAggregateR",
-      "esponse\022I\n\006GetMin\022\036.TransactionalAggrega" +
-      "teRequest\032\037.TransactionalAggregateRespon" +
-      "se\022I\n\006GetSum\022\036.TransactionalAggregateReq" +
-      "uest\032\037.TransactionalAggregateResponse\022L\n" +
-      "\tGetRowNum\022\036.TransactionalAggregateReque" +
-      "st\032\037.TransactionalAggregateResponse\022I\n\006G" +
-      "etAvg\022\036.TransactionalAggregateRequest\032\037." +
-      "TransactionalAggregateResponse\022I\n\006GetStd" +
-      "\022\036.TransactionalAggregateRequest\032\037.Trans" +
-      "actionalAggregateResponse\022L\n\tGetMedian\022\036",
-      ".TransactionalAggregateRequest\032\037.Transac" +
-      "tionalAggregateResponseBS\n;org.apache.ha" +
-      "doop.hbase.coprocessor.transactional.gen" +
-      "eratedB\017TrxRegionProtosH\001\210\001\001"
+      "esponse\022L\n\tGetMedian\022\036.TransactionalAggr" +
+      "egateRequest\032\037.TransactionalAggregateRes" +
+      "ponseBS\n;org.apache.hadoop.hbase.coproce" +
+      "ssor.transactional.generatedB\017TrxRegionP" +
+      "rotosH\001\210\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -35572,7 +35662,7 @@ public final class TrxRegionProtos {
           internal_static_TlogDeleteRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_TlogDeleteRequest_descriptor,
-              new java.lang.String[] { "RegionName", "TransactionId", "Scan", "AuditSeqNum", });
+              new java.lang.String[] { "RegionName", "TransactionId", "Scan", "AuditSeqNum", "AgeCommitted", });
           internal_static_TlogDeleteResponse_descriptor =
             getDescriptor().getMessageTypes().get(39);
           internal_static_TlogDeleteResponse_fieldAccessorTable = new
