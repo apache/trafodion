@@ -188,6 +188,8 @@ fi
 
 ./gensqstatem2lenv > $SQETC_DIR/sqstatem2l.env
 
+cp ./traf_coprocessor.properties $SQETC_DIR/
+
 # Create configuration database tables
 rm -f sqconfig.db
 sqlite3 -init createConfigDb sqconfig.db <<eof 
