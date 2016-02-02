@@ -710,9 +710,7 @@ sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 copyConfig
 
-if [[ $ENABLE_HA == "true" ]]; then
-   $LOCAL_WORKDIR/traf_add_sudoAccess
-fi
+$LOCAL_WORKDIR/traf_add_sudoAccess
 
 #Set Max kernel pid
 
