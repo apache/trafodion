@@ -37,9 +37,12 @@
 #include "seabed/ms.h"
 #include "seabed/pctl.h"
 #include "seabed/pevents.h"
-
+#include "seabed/timer.h"
+#include "seabed/thread.h"
 #include "idtmsrv.h"
 
+short          gv_tleid;
+short          gv_time_refresh_delay; // time in tics (10ms)
 char           ga_name[BUFSIZ];
 char          *gp_shm;
 unsigned long *gp_shml;
@@ -53,6 +56,37 @@ void do_reply(BMS_SRE *pp_sre, char *pp_reply, int pv_len, short pv_ec);
 
 
 //
+// Reset the global time counter
+//
+void reset_time_counter() {
+
+    struct timespec lv_new_ts;
+
+    clock_gettime(CLOCK_REALTIME, &lv_new_ts);
+    unsigned long lv_new_tsl = ((unsigned long) lv_new_ts.tv_sec << 20) |
+                               ((unsigned long) lv_new_ts.tv_nsec / 1000);
+
+    unsigned long lv_existing_tsl = __sync_add_and_fetch_8(gp_shm, 0);
+    __sync_add_and_fetch_8(gp_shm, lv_new_tsl - lv_existing_tsl);
+
+    if (gv_verbose)
+       printf("srv: reset_time_counter, adjustment=0x%lx, shm=0x%lx\n", lv_new_tsl - lv_existing_tsl, *gp_shml);
+}
+
+//
+// Timer callback
+//
+void timer_callback(int tleid, int toval, short parm1, long parm2) {
+    int   ferr;
+
+    if (gv_verbose)
+        printf("timer_callback \n");
+    reset_time_counter();
+    ferr = timer_start_cb(gv_time_refresh_delay, 0, 0, &gv_tleid, &timer_callback);
+    assert(ferr == XZFIL_ERR_OK);
+}
+
+//
 // initialize
 //
 void do_init(int pv_argc, char **ppp_argv) {
@@ -60,6 +94,7 @@ void do_init(int pv_argc, char **ppp_argv) {
     int   lv_arg;
     bool  lv_attach;
     int   lv_ferr;
+    char *lv_delay_s;
 
     lv_attach = false;
     for (lv_arg = 1; lv_arg < pv_argc; lv_arg++) {
@@ -76,6 +111,15 @@ void do_init(int pv_argc, char **ppp_argv) {
     else
         lv_ferr = msg_init(&pv_argc, &ppp_argv);
     assert(lv_ferr == XZFIL_ERR_OK);
+
+    gv_time_refresh_delay = 200;  // 2 seconds
+    lv_delay_s = getenv("TM_IDTMSRV_REFRESH_DELAY_SECONDS");
+    if (lv_delay_s != NULL) {
+       gv_time_refresh_delay = 100 * (atoi(lv_delay_s));      
+    }
+    if (gv_verbose){
+        printf("TM_IDTMSRV_REFRESH_DELAY_SECONDS is %s.  Setting gv_time_refresh_delay to %d \n", lv_delay_s, gv_time_refresh_delay);
+    }   
 
     if (gv_shook)
         msg_debug_hook("s", "s");
@@ -296,6 +340,8 @@ int main(int pv_argc, char *pa_argv[]) {
     assert(lv_ferr == XZFIL_ERR_OK);
 
     do_shm();
+    lv_ferr = timer_start_cb(gv_time_refresh_delay, 0, 0, &gv_tleid, &timer_callback);
+    assert(lv_ferr == XZFIL_ERR_OK);
 
     lv_done = false;
     while (!lv_done) {
