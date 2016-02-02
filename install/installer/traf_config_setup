@@ -394,6 +394,18 @@ echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export UTT_INSTALL=\"$UTT_INSTALL\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
+#Backup restore user
+
+echo -n "Enter Backup/Restore username (can be Trafodion), default is [$BACKUP_USER]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export BACKUP_USER=\"$BACKUP_USER\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export BACKUP_USER=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
 #Hadoop user name
 
 echo -n "Enter Hadoop admin username, default is [$ADMIN]: "
@@ -555,7 +567,7 @@ echo "export DCS_PRIMARY_MASTER_NODE=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRA
 #==============================================
 #Enable HA
 
-echo -n "Enable High Availability (Y/N), default is N: "
+echo -n "Enable High Avalability (Y/N), default is N: "
 read answer
 
 if [[ ! -z $answer ]]; then
