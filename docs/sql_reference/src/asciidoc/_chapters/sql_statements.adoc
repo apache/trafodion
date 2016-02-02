@@ -64,7 +64,7 @@ transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run the
 | <<alter_library_statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a Trafodion database.
 | <<alter_table_statement,ALTER TABLE Statement>>            | Changes attributes for a table.
 | <<alter_user_statement,ALTER USER Statement>>              | Changes attributes for a user.
-| <<create_function_statement,CREATE FUNCTION Statement>>    | Registers a user-defined function (UDF) written in C as a functionwithin a Trafodion database.
+| <<create_function_statement,CREATE FUNCTION Statement>>    | Registers a user-defined function (UDF) written in C as a function within a Trafodion database.
 | <<create_index_statement,CREATE INDEX Statement>>          | Creates an index on a table.
 | <<create_library_statement,CREATE LIBRARY Statement>>      | Registers a library object in a Trafodion database.
 | <<create_procedure_statement,CREATE PROCEDURE Statement>>  | Registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
@@ -82,8 +82,8 @@ referenced by the library object.
 | <<drop_table_statement,DROP TABLE Statement>>              | Drops a table.
 | <<drop_view_statement,DROP VIEW Statement>>                | Drops a view.
 | <<register_user_statement,REGISTER USER Statement>>        | Registers a user in the SQL database, associating the user's login name
-with a database username.
-| <<unregister_user_statement, UNREGISTER USER Statement>>   | Removes a database username from the SQL database.
+with a database user name.
+| <<unregister_user_statement, UNREGISTER USER Statement>>   | Removes a database user name from the SQL database.
 |===
 
 
@@ -138,11 +138,11 @@ Use these statements to register users, create roles, and grant and revoke privi
 | <<grant_statement,GRANT Statement>>                                           | Grants access privileges on an SQL object to specified users or roles.
 | <<grant_component_privilege_statement,GRANT COMPONENT PRIVILEGE Statement>>   | Grants one or more component privileges to a user or role.
 | <<grant_role_statement,GRANT ROLE Statement>>                                 | Grants one or more roles to a user.
-| <<register_user_statement,REGISTER USER Statement>>                           | Registers a user in the SQL database, associating the user's login name with a database username.
+| <<register_user_statement,REGISTER USER Statement>>                           | Registers a user in the SQL database, associating the user's login name with a database user name.
 | <<revoke_statement,REVOKE Statement>>                                         | Revokes access privileges on an SQL object from specified users or roles.
 | <<revoke_component_privilege_statement,REVOKE COMPONENT PRIVILEGE Statement>> | Removes one or more component privileges from a user or role.
 | <<revoke_role_statement,REVOKE ROLE Statement>>                               | Removes one or more roles from a user.
-| <<unregister_user_statement,UNREGISTER USER Statement>>                       | Removes a database username from the SQL database.
+| <<unregister_user_statement,UNREGISTER USER Statement>>                       | Removes a database user name from the SQL database.
 |===
 
 <<<
@@ -260,14 +260,14 @@ ALTER LIBRARY [[catalog-name.]schema-name.]library-name
 
 * `[[_catalog-name_.]_schema-name_.]_library-name_`
 +
-specifies the ansi logical name of the library object, where each part of the name is a valid sql identifier with a maximum of 128 characters.
+specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a maximum of 128 characters.
 specify the name of a library object that has already been registered in the schema. if you do not fully qualify the library name, trafodion sql
 qualifies it according to the schema of the current session. for more information, see <<identifiers,identifiers>> and
 <<_database_object_names,database object names>>.
 
 * `file _library-filename_`
 +
-specifies the full path of the redeployed library file, which either an spj's jar file or a udf's library file.
+specifies the full path of the redeployed library file, which either an SPJ's jar file or a UDF's library file.
 
 * `host name _host-name_`
 +
@@ -597,7 +597,7 @@ following must be true:
 * You are the owner of the referencing and referenced tables.
 * You have these privileges on the referencing and referenced table:
 ** For the referencing table, you have the ALTER or ALTER_TABLE component privilege for the SQL_OPERATIONS component.
-** For the referenced table, you have the REFERENCES (or ALL) privilege on the referenced table through your username or through a granted role.
+** For the referenced table, you have the REFERENCES (or ALL) privilege on the referenced table through your user name or through a granted role.
 
 If the constraint refers to the other table in a query expression, you must also have SELECT privileges on the other table.
 
@@ -766,7 +766,7 @@ if you do not fully qualify the procedure name, trafodion sql qualifies it accor
 
 * `_argument-list_`
 +
-accepts arguments for in, inout, or out parameters. the arguments consist of sql expressions, including dynamic parameters,
+accepts arguments for in, in-out, or out parameters. the arguments consist of sql expressions, including dynamic parameters,
 separated by commas:
 +
 `_sql-expression_[{, _sql-expression_}&#8230;]`
@@ -779,7 +779,7 @@ each expression must evaluate to a value of one of these data types:
 ** date-time value
 ** numeric value
 +
-interval value expressions are disallowed in spjs. for more information, see
+interval value expressions are disallowed in SPJs. for more information, see
 <<call_input_parameter_arguments,input parameter arguments>> and
 <<call_output_parameter_arguments,output parameter arguments>>.
 +
@@ -792,7 +792,7 @@ do not specify result sets in the argument list.
 ==== Usage Restrictions
 
 You can use a CALL statement as a stand-alone SQL statement in applications or command-line interfaces,
-such as TrafCI. You cannot use a CALL statement inside a compound statement or with rowsets.
+such as TrafCI. You cannot use a CALL statement inside a compound statement or with row sets.
 
 [[call_required_privileges]]
 ==== Required Privileges
@@ -827,7 +827,7 @@ For an INOUT parameter argument, you can use only a dynamic, named, or unnamed p
 ==== Output Parameter Arguments
 
 An SPJ returns values in OUT and INOUT parameters. Output parameter arguments must be dynamic parameters in an
-application (for example, ?) or named or unnamed parameters in HPDCI (for example, ?param or ?). Each
+application (for example, ?) or named or unnamed parameters in DCI (for example, ?param or ?). Each
 calling application defines the semantics of the OUT and INOUT parameters in its environment.
 
 [[call_data_conversion_parameter_arguments]]
@@ -1243,7 +1243,7 @@ specifies the case-sensitive name of the external function’s method.
 
 * `library [[_catalog-name_.]_schema-name_.]_library-name_`
 +
-specifies the ansi logical name of a library containing the external function. if you do not fully qualify the
+specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
 
 * `language c`
@@ -1262,7 +1262,7 @@ specifies that the function does not perform sql operations. this clause is opti
 * `deterministic | not deterministic`
 +
 specifies whether the function always returns the same values for out parameters for a given set of argument
-values (deterministic, the default behavior) or does not return the same values (not eterministic). if the
+values (deterministic, the default behavior) or does not return the same values (not deterministic). if the
 function is deterministic, trafodion sql is not required to execute the function each time to produce results;
 instead, trafodion sql caches the results and reuses them during subsequent executions, thus optimizing the execution.
 
@@ -1364,7 +1364,7 @@ hbase-options-list is:
 * `_index_`
 +
 is an SQL identifier that specifies the simple name for the new index. You cannot qualify _index_ with its schema
-name. Indexes have their own namespace within a schema, so an index name might be the same as a table or constraint
+name. Indexes have their own name space within a schema, so an index name might be the same as a table or constraint
 name. However, no two indexes in a schema can have the same name.
 
 * `_table_`
@@ -1380,7 +1380,7 @@ ASCENDING or DESCENDING specifies the storage and retrieval order for rows in th
 +
 Rows are ordered by values in the first column specified for the index. If multiple index rows share the same value
 for the first column, the values in the second column are used to order the rows, and so forth. If duplicate index
-rows occur in a nonunique index, their order is based on the sequence specified for the columns of the key of the
+rows occur in a non-unique index, their order is based on the sequence specified for the columns of the key of the
 underlying table. For ordering (but not for other purposes), nulls are greater than other values.
 
 * `HBASE_OPTIONS (_hbase-option_ = '_value_'[, _hbase-option_ = '_value_']&#8230;)`
@@ -1448,8 +1448,8 @@ Indexes are created under a single transaction. When an index is created, the fo
 NOTE: A side tree insert is a fast way of loading data that can perform specialized optimizations because the
 partitions are not audited and empty.
 
-* After load is complete, the index audit attribute is turned on and it is attached to the base table (to bring the index online).
-* The transaction is committed, either by the system or later by the requestor.
+* After load is complete, the index audit attribute is turned on and it is attached to the base table (to bring the index on-line).
+* The transaction is committed, either by the system or later by the requester.
 
 If the operation fails after basic semantic checks are performed, the index no longer exists and the entire transaction
 is rolled back even if it is a user-started transaction.
@@ -1465,7 +1465,7 @@ when the operation begins, CREATE INDEX waits until its lock request is granted 
 You cannot access an index directly.
 
 <<<
-[[create_index_required_priviges]]
+[[create_index_required_privileges]]
 ==== Required Privileges
 
 To issue a CREATE INDEX statement, one of the following must be true:
@@ -1481,7 +1481,7 @@ NOTE: In this case, if you create an index in a private schema, it will be owned
 [[create_index_limits]]
 ==== Limits on Indexes
 
-For nonunique indexes, the sum of the lengths of the columns in the index plus the sum of the length of
+For non-unique indexes, the sum of the lengths of the columns in the index plus the sum of the length of
 the clustering key of the underlying table cannot exceed 2048 bytes.
 
 No restriction exists on the number of indexes per table.
@@ -1521,7 +1521,7 @@ CREATE LIBRARY [[catalog-name.]schema-name.]library-name
 
 * `[[_catalog-name_.]_schema-name_.]_library-name_`
 +
-specifies the ansi logical name of the library object, where each part of the name is a valid sql
+specifies the ANSI logical name of the library object, where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify a name that is unique and does not exist for
 libraries in the same schema. if you do not fully qualify the library name, trafodion sq qualifies
 it according to the schema of the current session. for more information, see <<identifiers,identifiers>>
@@ -1530,7 +1530,7 @@ and <<database_object_names,database object names>>.
 <<<
 * `file '_library-filename_'`
 +
-specifies the full path of a deployed library file, which either an spj's jar file or a udf's library file.
+specifies the full path of a deployed library file, which either an SPJ's jar file or a UDF's library file.
 +
 note: make sure to upload the library file to the trafodion cluster and then copy the library file to the
 same directory on all the nodes in the cluster before running the create library statement. otherwise, you
@@ -1643,7 +1643,7 @@ the remaining syntax is not case-sensitive.
 * `_procedure-ref_([_sql-parameter_[, _sql-parameter_]&#8230;])`
 +
 specifies the name of the stored procedure in Java (SPJ) and any SQL parameters that correspond to the signature of
-the SPJ methaod.
+the SPJ method.
 
 ** `_procedure-ref_`
 +
@@ -1656,13 +1656,13 @@ see <<identifiers,identifiers>> and <<database_object_names,database object name
 +
 specify a name that is unique and does not exist for any procedure or function in the same schema. trafodion sql
 does not support the overloading of procedure names. that is, you cannot register the same procedure name more than
-once with different underlying spj methods.
+once with different underlying SPJ methods.
 +
 if you do not fully qualify the procedure name, trafodion sql qualifies it according to the schema of the current session.
 
 ** _sql-parameter_
 +
-specifies an sql parameter that corresponds to the signature of the spj method:
+specifies an sql parameter that corresponds to the signature of the SPJ method:
 +
 `[_parameter-mode_] [_sql-identifier_] _sql-datatype_`
 
@@ -1672,15 +1672,15 @@ specifies the mode in, out, or inout of a parameter. the default is in.
 
 **** `in`
 +
-specifies a parameter that passes data to an spj.
+specifies a parameter that passes data to an SPJ.
 
 **** `out`
 +
-specifies a parameter that accepts data from an spj. the parameter must be an array.
+specifies a parameter that accepts data from an SPJ. the parameter must be an array.
 
 **** `inout`
 +
-specifies a parameter that passes data to and accepts data from an spj. the parameter must be an array.
+specifies a parameter that passes data to and accepts data from an SPJ. the parameter must be an array.
 
 *** `_sql-identifier_`
 +
@@ -1688,7 +1688,7 @@ specifies an sql identifier for the parameter. for more information, see <<ident
 
 *** `_sql-datatype_`
 +
-specifies an sql data type that corresponds to the java parameter of the spj method.
+specifies an sql data type that corresponds to the java parameter of the SPJ method.
 +
 _sql-datatype_ can be:
 +
@@ -1729,19 +1729,19 @@ for more information, see <<data_types,data types>>.
 
 ** `_java-method-name_`
 +
-specifies the case-sensitive name of the spj method of the form:
+specifies the case-sensitive name of the SPJ method of the form:
 +
 `[_package-name_.]_class-name_._method-name_`
 +
 the java method must exist in a java class file, _class-name_.class, within a library registered in the database.
 the java method must be defined as public and static and have a return type of void.
 +
-if the class file that contains the spj method is part of a package, you must also specify the package name.
-if you do not specify the package name, the create procedure statement fails to register the spj.
+if the class file that contains the SPJ method is part of a package, you must also specify the package name.
+if you do not specify the package name, the create procedure statement fails to register the SPJ.
 
 ** `_java-signature_`
 +
-specifies the signature of the spj method and consists of:
+specifies the signature of the SPJ method and consists of:
 +
 `([_java-datatype_[, _java-datatype_]&#8230;])`
 +
@@ -1750,7 +1750,7 @@ primitive data type (for example, int). an sql data type maps to a java primitiv
 +
 the java signature is case-sensitive and must be placed within parentheses, such as (java.lang.integer, java.lang.integer).
 the signature must specify each of the parameter data types in the order they appear in the java method definition within
-the class file. each java data type that corresponds to an out or inout parameter must befollowed by empty square
+the class file. each java data type that corresponds to an out or inout parameter must be followed by empty square
 brackets ([ ]), such as java.lang.integer[].
 
 <<<
@@ -1760,21 +1760,21 @@ specifies a mappable java data type. for the mapping of the java data types to s
 
 * `library [[_catalog-name_.]_schema-name_.]_library-name_`
 +
-specifies the ansi logical name of a library containing the spj method. if you do not fully qualify the library name,
+specifies the ANSI logical name of a library containing the SPJ method. if you do not fully qualify the library name,
 trafodion sql qualifies it according to the schema of the current session.
 
 * `external security _external-security-type_`
 +
-determines the privileges, or rights, that users have when executing (or calling) the spj. an spj can have one of these
+determines the privileges, or rights, that users have when executing (or calling) the SPJ. An SPJ can have one of these
 types of external security:
 
 ** invoker determines that users can execute, or invoke, the stored procedure using the privileges of the user who invokes
 the stored procedure. this behavior is referred to as _invoker rights_ and is the default behavior if external security is
-not specified. invoker rights allow a user who has the execute privilege on the spj to call the spj using his or her existing
-privileges. in this case, the user must be granted privileges to access the underlying database objects on which the spj operates.
+not specified. invoker rights allow a user who has the execute privilege on the SPJ to call the SPJ using his or her existing
+privileges. in this case, the user must be granted privileges to access the underlying database objects on which the SPJ operates.
 +
 note: granting a user privileges to the underlying database objects gives the user direct access to those database objects,
-which could pose a risk to more sensitive or critical data to which users should not have access. for example, an spj
+which could pose a risk to more sensitive or critical data to which users should not have access. for example, an SPJ
 might operate on a subset of the data in an underlying database object, but that database object might contain other
 more sensitive or critical data to which users should not have access.
 
@@ -1782,8 +1782,8 @@ more sensitive or critical data to which users should not have access.
 the stored procedure. this behavior is referred to as _definer rights_. the advantage of definer rights is that users are
 allowed to manipulate data by invoking the stored procedure without having to be granted privileges to the underlying
 database objects. that way, users are restricted from directly accessing or manipulating more sensitive or critical data in
-the database. however, be careful about the users to whom you grant execute privilege on an spj with definer external security
-because those users will be able to execute the spj without requiring privileges to the underlying database objects.
+the database. however, be careful about the users to whom you grant execute privilege on an SPJ with definer external security
+because those users will be able to execute the SPJ without requiring privileges to the underlying database objects.
 
 <<<
 * `language java`
@@ -1796,42 +1796,42 @@ specifies that the run-time conventions for arguments passed to the external use
 
 * `no sql`
 +
-specifies that the spj cannot perform sql operations.
+specifies that the SPJ cannot perform sql operations.
 
 * `contains sql | modifies sql data | reads sql data`
 +
-specifies that the spj can perform sql operations. all these options behave the same as contains sql, meaning that the spj
+specifies that the SPJ can perform sql operations. all these options behave the same as contains sql, meaning that the SPJ
 can read and modify sql data. use one of these options to register a method that contains sql statements. if you do not specify
 an sql access mode, the default is contains sql.
 
 * `dynamic result sets _integer_`
 +
-specifies the maximum number of result sets that the spj can return. this option is applicable only if the method signature
+specifies the maximum number of result sets that the SPJ can return. this option is applicable only if the method signature
 contains a java.sql.resultset[] object. if the method contains a result set object, the valid range is 1 to 255 inclusive.
-the actual number of result sets returned by the spj method can be less than or equal to this number. if you do not specify
-this option, the default value is 0 (zero), meaning that the spj does not return result sets.
+the actual number of result sets returned by the SPJ method can be less than or equal to this number. if you do not specify
+this option, the default value is 0 (zero), meaning that the SPJ does not return result sets.
 
 * `transaction required | no transaction required`
 +
-determines whether the spj must run in a transaction inherited from the calling application (transaction required, the default
-option) or whether the spj runs without inheriting the calling application’s transaction (no transaction required). typically,
-you will want the stored procedure to inherit the transaction from the calling application. however, if the spj method does
+determines whether the SPJ must run in a transaction inherited from the calling application (transaction required, the default
+option) or whether the SPJ runs without inheriting the calling application’s transaction (no transaction required). typically,
+you will want the stored procedure to inherit the transaction from the calling application. however, if the SPJ method does
 not access the database or if you want the stored procedure to manage its own transactions, you should set the stored
 procedure’s transaction attribute to no transaction required. for more information, see
-<<effects_of_the_transaction_attribute_on_spjs,effects of the transaction attribute on spjs>>.
+<<effects_of_the_transaction_attribute_on_spjs,effects of the transaction attribute on SPJs>>.
 
 <<<
 * `deterministic | not deterministic`
 +
-specifies whether the spj always returns the same values for out and inout parameters for a given set of argument values
+specifies whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
 (deterministic) or does not return the same values (not deterministic, the default option). if you specify deterministic,
-trafodion sql is not required to call the spj each time to produce results; instead, trafodion sql caches the results and
+trafodion sql is not required to call the SPJ each time to produce results; instead, trafodion sql caches the results and
 reuses them during subsequent calls, thus optimizing the call statement.
 
 * `no isolate | isolate`
 +
-specifies that the spj executes either in the environment of the database server (no isolate) or in an isolated environment
-(isolate, the default option). trafodion sql allows both options but always executes the spj in the udr server process (isolate).
+specifies that the SPJ executes either in the environment of the database server (no isolate) or in an isolated environment
+(isolate, the default option). trafodion sql allows both options but always executes the SPJ in the udr server process (isolate).
 
 [[create_procedure_considerations]]
 === Considerations for CREATE PROCEDURE
@@ -2078,7 +2078,7 @@ specifies a registered database username to whom you assign the role owner.
 === Considerations for CREATE ROLE
 
 * To create a role, you must either be DB ROOT or have been granted the MANAGE_ROLES component privilege for SQL_OPERATIONS.
-* PUBLIC, _SYSTEM, NONE, and database usernames beginning with DB are reserved. You cannot specify a _role-name_ with any such name.
+* PUBLIC, _SYSTEM, NONE, and database user names beginning with DB are reserved. You cannot specify a _role-name_ with any such name.
 
 [[create_role_ownership]]
 ==== Role Ownership
@@ -2542,7 +2542,7 @@ directs Trafodion SQL to use partition definitions from _source-table_. Each new
 as its original _source-table_ counterpart. The new table partitions do not inherit partition names from the original table.
 Instead, Trafodion SQL generates new names based on the physical file location.
 +
-If you specify the LIKE clause and the SALT USING _num_ PARITIONS clause, you cannot specify WITH PARTITIONS.
+If you specify the LIKE clause and the SALT USING _num_ PARTITIONS clause, you cannot specify WITH PARTITIONS.
 
 <<<
 [[create_table_considerations]]
@@ -2585,7 +2585,7 @@ If the constraint refers to the other table in a query expression, you must also
 [[create_volatile_table_considerations]]
 ==== Considerations for CREATE VOLATILE TABLE
 
-* Volatile temporary tables are closely linked to the session. Their namespace is unique across multiple concurrent
+* Volatile temporary tables are closely linked to the session. Their name space is unique across multiple concurrent
 sessions, and therefore allow multiple sessions to use the same volatile temporary table names simultaneously without
 any conflicts.
 * Volatile tables support creation of indexes.
@@ -2962,7 +2962,7 @@ create table t(a int) as select b,c from t1
 An error is returned. Two items need to be specified as part of the table-attributes.
 
 * The _column-attributes_ must specify either the _column-name datatype-info_ pair or just the _column-name_ for all
-columns. Youcannot specify some columns with just the name and others with name and data type.
+columns. You cannot specify some columns with just the name and others with name and data type.
 +
 ```
 create table t(a int, b) as select c,d from t1
@@ -3089,7 +3089,7 @@ the objects underlying the view, and one of the following must be true:
 NOTE: In this case, if you create a view in a private schema, it will be owned by the schema owner.
 
 When you create a view on a single table, the owner of the view is automatically given all privileges WITH GRANT OPTION
-on the view. However, when you create a view that spans multiple tables, the owner ofthe view is given only SELECT
+on the view. However, when you create a view that spans multiple tables, the owner of the view is given only SELECT
 privileges WITH GRANT OPTION. If you try to grant privileges to another user on the view other than SELECT, you will
 receive a warning that you lack the grant option for that privilege.
 
@@ -3263,8 +3263,8 @@ The join is a left outer join where B is the inner table. In this example, for t
 of table A and vp1 fills the role of table B. For the join between vp1 and vp2, vp1 fills the role of table A and vp2 fills
 the role of table B.
 
-The view vp shown in this example uses left outer joins to combine thethree underlying tables. Therefore, if the select list
-in a query that accesses vp does not contain column d from vp2 then the join to tablevp2 in the view vp will not be performed.
+The view vp shown in this example uses left outer joins to combine the three underlying tables. Therefore, if the select list
+in a query that accesses vp does not contain column d from vp2 then the join to table vp2 in the view vp will not be performed.
 
 ```
 create table vp0(a integer not null, b integer, primary key(a));
@@ -3419,7 +3419,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 
 * `[[_catalog-name_.]_schema-name_.]_function-name_`
 +
-specifies the ansi logical name of the function, where each part of the name is a valid sql identifier with a maximum of
+specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
 the function name, trafodion sql qualifies it according to the schema of the current session. for more information,
 see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -3532,7 +3532,7 @@ DROP LIBRARY [[catalog-name.]schema-name.]library-name [restrict | cascade]
 
 * `[[_catalog-name_.]_schema-name_.]_library-name_`
 +
-specifies the ansi logical name of the library object, where each part of the name is a valid sql identifier with a
+specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a
 maximum of 128 characters. specify the name of a library object that has already been registered in the schema. if
 you do not fully qualify the library name, trafodion sql qualifies it according to the schema of the current session.
 for more information, see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -3540,7 +3540,7 @@ for more information, see <<identifiers,identifiers>> and <<database_object_name
 * `[restrict | cascade]`
 +
 if you specify restrict, the drop library operation fails if any stored procedures in java (spjs) or user-defined
-functions (udfs) were created based on the specified library.
+functions (UDFs) were created based on the specified library.
 +
 if you specify cascade, any such dependent procedures or functions are removed as part of the drop library operation.
 +
@@ -3602,7 +3602,7 @@ DROP PROCEDURE [[catalog-name.]schema-name.]procedure-name
 
 * `[[_catalog-name_.]_schema-name_.]_procedure-name_`
 +
-specifies the ansi logical name of the stored procedure in java (spj), where each part of the name is a valid sql
+specifies the ANSI logical name of the stored procedure in java (SPJ), where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify the name of a procedure that has already been registered in the
 schema. if you do not fully qualify the procedure name, trafodion sql qualifies it according to the schema of the
 current session.
@@ -3639,7 +3639,7 @@ DROP PROCEDURE totalprice;
 ```
 
 <<<
-[[drop_role_statemment]]
+[[drop_role_statement]]
 == DROP ROLE Statement
 
 The DROP ROLE statement deletes an SQL role. See <<roles,Roles>>.
@@ -4238,11 +4238,11 @@ the catalog is TRAFODION, and the schema is SEABASE.
 
 * `FUNCTIONS FOR LIBRARY [[_catalog-name_.]_schema-name_.]_library-name_`
 +
-displays the udfs that reference the specified library.
+displays the UDFs that reference the specified library.
 
 * `functions in schema [_catalog-name_.]_schema-name_`
 +
-displays the names of all the udfs in the specified schema.
+displays the names of all the UDFs in the specified schema.
 
 * `libraries`
 +
@@ -4698,7 +4698,7 @@ System Version 0.9.1. Expected Version 1.0.0.
 ```
 
 <<<
-[[get_version_of_software_examles]]
+[[get_version_of_software_examples]]
 === Examples of GET VERSION OF SOFTWARE
 
 * This GET VERSION OF SOFTWARE statement displays the software version for Trafodion Release 1.0.0:
@@ -4789,11 +4789,11 @@ specifies the privileges to grant. you can specify these privileges for an objec
 | insert     | can use the insert statement.
 | references | can create constraints that reference the object.
 | update     | can use the update statement on table objects.
-| execute    | can execute a stored procedure using a call statement or can execute a user-defined function (udf).
+| execute    | can execute a stored procedure using a call statement or can execute a user-defined function (UDF).
 | usage      | can access a library using the create procedure or create function statement. this privilege provides you 
 with read access to the library’s underlying library file.
 | all        | all the applicable privileges. when you specify all for a table or view, this includes the select, delete, 
-insert, references, and update privileges. when the object is a stored procedure or user-defined function (udf), only the 
+insert, references, and update privileges. when the object is a stored procedure or user-defined function (UDF), only the 
 execute privilege is applied. when the object is a library, only the update and usage privileges are applied.
 |===
 
@@ -4802,10 +4802,10 @@ execute privilege is applied. when the object is a library, only the update and 
 specifies an object on which to grant privileges. _object-type_ can be:
 
 ** `[table] [_schema_.]_object_`, where _object_ is a table or view. see <<database_object_names,database object names>>.
-** `[procedure] [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (spj) 
+** `[procedure] [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
 registered in the database.
 ** `[library] [_schema_.]_library-name_`, where _library-name_ is the name of a library object in the database.
-** `[function] [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (udf) in the database.
+** `[function] [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
 
 * `to {_grantee_ [, _grantee_] &#8230; }`
 +
@@ -4947,7 +4947,7 @@ specifies an _auth-name_ to which you grant component privileges.
 +
 specifies the name of an authorization ID to which you grant privileges. See <<authorization_ids,Authorization IDs>>. 
 The authorization ID must be a registered database username, existing role name, or PUBLIC. The name is a regular or 
-delimited case-insensitive identifier. See <<case_insensitive_delimited_iddentifiers,Case-Insensitive Delimited Identifiers>>.
+delimited case-insensitive identifier. See <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
 If you grant a privilege to PUBLIC, the privilege remains available to all users, unless it is later revoked from PUBLIC.
 
 * `WITH GRANT OPTION`
@@ -5155,11 +5155,11 @@ be inserted must be compatible with the data types of the corresponding target c
 
 Any character string data type is compatible with all other character string data types that have the same character set. For fixed length, an
 inserted value shorter than the column length is padded on the right with blank characters of the appropriate character set (for example,
-ISO88591 blanks (HEX20). If the value is longer than the column length, string truncation of nonblank trailing characters returns an error, and
+ISO88591 blanks (HEX20). If the value is longer than the column length, string truncation of non-blank trailing characters returns an error, and
 the truncated string is not inserted.
 
 For variable length, a shorter inserted value is not padded. As is the case for fixed length, if the value is longer than the column length,
-string truncation of nonblank trailing characters returns an error, and the truncated string is not inserted.
+string truncation of non-blank trailing characters returns an error, and the truncated string is not inserted.
 
 ===== Inserting Numeric Values
 
@@ -5724,19 +5724,19 @@ to type than the directory-service username.
 For example, if the user logs on as `John.Allen.Doe.the.Second@mycompany.com`, you might want to assign the user a
 database username of JDoe.
 
-Database usernames are authorization IDs. If you specify a name already assigned to another user or to an existing
+Database user names are authorization IDs. If you specify a name already assigned to another user or to an existing
 role, the command will fail. For more information, see <<authorization_ids,Authorization IDs>>.
 
 [[register_user_reserved_names]]
 ==== Reserved Names
 
-PUBLIC, _SYSTEM, NONE, and database usernames beginning with DB are reserved. You cannot register users with any
+PUBLIC, _SYSTEM, NONE, and database user names beginning with DB are reserved. You cannot register users with any
 such name.
 
 [[register_user_username_length]]
 ==== Username Length
 
-Database usernames are limited to 128 characters.
+Database user names are limited to 128 characters.
 
 [[register_user_examples]]
 === Examples of REGISTER USER
@@ -6434,7 +6434,7 @@ does not specify a return list.
 **** `_col-expr_ [[AS] _name_]`
 +
 specifies a derived column determined by the evaluation of an SQL value expression in the list. Any column referred to in
-a value expression can be specified as being from the row in the old table exposed by the pdate or can be specified as being
+a value expression can be specified as being from the row in the old table exposed by the update or can be specified as being
 from the row in the new table exposed by the update.
 +
 For example:
@@ -6488,7 +6488,7 @@ If you specify a CROSS join as the _join-type_, you cannot specify a NATURAL joi
 *** `_join-spec_.`
 +
 If you specify an INNER, LEFT, RIGHT, or FULL join as the _join-type_ and you do not specify a NATURAL join, you
-must use an ON clause as the _join-spec_, as follows: Subqueries are not allowed in the join predicate of FULL OUTER JOIN.
+must use an ON clause as the _join-spec_, as follows: subqueries are not allowed in the join predicate of FULL OUTER JOIN.
 
 *** `ON _search-condition_`
 +
@@ -6637,7 +6637,7 @@ optionally qualified by a table, view, or correlation name; for example, CUSTOME
 ** `ASC | DESC`
 +
 specifies the sort order. The default is ASC. When Trafodion SQL orders an intermediate result table on a column that can
-contain null, nulls are considered equal to one another but greater than all other nonnull values.
+contain null, nulls are considered equal to one another but greater than all other non-null values.
 
 <<<
 * `GROUP BY [_col-expr_] {_colname_ | _colnum_} [,{_colname_ | _colnum_}]&#8230;]`
@@ -6723,7 +6723,7 @@ specifies a column by its position in _select-list_. Use _colnum_ to refer to un
 ** `ASC | DESC`
 +
 specifies the sort order. The default is ASC. For ordering a result table on a column that can contain null, nulls are
-considered equal to one another but greater than all other nonnull values.
+considered equal to one another but greater than all other non-null values.
 +
 See <<considerations_for_order_by,Considerations for ORDER BY>>.
 
@@ -7139,7 +7139,7 @@ Order/Num  Part/Num Unit/Price   Qty/Ord    Part/Num Part Description   PRICE   
 
 <<<
 * Select from three tables and display them in employee number order. Two tables are joined by using a LEFT JOIN on matching department
-numbers, then an additional table is joined on matching jobcodes:
+numbers, then an additional table is joined on matching job codes:
 +
 ```
 SELECT empnum, first_name, last_name, deptname, location, jobdesc
@@ -7534,7 +7534,7 @@ displays all users who have been granted the role in the form of GRANT ROLE stat
 * SHOWDDL can be used within TrafCI.
 * SHOWDDL [TABLE \| LIBRARY \| PROCEDURE] displays the following information:
 ** A constraint may be disabled.
-** A table may be offline.
+** A table may be off line.
 ** An active DDL lock may exist on an object.
 * SHOWDDL USER displays user information as a REGISTER USER statement.
 * SHOWDDL ROLE displays the role information as a CREATE ROLE statement.
@@ -7716,7 +7716,7 @@ multi-column group.
 <<<
 ** `EVERY COLUMN`
 +
-indicates that histogram statistics are to be displayed for each individual column of _table_ and any multicolumns that
+indicates that histogram statistics are to be displayed for each individual column of _table_ and any multi columns that
 make up the primary key and indexes. For columns that do not have histograms, this option returns
 `No histogram data for column(s) ---&#93;`.
 

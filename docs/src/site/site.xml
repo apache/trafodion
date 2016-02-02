@@ -97,41 +97,7 @@
             <body />
           </sections>
         </index>
-        <advocate><shortTitle>Advocate</shortTitle></advocate>
         <architecture-overview><shortTitle>Architecture Overview</shortTitle></architecture-overview>
-        <build><shortTitle>Build Trafodion</shortTitle></build>
-        <build-tools-manual><shortTitle>Build Tools Manual Installation</shortTitle></build-tools-manual>
-        <code><shortTitle>Modify Code</shortTitle></code>
-        <contribute>
-           <shortTitle>Contribute</shortTitle>
-           <toc>false</toc>
-          <sections>
-            <body />
-            <columns>2</columns>
-            <body />
-          </sections>
-        </contribute>
-        <cplusplus-coding-guidelines>
-           <shortTitle>C++ Coding Guidelines</shortTitle>
-           <!--  Smaller than standard due to long headings -->
-           <tocTopMax>5</tocTopMax>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>      
-        </cplusplus-coding-guidelines>
-        <create-dev-environment>
-           <shortTitle>Create Development Environment</shortTitle>
-           <!-- Use H1 headings only for the TOC -->
-           <tocTopFlatten>false</tocTopFlatten>
-           <!--  Smaller than standard due to long headings -->
-           <tocTopMax>5</tocTopMax>
-        </create-dev-environment>
-        <develop>
-           <shortTitle>Develop</shortTitle>
-          <sections>
-            <body />
-          </sections>
-        </develop>
-        <document><shortTitle>Modify Documentation</shortTitle></document>
         <documentation><shortTitle>Documentation Library</shortTitle></documentation>
         <download><shortTitle>Download</shortTitle></download>
         <enable-secure-trafodion><shortTitle>Enabling Security Features in Trafodion</shortTitle></enable-secure-trafodion>
@@ -157,13 +123,6 @@
         <license><shortTitle>License</shortTitle><toc>false</toc></license>
         <mail-lists><shortTitle>Mailing Lists</shortTitle><toc>false</toc></mail-lists>
         <management><shortTitle>Managing Trafodion</shortTitle><toc>false</toc></management>
-        <manage-dev-environment>
-           <shortTitle>Manage Development Environment</shortTitle>
-           <!-- Use H1 headings only for the TOC -->
-           <tocTopFlatten>false</tocTopFlatten>
-           <!--  Smaller than standard due to long headings -->
-           <tocTopMax>5</tocTopMax>
-        </manage-dev-environment>
         <new-features><shortTitle>New Features</shortTitle></new-features>
         <performance><shortTitle>Performance</shortTitle></performance>
         <presentations><shortTitle>Presentations</shortTitle><toc>false</toc></presentations>
@@ -204,39 +163,12 @@
            <tocTopFlatten>false</tocTopFlatten>
         </release-notes-0-8-0>
         <roadmap><shortTitle>Roadmap</shortTitle></roadmap>
-        <setup-build-environment>
-           <shortTitle>Setup Build Environment</shortTitle>
-           <!-- Use H1 headings only for the TOC -->
-           <tocTopFlatten>false</tocTopFlatten>
-           <!--  Smaller than standard due to long headings -->
-           <tocTopMax>5</tocTopMax>
-        </setup-build-environment>
-        <tests>
-          <shortTitle>Modify Tests</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </tests>
-        <testing>
-          <shortTitle>Testing</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </testing>
         <traf_authentication_config><shortTitle>.traf_authentication_config Configuration File</shortTitle></traf_authentication_config>
         <uninstall>
           <shortTitle>Uninstall</shortTitle>
           <!-- Use H1 headings only for the TOC -->
           <tocTopFlatten>false</tocTopFlatten>
         </uninstall>
-        <website>
-           <shortTitle>Modify Web Site</shortTitle>
-           <tocTopFlatten>false</tocTopFlatten>
-           <sections>
-              <body />
-              <columns>2</columns>
-              <body />
-           </sections>
-        </website>
-        <wiki><toc>false</toc></wiki>
       </pages>
     </reflowSkin>
   </custom>
@@ -247,6 +179,7 @@
     </breadcrumbs>
     <links>
       <item name="Download" href="download.html"/>
+      <item name="Contributing" href="contributing-redirect.html"/>
     </links>
     <menu name="About">
       <item href="index.html" name="Project Overview"/>
@@ -254,7 +187,7 @@
       <item href="roadmap.html" name="Roadmap"/>
       <item href="performance.html" name="Performance"/>
       <item href="http:divider" name=""/>
-      <item href="team-list.html" name="Team"/>
+      <item href="team-redirect.html" name="Team"/>
       <item href="presentations.html" name="Presentations"/>
       <item href="mail-lists.html" name="Mailing List"/>
       <item href="http:divider" name=""/>
@@ -304,28 +237,6 @@
       <item href="http:divider" name=""/>
       <item href="https://wiki.trafodion.org/wiki/index.php/Backup_and_Restore" name="Backup/Restore Utility"/>
       <item href="https://wiki.trafodion.org/wiki/index.php/Metadata_Cleanup" name="Metadata Cleanup Utility"/>
-    </menu>
-    <menu name="Contributing">
-      <item href="contribute.html" name="Contribute"/>
-      <item href="advocate.html" name="Advocate"/>
-      <item href="develop.html" name="Develop"/>
-      <item href="testing.html" name="Test"/>
-      <item href="merge.html" name="Merge"/>
-      <item href="release.html" name="Release"/>
-      <item href="http:divider" name=""/>
-      <item href="create-dev-environment.html" name="Create Dev Environment"/>
-      <item href="manage-dev-environment.html" name="Manage Dev Environment"/>
-      <item href="setup-build-environment.html" name="Setup Build Environment"/>
-      <item href="build.html" name="Build Trafodion"/>
-      <item href="http:divider" name=""/>
-      <item href="code.html" name="Modify Code"/>
-      <item href="tests.html" name="Modify Tests"/>
-      <item href="document.html" name="Modify Documentation"/>
-      <item href="website.html" name="Modify Web Site"/>
-      <item href="wiki.html" name="Modify Wiki Pages"/>
-      <item href="http:divider" name=""/>
-      <item href="cplusplus-coding-guidelines.html" name="C++ Coding Guidelines"/>
-      <!-- item href="design-papers.html" name="Design Paper Template"/ -->
     </menu>
     <menu name="Apache">
       <item href="http://incubator.apache.org/projects/trafodion.html" name="Project Status" target="_blank"/>

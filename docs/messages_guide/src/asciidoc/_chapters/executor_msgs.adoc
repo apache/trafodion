@@ -57,7 +57,7 @@ The operation has been canceled.
 == SQL 8012
 
 ```
-8012 Encoding of CONTROL QUERY DEFAULTs: <encoding>.
+Encoding of CONTROL QUERY DEFAULTs: <encoding>.
 ```
 
 *Cause:* Trafodion displays an internal CONTROL
@@ -673,7 +673,6 @@ rather than by Trafodion.
 *Effect:* The operation fails.
 
 *Recovery:* Commit or abort the transaction by calling SQL COMMIT or
-
 ROLLBACKWORK.
 
 [[SQL-8842]]
@@ -919,7 +918,7 @@ attempt was made to contact a nonexistent Trafodion UDR server.
 == SQL 8904
 
 ```
-SQL/MX did not receive a reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
+Trafodion did not receive a reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
 ```
 
 *Cause:* During execution of a Trafodion statement,

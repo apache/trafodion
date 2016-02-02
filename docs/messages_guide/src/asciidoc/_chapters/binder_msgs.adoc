@@ -164,10 +164,10 @@ between 1 and the <value-2> of SELECT expressions.
 == SQL 4008
 
 ```
-A subquery is not allowed inside an aggregate function.
+A sub query is not allowed inside an aggregate function.
 ```
 
-*Cause:* You specified a subquery within an aggregate function, which is
+*Cause:* You specified a sub query within an aggregate function, which is
 not supported.
 
 *Effect:* The operation fails.
@@ -323,7 +323,7 @@ which is not supported.
 == SQL 4019
 
 ```
-The select list of a subquery in a select list must be scalar (degree of one).
+The select list of a sub query in a select list must be scalar (degree of one).
 ```
 
 *Cause:* You specified a select list that is not scalar.
@@ -350,11 +350,11 @@ constructors, which is not supported.
 == SQL 4021
 
 ```
-The select list contains a nongrouping non-aggregated column, <name>.
+The select list contains a non-grouping non-aggregated column, <name>.
 ```
 
-*Cause:* You specified a select list that contains a nongrouping,
-nonaggregated column <name>, which is not supported.
+*Cause:* You specified a select list that contains a non-grouping,
+non-aggregated column <name>, which is not supported.
 
 *Effect:* The operation fails.
 
@@ -485,8 +485,7 @@ Table or view <name> is not updatable.
 Column <name> has an invalid combination of datetime fields (internal field number, internal field number, internal field number).
 ```
 
-*Cause:* You specified column <name>, which is an invalid combination of
-datetime fields.
+*Cause:* You specified column <name>, which is an invalid combination of datetime fields.
 
 *Effect:* The operation fails.
 
@@ -735,9 +734,8 @@ scale of zero (0), which is required.
 == SQL 4048
 
 ```
-The third operand of a ternary comparison operator must be of type
+The third operand of a ternary comparison operator must be of type BOOLEAN, not <type>.
 ```
-BOOLEAN, not <type>.
 
 *Cause:* You specified the third operand of a ternary comparison
 argument with an invalid <type>. The type must be boolean.
@@ -765,8 +763,8 @@ data types. It must be one of data type.
 
 ```
 The operands of the <name> predicate must be comparable character
-```
 data types (that is, of the same character set and collation).
+```
 
 *Cause:* You specified predicate <name>, whose operands are required to
 be character, with invalid operands.
@@ -851,9 +849,8 @@ SELECT * FROM tblx, tblx;
 == SQL 4057
 
 ```
-Correlation name <name-1> conflicts with qualified identifier of
+Correlation name <name-1> conflicts with qualified identifier of table <name-2>.
 ```
-table <name-2>.
 
 *Cause:* You specified correlation <name-1>, which conflicts with a
 qualified identifier of table <name-2>. For example:
@@ -883,9 +880,9 @@ other than numeric, which is required.
 
 ```
 Reading from and inserting, or updating in, or deleting from the
-```
 same table, <name-1>, is not currently supported. <name-1> is contained by
 view(s) <name-2>.
+```
 
 *Cause:* You attempted to read from and insert, update, or delete within
 the same table <name-1>, which is not supported.
@@ -898,9 +895,8 @@ the same table <name-1>, which is not supported.
 == SQL 4061
 
 ```
-Rows cannot be inserted into, or updated in, an individual table
+Rows cannot be inserted into, or updated in, an individual table partition.
 ```
-partition.
 
 *Cause:* You attempted to insert or update rows in an individual table
 partition, which is not supported.
@@ -928,11 +924,10 @@ computations that this function uses.
 == SQL 4063
 
 ```
-The operands of function <name> must be comparable character data
+The operands of function <name> must be comparable character data types (that is, of the same character set and collation).
 ```
-types (that is, of the same character set and collation).
 
-*Cause:* You specified operands for function <name> with noncomparable
+*Cause:* You specified operands for function <name> with non-comparable
 character data types.
 
 *Effect:* The operation fails.
@@ -944,8 +939,8 @@ character data types.
 
 ```
 The operands of function <name> must be compatible character data
-```
 types (that is, of the same character set).
+```
 
 *Cause:* You specified operands for function <name> with incompatible
 character data types.
@@ -986,9 +981,8 @@ be operands of type character.
 == SQL 4068
 
 ```
-The operand of function <name> must contain an even number of
+The operand of function <name> must contain an even number of characters.
 ```
-characters.
 
 *Cause:* You specified invalid operands for function <name>. They must
 contain an even number of characters.
@@ -1043,9 +1037,8 @@ be datetime.
 == SQL 4072
 
 ```
-The operand of function <name> must be a datetime containing a
+The operand of function <name> must be a datetime containing a <name>.
 ```
-<name>.
 
 *Cause:* You specified an invalid operand for function <name>. It must
 be a datetime operand containing the variable listed in the message.
@@ -1058,9 +1051,8 @@ be a datetime operand containing the variable listed in the message.
 == SQL 4073
 
 ```
-The COLLATE clause may appear only after an expression of character
+The COLLATE clause may appear only after an expression of character data type, not <data-type>.
 ```
-data type, not <data-type>.
 
 *Cause:* You specified the COLLATE clause after an expression that is
 not a character data type.
@@ -1154,8 +1146,9 @@ operands must be numeric.
 [[SQL-4082]]
 == SQL 4082
 
-4082 Table, view or stored procedure <name> does not exist or is
-inaccessible.
+```
+Table, view or stored procedure <name> does not exist or is inaccessible.
+```
 
 *Cause:* You referred to table <name>, which does not exist or is
 inaccessible (for example, on a downed disk volume).
@@ -1210,9 +1203,8 @@ name.
 == SQL 4088
 
 ```
-The number of values in each TRANSPOSE item of a TRANSPOSE set must
+The number of values in each TRANSPOSE item of a TRANSPOSE set must be equal.
 ```
-be equal.
 
 *Cause:* You specified a TRANSPOSE set with an unequal number of values
 in each TRANSPOSE item.
@@ -1225,11 +1217,10 @@ in each TRANSPOSE item.
 == SQL 4089
 
 ```
-Check constraint <name> contains a subquery. This is not yet
+Check constraint <name> contains a sub query. This is not yet supported.
 ```
-supported.
 
-*Cause:* You specified a constraint <name> that contains a subquery,
+*Cause:* You specified a constraint <name> that contains a sub query,
 which is not supported.
 
 *Effect:* The operation fails.
@@ -1240,9 +1231,8 @@ which is not supported.
 == SQL 4093
 
 ```
-The number of output dynamic parameters (<value-1>) must equal the
+The number of output dynamic parameters (<value-1>) must equal the number of selected values (<value-2>).
 ```
-number of selected values (<value-2>).
 
 *Cause:* Trafodion requires that the number of
 output dynamic parameters, <value-1), match the number of selected
@@ -1257,8 +1247,8 @@ values, <value-2>.
 
 ```
 The number of output host variables (<value-1>) must equal the
-```
 number of selected values (<value-2>).
+```
 
 *Cause:* Trafodion requires that the number of
 output host variables, <value-1>, match the number of selected values,
@@ -1287,8 +1277,8 @@ supported.
 
 ```
 A DEFAULT specification is currently allowed only when simply
-```
 contained in the VALUES list of an INSERT.
+```
 
 *Cause:* You specified a DEFAULT value that was not contained in the
 VALUES list of an INSERT.
@@ -1343,9 +1333,8 @@ supported.
 == SQL 4100
 
 ```
-A NULL value is not allowed in a select list unless it is CAST to
+A NULL value is not allowed in a select list unless it is CAST to some data type.
 ```
-some data type.
 
 *Cause:* You specified a NULL value in a select list that is not cast to
 a data type, which is required.
@@ -1359,9 +1348,9 @@ a data type, which is required.
 
 ```
 If <name> is intended to be a further table reference in the FROM
-```
 clause, the preceding join search condition must be enclosed in
 parentheses.
+```
 
 *Cause:* A syntax error has caused the Trafodion database software to
 treat object <name> as an ambiguous entity.
@@ -1378,8 +1367,8 @@ Correct the syntax and resubmit.
 
 ```
 The [FIRST/ANY n] syntax can be used only in an outermost SELECT
-```
 statement that is not contained in a UNION or INSERT.
+```
 
 *Cause:* You attempted to use either a FIRST n or an ANY n clause in
 other than an outermost SELECT statement.
@@ -1391,9 +1380,11 @@ other than an outermost SELECT statement.
 [[SQL-4104]]
 == SQL 4104
 
-4104 If a character literal was intended, you must use the single quote
-delimiter: <literal>. The use of double quotes causes SQL/MX to
+```
+If a character literal was intended, you must use the single quote
+delimiter: <literal>. The use of double quotes causes Trafodion to
 interpret <column-name> as a delimited identifier column name.
+```
 
 Where <column-name> is a delimited ANSI identifier, such as MYCOL.
 
@@ -1435,9 +1426,8 @@ statement.
 == SQL 4106
 
 ```
-The character set for the operand of function <name-1> must be
+The character set for the operand of function <name-1> must be <name-2>.
 ```
-<name-2>.
 
 *Cause:* You specified an operand for function <name-1> with the wrong
 character set <name-2>.
@@ -1465,8 +1455,8 @@ column <name>, but there is no default value for that column.
 
 ```
 Inside a ROWS SINCE, another sequence function contained an invalid
-```
 reference to the THIS function.
+```
 
 *Cause:* A ROWS SINCE function in your statement contained another
 sequence function that, in turn, contained an invalid reference to the
@@ -1491,6 +1481,7 @@ functions (such as RUNNINGSUM, MOVINGSUM, LASTNOTNULL) are supported
 only in the select list or the HAVING clause of the query expression
 containing the SEQUENCE BY clause. For example, these queries are legal:
 
+```
 >>select a, runningcount(b) from T1 sequence by a;
 
 >>select x from (select a, runningcount(b) from T1 sequence by a)
@@ -1509,12 +1500,14 @@ T2(x,y) where y > 10;
 RUNNINGCOUNT(CAT.SCH.HPPARTEST1.B).
 
 *** ERROR[8822] Unable to prepare the statement.
+```
 
 [[SQL-4110]]
 == SQL 4110
 
-4110 The query contains sequence functions but no SEQUENCE BY clause:
-<name>.
+```
+The query contains sequence functions but no SEQUENCE BY clause: <name>.
+```
 
 *Cause:* You specified a query that contains a sequence function <name>
 but no SEQUENCE BY clause, which is not supported. The value of the
@@ -1527,19 +1520,24 @@ unexpected results.
 
 *Recovery:* Correct the syntax and resubmit. For example:
 
+```
 >>select runningsum(a) from t1;
 
-*** ERROR[4110] The query contains sequence functions but no SEQUENCE BY
-clause: RUNNINGSUM(CAT.SCH.T1.A).
+*** ERROR[4110] The query contains sequence functions but no SEQUENCE BY clause: RUNNINGSUM(CAT.SCH.T1.A).
+```
 
 To correct the query, add a SEQUENCE BY clause:
 
+```
 >>select runningsum(a) from t1 sequence by b;
+```
 
 [[SQL-4111]]
 == SQL 4111
 
-4111 The query contains a SEQUENCE BY clause but no sequence functions.
+```
+The query contains a SEQUENCE BY clause but no sequence functions.
+```
 
 *Cause:* You specified a query that contained a SEQUENCE BY clause but
 no sequence functions, which is not supported. The purpose of the
@@ -1554,26 +1552,27 @@ Without sequence functions, the SEQUENCE BY clause has no effect.
 query or by using an ORDER BY (if you intend to order the result set.)
 For example:
 
+```
 >>select a from T1 sequence by a;
 
-*** ERROR[4111] The query contains a SEQUENCE BY clause but no sequence
-functions.
+*** ERROR[4111] The query contains a SEQUENCE BY clause but no sequence functions.
 
 *** ERROR[8822] Unable to prepare the statement.
+```
 
 Correct the syntax with one of these:
 
+```
 >>select a, runningavg(c) from T1 sequence by a;
-
 >>select a from T1 order by a;
+```
 
 [[SQL-4112]]
 == SQL 4112
 
 ```
-Absolute and relative sampling cannot occur in the same BALANCE
+Absolute and relative sampling cannot occur in the same BALANCE expression.
 ```
-expression.
 
 *Cause:* You attempted to perform absolute and relative sampling in the
 same balance expression, which is not supported.
@@ -1666,14 +1665,11 @@ only if the cursor query is updatable.
 This example of a nonupdatable cursor join query does not select the
 target of the update and receives an error:
 
+```
 >>SELECT A.PROD_CODE FROM EXPRODPARAMS A, MSRATES B
-
 +>WHERE CASE WHEN B.UPDATE_FLAG IS NULL THEN 'N' ELSE
-
 B.UPDATE_FLAG END = 'N'
-
 +>AND A.ACC_TYPE = B.ACC_TYPE AND A.PROD_CODE = B.PROD_CODE
-
 +>FOR UPDATE OF UPDATE_FLAG ;
 
 *** ERROR[4001] Column UPDATE_FLAG is not found. Tables in scope: A.
@@ -1681,12 +1677,8 @@ Default schema: CAT.SCH.
 
 *** ERROR[4117] The cursor query expression may be nonupdatable.
 
-[[**_ERROR[8822]_Unable_to_prepare_the_statement._*SQL_4118]]
-[[=_**_ERROR[8822]_Unable_to_prepare_the_statement._*SQL_411]]
-[[=_=_**_ERROR[8822]_Unable_to_prepare_the_statement._*SQL_41]]
-[[=_=_=_**_ERROR[8822]_Unable_to_prepare_the_statement._*SQL_4]]
-[[=_=_=_=_**_ERROR[8822]_Unable_to_prepare_the_statement._*SQL]]
-== = = = = ** ERROR[8822] Unable to prepare the statement. *SQL 
+*** ERROR[8822] Unable to prepare the statement. 
+```
 
 [[118_The_cursor_query_expression_is_not_updatable]]
 == 118 The cursor query expression is not updatable
@@ -1706,11 +1698,11 @@ updatable if all the following are true:
 correlated subquery references to that table. For example, this query is
 updatable:
 
+```
 SELECT A FROM T;
+```
 
-This one is not: SELECT A FROM T WHERE B = (SELECT C FROM U WHERE
-
-T.I. = U.I)
+This one is not: SELECT A FROM T WHERE B = (SELECT C FROM U WHERE T.I. = U.I)
 
 * There are no aggregates.
 * There are no GROUP BY, DISTINCT, or ORDER BY clauses.
@@ -1720,19 +1712,16 @@ T.I. = U.I)
 This example of a nonupdatable cursor join query selects the target of
 the update correctly and receives an error:
 
+```
 >>SELECT A.PROD_CODE, B.UPDATE_FLAG FROM EXPRODPARAMS A, MSRATES B
-
-+>WHERE CASE WHEN B.UPDATE_FLAG IS NULL THEN 'N' ELSE
-
-B.UPDATE_FLAG END = 'N'
-
++>WHERE CASE WHEN B.UPDATE_FLAG IS NULL THEN 'N' ELSE B.UPDATE_FLAG END = 'N'
 +>AND A.ACC_TYPE = B.ACC_TYPE AND A.PROD_CODE = B.PROD_CODE
-
 +>FOR UPDATE OF UPDATE_FLAG ;
 
 *** ERROR[4118] The cursor query expression is not updatable.
 
 *** ERROR[8822] Unable to prepare the statement.
+```
 
 [[SQL-4120]]
 == SQL 4120
@@ -1756,10 +1745,9 @@ GROUP BY clause, or a DISTINCT clause. A column in the ORDER BY clause,
 
 ```
 In a query with a GROUP BY, DISTINCT, or aggregate function, each
-```
 column in the ORDER BY clause must be one of the columns explicitly
-SELECTed by the query. Column in error: <name>. Table in scope:
-<name>.
+SELECTed by the query. Column in error: <name>. Table in scope: <name>.
+```
 
 *Cause:* You attempted to perform a query with an aggregate function, a
 GROUP BY clause, or a DISTINCT clause. A column in the ORDER BY clause,
@@ -1815,10 +1803,10 @@ one table.
 == SQL 4125
 
 ```
-The select list of a subquery in a row value constructor must be
-```
-scalar (degree of one) if the subquery is one of several expressions
+The select list of a sub query in a row value constructor must be
+scalar (degree of one) if the sub query is one of several expressions
 rather than the only expression in the constructor.
+```
 
 *Cause:* You specified a subquery, consisting of several expressions,
 whose select list is not scalar. If the subquery is not the only
@@ -1832,9 +1820,8 @@ expression in the constructor, it must be scalar.
 == SQL 4126
 
 ```
-The row value constructors in a VALUES clause must be of equal
+The row value constructors in a VALUES clause must be of equal degree.
 ```
-degree.
 
 *Cause:* You specified a VALUES clause whose row value constructors are
 not of equal degree.
@@ -1861,7 +1848,7 @@ incompatible data types.
 == SQL 4128
 
 ```
-Default volume and subvolume information could not be retrieved fromc=_DEFAULTS define - DEFINEINFO error <number>.
+Default volume and subvolume information could not be retrieved from=_DEFAULTS define - DEFINEINFO error <number>.
 ```
 
 Where <number> is the error message.
@@ -1878,8 +1865,8 @@ default volume and subvolume information using the =_DEFAULTS define.
 
 ```
 An IF statement should have the same set of output host variables on
-```
 both sides of IF THEN statement list and the ELSE statement list.
+```
 
 *Cause:* You specified an IF statement that does not have the same set
 of output host variables on both sides of its IF THEN statement list and
@@ -1936,8 +1923,8 @@ database software does not allow.
 
 ```
 In an INSERT-SELECT, each column in the ORDER BY clause must be one
-```
 of the columns in the selected list of the query. Column in error: B.
+```
 
 *Cause:* You tried to SQL-compile an INSERT-SELECT statement that
 specified an ORDER BY column that is not in the select list of the
@@ -1953,8 +1940,8 @@ is also in the select list of the INSERT-SELECT query and resubmit.
 
 ```
 An outer SELECT was used in a DELETE [FIRST N] statement without
-```
 using the [LAST 1] clause.
+```
 
 *Cause:* An outer SELECT was used in a Delete [FIRST N] statement
 without using the [LAST 1] clause.
@@ -1968,8 +1955,8 @@ without using the [LAST 1] clause.
 
 ```
 Primary key of table expression <name> must be used for join with
-```
 embedded <operation> expression. Tables in scope: <name>.
+```
 
 *Cause:* You performed an embedded DELETE or UPDATE and are now
 attempting to join the result set of whatever that operation was with
@@ -2017,9 +2004,8 @@ statement.
 == SQL 4153
 
 ```
-Statement may not compile due to an order requirement on stream
+Statement may not compile due to an order requirement on stream expression.
 ```
-expression.
 
 *Cause:* You attempted to compile a stream expression using an ORDER BY
 on columns that do not define the prefix of the clustering key of the
@@ -2036,8 +2022,8 @@ the order and resubmit.
 
 ```
 Statement may not compile due to an order requirement on embedded
-```
 <name> expression.
+```
 
 *Cause:* You attempted to compile an embedded DELETE or embedded UPDATE
 expression using an ORDER BY without using a clustering key or a
@@ -2082,9 +2068,8 @@ statement.
 == SQL 4158
 
 ```
-Join of stream expressions is not supported. Tables in scope:
+Join of stream expressions is not supported. Tables in scope: <name>.
 ```
-<name>.
 
 *Cause:* You attempted to perform a join of stream expressions.
 
@@ -2097,9 +2082,8 @@ statement.
 == SQL 4159
 
 ```
-Intersection of stream expressions is not supported. Tables in
+Intersection of stream expressions is not supported. Tables in scope: <name>.
 ```
-scope: <name>.
 
 *Cause:* You attempted to perform an intersection of stream expressions.
 
@@ -2113,9 +2097,8 @@ statement.
 
 ```
 Intersection between embedded <name-1> expression and embedded
+<name-2> expression is not supported. Tables in scope: <name-3>, <name-4>.
 ```
-<name-2> expression is not supported. Tables in scope: <name-3>,
-<name-4>.
 
 *Cause:* You attempted to perform an intersection between two embedded
 expressions.
@@ -2130,8 +2113,8 @@ statement.
 
 ```
 Union between embedded <name-1> expression and embedded <name-2>
-```
 expression not supported. Tables in scope: <name-3>, <name-4>.
+```
 
 *Cause:* You attempted to perform a union between two embedded
 expressions.
@@ -2145,9 +2128,8 @@ statement.
 == SQL 4162
 
 ```
-GROUP BY is not supported for stream expression. Tables in scope:
+GROUP BY is not supported for stream expression. Tables in scope: <name>.
 ```
-<name>.
 
 *Cause:* You attempted to perform a GROUP BY in conjunction with a
 stream expression.
@@ -2162,8 +2144,8 @@ statement.
 
 ```
 GROUP BY is not supported for embedded <name-1> expression. Tables in
-```
 scope: <name-2>.
+```
 
 *Cause:* You attempted to perform a GROUP BY in conjunction with an
 embedded expression.
@@ -2178,8 +2160,8 @@ statement.
 
 ```
 Outer relation of right join cannot be embedded <name> expression.
-```
 Tables in scope: <name>.
+```
 
 *Cause:* You attempted to perform a right join using an embedded
 expression as the outer relation.
@@ -2194,8 +2176,8 @@ statement.
 
 ```
 Outer relation of right join cannot be stream expression. Tables in
-```
 scope: <name>.
+```
 
 *Cause:* You attempted to perform a right join using a stream expression
 as the outer relation.
@@ -2210,8 +2192,8 @@ statement.
 
 ```
 ORDER BY clause is not supported in UNION of two streams. Tables in
-```
 scope: <name-1>, <name-2>.
+```
 
 *Cause:* You attempted to use an ORDER BY clause in the UNION of two
 streams.
@@ -2256,8 +2238,8 @@ statement.
 
 ```
 Embedded delete statements are not allowed when using DECLARE ...
-```
 FOR UPDATE clause.
+```
 
 *Cause:* You attempted to perform a DECLARE... FOR UPDATE clause that
 included an embedded DELETE statement.
@@ -2347,8 +2329,8 @@ statement.
 
 ```
 Join between stream expression and embedded <name-1> expression is
-```
 not supported. Tables in scope: <name-2>.
+```
 
 *Cause:* You attempted to perform a join between a stream expression and
 an embedded expression.
@@ -2377,9 +2359,8 @@ statement.
 == SQL 4178
 
 ```
-Update of variable length column <name> is not permitted on
+Update of variable length column <name> is not permitted on rollback.
 ```
-rollback.
 
 *Cause:* You attempted to perform a rollback that included an update of
 a variable length column.
@@ -2437,8 +2418,8 @@ table with a referential constraint.
 
 ```
 Columns that are part of a referential constraint cannot be updated
-```
 using embedded UPDATE statements.
+```
 
 *Cause:* You attempted to perform an embedded UPDATE statement on
 columns that are part of a referential constraint.
@@ -2450,8 +2431,10 @@ columns that are part of a referential constraint.
 [[SQL-4189]]
 == SQL 4189
 
-4189 ORDER BY clause in an embedded INSERT, UPDATE, or DELETE statement
+```
+ORDER BY clause in an embedded INSERT, UPDATE, or DELETE statement
 is not supported.
+```
 
 *Cause:* An embedded INSERT, UPDATE, or DELETE statement has an ORDER BY
 clause.
@@ -2511,19 +2494,19 @@ statement.
 
 ```
 Insert/Update/Delete operation on non-audited table <name> requires
-```
 index maintenance which may cause the index(es) to become corrupt.
 
-Performing INSERT, UPDATE, or DELETE operations on a nonaudited table
+Performing INSERT, UPDATE, or DELETE operations on a non-audited table
 could corrupt the index if the operation is interrupted. Use the
 
 IUD_NONAUDITED_INDEX_MAINT attribute value to control if these
 operations create an error condition, are allowed with a warning, or are
 allowed with no warning. This message appears as a warning or as an
 error, depending on how you have set this attribute value.
+```
 
 *Cause:* You attempted to perform an INSERT, UPDATE, or DELETE operation
-on a nonaudited table and IUD_NONAUDITED_INDEX_MAINT is set to OFF. This
+on a non-audited table and IUD_NONAUDITED_INDEX_MAINT is set to OFF. This
 message is displayed as an error.
 
 *Effect:* Trafodion is unable to compile the
@@ -2532,7 +2515,7 @@ statement.
 *Recovery:* Modify the statement and resubmit.
 
 *Cause:* You attempted to perform an INSERT, UPDATE, or DELETE operation
-on a nonaudited table and IUD_NONAUDITED_INDEX_MAINT is set to WARN.
+on a non-audited table and IUD_NONAUDITED_INDEX_MAINT is set to WARN.
 This message appears as an warning.
 
 *Effect:* Trafodion performs the INSERT, UPDATE,
@@ -2545,9 +2528,8 @@ other messages about that condition.
 == SQL 4204
 
 ```
-Stream access is supported for only key-sequenced tables. Table:
+Stream access is supported for only key-sequenced tables. Table: <name>.
 ```
-<name>.
 
 *Cause:* You attempted to use stream access on a table that is not
 key-sequenced, which is required.
@@ -2561,9 +2543,8 @@ statement.
 == SQL 4205
 
 ```
-Embedded <name-1> is supported for only key-sequenced tables. Table:
+Embedded <name-1> is supported for only key-sequenced tables. Table: <name-2>.
 ```
-<name-2>.
 
 *Cause:* You attempted to perform an embedded action that is supported
 only for key-sequenced tables.
@@ -2577,9 +2558,8 @@ statement.
 == SQL 4206
 
 ```
-Embedded <name> is supported only for updatable views. View:
+Embedded <name> is supported only for updatable views. View: <name-2>.
 ```
-<name-2>.
 
 *Cause:* You attempted to perform an embedded action that is supported
 only for updatable views.
@@ -2594,8 +2574,8 @@ statement.
 
 ```
 Index <name> and other indexes covering a subset of columns do not
-```
 cover all output values of stream.
+```
 
 *Cause:* You attempted to use an index for stream access that does not
 cover all output columns of the base table.
@@ -2611,8 +2591,8 @@ index.
 
 ```
 Index <name> and other indexes covering a subset of columns do not
-```
 cover all columns referenced in WHERE clause of stream.
+```
 
 *Cause:* You attempted to use an index for stream access that does not
 cover all base table columns referenced in the WHERE clause.
@@ -2641,9 +2621,8 @@ statement.
 == SQL 4210
 
 ```
-Embedded update/delete statements not supported within an IF
+Embedded update/delete statements not supported within an IF statement.
 ```
-statement.
 
 *Cause:* You attempted to embed UPDATE/DELETE statements within an IF
 statement.
@@ -2658,8 +2637,8 @@ statement.
 
 ```
 <table-name> cannot be used to satisfy order requirement on the
-```
 stream because it is partitioned.
+```
 
 *Cause:* You specified <table-name>, a partitioned table, as the order
 requirement on a stream.
@@ -2673,11 +2652,10 @@ statement.
 == SQL 4213
 
 ```
-Use of rowsets in a predicate with embedded update/delete is not
+Use of row sets in a predicate with embedded update/delete is not supported.
 ```
-supported.
 
-*Cause:* You attempted to use a rowset as a predicate with an embedded
+*Cause:* You attempted to use a row set as a predicate with an embedded
 update or embedded delete.
 
 *Effect:* Trafodion is unable to compile the
@@ -2689,12 +2667,11 @@ statement.
 == SQL 4214
 
 ```
-The SET ON ROLLBACK clause is not allowed on a nonaudited table.
+The SET ON ROLLBACK clause is not allowed on a non-audited table. Table: <name>.
 ```
-Table: <name>.
 
 *Cause:* You attempted to use a SET ON ROLLBACK clause to update a
-column in a nonaudited table.
+column in a non-audited table.
 
 *Effect:* The operation fails.
 
@@ -2704,11 +2681,10 @@ column in a nonaudited table.
 == SQL 4215
 
 ```
-Stream access is not allowed on a non-audited table. Table:
+Stream access is not allowed on a non-audited table. Table: <name>.
 ```
-<name>.
 
-*Cause:* You attempted to use stream access on a nonaudited table.
+*Cause:* You attempted to use stream access on a non-audited table.
 
 *Effect:* The operation fails.
 
@@ -2780,8 +2756,8 @@ parameters.
 
 ```
 Parameter <value> for user-defined routine <routine-name> is an OUT
-```
 or INOUT parameter and must be a host variable or a dynamic parameter.
+```
 
 *Cause:* In the Trafodion database software statement being compiled,
 you attempted to invoke a stored procedure that has an OUT or INOUT
@@ -2816,21 +2792,21 @@ Rowset parameters are not allowed in a CALL statement.
 ```
 
 *Cause:* In the Trafodion database software statement being compiled,
-you attempted to use a rowset as a parameter in a stored procedure
+you attempted to use a row set as a parameter in a stored procedure
 invocation.
 
 *Effect:* Trafodion statement is not compiled.
 
 *Recovery:* Alter the data type of the relevant variable, or use a
-different nonrowset host variable. Retry the compilation.
+different non-row-set host variable. Retry the compilation.
 
 [[SQL-4308]]
 == SQL 4308
 
 ```
 Internal error: Unsupported SQL data type <value> specified for a
-```
 CALL statement parameter.
+```
 
 *Cause:* In the Trafodion database software statement being compiled, a
 parameter in a stored procedure invocation had an unsupported SQL data
@@ -2847,8 +2823,8 @@ support.
 
 ```
 Procedure <procedure-name> is registered to return result sets and
-```
 stored procedure result sets are not yet supported.
+```
 
 Where <procedure-name> is the ANSI name of a stored procedure.
 
@@ -2868,8 +2844,8 @@ supports stored procedure result sets.
 
 ```
 USER(x) is currently supported only in the outermost SELECT list.
-```
 For example, it cannot be part of the subquery.
+```
 
 *Cause:* You tried to use the USER(x) function somewhere other than the
 outermost SELECT clause. This function is not yet fully supported.
@@ -2881,7 +2857,9 @@ outermost SELECT clause. This function is not yet fully supported.
 [[SQL-4313]]
 == SQL 4313
 
-4313 Function rand()is not supported.
+```
+Function rand()is not supported.
+```
 
 *Cause:* You attempted to use the random function, which is not
 supported.
@@ -2893,9 +2871,11 @@ supported.
 [[SQL-4320]]
 == SQL 4320
 
-4320 Stream access not allowed on multi-partitioned table, when flag
+```
+Stream access not allowed on multi-partitioned table, when flag
 ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Table in scope:
-_$0~TableName_.
+<table-name>.
+```
 
 *Cause:* You attempted a stream access on a multi-partitioned table when
 the flag ATTEMPT_ASYNCHRONOUS_ACCESS was set to OFF.

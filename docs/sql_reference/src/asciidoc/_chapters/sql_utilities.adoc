@@ -64,7 +64,7 @@ The Trafodion bulk load process takes place in two phases:
 * _Preparation phase_: In this phase, Trafodion reads the data from
 the source files in Hive or HDFS, partitions the data based on the
 target table's partitioning scheme, sorts the data, and then generates
-KeyValue pairs that will populate the HFiles. Trafodion also encodes the
+key-value pairs that will populate the HFiles. Trafodion also encodes the
 data for faster storage and retrieval.
 * _Loading-the-files-into-HBase phase_: This phase uses the
 LoadIncrementalHFiles (also known as the computebulkload tool) and load
@@ -147,7 +147,7 @@ data from the parent table.
 
 * `UPSERT USING LOAD`
 +
-specifies that the data be inserted into the target table using rowset
+specifies that the data be inserted into the target table using row set
 inserts without a transaction.
 
 <<<
@@ -294,7 +294,7 @@ index-option is:
 +
 is an SQL identifier that specifies the simple name for the index. You
 cannot qualify _index_ with its schema name. Indexes have their own
-namespace within a schema, so an index name might be the same as a table
+name space within a schema, so an index name might be the same as a table
 or constraint name. However, no two indexes in a schema can have the
 same name.
 
@@ -305,7 +305,7 @@ is the name of the table for which to populate the index. See
 
 * `ONLINE`
 +
-specifies that the populate operation should be done online. That is,
+specifies that the populate operation should be done on-line. That is,
 ONLINE allows read and write DML access on the base table while the
 populate operation occurs. Additionally, ONLINE reads the audit trail to
 replay updates to the base table during the populate phase. If a lot of
@@ -315,7 +315,7 @@ contention to the audit trail. The default is ONLINE.
 
 * `OFFLINE`
 +
-specifies that the populate should be done offline. OFFLINE allows only
+specifies that the populate should be done off-line. OFFLINE allows only
 read DML access to the base table. The base table is unavailable for
 write operations at this time. OFFLINE must be specified explicitly.
 SELECT is allowed.
@@ -331,16 +331,16 @@ When POPULATE INDEX is executed, the following steps occur:
 
 If a failure occurs, the rollback is faster because it does not have to
 process a lot of audit. Also, if a failure occurs, the index remains
-empty, unaudited, and not attached to the base table (offline).
+empty, unaudited, and not attached to the base table (off-line).
 
-* When an offline POPULATE INDEX is being executed, the base table is
-accessible for read DML operations. When an online POPULATE INDEX is
+* When an off-line POPULATE INDEX is being executed, the base table is
+accessible for read DML operations. When an on-line POPULATE INDEX is
 being executed, the base table is accessible for read and write DML
 operations during that time period, except during the commit phase at
 the very end.
 * If the POPULATE INDEX operation fails unexpectedly, you may need to
 drop the index again and re-create and repopulate.
-* Online POPULATE INDEX reads the audit trail to replay updates by
+* On-line POPULATE INDEX reads the audit trail to replay updates by
 allowing read/write access. If you plan to create many indexes in
 parallel or if you have a high level of activity on the audit trail, you
 should consider using the OFFLINE option.
@@ -704,7 +704,7 @@ For more information about specifying columns, see
 * `EVERY COLUMN`
 +
 The EVERY COLUMN keyword indicates that histogram statistics are to be
-generated for each individual column of _table_ and any multicolumns
+generated for each individual column of _table_ and any multi-columns
 that make up the primary key and indexes. For example, _table_ has
 columns A, B, C, D defined, where A, B, C compose the primary key. In
 this case, the ON EVERY COLUMN option generates a single column
@@ -914,7 +914,7 @@ Generate statistics for columns most often used in data access plans for
 a table—that is, the primary key, indexes defined on the table, and any
 other columns frequently referenced in predicates in WHERE or GROUP BY
 clauses of queries issued on the table. Use the EVERY COLUMN option to
-generate histograms for every individual column or multicolumns that
+generate histograms for every individual column or multi columns that
 make up the primary key and indexes.
 
 The EVERY KEY option generates histograms that make up the primary key

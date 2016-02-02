@@ -93,8 +93,8 @@ The CSV output columns have the following meaning:
 | `1st Fetch(s)` | Time needed to fetch the first row in seconds.
 | `Fetch(s)`     | Total Fetch time in seconds.
 | `Total(s)`     | Total query elapsed time from prepare to fetch in seconds.
-| `Stimeline`    | Queries start timeline in milliseconds.
-| `Etimeline`    | Queries end timeline in milliseconds.
+| `Stimeline`    | Queries start time line in milliseconds.
+| `Etimeline`    | Queries end time line in milliseconds.
 |===
 
 <<<
@@ -168,7 +168,7 @@ This multiplying factors are defined with a `<number>:` preceding the script pat
 | `odb64luo -P test/queries/* -T 50 - c -q`    | Runs *in parallel* all files under `test/queries/` using 50 threads
 (ODBC connections) (`-T 50`), with CSV output (`-c`) and omitting query output (`-q`).
 | `odb64luo -P 3: test/queries/* -T 3 -c -q`   | Runs *in parallel three times (`3:`)* all files under `test/queries/`
-using thre threads (ODBC connections) (`-T 3`), with CSV output (`-c`) and omitting query output (`-q`).
+using three threads (ODBC connections) (`-T 3`), with CSV output (`-c`) and omitting query output (`-q`).
 Scripts will be assigned to threads using *_standard assignment_*.
 | `odb64luo -P -3: test/queries/* -T 3 -c -q`  | Runs *in parallel three times (`-3:`)* all files under `test/queries/`
 using three threads (ODBC connections) (`-T 3`), with CSV type output (`-c`) and omitting query output (`-q`).

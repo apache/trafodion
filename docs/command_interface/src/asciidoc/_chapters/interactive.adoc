@@ -26,7 +26,7 @@
 = Run Commands Interactively
 After launching TrafCI, you can run SQL statements and interface commands in the command-line interface.
 
-== User Inteface
+== User Interface
 
 === Product Banner
 
@@ -48,7 +48,7 @@ on one line. If you accidentally break an interface command across more than one
 SQL terminator and then reenter the command on one line.
 
 You can continue any SQL statement over multiple lines, breaking that statement at any point except
-within a word, a numeric literal, or a multicharacter operator (for example, `<&#61;`). To break a string
+within a word, a numeric literal, or a multi-character operator (for example, `<&#61;`). To break a string
 literal in a DML statement, use a concatenation operator (`||`). For more information, see the
 concatenation operator in the
 http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
@@ -354,7 +354,7 @@ For more information, see the <<cmd_set_list_count, SET LIST_COUNT Command>> and
 
 To display commands that were recently executed in the TrafCI session, enter the 
 `HISTORY` command. The `HISTORY` command associates each command with a number that 
-you can use to reexecute or edit the command with the `FC` command. See 
+you can use to re-execute or edit the command with the `FC` command. See 
 <<edit_reexecute_command, Edit and Reexecute a Command>>.
 
 *Example*
@@ -375,7 +375,7 @@ To save the session history in a user-specified file, enter the `SAVEHIST` comma
 
 *Example*
 
-This `SAVEHIST` command saves the session history inca file named `history.txt` in the 
+This `SAVEHIST` command saves the session history in a file named `history.txt` in the 
 local directory where you are running TrafCI:
 
 ```

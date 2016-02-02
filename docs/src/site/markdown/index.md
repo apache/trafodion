@@ -90,7 +90,7 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 
 <table>
   <tr>
-    <td width="25%" valign="top">
+    <td width="33%" valign="top">
       <center>
         <h2>Understand</h2>
         <img src="images/logos/understand.png" width="108" height="108"/>
@@ -104,7 +104,7 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
         <li><a href="roadmap.html">Roadmap</a></li>
       </ul>
     </td>
-    <td width="25%" valign="top">
+    <td width="33%" valign="top">
       <center>
         <h2>Use</h2>
         <img src="images/logos/use.png" width="108" height="108"/>
@@ -118,21 +118,7 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
         <li><a href="release-notes.html">Release Notes</a></li>
       </ul>
     </td>
-    <td width="25%" valign="top">
-      <center>
-      <h2>Contribute</h2>
-      <img src="images/logos/contribute.png" width="108" height="108"/>
-      <h4>Help enhance Trafodion</h4>
-      <div class="customHr">.</div>
-      </center>
-      <ul>
-        <li><a href="develop.html">Develop</a></li>
-        <li><a href="test.html">Test</a></li>
-        <li><a href="document.html">Document</a></li>
-        <li><a href="advocate.html">Advocate</a></li>
-      </ul>
-    </td>
-    <td width="25%" valign="top">
+    <td width="33%" valign="top">
       <center>
         <h2>Community</h2>
         <img src="images/logos/community.png" width="108" height="108"/>
@@ -140,7 +126,7 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
         <div class="customHr">.</div>
       </center>
       <ul>
-        <li><a href="contribute.html">Join</a></li>
+        <li><a href="contribution-redirect.html">Contribute</a></li>
         <li><a href="mail-lists.html">Discuss</a></li>
         <li><a href="calendar.html">Calendar</a></li>
         <li><a href="presentations.html">Presentations</a></li>

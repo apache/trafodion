@@ -228,7 +228,7 @@ For a list of Control Query Default (CQD) settings for the Hive environment, see
 [[ansi_names_for_hive_tables]]
 === ANSI Names for Hive Tables
 
-Hive tables appear in the Trafodion Hive ANSI namespace in a special catalog and schema named `HIVE.HIVE`.
+Hive tables appear in the Trafodion Hive ANSI name space in a special catalog and schema named `HIVE.HIVE`.
 
 To select from a Hive table named `T`, specify an implicit or explicit name, such as `HIVE.HIVE.T`,
 in a Trafodion SQL statement.
@@ -268,7 +268,7 @@ Trafodion performs the following data-type mappings:
 |===
 
 1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See <<hive_environment_cqds,Hive Environment CQDs>>.
-2. Hive supports timestamps with nanosecond resolution (precision of 9). Tafodion SQL supports only microsecond resolution (precision 6).
+2. Hive supports timestamps with nanosecond resolution (precision of 9). Trafodion SQL supports only microsecond resolution (precision 6).
 
 [[supported_sql_statements_with_hive_tables]]
 === Supported SQL Statements With Hive Tables
@@ -312,7 +312,7 @@ does not actually lock the data, thereby reducing lock request conflicts. If a l
 place is released.
 
 READ COMMITTED provides the next higher level of data consistency (compared to READ UNCOMMITTED).
-A statement executing with this access option does not allow dirty reads, but both nonrepeatable reads
+A statement executing with this access option does not allow dirty reads, but both non-repeatable reads
 and phantoms are possible.
 
 READ COMMITTED provides sufficient consistency for any process that does not require a repeatable read
@@ -406,7 +406,7 @@ This option, which is ANSI compliant, allows your transaction to access only com
 when READ COMMITTED is the specified isolation level.
 
 READ COMMITTED provides the next level of data consistency. A transaction executing with this isolation level does not
-allow dirty reads, but both nonrepeatable reads and phantoms are possible.
+allow dirty reads, but both non-repeatable reads and phantoms are possible.
 
 READ COMMITTED provides sufficient consistency for any transaction that does not require a repeatable-read capability.
 

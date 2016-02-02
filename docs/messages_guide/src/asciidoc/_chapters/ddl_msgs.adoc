@@ -1418,7 +1418,7 @@ and resubmit.
 == SQL 1112
 
 ```
-An index column list cannot consist only of the systemgenerated column SYSKEY.
+An index column list cannot consist only of the system-generated column SYSKEY.
 ```
 
 *Cause:* The column list specified in a CREATE INDEX statement consisted
@@ -1477,7 +1477,7 @@ statement. For information about file system errors, see <<file_system_errors,Fi
 == SQL 1116
 
 ```
-The current partitioning scheme requires a userspecified clustering key on object <table-name>.
+The current partitioning scheme requires a user-specified clustering key on object <table-name>.
 ```
 
 Where <table-name> is the name of the table.
@@ -1626,7 +1626,7 @@ not be correct.
 The float data value might not be evaluated consistently to the same
 value each time.
 
-*Recovery:* Do not use float datatypes in the partitioning key of a
+*Recovery:* Do not use float data types in the partitioning key of a
 partitionable table.
 
 [[SQL-1127]]
@@ -1755,13 +1755,13 @@ Where <column-name> is the name of a column of <table-name>.
 Where <table-name> is the name of the affected table.
 
 *Cause:* You attempted to create a check constraint that references a
-systemgenerated column. The column named SYSKEY is often
+system-generated column. The column named SYSKEY is often
 system-generated.
 
 *Effect:* The operation fails.
 
 *Recovery:* Modify the statement so that no check constraints reference
-any systemgenerated column and resubmit.
+any system-generated column and resubmit.
 
 [[SQL-1140]]
 == SQL 1140
@@ -1995,7 +1995,7 @@ the Partition Overlay Support feature was not enabled.
 *Effect:* The POS feature was not applied. A simple table without
 partitions was created.
 
-*Recovery:* None if a nonpartitioned table is requested. To request a
+*Recovery:* None if a non-partitioned table is requested. To request a
 partitioned table, delete the table, verify that disk volumes are
 available, and resubmit. You can also specify the volume names where the
 partitions need to be created for the given CREATE TABLE through
@@ -2505,9 +2505,8 @@ ISO88591 in a HEADING clause.
 The character set for string literals in CONSTRAINT must be ISO88591.
 ```
 
-```
-se.* You specified a literal with a character set other than
-```
+*Cause:* You specified a literal with a character set other than
+
 ISO88591 in the text of a constraint.
 
 *Effect:* The operation fails.
@@ -2922,7 +2921,7 @@ DDL or utility operation.
 == SQL 1301
 
 ```
-NO ACTION referential action for <referential-triggered-action> clause is not yet supported as specified by ANSI SQL99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
+NO ACTION referential action for <referential-triggered-action> clause is not yet supported as specified by ANSI SQL-99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
 ```
 
 Where <referential-triggered-action> can either be ON DELETE or ON

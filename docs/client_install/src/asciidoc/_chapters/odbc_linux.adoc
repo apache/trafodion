@@ -71,7 +71,7 @@ If you are building ODBC applications, please use the preferred build platform, 
 
 1.  Create a download folder on the client workstation.
 2.  Open a Web browser and navigate to http://trafodion.incubator.apache.org/download.html.
-3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodionclients tar file to your workstation.
+3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodion clients tar file to your workstation.
 4.  Place the `clients-1.3.*_n_*.tar.gz` file into the download folder.
 5.  Unpack the `clients-1.3.*_n_*.tar.gz` file.
 +
@@ -106,7 +106,7 @@ cd PkgTmp
 Except for the sample file, the `install.sh` script saves a copy (`.SAV`) of your previous installation files if they exist.
 4.  Accept the terms of the license agreement by entering *yes*.
 5.  Enter a directory for the library files, or press Enter to use the default directory (`/usr/lib64`).
-6.  Enter a directory for the datasource template file, or press *Enter* to use the default directory (`/etc/odbc`).
+6.  Enter a directory for the data-source template file, or press *Enter* to use the default directory (`/etc/odbc`).
 7.  Enter a directory for the sample program, or press *Enter* to use the default directory (`/etc/odbc`).
 
 === Set Up Client Environment

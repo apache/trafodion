@@ -27,7 +27,7 @@ TrafCI supports these commands in the command-line interface or in script files 
 
 [cols="20%l,50%,30%",options="header"]
 |===
-| Commmand             | Description                                                                                                 | Documentation
+| Command              | Description                                                                                                 | Documentation
 | @                    | Runs the SQL statements and interface commands contained in a specified script file.                        | <<cmd_at_sign, @ Command>>
 | /                    | Runs the previously executed SQL statement.                                                                 | <<cmd_slash, / Command>>
 | ALIAS                | Maps a string to any interface or SQL command.                                                              | <<cmd_alias, ALIAS Command>>
@@ -37,7 +37,7 @@ TrafCI supports these commands in the command-line interface or in script files 
 | DISCONNECT           | Terminates the connection to the Trafodion database.                                                        | <<cmd_disconnect, DISCONNECT Command>>
 | ENV                  | Displays attributes of the current TrafCI session.                                                          | <<cmd_env, ENV Command>>
 | EXIT                 | Disconnects from and exits the command-line interface.                                                      | <<cmd_exit, EXIT Command>>
-| FC                   | Edits and reexecutes a previous command. This command is restricted to the command-line
+| FC                   | Edits and re-executes a previous command. This command is restricted to the command-line
 interface and is disallowed in script files.                                                                                         | <<cmd_fc, FC Command>>
 | GET STATISTICS       | Returns formatted statistics for the last executed SQL statement.                                           | <<cmd_get_statistics, GET STATISTICS Command>>
 | GOTO                 | Jumps to a point the command history specified by the <<cmd_label, LABEL Command>>.                         | <<cmd_goto, GOTO Command>>
@@ -52,7 +52,7 @@ interface and is disallowed in script files.                                    
 | QUIT                 | Disconnects from and exits TrafCI.                                                                          | <<cmd_quit, QUIT Command>>
 | RECONNECT            | Creates a new connection to the Trafodion database using the login credentials of the last
 successful connection.                                                                                                               | <<cmd_reconnect, RECONNECT Command>>
-| REPEAT               | Reexecutes a command.                                                                                       | <<cmd_repeat, REPEAT Command>>
+| REPEAT               | Re-executes a command.                                                                                       | <<cmd_repeat, REPEAT Command>>
 | RESET LASTERROR      | Resets the last error code to `0`.                                                                          | <<cmd_reset_lasterror, RESET LASTERROR Command>>
 | RESET PARAM          | Clears all parameter values or a specified parameter value in the current session.                          | <<cmd_reset_param, RESET PARAM Command>>
 | RUN                  | Runs the previously executed SQL statement.                                                                 | <<cmd_run, RUN Command>>
@@ -84,7 +84,7 @@ The default is a semicolon (`;`).                                               
 | SHOW LASTERROR       | Displays the last error of the statement that was executed.                                                 | <<cmd_show_lasterror, SHOW LASTERROR Command>>
 | SHOW LIST_COUNT      | Displays the maximum number of rows to be returned by `SELECT` statements in the current session.           | <<cmd_show_list_count, SHOW LIST_COUNT Command>>
 | SHOW MARKUP          | Displays the value that has been set for the markup option for the current TrafCI session.                  | <<cmd_show_markup, SHOW MARKUP Command>>
-| SHOW PARAM           | isplays the parameters that are set in the current session.                                                 | <<cmd_show_param, SHOW PARAM Command>>
+| SHOW PARAM           | Displays the parameters that are set in the current session.                                                 | <<cmd_show_param, SHOW PARAM Command>>
 | SHOW PREPARED        | Displays the prepared statements in the current TrafCI session.                                             | <<cmd_show_prepared, SHOW PREPARED Command>>
 | SHOW RECCOUNT        | Displays the record count of the previous executed SQL statement.                                           | <<cmd_show_reccount, SHOW RECCOUNT Command>>
 | SHOW REMOTEPROCESS   | Displays the process name of the DCS server that is handling the current connection.                        | <<cmd_show_remoteprocess, SHOW REMOTEPROCESS Command>>
@@ -149,7 +149,7 @@ If you omit `_section-name_`, the `@` command executes the entire script file. F
 SQL> @ddl.sql
 ```
 
-* This `@` command runs the script file in the specified directory on aWindows workstation:
+* This `@` command runs the script file in the specified directory on a Windows workstation:
 +
 ```
  SQL> @c:\my_files\ddl.sql
@@ -226,7 +226,7 @@ is an command or SQL command.
 * `_SQL-terminator_`
 +
 is the default terminator (`;`) or a string value defined for the statement terminator by the
-<<cmd_set_sqlterminator, SET SQLTERMINATOR Command>>. For moreinformation, see
+<<cmd_set_sqlterminator, SET SQLTERMINATOR Command>>. For more information, see
 <<interactive_set_show_terminator, Set and Show the SQL Terminator>>.
 
 === Considerations
@@ -682,7 +682,7 @@ the line below the displayed command line:
 | `I`_characters_   | Inserts characters in front of the character immediately above the letter `I`.
 | `R`_characters_   | Replaces existing characters one-for-one with characters, beginning with the character immediately above the letter `R`.
 | _characters_    | Replaces existing characters one-for-one with characters, beginning with the first character immediately above characters.
-_`characters`_ must begin with a nonblank character.
+_`characters`_ must begin with a non-blank character.
 |===
 
 To specify more than one editing command on a line, separate the editing commands with a double slash (`//`). The end of a line terminates an
@@ -695,7 +695,7 @@ To terminate a command without saving changes to the command, use the double sla
 
 === Examples
 
-* Reexecute the most recent command that begins with SH:
+* Re-execute the most recent command that begins with SH:
 +
 ```
 SQL> FC SH
@@ -842,8 +842,8 @@ GET STATISTICS
 | Records Accessed       | Number of rows returned by disk process to `EID` (Executor In Disk process).
 | Records Used           | Number of rows returned by `EID` after selection.
 | Disk IOs               | Number of actual disk IOs done by disk process.
-| Message Count          | Number of messages sent/received between filesystem and disk process.
-| Message Bytes          | Number of message bytes sent/received between filesystem and disk process.
+| Message Count          | Number of messages sent/received between file system and disk process.
+| Message Bytes          | Number of message bytes sent/received between file system and disk process.
 | Lock Escl              | Number of lock escalations.
 | Lock Wait              | Number of lock waits.
 | Disk Process Busy Time | CPU time for disk process processes for the specified table.
@@ -985,7 +985,7 @@ SQL> HELP SET IDLETIMEOUT
 == HISTORY Command
 
 The `HISTORY` command displays recently executed commands, identifying each command by a number that you can use
-to reexecute or edit the command.
+to re-execute or edit the command.
 
 === Syntax
 
@@ -1000,8 +1000,8 @@ is the number of commands to display. The default number is `10`. The maximum nu
 === Considerations
 
 * You must enter the command on one line. The command does not require an SQL terminator.
-* You can use the `FC` command to edit and reexecute a command in the history buffer, or use the
-`REPEAT` command to reexecute a command without modifying it. See <<cmd_fc,FC Command>> or
+* You can use the `FC` command to edit and re-execute a command in the history buffer, or use the
+`REPEAT` command to re-execute a command without modifying it. See <<cmd_fc,FC Command>> or
 <<cmd_repeat,REPEAT Command>>.
 
 === Example
@@ -1556,7 +1556,7 @@ SQL> OBEY c:\trafci
 ```
 
 * This command executes all files beginning with the word `"script"` and contains one character after the word script
-and ends with `.sql` extenstion. For example: `script1.sql`, `script2.sql`, `scriptZ.sqland` so on.
+and ends with `.sql` extension. For example: `script1.sql`, `script2.sql`, `scriptZ.sqland` so on.
 +
 ```
 SQL> OBEY C:\trafci\script?.sql
@@ -1569,7 +1569,7 @@ SQL> OBEY C:\trafci\test
 ```
 
 * This command executes all files that begin with the word `"script"` and contains one character after the word `"script"` and
-ends with an extenstion prefixed by a dot. For example: `script1.sql`, `script2.bat`, `scriptZ.txt`, and so on.
+ends with an extension prefixed by a dot. For example: `script1.sql`, `script2.bat`, `scriptZ.txt`, and so on.
 +
 ```
 SQL> OBEY C:\trafci\script?.
@@ -1855,7 +1855,7 @@ Connected to Trafodion
 [[cmd_repeat]]
 == REPEAT Command
 
-The `REPEAT` command reexecutes a previous command.
+The `REPEAT` command re-executes a previous command.
 
 === Syntax
 
@@ -1879,15 +1879,15 @@ The HISTORY command displays the commands or statements in the history buffer. S
 == Considerations
 
 * You must enter the command on one line. The command does not require an SQL terminator.
-* To reexecute the immediately preceding command, enter `REPEAT` without specifying a number. If you enter more than one
-command on a line, then the `REPEAT` command reexecutes only the last command on the line.
+* To re-execute the immediately preceding command, enter `REPEAT` without specifying a number. If you enter more than one
+command on a line, then the `REPEAT` command re-executes only the last command on the line.
 * When a command is selected for repeat, and the SQL terminator value has changed since the execution of that command,
 then TrafCI replaces the SQL terminator in the command with the current SQL terminator value and executes the command.
 
 <<<
 === Examples
 
-* Display the previously executed commands and reexecute the second to the last command:
+* Display the previously executed commands and re-execute the second to the last command:
 +
 ```
 SQL> HISTORY
@@ -1913,7 +1913,7 @@ SQL>
 ```
 
 <<<
-* Reexecute the fifth command in the history buffer:
+* Re-execute the fifth command in the history buffer:
 +
 ```
 SQL> REPEAT 5
@@ -1926,7 +1926,7 @@ DEPT     EMPLOYEE   JOB         PROJECT
 SQL> 
 ```
 
-* Reexecute the `SHOW TABLES` command:
+* Re-execute the `SHOW TABLES` command:
 +
 ```
 SQL> REPEAT SHOW
@@ -3609,7 +3609,7 @@ Elapsed time:00:00:00:078
 [[cmd_show_param]]
 == SHOW PARAM Command
 
-The `SHOW PARAM` command displays the parameters that are set in thecurrent TrafCI session.
+The `SHOW PARAM` command displays the parameters that are set in the current TrafCI session.
 
 === Syntax
 

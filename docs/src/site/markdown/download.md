@@ -24,23 +24,19 @@ Trafodion is installed onto an existing Hadoop environment. Currently, one of th
 We're actively working on removing this restriction.
 
 # Download
-The Trafodion product environment is installed using the Trafodion Installer, which operates on Trafodion binaries only.
+The Trafodion end-user environment is installed using the Trafodion Installer, which operates on Trafodion binaries only.
 
 ## Binaries
 The Trafodion binaries are available as a tar file. 
 
-Please download from: https://dist.apache.org/repos/dist/release/incubator/trafodion/apache-trafodion-1.3.0-incubating/
+### 1.3.0 Binaries
+
+* [Trafodion Installer](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz)
+* [Trafodion Server](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-1.3.0-incubating-bin.tar.gz)
+* [Trafodion Clients](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-clients-1.3.0-incubating-bin.tar.gz)
 
 ## Source
-Build your own binaries from the Trafodion source code as follows:
-
-1. [Setup Build Environment](setup-build-environment.html).
-2. [Build Trafodion](build.html) — use **```make package```**.
-
-Git site: git@github.com:apache/incubator-trafodion
-
-The source tar file has been signed with pgp key A44C5A05 which is included in the download location’s KEYS file:
-https://dist.apache.org/repos/dist/release/incubator/trafodion/KEYS
+Refer to the [Trafodion Contributor Guide](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide) for information how to download and build the Trafodion source.
 
 # Install
 Please refer to the [Install](install.html) instructions.

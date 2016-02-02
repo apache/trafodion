@@ -132,7 +132,7 @@ contact the mailto:user@trafodion.incubator.apache.org[Trafodion User mailing li
 | 0087  | Waiting on a READ request and did not get it.
 | 0088  | A CONTROL READ is pending so a second READ is not valid. 
 | 0089  | A remote device cannot accept text because it has no buffer available.
-| 0090  | The transaction was aborted by the system because its parent process died, a server using the transaction failed, or a message to a server using the transaction was cancelled.
+| 0090  | The transaction was aborted by the system because its parent process died, a server using the transaction failed, or a message to a server using the transaction was canceled.
 | 0091  | A Transaction Services crash occurred during commitment of the transaction; the transaction may or may not have been committed.
 | 0092  | Distributed transaction aborted by system because the path to a remote segment that was part of the transaction was down.
 | 0093  | A transaction was aborted because it spanned too many transaction log files.
@@ -172,7 +172,7 @@ contact the mailto:user@trafodion.incubator.apache.org[Trafodion User mailing li
 | 0148  | Attempt to read unwritten data.
 | 0150  | End-of-tape marker detected.
 | 0151  | Runaway tape detected, or attempt to access a tape whose density is lower than the switch setting on the tape drive.
-| 0152  | Unusual end-tape unit went offline.
+| 0152  | Unusual end-tape unit went off-line.
 | 0153  | Tape drive power restored.
 | 0154  | BOT detected during backspace files or backspace records. 
 | 0155  | Only nine-track magnetic tape allowed on this system. 
@@ -262,7 +262,7 @@ contact the mailto:user@trafodion.incubator.apache.org[Trafodion User mailing li
 | 0530  | The program called WRITE^FILE for the receiving file before calling READ^FILE.
 | 0531  | A call to CHECK^BREAK could not open the receiving file the receiving file was opened without calling OPEN^FILE.
 | 0532  | A non-blocking I/O operation has been restarted.
-| 0533  | An internal sequential I/O error occured.
+| 0533  | An internal sequential I/O error occurred.
 | 0534  | A discrepancy was detected between the common file-control-block checksum and the previous checksum.
 | 0535  | A discrepancy was detected between the file file-control-block checksum and the previous checksum.
 | 0541  | A data structure version is incompatible with the requested operation.
@@ -290,7 +290,7 @@ contact the mailto:user@trafodion.incubator.apache.org[Trafodion User mailing li
 | 0588  | There was no kept transaction but the operation required one.
 | 0589  | The operation could not be performed because there was a kept transaction.
 | 0590  | The parameter value is invalid or inconsistent with another.
-| 0593  | The request was cancelled.
+| 0593  | The request was canceled.
 | 0594  | A tape-catalog error was returned to Tape Services. Refer to the event log for detailed information.
 | 0595  | An error was returned to Tape Services. Refer to the event log for detailed information.
 | 0597  | A required item is missing from an item list. 
@@ -467,7 +467,7 @@ contact the mailto:user@trafodion.incubator.apache.org[Trafodion User mailing li
 | 4101  | Operation would block.
 | 4102  | Operation now in progress.
 | 4103  | Operation already in progress.
-| 4104  | Socket operation on nonsocket.
+| 4104  | Socket operation on non socket.
 | 4105  | Destination address required.
 | 4106  | Message too long.
 | 4107  | Protocol wrong type for socket.
