@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,26 +21,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-TRAF_CONFIG=/etc/trafodion/trafodion_config
-source $TRAF_CONFIG
+#  Script that prompts user for all user input needed for the
+#  trafodion_config file. This script will be called from
+#  traf_config_setup and will prompt for user needed prompts. 
 
-sudoFile="trafodion"
-echo "***INFO: Creating $TRAF_USER sudo access file"
-echo
-
-echo "## Trafodion Floating IP commands" > $sudoFile
-echo "Cmnd_Alias IP = /sbin/ip" >>  $sudoFile
-echo "Cmnd_Alias ARP = /sbin/arping" >> $sudoFile
- 
-echo "## Allow Trafodion id to run commands needed to configure floating IP" >> $sudoFile
-echo "%trafodion ALL = NOPASSWD: IP, ARP" >> $sudoFile
-
-
-if [[ $all_node_count -gt "1" ]]; then
-   $TRAF_PDCP $sudoFile $HOME
-   $TRAF_PDSH sudo cp $HOME/$sudoFile /etc/sudoers.d/
-   $TRAF_PDSH sudo rm -f $HOME/$sudoFile
-else 
-   sudo cp $TRAF_USR /etc/sudoers.d
-fi
- 

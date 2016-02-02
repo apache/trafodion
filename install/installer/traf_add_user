@@ -55,17 +55,6 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 
-# create MY_NODES (used for pdsh/pdcp) from NODE_LIST
-if [ $node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP=""
-else
-    # use the -S option to cause pdsh to return largest of
-    # the remote command return values so we can tell if one
-    # or more of the remote commands failed
-    TRAF_PDSH="pdsh -R exec $MY_NODES ssh -q -n %h"
-    TRAF_PDCP="pdcp -R ssh $MY_NODES"
-fi
 #==============================
 # Find an unused uid and gid on all nodes for the Trafodion userid.
 # Need to make sure the uid and gid are free on all nodes in the cluster,
@@ -87,7 +76,7 @@ if [ -z "$traf_gid" ]; then
     while [ $found -ne 0 ]
     do
         ((traf_gid++))
-        if [ $node_count -eq 1 ]; then
+        if [ $all_node_count -eq 1 ]; then
             found=$(cat /etc/group | sed -e 's@^.*:x:\([0-9]*\):.*@\1@' | grep ^$traf_gid$ 2>/dev/null | wc -l)
         else
             found=$($TRAF_PDSH "cat /etc/group | sed -e 's@^.*:x:\([0-9]*\):.*@\1@' | grep ^$traf_gid$ " 2>/dev/null | wc -l)
@@ -119,7 +108,7 @@ traf_uid=500    # start at uid 500 (just a randomly chosen start)
 while [ $found -ne 0 ]
 do
     ((traf_uid++))
-    if [ $node_count -eq 1 ]; then
+    if [ $all_node_count -eq 1 ]; then
         found=$(cat /etc/passwd | sed -e 's@^.*:x:\([0-9]*\):\([0-9]*\):.*:.*$@\1@' | grep ^$traf_uid$ 2>/dev/null | wc -l)
     else
         found=$($TRAF_PDSH "cat /etc/passwd | sed -e 's@^.*:x:\([0-9]*\):\([0-9]*\):.*:.*\$@\1@' | grep ^$traf_uid$ " 2>/dev/null | wc -l)
@@ -148,6 +137,7 @@ if [ $return_code -ne 0 ]; then
         exit -1
     fi
 fi
+
 #=================================================
 
 # Setup passwordless ssh for this Trafodion userid
@@ -191,7 +181,7 @@ rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp3
 
 #=================================================
 # copy TRAF_USER_DIR to all other nodes if more than one
-if [ "$node_count" -ne 1 ]; then
+if [ "$all_node_count" -ne 1 ]; then
     # Have to copy in a round-about way since passwordless
     # ssh is not setup yet for the Trafodion userid and pdcp
     # may not work with sudo.
@@ -200,37 +190,38 @@ if [ "$node_count" -ne 1 ]; then
     sudo cp -r $TRAF_USER_DIR $TRAF_WORKDIR
     sudo rm -rf $TRAF_WORKDIR/$TRAF_USER/.pulse 2>/dev/null
     sudo chown -R $USER.$(id -ng) $TRAF_WORKDIR/$TRAF_USER
-    $PDCP -r $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/$TRAF_USER $TRAF_WORKDIR
-    $PDSH $MY_NODES -x $HOSTNAME $PDSH_SSH_CMD sudo cp -r $TRAF_WORKDIR/$TRAF_USER $default_home
-    $PDSH $MY_NODES -x $HOSTNAME $PDSH_SSH_CMD sudo chown -R $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR
+    $PDCP -r $ALL_NODES -x $HOSTNAME $TRAF_WORKDIR/$TRAF_USER $TRAF_WORKDIR
+    $PDSH $ALL_NODES -x $HOSTNAME $PDSH_SSH_CMD sudo cp -r $TRAF_WORKDIR/$TRAF_USER $default_home
+    $PDSH $ALL_NODES -x $HOSTNAME $PDSH_SSH_CMD sudo chown -R $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR
 fi
 
 #=================================================
 # Cycle through all nodes to create known_hosts file, even if only one node
 echo "***INFO: Creating known_hosts file for all nodes"
 NODES_SHORT=""
-for node in $NODE_LIST
+for node in $ALL_NODE_LIST
 do 
+   echo $node
+   echo $ALL_NODE_LIST
    newNode=$(ssh -q -n $node hostname -s) 
 
    NODES_SHORT="$NODES_SHORT $newNode"
 done
 
 NODES_LONG=""
-for node in $NODE_LIST
+for node in $ALL_NODE_LIST
 do 
    newNode=$(ssh -q -n $node hostname -f) 
 
    NODES_LONG="$NODES_LONG $newNode"
 done
-
-./traf_createPasswordLessSSH --nodes "$NODE_LIST"
+./traf_createPasswordLessSSH --nodes "$ALL_NODE_LIST"
 ./traf_createPasswordLessSSH --nodes "$NODES_SHORT"
 ./traf_createPasswordLessSSH --nodes "$NODES_LONG"
 
-if [ "$node_count" -ne 1 ]; then
+if [ "$all_node_count" -ne 1 ]; then
     # Copy known_hosts file to all other nodes
-    sudo su $TRAF_USER --command "$PDCP $MY_NODES -x $HOSTNAME $TRAF_USER_DIR/.ssh/known_hosts $TRAF_USER_DIR/.ssh"
+    sudo su $TRAF_USER --command "$PDCP $ALL_NODES -x $HOSTNAME $TRAF_USER_DIR/.ssh/known_hosts $TRAF_USER_DIR/.ssh"
 fi
 
 #=================================================

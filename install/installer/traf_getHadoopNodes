@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -21,8 +21,6 @@
 # @@@ END COPYRIGHT @@@
 #
 
-#!/bin/bash
-
 source /etc/trafodion/trafodion_config
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 
@@ -31,20 +29,22 @@ echo "***INFO: Getting list of all $HADOOP_TYPE nodes"
 
 curlRC=0
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
-   curl -su $ADMIN:$PASSWORD http://$URL/api/v6/cm/deployment > tempFile
+   curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts > tempFile
    curlRC=$?
    numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
    grep -r "hostname" tempFile > tempFile2
 
    if [[ -d /opt/cloudera/parcels/CDH ]]; then
       HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
+      HADOOP_BIN_PATH="/opt/cloudera/parcels/CDH/bin"
    else
       HADOOP_PATH="/usr/lib/hbase/lib"
+      HADOOP_BIN_PATH="/usr/bin"
    fi
 fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-   curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
+   curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
    curlRC=$?
    numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
    grep -r "host_name" tempFile > tempFile2
@@ -103,6 +103,9 @@ echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
 echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HADOOP_BIN_PATH\=/d' $TRAF_CONFIG
+echo "export HADOOP_BIN_PATH=\"$HADOOP_BIN_PATH\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/hadoop_node_count\=/d' $TRAF_CONFIG
 echo "export hadoop_node_count=\"$hadoop_node_count\"" >> $TRAF_CONFIG
