@@ -61,6 +61,9 @@ MPICH_ROOT="$TOOLSDIR/dest-mpich-3.0.4"
 ZOOKEEPER_DIR="$TOOLSDIR/zookeeper-3.4.5"
 THRIFT_LIB_DIR="$TOOLSDIR/thrift-0.9.0/lib"
 THRIFT_INC_DIR="$TOOLSDIR/thrift-0.9.0/include"
+LOG4CXX_LIB_DIR="$TOOLSDIR/apache-log4cxx-0.10.0/lib"
+LOG4CXX_INC_DIR="$TOOLSDIR/apache-log4cxx-0.10.0/include"
+
 
 # Explicitly set QT_TOOLKIT here if Qt is installed and you want to build the SqlCompilerDebugger
 # QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"

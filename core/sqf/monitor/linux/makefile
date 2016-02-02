@@ -83,7 +83,7 @@ INCLUDES+= -I$(LOG4CXX_INC_DIR)
 INCLUDES+= -I$(LOG4CXX_INC_DIR)/log4cxx
 
 LIBS+=  -lsqlite3
-LIBS+=  -L$(LOG4CXX_LIB_DIR) -llog4cxx
+LIBS+=  -llog4cxx
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
