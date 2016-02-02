@@ -104,7 +104,7 @@ exists or inserts into a table if the row does not exist) or updates (merges) ma
 | <<table_statement,TABLE Statement>>   | Equivalent to the query specification SELECT * FROM _table_
 | <<update_statement,UPDATE Statement>> | Updates values in columns of a table or view.
 | <<upsert_statement,UPSERT Statement>> | Updates a table if the row exists or inserts into a table if the row does not exist.
-| <<values_statement,VALUES Statement>> | Displays the results of the evaluation of the expressions and the results of row sub queries
+| <<values_statement,VALUES Statement>> | Displays the results of the evaluation of the expressions and the results of row subqueries
 within the row value constructors.
 |===
 
@@ -457,7 +457,7 @@ duplicate values are allowed unless the column is part of the primary key. colum
 +
 is a constraint that specifies a condition that must be satisfied for each row in the table. see <<search_condition,search condition>>.
 you cannot refer to the current_date, current_time, or current_timestamp function in a check constraint, and you cannot use
-sub queries in a check constraint.
+subqueries in a check constraint.
 
 <<<
 **** `references _ref-spec_`
@@ -512,7 +512,7 @@ unique index does not exist, the system creates a unique index.
 +
 is a constraint that specifies a condition that must be satisfied for each row in the table.
 see <<search_condition,search condition>>. you cannot refer to the current_date, current_time, or current_timestamp function in a check
-constraint, and you cannot use sub queries in a check constraint.
+constraint, and you cannot use subqueries in a check constraint.
 
 <<<
 *** `foreign key (_column-list_) references _ref-spec_ not enforced`
@@ -816,7 +816,7 @@ parameter argument, use one of these SQL expressions:
 * Literal
 * SQL function (including CASE and CAST expressions)
 * Arithmetic or concatenation operation
-* Scalar sub query
+* Scalar subquery
 * Dynamic parameter (for example, ?) in an application
 * Named (for example, ?param) or unnamed (for example, ?) parameter in TrafCI
 
@@ -2486,7 +2486,7 @@ is a constraint that specifies a condition that must be satisfied for each row i
 See <<search_condition,Search Condition>>.
 +
 You cannot refer to the CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP function in a CHECK constraint, and you cannot use
-sub queries in a CHECK constraint.
+subqueries in a CHECK constraint.
 
 * `REFERENCES _ref-spec_`
 +
@@ -3104,7 +3104,7 @@ To define an updatable view, a query expression must also meet these requirement
 * It cannot contain a GROUP BY or HAVING clause.
 * It cannot directly contain the keyword DISTINCT.
 * The FROM clause must refer to exactly one table or one updatable view.
-* It cannot contain a WHERE clause that contains a sub query.
+* It cannot contain a WHERE clause that contains a subquery.
 * The select list cannot include expressions or functions or duplicate column names.
 
 [[create_view_order_by_clause_guidelines]]
@@ -3121,7 +3121,7 @@ ORDER BY clause.
 ===== When to Use ORDER BY
 
 An ORDER BY clause is used in a view definition only when the clause is under the root of the Select query that uses that
-view. If the ORDER BY clause appears in other intermediate locations or in a sub query, it is ignored.
+view. If the ORDER BY clause appears in other intermediate locations or in a subquery, it is ignored.
 
 Consider this CREATE VIEW statement:
 
@@ -3136,7 +3136,7 @@ insert into t1 select * from v;
 ```
 
 In these two examples, the ORDER BY clause is ignored during DML processing because the first appears as part of a
-derived table and the second as a sub query selects, both created after the view expansion.
+derived table and the second as a subquery selects, both created after the view expansion.
 
 If the same query is issued using explicit derived tables instead of a view, a syntax error is returned:
 
@@ -3144,7 +3144,7 @@ If the same query is issued using explicit derived tables instead of a view, a s
 select * from (select a from t order by a) x, (select a from t order by a) y;
 ```
 
-This example returns a syntax error because an ORDER BY clause is not supported in a sub query.
+This example returns a syntax error because an ORDER BY clause is not supported in a subquery.
 
 The ORDER BY clause is ignored if it is part of a view and used in places where it is not supported. This is different
 than returning an error when the same query was written with explicit ORDER BY clause, as is shown in the preceding examples.
@@ -3257,7 +3257,7 @@ Trafodion SQL has the ability to eliminate redundant joins in a query. Redundant
 * Every row from this child will match one and only one row from the other child
 
 Suppose tables A and B denote generic tables. To check if the rule "every row from this child will match one and only one row
-from the other child" is true, Trafodion SQL uses the fact that the join of Table A with table or sub query B preserves all the
+from the other child" is true, Trafodion SQL uses the fact that the join of Table A with table or subquery B preserves all the
 rows of A if the join predicate contains an equi-join predicate that references a key of B, and one of the following is true:
 The join is a left outer join where B is the inner table. In this example, for the join between vp0 and vp1,vp0 fills the role
 of table A and vp1 fills the role of table B. For the join between vp1 and vp2, vp1 fills the role of table A and vp2 fills
@@ -3339,7 +3339,7 @@ The default access option is the isolation level of the containing transaction.
 ==== Authorization Requirements
 
 DELETE requires authority to read and write to the table or view being deleted from and authority to read tables or views
-specified in sub queries used in the search condition.
+specified in subqueries used in the search condition.
 
 [[delete_transaction-initiation-and-termination]]
 ==== Transaction Initiation and Termination
@@ -3394,7 +3394,7 @@ DELETE FROM invent.partsupp WHERE suppnum NOT IN
 --- 41 row(s) deleted.
 ```
 
-* This is an example of a self-referencing DELETE statement, where the table from which rows are deleted is scanned in a sub query:
+* This is an example of a self-referencing DELETE statement, where the table from which rows are deleted is scanned in a subquery:
 +
 ```
 delete from table1 where a in (select a from table1 where b > 200)
@@ -5103,7 +5103,7 @@ when all columns in _table_ have default values.
 ==== Authorization Requirements
 
 INSERT requires authority to read and write to the table or view receiving the data and authority to read tables or views 
-specified in the query expression (or any of its sub queries) in the INSERT statement.
+specified in the query expression (or any of its subqueries) in the INSERT statement.
 
 [[insert_transaction_initiation_and_termination]]
 ==== Transaction Initiation and Termination
@@ -5133,11 +5133,11 @@ isolation level of the containing transaction. Each statement then executes with
 ==== Use of a VALUES Clause for the Source Query Expression
 
 If the query expression consists of the VALUES keyword followed by rows of values, each row consists of a list of value expressions 
-or a row sub query (a sub query that returns a single row of column values). A value in a row can also be a scalar sub query (a sub query 
+or a row subquery (a subquery that returns a single row of column values). A value in a row can also be a scalar subquery (a subquery 
 that returns a single row consisting of a single column value).
 
 Within a VALUES clause, the operands of a value expression can be numeric, string, datetime, or interval values; however, an operand
-cannot reference a column (except in the case of a scalar or row sub query returning a value or values in its result table).
+cannot reference a column (except in the case of a scalar or row subquery returning a value or values in its result table).
 
 [[insert_requirements_for_inserted_rows]]
 ==== Requirements for Inserted Rows
@@ -5297,7 +5297,7 @@ a credit rating that is different from the default, you must update this column 
 insert into table1 select pk+?, b, c from table1
 ```
 
-* This is an example of a self-referencing insert where the target of the insert, table1, is also used in a sub query of the insert-source:
+* This is an example of a self-referencing insert where the target of the insert, table1, is also used in a subquery of the insert-source:
 +
 ```
 insert into table1
@@ -5481,13 +5481,13 @@ use case:
 * The MERGE statement does not use ESP parallelism.
 * A merged table cannot be a view.
 * Merge is not allowed if the table has constraints.
-* The _on-clause_ cannot contain a sub query. This statement is not allowed:
+* The _on-clause_ cannot contain a subquery. This statement is not allowed:
 +
 ```
 MERGE INTO t ON a = (SELECT a FROM t1) WHEN ...
 ```
 
-* The optional WHERE predicate in the when-matched clause cannot contain a sub query or an aggregate function. 
+* The optional WHERE predicate in the when-matched clause cannot contain a subquery or an aggregate function. 
 These statements are not allowed:
 +
 ```
@@ -5500,14 +5500,14 @@ MERGE INTO t ON a=10
   WHEN NOT MATCHED THEN INSERT VALUES (10,30);
 ```
 
-* The UPDATE SET clause in a MERGE statement cannot contain a sub query.
+* The UPDATE SET clause in a MERGE statement cannot contain a subquery.
 This statement is not allowed:
 +
 ```
 MERGE INTO t ON a = 1 WHEN MATCHED THEN UPDATE SET b = (SELECT a FROM t1)
 ```
 
-* The _insert-values-list_ clause in a MERGE statement cannot contain a sub query. This statement is not allowed:
+* The _insert-values-list_ clause in a MERGE statement cannot contain a subquery. This statement is not allowed:
 +
 ```
 MERGE INTO t ON a = 1 WHEN NOT MATCHED THEN INSERT VALUES ((SELECT a FROM t1))
@@ -6488,7 +6488,7 @@ If you specify a CROSS join as the _join-type_, you cannot specify a NATURAL joi
 *** `_join-spec_.`
 +
 If you specify an INNER, LEFT, RIGHT, or FULL join as the _join-type_ and you do not specify a NATURAL join, you
-must use an ON clause as the _join-spec_, as follows: Sub queries are not allowed in the join predicate of FULL OUTER JOIN.
+must use an ON clause as the _join-spec_, as follows: subqueries are not allowed in the join predicate of FULL OUTER JOIN.
 
 *** `ON _search-condition_`
 +
@@ -6554,8 +6554,8 @@ A _simple-table_ can be specified as:
 +
 A _simple-table_ can be a table value constructor. It starts with the VALUES keyword followed by a sequence of row
 value constructors, each of which is enclosed in parentheses. A _row-value-const_ is a list of expressions (or NULL)
-or a row sub query (a sub query that returns a single row of column values). An operand of an expression cannot reference
-a column (except when the operand is a scalar sub query returning a single column value in its result table).
+or a row subquery (a subquery that returns a single row of column values). An operand of an expression cannot reference
+a column (except when the operand is a scalar subquery returning a single column value in its result table).
 +
 The use of NULL as a _row-value-const_ element is a Trafodion SQL extension.
 +
@@ -6574,7 +6574,7 @@ The _search-condition_ is applied to each row of the result table derived from t
 or, in the case of multiple table references, the cross-product of result tables derived from the individual table references.
 +
 Each column you specify in _search-condition_ is typically a column in this intermediate result table. In the case of nested
-sub queries used to provide comparison values, the column can also be an outer reference. See<<subquery,Subquery>>.
+subqueries used to provide comparison values, the column can also be an outer reference. See<<subquery,Subquery>>.
 +
 To comply with ANSI standards, Trafodion SQL does not move aggregate predicates from the WHERE clause to a HAVING clause and
 does not move non-aggregate predicates from the HAVING clause to the WHERE clause.
@@ -6774,8 +6774,8 @@ support this type of query.
 ==== Restrictions on Embedded Inserts
 
 * An embedded INSERT cannot be used in a join.
-* An embedded INSERT cannot appear in a sub query.
-* An embedded INSERT statement cannot have a sub query in the WHERE clause.
+* An embedded INSERT cannot appear in a subquery.
+* An embedded INSERT statement cannot have a subquery in the WHERE clause.
 * An INSERT statement cannot contain an embedded INSERT statement.
 * A union between embedded INSERT expressions is not supported.
 * Declaring a cursor on an embedded INSERT statement is not supported.
@@ -6829,7 +6829,7 @@ of columns in the SELECT result table dependent on the order of columns in the c
 or views.
 * A _col-expr_ is a single column name or a derived column. A derived column is an SQL value expression; its operands can
 be numeric, string, datetime, or interval literals, columns, functions (including aggregate unctions) defined on columns,
-scalar sub queries, CASE expressions, or CAST expressions. Any single columns named in _col-expr_ must be from tables or views
+scalar subqueries, CASE expressions, or CAST expressions. Any single columns named in _col-expr_ must be from tables or views
 specified in the FROM clause. For a list of aggregate functions, see <<aggregate_functions,Aggregate (Set) Functions>>.
 * If _col-expr_ is a single column name, that column of the SELECT result table is a named column. All other columns are
 unnamed columns in the result table (and have the (EXPR) heading) unless you use the AS clause to specify a name for a
@@ -6843,7 +6843,7 @@ derived column.
 arguments of an aggregate (or set) function. For example, if AGE is not a grouping column, you can refer to AGE only
 as the argument of a function, such as AVG (AGE).
 * The expression in the GROUP BY clause must be exactly the same as the expression in the select list. An error will
-be returned if it is not. It cannot contain aggregate functions or sub queries.
+be returned if it is not. It cannot contain aggregate functions or subqueries.
 * If the value of _col-expr_ is a numeric constant, it refers to the position of the select list item and is treated
 as the current GROUP BY using the ordinal feature.
 * You can specify GROUP BY using ordinals to refer to the relative position within the SELECT list. For example,
@@ -6857,7 +6857,7 @@ result table form the one and only group. The result of AVG, for example, is a s
 When you specify an ORDER BY clause and its ordering columns, consider:
 
 * ORDER BY is allowed only in the outer level of a query or in the SELECT part of an INSERT/SELECT statement. It is not
-allowed inside nested SELECT expressions, such as sub queries.
+allowed inside nested SELECT expressions, such as subqueries.
 * If you specify DISTINCT, the ordering column must be in _select-list_.
 * If you specify a GROUP BY clause, the ordering column must also be a grouping column.
 * If an ORDER BY clause applies to a union of SELECT statements, the ordering column must be explicitly referenced, and
@@ -6922,7 +6922,7 @@ SELECT A FROM T1 ORDER BY A UNION SELECT B FROM T2
 SELECT A FROM T1 UNION (SELECT B FROM T2 ORDER BY A)
 ```
 +
-Because the sub query (SELECT B FROM T2&#8230;) is processed first, the ORDER BY clause does not follow the final SELECT.
+Because the subquery (SELECT B FROM T2&#8230;) is processed first, the ORDER BY clause does not follow the final SELECT.
 
 [[select_group_by_clause_having_clause_and_the_union_operator]]
 ===== GROUP BY Clause, HAVING Clause, and the UNION Operator
@@ -7248,7 +7248,7 @@ ORDERNUM   (EXPR)
 The price for the total quantity ordered is computed for each order number.
 
 * Show employees, their salaries, and the percentage of the total payroll that their salaries represent.
-Note the sub query as part of the expression in the select list:
+Note the subquery as part of the expression in the select list:
 +
 ```
 SELECT
@@ -8036,7 +8036,7 @@ This type of SET clause allows multiple columns to be specified on the
 left side of the assignment operator. These columns are updated using
 multiple values specified on the right side of the assignment operator.
 The right side of the assignment operator could be simple values or a
-sub query.
+subquery.
 
 ** `_column1_, &#8230;, _columnN_`
 +
@@ -8053,8 +8053,8 @@ corresponding column on the left side of the assignment operator.
 
 * `_query-expr_`
 +
-is a SELECT sub query. Only one sub query can be specified on the right
-side of a SET clause. The sub query cannot refer to the table being
+is a SELECT subquery. Only one subquery can be specified on the right
+side of a SET clause. The subquery cannot refer to the table being
 updated. For the syntax and description of _query-expr_, see the
 <<select_statement,SELECT Statement>>.
 
@@ -8101,7 +8101,7 @@ the table.
 ==== Authorization Requirements
 
 UPDATE requires authority to read and write to the table or view being
-updated and authority to read any table or view specified in sub queries
+updated and authority to read any table or view specified in subqueries
 used in the search condition. A column of a view can be updated if its
 underlying column in the base table can be updated.
 
@@ -8211,20 +8211,20 @@ UPDATE t set (b,c)=(SELECT r,t,s FROM x)
 ```
 
 * If multi-column update syntax is specified and the right side contains
-a sub query, only one element, the sub query, is not allowed.
+a subquery, only one element, the subquery, is not allowed.
 +
 ```
 UPDATE t SET (a,b)=(10, (SELECT a FROM t1))
 ```
 
-* More than one sub query is not allowed if multiple-column syntax is
+* More than one subquery is not allowed if multiple-column syntax is
 used.
 +
 ```
 UPDATE t SET (a,b)=(SELECT x,y FROM z), (c,d)=(SELECT x,y FROM a))
 ```
 
-* If a sub query is used, it must return at most one row.
+* If a subquery is used, it must return at most one row.
 
 <<<
 [[update_examples]]
@@ -8263,11 +8263,11 @@ WHERE deptnum IN
     WHERE location = 'CHICAGO');
 ```
 +
-The sub query is evaluated for each row of the DEPT table and returns
+The subquery is evaluated for each row of the DEPT table and returns
 department numbers for departments located in Chicago.
 
 * This is an example of a self-referencing UPDATE statement, where the
-table being updated is scanned in a sub query:
+table being updated is scanned in a subquery:
 +
 ```
 UPDATE table3 SET b = b + 2000 WHERE a, b =
@@ -8335,8 +8335,8 @@ data. You cannot qualify or repeat a column name.
 
 * `_query-expr_`
 +
-is a SELECT sub query that returns data to be inserted into or updated in
-the target _table_. The sub query cannot refer to the table being
+is a SELECT subquery that returns data to be inserted into or updated in
+the target _table_. The subquery cannot refer to the table being
 operated on. For the syntax and description of _query-expr_, see the
 <<select_statement,SELECT Statement>>.
 
@@ -8390,7 +8390,7 @@ VALUES (3600,‘JAPAN SALES’, 996);
 The VALUES statements starts with the VALUES keyword followed by a
 sequence of row value constructors, each of which is enclosed in
 parenthesis. It displays the results of the evaluation of the
-expressions and the results of row sub queries within the row value
+expressions and the results of row subqueries within the row value
 constructors.
 
 ```
@@ -8406,13 +8406,13 @@ row-value-const is:
 
 * `_row-value-const_`
 +
-specifies a list of expressions (or NULL) or a row sub query (a sub query
+specifies a list of expressions (or NULL) or a row subquery (a subquery
 that returns a single row of column values). An operand of an expression
-cannot reference a column (except when the operand is a scalar sub query
+cannot reference a column (except when the operand is a scalar subquery
 returning a single column value in its result table).
 +
 The results of the evaluation of the expressions and the results of the
-row sub queries in the row value constructors must have compatible data
+row subqueries in the row value constructors must have compatible data
 types.
 
 [[values_considerations]]
@@ -8451,7 +8451,7 @@ VALUES (1,2,3), (4,5,6);
 ```
 
 * This VALUES statement displays the results of the expressions and the
-row sub query in the lists:
+row subquery in the lists:
 +
 ```
 VALUES (1+2, 3+4), (5, (select count (*) from t));

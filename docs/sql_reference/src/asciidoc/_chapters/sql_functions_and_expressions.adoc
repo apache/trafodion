@@ -41,7 +41,7 @@ DOWN to the last day of the result month.
 == Aggregate (Set) Functions
 
 An aggregate (or set) function operates on a group or groups of rows
-retrieved by the SELECT statement or the sub query in which the aggregate
+retrieved by the SELECT statement or the subquery in which the aggregate
 function appears.
 
 
@@ -70,7 +70,7 @@ be weighted.
 
 
 Columns and expressions can be arguments of an aggregate function. The
-expressions cannot contain aggregate functions or sub queries.
+expressions cannot contain aggregate functions or subqueries.
 
 An aggregate function can accept an argument specified as DISTINCT,
 which eliminates duplicate values before the aggregate function is
@@ -739,7 +739,7 @@ values are eliminated before the AVG function is applied.
 +
 specifies a numeric or interval value _expression_ that determines the
 values to average. The _expression_ cannot contain an aggregate function
-or a sub query. The DISTINCT clause specifies that the AVG function
+or a subquery. The DISTINCT clause specifies that the AVG function
 operates on distinct values from the one-column table derived from the
 evaluation of _expression_.
 
@@ -1461,7 +1461,7 @@ An operand can be any SQL value expression of data type CHAR or VARCHAR.
 
 A string value can be specified by any character value expression, such
 as a character string literal, character string function, column
-reference, aggregate function, scalar sub query, CASE expression, or CAST
+reference, aggregate function, scalar subquery, CASE expression, or CAST
 expression. The value of the operand must be of type CHAR or VARCHAR.
 
 If you use the CAST expression, you must specify the length of CHAR or
@@ -1761,7 +1761,7 @@ function is applied.
 * `_expression_`
 +
 specifies a value expression that determines the values to count. The
-_expression_ cannot contain an aggregate function or a sub query. The
+_expression_ cannot contain an aggregate function or a subquery. The
 DISTINCT clause specifies that the COUNT function operates on distinct
 values from the one-column table derived from the evaluation of
 _expression_. See <<expressions,Expressions>>.
@@ -1775,7 +1775,7 @@ _expression_. See <<expressions,Expressions>>.
 The operand of COUNT is either * or an expression that includes columns
 from the result table specified by the SELECT statement that contains
 COUNT. However, the expression cannot include an aggregate function or a
-sub query. These expressions are valid:
+subquery. These expressions are valid:
 
 ```
 COUNT (*)
@@ -4170,7 +4170,7 @@ applied.
 +
 specifies an expression that determines the values to include in the
 computation of the maximum. The _expression_ cannot contain an aggregate
-function or a sub query. The DISTINCT clause specifies that the
+function or a subquery. The DISTINCT clause specifies that the
 MAX/MAXIMUM function operates on distinct values from the one-column
 table derived from the evaluation of _expression_. All nulls are
 eliminated before the function is applied to the set of values. If the
@@ -4231,7 +4231,7 @@ duplicate values are eliminated before the MIN function is applied.
 +
 specifies an expression that determines the values to include in the
 computation of the minimum. The _expression_ cannot contain an aggregate
-function or a sub query. The DISTINCT clause specifies that the MIN
+function or a subquery. The DISTINCT clause specifies that the MIN
 function operates on distinct values from the one-column table derived
 from the evaluation of _expression_. All nulls are eliminated before
 the function is applied to the set of values. If the result table is
@@ -5054,7 +5054,7 @@ comparable data types.
 If _operand_ is a null value, NVL returns _new-operand_. If _operand_
 is not a null value, NVL returns _operand_.
 
-The _operand_ and _new-operand_ can be a column name, sub query,
+The _operand_ and _new-operand_ can be a column name, subquery,
 Trafodion SQL string functions, math functions, or constant values.
 
 [[examples_of_nvl]]
@@ -6684,7 +6684,7 @@ If DISTINCT is specified, you cannot specify _weight_.
 +
 specifies a numeric value expression that determines the values for
 which to compute the standard deviation. The _expression_ cannot contain
-an aggregate function or a sub query. The DISTINCT clause specifies that
+an aggregate function or a subquery. The DISTINCT clause specifies that
 the STDDEV function operates on distinct values from the one-column
 table derived from the evaluation of _expression_.
 
@@ -6692,7 +6692,7 @@ table derived from the evaluation of _expression_.
 +
 specifies a numeric value expression that determines the weights of the
 values for which to compute the standard deviation. _weight_ cannot
-contain an aggregate function or a sub query. _weight_ is defined on
+contain an aggregate function or a subquery. _weight_ is defined on
 the same table as _expression_. The one-column table derived from the
 evaluation of _expression_ and the one-column table derived from the
 evaluation of _weight_ must have the same cardinality.
@@ -6935,7 +6935,7 @@ values are eliminated before the SUM function is applied.
 +
 specifies a numeric or interval value expression that determines the
 values to sum. The _expression_ cannot contain an aggregate function or
-a sub query. The DISTINCT clause specifies that the SUM function operates
+a subquery. The DISTINCT clause specifies that the SUM function operates
 on distinct values from the one-column table derived from the evaluation
 of _expression_. All nulls are eliminated before the function is
 applied to the set of values. If the result table is empty, SUM returns
@@ -7661,7 +7661,7 @@ If DISTINCT is specified, you cannot specify _weight_.
 +
 specifies a numeric value expression that determines the values for
 which to compute the variance. _expression_ cannot contain an aggregate
-function or a sub query. The DISTINCT clause specifies that the VARIANCE
+function or a subquery. The DISTINCT clause specifies that the VARIANCE
 function operates on distinct values from the one-column table derived
 from the evaluation of _expression_.
 
@@ -7669,7 +7669,7 @@ from the evaluation of _expression_.
 +
 specifies a numeric value expression that determines the weights of the
 values for which to compute the variance. _weight_ cannot contain an
-aggregate function or a sub query. _weight_ is defined on the same table
+aggregate function or a subquery. _weight_ is defined on the same table
 as _expression_. The one-column table derived from the evaluation of
 _expression_ and the one-column table derived from the evaluation of
 _weight_ must have the same cardinality.

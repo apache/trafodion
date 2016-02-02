@@ -64,7 +64,7 @@ The Trafodion bulk load process takes place in two phases:
 * _Preparation phase_: In this phase, Trafodion reads the data from
 the source files in Hive or HDFS, partitions the data based on the
 target table's partitioning scheme, sorts the data, and then generates
-Key-value pairs that will populate the HFiles. Trafodion also encodes the
+key-value pairs that will populate the HFiles. Trafodion also encodes the
 data for faster storage and retrieval.
 * _Loading-the-files-into-HBase phase_: This phase uses the
 LoadIncrementalHFiles (also known as the computebulkload tool) and load

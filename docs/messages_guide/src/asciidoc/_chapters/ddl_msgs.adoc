@@ -2988,7 +2988,7 @@ have the same subvolume names as their corresponding schemas on the
 other node. To create these, use the optional REUSE clause in the CREATE
 SCHEMA statement. All other schemas should have unique subvolume names.
 Schemas that are, or will be, related as RDF primary and backup schemas
-must have identical schema names and sub volumes on the primary and
+must have identical schema names and subvolumes on the primary and
 backup nodes.
 
 [[SQL-1307]]

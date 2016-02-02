@@ -1808,8 +1808,8 @@ scalar (degree of one) if the sub query is one of several expressions
 rather than the only expression in the constructor.
 ```
 
-*Cause:* You specified a sub query, consisting of several expressions,
-whose select list is not scalar. If the sub query is not the only
+*Cause:* You specified a subquery, consisting of several expressions,
+whose select list is not scalar. If the subquery is not the only
 expression in the constructor, it must be scalar.
 
 *Effect:* The operation fails.
@@ -1848,13 +1848,13 @@ incompatible data types.
 == SQL 4128
 
 ```
-Default volume and sub volume information could not be retrieved from=_DEFAULTS define - DEFINEINFO error <number>.
+Default volume and subvolume information could not be retrieved from=_DEFAULTS define - DEFINEINFO error <number>.
 ```
 
 Where <number> is the error message.
 
 *Cause:* Trafodion was not able to retrieve
-default volume and sub volume information using the =_DEFAULTS define.
+default volume and subvolume information using the =_DEFAULTS define.
 
 *Effect:* The operation fails.
 
@@ -2207,10 +2207,10 @@ statement.
 == SQL 4167
 
 ```
-Embedded <name> statements are not supported in sub queries.
+Embedded <name> statements are not supported in subqueries.
 ```
 
-*Cause:* You attempted to perform a sub query that included an embedded
+*Cause:* You attempted to perform a subquery that included an embedded
 statement.
 
 *Effect:* Trafodion is unable to compile the
@@ -2222,10 +2222,10 @@ statement.
 == SQL 4168
 
 ```
-Stream expressions are not supported in sub queries.
+Stream expressions are not supported in subqueries.
 ```
 
-*Cause:* You attempted to perform a sub query that included a stream
+*Cause:* You attempted to perform a subquery that included a stream
 expression.
 
 *Effect:* Trafodion is unable to compile the
@@ -2844,7 +2844,7 @@ supports stored procedure result sets.
 
 ```
 USER(x) is currently supported only in the outermost SELECT list.
-For example, it cannot be part of the sub query.
+For example, it cannot be part of the subquery.
 ```
 
 *Cause:* You tried to use the USER(x) function somewhere other than the

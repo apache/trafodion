@@ -390,10 +390,10 @@ supported.
 == SQL 3025
 
 ```
-The format of the sub volume name part in the specified location name <name> is not valid. The sub volume name part must be eight characters long and begin with the letters ZSD.
+The format of the subvolume name part in the specified location name <name> is not valid. The subvolume name part must be eight characters long and begin with the letters ZSD.
 ```
 
-*Cause:* You used an invalid location <name> for a sub volume that must
+*Cause:* You used an invalid location <name> for a subvolume that must
 be eight characters long and begin with the letters <ZSD>.
 
 *Effect:* The operation fails.
@@ -2407,7 +2407,7 @@ Trafodion statements.
 Subqueries are not allowed in the IF Condition.
 ```
 
-*Cause:* You specified an IF statement that contains a sub query.
+*Cause:* You specified an IF statement that contains a subquery.
 
 *Effect:* The operation fails.
 

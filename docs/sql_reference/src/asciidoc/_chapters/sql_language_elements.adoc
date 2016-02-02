@@ -185,7 +185,7 @@ system-generated unique identifier.
 [[correlation_names]]
 == Correlation Names
 
-A correlation name is a name you can associate with a table reference that is a table, view, or sub query in a SELECT
+A correlation name is a name you can associate with a table reference that is a table, view, or subquery in a SELECT
 statement to:
 
 * Distinguish a table or view from another table or view referred to in a statement
@@ -1084,7 +1084,7 @@ expression.
 A value expression can be a character string literal, a numeric literal,
 a dynamic parameter, or a column name that specifies the value of the
 column in a row of a table. A value expression can also include
-functions and scalar sub queries.
+functions and scalar subqueries.
 
 <<<
 [[character_value_expressions]]
@@ -1123,7 +1123,7 @@ Character (or string) value expressions are built from operands that can be:
 * Character string functions
 * Column references with character values
 * Dynamic parameters
-* Aggregate functions, sequence functions, scalar sub queries, CASE expressions, or CAST expressions that return character values
+* Aggregate functions, sequence functions, scalar subqueries, CASE expressions, or CAST expressions that return character values
 
 <<<
 [[examples_of_character_value_expressions]]
@@ -1214,7 +1214,7 @@ Datetime value expressions are built from operands that can be:
 * Column references with datetime or interval values
 * Dynamic parameters
 * Datetime or interval value functions
-* Any aggregate functions, sequence functions, scalar sub queries, CASE
+* Any aggregate functions, sequence functions, scalar subqueries, CASE
 expressions, or CAST expressions that return datetime or interval values
 
 [[considerations_for_datetime_value_expressions]]
@@ -1447,7 +1447,7 @@ Interval value expressions are built from operands that can be:
 * Column references with datetime or interval values
 * Dynamic parameters
 * Datetime or interval value functions
-* Aggregate functions, sequence functions, scalar sub queries, CASE expressions, or CAST expressions that return interval values
+* Aggregate functions, sequence functions, scalar subqueries, CASE expressions, or CAST expressions that return interval values
 
 
 For _interval-term_, _datetime-expression_, and _datetime-primary_, see <<datetime_value_[expressions,Datetime Value Expressions>>.
@@ -1685,7 +1685,7 @@ built from operands that can be:
 * Column references with numeric values
 * Dynamic parameters
 * Numeric value functions
-* Aggregate functions, sequence functions, scalar sub queries, CASE expressions, or CAST expressions that return numeric values
+* Aggregate functions, sequence functions, scalar subqueries, CASE expressions, or CAST expressions that return numeric values
 
 <<<
 [[considerations_for_numeric_value_expressions]]
@@ -2503,7 +2503,7 @@ rows from tables or views.
 | <<between_predicate,BETWEEN Predicate>> | Determines whether a sequence of values is within a range of sequences of values.
 | <<comparison_predicates,Comparison Predicates>> +
 ( =, <>, <, >, <&#61;, >&#61;  ) | Compares the values of sequences of expressions, or compares the values
-of sequences of row values that are the result of row sub queries.
+of sequences of row values that are the result of row subqueries.
 | <<exists_predicate,EXISTS Predicate>> | Determines whether any rows are selected by a subquery. If the subquery
 finds at least one row that satisfies its search condition, the
 predicate evaluates to true. Otherwise, if the result table of the
@@ -2658,7 +2658,7 @@ EMPNUM FIRST_NAME      LAST_NAME
 
 A comparison predicate compares the values of sequences of expressions,
 or the values of sequences of row values that are the result of row
-sub queries.
+subqueries.
 
 ```
 row-value-constructor comparison-op row-value-constructor
