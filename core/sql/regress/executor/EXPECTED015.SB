@@ -163,6 +163,13 @@
 
 --- SQL operation complete.
 >>
+>>prepare explainIt from
++>select substring(operator,1,16) operator
++>from table (explain(NULL,'XX')) t
++>where operator LIKE '%TRAFODION_MERGE%' ;
+
+--- SQL command prepared.
+>>
 >>insert into t015t1 values (1,1), (2,2);
 
 --- 2 row(s) inserted.
@@ -1800,35 +1807,67 @@ A            B                     C
 --- 1 row(s) selected.
 >>
 >>-- guarding against error 7000 and compiler asserts
->>prepare s1 from UPSERT INTO DEC1 
+>>prepare XX from UPSERT INTO DEC1 
 +>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 +>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
 +>?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s2 from UPSERT INTO DEC1 
+>>prepare XX from UPSERT INTO DEC1 
 +>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 +>VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s3 from UPSERT INTO DEC1 
+>>prepare XX from UPSERT INTO DEC1 
 +>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 +>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a), DEFAULT), 
 +>?b, ?c, ?d, ?e, null, ?f, null) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s4 from UPSERT INTO DE 
+>>prepare XX from UPSERT INTO DE 
 +>(ID, dataElementConceptID, valueDomainID)  VALUES  
 +>(NVL((select a.id from DE a where a.dataElementConceptID = 
 +>(select b.id from DEC1 b where b.codeValue = ?) and a.valueDomainID = ? ), DEFAULT),  
 +>NVL((select d.id from DEC1 d where d.codeValue = ?), NULL),  ? ) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s5 from UPSERT INTO ODT 
+>>prepare XX from UPSERT INTO ODT 
 +>(ID, objectTypeID, dataElementID, objectCategoryTypeCode)  
 +>VALUES  (NVL((select a.id from ODT a where a.objectTypeID = 
 +>(select b.id from OT b where b.objectCode = ? and b.version = ?) and  
@@ -1840,29 +1879,68 @@ A            B                     C
 +>(select i.id from DEC1 i where i.codeValue = ?) and h.valueDomainID = ? ), NULL), ? );
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s6 from UPSERT INTO DE 
+>>prepare XX from UPSERT INTO DE 
 +>(ID, dataElementConceptID, valueDomainID)  VALUES  
 +>(NVL((select a.id from DE a where a.dataElementConceptID = 
 +>(select b.id from DEC1 b where b.codeValue = ?) and a.valueDomainID = ? ), DEFAULT),  
 +>(select d.id from DEC1 d where d.codeValue = ?),  ? ) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s7 from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
+>>prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 +>VALUES  (1,  (select d.id from DEC1 d where d.codeValue = ?),  3 ) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s8 from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
+>>prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 +>VALUES  (?[10], ?[10], ?[10] ) ;
 
 --- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
->>prepare s9 from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
+>>prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 +>VALUES  (1,  (select d.id from DEC1 d where d.codeValue = 'aa'),  3 ) ;
 
 --- SQL command prepared.
->>
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
 >>
 >>log;
