@@ -709,6 +709,7 @@ enum DefaultConstants
                                             // CQDs are delimited by ","
   USTAT_MIN_CHAR_UEC_FOR_IS,     // minimum UEC for char type to use internal sort
   USTAT_MIN_DEC_BIN_UEC_FOR_IS,  // minimum UEC for binary types to use internal sort
+  USTAT_YOULL_LIKELY_BE_SORRY, // minimum row count where explicit NO SAMPLE clause is required
 
 
   // -------------------------------------------------------------------------
@@ -3453,7 +3454,7 @@ enum DefaultConstants
   // instead of relying on default cardinality estimate.
   ESTIMATE_HBASE_ROW_COUNT,
 
-  // if ON, then filter predicates could be pushed down to hbase.
+  // if OFF or '0' is disabled, ON or '1' is simple pushdown, '2' is for advance pushdown
   // It will depends on the query on which predicates or sub-predicates could be pushed.
   HBASE_FILTER_PREDS,
 
@@ -3753,6 +3754,8 @@ enum DefaultConstants
 
   UDR_JVM_DEBUG_PORT,
   UDR_JVM_DEBUG_TIMEOUT,
+  //enable HBASE Small Scanner, optimizing scans of size below HFile block size
+  HBASE_SMALL_SCANNER,
 
   TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE,
   HBASE_RANGE_PARTITIONING_PARTIAL_COLS,
@@ -3784,6 +3787,9 @@ enum DefaultConstants
 
   // set to ON to aggressively allocate ESP per core
   AGGRESSIVE_ESP_ALLOCATION_PER_CORE,
+
+  // real charset in the HIVE table
+  HIVE_FILE_CHARSET,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

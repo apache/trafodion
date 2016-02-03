@@ -9321,6 +9321,32 @@ convDoIt(char * source,
   };
   break;
 
+// gb2312 -> utf8
+// JIRA 1720
+  case CONV_GBK_F_UTF8_V:
+  {
+    int copyLen = 0;
+    int convLen = gbkToUtf8( source, sourceLen, target, targetLen);
+    if (convLen >= 0) {
+      copyLen = convLen; 
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      //if the target length is not enough, instead of truncate, raise a SQL Error
+      if (convLen > targetLen)
+        ExRaiseSqlError(heap, diagsArea, EXE_STRING_OVERFLOW);
+    }
+    else {
+      // LCOV_EXCL_START
+      convLen = 0;
+      copyLen = 0;
+      if ( varCharLen )
+        setVCLength(varCharLen, varCharLenSize, copyLen);
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      return ex_expr::EXPR_ERROR;
+      // LCOV_EXCL_STOP
+    }
+  };
+  break;
 // 5/10/98: sjis -> unicode
   case CONV_SJIS_F_UNICODE_F: 
   case CONV_SJIS_F_UNICODE_V: 

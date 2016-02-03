@@ -12,9 +12,10 @@
   limitations under the 
   License.
 -->
-This page describes how to install the Trafodion product environment. [Create Development Environment](create-dev-environment.html) describes how to create the Trafodion Development Test Environment.
+This page describes how to install the Trafodion end-user environment. Refer to the [Trafodion Contributor Guide](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide) for information how to build the Trafodion source and run the
+Trafodion developer test environment.
 
-The Trafodion product environment is installed using the Trafodion Installer, which operates on Trafodion binaries only. Refer to the [Download](download.html) page for instructions about how you download/create the Trafodion binaries.
+The Trafodion end-user environment is installed using the Trafodion Installer, which operates on Trafodion binaries only. Refer to the [Download](download.html) page for instructions about how you download/create the Trafodion binaries.
 
 # Preparation
 The Trafodion Installer assumes that you've performed the following steps before a Trafodion install:

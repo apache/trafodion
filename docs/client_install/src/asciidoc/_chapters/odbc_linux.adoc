@@ -1,0 +1,310 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+= Install Linux ODBC Driver
+These installation instructions apply to Trafodion Release 1.3.*_n_* and subsequent updates of the product until otherwise indicated.
+
+== Installation Packaged
+
+The distribution file for the Trafodion ODBC Driver for Linux is packaged within the Trafodion clients tar file,
+`clients-1.3.*_n_*.tar.gz`, on the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
+
+`TRAF_ODBC_Linux_Driver_64.tar.gz` is used to install the Trafodion ODBC Driver for Linux. It contains the following files:
+
+```
+connect_test.cpp 
+install.sh 
+libicudataNv44.so.44 
+libicuucNv44.so.44 
+libtrafodbc_l64.so 
+libtrafodbc_l64_drvr.so 
+LICENSE 
+license.txt 
+MD5SUM 
+TRAFDSN 
+```
+
+By default, a new version of the Trafodion ODBC driver will be installed in the following directories unless you specify a different directory
+during installation:
+
+* `/usr/lib64`
+* `/etc/odbc`
+
+NOTE: The following header files are not packaged with the Trafodion ODBC driver:
+
+* `sql.h`
+* `sqlext.h`
+* `sqltypes.h`
+* `sqlucode.h`
+
+To install those header files, <<win_odbc_client_env, Setting Up the Client Environment>>..
+
+<<<
+== Installation Requirements
+
+The driver for Linux requires `libgcc 3.4.3` and `libstd++ 6.0`.
+
+If you are building ODBC applications, please use the preferred build platform, RedHat 6.4 or CentOS 6.4.
+
+== Installation Instructions
+
+=== Download Linux ODBC Driver
+
+1.  Create a download folder on the client workstation.
+2.  Open a Web browser and navigate to http://trafodion.incubator.apache.org/download.html.
+3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodion clients tar file to your workstation.
+4.  Place the `clients-1.3.*_n_*.tar.gz` file into the download folder.
+5.  Unpack the `clients-1.3.*_n_*.tar.gz` file.
++
+```
+tar -xzf clients-1.3.0.tar.gz
+```
+
+The package file contains the Trafodion ODBC distribution file, `TRAF_ODBC_Linux_Driver_64.tar.gz`, which is extracted to the clients subdirectory.
+
+=== Install/Reinstall Linux ODBC Driver
+
+NOTE: You must have root access to install the Trafodion ODBC Driver for Linux at the default system location.
+
+1.  Change the directory to the clients subdirectory, and decompress the `.tar.gz` distribution file:
++
+```
+gunzip TRAF_ODBC_Linux_Driver_64.tar.gz
+```
+2.  Extract the contents of the `.tar` file. A directory called `PkgTmp` is created.
++
+```
+tar –xvf TRAF_ODBC_Linux_Driver_64.tar
+```
+
+3.  Install the product by entering these commands:
++
+```
+cd PkgTmp 
+./install.sh
+```
++
+Except for the sample file, the `install.sh` script saves a copy (`.SAV`) of your previous installation files if they exist.
+4.  Accept the terms of the license agreement by entering *yes*.
+5.  Enter a directory for the library files, or press Enter to use the default directory (`/usr/lib64`).
+6.  Enter a directory for the data-source template file, or press *Enter* to use the default directory (`/etc/odbc`).
+7.  Enter a directory for the sample program, or press *Enter* to use the default directory (`/etc/odbc`).
+
+=== Set Up Client Environment
+
+If you selected default options during installation, ensure that:
+
+* The libraries are located in the `/usr/lib64` directory.
+* A `TRAFDSN` file is in the `/etc/odbc` directory.
+
+If you select non-default locations during installation, ensure that the files are installed in the directories that you specified during
+installation.
+
+The driver expects the `TRAFDSN` file to be present in either the default location (`/etc/odbc`) or the current working directory (`CWD`) of the
+application.
+
+If you are building ODBC applications, you will need to install these header files in your build environment:
+
+* `sql.h`
+* `sqlext.h`
+* `sqltypes.h`
+* `sqlucode.h`
+
+To install those header files from the latest packages, run this `yum` command:
+
+```
+yum install libiodbc libiodbc-devel
+```
+
+The `yum` command automatically installs the header files in the `/usr/include` and `/usr/include/libiodbc` directories.
+
+<<<
+=== Enable Compression
+
+When compression is enabled in the ODBC driver, the ODBC driver can send and receive large volumes of data quickly and efficiently to and from
+the Trafodion Database Connectivity Services (DCS) server over a TCP/IP network. By default, compression is disabled.
+
+To enable compression in the ODBC driver or to change the compression setting, follow these steps:
+
+* If you are using the Trafodion ODBC driver manager, add
++
+```
+Compression = compression-level
+```
++
+to the `DSN` section of `TRAFDSN` file.
+
+* If you are using a third-party driver manager, such as unixODBC, add
++
+```
+Compression = compression-level
+```
++
+to the `DSN` section of the `odbc.ini` file.
+
+The `_compression-level_` is one of these values:
+
+* `SYSTEM_DEFAULT`, which is the same as no compression
+* `no compression`
+* `best speed`
+* `best compression`
+* `balance`
+* An integer from `0` to `9`, with `0` being `no compression` and `9` being the `maximum available compression`
+
+<<<
+=== Use Third-Party Driver Manager
+
+NOTE: For better performance, we recommend that you use at least version `2.3._x_` of unixODBC.
+
+* If you are using an external driver manager, you must point to `libtrafodbc_drvr64.so` and not to `libtrafodbc64.so`.
+* The driver, `libtrafodbc_l64_drvr.so`, has been verified with iODBC and unixODBC driver managers.
+* These driver managers, as well as documentation, can be found at these Web sites:
+* http://www.iodbc.org/
+* http://www.unixodbc.org/
+* For information on the necessary data-source configuration options, you will need to add to the respective configuration files (for example,
+to `odbc.ini`).
+
+=== Run Sample Program (`connect_test`)
+
+NOTE: The examples after each step assume that you have default installation directories.
+
+If you have a previous version of the Trafodion ODBC driver installed, you need to re-link your existing application to ensure that you pick up
+the correct version of the driver. If you are unsure of the version, check the version of your application with this command:
+
+```
+ldd object-file
+```
+
+1.  Move to the directory where you installed the sample program:
++
+```
+cd /etc/odbc
+```
+
+2.  Set the environment variable `LD_LIBRARY_PATH`:
++
+```
+export LD_LIBRARY_PATH=<path-to-odbc-library-files or /usr/lib64>
+```
+
+3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`.
++
+*Example*
++
+```
+[Default_DataSource]
+Description = Default Data Source
+Catalog = TRAFODION
+Schema = SEABASE
+DataLang = 0
+FetchBufferSize = SYSTEM_DEFAULT
+Server = TCP:1.2.3.4:37800 <- _Set IP Address_
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT = NO_TIMEOUT
+```
+
+4.  Compile the sample program.
++
+```
+g++ -g connect_test.cpp -L/usr/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
+```
+
+5.  Run the sample program:
++
+```
+./connect_test -d Default_DataSource -u username -p password
+```
+
+If the sample program runs successfully, you should see output similar to the following:
+
+```
+Using Connect String: DSN=Default_DataSource;UID=username;PWD=****;
+Connect Test Passed...
+```
+
+<<<
+[[linux_odbc_run_basicsql]]
+=== Run Sample Program (`basicsql`)
+
+NOTE: The Basic SQL sample program is not currently bundled with the ODBC Linux driver. To obtain the source code for this program, see
+<<odbc_sample_program, `basicsql` (Sample ODBC Program)>>.
+
+If you have a previous version of the Trafodion ODBC driver installed, you need to re-link your existing application to ensure that you pick up
+the correct version of the driver. If you are unsure of the version, check the version of your application with this command:
+
+```
+ldd object-file
+```
+
+1.  Move to the directory where you put the `basicsql.cpp` file.
+
+2.  Set the environment variable `LD_LIBRARY_PATH`:
++
+```
+export LD_LIBRARY_PATH=<path-to-odbc-driver-dlls>
+```
+
+3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`. For example:
++
+<<<
++
+*Example*
++
+```
+[Default_DataSource]
+Description = Default Data Source
+Catalog = TRAFODION
+Schema = SEABASE
+DataLang = 0
+FetchBufferSize = SYSTEM_DEFAULT
+Server = TCP:1.2.3.4:37800 
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT = NO_TIMEOUT
+```
+
+4.  Compile the sample program.
++
+```
+g++ -g basicsql.cpp -L. -I. -ltrafodbc64 -o basicsql
+```
+
+5.  Run the sample program:
++
+```
+basicsql Default_DataSource <username> <password>
+```
+
+If the sample program runs successfully, you should see output similar to the following:
+
+```
+Using Connect String: DSN=Default_DataSource;UID=user1;PWD=pwd1;
+Successfully connected using SQLDriverConnect.
+Drop sample table if it exists... Creating sample table TASKS...
+Table TASKS created using SQLExecDirect.
+Inserting data using SQLBindParameter, SQLPrepare, SQLExecute Data
+Data inserted.
+Fetching data using SQLExecDirect, SQLFetch, SQLGetData
+Data selected: 1000 CREATE REPORTS 2014-3-22
+Basic SQL ODBC Test Passed!
+```

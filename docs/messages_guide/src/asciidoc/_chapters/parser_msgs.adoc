@@ -1,0 +1,3273 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[parser-and-compilation-messages]]
+= Parser and Compilation Messages (3000 through 3999)
+
+[[SQL-3001]]
+== SQL 3001
+
+```
+Syntax error at or before <SQL-text>.
+```
+
+*Cause:* There is a syntax error near the text <SQL-text>.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the errors that accompany this message for more
+information. Correct the syntax and resubmit.
+
+[[SQL-3002]]
+== SQL 3002
+
+```
+<column-name> is not a valid column reference; it has more than 4 name parts.
+```
+
+*Cause:* You specified an invalid column reference, which must have four
+or fewer parts.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3003]]
+== SQL 3003
+
+```
+Length or precision must be greater than zero.
+```
+
+*Cause:* You defined length or precision as zero. You must enter a value
+greater than zero.
+
+*Effect:* The operation fails.
+
+*Recovery:* Enter a value greater than zero and resubmit.
+
+[[SQL-3004]]
+== SQL 3004
+
+```
+A delimited identifier must contain at least one non-blank character.
+```
+
+*Cause:* You defined a delimited identifier as blanks. You must enter at
+least one non-blank character.
+
+*Effect:* The operation fails.
+
+*Recovery:* Enter at least one non-blank character and resubmit.
+
+<<<
+[[SQL-3005]]
+== SQL 3005
+
+```
+A DECLARE CURSOR statement cannot dynamically get its cursor name from a host variable while also statically declaring a cursor specification. A dynamic cursor requires the name of a previously prepared statement or a host variable containing such a name; a static cursor requires a fixed, static name.
+```
+
+*Cause:* You attempted to use a DECLARE CURSOR statement without
+declaring a cursor name or using the name of a previously prepared
+statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Declare a cursor name, or use the name of a previously
+prepared statement, and resubmit.
+
+[[SQL-3006]]
+== SQL 3006
+
+```
+In a dynamic cursor declaration, both the cursor and the statement must be named in the same way: both must be literals or both must be string host variable expressions.
+```
+
+*Cause:* You attempted to declare a dynamic cursor in a way that does
+not match the statement. Both must be literals or both must be string
+host variable expressions.
+
+*Effect:* The operation fails.
+
+*Recovery:* Declare the cursor in a way that matches the statement and
+resubmit.
+
+<<<
+[[SQL-3007]]
+== SQL 3007
+
+```
+In an ALLOCATE CURSOR statement, both the cursor and the statement must be named using string host variables.
+```
+
+*Cause:* You specified an ALLOCATE CURSOR statement with invalid syntax.
+Both the cursor and the statement must be named using string host
+variables.
+
+*Effect:* The operation fails.
+
+*Recovery:* Name the cursor and statement with string host variables and
+resubmit.
+
+[[SQL-3008]]
+== SQL 3008
+
+```
+Precision of <type> UNSIGNED data type, <value>, cannot exceed 9.
+```
+
+*Cause:* You specified a CREATE TABLE statement with a precision value
+greater than nine for the PRECISION field, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3009]]
+== SQL 3009
+
+```
+DROP ASSERTION statement is not yet supported.
+```
+
+*Cause:* You attempted to perform a DROP ASSERTION statement, which is
+not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-3010]]
+== SQL 3010
+
+```
+Character set <name> is not yet supported.
+```
+
+Where <name> is the name of the character set.
+
+*Cause:* You specified character set <name> that is not supported for
+use in a Trafodion object, such as a table or module. Examples include
+creating a KANJI or KSC5601 column in a Trafodion table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a valid character set and resubmit.
+
+<<<
+[[SQL-3011]]
+== SQL 3011
+
+```
+<name> is not a valid qualified name; it has more than 3 name parts.
+```
+
+Where <name> is the name specified in the operation.
+
+*Cause:* You specified an invalid name <name>, which must have three or fewer parts. <catalog.schema.table> is valid.
+<catalog.schema.table.name> is invalid.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the name and resubmit.
+
+[[SQL-3012]]
+== SQL 3012
+
+```
+COUNT is the only aggregate function that accepts (*) as an operand.
+```
+
+*Cause:* You submitted an AVG or other aggregate function that does not
+allow (\*) as an operand. Only COUNT allows you to use (\*).
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the (*) operand and resubmit.
+
+<<<
+[[SQL-3013]]
+== SQL 3013
+
+```
+Subtraction is the only operation allowed in the parenthesized expression preceding an interval qualifier.
+```
+
+*Cause:* You specified an expression with invalid syntax. Only
+subtraction is supported in the parenthesized expression that precedes
+an interval qualifier.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3014]]
+== SQL 3014
+
+```
+Precision of numeric, <value>, cannot exceed 18.
+```
+
+*Cause:* You defined a numeric item, <value>, with precision greater
+than 18, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Redefine the item with a precision value of 18 or less.
+
+<<<
+[[SQL-3015]]
+== SQL 3015
+
+```
+Scale <value> cannot exceed precision <value>.
+```
+
+*Cause:* You defined a scale value with greater precision than 
+Trafodion allows.
+
+*Effect:* The operation fails.
+
+*Recovery:* Redefine the scale with a precision value less than or equal
+to the allowable value.
+
+[[SQL-3016]]
+== SQL 3016
+
+```
+Precision of decimal, <value>, cannot exceed 18.
+```
+
+*Cause:* You gave a decimal item, <value>, with precision greater than
+18, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Redefine the item with a precision value of 18 or less.
+
+<<<
+[[SQL-3017]]
+== SQL 3017
+
+```
+An unsigned integer was expected, not <value>.
+```
+
+*Cause:* You specified an unexpected value, <value>. Trafodion
+requires an unsigned integer.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace the value with an unsigned integer and resubmit.
+
+[[SQL-3018]]
+== SQL 3018
+
+```
+An unsigned smallint was expected, not <value>.
+```
+
+*Cause:* You specified an unexpected value, <value>. Trafodion
+requires an unsigned smallint.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace the value with an unsigned smallint and resubmit.
+
+<<<
+[[SQL-3019]]
+== SQL 3019
+
+```
+An unsigned number was expected within the parentheses, not <value>.
+```
+
+*Cause:* You specified an unexpected value, <value>. Trafodion
+requires an unsigned number.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace the value with an unsigned number and resubmit.
+
+[[SQL-3020]]
+== SQL 3020
+
+```
+An unsigned number was expected as the first operand within parentheses, not <value>.
+```
+
+*Cause:* You specified an unexpected value, <value>. Trafodion
+requires an unsigned number.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace the value with an unsigned number and resubmit.
+
+<<<
+[[SQL-3021]]
+== SQL 3021
+
+```
+An unsigned number was expected as the second operand within parentheses, not <value>.
+```
+
+*Cause:* You specified an unexpected value, <value>. Trafodion
+requires an unsigned number.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace the value with an unsigned number and resubmit.
+
+[[SQL-3022]]
+== SQL 3022
+
+```
+The <name> operator is not yet supported.
+```
+
+*Cause:* You attempted to use an operator that is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-3023]]
+== SQL 3023
+
+```
+The COLLATE clause in a sort specification is not yet supported.
+```
+
+*Cause:* You attempted to perform a COLLATE clause in a sort
+specification, which is not supported.
+
+*Effect:* Trafodion ignores the COLLATE clause.
+
+*Recovery:* Remove the COLLATE clause and resubmit.
+
+[[SQL-3024]]
+== SQL 3024
+
+```
+The MATCH PARTIAL clause is not yet supported.
+```
+
+*Cause:* You attempted to use a MATCH PARTIAL clause, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the MATCH PARTIAL clause and resubmit.
+
+<<<
+[[SQL-3025]]
+== SQL 3025
+
+```
+The format of the subvolume name part in the specified location name <name> is not valid. The subvolume name part must be eight characters long and begin with the letters ZSD.
+```
+
+*Cause:* You used an invalid location <name> for a subvolume that must
+be eight characters long and begin with the letters <ZSD>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the name and resubmit.
+
+[[SQL-3026]]
+== SQL 3026
+
+```
+A comma must be used to separate file attributes.
+```
+
+*Cause:* You made a syntax error in a list of file attributes, which
+must be separated by commas.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3027]]
+== SQL 3027
+
+```
+<name> is not a valid simple name; it has more than one name part.
+```
+
+*Cause:* You specified an invalid name <name>, which must have only one
+name part.
+
+*Effect:* Trafodion could not prepare the
+statement.
+
+*Recovery:* Correct the name and resubmit.
+
+[[SQL-3028]]
+== SQL 3028
+
+```
+Specifying a privilege column list in the INSERT clause is not yet supported.
+```
+
+*Cause:* You attempted to specify a privilege column list in an INSERT
+clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the privilege column list and resubmit.
+
+<<<
+[[SQL-3029]]
+== SQL 3029
+
+```
+<option> is not yet supported in referential integrity constraint definition.
+```
+
+*Cause:* You attempted to specify an <option> that is not supported in a
+referential integrity constraint definition.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the option and resubmit.
+
+[[SQL-3030]]
+== SQL 3030
+
+```
+The PARALLEL EXECUTION clause is not yet supported.
+```
+
+*Cause:* You used the PARALLEL EXECUTION clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the PARALLEL EXECUTION clause and resubmit.
+
+<<<
+[[SQL-3031]]
+== SQL 3031
+
+```
+CASCADE drop behavior is not yet supported.
+```
+
+*Cause:* You attempted to drop an object with the CASCADE option, which
+is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Drop the item without CASCADE.
+
+[[SQL-3032]]
+== SQL 3032
+
+```
+The COLUMN clause in the ALTER TABLE statement is not yet supported.
+```
+
+*Cause:* You used the COLUMN clause in the ALTER TABLE statement, which
+is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3033-]]
+== SQL 3033 
+
+```
+The MOVE clause in the ALTER TABLE statement is not yet supported.
+```
+
+*Cause:* You used the MOVE clause in the ALTER TABLE statement, which is
+not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3034-]]
+== SQL 3034 
+
+```
+The PARTITION clause in the ALTER TABLE statement is not yet supported.
+```
+
+*Cause:* You used the PARTITION clause in the ALTER TABLE statement,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3035-]]
+== SQL 3035 
+
+```
+The RENAME clause in the ALTER TABLE statement is not yet supported.
+```
+
+*Cause:* You used the RENAME clause in the ALTER TABLE statement, which
+is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3036]]
+== SQL 3036
+
+```
+The SET CONSTRAINT clause in the ALTER TABLE statement is not yet supported.
+```
+
+*Cause:* You used the SET CONSTRAINT clause in the ALTER TABLE
+statement, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3037]]
+== SQL 3037
+
+```
+Precision of type <data-type> cannot exceed 18.
+```
+
+*Cause:* You specified a CREATE TABLE statement with a precision value
+greater than 18 for <data-type>, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3038]]
+== SQL 3038
+
+```
+PIC X types cannot have leading signs, or any signs at all.
+```
+
+*Cause:* You specified a PIC X type with a sign, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the sign, or redefine the type, and resubmit.
+
+<<<
+[[SQL-3039]]
+== SQL 3039
+
+```
+PIC X types do not have any COMP representation.
+```
+
+*Cause:* You specified a PIC X type with COMP, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the COMP, or redefine the type, and resubmit.
+
+[[SQL-3040]]
+== SQL 3040
+
+```
+Precision zero is not valid. Add a '9' to the PICTURE clause.
+```
+
+*Cause:* You specified an item with precision zero. You must add the
+number nine to the PICTURE clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3041]]
+== SQL 3041
+
+```
+UNSIGNED is not valid for a numeric or decimal type with a scale greater than 9.
+```
+
+*Cause:* You specified UNSIGNED for a numeric or decimal type that has a
+scale greater than nine, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the specification to SIGNED and resubmit.
+
+[[SQL-3042]]
+== SQL 3042
+
+```
+UPSHIFT for a numeric type is not valid.
+```
+
+*Cause:* You specified UPSHIFT for a numeric type, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the specification and resubmit.
+
+<<<
+[[SQL-3043]]
+== SQL 3043
+
+```
+Precision greater than 18 for a COMP numeric type is not valid.
+```
+
+*Cause:* You specified a precision value greater than 18 for a COMP
+numeric type, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the precision to a value of 18 or less and resubmit.
+
+[[SQL-3044]]
+== SQL 3044
+
+```
+The interval <value> is not valid.
+```
+
+*Cause:* You specified an invalid interval <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the interval value to a valid one and resubmit.
+
+<<<
+[[SQL-3045]]
+== SQL 3045
+
+```
+The date <value> is not valid.
+```
+
+*Cause:* You specified an invalid date <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the date value and resubmit.
+
+[[SQL-3046]]
+== SQL 3046
+
+```
+The time <value> is not valid.
+```
+
+*Cause:* You specified an invalid time <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the time value and resubmit.
+
+<<<
+[[SQL-3047]]
+== SQL 3047
+
+```
+The timestamp <value> is not valid.
+```
+
+*Cause:* You specified an invalid timestamp <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the timestamp value to a valid one and resubmit.
+
+[[SQL-3048]]
+== SQL 3048
+
+```
+Dynamic parameters, such as <name>, are not allowed in a static compilation.
+```
+
+*Cause:* You attempted to use parameters in a static compilation, which
+is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the parameters and resubmit.
+
+<<<
+[[SQL-3049]]
+== SQL 3049
+
+```
+Host variables, such as <name>, are not allowed in a dynamic compilation.
+```
+
+*Cause:* You attempted to use host variables in dynamic compilation,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the host variables and resubmit.
+
+[[SQL-3050]]
+== SQL 3050
+
+```
+The constraint must have the same catalog and schema as the specified table.
+```
+
+*Cause:* You specified a constraint whose catalog and schema do not
+match the specified table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the constraint and table have the
+same catalog and schema.
+
+<<<
+[[SQL-3051]]
+== SQL 3051
+
+```
+Duplicate HEADING clauses were specified in column definition <name>.
+```
+
+*Cause:* You defined column <name> with more than one HEADING clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Define the column with only one HEADING clause and resubmit.
+
+[[SQL-3052]]
+== SQL 3052
+
+```
+Duplicate NOT NULL clauses were specified in column definition <name>.
+```
+
+*Cause:* You defined column <name> with more than one NOT NULL clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Define the column with only one NOT NULL clause and
+resubmit.
+
+<<<
+[[SQL-3053]]
+== SQL 3053
+
+```
+Duplicate PRIMARY KEY clauses were specified in column definition <name>.
+```
+
+*Cause:* You defined column <name> with more than one PRIMARY KEY
+clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Define the column with only one PRIMARY KEY clause and
+resubmit.
+
+[[SQL-3054]]
+== SQL 3054
+
+```
+The NOT DROPPABLE clause is allowed only in PRIMARY KEY and NOT NULL constraint definitions.
+```
+
+*Cause:* You specified a constraint with an invalid NOT DROPPABLE
+clause, which can appear only in PRIMARY KEY and NOT NULL constraint
+definitions.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3055]]
+== SQL 3055
+
+```
+Duplicate DELETE rules were specified.
+```
+
+*Cause:* You defined duplicate DELETE rules.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3056]]
+== SQL 3056
+
+```
+Duplicate UPDATE rules were specified.
+```
+
+*Cause:* You defined duplicate UPDATE rules.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3057]]
+== SQL 3057
+
+```
+The ALLOCATE value must be between 1 and <number>.
+```
+
+*Cause:* You provided an invalid size value in the ALLOCATE clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct size
+values, and resubmit.
+
+[[SQL-3058]]
+== SQL 3058
+
+```
+The BLOCKSIZE value must be 4096.
+```
+
+*Cause:* You defined a BLOCKSIZE with an invalid value. It must be 4096.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the BLOCKSIZE value and resubmit.
+
+<<<
+[[SQL-3059]]
+== SQL 3059
+
+```
+The specified size value (in the MAXSIZE clause or EXTENT size clause) is not valid.
+```
+
+*Cause:* You provided an invalid size value in the MAXSIZE clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct size
+values, and resubmit.
+
+[[SQL-3060]]
+== SQL 3060
+
+```
+The specified percentage value in the DSLACK clause is not valid.
+```
+
+*Cause:* You provided an invalid percentage value in the DSLACK clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct
+percentage values, and resubmit.
+
+<<<
+[[SQL-3061]]
+== SQL 3061
+
+```
+The format of the specified location name <name> is not valid.
+```
+
+*Cause:* You provided a location <name> with an invalid format.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct name
+format, and resubmit.
+
+[[SQL-3062]]
+== SQL 3062
+
+```
+Duplicate EXTENT/MAXEXTENTS clauses were specified in the PARTITION clause.
+```
+
+*Cause:* You specified duplicate EXTENT/MAXEXTENTS clauses in the
+PARTITION clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3063]]
+== SQL 3063
+
+```
+Duplicate DSLACK clauses were specified in the PARTITION clause.
+```
+
+*Cause:* You specified duplicate DSLACK clauses in the PARTITION clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3064]]
+== SQL 3064
+
+```
+Duplicate ISLACK clauses were specified in the PARTITION clause.
+```
+
+*Cause:* You specified duplicate ISLACK clauses in the PARTITION clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3065]]
+== SQL 3065
+
+```
+The primary key constraint cannot be droppable when the STORE BY PRIMARY KEY clause appears in a table definition.
+```
+
+*Cause:* You defined a primary key as droppable in a table that includes
+STORE BY PRIMARY KEY in its definition, which is not supported.
+
+*Effect:* Trafodion is unable to process this
+definition.
+
+*Recovery:* Change the definition of the primary key constraint so that
+it is NOT DROPPABLE.
+
+[[SQL-3067]]
+== SQL 3067
+
+```
+ALTER TABLE ADD CONSTRAINT allows only DROPPABLE constraints.
+```
+
+*Cause:* You specified an ALTER TABLE ADD CONSTRAINT statement with NOT
+DROPPABLE constraints. Only DROPPABLE constraints are allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3068]]
+== SQL 3068
+
+```
+The ALLOCATE and DEALLOCATE clauses cannot coexist in the same ALTER INDEX statement.
+```
+
+*Cause:* You specified an ALTER INDEX statement with both an ALLOCATE
+and a DEALLOCATE clause, which is not supported.
+
+*Effect:* Trafodion ignores the ALTER INDEX
+statement.
+
+*Recovery:* Correct the ALTER INDEX statement to include either ALLOCATE
+or DEALLOCATE.
+
+[[SQL-3070]]
+== SQL 3070
+
+```
+The [NO]AUDIT clause is not supported.
+```
+
+*Cause:* You specified the [NO]AUDIT clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3071]]
+== SQL 3071
+
+```
+Duplicate [NO]AUDITCOMPRESS clauses were specified.
+```
+
+*Cause:* You specified duplicate [NO]AUDITCOMPRESS clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3072]]
+== SQL 3072
+
+```
+The BLOCKSIZE clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+```
+
+*Cause:* You specified an ALTER INDEX. . .ATTRIBUTE(S) statement that
+includes a BLOCKSIZE clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3073]]
+== SQL 3073
+
+```
+The [NO]BUFFERED clause is not supported.
+```
+
+*Cause:* You specified a [NO]BUFFERED clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3074]]
+== SQL 3074
+
+```
+The SEPARATE BY clause is not supported.
+```
+
+*Cause:* You specified the SEPARATE BY clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3075]]
+== SQL 3075
+
+```
+The [NO]COMPRESS clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+```
+
+*Cause:* You specified an ALTER INDEX. . .ATTRIBUTE(S) statement that
+includes a [NO]COMPRESS clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3076]]
+== SQL 3076
+
+```
+Duplicate DEALLOCATE clauses were specified.
+```
+
+*Cause:* You specified duplicate DEALLOCATE clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3077]]
+== SQL 3077
+
+```
+The [NO]ICOMPRESS clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+```
+
+*Cause:* You specified an ALTER INDEX. . .ATTRIBUTE(S) statement that
+includes the [NO]ICOMPRESS clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3078]]
+== SQL 3078
+
+```
+The LOCKLENGTH clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+```
+
+*Cause:* You specified an ALTER INDEX. . .ATTRIBUTE(S) statement that
+includes the LOCKLENGTH clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3079]]
+== SQL 3079
+
+```
+Duplicate EXTENT/MAXEXTENTS clauses were specified.
+```
+
+*Cause:* You specified duplicate EXTENT/MAXEXTENT clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3080]]
+== SQL 3080
+
+```
+The [NO]SERIALWRITES clause is not supported.
+```
+
+*Cause:* You specified the [NO]SERIALWRITES clause, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3081]]
+== SQL 3081
+
+```
+Duplicate ALLOCATE clauses were specified.
+```
+
+*Cause:* You specified duplicate ALLOCATE clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3082]]
+== SQL 3082
+
+```
+Duplicate [NO]AUDIT clauses were specified.
+```
+
+*Cause:* You specified duplicate [NO]AUDIT clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3083]]
+== SQL 3083
+
+```
+Duplicate [NO]AUDITCOMPRESS clauses were specified.
+```
+
+*Cause:* You specified duplicate [NO]AUDITCOMPRESS clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3084]]
+== SQL 3084
+
+```
+The BLOCKSIZE clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+```
+
+*Cause:* You specified an ALTER TABLE. . .ATTRIBUTE(S) statement that
+includes the BLOCKSIZE clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3085]]
+== SQL 3085
+
+```
+Duplicate [NO]BUFFERED clauses were specified.
+```
+
+*Cause:* You specified duplicate [NO]BUFFERED clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3086]]
+== SQL 3086
+
+```
+Duplicate [NO]CLEARONPURGE clauses were specified.
+```
+
+*Cause:* You specified duplicate [NO]CLEARONPURGE clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3087]]
+== SQL 3087
+
+```
+The [NO]COMPRESS clause is not allowed in the ALTER TABLE . . .
+```
+ATTRIBUTE(S) statement.
+
+*Cause:* You specified an ALTER TABLE. . .ATTRIBUTE(S) statement that
+includes the [NO]COMPRESS clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3088]]
+== SQL 3088
+
+```
+The ALLOCATE AND DEALLOCATE cannot coexist in the same ALTER TABLE statement.
+```
+
+*Cause:* You specified an ALTER TABLE statement with both ALLOCATE and
+DEALLOCATE clauses, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the ALTER TABLE statement to include either ALLOCATE
+or DEALLOCATE.
+
+<<<
+[[SQL-3089]]
+== SQL 3089
+
+```
+The [NO]ICOMPRESS clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+```
+
+*Cause:* You specified an ALTER TABLE. . .ATTRIBUTE(S) statement that
+includes the [NO]ICOMPRESS clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3090]]
+== SQL 3090
+
+```
+Duplicate LOCKLENGTH clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate LOCKLENGTH clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3091]]
+== SQL 3091
+
+```
+The [NO]AUDIT clause is not allowed in the CREATE INDEX statements.
+```
+
+*Cause:* You specified a CREATE INDEX statement with the [NO]AUDIT
+clause, which is not supported.
+
+*Effect:* Trafodion ignores the CREATE INDEX
+statement.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3092]]
+== SQL 3092
+
+```
+Duplicate BLOCKSIZE clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate BLOCKSIZE clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3093]]
+== SQL 3093
+
+```
+Duplicate DCOMPRESS clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate DCOMPRESS clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3094]]
+== SQL 3094
+
+```
+The DEALLOCATE clause is not allowed in the CREATE INDEX statements.
+```
+
+*Cause:* You specified a CREATE INDEX statement that includes the
+DEALLOCATE clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3095]]
+== SQL 3095
+
+```
+Duplicate [NO]ICOMPRESS clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate [NO]ICOMPRESS clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3096]]
+== SQL 3096
+
+```
+Duplicate [NO]SERIALWRITES clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate [NO]SERIALWRITES
+clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3097]]
+== SQL 3097
+
+```
+The DEALLOCATE clause is not allowed in the CREATE TABLE statements.
+```
+
+*Cause:* You specified a CREATE TABLE statement that includes the
+DEALLOCATE clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3098]]
+== SQL 3098
+
+```
+Duplicate LOCATION clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate LOCATION clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3099]]
+== SQL 3099
+
+```
+Duplicate FILE ATTRIBUTE(S) clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate FILE ATTRIBUTE(S)
+clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3100]]
+== SQL 3100
+
+```
+Duplicate DSLACK clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate DSLACK clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3101]]
+== SQL 3101
+
+```
+Duplicate ISLACK clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate ISLACK clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3102]]
+== SQL 3102
+
+```
+Duplicate PARALLEL EXECUTION clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate PARALLEL EXECUTION
+clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3103]]
+== SQL 3103
+
+```
+Duplicate PARTITION clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate PARTITION clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3104]]
+== SQL 3104
+
+```
+Only the ADD option is allowed in a PARTITION clause in a CREATE TABLE statement.
+```
+
+*Cause:* You specified a CREATE TABLE statement with incorrect syntax.
+Only the ADD option is supported in a PARTITION clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3105]]
+== SQL 3105
+
+```
+Only range, hash, hash2 and system partitioning are currently supported.
+```
+
+*Cause:* You attempted to specify an invalid partitioning method.
+Currently only range, hash, hash2, and system partitioning are
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3106]]
+== SQL 3106
+
+```
+Duplicate PRIMARY KEY clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate PRIMARY KEY clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3107]]
+== SQL 3107
+
+```
+Duplicate LIKE clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate LIKE clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3108]]
+== SQL 3108
+
+```
+The LIKE clause and STORE BY clause cannot coexist in the same statement.
+```
+
+*Cause:* You specified a statement with both LIKE and STORE BY clauses,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement to include one of these clauses.
+
+<<<
+[[SQL-3109]]
+== SQL 3109
+
+```
+Duplicate STORE BY clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate STORE BY clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3110]]
+== SQL 3110
+
+```
+The LIKE clause and ATTRIBUTE(S) clause cannot coexist in the same statement.
+```
+
+*Cause:* You specified a statement with both LIKE and ATTRIBUTE(S)
+clauses, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement to include one of these clauses.
+
+<<<
+[[SQL-3111]]
+== SQL 3111
+
+```
+The LIKE clause and LOCATION clause cannot coexist in the same statement.
+```
+
+*Cause:* You specified a statement with both LIKE and LOCATION clauses,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement to include one of these clauses.
+
+[[SQL-3112]]
+== SQL 3112
+
+```
+The LIKE clause and PARTITION clause cannot coexist in the same statement.
+```
+
+*Cause:* You specified a statement with both LIKE and PARTITION clauses,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement to include one of these clauses.
+
+<<<
+[[SQL-3113]]
+== SQL 3113
+
+```
+Error in CONTROL statement: <number>
+```
+
+Where <number> is the error number.
+
+*Cause:* There is an error <number> in the CONTROL statement you
+specified.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the CONTROL statement and resubmit.
+
+[[SQL-3114]]
+== SQL 3114
+
+```
+Transaction access mode READ WRITE is incompatible with isolation level READ UNCOMMITTED.
+```
+
+*Cause:* You specified a statement with both READ WRITE and READ
+UNCOMMITTED clauses, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement to include one of these clauses.
+
+<<<
+[[SQL-3115]]
+== SQL 3115
+
+```
+Duplicate ISOLATION LEVEL clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate ISOLATION LEVEL
+clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3116]]
+== SQL 3116
+
+```
+Duplicate transaction access mode clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate access mode clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3117]]
+== SQL 3117
+
+```
+Duplicate DIAGNOSTICS SIZE clauses were specified.
+```
+
+*Cause:* You specified a statement with duplicate DIAGNOSTICS SIZE
+clauses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3118]]
+== SQL 3118
+
+```
+Specified identifier is too long.
+```
+
+*Cause:* You specified an identifier that is too long.
+
+*Effect:* The operation fails.
+
+*Recovery:* Shorten the identifier and resubmit.
+
+<<<
+[[SQL-3119]]
+== SQL 3119
+
+```
+The WITH LOCAL CHECK OPTION clause is not supported.
+```
+
+*Cause:* You attempted to create a constraint with the WITH LOCAL CHECK
+OPTION clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Eliminate the WITH LOCAL CHECK OPTION clause and resubmit.
+
+[[SQL-3120]]
+== SQL 3120
+
+```
+The CREATE ASSERTION statement is not yet supported.
+```
+
+*Cause:* You specified the CREATE ASSERTION statement, which is not
+supported.
+
+*Effect:* The operation fails.
+
+Correct the syntax and resubmit.
+
+<<<
+[[SQL-3122]]
+== SQL 3122
+
+```
+The system specified in the location clause <name> is not accessible.
+```
+
+Where <name> is the system name.
+
+*Cause:* You specified an invalid <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3123]]
+== SQL 3123
+
+```
+The format of the file name part in the specified location name <name> is not valid. The file name part must be eight characters long and end with the digits 00.
+```
+
+Where <name> is the name of the file.
+
+*Cause:* You specified an invalid file <name>. The file name must be
+eight characters long and end with the digits 00 (zero zero).
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3127]]
+== SQL 3127
+
+```
+An invalid character was found in identifier <name>.
+```
+
+*Cause:* You specified an identifier that includes an invalid character.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax of the identifier and resubmit.
+
+[[SQL-3128]]
+== SQL 3128
+
+```
+<object-name> is a reserved word. It must be delimited by double-quotes to be used as an identifier.
+```
+
+Where <object-name> is the identifier.
+
+*Cause:* You used an identifier that is a reserved word. You must put it
+between double quotes (") to use it as an identifier.
+
+*Effect:* The operation fails.
+
+Enclose the identifier in double quotes or select another name that is
+not a reserved word.
+
+<<<
+[[SQL-3129]]
+== SQL 3129
+
+```
+Function <name> accepts exactly one operand.
+```
+
+Where <name> is the name of the function.
+
+*Cause:* You specified two operands for an aggregate function that
+accepts exactly one operand. Only VARIANCE and STDDEV support two
+operands.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3130]]
+== SQL 3130
+
+```
+The UNSIGNED option is not supported for LARGEINT type.
+```
+
+*Cause:* You attempted to define a LARGEINT data item with the UNSIGNED
+option, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3131]]
+== SQL 3131
+
+```
+The statement just entered is currently not supported.
+```
+
+*Cause:* You specified a statement that is not supported by Trafodion.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-3132]]
+== SQL 3132
+
+```
+The HEADING for column <name> exceeds the maximum size of 128 characters.
+```
+
+Where <name> is the name of the column.
+
+*Cause:* You specified a heading for column <name> that exceeds the
+maximum size of 128 characters.
+
+*Effect:* The operation fails.
+
+Correct the syntax and resubmit.
+
+<<<
+[[SQL-3133]]
+== SQL 3133
+
+```
+PERFORM is valid only in COBOL programs.
+```
+
+*Cause:* You specified a PERFORM statement, which is supported only in
+COBOL programs.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3134]]
+== SQL 3134
+
+```
+The precision of time or timestamp, <value>, cannot exceed 6.
+```
+
+*Cause:* You specified a time or timestamp precision value that exceeds
+six, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3135]]
+== SQL 3135
+
+```
+The precision of float, <value>, cannot exceed 54.
+```
+
+*Cause:* You specified a value for float precision that exceeds 54,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3136]]
+== SQL 3136
+
+```
+Only LEFT, RIGHT, and FULL OUTER JOIN are valid in {oj . . .}
+```
+
+*Cause:* You attempted to perform an invalid outer join. Only LEFT,
+RIGHT, and FULL OUTER JOIN are supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3137]]
+== SQL 3137
+
+```
+UNION JOIN is not yet supported.
+```
+
+*Cause:* You attempted to perform a UNION JOIN, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3138]]
+== SQL 3138
+
+```
+A key-sequenced table with range partitioning requires a FIRST KEY clause.
+```
+
+*Cause:* You attempted to create a key-sequenced table with range
+partitioning without a FIRST KEY clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3139]]
+== SQL 3139
+
+```
+A range partitioned index requires a FIRST KEY clause.
+```
+
+*Cause:* You attempted to create a range-partitioned index without a
+required FIRST KEY clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3140]]
+== SQL 3140
+
+```
+The isolation level cannot be READ UNCOMMITTED for an INSERT,
+```
+UPDATE, DELETE, or DDL statement.
+
+*Cause:* You attempted to perform an INSERT, UPDATE, DELETE, or DDL
+statement with a READ UNCOMMITTED isolation level, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3141]]
+== SQL 3141
+
+```
+The transaction access mode cannot be READ ONLY for an INSERT, UPDATE, DELETE, or DDL statement.
+```
+
+*Cause:* You attempted to perform an INSERT, UPDATE, DELETE, or DDL
+statement with a transaction access mode of READ ONLY, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3142]]
+== SQL 3142
+
+```
+INTO clause host variables not allowed in a static cursor.
+```
+
+*Cause:* You attempted to create a static cursor with INTO clause host
+variables, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3143]]
+== SQL 3143
+
+```
+BROWSE or READ UNCOMMITTED access is not allowed on a table value constructor.
+```
+
+*Cause:* You attempted to create a table value constructor with BROWSE
+or READ UNCOMMITTED access, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3145]]
+== SQL 3145
+
+```
+Positioned UPDATE or DELETE is allowed only in embedded SQL.
+```
+
+*Cause:* You attempted to perform a positioned UPDATE or DELETE, which
+is supported only in embedded Trafodion.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3147]]
+== SQL 3147
+
+```
+In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
+```
+
+*Cause:* You specified an IN predicate whose right operand is a value
+list but whose left operand is not scalar, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3148]]
+== SQL 3148
+
+```
+Environment variable <value> is being ignored because this version of the code is Release, not Debug. Actual query results will likely not match expected results.
+```
+
+Where <value> is the environment variable value specified.
+
+*Cause:* Trafodion is ignoring the environment
+variable you specified. Query results might not match expected results.
+
+*Effect:* None.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+<<<
+[[SQL-3149]]
+== SQL 3149
+
+```
+Duplicate WITH CONSTRAINTS phrases were specified in LIKE clause in CREATE TABLE statement.
+```
+
+*Cause:* The WITH CONSTRAINTS phrase appears multiple times within the
+LIKE clause of the CREATE TABLE statement, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the duplicate WITH CONSTRAINTS phrases.
+
+[[SQL-3150]]
+== SQL 3150
+
+```
+Duplicate WITH HEADING phrases were specified in LIKE clause in CREATE TABLE statement.
+```
+
+*Cause:* The WITH HEADINGS phrase appears multiple times within the LIKE
+clause of the CREATE TABLE statement, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the duplicate WITH HEADINGS phrases.
+
+<<<
+[[SQL-3151]]
+== SQL 3151
+
+```
+Duplicate WITH HORIZONTAL PARTITIONS phrases were specified in LIKE clause in CREATE TABLE statement.
+```
+
+*Cause:* The WITH HORIZONTAL PARTITIONS phrase appears multiple times
+within the LIKE clause of the CREATE TABLE statement, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the duplicate WITH HORIZONTAL PARTITIONS phrases.
+
+[[SQL-3153]]
+== SQL 3153
+
+```
+The FIRST KEY clause is not allowed with hash or hash2 partitioning.
+```
+
+*Cause:* You attempted to use the FIRST KEY clause with hash or hash2
+partitioning, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3155]]
+== SQL 3155
+
+```
+The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
+```
+
+*Cause:* You specified a CREATE INDEX statement using both the POPULATE
+or NO POPULATE clauses, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3157]]
+== SQL 3157
+
+```
+A catalog name is required.
+```
+
+*Cause:* You attempted to create a catalog without specifying a catalog
+name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a catalog name and resubmit.
+
+<<<
+[[SQL-3158]]
+== SQL 3158
+
+```
+The DATETIME value <value> is not valid.
+```
+
+*Cause:* You specified an invalid DATETIME literal. Either the DATETIME
+qualifier has an invalid combination of start and end fields or the
+DATETIME literal string is invalid.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a valid DATETIME literal and resubmit.
+
+[[SQL-3159]]
+== SQL 3159
+
+```
+If you intended <name> to be a character set specifier for a character string literal, you must remove the spaces in front of the single quote delimiter.
+```
+
+Where <name> is the character set specifier.
+
+*Cause:* You apparently specified <name> as a character set specifier
+(for example, `KANJI`), but you placed a space in front of the single
+quote delimiter, which is not supported. For example,
+`KANJI 'xyz'` causes this error. `KANJI'XYZ'` does not.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3160]]
+== SQL 3160
+
+```
+<host-variable> was declared more than once in the procedure parameter list.
+```
+
+*Cause:* You declared <host-variable> more than once in the procedure
+parameter list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3161]]
+== SQL 3161
+
+```
+<procedure-parameter> was not declared in the procedure parameter list.
+```
+
+*Cause:* You did not declare <procedure-parameter> in the parameter
+list, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3162]]
+== SQL 3162
+
+```
+Procedure parameter <name> was not used.
+```
+
+Where <name> is the name of the procedure parameter.
+
+*Cause:* Trafodion did not use procedure parameter <name>.
+
+*Effect:* None.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-3163]]
+== SQL 3163
+
+```
+Host variable <name> appears more than once in the INTO list. Execution results will be undefined.
+```
+
+Where <name> is the host variable.
+
+*Cause:* You specified an INSERT statement whose INTO list includes host
+variable <name> more than once.
+
+*Effect:* Execution results are undefined.
+
+*Recovery:* This is an informational message only. No corrective action
+is needed, but you might want to rewrite your query.
+
+<<<
+[[SQL-3164]]
+== SQL 3164
+
+```
+There is a data type mismatch between output host variable and selected value.
+```
+
+*Cause:* A data type mismatch occurred between the output host variable
+and the selected value in the statement you specified.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3165]]
+== SQL 3165
+
+```
+The precision or exponent value specified in <value> was less than the minimum allowed or greater than the maximum allowed.
+```
+
+*Cause:* You specified a statement in which you exceed the min or max
+precision or the exponent <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3166]]
+== SQL 3166
+
+```
+The value specified in the float or double <value> was less than the minimum allowed or greater than the maximum allowed.
+```
+
+*Cause:* You specified a statement in which you exceed the min or max
+precision for float or double <value>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3167]]
+== SQL 3167
+
+```
+Duplicate [ NOT ] DROPPABLE clauses were specified.
+```
+
+*Cause:* You specified a statement with more than one [NOT] DROPPABLE
+clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3168]]
+== SQL 3168
+
+```
+The FOR . . . ACCESS clause is not allowed in a CREATE VIEW statement.
+```
+
+*Cause:* You specified a CREATE VIEW statement with the FOR . . . ACCESS
+clause, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3169]]
+== SQL 3169
+
+```
+<name> is not a known collation.
+```
+
+*Cause:* You attempted to use a collation that is not a known collation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3171]]
+== SQL 3171
+
+```
+Transaction statements are not allowed in compound statements.
+```
+
+*Cause:* You specified a compound statement that contains transaction
+statements, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3172]]
+== SQL 3172
+
+```
+EXIT is not allowed in a compound statement.
+```
+
+*Cause:* You specified a compound statement that contains an EXIT
+command.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3173]]
+== SQL 3173
+
+```
+UPDATE STATISTICS is not allowed in a compound statement.
+```
+
+*Cause:* You specified a compound statement that contains an UPDATE
+STATISTICS command.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3174]]
+== SQL 3174
+
+```
+DDL statements are not allowed in compound statements.
+```
+
+*Cause:* You specified a compound statement that contains DDL
+statements.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3175]]
+== SQL 3175
+
+```
+Dynamic SQL statements are not allowed in compound statements.
+```
+
+*Cause:* You specified a compound statement that contains dynamic
+Trafodion statements.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3176]]
+== SQL 3176
+
+```
+Subqueries are not allowed in the IF Condition.
+```
+
+*Cause:* You specified an IF statement that contains a subquery.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3177]]
+== SQL 3177
+
+```
+Character set <name> requires an even number of characters in the length declaration of the data type.
+```
+
+Where <name> is the name of the character set.
+
+*Cause:* You specified a character set with an odd number of characters
+in the length declaration of the data type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3178]]
+== SQL 3178
+
+```
+One or more of the following external (host-language) data types incorrectly appears within the SQL query or operation: <name>.
+```
+
+*Cause:* You specified a Trafodion query or attempted
+to perform an operation with an incorrect data type.
+
+The operation fails.
+
+Correct the syntax and resubmit.
+
+<<<
+[[SQL-3179]]
+== SQL 3179
+
+```
+Collation <name-1> is not defined on the character set <name-2>.
+```
+
+Where <name-1> is the name of the collation.
+
+Where <name-2> is the character set name.
+
+*Cause:* You attempted to used a collation name that is not defined on
+the character set. A valid collation name is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3180]]
+== SQL 3180
+
+```
+STREAM statements are not allowed in compound statements.
+```
+
+*Cause:* You specified a compound statement that contains a STREAM
+statement, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3181]]
+== SQL 3181
+
+```
+Specified name is not a valid three part ANSI name.
+```
+
+*Cause:* You specified an invalid logical name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3182]]
+== SQL 3182
+
+```
+Extra semicolon(;) in a compound statement.
+```
+
+*Cause:* You specified an extra semicolon in a compound statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3183]]
+== SQL 3183
+
+```
+Duplicate <clause-name> clauses were specified.
+```
+
+Where <clause-name> is the clause specified.
+
+*Cause:* You specified a CREATE PROCEDURE containing multiple
+occurrences of the <clause-name> clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3184]]
+== SQL 3184
+
+```
+An invalid SQLSTATE value <string-1> was found. Message: <string-2>
+```
+
+Where <string-1> is the illegal SQLSTATE value.
+
+*Cause:* You attempted to use an illegal SQLSTATE value. A valid
+SQLSTATE value is a single quoted string value that begins with an "S"
+or an "s" followed by a four-digit integer.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a valid SQLSTATE value and resubmit.
+
+<<<
+[[SQL-3185]]
+== SQL 3185
+
+```
+SIGNAL parameter 3 must be of type string.
+```
+
+*Cause:* You attempted a SIGNAL statement with a third parameter that is
+not a quoted string.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a parameter that is a quoted string and resubmit.
+
+[[SQL-3186]]
+== SQL 3186
+
+```
+<string>: Dynamic parameters and host variables are currently not allowed in DDL.
+```
+
+Where <string> is the dynamic parameter or host variable that was
+specified.
+
+*Cause:* Trafodion does not support the use of
+dynamic parameters or host variables in DDL statements.
+The operation fails.
+
+*Recovery:* Remove occurrences of dynamic parameters or host variables and
+resubmit.
+
+<<<
+[[SQL-3187]]
+== SQL 3187
+
+```
+Specifying a specific stream with SET STREAM TIMEOUT is not allowed.
+```
+
+*Cause:* You attempted to use a SET STREAM TIMEOUT statement, which is
+not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-3188]]
+== SQL 3188
+
+```
+A NOT DROPPABLE primary key constraint must be defined when STORE BY primary key is specified.
+```
+
+*Cause:* You specified a STORE BY primary key but did not define a NOT
+DROPPABLE primary key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3189]]
+== SQL 3189
+
+```
+Setting a lock timeout is not allowed on a view.
+```
+
+*Cause:* You attempted to set a lock timeout on a view, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-3192]]
+== SQL 3192
+
+```
+Union operands <table-1> and <table-2> have different access/lock modes.
+```
+
+*Cause:* Trafodion attempted to compile a UNION
+query that has an access/lock mode that can be applied to both branches
+of the access/lock mode or only to the second branch of the UNION.
+
+*Effect:* The access/lock mode is applied only to the second branch of
+the UNION.
+
+*Recovery:* Specify that the access/lock mode apply to both branches and
+resubmit.
+
+<<<
+[[SQL-3193]]
+== SQL 3193
+
+```
+SIGNAL SQLSTATE= <string>, message: <string-1>.
+```
+
+Where <string> is the SIGNAL SQLSTATE value.
+
+Where <string-1> is the SIGNAL text message.
+
+*Cause:* You attempted a SIGNAL statement. SIGNAL statements are
+commonly used as an action for a trigger in a compound statement or in a
+user application.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-3195]]
+== SQL 3195
+
+```
+Table creation with data type <dtype> is not supported.
+```
+
+Where <dtype> is a data type specified for a column.
+
+*Cause:* The data type specified for a column in a CREATE TABLE
+statement is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the data and resubmit.
+
+<<<
+[[SQL-3196]]
+== SQL 3196
+
+```
+Only one access clause for may be specified for a single table SELECT.
+```
+
+*Cause:* You specified two or more table-level access options for the
+same table reference.
+
+*Effect:* The offending SQL statement is rejected with an error.
+
+*Recovery:* Remove all but one of the table-level access options for
+each table reference.
+
+[[SQL-3197]]
+== SQL 3197
+
+```
+Only one lock clause may be specified for a single table SELECT.
+```
+
+*Cause:* You specified two or more table-level lock options for the same
+table reference.
+The offending SQL statement is rejected with an error.
+
+*Recovery:* Remove all but one of the table-level access options for each table
+reference.
+
+<<<
+[[SQL-3199]]
+== SQL 3199
+
+```
+Column <col-name> is incorrectly specified. Keywords ASCENDING and DESCENDING are not allowed in the partitioning key list.
+```
+
+Where <col-name> is the name of the column.
+
+*Cause:* You cannot specify ordering for columns of a partitioning key
+clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove any of the following keywords from the columns
+specified in the PARTITION clause: ASCENDING, ASC, DESCENDING, DESC, and
+resubmit.
+
+[[SQL-3201]]
+== SQL 3201
+
+```
+EXTERNAL PATH clause is required.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, you omitted the mandatory
+EXTERNAL PATH clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3202]]
+== SQL 3202
+
+```
+PARAMETER STYLE clause is required.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, you omitted the mandatory
+PARAMETER STYLE clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3203]]
+== SQL 3203
+
+```
+LANGUAGE clause is required.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, you omitted this mandatory
+LANGUAGE clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3204]]
+== SQL 3204
+
+```
+EXTERNAL NAME clause is badly formed.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, the EXTERNAL NAME clause you
+specified does not conform to the required syntax.
+
+*Effect:* Trafodion is unable to create the
+procedure.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-3205]]
+== SQL 3205
+
+```
+EXTERNAL NAME clause is required.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, you omitted the mandatory
+EXTERNAL NAME clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-3206]]
+== SQL 3206
+
+```
+The name for an object of this type must be fully qualified, or set NAMETYPE ANSI.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, you specified a partially
+qualified name when NAMETYPE was not set to ANSI.
+
+*Effect:* The operation fails.
+
+*Recovery:* Set NAMETYPE ANSI or fully qualify the name.
+
+[[SQL-3207]]
+== SQL 3207
+
+```
+Value for DYNAMIC RESULT SETS must be zero.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, you specified the optional
+DYNAMIC RESULT SETS clause with nonzero value.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the clause or use the value zero, and then resubmit.
+
+<<<
+[[SQL-3208]]
+== SQL 3208
+
+```
+UNSIGNED numeric is not allowed for routine parameter.
+```
+
+*Cause:* In the CREATE PROCEDURE statement, one of the parameters you
+specified is an unsigned numeric.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the parameter specification to SIGNED.
+
+[[SQL-3209]]
+== SQL 3209
+
+```
+Maximum length of LONGWVARCHAR is <value>.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (columnname
+longwvarchar(N)) where N >current MAX_LONG_WVARCHAR_DEFAULT_SIZE
+setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Decrease the CREATE TABLE statement's longwvarchar column
+width N or increase the current MAX_LONG_WVARCHAR_DEFAULT_SIZE setting
+and resubmit.
+
+<<<
+[[SQL-3210]]
+== SQL 3210
+
+```
+Minimum length of LONGWVARCHAR is <value>.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (columnname
+longwvarchar(N)) where N < current MIN_LONG_WVARCHAR_DEFAULT_SIZE
+setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Increase the CREATE TABLE statement's longwvarchar column
+width N or decrease the current MIN_LONG_WVARCHAR_DEFAULT_SIZE setting
+and resubmit.
+
+[[SQL-3211]]
+== SQL 3211
+
+```
+Maximum length of LONG VARBINARY is <value>.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (columnname long
+varbinary(N)) where N > current MAX_LONG_VARCHAR_DEFAULT_SIZE setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Decrease the CREATE TABLE statement's long varbinary column
+width N or increase the current MAX_LONG_VARCHAR_DEFAULT_SIZE setting
+and resubmit.
+
+<<<
+[[SQL-3212]]
+== SQL 3212
+
+```
+Minimum length of LONG VARBINARY is <value>.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (columnname long
+varbinary(N)) where N < current MIN_LONG_VARCHAR_DEFAULT_SIZE setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Increase the CREATE TABLE statement's long varbinary column
+width N or decrease the current MIN_LONG_VARCHAR_DEFAULT_SIZE setting
+and resubmit.
+
+[[SQL-3213]]
+== SQL 3213
+
+```
+Maximum length of LONG VARCHAR is <value>.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (columnname long
+varchar(N)) where N > current MAX_LONG_VARCHAR_DEFAULT_SIZE setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Decrease the CREATE TABLE statement's long varchar column
+width N or increase the current MAX_LONG_VARCHAR_DEFAULT_SIZE setting
+and resubmit.
+
+<<<
+[[SQL-3214]]
+== SQL 3214
+
+```
+Minimum length of LONG VARCHAR is <value>.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (columnname long
+varchar(N) where N < current MIN_LONG_VARCHAR_DEFAULT_SIZE setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Decrease the CREATE TABLE statement's long varchar column
+width N or increase the current MIN_LONG_VARCHAR_DEFAULT_SIZE setting
+and resubmit.
+
+[[SQL-3215]]
+== SQL 3215
+
+```
+Computed LONG VARCHAR length len1 is below minimum len2.
+```
+
+*Cause:* You attempted a CREATE TABLE table name (c1 longvarchar, c2
+long varchar,. . .cn long varchar) and the computed long varchar columns'
+width is below the current MIN_LONG_VARCHAR_DEFAULT_SIZE setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Decrease the number of long varchar columns in the CREATE
+TABLE statement or increase the current MIN_LONG_VARCHAR_DEFAULT_SIZE
+setting and resubmit.
+
+<<<
+[[SQL-3216]]
+== SQL 3216
+
+```
+Computed LONG WVARCHAR length <value-1> is below minimum <value-2>.
+```
+
+*Cause:* You attempted a `CREATE TABLE table name (c1 longwvarchar, c2
+longwvarchar,. . . cn longwvarchar)` and the computed width for each of the
+longwvarchar columns falls below the current
+MIN_LONG_WVARCHAR_DEFAULT_SIZE setting.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reduce the number of longwvarchar columns in the CREATE
+TABLE statement or increase the current MIN_LONG_WVARCHAR_DEFAULT_SIZE
+setting and resubmit.
+
+[[SQL-3217]]
+== SQL 3217
+
+```
+Character set <name> is not allowed in the <function-name> function.
+```
+
+*Cause:* You specified KANJI or KSC5601 character expressions to
+function LOWER, LCASE, UPPER, UPSHIFT, or UCASE.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not use KANJI or KSC5601 character expressions in these
+functions.
+
+<<<
+[[SQL-3218]]
+== SQL 3218
+
+```
+A table reference cannot contain DELETE or UPDATE in a CREATE VIE statement.
+```
+
+*Cause:* A create view statement was issued with a delete or update
+operation as a table reference.
+
+*Effect:* The statement does not compile.
+
+*Recovery:* Do not use delete or update in a CREATE view statement.
+
+[[SQL-3220]]
+== SQL 3220
+
+```
+SHOWDDL failed for object <object-name> because an SQL/MP display option was used on a Trafodion object.
+```
+
+Where <object-name> specifies the ANSI name of a table, view, or ALIAS.
+
+*Cause:* SHOWDDL was given the display option with a Trafodion 
+table given as an argument.
+
+*Effect:* SHOWDDL does not display output.
+
+*Recovery:* Reissue the command without the display option or specify an
+object.
+
+<<<
+[[SQL-3225]]
+== SQL 3225
+
+```
+SHOWLABEL failed for object <object-name>. The object does not exist in the given namespace <name-space>, the object is not accessible, or the object type is not supported. SHOWLABEL supports only Trafodion tables, views and indexes.
+```
+
+Where <object-name> is the specified name of an object.
+
+Where <name-space> is either the TABLE or INDEX namespace. The default
+namespace for SHOWLABEL is TABLE.
+
+*Cause:* SHOWLABEL was unable to find the object in the _namespace_
+namespace, the object is not accessible, or the object is unsupported.
+The table namespace is used as the default.
+
+*Effect:* SHOWLABEL does not display output.
+
+*Recovery:* Reissue the command with an object name and corresponding
+namespace of a valid, supported, and accessible object.
+
+[[SQL-3226]]
+== SQL 3226
+
+```
+SHOWLABEL failed for physical location name <location-name>. Object does not exist or object type is not supported. SHOWLABEL supports only Trafodion tables, views, and indexes.
+```
+
+Where <location-name> specifies the physical location name of a
+Trafodion object.
+
+*Cause:* SHOWLABEL was given an invalid physical location as an
+argument.
+
+*Effect:* SHOWLABEL does not display output.
+
+*Recovery:* Reissue the command with a valid location name.
+
+<<<
+[[SQL-3228]]
+== SQL 3228
+
+```
+SHOWLABEL failed for physical location name <location-name>. SHOWLABEL supports only the data forks of Trafodion tables, views, and indexes.
+```
+
+Where <location-name> specifies the physical location name of a
+Trafodion object.
+
+*Cause:* SHOWLABEL supports only the physical names of data forks of 
+Trafodion objects (physical location names that end in "00"). SHOWLABEL
+does not support resource forks.
+
+*Effect:* SHOWLABEL does not display output.
+
+*Recovery:* Reissue the command with a valid location name.
+
+[[SQL-3229]]
+== SQL 3229
+
+```
+SHOWLABEL failed for object <name>. SHOWLABEL does not support synonyms.
+```
+
+*Cause:* The requested operation is not allowed on synonyms.
+
+*Effect:* The operation fails.
+
+*Recovery:* Try the command using the reference object name.
+
+<<<
+[[SQL-3230]]
+== SQL 3230
+
+```
+The synonym must be defined in the same catalog as the specified table or view.
+```
+
+*Cause:* You specified a synonym that has a different catalog than the
+object.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the synonym and the object have
+the same catalog and schema values.
+
+[[SQL-3400]]
+== SQL 3400
+
+```
+Invalid code point value for character set <name>.
+```
+
+*Cause:* There is an undefined character in the character set.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the invalid character and resubmit.
+
+<<<
+[[SQL-3401]]
+== SQL 3401
+
+```
+Hexadecimal representation of string literals associated with character set <name> is not supported.
+```
+
+*Cause:* You used a hexadecimal format to represent a character string
+that is not supported by Trafodion.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not use a hexadecimal format for the character set you
+specified.
+
+[[SQL-3402]]
+== SQL 3402
+
+```
+The format of the <value> hexadecimal string literal is not valid.
+```
+
+*Cause:* You either used illegal hexadecimal digits, supplied an odd
+number of hexadecimal digits, or misplaced space separators.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify the string in the correct hexadecimal format and
+resubmit.
+
+<<<
+[[SQL-3403]]
+== SQL 3403
+
+```
+Function <name-1> does not take an operand with character set <name-2>.
+```
+
+*Cause:* You specified a character operand with a character set that the
+function does not support.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not use the character operand with that character set in
+the function.
+
+[[SQL-3404]]
+== SQL 3404
+
+```
+Character set <name>, to which SQL_TEXT is aliased, is not allowed for a SQL module.
+```
+
+*Cause:* You specified SQL_TEXT as the module character name set.
+SQL_TEXT is synonymous with UCS2, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace SQL_TEXT with ISO88591 and resubmit.
+
+<<<
+[[SQL-3405]]
+== SQL 3405
+
+```
+A logical partition name cannot be specified in the LOCATION clause of the CREATE statement of this object.
+```
+
+*Cause:* You cannot specify the logical partition name in the LOCATION
+clause of the create statement of catalog, procedure, view and
+materialized view object types.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the logical partition name syntax from the LOCATION
+clause and resubmit.
+
+[[SQL-3406]]
+== SQL 3406
+
+```
+A DDL statement could not be translated into a statement consisting of single-byte characters for processing.
+```
+
+*Cause:* The DDL statement coded in unicode contains non-ISO88591
+characters. Trafodion does not support arbitrary
+unicode characters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove non-ISO88591 characters and resubmit.
+
+<<<
+[[SQL-3411]]
+== SQL 3411
+
+```
+Expressions are not allowed as IDENTITY column values. Specify DEFAULT or supply a largeint value.
+```
+
+*Cause:* Tried to specify an expression in place of a constant largeint
+value or DEFAULT.
+
+*Effect:* The operation failed.
+
+*Recovery:* Specify DEFAULT or supply a largeint value.
+
+[[SQL-3412]]
+== SQL 3412
+
+```
+IDENTITY column <column-name> must be the primary key or must have a unique index on it.
+```
+
+*Cause:* Tried to INSERT a system generated value for the IDENTITY
+column, which does not have a unique index on it.
+
+*Effect:* The operation failed.
+
+*Recovery:* Create a unique index on the IDENTITY column. Note that the
+unique index must only be on the IDENTITY column.
+
+<<<
+[[SQL-3413]]
+== SQL 3413
+
+```
+The NOT NULL constraint on IDENTITY column <column-name> must be NOT DROPPABLE.
+```
+
+*Cause:* Specified DROPPABLE attribute on the NOT NULL constraint on the
+IDENTITY column.
+
+*Effect:* The operation failed.
+
+*Recovery:* Specify NOT DROPPABLE attribute on the NOT NULL constraint
+on the IDENTITY column.
+
+[[SQL-3414]]
+== SQL 3414
+
+```
+For an IDENTITY column <column-name>, the tuple list cannot have mixed user specified and DEFAULT values. Specify values for all or specify DEFAULT for all.
+```
+
+*Cause:* Provided mixed user specified and DEFAULT values in a tuple
+list for the IDENTITY column.
+
+*Effect:* The operation failed.
+
+*Recovery:* Specify values for all the tuples in the list or specify
+DEFAULT for all the tuples in the list.
+

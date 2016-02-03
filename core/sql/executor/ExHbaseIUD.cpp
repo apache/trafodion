@@ -51,7 +51,7 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE;
+	step_ = CLOSE_AND_DONE;
 
       switch (step_)
 	{
@@ -201,16 +201,17 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-
-	    step_ = DONE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
 	case DONE:
+        case CLOSE_AND_DONE:
 	  {
+            if (step_ == CLOSE_AND_DONE)
+               ehi_->close();
 	    if (handleDone(rc, matches_))
 	      return rc;
-
 	    step_ = NOT_STARTED;
 	  }
 	  break;
@@ -238,7 +239,7 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE;
+	step_ = CLOSE_AND_DONE;
 
       switch (step_)
 	{
@@ -371,13 +372,15 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-
-	    step_ = DONE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
 	case DONE:
+        case CLOSE_AND_DONE:
 	  {
+            if (step_ == CLOSE_AND_DONE)
+               ehi_->close();
 	    if (handleDone(rc, matches_))
 	      return rc;
 
@@ -408,7 +411,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE;
+	step_ = CLOSE_AND_DONE;
 
       switch (step_)
 	{
@@ -698,15 +701,15 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-
-	    retcode = ehi_->close();
-
-	    step_ = DONE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
 	case DONE:
+        case CLOSE_AND_DONE:
 	  {
+            if (step_ == CLOSE_AND_DONE)
+               ehi_->close();
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
 
@@ -754,19 +757,18 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = ALL_DONE;
+	step_ = CLOSE_AND_DONE;
      else if (pentry_down->downState.request == ex_queue::GET_EOD)
           if (currRowNum_ > rowsInserted_)
 	{
 	  step_ = PROCESS_INSERT_FLUSH_AND_CLOSE;
-
 	}
-          else
-          {
+        else
+        {
             if (lastHandledStep_ == ALL_DONE)
                matches_=0;
             step_ = ALL_DONE;
-          }
+        }
       switch (step_)
 	{
 	case NOT_STARTED:
@@ -909,11 +911,10 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		break;
 	      }
 
-	    step_ = PROCESS_INSERT;
+	    step_ = PROCESS_INSERT_AND_CLOSE;
 	  }
 	  break;
 
-	case PROCESS_INSERT:
 	case PROCESS_INSERT_AND_CLOSE:
 	case PROCESS_INSERT_FLUSH_AND_CLOSE:
 	  {
@@ -945,8 +946,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	      step_ = FLUSH_BUFFERS;
 	    else if (step_ == PROCESS_INSERT_AND_CLOSE)
 	      step_ = INSERT_CLOSE;
-	    else
-              step_ = ALL_DONE;
 	  }
 	  break;
         case COMPLETE_ASYNC_INSERT:
@@ -1007,10 +1006,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-
-	    retcode = ehi_->close();
-
-	    step_ = ALL_DONE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
 
@@ -1029,8 +1025,11 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	  break;
 
 	case DONE:
+        case CLOSE_AND_DONE:
 	case ALL_DONE:
 	  {
+            if (step_ == CLOSE_AND_DONE)
+               ehi_->close();
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
 
@@ -1056,7 +1055,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		return WORK_CALL_AGAIN;
 	      }
 
-	    if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
+	    if (handleDone(rc, (step_ == ALL_DONE  ? matches_ : 0)))
 	      return rc;
 	    lastHandledStep_ = step_;
 
@@ -2787,6 +2786,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
+					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScanner(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
 					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
@@ -3201,6 +3201,7 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 					   columns, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
+					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScanner(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
 					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
@@ -3865,7 +3866,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = ALL_DONE;
+	step_ = CLOSE_AND_DONE;
       else if (pentry_down->downState.request == ex_queue::GET_EOD) {
          if (numRowsInDirectBuffer() > 0) {
             if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
@@ -4028,9 +4029,9 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		break;
 	    }
 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
-	      step_ = PROCESS_DELETE;
+	      step_ = PROCESS_DELETE_AND_CLOSE;
 	    else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
-	      step_ = PROCESS_UPDATE;
+	      step_ = PROCESS_UPDATE_AND_CLOSE;
 	    else
 	      step_ = HANDLE_ERROR;
 	  }
@@ -4079,7 +4080,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
             step_ = ROW_DONE;
           }
           break;
-	case PROCESS_DELETE:
 	case PROCESS_DELETE_AND_CLOSE:
 	  {
             numRowsInVsbbBuffer_ = patchDirectRowIDBuffers();
@@ -4104,10 +4104,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
-	    if (step_ == PROCESS_DELETE_AND_CLOSE)
-	      step_ = RS_CLOSE;
-	    else
-	      step_ = DONE;
+	    step_ = RS_CLOSE;
 	  }
 	  break;
 
@@ -4178,7 +4175,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    step_ = NEXT_ROW;
 	  }
 	  break;
-	case PROCESS_UPDATE:
 	case PROCESS_UPDATE_AND_CLOSE:
 	  {
             numRowsInVsbbBuffer_ = patchDirectRowBuffers();
@@ -4205,10 +4201,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
 	    }
-	    if (step_ == PROCESS_UPDATE_AND_CLOSE)
-	      step_ = RS_CLOSE;
-	    else
-	      step_ = DONE;
+	    step_ = RS_CLOSE;
 	  }
 	  break;
       case COMPLETE_ASYNC_OPERATION:
@@ -4248,11 +4241,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInVsbbBuffer_);
             }
-            if ((lastHandledStep_ == PROCESS_UPDATE_AND_CLOSE)
-                 || (lastHandledStep_ == PROCESS_DELETE_AND_CLOSE))
-              step_ = RS_CLOSE;
-            else
-              step_ = DONE;
+            step_ = RS_CLOSE;
           }
           break;
 	case RS_CLOSE:
@@ -4274,9 +4263,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
 	    if (handleError(rc))
 	      return rc;
-
-	    retcode = ehi_->close();
-	    step_ = ALL_DONE;
+	    step_ = CLOSE_AND_DONE;
 	  }
 	  break;
         case ROW_DONE:
@@ -4287,8 +4274,11 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
           }
           break;
 	case DONE:
+        case CLOSE_AND_DONE:
 	case ALL_DONE:
 	  {
+            if (step_ == CLOSE_AND_DONE)
+               ehi_->close();
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
 
@@ -4324,7 +4314,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 
 	    if (step_ == DONE)
 	       step_ = SETUP_UMD;
-	    else 
+	    else  
 	       step_ = NOT_STARTED;
 	  }
 	  break;

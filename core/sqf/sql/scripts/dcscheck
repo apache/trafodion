@@ -84,7 +84,7 @@ if [[ $sq_stat == 0 ]]; then
 
 ### Get the node where the active master is running
    if [[ ! -z $CLUSTERNAME ]]; then
-     if [[ ! -z $ENABLE_HA ]]; then
+     if [[ $ENABLE_HA == "true" ]]; then
         echo "Cluster Configuration: HA"
         floatip_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
         floatip_port=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f3`

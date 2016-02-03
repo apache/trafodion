@@ -26,14 +26,6 @@
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
 
-if [ $node_count -eq 1 ]; then
-    TRAF_PDSH=""
-    TRAF_PDCP="/bin/cp"
-else
-    TRAF_PDSH="pdsh $MY_NODES"
-    TRAF_PDCP="pdcp -r $MY_NODES"
-fi
-
 ###### Setting up CLI for AWS as sudo id
 
 if [[ ! -z $AWS_CLOUD ]]; then

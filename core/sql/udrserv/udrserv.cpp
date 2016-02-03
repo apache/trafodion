@@ -59,6 +59,7 @@
 #include "LmRoutine.h"
 #include "ComDefs.h"
 #include "sqludr.h"
+#include "NAUserId.h"
 
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_udrserv)
@@ -2018,7 +2019,7 @@ static Int32 invokeUdrMethod(const char *method,
 
   ComRoutineExternalSecurity externalSecurity =
 		                     COM_ROUTINE_EXTERNAL_SECURITY_INVOKER;
-  Int32 routineOwnerId = SUPER_USER; //dbRoot
+  Int32 routineOwnerId = ROOT_USER_ID; //dbRoot
 
   while (result == LM_OK && i++ < nTimesToInvoke)
   {

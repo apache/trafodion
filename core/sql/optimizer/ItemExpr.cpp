@@ -13408,6 +13408,8 @@ Translate::Translate(ItemExpr *valPtr, NAString* map_table_name)
     map_table_id_ = Translate::SJIS_TO_UTF8;
   else if ( _strcmpi(map_table_name->data(), "UTF8TOSJIS") == 0 )
     map_table_id_ = Translate::UTF8_TO_SJIS;
+  else if ( _strcmpi(map_table_name->data(), "GBKTOUTF8") == 0 )
+    map_table_id_ = Translate::GBK_TO_UTF8;
 
                 else
                   if ( _strcmpi(map_table_name->data(), "KANJITOISO88591") == 0 )

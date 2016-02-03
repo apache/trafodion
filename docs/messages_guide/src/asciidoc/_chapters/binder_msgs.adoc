@@ -1,0 +1,2886 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[binder-and-compilation-messages]]
+= Binder and Compilation Messages
+
+[[through-4999]]
+= (4000 through 4999)
+
+[[SQL-4001]]
+== SQL 4001
+
+```
+Column <name-1> is not found. Tables in scope: <name-2>. Default schema: <name-3>.
+```
+
+*Cause:* You referenced column <name-1>, which the Trafodion database
+software could not find. The table <name-2> or tables in the scope of the
+column reference and the default schema <name-3> appear.
+
+A common reason for this error is that you have used double quotes
+instead of single quotes. For example:
+
+```
+>> SELECT * FROM tb WHERE b > "b";
+```
+
+result in this error:
+
+```
+*** ERROR[4001] Column "b" is not found. Tables in scope: CAT.SCH.TB. Default schema: CAT.SCH.
+```
+
+In this example, the user specified double quotes, which indicate a
+delimited identifier, rather than single quotes, which indicate an alpha
+literal.
+
+The user probably intended:
+
+```
+>> SELECT * FROM tb WHERE b > 'b' ; -- alpha literal or
+>> SELECT * FROM tb WHERE b > "v" ; -- table tb (a int, b char, "v" char)
+```
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the table and column can be
+found, and resubmit.
+
+[[SQL-4002]]
+== SQL 4002
+
+```
+Column <name-1> is not found. Table <name-2> not exposed. Tables in scope: <name-3>. Default schema: <name-4>.
+```
+
+*Cause:* You referenced column <name-1>, which the Trafodion database
+software could not find. Table <name-2> is not exposed. The table <name-3>
+or tables in the scope of the column reference and the default schema
+<name-4> appear.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the table and column can be
+found, and resubmit.
+
+[[SQL-4003]]
+== SQL 4003
+
+```
+Column <name-1> is not a column in table <name-2>, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+```
+
+*Cause:* You either attempted to select column <name-1>, which does not
+exist, or referenced a column that is included in a NATURAL JOIN or JOIN
+USING and is now a common column. If a column is part of a JOIN
+operation, you no longer qualify its name with its original table
+<name-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit. If the column is part of a
+JOIN, remove the table qualifier and use only the column name.
+
+[[SQL-4004]]
+== SQL 4004
+
+```
+Column name <name-1> is ambiguous. Tables in scope: <names>. Default schema: <name-2>.
+```
+
+*Cause:* You referenced column <name-1>, whose parent table is ambiguous.
+The table <names> or tables in the scope of the column reference and
+default schema <name-2> appear.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the table's parent table is
+clear, and resubmit.
+
+[[SQL-4005]]
+== SQL 4005
+
+```
+Column reference <name> must be a grouping column or be specified within an aggregate.
+```
+
+*Cause:* You referenced column <name>, which is not a grouping column or is not specified within an aggregate, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the column reference and resubmit.
+
+[[SQL-4006]]
+== SQL 4006
+
+```
+Within an aggregate, all column references must come from the same scope.
+```
+
+*Cause:* You referred to columns that do not come from the same scope.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the column references and resubmit.
+
+[[SQL-4007]]
+== SQL 4007
+
+```
+The select list index <value-1> is out of range. It must be between 1 and the number of select expressions, which in this case is <value-2>.
+```
+
+*Cause:* You specified an index <value-1> that is out of the range of
+between 1 and the <value-2> of SELECT expressions.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the index and resubmit.
+
+[[SQL-4008]]
+== SQL 4008
+
+```
+A sub query is not allowed inside an aggregate function.
+```
+
+*Cause:* You specified a sub query within an aggregate function, which is
+not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4009]]
+== SQL 4009
+
+```
+An aggregate is not allowed inside an aggregate function.
+```
+
+*Cause:* You specified an aggregate inside an aggregate function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4010]]
+== SQL 4010
+
+```
+There are no columns with the correlation name <table-name>.
+```
+
+*Cause:* You specified columns with the <table-name> qualifier, which
+does not exist or is not in scope at this point in the query.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4011]]
+== SQL 4011
+
+```
+Reference made to column <name> via star (*) is ambiguous.
+```
+
+Where <name> is the name of the column.
+
+*Cause:* You referred to column <name> using the `SELECT *` or `SELECT TBL.*`
+reference, and the Trafodion database software could not locate the column
+because the reference is ambiguous.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4012]]
+== SQL 4012
+
+```
+Column reference <name> must be a grouping column or be specified within an aggregate. On this grouped table a star reference is not allowed.
+```
+
+*Cause:* You referred to column <name> with a SELECT * or SELECT TBL.*
+reference. Column <name> must be a grouping column or be specified
+within an aggregate.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4013]]
+== SQL 4013
+
+```
+Column <name> is a system column and cannot be updated or inserted into.
+```
+
+*Cause:* You attempted to update or insert into a system column
+<name>, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax to refer to a non-system column.
+
+[[SQL-4014]]
+== SQL 4014
+
+```
+The operands of an INTERSECT must be of equal degree.
+```
+
+*Cause:* You created an INTERSECT with operands of unequal degree. They
+must be equal.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4015]]
+== SQL 4015
+
+```
+Aggregate functions are placed incorrectly: <name>.
+```
+
+*Cause:* You used aggregate function <name> on an ungrouped table. For
+example, you used an aggregate function in a predicate (WHERE or
+HAVING), but the aggregated columns come from the local scope instead of
+an outer scope.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4016]]
+== SQL 4016
+
+```
+The number of derived columns (<value-1>) must equal the degree of the derived table (<value-2>).
+```
+
+*Cause:* You specified a statement in which the number of derived
+columns (<value-1>) does not equal the degree of the derived table
+(<value-2>). They must be equal.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4017]]
+== SQL 4017
+
+```
+Derived column name <name> was specified more than once.
+```
+
+*Cause:* You specified column <name> more than once.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4018]]
+== SQL 4018
+
+```
+Rows cannot be deleted from an entry-sequenced table.
+```
+
+*Cause:* You attempted to delete rows from an entry-sequenced table,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4019]]
+== SQL 4019
+
+```
+The select list of a sub query in a select list must be scalar (degree of one).
+```
+
+*Cause:* You specified a select list that is not scalar.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4020]]
+== SQL 4020
+
+```
+Arithmetic operations on row value constructors are not allowed.
+```
+
+*Cause:* You attempted to perform an arithmetic operation on row value
+constructors, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4021]]
+== SQL 4021
+
+```
+The select list contains a non-grouping non-aggregated column, <name>.
+```
+
+*Cause:* You specified a select list that contains a non-grouping,
+non-aggregated column <name>, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4022]]
+== SQL 4022
+
+```
+Target column <name> was specified more than once.
+```
+
+*Cause:* You specified column <name> more than once.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4023]]
+== SQL 4023
+
+```
+The degree of each row value constructor (<value>) must equal the degree of the target table column list (<value>).
+```
+
+*Cause:* You specified a statement, such as INSERT, in which a <row-value> constructor does not equal the degree of the target table column
+list. For example:
+
+```
+INSERT INTO table (acol, bcol) VALUES (1, 2, 3);
+```
+
+is wrong because the number of columns does not match the number of
+values.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4024]]
+== SQL 4024
+
+```
+Column <name> has no default value, so it must be explicitly specified in the insert column list.
+```
+
+*Cause:* You attempted to insert column <name> into a table, and the
+column has no default value. For example:
+
+```
+INSERT INTO table (acol, bcol, ccol) VALUES (1, 2);
+```
+
+is wrong if ccol does not have a default value and you did not specify
+its value. The column list is optional, but if you use it, you must
+explicitly specify values for columns that do not have default values.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4025]]
+== SQL 4025
+
+```
+Error while preparing constraint <name> on table <table-name>.
+```
+
+Where <table-name> is the name of the table.
+
+*Cause:* Trafodion received an error while
+preparing constraint <name> on <table-name>. See accompanying error
+messages.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4026]]
+== SQL 4026
+
+```
+Reading from and inserting into, or updating in, or deleting from the same table, <name>, is not currently supported.
+```
+
+Where <name> is the name of the table.
+
+*Cause:* You attempted to read from and insert, update, or delete within
+the same table <name>. This feature is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4027]]
+== SQL 4027
+
+```
+Table or view <name> does not permit insertions.
+```
+
+Where <name> is the name of the table.
+
+*Cause:* You attempted to insert into table <name>, which is not
+insertable.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-4028]]
+== SQL 4028
+
+```
+Table or view <name> is not updatable.
+```
+
+*Cause:* You attempted to update table <name>, which is not updatable.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-4030]]
+== SQL 4030
+
+```
+Column <name> has an invalid combination of datetime fields (internal field number, internal field number, internal field number).
+```
+
+*Cause:* You specified column <name>, which is an invalid combination of datetime fields.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4031]]
+== SQL 4031
+
+```
+Column <name> has an unknown data type, <type>.
+```
+
+*Cause:* You specified column <name> with an unknown data <type>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4032]]
+== SQL 4032
+
+```
+Column <name> has an unknown class, <class>. It is neither a system column nor a user column.
+```
+
+*Cause:* You specified column <name> with an unknown class.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4033]]
+== SQL 4033
+
+```
+Column <name> is a primary or clustering key column and cannot be updated.
+```
+
+*Cause:* You attempted to update column <name>, which is a primary or
+clustering key column that cannot be updated.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4034]]
+== SQL 4034
+
+```
+The operation (<data-type> <operation-data-type>) operation is not allowed.
+```
+
+*Cause:* You attempted to perform an arithmetic operation on a DATETIME
+field using other DATETIME or INTERVAL expressions that do not have
+identical start and end fields.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4035]]
+== SQL 4035
+
+```
+Type <specification-1> cannot be cast to type <specification-2>.
+```
+
+*Cause:* You attempted to cast type <specification-1> to another type
+<specification-2> that is not valid.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4036-]]
+== SQL 4036 
+
+```
+The source field of the EXTRACT function must be of DateTime or Interval type.
+```
+
+*Cause:* You specified a source field of the EXTRACT function that is
+not a DATETIME or INTERVAL data type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the source field type and resubmit.
+
+[[SQL-4037]]
+== SQL 4037
+
+```
+Field <name> cannot be extracted from a source of type <specification>.
+```
+
+*Cause:* You attempted to extract field <name> from a source whose type
+<specification> does not support this.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4038]]
+== SQL 4038
+
+```
+The operand of an AVG or SUM function must be numeric or interval.
+```
+
+*Cause:* You attempted to perform an AVG or SUM function with an invalid
+operand. It must be numeric or interval.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4039]]
+== SQL 4039
+
+```
+Column <name> is of type <specification-1>, incompatible with the value's type, <specification-2>.
+```
+
+*Cause:* You specified column <name> with type <specification-1>, which
+is incompatible with the type of the value.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4040]]
+== SQL 4040
+
+```
+The operands of a BETWEEN predicate must be of equal degree.
+```
+
+*Cause:* You specified operands for a BETWEEN predicate that are not of
+equal degree, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the operands are of equal degree
+and resubmit.
+
+[[SQL-4041]]
+== SQL 4041
+
+```
+Type <specification-1> cannot be compared with type <specification-2>.
+```
+
+*Cause:* You attempted to compare two type specifications that cannot be
+compared.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4042]]
+== SQL 4042
+
+```
+The operands of a comparison predicate must be of equal degree.
+```
+
+*Cause:* You specified a comparison predicate with operands that are not
+of equal degree, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4043]]
+== SQL 4043
+
+```
+The operand of function <name> must be character.
+```
+
+*Cause:* You specified an operand for function <name> that is not a
+character, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4044]]
+== SQL 4044
+
+```
+Collation <name-1> does not support the <name-2> predicate or
+```
+function.
+
+*Cause:* You specified collation <name-1>, which does not support the
+predicate or function listed in the message.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4045]]
+== SQL 4045
+
+```
+The operand of function <name> must be numeric.
+```
+
+*Cause:* You specified operands for function <name> that are not
+numeric, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4046]]
+== SQL 4046
+
+```
+The operands of function <name> must be exact numeric.
+```
+
+*Cause:* You specified operands of function <name> that are not type
+exact numeric, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4047]]
+== SQL 4047
+
+```
+The operands of function <name> must have a scale of 0.
+```
+
+*Cause:* You specified operands of function <name> that do not have a
+scale of zero (0), which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4048]]
+== SQL 4048
+
+```
+The third operand of a ternary comparison operator must be of type BOOLEAN, not <type>.
+```
+
+*Cause:* You specified the third operand of a ternary comparison
+argument with an invalid <type>. The type must be boolean.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4049]]
+== SQL 4049
+
+```
+A CASE expression cannot have a result data type of both <type-1> and <type-2>.
+```
+
+*Cause:* You specified a CASE expression with a result data type of two
+data types. It must be one of data type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4050]]
+== SQL 4050
+
+```
+The operands of the <name> predicate must be comparable character
+data types (that is, of the same character set and collation).
+```
+
+*Cause:* You specified predicate <name>, whose operands are required to
+be character, with invalid operands.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4051]]
+== SQL 4051
+
+```
+The first operand of function <name> must be character.
+```
+
+*Cause:* You specified the first operand of function <name> with a type
+other than character, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4052]]
+== SQL 4052
+
+```
+The second operand of function <name> must be numeric.
+```
+
+*Cause:* You specified the first operand of function <name> with a type
+other than numeric, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4053]]
+== SQL 4053
+
+```
+The third operand of function <name> must be numeric.
+```
+
+*Cause:* You specified the third operand of a function <name> with a
+type other than numeric, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4055]]
+== SQL 4055
+
+```
+The select lists or tuples must have comparable data types. <type-1> and <type-2> are not comparable.
+```
+
+*Cause:* You specified select lists or tuples with incompatible data
+types.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4056]]
+== SQL 4056
+
+```
+Exposed name <name> appears more than once.
+```
+
+*Cause:* You specified a statement with an exposed table <name> that
+appears more than once. For example:
+
+SELECT * FROM tblx, tblx;
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4057]]
+== SQL 4057
+
+```
+Correlation name <name-1> conflicts with qualified identifier of table <name-2>.
+```
+
+*Cause:* You specified correlation <name-1>, which conflicts with a
+qualified identifier of table <name-2>. For example:
+
+SELECT * FROM tblx, tblz, tblx;
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4059]]
+== SQL 4059
+
+```
+The first operand of function <name> must be numeric.
+```
+
+*Cause:* You specified the first operand of function <name> with a type
+other than numeric, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4060]]
+== SQL 4060
+
+```
+Reading from and inserting, or updating in, or deleting from the
+same table, <name-1>, is not currently supported. <name-1> is contained by
+view(s) <name-2>.
+```
+
+*Cause:* You attempted to read from and insert, update, or delete within
+the same table <name-1>, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4061]]
+== SQL 4061
+
+```
+Rows cannot be inserted into, or updated in, an individual table partition.
+```
+
+*Cause:* You attempted to insert or update rows in an individual table
+partition, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4062]]
+== SQL 4062
+
+```
+The preceding error actually occurred in function <name>.
+```
+
+*Cause:* Trafodion detected an error in function
+<name>. Errors that appear before this one refer to the low level
+computations that this function uses.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the function and resubmit.
+
+[[SQL-4063]]
+== SQL 4063
+
+```
+The operands of function <name> must be comparable character data types (that is, of the same character set and collation).
+```
+
+*Cause:* You specified operands for function <name> with non-comparable
+character data types.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4064]]
+== SQL 4064
+
+```
+The operands of function <name> must be compatible character data
+types (that is, of the same character set).
+```
+
+*Cause:* You specified operands for function <name> with incompatible
+character data types.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4066]]
+== SQL 4066
+
+```
+The operands of a UNION must be of equal degree.
+```
+
+*Cause:* You specified operands of a UNION statement that are not of
+equal degree, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4067]]
+== SQL 4067
+
+```
+The operands of function <name> must be character data types.
+```
+
+*Cause:* You specified invalid operands for function <name>. They must
+be operands of type character.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4068]]
+== SQL 4068
+
+```
+The operand of function <name> must contain an even number of characters.
+```
+
+*Cause:* You specified invalid operands for function <name>. They must
+contain an even number of characters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4069]]
+== SQL 4069
+
+```
+Column <name> uses an unsupported collation.
+```
+
+*Cause:* You specified a column <name> that uses an unsupported
+collation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4070]]
+== SQL 4070
+
+```
+The operand of function <name> must be exact numeric.
+```
+
+*Cause:* You specified an invalid operand for function <name>. It must
+be type exact numeric.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4071]]
+== SQL 4071
+
+```
+The first operand of function <name> must be a datetime.
+```
+
+*Cause:* You specified an invalid operand for function <name>. It must
+be datetime.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4072]]
+== SQL 4072
+
+```
+The operand of function <name> must be a datetime containing a <name>.
+```
+
+*Cause:* You specified an invalid operand for function <name>. It must
+be a datetime operand containing the variable listed in the message.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4073]]
+== SQL 4073
+
+```
+The COLLATE clause may appear only after an expression of character data type, not <data-type>.
+```
+
+*Cause:* You specified the COLLATE clause after an expression that is
+not a character data type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4074]]
+== SQL 4074
+
+```
+CONTROL QUERY successful.
+```
+
+*Cause:* The CONTROL QUERY statement completed successfully.
+
+*Effect:* None.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-4075]]
+== SQL 4075
+
+```
+Division by zero occurred in constant expression <name>.
+```
+
+*Cause:* You attempted to divide by zero in constant expression
+<name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4076]]
+== SQL 4076
+
+```
+Overflow occurred in constant expression <name>.
+```
+
+*Cause:* There is an overflow in constant expression <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4077]]
+== SQL 4077
+
+```
+Function <name> accepts only one or two operands.
+```
+
+*Cause:* You specified an invalid argument in function <name>. This
+function accepts only one or two arguments, both numeric.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4078]]
+== SQL 4078
+
+```
+Function <name> does not accept a weight operand.
+```
+
+*Cause:* You specified an invalid argument in function <name>. The
+first argument must be numeric.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4079]]
+== SQL 4079
+
+```
+The operands of function <name> must be numeric.
+```
+
+*Cause:* You specified an invalid operand in function <name>. The
+operands must be numeric.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4082]]
+== SQL 4082
+
+```
+Table, view or stored procedure <name> does not exist or is inaccessible.
+```
+
+*Cause:* You referred to table <name>, which does not exist or is
+inaccessible (for example, on a downed disk volume).
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4085]]
+== SQL 4085
+
+```
+File organization <name-1> of object <name-2> is not supported.
+```
+
+*Cause:* You specified an invalid file organization <name-1> (for
+example, "R" for Relative) for table <name-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4086]]
+== SQL 4086
+
+```
+Environment variable or define <value> does not exist.
+```
+
+*Cause:* You specified an environment variable or define <value> that
+does not exist.
+
+*Effect:* The operation fails.
+
+*Recovery:* Define the environment variable and resubmit.
+
+[[SQL-4087]]
+== SQL 4087
+
+```
+Prototype value '<value>' is not a valid qualified name.
+```
+
+*Cause:* You specified a prototype <value> that is not a valid qualified
+name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4088]]
+== SQL 4088
+
+```
+The number of values in each TRANSPOSE item of a TRANSPOSE set must be equal.
+```
+
+*Cause:* You specified a TRANSPOSE set with an unequal number of values
+in each TRANSPOSE item.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4089]]
+== SQL 4089
+
+```
+Check constraint <name> contains a sub query. This is not yet supported.
+```
+
+*Cause:* You specified a constraint <name> that contains a sub query,
+which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4093]]
+== SQL 4093
+
+```
+The number of output dynamic parameters (<value-1>) must equal the number of selected values (<value-2>).
+```
+
+*Cause:* Trafodion requires that the number of
+output dynamic parameters, <value-1), match the number of selected
+values, <value-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4094]]
+== SQL 4094
+
+```
+The number of output host variables (<value-1>) must equal the
+number of selected values (<value-2>).
+```
+
+*Cause:* Trafodion requires that the number of
+output host variables, <value-1>, match the number of selected values,
+<value-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4095]]
+== SQL 4095
+
+```
+A DEFAULT whose value is NULL is not allowed in <object-name>.
+```
+
+*Cause:* You included a NULL operand in <object-name>, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4096]]
+== SQL 4096
+
+```
+A DEFAULT specification is currently allowed only when simply
+contained in the VALUES list of an INSERT.
+```
+
+*Cause:* You specified a DEFAULT value that was not contained in the
+VALUES list of an INSERT.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4097]]
+== SQL 4097
+
+```
+A NULL operand is not allowed in function <name>.
+```
+
+*Cause:* You attempted to use a NULL operand in function <name>, which
+is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4098]]
+== SQL 4098
+
+```
+A NULL operand is not allowed in operation <name>.
+```
+
+*Cause:* You included a NULL operand in operation <name>, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4099]]
+== SQL 4099
+
+```
+A NULL operand is not allowed in predicate <name>.
+```
+
+*Cause:* You included a NULL operand in predicate <name>, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4100]]
+== SQL 4100
+
+```
+A NULL value is not allowed in a select list unless it is CAST to some data type.
+```
+
+*Cause:* You specified a NULL value in a select list that is not cast to
+a data type, which is required.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4101]]
+== SQL 4101
+
+```
+If <name> is intended to be a further table reference in the FROM
+clause, the preceding join search condition must be enclosed in
+parentheses.
+```
+
+*Cause:* A syntax error has caused the Trafodion database software to
+treat object <name> as an ambiguous entity.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check the syntax for a missing parenthesis and resubmit. If
+the object is not intended as a table reference in the FROM clause, use
+the error messages that accompany this one to diagnose the problem.
+Correct the syntax and resubmit.
+
+[[SQL-4102]]
+== SQL 4102
+
+```
+The [FIRST/ANY n] syntax can be used only in an outermost SELECT
+statement that is not contained in a UNION or INSERT.
+```
+
+*Cause:* You attempted to use either a FIRST n or an ANY n clause in
+other than an outermost SELECT statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the `FIRST n` or `ANY n` clause and resubmit.
+
+[[SQL-4104]]
+== SQL 4104
+
+```
+If a character literal was intended, you must use the single quote
+delimiter: <literal>. The use of double quotes causes Trafodion to
+interpret <column-name> as a delimited identifier column name.
+```
+
+Where <column-name> is a delimited ANSI identifier, such as MYCOL.
+
+*Cause:* You attempted to select from a table using a character literal,
+but you used double quotes as the delimiter instead of single quotes.
+
+For example, if you enter this statement, in which "Lower" is a
+character literal:
+
+>>select * from T050a where a="Lower"; you will receive this error:
+
+*** ERROR[4001] Column "Lower" is not found. Tables in scope:
+CAT.SCH.T050A. Default schema: CAT.SCH.
+
+*** ERROR[4104] If a character literal was intended, you must use the
+single quote delimiter instead of the double: 'Lower' instead of
+"Lower".
+
+*Effect:* Nothing is selected.
+
+*Recovery:* Replace the double quotes with single quotes.
+
+[[SQL-4105]]
+== SQL 4105
+
+```
+Translation name is not recognized.
+```
+
+*Cause:* Trafodion does not recognize the
+translation name.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Use one of the supported translation names.
+
+[[SQL-4106]]
+== SQL 4106
+
+```
+The character set for the operand of function <name-1> must be <name-2>.
+```
+
+*Cause:* You specified an operand for function <name-1> with the wrong
+character set <name-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the character set of the operand and resubmit.
+
+[[SQL-4107]]
+== SQL 4107
+
+```
+Column <name> has no default value, so DEFAULT cannot be specified.
+```
+
+*Cause:* In the source value list of INSERT, you specified DEFAULT for
+column <name>, but there is no default value for that column.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4108]]
+== SQL 4108
+
+```
+Inside a ROWS SINCE, another sequence function contained an invalid
+reference to the THIS function.
+```
+
+*Cause:* A ROWS SINCE function in your statement contained another
+sequence function that, in turn, contained an invalid reference to the
+THIS function. Inside ROWS SINCE, the THIS function must not appear
+inside any other sequence function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reword the query so that the expression inside the other
+sequence function does not contain references to the THIS function.
+
+[[SQL-4109]]
+== SQL 4109
+
+```
+Sequence functions are placed incorrectly: <name>.
+```
+
+*Cause:* You specified a query that includes a SEQUENCE BY clause that
+contains an illegally placed sequence function <name>. Sequence
+functions (such as RUNNINGSUM, MOVINGSUM, LASTNOTNULL) are supported
+only in the select list or the HAVING clause of the query expression
+containing the SEQUENCE BY clause. For example, these queries are legal:
+
+```
+>>select a, runningcount(b) from T1 sequence by a;
+
+>>select x from (select a, runningcount(b) from T1 sequence by a)
+T2(x,y) where y > 10;
+
+>>select count(*) from t1 sequence by b group by a having runningsum(a)
+> count(*);
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit. For example:
+
+>>select a from T1 where runningcount(b) > 10 sequence by a;
+
+*** ERROR[4109] Sequence functions placed incorrectly:
+RUNNINGCOUNT(CAT.SCH.HPPARTEST1.B).
+
+*** ERROR[8822] Unable to prepare the statement.
+```
+
+[[SQL-4110]]
+== SQL 4110
+
+```
+The query contains sequence functions but no SEQUENCE BY clause: <name>.
+```
+
+*Cause:* You specified a query that contains a sequence function <name>
+but no SEQUENCE BY clause, which is not supported. The value of the
+sequence function depends on the specific sequence (order) of the rows.
+If no sequence is defined, the result of the sequence function is
+dependent on an arbitrary ordering of the rows, which could lead to
+unexpected results.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit. For example:
+
+```
+>>select runningsum(a) from t1;
+
+*** ERROR[4110] The query contains sequence functions but no SEQUENCE BY clause: RUNNINGSUM(CAT.SCH.T1.A).
+```
+
+To correct the query, add a SEQUENCE BY clause:
+
+```
+>>select runningsum(a) from t1 sequence by b;
+```
+
+[[SQL-4111]]
+== SQL 4111
+
+```
+The query contains a SEQUENCE BY clause but no sequence functions.
+```
+
+*Cause:* You specified a query that contained a SEQUENCE BY clause but
+no sequence functions, which is not supported. The purpose of the
+SEQUENCE BY clause is to specify an ordering for computing one or more
+sequence functions.
+
+Without sequence functions, the SEQUENCE BY clause has no effect.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax by adding a sequence function to the
+query or by using an ORDER BY (if you intend to order the result set.)
+For example:
+
+```
+>>select a from T1 sequence by a;
+
+*** ERROR[4111] The query contains a SEQUENCE BY clause but no sequence functions.
+
+*** ERROR[8822] Unable to prepare the statement.
+```
+
+Correct the syntax with one of these:
+
+```
+>>select a, runningavg(c) from T1 sequence by a;
+>>select a from T1 order by a;
+```
+
+[[SQL-4112]]
+== SQL 4112
+
+```
+Absolute and relative sampling cannot occur in the same BALANCE expression.
+```
+
+*Cause:* You attempted to perform absolute and relative sampling in the
+same balance expression, which is not supported.
+
+*Effect:* Trafodion is unable to prepare the
+query.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4113]]
+== SQL 4113
+
+```
+The sample size for <type> Sampling must be <size-type>.
+```
+
+*Cause:* You specified an invalid combination of sample <type> and
+sample <size-type>.
+
+*Effect:* Trafodion is unable to prepare the
+query.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4114]]
+== SQL 4114
+
+```
+An absolute sample size must have a scale of zero.
+```
+
+*Cause:* You specified an absolute sample size with a scale greater than
+zero, which is not supported.
+
+*Effect:* Trafodion is unable to prepare the
+query.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4115]]
+== SQL 4115
+
+```
+The sample size must be less than or equal to the sample period.
+```
+
+*Cause:* You specified a sample size that is greater than the sample
+period. It must be less than or equal to the sample period.
+
+*Effect:* Trafodion is unable to prepare the
+query.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4116]]
+== SQL 4116
+
+```
+The second operand of function <name> is not valid.
+```
+
+*Cause:* You specified an invalid operand for the second operand of
+function <name>. For example, a numeric literal operand (for example,
+9999999999999999999) cannot be represented as a valid compile-time
+constant value.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit. In this example, you would
+replace the numeric literal with a smaller numeric literal operand that
+can be represented as a valid compile-time constant value.
+
+[[SQL-4117]]
+== SQL 4117
+
+```
+The cursor query expression might be nonupdatable.
+```
+
+*Cause:* You specified a join or a nonupdatable query in an updatable
+cursor query (that is, one with an optional FOR UPDATE OF clause). That
+cursor's select list did not select the target column of the update.
+
+*Effect:* The operation fails.
+
+*Recovery:* An updatable cursor query should specify the target update
+column in the select list of the query. Use the FOR UPDATE OF clause
+only if the cursor query is updatable.
+
+This example of a nonupdatable cursor join query does not select the
+target of the update and receives an error:
+
+```
+>>SELECT A.PROD_CODE FROM EXPRODPARAMS A, MSRATES B
++>WHERE CASE WHEN B.UPDATE_FLAG IS NULL THEN 'N' ELSE
+B.UPDATE_FLAG END = 'N'
++>AND A.ACC_TYPE = B.ACC_TYPE AND A.PROD_CODE = B.PROD_CODE
++>FOR UPDATE OF UPDATE_FLAG ;
+
+*** ERROR[4001] Column UPDATE_FLAG is not found. Tables in scope: A.
+Default schema: CAT.SCH.
+
+*** ERROR[4117] The cursor query expression may be nonupdatable.
+
+*** ERROR[8822] Unable to prepare the statement. 
+```
+
+[[118_The_cursor_query_expression_is_not_updatable]]
+== 118 The cursor query expression is not updatable
+
+*Cause:* You specified a join or a nonupdatable query in an updatable
+cursor query (that is, one with an optional FOR UPDATE OF clause). A
+join query is not updatable.
+
+*Effect:* The operation fails.
+
+*Recovery:* An updatable cursor query should not specify a join or a
+nonupdatable query. A Trafodion database software statement cursor is
+updatable if all the following are true:
+
+* It is a SELECT statement.
+* There is only one table reference in the FROM clause, and there are no
+correlated subquery references to that table. For example, this query is
+updatable:
+
+```
+SELECT A FROM T;
+```
+
+This one is not: SELECT A FROM T WHERE B = (SELECT C FROM U WHERE T.I. = U.I)
+
+* There are no aggregates.
+* There are no GROUP BY, DISTINCT, or ORDER BY clauses.
+* All select_list columns are column references.
+* No column reference occurs more than once in the select list.
+
+This example of a nonupdatable cursor join query selects the target of
+the update correctly and receives an error:
+
+```
+>>SELECT A.PROD_CODE, B.UPDATE_FLAG FROM EXPRODPARAMS A, MSRATES B
++>WHERE CASE WHEN B.UPDATE_FLAG IS NULL THEN 'N' ELSE B.UPDATE_FLAG END = 'N'
++>AND A.ACC_TYPE = B.ACC_TYPE AND A.PROD_CODE = B.PROD_CODE
++>FOR UPDATE OF UPDATE_FLAG ;
+
+*** ERROR[4118] The cursor query expression is not updatable.
+
+*** ERROR[8822] Unable to prepare the statement.
+```
+
+[[SQL-4120]]
+== SQL 4120
+
+```
+In a query with a GROUP BY, DISTINCT, or aggregate function, each
+```
+column in the ORDER BY clause must be one of the columns explicitly
+SELECTed by the query. Column in error: <name>.
+
+*Cause:* You attempted to perform a query with an aggregate function, a
+GROUP BY clause, or a DISTINCT clause. A column in the ORDER BY clause,
+<name>, is not one of the columns explicitly selected by the query.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the ORDER BY clause and resubmit.
+
+[[SQL-4121]]
+== SQL 4121
+
+```
+In a query with a GROUP BY, DISTINCT, or aggregate function, each
+column in the ORDER BY clause must be one of the columns explicitly
+SELECTed by the query. Column in error: <name>. Table in scope: <name>.
+```
+
+*Cause:* You attempted to perform a query with an aggregate function, a
+GROUP BY clause, or a DISTINCT clause. A column in the ORDER BY clause,
+<name>, is not one of the columns explicitly selected by the query.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the ORDER BY clause and resubmit.
+
+[[SQL-4122]]
+== SQL 4122
+
+```
+NULL cannot be assigned to NOT NULL column <name>.
+```
+
+*Cause:* You attempted to assign NULL to a NOT NULL column <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4123]]
+== SQL 4123
+
+```
+NULL cannot be cast to a NOT NULL data type.
+```
+
+*Cause:* You attempted to cast NULL to a NOT NULL data type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4124]]
+== SQL 4124
+
+```
+More than one table will be locked: <name>.
+```
+
+Where <name> is the name of the table.
+
+*Cause:* Trafodion is preparing to lock more than
+one table.
+
+*Effect:* None.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-4125]]
+== SQL 4125
+
+```
+The select list of a sub query in a row value constructor must be
+scalar (degree of one) if the sub query is one of several expressions
+rather than the only expression in the constructor.
+```
+
+*Cause:* You specified a subquery, consisting of several expressions,
+whose select list is not scalar. If the subquery is not the only
+expression in the constructor, it must be scalar.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4126]]
+== SQL 4126
+
+```
+The row value constructors in a VALUES clause must be of equal degree.
+```
+
+*Cause:* You specified a VALUES clause whose row value constructors are
+not of equal degree.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4127]]
+== SQL 4127
+
+```
+Type <name-1> cannot be assigned to type <name-2>.
+```
+
+*Cause:* You attempted to perform an assignment but specified
+incompatible data types.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4128]]
+== SQL 4128
+
+```
+Default volume and subvolume information could not be retrieved from=_DEFAULTS define - DEFINEINFO error <number>.
+```
+
+Where <number> is the error message.
+
+*Cause:* Trafodion was not able to retrieve
+default volume and subvolume information using the =_DEFAULTS define.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check the =_DEFAULTS define and resubmit.
+
+[[SQL-4129]]
+== SQL 4129
+
+```
+An IF statement should have the same set of output host variables on
+both sides of IF THEN statement list and the ELSE statement list.
+```
+
+*Cause:* You specified an IF statement that does not have the same set
+of output host variables on both sides of its IF THEN statement list and
+its ELSE statement list.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4130]]
+== SQL 4130
+
+```
+SIGNAL parameter 3 must be of type string
+```
+
+*Cause:* You specified a SIGNAL parameter of an incorrect type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4133]]
+== SQL 4133
+
+```
+Both trim character and source have to be CHARACTER type.
+```
+
+*Cause:* The type of the trim source and trim character is not
+CHARACTER.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make sure the type of the source and trim character is
+CHARACTER.
+
+[[SQL-4134]]
+== SQL 4134
+
+```
+The operation (<name>) is not allowed. Try UNION ALL instead.
+```
+
+*Cause:* You attempted to perform an operation that the Trafodion
+database software does not allow.
+
+*Effect:* The operation fails.
+
+*Recovery:* Try a UNION ALL operation and resubmit.
+
+[[SQL-4135]]
+== SQL 4135
+
+```
+In an INSERT-SELECT, each column in the ORDER BY clause must be one
+of the columns in the selected list of the query. Column in error: B.
+```
+
+*Cause:* You tried to SQL-compile an INSERT-SELECT statement that
+specified an ORDER BY column that is not in the select list of the
+query.
+
+*Effect:* The operation fails.
+
+*Recovery:* Omit the ORDER BY clause or specify an ORDER BY column that
+is also in the select list of the INSERT-SELECT query and resubmit.
+
+[[SQL-4136]]
+== SQL 4136
+
+```
+An outer SELECT was used in a DELETE [FIRST N] statement without
+using the [LAST 1] clause.
+```
+
+*Cause:* An outer SELECT was used in a Delete [FIRST N] statement
+without using the [LAST 1] clause.
+
+*Effect:* The statement does not compile.
+
+*Recovery:* Use a [LAST 1] clause in the outer SELECT.
+
+[[SQL-4150]]
+== SQL 4150
+
+```
+Primary key of table expression <name> must be used for join with
+embedded <operation> expression. Tables in scope: <name>.
+```
+
+*Cause:* You performed an embedded DELETE or UPDATE and are now
+attempting to join the result set of whatever that operation was with
+the result set of another expression. You did not use the primary key of
+the second expression for your join. You must use the primary key to
+prevent returning multiple rows being returned for a single deleted or
+updated row.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the WHERE clause to use the primary key of the table
+expression.
+
+[[SQL-4151]]
+== SQL 4151
+
+```
+Stream access is supported only on updatable views. View: <table-name>.
+```
+
+*Cause:* You attempted to access a nonupdatable view using stream access
+mode.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4152]]
+== SQL 4152
+
+```
+Table <name> cannot be both read and updated.
+```
+
+*Cause:* You attempted to read from and update the same table.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4153]]
+== SQL 4153
+
+```
+Statement may not compile due to an order requirement on stream expression.
+```
+
+*Cause:* You attempted to compile a stream expression using an ORDER BY
+on columns that do not define the prefix of the clustering key of the
+base table or of a secondary index.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Create a secondary index whose clustering key materializes
+the order and resubmit.
+
+[[SQL-4154]]
+== SQL 4154
+
+```
+Statement may not compile due to an order requirement on embedded
+<name> expression.
+```
+
+*Cause:* You attempted to compile an embedded DELETE or embedded UPDATE
+expression using an ORDER BY without using a clustering key or a
+secondary index.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Create a secondary index materializing the order and
+resubmit.
+
+[[SQL-4156]]
+== SQL 4156
+
+```
+Inner relation of left join cannot be embedded <command-name>. Tables in scope: <name>.
+```
+
+*Cause:* You attempted to perform a left join using the result set of an
+embedded UPDATE or DELETE as the inner relation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4157]]
+== SQL 4157
+
+```
+Inner relation of left join cannot be stream expression. Tables in scope: <name>.
+```
+
+*Cause:* You attempted to perform a left join using the result set of a
+stream expression as the inner relation.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4158]]
+== SQL 4158
+
+```
+Join of stream expressions is not supported. Tables in scope: <name>.
+```
+
+*Cause:* You attempted to perform a join of stream expressions.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4159]]
+== SQL 4159
+
+```
+Intersection of stream expressions is not supported. Tables in scope: <name>.
+```
+
+*Cause:* You attempted to perform an intersection of stream expressions.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4160]]
+== SQL 4160
+
+```
+Intersection between embedded <name-1> expression and embedded
+<name-2> expression is not supported. Tables in scope: <name-3>, <name-4>.
+```
+
+*Cause:* You attempted to perform an intersection between two embedded
+expressions.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4161]]
+== SQL 4161
+
+```
+Union between embedded <name-1> expression and embedded <name-2>
+expression not supported. Tables in scope: <name-3>, <name-4>.
+```
+
+*Cause:* You attempted to perform a union between two embedded
+expressions.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4162]]
+== SQL 4162
+
+```
+GROUP BY is not supported for stream expression. Tables in scope: <name>.
+```
+
+*Cause:* You attempted to perform a GROUP BY in conjunction with a
+stream expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4163]]
+== SQL 4163
+
+```
+GROUP BY is not supported for embedded <name-1> expression. Tables in
+scope: <name-2>.
+```
+
+*Cause:* You attempted to perform a GROUP BY in conjunction with an
+embedded expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4164]]
+== SQL 4164
+
+```
+Outer relation of right join cannot be embedded <name> expression.
+Tables in scope: <name>.
+```
+
+*Cause:* You attempted to perform a right join using an embedded
+expression as the outer relation.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4165]]
+== SQL 4165
+
+```
+Outer relation of right join cannot be stream expression. Tables in
+scope: <name>.
+```
+
+*Cause:* You attempted to perform a right join using a stream expression
+as the outer relation.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4166]]
+== SQL 4166
+
+```
+ORDER BY clause is not supported in UNION of two streams. Tables in
+scope: <name-1>, <name-2>.
+```
+
+*Cause:* You attempted to use an ORDER BY clause in the UNION of two
+streams.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4167]]
+== SQL 4167
+
+```
+Embedded <name> statements are not supported in subqueries.
+```
+
+*Cause:* You attempted to perform a subquery that included an embedded
+statement.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4168]]
+== SQL 4168
+
+```
+Stream expressions are not supported in subqueries.
+```
+
+*Cause:* You attempted to perform a subquery that included a stream
+expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4169]]
+== SQL 4169
+
+```
+Embedded delete statements are not allowed when using DECLARE ...
+FOR UPDATE clause.
+```
+
+*Cause:* You attempted to perform a DECLARE... FOR UPDATE clause that
+included an embedded DELETE statement.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4170]]
+== SQL 4170
+
+```
+Stream expressions are not supported for insert statements.
+```
+
+*Cause:* You attempted to perform an insert statement that includes a
+stream expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4171]]
+== SQL 4171
+
+```
+Embedded <name> statements are not supported in INSERT statements.
+```
+
+*Cause:* You attempted to perform an INSERT that included an embedded
+statement.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4173]]
+== SQL 4173
+
+```
+Stream expression is not supported for top level UPDATE statements.
+```
+
+*Cause:* You attempted to perform a top-level UPDATE statement that
+included a stream expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4174]]
+== SQL 4174
+
+```
+JOIN_ORDER_BY_USER prevented compiler from reordering query tree.
+```
+
+*Cause:* Trafodion compiler could not reorder the
+join tree because the JOIN_ORDER_BY_USER directive is in effect.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Disable the JOIN_ORDER_BY_USER directive and resubmit.
+
+[[SQL-4175]]
+== SQL 4175
+
+```
+Join between embedded <name-1> expression and embedded <name-2> expression is not supported. Tables in scope: <name-3>.
+```
+
+*Cause:* You attempted to perform a join between two embedded
+expressions.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4176]]
+== SQL 4176
+
+```
+Join between stream expression and embedded <name-1> expression is
+not supported. Tables in scope: <name-2>.
+```
+
+*Cause:* You attempted to perform a join between a stream expression and
+an embedded expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4177]]
+== SQL 4177
+
+```
+Update of <name-1> column <name-2> is not permitted on rollback.
+```
+
+*Cause:* You attempted to update clustering key components or columns
+associated with referential integrity constraints during a rollback.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4178]]
+== SQL 4178
+
+```
+Update of variable length column <name> is not permitted on rollback.
+```
+
+*Cause:* You attempted to perform a rollback that included an update of
+a variable length column.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4179]]
+== SQL 4179
+
+```
+SEQUENCE BY is not supported for stream expressions.
+```
+
+*Cause:* You included a SEQUENCE BY statement in a stream expression.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4180]]
+== SQL 4180
+
+```
+Stream expression is not supported for top level DELETE statement.
+```
+
+*Cause:* You attempted to use a stream expression to perform a top-level
+DELETE.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4183]]
+== SQL 4183
+
+```
+Embedded DELETE statements are not allowed on referenced tables.
+```
+
+*Cause:* You attempted to perform an embedded DELETE statement on a
+table with a referential constraint.
+
+*Effect:* The operation fails.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4184]]
+== SQL 4184
+
+```
+Columns that are part of a referential constraint cannot be updated
+using embedded UPDATE statements.
+```
+
+*Cause:* You attempted to perform an embedded UPDATE statement on
+columns that are part of a referential constraint.
+
+*Effect:* The operation fails.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4189]]
+== SQL 4189
+
+```
+ORDER BY clause in an embedded INSERT, UPDATE, or DELETE statement
+is not supported.
+```
+
+*Cause:* An embedded INSERT, UPDATE, or DELETE statement has an ORDER BY
+clause.
+
+*Effect:* The statement does not compile.
+
+*Recovery:* Do not use ORDER BY with an embedded INSERT, UPDATE, or
+DELETE statement.
+
+[[SQL-4200]]
+== SQL 4200
+
+```
+Stream expressions are not supported for compound statements.
+```
+
+*Cause:* You attempted to use a stream expression for a compound
+statement.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4201]]
+== SQL 4201
+
+```
+Embedded <name> expression is not supported for compound statements.
+```
+
+*Cause:* You attempted to use an embedded expression for a compound
+statement.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4202]]
+== SQL 4202
+
+```
+SEQUENCE BY is not supported for embedded <name> expressions.
+```
+
+*Cause:* You attempted to perform an embedded expression that included
+SEQUENCE BY.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4203]]
+== SQL 4203
+
+```
+Insert/Update/Delete operation on non-audited table <name> requires
+index maintenance which may cause the index(es) to become corrupt.
+
+Performing INSERT, UPDATE, or DELETE operations on a non-audited table
+could corrupt the index if the operation is interrupted. Use the
+
+IUD_NONAUDITED_INDEX_MAINT attribute value to control if these
+operations create an error condition, are allowed with a warning, or are
+allowed with no warning. This message appears as a warning or as an
+error, depending on how you have set this attribute value.
+```
+
+*Cause:* You attempted to perform an INSERT, UPDATE, or DELETE operation
+on a non-audited table and IUD_NONAUDITED_INDEX_MAINT is set to OFF. This
+message is displayed as an error.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+*Cause:* You attempted to perform an INSERT, UPDATE, or DELETE operation
+on a non-audited table and IUD_NONAUDITED_INDEX_MAINT is set to WARN.
+This message appears as an warning.
+
+*Effect:* Trafodion performs the INSERT, UPDATE,
+or DELETE operation. If the operation encounters an error, you will see
+other messages about that condition.
+
+*Recovery:* Informational message only; no corrective action is needed.
+
+[[SQL-4204]]
+== SQL 4204
+
+```
+Stream access is supported for only key-sequenced tables. Table: <name>.
+```
+
+*Cause:* You attempted to use stream access on a table that is not
+key-sequenced, which is required.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4205]]
+== SQL 4205
+
+```
+Embedded <name-1> is supported for only key-sequenced tables. Table: <name-2>.
+```
+
+*Cause:* You attempted to perform an embedded action that is supported
+only for key-sequenced tables.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4206]]
+== SQL 4206
+
+```
+Embedded <name> is supported only for updatable views. View: <name-2>.
+```
+
+*Cause:* You attempted to perform an embedded action that is supported
+only for updatable views.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4207]]
+== SQL 4207
+
+```
+Index <name> and other indexes covering a subset of columns do not
+cover all output values of stream.
+```
+
+*Cause:* You attempted to use an index for stream access that does not
+cover all output columns of the base table.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Restrict the select list or add the missing columns to the
+index.
+
+[[SQL-4208]]
+== SQL 4208
+
+```
+Index <name> and other indexes covering a subset of columns do not
+cover all columns referenced in WHERE clause of stream.
+```
+
+*Cause:* You attempted to use an index for stream access that does not
+cover all base table columns referenced in the WHERE clause.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Add the missing columns to the index.
+
+[[SQL-4209]]
+== SQL 4209
+
+```
+Update of nullable column <name> is not permitted on rollback.
+```
+
+*Cause:* You attempted to perform a rollback that included an update of
+a nullable column.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4210]]
+== SQL 4210
+
+```
+Embedded update/delete statements not supported within an IF statement.
+```
+
+*Cause:* You attempted to embed UPDATE/DELETE statements within an IF
+statement.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4212]]
+== SQL 4212
+
+```
+<table-name> cannot be used to satisfy order requirement on the
+stream because it is partitioned.
+```
+
+*Cause:* You specified <table-name>, a partitioned table, as the order
+requirement on a stream.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4213]]
+== SQL 4213
+
+```
+Use of row sets in a predicate with embedded update/delete is not supported.
+```
+
+*Cause:* You attempted to use a row set as a predicate with an embedded
+update or embedded delete.
+
+*Effect:* Trafodion is unable to compile the
+statement.
+
+*Recovery:* Modify the statement and resubmit.
+
+[[SQL-4214]]
+== SQL 4214
+
+```
+The SET ON ROLLBACK clause is not allowed on a non-audited table. Table: <name>.
+```
+
+*Cause:* You attempted to use a SET ON ROLLBACK clause to update a
+column in a non-audited table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the table's AUDIT attribute and resubmit.
+
+[[SQL-4215]]
+== SQL 4215
+
+```
+Stream access is not allowed on a non-audited table. Table: <name>.
+```
+
+*Cause:* You attempted to use stream access on a non-audited table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the table's AUDIT attribute and resubmit.
+
+[[SQL-4216]]
+== SQL 4216
+
+```
+The FIRST/ANY n syntax cannot be used with an embedded update or embedded delete statement.
+```
+
+*Cause:* You attempted to use either a `FIRST n` or an `ANY n` clause in an embedded UPDATE or DELETE statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the `FIRST n` or `ANY n` clause and resubmit.
+
+[[SQL-4302]]
+== SQL 4302
+
+```
+Procedure <procedure-name> expects <value-1> parameters but was called with <value-2> parameters.
+```
+
+*Cause:* In the Trafodion database software statement being compiled, a
+stored procedure invocation contains an incorrect number of parameters.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* Correct the Trafodion database software statement and retry
+the compilation.
+
+[[SQL-4303]]
+== SQL 4303
+
+```
+The supplied type for parameter <value> of routine <routine-name> was <type-name-1> which is not compatible with the expected type <type-name-2>.
+```
+
+*Cause:* In the Trafodion database software statement being compiled,
+you attempted to invoke a stored procedure with a type of parameter that
+is incompatible with the formal type of the parameter.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* Supply the correct parameter and type and retry the
+compilation.
+
+[[SQL-4304]]
+== SQL 4304
+
+```
+Host variable or dynamic parameter <parameter-name> is used in more than one OUT or INOUT parameter for routine <routine-name>. Results may be unpredictable.
+```
+
+*Cause:* In the Trafodion database software statement being compiled,
+you attempted to invoke a stored procedure that contains the same host
+variable or dynamic parameter in more than one OUT or INOUT parameter.
+
+*Effect:* This is a warning message only. Results will be unpredictable.
+The host variable could have any one of the actual OUT values.
+
+*Recovery:* Use different host variables for each of the OUT or INOUT
+parameters.
+
+[[SQL-4305]]
+== SQL 4305
+
+```
+Parameter <value> for user-defined routine <routine-name> is an OUT
+or INOUT parameter and must be a host variable or a dynamic parameter.
+```
+
+*Cause:* In the Trafodion database software statement being compiled,
+you attempted to invoke a stored procedure that has an OUT or INOUT
+parameter that is neither a host variable nor a dynamic parameter.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* Correct the Trafodion database software statement. Supply a
+host variable or a dynamic parameter for OUT or INOUT parameters, and
+retry the compilation.
+
+[[SQL-4306]]
+== SQL 4306
+
+```
+A CALL statement is not allowed within a compound statement.
+```
+
+*Cause:* In the Trafodion database software statement being compiled, a
+CALL statement was present within a BEGIN...END block.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* Remove the CALL statement from the compound statement and
+retry the compilation.
+
+[[SQL-4307]]
+== SQL 4307
+
+```
+Rowset parameters are not allowed in a CALL statement.
+```
+
+*Cause:* In the Trafodion database software statement being compiled,
+you attempted to use a row set as a parameter in a stored procedure
+invocation.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* Alter the data type of the relevant variable, or use a
+different non-row-set host variable. Retry the compilation.
+
+[[SQL-4308]]
+== SQL 4308
+
+```
+Internal error: Unsupported SQL data type <value> specified for a
+CALL statement parameter.
+```
+
+*Cause:* In the Trafodion database software statement being compiled, a
+parameter in a stored procedure invocation had an unsupported SQL data
+type.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* This error should never occur. Drop the stored procedure and
+re-create it with an appropriate data type. Report this problem to HP
+support.
+
+[[SQL-4309]]
+== SQL 4309
+
+```
+Procedure <procedure-name> is registered to return result sets and
+stored procedure result sets are not yet supported.
+```
+
+Where <procedure-name> is the ANSI name of a stored procedure.
+
+*Cause:* You are running a Trafodion database software version that does
+not support stored procedure result sets and attempted to compile a CALL
+statement for a stored procedure that returns result sets. This message
+indicates a downgrade has been performed without removing stored
+procedures that return result sets.
+
+*Effect:* Trafodion statement is not compiled.
+
+*Recovery:* Migrate to a Trafodion database software version that
+supports stored procedure result sets.
+
+[[SQL-4310]]
+== SQL 4310
+
+```
+USER(x) is currently supported only in the outermost SELECT list.
+For example, it cannot be part of the subquery.
+```
+
+*Cause:* You tried to use the USER(x) function somewhere other than the
+outermost SELECT clause. This function is not yet fully supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the query and retry the request.
+
+[[SQL-4313]]
+== SQL 4313
+
+```
+Function rand()is not supported.
+```
+
+*Cause:* You attempted to use the random function, which is not
+supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-4320]]
+== SQL 4320
+
+```
+Stream access not allowed on multi-partitioned table, when flag
+ATTEMPT_ASYNCHRONOUS_ACCESS is set to OFF. Table in scope:
+<table-name>.
+```
+
+*Cause:* You attempted a stream access on a multi-partitioned table when
+the flag ATTEMPT_ASYNCHRONOUS_ACCESS was set to OFF.
+
+*Effect:* The operation fails.
+
+*Recovery:* Set the ATTEMPT_ASYNCHRONOUS_ACCESS flag to ON and resubmit.
+

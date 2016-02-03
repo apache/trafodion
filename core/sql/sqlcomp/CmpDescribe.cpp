@@ -1690,10 +1690,6 @@ static short CmpDescribePlan(
   if (retcode)
     return (short)retcode;
 
-  retcode = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", TRUE);
-  if (retcode)
-    return (short)retcode;
-
   // send control session to indicate showplan is being done
   retcode = exeImmedOneStmt("CONTROL SESSION SET 'SHOWPLAN' 'ON';");
   if (retcode)
@@ -1763,8 +1759,6 @@ static short CmpDescribePlan(
   if (retcode)
     goto label_error;
         
-  resetRetcode  = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", FALSE);
-
    // free up resources
   retcode = SQL_EXEC_DeallocDesc(&sql_src);
   if (retcode)
@@ -1782,8 +1776,6 @@ static short CmpDescribePlan(
     resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
 
  label_error:
-    resetRetcode  = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", FALSE);
-
     return ((retcode < 0) ? -1 : (short)retcode);
 } // CmpDescribePlan
 

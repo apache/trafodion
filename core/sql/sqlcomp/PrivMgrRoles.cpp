@@ -412,6 +412,7 @@ PrivMgrMDAdmin admin(trafMetadataLocation_,metadataLocation_,pDiags_);
                switch (referencedObjectsList[obj]->objectType)
                {
                   case COM_BASE_TABLE_OBJECT:
+                  case COM_VIEW_OBJECT:
                      privType = SELECT_PRIV;
                      break;
                   case COM_USER_DEFINED_ROUTINE_OBJECT:
@@ -797,7 +798,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
       int32_t roleID = roleIDs[r]; 
 
       // if the roleID is PUBLIC return an error
-      if (roleID == PUBLIC_AUTH_ID)
+      if (roleID == PUBLIC_USER)
       {
          *pDiags_ << DgSqlCode (-CAT_IS_NOT_A_ROLE)
                   << DgString0(PUBLIC_AUTH_NAME);
@@ -818,7 +819,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
       {
          // Currently roles cannot be granted to PUBLIC.  This restriction
          // could be lifted in the future.  Grants to _SYSTEM never make sense.
-         if (granteeIDs[g] == SYSTEM_AUTH_ID || granteeIDs[g] == PUBLIC_AUTH_ID)
+         if (granteeIDs[g] == SYSTEM_USER || granteeIDs[g] == PUBLIC_USER)
          {
             *pDiags_ << DgSqlCode(-CAT_NO_GRANT_ROLE_TO_PUBLIC_OR_SYSTEM);
             return STATUS_ERROR;
@@ -961,8 +962,8 @@ MyRow row(fullTableName_);
    row.granteeID_ = granteeID;
    row.granteeName_ = granteeName;
    row.granteeAuthClass_ = PrivAuthClass::USER;
-   row.grantorID_ = SYSTEM_AUTH_ID;
-   row.grantorName_ = "_SYSTEM";
+   row.grantorID_ = SYSTEM_USER;
+   row.grantorName_ = SYSTEM_AUTH_NAME;
    row.grantorAuthClass_ = PrivAuthClass::USER;
    row.grantDepth_ = -1;
    
@@ -1299,15 +1300,18 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
 
 {
 
-MyTable &myTable = static_cast<MyTable &>(myTable_);
+   std::string traceMsg;
+   PrivMgr::log (__FILE__, "populating ROLE_USAGE table", -1);
+
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
 
    // See if the table is empty before inserting any rows
 
-std::string whereClause;
+   std::string whereClause;
 
-int64_t expectedRows = 0;
+   int64_t expectedRows = 0;
 
-PrivStatus privStatus = myTable.selectCountWhere(whereClause,expectedRows);
+   PrivStatus privStatus = myTable.selectCountWhere(whereClause,expectedRows);
 
    if (privStatus == STATUS_ERROR)
       return privStatus;
@@ -1317,6 +1321,9 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,expectedRows);
       std::string message ("Found ");
       message += to_string((long long int)expectedRows);
       message += " rows in ROLE_USAGE table, expecting 0 rows";
+      traceMsg = "ERROR: ";
+      traceMsg += message;
+      PrivMgr::log(__FILE__, message, -1);
       PRIVMGR_INTERNAL_ERROR(message.c_str());
       return STATUS_ERROR;
    }
@@ -1325,11 +1332,17 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,expectedRows);
    privStatus = myTable.insertSelect(authsLocation);
 
    if (privStatus == STATUS_ERROR)
+   {
+      traceMsg = "ERROR unable to populate ROLE_USAGE: ";
+      traceMsg += to_string((long long int)pDiags_->mainSQLCODE());
+      PrivMgr::log (__FILE__, traceMsg, -1);
+
       return privStatus;
+   }
   
    // make sure that the number rows inserted match the expected.
    // get the number of rows inserted
-int64_t insertedRows;
+   int64_t insertedRows;
 
    privStatus = myTable.selectCountWhere(whereClause,insertedRows);
 
@@ -1337,19 +1350,19 @@ int64_t insertedRows;
       return privStatus;
 
    // get number rows expected
-std::string selectStmt ("SELECT COUNT(*) FROM  ");
+   std::string selectStmt ("SELECT COUNT(*) FROM  ");
 
    whereClause = " where AUTH_TYPE = 'R'";
    selectStmt += authsLocation;
    selectStmt += " ";
    selectStmt += whereClause;
 
-int32_t length = 0;
-ExeCliInterface cliInterface(STMTHEAP);
+   int32_t length = 0;
+   ExeCliInterface cliInterface(STMTHEAP);
 
-int32_t cliRC = cliInterface.executeImmediate(selectStmt.c_str(),
-                                              (char*)&expectedRows,
-                                              &length,NULL);
+   int32_t cliRC = cliInterface.executeImmediate(selectStmt.c_str(),
+                                                 (char*)&expectedRows,
+                                                 &length,NULL);
 
    if (cliRC < 0)
    {
@@ -1365,6 +1378,9 @@ int32_t cliRC = cliInterface.executeImmediate(selectStmt.c_str(),
       message += " rows into ROLE_USAGE table, instead ";
       message += to_string((long long int)insertedRows);
       message += " were found.";
+      traceMsg = "ERROR: ";
+      traceMsg += message;
+      PrivMgr::log(__FILE__, traceMsg, -1);
       PRIVMGR_INTERNAL_ERROR(message.c_str());
       return STATUS_ERROR;
    }

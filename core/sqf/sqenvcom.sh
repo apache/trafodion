@@ -634,7 +634,7 @@ then
   export LOG4CXX_LIB_DIR=$TOOLSDIR/apache-log4cxx-0.10.0/lib
   export LOG4CXX_INC_DIR=$TOOLSDIR/apache-log4cxx-0.10.0/include
 else
-  export LOG4CXX_LIB_DIR=/lib64:/usr/lib64
+  export LOG4CXX_LIB_DIR=/usr/lib64
   export LOG4CXX_INC_DIR=/usr/include/log4cxx
 fi
 

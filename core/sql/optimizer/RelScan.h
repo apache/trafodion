@@ -1453,6 +1453,16 @@ public:
 
   short extractHbaseFilterPreds(Generator * generator, ValueIdSet &preds,
                                 ValueIdSet &newExePreds);
+
+  NABoolean isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
+                                ValueId &colVID, ValueId &valueVID,
+                                NAString &op);
+
+  short extractHbaseFilterPredsVX(Generator * generator,ValueIdSet &preds, ValueIdSet &newExePreds);
+
+  NABoolean extractHbaseFilterPredsV2(Generator * generator, ValueIdSet &preds, ValueIdSet &newExePreds,
+                                      NABoolean checkOnly);
+
   NABoolean isSnapshotScanFeasible(LatestSnpSupportEnum snpNotSupported,
                                    char * tableName);
 

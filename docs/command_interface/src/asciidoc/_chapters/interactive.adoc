@@ -1,0 +1,941 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+= Run Commands Interactively
+After launching TrafCI, you can run SQL statements and interface commands in the command-line interface.
+
+== User Interface
+
+=== Product Banner
+
+After you launch TrafCI and connect to the database platform, the product banner appears in the
+command-line interface:
+
+image:{images}/launch02.jpg[Product banner]
+
+=== Interface Prompt
+
+The standard prompt is `SQL>`. You can change the prompt, `SQL>`, to something else by using the
+`SET SQLPROMPT` or `SET PROMPT` command. For more information,
+<<interactive_customize_prompt, Customize the Standard Prompt>>.
+
+=== Break the Command Line
+
+You cannot break an interface command over multiple lines. Each interface command must be entered
+on one line. If you accidentally break an interface command across more than one line, enter the
+SQL terminator and then reenter the command on one line.
+
+You can continue any SQL statement over multiple lines, breaking that statement at any point except
+within a word, a numeric literal, or a multi-character operator (for example, `<&#61;`). To break a string
+literal in a DML statement, use a concatenation operator (`||`). For more information, see the
+concatenation operator in the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+To terminate an SQL statement that spans multiple lines, use the SQL terminator for the session.
+You can also include several SQL statements on the same command line provided that each one is
+terminated by the SQL terminator. For more information, see
+<<interactive_set_show_terminator, Set and Show the SQL Terminator>>.
+
+<<<
+=== Case Sensitivity
+
+In the command-line interface, you can enter SQL statements and interface commands in uppercase,
+lowercase, or mixed-case characters. All parts of statements and commands are case-insensitive except
+for parts that you enclose in single-quotes (`'`) or double-quotes (`"`).
+
+<<<
+== Interface Commands
+
+The interface commands allow you to customize TrafCI (for example, by using `SET` commands) or 
+return information about the interface settings or database objects (for example, 
+by using `SHOW commands`).
+
+For more information about the interface commands, see <<commands, Commands>>.
+
+NOTE: Each interface command must be entered on one line. If you accidentally break an interface 
+command across more than one line, enter the SQL terminator and then reenter the command on one line.
+
+=== Show Session Attributes
+
+To display the attributes and settings of the current TrafCI session, use the `ENV`, `SHOW SESSION`, 
+or `SESSION` command. 
+
+*Example*
+
+This SESSION command displays the session attributes:
+
+```
+SQL> SESSION
+
+COLSEP           " "
+HISTOPT          DEFAULT [No expansion of script files] 
+IDLETIMEOUT      0 min(s) [Never Expires]
+LIST_COUNT       0 [All Rows]
+LOG FILE         c:\session.txt 
+LOG OPTIONS      APPEND,CMDTEXT ON 
+MARKUP           RAW
+PROMPT           SQL>
+SCHEMA           SEABASE
+SERVER           sqws135.houston.host.com:37800 
+SQLTERMINATOR    ;
+STATISTICS       OFF
+TIME             OFF
+TIMING           OFF
+USER             user1
+
+SQL>
+```
+
+For more information, see <<cmd_env, ENV Command>> <<cmd_show_session,SHOW SESSION Command>>.
+
+<<<
+[[interactive_idle_timeout]]
+=== Set and Show Session Idle Timeout Value
+
+The idle timeout value of a session determines when the session expires after a period of inactivity. 
+To set the idle timeout value of a session, enter the `SET IDLETIMEOUT` command. 
+
+*Example*
+
+This `SET IDLETIMEOUT 0` command sets the idle timeout to an infinite amount of time so that the 
+session never expires:
+
+```
+SQL> SET IDLETIMEOUT 0
+SQL>
+```
+
+To show the idle timeout value that is in effect for the session, enter the `SHOW IDLETIMEOUT` command. 
+
+*Example*
+
+This `SHOW IDLETIMEOUT` command displays an idle timeout of zero minutes, which means that the session
+never expires:
+
+```
+SQL> SHOW IDLETIMEOUT
+
+IDLETIMEOUT 0 min(s) [Never Expires]
+
+SQL>
+```
+
+For more information, see the <<cmd_set_idletimeout,SET IDLETIMEOUT Command>> and the 
+<<cmd_show_idletimeout, SET IDLETIMEOUT Command>.
+
+<<<
+[[interactive_customize_prompt]]
+=== Customize the Standard Prompt
+
+To change the standard prompt in the command-line interface, use one or both of these commands:
+
+==== SET PROMPT Command
+
+The `SET PROMPT` command changes the default prompt to a specified character or string. 
+
+*Example*
+
+This `SET PROMPT` command changes the prompt to the current user (`user1`) and `ENTER>`:
+
+```
+SQL>set prompt "%USER ENTER>"
+
+user1 ENTER>
+```
+
+For more information, see <<cmd_set_prompt, SET PROMPT Command>>.
+
+==== SET TIME Command
+
+The `SET TIME ON` command causes the current time of the client workstation to be 
+displayed in the prompt:
+
+```
+SQL ENTER> SET TIME ON
+
+20:32:26 SQL ENTER>
+```
+
+The `SET TIME OFF` command removes the current time from the prompt:
+
+```
+20:32:26 SQL ENTER> SET TIME OFF
+
+SQL ENTER>
+```
+
+For more information, see the <<cmd_set_time, SET TIME Command>>.
+
+<<<
+[[interactive_set_show_terminator]]
+=== Set and Show the SQL Terminator
+
+The SQL terminator symbolizes the end of an SQL statement. By default, the SQL terminator 
+is a semicolon (`;`).
+
+To change the SQL terminator, enter the `SET SQLTERMINATOR` command. 
+
+*Example*
+
+This SET SQLTERMINATOR command sets the SQL terminator to a period (`.`):
+
+```
+SQL> SET SQLTERMINATOR .
+SQL> INSERT INTO sales.custlist
++> (SELECT * FROM invent.supplier
++> WHERE suppnum=8).
+
+--- 1 row(s) inserted.
+SQL>
+
+```
+
+To show the SQL terminator that is in effect for the session, enter the `SHOW SQLTERMINATOR` command. 
+
+*Example*
+
+This `SHOW SQLTERMINATOR` command displays SQLTERMINATOR `.`, where the period (`.`) is the 
+SQL terminator for the session:
+
+```
+SQL> SHOW SQLTERMINATOR
+SQLTERMINATOR .
+
+SQL>
+```
+
+For more information, see the <<cmd_set_sqlterminator, SET SQLTERMINATOR Command>> and 
+the <<cmd_show_sqlterminator, SHOW SQLTERMINATOR Command>>.
+
+<<<
+[[interactive_display_elapsed_time]]
+=== Display the Elapsed Time
+
+By default, TrafCI does not display the elapsed time of an SQL statement after the statement 
+executes. To display the elapsed time after each SQL statement executes, enter the `SET TIMING ON` 
+command:
+
+```
+SQL> SET TIMING ON
+SQL> SELECT suppname, street, city, state, postcode
++> FROM invent.supplier
++> WHERE suppnum=3;
+
+SUPPNAME          STREET               CITY           STATE        POSTCODE
+----------------- -------------------- -------------- ------------ ---------- 
+HIGH DENSITY INC  7600 EMERSON         NEW YORK       NEW YORK     10230
+
+--- 1 row(s) selected. Elapsed :00:00:00.111 SQL>
+
+```
+
+To prevent the elapsed time from being displayed after each SQL statement executes, 
+enter the `SET TIMING OFF` command:
+
+```
+SQL> SET TIMING OFF
+SQL> /
+
+SUPPNAME          STREET               CITY           STATE        POSTCODE
+----------------- -------------------- -------------- ------------ ---------- 
+HIGH DENSITY INC  7600 EMERSON         NEW YORK       NEW YORK     10230
+
+--- 1 row(s) selected. 
+
+SQL>
+```
+
+For more information, see the <<cmd_set_timing, SET TIMING Command>>.
+
+<<<
+[[interactive_set_show_current_schema]]
+=== Set and Show the Current Schema
+
+By default, the schema of the session is `USR`. The SQL statement, `SET SCHEMA`, 
+allows you to set the schema for the TrafCI session. 
+
+*Example*
+
+This `SET SCHEMA` statement changes the default schema to `PERSNL` for the session:
+
+```
+SQL> SET SCHEMA persnl;
+
+--- SQL operation complete. 
+
+SQL> DELETE FROM employee
++> WHERE first_name='TIM' AND
++> last_name='WALKER';
+
+--- 1 row(s) deleted.
+
+SQL>
+```
+
+The schema that you specify with `SET SCHEMA` remains in effect until the end of the session 
+or until you execute another `SET SCHEMA` statement.
+
+If you execute this statement in a script file, it affects not only the SQL statements in the 
+script file but all subsequent SQL statements that are run in the current session. If you set 
+the schema in a script file, reset the default schema for the session at the end of the script 
+file.
+
+For more information about the SET SCHEMA statement, see the 
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+The `SHOW SCHEMA` command displays the current schema for the session. 
+
+*Example*
+
+This `SHOW SCHEMA` command displays `SCHEMA PERSNL`, where `PERSNL` is the name of the current 
+schema for the session:
+
+```
+SQL> SHOW SCHEMA SCHEMA persnl
+SQL>
+```
+
+For more information, <<cmd_show_schema, SHOW SCHEMA Command>>.
+
+=== Limit Query Result Set
+
+To set the maximum number of rows to be returned by `SELECT` statements that are executed 
+in the session, enter the `SET LIST_COUNT` command. 
+
+*Example*
+
+This `SET LIST_COUNT` command limits the result set of queries to 20 rows:
+
+```
+SQL> SET LIST_COUNT 20
+```
+
+To show the limit that is in effect for the session, enter the `SHOW LIST_COUNT` command. 
+
+*Example*
+
+This `SHOW LIST_COUNT` command shows that the number of rows returned by `SELECT` statements 
+is unlimited:
+
+```
+SQL> SHOW LIST_COUNT
+
+LISTCOUNT 0 [All Rows]
+```
+
+For more information, see the <<cmd_set_list_count, SET LIST_COUNT Command>> and 
+<<cmd_show_list_count, SHOW LIST_COUNT Command>>.
+
+<<<
+[[interactive_history]]
+=== Display Executed Commands
+
+To display commands that were recently executed in the TrafCI session, enter the 
+`HISTORY` command. The `HISTORY` command associates each command with a number that 
+you can use to re-execute or edit the command with the `FC` command. See 
+<<edit_reexecute_command, Edit and Reexecute a Command>>.
+
+*Example*
+
+This `HISTORY` command displays a maximum of 100 commands that were entered in the session:
+
+```
+SQL> HISTORY
+
+1> SET IDLETIMEOUT 0
+2> SET SCHEMA persnl;
+3> SELECT * FROM project;
+
+SQL>
+```
+
+To save the session history in a user-specified file, enter the `SAVEHIST` command. 
+
+*Example*
+
+This `SAVEHIST` command saves the session history in a file named `history.txt` in the 
+local directory where you are running TrafCI:
+
+```
+SQL> SAVEHIST history.txt
+```
+
+For more information, see the <<cmd_history,HISTORY Command>> and
+the <<cmd_savehist, SAVEHIST Command>>.
+
+<<<
+[[edit_reexecute_command]]
+=== Edit and Reexecute a Command
+
+To edit and reexecute a command in the history buffer of an TrafCI session, enter the `FC` command. 
+To display the commands in the history buffer, use the `HISTORY` command. See 
+<<interactive_history, Display Executed Commands>>.
+
+*Example*
+
+This *FC* command and its delete (`D`) editing command correct a `SELECT` statement that was entered incorrectly:
+
+```
+SQL> FC
+
+SQL> SELECCT FROM employee;
+     .... d
+SQL> SELECT FROM employee;
+
+```
+
+Pressing Enter executes the corrected `SELECT` statement. For more information, see the 
+<<cmd_fc, FC Command>>.
+
+<<<
+=== Clear the Interface Window
+
+After entering commands in TrafCI, you can clear the interface window by using the `CLEAR` command. 
+
+*Example*
+
+This `CLEAR` command clears the interface window so that only the prompt appears at the top of the
+window:
+
+```
+SQL> CLEAR
+```
+
+For more information, see the <<cmd_clear, CLEAR Command>>.
+
+=== Obtain Help
+
+To display help text for an interface command that is supported in TrafCI, enter the `HELP` command. 
+
+*Example*
+
+This `HELP` command displays syntax and examples of the `FC` command:
+
+```
+SQL> HELP FC
+```
+
+For more information, see the <<cmd_help, HELP Command>>.
+
+<<<
+== Run SQL Statements
+
+In TrafCI, you can run SQL statements interactively. TrafCI supports all the SQL statements, 
+SQL utilities, and other SQL-related commands that the Trafodion database engine supports. 
+For more information about those SQL statements, see the 
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+To run SQL statements from script files in TrafCI, see <<run_scripts, Run Scripts>>.
+
+=== Execute an SQL Statement
+
+*Example*
+
+You can query the `EMPLOYEE` table and return an employee’s salary by executing this `SELECT` statement 
+in TrafCI:
+
+```
+SQL> SELECT salary
++> FROM persnl.employee
++> WHERE jobcode=100;
+
+SALARY
+---------- 
+ 175500.00
+ 137000.10
+ 139400.00
+ 138000.40
+  75000.00
+  90000.00
+ 118000.00
+  80000.00
+  70000.00
+  90000.00
+  56000.00
+
+--- 11 row(s) selected. 
+
+SQL>
+```
+
+If the SQL statement executes successfully, TrafCI returns a message indicating that the SQL 
+operation was successful, followed by the standard prompt. If a problem occurs during the 
+execution of the SQL statement, TrafCI returns an error message.
+
+<<<
+=== Repeat an SQL Statement
+
+To run a previously executed SQL statement, use the `/`, `RUN`, or `REPEAT` command.
+
+```
+SQL> /
+
+SALARY
+---------- 
+ 175500.00
+ 137000.10
+ 139400.00
+ 138000.40
+  75000.00
+  90000.00
+ 118000.00
+  80000.00
+  70000.00
+  90000.00
+  56000.00
+
+--- 11 row(s) selected. 
+
+SQL>
+```
+
+For more information, see the <<cmd_slash, / Command>>,
+<<cmd_run, RUN Command>>, or <<cmd_repeat, REPEAT Command>>.
+
+<<<
+=== Prepare and Execute SQL Statements
+
+You can prepare, or compile, an SQL statement by using the `PREPARE` statement and 
+later execute the prepared SQL statement by using the `EXECUTE` statement.
+
+[[interactive_prepare_sql_statement]]
+==== Prepare a SQL Statement
+Use the PREPARE statement to compile an SQL statement for later execution with the 
+EXECUTE statement. You can also use the PREPARE statement to check the syntax of 
+an SQL statement without executing the statement. 
+
+*Example*
+
+This PREPARE statement compiles a SELECT statement named empsal and detects a syntax error:
+
+```
+SQL> PREPARE empsal FROM
++> SELECT salary FROM employee
++> WHERE jobcode = 100;
+SQL>
+```
+
+You can then correct the syntax of the SQL statement and prepare it again:
+
+```
+SQL> PREPARE empsal FROM
++> SELECT salary FROM persnl.employee
++> WHERE jobcode = 100;
+
+--- SQL command prepared.
+```
+
+To specify a parameter to be supplied later, either in a `SET PARAM` statement or 
+in the `USING` clause of an `EXECUTE` statement, use one of these types of parameters 
+in the SQL statement:
+
+* Named parameter, which is represented by `?_param-name_`
+* Unnamed parameter, which is represented by a question mark (`?`) character
+
+<<<
+*Example*
+
+This prepared `SELECT` statement specifies unnamed parameters for salary and job code:
+
+```
+SQL> PREPARE findemp FROM
++> SELECT  FROM persnl.employee
++> WHERE salary > ? AND jobcode = ?;
+
+--- SQL command prepared.
+```
+
+This PREPARE statement prepares another `SELECT` statement named `empcom`, which has one 
+named parameter, `?_dn_`, for the department number, which appears twice in the statement:
+
+```
+SQL> PREPARE empcom FROM
++> SELECT first_name, last_name, deptnum
++> FROM persnl.employee
++> WHERE deptnum <> ?dn AND salary <=
++> (SELECT AVG(salary)
++> FROM persnl.employee
++> where deptnum = ?dn);
+
+--- SQL command prepared.
+```
+
+For the syntax of the PREPARE statement, see the 
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+[[interactive_set_parameters]]
+==== Setting Parameters
+In an TrafCI session, you can set a parameter of an SQL statement (either prepared or not) 
+by using the SET PARAM command.
+
+NOTE: The parameter name is case-sensitive. If you specify it in lowercase in the 
+SET PARAM command, you must specify it in lowercase in other statements, such as 
+DML statements or EXECUTE.
+
+<<<
+*Example*
+
+This SET PARAM command sets a value for the parameter named ?sal, which you can apply 
+to one of the unnamed parameters in the prepared findemp statement or to a named parameter 
+with an identical name in an SQL statement:
+
+```
+SQL> SET PARAM ?sal 40000.00
+```
+
+This `SELECT` statement uses sal as a named parameter:
+
+```
+SQL> SELECT last_name
++> FROM persnl.employee
++> WHERE salary = ?sal;
+```
+
+This `SET PARAM` command sets a value for the parameter named `dn`, which you can apply 
+to the named parameter, `?dn`, in the prepared `empcom` statement or to a named parameter 
+with an identical name in an SQL statement:
+
+```
+SQL> SET PARAM ?dn 1500
+```
+
+For the syntax of the `SET PARAM` command, see the <<cmd_set_param, SET PARAM Command>>.
+
+[[interactive_display_session_parameters]]
+To determine what parameters you have set in the current session, use the SHOW PARAM command. 
+
+*Example*
+
+This SHOW PARAM command displays the recent SET PARAM settings:
+
+```
+SQL> SHOW PARAM dn 1500
+sal 40000.00
+SQL>
+```
+
+For the syntax of the `SHOW PARAM` command, <<cmd_show_param, SHOW PARAM Command>>.
+
+<<<
+[[interactive_reset_parameters]]
+==== Reset the Parameters
+
+To change the value of a parameter, specify the name of the parameter in the RESET PARAM 
+command and then use the SET PARAM command to change the setting. 
+
+*Example*
+
+Suppose that you want to change the salary parameter to 80000.00:
+
+```
+SQL> RESET PARAM ?sal
+SQL> SET PARAM ?sal 80000.00
+SQL>
+```
+
+Entering the `RESET PARAM` command without specifying a parameter name clears all 
+parameter settings in the session. 
+
+*Example*
+
+```
+SQL> RESET PARAM
+SQL> SHOW PARAM
+SQL>
+```
+
+To use the parameters that you had set before, you must reenter them in the session:
+
+```
+SQL> SET PARAM ?dn 1500
+SQL> SET PARAM ?sal 80000.00
+SQL> SHOW PARAM dn 1500
+
+sal 80000.00
+
+SQL>
+```
+
+For the syntax of the `RESET PARAM` command, see the <<cmd_reset_param, RESET PARAM Command>>.
+
+<<<
+=== Execute a Prepared SQL Statement
+
+To execute a prepared SQL statement, use the `EXECUTE` statement.
+
+*Example*
+
+This `EXECUTE` statement executes the prepared `empsal` statement, which does not have any parameters:
+
+```
+SQL> EXECUTE empsal;
+
+SALARY
+---------- 
+ 137000.10
+  90000.00
+  75000.00
+ 138000.40
+  56000.00
+ 136000.00
+  80000.00
+  70000.00
+ 175500.00
+  90000.00
+ 118000.00
+
+--- 11 row(s) selected.
+
+SQL>
+```
+
+<<<
+This `EXECUTE` statement executes the prepared empcom statement, which has one named parameter,
+`?dn`, which was set by `SET PARAM` for the department number:
+
+```
+SQL>EXECUTE empcom;
+
+FIRST_NAME      LAST_NAME            DEPTNUM
+--------------- -------------------- -------
+ALAN            TERRY                   3000
+DAVID           TERRY                   2000
+PETE            WELLINGTON              3100
+JOHN            CHOU                    3500
+MANFRED         CONRAD                  4000
+DINAH           CLARK                   9000
+DAVE            FISHER                  3200
+GEORGE          FRENCHMAN               4000
+KARL            HELMSTED                4000
+JOHN            JONES                   4000
+JOHN            HUGHES                  3200
+WALTER          LANCASTER               4000
+MARLENE         BONNY                   4000
+BILL            WINN                    2000
+MIRIAM          KING                    2500
+GINNY           FOSTER                  3300
+```
+<<<
+```
+MARIA           JOSEF                   4000
+HERB            ALBERT                  3300
+RICHARD         BARTON                  1000
+XAVIER          SEDLEMEYER              3300
+DONALD          TAYLOR                  3100
+LARRY           CLARK                   1000
+JIM             HERMAN                  3000
+GEORGE          STRICKER                3100
+OTTO            SCHNABL                 3200
+TIM             WALKER                  3000
+TED             MCDONALD                2000
+PETER           SMITH                   3300
+MARK            FOLEY                   4000
+HEIDI           WEIGL                   3200
+ROCKY           LEWIS                   2000
+SUE             CRAMER                  1000
+MARTIN          SCHAEFFER               3200
+HERBERT         KARAJAN                 3200
+JESSICA         CRINER                  3500
+
+--- 35 row(s) selected.
+
+SQL>
+```
+
+<<<
+This `EXECUTE` statement executes the prepared findemp statement, which has two 
+unnamed parameters: `?sal`, which was set by `SET PARAM` for the salary, and a 
+parameter that was not set in advance for the job code:
+
+```
+SQL> EXECUTE findemp USING ?sal, 100;
+
+EMP_NUM FIRST_NAME      LAST_NAME            DEPTNUM JOBCODE SALARY
+------- --------------- -------------------- ------- ------- ---------
+    213 ROBERT          WHITE                   1500     100  90000.00
+     23 JERRY           HOWARD                  1000     100 137000.10
+      1 ROGER           GREEN                   9000     100 175500.00
+     29 JANE            RAYMOND                 3000     100 136000.00
+     32 THOMAS          RUDLOFF                 2000     100 138000.40
+     43 PAUL            WINTER                  3100     100  90000.00
+     65 RACHEL          MCKAY                   4000     100 118000.00
+
+--- 7 row(s) selected.
+SQL>
+```
+
+For the syntax of the EXECUTE statement, see the 
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+<<<
+[[interactive_log_output]]
+== Log Output
+
+To log an TrafCI session, use the `SPOOL` or `LOG` command. The `SPOOL` and `LOG` commands 
+record into a log file the commands that you enter in the command-line interface and the 
+output of those commands.
+
+=== Start the Logging Process
+
+To start logging, enter one of these commands:
+
+* `SPOOL ON` or `LOG ON`
+* `SPOOL _log-file_` or `LOG _log-file_`
+
+For more information, see the <<cmd_log, LOG Command>> and
+the <<cmd_spool, SPOOL Command>>.
+
+<<<
+==== `SPOOL ON` or `LOG ON` Command
+
+The `SPOOL ON` or `LOG ON` command logs information about a session in the `sqlspool.lst`
+file, which TrafCI stores in the bin directory:
+
+* On Windows:
++
+```
+<trafci-installation-directory>\Trafodion Command Interface\bin\sqlspool.lst
+```
++
+`_trafci-installation-directory_` is the directory where you installed the
+TrafCI software files.
+
+* On Linux:
++
+```
+<trafci-installation-directory>/trafci/bin/sqlspool.lst
+```
++
+`_trafci-installation-directory_` is the directory where you installed
+the TrafCI software files.
+
+*Example*
+
+This SPOOL ON command starts logging the session in the `sqlspool.lst` file:
+
+```
+SQL> SPOOL ON
+```
+
+=== `SPOOL _log-file_` or `LOG _log-file_` Command
+
+The `SPOOL _log-file_` and `LOG _log-file_` commands record information about a session 
+in a log file that you specify. If you specify a directory for the log file, the 
+directory must exist as specified. Otherwise, an error occurs when you try to run the 
+`SPOOL` or `LOG` command. If you do not specify a directory for the log file, TrafCI uses the 
+`bin` directory.
+
+*Example*
+
+This `SPOOL _log-file_` command starts logging the session in the `persnl_updates.log` file in 
+the `C:\log directory`:
+
+```
+SQL> SPOOL C:\log\persnl_updates.log
+```
+
+<<<<
+==== Using the `CLEAR` Option
+
+The CLEAR option clears the contents of an existing log file before logging new information to 
+the file. If you omit CLEAR, TrafCI appends new information to existing information in the log file.
+
+*Example*
+
+This SPOOL _log-file_ CLEAR command clears existing information from the specified log file and 
+starts logging the session in the log file:
+
+```
+SQL> SPOOL C:\log\persnl_updates.log clear
+```
+
+==== Log Concurrent the TrafCI Sessions
+
+If you plan to run two or more TrafCI sessions concurrently on the same workstation, use the 
+`SPOOL _log-file_` or `LOG _log-file_` command and specify a unique name for each log file. 
+Otherwise, each session writes information to the same log file, making it difficult to determine 
+which information belongs to each session.
+
+=== Stopping the Logging Process
+
+To stop logging, enter one of these commands:
+
+* `SPOOL OFF`
+* `LOG OFF`
+
+*Example*
+
+This SPOOL OFF command stops logging in an TrafCI session:
+
+```
+SQL> SPOOL OFF
+```
+
+<<<
+=== View the Contents of a Log File
+
+The log file is an ASCII text file that contains all the lines in TrafCI from the time you start 
+logging to the time you stop logging. The logged lines include prompts, entered commands, 
+output from commands, and diagnostic messages.
+
+*Example*
+
+This log file contains information from when you started logging to when you stopped logging:
+
+```
+================================================================================
+Spooling started at May 29, 2105 4:52:23 PM
+================================================================================
+
+SQL> SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+--- SQL operation complete. SQL>begin work;
+
+--- SQL operation complete.
+
+SQL> DELETE FROM employee WHERE empnum=32;
+
+-- 1 row(s) deleted.
+
+SQL> INSERT INTO employee
+(empnum, first_name, last_name, deptnum, salary) values(51, 'JERRY',
+'HOWARD', 1000, 137000.00);
+
+-- 1 row(s) inserted.
+
+SQL> UPDATE dept SET manager=50
+where deptnum=1000;
+
+--- 1 row(s) updated. 
+
+SQL> COMMIT WORK;
+
+--- SQL operation complete. 
+
+SQL> LOG OFF
+```
+
+
+

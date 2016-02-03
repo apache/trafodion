@@ -62,7 +62,8 @@ class PrivMgrMDAdmin;
 // -----------------------------------------------------------------------
 typedef struct {
   int64_t objectUID;
-  int32_t objectOwner;
+  int32_t granteeID;
+  bool grantorIsSystem;
   std::string objectName;
   ComObjectType objectType;
   PrivMgrDesc originalPrivs;
@@ -78,8 +79,10 @@ typedef struct {
     details += to_string((long long int) objectUID);
     details += ", name is ";
     details += objectName;
-    details += ", owner is ";
-    details += to_string((long long int) objectOwner);
+    details += ", grantee is ";
+    details += to_string((long long int) granteeID);
+    details += ", is owner ";
+    details += (grantorIsSystem) ? "true " : "false ";
   }
 } ObjectUsage;
 
@@ -165,7 +168,9 @@ class PrivMgrMDAdmin : public PrivMgr
       const std::string &colsLocation,
       std::vector<std::string> &tablesCreated,
       std::vector<std::string> &tablesUpgraded);
-    PrivStatus dropMetadata(const std::vector<std::string> &objectsToDrop);
+    PrivStatus dropMetadata(
+      const std::vector<std::string> &objectsToDrop,
+      bool doCleanup);
 
     inline void setMetadataLocation (const std::string metadataLocation)
       {metadataLocation_ = metadataLocation;};
@@ -201,6 +206,8 @@ class PrivMgrMDAdmin : public PrivMgr
     }
 
   private:
+
+    void cleanupMetadata(ExeCliInterface &cliInterface);
 
     bool isRoot(std::string userName)
     { return ((userName == "DB__ROOT") ? true : false); }

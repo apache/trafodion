@@ -1,0 +1,4088 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sql_language_elements]]
+= SQL Language Elements
+
+Trafodion SQL language elements, which include data types, expressions, functions, identifiers, literals, and
+predicates, occur within the syntax of SQL statements. The statement and command topics support the syntactical
+and semantic descriptions of the language elements in this section.
+
+[[_authorization_ids]]
+== Authorization IDs
+
+An authorization ID is used for an authorization operation. Authorization is the process of validating that a
+database user has permission to perform a specified SQL operation. Externally, the authorization ID is a regular
+or delimited case-insensitive identifier that can have a maximum of 128 characters. See
+<<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
+Internally, the authorization ID is associated with a 32-bit number that the database generates and uses for
+efficient access and storage.
+
+All authorization IDs share the same name space. An authorization ID can be a database user name or a role name.
+Therefore, a database user and a role cannot share the same name.
+
+An authorization ID can be the PUBLIC authorization ID, which represents all present and future authorization IDs.
+An authorization ID cannot be SYSTEM, which is the implicit grantor of privileges to the creator of objects.
+
+[[character_sets]]
+== Character Sets
+
+You can specify ISO88591 or UTF8 for a character column definition. The use of UTF8 permits you to store characters
+from many different languages.
+
+<<<
+[[columns]]
+== Columns
+
+A column is a vertical component of a table and is the relational representation of a field in a record. A column
+contains one data value for each row of the table.
+
+A column value is the smallest unit of data that can be selected from or updated in a table. Each column has a name
+that is an SQL identifier and is unique within the table or view that contains the column.
+
+[[column_references]]
+=== Column References
+
+A qualified column name, or column reference, is a column name qualified by the name of the table or view to which
+the column belongs, or by a correlation name.
+
+If a query refers to columns that have the same name but belong to different tables, you must use a qualified column
+name to refer to the columns within the query. You must also refer to a column by a qualified column name if you join
+a table with itself within a query to compare one row of the table with other rows in the same table.
+
+The syntax of a column reference or qualified column name is:
+
+```
+{table-name | view-name | correlation-name}.column-name
+```
+
+If you define a correlation name for a table in the FROM clause of a statement, you must use that correlation name if
+you need to qualify the column name within the statement.
+
+If you do not define an explicit correlation name in the FROM clause, you can qualify the column name with the name of
+the table or view that contains the column. See <<correlation_names,Correlation Names>>.
+
+<<<
+[[derived_column_names]]
+=== Derived Column Names
+
+A derived column is an SQL value expression that appears as an item in the select list of a SELECT statement. An explicit
+name for a derived column is an SQL identifier associated with the derived column. The syntax of a derived column name is:
+
+```
+column-expression [[AS] column-name]
+```
+
+The column expression can simply be a column reference. The expression is optionally followed by the AS keyword and the
+name of the derived column.
+
+If you do not assign a name to derived columns, the headings for unnamed columns in query result tables appear as (EXPR).
+Use the AS clause to assign names that are meaningful to you, which is important if you have more than one derived column
+in your select list.
+
+[[examples_of_derived_column_names]]
+==== Examples of Derived Column Names
+
+These two examples show how to use names for derived columns.
+
+* The first example shows (EXPR) as the column heading of the SELECT result table:
++
+```
+SELECT AVG (salary) FROM persnl.employee; (EXPR)
+
+----------------
+49441.52
+
+--- 1 row(s) selected.
+```
+
+* The second example shows AVERAGE SALARY as the column heading:
++
+```
+SELECT AVG (salary) AS "AVERAGE SALARY"
+FROM persnl.employee; "AVERAGE SALARY"
+
+----------------
+49441.52
+
+--- 1 row(s) selected.
+```
+
+[[column_default_settings]]
+=== Column Default Settings
+
+You can define specific default settings for columns when the table is created. The CREATE TABLE statement defines the
+default settings for columns within tables. The default setting for a column is the value inserted in a row when an INSERT
+statement omits a value for a particular column.
+
+[[constraints]]
+== Constraints
+
+An SQL constraint is an object that protects the integrity of data in a table by specifying a condition that all the
+values in a particular column or set of columns of the table must satisfy.
+
+Trafodion SQL enforces these constraints on SQL tables:
+
+[cols="20%,80%"]
+|===
+| CHECK       | Column or table constraint specifying a condition must be satisfied for each row in the table.
+| FOREIGN KEY | Column or table constraint that specifies a referential constraint for the table, declaring that a
+column or set of columns (called a foreign key) in a table can contain only values that match those in a column or
+set of columns in the table specified in the REFERENCES clause.
+| NOT NULL    | Column constraint specifying the column cannot contain nulls.
+| PRIMARY KEY | Column or table constraint specifying the column or set of columns as the primary key for the table.
+| UNIQUE      | Column or table constraint that specifies that the column or set of columns cannot contain more than
+one occurrence of the same value or set of values.
+|=== 
+
+[[creating_or_adding_constraints_on_sql_tables]]
+=== Creating or Adding Constraints on SQL Tables
+
+To create constraints on an SQL table when you create the table, use the NOT NULL, UNIQUE, CHECK, FOREIGN KEY, or
+PRIMARY KEY clause of the CREATE TABLE statement.
+
+For more information on Trafodion SQL commands, see <<create_table_statement,CREATE TABLE Statement>> and
+<<alter_table_statement,ALTER TABLE Statement>>.
+
+[[constraint_names]]
+=== Constraint Names
+
+When you create a constraint, you can specify a name for it or allow a name to be generated by Trafodion SQL.
+You can optionally specify both column and table constraint names. Constraint names are ANSI logical names.
+See <<database_object_names,Database Object Names>>. Constraint names are in the same name space as tables and
+views, so a constraint name cannot have the same name s a table or view.
+
+The name you specify can be fully qualified or not. If you specify the schema parts of the name, they must match
+those parts of the affected table and must be unique among table, view, and constraint names in that schema. If you
+omit the schema portion of the name you specify, Trafodion SQL expands the name by using the schema for the table.
+
+If you do not specify a constraint name, Trafodion SQL constructs an SQL identifier as the name for the constraint
+and qualifies it with the schema of the table. The identifier consists of the table name concatenated with a
+system-generated unique identifier.
+
+[[correlation_names]]
+== Correlation Names
+
+A correlation name is a name you can associate with a table reference that is a table, view, or subquery in a SELECT
+statement to:
+
+* Distinguish a table or view from another table or view referred to in a statement
+* Distinguish different uses of the same table
+* Make the query shorter
+
+
+A correlation name can be explicit or implicit.
+
+[[explicit_correlation_names]]
+=== Explicit Correlation Names
+
+An explicit correlation name for a table reference is an SQL identifier associated with the table reference in the FROM
+clause of a SELECT statement. See <<identifiers,Identifiers>>. The correlation name must be unique within the FROM clause.
+For more information about the FROM clause, table references, and correlation names, see <<select_statement,SELECT Statement>>.
+
+The syntax of a correlation name for the different forms of a table reference within a FROM clause is the same:
+
+```
+{table | view | (query-expression)} [AS]correlation-name
+```
+
+A table or view is optionally followed by the AS keyword and the correlation name. A derived table, resulting from the
+evaluation of a query expression, must be followed by the AS keyword and the correlation name. An explicit correlation
+name is known only to the statement in which you define it. You can use the same identifier as a correlation name in
+another statement.
+
+[[implicit_correlation_names]]
+=== Implicit Correlation Names
+
+A table or view reference that has no explicit correlation name has an implicit correlation name. The implicit correlation
+name is the table or view name qualified with the schema names.
+
+You cannot use an implicit correlation name for a reference that has an explicit correlation name within the statement.
+
+[[examples_of_correlation_names]]
+=== Examples of Correlation Names
+
+This query refers to two tables, ORDERS and CUSTOMER, that contain columns named CUSTNUM. In the WHERE clause, one column
+reference is qualified by an implicit correlation name (ORDERS) and the other by an explicit correlation name (C):
+
+```
+SELECT ordernum, custname FROM orders, customer c
+WHERE orders.custnum = c.custnum AND orders.custnum = 543;
+```
+
+[[database_objects]]
+== Database Objects
+
+A database object is an SQL entity that exists in a name space. SQL statements can access Trafodion SQL database objects.
+The subsections listed below describe these Trafodion SQL database objects.
+
+* <<constraints,Constraints>>
+* <<indexes,Indexes>>
+* <<tables,Tables>>
+* <<views,Views>>
+
+[[ownership]]
+=== Ownership
+
+In Trafodion SQL, the creator of an object owns the object defined in the schema and has all privileges on the object.
+In addition, you can use the GRANT and REVOKE statements to grant access privileges for a table or view to specified users.
+
+For more information, see the <<grant_statement,GRANT Statement>> and <<revoke_statement,REVOKE Statement>>. For
+information on privileges on tables and views, see <<create_table_statement,CREATE TABLE Statement>> and
+<<create_view_statement,CREATE VIEW Statement>>.
+
+[[database_object_names]]
+== Database Object Names
+
+DML statements can refer to Trafodion SQL database objects. To refer to a database object in a statement, use an appropriate
+database object name. For information on the types of database objects see <<database_objects,Database Objects>>.
+
+<<<
+[[logical_names_for_sql_objects]]
+=== Logical Names for SQL Objects
+
+You may refer to an SQL table, view, constraint, library, function, or procedure by using a one-part, two-part, or three-part
+logical name, also called an ANSI name:
+
+```
+catalog-name.schema-name.object-name
+```
+
+In this three-part name, _catalog-name_ is the name of the catalog, which is TRAFODION for Trafodion SQL objects that map to
+HBase tables. _schema-name_ is the name of the schema, and _object-name_ is the simple name of the table, view, constraint,
+library, function, or procedure. Each of the parts is an SQL identifier. See <<identifiers,Identifiers>>.
+
+Trafodion SQL automatically qualifies an object name with a schema name unless you explicitly specify schema names with the
+object name. If you do not set a schema name for the session using a SET SCHEMA statement, the default schema is SEABASE,
+which exists in the TRAFODION catalog. See <<set_schema_statement,SET SCHEMA Statement>>. A one-part name _object-name_ is
+qualified implicitly with the default schema.
+
+You can qualify a column name in a Trafodion SQL statement by using a three-part, two-part, or one-part object name, or a
+correlation name.
+
+[[sql_object_namespaces]]
+=== SQL Object Namespaces
+
+Trafodion SQL objects are organized in a hierarchical manner. Database objects exist in schemas, which are themselves
+contained in a catalog called TRAFODION. A catalog is a collection of schemas. Schema names must be unique within the catalog.
+
+Multiple objects with the same name can exist provided that each belongs to a different name space. Trafodion SQL supports these
+namespaces:
+
+* Index
+* Functions and procedures
+* Library
+* Schema label
+* Table value object (table, view, constraint)
+
+Objects in one schema can refer to objects in a different schema. Objects of a given name space are required to have
+unique names within a given schema.
+
+<<<
+[[data_types]]
+== Data Types
+
+Trafodion SQL data types are character, datetime, interval, or numeric (exact or approximate):
+
+[cols="2*"]
+|===
+| <<character_string_data_types,Character String Data Types>> | Fixed-length and variable-length character data types.
+| <<datetime_data_types,Datetime Data Types>>                 | DATE, TIME, and TIMESTAMP data types.
+| <<interval_data_types,Interval Data Types>>                 | Year-month intervals (years and months) and day-time intervals (days,
+hours, minutes, seconds, and fractions of a second).
+| <<numeric_data_types_,Numeric Data Types >>                 | Exact and approximate numeric data types.
+|===
+
+Each column in a table is associated with a data type. You can use the CAST expression to convert data to the data type that you specify. For
+more information, see <<cast_expression,CAST Expression>>.
+
+The following table summarizes the Trafodion SQL data types:
+
+[cols="13%,29%,29%,29%",options="header"]
+|===
+| Type | SQL Designation | Description | Size or Range^1^
+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 32707 characters^2^
+|                        | NCHAR                | Fixed-length character data in predefined national character set | 1 to 32707 bytes^3^ ^7^
+|                        | NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 32707 bytes^3^ ^7^
+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 32703 characters^4^
+|                           | CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 32703 characters^4^
+|                           | NCHAR VARYING                | Variable-length ASCII character string | 1 to 32703 bytes^4^ ^8^
+|                           | NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 32703 characters^4^ ^8^
+| Numeric
+| NUMERIC (1,_scale_) to +
+NUMERIC (128,_scale_)
+| Binary number with optional scale; signed or unsigned for 1 to 9 digits
+| 1 to 128 digits; stored: +
+1 to 4 digits in 2 bytes +
+ +
+5 to 9 digits in 4 bytes +
+ +
+10 to 128 digits in 8-64 bytes, depending on precision
+|                           | SMALLINT                      | Binary integer; signed or unsigned    | 0 to 65535 unsigned, -32768 to +32767 signed; stored in 2 bytes
+|                           | INTEGER                       | Binary integer; signed or unsigned    | 0 to 4294967295 unsigned, -2147483648 to +2147483647 signed; stored in 4 bytes
+|                           | LARGEINT                      | Binary integer; signed only           | -2**63 to +(2**63)-1; stored in 8 bytes
+| Numeric (extended numeric precision) | NUMERIC (precision 19 to 128) | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
+length of 8 bytes.
+| Floating point number
+| FLOAT[(_precision_)]
+| Floating point number; precision designates from 1 through 52 bits of precision
+| +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
+|                                      | REAL                          | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
+|
+| DOUBLE PRECISION
+| Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent)
+| +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 byte
+| Decimal number
+| DECIMAL (1,_scale_) to DECIMAL (18,_scale_)
+| Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
+| 1 to 18 digits. Byte length equals the number of digits. Sign is stored as the first bit of the leftmost byte.
+|
+| Date-Time
+| Point in time, using the Gregorian calendar and a 24 hour clock system. The five supported designations are listed below.
+| YEAR 0001-9999 +
+MONTH 1-12 +
+DAY 1-31 +
+ +
+DAY constrained by MONTH and YEAR +
+ +
+HOUR 0-23 +
+MINUTE 0-59 +
+SECOND 0-59 +
+FRACTION(n) 0-999999 +
+ +
+in which n is the number of significant digits, from 1 to 6
+(default is 6; minimum is 1; maximum is 6). Actual database storage is
+incremental, as follows:
+ +
+YEAR in 2 bytes +
+MONTH in 1 byte +
+DAY in 1 byte +
+HOUR in 1 byte +
+MINUTE in 1
+byte SECOND in 1 byte +
+FRACTION in 4 bytes +
+| | DATE                         | Date                                   | Format as YYYY-MM-DD; actual database storage size is 4 bytes
+| | TIME                         | Time of day, 24 hour clock, no time precision. Format as HH:MM:SS; actual database storage size is 3 bytes
+| | TIME (with time precision)   | Time of day, 24 hour clock, with time precision | Format as HH:MM:SS.FFFFFF; actual database storage size is 7 bytes
+| | TIMESTAMP                    | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS; actual database storage size is 7 bytes
+| | TIMESTAMP (with time precision) Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 1 byte
+| Interval | INTERVAL | Duration of time; value is in the YEAR/MONTH range or the DAY/HOUR/MINUTE/YEAR/SECOND/FRACTION range
+| YEAR no constraint^6^ +
+MONTH 0-1 +
+DAY no contraint +
+HOUR 0-23 +
+MINUTE 0-59 +
+SECOND 0-59 +
+FRACTION(n) 0-999999 +
+in which n is the number of significant digits (default is 6; minimum is 1; maximum is 6); +
+stored in 2, 4, or 8 bytes depending on number of digits^2^
+|===
+
+* _scale_ is the number of digits to the right of the decimal.
+* _precision_ specifies the allowed number of decimal digits.
+
+
+1. The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
+2.  The maximum row size is 32708 bytes, but the actual row size is less than that because of bytes used by
+null indicators, varchar column length indicators, and actual data encoding.
+3.  Storage size is the same as that required by CHAR data type but store only half as many characters depending
+on character set selection.
+4.  Storage size is reduced by 4 bytes for storage of the varying character length.
+5.  The maximum number of digits in an INTERVAL value is 18, including the digits in all INTERVAL fields of the value.
+Any INTERVAL field that is a starting field can have up to 18 digits minus the number of other digits in the INTERVAL value.
+6.  The maximum is 32707 if the national character set was specified at installation time to be ISO88591.
+The maximum is 16353 if the national character set was specified at installation time as UTF8.
+7.  The maximum is 32703 if the national character set was specified at installation time to be ISO88591.
+The maximum is 16351 if the national character set was specified at installation time as UTF8.
+
+
+<<<
+[[comparable_and_compatible_data_types]]
+=== Comparable and Compatible Data Types
+
+Two data types are comparable if a value of one data type can be compared to a value of the other data type.
+
+Two data types are compatible if a value of one data type can be assigned to a column of the other data type, and if
+columns of the two data types can be combined using arithmetic operations. Compatible data types are also comparable.
+
+Assignment and comparison are the basic operations of Trafodion SQL. Assignment operations are performed during the
+execution of INSERT and UPDATE statements. Comparison operations are performed during the execution of statements that
+include predicates, aggregate (or set) functions, and GROUP BY, HAVING, and ORDER BY clauses.
+
+The basic rule for both assignment and comparison is that the operands have compatible data types. Data types with
+different character sets cannot be compared without converting one character set to the other. However, the SQL compiler
+will usually generate the necessary code to do this conversion automatically.
+
+[[character_data_types]]
+==== Character Data Types
+
+Values of fixed and variable length character data types of the same character set are all character strings and are
+all mutually comparable and mutually assignable.
+
+When two strings are compared, the comparison is made with a temporary copy of the shorter string that has been padded
+on the right with blanks to have the same length as the longer string.
+
+[[datetime_data_types]]
+==== Datetime Data Types
+
+Values of type datetime are mutually comparable and mutually assignable only if the types have the same datetime fields.
+A DATE, TIME, or TIMESTAMP value can be compared with another value only if the other value has the same data type.
+
+All comparisons are chronological. For example, this predicate is true:
+
+```
+TIMESTAMP '2008-09-28 00:00:00' > TIMESTAMP '2008-06-26 00:00:00'
+```
+
+
+<<<
+[[interval_data_types]]
+==== Interval Data Types
+
+Values of type INTERVAL are mutually comparable and mutually assignable only if the types are either both year-month
+intervals or both day-time intervals.
+
+For example, this predicate is true:
+
+```
+INTERVAL '02-01' YEAR TO MONTH > INTERVAL '00-01' YEAR TO MONTH
+```
+
+The field components of the INTERVAL do not have to be the same. For example, this predicate is also true:
+
+```
+INTERVAL '02-01' YEAR TO MONTH > INTERVAL '01' YEAR
+```
+
+[[numeric_data_types]]
+==== Numeric Data Types
+
+Values of the approximate data types FLOAT, REAL, and DOUBLE PRECISION, and values of the exact data types NUMERIC,
+DECIMAL, INTEGER, SMALLINT, and LARGEINT, are all numbers and are all mutually comparable and mutually assignable.
+
+When an approximate data type value is assigned to a column with exact data type, rounding might occur, and the
+fractional part might be truncated. When an exact data type value is assigned to a column with approximate data type,
+the result might not be identical to the original number.
+
+When two numbers are compared, the comparison is made with a temporary copy of one of the numbers, according to defined
+rules of conversion. For example, if one number is INTEGER and the other is DECIMAL, the comparison is made with a
+temporary copy of the integer converted to a decimal.
+
+[[extended_numeric_precision]]
+===== Extended Numeric Precision
+
+Trafodion SQL provides support for extended numeric precision data type. Extended numeric precision is an extension to
+the NUMERIC(x,y) data type where no theoretical limit exists on precision. It is a software data type, which means that
+the underlying hardware does not support it and all computations are performed by software. Computations using this data
+type may not match the performance of other hardware supported data types.
+
+<<<
+[[considerations_for_extended_numeric_precision_data_type]]
+===== Considerations for Extended NUMERIC Precision Data Type
+
+Consider these points and limitations for extended NUMERIC precision data type:
+
+
+* May cost more than other data type options.
+* Is a software data type.
+* Cannot be compared to data types that are supported by hardware.
+* If your application requires extended NUMERIC precision arithmetic
+expressions, specify the required precision in the table DDL or as
+explicit extended precision type casts of your select list items. The
+default system behavior is to treat user-specified extended precision
+expressions as extended precision values. Conversely, non-user-specified
+(that is, temporary, intermediate) extended precision expressions may
+lose precision. In the following example, the precision appears to lose
+one digit because the system treats the sum of two NUMERIC(18,4) type
+columns as NUMERIC(18,4). NUMERIC(18) is the longest non-extended
+precision numeric type. NUMERIC(19) is the shortest extended precision
+numeric type. The system actually computes the sum of 2 NUMERIC(18,4)
+columns as an extended precision NUMERIC(19,4) sum. But because no
+user-specified extended precision columns exist, the system casts the
+sum back to the user-specified type of NUMERIC(18,4).
++    
+```
+CREATE TABLE T(a NUMERIC(18,4), B NUMERIC(18,4));
+INSERT INTO T VALUES (1.1234, 2.1234);
+
+>> SELECT A+B FROM T;
+
+(EXPR)
+--------------
+3.246
+```
++
+If this behavior is not acceptable, you can use one of these options:
++
+** Specify the column type as NUMERIC(19,4). For example, CREATE TABLE T(A NUMERIC(19,4), B NUMERIC(19,4)); or
+** Cast the sum as NUMERIC(19,4). For example, SELECT CAST(A+B AS NUMERIC(19,4)) FROM T; or
+** Use an extended precision literal in the expression. For example, SELECT A+B*1.00000000000000000000 FROM T;.
++
+Note the result for the previous example when changing to NUMERIC(19,4):
++
+```
+SELECT CAST(A+B AS NUMERIC(19,4)) FROM T;
+
+(EXPR)
+------------
+3.2468
+```
++
+When displaying output results in the command interface of a
+client-based tool, casting a select list item to an extended precision
+numeric type is acceptable. However, when retrieving an extended
+precision select list item into an application program's host variable,
+you must first convert the extended precision numeric type into a string
+data type. For example:
++
+```
+SELECT CAST(CAST(A+B AS NUMERIC(19,4)) AS CHAR(24)) FROM T;
+
+(EXPR)
+
+------------
+3.2468
+```
++
+NOTE: An application program can convert an externalized extended
+precision value in string form into a numeric value it can handle. But,
+an application program cannot correctly interpret an extended precision
+value in internal form.
+
+[[rules_for_extended_numeric_precision_data_type]]
+===== Rules for Extended NUMERIC Precision Data Type
+
+These rules apply:
+
+* No limit on maximum precision.
+* Supported in all DDL and DML statements where regular NUMERIC data type is supported.
+* Allowed as part of key columns for hash partitioned tables only.
+* NUMERIC type with precision 10 through 18.
+** UNSIGNED is supported as extended NUMERIC precision data type
+** SIGNED is supported as 64-bit integer
+* CAST function allows conversion between regular NUMERIC and extended NUMERIC precision data type.
+* Parameters in SQL queries support extended NUMERIC precision data type.
+
+<<<
+[[example_of_extended_numeric_precision_data_type]]
+===== Example of Extended NUMERIC Precision Data Type
+
+```
+>>CREATE TABLE t( n NUMERIC(128,30));
+
+--- SQL operation complete.
+
+>>SHOWDDL TABLE t;
+CREATE TABLE SCH.T
+  (
+      N NUMERIC(128, 30) DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+
+>>
+```
+
+<<<
+[[character_string_data_types]]
+=== Character String Data Types
+
+Trafodion SQL includes both fixed-length character data and variable-length character data. You cannot compare character data to
+numeric, datetime, or interval data.
+
+* `_character-type_` is:
++
+```
+CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
+| CHAR[ACTER] VARYING(_length_) [CHARACTERS][_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
+| VARCHAR(_length_) [CHARACTERS] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NCHAR [(_length_)] [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NCHAR VARYING (_length_) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NATIONAL CHAR[ACTER] [(_length_)] [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NATIONAL CHAR[ACTER] VARYING (_length_) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+```
+
+* `_char-set_` is
++
+```
+CHARACTER SET char-set-name
+```
+
+CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
+VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
+varying-length character types.
+
+* `_length_`
++
+is a positive integer that specifies the number of characters allowed in
+the column. You must specify a value for _length_.
+
+* `_char-set-name_`
++
+is the character set name, which can be ISO88591 or UTF8.
+
+* `CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with fixed-length character data.
+
+* `CHAR[ACTER] VARYING (_length_) [CHARACTERS] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with varying-length character data. VARYING specifies
+that the number of characters stored in the column can be fewer than the
+_length_.
++
+<<<
++
+Values in a column declared as VARYING can be logically and physically
+shorter than the maximum length, but the maximum internal size of a
+VARYING column is actually four bytes larger than the size required for
+an equivalent column that is not VARYING.
+
+* `VARCHAR (_length_) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with varying-length character data. VARCHAR is
+equivalent to data type CHAR[ACTER] VARYING.
+
+* `NCHAR [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with data in the predefined national character set.
+
+* `NCHAR VARYING [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] VARYING (_length_) [UPSHIFT] [[NOT]CASESPECIFIC]`
++
+specifies a column with varying-length data in the predefined national character set.
+
+[[considerations_for_character_string_data_types]]
+==== Considerations for Character String Data Types
+
+[[difference_between_char_and_varchar]]
+===== Difference Between CHAR and VARCHAR
+
+You can specify a fixed-length character column as CHAR(_n_), where
+_n_ is the number of characters you want to store. However, if you store
+five characters into a column specified as CHAR(10), ten characters are
+stored where the rightmost five characters are blank.
+
+If you do not want to have blanks added to your character string, you
+can specify a variable-length character column as VARCHAR(_n_), where
+_n_ is the maximum number of characters you want to store. If you store
+five characters in a column specified as VARCHAR(10), only the five
+characters are stored logically—without blank padding.
+
+<<<
+[[nchar_columns_in_sql_tables]]
+===== NCHAR Columns in SQL Tables
+
+In Trafodion SQL, the NCHAR type specification is equivalent to:
+
+
+* NATIONAL CHARACTER
+* NATIONAL CHAR
+* CHAR &#8230; CHARACTER SET &#8230;, where the character set is the character set for NCHAR
+
+Similarly, you can use NCHAR VARYING, NATIONAL CHARACTER VARYING, NATIONAL CHAR
+VARYING, and VARCHAR &#8230; CHARACTER SET &#8230; , where the character set is
+the character set for NCHAR. The character set for NCHAR is determined
+when Trafodion SQL is installed.
+
+<<<
+[[datetime_data_types]]
+=== Datetime Data Types
+
+A value of datetime data type represents a point in time according to
+the Gregorian calendar and a 24-hour clock in local civil time (LCT). A
+datetime item can represent a date, a time, or a date and time.
+
+When a numeric value is added to or subtracted from a date type, the
+numeric value is automatically casted to an INTERVAL DAY value. When a
+numeric value is added to or subtracted from a time type or a timestamp
+type, the numeric value is automatically casted to an INTERVAL SECOND
+value. For information on CAST, see <<cast
+expression,CAST
+Expression>>.
+
+Trafodion SQL accepts dates, such as October 5 to 14, 1582, that were
+omitted from the Gregorian calendar. This functionality is a Trafodion
+SQL extension.
+
+The range of times that a datetime value can represent is:
+
+```
+January 1, 1 A.D., 00:00:00.000000 (low value) December 31, 9999, 23:59:59.999999 (high value)
+```
+
+Trafodion SQL has three datetime data types:
+
+* `_datetime-type_` is:
++
+```
+  DATE
+| TIME [(_time-precision_)]
+| TIMESTAMP [(_timestamp-precision_)]
+```
+
+* `DATE`
++
+specifies a datetime column that contains a date in the external form
+yyyy-mm-dd and stored in four bytes.
+
+* `TIME [(_time-precision_)]`
++
+specifies a datetime column that, without the optional time-precision,
+contains a time in the external form hh:mm:ss and is stored in three
+bytes. _time-precision_ is an unsigned integer that specifies the number
+of digits in the fractional seconds and is stored in four bytes. The
+default for _time-precision_ is 0, and the maximum is 6.
+
+* `TIMESTAMP [(_timestamp-precision_)]`
++
+specifies a datetime column that, without the optional
+_timestamp-precision_, contains a timestamp in the external form
+yyyy-mm-dd hh:mm:ss and is stored in seven bytes. _timestamp-precision_
+is an unsigned integer that specifies the number of digits in the
+fractional seconds and is stored in four bytes. The default for
+_timestamp-precision_ is 6, and the maximum is 6.
+
+
+[[considerations_for_datetime_data_types]]
+==== Considerations for Datetime Data Types
+
+[[datetime_ranges]]
+===== Datetime Ranges
+
+The range of values for the individual fields in a DATE, TIME, or
+TIMESTAMP column is specified as:
+
+
+[cols=","]
+|===
+| _yyyy_   | Year, from 0001 to 9999
+| _mm_     | Month, from 01 to 12
+| _dd_     | Day, from 01 to 31
+| _hh_     | Hour, from 00 to 23
+| _mm_     | Minute, from 00 to 59
+| _ss_     | Second, from 00 to 59
+| _msssss_ | Microsecond, from 000000 to 999999
+|===
+
+When you specify _datetime_value_ (FORMAT ‘string’) in the DML statement
+and the specified format is ‘mm/dd/yyyy’,’MM/DD/YYYY’, or ‘yyyy/mm/dd’
+or ‘yyyy-mm-dd’, the datetime type is automatically cast.
+
+<<<
+[[interval_data_types]]
+=== Interval Data Types
+
+Values of interval data type represent durations of time in year-month
+units (years and months) or in day-time units (days, hours, minutes,
+seconds, and fractions of a second).
+
+* `_interval-type_ is:`
++
+```
+INTERVAL[-] { start-field TO end-field | single-field }
+```
+
+* `_start-field_ is:`
++
+```
+{YEAR | MONTH | DAY | HOUR | MINUTE} [(_leading-precision_)]
+```
+
+* `_end-field_ is:
++
+```
+YEAR | MONTH | DAY | HOUR | MINUTE | SECOND [(_fractional-precision_)]
+```
+
+* `_single-field_ is:`
++
+```
+_start-field_ | SECOND [(_leading-precision_, _fractional-precision_)]
+```
+
+* `INTERVAL[-] { _start-field_ TO _end-field_ | _single-field_ }`
++
+specifies a column that represents a duration of time as a year-month or
+day-time range or a single-field. The optional sign indicates if this is
+a positive or negative integer. If you omit the sign, it defaults to
+positive.
++
+If the interval is specified as a range, the _start-field_ and
+_end-field_ must be in one of these categories:
+
+* `{YEAR | MONTH | DAY | HOUR | MINUTE} [(_leading-precision_)]`
++
+specifies the _start-field_. A _start-field_ can have a
+_leading-precision_ up to 18 digits (the maximum depends on the number
+of fields in the interval). The _leading-precision_ is the number of digits allowed in the
+_start-field_. The default for _leading-precision_ is 2.
+
+* `YEAR | MONTH | DAY | HOUR | MINUTE | SECOND [(_fractional-precision_)]`
++
+specifies the _end-field_. If the _end-field_ is SECOND, it can have a
+_fractional-precision_ up to 6 digits. The _fractional-precision_ is the
+number of digits of precision after the decimal point. The default for
+_fractional-precision_ is 6.
+
+* `start-field | SECOND [(_leading-precision_, _fractional-precision_)]`
++
+specifies the _single-field_. If the _single-field_ is SECOND, the
+_leading-precision_ is the number of digits of precision before the
+decimal point, and
+the _fractional-precision_ is the number of digits of precision after
+the decimal point. The default for _leading-precision_ is 2, and the
+default for _fractional-precision_
+is 6. The maximum for _leading-precision_ is 18, and the maximum for
+_fractional-precision_ is 6.
+
+
+[[considerations_for_interval_data_types]]
+==== Considerations for Interval Data Types
+
+[[adding_or_subtracting_imprecise_interval_values]]
+===== Adding or Subtracting Imprecise Interval Values
+
+Adding or subtracting an interval that is any multiple of a MONTH, a
+YEAR, or a combination of these may result in a runtime error. For
+example, adding 1 MONTH to January 31, 2009 will result in an error
+because February 31 does not exist and it is not clear whether the user
+would want rounding back to February 28, 2009, rounding up to March 1,
+2009 or perhaps treating the interval 1 MONTH as if it were 30 days
+resulting in an answer of March 2, 2009. Similarly, subtracting 1 YEAR
+from February 29, 2008 will result in an error. See the descriptions for
+the <<add_months_function,ADD_MONTHS Function>>,
+<<date_add_function,DATE_ADD Function>>,
+<<date_sub_function,DATE_SUB Function>> , and <<dateadd_function,DATEADD Function>> for ways
+to add or subtract such intervals without getting errors at runtime.
+
+[[interval_leading_precision]]
+===== Interval Leading Precision
+
+The maximum for the _leading-precision_ depends on the number of fields
+in the interval and on the _fractional-precision_. The maximum is
+computed as:
+
+```
+[[18 - _fractional-precision_ - 2 * (_n_ - 1)]]
+_max-leading-precision_ = 18 - _fractional-precision_ - 2 * (_N_ - 1)
+```
+
+where _N_ is the number of fields in the interval.
+
+For example, the maximum number of digits for the _leading-precision_ in
+a column with data type INTERVAL YEAR TO MONTH is computed as: 18 – 0 –
+2 * (2 – 1) = 16
+
+<<<
+[[interval_ranges]]
+===== Interval Ranges
+
+Within the definition of an interval range (other than a single field),
+the _start-field_ and
+_end-field_ can be any of the specified fields with these restrictions:
+
+* An interval range is either year-month or day-time—that is, if the
+_start-field_ is YEAR, the _end-field_ is MONTH; if the _start-field_ is
+DAY, HOUR, or MINUTE, the _end-field_ is also a time field.
+* The _start-field_ must precede the _end-field_ within the hierarchy:
+YEAR, MONTH, DAY, HOUR, MINUTE, and SECOND.
+
+[[signed_intervals]]
+===== Signed Intervals
+
+To include a quoted string in a signed interval data type, the sign must
+be outside the quoted string. It can be before the entire literal or
+immediately before the duration enclosed in quotes.
+
+For example, for the interval “minus (5 years 5 months) these formats
+are valid:
+
+```
+INTERVAL - '05-05'YEAR TO MONTH
+
+- INTERVAL '05-05' YEAR TO MONTH
+```
+
+[[overflow_conditions]]
+===== Overflow Conditions
+
+When you insert a fractional value into an INTERVAL data type field, if
+the fractional value is 0 (zero) it does not cause an overflow.
+Inserting value INTERVAL '1.000000' SECOND(6) into a field SECOND(0)
+does not cause a loss of value. Provided that the value fits in the
+target column without a loss of precision, Trafodion SQL does not return
+an overflow error.
+
+However, if the fractional value is > 0, an overflow occurs. Inserting
+value INTERVAL '1.000001' SECOND(6) causes a loss of value.
+
+<<<
+[[numeric_data_types]]
+=== Numeric Data Types
+
+Numeric data types are either exact or approximate. A numeric data type
+is compatible with any other numeric data type, but not with character,
+datetime, or interval data types.
+
+* `_exact-numeric-type_` is:
++
+```
+   NUMERIC [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]
+| SMALLINT [SIGNED|UNSIGNED]
+| INT[EGER] [SIGNED|UNSIGNED]
+| LARGEINT
+| DEC[IMAL] [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]
+```
+
+* `_approximate-numeric-type_` is:
++
+```
+   FLOAT [(_precision_)]
+| REAL
+| DOUBLE PRECISION
+```
++
+Exact numeric data types are types that can represent a value exactly:
+NUMERIC, SMALLINT, INTEGER, LARGEINT, and DECIMAL.
++
+Approximate numeric data types are types that do not necessarily
+represent a value exactly: FLOAT, REAL, and DOUBLE PRECISION.
++
+A column in a Trafodion SQL table declared with a floating-point data
+type is stored in IEEE floating-point format and all computations on it
+are done assuming that. Trafodion SQL tables can contain only IEEE
+floating-point data.
+
+* `NUMERIC [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]`
++
+specifies an exact numeric column—a two-byte binary number, SIGNED or
+UNSIGNED. _precision_ specifies the total number of digits and cannot
+exceed 128. If _precision_ is between 10 and 18, you must use a signed
+value to obtain the supported hardware data type. If precision is over
+18, you will receive the supported software data type. You will also
+receive the supported software data type if the precision type is
+between 10 and 18, and you specify UNSIGNED. _scale_ specifies the
+number of digits to the right of the decimal point.
++
+The default is NUMERIC (9,0) SIGNED.
+
+* `SMALLINT [SIGNED|UNSIGNED]`
++
+specifies an exact numeric column—a two-byte binary integer, SIGNED or
+UNSIGNED. The
+column stores integers in the range unsigned 0 to 65535 or signed -32768
+to +32767. The default is SIGNED.
+
+* `INT[EGER] [SIGNED|UNSIGNED]`
++
+specifies an exact numeric column—a 4-byte binary integer, SIGNED or
+UNSIGNED. The column stores integers in the range unsigned 0 to
+4294967295 or signed -2147483648 to +2147483647.
++
+The default is SIGNED.
+
+* `LARGEINT`
++
+specifies an exact numeric column—an 8-byte signed binary integer. The
+column stores integers
+in the range -2^63^ to +2^63^ -1 (approximately 9.223 times 10 to the
+eighteenth power).
+
+* `DEC[IMAL] [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]`
++
+specifies an exact numeric column—a decimal number, SIGNED or
+UNSIGNED,stored as ASCII characters. _precision_ specifies the total
+number of digits and cannot exceed 18. If _precision_ is 10 or more, the
+value must be SIGNED. The sign is stored as the first bit of the
+leftmost byte. _scale_ specifies the number of digits to the right of
+the decimal point.
++
+The default is DECIMAL (9,0) SIGNED.
+
+* `FLOAT [( precision )]`
++
+specifies an approximate numeric column. The column stores
+floating-point numbers and
+designates from 1 through 54 bits of _precision_.
+The range is from +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308 stored in 8 bytes.
++
+An IEEE FLOAT _precision_ data type is stored as an IEEE DOUBLE, that is, in 8 bytes, with the specified precision.
++
+The default _precision_ is 54.
+
+* `REAL`
++
+specifies a 4-byte approximate numeric column. The column stores 32-bit
+floating-point numbers with 23 bits of binary precision and 8 bits of
+exponent.
++
+The minimum and maximum range is from +/- 1.17549435e-38 through +/ 3.40282347e+38.
+
+<<<
+* `DOUBLE PRECISION`
++
+specifies an 8-byte approximate numeric column.
++
+The column stores 64-bit floating-point numbers and designates from 1
+through 52 bits of _precision_.
++
+An IEEE DOUBLE PRECISION data type is stored in 8 bytes with 52 bits of
+binary precision and 1 bits of exponent. The minimum and maximum range
+is from +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308.
+
+<<<
+[[expressions]]
+== Expressions
+
+An SQL value expression, called an expression, evaluates to a value.
+Trafodion SQL supports these types of expressions:
+
+
+[cols="30%,70%"]
+|===
+| <<character_value_expressions,Character Value Expressions>> | Operands can be combined with the concatenation operator (&#124;&#124;). +
+ +
+Example: `'HOUSTON,' \|\| ' TEXAS'`
+| <<datetime_value_expressions,Datetime Value Expressions>> |  Operands can be combined in specific ways with arithmetic operators. +
+ +
+Example: `CURRENT_DATE + INTERVAL '1' DAY`
+| <<interval_value_expressions,Interval Value Expressions>> | Operands can be combined in specific ways with addition and subtraction operators. +
+ +
+Example: `INTERVAL '2' YEAR - INTERVAL '3' MONTH`
+| <<numeric_value_expressions,Numeric Value Expressions>> |  Operands can be combined in specific ways with arithmetic operators. +
+ +
+Example: `SALARY * 1.10`
+|===
+
+
+The data type of an expression is the data type of the value of the
+expression.
+
+A value expression can be a character string literal, a numeric literal,
+a dynamic parameter, or a column name that specifies the value of the
+column in a row of a table. A value expression can also include
+functions and scalar subqueries.
+
+<<<
+[[character_value_expressions]]
+=== Character Value Expressions
+
+The operands of a character value expression—called character
+primaries—can be combined with the concatenation operator (||). The data
+type of a character primary is character string.
+
+* `_character-expression_` is:
++
+```
+   character-primary
+| character-expression || character-primary
+```
+
+* `_character-primary_` is:
++
+```
+   character-string-literal
+| column-reference
+| character-type-host-variable
+| dynamic parameter
+| character-value-function
+| aggregate-function
+| sequence-function
+| scalar-subquery
+| CASE-expression
+| CAST-expression
+| (character-expression)
+```
+
+Character (or string) value expressions are built from operands that can be:
+
+* Character string literals
+* Character string functions
+* Column references with character values
+* Dynamic parameters
+* Aggregate functions, sequence functions, scalar subqueries, CASE expressions, or CAST expressions that return character values
+
+<<<
+[[examples_of_character_value_expressions]]
+==== Examples of Character Value Expressions
+
+These are examples of character value expressions:
+
+
+[cols="40%,60%",options="header"]
+|===
+| Expression                                | Description
+| 'ABILENE'                                 | Character string literal.
+| 'ABILENE ' \|\|' TEXAS'                   | The concatenation of two string literals.
+| 'ABILENE ' \|\|' TEXAS ' \|\| x’55 53 41' | The concatenation of three string literals to form the literal: 'ABILENE TEXAS USA'
+| 'Customer ' \|\| custname                 | The concatenation of a string literal with the value in column CUSTNAME.
+| CAST (order_date AS CHAR(10))             | CAST function applied to a DATE value.
+|===
+
+<<<
+[[datetime_value_expressions]]
+=== Datetime Value Expressions
+
+The operands of a datetime value expression can be combined in specific
+ways with arithmetic operators.
+
+In this syntax diagram, the data type of a datetime primary is DATE,
+TIME, or TIMESTAMP. The data type of an interval term is INTERVAL.
+
+* `_datetime-expression_` is:
++
+```
+  datetime-primary
+| interval-expression + datetime-primary
+| datetime-expression + interval-term
+| datetime-expression - interval-term
+```
+
+* `_datetime-primary_` is:
++
+```
+  datetime-literal
+| column-reference
+| datetime-type-host-variable
+| dynamic parameter
+| datetime-value-function
+| aggregate-function
+| sequence-function
+| scalar-subquery
+| CASE-expression
+| CAST-expression
+| (datetime-expression)
+```
+
+* `_interval-term_` is:
++
+```
+  interval-factor
+| numeric-term * interval-factor
+```
+
+* `_interval-factor_` is:
++
+```
+[+|-] interval-primary
+```
+
+<<<
+* `_interval-primary_` is:
++
+```
+  interval-literal
+| column-reference
+| interval-type-host-variable
+| dynamic parameter
+| aggregate-function
+| sequence-function
+| scalar-subquery
+| CASE-expression
+| CAST-expression
+| (interval-expression)
+```
+
+Datetime value expressions are built from operands that can be:
+
+* Interval value expressions
+* Datetime or interval literals
+* Dynamic parameters
+* Column references with datetime or interval values
+* Dynamic parameters
+* Datetime or interval value functions
+* Any aggregate functions, sequence functions, scalar subqueries, CASE
+expressions, or CAST expressions that return datetime or interval values
+
+[[considerations_for_datetime_value_expressions]]
+==== Considerations for Datetime Value Expressions
+
+[[data_type_of_result]]
+===== Data Type of Result
+
+In general, the data type of the result is the data type of the
+_datetime-primary_ part of the datetime expression. For example,
+datetime value expressions include:
+
+[cols="33%l,33%,33%",options="header"]
+|===
+| Datetime Expression | Description | Result Data Type
+| CURRENT_DATE + INTERVAL '1' DAY | The sum of the current date and an interval value of one day. | DATE
+| CURRENT_DATE + est_complete | The sum of the current date and the interval value in column EST_COMPLETE. | DATE
+| ( SELECT ship_timestamp FROM project WHERE projcode=1000) + INTERVAL '07:04' DAY TO HOUR
+| The sum of the ship timestamp for the specified project and an interval value of seven days, four hours.
+| TIMESTAMP
+|===
+
+The datetime primary in the first expression is CURRENT_DATE, a function
+that returns a value with DATE data type. Therefore, the data type of
+the result is DATE.
+
+In the last expression, the datetime primary is this scalar subquery:
+
+```
+( SELECT ship_timestamp FROM project WHERE projcode=1000 )
+```
+ 
+The preceding subquery returns a value with TIMESTAMP data type.
+Therefore, the data type of the result is TIMESTAMP.
+
+[[restrictions_on_operations_with_datetime_or_interval_operands]]
+===== Restrictions on Operations With Datetime or Interval Operands
+
+You can use datetime and interval operands with arithmetic operators in
+a datetime value expression only in these combinations:
+
+[cols="25%,25%l,25%,25%",options="header"]
+|===
+| Operand 1 | Operator | Operand 2 | Result Type
+| Datetime  | + or –   | Interval  | Datetime
+| Interval  | +        | Datetime  | Datetime
+|===
+
+
+When a numeric value is added to or subtracted from a DATE type, the
+numeric value is automatically casted to an INTERVAL DAY value. When a
+numeric value is added to or subtracted from a time type or a timestamp
+type, the numeric value is automatically casted to an INTERVAL SECOND
+value. For information on CAST, see <<cast expression,CAST Expression>>.
+For more information on INTERVALS, see 
+<<interval_value_expressions,Interval Value Expressions>>
+
+When using these operations, note:
+
+* Adding or subtracting an interval of months to a DATE value results in
+a value of the same day plus or minus the specified number of months.
+Because different months have different lengths, this is an approximate
+result.
+* Datetime and interval arithmetic can yield unexpected results,
+depending on how the fields are used. For example, execution of this
+expression (evaluated left to right) returns an error:
++
+```
+DATE '2007-01-30' + INTERVAL '1' MONTH + INTERVAL '7' DAY
+```
++
+In contrast, this expression (which adds the same values as the previous
+expression, but in a different order) correctly generates the value
+2007-03-06:
++
+```
+DATE '2007-01-30' + INTERVAL '7' DAY + INTERVAL '1' MONTH
+```
+
+You can avoid these unexpected results by using the <<add_months_function,ADD_MONTHS Function>>.
+
+[[examples_of_datetime_value_expressions]]
+==== Examples of Datetime Value Expressions
+
+The PROJECT table consists of five columns that use the data types
+NUMERIC, VARCHAR, DATE, TIMESTAMP, and INTERVAL DAY. Suppose that you
+have inserted values into the PROJECT table. For example:
+
+```
+INSERT INTO persnl.project
+VALUES (1000,'SALT LAKE CITY',DATE '2007-04-10',
+TIMESTAMP '2007-04-21:08:15:00.00',INTERVAL '15' DAY);
+```
+
+The next examples use these values in the PROJECT table:
+
+[cols="4*",options="header"]
+|===
+| PROJCODE | START_DATE | SHIP_TIMESTAMP         | EST_COMPLETE
+| 1000     | 2007-04-10 | 2007-04-21 08:15:00.00 | 15
+| 945      | 2007-10-20 | 2007-12-21 08:15:00.00 | 30
+| 920      | 2007-02-21 | 2007-03-12 09:45:00.00 | 20
+| 134      | 2007-1 -20 | 2008-01-01 00:00:00.00 | 30
+|===
+
+* Add an interval value qualified by YEAR to a datetime value:
++
+```
+SELECT start_date + INTERVAL '1' YEAR FROM persnl.project
+WHERE projcode = 1000;
+
+(EXPR)
+----------
+2008-04-10
+
+--- 1 row(s) selected.
+```
+
+* Subtract an interval value qualified by MONTH from a datetime value:
++
+```
+SELECT ship_timestamp - INTERVAL '1' MONTH FROM persnl.project
+WHERE projcode = 134;
+
+(EXPR)
+--------------------------
+2007-12-01 00:00:00.000000
+
+--- 1 row(s) selected.
+```
++
+The result is 2007-12-01 00:00:00.00. The YEAR value is decremented by 1
+because subtracting a month from January 1 causes the date to be in the
+previous year.
+
+<<<
+* Add a column whose value is an interval qualified by DAY to a datetime
+value:
++
+```
+SELECT start_date + est_complete FROM persnl.project
+WHERE projcode = 920;
+
+(EXPR)
+----------
+2007-03-12
+
+--- 1 row(s) selected.
+```
++
+The result of adding 20 days to 2008-02-21 is 2008-03-12. Trafodion SQL
+correctly handles 2008 as a leap year.
+
+* Subtract an interval value qualified by HOUR TO MINUTE from a datetime
+value:
++
+```
+SELECT ship_timestamp - INTERVAL '15:30' HOUR TO MINUTE
+FROM persnl.project WHERE projcode = 1000;
+
+(EXPR)
+--------------------------
+2008-04-20 16:45:00.000000
+```
++
+The result of subtracting 15 hours and 30 minutes from 2007-04-21
+08:15:00.00 is 2007-04-20 16:45:00.00.
+
+<<<
+[[interval_value_expressions]]
+=== Interval Value Expressions
+
+The operands of an interval value expression can be combined in specific
+ways with addition and subtraction operators. In this syntax diagram,
+the data type of a datetime expression is DATE, TIME, or TIMESTAMP; the
+data type of an interval term or expression is INTERVAL.
+
+* `_interval-expression_` is:
++
+```
+  interval-term
+| interval-expression + interval-term
+| interval-expression - interval-term
+| (datetime-expression - datetime-primary)
+     [interval-qualifier]
+```
+
+* `_interval-term_` is:
++
+```
+  interval-factor
+| interval-term * numeric-factor
+| interval-term / numeric-factor
+| numeric-term * interval-factor
+```
+
+* `_interval-factor_` is:
++
+```
+[+|-] interval-primary
+```
+
+* `_interval-primary_` is:
++
+```
+interval-literal
+| column-reference
+| interval-type-host-variable
+| dynamic-parameter
+| aggregate-function
+| sequence-function
+| scalar-subquery
+| CASE-expression
+| CAST-expression
+| (interval-expression)
+```
+
+* `_numeric-factor_` is:
++
+```
+  [+|-] numeric-primary
+| [+|-] numeric-primary ** numeric-factor
+```
+
+Interval value expressions are built from operands that can be:
+
+* Integers
+* Datetime value expressions
+* Interval literals
+* Column references with datetime or interval values
+* Dynamic parameters
+* Datetime or interval value functions
+* Aggregate functions, sequence functions, scalar subqueries, CASE expressions, or CAST expressions that return interval values
+
+
+For _interval-term_, _datetime-expression_, and _datetime-primary_, see <<datetime_value_[expressions,Datetime Value Expressions>>.
+
+If the interval expression is the difference of two datetime expressions, by default, the result is expressed in the least
+significant unit of measure for that interval. For date differences, the interval is expressed in days. For timestamp differences, the interval
+is expressed in fractional seconds.
+
+If the interval expression is the difference or sum of interval
+operands, the interval qualifiers of the operands are either year-month
+or day-time. If you are updating or inserting a value that is the result
+of adding or subtracting two interval qualifiers, the interval qualifier
+of the result depends on the interval qualifier of the target column.
+
+<<<
+[[considerations_for_interval_value_expressions]]
+==== Considerations for Interval Value Expressions
+
+[[start_and_end_fields]]
+===== Start and End Fields
+
+Within the definition of an interval range, the _start-field_ and
+_end-field_ can be any of the specified fields with these restrictions:
+
+
+* An interval is either year-month or day-time. If the _start-field_ is
+YEAR, the _end-field_ is MONTH; if the _start-field_ is DAY, HOUR, or
+MINUTE, the _end-field_ is also a time field.
+* The _start-field_ must precede the _end-field_ within the hierarchy
+YEAR, MONTH, DAY, HOUR, MINUTE, and SECOND.
+
+
+Within the definition of an interval expression, the _start-field_ and
+_end-field_ of all operands in the expression must be either year-month
+or day-time.
+
+[[interval_qualifier]]
+===== Interval Qualifier
+
+The rules for determining the interval qualifier of the result
+expression vary. For example, interval value expressions include:
+
+[cols="40%l,40%,20%l",options="header"]
+|===
+| Datetime Expression                    | Description                                                              | Result Data Type
+| CURRENT_DATE - start_date
+| By default, the interval difference between the current date and the value in column START_DATE is expressed
+in days. You are not required to specify the interval qualifier.
+| INTERVAL DAY (12)
+| INTERVAL '3' DAY - INTERVAL '2' DAY    | The difference of two interval literals. The result is 1 day.            | INTERVAL DAY (3)
+| INTERVAL '3' DAY + INTERVAL '2' DAY    | The sum of two interval literals. The result is 5 days.                  | INTERVAL DAY (3)
+| INTERVAL '2' YEAR - INTERVAL '3' MONTH | The difference of two interval literals. The result is 1 year, 9 months. | INTERVAL YEAR (3) TO MONTH
+|===
+
+
+[[restrictions_on_operations]]
+===== Restrictions on Operations
+
+You can use datetime and interval operands with arithmetic operators in
+an interval value expression only in these combinations:
+
+
+[cols="4*",options="header"]
+|===
+| Operand 1 | Operator | Operand 2 | Result Type
+| Datetime  | -        | Datetime  | Interval
+| Interval  | + or –   | Interval  | Interval
+| Interval  | * or /   | Numeric   | Interval
+| Numeric   | *        | Interval  | Interval
+|===
+
+<<<
+This table lists valid combinations of datetime and interval arithmetic operators, and the data type of the result:
+
+
+[cols="2*",options="header"]
+|===
+| Operands                                      | Result type
+| Date + Interval or Interval + Date            | Date
+| Date + Numeric or Numeric + Date              | Date
+| Date - Numeric                                | Date
+| Date – Interval                               | Date
+| Date – Date                                   | Interval
+| Time + Interval or Interval + Time            | Time
+| Time + Numeric or Numeric + Time              | Time
+| Time - Number                                 | Time
+| Time – Interval                               | Time
+| Timestamp + Interval or Interval + Timestamp  | Timestamp
+| Timestamp + Numeric or Numeric + Timestamp    | Timestamp
+| Timestamp - Numeric                           | Timestamp
+| Timestamp – Interval                          | Timestamp
+| year-month Interval + year-month Interval     | year-month Interval
+| day-time Interval + day-time Interval         | day-time Interval
+| year-month Interval – year-month Interval     | year-month Interval
+| day-time Interval – day-time Interval         | day-time Interval
+| Time – Time                                   | Interval
+| Timestamp – Timestamp                         | Interval
+| Interval * Number or Number * Interval        | Interval
+| Interval / Number                             | Interval
+| Interval – Interval or Interval + Interval    | Interval
+|===
+
+
+When using these operations, note:
+
+
+* If you subtract a datetime value from another datetime value, both
+values must have the same data type. To get this result, use the CAST
+expression. For example:
++
+```
+CAST (ship_timestamp AS DATE) - start_date
+```
+
+* If you subtract a datetime value from another datetime value, and you
+specify the interval qualifier, you must allow for the maximum number of
+digits in the result for the precision. For example:
++
+```
+(CURRENT_TIMESTAMP - ship_timestamp) DAY(4) TO SECOND(6)
+```
+
+<<<
+* If you are updating a value that is the result of adding or
+subtracting two interval values, an SQL error occurs if the source value
+does not fit into the target column's range of interval fields. For
+example, this expression cannot replace an INTERVAL DAY column:
++
+```
+INTERVAL '1' MONTH + INTERVAL '7' DAY
+```
+
+* If you multiply or divide an interval value by a numeric value
+expression, Trafodion SQL converts the interval value to its least
+significant subfield and then multiplies or divides it by the numeric
+value expression. The result has the same fields as the interval that
+was multiplied or divided. For example, this expression returns the
+value 5-02:
++
+```
+INTERVAL '2-7' YEAR TO MONTH * 2
+```
+
+[[examples_of_interval_value_expressions]]
+==== Examples of Interval Value Expressions
+
+The PROJECT table consists of five columns using the data types NUMERIC,
+VARCHAR, DATE, TIMESTAMP, and INTERVAL DAY. Suppose that you have
+inserted values into the PROJECT table. For example:
+
+```
+INSERT INTO persnl.project
+VALUES (1000,'SALT LAKE CITY',DATE '2007-04-10',
+        TIMESTAMP '2007-04-21:08:15:00.00',INTERVAL '15' DAY);
+```
+
+The next example uses these values in the PROJECT table:
+
+[cols="4*",options="header"]
+|===
+| PROJCODE | START_DATE | SHIP_TIMESTAMP           | EST_COMPLETE
+| 1000     | 2007-04-10 | 2007-04-21:08:15:00.0000 | 15
+| 2000     | 2007-06-10 | 2007-07-21:08:30:00.0000 | 30
+| 2500     | 2007-10-10 | 2007-12-21:09:00:00.0000 | 60
+| 3000     | 2007-08-21 | 2007-10-21:08:10:00.0000 | 60
+| 4000     | 2007-09-21 | 2007-10-21:10:15:00.0000 | 30
+| 5000     | 2007-09-28 | 2007-10-28:09:25:01.1 1  | 30
+|===
+
+<<<
+* Suppose that the CURRENT_TIMESTAMP is 2000-01-06 1 :14:41.748703. Find
+the number of days, hours, minutes, seconds, and fractional seconds in
+the difference of the current timestamp and the SHIP_TIMESTAMP in the
+PROJECT table:
++
+```
+SELECT projcode,
+   (CURRENT_TIMESTAMP - ship_timestamp) DAY(4) TO SECOND(6)
+FROM samdbcat.persnl.project;
+
+Project/Code (EXPR)
+------------ ---------------------
+        1000 1355 02:58:57.087086
+        2000 1264 02:43:57.087086
+        2500 1111 02:13:57.087086
+        3000 1172 03:03:57.087086
+        4000 1172 00:58:57.087086
+        5000 1165 01:48:55.975986
+
+--- 6 row(s) selected.
+```
+
+<<<
+[[numeric_value_expressions]]
+=== Numeric Value Expressions
+
+The operands of a numeric value expression can be combined in specific
+ways with arithmetic operators. In this syntax diagram, the data type of
+a term, factor, or numeric primary is numeric.
+
+```
+numeric-expression` is:
+  numeric-term
+| numeric-expression + numeric-term
+| numeric-expression - numeric-term
+
+numeric-term is:
+  numeric-factor
+| numeric-term * numeric-factor
+| numeric-term / numeric-factor
+
+numeric-factor is:
+  [+|-] numeric-primary
+| [+|-] numeric-primary ** numeric-factor
+
+numeric-primary is:
+  unsigned-numeric-literal
+| column-reference
+| numeric-type-host-variable
+| dynamic parameter
+| numeric-value-function
+| aggregate-function
+| sequence-function
+| scalar-subquery
+| CASE-expression
+| CAST-expression
+| (numeric-expression)
+```
+
+As shown in the preceding syntax diagram, numeric value expressions are
+built from operands that can be:
+
+
+* Numeric literals
+* Column references with numeric values
+* Dynamic parameters
+* Numeric value functions
+* Aggregate functions, sequence functions, scalar subqueries, CASE expressions, or CAST expressions that return numeric values
+
+<<<
+[[considerations_for_numeric_value_expressions]]
+==== Considerations for Numeric Value Expressions
+
+[[order_of_evaluation]]
+===== Order of Evaluation
+
+1.  Expressions within parentheses
+2.  Unary operators
+3.  Exponentiation
+4.  Multiplication and division
+5.  Addition and subtraction
+
+
+Operators at the same level are evaluated from left to right for all
+operators except exponentiation. Exponentiation operators at the same
+level are evaluated from right to left. For example,
+`X + Y + Z` is evaluated as `(X + Y) + Z`, whereas `X ** Y &#42;&#42; Z` is evaluated as `X &#42;&#42; (Y &#42;&#42; Z)`.
+
+[[additional_rules_for_arithmetic_operations]]
+===== Additional Rules for Arithmetic Operations
+
+Numeric expressions are evaluated according to these additional rules:
+
+* An expression with a numeric operator evaluates to null if any of the operands is null.
+* Dividing by 0 causes an error.
+* Exponentiation is allowed only with numeric data types. If the first
+operand is 0 (zero), the second operand must be greater than 0, and the
+result is 0. If the second operand is 0, the
+first operand cannot be 0, and the result is 1. If the first operand is
+negative, the second operand must be a value with an exact numeric data
+type and a scale of zero.
+* Exponentiation is subject to rounding error. In general, results of
+exponentiation should be considered approximate.
+
+[[precision_magnitude,_and_scale_of_arithmetic_results]]
+===== Precision, Magnitude, and Scale of Arithmetic Results
+
+The precision, magnitude, and scale are computed during the evaluation
+of an arithmetic expression. Precision is the maximum number of digits
+in the expression. Magnitude is the number of digits to the left of the
+decimal point. Scale is the number of digits to the right of the decimal point.
+
+For example, a column declared as NUMERIC (18, 5) has a precision of 18,
+a magnitude of 13, and a scale of 5. As another example, the literal
+12345.6789 has a precision of 9, a magnitude of 5, and a scale of 4.
+
+The maximum precision for exact numeric data types is 128 digits. The
+maximum precision for the REAL data type is approximately 7 decimal
+digits, and the maximum precision for the DOUBLE PRECISION data type is
+approximately 16 digits.
+
+When Trafodion SQL encounters an arithmetic operator in an expression,
+it applies these rules (with the restriction that if the precision
+becomes greater than 18, the resulting precision is set to 18 and the
+resulting scale is the maximum of 0 and (18- (_resulted precision_ -
+_resulted scale_)).
+
+
+* If the operator is + or -, the resulting scale is the maximum of the
+scales of the operands. The resulting precision is the maximum of the
+magnitudes of the operands, plus the scale of the result, plus 1.
+* If the operator is *, the resulting scale is the sum of the scales of
+the operands. The resulting precision is the sum of the magnitudes of
+the operands and the scale of the result.
+* If the operator is /, the resulting scale is the sum of the scale of
+the numerator and the magnitude of the denominator. The resulting
+magnitude is the sum of the magnitude of the numerator and the scale of
+the denominator.
+
+
+For example, if the numerator is NUMERIC (7, 3) and the denominator is
+NUMERIC (7, 5), the resulting scale is 3 plus 2 (or 5), and the
+resulting magnitude is 4 plus 5 (or 9). The expression result is NUMERIC
+(14, 5).
+
+[[conversion_of_numeric_types_for_arithmetic_operations]]
+===== Conversion of Numeric Types for Arithmetic Operations
+
+Trafodion SQL automatically converts between floating-point numeric
+types (REAL and DOUBLE PRECISION) and other numeric types. All numeric
+values in the expression are first converted to binary, with the maximum
+precision needed anywhere in the evaluation.
+
+
+[[examples_of_numeric_value_expressions]]
+==== Examples of Numeric Value Expressions
+
+
+These are examples of numeric value expressions:
+
+[cols="40%l,60%"]
+|===
+| -57                      | Numeric literal.
+| salary * 1.10            | The product of the values in the SALARY column and a numeric literal.
+| unit_price * qty_ordered | The product of the values in the UNIT_PRICE and QTY_ORDERED columns.
+| 12 * (7 - 4)             | An expression whose operands are numeric literals.
+| COUNT (DISTINCT city)    | Function applied to the values in a column.
+|===
+
+
+<<<
+[[identifiers]]
+== Identifiers
+
+SQL identifiers are names used to identify tables, views, columns, and
+other SQL entities. The two types of identifiers are regular and
+delimited. A delimited identifier is enclosed in double quotes (").
+Case-insensitive delimited identifiers are used only for user names and
+role names. Either regular, delimited, or case-sensitive delimited
+identifiers can contain up to 128 characters.
+
+[[regular_identifiers]]
+=== Regular Identifiers
+
+Regular identifiers begin with a letter (A through Z and a through z),
+but can also contain digits (0 through 9) or underscore characters (_).
+Regular identifiers are not case-sensitive. You cannot use a reserved
+word as a regular identifier.
+
+[[delimited_identifiers]]
+=== Delimited Identifiers
+
+Delimited identifiers are character strings that appear within double
+quote characters (") and consist of alphanumeric characters, including
+the underscore character (_) or a dash (-). Unlike regular identifiers,
+delimited identifiers are case-sensitive. Trafodion SQL does not support
+spaces or special characters in delimited identifiers given the
+constraints of the underlying HBase file system. You can use reserved
+words as delimited identifiers.
+
+[[case_insensitive_delimited_identifiers]]
+=== Case-Insensitive Delimited Identifiers
+
+Case-insensitive delimited identifiers, which are used for user names and
+roles, are character strings that appear within double quote characters
+(") and consist of alphanumeric characters
+(A through Z and a through z), digits (0 through 9), underscores (_), dashes (-), periods (.), at
+symbols (@), and forward slashes (/), except for the leading at sign (@)
+or leading forward slash (/) character.
+
+Unlike other delimited identifiers, case-insensitive-delimited
+identifiers are case-insensitive. Identifiers are up-shifted before
+being inserted into the SQL metadata. Thus, whether you specify a user's
+name as `"Penelope.Quan@hp.com"`, `"PENELOPE.QUAN@hp.com"`, or
+`"penelope.quan@hp.com"`, the value stored in the metadata will be the
+same: `PENELOPE.QUAN@HP.COM`.
+
+You can use reserved words as case-insensitive delimited identifiers.
+
+<<<
+[[examples_of_identifiers]]
+=== Examples of Identifiers
+
+* These are regular identifiers:
++
+```
+mytable SALES2006
+Employee_Benefits_Selections
+CUSTOMER_BILLING_INFORMATION
+```
++
+Because regular identifiers are case insensitive, SQL treats all these
+identifiers as alternative representations of mytable:
++
+```
+mytable     MYTABLE     MyTable     mYtAbLe
+```
+
+* These are delimited identifiers:
++
+```
+"mytable"
+"table"
+"CUSTOMER-BILLING-INFORMATION"
+```
++
+Because delimited identifiers are case-sensitive, SQL treats the
+identifier "mytable" as different from the identifiers "MYTABLE" or
+"MyTable".
++
+You can use reserved words as delimited identifiers. For example, table
+is not allowed as a regular identifier, but "table" is allowed as a
+delimited identifier.
+
+
+<<<
+[[indexes]]
+== Indexes
+
+An index is an ordered set of pointers to rows of a table. Each index is
+based on the values in one or more columns. Indexes are transparent to
+DML syntax.
+
+A one-to-one correspondence always exists between index rows and base
+table rows.
+
+[[sql_indexes]]
+=== SQL Indexes
+
+Each row in a Trafodion SQL index contains:
+
+* The columns specified in the CREATE INDEX statement
+* The clustering key of the underlying table (the user-defined
+clustering key)
+
+An index name is an SQL identifier. Indexes have their own name space
+within a schema, so an index name might be the same as a table or
+constraint name. However, no two indexes in a schema can have the same
+name.
+
+See <<create_index_statement,CREATE INDEX Statement>>.
+
+<<<
+[[keys]]
+== Keys
+
+[[clustering_keys]]
+=== Clustering Keys
+
+Every table has a clustering key, which is the set of columns that
+determine the order of the rows on disk. Trafodion SQL organizes records
+of a table or index by using a b-tree based on this clustering key.
+Therefore, the values of the clustering key act as logical row-ids.
+
+[[syskey]]
+=== SYSKEY
+
+When the STORE BY clause is specified with the _key-column-list_ clause,
+an additional column is appended to the _key-column-list_ called the
+SYSKEY.
+
+A SYSKEY (or system-defined clustering key) is a clustering key column
+which is defined by Trafodion SQL rather than by the user. Its type is
+LARGEINT SIGNED. When you insert a record in a table, Trafodion SQL
+automatically generates a value for the SYSKEY column. You cannot supply
+the value.
+
+You cannot specify a SYSKEY at insert time and you cannot update it
+after it has been generated. To see the value of the generated SYSKEY,
+include the SYSKEY column in the select list:
+
+```
+SELECT *, SYSKEY FROM t4;
+```
+
+[[index_keys]]
+=== Index Keys
+
+A one-to-one correspondence always exists between index rows and base
+table rows. Each row in a Trafodion SQL index contains:
+
+
+* The columns specified in the CREATE INDEX statement
+* The clustering (primary) key of the underlying table (the user-defined clustering key)
+
+
+For a non-unique index, the clustering key of the index is composed of
+both items. The clustering key cannot exceed 2048 bytes. Because the
+clustering key includes all the columns in the table, each row is also
+limited to 2048 bytes.
+
+For varying-length character columns, the length referred to in these
+byte limits is the defined column length, not the stored length. (The
+stored length is the expanded length, which includes two extra bytes for
+storing the data length of the item.)
+
+See <<create_index_statement,CREATE INDEX Statement>>.
+
+[[primary_keys]]
+=== Primary Keys
+
+A primary key is the column or set of columns that define the uniqueness
+constraint for a table. The columns cannot contain nulls, and only one
+primary key constraint can exist on a table.
+
+<<<
+[[literals]]
+== Literals
+
+A literal is a constant you can use in an expression, in a statement, or
+as a parameter value. An SQL literal can be one of these data types:
+
+[cols="40%,50%]
+|===
+| <<character_string_literals,Character String Literals>> | A series of characters enclosed in single quotes. +
+ +
+Example: 'Planning'
+| <<datetime_literals,Datetime Literals>> | Begins with keyword DATE, TIME, or TIMESTAMP and followed by a character string. +
+ +
+Example: DATE '1990-01-22'
+| <<interval_literals,Interval Literals>> | Begins with keyword INTERVAL and followed by a character string and an interval qualifier. +
+ +
+Example: INTERVAL '2-7' YEAR TO MONTH
+| <<numeric_literals,Numeric Literals>> | A simple numeric literal (one without an exponent) or a numeric literal in scientific notation. +
+ +
+Example: 99E-2
+|===
+
+[[character_string_literals]]
+=== Character String Literals
+
+A character string literal is a series of characters enclosed in single
+quotes.
+
+You can specify either a string of characters or a set of hexadecimal
+code values representing the characters in the string.
+
+* `[_character-set_ | N]_'string'_
+| [_character-set_ | N] X'_hex-code-value_. . . '
+| [_character-set_ | N]
+X'[_space_. . .]_hex-code-value_[[_space_. . .]_hex-code-value_. . .][_space_. . .]'
+_ character-set_`
++
+specifies the character set ISO88591 or UTF8. The _character-set_
+specification of the string literal should correspond with the character
+set of the column definition, which is either ISO88591 or UTF8. If you
+omit the _character-set specification, Trafodion SQL initially assumes
+the ISO88591 character set if the string literal consists entirely of
+7-bit ASCII characters and UTF8 otherwise. (However, the initial
+assumption will later be changed if the string literal is used in a
+context that requires a character set different from the initial
+assumption.)
+
+* `N`
++
+associates the string literal with the character set of the NATIONAL
+CHARACTER (NCHAR) data type. The character set for NCHAR is determined
+during the installation of Trafodion SQL. This value can be either UTF8
+(the default) or ISO88591.
+
+<<<
+* `'_string_'`
++
+is a series of any input characters enclosed in single quotes. A single
+quote within a string is represented by two single quotes (''). A string
+can have a length of zero if you specify two single quotes ('') without
+a space in between.
+
+* `X`
++
+indicates the hexadecimal string.
+
+* `'_hex-code-value_'`
++
+represents the code value of a character in hexadecimal form enclosed in
+single quotes. It must contain an even number of hexadecimal digits. For
+ISO88591, each value must be two digits long. For UTF8, each value can
+be 2, 4, 6, or 8 hexadecimal digits long. If _hex-code-value_ is
+improperly formatted (for example, it contains an invalid hexadecimal
+digit or an odd number of hexadecimal digits), an error is returned.
+
+* `_space_`
++
+is space sequences that can be added before or after _hex-code-value_
+for readability. The encoding for _space_ must be the TERMINAL_CHARSET
+for an interactive interface and the SQL module character set for the
+programmatic interface.
+
+[[considerations_for_character_string_literals]]
+==== Considerations for Character String Literals
+
+[[using_string_literals]]
+===== Using String Literals
+
+A string literal can be as long as a character column. See
+<<character_string_data_types,Character String Data Types>>.
+
+You can also use string literals in string value expressions—for
+example, in expressions that use the concatenation operator (||) or in
+expressions that use functions returning string values.
+
+When specifying string literals:
+
+* Do not put a space between the character set qualifier and the
+character string literal. If you use this character string literal in a
+statement, Trafodion SQL returns an error.
+* To specify a single quotation mark within a string literal, use two
+consecutive single quotation marks.
+* To specify a string literal whose length is more than one line,
+separate the literal into several smaller string literals, and use the
+concatenation operator (||) to concatenate them.
+* Case is significant in string literals. Lowercase letters are not
+equivalent to the corresponding uppercase letters.
+* Leading and trailing spaces within a string literal are significant.
+* Alternately, a string whose length is more than one line can be
+written as a literal followed by a space, CR, or tab character, followed
+by another string literal.
+
+[[examples_of_character_string_literals]]
+==== Examples of Character String Literals
+
+* These data type column specifications are shown with examples of
+literals that can be stored in the columns.
++
+[cols="50%l,50%l",options="header"]
+|===
+| Character String Data Type | Character String Literal Example
+| CHAR (12) UPSHIFT          | 'PLANNING'
+| VARCHAR (18)               | 'NEW YORK'
+|===
+
+* These are string literals:
++
+```
+'This is a string literal.'
+'abc^&*'
+'1234.56'
+'This literal contains '' a single quotation mark.'
+```
+
+* This is a string literal concatenated over three lines:
++
+```
+'This literal is' || '
+in three parts,' ||
+'specified over three lines.'
+```
+
+* This is a hexadecimal string literal representing the VARCHAR pattern
+of the ISO88591 string 'Strauß':
++
+```
+_ISO88591 X'53 74 72 61 75 DF'
+```
+
+<<<
+[[datetime_literals]]
+=== Datetime Literals
+
+A datetime literal is a DATE, TIME, or TIMESTAMP constant you can use in
+an expression, in a statement, or as a parameter value. Datetime
+literals have the same range of valid values as the corresponding
+datetime data types. You cannot use leading or trailing spaces within a
+datetime string (within the single quotes).
+
+A datetime literal begins with the DATE, TIME, or TIMESTAMP keyword and
+can appear in default, USA, or European format.
+
+```
+DATE 'date' | TIME 'time' | TIMESTAMP 'timestamp'
+
+date is:
+  yyyy-mm-dd                              Default
+| mm/dd/yyyy                              USA
+| dd.mm.yyyy                              European
+
+time is:
+  hh:mm:ss.msssss                         Default
+| hh:mm:ss.msssss [am | pm]               USA
+| hh.mm.ss.msssss                         European
+
+timestamp is:
+  yyyy-mm-dd hh:mm:ss.msssss              Default
+| mm/dd/yyyy hh:mm:ss.msssss [am | pm]    USA
+| dd.mm.yyyy hh.mm.ss.msssss              European
+```
+
+* `_date,time,timestamp_`
++
+specify the datetime literal strings whose component fields are:
++
+[cols="30%l,70%"]
+|===
+| yyyy   | Year, from 0001 to 9999
+| mm     | Month, from 01 to 12
+| dd     | Day, from 01 to 31
+| hh     | Hour, from 00 to 23
+| mm     | Minute, from 00 to 59
+| ss     | Second, from 00 to 59
+| msssss | Microsecond, from 000000 to 999999
+| am     | AM or am, indicating time from midnight to before noon
+| pm     | PM or pm, indicating time from noon to before midnight
+|===
+
+[[examples_of_datetime_literals]]
+==== Examples of Datetime Literals
+
+* These are DATE literals in default, USA, and European formats, respectively:
++
+```
+DATE '2008-01-22' DATE '01/22/2008' DATE '22.01.2008'
+```
+
+* These are TIME literals in default, USA, and European formats, respectively:
++
+```
+TIME '13:40:05'
+TIME '01:40:05 PM'
+TIME '13.40.05'
+```
+
+* These are TIMESTAMP literals in default, USA, and European formats, respectively:
++
+```
+TIMESTAMP '2008-01-22 13:40:05'
+TIMESTAMP '01/22/2008 01:40:05 PM'
+TIMESTAMP '22.01.2008 13.40.05'
+```
+
+<<<
+[[interval_literals]]
+=== Interval Literals
+
+An interval literal is a constant of data type INTERVAL that represents
+a positive or negative duration of time as a year-month or day-time
+interval; it begins with the keyword INTERVAL optionally preceded or
+followed by a minus sign (for negative duration). You cannot include
+leading or trailing spaces within an interval string (within single
+quotes).
+
+```
+[-]INTERVAL [-]{'year-month' | 'day:time'} interval-qualifier
+
+year-month is:
+  years [-months] | months
+
+day:time is:
+  days [[:]hours [:minutes [:seconds [.fraction]]]]
+| hours [:minutes [:seconds [.fraction]]]
+| minutes [:seconds [.fraction]]
+| seconds [.fraction]
+
+interval-qualifier is:
+  start-field TO end-field | single-field
+
+start-field is:
+  {YEAR | MONTH | DAY | HOUR | MINUTE} [(leading-precision)]
+
+end-field is:
+  YEAR | MONTH | DAY | HOUR | MINUTE | SECOND [(fractional-precision)]
+
+single-field is:
+  start-field | SECOND [(leading-precision,fractional-precision)]
+```
+
+* `_start-field_ TO _end-field_`
++
+must be year-month or day-time.The _start-field_ you specify must
+precede the _end-field_ you specify in the list of field names.
+
+* `{YEAR &#124; MONTH &#124; DAY &#124; HOUR &#124; MINUTE} [(_leading-precision_)]`
++
+specifies the _start-field_. A _start-field_ can have a
+_leading-precision_ up to 18 digits (the maximum depends on the number
+of fields in the interval). The
+_leading-precision_ is the number of digits allowed in the
+_start-field_. The default for _leading-precision_ is 2.
+
+* `YEAR &#124; MONTH &#124; DAY &#124; HOUR &#124; MINUTE &#124; SECOND [(_fractional-precision_)]`
++
+specifies the _end-field_. If the _end-field_ is SECOND, it can have a
+_fractional-precision_ up to 6 digits. The _fractional-precision_ is the
+number
+of digits of precision after the decimal point. The default for
+_fractional-precision_ is 6.
+
+* `_start-field_ &#124; SECOND [(_leading-precision_, _fractional-precision_)]`
++
+specifies the _single-field_. If the _single-field_ is SECOND, the
+_leading-precision_ is the number of digits of precision before the
+decimal point, and the _fractional-precision_ is the number of digits of
+precision after the decimal point.
++
+The default for _leading-precision_ is 2, and the default for
+_fractional-precision_ is 1.  The maximum for _leading-precision_ is 18,
+and the maximum for _fractional-precision_ is 6.
++
+See <<interval_data_types,Interval Data Types>> and
+<<interval_value_expressions,Interval Value Expressions>>.
+
+* `'_year-month_' &#124; '_day:time_'`
++
+specifies the date and time components of an interval literal. The day
+and hour fields can be separated by a space or a colon. The interval
+literal strings are:
++
+[cols="15%l,85%"]
+|===
+| years | Unsigned integer that specifies a number of years. _years_ can be up to 18 digits, or 16 digits if _months_
+is the end-field. The maximum for the _leading-precision_ is specified within the interval qualifier by either YEAR(18)
+or YEAR(16) TO MONTH.
+| months | Unsigned integer that specifies a number of months. Used as a starting field, _months_ can have up to 18
+digits. The maximum for the _leading-precision_ is specified by MONTH(18). Used as an ending field, the value of _months_
+must be in the range 0 to 1 .
+| days | Unsigned integer that specifies number of days. _days_ can have up to 18 digits if no end-field exists; 16 digits
+if _hours_ is the end-field; 14 digits if _minutes_ is the end-field; and 13-_f_ digits if _seconds_ is the end-field, where
+f is the _fraction_ less than or equal to 6. These maximums are specified by DAY(18), DAY(16) TO HOUR, DAY(14) TO
+MINUTE, and DAY(13-_f_) TO SECOND(_f_).
+| hours | Unsigned integer that specifies a number of hours. Used as a starting field, _hours_ can have up to 18 digits if
+no end-field exists; 16 digits if _minutes_ is the end-field; and 14-_f_ digits if _seconds_ is the end-field, where f is
+the _fraction_ less than or equal to 6. These maximums are specified by HOUR(18), HOUR(16) TO MINUTE, and HOUR(14-f) TO
+SECOND(_f_). Used as an ending field, the value of _hours_ must be in the range 0 to 23.
+| minutes | Unsigned integer that specifies a number of minutes. Used as a starting field, _minutes_ can have up to 18 digits
+if no end-field exists; and 16-f digits if _seconds_ is the end-field, where _f_ is the _fraction_ less than or equal to 6.
+These maximums are specified by MINUTE(18), and MINUTE(16-_f_) TO SECOND(_f_). Used as an ending field, the value of _minutes_
+must be in the range 0 to 59.
+| seconds | Unsigned integer that specifies a number of seconds. Used as a starting field, _seconds_ can have up to 18 digits,
+minus the number of digits f in the _fraction_ less than or equal to 6. This maximum is specified by SECOND(18-_f_, _f_). The
+value of _seconds_ must be in the range 0 to 59.9(_n_), where _n_ is the number of digits specified for seconds precision.
+| fraction | Unsigned integer that specifies a fraction of a second. When _seconds_ is used as an ending field, _fraction_ is
+limited to the number of digits specified by the _fractional-precision_ field following the SECOND keyword.
+|===
+
+<<<
+[[considerations_for_interval_literals]]
+==== Considerations for Interval Literals
+
+[[length_of_year_month_and_day_time_strings]]
+===== Length of Year-Month and Day-Time Strings
+
+An interval literal can contain a maximum of 18 digits, in the string
+following the INTERVAL keyword, plus a hyphen (-) that separates the
+year-month fields, and colons (:) that separate the day-time fields. You
+can also separate day and hour with a space.
+
+[[examples_of_interval_literals]]
+==== Examples of Interval Literals
+
+[cols="50%l,50%"]
+|===
+| INTERVAL '1' MONTH                       | Interval of 1 month
+| INTERVAL '7' DAY                         | Interval of 7 days
+| INTERVAL '2-7' YEAR TO MONTH             | Interval of 2 years, 7 months
+| INTERVAL '5:2:15:36.33' DAY TO SECOND(2) | Interval of 5 days, 2 hours, 15 minutes, and 36.33 seconds
+| INTERVAL - '5' DAY                       | Interval that subtracts 5 days
+| INTERVAL '100' DAY(3)                    | Interval of 100 days. This example requires an explicit leading
+precision of 3 because the default is 2.
+| INTERVAL '364 23' DAY(3) TO HOUR         | Interval of 364 days, 23 hours. The separator for the day and hour
+fields can be a space or a colon.
+|===
+
+<<<
+[[numeric_literals]]
+=== Numeric Literals
+
+A numeric literal represents a numeric value. Numeric literals can be
+represented as an exact numeric literal (without an exponent) or as an
+approximate numeric literal by using scientific notation (with an
+exponent).
+
+```
+exact-numeric-literal is:
+  [+|-]unsigned-integer[.[unsigned-integer]]
+| [+|-].unsigned-integer
+
+approximate-numeric-literal is:
+  mantissa{E|e}exponent
+
+mantissa is:
+  exact-numeric-literal
+
+exponent is:
+  [+|-]unsigned-integer
+
+unsigned-integer is:
+  digit. . .
+```
+
+* `_exact-numeric-literal_`
++
+is an exact numeric value that includes an optional plus sign (+) or
+minus sign (-), up to 128 digits (0 through 9), and an optional period
+(.) that indicates a decimal point. Leading zeros do not count toward
+the 128-digit limit; trailing zeros do.
++
+A numeric literal without a sign is a positive number. An exact numeric
+literal that does not include a decimal point is an integer. Every exact
+numeric literal has the data type NUMERIC and the minimum precision
+required to represent its value.
+
+* `_approximate-numeric-literal_`
++
+is an exact numeric literal followed by an exponent expressed as an
+uppercase E or lowercase e followed by an optionally signed integer.
++
+Numeric values expressed in scientific notation are treated as data type
+REAL if they include no more than seven digits before the exponent, but
+treated as type DOUBLE PRECISION if they include eight or more digits.
+Because of this factor, trailing zeros after a decimal can sometimes
+increase the precision of a numeric literal used as a DOUBLE PRECISION
+value.
++
+<<<
++For example, if XYZ is a table that consists of one DOUBLE PRECISION
+column, the inserted value:
++
+```
+INSERT INTO XYZ VALUES (1.00000000E-10)
+```
++
+has more precision than:
++
+```
+INSERT INTO XYZ VALUES (1.0E-10)
+```
+
+[[examples_of_numeric_literals]]
+==== Examples of Numeric Literals
+
+These are all numeric literals, along with their display format:
+
+[cols="50%l,50%l",options="header"]
+|===
+| Literal               | Display Format
+| 477                   | 477
+| 580.45                | 580.45
+| +005                  | 5
+| -.3175                | -.3175
+| 1300000000            | 1300000000
+| 99.                   | 99
+| -0.123456789012345678 | -.123456789012345678
+| 99E-2                 | 9.9000000E-001
+| 12.3e+5               | 1.2299999E+006
+|===
+
+
+<<<
+[[null]]
+== Null
+
+Null is a special symbol, independent of data type, that represents an
+unknown. The Trafodion SQL keyword NULL represents null. Null indicates
+that an item has no value. For sorting purposes, null is greater than
+all other values. You cannot store null in a column by using INSERT or
+UPDATE, unless the column allows null.
+
+A column that allows null can be null at any row position. A nullable
+column has extra bytes associated with it in each row. A special value
+stored in these bytes indicates that the column has null for that row.
+
+[[using_null_versus_default_values]]
+=== Using Null Versus Default Values
+
+Various scenarios exist in which a row in a table might contain no value
+for a specific column. For example:
+
+* A database of telemarketing contacts might have null AGE fields if
+contacts did not provide their age.
+* An order record might have a DATE_SHIPPED column empty until the order
+is actually shipped.
+* An employee record for an international employee might not have a
+social security number.
+
+You allow null in a column when you want to convey that a value in the
+column is unknown (such as the age of a telemarketing contact) or not
+applicable (such as the social security number of an international
+employee).
+
+In deciding whether to allow nulls or use defaults, also note:
+
+* Nulls are not the same as blanks. Two blanks can be compared and found
+equal, while the result of a comparison of two nulls is indeterminate.
+* Nulls are not the same as zeros. Zeros can participate in arithmetic
+operations, while nulls are excluded from any arithmetic operation.
+
+[[defining_columns_that_allow_or_prohibit_null]]
+=== Defining Columns That Allow or Prohibit Null
+
+The CREATE TABLE and ALTER TABLE statements define the attributes for
+columns within tables. A column allows nulls unless the column
+definition includes the NOT NULL clause or the column is part of the
+primary key of the table.
+
+Null is the default for a column (other than NOT NULL) unless the column
+definition includes a DEFAULT clause (other than DEFAULT NULL) or the NO
+DEFAULT clause. The default value for a column is the value Trafodion
+SQL inserts in a row when an INSERT statement omits a value for a
+particular column.
+
+[[null_in_distinct_group_by_and_order_by_clauses]]
+==== Null in DISTINCT, GROUP BY, and ORDER BY Clauses
+
+In evaluating the DISTINCT, GROUP BY, and ORDER BY clauses, Trafodion
+SQL considers all nulls to be equal. Additional considerations for these
+clauses are:
+
+[cols="15%l,85%"]
+|===
+| DISTINCT | Nulls are considered duplicates; therefore, a result has at most one null.
+| GROUP BY | The result has at most one null group.
+| ORDER BY | Nulls are considered greater than non-null values.
+|===
+
+[[null-and-expression-evaluation-comparison]]
+==== Null and Expression Evaluation Comparison
+
+[cols="3*",options="header"]
+|===
+| Expression Type | Condition | Result
+| Boolean operators (AND, OR, NOT) | Either operand is null. | For AND, the result is null. For OR, the result is true if the other
+operand is true, or null if the other operand is null or false. For NOT, the result is null.
+| Arithmetic operators | Either or both operands are null. | The result is null.
+| NULL predicate | The operand is null. | The result is true.
+| Aggregate (or set) functions (except COUNT) | Some rows have null columns. The function is evaluated after eliminating nulls. | The result is null if set is empty.
+| COUNT(*) | The function does not eliminate nulls. | The result is the number of rows in the table whether or not the rows are null.
+| COUNT COUNT DISTINCT | The function is evaluated after eliminating nulls. | The result is zero if set is empty.
+| Comparison: =, <>, <, >, <&#61;, >&#61;, LIKE | Either operand is null. | The result is null.
+| IN predicate | Some expressions in the IN value list are null. | The result is null if all of the expressions are null.
+| Subquery | No rows are returned. | The result is null.
+|===
+
+<<<
+[[predicates]]
+== Predicates
+
+A predicate determines an answer to a question about a value or group of
+values. A predicate returns true, false, or, if the question cannot be
+answered, unknown. Use predicates within search conditions to choose
+rows from tables or views.
+
+[cols="30%,70%"]
+|===
+| <<between_predicate,BETWEEN Predicate>> | Determines whether a sequence of values is within a range of sequences of values.
+| <<comparison_predicates,Comparison Predicates>> +
+( =, <>, <, >, <&#61;, >&#61;  ) | Compares the values of sequences of expressions, or compares the values
+of sequences of row values that are the result of row subqueries.
+| <<exists_predicate,EXISTS Predicate>> | Determines whether any rows are selected by a subquery. If the subquery
+finds at least one row that satisfies its search condition, the
+predicate evaluates to true. Otherwise, if the result table of the
+subquery is empty, the predicate is false.
+| <<in_predicate,IN Predicate>> | Determines if a sequence of values is equal to any of the sequences of
+values in a list of sequences.
+| <<like_predicate,LIKE Predicate>> | Searches for character strings that match a pattern.
+| <<null_predicate,NULL Predicate>> | Determines whether all the values in a sequence of values are null.
+| <<quantified_comparison_predicates,Quantified Comparison Predicates>> +  
+(ALL, ANY, SOME ) | Compares the values of sequences of expressions to the values in each
+row selected by a table subquery. The comparison is quantified by ALL,
+ANY, or .
+|===
+
+See the individual entry for a predicate or predicate group.
+
+[[between_predicate]]
+=== BETWEEN Predicate
+
+The BETWEEN predicate determines whether a sequence of values is within
+a range of sequences of values.
+
+```
+row-value-constructor [NOT] BETWEEN
+    row-value-constructor AND row-value-constructor
+
+row-value-constructor is:
+  (expression [,expression ]...)
+| row-subquery
+```
+
+* `_row-value-constructor_`
++
+specifies an operand of the BETWEEN predicate. The three operands can be
+either of:
++
+** (_expression_ [,_expression_ ]&#8230;)
++
+is a sequence of SQL value expressions, separated by commas and enclosed
+in parentheses.
+_expression_ cannot include an aggregate function unless _expression_ is
+in a HAVING clause. _expression_ can be a scalar subquery (a subquery
+that returns a single row consisting of a single column). See
+<<expressions,Expressions>>. 
++
+<<<
++
+** `_row-subquery_`
++
+is a subquery that returns a single row (consisting of a sequence of
+values). See <<subquery,Subquery>> .
++
+The three _row-value-constructors_ specified in a BETWEEN predicate must
+contain the same number of elements. That is, the number of value
+expressions in each list, or the number of values returned by a row
+subquery, must be the same.
++
+The data types of the respective values of the three
+_row-value-constructors_ must be comparable. Respective values are
+values with the same ordinal position in the two lists. See
+<<comparable_and_compatible_data_types,Comparable and Compatible Data Types>>.
+
+[[considerations_for_between]]
+==== Considerations for BETWEEN
+
+[[logical_equivalents_using_and_and_or]]
+===== Logical Equivalents Using AND and OR
+
+The predicate _expr1_ BETWEEN _expr2_ AND _expr3_ is true if and only if
+this condition is true:
+
+```
+expr2 <= expr1 AND expr1 <= expr3
+```
+
+The predicate _expr1_ NOT BETWEEN _expr2_ AND _expr3_ is true if and
+only if this condition is true:
+
+```
+expr2 > expr1 OR expr1 > expr3
+```
+
+[[descending_columns_in_keys]]
+===== Descending Columns in Keys
+
+If a clause specifies a column in a key BETWEEN _expr2_ and _expr3_,
+_expr3_ must be greater than _expr2_ even if the column is specified as DESCENDING within its table
+definition.
+
+
+[[examples_of_between]]
+==== Examples of BETWEEN
+
+* This predicate is true if the total price of the units in inventory is
+in the range from $1,000 to $10,000:
++
+```
+qty_on_hand * price
+  BETWEEN 1000.00 AND 10000.00
+```
+
+* This predicate is true if the part cost is less than $5 or more than $800:
++
+```
+partcost NOT BETWEEN 5.00 AND 800.00
+```
+
+* This BETWEEN predicate selects the part number 6400:
++
+```
+SELECT * FROM partsupp
+WHERE partnum BETWEEN 6400 AND 6700
+  AND partcost > 300.00;
+
+Part/Num Supp/Num Part/Cost    Qty/Rec
+-------- -------- ------------ ----------
+    6400        1       390.00         50
+    6401        2       500.00         20
+    6401        3       480.00         38
+
+--- 3 row(s) selected.
+```
+
+* Find names between Jody Selby and Gene Wright:
++
+```
+(last_name, first_name) BETWEEN
+  ('SELBY', 'JODY') AND ('WRIGHT', 'GENE')
+```
++
+The name Barbara Swift would meet the criteria; the name Mike Wright would not.
++
+```
+SELECT empnum, first_name, last_name
+FROM persnl.employee
+WHERE (last_name, first_name) BETWEEN
+('SELBY', 'JODY') AND ('WRIGHT', 'GENE');
+
+EMPNUM FIRST_NAME      LAST_NAME
+------ --------------- --------------------
+43     PAUL            WINTER
+72     GLENN           THOMAS
+74     JOHN            WALKER
+...
+
+--- 15 row(s) selected.
+```
+
+<<<
+[[comparison_predicates]]
+=== Comparison Predicates
+
+A comparison predicate compares the values of sequences of expressions,
+or the values of sequences of row values that are the result of row
+subqueries.
+
+```
+row-value-constructor comparison-op row-value-constructor
+```
+
+* `_comparison-op_` is:
++
+```
+  =     Equal
+| <>    Not equal
+| <     Less than
+| >     Greater than
+| <=    Less than or equal to
+| >=    Greater than or equal to
+```
+
+* `_row-value-constructor_` is:
++
+```
+  (expression [,expression]...)
+| row-subquery
+```
+
+* `_row-value-constructor_`
++
+specifies an operand of a comparison predicate. The two operands can be
+either of these:
+
+** `(_expression_ [,_expression_ ]&#8230;)`
++
+is a sequence of SQL value expressions, separated by commas and enclosed
+in parentheses.
++
+_expression_ cannot include an aggregate function unless expression is
+in a HAVING clause. _expression_ can be a scalar subquery (a subquery
+that returns a single row consisting of a single column). See
+<<expressions,Expressions>>.
+
+** `_row-subquery_`
++
+is a subquery that returns a single row (consisting of a sequence of
+values). See <<subquery,Subquery>> .
+
+* The two _row-value-constructors_ must contain the same number of
+elements. That is, the number of value expressions in each list, or the
+number of values returned by a row subquery, must be the same.
++
+The data types of the respective values of the two
+_row-value-constructors_ must be comparable. (Respective values are
+values with the same ordinal position in the two lists.) See
+<<comparable_and_compatible_data_types,Comparable and Compatible Data Types>>.
+
+[[considerations_for_comparison_predicates]]
+==== Considerations for Comparison Predicates
+
+
+[[when_a_comparison_predicate_is_true]]
+===== When a Comparison Predicate Is True
+
+Trafodion SQL determines whether a relationship is true or false by
+comparing values in corresponding positions in sequence, until it finds
+the first non-equal pair.
+
+You cannot use a comparison predicate in a WHERE or HAVING clause to
+compare row value constructors when the value expressions in one row
+value constructor are equal to null. Use the IS NULL predicate instead.
+
+Suppose that two rows with multiple components exist, X and Y:
+
+```
+X=(X1,X2,...,Xn), Y=(Y1,Y2,...,Yn).
+```
+
+Predicate X=Y is true if for all i=1,&#8230;,n: Xi=Yi. For this predicate,
+Trafodion SQL must look through all values. Predicate X = Y is false if
+for some i Xi<>Yi. When SQL finds non-equal components, it stops and does
+not look at remaining components.
+
+Predicate X<>Y is true if X=Y is false. If X1<>Y1, Trafodion SQL does
+not look at all components. It stops and returns a value of false for
+the X=Y predicate and a value of true for the X<>Y predicate. Predicate
+X<>Y is false if X=Y is true, or for all i=1,&#8230;,n: Xi=Yi. In this
+situation, Trafodion SQL must look through all components.
+
+Predicate X>Y is true if for some index m Xm>Ym and for all i=1,&#8230;,m-1:
+Xi=Yi. Trafodion SQL does not look through all components. It stops when
+it finds the first nonequal components, Xm<>Ym. If Xm>Ym, the predicate
+is true. Otherwise the predicate is false. The predicate is also false
+if all components are equal, or X=Y.
+
+Predicate X>&#61;Y is true if X>Y is true or X=Y is true. In this scenario,
+Trafodion SQL might look through all components and return true if they
+are all equal. It stops at the first nonequal components, Xm<>Ym. If
+Xm>Ym, the predicate is true. Otherwise, it is false.
+
+Predicate X<Y is true if for some index m Xm<Ym, and for all i=1,&#8230;,m-1:
+Xi=Yi. Trafodion SQL does not look through all components. It stops when
+it finds the first nonequal components Xm<>Ym. If Xm<Ym, the predicate
+is true. Otherwise, the predicate is false. The predicate is also false
+if all components are equal, or X=Y.
+
+Predicate X<&#61;Y is true if X<Y is true or X=Y is true. In this scenario,
+Trafodion SQL might need to look through all components and return true
+if they are all equal. It stops at the first non-equal components,
+Xm<>Ym. If Xm<Ym, the predicate is true. Otherwise, it is false.
+
+[[comparing_character_data]]
+===== Comparing Character Data
+
+For comparisons between character strings of different lengths, the
+shorter string is padded on the right with spaces (HEX 20) until it is
+the length of the longer string. Both fixed-length and
+variable-length strings are padded in this way.
+
+For example, Trafodion SQL considers the string ‘JOE’ equal to a value
+JOE stored in a column of data type CHAR or VARCHAR of width three or
+more. Similarly, Trafodion SQL considers a value JOE stored in any
+column of the CHAR data type equal to the value JOE stored in any column
+of the VARCHAR data type.
+
+Two strings are equal if all characters in the same ordinal position are
+equal. Lowercase and uppercase letters are not considered equivalent.
+
+[[comparing_numeric_data]]
+===== Comparing Numeric Data
+
+Before evaluation, all numeric values in an expression are first
+converted to the maximum precision needed anywhere in the expression.
+
+[[comparing_interval_data]]
+===== Comparing Interval Data
+
+For comparisons of INTERVAL values, Trafodion SQL first converts the
+intervals to a common unit.
+
+If no common unit exists, Trafodion SQL reports an error. Two INTERVAL
+values must be both year-month intervals or both day-time intervals.
+
+[[comparing_multiple_values]]
+===== Comparing Multiple Values
+
+Use multi-value predicates whenever possible; they are generally more
+efficient than equivalent conditions without multi-value predicates.
+
+[[examples_of_comparison_predicates]]
+==== Examples of Comparison Predicates
+
+* This predicate is true if the customer number is equal to 3210:
++
+```
+custnum = 3210
+```
+
+* This predicate is true if the salary is greater than the average
+salary of all employees:
++
+```
+salary > (SELECT AVG (salary) FROM persnl.employee);
+```
+
+* This predicate is true if the customer name is BACIGALUPI:
++
+```
+custname = 'BACIGALUPI'
+```
+
+* This predicate evaluates to unknown for any rows in either CUSTOMER or
+ORDERS that contain null in the CUSTNUM column:
++
+```
+customer.custnum > orders.custnum
+```
+
+* This predicate returns information about anyone whose name follows
+MOSS, DUNCAN in a list arranged alphabetically by last name and, for the
+same last name, alphabetically by first name:
++
+```
+(last_name, first_name) > ('MOSS', 'DUNCAN')
+```
++
+REEVES, ANNE meets this criteria, but MOSS, ANNE does not.
++
+This multi-value predicate is equivalent to this condition with three
+comparison predicates:
++
+```
+(last_name > 'MOSS') OR
+(last_name = 'MOSS' AND first_name > 'DUNCAN')
+```
+
+* Compare two datetime values START_DATE and the result of the
+CURRENT_DATE function:
++
+```
+START_DATE < CURRENT_DATE
+```
+
+* Compare two datetime values START_DATE and SHIP_TIMESTAMP:
++
+```
+CAST (start_date AS TIMESTAMP) < ship_timestamp
+```
+
+* Compare two INTERVAL values:
++
+```
+JOB1_TIME < JOB2_TIME
+```
++
+Suppose that JOB1_TIME, defined as INTERVAL DAY TO MINUTE, is 2 days 3
+hours, and JOB2_TIME, defined as INTERVAL DAY TO HOUR, is 3 days.
++
+To evaluate the predicate, Trafodion SQL converts the two INTERVAL
+values to MINUTE. The comparison predicate is true.
+
+
+* The next examples contain a subquery in a comparison predicate. Each
+subquery operates on a separate logical copy of the EMPLOYEE table.
++
+The processing sequence is outer to inner. A row selected by an outer
+query allows an inner query to be evaluated, and a single value is
+returned. The next inner query is evaluated when it receives a value
+from its outer query.
++
+Find all employees whose salary is greater than the maximum salary of
+employees in department 1500:
++
+```
+SELECT
+  first_name, last_name, deptnum, salary
+FROM persnl.employee
+WHERE salary >
+   (SELECT MAX (salary) FROM persnl.employee WHERE deptnum = 1500);
+
+FIRST_NAME      LAST_NAME             DEPTNUM SALARY
+--------------- --------------------  ------- -----------
+ROGER           GREEN                    9000   175500.00
+KATHRYN         HALL                     4000    96000.00
+RACHEL          MCKAY                    4000   118000.00
+THOMAS          RUDLOFF                  2000   138000.40
+JANE            RAYMOND                  3000   136000.00
+JERRY           HOWARD                   1000   137000.10
+
+--- 6 row(s) selected.
+```
+Find all employees from other departments whose salary is less than the
+minimum salary of employees (not in department 1500) that have a salary
+greater than the average salary for department 1500:
++
+```
+SELECT first_name, last_name, deptnum, salary
+FROM persnl.employee
+WHERE deptnum <> 1500
+AND salary < (SELECT MIN (salary)
+   FROM persnl.employee WHERE deptnum <> 1500
+   AND salary > (SELECT AVG (salary) FROM persnl.employee WHERE deptnum = 1500));
+
+FIRST_NAME      LAST_NAME            DEPTNUM SALARY
+--------------- -------------------- ------- -----------
+JESSICA         CRINER                  3500    39500.00
+ALAN            TERRY                   3000    39500.00
+DINAH           CLARK                   9000    37000.00
+BILL            WINN                    2000    32000.00
+MIRIAM          KING                    2500    18000.00
+...
+
+--- 35 row(s) selected.
+```
++
+<<<
++
+The first subquery of this query determines the minimum salary of
+employees from other departments whose salary is greater than the
+average salary for department 1500. The main query then finds the names
+of employees who are not in department 1500 and whose salary is less
+than the minimum salary determined by the first subquery.
+
+[[exists_predicate]]
+=== EXISTS Predicate
+
+The EXISTS predicate determines whether any rows are selected by a
+subquery. If the subquery finds at least one row that satisfies its
+search condition, the predicate evaluates to true. Otherwise, if the
+result table of the subquery is empty, the predicate is false.
+
+```
+[NOT] EXISTS subquery
+```
+
+* `_subquery_`
++
+specifies the operand of the predicate. A _subquery_ is a query
+expression enclosed in parentheses. An EXISTS _subquery_ is typically
+correlated with an outer query. See <<subquery,Subquery>> .
+
+[[examples_of_exists]]
+==== Examples of EXISTS
+
+* Find locations of employees with job code 300:
++
+```
+SELECT deptnum, location FROM persnl.dept D WHERE EXISTS
+  (SELECT jobcode FROM persnl.employee E
+   WHERE D.deptnum = E.deptnum AND jobcode = 300);
+
+DEPTNUM LOCATION
+------- -------------
+   3000 NEW YORK
+   3100 TORONTO
+   3200 FRANKFURT
+   3300 LONDON
+   3500 HONG KONG
+
+--- 5 row(s) selected.
+```
++
+In the preceding example, the EXISTS predicate contains a subquery that
+determines which locations have employees with job code 300. The
+subquery depends on the value of D.DEPTNUM from the outer query and must
+be evaluated for each row of the result table where D.DEPTNUM equals
+E.DEPTNUM. The column D.DEPTNUM is an example of an outer reference.
+
+* Search for departments that have no employees with job code 420:
++
+```
+SELECT deptname FROM persnl.dept D WHERE NOT EXISTS
+  (SELECT jobcode FROM persnl.employee E
+   WHERE D.deptnum = E.deptnum AND jobcode = 420);
+
+DEPTNAME
+------------
+FINANCE
+PERSONNEL
+INVENTORY
+
+...
+
+--- 11 row(s) selected.
+```
+
+* Search for parts with less than 20 units in the inventory:
++
+```
+SELECT partnum, suppnum FROM invent.partsupp PS WHERE EXISTS
+  (SELECT partnum FROM invent.partloc PL
+   WHERE PS.partnum = PL.partnum AND qty_on_hand < 20);
+
+PARTNUM SUPPNUM
+------- -------
+    212       1
+    212       3
+   2001       1
+   2003       2
+...
+
+--- 18 row(s) selected.
+```
+
+<<<
+[[in_predicate]]
+=== IN Predicate
+
+The IN predicate determines if a sequence of values is equal to any of
+the sequences of values in a list of sequences. The NOT operator
+reverses its truth value. For example, if IN is true, NOT IN is false.
+
+```
+row-value-constructor
+  [NOT] IN {table-subquery | in-value-list}
+
+row-value-constructor is:
+  (expression [,expression]...)
+| row-subquery
+```
+
+* `_in-value-list_` is:
++
+```
+(expression [,expression_]...)
+```
+
+* `_row-value-constructor_`
++
+specifies the first operand of the IN predicate. The first operand can
+be either of:
++
+```
+(expression [,expression ]...)
+```
++
+is a sequence of SQL value expressions, separated by commas and enclosed
+in parentheses.
++
+_expression_ cannot include an aggregate function unless expression is
+in a HAVING clause. _expression_ can be a scalar subquery (a subquery
+that returns a single row consisting of a single column). See
+<<expressions,Expressions>>.
+
+* `_row-subquery_`
++
+is a subquery that returns a single row (consisting of a sequence of
+values). See <<subquery,Subquery>> .
+
+* `_table-subquery_`
++
+is a subquery that returns a table (consisting of rows of columns). The
+table specifies rows of values to be compared with the row of values
+specified by the _row-value-constructor_. The number of values of the
+_row-value-constructor_ must be equal to the number of columns in the
+result table of the _table-subquery_, and the data types of the values
+must be comparable.
+
+* `_in-value-list_`
++
+is a sequence of SQL value expressions, separated by commas and enclosed
+in parentheses. _expression_ cannot include an aggregate function
+defined on a column. _expression_ can be a scalar subquery (a subquery
+that returns a single row consisting of a single column). In this case,
+the result of the _row-value-constructor_ is a single value. The data
+types of the values must be comparable. The number of expressions in the
+_in-value-list_ can have at least 5000 expressions.
+
+
+<<<
+[[considerations_for_in]]
+==== Considerations for IN
+
+[[logical_equivalent_using_any_or_some]]
+===== Logical Equivalent Using ANY (or SOME)
+
+The predicate _expr_ IN (_expr1_, _expr2_, &#8230; ) is true if and only
+if the following predicate is true:
+
+```
+expr = ANY (expr1, expr2, ... )
+```
+
+[[in_predicate_results]]
+===== IN Predicate Results
+
+The IN predicate is true if and only if either of these is true:
+
+* The result of the _row-value-constructor_ (a row or sequence of
+values) is equal to any row of column values specified by
+_table-subquery_.
+
+A table subquery is a query expression and can be specified as a form of
+a simple table; for example, as the VALUES keyword followed by a list of
+row values. See <<select_statement,SELECT Statement>>.
+
+* The result of the _row-value-constructor_ (a single value) is equal to
+any of the values specified by the list of expressions
+_in-value-list_.
++
+In this case, it is helpful to think of the list of expressions as a
+one-column table—a special case of a table subquery. The degree of the
+row value constructor and the degree of the list of expressions are both
+one.
+
+[[comparing_character_data]]
+===== Comparing Character Data
+
+Two strings are equal if all characters in the same ordinal position are
+equal. Lowercase and uppercase letters are not considered equivalent.
+For comparisons between character strings of different lengths, the
+shorter string is padded on the right with spaces (HEX 20) until it is
+the length of the longer string. Both fixed-length and varying-length
+strings are padded in this way.
+
+For example, Trafodion SQL considers the string ‘JOE’ equal to a value
+JOE stored in a column of data type CHAR or VARCHAR of width three or
+more. Similarly, Trafodion SQL considers a value JOE stored in any
+column of the CHAR data type equal to the value JOE stored in any column
+of the VARCHAR data type.
+
+[[comparing_numeric_data]]
+===== Comparing Numeric Data
+
+Before evaluation, all numeric values in an expression are first
+converted to the maximum precision needed anywhere in the expression.
+
+[[comparing_interval_data]]
+===== Comparing Interval Data
+
+For comparisons of INTERVAL values, Trafodion SQL first converts the
+intervals to a common unit.
+
+If no common unit exists, Trafodion SQL reports an error. Two INTERVAL
+values must be both year-month intervals or both day-time intervals.
+
+
+[[examples_of_in]]
+==== Examples of IN
+
+* Find those employees whose EMPNUM is 39, 337, or 452:
++
+```
+SELECT last_name, first_name, empnum
+FROM persnl.employee
+WHERE empnum IN (39, 337, 452);
+
+LAST_NAME            FIRST_NAME      EMPNUM
+-------------------- --------------- ------
+CLARK                DINAH           337
+SAFFERT              KLAUS           39
+
+--- 2 row(s) selected.
+```
+
+* Find those items in PARTS whose part number is not in the PARTLOC table:
++
+```
+SELECT partnum, partdesc FROM sales.parts
+WHERE partnum NOT IN (SELECT partnum
+FROM invent.partloc);
+
+PARTNUM PARTDESC
+------- ------------------
+186     186 MegaByte Disk
+
+--- 1 row(s) selected.
+```
+
+* Find those items (and their suppliers) in PARTS that have a supplier
+in the PARTSUPP table:
++
+```
+SELECT P.partnum, P.partdesc, S.suppnum, S.suppname
+FROM sales.parts P, invent.supplier S
+WHERE P.partnum, S.suppnum IN
+  (SELECT partnum, suppnum FROM invent.partsupp);
+```
+
+* Find those employees in EMPLOYEE whose last name and job code match
+the list of last names and job codes:
++
+```
+SELECT empnum, last_name, first_name
+FROM persnl.employee
+WHERE (last_name, jobcode)
+IN (VALUES ('CLARK', 500), ('GREEN', 200));
+```
+
+<<<
+[[like_predicate]]
+=== LIKE Predicate
+
+The LIKE predicate searches for character strings that match a pattern.
+
+[[like_syntax]]
+==== Syntax
+
+```
+match-value [NOT] LIKE pattern [ESCAPE esc-char-expression]
+```
+
+* `_match-value_`
++
+is a character value expression that specifies a set of strings to
+search for that match the _pattern_.
+
+* `_pattern_`
++
+is a character value expression that specifies the pattern string for
+the search.
+
+* `_esc-char-expression_`
++
+is a character value expression that must evaluate to a single
+character. The escape character value is used to turn off the special
+meaning of percent (%) and underscore (_). See <<wild_card_characters,Wild-Card Characters>>.
+<<escape_characters>>.
+
+See <<character_value_expressions,Character Value Expressions>>.
+
+[[like_considerations]]
+==== Considerations
+
+[[comparing_the_value_to_the_pattern]]
+===== Comparing the Value to the Pattern
+
+The values that you compare must be character strings. Lowercase and
+uppercase letters are not equivalent. To make lowercase letters match
+uppercase letters, use the UPSHIFT function. A blank is compared in the
+same way as any other character.
+
+[[when_a_like_predicate_is_true]]
+===== When a LIKE Predicate Is True
+
+When you refer to a column, the LIKE predicate is true if the _pattern_
+matches the column value. If the value of the column reference is null,
+the LIKE predicate evaluates to unknown for that row.
+
+If the values that you compare are both empty strings (that is, strings
+of zero length), the LIKE predicate is true.
+
+[[using_not]]
+===== Using NOT
+
+If you specify NOT, the predicate is true if the _pattern_ does not
+match any string in the _match-value_ or is not the same length as any string in the
+_match-value_. For example, NAME NOT LIKE '_Z' is true if the string
+is not two characters long or the last character is not Z. In a search
+condition, the predicate NAME NOT LIKE '_Z' is equivalent to NOT (NAME
+LIKE '_Z').
+
+[[wild_card_characters]]
+===== Wild-Card Characters
+
+You can look for similar values by specifying only part of the
+characters of _pattern_ combined with these wild-card characters:
+
+* `Percent Sign (%)`
++
+Use a percent sign to indicate zero or more characters of any type. For
+example, '%ART%' matches 'SMART', 'ARTIFICIAL', and 'PARTICULAR', but not 'smart'.
+
+* `Underscore (_)`
++
+Use an underscore to indicate any single character. For example, 'BOO_'
+matches 'BOOK' and 'BOOT' but not 'BOO', 'BOOKLET', or 'book'.
+
+* `Escape Characters`
++
+To search for a string containing a percent sign (%) or an underscore
+(_), define an escape character, using ESCAPE _esc-char-expression_,
+to turn off the special meaning of the percent sign and underscore.
++
+To include a percent sign or an underscore in a comparison string, type
+the escape character immediately preceding the percent sign or
+underscore. For example, to locate the value 'A_B', type:
++
+```
+NAME LIKE 'A\_B' ESCAPE '\'
+```
++
+To include the escape character itself in the comparison string, type
+two escape characters. For example, to locate 'A_B\C%', type:
++
+```
+NAME LIKE 'A\_B\\C\%' ESCAPE '\'
+```
++
+The escape character must precede only the percent sign, underscore, or
+escape character itself. For example, the pattern RA\BS is an invalid
+LIKE pattern if the escape character is defined to be '\'. Error 8410
+will be returned if this kind of pattern is used in an SQL query.
+
+[[comparing_the_pattern_to_char_columns]]
+===== Comparing the Pattern to CHAR Columns
+
+Columns of data type CHAR are fixed length. When a value is inserted
+into a CHAR column, Trafodion SQL pads the value in the column with
+blanks if necessary. The value 'JOE' inserted into a CHAR(4) column
+becomes 'JOE ' (three characters plus one blank). The LIKE predicate is
+true only if the column value and the comparison value are the same
+length. The column value 'JOE ' does not match 'JOE' but does match
+'JOE%'.
+
+[[comparing_the_pattern_to_varchar_columns]]
+===== Comparing the Pattern to VARCHAR Columns
+
+Columns of variable-length character data types do not include trailing
+blanks unless blanks are specified when data is entered. For example,
+the value 'JOE' inserted in a VARCHAR(4) column is 'JOE' with no
+trailing blanks. The value matches both 'JOE' and 'JOE%'.
+
+If you cannot locate a value in a variable-length character column, it
+might be because trailing blanks were specified when the value was
+inserted into the table. For example, a value of '5MB ' (with one
+trailing blank) will not be located by LIKE '%MB' but will be located by
+LIKE '%MB%'.
+
+[[like_examples]]
+=== Examples
+
+* Find all employee last names beginning with ZE:
++
+```
+last_name LIKE 'ZE%'
+```
+
+* Find all part descriptions that are not 'FLOPPY_DISK':
++
+```
+partdesc NOT LIKE 'FLOPPY\_DISK' ESCAPE '\'
+```
++
+The escape character indicates that the underscore in 'FLOPPY_DISK' is
+part of the string to search for, not a wild-card character.
+
+<<<
+[[null_predicate]]
+=== NULL Predicate
+
+The NULL predicate determines whether all the expressions in a sequence
+are null. See <<null,Null>> .
+
+```
+row-value-constructor IS [NOT] NULL
+
+row-value-constructor is:
+  (expression [,expression]...)
+| row-subquery
+```
+
+* `_row-value-constructor_`
++
+specifies the operand of the NULL predicate. The operand can be either
+of these:
++
+```
+(expression [,expression ]...)
+```
++
+is a sequence of SQL value expressions, separated by commas and enclosed
+in parentheses.
++
+_expression_ cannot include an aggregate function unless expression is
+in a HAVING clause. _expression_ can be a scalar subquery (a subquery
+that returns a single row consisting of a single column). See
+<<expressions,Expressions>>.
+
+* `_row-subquery_`
++
+is a subquery that returns a single row (consisting of a sequence of
+values). See <<subquery,Subquery>> .
++
+If all of the expressions in the _row-value-constructor_ are null, the
+IS NULL predicate is true. Otherwise, it is false. If none of the
+expressions in the _row-value-constructor_ are null, the IS NOT NULL
+predicate is true. Otherwise, it is false.
+
+<<<
+[[considerations-for-null]]
+==== Considerations for NULL
+
+[[summary_of_null_results]]
+===== Summary of NULL Results
+
+Let rvc be the value of the _row-value-constructor_. This table
+summarizes the results of NULL predicates. The degree of a _rvc_ is the
+number of values in the _rvc_.
+
+[cols="5*",options="header"]
+|===
+| Expressions         | _rvc_ IS NULL | _rvc_ IS NOT NULL | NOT _rvc_ IS NULL | NOT _rvc_ IS NOT NULL
+| degree 1: null      | TRUE          | FALSE             | FALSE             | TRUE
+| degree 1: not null  | FALSE         | TRUE              | TRUE              | FALSE
+| degree>1: all null  | TRUE          | FALSE             | FALSE             | TRUE
+| degree>1: some null | FALSE         | FALSE             | TRUE              | TRUE
+| degree>1: none null | FALSE         | TRUE              | TRUE             | FALSE
+|===
+
+The _rvc_ IS NOT NULL predicate is not equivalent to NOT _rvc_ IS NULL.
+
+
+[[examples-of-null]]
+==== Examples of NULL
+
+* Find all rows with null in the SALARY column:
++
+```
+salary IS NULL
+```
+
+* This predicate evaluates to true if the expression (PRICE + TAX)
+evaluates to null:
++
+```
+(price + tax) IS NULL
+```
+
+* Find all rows where both FIRST_NAME and SALARY are null:
++
+```
+(first_name, salary) IS NULL
+```
+
+<<<
+[[quantified_comparison_predicates]]
+=== Quantified Comparison Predicates
+
+A quantified comparison predicate compares the values of sequences of
+expressions to the values in each row selected by a table subquery. The
+comparison operation is quantified by the logical quantifiers ALL, ANY,
+or SOME.
+
+```
+row-value-constructor comparison-op quantifier table-subquery
+
+row-value-constructor is:
+  (expression [,expression]...)
+| row-subquery
+
+comparison-op is:
+  =   Equal
+| <>  Not equal
+| !=  Not equal
+| <   Less than
+| >   Greater than
+| <=  Less than or equal to
+| >=  Greater than or equal to
+
+quantifier is:
+  ALL | ANY | SOME
+```
+
+* `_row-value-constructor_`
++
+specifies the first operand of a quantified comparison predicate. The
+first operand can be either of:
+
+* `(_expression_ [,_expression_ ]&#8230;)`
++
+is a sequence of SQL value expressions, separated by commas and enclosed
+in parentheses. _expression_ cannot include an aggregate function
+unless _expression_ is in a HAVING clause. _expression_ can be a scalar
+subquery (a subquery that returns a single row consisting of a single
+column). See <<expressions,Expressions>>.
+
+** `row-subquery`
++
+is a subquery that returns a single row (consisting of a sequence of
+values). See <<subquery,Subquery>> .
+
+* `ALL`
++
+specifies that the predicate is true if the comparison is true for every
+row selected by
++
+_table-subquery_ (or if _table-subquery_ selects no rows), and specifies
+that the predicate is false if the comparison is false for at least one
+row selected.
+
+* `ANY | SOME`
++
+specifies that the predicate is true if the comparison is true for at
+least one row selected by the _table-subquery_ and specifies that the
+predicate is false if the comparison is false for every row selected (or
+if _table-subquery_ selects no rows).
+
+* `table-subquery`
++
+provides the values for the comparison. The number of values returned by
+the _row-value-constructor_ must be equal to the number of values specified
+by the _table-subquery_, and the data types of values returned by the
+_row-value-constructor_ must be comparable to the data types of values
+returned by the _table-subquery_. See “Subquery” .
+
+[[considerations_for_all_any_some]]
+==== Considerations for ALL, ANY, SOME
+
+Let _R_ be the result of the _row-value-constructor_, _T_ the result
+of the _table-subquery_, and _RT_ a row in _T_.
+
+===== Result of _Rcomparison-op_ ALL _T_
+
+If _T_ is empty or if _R comparison-op RT_ is true for every row _RT_ in
+_T_, the _comparison-op_ ALL predicate is true.
+
+If _R comparison-op RT_ is false for at least one row _RT_ in _T_, the
+_comparison-op_ ALL predicate is false.
+
+===== Result of _Rcomparison-op_ ANY _T_ or _Rcomparison-op_ SOME _T_
+
+If _T_ is empty or if _R comparison-op RT_ is false for every row _RT_
+in _T_, the _comparison-op_ ANY predicate is false.
+
+If _R comparison-op RT_ is true for at least one row _RT_ in _T_, the
+_comparison-op_ ANY predicate is true.
+
+
+<<<
+[[examples_of_all_any_some]]
+==== Examples of ALL, ANY, SOME
+
+* This predicate is true if the salary is greater than the salaries of
+all the employees who have a jobcode of 420:
++
+```
+salary > ALL (SELECT salary
+              FROM persnl.employee
+	      WHERE jobcode = 420)
+```
++
+Consider this SELECT statement using the preceding predicate:
++
+```
+SELECT empnum, first_name, last_name, salary FROM persnl.employee
+WHERE salary > ALL (SELECT salary
+FROM persnl.employee WHERE jobcode = 420);
+```
++
+The inner query providing the comparison values yields these results:
++
+```
+SELECT salary
+FROM persnl.employee WHERE jobcode = 420;
+
+SALARY
+-----------
+   33000.00
+   36000.00
+   18000.10
+
+--- 3 row(s) selected.
+```
++
+The SELECT statement using this inner query yields these results. The
+salaries listed are greater than the salary of every employees with
+jobcode equal to 420—that is, greater than
+$33,000.00, $36,000.00, and $18,000.10:
++
+```
+SELECT empnum, first_name, last_name, salary FROM persnl.employee
+WHERE salary > ALL (SELECT salary
+FROM persnl.employee WHERE jobcode = 420);
+
+FIRST_NAME      LAST_NAME            SALARY
+--------------- -------------------- -----------
+ROGER           GREEN                  175500.00
+JERRY           HOWARD                 137000.10
+JANE            RAYMOND                136000.00
+...
+ALAN            TERRY                   39500.00
+BEN             HENDERSON               65000.00
+JESSICA         CRINER                  39500.00
+
+--- 23 row(s) selected.
+```
+
+* This predicate is true if the part number is equal to any part number
+with more than five units in stock:
++
+```
+partnum = ANY (SELECT partnum
+              FROM sales.odetail
+	      WHERE qty_ordered > 5)
+```
++
+Consider this SELECT statement using the preceding predicate:
++
+```
+SELECT ordernum, partnum, qty_ordered FROM sales.odetail
+WHERE partnum = ANY (SELECT partnum
+FROM sales.odetail WHERE qty_ordered > 5);
+```
++
+The inner query providing the comparison values yields these results:
++
+```
+SELECT partnum FROM sales.odetail
+WHERE qty_ordered > 5;
+
+Part/Num
+--------
+    2403
+    5100
+    5103
+    6301
+    6500
+....
+
+--- 60 row(s) selected.
+```
++
+The SELECT statement using this inner query yields these results. All of
+the order numbers listed have part number equal to any part number with
+more than five total units in stock—that is, equal to 2403, 5100, 5103,
+6301, 6500, and so on:
++
+```
+SELECT ordernum, partnum, qty_ordered FROM sales.odetail
+WHERE partnum = ANY (SELECT partnum
+FROM sales.odetail WHERE qty_ordered > 5);
+
+Order/Num  Part/Num Qty/Ord
+---------- -------- ----------
+    100210      244          3
+    100210     2001          3
+    100210     2403          6
+    100210     5100         10
+    100250      244          4
+    100250     5103         10
+    100250     6301         15
+    100250     6500         10
+    ......     .... ..
+
+--- 71 row(s) selected.
+```
+
+<<<
+[[privileges]]
+== Privileges
+
+A privilege provides authorization to perform a specific operation for a
+specific object. A privilege can be granted to or revoked from a user or
+role in many ways:
+
+
+* Implicit privileges are granted to an owner of an object when the
+object is created. The owner retains implicit privileges for the
+lifespan of the object.
+* Explicit privileges can be granted to or revoked from a user or role.
+Explicit privileges can be granted or revoked by a database user
+administrator, an object owner, or a user who has been granted the
+privilege with the WITH GRANT OPTION option.
+* The privileges granted to a user can come from various sources.
+Privileges can be directly granted to a user or they can be inherited
+through a role. For example, a user gets the SELECT privilege on table
+T1 from two different roles. If one of the roles is revoked from the
+user, the user will still be able to select from T1 via the SELECT
+privilege granted to the remaining role.
+* A user who is granted a role is thereby conferred all privileges of
+the role. The only way to revoke any such privilege is to revoke the
+role from the user. For more information, see
+<<roles,Roles>> .
+
+
+You can manage privileges by using the GRANT and REVOKE statements.
+
+For more information on GRANT, see:
+
+* <<grant_statement,GRANT Statement>>
+* <<grant_component_privilege_statement,GRANT COMPONENT PRIVILEGE Statement>>
+* <<grant_role_statement,GRANT ROLE Statement>>
+
+For more information on REVOKE, see:
+
+* <<revoke_statement,REVOKE Statement>>
+* <<revoke_component_privilege_statement,REVOKE COMPONENT PRIVILEGE Statement>>
+* <<revoke_role_statement,REVOKE ROLE Statement>>
+
+<<<
+[[roles]]
+== Roles
+
+A role offers the flexibility of implicitly assigning a set of
+privileges to users, instead of assigning privileges individually. A
+user can be granted one or more roles. A role can be granted to one or
+more users. A role can be granted by or revoked by a database user
+administrator, a role owner, or a member of the role.
+
+Privileges are granted to a role. When a role is granted to a user, the
+privileges granted to the role become available to the user. If new
+privileges are granted to the role, those privileges become available to
+all users who have been granted the role. When a role is revoked from a
+user, the privileges granted to the role are no longer available to the
+user. The change in privileges is automatically propagated to and detected by
+active sessions, so there is no need for users to disconnect from and
+reconnect to a session to see the updated set of privileges. For more
+information about privileges, see <<privileges,Privileges>>.
+
+A role name is an authorization ID. A role name cannot be identical to a
+registered database user name. For more information, see
+<<authorization_ids,Authorization IDs>>.
+
+To manage roles, see these SQL statements:
+
+* <<create_role_statement,CREATE ROLE Statement>>
+* <<drop_role_statement,DROP ROLE Statement>>
+* <<grant_role_statement,GRANT ROLE Statement>>
+* <<revoke_role_statement,REVOKE ROLE Statement>>
+
+<<<
+[[schemas]]
+== Schemas
+
+The ANSI SQL:1999 schema name is an SQL identifier that is unique for a
+given ANSI catalog name. Trafodion SQL automatically qualifies the
+schema name with the current default catalog name, TRAFODION.
+
+The logical name of the form _schema.object_ is an ANSI name. The part
+_schema_ denotes the ANSI-defined schema.
+
+To be compliant with ANSI SQL:1999, Trafodion SQL provides support for
+ANSI object names.
+
+By using these names, you can develop ANSI-compliant applications that
+access all SQL objects. You can access Trafodion SQL objects with the
+name of the actual object. See <<set_schema_statement,SET SCHEMA Statement>>.
+
+[[creating_and_dropping_schemas]]
+=== Creating and Dropping Schemas
+
+You create a schema using the CREATE SCHEMA command and drop a schema using the
+DROP SCHEMA statement. For more information, see the
+<<create_schema_statement,CREATE SCHEMA Statement>> and the
+<<drop_schema_statement,DROP SCHEMA Statement>>.
+
+<<<
+[[search_condition]]
+== Search Condition
+
+A search condition is used to choose rows from tables or views,
+depending on the result of applying the condition to rows. The condition
+is a Boolean expression consisting of predicates combined together with
+OR, AND, and NOT operators.
+
+You can use a search condition in the WHERE clause of a SELECT, DELETE,
+or UPDATE statement, the HAVING clause of a SELECT statement, the
+searched form of a CASE expression, the ON clause of a SELECT statement
+that involves a join, a CHECK constraint, or a ROWS SINCE sequence
+function.
+
+```
+search-condition is:
+  boolean-term | search-condition OR boolean-term
+
+boolean-term is:
+  boolean-factor | boolean-term AND boolean-factor
+
+boolean-factor is:
+  [NOT] boolean-primary
+
+boolean-primary is:
+  predicate | (search-condition)
+```
+
+* `OR`
++
+specifies the resulting search condition is true if and only if either
+of the surrounding predicates or search conditions is true.
+
+* `AND`
++
+specifies the resulting search condition is true if and only if both the
+surrounding predicates or search conditions are true.
+
+* `NOT`
++
+reverses the truth value of its operand—the following predicate or
+search condition. predicate is a BETWEEN, comparison, EXISTS, IN, LIKE, NULL, or quantified
+comparison predicate. A predicate specifies conditions that must be satisfied for a row to be
+chosen. See <<predicates,Predicates>>  and individual entries.
+
+<<<
+[[considerations_for_search_condition]]
+=== Considerations for Search Condition
+
+[[order_of_evaluation]]
+==== Order of Evaluation
+
+SQL evaluates search conditions in this order:
+
+1.  Predicates within parentheses
+2.  NOT
+3.  AND
+4.  OR
+
+[[column-references]]
+==== Column References
+
+Within a search condition, a reference to a column refers to the value
+of that column in the row currently being evaluated by the search
+condition.
+
+[[subqueries]]
+==== Subqueries
+
+If a search condition includes a subquery and the subquery returns no
+values, the predicate evaluates to null. See
+<<subquery,Subquery>>.
+
+<<<
+[[examples_of_search_condition]]
+=== Examples of Search Condition
+
+* Select rows by using a search condition composed of three comparison
+predicates joined by AND operators:
++
+```
+SELECT O.ordernum, O.deliv_date, OD.qty_ordered
+FROM sales.orders O, sales.odetail OD
+WHERE qty_ordered < 9
+  AND deliv_date <= DATE '2008-11-01'
+  AND O.ordernum = OD.ordernum;
+
+ORDERNUM    DELIV_DATE QTY_ORDERED
+----------  ---------- -----------
+    100210  2008-04-10           3
+    100210  2008-04-10           3
+    100210  2008-04-10           6
+    100250  2008-06-15           4
+    101220  2008-12-15           3
+...  
+
+--- 28 row(s) selected.
+```
+
+* Select rows by using a search condition composed of three comparison
+predicates, two of which are joined by an OR operator (within
+parentheses), and where the result of the OR and the first comparison
+predicate are joined by an AND operator:
++
+```
+SELECT partnum, S.suppnum, suppname
+FROM invent.supplier S, invent.partsupp PS
+WHERE S.suppnum = PS.suppnum
+  AND (partnum < 3000 OR partnum = 7102);
+
+SUPPNAME
+------------------
+NEW COMPUTERS INC
+NEW COMPUTERS INC
+NEW COMPUTERS INC
+... 
+LEVERAGE INC
+
+--- 18 row(s) selected.
+```
+
+<<<
+[[subquery]]
+== Subquery
+
+A subquery is a query expression enclosed in parentheses. Its syntactic
+form is specified in the syntax of a SELECT statement. For further
+information about query expressions, see <<select_statement,SELECT Statement>>.
+
+A subquery is used to provide values for a BETWEEN, comparison, EXISTS,
+IN, or quantified comparison predicate in a search condition. It is also
+used to specify a derived table in the FROM clause of a SELECT
+statement.
+
+A subquery can be a table, row, or scalar subquery. Therefore, its
+result table can be a table consisting of multiple rows and columns, a
+single row of column values, or a single row consisting of only one
+column value.
+
+[[select_form_of_a_subquery]]
+=== SELECT Form of a Subquery
+
+A subquery is typically specified as a special form of a SELECT
+statement enclosed in parentheses that queries (or selects) to provide
+values in a search condition or to specify a derived table as a table
+reference.
+
+The form of a subquery specified as a SELECT statement is _query-expr_.
+
+Neither the ORDER BY clause nor [FIRST N] / [ANY N] clause is allowed in
+a subquery.
+
+[[using_subqueries_to_provide_comparison_values]]
+=== Using Subqueries to Provide Comparison Values
+
+When a subquery is used to provide comparison values, the SELECT
+statement that contains the subquery is called an outer query. The
+subquery within the SELECT is called an _inner query_.
+
+In this case, the differences between the SELECT statement and the
+SELECT form of a subquery are:
+
+* A subquery is always enclosed in parentheses.
+* A subquery cannot contain an ORDER BY clause.
+* If a subquery is not part of an EXISTS, IN, or quantified comparison
+predicate, and the subquery evaluates to more than one row, a run-time
+error occurs.
+
+<<<
+[[nested_subqueries_when_providing_comparison_values]]
+=== Nested Subqueries When Providing Comparison Values
+
+An outer query (a main SELECT statement) can have nested subqueries.
+Subqueries within the same WHERE or HAVING clause are at the same level.
+For example, this query has one level of nesting:
+
+```
+SELECT * FROM table1
+WHERE A = (SELECT P FROM table2 WHERE q = 1)
+AND b = (SELECT x FROM table3 WHERE y = 2);
+```
+
+A subquery within the WHERE clause of another subquery is at a different
+level, however, so this query has two levels of nesting:
+
+```
+SELECT * FROM table1
+WHERE a = (SELECT p FROM table2
+WHERE q = (SELECT x FROM table3
+WHERE y = 2))
+```
+
+The maximum level of nested subqueries might depend on:
+
+* The complexity of the subqueries.
+* Whether the subquery is correlated and if so, whether it can be un-nested.
+* Amount of available memory.
+
+Other factors may affect the maximum level of subqueries.
+
+[[correlated_subqueries_when_providing_comparison_values]]
+=== Correlated Subqueries When Providing Comparison Values
+
+In a subquery, when you refer to columns of any table or view defined in
+an outer query, the reference is called an outer reference. A subquery
+containing an outer reference is called a correlated subquery.
+
+If you refer to a column name that occurs in more than one outer query,
+you must qualify the column name with the correlation name of the table
+or view to which it belongs. Similarly, if you refer to
+
+a column name that occurs in the subquery and in one or more outer
+queries, you must qualify the column name with the correlation name of
+the table or view to which it belongs. The correlation name is known to
+other subqueries at the same level, or to inner queries but not to outer
+queries.
+
+If you use the same correlation name at different levels of nesting, an
+inner query uses the one from the nearest outer level.
+
+<<<
+[[tables]]
+== Tables
+
+A table is a logical representation of data in which a set of records is
+represented as a sequence of rows, and the set of fields common to all
+rows is represented by columns. A column is a set of values of the same
+data type with the same definition. The intersection of a row and column
+represents the data value of a particular field in a particular record.
+
+Every table must have one or more columns, but the number of rows can be
+zero. No inherent order of rows exists within a table.
+
+You create a Trafodion SQL user table by using the CREATE TABLE
+statement. See the <<create_table_statement,CREATE TABLE Statement>>.
+The definition of a user table within the statement includes this information:
+
+* Name of the table
+* Name of each column of the table
+* Type of data you can store in each column of the table
+* Other information about the table, including the physical
+characteristics of the file that stores the table (for example, the
+storage order of rows within the table)
+
+A Trafodion SQL table is described in an SQL schema and stored as an
+HBase table. Trafodion SQL tables have regular ANSI names in the catalog
+TRAFODION. A Trafodion SQL table name can be a fully qualified ANSI name
+of the form TRAFODION._schema-name.object-name_. A Trafodion SQL
+table’s metadata is stored in the schema TRAFODION."_MD_".
+
+Because Trafodion defines the encodings for column values in Trafodion
+SQL tables, those tables support various Trafodion SQL statements. See
+<<supported_sql_statements_with_hbase_tables,Supported SQL Statements With HBase Tables>>.
+
+Internally, Trafodion SQL tables use a single HBase column family and
+shortened column names to conserve space. Their encoding allows keys
+consisting of multiple columns and preserves the order of key values as
+defined by SQL. The underlying HBase column model makes it very easy to
+add and remove columns from Trafodion SQL tables. HBase columns that are
+not recorded in the Trafodion metadata are ignored, and missing columns
+are considered NULL values.
+
+[[base_tables_and_views]]
+=== Base Tables and Views
+
+In some descriptions of SQL, tables created with a CREATE TABLE
+statement are called base tables to distinguish them from views, which
+are called logical tables.
+
+A view is a named logical table defined by a query specification that
+uses one or more base tables or other views. See <<views,Views>>.
+
+[[example_of_a_base_table]]
+=== Example of a Base Table
+
+For example, this EMPLOYEE table is a base table in a sample database:
+
+[cols="6*",options="header"]
+|===
+| EMPNUM | FIRST_NAME | LAST_NAME | DEPTNUM | JOBCODE | SALARY
+| 1      | ROGER      | GREEN     | 9000    | 100     | 175500.00
+| 23     | JERRY      | HOWARD    | 1000    | 100     | 137000.00
+| 75     | TIM        | WALKER    | 3000    | 300     | 32000.00
+| . . .  | . . .      | . . .     | . . .   | . . .    | . . .
+|===
+
+
+In this sample table, the columns are EMPNUM, FIRST_NAME, LAST_NAME,
+DEPTNUM, JOBCODE, and SALARY. The values in each column have the same
+data type.
+
+<<<
+[[views]]
+== Views
+
+A view provides an alternate way of looking at data in one or more
+tables. A view is a named specification of a result table, which is a
+set of rows selected or generated from one or more base tables or other
+views. The specification is a SELECT statement that is executed whenever
+the view is referenced.
+
+A view is a logical table created with the CREATE VIEW statement and
+derived by projecting a subset of columns, restricting a subset of rows,
+or both, from one or more base tables or other views.
+
+[[sql_views]]
+=== SQL Views
+
+A view’s name must be unique among table and view names within the
+schema that contains it. Single table views can be updatable. Multi-table
+views are not updatable.
+
+For information about SQL views, see <<create_view_statement,CREATE VIEW Statement>>
+and <<drop_view_statement,DROP VIEW Statement>>.
+
+[[example_of_a_view]]
+=== Example of a View
+
+You can define a view to show only part of the data in a table. For
+example, this EMPLIST view is defined as part of the EMPLOYEE table:
+
+[cols="5*",options="header"]
+|===
+| EMPNUM | FIRST_NAME | LAST_NAME | DEPTNUM | JOBCODE
+| 1      | ROGER      | GREEN     | 9000    | 100
+| 23     | JERRY      | HOWARD    | 1000    | 100
+| 75     | TIM        | WALKER    | 3000    | 300
+| . . .  | . . .      | . . .     | . . .   | . . .
+|===
+
+In this sample view, the columns are EMPNUM, FIRST_NAME, LAST_NAME,
+DEPTNUM, and JOBCODE. The SALARY column in the EMPLOYEE table is not
+part of the EMPLIST view.
+

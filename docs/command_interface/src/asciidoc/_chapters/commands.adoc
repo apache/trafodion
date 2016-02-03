@@ -1,0 +1,4315 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+<<<
+[[commands]]
+= Commands
+TrafCI supports these commands in the command-line interface or in script files that you run from the command-line interface.
+
+[cols="20%l,50%,30%",options="header"]
+|===
+| Command              | Description                                                                                                 | Documentation
+| @                    | Runs the SQL statements and interface commands contained in a specified script file.                        | <<cmd_at_sign, @ Command>>
+| /                    | Runs the previously executed SQL statement.                                                                 | <<cmd_slash, / Command>>
+| ALIAS                | Maps a string to any interface or SQL command.                                                              | <<cmd_alias, ALIAS Command>>
+| CLEAR                | Clears the command console so that only the prompt appears at the top of the screen.                        | <<cmd_clear, CLEAR Command>>
+| CONNECT              | Creates a new connection to the Trafodion database from a current or existing TrafCI session.               | <<cmd_connect, CONNECT Command>>
+| DELAY                | Allows the TrafCI session to be in sleep mode for the specified interval.                                   | <<cmd_delay, DELAY Command>>
+| DISCONNECT           | Terminates the connection to the Trafodion database.                                                        | <<cmd_disconnect, DISCONNECT Command>>
+| ENV                  | Displays attributes of the current TrafCI session.                                                          | <<cmd_env, ENV Command>>
+| EXIT                 | Disconnects from and exits the command-line interface.                                                      | <<cmd_exit, EXIT Command>>
+| FC                   | Edits and re-executes a previous command. This command is restricted to the command-line
+interface and is disallowed in script files.                                                                                         | <<cmd_fc, FC Command>>
+| GET STATISTICS       | Returns formatted statistics for the last executed SQL statement.                                           | <<cmd_get_statistics, GET STATISTICS Command>>
+| GOTO                 | Jumps to a point the command history specified by the <<cmd_label, LABEL Command>>.                         | <<cmd_goto, GOTO Command>>
+| HELP                 | Displays help text for the interface commands.                                                              | <<cmd_help, HELP Command>>
+| HISTORY              | Displays recently executed commands.                                                                        | <<cmd_history, HISTORY Command>>
+| IF&8230;THEN         | Allows the conditional execution of actions specified within the `IF&#8230;THEN` conditional statement.     | <<cmd_if_then, IF&#8230;THEN Command>>
+| LABEL                | Marks a point in the command history that you can jump to by using the <<cmd_goto, GOTO Command>>.          | <<cmd_label, LABEL Command>>
+| LOCALHOST            | Executes client machine commands.                                                                           | <<cmd_localhost, LOCALHOST Command>>
+| LOG                  | Logs commands and output from TrafCI to a log file.                                                         | <<cmd_log, LOG Command>>
+| OBEY                 | Runs the SQL statements and interface commands contained in a specified script file.                        | <<cmd_obey, OBEY Command>>
+| PRUN                 | Runs script files in parallel.                                                                              | <<cmd_prun, PRUN Command>>
+| QUIT                 | Disconnects from and exits TrafCI.                                                                          | <<cmd_quit, QUIT Command>>
+| RECONNECT            | Creates a new connection to the Trafodion database using the login credentials of the last
+successful connection.                                                                                                               | <<cmd_reconnect, RECONNECT Command>>
+| REPEAT               | Re-executes a command.                                                                                       | <<cmd_repeat, REPEAT Command>>
+| RESET LASTERROR      | Resets the last error code to `0`.                                                                          | <<cmd_reset_lasterror, RESET LASTERROR Command>>
+| RESET PARAM          | Clears all parameter values or a specified parameter value in the current session.                          | <<cmd_reset_param, RESET PARAM Command>>
+| RUN                  | Runs the previously executed SQL statement.                                                                 | <<cmd_run, RUN Command>>
+| SAVEHIST             | Saves the session history in a user-specified file.                                                         | <<cmd_savehist, SAVEHIST Command>>
+| SESSION              | Displays attributes of the current TrafCI session.                                                          | <<cmd_session, SESSION Command>>
+| SET COLSEP           | Sets the column separator and allows you to control the formatting of the result displayed for SQL queries. | <<cmd_set_colsep, SET COLSEP Command>>
+| SET FETCHSIZE        | Changes the default fetchsize used by JDBC.                                                                 | <<cmd_set_fetchsize, SET FETCHSIZE Command>>
+| SET HISTOPT          | Sets the history option and controls how commands are added to the history buffer.                          | <<cmd_set_histopt, SET HISTOPT Command>>
+| SET IDLETIMEOUT      | Sets the idle timeout value for the current session.                                                        | <<cmd_set_idletimeout, SET IDLETIMEOUT>>
+| SET LIST_COUNT       | Sets the maximum number of rows to be returned by `SELECT` statements that are executed after this command. | <<cmd_set_list_count, SET LIST_COUNT Command>>
+| SET MARKUP           | Sets the markup format and controls how results are displayed by TrafCI.                                    | <<cmd_set_markup, SET MARKUP Command>>
+| SET PARAM            | Sets a parameter value in the current session.                                                              | <<cmd_set_param, SET PARAM Command>>
+| SET PROMPT           | Sets the prompt of the current session to a specified string or to a session variable.                      | <<cmd_set_prompt, SET PROMPT Command>>
+| SET SQLPROMPT        | Sets the SQL prompt of the current session to a specified string. The default is `SQL`.                     | <<cmd_set_sqlprompt, SET SQLPROMPT Command>> 
+| SET SQLTERMINATOR    | Sets the SQL statement terminator of the current session to a specified string.
+The default is a semicolon (`;`).                                                                                                    | <<cmd_set_sqlterminator, SET SQLTERMINATOR Command>>
+| SET STATISTICS       | Automatically retrieves the statistics information for a query being executed.                              | <<cmd_set_statistics, SET STATISTICS Command>>
+| SET TIME             | Causes the local time of the client workstation to be displayed as part of the interface prompt.            | <<cmd_set_time, SET TIME Command>>
+| SET TIMING           | Causes the elapsed time to be displayed after each SQL statement executes.                                  | <<cmd_set_timing, SET TIMING Command>>
+| SHOW ACTIVITYCOUNT   | Functions as an alias of <<cmd_show_reccount, SHOW RECCOUNT Command>>.                                      | <<cmd_show_activitycount, SHOW ACTIVITYCOUNT Command>>
+| SHOW ALIAS           | Displays all or a set of aliases available in the current TrafCI session.                                   | <<cmd_show_alias, SHOW ALIAS Command>>
+| SHOW ALIASES         | Displays all the aliases available in the current TrafCI session.                                           | <<cmd_show_aliases, SHOW ALIASES Command>>
+| SHOW CATALOG         | Displays the current catalog of the TrafCI session.                                                         | <<cmd_show_catalog, SHOW CATALOG Command>>
+| SHOW COLSEP          | Displays the value of the column separator for the current TrafCI session.                                  | <<cmd_show_colsep, SHOW COLSEP Command>>
+| SHOW ERRORCODE       | Functions as an alias for the <<cmd_show_lasterror, SHOW LASTERROR Command>>.                               | <<cmd_show_errorcode, SHOW ERRORCODE Command>>
+| SHOW FETCHSIZE       | Displays the fetch size value for the current TrafCI session.                                               | <<cmd_show_fetchsize, SHOW FETCHSIZE Command>>
+| SHOW HISTOPT         | Displays the value that has been set for the history option of the current setting.                         | <<cmd_show_histopt, SHOW HISTOPT Command>>
+| SHOW IDLETIMEOUT     | Displays the idle timeout value of the current session.                                                     | <<cmd_show_idletimeout, SHOW IDLETIMEOUT Command>>
+| SHOW LASTERROR       | Displays the last error of the statement that was executed.                                                 | <<cmd_show_lasterror, SHOW LASTERROR Command>>
+| SHOW LIST_COUNT      | Displays the maximum number of rows to be returned by `SELECT` statements in the current session.           | <<cmd_show_list_count, SHOW LIST_COUNT Command>>
+| SHOW MARKUP          | Displays the value that has been set for the markup option for the current TrafCI session.                  | <<cmd_show_markup, SHOW MARKUP Command>>
+| SHOW PARAM           | Displays the parameters that are set in the current session.                                                 | <<cmd_show_param, SHOW PARAM Command>>
+| SHOW PREPARED        | Displays the prepared statements in the current TrafCI session.                                             | <<cmd_show_prepared, SHOW PREPARED Command>>
+| SHOW RECCOUNT        | Displays the record count of the previous executed SQL statement.                                           | <<cmd_show_reccount, SHOW RECCOUNT Command>>
+| SHOW REMOTEPROCESS   | Displays the process name of the DCS server that is handling the current connection.                        | <<cmd_show_remoteprocess, SHOW REMOTEPROCESS Command>>
+| SHOW SCHEMA          | Displays the current schema of the TrafCI session.                                                          | <<cmd_show_schema, SHOW SCHEMA Command>>
+| SHOW SESSION         | Displays attributes of the current TrafCI session.                                                          | <<cmd_show_session, SHOW SESSION Command>>
+| SHOW SQLPROMPT       | Displays the value of the SQL prompt for the current session.                                               | <<cmd_show_sqlprompt, SHOW SQLPROMPT Command>>
+| SHOW SQLTERMINATOR   | Displays the SQL statement terminator of the current session.                                               | <<cmd_show_sqlterminator, SHOW SQLTERMINATOR Command>>
+| SHOW STATISTICS      | Displays if statistics has been enabled or disabled for the current session.                                | <<cmd_show_statistics, SHOW STATISTICS Command>>
+| SHOW TIME            | Displays the setting for the local time in the SQL prompt.                                                  | <<cmd_show_time, SHOW TIME Command>>
+| SHOW TIMING          | Displays the setting for the elapsed time.                                                                  | <<cmd_show_timing, SHOW TIMING Command>>
+| SPOOL                | Logs commands and output from TrafCI to a log file.                                                         | <<cmd_spool, SPOOL Command>>
+| VERSION              | Displays the build versions of the platform, database connectivity services, JDBC Type 4 Driver, and TrafCI.| <<cmd_version, VERSION Command>>
+|===
+
+<<<
+[[cmd_at_sign]]
+== @ Command
+The `@` command executes the SQL statements and interface commands contained in a specified script file. The `@` command is
+executed the same as the `OBEY` command. For more information on syntax and considerations, <<cmd_obey, OBEY Command>>.
+
+=== Syntax
+
+```
+@{script-file | wild-card-pattern} [(section-name)]
+```
+
+* `_script-file_`
++
+is the name of an ASCII text file that contains SQL statements, interface commands, and comments. If the script file exists outside the
+local directory where you launch TrafCI (by default, the `bin` directory) specify the full directory path of the script file.
+
+* `_wild-card-pattern_`
++
+is a character string used to search for script files with names that match the character string. `_wild-card-pattern_` matches a string,
+depending on the operating system for case-sensitivity, unless you enclose it within double quotes. To look for similar values, specify
+only part of the characters of `_wild-card-pattern_` combined with these wild-card characters:
++
+[cols="10%,90%"]
+|===
+| `*` | Use an asterisk (`*`) to indicate zero or more characters of any type. For example, `*art*` matches `SMART`, `ARTIFICIAL`, and `PARTICULAR`.
+| `?` | Use a question mark (`?`) to indicate any single character. For example, `boo?` matches `BOOK` and `BOOT` but not `BOO` or `BOOTS`.
+|===
+
+* `(_section-name_)`
++
+is the name of a section within the `_script-file_` to execute. If you specify `_section-name_`, the `@` command executes the commands between
+the header line for the specified section and the header line for the next section (or the end of the script file).
+If you omit `_section-name_`, the `@` command executes the entire script file. For more information, <<script_section_headers, Section Headers>>.
+
+<<<
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* Space is disallowed between the `@` sign and the first character of the script name.
+* For additional considerations, see the <<cmd_obey, OBEY Command>>.
+
+=== Examples
+
+* This `@` command runs the script file from the local directory (the same directory where you are running TrafCI):
++
+```
+SQL> @ddl.sql
+```
+
+* This `@` command runs the script file in the specified directory on a Windows workstation:
++
+```
+ SQL> @c:\my_files\ddl.sql
+```
+
+* This `@` command runs the script file in the specified directory on a Linux or UNIX workstation:
++
+```
+SQL> @./my_files/ddl.sql
+```
+
+<<<
+[[cmd_slash]]
+== / Command
+
+The `/` command executes the previously executed SQL statement. This command does not repeat an interface command.
+
+=== Syntax
+
+```
+/
+```
+
+=== Considerations
+
+* You must enter the command on one line.
+* The command does not require an SQL terminator.
+
+=== Example
+
+This `/` command executes the previously executed `SELECT` statement:
+
+```
+SQL> SELECT COUNT() FROM persnl.employee;
+
+(EXPR)
+--------------------
+62
+
+--- 1 row(s) selected.
+
+`SQL>`/
+
+(EXPR)
+--------------------
+62
+
+--- 1 row(s) selected.
+
+SQL>
+```
+
+<<<
+[[cmd_alias]]
+== ALIAS Command
+The `ALIAS` command allows you to map a string to any interface or SQL command. The syntax of the interface or SQL command
+is checked only when the mapped string is executed. This command replaces only the first token of a command string, which allows
+the rest of the tokens to be treated as parameters.
+
+=== Syntax
+
+```
+ALIAS value AS command SQL-terminator
+```
+
+* `_value_`
++
+is a case-insensitive string without spaces. `_Value_` cannot be a command.
+
+* `_command_`
++
+is an command or SQL command.
+
+* `_SQL-terminator_`
++
+is the default terminator (`;`) or a string value defined for the statement terminator by the
+<<cmd_set_sqlterminator, SET SQLTERMINATOR Command>>. For more information, see
+<<interactive_set_show_terminator, Set and Show the SQL Terminator>>.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* The `ALIAS` command lasts only for the duration of the session.
+* An alias on an alias is not supported.
+
+<<<
+=== Examples
+
+* This command creates an alias named `.OS` to perform the `LOCALHOST (LH)` command:
++
+```
+SQL> ALIAS .OS AS LH;
+```
+
+* This command executes the new `ALIAS` with the `ls` option:
++
+```
+SQL> .OS ls
+
+trafci-perl.pl trafci-python.py trafci.cmd trafci.pl trafci.py trafci.sh
+```
+
+* This command creates an alias named `.GOTO` to perform the `GOTO` command:
++
+```
+SQL> ALIAS .GOTO AS GOTO; 
+SQL> .GOTO mylabel
+```
++
+The `GOTO` statement executed, ignoring all commands until a `'LABEL MYLABEL'` command is encountered.
+
+* This command creates an alias named USE to perform the `SET SCHEMA` operation, uses the alias to set the schema to
+`TRAFODION.USR`, and checks the current schema to verify that the alias worked correctly:
++
+```
+SQL> ALIAS use AS "SET SCHEMA";
+SQL> use TRAFODION.USR;
+SQL> SHOW SCHEMA
+
+SCHEMA USR
+```
+
+<<<
+[[cmd_clear]]
+== CLEAR Command
+
+The `CLEAR` command clears the interface window so that only the prompt appears at the top of the window. `CLEAR` does not clear the log file or
+reset the settings of the session.
+
+=== Syntax
+
+```
+CLEAR
+```
+
+=== Considerations
+
+* You must enter the command on one line.
+* The `CLEAR` command does not require an SQL terminator.
+
+=== Example
+
+This CLEAR command clears the interface window:
+
+```
+SQL> CLEAR
+```
+
+After the CLEAR command executes, the interface window appears with only the prompt showing:
+
+```
+SQL>
+```
+
+<<<
+[[cmd_connect]]
+== CONNECT Command
+
+The `CONNECT` command creates a new connection to the database from the current or existing TrafCI session.
+
+=== Syntax
+
+```
+CONNECT [ username [ /password ][@hostname]]
+```
+
+* `_username_`
++
+specifies the user name for logging in to the database platform.
++
+** If the user name is not specified, then TrafCI prompts for the user name.
+** If the user name contains spaces or special characters, such as a period (`.`), hyphen (`-`), or underscore (`_`),
+then put the name within double quotes. For example: *"sq.user-1"*.
+
+* `_/password_`
++
+specifies the password of the user for logging in to the database platform.
++
+** If the password is not specified, then TrafCI prompts for the password.
+** If the password contains spaces or special characters, such as `@` or a single quote (`'`), then put the password
+within double quotes. For example: *"Tr@f0d!0n"*.
+
+* `_@hostname_`
++
+specifies the host name or IP address of the database platform to which you want the client to connect.
++
+** If the hostname is not specified, then the value is automatically used from the current TrafCI session.
+** If TrafCI was invoked with the `-noconnect` launch parameter, then you are prompted for a `_hostname_` value.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If TrafCI was invoked with the `-noconnect` launch parameter, then TrafCI prompts you for the values.
+* If the user name or password contains space or special characters, then you must put the name or password within double quotes.
+
+=== Examples
+
+* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
++
+```
+SQL> CONNECT
+
+User Name: user1
+Password:
+
+Connected to Trafodion
+```
+
+* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
++
+```
+SQL> CONNECT user1/password
+
+Connected to Trafodion
+```
+
+* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
++
+``` 
+SQL> CONNECT user1/password@host0101
+
+Connected to Trafodion
+```
+
+* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
++
+```
+SQL> CONNECT user2
+
+Password:
+
+Connected to Trafodion
+```
+
+<<<
+[[cmd_delay]]
+== DELAY Command
+
+The `DELAY` command allows the TrafCI session to be in sleep mode for the specified interval.
+
+=== Syntax
+
+```
+DELAY time [sec[ond][s] | min[ute][s]]
+```
+
+* `_time_`
++
+is an integer.
+
+=== Considerations
+
+* If `seconds` or `minutes` are not specified, then the default is `seconds`.
+* The maximum delay limit is 3600 seconds. You can override this value by setting `trafci.maxDelayLimit` in `_JAVA_OPTIONS`.
+The unit is seconds for `trafci.maxDelayLimit`.
+* This command does not require an SQL terminator.
+
+=== Examples
+
+* This DELAY command puts the TrafCI session to sleep for 5 seconds before executing the next command:
++
+```
+SQL> DELAY 5 secs
+SQL> SHOW VIEWS
+```
+
+* This DELAY command puts TrafCI session to sleep for 5 minutes before executing the next command, which is to exit the session:
++
+```
+SQL> DELAY 5 mins 
+SQL> EXIT
+```
+
+<<<
+[[cmd_disconnect]]
+== DISCONNECT Command
+
+The `DISCONNECT` command terminates the connection from the database, not from TrafCI.
+
+=== Syntax
+
+```
+DISCONNECT [WITH] [status] [IF {condition}]
+```
+
+* _status_
++
+is any 1-byte integer. `_status_` is a shell return value, and the range of allowable values is platform dependent.
+
+* _condition_
++
+is the same as the condition parameter defined for the <<cmd_if_then, IF&8230;THEN Command>>. See <<cmd_conditional_parameters, Condition Parameter>>.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* After you disconnect from the Trafodion database, you can still run these interface commands:
++
+[cols="15%,20%,28%,32%"]
+|===
+| ALIAS       | HELP               | SAVEHIST             | SET/SHOW SQLTERMINATOR
+| CLEAR       | HISTORY            | SESSION              | SET/SHOW TIME
+| CONNECT     | LABEL              | SET/SHOW COLSEP      | SET/SHOW TIMING
+| DELAY       | LOCALHOST          | SET/SHOW HISTOPT     | SHOW ALIAS/ALIASES
+| DISCONNECT  | LOG                | SET/SHOW IDLETIMEOUT | SHOW SESSION
+| ENV         | QUIT               | SET/SHOW MARKUP      | SPOOL
+| EXIT        | REPEAT             | SET/SHOW PARAM       | VERSION
+| FC          | RESET LASTERROR    | SET PROMPT           | GOTO
+| RESET PARAM | SET/SHOW SQLPROMPT
+|===
+
+<<<
+=== Examples
+
+This command terminates the connection to the Trafodion database. You can connect to the Trafodion database by using the `CONNECT`
+and `RECONNECT` commands:
+
+```
+SQL> DISCONNECT
+
+Session Disconnected. Please connect to the database by using
+connect/reconnect command.
+
+```
+
+<<<
+[[cmd_env]]
+== ENV Command
+
+`ENV` displays attributes of the current TrafCI session. You can also use the `SESSION` and `SHOW SESSION` commands to perform the same function.
+
+=== Syntax
+
+```
+ENV
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* ENV displays these attributes:
+
+[cols="15%,85%",options="header"]
+|===
+| Attribute       | Description
+| `COLSEP`        | Current column separator, which is used to control how query results are displayed. For more information, see <<cmd_set_colsep, SET COLSEP Command>>.
+| `HISTOPT`       | Current history options, which controls how the commands are added to the history buffer. For more information, see <<cmd_set_histopt, SET HISTOPT Command>>.
+| `IDLETIMEOUT`   | Current idle timeout value, which determines when the session expires after a period of inactivity. By default, the idle timeout is `30 minutes`. 
+For more information, see <<interactive_idle_timeout, Set and Show Session Idle Timeout Value>> and <<cmd_set_idletimeout, SET IDLETIMEOUT Command>>.
+| `LIST_COUNT`    | Current list count, which is the maximum number of rows that can be returned by SELECT statements. By default, the list count is all rows.
+For more information, see <<cmd_set_list_count, SET LIST_COUNT Command>>.
+| `LOG FILE`      | Current log file and the directory containing the log file. By default, logging during a session is turned `off`. 
+For more information, see <<interactive_log_output, Log Output>>, and <<cmd_log, LOG Command>> or <<cmd_spool, SPOOL Command>>. 
+| `LOG OPTIONS`   | Current logging options. By default, logging during a session is turned `off`, and this attribute does not appear in the output. 
+For more information, see the <<cmd_log, LOG Command>> or <<cmd_spool, SPOOL Command>>.
+| `MARKUP`        | Current markup option selected for the session. The default option is `RAW`. For more information, <<cmd_set_markup, SET MARKUP Command>>.
+| `PROMPT`        | Current prompt for the session. For example, the default is `SQL>`. 
+For more information, <<interactive_customize_prompt,Customize the Standard Prompt>> and <<cmd_set_prompt, SET PROMPT Command>>.
+| `SCHEMA`        | Current schema. The default is `USR`. For more information, see <<interactive_set_show_current_schema, Set and Show the Current Schema>>.
+| `SERVER`        | Host name and port number that you entered when logging in to the database platform. For more information, see <<trafci_login, Log In to Database Platform>>.
+| `SQLTERMINATOR` | Current SQL statement terminator. The default is a semicolon (`;`). 
+For more information, see <<interactive_set_show_terminator, Set and Show the SQL Terminator>> and <<cmd_show_sqlterminator, SHOW SQLTERMINATOR Command>>.
+| `STATISTICS`    | Current setting (`on` or `off`) of statistics. For more information, see the <<cmd_set_statistics, SET STATISTICS Command>>.
+| `TIME`          | Current setting (`on` or `off`) of the local time as part of the prompt. When this command is set to `on`, military time is displayed. 
+By default, the local time is `off`. For more information, see <<interactive_customize_prompt,Customize the Standard Prompt>> and <<cmd_set_time, SET TIME Command>>.
+| `TIMING`        | Current setting (`on` or `off`) of the elapsed time. By default, the elapsed time is `off`. 
+For more information, see <<interactive_display_elapsed_time, Display the Elapsed Time>> and <<cmd_set_timing, SET TIMING Command>>.
+| `USER`          | User name that you entered when logging in to the database platform. 
+For more information, <<trafci_login, Log In to Database Platform>>.
+|===
+
+=== Examples
+
+* This `ENV` command displays the attributes of the current session:
++
+```
+SQL> ENV
+
+COLSEP           " "
+HISTOPT          DEFAULT [No expansion of script files] 
+IDLETIMEOUT      0 min(s) [Never Expires]
+LIST_COUNT       0 [All Rows]
+LOG FILE         c:\session.txt 
+LOG OPTIONS      APPEND,CMDTEXT ON 
+MARKUP           RAW
+PROMPT           SQL>
+SCHEMA           SEABASE
+SERVER           sqws135.houston.host.com:37800 
+SQLTERMINATOR    ;
+STATISTICS       OFF
+TIME             OFF
+TIMING           OFF
+USER             user1
+
+```
+
+
+<<<
+* This `ENV` command shows the effect of setting various session attributes:
++
+```
+4:16:43 PM > ENV
+
+COLSEP           " "
+HISTOPT          DEFAULT [No expansion of script files] 
+IDLETIMEOUT      30 min(s)
+LIST_COUNT       0 [All Rows]
+LOG              OFF
+MARKUP           RAW
+PROMPT           SQL>
+SCHEMA           SEABASE
+SERVER           sqws135.houston.host.com:37800 
+SQLTERMINATOR    ;
+STATISTICS       OFF
+TIME             OFF
+TIMING           OFF
+USER             user1
+
+4:16:49 PM >
+```
+
+<<<
+[[cmd_exit]]
+== EXIT Command
+
+The `EXIT` command disconnects from and exits TrafCI. `EXIT` can return a status code.
+If no status code is specified, then `0` (zero) is returned by default. In addition, a conditional statement
+can be appended to the command.
+
+
+=== Syntax
+
+```
+EXIT [WITH] [status] [IF {condition}]
+```
+
+* `_status_`
++
+is any 1-byte integer. `_status_` is a shell return value, and the range of allowable values is platform dependent.
+
+* `_condition_`
++
+is the same as the condition parameter defined for the <<cmd_if_then, IF&8230;THEN Command>>.
+See <<cmd_conditional_parameter, Condition Parameter>>.
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+=== Examples
+
+* This command disconnects from and exits TrafCI, which disappears from the screen:
++
+```
+SQL> EXIT
+```
+
+<<<
+* In a script file, the conditional exit command causes the script file to quit running and disconnect from
+and exit TrafCI when the previously run command returns error code `4082`:
++
+```
+LOG c:\errorCode.log 
+SELECT * FROM employee;
+EXIT IF errorcode=4082
+LOG OFF
+```
++
+These results are logged when error code 4082 occurs:
++
+```
+SQL> SELECT * FROM employee;
+
+**** ERROR[4082] Table, view or stored procedure TRAFODION.USR.EMPLOYEE does not exist or is inaccessible.
+
+SQL> EXIT IF errorcode=4082
+```
+
+* The following two examples are equivalent:
++
+```
+SQL> EXIT -1 IF LASTERROR <> 0
+SQL> EXIT WITH -1 IF LASTERROR != 0
+```
+
+* This example exits TrafCI if the last error code is equal to `4082`:
++
+```
+SQL> EXIT WITH 82 IF LASTERROR == 4082 
+SQL> EXIT -- default status is 0
+```
+
+<<<
+[[cmd_fc]]
+== FC Command
+
+The `FC` command allows you to edit and reissue a command in the history buffer of an TrafCI session.
+You can display the commands in the history buffer by using the `HISTORY` command. For information about the history
+buffer, see the <<cmd_history,HISTORY Command>>.
+
+=== Syntax
+
+```
+FC [text | [-]number]
+```
+
+* `_text_`
++
+is the beginning text of a command in the history buffer. Case is not significant in matching the text to a command.
+
+* `[-]_number_`
++
+is either a positive integer that is the ordinal number of a command in the history buffer or a negative integer that indicates the position of
+a command relative to the most recent command.
+
+Without text or number, `FC` retrieves the most recent command.
+
+<<<
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* You cannot execute this command in a script file. You can execute this command only at a command prompt.
+* As each line of the command is displayed, you can modify the line by entering these editing commands (in uppercase or lowercase letters) on
+the line below the displayed command line:
+
+[cols="20%,80%",options="header"]
+|===
+| Edit Command      | Description
+| `D`               | Deletes the character immediately above the letter `D`. Repeat to delete more characters.
+| `I`_characters_   | Inserts characters in front of the character immediately above the letter `I`.
+| `R`_characters_   | Replaces existing characters one-for-one with characters, beginning with the character immediately above the letter `R`.
+| _characters_    | Replaces existing characters one-for-one with characters, beginning with the first character immediately above characters.
+_`characters`_ must begin with a non-blank character.
+|===
+
+To specify more than one editing command on a line, separate the editing commands with a double slash (`//`). The end of a line terminates an
+editing command or a set of editing commands.
+
+After you edit a line of the command, TrafCI displays the line again and allows you to edit it again. Press *Enter* without specifying editing
+commands to stop editing the line. If that line is the last line of the command, pressing *Enter* executes the command.
+
+To terminate a command without saving changes to the command, use the double slash (`//`), and then press *Enter*.
+
+=== Examples
+
+* Re-execute the most recent command that begins with SH:
++
+```
+SQL> FC SH
+SQL> SHOW SCHEMA 
+....
+
+```
++
+Pressing *Enter* executes the `SHOW SCHEMA` command and displays the current schema, `PERSNL`:
++
+```
+SQL> FC SH
+SQL> SHOW SCHEMA
+....
+
+SCHEMA PERSNL
+
+SQL>
+```
+
+* Correct an SQL statement that you entered incorrectly by using the delete (`D`) editing command:
++
+```
+SQL> SELECT * FROM persnl.employee;
+
+*** ERROR[15001] A syntax error occurred at or before:
+SELECCT * FROM persnl.employee;
+      ^
+SQL> FC
+SQL> SELECCT * FROM persnl.employee;
+....     d
+SQL>SELECT * FROM persnl.employee;
+....
+```
++
+Pressing *Enter* executes the corrected `SELECT` statement.
+
+* Correct an SQL statement that you entered incorrectly by using more than one editing command:
++
+```
+SQL> SELT * FROMM persnl.employee;
+
+*** ERROR[15001] A syntax error occurred at or before:
+SELT * FROMM persnl.employee;
+   ^
+SQL> FC
+SQL> SELT *  FROMM persnl.employee;
+....    iEX//   d
+SQL> SELECT * FROM persnl.employee;
+....
+```
++
+Pressing *Enter* executes the corrected `SELECT` statement.
+
+<<<
+* Modify a previously executed statement by replacing a value in the `WHERE` clause with another value:
++
+```
+SQL> SELECT first_name, last_name
++> FROM persnl.employee
++> WHERE jobcode=111;
+
+--- 0 row(s) selected.
+
+SQL> FC
+SQL> SELECT first_name, last_name
+....
+SQL> FROM persnl.employee
+....
+SQL> WHERE jobcode=111;
+                   450
+....
+SQL> WHERE jobcode=450;
+....
+```
++
+Pressing Enter lists the first and last names of all of the employees whose job code is `450`.
+
+* Modify a previously executed statement by replacing a column name in the select list with another column name:
++
+```
+SQL> SELECT first_name, last_name
++> FROM persnl.employee
++> WHERE jobcode=450;
+
+FIRST_NAME      LAST_NAME
+--------------- --------------------
+MANFRED         CONRAD
+WALTER          LANCASTER
+JOHN            JONES
+KARL            HELMSTED
+THOMAS          SPINNER
+
+--- 5 row(s) selected.
+
+SQL> FC
+SQL> SELECT first_name, last_name
+....        R   empnum,
+SQL> SELECT     empnum, last_name
+....
+
+SQL> FROM persnl.employee
+....
+
+SQL> WHERE jobcode=450;
+....
+```
++
+<<<
++
+Pressing *Enter* lists the employee number and last names of all employees whose job code is `450`:
++
+```
+EMPNUM LAST_NAME
+------ --------------------
+   180 CONRAD
+   215 LANCASTER
+   216 JONES
+   225 HELMSTED
+   232 SPINNER
+
+--- 5 row(s) selected.
+SQL>
+
+```
+
+<<<
+[[cmd_get_statistics]]
+== GET STATISTICS Command
+
+The GET STATISTICS command returns formatted statistics for the last executed SQL statement.
+
+=== Syntax
+
+```
+GET STATISTICS
+```
+
+=== Description of Returned Values
+
+[cols="30%l,70%",options="header"]
+|===
+| Value                  | Description
+| Records Accessed       | Number of rows returned by disk process to `EID` (Executor In Disk process).
+| Records Used           | Number of rows returned by `EID` after selection.
+| Disk IOs               | Number of actual disk IOs done by disk process.
+| Message Count          | Number of messages sent/received between file system and disk process.
+| Message Bytes          | Number of message bytes sent/received between file system and disk process.
+| Lock Escl              | Number of lock escalations.
+| Lock Wait              | Number of lock waits.
+| Disk Process Busy Time | CPU time for disk process processes for the specified table.
+|===
+
+=== Considerations
+
+The command requires an SQL terminator.
+
+<<<
+=== Examples
+
+```
+SQL> SELECT * FROM job;
+
+JOBCODE JOBDESC
+------- ------------------
+100     MANAGER
+1234    ENGINEER
+450     PROGRAMMER
+900     SECRETARY
+300     SALESREP
+500     ACCOUNTANT
+400     SYSTEM ANALYST
+250     ASSEMBLER
+420     ENGINEER
+600     ADMINISTRATOR
+200     PRODUCTION SUPV
+
+--- 11 row(s) selected.
+
+SQL> GET STATISTICS;
+
+Start Time         21:45:34.082329
+End Time           21:45:34.300265
+Elapsed Time       00:00:00.217936
+Compile Time       00:00:00.002423
+Execution Time     00:00:00.218750
+
+
+Table Name         Records  Records Disk Message Message Lock   Lock Disk Process
+                   Accessed Used    I/Os Count   Bytes   Escl   Wait Busy Time
+TRAFODION.TOI.JOB         2            2       0       4 15232     0    0     363
+
+--- SQL operation complete.
+```
+
+<<<
+[[cmd_goto]]
+== GOTO Command
+
+The GOTO command allows you to jump to a designated point in the command history. The point in the command history is designated
+by a `LABEL` command. All commands executed after a `GOTO` statement are ignored until the specified label is set. To set a label,
+use the <<cmd_label, LABEL Command>>.
+
+=== Syntax
+
+```
+GOTO {label}
+```
+
+* `_label_`
++
+is a string of characters without quotes and spaces, or a quoted string.
+
+=== Considerations
+
+* You must enter the command on one line.
+* The `GOTO` command cannot currently jump back in the command history; it is a forward-only command.
+
+=== Examples
+
+These examples show the use of the `GOTO` and `LABEL` commands:
+
+```
+SQL> GOTO ViewManagers
+SQL> SELECT  FROM Employees; -- skipped
+SQL> SHOW RECCOUNT;          -- skipped
+SQL> LABEL ViewManagers
+SQL> SELECT  FROM Managers;
+SQL> GOTO "View Customers"
+SQL> SELECT  FROM Invoices;  -- skipped
+SQL> LABEL "View Customers"
+SQL> SELECT  FROM Customers;
+```
+
+<<<
+[[cmd_help]]
+== HELP Command
+The HELP command displays help text for the commands. See <<commands, Commands>> for a descriptions of the commands.
+
+== Syntax
+
+```
+HELP [command-name]
+```
+
+`_command-name_`
+
+is the name of a command.
+
+* If you do not specify a command, then TrafCI returns a list of all commands.
+* If you specify `SET`, then TrafCI returns a list of all SET commands.
+* If you specify `SHOW`, then TrafCI returns a list of all `SHOW` commands.
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+<<<
+=== Examples
+
+* This `HELP` command lists all the interface commands that are supported:
++
+```
+SQL> HELP
+```
+
+* This `HELP` command lists all the `SET` commands that are supported:
++
+```
+SQL> HELP SET
+```
+
+* This `HELP` command lists all the `SHOW` commands that are supported:
++
+```
+SQL> HELP SHOW
+```
+
+* This `HELP` command shows help text for `SET IDLETIMEOUT`:
++
+```
+SQL> HELP SET IDLETIMEOUT
+```
+
+<<<
+[[cmd_history]]
+== HISTORY Command
+
+The `HISTORY` command displays recently executed commands, identifying each command by a number that you can use
+to re-execute or edit the command.
+
+=== Syntax
+
+```
+HISTORY [number]
+```
+
+* `_number_`
++
+is the number of commands to display. The default number is `10`. The maximum number is `100`.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* You can use the `FC` command to edit and re-execute a command in the history buffer, or use the
+`REPEAT` command to re-execute a command without modifying it. See <<cmd_fc,FC Command>> or
+<<cmd_repeat,REPEAT Command>>.
+
+=== Example
+
+Display the three most recent commands and use `FC` to redisplay one:
+
+```
+SQL> HISTORY 3
+
+14> SET SCHEMA SALES;
+15> SHOW TABLES
+16> SHOW VIEWS
+
+SQL> FC 14
+
+SQL> SET SCHEMA sales
+....
+
+```
+
+Now you can use the edit capabilities of `FC` to modify and execute a different `SET SCHEMA` statement.
+
+<<<
+[[cmd_if_then]]
+== IF&#8230;THEN Command
+
+`IF&#8230;THEN` statements allow for the conditional execution of actions. If the condition is met, the action
+is executed; otherwise, no action is taken.
+
+=== Syntax
+
+```
+IF {condition} THEN {action} {SQL-terminator}
+```
+
+[[cmd_condition_parameter]]
+* `_condition_`
++
+The condition parameter (`_condition_`) is a Boolean statement structured as follows:
++
+```
+( {variable-name | value} {operator} {variable-name | value}
+```
+
+* `_variable-name_`
++
+is one of:
++
+```
+{ LASTERROR
+| RECCOUNT
+| ACTIVITYCOUNT
+| ERRORCODE
+| [%]any ENV variable | any SQL parameter
+}
+```
+
+* `_value_`
++
+is any integer or a quoted string, where the quoted string is any non-quote character. `\` is the optional escape character.
+
+<<<
+* `_operator_`
++
+is one of:
++
+[cols="30%l,70%",options="header"]
+|===
+| Operator                   | Meaning
+| == \| =                    | equal to
+| <> \| != \| ~= \| ^=       | not equal to
+| >                          | greater than
+| >=                         | greater than or equal to
+| <                          | less than
+| <&#61;                     | less than or equal to
+|===
+
+* `_action_`
++
+The action parameter (`_action_`) is any interface or SQL command.
+
+* `_SQL Terminator_`
++
+The SQL terminator (`_SQL-terminator_`) is the default terminator (`;`) or a string value defined for the statement
+terminator by the <<cmd_set_sqlterminator, SET SQLTERMINATOR Command>>.
+See <<interactive_set_show_terminator, Set and Show the SQL Terminator>>.
+
+=== Considerations
+
+* `IF&#8230;THEN` is itself an action. Thus, nested `IF&#8230;THEN` statements are allowed.
+* An action must end with the SQL terminator, even if the action is an interface command.
+
+<<<
+=== Examples
+
+These commands show multiple examples of `IF&#8230;THEN` statements:
+
+```
+SQL> INVOKE employees
+SQL> -- ERROR 4082 means the table does not exist
+SQL> IF ERRORCODE != 4082 THEN GOTO BeginPrepare
+SQL> CREATE TABLE employees(ssn INT PRIMARY KEY NOT NULL NOT DROPPABLE, fname VARCHAR(50), lname VARCHAR(50), hiredate DATE DEFAULT CURRENT_DATE);
+SQL> LABEL beginprepare
+SQL> PREPARE empSelect FROM
++> SELECT * FROM
++> employees
++> WHERE SSN=?empssn;
+SQL> IF user == "alice" THEN SET PARAM ?empssn 987654321;
+SQL> IF %user == "bob" THEN SET PARAM ?empssn 123456789;
+SQL> EXECUTE empselect
+SQL> IF user == "alice" THEN
++> IF activitycount == 0 THEN GOTO insertalice;
+SQL> IF user == "bob" THEN IF activitycount == 0 THEN GOTO insertbob;
+SQL> EXIT
+SQL> LABEL insertalice
+SQL> INSERT INTO employees(ssn, fname, lname) VALUES(987654321, 'Alice', 'Smith');
+SQL> EXIT
+SQL> LABEL insertbob
+SQL> INSERT INTO employees(ssn, fname, lname) VALUES(123456789, 'Bob', 'Smith');
+SQL> EXIT
+```
+
+<<<
+[[cmd_label]]
+== LABEL Command
+
+The LABEL command marks a point in the command history that you can jump to by using the `GOTO` command.
+For more information, see the <<cmd_goto, GOTO Command>>.
+
+=== Syntax
+
+```
+LABEL {label}
+```
+
+* `_label_`
++
+is a string of characters without quotes and spaces, or a quoted string.
+
+=== Considerations
+
+You must enter the command on one line.
+
+=== Examples
+
+* This command creates a label using a string of characters:
++
+```
+SQL> LABEL MyNewLabel
+```
+
+* This command creates a label using a quoted string:
++
+```
+SQL> LABEL "Trafodion Label"
+```
+
+<<<
+[[cmd_localhost]]
+== LOCALHOST Command
+
+The `LOCALHOST` command allows you to execute client machine commands.
+
+=== Syntax
+
+```
+LOCALHOST | LH <client M/C commands>
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* The `LOCALHOST` command has a limitation. When input is entered for the operating system commands
+(for example, `date`, `time`, and `cmd`), the input is not visible until you hit the `enter` key.
+* If the `SET TIMING` is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* If you are using a Windows system, dir lists the contents of the directory name. Similarly, if you are on a UNIX system you enter
+`LOCALHOST LS` to display the contents of the folder.
++
+```
+SQL> LOCALHOST dir
+
+Volume in drive C is E-Client
+Volume Serial Number is DC4F-5B3B
+
+Directory of c:\Program Files (x86)\Apache Software Foundation\Trafodion Command
+
+Interface\bin 05/11/2105 01:17 PM <DIR>
+05/11/2105 01:17 PM <DIR>
+05/16/2105 09:47 AM      1,042 trafci-perl.pl
+05/16/2105 09:47 AM      1,017 trafci-python.pl
+05/16/2105 09:47 AM        752 trafci.cmd
+05/16/2105 09:47 AM      1,416 trafci.pl
+05/16/2105 09:47 AM      2,388 trafci.py
+05/16/2105 09:47 AM      3,003 trafci.sh
+          6 Files(s) 19,491 bytes
+          2 Dir (s) 57,686,646,784 bytes free
+
+SQL> LH mkdir c:\trafci -- Will create a directory c:\trafci on your local machine.
+```
+
+* This command displays the elapsed time information because the `SET TIMING` command is set to `ON`:
++
+```
+SQL> SET TIMING ON
+SQL> LOCALHOST ls
+
+trafci-perl.pl
+trafci-python.py
+trafci.cmd
+trafci.pl
+trafci.py
+trafci.sh
+
+Elapsed :00:00:00.078
+
+```
+
+<<<
+[[cmd_log]]
+== LOG Command
+
+The `LOG` command logs the entered commands and their output from TrafCI to a log file.
+If this is an obey script file, then the command text from the obey script file is shown on the console.
+
+=== Syntax
+
+```
+LOG { ON [CLEAR, QUIET, CMDTEXT {ON | OFF}]
+    | log-file [CLEAR, QUIET, CMDTEXT {ON | OFF}]
+    | OFF
+    }
+```
+
+* `ON`
++
+starts the logging process and records information in the `sqlspool.lst` file in the `bin` directory.
+
+* `CLEAR`
++
+instructs TrafCI to clear the contents of the sqlspool.lst file before logging new information to the file.
+
+* `QUIET`
++
+specifies that the command text is displayed on the screen, but the results of the command are written only to the log file and not to the screen.
+
+* `CMDTEXT ON`
++
+specifies that the command text and the log header are displayed in the log file.
+
+* `CMDTEXT OFF`
++
+specifies that the command text and the log header are not displayed in the log file.
+
+* `_log-file_`
++
+is the name of a log file into which TrafCI records the entered commands and their output. If you want the log file to exist outside the local
+directory where you launch TrafCI (by default, the `bin` directory), specify the full directory path of the log file. The log file does not
+need to exist, but the specified directory must exist before you execute the `LOG` command.
+
+<<<
+* `_log-file_ CLEAR`
++
+instructs TrafCI to clear the contents of the specified `_log-file_` before logging new information to the file.
+
+* `OFF`
++
+stops the logging process.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* Use a unique name for each log file to avoid writing information from different TrafCI sessions into the same log file.
+
+<<<
+=== Examples
+
+
+* This command starts the logging process and records information to the `sqlspool.lst` file in the `bin` directory:
++
+```
+SQL> LOG ON
+```
+
+* This command starts the logging process and appends new information to an existing log file, `persnl_updates.log`,
+in the local directory (the same directory where you are running TrafCI):
++
+```
+SQL> LOG persnl_updates.log
+```
+
+* This command starts the logging process and appends new information to a log file,
+`sales_updates.log`, in the specified directory on a Windows workstation:
++
+```
+SQL> LOG c:\log_files\sales_updates.log
+```
+
+* This command starts the logging process and appends new information to a log file,
+`sales_updates.log`, in the specified directory on a Linux or UNIX workstation:
++
+```
+SQL> LOG ./log_files/sales_updates.log
+```
+
+* This command starts the logging process and clears existing information from the log file before
+logging new information to the file:
++
+```
+SQL> LOG persnl_ddl.log CLEAR
+```
+
+<<<
+* This command start the logging process, clears existing information from the log file, and specifies
+that the command text and log header is not displayed in the log file:
++
+```
+SQL> LOG c:\temp\a.txt clear, CMDTEXT OFF
+SQL> (SELECT * FROM trafodion.toi.job
++>;
+
+JOBCODE JOBDESC
+------- ------------------
+100     MANAGER
+450     PROGRAMMER 900 SECRETARY
+300     SALESREP
+500     ACCOUNTANT
+400     SYSTEM ANALYST
+250     ASSEMBLER
+420     ENGINEER
+600     ADMINISTRATOR
+200     PRODUCTION SUPV
+
+--- 10 row(s) selected.
+
+SQL> log off
+
+Output of c:\temp\a.txt
+
+JOBCODE JOBDESC
+------- ------------------
+100     MANAGER
+450     PROGRAMMER 900 SECRETARY
+300     SALESREP
+500     ACCOUNTANT
+400     SYSTEM ANALYST
+250     ASSEMBLER
+420     ENGINEER
+600     ADMINISTRATOR
+200     PRODUCTION SUPV
+
+--- 10 row(s) selected
+```
+
+<<<
+* This command start the logging process, clears existing information from the log file, specifies that no output appears on the console
+window, and the quiet option is enabled:
++
+```
+SQL> LOG c:\temp\b.txt CLEAR, CMDTEXT OFF, QUIET
+SQL> SELECT
++> FROM trafodion.toi.job; +
+SQL> LOG OFF
+
+Output of c:\temp\b.txt
+
+JOBCODE JOBDESC
+------- ------------------
+100     MANAGER
+450     PROGRAMMER 900 SECRETARY
+300     SALESREP
+500     ACCOUNTANT
+400     SYSTEM ANALYST
+250     ASSEMBLER
+420     ENGINEER
+600     ADMINISTRATOR
+200     PRODUCTION SUPV
+
+--- 10 row(s) selected
+```
++
+This command stops the logging process:
++
+```
+SQL> LOG OFF
+```
+
+For more information, see <<interactive_log_output, Log Output>>.
+
+<<<
+[[cmd_obey]]
+== OBEY Command
+The `OBEY` command executes the SQL statements and interface commands of a specified script file or an
+entire directory. This command accepts a single filename or a filename with a wild-card pattern specified.
+Executing the `OBEY` command without optional parameters prompts you to enter a filename. If a filename is
+not specified, then `*.sql` is used.
+
+=== Syntax
+
+```
+OBEY {script-file | wild-card-pattern} [(section-name)]
+```
+
+* `_script-file_`
++
+is the name of an ASCII text file that contains SQL statements, interface commands, and comments. If the script file
+exists outside the local directory where you launch TrafCI (by default, the `bin` directory), specify the full directory
+path of the script file.
+
+* `_wild-card-pattern_`
++
+is a character string used to search for script files with names that match the character string. `_wild-card-pattern_`
+matches a string, depending on the operating system for case-sensitivity, unless you enclose it within double quotes.
+To look for similar values, specify only part of the characters of `_wild-card-pattern_` combined with these
+wild-card characters:
+
+* `(_section-name_)`
++
+is the name of a section within the `_script-file_` to execute. If you specify `_section-name_`, the `OBEY` command
+executes the commands between the header line for the specified section and the header line for the next section
+(or the end of the script file). If you omit `_section-name_`, the `OBEY` command executes the entire script file.
+For more information, see <<script_section_headers, Section Headers>>.
+
+<<<
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* Put a space between `OBEY` and the first character of the file name.
+* You can execute this command in a script file.
+* Before putting dependent SQL statements across multiple files, consider the order of the file execution. If a directory
+is not passed to the `OBEY` command, the file or wild card is assumed to be in the current working directory.
+* If the (`*`) is issued in the `OBEY` command, all files are executed in the current directory. Some of the files in
+the directory could be binary files. The `OBEY` command tries to read those binary files and junk or invalid characters are
+displayed on the console. For example, this command causes invalid characters to be displayed on the console:
++
+```
+SQL> OBEY C:\trafci\bin\
+```
+
+* `OBEY` detects recursive obey files (for example, an SQL file that calls OBEY on itself) and prevents infinite loops using
+a max depth environment variable. If no variable is passed to the JVM, the default depth is set to `10`. To change this depth
+(for example to a value of `20`), pass a Java environment variable as follows:
++
+```
+-Dtrafci.obeydepth=20
+```
+
+<<<
+=== Examples
+
+* This `OBEY` command runs the script file from the local directory (the same directory where you are running TrafCI):
++
+```
+SQL> OBEY ddl.sql
+```
+
+* This `OBEY` command runs the script file in the specified directory on Windows.
++
+```
+SQL> OBEY c:\my_files\ddl.sql
+```
+
+<<<
+* This `OBEY` command runs the script file in the specified directory on a Linux or UNIX workstation:
++
+```
+SQL> OBEY ./my_files/ddl.sql
+```
+
+* This sample file contains sections to be used in conjunction with the `OBEY` command:
++
+```
+?section droptable
+DROP TABLE course ;
+
+?section create
+CREATE TABLE course ( cno VARCHAR(3) NOT NULL
+                    , cname VARCHAR(22) NOT NULL
+                    , cdescp VARCHAR(25) NOT NULL
+                    , cred INT
+                    , clabfee NUMERIC(5,2)
+                    , cdept VARCHAR(4) NOT NULL
+                    , PRIMARY KEY (cno)
+                    ) ;
+
+?section insert
+INSERT INTO course VALUES ('C11', 'Intro to CS','for Rookies',3, 100, 'CIS') ;
+INSERT INTO course VALUES ('C22', 'Data Structures','Very Useful',3, 50, 'CIS') ;
+INSERT INTO course VALUES ('C33', 'Discrete Mathematics', 'Absolutely Necessary',3, 0,'CIS') ;
+
+?section select
+SELECT * FROM course ;
+
+?section delete
+PURGEDATA course;
+```
++
+<<<
++
+To run only the commands in section `create`, execute the following:
++
+```
+SQL> OBEY C:\Command Interfaces\course.sql (create)
+
+SQL> ?section create
+SQL> CREATE TABLE course
++>(
++> cno VARCHAR(3) NOT NULL,
++> cname VARCHAR(22) NOT NULL,
++> cdescp VARCHAR(25) NOT NULL,
++> cred INT,
++> clabfee NUMERIC(5,2),
++> cdept VARCHAR(4) NOT NULL,
++> PRIMARY KEY (cno)
++>) ;
+
+--- SQL Operation complete.
+
+```
++
+To run only the commands in the `insert` section, execute the following:
++
+```
+SQL> OBEY C:\Command Interfaces\course.sql (insert)
+
+SQL> ?section insert
+SQL> INSERT INTO course VALUES
++> ('C11', 'Intro to CS','For Rookies',3, 100, 'CIS');
+
+--- 1 row(s) inserted.
+
+SQL> INSERT INTO course VALUES
++> ('C22', 'Data Structures','Very Useful',3, 50, 'CIS');
+
+--- 1 row(s) inserted.
+
+SQL> INSERT INTO course VALUES
++> ('C33', 'Discrete Mathematics', 'Absolutely Necessary',3, 0, 'CIS');
+
+--- 1 row(s) inserted.
+
+```
+
+<<<
+* This command executes all files with `.sql` extension:
++
+```
+SQL> OBEY c:\trafci\.sql;
+SQL> OBEY c:\trafci
+```
+
+* This command executes all files beginning with the word `"script"` and contains one character after the word script
+and ends with `.sql` extension. For example: `script1.sql`, `script2.sql`, `scriptZ.sqland` so on.
++
+```
+SQL> OBEY C:\trafci\script?.sql
+```
+
+* This command executes all files that contain the word `"test"`. This includes the files that do not end with `.sql` extension.
++
+```
+SQL> OBEY C:\trafci\test
+```
+
+* This command executes all files that begin with the word `"script"` and contains one character after the word `"script"` and
+ends with an extension prefixed by a dot. For example: `script1.sql`, `script2.bat`, `scriptZ.txt`, and so on.
++
+```
+SQL> OBEY C:\trafci\script?.
+```
+
+* This command executes all files that have `.txt` extension in the current directory, the directory in which the command interface was launched.
++
+```
+SQL> OBEY .txt;
+```
+
+* This command prompts the user to enter the script filename or a pattern. The default value is `*.sql`.
++
+```
+SQL> OBEY;
+
+Enter the script filename [.sql]:
+```
+
+<<<
+[[]]
+== PRUN Command
+
+The `PRUN` command runs script files in parallel.
+
+=== Syntax
+
+```
+PRUN { -d | -defaults }
+
+PRUN
+[ { -sd | -scriptsdir } scriptsdirectory ]
+[ { -e  | -extension } filedirectory ]
+[ { -ld | -logsdir } log-directory ]
+[ { -o  | -overwrite } {Y | N}
+[ { -c  | -connections } num ]
+```
+
+* `-d | -defaults`
++
+Specify this option to have PRUN use these default settings:
++
+[cols="30%,70%", options="header"]
+|===
+| Parameter             | Default Setting
+| `-sd \| -scriptsdir`  | `PRUN` searches for the script files in the same directory as the `trafci.sh` or `trafci.cmd` file (`_trafci-installation-directory_/trafci/bin` or 
+`_trafci-installation-directory_\trafci\bin`).
+| `-e \| -extension`    |  The file extension is `.sql`.
+| `-ld \| -logsdir`     | `PRUN` places the log files in the same directory as the script files.
+| `-o \| -overwrite`    | No overwriting occurs. `PRUN` keeps the original information in the log files and appends new information at the end of each file.
+| `-c \| -connections`  | `PRUN` uses two connections.
+|===
+
+* `{-sd | -scriptsdir} _scripts-directory_`
++
+In this directory, `PRUN` processes every file with the specified file extension. If you do not specify a directory or if you specify an
+invalid directory, an error message occurs, and you are prompted to reenter the directory. Before running `PRUN`, verify that this directory
+contains valid script files.
+
+* `{-e | -extension} _file-extension_`
++
+Specify the file extension of the script files. The default is `.sql`.
+
+<<<
+* `{-ld | -logsdir} _log-directory_`
++
+In this directory, `PRUN` creates a log file for each script file by appending the `.log` extension to the name of the script file. If you do
+not specify a log file directory, `PRUN` places the log files in the same directory as the script files.
+
+* `{-o | -overwrite} {y | n}`
++
+If you specify `y`, `PRUN` overwrites the contents of existing log files. By default, `PRUN` keeps the original information in the log files and
+appends new information at the end of each file.
+
+* `{-c | -connections} _num_`
++
+Enter a number for the maximum number of connections If you do not specify the maximum number of connections, `PRUN` uses two connections.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If you execute the `PRUN` command without any arguments, then TrafCI prompts you for the `PRUN` arguments. If you specify one or more options, 
+then the `PRUN` command runs without prompting you for more input. In the non-interactive mode, if any options are not specified, `PRUN` uses the default values.
+* The `-d` or `-defaults` option cannot be specified with any other option.
+* The `PRUN` log files also contain the log end time.
+* `PRUN` does not support the `SPOOL` or `LOG` commands. Those commands are ignored in `PRUN` script files.
+* The environment values from the main session (which are available through the `SET` commands) are propagated to new sessions started via
+`PRUN`. However, prepared statements and parameters are bound only to the main user session.
+* For a summary of all errors and warnings that occurred during the `PRUN` operation, go to the error subdirectory in the same directory as the log
+files (for example, `C:\log\error`) and open the `prun.err.log` summary file.
+* For details about the errors that occurred during the execution of a script file, open each individual log file (`_script-file_.sql.log`).
+
+
+<<<
+=== Examples
+
+* To use `PRUN`, enter the `PRUN` command in the TrafCI session:
++
+```
+SQL> PRUN
+```
++
+```
+Enter  as input to stop the current prun session
+--------------------------------------------------
+Enter the scripts directory              : c:\ddl_scripts 
+Enter the script file extension[sql]     :
+Enter the logs directory[scripts dir]    : c:\log 
+Overwrite the log files (y/n)[n]?        : y 
+Enter the number of connections(2-248)[2]: 3
+```
++
+After you enter the number of connections, `PRUN` starts to process the script files and displays this status:
++
+```
+Status: In Progress.......
+```
++
+<<<
++
+After executing all the script files, `PRUN` returns a summary of the operation:
++
+```
+         __________________________________________________
+                  PARALLELRUN(PRUN) SUMMARY
+         __________________________________________________
+         Total files present............................. 3
+         Total files processed........................... 3
+         Total queries processed........................ 40
+         Total errors.................................... 4
+         Total warnings.................................. 0
+         Total successes................................ 36
+         Total connections............................... 5
+         Total connection failures....................... 0
+
+         Please verify the error log file c:\log\error\prun.err.log
+SQL>
+```
++
+NOTE: In the `PRUN` summary, the `Total queries processed` is the total number of commands that `PRUN` processes. 
+Those commands can include SQL statements and commands. The total `errors`, `warnings`, and `successes` also 
+include commands other than SQL statements.
+
+<<<
+* This `PRUN` command initiates a parallel run operation with the `-d` option:
++
+```
+SQL> PRUN -d
+SQL> PRUN -scriptsdir ./prun/sql -e sql -ld ./prun/logs -o y -connections 5
+
+PRUN options are -scriptsdir    c:/_trafci/prun
+                 -logsdir       c:/_trafci/prun/logs
+                 -extension     sql
+                 -overwrite     y
+                 -connections   5
+Status: Complete
+
+         __________________________________________________
+                  PARALLELRUN(PRUN) SUMMARY
+         __________________________________________________
+         Total files present............................ 99
+         Total files processed.......................... 99
+         Total queries processed....................... 198
+         Total errors.................................... 0
+         Total warnings.................................. 0
+         Total warnings.................................. 0
+         Total connections............................... 5
+         Total connection failures....................... 0
+
+===========================================================================
+PRUN completed at May 20, 2105 9:33:21 AM
+===========================================================================
+```
+
+* PRUN can be started in non-interactive mode using the `-q` parameter of `trafci.cmd` or
+`trafci.sh`, thus requiring no input:
++
+```
+trafci.cmd -h 16.123.456.78
+-u user1 -p host1
+-q "PRUN -sd c:/_trafci/prun -o y -c 3"
+```
+
+<<<
+* `PRUN` can be started in non-interactive mode from an `OBEY` file:
++
+```
+SQL> OBEY startPrun.txt
+SQL> PRUN -sd c:/_trafci/prun -ld c:/_trafci/prun/logs -e sql -o y -c 5
+
+PRUN options are -scriptsdir    c:/_trafci/prun
+                 -logsdir       c:/_trafci/prun/logs
+                 -extension     sql
+                 -overwrite     yes
+                 -connections   5
+Status: Complete
+```
+
+<<<
+[[cmd_quit]]
+== QUIT Command
+
+The `QUIT` command disconnects from and exits TrafCI.
+
+=== Syntax
+
+```
+QUIT [WITH] [status] [IF {condition}]
+```
+
+* `_status_`
++
+is any 1-byte integer. `_status_` is a shell return value, and the range of allowable values is platform dependent.
+
+* `_condition_`
++
+is the same as the condition parameter defined for the <<cmd_if_then, IF&#8230;THEN Command>>.
+See <<cmd_conditional_parameters, Condition Parameters>>.
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+=== Examples
+
+* This command disconnects from and exits TrafCI, which disappears from the screen:
++
+```
+SQL> QUIT
+```
+
+* In a script file, the conditional exit command causes the script file to quit running and disconnect from and
+exit TrafCI when the previously run command returns error code `4082`:
++
+```
+SQL> LOG c:\errorCode.log
+SQL> SELECT * FROM employee;
+SQL> QUIT IF errorcode=4082
+SQL> LOG OFF
+```
++
+<<<
+These results are logged when error code `4082` occurs:
++
+```
+SQL> SELECT * FROM employee;
+
+**** ERROR[4082] Table, view or stored procedure TRAFODION.USR.EMPLOYEE does not exist or is inaccessible.
+
+SQL> QUIT IF errorcode=4082
+```
+
+<<<
+[[cmd_reconnect]]
+== RECONNECT Command
+
+The `RECONNECT` command creates a new connection to the Trafodion database using the login credentials of the last successful connection.
+
+=== Syntax
+
+```
+RECONNECT
+```
+
+=== Considerations
+
+The host name (or IP address) and port number, plus the credentials (user name and password), are used from information previously entered.
+This is the information specified at launch or when the last `CONNECT` command was executed.
+
+If TrafCI was invoked with the `-noconnect` launch parameter, TrafCI prompts you for the values.
+
+=== Examples
+
+* This command creates a new connection to the Trafodion database using the login credentials of the last successful connection:
++
+```
+SQL> RECONNECT
+
+Connected to Trafodion
+```
+
+<<<
+[[cmd_repeat]]
+== REPEAT Command
+
+The `REPEAT` command re-executes a previous command.
+
+=== Syntax
+
+```
+REPEAT [text | [-]number ]
+```
+
+* `_text_`
++
+specifies the text of the most recently executed command. The command must have been executed beginning with `_text_`,
+but `_text_` need be only as many characters as necessary to identify the command. TrafCI ignores leading blanks.
+
+* `[-]_number_`
++
+is an integer that identifies a command in the history buffer. If number is negative, it indicates the position of the
+command in the history buffer relative to the current command; if number is positive, it is the ordinal number of a
+command in the history buffer.
+
+The HISTORY command displays the commands or statements in the history buffer. See the <<cmd_history,HISTORY Command>>.
+
+== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* To re-execute the immediately preceding command, enter `REPEAT` without specifying a number. If you enter more than one
+command on a line, then the `REPEAT` command re-executes only the last command on the line.
+* When a command is selected for repeat, and the SQL terminator value has changed since the execution of that command,
+then TrafCI replaces the SQL terminator in the command with the current SQL terminator value and executes the command.
+
+<<<
+=== Examples
+
+* Display the previously executed commands and re-execute the second to the last command:
++
+```
+SQL> HISTORY
+
+1> SET IDLETIMEOUT 0
+2> LOG ON
+3> SET SCHEMA persnl;
+4> SELECT * FROM employee;
+5> SHOW TABLES
+6> SELECT * FROM dept;
+7> SHOW VIEWS
+8> SELECT *  FROM emplist;
+
+SQL>
+SQL> REPEAT -2
+
+SHOW VIEWS
+VIEW NAMES
+-------------------------------------------------------------
+EMPLIST  MGRLIST
+
+SQL> 
+```
+
+<<<
+* Re-execute the fifth command in the history buffer:
++
+```
+SQL> REPEAT 5
+
+SHOW TABLES
+TABLE NAMES
+-------------------------------------------------------------
+DEPT     EMPLOYEE   JOB         PROJECT
+
+SQL> 
+```
+
+* Re-execute the `SHOW TABLES` command:
++
+```
+SQL> REPEAT SHOW
+
+SHOW TABLES
+TABLE NAMES
+-------------------------------------------------------------
+DEPT     EMPLOYEE   JOB         PROJECT
+
+SQL> 
+```
+
+<<<
+[[cmd_reset_lasterror]]
+== RESET LASTERROR Command
+
+The `RESET LASTERROR` command resets the last error code to 0.
+
+=== Syntax
+
+```
+RESET LASTERROR
+```
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+=== Examples
+
+* This command resets the last error in the current session:
++
+```
+SQL> SELECT * FROM emp;
+
+**** ERROR[4082]Object TRAFODION.SCH.EMP does not exist or is inaccessible.
+
+SQL> SHOW LASTERROR
+
+LASTERROR 4082
+
+SQL> RESET LASTERROR
+SQL> SHOW LASTERROR
+
+LASTERROR 0
+```
+
+<<<
+[[cmd_reset_param]]
+== RESET PARAM Command
+
+The RESET PARAM command clears all parameter values or a specified parameter value in the current session.
+
+=== Syntax
+
+```
+RESET PARAM [param-name]
+```
+
+* `_param-name_`
++
+is the name of the parameter for which you specified a value. Parameter names are case-sensitive. For example,
+the parameter `?pn` is not equivalent to the parameter `?PN`. `_param-name_` can be preceded by a
+question mark (`?`), such as `?_param-name_`.
++
+If you do not specify a parameter name, all of the parameter values in the current session are cleared.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* To clear several parameter values but not all, you must use a separate `RESET PARAM` command for each parameter.
+
+=== Example
+
+* This command clears the setting of the `?sal` (`salary`) parameter, and the `SET PARAM` command resets it to a new value:
++
+```
+SQL> RESET PARAM ?sal +
+SQL> SET PARAM ?sal 80000.00
+```
+
+For more information, see <<interactive_reset_parameters,Reset the Parameters>>.
+
+<<<
+[[cmd_run]]
+== RUN Command
+
+The `RUN` command executes the previously executed SQL statement. This command does not repeat an interface command.
+
+=== Syntax
+
+```
+RUN
+```
+
+=== Considerations
+
+* You must enter the command on one line.
+* The command does not require an SQL terminator.
+
+=== Example
+
+* This command executes the previously executed SELECT statement:
++
+```
+SQL> SELECT COUNT(*) FROM persnl.employee;
+
+(EXPR)
+--------------------
+62
+
+--- 1 row(s) selected.
+
+SQL> RUN
+
+(EXPR)
+--------------------
+62
+
+--- 1 row(s) selected.
+
+SQL> 
+```
+
+<<<
+[[cmd_savehist]]
+== SAVEHIST Command
+
+The `SAVEHIST` command saves the session history in a user-specified file. The session history consists of a list of the commands that were
+executed in the TrafCI session before the SAVEHIST command.
+
+=== Syntax
+
+```
+SAVEHIST file-name [CLEAR]
+```
+
+* `_file-name_`
++
+is the name of a file into which TrafCI stores the session history. If you want the history file to exist outside the local directory where you
+launch TrafCI (by default, the `bin` directory), specify the full directory path of the history file. The specified directory must exist
+before you execute the `SAVEHIST` command.
+
+* `CLEAR`
++
+instructs TrafCI to clear the contents of the specified file before adding the session history to the file.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the specified file already exists, TrafCI appends newer session-history information to the file.
+
+=== Examples
+
+* This command clears the contents of an existing file named `history.txt` in the local directory (the same directory where you are running TrafCI)
+and saves the session history in the file:
++
+```
+SQL> SAVEHIST history.txt CLEAR
+SQL> 
+```
+
+* This command saves the session history in a file named `hist.txt` in the specified directory on a Windows workstation:
++
+```
+SQL> SAVEHIST c:\log_files\hist.txt
+SQL> 
+```
+
+<<<
+* This command saves the session history in a file named `hist.txt` in the specified directory on a Linux or UNIX workstation:
++
+```
+SQL> SAVEHIST ./log_files/hist.txt
+SQL> 
+```
+
+For more information, see <<interactive_history,Display Executed Commands>>.
+
+<<<
+[[cmd_set_colsep]]
+== SET COLSEP Command
+
+The `SET COLSEP` command sets the column separator and allows you to control the formatting of the result displayed for
+SQL queries. The `SET COLSEP` command specifies a delimiter value to use for separating columns in each row of the results.
+The default delimiter is " "(white space).
+
+=== Syntax
+
+```
+SET COLSEP [separator]
+```
+
+=== Considerations
+
+* You must enter the command on one line.
+* The `SET COLSEP` command has no effect if the markup is set to `HTML`,`XML`, or `CSV`.
+
+=== Examples
+
+* This command specifies the separator as a "`|`"(pipe):
++
+```
+SQL> SET COLSEP |
+SQL> SHOW COLSEP
+COLSEP "|"
+SQL> SELECT * FROM employee;
+
+EMPNUM|EMPNAME       |REGNUM|BRANCHNUM|JOB
+------|--------------|------|---------|--------
+|    1|ROGER GREEN   |    99|        1|MANAGER
+|   23|JERRY HOWARD  |     2|        1|MANAGER
+|   29|JACK RAYMOND  |     1|        1|MANAGER
+|   32|THOMAS RUDLOFF|     5|        3|MANAGER
+|   39|KLAUS SAFFERT |     5|        2|MANAGER
+
+--- 5 row(s) selected.
+```
+
+<<<
+[[cmd_set_fetchsize]]
+== SET FETCHSIZE Command
+
+The `SET FETCHSIZE` command allows you to change the default fetchsize used by JDBC. Setting the value to `0` sets the
+fetchsize to the default value used in JDBC.
+
+=== Syntax
+
+```
+SET FETCHSIZE _value_
+```
+
+* `_value_`
++
+is an integer representing the fetch size as a number of rows. Zero (`0`) represents the default value of fetch size set in JDBC.
+
+=== Considerations
+
+* You must enter the command on one line.
+* The command does not require an SQL terminator.
+
+=== Examples
+
+* This command sets the fetchsize to `1`:
++
+```
+SQL> SET FETCHSIZE 1
+SQL> SHOW FETCHSIZE
+
+FETCHSIZE 1
+
+SQL> SELECT * FROM stream(t1);
+
+C1      C2      C3
+------- ------- -------
+TEST1   TEST2   TEST3
+AAA     BBB     CCC
+```
+
+<<<
+[[set_histopt]]
+== SET HISTOPT Command
+
+The `SET HISTOPT` command sets the history option and controls how commands are added to the history buffer.
+By default, commands within a script file are not added to history. If the history option is set to `ALL`,
+then all the commands in the script file are added to the history buffer. If no options are specified,
+`DEFAULT` is used.
+
+=== Syntax
+
+```
+SET HISTOPT [ ALL | DEFAULT ]
+```
+
+=== Considerations
+
+You must enter the command on one line.
+
+<<<
+=== Examples
+
+* This command shows only the obey commands added to the history buffer.
++
+```
+SQL> SHOW HISTOPT
+
+HISTOPT DEFAULT [No expansion of script files]
+
+SQL> OBEY e:\scripts\nobey\insert2.sql
+
+SQL> ?SECTION insert
+
+SQL> SET SCHEMA trafodion.sch;
+
+--- SQL operation complete.
+
+SQL>  INSERT INTO course1 VALUES
++> ('C11', 'Intro to CS','For Rookies',3, 100,'CIS');
+
+--- 1 row(s) inserted.
+
+SQL>  INSERT INTO course1 VALUES
++> ('C55', 'Computer Arch.','VON Neumann''S Mach.',3, 100, 'CIS');
+
+--- 1 row(s) inserted.
+```
+
+<<<
+```
+SQL> HISTORY;
+
+1> SHOW HISTOPT
+2> OBEY e:\scripts\nobey\insert2.sql
+```
+
+* This command shows all the commands added to the history buffer.
++
+```
+SQL> SET HISTOPT ALL
+SQL> OBEY e:\scripts\nobey\insert2.sql
+
+?SECTION insert
+
+SQL>  set schema trafodion.sch;
+
+--- SQL operation complete.
+
+SQL>  INSERT INTO course1 VALUES
++> ('C11','Intro to CS','For Rookies',3, 100, 'CIS');
+
+---1 row(s) inserted.
+
+SQL>  INSERT INTO course1 VALUES
++> ('C55','Computer Arch.','Von Neumann''s Mach.',3,100, 'CIS');
+
+---1 row(s) inserted.
+
+SQL> HISTORY;
+
+1> SHOW HISTOPT
+2> OBEY e:\scripts\nobey\insert2.sql
+3> HISTORY;
+4> SET HISTOPT ALL
+5> SET SCHEMA trafodion.sch;
+6> INSERT INTO course1 VALUES
+     ('C11','Intro to CS','For Rookies',3, 100, 'CIS');
+7> INSERT INTO course1 VALUES
+     ('C55','Computer Arch.','Von Neumann''s MACH.',3,100, 'CIS');
+```
+
+<<<
+[[cmd_set_idletimeout]]
+== SET IDLETIMEOUT Command
+
+The `SET IDLETIMEOUT` command sets the idle timeout value for the current session. The idle timeout value
+of a session determines when the session expires after a period of inactivity. The default is `30 minutes`.
+
+=== Syntax
+
+```
+SET IDLETIMEOUT value
+```
+
+* `_value_`
++
+is an integer representing the idle timeout value in minutes. Zero represents an infinite amount of time, meaning that
+the session never expires.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If you execute this command in a script file, it affects the session in which the script file runs. You can specify
+this command in `PRUN` script files. However, running this command from a `PRUN` script file does not affect the idle
+timeout value for the current session.
+* To reset the default timeout value, enter this command:
++
+```
+SET IDLETIMEOUT 30
+```
+
+<<<
+=== Examples
+
+* This command sets the idle timeout value to four hours:
++
+```
+SQL> SET IDLETIMEOUT 240
+```
+
+* This command sets the idle timeout value to an infinite amount of time so that the session never expires:
++
+```
+SQL> SET IDLETIMEOUT 0
+```
+
+<<<
+* To reset the idle timeout to the default, enter this command:
++
+```
+SQL> SET IDLETIMEOUT 30
+SQL> 
+```
+
+For more information, see <<interactive_idle_timeout, Set and Show Session Idle Timeout Value>>.
+
+<<<
+[[cmd_set_list_count]]
+== SET LIST_COUNT Command
+
+The `SET LIST_COUNT` command sets the maximum number of rows to be returned by `SELECT` statements that are executed
+after this command. The default is zero, which means that all rows are returned.
+
+=== Syntax
+
+```
+SET LIST_COUNT num-rows
+```
+
+* `_num-rows_`
++
+is a positive integer that specifies the maximum number of rows of data to be displayed by `SELECT` statements that
+are executed after this command. Zero means that all rows of data are returned.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* To reset the number of displayed rows, enter this command:
++
+```
+SET LIST_COUNT 0
+```
+
+=== Examples
+
+* This command specifies that the number of rows to be displayed by `SELECT` statements is five:
++
+```
+SQL> SET LIST_count 5
+SQL> SELECT empnum, first_name, last_name FROM persnl.employee ORDER BY empnum;
+
+EMPNUM FIRST_NAME      LAST_NAME
+------ --------------- --------------------
+     1 ROGER           GREEN
+    23 JERRY           HOWARD
+    29 JANE            RAYMOND
+    32 THOMAS          RUDLOFF
+    39 KLAUS           SAFFERT
+
+--- 5 row(s) selected. LIST_COUNT was reached.
+
+SQL> 
+```
+
+<<<
+* This command resets the number of displayed rows to all rows:
++
+```
+SQL> SET LIST_COUNT 0
+SQL> SELECT empnum, first_name, last_name
++> FROM persnl.employee
++> ORDER BY empnum;
+
+EMPNUM FIRST_NAME      LAST_NAME
+------ --------------- --------------------
+     1 ROGER           GREEN
+    23 JERRY           HOWARD
+    29 JANE            RAYMOND
+    32 THOMAS          RUDLOFF
+    39 KLAUS           SAFFERT
+    43 PAUL            WINTER
+    65 RACHEL          MCKAY
+...
+   995 Walt            Farley
+
+--- 62 row(s) selected.
+
+SQL> 
+```
+
+<<<
+[[cmd_set_markup]]
+== SET MARKUP Command
+
+The `SET MARKUP` command sets the markup format and controls how results are displayed by TrafCI.
+
+=== Syntax
+
+```
+SET MARKUP [ RAW | HTML | XML | CSV | COLSEP ]
+```
+
+The supported options enable results to be displayed in `XML`, `HTML`, `CSV` (Comma Separated Values), and `COLSEP` format.
+The default format is `RAW`.
+
+=== Considerations
+
+
+* You must enter the command on one line.
+* If the `MARKUP` format is `CSV` or `COLSEP`, the column header information and status messages are not displayed.
+* For the `XML` and `HTML` markup format, the syntax and interface errors is consistent `XML`
+and `HTML` markup is displayed.
+* For `XML` markup, any occurrence of `]]>` that appear in the error message or invalid query are replaced with `]]>`.
+* When error messages are output as `HTML` markup, both the `>` (greater than) and `<` (less than) symbols are
+replaced with their escaped versions: `>` and `<`, respectively. An example of the formatted error messages are show below.
+
+<<<
+=== Examples
+
+* This command specifies results be displayed in `HTML`:
++
+```
+SQL> SET MARKUP HTML
+SQL> SELECT c.custnum, c.custnum, ordernum, order_date
++> FROM customer c, orders o where c.custnum=o.custnum;
+
+<TABLE>
+<!--SELECT c.custnum, c.custname,ordernum,order_date
+FROM customer c, orders o where c.custnum=o.custnum;-->
+<tr>
+  <th>CUSTNUM</th>
+  <th>CUSTNAME</th>
+  <th>ORDERNUM</th>
+  <th>ORDER_DATE</th>
+</tr>
+<tr>
+  <td>143</td>
+  <td>STEVENS SUPPLY</td>
+  <td>700510</td>
+  <td>2105-05-01</td>
+</tr>
+<tr>
+  <td>3333</td>
+  <td>NATIONAL UTILITIES</td>
+  <td>600480</td>
+  <td>2105-05-12</td>
+</tr>
+<tr>
+  <td>7777</td>
+  <td>SLEEP WELL HOTELS</td>
+  <td>100250</td>
+  <td>2105-01-23</td>
+</tr>
+<!-- --- 3 row(s) selected.-->
+</TABLE>
+```
+<<<
+```
+SQL> SELECT c.custnum, c.custname,ordernum,order_date,
++> FROM customer c, orders o where c.custnum=o.custnum;
+
+<TABLE>
+<!-- SELECT c.custnum, c.custname,ordernum,order_date,
+FROM customer c, orders o where c.custnum=o.custnum;-->
+<tr>
+  <th>Error Id</th>
+  <th>Error Code</th>
+  <th>Error Message</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td>4082</td>
+  <td>Object TRAFODION.NVS.CUSTOMER does not exist or is inaccessible.</td>
+</tr>
+</TABLE>
+```
+
+* To set the application to format output as `HTML`:
++
+```
+SQL> SET MARKUP HTML
+```
++
+HTML formatted error message example:
++
+```
+SQL> SET MARKUP <invalid>
+
+<?xml version="1.0"?>
+<Results>
+  <Query>
+    <![CDATA[set markup <invalid ]]>
+  </Query>
+  <ErrorList>
+    <Error id="1">
+    <ErrorCode>NVCI001</ErrorCode>
+    <ErrorMsg> <![CDATA[
+ERROR: A syntax error occurred at or before:
+set markup <invalid>
+           ^ ]]
+    </ErrorMsg>
+  </ErrorList>
+</Results>
+```
+
+<<<
+* This command specifies results be displayed in `CSV`:
++
+```
+SQL> SET MARKUP CSV
+SQL> SELECT c.custnum, c.custnum, ordernum, order_date
++> FROM customer c,orders o where c.custnum=o.custnum;
+
+143,STEVENS SUPPLY ,700510,2105-05-01
+3333,NATIONAL UTILITIES,600480,2105-05-12
+7777,SLEEPWELL HOTELS ,100250,2105-01-23
+324,PREMIER INSURANCE ,500450,2105-04-20
+926,METALL-AG. ,200300,2105-02-06
+123,BROWN MEDICAL CO ,200490,2105-03-19
+123,BROWN MEDICAL CO ,300380,2105-03-19
+543,FRESNO STATE BANK ,300350,2105-03-03
+5635,ROYAL CHEMICALS ,101220,2105-05-21
+21,CENTRAL UNIVERSITY,200320,2105-02-17
+1234,DATASPEED ,100210,2105-04-10
+3210,BESTFOOD MARKETS ,800660,2105-05-09
+```
+
+<<<
+* This command specifies results be displayed in `XML`:
++
+```
+SQL> SET MARKUP XML
+SQL> SELECT * FROM author
+
+<?xml version="1.0"?>
+<Results>
+  <Query>
+    <![CDATA[select  from author;]]>
+  </Query>
+  <rowid="1">
+    <AUTHORID>91111</AUTHORID>
+    <AUTHORNAME>Bjarne Stroustrup</AUTHORNAME>
+  </row>
+  <rowid="2">
+    <AUTHORID>444444</AUTHORID>
+    <AUTHORNAME>John Steinbeck</AUTHORNAME>
+  </row>
+  <rowid="3">
+    <AUTHORID>2323423</AUTHORID>
+    <AUTHORNAME>Irwin Shaw</AUTHORNAME>
+  </row>
+  <rowid="4">
+    <AUTHORID>93333</AUTHORID>
+    <AUTHORNAME>Martin Fowler</AUTHORNAME>
+  </row>
+  <rowid="5">
+    <AUTHORID>92222</AUTHORID>
+    <AUTHORNAME>Grady Booch</AUTHORNAME>
+  </row>
+  <rowid="6">
+    <AUTHORID>84758345</AUTHORID>
+    <AUTHORNAME>Judy Blume</AUTHORNAME>
+  </row>
+  <rowid="7">
+    <AUTHORID>89832473</AUTHORID>
+    <AUTHORNAME>Barbara Kingsolver</AUTHORNAME>
+  </row>
+  <Status> <![CDATA[-- 7 row(s) selected .]]></Status>
+</Results>
+```
+
+<<<
+* To set the application to format output as `XML`:
++
+```
+SQL> SET MARKUP XML
+```
++
+`XML` formatted error message examples:
++
+```
+SQL> SET MARKUP <]]>
+
+<?xml version="1.0"?>
+<Results>
+  <Query>
+    <![CDATA[set markup <]]&#62; ]]>>
+  </Query>
+  <ErrorList>
+    <Error id="1">
+    <ErrorCode>UNKNOWN ERROR CODE</ErrorCode
+    <ErrorMessage> <![CDATA[
+ERROR: A syntax error occurred at or before:
+set markup <]]&#62;>
+           ^ ]]<>
+    </ErrorMessage>
+  </ErrorList>
+</Results>
+```
+
+* This command displays `CSV` like output using the `COLSEP` value as a separator.
++
+```
+SQL> SET COLSEP |
+SQL> SET MARKUP COLSEP
+SQL> SELECT * FROM employee;
+
+32|THOMAS       |RUDLOFF      |2000|100|138000.40
+39|KLAUS        |SAFFERT      |3200|100|75000.00
+89|PETER        |SMITH        |3300|300|37000.40
+29|JANE         |RAYMOND      |3000|100|136000.00
+65|RACHEL       |MCKAY        |4000|100|118000.00
+75|TIM          |WALKER       |3000|300|320000.00
+11|ROGER        |GREEN        |9000|100|175500.00
+93|DONALD       |TAYLOR       |3100|300|33000.00
+```
+
+<<<
+[[cmd_set_param]]
+== SET PARAM Command
+
+The `SET PARAM` command associates a parameter name with a parameter value in the current session.
+The parameter name and value are associated with one of these parameter types:
+
+* Named parameter (represented by `?_param-name_`) in a DML statement or in a prepared SQL statement
+* Unnamed parameter (represented by `?`) in a prepared SQL statement only
+
+A prepared statement is one that you SQL compile by using the PREPARE statement.
+For more information about PREPARE, see the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+After running `SET PARAM` commands in the session:
+
+* You can specify named parameters (`?_param-name_`) in a DML statement.
+* You can execute a prepared statement with named parameters by using the `EXECUTE` statement without a `USING` clause.
+* You can execute a prepared statement with unnamed parameters by using the `EXECUTE` statement with a `USING` clause
+that contains literal values and/or a list of the named parameters set by `SET PARAM`.
+
+The `EXECUTE` statement substitutes parameter values for the parameters in the prepared statement. For more information about `EXECUTE`, see the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+<<<
+=== Syntax
+
+```
+SET PARAM param-name [UTF8] param-value
+```
+
+* `_param-name_`
++
+is the name of the parameter for which a value is specified. Parameter names are case-sensitive.
+For example, the parameter `?pn` is not equivalent to the parameter `?PN`. `_param-name_` can be
+preceded by a question mark (`?`), such as `?_param-name_`.
+
+* `UTF8`
++
+specifies that a character string specified for the parameter value, `_param-value_`, uses the
+`UTF8` character set. If the character string is in `UTF8` format, it must be prefixed by `UTF8`.
+
+* `_param-value_`
++
+is a numeric or character literal that specifies the value for the parameter. If you do not specify a value,
+TrafCI returns an error.
++
+If `_param-value_` is a character literal and the target column type is a character string, you do not have
+to enclose the value in single quotation marks. Its data type is determined from the data type of the column
+to which the literal is assigned. Character strings specified as parameter values are always case-sensitive
+even if they are not enclosed in quotation marks. If the character string is in `UTF8` format, it must
+be prefixed by `UTF8`.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* Use separate `SET PARAM` commands to name and assign values to each unique parameter in a prepared SQL
+statement before running the `EXECUTE` statement.
+* Parameter names are case-sensitive. If you specify a parameter name in lowercase in the `SET PARAM` command,
+you must specify it in lowercase in other statements, such as DML statements or `EXECUTE`.
+* The name of a named parameter (`?_param-name_`) in a DML statement must be identical to the parameter name
+(`_param-name_`) that you specify in a `SET PARAM` command.
+
+<<<
+=== Examples
+
+* This command sets a value for the `?sal` (`salary`) parameter:
++
+```
+SQL> SET PARAM ?sal 40000.00
+```
+
+* This command sets a character string value, `GREEN`, for the `?lastname` parameter:
++
+```
+SQL> SET PARAM ?lastname GREEN
+```
+
+* These commands set values for named parameters in a subsequent `SELECT` statement:
++
+```
+SQL> SET PARAM ?sal 80000.00
+SQL> SET PARAM ?job 100
+SQL> SELECT * FROM persnl.employee WHERE salary = ?sal AND jobcode = ?job;
+
+EMPNUM FIRST_NAME      LAST_NAME            DEPTNUM JOBCODE SALARY
+------ --------------- -------------------- ------- ------- ----------
+    72 GLENN           THOMAS                  3300     100   80000.00
+
+--- 1 row(s) selected.
+
+SQL> 
+```
++
+NOTE: The names of the named parameters, `?sal` and `?job`, in the `SELECT` statement are
+identical to the parameter `names`, `sal` and `job`, in the `SET PARAM` command.
+
+* This command sets a character string value, `Pe&#241;a`, which is in `UTF8` format,
+for the `?lastname` parameter:
++
+```
+SQL> SET PARAM ?lastname UTF8'Pe&#241;a'
+```
+
+* This command sets a character string value, which uses the `UTF8` character set and is in
+hexadecimal notation, for the `?lastname` parameter:
++
+```
+SQL> SET PARAM ?lastname UTF8x'5065266e74696c64653b61'
+```
+
+For more information, see <<interactive_set_parameters,Set Parameters>>.
+
+<<<
+[[cmd_set_prompt]]
+== SET PROMPT Command
+
+The `SET PROMPT` command sets the prompt of the current session to a specified string and/or to the session variables,
+which start with `%`. The default prompt is `SQL>`.
+
+=== Syntax
+
+```
+SET PROMPT [string] [%USER] [%SERVER] [%SCHEMA]
+```
+
+* `_string_`
++
+is a string value to be displayed as the prompt. The string may contain any characters. Spaces are allowed if you enclose
+the string in double quotes (`"`). If you do not enclose the string in double quotes, the prompt is displayed in uppercase.
+
+* `%USER`
++
+displays the session user name as the prompt.
+
+* `%SERVER`
++
+displays the session host name and port number as the prompt.
+
+* `%SCHEMA`
++
+displays the session schema as the prompt.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* To reset the default prompt, enter this command:
++
+```
+SET PROMPT
+```
+
+<<<
+=== Examples
+
+* This `SET PROMPT` command sets the SQL prompt to `ENTER>`:
++
+```
+SQL> SET PROMPT Enter>
+ENTER>
+```
+
+* To reset the SQL prompt to the default, enter this `SET PROMPT` command:
++
+```
+ENTER> SET PROMPT +
+SQL> 
+```
+
+* This command displays the session user name for the prompt:
++
+```
+SQL> SET PROMPT %user>
+user1>
+```
+
+* This command displays the session host name and port number for the prompt:
++
+```
+SQL> SET PROMPT %server>
+sqws135.houston.host.com:22900>
+```
+
+* This command displays the session schema for the prompt:
++
+```
+SQL> SET PROMPT "Schema %schema:"
+Schema USR:
+```
+
+* This command displays multiple session variables:
++
+```
+SQL> SET PROMPT %USER@%SCHEMA> user1@USR>
+user1@USR>set prompt %SERVER:%USER>
+sqws135.houston.host.com:22900:user1>
+sqws135.houston.host.com:22900:user1> SET PROMPT "%schema CI> "
+USR CI>
+```
+
+For more information, see <<interactive_customize_prompt, Customize Standard Prompt>>.
+
+<<<
+[[]]
+== SET SQLPROMPT Command
+
+The `SET SQLPROMPT` command sets the SQL prompt of the current session to
+a specified string. The default is `SQL>`.
+
+=== Syntax
+
+```
+SET SQLPROMPT [string] [%USER] [%SERVER] [%SCHEMA]
+```
+
+* `_string_`
++
+is a string value to be displayed as the SQL prompt. The string may contain any characters. 
+Spaces are allowed if you enclose the string in double quotes. If you do not enclose the string 
+in double quotes (`"`), the prompt is displayed in uppercase.
+
+* `%USER`
++
+displays the session user name as the prompt.
+
+* `%SERVER`
++
+displays the session host name and port number as the prompt.
+
+* `%SCHEMA`
++
+displays the session schema as the prompt.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* To reset the default SQL prompt, enter this command:
++
+```
+SET SQLPROMPT
+```
+
+<<<
+=== Examples
+
+* This command sets the SQL prompt to `ENTER>`:
++
+```
+SQL> SET SQLPROMPT Enter>
+ENTER>
+```
+
+* To reset the SQL prompt to the default, enter this command:
++
+```
+ENTER> SET SQLPROMPT
+SQL> 
+```
+
+* This command displays the session user name for the prompt:
++
+```
+SQL> SET SQLPROMPT %user>
+user1>
+```
+
+* This command displays the session host name and port number for the prompt:
++
+```
+SQL> SET SQLPROMPT %server>
+sqws135.houston.host.com:22900>
+```
+
+* This command displays the session schema for the prompt:
++
+```
+SQL> SET SQLPROMPT "Schema %schema:"
+Schema USR:
+```
+
+* This command displays multiple session variables:
++
+```
+SQL> SET SQLPROMPT %USER@%SCHEMA>
+user1@USR> 
+
+SQL> SET SQLPROMPT %SERVER:%USER>
+sqws135.houston.host.com:22900:user1>
+sqws135.houston.host.com:22900:user1> SET SQLPROMPT "%schema CI> "
+USR CI>
+```
+
+For more information, see <<interactive_customize_prompt, Customize Standard Prompt>>.
+
+<<<
+[[cmd_set_sqlterminator]]
+== SET SQLTERMINATOR Command
+
+The `SET SQLTERMINATOR` command sets the SQL statement terminator of the current session.
+The default is a semicolon (`;`).
+
+=== Syntax
+
+```
+SET SQLTERMINATOR string
+```
+
+* `_string_`
++
+is a string value for the SQL terminator. The string may contain any characters except spaces.
+Spaces are disallowed even if you enclose the string in double quotes. Lowercase and uppercase
+characters are accepted, but the SQL terminator is always shown in uppercase.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* Do not include a reserved word as an SQL terminator.
+* If you execute this command in a script file, it affects not only the SQL statements in the script
+file but all subsequent SQL statements that are run in the current session. If you set the SQL terminator
+in a script file, reset the default terminator at the end of the script file.
+* To reset the default SQL terminator (`;`), enter this command:
++
+```
+SET SQLTERMINATOR ;
+```
+
+<<<
+=== Examples
+
+* This command sets the SQL terminator to a period (`.`):
++
+```
+SQL> SET SQLTERMINATOR .
+```
+
+* This command sets the SQL terminator to a word, `go`:
++
+```
+SQL> SET SQLTERMINATOR go
+```
++
+This query ends with the new terminator, `go`:
++
+```
+SQL> SELECT * FROM persnl.employee go
+```
+
+* To reset the SQL terminator to the default, enter this command:
++
+```
+SQL> SET SQLTERMINATOR ;
+```
+
+For more information, <<interactive_set_show_terminator, Set and Show the SQL Terminator>>.
+
+<<<
+[[cmd_set_statistics]]
+== SET STATISTICS Command
+
+The `SET STATISTICS` command automatically retrieves the statistics information for a query being executed.
+The results returned are the same as would have been returned if the `GET STATISTICS` command was executed.
+The default is `OFF` which means the statistics information is not automatically printed for any queries.
+
+=== Syntax
+
+```
+SET STATISTICS { ON | OFF }
+```
+
+=== Considerations
+
+You must enter the command on one line.
+
+<<<
+=== Examples
+
+* This command shows the default output format as `PERTABLE`:
++
+```
+SQL> SET STATISTICS ON
+SQL> SELECT * FROM job;
+
+JOBCODE JOBDESC
+------- ------------------
+100     MANAGER
+450     PROGRAMMER
+900     SECRETARY
+300     SALESREP
+500     ACCOUNTANT
+400     SYSTEM ANALYST
+250     ASSEMBLER
+420     ENGINEER
+600     ADMINISTRATOR
+200     PRODUCTION SUPV
+
+--- 11 row(s) selected.
+
+Start Time             2105/05/18 21:45:34.082329
+End Time               2105/05/18 21:45:34.300265
+Elapsed Time                      00:00:00.217936
+Compile Time                      00:00:00.002423
+Execution Time                    00:00:00.218750
+
+Table Name   Records  Records  Disk  Message  Message  Lock  Lock  Disk Process
+            Accessed     Used  I/Os    Count    Bytes  Escl  Wait     Busy Time
+TRAFODION.TOI.JOB
+                   2       2      0       4     15232     0     0           363
+
+
+SQL> 
+```
+
+For more information on the STATISTICS command, see the 
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+<<<
+[[cmd_set_time]]
+== SET TIME Command
+The `SET TIME` command causes the local time of the client workstation to be displayed as part of the
+interface prompt. By default, the local time is not displayed in the interface prompt.
+
+=== Syntax
+
+```
+SET TIME { ON[12H] | OFF }
+```
+
+* `ON`
++
+specifies that the local time be displayed as part of the prompt.
+
+* `OFF`
++
+specifies that the local time not be displayed as part of the prompt. `OFF` is the default.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* The default is a 24-hour military style display. The additional argument of `12h` allows
+the time to be displayed in a 12-hour AM/PM style.
+
+<<<
+=== Examples
+
+* This command causes the local time to be displayed in the SQL prompt:
++
+```
+SQL> SET TIME ON
+14:17:17 SQL> 
+```
+
+* This command causes the local time to be displayed in 12-hour AM/PM style in the SQL prompt:
++
+```
+SQL> SET TIME ON 12H
+2:17:17 PM SQL> 
+```
+
+* This command turns off the local time in the SQL prompt:
++
+```
+2:17:17 PM SQL> SET TIME OFF
+SQL> 
+```
+
+For more information, see <<interactive_customize_prompt,Customize the Standard Prompt>>.
+
+<<<
+[[cmd_set_timing]]
+== SET TIMING Command
+
+The `SET TIMING` command causes the elapsed time to be displayed after each SQL statement executes.
+This command does not cause the elapsed time of interface commands to be displayed. By default, the
+elapsed time is `off`.
+
+=== Syntax
+
+```
+SET TIMING { ON | OFF }
+```
+
+* `ON`
++
+specifies the elapsed time be displayed after each SQL statement executes.
+
+* `OFF`
++
+specifies that the elapsed time not be displayed after each SQL statement executes. `OFF` is the default.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* The elapsed time value includes compile and execution time plus any network I/O time and client-side processing time.
+
+=== Examples
+
+* This command displays the elapsed time of SQL statements:
++
+```
+SQL> SET TIMING ON
+```
+
+* This command turns off the elapsed time:
++
+```
+SQL> SET TIMING OFF
+```
+
+For more information, see <<interactive_display_elapsed_time,Display the Elapsed Time>>.
+
+<<<
+[[cmd_show_activitycount]]
+== SHOW ACTIVITYCOUNT Command
+
+The `SHOW ACTIVITYCOUNT` command provides an alias for `SHOW RECCOUNT`.
+`ACTIVITYCOUNT` is an alias for `RECCOUNT`. For more information, see the <<cmd_reccount,SHOW RECCOUNT Command>>.
+
+=== Syntax
+
+```
+SHOW ACTIVITYCOUNT
+```
+
+=== Examples
+
+* This command shows the record count of the previous executed SQL statement:
++
+```
+SQL> SHOW ACTIVITYCOUNT
+
+ACTIVITYCOUNT 0
+
+```
+
+<<<
+[[cmd_show_alias]]
+== SHOW ALIAS Command
+
+The `SHOW ALIAS` command displays all or a set of aliases available in the current TrafCI session. If a pattern is specified,
+then all aliases matching the pattern are displayed. By default, all aliases in the current session are displayed.
+
+=== Syntax
+
+```
+SHOW ALIAS [ alias-name | wild-card-pattern ]
+```
+
+* `_alias-name_`
++
+is any alias name that is used with the `ALIAS` command. See <<cmd_alias, ALIAS Command>>.
+
+* `_wild-card-pattern_`
++
+is a character string used to search for and display aliases with names that match the character string. `_wild-card-pattern_`
+matches an uppercase string unless you enclose it within double quotes. To look for similar values, specify only part of the
+characters of `_wild-card-pattern_` combined with these wild-card characters.
++
+[cols="10%,90%"]
+|===
+| `%`     | Use a percent sign (`%`) to indicate zero or more characters of any type. +
+ +
+For example, `%art%` matches `SMART`, `ARTIFICIAL`, and `PARTICULAR` but not smart or Hearts. `"%art%"` matches `smart` and `Hearts`
+but not `SMART`, `ARTIFICIAL`, or `PARTICULAR`.
+| `*`     | Use an asterisk (`*`) to indicate zero or more characters of any type. +
+ +
+For example, `*art*` matches `SMART`, `ARTIFICIAL`, and `PARTICULAR` but not `smart` or `Hearts`.
+`"*art*"` matches `smart` and `Hearts` but not `SMART`, `ARTIFICIAL`, or `PARTICULAR`.
+| `&#95;` | Use an underscore (`&#95;`) to indicate any single character. +
+ +
+For example, `boo_` matches `BOOK` and `BOOT` but not `BOO` or `BOOTS`. `"boo_"` matches `book` and `boot` but not `boo` or `boots`.
+| `?`     | Use a question mark (`?`) to indicate any single character. +
+ +
+For example, `boo?` matches `BOOK` and `BOOT` but not `BOO` or `BOOTS`. `"boo?"` matches `book` and `boot` but not `boo` or `boots`.
+|===
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+<<<
+=== Examples
+
+* This command displays a list of the available aliases:
++
+```
+SQL> SHOW ALIAS
+
+.OS AS LH
+.GOTO AS GOTO
+USE AS SET SCHEMA
+```
+
+* This command displays the `.GOTO` alias:
++
+```
+SQL> SHOW ALIAS .GOTO
+
+.GOTO AS GOTO
+```
+
+* This command displays the `.FOO` alias:
++
+```
+SQL> SHOW ALIAS .FOO
+
+No aliases found.
+```
+
+* This command displays all aliases beginning with the letter `S`:
++
+```
+SQL> SHOW ALIAS S*
+
+SEL AS SELECT
+SHOWTIME AS SHOW TIME
+ST AS SHOW TABLES
+
+```
+
+<<<
+[[cmd_show_aliases]]
+== SHOW ALIASES Command
+
+The `SHOW ALIASES` command displays all the aliases available in the current TrafCI session.
+
+=== Syntax
+
+```
+SHOW ALIASES
+```
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+=== Examples
+
+* This command displays all the aliases in the current TrafCI session:
++
+```
+SQL> SHOW ALIASES
+
+.OS AS LH
+.GOTO AS GOTO
+USE AS SET SCHEMA
+```
+
+<<<
+[[cmd_show_catalog]]
+== SHOW CATALOG Command
+
+The `SHOW CATALOG` command displays the current catalog of the TrafCI session.
+
+=== Syntax
+
+```
+SHOW CATALOG
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows that the current catalog of the session is TRAFODION:
++
+```
+SQL> SHOW CATALOG
+
+CATALOG TRAFODION
+```
+
+<<<
+[[cmd_show_colsep]]
+== SHOW COLSEP Command
+
+The `SHOW COLSEP` command displays the value of the column separator for the current TrafCI session.
+
+=== Syntax
+
+```
+SHOW COLSEP
+```
+
+=== Considerations
+
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command displays the column separator.
++
+```
+SQL> SHOW COLSEP
+
+COLSEP " "
+
+SQL> SET COLSEP 
+SQL> SHOW COLSEP
+
+COLSEP ""
+```
+
+* This command displays the column separator.
++
+```
+SQL> SHOW COLSEP
+
+COLSEP " "
+
+SQL> SET COLSEP
+SQL> SHOW COLSEP
+
+COLSEP ""
+```
+
+<<<
+[[cmd_show_errorcode]]
+== SHOW ERRORCODE Command
+
+The `SHOW ERRORCODE` command is an alias for the `SHOW LASTERROR` command. `ERRORCODE` is an alias for `LASTERROR`. For more information, see
+<<cmd_show_lasterror,SHOW LASTERROR Command>>.
+
+=== Syntax
+
+```
+SHOW ERRORCODE
+```
+
+=== Examples
+
+* This command displays the error of the last SQL statement that was executed:
++
+```
+SQL> SHOW ERRORCODE
+
+ERRORCODE 29481
+```
+
+<<<
+[[cmd_show_fetchsize]]
+== SHOW FETCHSIZE Command
+
+The `SHOW FETCHSIZE` command displays the fetch size value for the current TrafCI session.
+
+=== Syntax
+
+```
+SHOW FETCHSIZE
+```
+
+=== Considerations
+
+You must enter the command on one line.
+
+=== Examples
+
+* These commands display the fetch size in the current TrafCI session, set the fetch size to a new value, and then redisplay the fetch size:
++
+```
+SQL> SHOW FETCHSIZE
+
+FETCHSIZE 0 [Default]
+
+SQL> SET FETCHSIZE 1
+SQL> SHOW FETCHSIZE
+
+FETCHSIZE 1
+
+```
+
+<<<
+[[cmd_show_histopt]]
+== SHOW HISTOPT Command
+
+The `SHOW HISTOPT` command displays the value that has been set for the history option.
+
+=== Syntax
+
+```
+SHOW HISTOPT
+```
+
+=== Considerations
+
+* You must enter the command on one line.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command displays the value set for the history option:
++
+```
+SQL> SHOW HISTOPT
+
+HISTOPT DEFAULT [No expansion of script files]
+
+SQL> SET HISTOPT ALL
+SQL> SHOW HISTOPT
+
+HISTOPT ALL
+```
+
+<<<
+[[cmd_show_idletimeout]]
+== SHOW IDLETIMEOUT Command
+
+The `SHOW IDLETIMEOUT` command displays the idle timeout value of the current TrafCI session. The idle timeout
+value of a session determines when the session expires after a period of inactivity.
+The default is `30 minutes`.
+
+=== Syntax
+
+```
+SHOW IDLETIMEOUT
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+<<<
+=== Examples
+
+* This command shows that the idle timeout value of the session is 30 minutes, which is the default:
++
+```
+SQL> SHOW IDLETIMEOUT
+
+IDLETIMEOUT 30 min(s)
+
+Elapsed time:00:00:00:078
+```
+
+* This command shows that the idle timeout value of the session is four hours:
++
+```
+SQL> SHOW IDLETIMEOUT
+
+IDLETIMEOUT 240 min(s)
+```
+
+* This command shows that the idle timeout value is an infinite amount of time, meaning that the session never expires:
++
+```
+SQL> SHOW IDLETIMEOUT
+
+IDLETIMEOUT 0 min(s) [Never Expires]
+```
+
+* This command displays the elapsed time information because `SET TIMING` command is enabled:
++
+```
+SQL> SET TIMING ON
+SQL> SHOW IDLETIMEOUT
+
+IDLETIMEOUT 0 min(s) [Never Expires]
+
+Elapsed time:00:00:00:078
+```
+
+For more information, see <<interactive_idle_timeout, Set and Show Session Idle Timeout Value>>.
+
+<<<
+[[cmd_show_lasterror]]
+== SHOW LASTERROR Command
+
+The `SHOW LASTERROR` command displays the error of the last SQL statement that was executed.
+If the query was successful, then `0` is returned; otherwise an SQL error code is returned.
+
+=== Syntax
+
+```
+SHOW LASTERROR
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command shows the last error in the current session:
++
+```
+SQL> SELECT * FROM emp;
+
+**** ERROR[4082]Object TRAFODION.SCH.EMP does not exist or is inaccessible.
+
+SQL> SHOW LASTERROR
+
+LASTERROR 4082
+
+```
+
+<<<
+[[cmd_show_list_count]]
+== SHOW LIST_COUNT Command
+
+The `SHOW LIST_COUNT` command displays the maximum number of rows to be returned by `SELECT` statements in the
+current TrafCI session. The default is `zero`, which means that all rows are returned.
+
+=== Syntax
+
+```
+SHOW LIST_COUNT
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command shows that `SELECT` statements return all rows in the current session:
++
+```
+SQL> SHOW LIST_COUNT
+
+LISTCOUNT 0 [All Rows]
+
+Elapsed time:00:00:00:078
+```
+
+* This command shows that the maximum number of rows to be displayed by `SELECT` statements in the session is five:
++
+```
+SQL> SET LIST_COUNT 5
+SQL> SHOW LIST_COUNT
+
+LIST_COUNT 5
+
+Elapsed time:00:00:00:078
+
+```
+
+<<<
+[[cmd_show_markup]]
+== SHOW MARKUP Command
+
+The `SHOW MARKUP` command displays the value set for the markup option.
+
+=== Syntax
+
+```
+SHOW MARKUP
+```
+
+=== Considerations
+
+* You must enter the command on one line.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command displays the value set for the markup option:
++
+```
+SQL> SHOW MARKUP
+
+MARKUP RAW
+
+Elapsed time:00:00:00:078
+```
+
+<<<
+[[cmd_show_param]]
+== SHOW PARAM Command
+
+The `SHOW PARAM` command displays the parameters that are set in the current TrafCI session.
+
+=== Syntax
+
+```
+SHOW PARAM
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows that parameters that are set for the current session:
++
+```
+SQL> SHOW PARAM
+
+lastname GREEN
+dn 1500
+sal 40000.00
+```
+
+* This command shows that when no parameters exist, the `SHOW PARAM` command displays an error message:
++
+```
+SQL> SHOW PARAM
+
+No parameters found.
+
+```
+
+For more information, <<interactive_display_session_parameters, Display Session Parameters>>.
+
+<<<
+[[cmd_show_prepared]]
+== SHOW PREPARED Command
+
+The `SHOW PREPARED` command displays the prepared statements in the current TrafCI session.
+If a pattern is specified, then all prepared statements matching the prepared statement name
+pattern are displayed. By default, all prepared statements in the current session are displayed.
+
+=== Syntax
+
+```
+SHOW PREPARED
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command shows all the prepared statements, by default:
++
+```
+SQL> SHOW PREPARED
+
+S1
+       SELECT *  FROM t1
+S2
+       SELECT * FROM student
+T1
+       SELECT * FROM test123
+
+SQL> SHOW PREPARED s%
+
+S1
+       SELECT * FROM t1
+S2
+       SELECT * FROM student
+
+SQL> SHOW PREPARED t%
+
+T1
+       SELECT * FROM test123
+
+```
+
+<<<
+[[cmd_show_reccount]]
+== SHOW RECCOUNT Command
+
+The `SHOW RECCOUNT` command displays the record count of the previously executed SQL statement. If the previously
+executed command was an interface command, then TrafCI returns zero.
+
+=== Syntax
+
+```
+SHOW RECCOUNT
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not need an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Examples
+
+* This command displays the record count of the SQL statement that was executed last:
++
+```
+SQL> SELECT * FROM employee;
+SQL> SHOW RECCOUNT
+
+RECCOUNT 62
+
+```
+
+<<<
+[[cmd_show_remoteprocess]]
+== SHOW REMOTEPROCESS Command
+
+The `SHOW REMOTEPROCESS` command displays the process name of the DCS server that is handling the current connection.
+
+=== Syntax
+
+```
+SHOW REMOTEPROCESS
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not need an SQL terminator.
+* The command does not need an SQL terminator.
+
+=== Example
+
+* This command displays the process name, `\g4t3028.houston.host.com:0.$Z0000M2`, of the DCS server that is handling
+the current connection:
++
+```
+SQL> SHOW REMOTEPROCESS
+
+REMOTE PROCESS \g4t3028.houston.host.com:0.$Z0000M2
+
+SQL> 
+```
+
+<<<
+[[cmd_show_schema]]
+== SHOW SCHEMA Command
+
+The `SHOW SCHEMA` command displays the current schema of the TrafCI session.
+
+=== Syntax
+
+```
+SHOW SCHEMA
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows that the current schema of the session is `PERSNL`:
++
+```
+SQL> SHOW SCHEMA
+
+SCHEMA PERSNL
+```
+
+For more information, see <<interactive_set_show_current_schema, Set and Show the Current Schema>>.
+
+<<<
+[[cmd_show_session]]
+== SHOW SESSION Command
+
+`SHOW SESSION` or `SESSION` displays attributes of the current TrafCI session.
+You can also use the `ENV` command to perform the same function.
+
+=== Syntax
+
+```
+[SHOW] SESSION
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+* `SHOW SESSION` or `SESSION` displays these attributes:
++
+[cols="20%,80%",options="header"]
+|===
+| Attribute       | Description
+| `COLSEP`        | Current column separator, which is used to control how query results are displayed. +
+ +
+For more information, <<cmd_set_colsep,SET COLSEP Command>>.
+| `HISTOPT`       | Current history options, which controls how the commands are added to the history buffer. +
+ +
+For more information, see <<cmd_set_histopt, SET HISTOPT Command>>.
+| `IDLETIMEOUT`   | Current idle timeout value, which determines when the session expire after a period of inactivity.
+By default, the idle timeout is `30 minutes`. +
+ +
+For more information, see <<interactive_idle_timeout, Set and Show Session Idle Timeout Value>> and
+<<cmd_set_idletimeout, SET IDLETIMEOUT Command>>.
+| `LIST_COUNT`    | Current list count, which is the maximum number of rows that can be returned by SELECT statements.
+By default, the list count is all rows. +
+ +
+For more information, see <<cmd_set_list_count,SET LIST_COUNT Command>>.
+| `LOG FILE`      | Current log file and the directory containing the log file. By default, logging during a session is turned off. +
+ +
+For more information, see <<interactive_log_output, Log Output>>, and <<cmd_log, LOG Command>>.
+| `LOG OPTIONS`   | Current logging options. By default, logging during a session is turned off, and this attribute does not appear in the output. +
+ +
+For more information, see the <<cmd_log, LOG Command>> or <<cmd_spool, SPOOL Command>>.
+| `MARKUP`        | Current markup option selected for the session. The default option is RAW. +
+ +
+For more information, see <<cmd_set_markup,SET MARKUP Command">>.
+| `PROMPT`        | Current prompt for the session. For example, the default is `SQL>`. +
+ +
+For more information, see <<interactive_customize_prompt,Customize the Standard Prompt>> and <<cmd_set_prompt, SET PROMPT Command>>.
+| `SCHEMA`        | Current schema. The default is `USR`. +
+ +
+For more information, see <<interactive_set_show_current_schema, Set and Show the Current Schema>>.
+| `SERVER`        | Host name and port number that you entered when logging in to the database platform. +
+ +
+For more information, see <<trafci_login, Log In to Database Platform>>.
+| `SQLTERMINATOR` | Current SQL statement terminator. The default is a semicolon (`;`). +
+ + 
+For more information, see <<interactive_set_show_terminator, Set and Show the SQL Terminator>> and
+<<cmd_show_sqlterminator,SHOW SQLTERMINATOR Command>>.
+| `STATISTICS`    | Current setting (`on` or `off`) of statistics. +
+ +
+For more information, see the <<cmd_set_statistics, SET STATISTICS Command>>.
+| `TIME`          | Current setting (`on` or `off`) of the local time as part of the prompt. When this command is set to `on`, 
+military time is displayed. By default, the local time is `off`. +
+ +
+For more information, see <<interactive_customize_prompt,Customize the Standard Prompt>> and <<cmd_set_time, SET TIME Command>>.
+| `TIMING`        | Current setting (`on` or `off`) of the elapsed time. By default, the elapsed time is `off`. +
+ +
+For more information, see <<interactive_display_elapsed_time, Display the Elapsed Time>> and <<cmd_set_timing, SET TIMING Command>>.
+| `USER`          | User name that you entered when logging in to the database platform. +
+ +
+For more information, see <<trafci_login, Log In to Database Platform>>.
+|===
+
+<<<
+=== Examples
+
+* This SHOW SESSION command displays the attributes of the current session:
++
+```
+SQL> SHOW SESSION
+
+COLSEP             " "
+HISTOPT            DEFAULT [No expansion of script files] 
+IDLETIMEOUT        0 min(s) [Never Expires]
+LIST_COUNT         0 [All Rows]
+LOG FILE           c:\session.txt 
+LOG OPTIONS        APPEND,CMDTEXT ON 
+MARKUP             RAW
+PROMPT             SQL> 
+SCHEMA             SEABASE
+SERVER             sqws135.houston.host.com:37800 
+SQLTERMINATOR      ;
+STATISTICS         OFF
+TIME               OFF
+TIMING             OFF
+USER               user1
+```
+
+* This `SESSION` command shows the effect of setting various session attributes:
++
+```
+SQL> SESSION
+
+COLSEP             " "
+HISTOPT            DEFAULT [No expansion of script files] 
+IDLETIMEOUT        30 min(s)
+LIST_COUNT         0 [All Rows]
+LOG                OFF
+MARKUP             RAW
+PROMPT             SQL> 
+SCHEMA             SEABASE
+SERVER             sqws135.houston.host.com:37800 
+SQLTERMINATOR      ;
+STATISTICS         OFF
+TIME               OFF
+TIMING             OFF
+USER               user1
+
+SQL> 
+```
+
+<<<
+[[cmd_set_sqlprompt]]
+== SHOW SQLPROMPT Command
+
+The `SHOW SQLPROMPT` command displays the value of the SQL prompt for the current TrafCI session.
+
+=== Syntax
+
+```
+SHOW SQLPROMPT
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows that the SQL prompt for the current session is `SQL>`:
++
+```
+SQL> SHOW SQLPROMPT
+SQLPROMPT SQL> 
+```
+
+<<<
+[[cmd_show_sqlterminator]]
+== SHOW SQLTERMINATOR Command
+
+The `SHOW SQLTERMINATOR` command displays the SQL statement terminator of the current TrafCI session.
+
+=== Syntax
+
+```
+SHOW SQLTERMINATOR
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows that the SQL terminator for the current session is a period (`.`):
++
+```
+SQL> SHOW SQLTERMINATOR 
+
+SQLTERMINATOR .
+```
+
+For more information, see <<interactive_set_show_terminator, Set and Show the SQL Terminator>>.
+
+<<<
+[[cmd_show_statistics]]
+== SHOW STATISTICS Command
+
+The `SHOW STATISTICS` command displays if statistics has been enabled or disabled for the current session.
+
+=== Syntax
+
+```
+SHOW STATISTICS
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows `SHOW STATISTICS` disabled and then enabled:
++
+```
+SQL> SHOW STATISTICS
+
+STATISTICS OFF
+
+SQL> SET STATISTICS ON
+SQL> SHOW STATISTICS
+
+STATISTICS ON
+
+```
+
+<<<
+[[cmd_show_time]]
+== SHOW TIME Command
+
+The `SHOW TIME` command displays whether the setting for the local time in the interface prompt is `ON` or `OFF`.
+
+=== Syntax
+
+```
+SHOW TIME
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+* This command shows that the setting for the local time in the SQL prompt is `OFF`:
++
+```
+SQL> SHOW TIME
+
+TIME OFF
+```
+
+<<<
+[[cmd_show_timing]]
+== SHOW TIMING Command
+
+The `SHOW TIMING` command displays whether the setting for the elapsed time is `ON` or `OFF`.
+
+=== Syntax
+
+```
+SHOW TIMING
+```
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* If the `SET TIMING` command is set to `ON`, the elapsed time information is displayed.
+
+=== Example
+
+
+* This command displays the elapsed time information because the `SET TIMING` command is enabled:
++
+```
+SQL> SET TIMING ON
+SQL> SHOW TIME
+
+TIME OFF
+
+Elapsed :00:00:00.000
+```
+
+<<<
+[[cmd_spool]]
+== SPOOL Command
+
+The `SPOOL` command logs the entered commands and their output from TrafCI to a log file.
+
+=== Syntax
+
+```
+SPOOL { ON [ CLEAR, QUIET, CMDTEXT { ON | OFF } ]
+      | log-file [ CLEAR, QUIET, CMDTEXT { ON | OFF } ]
+      | OFF
+      }
+```
+
+* `ON`
++
+starts the logging process and records information in the `sqlspool.lst` file in the `bin directory. 
+
+* `ON CLEAR`
++
+instructs TrafCI to clear the contents of the `sqlspool.lst` file before logging new information to the file.
+
+* `QUIET`
++
+specifies that the command text is displayed on the screen, but the results of the command are written only to 
+the log file and not to the screen.
+
+* `CMDTEXT ON`
++
+specifies that the command text and the log header are displayed in the log file.
+
+* `CMDTEXT OFF`
++
+specifies that the command text and the log header are not displayed in the log file.
+
+* `_log-file_`
++
+is the name of a log file into which TrafCI records the entered commands and their output. If you want the log file 
+to exist outside the local directory where you launch TrafCI (by default, the `bin` directory), then specify the 
+full directory path of the log file. The log file does not need to exist, but the specified directory must exist 
+before you execute the `SPOOL` command.
+
+* `_log-file_ CLEAR`
++
+instructs TrafCI to clear the contents of the specified `_log-file_` before logging new information to the file.
+
+* `OFF`
++
+stops the logging process.
+
+=== Considerations
+
+* You must enter the command on one line. The command does not require an SQL terminator.
+* Use a unique name for each log file to avoid writing information from different TrafCI sessions into the same log file.
+
+=== Examples
+
+* This command starts the logging process and records information to the `sqlspool.lst` file in the `bin` directory:
++
+```
+SQL> SPOOL ON
+```
+
+* This command starts the logging process and appends new information to an existing log file, `persnl_updates.log`, 
+in the local directory (the same directory where you are running TrafCI):
++
+```
+SQL> SPOOL persnl_updates.log
+```
+
+* This command starts the logging process and appends new information to a log file, `sales_updates.log`, in the 
+specified directory on a Windows workstation:
++
+```
+SQL> SPOOL c:\log_files\sales_updates.log
+```
+
+* This command starts the logging process and appends new information to a log file, `sales_updates.log`, 
+in the specified directory on a Linux or UNIX workstation:
++
+```
+SQL> SPOOL ./log_files/sales_updates.log
+```
+
+* This command starts the logging process and clears existing information from the log file before logging 
+new information to the file:
++
+```
+SQL> SPOOL persnl_ddl.log CLEAR
+```
+
+<<<
+* This command starts the logging process and records information to the `sqlspool.lst` file in the bin directory:
++
+```
+SQL> LOG ON
+```
+
+* This command starts the logging process and appends new information to an existing log file, `persnl_updates.log`, 
+in the local directory (the same directory where you are running TrafCI):
++
+```
+SQL> LOG persnl_updates.log
+```
+
+* This command starts the logging process and appends new information to a log file, `sales_updates.log`, 
+in the specified directory on a Windows workstation:
++
+```
+SQL> LOG c:\log_files\sales_updates.log
+```
+
+* This command starts the logging process and appends new information to a log file, `sales_updates.log`, 
+in the specified directory on a Linux or UNIX workstation:
++
+```
+SQL> LOG ./log_files/sales_updates.log
+```
+
+* This command starts the logging process and clears existing information from the log file before logging new 
+information to the file:
++
+```
+SQL> LOG persnl_ddl.log CLEAR
+```
+
+<<<
+* This command start the logging process, clears existing information from the log file, and specifies that the 
+command text and log header is not displayed in the log file:
++
+```
+SQL> LOG c:\temp\a.txt clear, CMDTEXT OFF
+SQL> SELECT * FROM trafodion.toi.job 
++>;
+
+JOBCODE JOBDESC
+------- ------------------
+    100 MANAGER
+    450 PROGRAMMER 
+    900 SECRETARY
+    300 SALESREP
+    500 ACCOUNTANT
+    400 SYSTEM ANALYST
+    250  ASSEMBLER
+    420 ENGINEER
+    600 ADMINISTRATOR
+    200 PRODUCTION SUPV
+
+--- 10 row(s) selected. 
+
+SQL> LOG OFF
+```
++
+Output of `c:\temp\a.txt`
++
+```
+JOBCODE JOBDESC
+------- ------------------
+     100 MANAGER
+     450 PROGRAMMER 900 SECRETARY
+     300 SALESREP
+     500 ACCOUNTANT
+     400 SYSTEM ANALYST
+     250 ASSEMBLER
+     420 ENGINEER
+     600 ADMINISTRATOR
+     200 PRODUCTION SUPV
+
+--- 10 row(s) selected
+```
+
+<<<
+* This command start the logging process, clears existing information from the log file, and specifies that no output 
+appears on the console window:
++
+```
+SQL> LOG c:\temp\b.txt CLEAR, CMDTEXT OFF, QUIET
+SQL> SELECT *
++>FROM trafodion.toi.job;
+SQL> LOG OFF
+```
++
+Output of `c:\temp\b.txt`
++
+```
+==================== 
+JOBCODE JOBDESC
+------- ------------------
+     100 MANAGER
+     450 PROGRAMMER 
+     900 SECRETARY
+     300 SALESREP
+     500 ACCOUNTANT
+     400 SYSTEM ANALYST
+     250 ASSEMBLER
+     420 ENGINEER
+     600 ADMINISTRATOR
+     200 PRODUCTION SUPV
+
+--- 10 row(s) selected
+```
+
+* This command stops the logging process:
++
+```
+SQL> LOG OFF
+```
+
+For more information, see <<interactive_log_output, Log Output>>.
+
+<<<
+[[cmd_version]]
+== VERSION Command
+
+The `VERSION` command displays the build versions of the Trafodion database, Trafodion Connectivity Service, 
+Trafodion JDBC Type 4 Driver, and TrafCI.
+
+=== Syntax
+
+```
+VERSION
+```
+
+=== Considerations
+
+You must enter the command on one line. The command does not require an SQL terminator.
+
+=== Example
+
+* This command shows versions of the Trafodion database, Trafodion Connectivity Service, Trafodion JDBC Type 4 Driver, and TrafCI:
++
+```
+SQL> VERSION
+
+Trafodion Platform              : Release 0.8.0
+Trafodion Connectivity Services : Version 1.0.0 Release 0.8.0 
+Trafodion JDBC Type 4 Driver    : Traf_JDBC_Type4_Build_40646) 
+Trafodion Command Interface     : TrafCI_Build_40646
+
+SQL> 
+```
+
+<<<
+* If TrafCI is started with the -noconnect parameter, the `VERSION` command displays only TrafCI and the 
+Trafodion JDBC Type 4 Driver versions.
++
+```
+C:\Program Files (x86)\Apache Software Foundation\Trafodion Command Interface\bin> TRAFCI -noconnect 
+
+Welcome to Trafodion Command Interface
+Copyright(C) 2013-2105 Apache Software Foundation
+
+SQL> VERSION
+
+Trafodion Platform              : Information not available. 
+Trafodion Connectivity Services : Information not available. 
+Trafodion JDBC Type 4 Driver    : Traf_JDBC_Type4_Build_40646 
+Trafodion Command Interface     : TrafCI_Build_40646
+
+```
+
+
+

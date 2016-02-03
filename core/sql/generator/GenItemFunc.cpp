@@ -1737,6 +1737,9 @@ short Translate::codeGen(Generator * generator)
      case UCS2_TO_UTF8:
 	convType = CONV_UCS2_F_UTF8_V;
 	break;
+     case GBK_TO_UTF8:
+        convType = CONV_GBK_F_UTF8_V;
+        break;
      case UNICODE_TO_ISO88591:
 	convType = CONV_UNICODE_F_ASCII_V;
 	break;

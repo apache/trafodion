@@ -364,6 +364,7 @@ public class TrafConnection {
                 LOG.debug(serverWorkerName + ". closeTrafStatement.containsKey [" + stmtLabel + "] is found ");
             trafStatement = getTrafStatement(stmtLabel, 0);
             trafStatement.closeTStatement();
+            statements.remove(stmtLabel);
         }
         return trafStatement;
     }
@@ -384,7 +385,7 @@ public class TrafConnection {
             while (keySetIterator.hasNext()) {
                 key = keySetIterator.next();
                 tstmt = statements.get(key);
-                if (tstmt.getStmtHandle() == stmtHandle);
+                if (tstmt.getStmtHandle() == stmtHandle)
                     return tstmt;
             }
             throw new SQLException("getTrafStatement stmtHandle [" + stmtHandle + "] returns null");

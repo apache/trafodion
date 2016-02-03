@@ -106,6 +106,10 @@ int  UTF16ToLocale( const enum cnv_version version,
                     unsigned int * translated_char_cnt_p = NULL  ,
                     const char *substitution_char        = NULL );
 
+NA_EIDPROC
+int gbkToUtf8(char* gbkString, size_t gbklen,
+              char* result ,size_t outlen, bool addNullAtEnd=FALSE);
+
 /*
  * LocaleCharToUCS4() converts the FIRST char in the input string to its
  * UCS4 value.  Returns the UCS4 value at location specified AND the

@@ -1,0 +1,2111 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sqlstate]]
+= SQLSTATE 
+
+Trafodion returns SQLSTATE values that are defined
+in the ISO/ANSI SQL standard and implementation-defined SQLSTATE values. See
+Subclause 22, "Status Codes" in the ISO/ANSI SQL92 Standard "Database
+Language SQL."
+
+[[sqlstate-and-sqlcode-considerations]]
+== SQLSTATE and SQLCODE Considerations
+
+* Using SQLSTATE causes performance overhead because of the representation of SQLSTATE as five characters. 
+The overhead is most noticeable with short SQL statements and in error situations.
+
+* Mapping SQLSTATE values to SQLCODE values can result in ambiguous SQLCODE values:
+
+** SQLCODE values will often not map to a unique SQLSTATE value. For example, see the many SQLCODE 
+values mapped to SQLSTATE 42000 in the table below.
+
+** To deal with the problem of ambiguous SQLCODE values, we recommends retrieving the error message 
+text or the SQLCODE value in addition to the SQLSTATE.
+
+* SQLSTATE values for some Trafodion error and warning messages might be subject to change:
+
+** In the future, Trafodion might return different SQLSTATE values for error conditions than it does now.
+
+** In the future, the Trafodion error handling might use a different error path, and therefore return a 
+slightly different SQLCODE and implementation defined SQLSTATE value for an error.
+
+[[sqlstate-values]]
+== SQLSTATE Values
+
+The table below is a list of returned SQLSTATE values ordered by SQLSTATE.
+SQLSTATE values are provided for both warning messages (positive SQLCODE
+numbers) and error messages (negative SQLCODE numbers).
+
+
+[cols="15%l,10%l,75%",options="header",]
+|===
+| SQLSTATE | SQLCODE | Error Text
+|00000     | 0       | Successful completion
+|01001     | 8106    | The last row fetched by this cursor was updated or deleted between the FETCH and UPDATE/DELETE. . .WHERE CURRENT. . . of statements.
+| 01004    | 8402    | A string overflow occurred during the evaluation of a character expression.
+| 01006    | 1015    | Some of the specified privileges could not be revoked.
+| 01007    | 1012    | No privileges were granted. You lack grant option on the specified privileges.
+| 01007    | 1013    | Not all privileges were granted. You lack grant option on some of the specified privileges.
+| 01500    | 1000    | A syntax error occurred.
+| 01501    | 1001    | An internal error occurred in module <name> on line <num>. DETAILS(<details>).
+| 01502    | 1002    | Catalog <catalog> does not exist, or has not been registered on node <node>
+| 01503    | 1003    | Schema <schema> does not exist.
+| 01504    | 1004    | Table, view, or stored procedure <object-name> does not exist or object type is invalid for the current operation.
+| 01505    | 1005    | Constraint <constraint-name> does not exist.
+| 01506    | 1006    | Index <index-name> does not exist.
+| 01508    | 1008    | User name <user-name> does not exist.
+| 01509    | 1009    | Column <column-name> does not exist in the specified table.
+| 0150A    | 1010    | The statement just specified is currently not supported.
+| 0150E    | 1014    | Privileges were not revoked. Dependent privilege descriptors still exist.
+| 0150G    | 1016    | Redundant references to column <column-name> were specified in the constraint or trigger definition.
+| 0150H    | 1017    | You are not authorized to perform this operation.
+| 0150J    | 1019    | No valid primary partition for <table-name> could be found.
+| 0150K    | 1020    | Privilege settings on metadata tables cannot be changed.
+| 0150L    | 1021    | SQL is already initialized on system <node-name>.
+| 0150M    | 1022    | Schema <schema-name> already exists.
+| 0150N    | 1023    | Only the super ID can name an authorization ID other than the current user name.
+| 0150O    | 1024    | File system error <error-number> occurred on module <text-string-1>. <text-string-2>.
+| 0150P    | 1025    | Request failed. One or more dependent objects exist.
+| 0150Q    | 1026    | Only the schema owner or super ID user can drop a schema.
+| 0150R    | 1027    | The definition <schema-name> is dropped when its catalog is dropped.
+| 0150S    | 1028    | The schema must be empty. It contains at least one object <object-name>.
+| 0150T    | 1029    | Object <object-name> could not be created.
+| 0150U    | 1030    | File label <name> could not be accessed. File System error <error>.
+| 0150V    | 1031    | Object <object-name> could not be dropped.
+| 0150Y    | 1034    | Trafodion was not able to initialize.
+| 0150Z    | 1035    | Catalog <catalog-name> already exists
+| 01510    | 1036    | Only super ID can execute DROP SQL.
+| 01511    | 1037    | Trafodion is not installed on system <node>.
+| 01512    | 1038    | Not all catalogs have been dropped from the system.
+| 01513    | 1039    | The drop SQL statement could not be executed.
+| 01514    | 1040    | The use of ALTER on metadata tables is not permitted.
+| 01515    | 1041    | The primary key has already been defined.
+| 01516    | 1042    | All PRIMARY KEY or UNIQUE constraint columns must be NOT NULL.
+| 01517    | 1043    | Constraint <constraint-name> already exists.
+| 01518    | 1044    | Constraint <constraint-name> could not be created because the referenced columns in the referenced table are not part of a unique constraint.
+| 01519    | 1045    | The unique constraint cannot be used because it is deferrable.
+| 0151A    | 1046    | Referenced and referencing column lists do not match for constraint <name>.
+| 0151B    | 1047    | Request failed. Dependent view <view-name> exists.
+| 0151C    | 1048    | Currently only supporting restrict drop behavior.
+| 0151D    | 1049    | Attempting to drop a NOT DROPPABLE constraint.
+| 0151E    | 1050    | Cannot drop constraint used as a referenced object for a foreign key.
+| 0151F    | 1051    | Insufficient privilege on <table-name>.
+| 0151G    | 1052    | Trying to drop a constraint that does not belong to requested table.
+| 0151H    | 1053    | Unique index <table-name> could not be created because the column(s) specified contain duplicate data.
+| 0151I    | 1054    | Index <table-name> already exists.
+| 0151J    | 1055    | Table, view, or stored procedure <table-name> already exists.
+| 0151L    | 1057    | The DAM volume specified (<name>) is not available or is not audit protected.
+| 0151M    | 1058    | Lock <table-name> already exists.
+| 0151N    | 1059    | Request failed. Dependent constraint <name> exists.
+| 0151P    | 1061    | Cannot drop metadata catalog <name>.
+| 0151Q    | 1062    | Cannot drop metadata schema <name>.
+| 0151R    | 1063    | Cannot drop metadata index <table-name>.
+| 0151S    | 1064    | Cannot drop metadata view <table-name>.
+| 0151T    | 1065    | Cannot create constraint <name> in metadata schema.
+| 0151U    | 1066    | Cannot create index <table-name> in metadata schema.
+| 0151X    | 1069    | Unable to drop schema <name>.
+| 0151Y    | 1070    | Unable to create object <table-name> (file error <num>).
+| 0151Z    | 1071    | Unable to access object <table-name> (file error <num>).
+| 01520    | 1072    | Unique constraint <name> is disabled; cannot create foreign key constraint <name>.
+| 01521    | 1073    | Only the super ID user can execute INITIALIZE SQL.
+| 01523    | 1075    | Catalog <name> contains at least one schema. The catalog must be empty.
+| 01525    | 1077    | Metadata table <name> does not contain information for view <name>.
+| 01526    | 1078    | The format of the specified location name <name> is invalid.
+| 01527    | 1079    | Unable to prepare the statement.
+| 01528    | 1080    | Duplicate references to column <name> in the create request.
+| 01529    | 1081    | Loading of index <table-name> failed unexpectedly.
+| 0152A    | 1082    | Validation for constraint <name> failed unexpectedly.
+| 0152B    | 1083    | Validation for constraint <name> failed; incompatible data exists in table.
+| 0152C    | 1084    | Invalid default value for column <name>.
+| 0152D    | 1085    | The calculated key length is greater than 255 bytes.
+| 0152E    | 1086    | Lock <table-name> does not exist.
+| 0152F    | 1087    | Lock cannot be granted, conflicting operation is in progress.
+| 0152G    | 1088    | Cannot instantiate object <table-name>, conflicting lock exists.
+| 0152I    | 1090    | Self-referencing constraints are currently not supported.
+| 0152M    | 1094    | Unable to drop object <table-name> because it is not a <name>.
+| 0152N    | 1095    | The partition by column <name> should also be part of the clustering/storage key.
+| 0152Q    | 1098    | Duplicate partition key (<name>) specified for object <name>.
+| 0152R    | 1099    | Column <num> is unnamed. You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.
+| 0152S    | 1100    | Unable to select <table.schema.name>
+| 0152T    | 1101    | Unable to update <table.schema.name>
+| 0152U    | 1102    | Unable to insert rows into <table.schema.name>
+| 0152V    | 1103    | Unable to delete rows from <table.schema.name>
+| 0152W    | 1104    | Default value string too long for column <name>.
+| 0152X    | 1105    |  CREATE TABLE LIKE statement cannot contain both HORIZONTAL PARTITIONS and STORE BY clauses.
+| 0152Y    | 1106    | The specified partition <name> of object <name> does not exist.
+| 01530    | 1108    | The number of columns specified in the view column list, <num>, does not match the degree of the query expression, <num>.
+| 01531    | 1109    | The WITH CHECK OPTION clause appears in the definition of view <table-name>, but the view is not updateable.
+| 01533    | 1111    | Error starting transaction. Table name <name>
+| 01536    | 1114    | Unable to create catalog <name> metadata tables on <name>.
+| 01537    | 1115    | Unable to create label for <name> (file error <num>) <text>.
+| 01538    | 1116    | The current partitioning scheme requires a user-specified primary key on object <name>.
+| 01539    | 1117    | Cannot drop the only partition of the table. There must be at least two partitions available to perform the drop.
+| 0153A    | 1118    | Cannot create object <name> in metadata schema.
+| 0153B    | 1119    | Cannot drop metadata object <name>.
+| 0153C    | 1120    | Attempting to change the audit flags for a table in an unsupported way.
+| 0153D    | 1121    | Attempting to perform a partition add, move, or drop on table <name>. Partition operations are not allowed on tables with vertical partitions, entry sequenced operations, and SYSKEY only partitioned tables.
+| 0153E    | 1122    | The number of specified partition key values (<name>) for object <name> exceeds the number of key columns used, <num>.
+| 0153F    | 1123    | Unable to process the partition key values (<name>) for object <name>. Please verify that the correct key value data types were specified.
+| 0153G    | 1124    | Schema <name> is an unknown version.
+| 0153H    | 1125    | API request version number mismatch.
+| 0153I    | 1126    | Referential integrity is not yet supported. Constraint <name> will not be enforced.
+| 0153J    | 1127    | The specified table <name> is not a base table. Please verify that the correct table was specified.
+| 0153K    | 1128    | Invalid API request. Details: <text>.
+| 0153M    | 1130    | The column requires a default value.
+| 0153O    | 1132    | An added column cannot have both DEFAULT NULL and NOT NULL.
+| 0153P    | 1133    | Only the super ID can perform this operation.
+| 0153Q    | 1134    | Concurrent DDL operations are being performed on the given object. The current operation cannot be performed.
+| 0153R    | 1135    | Clustering key column <name> must be assigned a NOT NULL NOT DROPPABLE constraint.
+| 0153S    | 1136    | For an added column, the PRIMARY KEY clause cannot be NOT DROPPABLE.
+| 0153T    | 1137    | Invalid index status. Details: <text>.
+| 0153U    | 1138    | Invalid input parameter(s). Object name and status are required.
+| 0153V    | 1139    | System-generated column <name> of base table <name> cannot appear in the search condition of a check constraint definition.
+| 0153W    | 1140    | Row-length <num> exceeds the maximum allowed row-length of <num> for table <name>.
+| 0153X    | 1141    | Could not obtain an up-and-audited DAM volume. Please check your system configuration.
+| 0153Y    | 1142    | Attempting to add a column with a NULL, UNIQUE, CHECK, PRIMARY KEY, or FOREIGN KEY constraint defined. This is not supported for a non-audited table.
+| 0153Z    | 1143    | Validation for constraint <name> failed; incompatible data exists in referencing base table <name> and referenced base table <name>. To display the data violating the constraint, please use the following DML statement: <text>
+| 01540    | 1144    | Expected a quoted string in first key clause for column <name> on table <name>, value detected is (<num>).
+| 01541    | 1145    | The catalog name <name> is reserved for the Trafodion metadata.
+| 01542    | 1146    | Unable to alter object <name> because it is not a <name>.
+| 01543    | 1147    | System-generated column <name> of base table <name> cannot appear in a unique or primary key constraint definition.
+| 01544    | 1148    | System-generated column <name> of base table <name> cannot appear in a referential integrity constraint definition.
+| 01551    | 1181    | Unable to drop object <name> (file error <num>).
+| 01552    | 1182    | Cannot instantiate constraint <name>, conflicting lock exists.
+| 01553    | 1183    | Cannot instantiate module <name>, conflicting lock exists.
+| 01554    | 1184    | Insufficient privilege on <name>.
+| 01555    | 1185    | The location name is either invalid or missing.
+| 01556    | 1186    | Column <name> is of type <type>, incompatible with the default value's type, <type>.
+| 01557    | 1187    | The schema name <name> is reserved for the Trafodion metadata.
+| 01558    | 1188    | Unable to create referential integrity constraint <name> for table <name> due to circular dependency: <name>.
+| 01566    | 1222    | Invalid file type <name>.
+| 01568    | 1224    | Invalid data type for routine param <name>.
+| 01569    | 1225    | Error on access to PROCS table. Trafodion error <integer>.
+| 0156A    | 1226    | Error on access to PARAMS table. Trafodion error <integer>.
+| 0156F    | 1231    | Unable to create user-defined routine <string>.
+| 01600    | 2000    | Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
+| 01601    | 2001    | Error or warning <num> occurred while opening or reading from DEFAULTS table <name>. Using <name> values.
+| 01602    | 2002    | Internal error: cannot create Trafodion compiler server.
+| 01603    | 2003    | Internal error: cannot establish connection with MXCMP server.
+| 01604    | 2004    | Internal error: error from MXCMP; cannot work on this query.
+| 01605    | 2005    | Internal error: from compilation, no errors in diagnostics yet for statement: <name>
+| 01606    | 2006    | Internal error: assertion failure (<name>) in file <name> at line <num>.
+| 01608    | 2008    | Internal error: out of virtual memory.
+| 01609    | 2009    | The user transaction must be rolled back (or committed, if that makes sense in the application) before MXCMP can be restarted and proceed.
+| 0160A    | 2010    | Internal IPC error.
+| 0160B    | 2011    | Unable to create server process.  error <num> while resolving program file name <name>.
+| 0160C    | 2012    | Unable to create server process <name>.  error <num>, TPC error = <num>, error detail = <num>. (See  procedure PROCESS_LAUNCH_ for details).
+| 0160D    | 2013    | Unable to create server process <name>.  error <num> on program file.
+| 0160E    | 2014    | Unable to create server process <name>.  error <num> on swap file.
+| 0160F    | 2015    | Unable to create server process <name>. CPU is unavailable ( error <num>).
+| 0160G    | 2016    | Server process <name> was started but had undefined externals.
+| 0160H    | 2017    | Unable to create server process <name>. No more processes (PCBs) available.
+| 0160I    | 2018    | Unable to create server process <name>. Library conflict.
+| 0160J    | 2019    | Unable to create server process <name>. Unable to allocate virtual memory.
+| 0160K    | 2020    | Unable to create server process <name>. Unlicensed privileged program.
+| 0160L    | 2021    | System error <num> in <name> from <name>.
+| 0160M    | 2022    | System error <num> in <name> from <name>, detail <num>.
+| 0160N    | 2023    | Unable to create server process <name>. <name>.
+| 0160P    | 2025    | Unable to create server process <name>. CPU is unavailable; <text>.
+| 0160R    | 2027    | Error <num> while sending a startup message to process <name>.
+| 0160S    | 2028    | Unable to create OSS server process <name>. Insufficient resources.
+| 0160T    | 2029    | Unable to create OSS server process <name>. OSS is not running.
+| 0160X    | 2033    | <text>:  error <num> while communicating with process <name>.
+| 0160Y    | 2034    | <text>:  error <num> while communicating with server process <name>.
+| 0160Z    | 2035    | <text>: Unable to open process <name> (err no = <num>).
+| 01611    | 2037    | <receiving-process>: A message from process <sending-process> was incorrectly formatted and could not be processed.
+| 0161E    | 2050    | <name> is not the name of any DEFAULTS table attribute.
+| 0161F    | 2051    | Invalid <name> option <name> or value '<num>'.
+| 0161G    | 2052    | Optimizer internal counters: <name> <name> <name> <name>.
+| 0161H    | 2053    | ASSERTION FAILURE CAUGHT BY OPTIMIZER! Attempting to recover and produce a plan.
+| 0161J    | 2055    | Invalid value '<num>' for DEFAULTS attribute <name>.
+| 0161K    | 2056    | The value must be a number in the range <num>.
+| 0161L    | 2057    | The value must be a multiple of <num>.
+| 0161M    | 2058    | DEFAULTS attribute <name> is of type <type> but is being converted to <type>.
+| 0161N    | 2059    | Warnings while reading values from DEFAULTS table <name>.
+| 0161O    | 2060    | Procedure <name> has already been defined in this module. The previous definition is being retained and this latest one ignored.
+| 0161P    | 2061    | Static cursor <name> has already been defined in this module. The previous definition, as a static cursor, is being retained and this latest one ignored.
+| 0161Q    | 2062    | Static cursor <name> has already been defined in this module. The previous definition, as a dynamic cursor, is being retained and this latest one ignored.
+| 0161R    | 2063    | Dynamic cursor <name> has already been defined in this module. The previous definition, as a static cursor, is being retained and this latest one ignored.
+| 0161S    | 2064    | Dynamic cursor <name> has already been defined in this module. The previous definition, as a dynamic cursor, is being retained and this latest one ignored.
+| 0161T    | 2065    | Statement <name> was not found in module <name>.
+| 0161U    | 2066    | Cursor <name> was not found in module <name>.
+| 0161V    | 2067    | Descriptor <name> has already been defined in this module. The previous definition is being retained and this latest one ignored.
+| 0161W    | 2068    | A procedure body must be a SELECT, INSERT, UPDATE, DELETE, DECLARE CATALOG, DECLARE SCHEMA, or a static DECLARE CURSOR.
+| 0161X    | 2069    | A static cursor declaration might appear only in the body of a procedure.
+| 0161Y    | 2070    | Invalid statement type in this context.
+| 0161Z    | 2071    | The name <name> has already been declared or defined in this module. The previous definition, as a <name>, is being retained and this latest one ignored.
+| 01620    | 2072    | A simple value specification that is a literal is not yet supported.
+| 01621    | 2073    | Only the super ID user can compile system module <name>.
+| 01622    | 2074    | The name <name> is reserved for future system modules.
+| 01628    | 2080    | Error <num> while reading file: <num> bytes were read from <name> when <num> were expected in module <name>.
+| 01629    | 2081    | Error <num> while opening file <name> for read.
+| 0162A    | 2082    | Error <num> while opening file <name> for write.
+| 0162B    | 2083    | Error <num> while naming or locating file <name>.
+| 0162C    | 2084    | Error <num> while writing <num> bytes to file <name>.
+| 0162D    | 2085    | Error <num> while closing file <name>.
+| 0162E    | 2086    | Unable to purge the file <name>. This file contains the results of a failed compilation and should be purged.
+| 0162I    | 2090    | The command line argument for module name, <name>, is being ignored in favor of module name <name> in file <name>.
+| 0162J    | 2091    | The required module statement was not found in file <name>.
+| 0162K    | 2092    | A module statement has already appeared in this file. The previous definition, <name>, is being retained and this latest one ignored.
+| 0162L    | 2093    | A module timestamp statement was not found in file <name>.
+| 0162M    | 2094    | A module timestamp statement has already appeared in this module. The previous timestamp is being retained and this latest one  ignored.
+| 0162N    | 2095    | Module file <name>, expected to contain module <name>, instead contains <name>.
+| 0162Q    | 2098    | The <name> compilation completed with <num> warnings.
+| 0162R    | 2099    | The <name> compilation failed with <num> errors and <num> warnings.
+| 0162S    | 2100    | Break was received. The compilation has been aborted.
+| 0162T    | 2101    | Compilation failure due to internal error.
+| 0162U    | 2102    | Unable to compile this query with 'MINIMUM' optimization level. Suggestion: Retry with 'MEDIUM' optimization level.
+| 0162V    | 2103    | Unable to compile this query for one/both of the following reasons: a) Use of 'MINIMUM' optimization level, or b) Incompatible Control Query Shape specifications.
+| 0162W    | 2104    |  Unable to compile this query for one of two reasons: a) Incompatible Control Query Shape (CQS) specifications, or b) 'MEDIUM' optimization level is not sufficient to satisfy the CQS in effect. +
+ +
+Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 'MAXIMUM'. Note that for this query, 'MAXIMUM' optimization level might result in a long compile time.
+| 0162X    | 2105    | Unable to compile this query because of incompatible Control Query Shape (CQS) specifications. Suggestion: Inspect the CQS in effect.
+
+| 0162Y    | 2106    | Unable to compile this statement since it is too long. Suggestion: Break up large statements into smaller pieces.
+| 0162Z    | 2107    | Unable to compile this statement. Suggestion: Address the issue(s) raised in the reported warning(s).
+| 01630    | 2108    | Statement was compiled as if query plan caching were off.
+| 0165K    | 2200    | DEFAULTS attribute <name> is read-only.
+| 016P0    | 2900    | in file <name> at line <num>:
+| 01700    | 3000    | An internal error occurred in module <name> on line <number>. DETAILS (<detailed-text>).
+| 01701    | 3001    | Syntax error at or before <SQL-text>.
+| 01702    | 3002    | <name> is not a valid column reference; it has more than 4 name parts.
+| 01703    | 3003    | Length or precision must be greater than zero.
+| 01704    | 3004    | A delimited identifier must contain at least one non-blank character.
+| 01705    | 3005    | A DECLARE CURSOR statement cannot dynamically get its cursor name from a host variable while also statically declaring a cursor specification. A dynamic cursor requires the name of a previously prepared statement, or a host variable containing such a name; a static cursor requires a fixed, static name.
+| 01706    | 3006    | In a dynamic cursor declaration both the cursor and the statement must be named in the same way: both must be literals or both must be string host variable expressions.
+| 01707    | 3007    | In an ALLOCATE CURSOR statement both the cursor and the statement must be named using string host variables.
+| 01708    | 3008    | Precision of <type> UNSIGNED data type, <value>, cannot exceed 9.
+| 01709    | 3009    | DROP ASSERTION statement is not yet supported.
+| 0170A    | 3010    | Character set <name> is not yet supported.
+| 0170B    | 3011    | <name> is not a valid qualified name; it has more than 3 name parts.
+| 0170C    | 3012    | COUNT is the only aggregate function that accepts (\*) as an operand.
+| 0170D    | 3013    | Subtraction is the only operation allowed in the parenthesized expression preceding an interval qualifier.
+| 0170E    | 3014    | Precision of numeric, <value>, cannot exceed 18.
+| 0170F    | 3015    | Scale <value> cannot exceed precision <value>.
+| 0170G    | 3016    | Precision of decimal, <value>, cannot exceed 18.
+| 0170H    | 3017    | Expected an unsigned integer, not <value>.
+| 0170I    | 3018    | Expected an unsigned smallint, not <value>.
+| 0170J    | 3019    | Expected an unsigned number within the parentheses, not <value>.
+| 0170K    | 3020    | Expected an unsigned number as the first operand within the parentheses, not <value>.
+| 0170L    | 3021    | Expected an unsigned number as the second operand within the parentheses, not <value>.
+| 0170M    | 3022    | The <name> operator is not yet supported.
+| 0170N    | 3023    | The COLLATE clause in a sort specification is not yet supported.
+| 0170O    | 3024    | The MATCH PARTIAL clause is not yet supported.
+| 0170P    | 3025    | The format of the subvolume name part in the specified location name <name> is invalid. The subvolume name part must be eight characters long and begin with the letters ZSD.
+| 0170Q    | 3026    | A comma must be used to separate file attributes.
+| 0170R    | 3027    | <name> is not a valid simple name; it has more than one name part.
+| 0170S    | 3028    | Specifying a privilege column list in the INSERT clause is not yet supported.
+| 0170T    | 3029    | <name> is not yet supported in referential integrity constraint definition.
+| 0170U    | 3030    | The PARALLEL EXECUTION clause is not yet supported.
+| 0170V    | 3031    | CASCADE drop behavior is not yet supported.
+| 0170W    | 3032    | The COLUMN clause in the ALTER TABLE statement is not yet supported.
+| 0170X    | 3033    | The MOVE clause in the ALTER TABLE statement is not yet supported.
+| 0170Y    | 3034    | The PARTITION clause in the ALTER TABLE statement is not yet supported.
+| 0170Z    | 3035    | The RENAME clause in the ALTER TABLE statement is not yet supported.
+| 01710    | 3036    | The SET CONSTRAINT clause in the ALTER TABLE statement is not yet supported.
+| 01711    | 3037    | Precision of type <data-type> cannot exceed 18.
+| 01712    | 3038    | PIC X types cannot have leading signs, or any signs at all.
+| 01713    | 3039    | PIC X types do not have any COMP representation.
+| 01714    | 3040    | Precision zero is invalid. Add a '9' to the PICTURE clause.
+| 01715    | 3041    | UNSIGNED is invalid for a numeric or decimal type with a scale greater than 9.
+| 01716    | 3042    | UPSHIFT for a numeric type is invalid.
+| 01717    | 3043    | Precision greater than 18 for a COMP numeric type is invalid.
+| 01718    | 3044    | Invalid interval <value>.
+| 01719    | 3045    | Invalid date <value>.
+| 0171A    | 3046    | Invalid time <value>.
+| 0171B    | 3047    | Invalid timestamp <timestamp.
+| 0171C    | 3048    | Dynamic parameters, such as <name>, are not allowed in a static compilation.
+| 0171D    | 3049    | Host variables, such as <name>, are not allowed in a dynamic compilation.
+| 0171E    | 3050    | The constraint must have the same catalog and schema as the specified table.
+| 0171F    | 3051    | Duplicate HEADING clauses in column definition <name>.
+| 0171G    | 3052    | Duplicate NOT NULL clauses in column definition <name>.
+| 0171H    | 3053    | Duplicate PRIMARY KEY clauses in column definition <name>.
+| 0171I    | 3054    | The NOT DROPPABLE clause is allowed only in PRIMARY KEY and NOT NULL constraint definitions.
+| 0171J    | 3055    | Duplicate DELETE rules specified.
+| 0171K    | 3056    | Duplicate UPDATE rules specified.
+| 0171L    | 3057    | Invalid size value in the ALLOCATE clause.
+| 0171M    | 3058    | The BLOCKSIZE value must be 4096.
+| 0171N    | 3059    | Invalid size value in the MAXSIZE clause.
+| 0171O    | 3060    | Invalid percentage value in the DSLACK clause.
+| 0171P    | 3061    | The format of the specified location name <name> is invalid.
+| 0171Q    | 3062    | Duplicate MAXSIZE clauses in the PARTITION clause.
+| 0171R    | 3063    | Duplicate DSLACK clauses in the PARTITION clause.
+| 0171S    | 3064    | Duplicate ISLACK clauses in the PARTITION clause.
+| 0171T    | 3065    | The primary key constraint cannot be droppable when the STORE BY PRIMARY KEY clause appears in a table definition.
+| 0171V    | 3067    | ALTER TABLE ADD CONSTRAINT allows only DROPPABLE constraints.
+| 0171W    | 3068    | The ALLOCATE and DEALLOCATE clauses cannot coexist in the same ALTER INDEX statement.
+| 0171Y    | 3070    | The [NO]AUDIT clause is not supported.
+| 0171Z    | 3071    | Duplicate [NO]AUDITCOMPRESS clauses.
+| 01720    | 3072    | The BLOCKSIZE clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 01721    | 3073    | Duplicate [NO]BUFFERED clauses.
+| 01722    | 3074    | Duplicate [NO]CLEARONPURGE clauses.
+| 01723    | 3075    | The [NO]COMPRESS clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 01724    | 3076    | Duplicate DEALLOCATE clauses.
+| 01725    | 3077    | The [NO]ICOMPRESS clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 01726    | 3078    | The LOCKLENGTH clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 01727    | 3079    | Duplicate MAXSIZE clauses.
+| 01728    | 3080    | The [NO]SERIALWRITES clause is not supported.
+| 01729    | 3081    | Duplicate ALLOCATE clauses.
+| 0172A    | 3082    | Duplicate [NO]AUDIT clauses.
+| 0172B    | 3083    | Duplicate [NO]AUDITCOMPRESS clauses.
+| 0172C    | 3084    | The BLOCKSIZE clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+| 0172D    | 3085    | Duplicate [NO]BUFFERED clauses.
+| 0172E    | 3086    | Duplicate [NO]CLEARONPURGE clauses.
+| 0172F    | 3087    | The [NO]COMPRESS clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+| 0172G    | 3088    | The ALLOCATE AND DEALLOCATE cannot coexist in the same ALTER TABLE statement.
+| 0172H    | 3089    | The [NO]ICOMPRESS clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+| 0172I    | 3090    | Duplicate LOCKLENGTH clauses.
+| 0172J    | 3091    | The [NO]AUDIT clause is not allowed in the CREATE INDEX statements.
+| 0172K    | 3092    | Duplicate BLOCKSIZE clauses.
+| 0172L    | 3093    | Duplicate DCOMPRESS clauses.
+| 0172M    | 3094    | The DEALLOCATE clause is not allowed in the CREATE INDEX statements.
+| 0172N    | 3095    | Duplicate [NO]ICOMPRESS clauses.
+| 0172O    | 3096    | Duplicate [NO]SERIALWRITES clauses.
+| 0172P    | 3097    | The DEALLOCATE clause is not allowed in the CREATE TABLE statements.
+| 0172Q    | 3098    | Duplicate LOCATION clauses.
+| 0172R    | 3099    | Duplicate FILE ATTRIBUTE(S) clauses.
+| 0172S    | 3100    | Duplicate DSLACK clauses.
+| 0172T    | 3101    | Duplicate ISLACK clauses.
+| 0172U    | 3102    | Duplicate PARALLEL EXECUTION clauses.
+| 0172V    | 3103    | Duplicate PARTITION clauses.
+| 0172W    | 3104    | Only the ADD option is allowed in a PARTITION clause in a CREATE TABLE statement.
+| 0172X    | 3105    | Currently only range, hash and system partitioning are supported.
+| 0172Y    | 3106    | Duplicate PRIMARY KEY clauses.
+| 0172Z    | 3107    | Duplicate LIKE clauses.
+| 01730    | 3108    | The LIKE clause and STORE BY clause cannot coexist in the same statement.
+| 01731    | 3109    | Duplicate STORE BY clauses.
+| 01732    | 3110    | The LIKE clause and ATTRIBUTE(S) clause cannot coexist in the same statement.
+| 01733    | 3111    | The LIKE clause and LOCATION clause cannot coexist in the same statement.
+| 01734    | 3112    | The LIKE clause and PARTITION clause cannot coexist in the same statement.
+| 01735    | 3113    | Error in CONTROL statement: <error>
+| 01736    | 3114    | Transaction access mode READ WRITE is incompatible with isolation level READ UNCOMMITTED.
+| 01737    | 3115    | Duplicate ISOLATION LEVEL clause specified.
+| 01738    | 3116    | Duplicate transaction access mode clause specified.
+| 01739    | 3117    | Duplicate DIAGNOSTICS SIZE specified.
+| 0173A    | 3118    | Identifier too long.
+| 0173B    | 3119    | The WITH LOCAL CHECK OPTION clause is not supported.
+| 0173C    | 3120    | The CREATE ASSERTION statement is not yet supported.
+| 0173D    | 3121    | Partitioned entry-sequenced tables are not yet supported.
+| 0173E    | 3122    | The format of the system name part in the specified location name <name> is invalid.
+| 0173F    | 3123    | The format of the file name part in the specified location name <name> is invalid. The file name part must be eight characters long and end with the digits 00.
+| 0173J    | 3127    | Invalid character in identifier <name>.
+| 0173K    | 3128    | <object-name> is a reserved word. It must be delimited by double-quotes to be used as an identifier.
+| 0173L    | 3129    | Function <name> accepts exactly one operand.
+| 0173M    | 3130    | UNSIGNED option is not supported for LARGEINT type.
+| 0173N    | 3131    | The statement just specified is currently not supported.
+| 0173O    | 3132    | The HEADING for column <name> exceeds the maximum size of 128 characters.
+| 0173P    | 3133    | PERFORM is valid only in COBOL programs.
+| 0173Q    | 3134    | Precision of time or timeStamp, <value>, cannot exceed 6.
+| 0173R    | 3135    | Precision of float, <value>, cannot exceed 54.
+| 0173S    | 3136    | Only LEFT, RIGHT, and FULL OUTER JOIN are valid in {oj . . .}
+| 0173T    | 3137    | UNION JOIN is not yet supported.
+| 0173U    | 3138    | A key-sequenced table with range partitioning requires a FIRST KEY clause.
+| 0173V    | 3139    | A range-partitioned index requires a FIRST KEY clause.
+| 0173W    | 3140    | The isolation level cannot be READ UNCOMMITTED for an INSERT, UPDATE, DELETE, or DDL statement.
+| 0173X    | 3141    | The transaction access mode cannot be READ ONLY for an INSERT, UPDATE, DELETE, or DDL statement.
+| 0173Y    | 3142    | INTO clause host variables are not allowed in a static cursor.
+| 0173Z    | 3143    | BROWSE or READ UNCOMMITTED access is not allowed on a table value constructor.
+| 01741    | 3145    | Positioned UPDATE or DELETE is allowed only in embedded SQL.
+| 01743    | 3147    | In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
+| 01744    | 3148    | Environment variable <name> is being ignored because this version of the code is Release, not Debug. Actual query results will likely not match expected results.
+| 01745    | 3149    | Duplicate WITH CONSTRAINTS phrases in LIKE clause in CREATE TABLE statement.
+| 01746    | 3150    | Duplicate WITH HEADING phrases in LIKE clause in CREATE TABLE statement.
+| 01747    | 3151    | Duplicate WITH HORIZONTAL PARTITIONS phrases in LIKE clause in CREATE TABLE statement.
+| 01749    | 3153    | The FIRST KEY clause is not allowed with hash partitioning.
+| 0174B    | 3155    | The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
+| 0174D    | 3157    | Catalog name is required.
+| 0174E    | 3158    | Invalid DATETIME <name>.
+| 0174F    | 3159    | If you intended <name> to be a character set specifier for a character string literal, you must remove the spaces in front of the single quote delimiter.
+| 0174G    | 3160    | <name> was declared more than once in the procedure parameter list.
+| 0174H    | 3161    | <name> was not declared in the procedure parameter list.
+| 0174I    | 3162    | Procedure parameter <name> was not used.
+| 0174J    | 3163    | Host variable <name> appears more than once in the INTO list. Execution results will be undefined.
+| 0174K    | 3164    | Data type mismatch between output host variable and selected value.
+| 0174L    | 3165    | Min or max precision or exponent value exceeded, <num>.
+| 0174M    | 3166    | Min or max value for float or double value exceeded, <num>.
+| 0174N    | 3167    | Duplicate [ NOT ] DROPPABLE clauses.
+| 0174O    | 3168    | The FOR . . . ACCESS clause is not allowed in a CREATE VIEW statement.
+| 0174P    | 3169    | <name> is not a known collation.
+| 0174R    | 3171    | Transaction statements are not allowed in compound statements.
+| 0174S    | 3172    | EXIT is not allowed in a compound statement.
+| 0174T    | 3173    | UPDATE STATISTICS is not allowed in a compound statement.
+| 0174U    | 3174    | DDL statements are not allowed in compound statements.
+| 0174V    | 3175    | Dynamic SQL statements are not allowed in compound statements.
+| 0174W    | 3176    | Subqueries are not allowed in the IF Condition.
+| 0174X    | 3177    | Character set <name> requires an even number of characters in the length declaration of the data type.
+| 0174Y    | 3178    | One or more of the following external (host-language) data types incorrectly appears within the SQL query or operation: <name>.
+| 0174Z    | 3179    | Collation <name> is not defined on the character set <name>.
+| 01750    | 3180    | STREAM statements are not allowed in compound statements.
+| 01751    | 3181    | Invalid logical name, a three part logical name is required.
+| 01752    | 3182    | Extra semicolon(;) in a compound statement.
+| 01757    | 3187    | Not supported: SET STREAM TIMEOUT per a specific stream.
+| 01759    | 3189    | Cannot set lock timeout on a view.
+| 0175L    | 3201    | EXTERNAL PATH clause is required.
+| 0175M    | 3202    | PARAMETER STYLE clause is required.
+| 0175N    | 3203    | LANGUAGE clause is required.
+| 0175O    | 3204    | EXTERNAL NAME clause is badly formed.
+| 0175P    | 3205    | EXTERNAL NAME clause is required.
+| 0175Q    | 3206    | The name for an object of this type must be fully qualified, or set NAMETYPE ANSI.
+| 0175R    | 3207    | Value for DYNAMIC RESULT SETS must be zero.
+| 0175S    | 3208    | UNSIGNED numeric is not allowed for routine parameter.
+| 01800    | 4000    | Internal error in the query binder.
+| 01801    | 4001    | Column <name> is not found. Tables in scope: <name>. Default schema: <name>.
+| 01802    | 4002    | Column <name> is not found. Table <name> not exposed. Tables in scope: <name>. Default schema: <name>.
+| 01803    | 4003    | Column <name> is not a column in table <name>, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+| 01804    | 4004    | Column name <name> is ambiguous. Tables in scope: <name>. Default schema: <name>.
+| 01805    | 4005    | Column reference <name> must be a grouping column or be specified within an aggregate.
+| 01806    | 4006    | Within an aggregate, all column references must come from the same scope.
+| 01807    | 4007    | The select list index <num> is out of range. It must be between 1 and the number of select expressions, which in this case is <num>.
+| 01808    | 4008    | A subquery is not allowed inside an aggregate function.
+| 01809    | 4009    | An aggregate is not allowed inside an aggregate function.
+| 0180A    | 4010    | There are no columns with the correlation name <name>.
+| 0180B    | 4011    | Ambiguous star column reference <name>.
+| 0180C    | 4012    | Column reference <name> must be a grouping column or be specified within an aggregate. On this grouped table a star reference is not allowed.
+| 0180D    | 4013    | Column <name> is a system column and cannot be updated or inserted into.
+| 0180E    | 4014    | The operands of an INTERSECT must be of equal degree.
+| 0180F    | 4015    | Aggregate functions placed incorrectly: <name>.
+| 0180G    | 4016    | The number of derived columns (<num>) must equal the degree of the derived table (<num>).
+| 0180H    | 4017    | Derived column name <name> was specified more than once.
+| 0180I    | 4018    | Rows cannot be deleted from an entry-sequenced table.
+| 0180J    | 4019    | The select list of a subquery in a select list must be scalar (degree of one).
+| 0180K    | 4020    | Arithmetic operations on row value constructors are not allowed.
+| 0180L    | 4021    | The select list contains a nongrouping non-aggregated column, <name>.
+| 0180M    | 4022    | Target column <name> was specified more than once.
+| 0180N    | 4023    | The degree of each row value constructor (<num>) must equal the degree of the target table column list (<num>).
+| 0180O    | 4024    | Column <name> has no default value, so must be explicitly specified in the insert column list.
+| 0180P    | 4025    | Error while preparing constraint <name> on table <name>.
+| 0180Q    | 4026    | Reading from and inserting into, or updating in, or deleting from the same table, <name>, is not currently supported.
+| 0180R    | 4027    | Table <name> is not insertable.
+| 0180S    | 4028    | Table <name> is not updateable.
+| 0180U    | 4030    | Column <name> is an invalid combination of datetime fields (<num>, <num>, <num>).
+| 0180V    | 4031    | Column <name> is an unknown data type, <num>.
+| 0180W    | 4032    | Column <name> is an unknown class, <num>. It is neither a system column nor a user column.
+| 0180X    | 4033    | Column <name> is a primary or clustering key column and cannot be updated.
+| 0180Y    | 4034    | The operation (<name> <name> <name>) <name> is not allowed.
+| 0180Z    | 4035    | Type <name> cannot be cast to type <type>.
+| 01810    | 4036    | The source field of the EXTRACT function must be of DateTime or Interval type.
+| 01811    | 4037    | Field <name> cannot be extracted from a source of type <type>.
+| 01812    | 4038    | The operand of an AVG or SUM function must be numeric or interval.
+| 01813    | 4039    | Column <name> is of type <type>, incompatible with the value's type, <type>.
+| 01814    | 4040    | The operands of a BETWEEN predicate must be of equal degree.
+| 01815    | 4041    | Type <name> cannot be compared with type <name>.
+| 01816    | 4042    | The operands of a comparison predicate must be of equal degree.
+| 01817    | 4043    | The operand of function <name> must be character.
+| 01818    | 4044    | Collation <name> does not support the <name> predicate or function.
+| 01819    | 4045    | The operand of function <name> must be numeric.
+| 0181A    | 4046    | The operands of function <name> must be exact numeric.
+| 0181B    | 4047    | The operands of function <name> must have a scale of 0.
+| 0181C    | 4048    | The third operand of a ternary comparison operator must be of type BOOLEAN, not <name>.
+| 0181D    | 4049    | A CASE expression cannot have a result data type of both <type> and <type>.
+| 0181E    | 4050    | The operands of the <name> predicate must be comparable character data types (that is, of the same character set and collation).
+| 0181F    | 4051    | The first operand of function <name> must be character.
+| 0181G    | 4052    | The second operand of function <name> must be numeric.
+| 0181H    | 4053    | The third operand of function <name> must be numeric.
+| 0181J    | 4055    | The select lists or tuples must have comparable data types. <type> and <type> are not comparable.
+| 0181K    | 4056    | Exposed name <name> appears more than once.
+| 0181L    | 4057    | Correlation name <name> conflicts with qualified identifier of table <name>.
+| 0181N    | 4059    | The first operand of function <name> must be numeric.
+| 0181O    | 4060    | Reading from and inserting into, or updating in, or deleting from the same table, <name>, is not currently supported. <name> is contained by view(s) <name>.
+| 0181P    | 4061    | Rows cannot be inserted into, or updated in, an individual table partition.
+| 0181Q    | 4062    | The preceding error actually occurred in function <name>.
+| 0181R    | 4063    | The operands of function <name> must be comparable character data types (that is, of the same character set and collation).
+| 0181S    | 4064    | The operands of function <name> must be compatible character data types (that is, of the same character set).
+| 0181U    | 4066    | The operands of a UNION must be of equal degree.
+| 0181V    | 4067    | The operands of function <name> must be character data types.
+| 0181W    | 4068    | The operand of function <name> must contain an even number of characters.
+| 0181X    | 4069    | Column <name> uses an unsupported collation, <name>.
+| 0181Y    | 4070    | The operand of function <name> must be exact numeric.
+| 0181Z    | 4071    | The first operand of function <name> must be a datetime.
+| 01820    | 4072    | The operand of function <name> must be a datetime containing a <name>.
+| 01821    | 4073    | The COLLATE clause might appear only after an expression of character data type, not <name>.
+| 01822    | 4074    | CONTROL QUERY successful.
+| 01823    | 4075    | Division by zero in constant expression <name>.
+| 01824    | 4076    | Overflow in constant expression <name>.
+| 01825    | 4077    | Function <name> accepts only one or two operands.
+| 01826    | 4078    | Function <name> does not accept a weight operand.
+| 01827    | 4079    | The operands of function <name> must be numeric.
+| 0182A    | 4082    | Table <name> does not exist or is inaccessible.
+| 0182C    | 4084    | SQL object <name> is corrupt.
+| 0182D    | 4085    | File organization <type> of object <name> is not supported.
+| 0182E    | 4086    | Environment variable or define <name> does not exist.
+| 0182F    | 4087    | Prototype value '<name>' is not a valid qualified name.
+| 0182G    | 4088    | The number of values in each TRANSPOSE item of a TRANSPOSE set must be equal.
+| 0182H    | 4089    | Check constraint <name> contains a subquery, which is not yet supported.
+| 0182L    | 4093    | The number of output dynamic parameters (<num>) must equal the number of selected values (<num>).
+| 0182M    | 4094    | The number of output host variables (<num>) must equal the number of selected values (<num>).
+| 0182N    | 4095    | A DEFAULT whose value is NULL is not allowed in <name>.
+| 0182O    | 4096    | A DEFAULT specification is currently allowed only when simply contained in the VALUES list of an INSERT.
+| 0182P    | 4097    | A NULL operand is not allowed in function <name>.
+| 0182Q    | 4098    | A NULL operand is not allowed in operation <name>.
+| 0182R    | 4099    | A NULL operand is not allowed in predicate <name>.
+| 0182S    | 4100    | A NULL value is not allowed in a select list unless it is CAST to some data type.
+| 0182T    | 4101    | If <name> is intended to be a further table reference in the FROM clause, the preceding join search condition must be enclosed in parentheses.
+| 0182U    | 4102    | The FIRST/ANY n syntax cannot be used with in an outermost SELECT statement.
+| 0182W    | 4104    | If a character literal was intended, you must use the single quote delimiter instead of the double: <name> instead of <name>.
+| 0182X    | 4105    | Unknown translation.
+| 0182Y    | 4106    | The character set for the operand of function <name> must be <name>.
+| 0182Z    | 4107    | Column <name> has no default value, so DEFAULT cannot be specified.
+| 01830    | 4108    | Inside a ROWS SINCE, another sequence function contained an invalid reference to the THIS function.
+| 01831    | 4109    | Sequence functions placed incorrectly: <name>.
+| 01832    | 4110    | The query contains sequence functions but no SEQUENCE BY clause: <name>.
+| 01833    | 4111    | The query contains a SEQUENCE BY clause but no sequence functions.
+| 01834    | 4112    | Absolute and relative sampling cannot occur in the same BALANCE expression.
+| 01835    | 4113    | The sample size for <name> Sampling must be <num>.
+| 01836    | 4114    | An absolute sample size must have a scale of zero.
+| 01837    | 4115    | The sample size must be less than or equal to the sample period.
+| 01838    | 4116    | The second operand of function <name> is invalid.
+| 01839    | 4117    | The cursor query expression might be nonupdateable.
+| 0183A    | 4118    | The cursor query expression is not updateable.
+| 0183C    | 4120    | In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query. Column in error: <name>.
+| 0183D    | 4121    | In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query. Column in error: <name>. Table in scope: <name>.
+| 0183E    | 4122    | NULL cannot be assigned to NOT NULL column <name>.
+| 0183F    | 4123    | NULL cannot be cast to a NOT NULL data type.
+| 0183G    | 4124    | More than one table will be locked: <name>.
+| 0183H    | 4125    | The select list of a subquery in a row value constructor, if the subquery is one of several expressions rather than the only expression in the constructor, must be scalar (degree of one).
+| 0183I    | 4126    | The row value constructors in a VALUES clause must be of equal degree.
+| 0183J    | 4127    | Type <type> cannot be assigned to type <type>.
+| 0183K    | 4128    | Cannot retrieve default volume and subvolume information from =_DEFAULTS define, DEFINEINFO error <num>.
+| 0183Q    | 4134    | The operation (<name>) is not allowed. Try UNION ALL instead.
+| 01846    | 4150    | Primary key of table expression <name> must be used for join with embedded <name> expression. Tables in scope: <name>.
+| 01847    | 4151    | Stream access supported only on updateable views <name>.
+| 01848    | 4152    | Table <name> cannot be both read and updated.
+| 01849    | 4153    | Statement might not compile due to an order requirement on stream expression.
+| 0184A    | 4154    | Statement might not compile due to an order requirement on embedded <name> expression.
+| 0184D    | 4157    | Inner relation of left join cannot be stream expression. Tables in scope: <name>.
+| 0184E    | 4158    | Join of stream expressions not supported. Tables in scope: <name>.
+| 0184F    | 4159    | Intersection of stream expressions not supported. Tables in scope: <name>.
+| 0184G    | 4160    | Intersection between embedded <name> expression and embedded <name> expression not supported. Tables in scope: <name>, <name>.
+| 0184H    | 4161    | Union between embedded <name> expression and embedded <name> expression not supported. Tables in scope: <name>, <name>.
+| 0184I    | 4162    | Groupby not supported for stream expression. Tables in scope: <name>.
+| 0184J    | 4163    | Groupby not supported for embedded <name> expression. Tables in scope: <name>.
+| 0184K    | 4164    | Outer relation of right join cannot be embedded <name> expression. Tables in scope: <name>.
+| 0184L    | 4165    | Outer relation of right join cannot be stream expression. Tables in scope: <name>.
+| 0184M    | 4166    | ORDER BY clause not supported in UNION of two streams. Tables in scope: <name>, <name>.
+| 0184N    | 4167    | Embedded <name> statements not supported in subqueries.
+| 0184O    | 4168    | Stream expressions not supported in subqueries.
+| 0184P    | 4169    | Embedded DELETE statements not allowed when using DECLARE . . . FOR UPDATE clause.
+| 0184Q    | 4170    | Stream expressions not supported for insert statements.
+| 0184R    | 4171    | Embedded <name> statements not supported in INSERT statements.
+| 0184T    | 4173    | Stream expression not supported for top level UPDATE statements.
+| 0184U    | 4174    | JOIN_ORDER_BY_USER prevented compiler from reordering query tree.
+| 0184V    | 4175    | Join between embedded <name> expression and embedded <name> expression not supported. Tables in scope: <name>.
+| 0184W    | 4176    | Join between stream expression and embedded <name> expression not supported. Tables in scope: <name>.
+| 0184X    | 4177    | Update of <name> column <name> not permitted on rollback.
+| 0184Y    | 4178    | Update of variable length column <name> not permitted on rollback.
+| 0184Z    | 4179    | SEQUENCE BY not supported for stream expressions.
+| 01850    | 4180    | Stream expression not supported for top level DELETE statement.
+| 0185K    | 4200    | Stream expressions not supported for compound statements.
+| 0185L    | 4201    | Embedded <type> expression not supported for compound statements.
+| 0185M    | 4202    | SEQUENCE BY not supported for embedded <type> expressions.
+| 0185N    | 4203    | INSERT/UPDATE/DELETE operation on nonaudited table <name> requires index maintenance which might cause the index(es) to become corrupt.
+| 0185O    | 4204    | Stream access supported only for key-sequenced tables. Table: <name>.
+| 0185P    | 4205    | Embedded <type> supported only for key-sequenced tables. Table: <name>.
+| 0185Q    | 4206    | Embedded <type> supported only for updateable views. View: <name>.
+| 0185R    | 4207    | Index <name> and other indexes covering a subset of columns do not cover all output values of stream.
+| 0185S    | 4208    | Index <name> and other indexes covering a subset of columns do not cover all columns referenced in where clause of stream.
+| 0185T    | 4209    | Update of nullable column <name> not permitted on rollback.
+| 0185U    | 4210    | Embedded UPDATE/DELETE statements are not supported within an IF statement.
+| 0185W    | 4212    | <table-name> cannot be used to satisfy order requirement on the stream because it is partitioned.
+| 0185X    | 4213    | Use of rowsets in a predicate with embedded UPDATE/DELETE not supported.
+| 0185Y    | 4214    | The SET ON ROLLBACK clause is not allowed on a non-audited table. Table: <name>.
+| 0185Z    | 4215    | Stream access is not allowed on a nonaudited table. Table: <name>.
+| 01860    | 4216    | The FIRST/ANY n syntax cannot be used with an embedded update or embedded DELETE statement.
+| 01861    | 4217    | <text>
+| 0188C    | 4300    | Invalid usage of procedure <procedure-name> - A UDR was invoked within a trigger.
+| 0188E    | 4302    | Procedure <procedure-name> expects <value-1> parameters but was called with <value-2> parameters.
+| 0188F    | 4303    | The supplied type for parameter value of routine <routine-name> was <type-name-1> which is not compatible with the expected type <type-name-2>.
+| 0188G    | 4304    | Host variable or dynamic parameter <parameter-name> is used in more than one OUT or INOUT parameter for routine routine-name. Results might be unpredictable.
+| 0188H    | 4305    | Parameter <value> for used defined routine <routine-name> is an OUT or INOUT parameter and must be a host variable or a dynamic parameter.
+| 0188I    | 4306    | A CALL statement is not allowed within a compound statement.
+| 0188J    | 4307    | Rowset parameters are not allowed in a CALL statement.
+| 0188K    | 4308    | Internal error: unsupported SQL data type <value> specified for a CALL statement parameter.
+| 01900    | 5000    | Internal error in the query normalizer.
+| 01I00    | 6000    | Internal error in the query optimizer.
+| 01I01    | 6001    | DISTINCT aggregates can be computed only for one column per table expression.
+| 01I02    | 6002    | The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid values. If you have manually modified the metadata table, then you should undo your changes using the CLEAR option in UPDATE STATISTICS.
+| 01I07    | 6007    | Multi-column statistics for columns <name> from table <name> were not available; as a result, the access path chosen might not be the best possible.
+| 01I08    | 6008    | Statistics for column <name> were not available; as a result, the access path chosen might not be the best possible.
+| 01J00    | 7000    | Internal error in the code generator in file <name> at line <num>: <text>.
+| 01J01    | 7001    | Invalid default value <name> for column <name>.
+| 01J03    | 7003    | A plan using cluster sampling could not be produced for this query.
+| 01K01    | 8001    | Internal executor error.
+| 01K02    | 8002    | The current nowaited operation is not complete.
+| 01K03    | 8003    | The descriptor is locked by another nowaited operation.
+| 01K04    | 8004    | Trying to open a statement or cursor that is not in the closed state.
+| 01K05    | 8005    | Trying to fetch from a cursor that is not in the open state.
+| 01K06    | 8006    | The stream timed out, but the cursor is still open.
+| 01K07    | 8007    | The operation has been canceled.
+| 01K08    | 8008    | Catalog name <name> is invalid.
+| 01K09    | 8009    | Schema name <name> is invalid.
+| 01K0A    | 8010    | Default catalog name: <name>. Default schema name: <name>.
+| 01K0B    | 8011    | SELECT statement inside compound (BEGIN . . . END) statement returns more than one row.
+| 01K0C    | 8012    | Encoding of CONTROL QUERY DEFAULTs: <name>.
+| 01K0D    | 8013    | Trying to update or delete from a cursor that is not in the fetched state.
+| 01K0E    | 8014    | A SELECT statement within a compound statement did not return any row.
+| 01K0F    | 8015    | Aborting transaction because a compound statement performed an update operation followed by a SELECT statement that did not return any row.
+| 01K0G    | 8016    | An attempt was made to access <name> which has a system version that is incompatible with the version of the accessing software.
+| 01K0H    | 8017    | Explain information is not available for this query.
+| 01K2S    | 8100    | Define <name> does not exist
+| 01K2T    | 8101    | The operation is prevented by check constraint <name> on table <name>.
+| 01K2U    | 8102    | The operation is prevented by a unique constraint.
+| 01K2V    | 8103    | The operation is prevented by referential integrity constraint <name> on table <name>.
+| 01K2W    | 8104    | The operation is prevented by the check on view <name> cascaded from the check option on <name>.
+| 01K2X    | 8105    | The operation is prevented by the check option on view <name>.
+| 01K3W    | 8140    | The statement was canceled, to test cancel processing. File <name> at line <num>.
+| 01K3X    | 8141    | An error was artificially injected, to test error handling. File <name> at line <num>.
+| 01K8C    | 8300    | Late name resolution failed.
+| 01K8D    | 8301    | Late name resolution failed. File system error <num> on file <name>.
+| 01K8E    | 8302    | Late name resolution failed. SQLCODE error <num> from <name>.
+| 01KB7    | 8403    | The length argument of function SUBSTRING cannot be less than zero or greater than source string length.
+| 01KB8    | 8404    | The trim character argument of function TRIM must be one character in length.
+| 01KB9    | 8405    | The operand of function CONVERTTIMESTAMP is out of range.
+| 01KBB    | 8407    | The operand of function JULIANTIMESTAMP is out of range.
+| 01KBD    | 8409    | The escape character argument of a LIKE predicate must be one character in length.
+| 01KBE    | 8410    | An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
+| 01KBF    | 8411    | A numeric overflow occurred during an arithmetic computation or data conversion.
+| 01KBG    | 8412    | An input character host variable is missing its null terminator.
+| 01KBH    | 8413    | The string argument contains characters that cannot be converted.
+| 01KBI    | 8414    | The attempted conversion is not supported on this platform.
+| 01KBJ    | 8415    | The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+| 01KBK    | 8416    | A datetime expression evaluated to an invalid datetime value.
+| 01KBL    | 8417    | An error occurred during the evaluation of a USER function.
+| 01KBM    | 8418    | The USER function is not supported on this platform.
+| 01KBN    | 8419    | An arithmetic expression attempted a division by zero.
+| 01KBO    | 8420    | Missing indicator parameter for a NULL value.
+| 01KBP    | 8421    | NULL cannot be assigned to a NOT NULL column.
+| 01KBQ    | 8422    | The provided INTERVAL is not valid and cannot be converted.
+| 01KBR    | 8423    | The provided field number is not valid.
+| 01KBS    | 8424    | Function <name> is not yet supported.
+| 01KBT    | 8425    | NULL cannot be assigned to a DEFAULT NULL NOT NULL column.
+| 01KBV    | 8427    | <text>
+| 01KBW    | 8428    | The argument to function <name> is not valid.
+| 01KBX    | 8429    | The preceding error actually occurred in function <name>.
+| 01KFA    | 8550    | Error <num> was returned by the Data Access Manager.
+| 01KFB    | 8551    | Error <num> was returned by the Distribution Service on <name>.
+| 01KFC    | 8552    | Error <num> was returned by the Distribution Service while fetching the version of the system <name>.
+| 01KFD    | 8553    | Stream overflow; subscription rate has fallen too far behind publishing rate.
+| 01KFU    | 8570    | Insufficient memory to build query.
+| 01KFV    | 8571    | Insufficient memory to execute query.
+| 01KFW    | 8572    | The statement has incurred a fatal error and must be deallocated.
+| 01KFX    | 8573    | The user does not have <name> privilege on table or view <name>.
+| 01KFY    | 8574    | An OPEN was blown away on table <name>.
+| 01KFZ    | 8575    | Timestamp mismatch on table <name>.
+| 01KG0    | 8576    | Statement was recompiled.
+| 01KG1    | 8577    | Table, index, or view <name> not found.
+| 01KG2    | 8578    | Similarity check passed.
+| 01KG3    | 8579    | Similarity check failed: <name>
+| 01KGP    | 8601    | Error returned from file system while locking/unlocking.
+| 01KGQ    | 8602    | The file system reported error <num> on a lock/unlock operation.
+| 01KGR    | 8603    | Trying to begin a transaction that has already been started.
+| 01KGS    | 8604    | Transaction subsystem <name> returned error <num> while starting a transaction.
+| 01KGT    | 8605    | Committing a transaction which has not started.
+| 01KGU    | 8606    | Transaction subsystem <name> returned error <num> on a commit transaction.
+| 01KGV    | 8607    | Rolling back a transaction that has not started.
+| 01KGW    | 8608    | Transaction subsystem <name> returned error <num> on rollback transaction.
+| 01KGX    | 8609    | Waited rollback performed without starting a transaction.
+| 01KGY    | 8610    | Transaction subsystem <name> reported error <num> on a waited rollback transaction.
+| 01KH0    | 8612    | Transaction mode cannot be set if the transaction is already running.
+| 01KH1    | 8613    | SQL cannot commit or rollback a transaction that was started by application.
+| 01KH2    | 8614    | SQL cannot begin a transaction when multiple contexts exist.
+| 01KJG    | 8700    | An assertion failure or out-of-memory condition occurred during parallel execution.
+| 01KJQ    | 8710    | Error <num> returned by Measure when attempting to update SQL counters.
+| 01KM9    | 8801    | Trying to allocate a descriptor that already exists in the current context.
+| 01KMA    | 8802    | Trying to allocate a statement that already exists in the current context.
+| 01KMB    | 8803    | The input descriptor provided does not exist in the current context.
+| 01KMC    | 8804    | The input statement provided does not exist in the current context.
+| 01KMD    | 8805    | Trying to <action> a descriptor that is not allocated with AllocDesc() call.
+| 01KME    | 8806    | Trying to <action> a statement that is not allocated with AllocStmt() call.
+| 01KMF    | 8807    | Trying to allocate more than <num> entries for a descriptor.
+| 01KMG    | 8808    | Module file <name> contains corrupted or invalid data.
+| 01KMH    | 8809    | Unable to open the module file <name>.
+| 01KMJ    | 8811    | Trying to close a statement that is either not in the open state or has not reached EOF.
+| 01KMK    | 8812    | Trying to execute a statement that is not in the closed state.
+| 01KML    | 8813    | Trying to fetch from a statement that is in the closed state.
+| 01KMM    | 8814    | The transaction mode at run time (<num>) differs from that specified at compile time (<num>).
+| 01KMN    | 8815    | Error while building the TCB tree when executing the statement.
+| 01KMO    | 8816    | Error while executing the TCB tree.
+| 01KMP    | 8817    | Error while fetching from the TCB tree.
+| 01KMQ    | 8818    | Error from root_tdb describe.
+| 01KMR    | 8819    | Begin transaction failed while preparing the statement.
+| 01KMS    | 8820    | Transaction commit failed while closing the statement.
+| 01KMT    | 8821    | Rollback transaction failed during the process of fetching the statement.
+| 01KMU    | 8822    | Unable to prepare the statement.
+| 01KMV    | 8823    | Internal error: IO requests are waiting for <name> message in the IpcMessageStream.
+| 01KMW    | 8824    | The input <module-id> does not have a module name.
+| 01KMX    | 8825    | Module is already added into the current context.
+| 01KMY    | 8826    | Unable to add the module.
+| 01KMZ    | 8827    | Unable to send the request <name>.
+| 01KN0    | 8828    | Out of memory while creating the <name>.
+| 01KN1    | 8829    | Trying to set descriptor item for an entry that is either invalid or greater than the maximum entry count for that descriptor.
+| 01KN2    | 8830    | There is no current context.
+| 01KN3    | 8831    | Either no current context or the module to which the statement belongs is not added to the current context.
+| 01KN4    | 8832    | Transaction has not been started.
+| 01KN5    | 8833    | The input parameter is an invalid SQL transaction command.
+| 01KN6    | 8834    | Unable to find Trafodion installation directory. Operating system error <num>.
+| 01KN7    | 8835    | Invalid SQL descriptor information requested.
+| 01KN8    | 8836    | Invalid update column for cursor.
+| 01KN9    | 8837    | Invalid user id.
+| 01KNA    | 8838    |  Unable to receive reply from MXCMP, possibly caused by internal errors when compiling SQL statements, processing DDL statements, or executing the built in stored procedures.
+| 01KNB    | 8839    | Transaction was aborted.
+| 01KNC    | 8840    | Object name provided to CLI is invalid.
+| 01KND    | 8841    | User application committed or aborted a transaction started by SQL. This transaction needs to be committed or aborted by calling SQL COMMIT or ROLLBACK WORK.
+| 01KNE    | 8842    | The cursor, <name>, referenced by this statement is not found or is not updateable.
+| 01KNF    | 8843    | Trying to retrieve an item, <num>, that is out of range.
+| 01KNG    | 8844    | A transaction started by SQL that was committed or aborted by user application from outside of SQL, has now been cleaned up.
+| 01KNH    | 8845    | Internal error: root_tcb is null.
+| 01KNI    | 8846    | Empty SQL statement.
+| 01KNK    | 8848    | Cancel on DDL statements or stored procedures is not supported.
+| 01KNM    | 8850    | The table specified in this cursor update or DELETE statement is different than the table specified in the declare cursor statement.
+| 01KNN    | 8851    | CLI Parameter bound check error.
+| 01KNO    | 8852    | Holdable cursors are supported only for streaming cursors and embedded UPDATE/DELETE cursors.
+| 01KNP    | 8853    | Invalid attribute definition.
+| 01KNQ    | 8854    | Invalid attribute value.
+| 01KNR    | 8855    | Statement attribute cannot be set now.
+| 01KNS    | 8856    | Invalid attribute value. INPUT_ARRAY_MAXSIZE must be positive.
+| 01KNU    | 8858    | The value:(<num>) passed in through input a host variable/parameter is an invalid SQL identifier
+| 01KNV    | 8859    | There are pending insert, delete, or update operations.
+| 01KNW    | 8860    | Module file <name> has obsolete module header.
+| 01KNX    | 8861    | Module file <name> has obsolete descriptor location table header.
+| 01KNY    | 8862    | Module file <name> has obsolete descriptor location table entry.
+| 01KNZ    | 8863    | Module file <name> has obsolete descriptor header.
+| 01KO0    | 8864    | Module file <name> has obsolete descriptor entry.
+| 01KO1    | 8865    | Module file <name> has obsolete procedure location table header.
+| 01KO2    | 8866    | Module file <name> has obsolete procedure location table entry.
+| 01KO3    | 8867    | Error while reading from file <name>.
+| 01KO4    | 8868    | Unable to create context when current transaction is implicitly started by SQL.
+| 01KO5    | 8869    | The specified file number is not a QFO, or the file number is not internally associated with a QFO object (CLI internal error).
+| 01KO6    | 8870    | The current statement is not associated with any QFO.
+| 01KO7    | 8871    | Nowait tag is not specified in the <statement-id>.
+| 01KO8    | 8872    | Unable to execute a new operation while there is another nowaited operation pending.
+| 01KO9    | 8873    | The current statement is already associated with a QFO.
+| 01KOG    | 8880    | Cannot remove the current context.
+| 01KOH    | 8881    | The specified CLI context handle is not found
+| 01KOI    | 8882    | Containing SQL not permitted.
+| 01KOJ    | 8883    | The current context has violation checking functions disabled. Use SQL_EXEC_SetUdrAttributes_Internal() to enable it.
+| 01KOK    | 8884    | Prohibited SQL statement attempted.
+| 01KOQ    | 8890    | The SQL compiler failed to initialize properly. Query results might differ from what is expected, due to different compiler defaults.
+| 01KOR    | 8891    | Non-ASCII character host variable type for <name> field.
+| 01KOT    | 8893    | The statement argument count does not match the descriptor entry count.
+| 01KOU    | 8894    | Argument <argument-name> of CLI function <function-name> is reserved for future use and must be set to <string> when calling the function.
+| 01KOX    | 8897    | RPC exception in CLI request from non-trusted shadow client to trusted shadow server.
+| 01KOY    | 8898    | Internal error in CLI.
+| 01KP1    | 8901    | The MXUDR server for this statement is no longer running. The statement will be assigned a new MXUDR server if it is executed again.
+| 01KP2    | 8902    | Internal error: MXUDR returned an invalid UDR handle.
+| 01KP3    | 8903    | An attempt was made by the Trafodion to kill the MXUDR server for this statement <process-name>. PROCESS_STOP_ returned <value>.
+| 01KP4    | 8904    | Unable to receive reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
+| 01KP6    | 8906    | An invalid or corrupt MXUDR reply could not be processed, possibly due to memory corruption in MXUDR while executing friendly user-defined routines or an internal error in Trafodion.
+| 01L5K    | 9200    | UPDATE STATISTICS encountered an error from statement <name>.
+| 01L5L    | 9201    | Unable to DROP object <name>.
+| 01L5M    | 9202    | UPDATE STATISTICS has located previously generate histogram that are not being regenerated. This might affect the plans that will be generated. Missing column lists are <column-list>.
+| 01L5N    | 9203    | Column names must be unique when specified in column list: (<name>).
+| 01L5O    | 9204    | Invalid option <option> specified. Value must be <range>.
+| 01L5P    | 9205    | UPDATE STATISTICS for object <name> is not supported.
+| 01L5Q    | 9206    | You are not authorized to read/write object <name>. Verify that you have the necessary access privileges.
+| 01L5R    | 9207    | You are not allowed to generate histogram statistics on an ISO88591 CHARACTER SET column which contains a null terminator character. You need to exclude this column from the column group list in UPDATE STATISTICS.
+| 01L5S    | 9208    | Unable to access column definitions.
+| 01L5T    | 9209    | Column name <name> does not exist in the table.
+| 01L5U    | 9210    | One of the column data types is not supported by UPDATE STATISTICS. You need to exclude this column from the column group list in UPDATE STATISTICS.
+| 01L5W    | 9212    | Cardinality statistics will be more accurate if you use SET ROWCOUNT option in the SAMPLE clause.
+| 01L5X    | 9213    | If you intend to update histogram statistics for columns, you must specify a column group list in the statement.
+| 01L5Y    | 9214    | Unable to CREATE object <name>.
+| 01L5Z    | 9215    | UPDATE STATISTICS encountered an internal error (<location>).
+| 01M01    | 10001   | Sort Error: No error text is defined for this error
+| 01M03    | 10003   | Sort Error: Warning: Scratch File EOF
+| 01M04    | 10004   | Sort Error: Merge is disallowed for Sort
+| 01M05    | 10005   | Sort Error: Unexpected error value. Check error
+| 01M06    | 10006   | Sort Error: Previous IO failed
+| 01M07    | 10007   | Sort Error: Error writing to Scratch File
+| 01M08    | 10008   | Sort Error: Invalid sort algorithm selected
+| 01M0A    | 10010   | Sort Error: Run number is invalid
+| 01M0B    | 10011   | Sort Error: Error reading Scratch File
+| 01M0C    | 10012   | Sort Error: Scratch Block number is invalid
+| 01M0D    | 10013   | Sort Error: No fixed disks to sort on
+| 01M0E    | 10014   | Sort Error: No memory to allocate scratch space
+| 01M0F    | 10015   | Sort Error: PROCESSHANDLE_GETMINE_ failed
+| 01M0G    | 10016   | Sort Error: PROCESSHANDLE_DECOMPOSE_ failed
+| 01M0H    | 10017   | Sort Error: DEVICE_GETINFOBYLDEV_ failed
+| 01M0I    | 10018   | Sort Error: FILENAME_FINDSTART_ failed
+| 01M0J    | 10019   | Sort Error: FILENAME_FINDNEXT_ failed
+| 01M0K    | 10020   | Sort Error: FILENAME_FINDFINISH_ failed
+| 01M0L    | 10021   | Sort Error: FILE_GETINFOLISTBYNAME_ failed
+| 01M0M    | 10022   | Sort Error: FILE_CREATE failed
+| 01M0N    | 10023   | Sort Error: FILE_OPEN_ failed
+| 01M0O    | 10024   | Sort Error: SetMode failed
+| 01M0O    | 10024   | Sort Error: SetMode failed
+| 01M0Q    | 10026   | Sort Error: AWAITIOX failed
+| 01M0R    | 10027   | Sort Error: FILE_GETINFOLIST failed
+| 01M0S    | 10028   | Sort Error: POSITION failed
+| 01M0T    | 10029   | Sort Error: FILE_GETINFO_ failed
+| 01M18    | 10044   | Sort Error: IO did not complete
+| 01M1B    | 10047   | Sort Error: Wrong length read
+| 01N2T    | 11101   | MXUDR: Unknown message type: <value>.
+| 01N2V    | 11103   | MXUDR: Invalid routine handle: <string>.
+| 01N2W    | 11104   | MXUDR: CLI Error: <error-text>.
+| 01N2X    | 11105   | MXUDR: Invalid Language Manager param mode. Parameter <parameter-value>.
+| 01N30    | 11108   | MXUDR: Unable to allocate memory for object <object-name>.
+| 01N32    | 11110   | MXUDR: Unexpected error during message processing: <string>.
+| 01N33    | 11111   | MXUDR: Internal error: <value>.
+| 01N35    | 11113   | MXUDR: Internal error: An unexpected UNLOAD request arrived for UDR handle <string>.
+| 01N5L    | 11201   | Language Manager initialization failed. Details: Error occurred while loading Java System Class <class-name>.
+| 01N5M    | 11202   | Language Manager initialization failed. Details: Unable to initialize JVM.
+| 01N5N    | 11203   | The Language Manager failed to create its class loader, possibly due to corrupt LmClassLoader.class file.
+| 01N5P    | 11205   | Java class <class-file-name> was not found in external path <path-name>.
+| 01N5Q    | 11206   | Java class <class-file-name> failed to initialize.
+| 01N5R    | 11207   | Java method <method-name> was not found in Java class <class-file-name>.
+| 01N5S    | 11208   | Specified signature is invalid. Reason: The list of parameter types must be enclosed in parentheses.
+| 01N5T    | 11209   | Specified signature is invalid. Reason: the number of parameters <value> must match the number of parameters in Java method.
+| 01N5U    | 11210   | Specified signature is invalid. Reason: Missing [ ] for OUT/INOUT parameter at position <value>.
+| 01N5V    | 11211   | Specified signature is invalid. Reason: Unknown parameter type used at position <value>.
+| 01N5W    | 11212   | Specified signature is invalid. Reason: Java signature size is more than supported.
+| 01N5X    | 11213   | Specified signature is invalid. Reason: A return type must not be specified.
+| 01N5Z    | 11215   | Java execution: Invalid null input value at parameter position <value>.
+| 01N60    | 11216   | Java execution: Data overflow occurred while retrieving data at parameter position <parameter-number>.
+| 01N61    | 11217   | Java execution: Data overflow occurred while retrieving data at parameter position <parameter-number>. Value is truncated.
+| 01N62    | 11218   | A Java method completed with an uncaught Java exception. Details: <string>.
+| 01N63    | 11219   | A Java method completed with an uncaught java.sql.SQLException. Details: <string>.
+| 01N64    | 11220   | A Java method completed with an uncaught java.sql.SQLException with invalid SQLSTATE. The uncaught exception had an SQLCODE of <SQLCODE-value> and SQLSTATE of <SQLSTATE-value>. Details: <string>.
+| 01N65    | 11221   | Language Manager is out of memory <string>.
+| 01N66    | 11222   | The operation failed because the Java Virtual Machine ran out of memory.
+| 01N67    | 11223   | Language Manager encountered internal error <detail-text>.
+| 01N68    | 11224   | JVM raised an exception. Details: <detail-text>.
+| 01N69    | 11225   | Specified signature is invalid. Reason: The Java signature for a Java main method must be (java.lang.<string>[ ]).
+| 01N6A    | 11226   | All SQL parameters associated with a Java main method must have a parameter mode of IN.
+| 01N6B    | 11227   | All SQL parameters associated with a Java main method must be an SQL character type.
+| 01N6C    | 11228   | Floating point conversion error <string>.
+| 01P01    | 13001   | Internal Error. Unable to translate SQL statement.
+| 01P02    | 13002   | Syntax error near line <num>.
+| 01P03    | 13003   | This feature is unsupported.
+| 01P04    | 13004   | No error.
+| 01P05    | 13005   | General programming error in file <name> at line <num>.
+| 01P06    | 13006   | Switch has bad value, <num>, for its expression at line <num> in file <name>.
+| 01P07    | 13007   | Missing output file argument after the -c option.
+| 01P08    | 13008   | Missing module definition file argument after the -m option.
+| 01P09    | 13009   | Missing listing file argument after the -l option.
+| 01P0A    | 13010   | Missing timestamp argument after the -t option.
+| 01P0B    | 13011   | <name> is an unknown command line option.
+| 01P0C    | 13012   | <name> is an invalid or undefined command line argument.
+| 01P0D    | 13013   | Help for SQLC and SQLCO is available by typing SQLC or SQLCO on the command line.
+| 01P0E    | 13014   | Unable to open the output source file <name>.
+| 01P0F    | 13015   | Unable to open the module definition file <name>.
+| 01P0G    | 13016   | Descriptor name <name> conflicts with SQLC default name <name>.
+| 01P0H    | 13017   | Descriptor <name> is multiply defined.
+| 01P0I    | 13018   | Descriptor name <name> is invalid.
+| 01P0J    | 13019   | Statement name <name> uses <name>, a reserved name SQLC generates.
+| 01P0K    | 13020   | Statement name <name> is multiply defined.
+| 01P0L    | 13021   | <name> is already defined.
+| 01P0M    | 13022   | Cursor <name> is already defined.
+| 01P0N    | 13023   | <name> is already defined as a dynamic cursor.
+| 01P0O    | 13024   | Cursor <name> was not declared.
+| 01P0P    | 13025   | Warning(s) near line <num>.
+| 01P0Q    | 13026   | The EXEC SQL MODULE statement must precede any cursor definitions or executable SQL statements.
+| 01P0R    | 13027   | Only one EXEC SQL MODULE statement is allowed.
+| 01P0S    | 13028   | Cannot open static cursor <name> because <name> is out of scope at time of open.
+| 01P0T    | 13029   | <line-number-detail-text>
+| 01P0U    | 13030   | <line-number-detail-text>
+| 01P0V    | 13031   | Expecting a single host variable of type string.
+| 01P0W    | 13032   | Not expecting input host variables for static cursor <name>.
+| 01P0X    | 13033   | Host variable <name> is in different scope than when cursor <name> was declared.
+| 01P0Y    | 13034   | Character set <name> is not yet supported.
+| 01P0Z    | 13035   | Invalid line number <num> for line pragma; ignoring the rest.
+| 01P10    | 13036   | C/C++ syntax error in switch/for/while condition near line <num>.
+| 01P11    | 13037   | Function header syntax error near line <num>.
+| 01P12    | 13038   | Array size <num> expected to be an unsigned integer near line <num>.
+| 01P13    | 13039   | Function definition is not allowed within an SQL declare section near line <num>.
+| 01P14    | 13040   | Expecting ")" near line <num>.
+| 01P15    | 13041   | Typedef encountered near line <num>, and typedefs are not supported.
+| 01P16    | 13042   | Unnamed declaration near line <num>.
+| 01P17    | 13043   | Expecting <name> near line <num>.
+| 01P18    | 13044   | Type specification <type> is not a recognized type near line <num>.
+| 01P19    | 13045   | Unexpected class declaration near line <num> ignored.
+| 01P1A    | 13046   | Expecting "}" to end member declaration near line <num>.
+| 01P1B    | 13047   | Undefined tag <name> near line <num>.
+| 01P1C    | 13048   | Tag <name> redefined near line <num>.
+| 01P1D    | 13049   | Input file not good near line <num>.
+| 01P1E    | 13050   | Cursor <name> not closed.
+| 01P1F    | 13051   | Cursor <name> not opened.
+| 01P1G    | 13052   | Cursor <name> not fetched.
+| 01P1H    | 13053   | Cursor <name> not opened or closed.
+| 01P1I    | 13054   | Cursor <name> not fetched or closed.
+| 01P1J    | 13055   | Cursor <name> not opened or fetched.
+| 01P1K    | 13056   | Cursor <name> not used.
+| 01P1L    | 13057   | End-of-file processing generated unexpected cursor status of <num> for cursor <name>.
+| 01P1M    | 13058   | Unable to open SQL CLI header file <name>.
+| 01P1O    | 13060   | Unable to open the listing file <name>.
+| 01P1P    | 13061   | Invalid NUMERIC precision specified near line <num>.
+| 01P1Q    | 13062   | Unsigned long long type not allowed near line <num>.
+| 01P1R    | 13063   | Identifier <name> not defined near line <num>.
+| 01P1S    | 13064   | Identifier <name> is not a member of struct <name> near line <num>.
+| 01P1T    | 13065   | End of file was found after <name> when <name> was expected, near line <num>.
+| 01P1U    | 13066   | Identifier <name> was expected to be a structure type near line <num>.
+| 01P1V    | 13067   | Unable to open source file <name>.
+| 01P1W    | 13068   | C/C++ syntax error near line <num>.
+| 01P1X    | 13069   | Missing module specification string argument after -g option.
+| 01P1Y    | 13070   | Module Group Specification String <MVSS-string> is not a Regular Identifier, or is longer than 31 characters.
+| 01P1Z    | 13071   | Module Tableset Specification String <MTSS-string> is not a Regular Identifier, or is longer than 31 characters.
+| 01P20    | 13072   | Module Version Specification String <MVSS-string> is not a Regular Identifier, or is longer than 31 characters.
+| 01P21    | 13073   | Module name <module-name> is not a value OSS file name, or is longer than 128 characters.
+| 01P22    | 13074   | One or more of the first three parts of the externally qualified module name <module-name> is longer than 128 characters.
+| 01P23    | 13075   | Externally qualified module name <module-name> is not a Regular Identifier, or is longer than 248 characters.
+| 01P24    | 13076   | Catalog name <catalog-name> is not a valid OSS file name,  or is longer than 128 characters.
+| 01P25    | 13077   | Schema name <schema-name> is not a valid OSS file name, or is longer than 128 characters.
+| 01PDW    | 13500   | SQLCO errors
+| 01PDX    | 13501   | Invalid command option <name>.
+| 01PDY    | 13502   | Source file name must be specified.
+| 01PDZ    | 13503   | Missing filename for command option <name>.
+| 01PE0    | 13504   | Missing timestamp command option.
+| 01PE1    | 13505   | Source input file <name> cannot be opened.
+| 01PE2    | 13506   | COBOL output source file <name> cannot be opened.
+| 01PE3    | 13507   | Error while parsing source: <text>.
+| 01PE4    | 13508   | Expecting <name>, found <name>.
+| 01PE5    | 13509   | Expecting <name> after <name>, found <name>.
+| 01PE6    | 13510   | The SQL declare section might not contain COPY or REPLACE.
+| 01PE7    | 13511   | End of input file while processing EXEC SQL.
+| 01PE8    | 13512   | Input file error while processing EXEC SQL.
+| 01PE9    | 13513   | The BIT data type is not implemented in the Trafodion software.
+| 01PEA    | 13514   | The CHARACTER SET attribute is not implemented in Trafodion.
+| 01PEB    | 13515   | Picture <name> is not valid for a host variable.
+| 01PEC    | 13516   | Unexpected end of input file encountered after line <num>.
+| 01PED    | 13517   | Line <num> is too long to process and has been truncated.
+| 01PEE    | 13518   | Line <num> cannot be interpreted as a COBOL line type.
+| 01PEF    | 13519   | Line <num> contains an unterminated character literal.
+| 01PEG    | 13520   | Line <num> does not correctly continue a character literal.
+| 01PEH    | 13521   | Line <num>: DISPLAY host variables must be SIGN LEADING SEPARATE.
+| 01PEI    | 13522   | DECLARE SECTION cannot be nested.
+| 01PEJ    | 13523   | END DECLARE SECTION without a matching BEGIN DECLARE SECTION.
+| 01PEK    | 13524   | DECLARE SECTION encountered in unexpected program section.
+| 01PEL    | 13525   | Variable <name> might not be allocated correctly for a host variable.
+| 01PEM    | 13526   | Line <num>, <name>: <name> clause is not valid for a host variable.
+| 01PEN    | 13527   | The first declaration in an SQL DECLARE SECTION must have level 01 or 77.
+| 01PEO    | 13528   | Line <num>: Variable <num> is not alphabetic and cannot have a CHARACTER SET clause.
+| 01PEP    | 13529   | Missing END DECLARE SECTION detected at line <num>.
+| 01PM8    | 13800   | Line <num>: <name> is not a valid character set name.
+| 01R00    | 15000   | SQLCI error messages.
+| 01R01    | 15001   | Syntax error at or before: <string>.
+| 01R02    | 15002   | Internal parser error: <name.name>
+| 01R03    | 15003   | Incomplete statement in input: <name>
+| 01R04    | 15004   | Error <num> on change directory attempt to <action>.
+| 01R05    | 15005   | Unmatched quote in input (unterminated string): <name>
+| 01R06    | 15006   | Error <num> while reading from file.
+| 01R07    | 15007   | Error <num> while opening file <name>.
+| 01R08    | 15008   | The specified statement does not exist in the history buffer.
+| 01R09    | 15009   | The requested help topic is too long.
+| 01R0A    | 15010   | The help file could not be opened.
+| 01R0B    | 15011   | No help is available for the requested topic.
+| 01R0C    | 15012   | File read error on the help file.
+| 01R0D    | 15013   | This command is not supported by the SQLCI OLE server.
+| 01R0E    | 15014   | Section <name> not found in file <name>.
+| 01R0F    | 15015   | PARAM <name> (value <num>) cannot be converted to type <type>.
+| 01R0G    | 15016   | PARAM <name> not found.
+| 01R0H    | 15017   | Statement <name> not found.
+| 01R0I    | 15018   | Break was received. The last statement might be lost.
+| 01R0J    | 15019   | <num> values were supplied in the USING list while the statement contains <num> unnamed parameters.
+| 01R0K    | 15020   | The USING list must contain at least one parameter value.
+| 01R0L    | 15021   | The USING list cannot contain more than <num> parameter values.
+| 01R0N    | 15023   | The USING list value <name> exceeds the SQLCI limit of <num> characters.
+| 01R0O    | 15024   | The USING list quoted literal <name> must be followed by either a comma or a semicolon.
+| 01R0P    | 15025   | Cursor operations are not supported by SQLCI.
+| 01R0Q    | 15026   | Break rejected.
+| 01R0S    | 15028   | Break error.
+| 01R0U    | 15030   | The specified define already exists. Use alter or delete and add.
+| 01R0V    | 15031   | The specified define does not exist.
+| 01R0W    | 15032   | An error occurred while adding, altering or deleting this define.
+| 01R0X    | 15033   | Break was received.
+| 01R0Y    | 15034   | Invalid LOG file name.
+| 01R0Z    | 15035   | Permission denied to access this file
+| 01R10    | 15036   | Invalid Filecode OR Invalid Function Argument
+| 01RRR    | 15999   | SQLCI internal error.
+| 01S00    | 19000   | Internal error in internal stored procedure processing.
+| 01S01    | 19001   | Error in field description of internal stored procedure.
+| 01S02    | 19002   | No such internal stored procedure: <name> defined.
+| 01S03    | 19003   | Internal stored procedure failed without any error information returned.
+| 01S0K    | 19020   | Stored procedure <name> expects <num> input parameters.
+| 01S0L    | 19021   | Stored procedure <name> returns with error: <name>.
+| 01T00    | 20000   | SQL Utilities error messages.
+| 01T31    | 20109   | <text>
+| 01U01    | 30001   | A rowset must be composed of host variable arrays.
+| 01U02    | 30002   | The given rowset size (<num>) must be smaller or equal to the smallest dimension (<num>) of the arrays composing the rowset.
+| 01U03    | 30003   | Rowset size must be an integer host variable or constant.
+| 01U04    | 30004   | The dimension of the arrays composing the rowset must be greater than zero. A value of <num> was given.
+| 01U05    | 30005   | The dimensions of the arrays composing the rowset are different. The smallest dimension is assumed.
+| 01U06    | 30006   | Rowset and one-dimensional variable are in output list.
+| 01U07    | 30007   | Incompatible assignment from type <type> to type <type>
+| 01U08    | 30008   | Internal error. Rowset index is out of range.
+| 01U09    | 30009   | Internal error. Trying to add more elements than maximum rowset size.
+| 01U0A    | 30010   | Internal error. Rowset is corrupted.
+| 01U0B    | 30011   | More than one INTO statement in the same query is not supported.
+| 01U0C    | 30012   | Rowset index <name> must be specified last in the derived column list of <name>.
+| 01U0D    | 30013   | Hostvar used to set input size of rowset has zero or negative value.
+| 01U0E    | 30014   | Hostvar used to set input size of rowset is not of type short, int, or long.
+| 01U0K    | 30020   | Embedded UPDATE/DELETE cannot be used with SELECT. . .INTO and rowset.
+| 01Y00    | 16000   | Error message file not found.
+| 01Y01    | 16001   | No message found for error or warning <sqlcode>.
+| 02000    | 100     | The "no data" completion condition (SQLCODE = +100).
+| 01Z01    | 25001   | Program <executable>, executing on <node>, has encountered a version error.
+| 01Z2S    | 25100   | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of <node> is <version-1>, the local node does not support versions older than <version-2>.
+| 01Z2T    | 25101   | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of <node> is <version-1>, the local node supports only version <version-2>.
+| 01Z2U    | 25102   | Remote node <node> runs a version of Trafodion which cannot interoperate with other versions. The Trafodion version (version) of <node> is <version-1>.
+| 01Z8C    | 25300   | Module <module> has module version <version-1>; node <node> does not support module versions lower than <version-2>.
+| 01Z8D    | 25301   | Module <module> has module version <version-1>; the local node does not support module versions higher than <version-2>.
+| 01Z8I    | 25306   | A required system module has module version <version-1>; node <node> does not support query plans from modules with module version lower than <version-2>.
+| 01Z8J    | 25307   | The query plan can be executed only by a node with Trafodion version (version) <version-1>, the version of <node> is <version-1>.
+| 01Z8K    | 25308   | The query plan has plan version <version-1>, the local Trafodion version (version) can execute only query plans with plan version <version-1>.
+| 01Z8L    | 25309   | Module <module> can be executed only by a node with Trafodion version (version) version1, the version of <node> is <version-1>.
+| 01Z8M    | 25310   | Module <module> has module version <version-1>, the local Trafodion version (version) can execute only modules with module version <version-1>.
+| 01Z8N    | 25311   | System module <module> has a wrong module version. The expected module version is <version-1>. the actual module version is <version-2>.
+| 02000    | 100 |T  h e "no data" completion condition (SQLCODE=+100).
+| 07001    | -15015    |PARAM <name> (value <num>) cannot be converted to type <type>.
+| 07001    | -15016    |PARAM <name> not found.
+| 07001    | -15019    |<num> values were supplied in the USING list while the statement contains <num> unnamed parameters.
+| 07008    | -8807   | Trying to allocate more than <num> entries for a descriptor.
+| 07008    | -8893   | The statement argument count does not match the descriptor entry count.
+| 07009    | -8829   | Trying to set descriptor item for an entry that is either invalid or greater than the maximum entry count for that descriptor.
+| 07009    | -8843   | Trying to retrieve an item, <num>, that is out of range.
+| 0A000    | -1010   | The statement just specified is currently not supported.
+| 0A000    | -1048   | Currently only supporting restrict drop behavior.
+| 0A000    | -1074   | SQL system metadata not supported by this catalog manager version.
+| 0A000    | -1090   | Self-referencing constraints are currently not supported.
+| 0A000    | -1091   | The constraint, index, or file option is not supported on a vertically partitioned table.
+| 0A000    | -1120   | Attempting to change the audit flags for a table in an unsupported way.
+| 0A000    | -1121   | Attempting to perform a partition add, move, or drop on table <name>. Partition operations are not allowed on tables with vertical partitions, entry sequenced operations, and SYSKEYonly partitioned tables.
+| 0A000    | -1126   | Referential integrity is not yet supported. Constraint <name> will not be enforced.
+| 0A000    | -1142   | Attempting to add a column with a NULL, UNIQUE, CHECK, PRIMARY KEY, or FOREIGN KEY constraint defined. This is not supported for a nonaudited table.
+| 0A000    | -13003  | This feature is unsupported.
+| 0A000    | -13034  | Character set <name> is not yet supported.
+| 0A000    | -13041  | Typedef encountered near line <num>, and typedefs are not supported.
+| 0A000    | -15013  | This command is not supported by the SQLCI OLE server.
+| 0A000    | -15025  | Cursor operations are not supported by SQLCI.
+| 0A000    | -2072   | A simple value specification that is a literal is not yet supported.
+| 0A000    | -3009   | DROP ASSERTION statement is not yet supported.
+| 0A000    | -3010   | Character set <name> is not yet supported.
+| 0A000    | -3022   | The <name> operator is not yet supported.
+| 0A000    | -3023   | The COLLATE clause in a sort specification is not yet supported.
+| 0A000    | -3024   | The MATCH PARTIAL clause is not yet supported.
+| 0A000    | -3028   | Specifying a privilege column list in the INSERT clause is not yet supported.
+| 0A000    | -3029   | <name> is not yet supported in referential integrity constraint definition.
+| 0A000    | -3030   | The PARALLEL EXECUTION clause is not yet supported.
+| 0A000    | -3031   | CASCADE drop behavior is not yet supported.
+| 0A000    | -3032   | The COLUMN clause in the ALTER TABLE statement is not yet supported.
+| 0A000    | -3033   | The MOVE clause in the ALTER TABLE statement is not yet supported.
+| 0A000    | -3034   | The PARTITION clause in the ALTER TABLE statement is not yet supported.
+| 0A000    | -3035   | The RENAME clause in the ALTER TABLE statement is not yet supported.
+| 0A000    | -3036   | The SET CONSTRAINT clause in the ALTER TABLE statement is not yet supported.
+| 0A000    | -3070   | The [NO]AUDIT clause is not supported.
+| 0A000    | -3080   | The [NO]SERIALWRITES clause is not supported.
+| 0A000    | -3105   | Currently only range, hash and system partitioning are supported.
+| 0A000    | -3119   | The WITH LOCAL CHECK OPTION clause is not supported.
+| 0A000    | -3120   | The CREATE ASSERTION statement is not yet supported.
+| 0A000    | -3121   | Partitioned entry-sequenced tables are not yet supported.
+| 0A000    | -3130   | UNSIGNED option is not supported for LARGEINT type.
+| 0A000    | -3131   | The statement just specified is currently not supported.
+| 0A000    | -3137   | UNION JOIN is not yet supported.
+| 0A000    | -3169   | <name> is not a known collation.
+| 0A000    | -4026   | Reading from and inserting into, or updating in, or deleting from the same table, <name>, is not currently supported.
+| 0A000    | -4060   | Reading from and inserting into, or updating in, or deleting from the same table, <name>, is not currently supported. <name> is contained by view(s) <name>.
+| 0A000    | -4069   | Column <name> uses an unsupported collation, <name>.
+| 0A000    | -4085   | File organization <name> of object <name> is not supported.
+| 0A000    | -4089   | Check constraint <name> contains a subquery, which is not yet supported.
+| 0A000    | -4096   | A DEFAULT specification is currently allowed only when simply contained in the VALUES list of an INSERT.
+| 0A000    | -4103   | Reading from and inserting into the same table <name> is not currently supported. View <name> contains <name>.
+| 0A000    | -6001   | DISTINCT aggregates can be computed only for one column per table expression.
+| 0A000    | -8414   | The attempted conversion is not supported on this platform.
+| 0A000    | -8418   | The USER function is not supported on this platform.
+| 0A000    | -8424   | Function <name> is not yet supported.
+| 0A000    | -8848   | Cancel on DDL statements or stored procedures is not supported.
+| 22001    | -8402   | A string overflow occurred during the evaluation of a character expression.
+| 22002    | -8420   | Missing indicator parameter for a NULL value.
+| 22003    | -8411   | A numeric overflow occurred during an arithmetic computation or data conversion.
+| 22007    | -3045   | Invalid date '<date>'.
+| 22007    | -3046   | Invalid time '<time>'.
+| 22007    | -3047   | Invalid timestamp '<timestamp>'.
+| 22007    | -3158   | Invalid DATETIME <datetime>.
+| 22007    | -8413   | The string argument contains characters that cannot be converted.
+| 22007    | -8415   | The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+| 22007    | -8422   | The provided INTERVAL is not valid and cannot be converted.
+| 22008    | -8405   | The operand of function CONVERTTIMESTAMP is out of range.
+| 22008    | -8407   | The operand of function JULIANTIMESTAMP is out of range.
+| 22008    | -8416   | A datetime expression evaluated to an invalid datetime value.
+| 22008    | -8403   | The length argument of function SUBSTRING cannot be less than zero or greater than source string length.
+| 22008    | -4075   | Division by zero in constant expression <name>.
+| 22012    | -8419   | An arithmetic expression attempted a division by zero.
+| 22015    | -3044   | Invalid interval <num>.
+| 22019    | -8409   | The escape character argument of a LIKE predicate must be one character in length.
+| 22019    | -8412   | An input character host variable is missing its null terminator.
+| 22019    | -8410   | An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
+| 22027    | -8404   | The trim character argument of function TRIM must be one character in length.
+| 23000    | -8101   | The operation is prevented by check constraint <name> on table <name>.
+| 23000    | -8102   | The operation is prevented by a unique constraint.
+| 23000    | -8103   | The operation is prevented by referential integrity constraint <name> on table <name>.
+| 23000    | -8421   | NULL cannot be assigned to a NOT NULL column.
+| 24000    | -8004   | Trying to open a statement or cursor that is not in the closed state.
+| 24000    | -8005   | Trying to fetch from a cursor that is not in the open state.
+| 24000    | -8013   | Trying to update or delete from a cursor that is not in the fetched state.
+| 24000    | -8811   | Trying to close a statement that is either not in the open state or has not reached EOF.
+| 24000    | -8812   | Trying to execute a statement that is not in the closed state.
+| 24000    | -8813   | Trying to fetch from a statement that is in the closed state.
+| 24000    | -8850   | The table specified in this cursor update or DELETE statement is different than the table specified in the declare cursor statement.
+| 25000    | -1111   | Error starting transaction._table name.schema.name_
+| 25000    | -1112   | Error committing transaction._table name.schema.name_
+| 25000    | -3114   | Transaction access mode READ WRITE is incompatible with isolation level READ UNCOMMITTED.
+| 25000    | -3140   | The isolation level cannot be READ UNCOMMITTED for an INSERT, UPDATE, DELETE, or DDL statement.
+| 25000    | -3141   | The transaction access mode cannot be READ ONLY for an INSERT, UPDATE, DELETE, or DDL statement.
+| 25000    | -8603   | Trying to begin a transaction that has already been started.
+| 25000    | -8604   | Transaction subsystem <name> returned error <num> while starting a transaction.
+| 25000    | -8605   | Committing a transaction which has not started.
+| 25000    | -8606   | Transaction subsystem <name> returned error <num> on a commit transaction.
+| 25000    | -8612   | Transaction mode cannot be set if the transaction is already running.
+| 25000    | -8613   | SQL cannot commit or rollback a transaction that was started by application.
+| 25000    | -8614   | SQL cannot be begin a transaction when multiple contexts exist.
+| 25000    | -8814   | The transaction mode at run time (<num>) differs from that specified at compile time (<num>).
+| 25000    | -8819   | Begin transaction failed while preparing the statement.
+| 25000    | -8820   | Transaction commit failed while closing the statement.
+| 25000    | -8832   | Transaction has not been started.
+| 25000    | -8833   | The input parameter is an invalid SQL transaction command.
+| 25000    | -8841   | User application committed or aborted a transaction started by SQL. This transaction needs to be committed or aborted by calling SQL COMMIT or ROLLBACK WORK.
+| 25000    | -8844   | A transaction started by SQL that was committed or aborted by user application from outside of SQL, has now been cleaned up.
+| 26000    | -15017  | Statement <name> not found.
+| 26000    | -2065   | Statement <name> was not found in module <name>.
+| 26000    | -8802   | Trying to allocate a statement that already exists in the current context.
+| 26000    | -8804   | The input statement provided does not exist in the current context.
+| 26000    | -8806   | Trying to <action> a statement that is not allocated with AllocStmt() call.
+| 2B000    | -1014   | Privileges were not revoked. Dependent privilege descriptors still exist.
+| 33000    | -8801   | Trying to allocate a descriptor that already exists in the current context.
+| 33000    | -8803   | The input descriptor provided does not exist in the current context.
+| 33000    | -8805   | Trying to <action> a descriptor that is not allocated with AllocDesc() call.
+| 34000    | -2066   | Cursor <name> was not found in module <name>.
+| 38000    | -11218  | A Java method completed with an uncaught Java exception. Details: <string>.
+| 39001    | -11220  | A Java method completed with an uncaught java.sql.SQLException with invalid SQLSTATE. The uncaught exception had an SQLCODE of <SQLCODE-value> and SQLSTATE of <SQLSTATE-value>. Details: <string>.
+| 3D000    | -8008   | Catalog name <name> is invalid.
+| 3F000    | -8009   | Schema name <name> is invalid.
+| 40000    | -1113   | Error rolling back transaction. <table name.schema.name>
+| 40000    | -2007   | Internal error: need to rollback transaction.
+| 40000    | -2009   | The user transaction must be rolled back (or committed, if that makes sense in the application) before MXCMP can be restarted and proceed.
+| 40000    | -8015   | Aborting transaction because a compound statement performed an update operation followed by a SELECT statement that did not return any row.
+| 40000    | -8607   | Rolling back a transaction that has not started.
+| 40000    | -8609   | Waited rollback performed without starting a transaction.
+| 40000    | -8821   | Rollback transaction failed during the process of fetching the statement.
+| 40000    | -8839   | Transaction was aborted.
+| 40003    | -8608   | Transaction subsystem <name> returned error <num> on rollback transaction.
+| 40003    | -8610   | Transaction subsystem <name> reported error <num> on a waited rollback transaction.
+| 42000    | -1000   | A syntax error occurred.
+| 42000    | -3201   | EXTERNAL PATH clause is required.
+| 42000    | -3202   | PARAMETER STYLE clause is required.
+| 42000    | -3203   | LANGUAGE clause is required.
+| 42000    | -3204   | EXTERNAL NAME clause is badly formed.
+| 42000    | -3205   | EXTERNAL NAME clause is required.
+| 42000    | -3206   | The name for an object of this type must be fully qualified, or set NAMETYPE ANSI.
+| 42000    | -3207   | Value for DYNAMIC RESULT SETS must be zero.
+| 42000    | -3208   | UNSIGNED numeric is not allowed for routine parameter.
+| 42000    | -1123   | Unable to process the partition key values (<num>) for object <name>. Please verify that the correct key value data types were specified.
+| 42000    | -1136   | For an added column, the PRIMARY KEY clause cannot be NOT DROPPABLE.
+| 42000    | -1186   | Column <name> is of type <type>, incompatible with the default value's type, <type>.
+| 42000    | -13002  | Syntax error near line <num>.
+| 42000    | -13025  | Warning(s) near line <num>.
+| 42000    | -13036  | C/C++ syntax error in switch/for/while condition near line <num>.
+| 42000    | -13037  | Function header syntax error near line <num>.
+| 42000    | -13068  | C/C++ syntax error near line <num>.
+| 42000    | -15001  | Syntax error at or before: <string>.
+| 42000    | -15002  | Internal parser error: <name.name>
+| 42000    | -15003  | Incomplete statement in input: <name>
+| 42000    | -15005  | Unmatched quote in input (unterminated string): <name>
+| 42000    | -15020  | The USING list must contain at least one parameter value.
+| 42000    | -15021  | The USING list cannot contain more than <num> parameter values.
+| 42000    | -15022  | A USING list unquoted literal is the empty string.
+| 42000    | -15023  | The USING list value <num> exceeds the SQLCI limit of <num> characters.
+| 42000    | -15024  | The USING list quoted literal <name> must be followed by either a comma or a semicolon.
+| 42000    | -2050   | <name> is not the name of any DEFAULTS table attribute.
+| 42000    | -2051   | Invalid <name> option <name> or value '<num>'.
+| 42000    | -2055   | Invalid value '<num>' for DEFAULTS attribute <name>.
+| 42000    | -2056   | The value must be a number in the range <num>.
+| 42000    | -2057   | The value must be a multiple of <num>.
+| 42000    | -2058   | DEFAULTS attribute <name> is of type <type> but is being converted to <type>.
+| 42000    | -2060   | Procedure <name> has already been defined in this module. The previous definition is being retained and this latest one ignored.
+| 42000    | -2061   | Static cursor <name> has already been defined in this module. The previous definition, as a static cursor, is being retained and this latest one ignored.
+| 42000    | -2062   | Static cursor <name> has already been defined in this module. The previous definition, as a dynamic cursor, is being retained and this latest one ignored.
+| 42000    | -2063   | Dynamic cursor <name> has already been defined in this module. The previous definition, as a static cursor, is being retained and this latest one ignored.
+| 42000    | -2064   | Dynamic cursor <name> has already been defined in this module. The previous definition, as a dynamic cursor, is being retained and this latest one ignored.
+| 42000    | -2067   | Descriptor <name> has already been defined in this module. The previous definition is being retained and this latest one ignored.
+| 42000    | -2068   | A procedure body must be a SELECT, INSERT, UPDATE, DELETE, DECLARE CATALOG, DECLARE SCHEMA, or a static DECLARE CURSOR.
+| 42000    | -2069   | A static cursor declaration might appear only in the body of a procedure.
+| 42000    | -2070   | Invalid statement type in this context.
+| 42000    | -2071   | The name <name> has already been declared or defined in this module. The previous definition, as a <type>, is being retained and this latest one ignored.
+| 42000    | -2091   | The required module statement was not found in file <name>.
+| 42000    | -2092   | A module statement has already appeared in this file. The previous definition, <name>, is being retained and this latest one ignored.
+| 42000    | -2093   | A module timestamp statement was not found in file <name>.
+| 42000    | -2094   | A module timestamp statement has already appeared in this module. The previous timestamp is being retained and this latest one ignored.
+| 42000    | -2093   | A module timestamp statement was not found in file <name>.
+| 42000    | -2094   | A module timestamp statement has already appeared in this module. The previous timestamp is being retained and this latest one ignored.
+| 42000    | -2200   | DEFAULTS attribute <name> is read-only.
+| 42000    | -30001  | A rowset must be composed of host variable arrays.
+| 42000    | -30002  | The given rowset size (<num>) must be smaller or equal to the smallest dimension (<num>) of the arrays composing the rowset.
+| 42000    | -30003  | Rowset size must be an integer host variable or constant.
+| 42000    | -30004  | The dimension of the arrays composing the rowset must be greater than zero. A value of <num> was given.
+| 42000    | -30005  | The dimensions of the arrays composing the rowset are different. The smallest dimension is assumed.
+| 42000    | -30006  | Rowset and one-dimensional variable are in output list.
+| 42000    | -30007  | Incompatible assignment from type <type> to type <type>
+| 42000    | -3001   | Syntax error at or before <SQL-text>.
+| 42000    | -3002   | <name> is not a valid column reference; it has more than 4 name parts.
+| 42000    | -3003   | Length or precision must be greater than zero.
+| 42000    | -3004   | A delimited identifier must contain at least one non-blank character.
+| 42000    | -3005   | A DECLARE CURSOR statement cannot dynamically get its cursor name from a host variable while also statically declaring a cursor specification. A dynamic cursor requires the name of a previously prepared statement, or a host variable containing such a name; a static cursor requires a fixed, static name.
+| 42000    | -3006   | In a dynamic cursor declaration both the cursor and the statement must be named in the same way: both must be literals or both must be string host variable expressions.
+| 42000    | -3007   | In an ALLOCATE CURSOR statement both the cursor and the statement must be named using string host variables.
+| 42000    | -3008   | Precision of <name> UNSIGNED data type, <value>, cannot exceed 9.
+| 42000    | -3011   | <name> is not a valid qualified name; it has more than 3 name parts.
+| 42000    | -3012   | COUNT is the only aggregate function that accepts (\*) as an operand.
+| 42000    | -3013   | Subtraction is the only operation allowed in the parenthesized expression preceding an interval qualifier.
+| 42000    | -3014   | Precision of numeric, <value>, cannot exceed 18.
+| 42000    | -3015   | Scale <value> cannot exceed precision <value>.
+| 42000    | -3016   | Precision of decimal, <value>, cannot exceed 18.
+| 42000    | -3017   | Expected an unsigned integer, not <value>.
+| 42000    | -3018   | Expected an unsigned smallint, not <value>.
+| 42000    | -3019   | Expected an unsigned number within the parentheses, not <value>.
+| 42000    | -3020   | Expected an unsigned number as the first operand within the parentheses, not <value>.
+| 42000    | -3021   | Expected an unsigned number as the second operand within the parentheses, not <value>.
+| 42000    | -3025   | The format of the subvolume name part in the specified location name <name> is invalid. The subvolume name part must be eight characters long and begin with the letters ZSD.
+| 42000    | -3026   | A comma must be used to separate file attributes.
+| 42000    | -3027   | <name> is not a valid simple name; it has more than one name part.
+| 42000    | -3037   | Precision of type <data-type> cannot exceed 18.
+| 42000    | -3038   | PIC X types cannot have leading signs, or any signs at all.
+| 42000    | -3039   | PIC X types do not have any COMP representation.
+| 42000    | -3040   | Precision zero is invalid. Add a '9' to the PICTURE clause.
+| 42000    | -3041   | UNSIGNED is invalid for a numeric or decimal type with a scale greater than 9.
+| 42000    | -3042   | UPSHIFT for a numeric type is invalid.
+| 42000    | -3043   | Precision greater than 18 for a COMP numeric type is invalid.
+| 42000    | -3048   | Dynamic parameters, such as <name>, are not allowed in a static compilation.
+| 42000    | -3049   | Host variables, such as <name>, are not allowed in a dynamic compilation.
+| 42000    | -3050   | The constraint must have the same catalog and schema as the specified table.
+| 42000    | -3051   | Duplicate HEADING clauses in column definition <name>.
+| 42000    | -3052   | Duplicate NOT NULL clauses in column definition <name>.
+| 42000    | -3053   | Duplicate PRIMARY KEY clauses in column definition <name>.
+| 42000    | -3054   | The NOT DROPPABLE clause is allowed only in PRIMARY KEY and NOT NULL constraint definitions.
+| 42000    | -3055   | Duplicate DELETE rules specified.
+| 42000    | -3056   | Duplicate UPDATE rules specified.
+| 42000    | -3057   | Invalid size value in the ALLOCATE clause.
+| 42000    | -3058   | The BLOCKSIZE value must be 4096.
+| 42000    | -3059   | Invalid size value in the MAXSIZE clause.
+| 42000    | -3060   | Invalid percentage value in the DSLACK clause.
+| 42000    | -3061   | The format of the specified location name <name> is invalid.
+| 42000    | -3062   | Duplicate MAXSIZE clauses in the PARTITION clause.
+| 42000    | -3063   | Duplicate DSLACK clauses in the PARTITION clause.
+| 42000    | -3064   | Duplicate ISLACK clauses in the PARTITION clause.
+| 42000    | -3065   | The primary key constraint cannot be droppable when the STORE BY PRIMARY KEY clause appears in a table definition.
+| 42000    | -3067   | ALTER TABLE ADD CONSTRAINT allows only DROPPABLE constraints.
+| 42000    | -3068   | The ALLOCATE and DEALLOCATE clauses cannot coexist in the same ALTER INDEX statement.
+| 42000    | -3071   | Duplicate [NO]AUDITCOMPRESS clauses.
+| 42000    | -3072   | The BLOCKSIZE clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 42000    | -3073   | Duplicate [NO]BUFFERED clauses.
+| 42000    | -3074   | Duplicate [NO]CLEARONPURGE clauses.
+| 42000    | -3075   | The [NO]COMPRESS clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 42000    | -3076   | Duplicate DEALLOCATE clauses.
+| 42000    | -3077   | The [NO]ICOMPRESS clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 42000    | -3078   | The LOCKLENGTH clause is not allowed in the ALTER INDEX . . . ATTRIBUTE(S) statement.
+| 42000    | -3079   | Duplicate MAXSIZE clauses.
+| 42000    | -3081   | Duplicate ALLOCATE clauses.
+| 42000    | -3082   | Duplicate [NO]AUDIT clauses.
+| 42000    | -3083   | Duplicate [NO]AUDITCOMPRESS clauses.
+| 42000    | -3084   | The BLOCKSIZE clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+| 42000    | -3085   | Duplicate [NO]BUFFERED clauses.
+| 42000    | -3086   | Duplicate [NO]CLEARONPURGE clauses.
+| 42000    | -3087   | The [NO]COMPRESS clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+| 42000    | -3088   | The ALLOCATE AND DEALLOCATE cannot coexist in the same ALTER TABLE statement.
+| 42000    | -3089   | The [NO]ICOMPRESS clause is not allowed in the ALTER TABLE . . . ATTRIBUTE(S) statement.
+| 42000    | -3090   | Duplicate LOCKLENGTH clauses.
+| 42000    | -3091   | The [NO]AUDIT clause is not allowed in the CREATE INDEX statements.
+| 42000    | -3092   | Duplicate BLOCKSIZE clauses.
+| 42000    | -3093   | Duplicate DCOMPRESS clauses.
+| 42000    | -3094   | The DEALLOCATE clause is not allowed in the CREATE INDEX statements.
+| 42000    | -3095   | Duplicate [NO]ICOMPRESS clauses.
+| 42000    | -3096   | Duplicate [NO]SERIALWRITES clauses.
+| 42000    | -3097   | The DEALLOCATE clause is not allowed in the CREATE TABLE statements.
+| 42000    | -3098   | Duplicate LOCATION clauses.
+| 42000    | -3099   | Duplicate FILE ATTRIBUTE(S) clauses.
+| 42000    | -3100   | Duplicate DSLACK clauses.
+| 42000    | -3101   | Duplicate ISLACK clauses.
+| 42000    | -3102   | Duplicate PARALLEL EXECUTION clauses.
+| 42000    | -3103   | Duplicate PARTITION clauses.
+| 42000    | -3104   | Only the ADD option is allowed in a PARTITION clause in a CREATE TABLE statement.
+| 42000    | -3106   | Duplicate PRIMARY KEY clauses.
+| 42000    | -3107   | Duplicate LIKE clauses.
+| 42000    | -3108   | The LIKE clause and STORE BY clause cannot coexist in the same statement.
+| 42000    | -3109   | Duplicate STORE BY clauses.
+| 42000    | -3110   | The LIKE clause and ATTRIBUTE(S) clause cannot coexist in the same statement.
+| 42000    | -3111   | The LIKE clause and LOCATION clause cannot coexist in the same statement.
+| 42000    | -3112   | The LIKE clause and PARTITION clause cannot coexist in the same statement.
+| 42000    | -3113   | Error in CONTROL statement: <name>
+| 42000    | -3115   | Duplicate ISOLATION LEVEL clause specified.
+| 42000    | -3116   | Duplicate transaction access mode clause specified.
+| 42000    | -3117   | Duplicate DIAGNOSTICS SIZE specified.
+| 42000    | -3118   | Identifier too long.
+| 42000    | -3122   | The format of the system name part in the specified location name <name> is invalid.
+| 42000    | -3123   | The format of the file name part in the specified location name <name> is invalid. The file name part must be eight characters long and end with the digits 00.
+| 42000    | -3127   | Invalid character in identifier <name>.
+| 42000    | -3128   | <name> is a reserved word. It must be delimited by double- quotes to be used as an identifier.
+| 42000    | -3129   | Function <name> accepts exactly one operand.
+| 42000    | -3132   | The HEADING for column <name> exceeds the maximum size of 128 characters.
+| 42000    | -3133   | PERFORM is valid only in COBOL programs.
+| 42000    | -3134   | Precision of time or timeStamp, <num>, cannot exceed 6.
+| 42000    | -3135   | Precision of float, <value>, cannot exceed 54.
+| 42000    | -3136   | Only LEFT, RIGHT, and FULL OUTER JOIN are valid in \{oj . . .}
+| 42000    | -3138   | A key-sequenced table with range partitioning requires a FIRST KEY clause.
+| 42000    | -3139   | A range-partitioned index requires a FIRST KEY clause.
+| 42000    | -3142   | INTO clause host variables are not allowed in a static cursor.
+| 42000    | -3143   | BROWSE or READ UNCOMMITTED access is not allowed on a table value constructor.
+| 42000    | -3145   | Positioned UPDATE or DELETE is allowed only in embedded SQL.
+| 42000    | -3147   | In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
+| 42000    | -3149   | Duplicate WITH CONSTRAINTS phrases in LIKE clause in CREATE TABLE statement.
+| 42000    | -3150   | Duplicate WITH HEADING phrases in LIKE clause in CREATE TABLE statement.
+| 42000    | -3151   | Duplicate WITH HORIZONTAL PARTITIONS phrases in LIKE clause in CREATE TABLE statement.
+| 42000    | -3153   | The FIRST KEY clause is not allowed with hash partitioning.
+| 42000    | -3155   | The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
+| 42000    | -3157   | Catalog name is required.
+| 42000    | -3159   | If you intended <name> to be a character set specifier for a character string literal, you must remove the spaces in front of the single quote delimiter.
+| 42000    | -3160   | <name> was declared more than once in the procedure parameter list.
+| 42000    | -3161   | <name> was not declared in the procedure parameter list.
+| 42000    | -3164   | Data type mismatch between output host variable and selected value.
+| 42000    | -3165   | Min or max precision or exponent value exceeded, <num>.
+| 42000    | -3166   | Min or max value for float or double value exceeded, <num>. 42000 -3167 Duplicate [ NOT ] DROPPABLE clauses.
+| 42000    | -3168   | The FOR . . . ACCESS clause is not allowed in a CREATE VIEW statement.
+| 42000    | -3171   | Transaction statements are not allowed in compound statements.
+| 42000    | -3172   | EXIT is not allowed in a compound statement.
+| 42000    | -3173   | UPDATE STATISTICS is not allowed in a compound statement.
+| 42000    | -3174   | DDL statements are not allowed in compound statements.
+| 42000    | -3175   | Dynamic SQL statements are not allowed in compound statements.
+| 42000    | -3176   | Subqueries are not allowed in the IF Condition.
+| 42000    | -3177   | Character set <name> requires an even number of characters in the length declaration of the data type.
+| 42000    | -3178   | One or more of the following external (host-language) data types incorrectly appears within the SQL query or operation: <type>.
+| 42000    | -3179   | Collation <name> is not defined on the character set <name>.
+| 42000    | -3180   | STREAM statements are not allowed in compound statements.
+| 42000    | -3181   | Invalid logical name, a three part logical name is required.
+| 42000    | -3187   | Not supported: SET STREAM TIMEOUT per a specific stream.
+| 42000    | -3189   | cannot set lock timeout on a view.
+| 42000    | -4001   | Column <name> is not found. Tables in scope: <name>. Default schema: <name>.
+| 42000    | -4002   | Column <name> is not found. Table <name> not exposed. Tables in scope: <name>. Default schema: <name>.
+| 42000    | -4003   | Column name is not a column in table <name>, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+| 42000    | -4004   | Column name <name> is ambiguous. Tables in scope: <name>. Default schema: <name>.
+| 42000    | -4005   | Column reference <name> must be a grouping column or be specified within an aggregate.
+| 42000    | -4006   | Within an aggregate, all column references must come from the same scope.
+| 42000    | -4007   | The select list index <num> is out of range. It must be between 1 and the number of select expressions, which in this case is <num>.
+| 42000    | -4008   | A subquery is not allowed inside an aggregate function.
+| 42000    | -4009   | An aggregate is not allowed inside an aggregate function.
+| 42000    | -4010   | There are no columns with the correlation name <name>.
+| 42000    | -4011   | Ambiguous star column reference <name>.
+| 42000    | -4012   | Column reference <name> must be a grouping column or be specified within an aggregate. On this grouped table a star reference is not allowed.
+| 42000    | -4013   | Column <name> is a system column and cannot be updated or inserted into.
+| 42000    | -4014   | The operands of an INTERSECT must be of equal degree.
+| 42000    | -4010   | There are no columns with the correlation name <name>.
+| 42000    | -4011   | Ambiguous star column reference <name>.
+| 42000    | -4012   | Column reference <name> must be a grouping column or be specified within an aggregate. On this grouped table a star reference is not allowed.
+| 42000    | -4013   | Column <name> is a system column and cannot be updated or inserted into.
+| 42000    | -4014   | The operands of an INTERSECT must be of equal degree.
+| 42000    | -4015   | Aggregate functions placed incorrectly: <name>.
+| 42000    | -4016   | The number of derived columns (<num>) must equal the degree of the derived table (<num>). 
+| 42000    | -4017   | Derived column name <name> was specified more than once.
+| 42000    | -4018   | Rows cannot be deleted from an entry-sequenced table.
+| 42000    | -4019   | The select list of a subquery in a select list must be scalar (degree of one).
+| 42000    | -4020   | Arithmetic operations on row value constructors are not allowed.
+| 42000    | -4021   | The select list contains a nongrouping non-aggregated column, <name>.
+| 42000    | -4022   | Target column <name> was specified more than once. 
+| 42000    | -4023   | The degree of each row value constructor (<num>) must equal the degree of the target table column list (<num>).
+| 42000    | -4024   | Column <name> has no default value, so must be explicitly specified in the insert column list.
+| 42000    | -4025   | Error while preparing constraint <name> on table <name>.
+| 42000    | -4027   | Table <name> is not insertable.
+| 42000    | -4028   | Table <name> is not updateable.
+| 42000    | -4030   | Column <name> is an invalid combination of datetime fields (<num>, <num>, <num>).
+| 42000    | -4031   | Column <name> is an unknown data type, <num>.
+| 42000    | -4032   | Column <name> is an unknown class, <num>. It is neither a system column nor a user column.
+| 42000    | -4033   | Column <name> is a primary or clustering key column and cannot be updated.
+| 42000    | -4034   | The operation (<name> <name> <name>) <name> is not allowed. 
+| 42000    | -4035   | Type <type> cannot be cast to type <type>.
+| 42000    | -4036   | The source field of the EXTRACT function must be of DateTime or Interval type.
+| 42000    | -4037   | Field <name> cannot be extracted from a source of type <type>.
+| 42000    | -4038   | The operand of an AVG or SUM function must be numeric or interval.
+| 42000    | -4039   | Column <name> is of type <type>, incompatible with the value's type, <type>.
+| 42000    | -4040   | The operands of a BETWEEN predicate must be of equal degree. 
+| 42000    | -4041   | Type <type> cannot be compared with type <type>.
+| 42000    | -4042   | The operands of a comparison predicate must be of equal degree.
+| 42000    | -4043   | The operand of function <name> must be character.
+| 42000    | -4044   | Collation <name> does not support the <name> predicate or function.
+| 42000    | -4045   | The operand of function <name> must be numeric.
+| 42000    | -4046   | The operands of function <name> must be exact numeric.
+| 42000    | -4047   | The operands of function <name> must have a scale of 0.
+| 42000    | -4048   | The third operand of a ternary comparison operator must be of type BOOLEAN, not <name>.
+| 42000    | -4049   | A CASE expression cannot have a result data type of both <type> and <type>.
+| 42000    | -4050   | The operands of the <name> predicate must be comparable character data types (that is, of the same character set and collation).
+| 42000    | -4051   | The first operand of function <name> must be character.
+| 42000    | -4052   | The second operand of function <name> must be numeric.
+| 42000    | -4053   | The third operand of function <name> must be numeric.
+| 42000    | -4055   | The select lists or tuples must have comparable data types. <type> and <type> are not comparable.
+| 42000    | -4056   | Exposed name <name> appears more than once.
+| 42000    | -4057   | Correlation name <name> conflicts with qualified identifier of table <name>.
+| 42000    | -4059   | The first operand of function <name> must be numeric.
+| 42000    | -4061   | Rows cannot be inserted into, or updated in, an individual table partition.
+| 42000    | -4062   | The preceding error actually occurred in function <name>.
+| 42000    | -4063   | The operands of function <name> must be comparable character data types (that is, of the same character set and collation).
+| 42000    | -4064   | The operands of function <name> must be compatible character data types (that is, of the same character set).
+| 42000    | -4066   | The operands of a UNION must be of equal degree.
+| 42000    | -4067   | The operands of function <name> must be character data types.
+| 42000    | -4068   | The operand of function <name> must contain an even number of characters.
+| 42000    | -4070   | The operand of function <name> must be exact numeric.
+| 42000    | -4071   | The first operand of function <name> must be a datetime.
+| 42000    | -4072   | The operand of function <name> must be a datetime containing a <name>.
+| 42000    | -4073   | The COLLATE clause might appear only after an expression of character data type, not <type>.
+| 42000    | -4076   | Overflow in constant expression <name>.
+| 42000    | -4077   | Function <name> accepts only one or two operands.
+| 42000    | -4078   | Function <name> does not accept a weight operand.
+| 42000    | -4079   | The operands of function <name> must be numeric.
+| 42000    | -4082   | Table <name> does not exist or is inaccessible.
+| 42000    | -4084   | SQL object <table-name> is corrupt.
+| 42000    | -4086   | Environment variable or define <name> does not exist.
+| 42000    | -4087   | Prototype value '<name>' is not a valid qualified name.
+| 42000    | -4088   | The number of values in each TRANSPOSE item of a TRANSPOSE set must be equal.
+| 42000    | -4093   | The number of output dynamic parameters (<num>) must equal the number of selected values (<num>).
+| 42000    | -4094   | The number of output host variables (<num>) must equal the number of selected values (<num>).
+| 42000    | -4095   | A DEFAULT whose value is NULL is not allowed in <name>.
+| 42000    | -4097   | A NULL operand is not allowed in function <name>.
+| 42000    | -4098   | A NULL operand is not allowed in operation <name>.
+| 42000    | -4099   | A NULL operand is not allowed in predicate <name>.
+| 42000    | -4100   | A NULL value is not allowed in a select list unless it is CAST to some data type.
+| 42000    | -4101   | If <name> is intended to be a further table reference in the FROM clause, the preceding join search condition must be enclosed in parentheses.
+| 42000    | -4104   | If a character literal was intended, you must use the single quote delimiter instead of the double: <name> instead of <name>.
+| 42000    | -4105   | Unknown translation.
+| 42000    | -4106   | The character set for the operand of function <name> must be <name>.
+| 42000    | -4107   | Column <name> has no default value, so DEFAULT cannot be specified.
+| 42000    | -4108   | Inside a ROWS SINCE, another sequence function contained an invalid reference to the THIS function.
+| 42000    | -4109   | Sequence functions placed incorrectly: <name>.
+| 42000    | -4110   | The query contains sequence functions but no SEQUENCE BY clause: <name>.
+| 42000    | -4111   | The query contains a SEQUENCE BY clause but no sequence functions.
+| 42000    | -4112   | Absolute and relative sampling cannot occur in the same BALANCE expression.
+| 42000    | -4113   | The sample size for <name> Sampling must be <num>.
+| 42000    | -4114   | An absolute sample size must have a scale of zero.
+| 42000    | -4115   | The sample size must be less than or equal to the sample period.
+| 42000    | -4116   | The second operand of function <name> is invalid.
+| 42000    | -4117   | The cursor query expression might be nonupdatable.
+| 42000    | -4118   | The cursor query expression is not updateable.
+| 42000    | -4120   | In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query. Column in error: <name>.
+| 42000    | -4121   | In a query with a GROUP BY, DISTINCT, or aggregate function, each column in the ORDER BY clause must be one of the columns explicitly SELECTed by the query. Column in error: <name>. Table in scope: <name>.
+| 42000    | -4122   | NULL cannot be assigned to NOT NULL column <name>.
+| 42000    | -4123   | NULL cannot be cast to a NOT NULL data type.
+| 42000    | -4125   | The select list of a subquery in a row value constructor, if the subquery is one of several expressions rather than the only expression in the constructor, must be scalar (degree of one).
+| 42000    | -4126   | The row value constructors in a VALUES clause must be of equal degree.
+| 42000    | -4127   | Type <type> cannot be assigned to type <type>.
+| 42000    | -4128   | Cannot retrieve default volume and subvolume information from =_DEFAULTS define, DEFINEINFO error <num>.
+| 42000    | -4134   | The operation (<name>) is not allowed. Try UNION ALL instead.
+| 42000    | -7003   | A plan using cluster sampling could not be produced for this query.
+| 42000    | -8573   | The user does not have <name> privilege on table or view <name>.
+| 44000    | -8104   | The operation is prevented by the check on view <name> cascaded from the check option on <table-name>.
+| 44000    | -8105   | The operation is prevented by the check option on view <name>.
+| 46007    | -11208  | Specified signature is invalid. Reason: The list of parameter types must be enclosed in parentheses.
+| 46007    | -11209  | Specified signature is invalid. Reason: the number of parameters <value> must match the number of parameters in Java method.
+| 46007    | -11210  | Specified signature is invalid. Reason: Missing [ ] for OUT/INOUT parameter at position <value>.
+| 46007    | -11211  | Specified signature is invalid. Reason: Unknown parameter type used at position <value>.
+| 46007    | -11212  | Specified signature is invalid. Reason: Java signature size is more than supported.
+| 46007    | -11213  | Specified signature is invalid. Reason: A return type must not be specified.
+| 46101    | -11215  | Java execution: Invalid null input value at parameter position <value>.
+| 46103    | -11205  | Java class <class-file-name> was not found in external path <path-name>.
+| HY011    | -8855   | Statement attribute cannot be set now.
+| HY011    | -8857   |  Statement attribute cannot be set now. INPUT_ARRAY_MAXSIZE must be set before compiling the statement.
+| HY024    | -8854   | Invalid attribute value.
+| HY024    | -8856   | Invalid attribute value. INPUT_ARRAY_MAXSIZE must be positive.
+| HY092    | -8853   | Invalid attribute definition.
+| X0101    | -1001   | An internal error occurred in module <name> on line <num>. DETAILS(<text>).
+| X0102    | -1002   | Catalog <name> does not exist.
+| X0103    | -1003   | Schema <name> does not exist.
+| X0104    | -1004   | Table, view, or stored procedure <name> does not exist.
+| X0105    | -1005   | Constraint <name> does not exist.
+| X0106    | -1006   | Index <name> does not exist.
+| X0108    | -1008   | User name <name> does not exist.
+| X0109    | -1009   | Column <name> does not exist in the specified table.
+| X010G    | -1016   | Redundant references to column <name> in the constraint.
+| X010H    | -1017   | You are not authorized to perform this operation.
+| X010J    | -1019   | Cannot find a valid primary partition for <name>.
+| X010K    | -1020   | Privilege settings on metadata tables cannot be changed.
+| X010L    | -1021   | SQL is already initialized on system <name>.
+| X010M    | -1022   | Schema <name> already exists.
+| X010N    | -1023   | Only the super ID user can name an authorization ID other than the current user name.
+| X010O    | -1024   | Distribution Service/Data Access Manager error <num> occurred in module <name> on line <num>. DETAILS(<text>).
+| X010P    | -1025   | Request failed. One or more dependent objects exist.
+| X010Q    | -1026   | Only the schema owner or the super ID user can drop a schema.
+| X010R    | -1027   | The definition schema <name> is dropped when its catalog is dropped.
+| X010S    | -1028   | Schema <name> contains at least one object. The schema must be empty.
+| X010T    | -1029   | Unable to create object <name>.
+| X010U    | -1030   | Unable to access object <name> (file error <num>).
+| X010V    | -1031   | Unable to drop object <name>.
+| X010Y    | -1034   | Unable to initialize SQL.
+| X010Z    | -1035   | Catalog <name> already exists.
+| X0110    | -1036   | Only the super ID can execute DROP SQL.
+| X0111    | -1037   | SQL is not installed on system <name>.
+| X0112    | -1038   | All catalogs have not been dropped from the system.
+| X0113    | -1039   | Unable to drop SQL.
+| X0114    | -1040   | Cannot alter metadata table.
+| X0115    | -1041   | The primary key has already been defined.
+| X0116    | -1042   | All PRIMARY KEY or UNIQUE constraint columns must be NOT NULL.
+| X0118    | -1044   | Unable to create constraint <name>. The referenced table does not contain a unique constraint.
+| X0119    | -1045   | The unique constraint cannot be used because it is deferrable.
+| X011A    | -1046   | Referenced and referencing column lists do not match for constraint <name>.
+| X011B    | -1047   | Unable to drop view <name> due to view being used by other objects.
+| X011D    | -1049   | Attempting to drop a NOT DROPPABLE constraint.
+| X011E    | -1050   | Cannot drop constraint used as a referenced object for a foreign key.
+| X011F    | -1051   | Insufficient privilege on <name>.
+| X011G    | -1052   | Trying to drop a constraint that does not belong to requested table.
+| X011H    | -1053   | Unique index <name> could not be created because the column(s) specified contain duplicate data.
+| X011I    | -1054   | Index <name> already exists.
+| X011J    | -1055   | Table, view, or stored procedure <name> already exists.
+| X011L    | -1057   | The DAM volume specified (<name>) is not available or is not audit protected.
+| X011M    | -1058   | Lock <name> already exists.
+| X011N    | -1059   | Request failed. Dependent constraint <name> exists.
+| X011P    | -1061   | Cannot drop metadata catalog <name>.
+| X011Q    | -1062   | Cannot drop metadata schema <name>.
+| X011R    | -1063   | Cannot drop metadata index <name>.
+| X011S    | -1064   | Cannot drop metadata view <name>.
+| X011T    | -1065   | Cannot create constraint <name> in metadata schema.
+| X011U    | -1066   | Cannot create index <name> in metadata schema.
+| X011X    | -1069   | Unable to drop schema <name>.
+| X011Y    | -1070   | Unable to create object <name> (file error <num>).
+| X011Z    | -1071   | Unable to access object <name> (file error <num>).
+| X0120    | -1072   | Unique constraint <name> is disabled; cannot create foreign key constraint <name>.
+| X0121    | -1073   | Only the super ID user can execute INITIALIZE SQL.
+| X0123    | -1075   | Catalog <name> contains at least one schema. The catalog must be empty.
+| X0125    | -1077   | Metadata table <name> does not contain information for view <name>.
+| X0126    | -1078   | The format of the specified location name <name> is invalid.
+| X0127    | -1079   | Unable to prepare the statement.
+| X0128    | -1080   | Duplicate references to column <name> in the create request.
+| X0129    | -1081   | Loading of index <name> failed unexpectedly.
+| X012A    | -1082   | Validation for constraint <name> failed unexpectedly.
+| X012B    | -1083   | Validation for constraint <name> failed; incompatible data exists in table.
+| X012C    | -1084   | Invalid default value for column <name>.
+| X012D    | -1085   | The calculated key length is greater than 255 bytes.
+| X012E    | -1086   | Lock <name> does not exist.
+| X012F    | -1087   | Lock cannot be granted, conflicting operation is in progress.
+| X012G    | -1088   | Cannot instantiate object <name>, conflicting lock exists.
+| X012M    | -1094   | Unable to drop object <name> because it is not a <name>.
+| X012N    | -1095   | The partition by column <name> should also be part of the clustering/storage key.
+| X012Q    | -1098   | Duplicate partition key (<name>) specified for object <name>.
+| X012R    | -1099   | Column <num> is unnamed. You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.
+| X012S    | -1100   | Unable to select <name.schema.name>.
+| X012T    | -1101   | Unable to update <name.schema.name>.
+| X012U    | -1102   | Unable to insert rows into <name.schema.name>.
+| X012V    | -1103   | Unable to delete rows from <name.schema.name>.
+| X012W    | -1104   | Default value string too long for column <name>.
+| X012X    | -1105   a | CREATE TABLE LIKE statement cannot contain both HORIZONTAL PARTITIONS and STORE BY clauses.
+| X012Y    | -1106   | The specified partition <name> of object <name> does not exist.
+| X0130    | -1108   | The number of columns specified in the view column list, <num>, does not match the degree of the query expression, <num>.
+| X0131    | -1109   | The WITH CHECK OPTION clause appears in the definition of view name, but the view is not updateable.
+| X0136    | -1114   | Unable to create catalog <name> metadata tables on <name>.
+| X0137    | -1115   | Unable to create label for <name> (file error <num>) <name>.
+| X0138    | -1116   | The current partitioning scheme requires a user-specified primary key on object <name>.
+| X0139    | -1117   | Cannot drop the only partition of the table. There must be at least two partitions available to perform the drop.
+| X013A    | -1118   | Cannot create object <name> in metadata schema.
+| X013B    | -1119   | Cannot drop metadata object <name>.
+| X013E    | -1122   | The number of specified partition key values (<num>) for object <name> exceeds the number of key columns used, <num>.
+| X013G    | -1124   | Schema <name> is an unknown version.
+| X013H    | -1125   | API request version number mismatch.
+| X013J    | -1127   | The specified table <name> is not a base table. Please verify that the correct table was specified.
+| X013K    | -1128   | Invalid API request. Details: <text>.
+| X013M    | -1130   | The column requires a default value.
+| X013O    | -1132   | An added column cannot have both DEFAULT NULL and NOT NULL.
+| X013P    | -1133   | Only the super ID can perform this operation.
+| X013Q    | -1134   | Concurrent DDL operations are being performed on the given object. The current operation cannot be performed.
+| X013R    | -1135   | Clustering key column <name> must be assigned a NOT NULL NOT DROPPABLE constraint.
+| X013T    | -1137   | Invalid index status. Details: <text>.
+| X013U    | -1138   | Invalid input parameter(s). Object name and status are required.
+| X013V    | -1139   | System-generated column <name> of base table <name> cannot appear in the search condition of a check constraint definition.
+| X013W    | -1140   | Row-length <num> exceeds the maximum allowed row-length of <num> for table <name>.
+| X013X    | -1141   | Could not obtain an up-and-audited DAM volume. Please check your system configuration.
+| X013Z    | -1143   | Validation for constraint <name> failed; incompatible data exists in referencing base table <name> and referenced base table <name>. To display the data violating the constraint, please use the following DML statement: <name>
+| X0140    | -1144   | Expected a quoted string in first key clause for column <name> on table <name>, value detected is (<name>).
+| X0141    | -1145   | The catalog name <name> is reserved for Trafodion metadata.
+| X0142    | -1146   | Unable to alter object <name> because it is not a <name>.
+| X0143    | -1147   | System-generated column <name> of base table <name> cannot appear in a unique or primary key constraint definition.
+| X0144    | -1148   | System-generated column <name> of base table <name> cannot appear in a referential integrity constraint definition.
+| X0151    | -1181   | Unable to drop object <name> (file error <num>).
+| X0152    | -1182   | Cannot instantiate constraint <name>, conflicting lock exists.
+| X0153    | -1183   | Cannot instantiate module <name>, conflicting lock exists.
+| X0154    | -1184   | Insufficient privilege on <name>.
+| X0155    | -1185   | The location name is either invalid or missing.
+| X0157    | -1187   | The schema name <name> is reserved for Trafodion metadata.
+| X0158    | -1188   | Unable to create referential integrity constraint <name> for table <name> due to circular dependency: <name>.
+| X0166    | -1222   | Invalid file type <type>.
+| X0168    | -1224   | Invalid data type for routine param <name>.
+| X0169    | -1225   | Error on access to PROCS table. Trafodion error <integer>.
+| X016A    | -1226   | Error on access to PARAMS table. Trafodion error <integer>.
+| X016F    | -1231   | Unable to create user-defined routine <routine-name>.
+| X0200    | -2000   | Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
+| X0201    | -2001   | Error or warning <num> occurred while opening or reading from DEFAULTS table <name>. Using <name> values.
+| X0202    | -2002   | Internal error: cannot create MXCMP server.
+| X0203    | -2003   | Internal error: cannot establish connection with MXCMP server.
+| X0204    | -2004   | Internal error: error from MXCMP; cannot work on this query.
+| X0205    | -2005   | Internal error: from compilation, no errors in diagnostics yet for statement: <name>
+| X0206    | -2006   | Internal error: assertion failure (<name>) in file <name> at line <num>.
+| X0208    | -2008   | Internal error: out of virtual memory.
+| X020A    | -2010   | Internal IPC error.
+| X020B    | -2011   | Unable to create server process. Error <num> while resolving program file name <name>.
+| X020C    | -2012   | Unable to create server process <name>. Error <num>, TPC Error = <num>, error detail = <text>. (See  procedure PROCESS_LAUNCH_ for details).
+| X020D    | -2013   | Unable to create server process <name>.  error <num> on program file.
+| X020E    | -2014   | Unable to create server process <name>.  error <num> on swap file.
+| X020F    | -2015   | Unable to create server process <name>. CPU is unavailable ( error <num>).
+| X020G    | -2016   | Server process <name> was started but had undefined externals.
+| X020H    | -2017   | Unable to create server process <name>. No more processes (PCBs) available.
+| X020I    | -2018   | Unable to create server process <name>. Library conflict.
+| X020J    | -2019   | Unable to create server process <name>. Unable to allocate virtual memory.
+| X020K    | -2020   | Unable to create server process <name>. Unlicensed privileged program.
+| X020L    | -2021   | System error <num> in <name> from <name>.
+| X020M    | -2022   | System error <num> in <name> from <name>, detail <text>.
+| X020N    | -2023   | Unable to create server process <name>. <name>.
+| X020P    | -2025   | Unable to create server process <name>. CPU is unavailable; <name>.
+| X020R    | -2027   |  error <num> while sending a startup message to process <name>.
+| X020S    | -2028   | Unable to create OSS server process <name>. Insufficient resources.
+| X020T    | -2029   | Unable to create OSS server process <name>. OSS is not running.
+| X020U    | -2030   | Unable to create server process <name> via inetd (err no = <num>).
+| X020X    | -2033   | <text>:  error <num> while communicating with process <name>.
+| X020Y    | -2034   | <text>:  error <num> while communicating with server process <name>.
+| X020Z    | -2035   | <text>: Unable to open process <name> (err no = <num>).
+| X0211    | -2037   | <receiving-process>: A message from process <sending-process> was incorrectly formatted and could not be processed.
+| X021G    | -2052   | Optimizer internal counters: <name> <name> <name> <name>.
+| X021H    | -2053   | ASSERTION FAILURE CAUGHT BY OPTIMIZER! Attempting to recover and produce a plan.
+| X021N    | -2059   | Warnings while reading values from DEFAULTS table <name>.
+| X0221    | -2073   | Only the super ID user can compile system module <name>.
+| X0222    | -2074   | The name <name> is reserved for future system modules.
+| X0228    | -2080   | Error <num> while reading file: <num> bytes were read from <name> when <num> were expected in module <name>.
+| X0229    | -2081   | Error <num> while opening file <name> for read.
+| X022A    | -2082   | Error <num> while opening file <name> for write.
+| X022B    | -2083   | Error <num> while naming or locating file <name>.
+| X022C    | -2084   | Error <num> while writing <num> bytes to file <name>.
+| X022D    | -2085   | Error <num> while closing file <name>.
+| X022E    | -2086   | Unable to purge the file <name>. This file contains the results of a failed compilation and should be purged.
+| X022I    | -2090   | The command line argument for module name, <name>, is being ignored in favor of module name <name> in file <name>.
+| X022N    | -2095   | Module file <name>, expected to contain module <name>, instead contains <name>.
+| X022Q    | -2098   | The <name> compilation completed with <num> warnings.
+| X022R    | -2099   | The <name> compilation failed with <num> errors and <num> warnings.
+| X022S    | -2100   | Break was received. The compilation has been aborted.
+| X022T    | -2101   | Compilation failure due to internal error.
+| X022U    | -2102   | Unable to compile this query with 'MINIMUM' optimization level. Suggestion: Retry with 'MEDIUM' optimization level.
+| X022V    | -2103   | Unable to compile this query for one/both of the following reasons: a) Use of 'MINIMUM' optimization level, or b) Incompatible Control Query Shape specifications.
+| X022W    | -2104   |  Unable to compile this query for one of two reasons: a)
+Incompatible Control Query Shape (CQS) specifications, or b) 'MEDIUM'
+optimization level is not sufficient to satisfy the CQS in effect.
+Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization
+level to 'MAXIMUM'. Note that for this query, 'MAXIMUM' optimization
+level might result in a long compile time.
+| X022X    | -2105   | Unable to compile this query because of incompatible Control Query Shape (CQS) specifications. Suggestion: Inspect the CQS in effect.
+| X022Y    | -2106   | Unable to compile this statement since it is too long. Suggestion: Break up large statements into smaller pieces.
+| X022Z    | -2107   | Unable to compile this statement. Suggestion: Address the issue(s) raised in the reported warning(s).
+| X0230    | -2108   | Statement was compiled as if query plan caching were off.
+| X02P0    | -2900   | in file <name> at line <num>:
+| X0300    | -3000   | An internal error occurred in module <name> on line <num>. DETAILS(<text>).
+| X0344    | -3148   | Environment variable <name> is being ignored because this version of the code is Release, not Debug. Actual query results will likely not match expected results.
+| X034I    | -3162   | Procedure parameter <name> was not used.
+| X034J    | -3163   | Host variable <name> appears more than once in the INTO list. Execution results will be undefined.
+| X0352    | -3182   | Extra semicolon(;) in a compound statement.
+| X0400    | -4000   | Internal error in the query binder.
+| X0422    | -4074   | CONTROL QUERY successful.
+| X042U    | -4102   | The FIRST/ANY n syntax cannot be used with in an outermost SELECT statement.
+| X043G    | -4124   | More than one table will be locked: <name>.
+| X0446    | -4150   | Primary key of table expression <name> must be used for join with embedded <name> expression. Tables in scope: <name>.
+| X0447    | -4151   | Stream access supported only on updateable views <name>.
+| X0448    | -4152   | Table <name> cannot be both read and updated.
+| X0449    | -4153   | Statement might not compile due to an order requirement on stream expression.
+| X044A    | -4154   | Statement might not compile due to an order requirement on embedded <name> expression.
+| X044B    | -4155   |  Secondary indexes don't support order requirement. Table: <name>.
+| X044D    | -4157   | Inner relation of left join cannot be stream expression. Tables in scope: <name>.
+| X044E    | -4158   | Join of stream expressions not supported. Tables in scope: <name>.
+| X044F    | -4159   | Intersection of stream expressions not supported. Tables in scope: <name>.
+| X044G    | -4160   | Intersection between embedded <name> expression and embedded <name> expression not supported. Tables in scope: <name>, <name>.
+| X044H    | -4161   | Union between embedded <name> expression and embedded <name> expression not supported. Tables in scope: <name>, <name>.
+| X044I    | -4162   | Groupby not supported for stream expression. Tables in scope: <name>.
+| X044J    | -4163   | Groupby not supported for embedded <name> expression. Tables in scope: <name>.
+| X044K    | -4164   | Outer relation of right join cannot be embedded <name> expression. Tables in scope: <name>.
+| X044L    | -4165   | Outer relation of right join cannot be stream expression. Tables in scope: <name>.
+| X044M    | -4166   | ORDER BY clause not supported in UNION of two streams. Tables in scope: <name>, <name>.
+| X044N    | -4167   | Embedded <name> statements not supported in subqueries.
+| X044O    | -4168   | Stream expressions not supported in subqueries.
+| X044P    | -4169   | Embedded DELETE statements not allowed when using DECLARE . . . FOR UPDATE clause.
+| X044Q    | -4170   | Stream expressions not supported for insert statements.
+| X044R    | -4171   | Embedded <name> statements not supported in INSERT statements.
+| X044T    | -4173   | Stream expression not supported for top level UPDATE statements.
+| X044U    | -4174   | JOIN_ORDER_BY_USER prevented compiler from reordering query tree.
+| X044V    | -4175   | Join between embedded <name> expression and embedded <name> expression not supported. Tables in scope: <name>.
+| X044W    | -4176   | Join between stream expression and embedded <name> expression not supported. Tables in scope: <name>.
+| X044X    | -4177   | Update of <name> column <name> not permitted on rollback.
+| X044Y    | -4178   | Update of variable length column <name> not permitted on rollback.
+| X044Z    | -4179   | SEQUENCE BY not supported for stream expressions.
+| X0450    | -4180   | Stream expression not supported for top level DELETE statement.
+| X0451    | -4181   | Join with embedded <name> expression is not supported.
+| X0452    | -4182   | Selection predicate on any but the innermost correlation name of an embedded <name> expression is not supported.
+| X045K    | -4200   | Stream expressions not supported for compound statements.
+| X045L    | -4201   | Embedded <name> expression not supported for compound statements.
+| X045M    | -4202   | SEQUENCE BY not supported for embedded <name> expressions.
+| X045N    | -4203   | INSERT/UPDATE/DELETE operation on nonaudited table <name> requires index maintenance which might cause the index(es) to become corrupt.
+| X045O    | -4204   | Stream access supported only for key-sequenced tables. Table: <name>.
+| X045P    | -4205   | Embedded <name> supported only for key-sequenced tables. Table: <name>.
+| X045Q    | -4206   | Embedded <name> supported only for updateable views. View: <name>.
+| X045R    | -4207   | Index <name> and other indexes covering a subset of columns do not cover all output values of stream.
+| X045S    | -4208   | Index <name> and other indexes covering a subset of columns do not cover all columns referenced in where clause of stream.
+| X045T    | -4209   | Update of nullable column <name> not permitted on rollback.
+| X045U    | -4210   | Embedded UPDATE/DELETE statements are not supported within an IF statement.
+| X045W    | -4212   | <table-name> cannot be used to satisfy order requirement on the stream because it is partitioned.
+| X045X    | -4213   | Use of rowsets in a predicate with embedded UPDATE/DELETE not supported.
+| X045Y    | -4214   | The SET ON ROLLBACK clause is not allowed on a nonaudited table. Table: <name>.
+| X045Z    | -4215   | Stream access is not allowed on a nonaudited table. Table: <name>.
+| X0460    | -4216   | The FIRST/ANY n syntax cannot be used with an embedded update or embedded DELETE statement.
+| X0461    | -4217   | 
+| X048C    | -4300   | Invalid usage of procedure <procedure-name> - A UDR was invoked within a trigger.
+| X048E    | -4302   | Procedure <procedure-name> expects <value-1> parameters but was called with <value-2> parameters.
+| X048F    | -4303   | The supplied type for parameter value of routine <routine-name> was <type-name-1> which is not compatible with the expected type <type-name-2>.
+| X048G    | -4304   | Host variable or dynamic parameter <parameter-name> is used in more than one OUT or INOUT parameter for routine routine-name. Results might be unpredictable.
+| X048H    | -4305   | Parameter <value> for used defined routine <routine-name> is an OUT or INOUT parameter and must be a host variable or a dynamic parameter.
+| X048I    | -4306   | A CALL statement is not allowed within a compound statement.
+| X048J    | -4307   | Rowset parameters are not allowed in a CALL statement.
+| X048K    | -4308   | Internal error: unsupported SQL data type <value> specified for a CALL statement parameter.
+| X0500    | -5000   | Internal error in the query normalizer.
+| X0600    | -6000   | Internal error in the query optimizer.
+| X0602    | -6002   | The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid values. If you have manually modified the metadata table, then you should undo your changes using the CLEAR option in UPDATE STATISTICS.
+| X0607    | -6007   | Multi-column statistics for columns <name> from table <name> were not available; as a result, the access path chosen might not be the best possible.
+| X0608    | -6008   | Statistics for column <name> were not available; as a result, the access path chosen might not be the best possible.
+| X0700    | -7000   | Internal error in the code generator in file <name> at line <num>: <text>.
+| X0701    | -7001   | Invalid default value <name> for column <name>.
+| X0801    | -8001   | Internal executor error.
+| X0802    | -8002   | The current nowaited operation is not complete.
+| X0803    | -8003   | The descriptor is locked by another nowaited operation.
+| X0806    | -8006   | The stream timed out, but the cursor is still open.
+| X0807    | -8007   | The operation has been canceled.
+| X080A    | -8010   | Default catalog name: <name>. Default schema name: <name>.
+| X080B    | -8011   | SELECT statement inside compound (BEGIN . . . END) statement returns more than one row.
+| X080C    | -8012   | Encoding of CONTROL QUERY DEFAULTs: <name>.
+| X080E    | -8014   | A SELECT statement within compound statement did not return any row.
+| X080G    | -8016   | An attempt was made to access <name> which has a system version that is incompatible with the version of the accessing software.
+| X080H    | -8017   | Explain information is not available for this query.
+| X080J    | -8883   | 
+| X08P1    | -8901   | The MXUDR server for this statement is no longer running. The statement will be assigned a new MXUDR server if it is executed again.
+| X08P2    | -8902   | Internal error: MXUDR returned an invalid UDR handle.
+| X08P3    | -8903   | An attempt was made by Trafodion to kill the MXUDR server for this statement <process-name>. PROCESS_STOP_ returned <value>.
+| X08P4    | -8904   | Unable to receive reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
+| X08P6    | -8906   | An invalid or corrupt MXUDR reply could not be processed, possibly due to memory corruption in MXUDR while executing friendly user-defined routines or an internal error in Trafodion.
+| X082S    | -8100   | Define <name> does not exist
+| X08O4    | -8868   | Unable to create context when current transaction is implicitly started by SQL.
+| X08O5    | -8869   | The specified file number is not a QFO, or the file number is not internally associated with a QFO object (CLI internal error).
+| X08O6    | -8870   | The current statement is not associated with any QFO.
+| X08O7    | -8871   | Nowait tag is not specified in the <statement-id>.
+| X08O8    | -8872   | Unable to execute a new operation while there is another nowaited operation pending.
+| X08O9    | -8873   | The current statement is already associated with a QFO.
+| X08OG    | -8880   | Cannot remove the current context.
+| X08OH    | -8881   | The specified CLI context handle is not found
+| X08OI    | -8882   | Containing SQL not permitted.
+| X08OJ    | -8883   | The current context has violation checking functions disabled. Use SQL_EXEC_SetUdrAttributes_Internal() to enable it.
+| X08OU    | -8894   | Argument <argument-name> of CLI function <function-name> is reserved for future use and must be set to <string> when calling the function.
+| X083W    | -8140   | Prohibited SQL statement attempted.
+| X083X    | -8141   | An error was artificially injected, to test error handling. File <name> at line <num>.
+| X088C    | -8300   | Late name resolution failed.
+| X088D    | -8301   | Late name resolution failed. File system error <num> on file <name>.
+| X088E    | -8302   | Late name resolution failed. SQLCODE error <num> from <name>.
+| X08BL    | -8417   | An error occurred during the evaluation of a USER function.
+| X08BR    | -8423   | The provided field number is not valid.
+| X08BT    | -8425   | NULL cannot be assigned to a DEFAULT NULL NOT NULL column.
+| X08BV    | -8427   | <text>
+| X08BW    | -8428   | The argument to function <name> is not valid.
+| X08BX    | -8429   | The preceding error actually occurred in function <name>.
+| X08FA    | -8550   | Error <num> was returned by the Data Access Manager.
+| X08FB    | -8551   | Error <num> was returned by the Distribution Service on <name>.
+| X08FC    | -8552   | Error <num> was returned by the Distribution Service while fetching the version of the system <name>.
+| X08FD    | -8553   | Stream overflow; subscription rate has fallen too far behind publishing rate.
+| X08FU    | -8570   | Insufficient memory to build query.
+| X08FV    | -8571   | Insufficient memory to execute query.
+| X08FW    | -8572   | The statement has incurred a fatal error and must be deallocated.
+| X08FY    | -8574   | An OPEN was blown away on table <name>.
+| X08FZ    | -8575   | Timestamp mismatch on table <name>.
+| X08G0    | -8576   | Statement was recompiled.
+| X08G1    | -8577   | Table, index, or view <name> not found.
+| X08G2    | -8578   | Similarity check passed.
+| X08G3    | -8579   | Similarity check failed: <name>
+| X08GP    | -8601   | Error returned from file system while locking/unlocking.
+| X08GQ    | -8602   | The file system reported error <num> on a lock/unlock operation.
+| X08JG    | -8700   | An assertion failure or out-of-memory condition occurred during parallel execution.
+| X08JQ    | -8710   | Error <num> returned by Measure when attempting to update SQL counters.
+| X08MG    | -8808   | Module file <name> contains corrupted or invalid data.
+| X08MH    | -8809   | Unable to open the module file <name>.
+| X08MN    | -8815   | Error while building the TCB tree when executing the statement.
+| X08MO    | -8816   | Error while executing the TCB tree.
+| X08MP    | -8817   | Error while fetching from the TCB tree.
+| X08MQ    | -8818   | Error from root_tdb describe.
+| X08MU    | -8822   | Unable to prepare the statement.
+| X08MV    | -8823   | Internal error: IO requests are waiting for <name> message in the IpcMessageStream.
+| X08MW    | -8824   | The input <module-id> does not have a module name.
+| X08MX    | -8825   | Module is already added into the current context.
+| X08MY    | -8826   | Unable to add the module.
+| X08MZ    | -8827   | Unable to send the request <name>.
+| X08N0    | -8828   | Out of memory while creating the <name>.
+| X08N2    | -8830   | There is no current context.
+| X08N3    | -8831   | Either no current context or the module to which the statement belongs is not added to the current context.
+| X08N6    | -8834   | Unable to find the installation directory. Operating system error <num>.
+| X08N7    | -8835   | Invalid SQL descriptor information requested.
+| X08N8    | -8836   | Invalid update column for cursor.
+| X08N9    | -8837   | Invalid user id.
+| X08NA    | -8838   | Unable to receive reply from MXCMP, possibly caused by internal errors when compiling SQL statements, processing DDL statements, or executing the built in stored procedures.
+| X08NC    | -8840   | Object name provided to CLI is invalid.
+| X08NE    | -8842   | The cursor, <name>, referenced by this statement is not found or is not updateable.
+| X08NH    | -8845   | Internal error: root_tcb is null.
+| X08NI    | -8846   | Empty SQL statement.
+| X08NN    | -8851   | CLI Parameter bound check error.
+| X08NO    | -8852   | Holdable cursors are supported only for streaming cursors and embedded UPDATE/DELETE cursors.
+| X08NU    | -8858   | The value: (<num>) passed in through input a host variable/parameter is an invalid SQL identifier
+| X08NV    | -8859   | There are pending insert, delete, or update operations.
+| X08NW    | -8860   | Module file <name> has obsolete module header.
+| X08NX    | -8861   | Module file <name> has obsolete descriptor location table header.
+| X08NY    | -8862   | Module file <name> has obsolete descriptor location table entry.
+| X08NZ    | -8863   | Module file <name> has obsolete descriptor header.
+| X08O0    | -8864   | Module file <name> has obsolete descriptor entry.
+| X08O1    | -8865   | Module file <name> has obsolete procedure location table header.
+| X08O2    | -8866   | Module file <name> has obsolete procedure location table entry.
+| X08O3    | -8867   | Error while reading from file <name>.
+| X08OQ    | -8890   | The SQL compiler failed to initialize properly. Query results might differ from what is expected, due to different compiler defaults.
+| X08OR    | -8891   | Non-ASCII character host variable type for <name> field.
+| X08OX    | -8897   | RPC exception in CLI request from non-trusted shadow client to trusted shadow server.
+| X08OY    | -8898   | Internal error in CLI.
+| X095K    | -9200   | UPDATE STATISTICS encountered an error from <name>.
+| X095L    | -9201   | Unable to DROP object <name>.
+| X095M    | -9202   | UPDATE STATISTICS has located previously generate histogram that are not being regenerated. This might affect the plans that will be generated. Missing column lists are <column-list>.
+| X095N    | -9203   | Column names must be unique when specified in column list: (<name>).
+| X095O    | -9204   | The range of interval count is from 1 to 200.
+| X095P    | -9205   | UPDATE STATISTICS for object <name> is not supported.
+| X095Q    | -9206   | You are not authorized to read/write object <name>. Verify that you have the necessary access privileges.
+| X095R    | -9207   | You are not allowed to generate histogram statistics on an ISO88591 CHARACTER SET column which contains a null terminator character. You need to exclude this column from the column group list in UPDATE STATISTICS.
+| X095S    | -9208   | Unable to access column definitions.
+| X095T    | -9209   | Column name <name> does not exist in the table.
+| X095U    | -9210   | One of the column data types is not supported by UPDATE STATISTICS. You need to exclude this column from the column group list in UPDATE STATISTICS.
+| X095W    | -9212   | Cardinality statistics will be more accurate if you use SET ROWCOUNT option in the SAMPLE clause.
+| X095X    | -9213   | If you intend to update histogram statistics for columns, you must specify a column group list in the statement.
+| X095Y    | -9214   | Unable to create object <name>.
+| X095Z    | -9215   | UPDATE STATISTICS encountered an internal error (<location>).
+| X0A01    | -10001  | Sort Error: No error text is defined for this error.
+| X0A03    | -10003  | Sort Error: Warning: Scratch File EOF
+| X0A04    | -10004  | Sort Error: Merge is disallowed for Sort
+| X0A05    | -10005  | Sort Error: Unexpected error value. Check error
+| X0A06    | -10006  | Sort Error: Previous IO failed
+| X0A07    | -10007  | Sort Error: Error writing to Scratch File
+| X0A08    | -10008  | Sort Error: Invalid sort algorithm selected
+| X0A0A    | -10010  | Sort Error: Run number is invalid
+| X0A0B    | -10011  | Sort Error: Error reading Scratch File
+| X0A0C    | -10012  | Sort Error: Scratch Block number is invalid
+| X0A0D    | -10013  | Sort Error: No fixed disks to sort on
+| X0A0E    | -10014  | Sort Error: No memory to allocate scratch space
+| X0A0F    | -10015  | Sort Error: PROCESSHANDLE_GETMINE_ failed
+| X0A0G    | -10016  | Sort Error: PROCESSHANDLE_DECOMPOSE_ failed
+| X0A0H    | -10017  | Sort Error: DEVICE_GETINFOBYLDEV_ failed
+| X0A0I    | -10018  | Sort Error: FILENAME_FINDSTART_ failed
+| X0A0J    | -10019  | Sort Error: FILENAME_FINDNEXT_ failed
+| X0A0K    | -10020  | Sort Error: FILENAME_FINDFINISH_ failed
+| X0A0L    | -10021  | Sort Error: FILE_GETINFOLISTBYNAME_ failed
+| X0A0M    | -10022  | Sort Error: FILE_CREATE failed
+| X0A0N    | -10023  | Sort Error: FILE_OPEN_ failed
+| X0A0O    | -10024  | Sort Error: SetMode failed
+| X0A0P    | -10025  | Sort Error: FileClose failed
+| X0A0Q    | -10026  | Sort Error: AWAITIOX failed
+| X0A0R    | -10027  | Sort Error: FILE_GETINFOLIST failed
+| X0A0S    | -10028  | Sort Error: POSITION failed
+| X0A0T    | -10029  | Sort Error: FILE_GETINFO_ failed
+| X0A18    | -10044  | Sort Error: IO did not complete
+| X0A1B    | -10047  | Sort Error: Wrong length read
+| X0B2T    | -11101  | MXUDR: Unknown message type: <value>.
+| X0B2V    | -11103  | MXUDR: Invalid routine handle: <string>.
+| X0B2W    | -11104  | MXUDR: CLI Error: <error-text>.
+| X0B2X    | -11105  | MXUDR: Invalid Language Manager param mode. Parameter <parameter-value>.
+| X0B30    | -11108  | MXUDR: Unable to allocate memory for object <object-name>.
+| X0B32    | -11110  | MXUDR: Unexpected error during message processing: <string>.
+| X0B33    | -11111  | MXUDR: Internal error: <value>.
+| X0B35    | -11113  | MXUDR: Internal error: An unexpected UNLOAD request arrived for UDR handle <string>.
+| X0B5L    | -11201  | Language Manager initialization failed. Details: Error occurred while loading Java System Class <class-name>.
+| X0B5M    | -11202  | Language Manager initialization failed. Details: Unable to initialize JVM.
+| X0B5N    | -11203  | The Language Manager failed to create its class loader, possibly due to corrupt LmClassLoader.class file.
+| X0B5Q    | -11206  | Java class <class-file-name> was not found in external path <path-name>.
+| X0B5R    | -11207  | Java class <class-file-name> failed to initialize.
+| X0B60    | -11216  | Java execution: Data overflow occurred while retrieving data at parameter position <parameter-number>.
+| X0B61    | -11217  | Java execution: Data overflow occurred while retrieving data at parameter position <parameter-number>. Value is truncated.
+| X0B63    | -11219  | Specified signature is invalid. Reason: the number of parameters <value> must match the number of parameters in Java method.
+| X0B65    | -11221  | Specified signature is invalid. Reason: Missing [ ] for OUT/INOUT parameter at position <value>.
+| X0B66    | -11222  | Specified signature is invalid. Reason: Unknown parameter type used at position <value>.
+| X0B67    | -11223  | Language Manager encountered internal error <detail-text>.
+| X0B68    | -11224  | JVM raised an exception. Details: <detail-text>.
+| X0B69    | -11225  | Specified signature is invalid. Reason: Unknown or unsupported type used as a return type.
+| X0B6A    | -11226  | Java execution: Invalid null input value at parameter position <value>.
+| X0B6B    | -11227  | Java execution: Data overflow occurred while retrieving data at parameter position <value>.
+| X0B6C    | -11228  | Floating point conversion error <detail-text>.
+| X0D01    | -13001  | Java execution: Data overflow occurred while retrieving data at parameter position <value>. Value is truncated.
+| X0D04    | -13004  | A Java method completed with an uncaught Java exception. Details: <string>.
+| X0D05    | -13005  | A Java method completed with an uncaught java.sql.SQLException. Details: <string>.
+| X0D06    | -13006  | A Java method completed with an uncaught java.sql.SQLException with invalid SQLSTATE. The uncaught exception had an SQLCODE of <SQLCODE-value> and SQLSTATE of <SQLSTATE-value>. Details: <string>.
+| X0D07    | -13007  | Language Manager is out of memory <string>.
+| X0D08    | -13008  | The operation failed because the Java Virtual Machine ran out of memory.
+| X0D09    | -13009  | Language Manager encountered internal error <string>.
+| X0D0A    | -13010  | JVM raised an exception. Details: <string>.
+| X0D0B    | -13011  | Specified signature is invalid. Reason: The Java signature for a Java main method must be (java.lang.<string>[ ]).
+| X0D0C    | -13012  | All SQL parameters associated with a Java main method must have a parameter mode of IN.
+| X0D0D    | -13013  | All SQL parameters associated with a Java main method must be an SQL character type.
+| X0D0E    | -13014  | Unable to open the output source file <name>.
+| X0D0F    | -13015  | Unable to open the module definition file <name>.
+| X0D0G    | -13016  | Descriptor name <name> conflicts with SQLC default name <name>.
+| X0D0H    | -13017  | Descriptor <name> is multiply defined.
+| X0D0I    | -13018  | Descriptor name <name> is invalid.
+| X0D0J    | -13019  | Statement name <name> uses <name>, a reserved name SQLC generates.
+| X0D0K    | -13020  | Statement name <name> is multiply defined.
+| X0D0L    | -13021  | <name> is already defined.
+| X0D0M    | -13022  | Cursor <name> is already defined.
+| X0D0N    | -13023  | <name> is already defined as a dynamic cursor.
+| X0D0O    | -13024  | Cursor <name> was not declared.
+| X0D0Q    | -13026  | The EXEC SQL MODULE statement must precede any cursor definitions or executable SQL statements.
+| X0D0R    | -13027  | Only one EXEC SQL MODULE statement is allowed.
+| X0D0S    | -13028  | Cannot open static cursor <name> because <name> is out of scope at time of open.
+| X0D0T    | -13029  | <line-number-detail-text>
+| X0D0U    | -13030  | <line-number-detail-text>
+| X0D0V    | -13031  | Expecting a single host variable of type string.
+| X0D0W    | -13032  | Not expecting input host variables for static cursor <name>.
+| X0D0X    | -13033  | Host variable <name> is in different scope than when cursor <name> was declared.
+| X0D0Z    | -13035  | Invalid line number <num> for line pragma; ignoring the rest.
+| X0D12    | -13038  | Array size <name> expected to be an unsigned integer near line <num>.
+| X0D13    | -13039  | Function definition is not allowed within an SQL declare section near line <num>.
+| X0D14    | -13040  | Expecting ")" near line <num>.
+| X0D16    | -13042  | Unnamed declaration near line <num>.
+| X0D17    | -13043  | Expecting <name> near line <num>.
+| X0D18    | -13044  | Type specification <type> is not a recognized type near line <num>.
+| X0D19    | -13045  | Unexpected class declaration near line <num> ignored.
+| X0D1A    | -13046  | Expecting "}" to end member declaration near line <num>.
+| X0D1B    | -13047  | Undefined tag <name> near line <num>.
+| X0D1C    | -13048  | Tag <name> redefined near line <num>.
+| X0D1D    | -13049  | Input file not good near line <num>.
+| X0D1E    | -13050  | Cursor <name> not closed.
+| X0D1F    | -13051  | Cursor <name> not opened.
+| X0D1G    | -13052  | Cursor <name> not fetched.
+| X0D1H    | -13053  | Cursor <name> not opened or closed.
+| X0D1I    | -13054  | Cursor <name> not fetched or closed.
+| X0D1J    | -13055  | Cursor <name> not opened or fetched.
+| X0D1K    | -13056  | Cursor <name> not used.
+| X0D1L    | -13057  | End-of-file processing generated unexpected cursor status of <num> for cursor <name>.
+| X0D1M    | -13058  | Unable to open SQL CLI header file <name>.
+| X0D1O    | -13060  | Unable to open the listing file <name>.
+| X0D1P    | -13061  | Invalid NUMERIC precision specified near line <num>.
+| X0D1Q    | -13062  | Unsigned long long type not allowed near line <num>.
+| X0D1R    | -13063  | Identifier <name> not defined near line <num>.
+| X0D1S    | -13064  | Identifier <name> is not a member of struct <name> near line <num>.
+| X0D1T    | -13065  | End of file was found after <name> when <name> was expected, near line <num>.
+| X0D1U    | -13066  | Identifier <name> was expected to be a structure type near line <num>.
+| X0D1V    | -13067  | Unable to open source file <name>.
+| X0D1X    | -13069  | Missing module specification string argument after -g option.
+| X0D1Y    | -13070  | Module Group Specification String <MVSS-string> is not a Regular Identifier, or is longer than 31 characters.
+| X0D1Z    | -13071  | Module Tableset Specification String <MTSS-string> is not a Regular Identifier, or is longer than 31 characters.
+| X0D20    | -13072  | Module Version Specification String <MVSS-string> is not a Regular Identifier, or is longer than 31 characters.
+| X0D21    | -13073  | Module name <module-name> is not a value OSS file name, or is longer than 128 characters.
+| X0D22    | -13074  | One or more of the first three parts of the externally qualified module name <module-name> is longer than 128 characters.
+| X0D23    | -13075  | Externally qualified module name <module-name> is not a Regular Identifier, or is longer than 248 characters.
+| X0D24    | -13076  | Catalog name <catalog-name> is not a valid OSS file name, or is longer than 128 characters.
+| X0D25    | -13077  | Schema name <schema-name> is not a valid OSS file name, or is longer than 128 characters.
+| X0DDW    | -13500  | SQLCO errors
+| X0DDX    | -13501  | Invalid command option <name>.
+| X0DDY    | -13502  | Source file name must be specified.
+| X0DDZ    | -13503  | Missing filename for command option <name>.
+| X0DE0    | -13504  | Missing timestamp command option.
+| X0DE1    | -13505  | Source input file <name> cannot be opened.
+| X0DE2    | -13506  | COBOL output source file <name> cannot be opened.
+| X0DE3    | -13507  | Error while parsing source: <name>.
+| X0DE4    | -13508  | Expecting <name>, found <name>.
+| X0DE5    | -13509  | Expecting <name> after <name>, found <name>.
+| X0DE6    | -13510  | The SQL declare section might not contain COPY or REPLACE.
+| X0DE7    | -13511  | End of input file while processing EXEC SQL.
+| X0DE8    | -13512  | Input file error while processing EXEC SQL.
+| X0DE9    | -13513  | The BIT data type is not implemented in Trafodion.
+| X0DEA    | -13514  | The CHARACTER SET attribute is not implemented in Trafodion.
+| X0DEB    | -13515  | Picture <name> is not valid for a host variable.
+| X0DEC    | -13516  | Unexpected end of input file encountered after line <num>.
+| X0DED    | -13517  | Line <num> is too long to process and has been truncated.
+| X0DEE    | -13518  | Line <num> cannot be interpreted as a COBOL line type.
+| X0DEF    | -13519  | Line <num> contains an unterminated character literal.
+| X0DEG    | -13520  | Line <num> does not correctly continue a character literal.
+| X0DEH    | -13521  | Line <num>: DISPLAY host variables must be SIGN LEADING SEPARATE.
+| X0DEI    | -13522  | DECLARE SECTION cannot be nested.
+| X0DEJ    | -13523  | END DECLARE SECTION without a matching BEGIN DECLARE SECTION.
+| X0DEK    | -13524  | DECLARE SECTION encountered in unexpected program section.
+| X0DEL    | -13525  | Variable <name> might not be allocated correctly for a host variable.
+| X0DEM    | -13526  | Line <num>, <name>: <name> clause is not valid for a host variable.
+| X0DEN    | -13527  | The first declaration in an SQL DECLARE SECTION must have level 01 or 77.
+| X0DEO    | -13528  | Line <num>: Variable <name> is not alphabetic and cannot have a CHARACTER SET clause.
+| X0DEP    | -13529  | Missing END DECLARE SECTION detected at line <num>.
+| X0DM8    | -13800  | Line <num>: <name> is not a valid character set name.
+| X0F00    | -15000  | SQLCI error messages.
+| X0F04    | -15004  | Error <num> on change directory attempt to <name>.
+| X0F06    | -15006  | Error <num> while reading from file.
+| X0F07    | -15007  | Error <num> while opening file <name>.
+| X0F08    | -15008  | The specified statement does not exist in the history buffer.
+| X0F09    | -15009  | The requested help topic is too long.
+| X0F0A    | -15010  | The help file could not be opened.
+| X0F0B    | -15011  | No help is available for the requested topic.
+| X0F0C    | -15012  | File read error on the help file.
+| X0F0E    | -15014  | Section <name> not found in file <name>.
+| X0F0I    | -15018  | Break was received. The last statement might be lost.
+| X0F0Q    | -15026  | Break rejected.
+| X0F0R    | -15027  | SQL statement not ready. Try Break later.
+| X0F0S    | -15028  | Break error.
+| X0F0T    | -15029  | Operation failed due to insufficient memory.
+| X0F0U    | -15030  | The specified define already exists. Use alter or delete and add.
+| X0F0V    | -15031  | The specified define does not exist.
+| X0F0W    | -15032  | An error occurred while adding, altering or deleting this define.
+| X0F0X    | -15033  | Break was received.
+| X0F0Y    | -15034  | Invalid LOG file name.
+| X0F0Z    | -15035  | Permission denied to access this file
+| X0F10    | -15036  | Invalid filecode OR invalid function argument
+| X0FRR    | -15999  | SQLCI internal error.
+| X0G00    | -16000  | Error message file not found.
+| X0G01    | -16001  | No message found for error or warning <sqlcode>.
+| X0J00    | -19000  | Internal error in internal stored procedure processing.
+| X0J01    | -19001  | Error in field description of internal stored procedure.
+| X0J02    | -19002  | No such internal stored procedure: <name> defined.
+| X0J03    | -19003  | Internal stored procedure failed without any error information returned.
+| X0J0K    | -19020  | Stored procedure <name> expects <num> input parameters.
+| X0J0L    | -19021  | Stored procedure <name> returns with error: <text>.
+| X0K00    | -20000  | SQL Utilities error messages.
+| X0K31    | -20109  | <text>
+| X0P01    | -25001  | Program <executable>, executing on <node>, has encountered a version error.
+| X0P2S    | -25100  | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of node is <version-1>, the local node does not support versions older than <version-2>.
+| X0P2T    | -25101  | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of <node> is <version-1>, the local node supports only version <version-2>.
+| X0P2U    | -25102  | Remote node <node> runs a version of Trafodion which cannot interoperate with other versions. The Trafodion version (version) of <node> is <version-1>.
+| X0P8C    | -25300  | Module <module> had module version <version-1>; node <node> does not support module versions lower than <version-2>.
+| X0P8D    | -25301  | Module <module> had module version <version-1>; the local node does not support module versions higher than <version-2>.
+| X0P8I    | -25306  | A required system module has module version <version-1>; node <node> does not support query plans from modules with module version lower than <version-2>.
+| X0P8J    | -25307  | The query plan can be executed only by a node with Trafodion version (version) <version-1>, the version of <node> is <version-1>.
+| X0P8K    | -25308  | The query plan has plan version <version-1>, the local Trafodion version (version) can execute only query plans with plan version <version-1>.
+| X0P8L    | -25309  | Module <module> can be executed only by a node with Trafodion version (version) version1, the version of <node> is <version-1>.
+| X0P8M    | -25310  | Module <module> has module version <version-1>, the local Trafodion version (version) can execute modules only with module version <version-1>.
+| X0P8N    | -25311  | System module <module> has a wrong module version. The expected module version is <version-1>. The actual module version is <version-2>.
+| X0U08    | -30008  | Internal error. Rowset index is out of range.
+| X0U09    | -30009  | Internal error. Trying to add more elements than maximum rowset size.
+| X0U0A    | -30010  | Internal error. Rowset is corrupted.
+| X0U0B    | -30011  | More than one INTO statement in the same query is not supported.
+| X0U0C    | -30012  | Rowset index <name> must be specified last in the derived column list of <name>.
+| X0U0D    | -30013  | Hostvar used to set input size of rowset has zero or negative value.
+| X0U0E    | -30014  | Hostvar used to set input size of rowset is not of type short, int, or long.
+| X0U0K    | -30020  | Embedded UPDATE/DELETE cannot be used with SELECT. . .INTO and rowset.
+| XW02S    | -100    |  The "no data" completion condition (SQLCODE = +100).
+| XW10C    | -1012   | No privileges were granted. You lack grant option on the specified privileges.
+| XW10D    | -1013   | Not all privileges were granted. You lack grant option on some of the specified privileges.
+| XW10F    | -1015   | Some of the specified privileges could not be revoked.
+| XW82Y    | -8106   | The last row fetched by this cursor was updated or deleted between the FETCH and UPDATE/DELETE. . .WHERE CURRENT. . . of statements.
+|===

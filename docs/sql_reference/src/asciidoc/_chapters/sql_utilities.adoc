@@ -1,0 +1,1028 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sql_utilities]]
+= SQL Utilities
+
+A utility is a tool that runs within Trafodion SQL and performs tasks.
+This section describes the Trafodion SQL utilities:
+
+[cols=","]
+|===
+| <<load_statement,LOAD Statement>>                           | Uses the Trafodion Bulk Loader to load data from a source table, either
+a Trafodion table or a Hive table, into a target Trafodion table.
+| <<populate_index_utility,POPULATE INDEX Utility>>           | Loads indexes.
+| <<purgedata_utility,PURGEDATA Utility>>                     | Purges data from tables and indexes.
+| <<unload_statement,UNLOAD Statement>>                       | Unloads data from Trafodion tables into an HDFS location that you
+specify.
+| <<update_statistics_statement,UPDATE STATISTICS Statement>> | Updates the histogram statistics for one or more groups of columns
+within a table. These statistics are used to devise optimized access plans.
+|===
+
+NOTE: Trafodion SQL utilities are entered interactively or from script
+files using a client-based tool, such as the Trafodion Command Interface
+(TrafCI). To install and configure a client application that enables you
+to connect to and issue SQL utilities, see the
+http://trafodion.incubator.apache.org/docs/client_installation/index.html[_Trafodion Client Installation Guide_].
+
+<<<
+[[load_statement]]
+== LOAD Statement
+
+The LOAD statement uses the Trafodion Bulk Loader to load data from a
+source table, either a Trafodion table or a Hive table, into a target
+Trafodion table. The Trafodion Bulk Loader prepares and loads HFiles
+directly in the region servers and bypasses the write path and the cost
+associated with it. The write path begins at a client, moves to a region
+server, and ends when data eventually is written to an HBase data file
+called an HFile.
+
+The Trafodion bulk load process takes place in two phases:
+
+* _Preparation phase_: In this phase, Trafodion reads the data from
+the source files in Hive or HDFS, partitions the data based on the
+target table's partitioning scheme, sorts the data, and then generates
+key-value pairs that will populate the HFiles. Trafodion also encodes the
+data for faster storage and retrieval.
+* _Loading-the-files-into-HBase phase_: This phase uses the
+LoadIncrementalHFiles (also known as the computebulkload tool) and load
+the generated HFiles into the region servers.
+
+LOAD is a Trafodion SQL extension.
+
+```
+LOAD [WITH option[[,] option]...] INTO target-table SELECT ... FROM source-table
+
+option is:
+    TRUNCATE TABLE
+  | NO RECOVERY
+  | NO POPULATE INDEXES
+  | NO DUPLICATE CHECK
+  | NO OUTPUT
+  | INDEX TABLE ONLY
+  | UPSERT USING LOAD
+```
+
+[[load_syntax]]
+=== Syntax Description of LOAD
+
+* `_target-table_`
++
+is the name of the target Trafodion table where the data will be loaded.
+See <<database_object_names,Database Object Names>>.
+
+* `_source-table_`
++
+is the name of either a Trafodion table or a Hive table that has the
+source data. Hive tables can be accessed in Trafodion using the
+HIVE.HIVE schema (for example, hive.hive.orders). The Hive table needs
+to already exist in Hive before Trafodion can access it. If you want to
+load data that is already in an HDFS folder, then you need to create an
+external Hive table with the right fields and pointing to the HDFS
+folder containing the data. You can also specify a WHERE clause on the
+source data as a filter.
+
+* `[WITH _option_[[,] _option_]&#8230;]`
++
+is a set of options that you can specify for the load operation. You can
+specify one or more of these options:
+
+** `TRUNCATE TABLE`
++
+causes the Bulk Loader to truncate the target table before starting the
+load operation. By default, the Bulk Loader does not truncate the target
+table before loading data.
+
+** `NO RECOVERY`
++
+specifies that the Bulk Loader not use HBase snapshots for recovery. By
+default, the Bulk Loader handles recovery using the HBase snapshots
+mechanism.
+
+** `NO POPULATE INDEXES`
++
+specifies that the Bulk Loader not handle index maintenance or populate
+the indexes. By default, the Bulk Loader handles index maintenance,
+disabling indexes before starting the load operation and populating them
+after the load operation is complete.
+
+** `NO DUPLICATE CHECK`
++
+causes the Bulk Loader to ignore duplicates in the source data. By
+default, the Bulk Loader checks if there are duplicates in the source
+data and generates an error when it detects duplicates.
+
+** `NO OUTPUT
++
+prevents the LOAD statement from displaying status messages. By default,
+the LOAD statement prints status messages listing the steps that the
+Bulk Loader is executing.
+
+* `INDEX TABLE ONLY`
++
+specifies that the target table, which is an index, be populated with
+data from the parent table.
+
+* `UPSERT USING LOAD`
++
+specifies that the data be inserted into the target table using row set
+inserts without a transaction.
+
+<<<
+[[load_considerations]]
+=== Considerations for LOAD
+
+[[load_required_privileges]]
+==== Required Privileges
+
+To issue a LOAD statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the target table.
+* You have these privileges:
+** SELECT and INSERT privileges on the target table
+** DELETE privilege on the target table if TRUNCATE TABLE is specified
+* You have the MANAGE_LOAD component privilege for the SQL_OPERATIONS component.
+
+[[load_configuration_before_running_load]]
+==== Configuration Before Running LOAD
+
+Before running the LOAD statement, make sure that you have configured
+the staging folder, source table, and HBase according to these
+guidelines.
+
+==== Staging Folder for HFiles
+
+The Bulk Loader uses an HDFS folder as a staging area for the HFiles
+before calling HBase APIs to merge them into the Trafodion table. By
+default, Trafodion uses /bulkload/ as the staging
+folder. This folder must be owned by the same user as the one under
+which Trafodion runs. Trafodion
+also must have full permissions on this folder. The HBase user (that is,
+the user under which HBase runs) must have read/write access to this
+folder.
+
+Example:
+
+```
+drwxr-xr-x - trafodion trafodion 0 2014-07-07 09:49 /bulkload.
+```
+
+==== Hive Source Table
+
+To load data stored in HDFS, you will need to create a Hive table with
+the right fields and types pointing to the HDFS folder containing the
+data before you start the load.
+
+<<<
+==== HBase Snapshots
+
+If you do not specify the NO RECOVERY OPTION in the LOAD statement, the
+Bulk Loader uses HBase snapshots as a mechanism for recovery. Snapshots
+are a lightweight operation where some metadata is copied. (Data is not
+copied.) A snapshot is taken before the load starts and is removed after
+the load completes successfully. If something goes wrong and it is
+possible to recover, the snapshot is used to restore the table to its
+initial state before the load started. To use this recovery mechanism,
+HBase needs to be configured to allow snapshots.
+
+[[load_examples]]
+=== Examples of LOAD
+
+* For customer demographics data residing in
+`/hive/tpcds/customer_demographics`, create an external Hive table using
+the following Hive SQL:
++
+```
+create external table customer_demographics
+(
+    cd_demo_sk int
+  , cd_gender string
+  , cd_marital_status string
+  , cd_education_status string
+  , cd_purchase_estimate int
+  , cd_credit_rating string
+  , cd_dep_count int
+  , cd_dep_employed_count int
+  , cd_dep_college_count int
+)
+
+row format delimited fields terminated by '|' location
+'/hive/tpcds/customer_demographics';
+```
+
+* The Trafodion table where you want to load the data is defined using
+this DDL:
++
+```
+create table customer_demographics_salt
+(
+    cd_demo_sk int not null
+  , cd_gender char(1)
+  , cd_marital_status char(1)
+  , cd_education_status char(20)
+  , cd_purchase_estimate int
+  , cd_credit_rating char(10)
+  , cd_dep_count int
+  , cd_dep_employed_count int
+  , cd_dep_college_count int
+  , primary key (cd_demo_sk)
+)
+salt using 4 partitions on (cd_demo_sk);
+```
+
+* This example shows how the LOAD statement loads the
+customer_demographics_salt table from the Hive table,
+`hive.hive.customer_demographics`:
++
+```
+>>load into customer_demographics_salt
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+Task: LOAD Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: DISABLE INDEX Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: DISABLE INDEX Status: Ended Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: PREPARATION Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+       Rows Processed: 5000
+Task: PREPARATION Status: Ended ET: 00:00:03.199
+Task: COMPLETION Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: COMPLETION Status: Ended ET: 00:00:00.331
+Task: POPULATE INDEX Status: Started Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task: POPULATE INDEX Status: Ended ET: 00:00:05.262
+```
+
+<<<
+[[populate_index_utility]]
+== POPULATE INDEX Utility
+
+The POPULATE INDEX utility performs a fast INSERT of data into an index
+from the parent table. You can execute this utility in a client-based
+tool like TrafCI.
+
+```
+POPULATE INDEX index ON table [index-option]
+
+index-option is:
+    ONLINE | OFFLINE
+```
+
+[[populate_index_syntax]]
+=== Syntax Description of POPULATE INDEX
+
+* `_index_`
++
+is an SQL identifier that specifies the simple name for the index. You
+cannot qualify _index_ with its schema name. Indexes have their own
+name space within a schema, so an index name might be the same as a table
+or constraint name. However, no two indexes in a schema can have the
+same name.
+
+* `_table_`
++
+is the name of the table for which to populate the index. See
+<<database_object_names,Database Object Names>>.
+
+* `ONLINE`
++
+specifies that the populate operation should be done on-line. That is,
+ONLINE allows read and write DML access on the base table while the
+populate operation occurs. Additionally, ONLINE reads the audit trail to
+replay updates to the base table during the populate phase. If a lot of
+audit is generated and you perform many CREATE INDEX operations, we
+recommend that you avoid ONLINE operations because they can add more
+contention to the audit trail. The default is ONLINE.
+
+* `OFFLINE`
++
+specifies that the populate should be done off-line. OFFLINE allows only
+read DML access to the base table. The base table is unavailable for
+write operations at this time. OFFLINE must be specified explicitly.
+SELECT is allowed.
+
+<<<
+[[populate_index_considerations]]
+=== Considerations for POPULATE INDEX
+
+When POPULATE INDEX is executed, the following steps occur:
+
+* The POPULATE INDEX operation runs in many transactions.
+* The actual data load operation is run outside of a transaction.
+
+If a failure occurs, the rollback is faster because it does not have to
+process a lot of audit. Also, if a failure occurs, the index remains
+empty, unaudited, and not attached to the base table (off-line).
+
+* When an off-line POPULATE INDEX is being executed, the base table is
+accessible for read DML operations. When an on-line POPULATE INDEX is
+being executed, the base table is accessible for read and write DML
+operations during that time period, except during the commit phase at
+the very end.
+* If the POPULATE INDEX operation fails unexpectedly, you may need to
+drop the index again and re-create and repopulate.
+* On-line POPULATE INDEX reads the audit trail to replay updates by
+allowing read/write access. If you plan to create many indexes in
+parallel or if you have a high level of activity on the audit trail, you
+should consider using the OFFLINE option.
+
+Errors can occur if the source base table or target index cannot be
+accessed, or if the load fails due to some resource problem or problem
+in the file system.
+
+[[populate_index_required_privileges]]
+==== Required Privileges
+
+To perform a POPULATE INDEX operation, one of the following must be
+true:
+
+* You are DB ROOT.
+* You are the owner of the table.
+* You have the SELECT and INSERT (or ALL) privileges on the associated table.
+
+[[populate_index_examples]]
+=== Examples of POPULATE INDEX
+
+* This example loads the specified index from the specified table:
++
+```
+POPULATE INDEX myindex ON myschema.mytable;
+```
+
+* This example loads the specified index from the specified table, which
+uses the default schema:
++
+```
+POPULATE INDEX index2 ON table2;
+```
+
+<<<
+[[purgedata_utility]]
+== PURGEDATA Utility
+
+The PURGEDATA utility performs a fast DELETE of data from a table and
+its related indexes. You can execute this utility in a client-based tool
+like TrafCI.
+
+```
+PURGEDATA object
+```
+
+[[purgedata_syntax]]
+=== Syntax Description of PURGEDATA
+
+_object_
+
+is the name of the table from which to purge the data. See
+<<"database object names","Database Object Names">>.
+
+[[purgedata_considerations]]
+=== Considerations for PURGEDATA
+
+* The _object_ can be a table name.
+* Errors are returned if _table_ cannot be accessed or if a resource or
+file-system problem causes the delete to fail.
+* PURGEDATA is not supported for volatile tables.
+
+[[purgedata_required_privileges]]
+==== Required Privileges
+
+To perform a PURGEDATA operation, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the table.
+* You have the SELECT and DELETE (or ALL) privileges on the associated
+table.
+
+[[purgedata_availability]]
+==== Availability
+
+PURGEDATA marks the table OFFLINE and sets the corrupt bit while
+processing. If PURGEDATA fails before it completes, the table and its
+dependent indexes will be unavailable, and you must run PURGEDATA again
+to complete the operation and remove the data. Error 8551 with an
+accompanying file system error 59 or error 1071 is returned in this
+case.
+
+[[purgedata_examples]]
+=== Examples of PURGEDATA
+
+* This example purges the data in the specified table. If the table has
+indexes, their data is also purged.
++
+```
+PURGEDATA myschema.mytable;
+```
+
+<<<
+[[unload_statement]]
+== UNLOAD Statement
+
+The UNLOAD statement unloads data from Trafodion tables into an HDFS
+location that you specify. Extracted data can be either compressed or
+uncompressed based on what you choose.
+
+UNLOAD is a Trafodion SQL extension.
+
+```
+UNLOAD [WITH option[ option]...] INTO 'target-location' SELECT ... FROM source-table ...
+
+option is:
+    DELIMITER { 'delimiter-string' | delimiter-ascii-value }
+  | RECORD_SEPARATOR { 'separator-literal' | separator-ascii-value }
+  | NULL_STRING 'string-literal'
+  | PURGEDATA FROM TARGET
+  | COMPRESSION GZIP
+  | MERGE FILE merged_file-path [OVERWRITE]
+  | NO OUTPUT
+  | { NEW | EXISTING } SNAPSHOT HAVING SUFFIX 'string'
+```
+
+[[unload_syntax]]
+=== Syntax Description of UNLOAD
+
+* `'_target-location_'`
++
+is the full pathname of the target HDFS folder where the extracted data
+will be written. Enclose the name of folder in single quotes. Specify
+the folder name as a full pathname and not as a relative path. You must
+have write permissions on the target HDFS folder. If you run UNLOAD in
+parallel, multiple files will be produced under the _target-location_.
+The number of files created will equal the number of ESPs.
+
+* `SELECT &#8230; FROM _source-table_ &#8230;`
++
+is either a simple query or a complex one that contains GROUP BY, JOIN,
+or UNION clauses. _source-table_ is the name of a Trafodion table that
+has the source data. See <<database_object_names,Database Object Names>>.
+
+* `[WITH _option_[ _option_]&#8230;]`
++
+is a set of options that you can specify for the unload operation. If
+you specify an option more than once, Trafodion returns an error with
+SQLCODE -4489. You can specify one or more of these options:
+
+** `DELIMITER { '_delimiter-string_' | _delimiter-ascii-value_ }`
++
+specifies the delimiter as either a delimiter string or an ASCII value.
+If you do not specify this option, Trafodion uses the character "|" as
+the delimiter.
+
+*** _delimiter-string_ can be any ASCII or Unicode string. You can also
+specify the delimiter as an ASCII value. Valid values range from 1 to 255.
+Specify the value in decimal notation; hexadecimal or octal
+notation are currently not supported. If you are using an ASCII value,
+the delimiter can be only one character wide. Do not use quotes when
+specifying an ASCII value for the delimiter.
+
+** `RECORD_SEPARATOR { '_separator-literal_' | _separator-ascii-value_ }`
++
+specifies the character that will be used to separate consecutive
+records or rows in the output file. You can specify either a literal
+or an ASCII value for the separator. The default value is a newline character.
+
+*** _separator-literal_ can be any ASCII or Unicode character. You can also
+specify the separator as an ASCII value. Valid values range from 1 to 255.
+Specify the value in decimal notation; hexadecimal or octal
+notation are currently not supported. If you are using an ASCII value,
+the separator can be only one character wide. Do not use quotes when
+specifying an ASCII value for the separator.
+
+** `NULL_STRING '_string-literal_'`
++
+specifies the string that will be used to indicate a NULL value. The
+default value is the empty string ''.
+
+** `PURGEDATA FROM TARGET`
++
+causes files in the target HDFS folder to be deleted before the unload
+operation.
+
+** `COMPRESSION GZIP`
++
+uses gzip compression in the extract node, writing the data to disk in
+this compressed format. GZIP is currently the only supported type of
+compression. If you do not specify this option, the extracted data will
+be uncompressed.
+
+** `MERGE FILE _merged_file-path_ [OVERWRITE]`
++
+merges the unloaded files into one single file in the specified
+_merged-file-path_. If you specify compression, the unloaded data will
+be in compressed format, and the merged file will also be in compressed
+format. If you specify the optional OVERWRITE keyword, the file is
+overwritten if it already exists; otherwise, Trafodion raises an error
+if the file already exists.
+
+** `NO OUTPUT`
++
+prevents the UNLOAD statement from displaying status messages. By
+default, the UNLOAD statement prints status messages listing the steps
+that the Bulk Unloader is executing.
+
+<<<
+* `{ NEW | EXISTING } SNAPSHOT HAVING SUFFIX '_string_'`
++
+initiates an HBase snapshot scan during the unload operation. During a
+snapshot scan, the Bulk Unloader will get a list of the Trafodion tables
+from the query explain plan and will create and verify snapshots for the
+tables. Specify a suffix string, '_string_', which will be appended to
+each table name.
+
+[[unload_considerations]]
+=== Considerations for UNLOAD
+
+* You must have write permissions on the target HDFS folder.
+* If a WITH option is specified more than once, Trafodion returns an
+error with SQLCODE -4489.
+
+[[unload_required_privileges]]
+==== Required Privileges
+
+To issue an UNLOAD statement, one of the following must be true:
+
+* You are DB ROOT.
+* You are the owner of the target table.
+* You have the SELECT privilege on the target table.
+* You have the MANAGE_LOAD component privilege for the SQL_OPERATIONS
+component.
+
+[[unload_examples]]
+=== Examples of UNLOAD
+
+* This example shows how the UNLOAD statement extracts data from a
+Trafodion table, `TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS`, into an HDFS
+folder, `/bulkload/customer_demographics`:
++
+```
+>>UNLOAD
++>WITH PURGEDATA FROM TARGET
++>MERGE FILE 'merged_customer_demogs.gz' OVERWRITE
++>COMPRESSION GZIP
++>INTO '/bulkload/customer_demographics'
++>select * from trafodion.hbase.customer_demographics
++><<+ cardinality 10e10 ,+ cardinality 10e10 >>;
+Task: UNLOAD Status: Started
+Task: EMPTY TARGET Status: Started
+Task: EMPTY TARGET Status: Ended ET: 00:00:00.014
+Task: EXTRACT Status: Started
+       Rows Processed: 200000
+Task: EXTRACT Status: Ended ET: 00:00:04.743 Task: MERGE FILES Status: Started
+Task: MERGE FILES Status: Ended ET: 00:00:00.063
+
+--- 200000 row(s) unloaded.
+```
+
+<<<
+[[update_statistics_statement]]
+== UPDATE STATISTICS Statement
+
+The UPDATE STATISTICS statement updates the histogram statistics for one
+or more groups of columns within a table. These statistics are used to
+devise optimized access plans.
+
+UPDATE STATISTICS is a Trafodion SQL extension.
+
+```
+UPDATE STATISTICS FOR TABLE table [CLEAR | on-clause]
+
+on-clause is:
+    ON column-group-list CLEAR
+  | ON column-group-list [histogram-option]...
+
+column-group-list is:
+    column-list [,column-list]...
+  | EVERY COLUMN [,column-list]...
+  | EVERY KEY [,column-list]...
+  | EXISTING COLUMN[S] [,column-list]...
+  | NECESSARY COLUMN[S] [,column-list]...
+
+column-list for a single-column group is:
+    column-name
+  | (column-name)
+  | column-name TO column-name
+  | (column-name) TO (column-name)
+  | column-name TO (column-name)
+  | (column-name) TO column-name
+
+column-list for a multicolumn group is:
+    (column-name, column-name [,column-name]...)
+
+histogram-option is:
+    GENERATE n INTERVALS
+  | SAMPLE [sample-option]
+
+sample-option is:
+    [r ROWS]
+  | RANDOM percent PERCENT
+  | PERIODIC size ROWS EVERY period ROWS
+```
+
+[[update_statistics_syntax]]
+=== Syntax Description of UPDATE STATISTICS
+
+* `_table_`
++
+names the table for which statistics are to be updated. To refer to a
+table, use the ANSI logical name.
+See <<database_object_names,Database Object Names>>.
+
+* `CLEAR`
++
+deletes some or all histograms for the table _table_. Use this option
+when new applications no longer use certain histogram statistics.
++
+If you do not specify _column-group-list_, all histograms for _table_
+are deleted. If you specify _column-group-list_, only columns in the
+group list are deleted.
+
+* `ON _column-group-list_`
++
+specifies one or more groups of columns for which to generate histogram
+statistics with the option of clearing the histogram statistics. You
+must use the ON clause to generate statistics stored in histogram
+tables.
+
+* `_column-list_`
++
+specifies how _column-group-list_ can be defined. The column list
+represents both a single-column group and a multi-column group.
+
+** Single-column group:
+
+*** `_column-name_ | (_column-name_) | _column-name_ TO _column-name_ |
+(_column-name_) TO (_column-name_)`
++
+specifies how you can specify individual columns or a group of
+individual columns.
++
+To generate statistics for individual columns, list each column. You can
+list each single column name within or without parentheses.
+
+** Multicolumn group:
+
+*** `(_column-name_, _column-name_ [,_column-name_]&#8230;)`
++
+specifies a multi-column group.
++
+To generate multi-column statistics, group a set of columns within
+parentheses, as shown. You cannot specify the name of a column more than
+once in the same group of columns.
++
+<<<
++
+One histogram is generated for each unique column group. Duplicate
+groups, meaning any permutation of the same group of columns, are
+ignored and processing continues. When you run UPDATE STATISTICS again
+for the same user table, the new data for that table replaces the data
+previously generated and stored in the table’s histogram tables.
+Histograms of column groups not specified in the ON clause remain
+unchanged in histogram tables.
++
+For more information about specifying columns, see
+<<generating_and_clearing_statistics_for_columns,Generating and Clearing Statistics for Columns>>.
+
+* `EVERY COLUMN`
++
+The EVERY COLUMN keyword indicates that histogram statistics are to be
+generated for each individual column of _table_ and any multi-columns
+that make up the primary key and indexes. For example, _table_ has
+columns A, B, C, D defined, where A, B, C compose the primary key. In
+this case, the ON EVERY COLUMN option generates a single column
+histogram for columns A, B, C, D, and two multi-column histograms of (A,
+B, C) and (A, B).
++
+The EVERY COLUMN option does what EVERY KEY does, with additional
+statistics on the individual columns.
+
+* `EVERY KEY`
++
+The EVERY KEY keyword indicates that histogram statistics are to be
+generated for columns that make up the primary key and indexes. For
+example, _table_ has columns A, B, C, D defined. If the primary key
+comprises columns A, B, statistics are generated for (A, B), A and B. If
+the primary key comprises columns A, B, C, statistics are generated for
+(A,B,C), (A,B), A, B, C. If the primary key comprises columns A, B, C,
+D, statistics are generated for (A, B, C, D), (A, B, C), (A, B), and A,
+B, C, D.
+
+* `EXISTING COLUMN[S]`
++
+The EXISTING COLUMN keyword indicates that all existing histograms of
+the table are to be updated. Statistics must be previously captured to
+establish existing columns.
+
+* `NECESSARY COLUMN[S]`
++
+The NECESSARY COLUMN[S] keyword generates statistics for histograms that
+the optimizer has requested but do not exist. Update statistics
+automation must be enabled for NECESSARY COLUMN[S] to generate
+statistics. To enable automation, see <<update_statistics_automating_update_statistics,
+Automating Update Statistics>>.
+
+<<<
+* `_histogram-option_`
+
+** `GENERATE _n_ INTERVALS`
++
+The GENERATE _n_ INTERVALS option for UPDATE STATISTICS accepts values
+between 1 and 10,000. Keep in mind that increasing the number of
+intervals per histograms may have a negative impact on compile time.
++
+Increasing the number of intervals can be used for columns with small
+set of possible values and large variance of the frequency of these
+values. For example, consider a column ‘CITY’ in table SALES, which
+stores the city code where the item was sold, where number of cities in
+the sales data is 1538. Setting the number of intervals to a number
+greater or equal to the number of cities (that is, setting the number of
+intervals to 1600) guarantees that the generated histogram captures the
+number of rows for each city. If the specified value n exceeds the
+number of unique values in the column, the system generates only as many
+intervals as the number of unique values.
+
+** `SAMPLE [_sample-option_]`
++
+is a clause that specifies that sampling is to be used to gather a
+subset of the data from the table. UPDATE STATISTICS stores the sample
+results and generates histograms.
++
+If you specify the SAMPLE clause without additional options, the result
+depends on the number of rows in the table. If the table contains no
+more than 10,000 rows, the entire table will be read (no sampling). If
+the number of rows is greater than 10,000 but less than 1 million,
+10,000 rows are randomly sampled from the table. If there are more than
+1 million rows in the table, a random row sample is used to read 1
+percent of the rows in the table, with a maximum of 1 million rows
+sampled.
++
+TIP: As a guideline, the default sample of 1 percent of the rows in the
+table, with a maximum of 1 million rows, provides good statistics for
+the optimizer to generate good plans.
++
+If you do not specify the SAMPLE clause, if the table has fewer rows
+than specified, or if the sample size is greater than the system limit,
+Trafodion SQL reads all rows from _table_. See <<sample_clause,SAMPLE Clause>>.
+
+*** `_sample-option_`
+
+**** `r_ rows`
++
+A row sample is used to read _r_ rows from the table. The value _r_ must
+be an integer that is greater than zero 
+
+<<<
+**** `RANDOM _percent_ PERCENT`
++
+directs Trafodion SQL to choose rows randomly from the table. The value
+percent must be a value between zero and 100 (0 < percent &#60;= 100). In
+addition, only the first four digits to the right of the decimal point
+are significant. For example, value 0.00001 is considered to be 0.0000,
+Value 1.23456 is considered to be 1.2345.
+
+**** `PERIODIC _size_ ROWS EVERY _period_ ROW`
++
+directs Trafodion SQL to choose the first _size_ number of rows from
+each _period_ of rows. The value _size_ must be an integer that is
+greater than zero and less than or equal to the value _period_. (0 <
+_size_ &#60;= _period_). The size of the _period_ is defined by the number
+of rows specified for _period_. The value _period_ must be an integer
+that is greater than zero (_period_ > 0).
+
+[[update_statistics_considerations]]
+=== Considerations for UPDATE STATISTICS
+
+[[update_statistics_using_statistics]]
+==== Using Statistics
+
+Use UPDATE STATISTICS to collect and save statistics on columns. The SQL
+compiler uses histogram statistics to determine the selectivity of
+predicates, indexes, and tables. Because selectivity directly influences
+the cost of access plans, regular collection of statistics increases the
+likelihood that Trafodion SQL chooses efficient access plans.
+
+While UPDATE STATISTICS is running on a table, the table is active and
+available for query access.
+
+When a user table is changed, either by changing its data significantly
+or its definition, re-execute the UPDATE STATISTICS statement for the
+table.
+
+<<<
+[[update_statistics_histogram_statistics]]
+==== Histogram Statistics
+
+Histogram statistics are used by the compiler to produce the best plan
+for a given SQL query. When histograms are not available, default
+assumptions are made by the compiler and the resultant plan might not
+perform well. Histograms that reflect the latest data in a table are
+optimal.
+
+The compiler does not need histogram statistics for every column of a
+table. For example, if a column is only in the select list, its
+histogram statistics will be irrelevant. A histogram statistic is useful
+when a column appears in:
+
+* A predicate
+* A GROUP BY column
+* An ORDER BY clause
+* A HAVING clause
+* Or similar clause
+
+In addition to single-column histogram statistics, the compiler needs
+multi-column histogram statistics, such as when group by column-5,
+column-3, column-19 appears in a query. Then, histogram statistics for
+the combination (column-5, column-3, column-19) are needed.
+
+[[update_statistics_required-privileges]]
+==== Required Privileges
+
+To perform an UPDATE STATISTICS operation, one of the following must be
+true:
+
+* You are DB ROOT.
+* You are the owner of the target table.
+* You have the MANAGE_STATISTICS component privilege for the
+SQL_OPERATIONS component.
+
+[[update_statistics_locking]]
+==== Locking
+
+UPDATE STATISTICS momentarily locks the definition of the user table
+during the operation but not the user table itself. The UPDATE
+STATISTICS statement uses READ UNCOMMITTED isolation level for the user
+table.
+
+<<<
+[[update_statistics_transactions]]
+==== Transactions
+
+Do not start a transaction before executing UPDATE STATISTICS. UPDATE
+STATISTICS runs multiple transactions of its own, as needed. Starting
+your own transaction in which UPDATE STATISTICS runs could cause the
+transaction auto abort time to be exceeded during processing.
+
+[[update_statistics_generating_and_clearing_statistics_for_columns]]
+==== Generating and Clearing Statistics for Columns
+
+To generate statistics for particular columns, name each column, or name
+the first and last columns of a sequence of columns in the table. For
+example, suppose that a table has consecutive columns CITY, STATE, ZIP.
+This list gives a few examples of possible options you can specify:
+
+[cols="25%,37%,37%",options="header"]
+|===
+| Single-Column Group   | Single-Column Group Within Parentheses | Multicolumn Group
+| ON CITY, STATE, ZIP   | ON (CITY),(STATE),(ZIP)                | ON (CITY, STATE) or ON (CITY,STATE,ZIP)
+| ON CITY TO ZIP        | ON (CITY) TO (ZIP)                     |
+| ON ZIP TO CITY        | ON (ZIP) TO (CITY)                     |
+| ON CITY, STATE TO ZIP | ON (CITY), (STATE) TO (ZIP)            |
+| ON CITY TO STATE, ZIP | ON (CITY) TO (STATE), (ZIP)            |
+|===
+
+The TO specification is useful when a table has many columns, and you
+want histograms on a subset of columns. Do not confuse (CITY) TO (ZIP)
+with (CITY, STATE, ZIP), which refers to a multi-column histogram.
+
+You can clear statistics in any combination of columns you specify, not
+necessarily with the _column-group-list_ you used to create statistics.
+However, those statistics will remain until you clear them.
+
+<<<
+[[update_statistics_column_lists_and_access_plans]]
+==== Column Lists and Access Plans
+
+Generate statistics for columns most often used in data access plans for
+a table—that is, the primary key, indexes defined on the table, and any
+other columns frequently referenced in predicates in WHERE or GROUP BY
+clauses of queries issued on the table. Use the EVERY COLUMN option to
+generate histograms for every individual column or multi columns that
+make up the primary key and indexes.
+
+The EVERY KEY option generates histograms that make up the primary key
+and indexes.
+
+If you often perform a GROUP BY over specific columns in a table, use
+multi-column lists in the UPDATE STATISTICS statement (consisting of the
+columns in the GROUP BY clause) to generate histogram statistics that
+enable the optimizer to choose a better plan. Similarly, when a query
+joins two tables by two or more columns, multi-column lists (consisting
+of the columns being joined) help the optimizer choose a better plan.
+
+[[update_statistics_automating_update_statistics]]
+==== Automating Update Statistics
+
+To enable update statistics automation, set the Control Query Default
+(CQD) attribute, USTAT_AUTOMATION_INTERVAL, in a session where you will
+run update statistics operations. For example:
+
+```
+control query default USTAT_AUTOMATION_INTERVAL '1440';
+```
+
+The value of USTAT_AUTOMATION_INTERVAL is intended to be an automation
+interval (in minutes), but, in Trafodion Release 1.0, this value does
+not act as a timing interval. Instead, any value greater than zero
+enables update statistics automation.
+
+After enabling update statistics automation, prepare each of the queries
+that you want to optimize. For example:
+
+```
+prepare s from select...;
+```
+
+The PREPARE statement causes the Trafodion SQL compiler to compile and
+optimize a query without executing it. When preparing queries with
+update statistic automation enabled, any histograms needed by the
+optimizer that are not present will cause those columns to be marked as
+needing histograms.
+
+Next, run this UPDATE STATISTICS statement against each table, using ON
+NECESSARY COLUMN[S] to generate the needed histograms:
+
+```
+update statistics for table _table-name_ on necessary columns sample;
+```
+
+<<<
+[[update_statistics_examples]]
+=== Examples of UPDATE STATISTICS
+
+* This example generates four histograms for the columns jobcode,
+empnum, deptnum, and (empnum, deptnum) for the table EMPLOYEE. Depending
+on the table’s size and data distribution, each histogram should contain
+ten intervals.
++
+```
+UPDATE STATISTICS FOR TABLE employee
+ON (jobcode),(empnum, deptnum) GENERATE 10 INTERVALS;
+
+--- SQL operation complete.
+```
+
+* This example generates histogram statistics using the ON EVERY COLUMN
+option for the table DEPT. This statement performs a full scan, and
+Trafodion SQL determines the default number of intervals.
++
+```
+UPDATE STATISTICS FOR TABLE dept ON EVERY COLUMN;
+
+--- SQL operation complete.
+```
+
+* Suppose that a construction company has an ADDRESS table of potential
+sites and a DEMOLITION_SITES table that contains some of the columns of
+the ADDRESS table. The primary key is ZIP. Join these two tables on two
+of the columns in common:
++
+```
+SELECT COUNT(AD.number), AD.street,
+       AD.city, AD.zip, AD.state
+FROM address AD, demolition_sites DS
+WHERE AD.zip = DS.zip AND AD.type = DS.type
+GROUP BY AD.street, AD.city, AD.zip, AD.state;
+```
++
+To generate statistics specific to this query, enter these statements:
++
+```
+UPDATE STATISTICS FOR TABLE address
+ON (street), (city), (state), (zip, type);
+
+UPDATE STATISTICS FOR TABLE demolition_sites ON (zip, type);
+```
+
+* This example removes all histograms for table DEMOLITION_SITES:
++
+```
+UPDATE STATISTICS FOR TABLE demolition_sites CLEAR;
+```
+
+<<<
+* This example selectively removes the histogram for column STREET in
+table ADDRESS:
++
+```
+UPDATE STATISTICS FOR TABLE address ON street CLEAR;
+```
+
+

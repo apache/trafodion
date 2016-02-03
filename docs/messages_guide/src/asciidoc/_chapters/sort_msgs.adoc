@@ -1,0 +1,504 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[sort-messages]]
+= Sort Messages (9200 through 10049)
+
+[[SQL-9200]]
+== SQL 9200
+
+```
+UPDATE STATISTICS encountered an error from statement <name>.
+```
+
+*Cause:* UPDATE STATISTICS encountered an error from the Trafodion statement <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Other error messages will appear with this one, depending on
+what statement caused the error. Use them to diagnose and correct the
+problem.
+
+[[SQL-9201]]
+== SQL 9201
+
+```
+Unable to DROP object <name>.
+```
+
+*Cause:* UPDATE STATISTICS encountered an error during a DROP of the
+object <name>.
+
+*Effect:* Trafodion is unable to continue processing.
+
+*Recovery:* Resubmit the statement. If this does not correct the problem, stop and restart Trafodion. 
+If this does not correct the problem, 
+contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-9202]]
+== SQL 9202
+
+```
+UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing column lists are <column-list>.
+```
+
+*Cause:* UPDATE STATISTICS has located previously generated histograms that are not being regenerated.
+
+*Effect:* Processing continues without interruption.
+
+*Recovery:* Remove or replace previously generated histograms by
+performing either one of these two recovery actions:
+
+* Re-execute the same UPDATE STATISTICS command, but also include the
+<column-list> from the message.
+* Perform UPDATE STATISTICS FOR the table. Then re-execute UPDATE
+STATISTICS with the column lists in which you are interested.
+
+[[SQL-9203]]
+== SQL 9203
+
+```
+Column names must be unique when specified in column list: (<name>).
+```
+
+*Cause:* You specified a non unique column name in the specified column list.
+
+*Effect:* Trafodion is unable to continue processing.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-9204]]
+== SQL 9204
+
+```
+Invalid option <option> specified. Value must be <range>.
+```
+
+*Cause:* You specified an invalid option for UPDATE STATISTICS. The
+value <range> specifies the valid range for this option.
+
+*Effect:* Trafodion is unable to continue
+processing.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-9205]]
+== SQL 9205
+
+```
+UPDATE STATISTICS is not supported for object <name>.
+```
+
+*Cause:* You attempted to run UPDATE STATISTICS against an object that is not supported.
+
+*Effect:* Trafodion is unable to continue processing.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-9206]]
+== SQL 9206
+
+```
+You are not authorized to read/write object <name>. Verify that you have the necessary access privileges.
+```
+
+*Cause:* Trafodion could not perform an UPDATE
+STATISTICS statement because you are not authorized to perform this
+operation against this table. You must either own the object <name> or
+be the super ID.
+
+*Effect:* Trafodion is unable to continue processing.
+
+*Recovery:* Resubmit after checking the table location and access privileges.
+
+[[SQL-9207]]
+== SQL 9207
+
+```
+The specified SAMPLE option generated an empty sample set. Modify the SAMPLE option and resubmit.
+```
+
+*Cause:* The SAMPLE option you specified generated an empty sample set.
+
+*Effect:* Trafodion is unable to continue processing.
+
+*Recovery:* Modify the SAMPLE option and resubmit.
+
+<<<
+[[SQL-9208]]
+== SQL 9208
+
+```
+Column definitions could not be accessed.
+```
+
+*Cause:* An UPDATE STATISTICS statement was unable to access column definitions.
+
+*Effect:* The operation fails.
+
+*Recovery:* Resubmit the statement. If this does not correct the
+problem, stop and restart the Trafodion database software. If this does
+not correct the problem, report the entire message to mailto:user@trafodion.incubator.apache.org[the Trafodion User mailing list].
+
+[[SQL-9209]]
+== SQL 9209
+
+```
+Column <name> does not exist in object <name>.
+```
+
+*Cause:* You tried to access column <name>, which does not exist in object <name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check the column <name> and resubmit.
+
+<<<
+[[SQL-9210]]
+== SQL 9210
+
+```
+One of the column data types is not supported by UPDATE STATISTICS. You must exclude this column from the column list in UPDATE STATISTICS.
+```
+
+*Cause:* You attempted to perform UPDATE STATISTICS on a column whose data type does not support this operation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Exclude this column from the column list and resubmit.
+
+[[SQL-9212]]
+== SQL 9212
+
+```
+Cardinality statistics will be more accurate if you use the SET ROWCOUNT option in the SAMPLE clause.
+```
+
+*Cause:* The SET ROWCOUNT option was not used in the SAMPLE clause.
+
+*Effect:* Processing continues without interruption.
+
+*Recovery:* Provide SET ROWCOUNT option and resubmit for more accurate statistics.
+
+<<<
+[[SQL-9213]]
+== SQL 9213
+
+```
+If you intend to update histogram statistics for columns, you must specify a column list in the statement.
+```
+
+*Cause:* You attempted to perform UPDATE STATISTICS and did not specify a column list.
+
+*Effect:* Processing continues without interruption.
+
+*Recovery:* Correct your syntax to specify the column list and resubmit.
+
+[[SQL-9214]]
+== SQL 9214
+
+```
+Object <name> could not be created.
+```
+
+*Cause:* UPDATE STATISTICS encountered an error during a CREATE of the object <name>.
+
+*Effect:* Trafodion is unable to continue processing.
+
+*Recovery:* Resubmit the statement. If this does not correct the
+problem, stop and restart the Trafodion database software. If this does
+not correct the problem, report the entire message to mailto:user@trafodion.incubator.apache.org[the Trafodion User mailing list].
+
+<<<
+[[SQL-10007-]]
+== SQL 10007 
+
+```
+Sort failed while writing to a scratch file with error <system-error>.
+```
+
+*Cause:* An I/O error occurred during a scratch file I/O operation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10011-]]
+== SQL 10011 
+
+```
+Sort failed while reading a scratch file with error <system-error>.
+```
+
+Where <system-error> is the error returned.
+
+*Cause:* An I/O error occurred during a scratch file I/O operation.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10013-]]
+== SQL 10013 
+
+```
+Sort could not find any appropriate disks for overflow.
+```
+
+*Cause:* The available disks on the system are not suitable for scratch usage.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make sure there are appropriate disks with enough space for
+scratch file use. Disks such as optical disks, phantom disks, and 
+virtual disks are not considered suitable. See the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_]
+for more information on how to influence the placement of scratch files.
+
+[[SQL-10014-]]
+== SQL 10014 
+
+```
+Sort ran out of memory while allocating an internal data structure.
+```
+
+*Cause:* An internal data structure could not be allocated because of an out of memory condition.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. This is an internal error. 
+Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10015-]]
+== SQL 10015 
+
+```
+Sort failed while calling PROCESSHANDLE_GETMINE_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10016-]]
+== SQL 10016 
+
+```
+Sort failed while calling PROCESSHANDLE_DECOMPOSE_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10017-]]
+== SQL 10017 
+
+```
+Sort failed while calling DEVICE_GETINFOBYLDEV_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10018-]]
+== SQL 10018 
+
+```
+Sort failed while calling FILENAME_FILESTART_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10019-]]
+== SQL 10019 
+
+```
+Sort failed while calling FILENAME_FILENEXT_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10020-]]
+== SQL 10020 
+
+```
+Sort failed while calling FILENAME_FINDFINISH_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10021-]]
+== SQL 10021 
+
+```
+Sort failed while calling FILE_GETINFOLISTBYNAME_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10022-]]
+== SQL 10022 
+
+```
+Sort failed while calling FILE_CREATE with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10023-]]
+== SQL 10023 
+
+```
+Sort failed while calling FILE_OPEN_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10024-]]
+== SQL 10024 
+
+```
+Sort failed while calling SETMODE_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10027-]]
+== SQL 10027 
+
+```
+Sort failed while calling FILE_GETINFOLIST with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10028-]]
+== SQL 10028 
+
+```
+Sort failed while calling POSITION with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10029-]]
+== SQL 10029 
+
+```
+Sort failed while calling FILE_GETINFO_ with error <number>.
+```
+
+*Cause:* An error occurred while calling a system level call.
+
+*Effect:* The operation fails.
+
+*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+[[SQL-10047-]]
+== SQL 10047 
+
+```
+Sort Error: Wrong length read.
+```
+
+*Cause:* The length of the data returned was not what was expected.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. This is an internal error. 
+Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User distribution list].
+
+<<<
+[[SQL-10048-]]
+== SQL 10048 
+
+```
+IO to a scratch file failed because the free space threshold was reached on all available disks.
+```
+
+*Cause:* The threshold, specified by the default
+SCRATCH_FREESPACE_THRESHOLD_PERCENT was reached on all available disks.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reduce the threshold percentage and retry the query or
+specify a particular disk with adequate free space specifically for
+scratch use.
+

@@ -3026,6 +3026,24 @@ Lng32 HSGlobalsClass::Initialize()
 
     HS_ASSERT(actualRowCount >= 0);
 
+    Int64 youWillLikelyBeSorry = 
+      ActiveSchemaDB()->getDefaults().getAsDouble(USTAT_YOULL_LIKELY_BE_SORRY);
+    if ((actualRowCount >= youWillLikelyBeSorry) &&
+       !(optFlags & SAMPLE_REQUESTED) &&
+       !(optFlags & IUS_OPT))
+      {
+        // attempt to do UPDATE STATISTICS on a big table without sampling,
+        // which could take a really long time
+        if ((optFlags & NO_SAMPLE) == 0)  // if explicit NO SAMPLE is missing
+          {
+            // raise an error on the chance that omitting the SAMPLE clause
+            // was accidental
+            HSFuncMergeDiags(-UERR_YOU_WILL_LIKELY_BE_SORRY);
+            retcode = -1;
+            HSHandleError(retcode);
+          }
+      }
+
 
                                              /*===================================*/
                                              /*=  DETERMINE "NECESSARY" COLUMNS  =*/
