@@ -210,18 +210,6 @@ notices and license terms. Your use of the source code for the these
 subcomponents is subject to the terms and conditions of the following licenses. 
 
 ===============================================================================
-Apache Trafodion uses Apache licenses as follows:
-
-For file incubator-trafodion/core/sql/export/FBString.h:
-
-Apache Trafodion uses Facebook's string class that has been adapted to use 
-Trafodion's memory manager 
-
- Copyright 2013 Facebook, Inc.
-
-For details see incubator-trafodion/licenses/LICENSE-facebook
-
-===============================================================================
 Apache Trafodion uses several BSD like licenses:
 
 For files:
@@ -306,11 +294,6 @@ For files in:
 For details see http://jquery.org/license
 
 ++++++++++++++++++++++++++++++
-
-Apache Trafodion uses asciidocs to create its documentation which is licensed
-under MIT 
-
-For details see http://asciidoctor.org/
 
 ===============================================================================
 As part of test large objects (LOBs), the testware needs some object files.
