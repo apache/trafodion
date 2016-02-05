@@ -73,15 +73,15 @@ greater than zero.
 == SQL 3004
 
 ```
-A delimited identifier must contain at least one nonblank character.
+A delimited identifier must contain at least one non-blank character.
 ```
 
 *Cause:* You defined a delimited identifier as blanks. You must enter at
-least one nonblank character.
+least one non-blank character.
 
 *Effect:* The operation fails.
 
-*Recovery:* Enter at least one nonblank character and resubmit.
+*Recovery:* Enter at least one non-blank character and resubmit.
 
 <<<
 [[SQL-3005]]
@@ -1898,7 +1898,7 @@ which is not supported.
 == SQL 3136
 
 ```
-Only LEFT, RIGHT, and FULL OUTER JOIN are valid in \{oj . . .}
+Only LEFT, RIGHT, and FULL OUTER JOIN are valid in {oj . . .}
 ```
 
 *Cause:* You attempted to perform an invalid outer join. Only LEFT,
@@ -3004,7 +3004,7 @@ operation as a table reference.
 == SQL 3220
 
 ```
-SHOWDDL failed for object <object-name> because an SQL/MP display option was used on a SQL/MX object.
+SHOWDDL failed for object <object-name> because an SQL/MP display option was used on a Trafodion object.
 ```
 
 Where <object-name> specifies the ANSI name of a table, view, or ALIAS.
@@ -3022,7 +3022,7 @@ object.
 == SQL 3225
 
 ```
-SHOWLABEL failed for object <object-name>. The object does not exist in the given namespace <name-space>, the object is not accessible, or the object type is not supported. SHOWLABEL supports only SQL/MX tables, views and indexes.
+SHOWLABEL failed for object <object-name>. The object does not exist in the given namespace <name-space>, the object is not accessible, or the object type is not supported. SHOWLABEL supports only Trafodion tables, views and indexes.
 ```
 
 Where <object-name> is the specified name of an object.
@@ -3043,7 +3043,7 @@ namespace of a valid, supported, and accessible object.
 == SQL 3226
 
 ```
-SHOWLABEL failed for physical location name <location-name>. Object does not exist or object type is not supported. SHOWLABEL supports only SQL/MX tables, views, and indexes.
+SHOWLABEL failed for physical location name <location-name>. Object does not exist or object type is not supported. SHOWLABEL supports only Trafodion tables, views, and indexes.
 ```
 
 Where <location-name> specifies the physical location name of a
@@ -3061,7 +3061,7 @@ argument.
 == SQL 3228
 
 ```
-SHOWLABEL failed for physical location name <location-name>. SHOWLABEL supports only the data forks of SQL/MX tables, views, and indexes.
+SHOWLABEL failed for physical location name <location-name>. SHOWLABEL supports only the data forks of Trafodion tables, views, and indexes.
 ```
 
 Where <location-name> specifies the physical location name of a

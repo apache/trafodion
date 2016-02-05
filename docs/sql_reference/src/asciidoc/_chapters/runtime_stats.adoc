@@ -582,7 +582,7 @@ earlier will be reclaimed to free up space for the upcoming queries. This counte
 | EID Heap Allocated^2^  | Dp2HeapTotal                             | Amount of "heap" memory in KB allocated in the executor in TSEs involved in the query.
 | EID Heap Used2         | Dp2HeapUsed                              | Amount of "heap" memory in KB used in the executor in TSEs involved in the query.
 | Opens                  | Opens                                    | Number of OPEN calls performed by the SQL executor on behalf of this statement.
-| Open Time              | OpenTime                                 | Time (in microseconds) this process spent doing OPENs on behalf of this statement.
+| Open Time              | OpenTime                                 | Time (in microseconds) this process spent doing opens on behalf of this statement.
 | Processes Created      | Newprocess                               | The number of processes (ESPs and MXCMPs) created by the master executor for this statement.
 | Process Create Time    | NewprocessTime                           | The elapsed time taken to create these processes.
 | Table Name             | AnsiName                                 | Name of a table in the query.
@@ -1160,7 +1160,7 @@ RMS Stats Reset Timestamp   2010/12/05 14:32:33.891083
 
 Use the QUERYID_EXTRACT function within an SQL statement to extract
 components of a query ID for use in a SQL query. The query ID, or QID,
-is a unique, clusterwide identifier for a query and
+is a unique, cluster-wide identifier for a query and
 is generated for dynamic SQL statements whenever a SQL string is
 prepared.
 

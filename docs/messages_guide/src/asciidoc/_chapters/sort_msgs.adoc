@@ -276,7 +276,7 @@ Sort could not find any appropriate disks for overflow.
 *Effect:* The operation fails.
 
 *Recovery:* Make sure there are appropriate disks with enough space for
-scratch file use. Disks such as optical disks, phantom disks, and SMS
+scratch file use. Disks such as optical disks, phantom disks, and 
 virtual disks are not considered suitable. See the
 http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_]
 for more information on how to influence the placement of scratch files.
@@ -354,7 +354,7 @@ Sort failed while calling FILENAME_FILESTART_ with error <number>.
 == SQL 10019 
 
 ```
-Sort failed while calling FILENAME_FILENEXT_ with error $0~int0.
+Sort failed while calling FILENAME_FILENEXT_ with error <number>.
 ```
 
 *Cause:* An error occurred while calling a system level call.

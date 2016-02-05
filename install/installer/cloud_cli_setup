@@ -26,30 +26,28 @@
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
 
-if [ $node_count -eq 1 ]; then
-    exit 0
-else
-    TRAF_PDSH="pdsh $MY_NODES"
-    TRAF_PDCP="pdcp -r $MY_NODES"
-fi
-
 ###### Setting up CLI for AWS as sudo id
 
 if [[ ! -z $AWS_CLOUD ]]; then
-    ###### Check for existence of aws binary 
+###### Check for existence of aws  
     if [[ ! -d /usr/local/aws ]]; then
        cd $HOME
        curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
        unzip $HOME/awscli-bundle.zip
 
-       $TRAF_PDCP $HOME/awscli-bundle $HOME
-       $TRAF_PDSH "sudo $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws" | tee -a $INSTALL_LOG
+       if [[ $node_count -gt "1" ]]; then
+          $TRAF_PDCP $HOME/awscli-bundle $HOME
+          $TRAF_PDSH "sudo $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws" | tee -a $INSTALL_LOG
+       else 
+          sudo $HOME/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws | tee -a $INSTALL_LOG
+       fi
 
        $TRAF_PDSH "sudo rm -rf $HOME/awscli-bundle"
        rm -f $HOME/awscli-bundle.zip
     fi
 
-    ###### Check if .aws configuration file exist for Trafodion Id
+###### Check for existence of .aws for trafodion id
+    ###### Check if aws configuration file exist for Trafodion Id
     AWSCONFIG_DIR=`sudo su $TRAF_USER --login --command "ls -altr | grep -w ".aws" | wc -l" `
     if [[ $AWSCONFIG_DIR == 0 ]]; then
        ###### Execute 'aws configure' command as a Trafodion Id

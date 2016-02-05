@@ -122,7 +122,7 @@ Data extraction options [connection required]:
       * rs: default '\n'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>
       * ec: default '\'. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>
       * sq: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>
-      * gzip compressione level between 0 and 9
+      * gzip compression level between 0 and 9
       * bpc: default 1,bpwc: default 4
 Data copy options [connection required]:
    -cp src={table|-file:tgt=schema[.table][pwhere=where_cond][:soe][:roe=#][:roedel=#ms]
@@ -636,7 +636,7 @@ This (standard) behavior can be modified using the following options:
 
 <<<
 [[concepts_load_balancing]]
-== Dynamic Load Balanacing
+== Dynamic Load Balancing
 As discussed in the previous section, executions are normally _pre-assigned_ to threads using a simple
 round-robin algorithm. This way, the total elapsed time for each thread depends on the complexity of
 *its own* _executions_.
@@ -858,7 +858,7 @@ CREATE TABLE TRAFODION.SEABASE."REGIONS" ( REGION_ID INTEGER NOT NULL
 );
 ```
 
-The `&` wildcard allows you to extract the DDL for multiple objects.
+The `&` wild card allows you to extract the DDL for multiple objects.
 
 *Example*
 

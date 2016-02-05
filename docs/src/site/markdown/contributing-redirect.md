@@ -12,4 +12,7 @@
   limitations under the 
   License.
 -->
-This page provides how to contribute to Trafodion via advocacy. Please refer to the [Contribute](contribute.html) page for information about other ways to contribute to the Trafodion project.
+Redirecting to the Trafodion wiki...
+<p><meta http-equiv="refresh" content="0; url=https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide"></meta></p>
+
+<!-- This page is here to ensure that we track page requests in Google Analytics. -->

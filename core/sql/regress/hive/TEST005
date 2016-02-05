@@ -30,16 +30,19 @@ sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/customer_ddl;
 sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/customer_temp;
 sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_utf8;
 sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_type;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_gbk;
 --empty folders
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/customer_ddl/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/customer_temp/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_utf8/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_type/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_gbk/*;
 
 --- setup Hive tables
 sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_a.hive.sql;
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_utf8.data /user/hive/exttables/tbl_utf8;
 sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_type.data /user/hive/exttables/tbl_type;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_gbk.data /user/hive/exttables/tbl_gbk;
 
 log LOG005 clear;
 
@@ -218,5 +221,9 @@ select * from tbl_utf8p where chapter like '%海印_昧%';
 select * from tbl_type;
 insert into tbl_type_temp select * from tbl_type;
 select * from tbl_type_temp;
+
+cqd HIVE_FILE_CHARSET 'GBK';
+select c1, CONVERTTOHEX(c2) from tbl_gbk;
+cqd HIVE_FILE_CHARSET reset;
 
 log;

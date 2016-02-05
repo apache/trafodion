@@ -7071,32 +7071,32 @@ void RelRoot::recomputeOuterReferences()
   // been pulled up.
   // ---------------------------------------------------------------------
   if (NOT getGroupAttr()->getCharacteristicInputs().isEmpty())
-    {
-      ValueIdSet leafValues, emptySet;
-      GroupAttributes emptyGA;
-      child(0)->getGroupAttr()->getCharacteristicInputs().
-                  getLeafValuesForCoverTest(leafValues, emptyGA, emptySet);
-      CMPASSERT((getGroupAttr()->getCharacteristicInputs().contains
-		 (child(0)->getGroupAttr()->getCharacteristicInputs())) || 
-                (getGroupAttr()->getCharacteristicInputs().contains (leafValues))); 
-      ValueIdSet outerRefs = getGroupAttr()->getCharacteristicInputs(); 
-
-      // Remove from outerRefs those valueIds that are not needed
-      // by my selection predicate or by my computed expression list.
-      // Need to add the orderby list since it is not a subset of the
-      // computed expression list.
-      ValueIdSet allMyExpr(getSelectionPred());
-      allMyExpr.insertList(compExpr());
-      allMyExpr.insertList(reqdOrder());
-
-      allMyExpr.weedOutUnreferenced(outerRefs);
-
-      // Add to outerRefs those that my child need.
-      outerRefs += child(0).getPtr()->getGroupAttr()->getCharacteristicInputs();
-
-      // set my Character Inputs to this new minimal set.
-      getGroupAttr()->setCharacteristicInputs(outerRefs);
-    }
+  {
+    ValueIdSet leafValues, emptySet;
+    GroupAttributes emptyGA;
+    child(0)->getGroupAttr()->getCharacteristicInputs().
+      getLeafValuesForCoverTest(leafValues, emptyGA, emptySet);
+    CMPASSERT((getGroupAttr()->getCharacteristicInputs().contains
+               (child(0)->getGroupAttr()->getCharacteristicInputs())) || 
+              (getGroupAttr()->getCharacteristicInputs().contains (leafValues))); 
+    ValueIdSet outerRefs = getGroupAttr()->getCharacteristicInputs(); 
+    
+    // Remove from outerRefs those valueIds that are not needed
+    // by my selection predicate or by my computed expression list.
+    // Need to add the orderby list since it is not a subset of the
+    // computed expression list.
+    ValueIdSet allMyExpr(getSelectionPred());
+    allMyExpr.insertList(compExpr());
+    allMyExpr.insertList(reqdOrder());
+    
+    allMyExpr.weedOutUnreferenced(outerRefs);
+    
+    // Add to outerRefs those that my child need.
+    outerRefs += child(0).getPtr()->getGroupAttr()->getCharacteristicInputs();
+    
+    // set my Character Inputs to this new minimal set.
+    getGroupAttr()->setCharacteristicInputs(outerRefs);
+  }
 } // RelRoot::recomputeOuterReferences()  
 
 // -----------------------------------------------------------------------

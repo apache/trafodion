@@ -183,7 +183,7 @@ DISTINCT in a window function will result in the "4341" error message.
 [[avg_window_function]]
 == AVG Window Function
 
-AVG is a window function that returns the average of nonnull values of
+AVG is a window function that returns the average of non-null values of
 the given expression for the current window specified by the
 _inline-window specification_.
 
@@ -420,7 +420,7 @@ equal have the same rank. The value of DENSE_RANK advances 1 when the
 value of the given expression changes.
 
 ```
-DENSERANK() OVER (inline-window-specification)
+DENSE_RANK() OVER (inline-window-specification)
 ```
 
 * `_inline-window-specification_` is:
@@ -735,7 +735,7 @@ ROW_NUMBER is a window function that returns the row number of each row
 of the current window specified by the inline-window-specification.
 
 ```
-ROWNUMBER () OVER (inline-window-specification)
+ROW_NUMBER () OVER (inline-window-specification)
 ```
 
 * `_inline-window-specification_` is:

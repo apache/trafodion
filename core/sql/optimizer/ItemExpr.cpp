@@ -10519,8 +10519,11 @@ ConstValue * ConstValue::castToConstValue(NABoolean & negate_it)
 
 Int32 ConstValue::getArity() const { return 0; }
 
-NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
+NAString ConstValue::getConstStr(NABoolean transformNeeded) const
 {
+  if ((*text_ == "<min>") || (*text_ == "<max>"))
+    return *text_ ;
+
   if (getType()->getTypeQualifier() == NA_DATETIME_TYPE &&
       getType()->getPrecision() != SQLDTCODE_MPDATETIME)
   {
@@ -10532,7 +10535,7 @@ NAString ConstValue::getConstStr(NABoolean transformeNeeded) const
 
     // 4/8/96: added the Boolean switch so that displayable
     // and non-displayable version can be differed.
-    if ( transformeNeeded )
+    if ( transformNeeded )
       return chType->getCharSetAsPrefix() + getText();
     else
       return chType->getCharSetAsPrefix() + getTextForQuery(QUERY_FORMAT);
@@ -13408,6 +13411,8 @@ Translate::Translate(ItemExpr *valPtr, NAString* map_table_name)
     map_table_id_ = Translate::SJIS_TO_UTF8;
   else if ( _strcmpi(map_table_name->data(), "UTF8TOSJIS") == 0 )
     map_table_id_ = Translate::UTF8_TO_SJIS;
+  else if ( _strcmpi(map_table_name->data(), "GBKTOUTF8") == 0 )
+    map_table_id_ = Translate::GBK_TO_UTF8;
 
                 else
                   if ( _strcmpi(map_table_name->data(), "KANJITOISO88591") == 0 )

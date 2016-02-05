@@ -89,7 +89,7 @@ See the individual entry for the function.
 
 These functions manipulate character strings and use a character value
 expression as an argument or return a result of a character data type.
-Character string functions treat each single-byte or multibyte character
+Character string functions treat each single-byte or multi-byte character
 in an input string as one character, regardless of the byte length of
 the character.
 
@@ -109,11 +109,11 @@ value. You can also use the concatenation operator (\|\|).
 | <<insert_function,INSERT Function>>                     | Returns a character string where a specified number of characters within
 the character string have been deleted and then a second character
 string has been inserted at a specified start position.
-| <<lcase_function,LCASE Function>>                       | Downshifts alphanumeric characters. You can also use LOWER.
+| <<lcase_function,LCASE Function>>                       | Down-shifts alphanumeric characters. You can also use LOWER.
 | <<left_function,LEFT Function>>                         | Returns the leftmost specified number of characters from a character expression.
 | <<locate_function,LOCATE Function>>                     | Returns the position of a specified substring within a character string.
 You can also use POSITION.
-| <<lower_function,LOWER Function>>                       | Downshifts alphanumeric characters. You can also use LCASE.
+| <<lower_function,LOWER Function>>                       | Down-shifts alphanumeric characters. You can also use LCASE.
 | <<lpad_function,LPAD Function>>                         | Replaces the leftmost specified number of characters in a character
 expression with a padding character.
 | <<ltrim_function,LTRIM Function>>                       | Removes leading spaces from a character string.
@@ -135,9 +135,9 @@ expression with a padding character.
 | <<translate_function,TRANSLATE Function>>               | Translates a character string from a source character set to a target
 character set.
 | <<trim_function,TRIM Function>>                         | Removes leading or trailing characters from a character string.
-| <<ucase_function,UCASE Function>>                       | Upshifts alphanumeric characters. You can also use UPSHIFT or UPPER.
-| <<upper_function,UPPER Function>>                       | Upshifts alphanumeric characters. You can also use UPSHIFT or UCASE.
-| <<upshift_function,UPSHIFT Function>>                   | Upshifts alphanumeric characters. You can also use UPPER or UCASE.
+| <<ucase_function,UCASE Function>>                       | Up-shifts alphanumeric characters. You can also use UPSHIFT or UPPER.
+| <<upper_function,UPPER Function>>                       | Up-shifts alphanumeric characters. You can also use UPSHIFT or UCASE.
+| <<upshift_function,UPSHIFT Function>>                   | Up-shift alphanumeric characters. You can also use UPPER or UCASE.
 |===
 
 See the individual entry for the function.
@@ -241,7 +241,7 @@ returns 0. If value is greater than zero, returns 1.
 | <<sqrt_function,SQRT Function>>       | Returns the square root of a numeric value expression.
 | <<tan_function,TAN Function>>         | Returns the tangent of a numeric value expression, where the expression is an angle expressed in radians.
 | <<tanh_function,TANH Function>>       | Returns the hyperbolic tangent of a numeric value expression, where the expression is an angle expressed in radians.
-| <<zeroifnull_dunction,ZEROIFNULL Function>> | Returns the value of the operand unless it is NULL, in which case it returns zero.
+| <<zeroifnull_function,ZEROIFNULL Function>> | Returns the value of the operand unless it is NULL, in which case it returns zero.
 |===
 
 See the individual entry for the function.
@@ -276,12 +276,12 @@ sequence function.
 
 [cols="25%,75%"]
 |===
-| <<movingcount_function,MOVINGCOUNT Function>>       | Returns the number of nonnull values of a column expression in the current window.
-| <<movingmax_function,MOVINGMAX Function>>           | Returns the maximum of nonnull values of a column expression in the current window.
-| <<movingmin_function,MOVINGMIN Function>>           | Returns the minimum of nonnull values of a column expression in the current window.
-| <<movingstddev_function,MOVINGSTDDEV Function>>     | Returns the standard deviation of nonnull values of a column expression in the current window.
-| <<movingsum_function,MOVINGSUM Function>>           | Returns the sum of nonnull values of a column expression in the current window.
-| <<movingvariance_function,MOVINGVARIANCE Function>> | Returns the variance of nonnull values of a column expression in the current window.
+| <<movingcount_function,MOVINGCOUNT Function>>       | Returns the number of non-null values of a column expression in the current window.
+| <<movingmax_function,MOVINGMAX Function>>           | Returns the maximum of non-null values of a column expression in the current window.
+| <<movingmin_function,MOVINGMIN Function>>           | Returns the minimum of non-null values of a column expression in the current window.
+| <<movingstddev_function,MOVINGSTDDEV Function>>     | Returns the standard deviation of non-null values of a column expression in the current window.
+| <<movingsum_function,MOVINGSUM Function>>           | Returns the sum of non-null values of a column expression in the current window.
+| <<movingvariance_function,MOVINGVARIANCE Function>> | Returns the variance of non-null values of a column expression in the current window.
 |===
 
 Offset sequence function
@@ -298,14 +298,14 @@ Offset sequence function
 
 [cols="25%,75%"]
 |===
-| <<runningavg_function,RUNNINGAVG Function>>             | Returns the average of nonnull values of a column expression up to and including the current row.
+| <<runningavg_function,RUNNINGAVG Function>>             | Returns the average of non-null values of a column expression up to and including the current row.
 | <<runningcount_function,RUNNINGCOUNT Function>>         | Returns the number of rows up to and including the current row.
 | <<runningmax_function,RUNNINGMAX Function>>             | Returns the maximum of values of a column expression up to and including the current row.
 | <<runningmin_function,RUNNINGMIN Function>>             | Returns the minimum of values of a column expression up to and including the current row.
 | <<runningrank_function,RUNNINGRANK Function>>           | Returns the rank of the given value of an intermediate result table ordered by a SEQUENCE BY clause in a SELECT statement.
-| <<runningstddev_function,RUNNINGSTDDEV Function>>       | Returns the standard deviation of nonnull values of a column expression up to and including the current row.
-| <<runningsum_function,RUNNINGSUM Function>>             | Returns the sum of nonnull values of a column expression up to and including the current row.
-| <<runningvariance_function,RUNNINGVARIANCE Function>>   | Returns the variance of nonnull values of a column expression up to and including the current row.
+| <<runningstddev_function,RUNNINGSTDDEV Function>>       | Returns the standard deviation of non-null values of a column expression up to and including the current row.
+| <<runningsum_function,RUNNINGSUM Function>>             | Returns the sum of non-null values of a column expression up to and including the current row.
+| <<runningvariance_function,RUNNINGVARIANCE Function>>   | Returns the variance of non-null values of a column expression up to and including the current row.
 |===
 
 [[other_sequence_functions]]
@@ -313,7 +313,7 @@ Offset sequence function
 
 [cols="25%,75%"]
 |===
-| <<lastnotnull_function,LASTNOTNULL Function>>               | Returns the last nonnull value for the specified column expression. If only null values have been returned, returns null.
+| <<lastnotnull_function,LASTNOTNULL Function>>               | Returns the last non-null value for the specified column expression. If only null values have been returned, returns null.
 | <<rows_since_function,ROWS SINCE Function>>                 | Returns the number of rows counted since the specified condition was last true.
 | <<rows_since_changed_function,ROWS SINCE CHANGED Function>> | Returns the number of rows counted since the specified set of values last changed.
 | <<this_function,THIS Function>>                             | Used in ROWS SINCE to distinguish between the value of the column in the current row and the value of the column in previous rows.
@@ -337,13 +337,13 @@ Use these other functions and expressions in an SQL value expression:
 | <<coalesce_function,COALESCE Function>>                         | Returns the value of the first expression in the list that does not have a NULL value or if all 
 the expressions have NULL values, the function returns a NULL value.
 | <<converttohex_function,CONVERTTOHEX Function>>                 | Converts the specified value expression to hexadecimal for display purposes.
-| <<current_user_function,CURRENT_USER Function>>                 | Returns the database username of the current user who invoked the function.
+| <<current_user_function,CURRENT_USER Function>>                 | Returns the database user name of the current user who invoked the function.
 | <<decode_function,DECODE Function>>                             | Compares _expr_ to each _test_expr_ value one by one in the order provided.
 | <<explain_function,EXPLAIN Function>>                           | Generates a result table describing an access plan for a SELECT, INSERT, DELETE, or UPDATE statement.
 | <<isnull_function,ISNULL Function>>                             | Returns the first argument if it is not null, otherwise it returns the second argument.
 | <<nullif_function,NULLIF Function>>                             | Returns the value of the first operand if the two operands are not equal, otherwise it returns NULL.
 | <<nvl_function,NVL Function>>                                   | Returns the value of the first operand unless it is NULL, in which case it returns the value of the second operand.
-| <<user_function,USER Function>>                                 | Returns either the database username of the current user who invoked the function or the database username 
+| <<user_function,USER Function>>                                 | Returns either the database user name of the current user who invoked the function or the database user name 
 associated with the specified user ID number.
 |===
 
@@ -969,7 +969,7 @@ specifies the result value expression associated with each _expression_
 in a WHEN clause of a simple CASE, or with each _condition_ in a WHEN
 clause of a searched CASE. All of the _result-expressions_ must have
 comparable data types, and at least one of the
-_result-expressions_ must return nonnull.
+_result-expressions_ must return non-null.
 
 * `_result-expression_`
 +
@@ -1279,7 +1279,7 @@ PREMIER INSURANCE       80 P
 == CHAR_LENGTH Function
 
 The CHAR_LENGTH function returns the number of characters in a string.
-You can also use CHARACTER_LENGTH. Every character, including multibyte
+You can also use CHARACTER_LENGTH. Every character, including multi-byte
 characters, counts as one character.
 
 ```
@@ -2007,9 +2007,9 @@ SET ship_timestamp = CURRENT_TIMESTAMP WHERE projcode = 1000;
 [[current_user_function]]
 == CURRENT_USER Function
 
-The CURRENT_USER function returns the database username of the current
+The CURRENT_USER function returns the database user name of the current
 user who invoked the function. The current user is the authenticated
-user who started the session. That database username is used for
+user who started the session. That database user name is used for
 authorization of SQL statements in the current session.
 
 ```
@@ -2028,7 +2028,7 @@ The CURRENT_USER function is similar to the <<user_function,USER Function>>.
 [[examples_of_current_user]]
 === Examples of CURRENT_USER
 
-* This example retrieves the database username for the current user:
+* This example retrieves the database user name for the current user:
 +
 ```
 SELECT CURRENT_USER FROM (values(1)) x(a);
@@ -2669,7 +2669,7 @@ DAYOFMONTH (datetime-expression)
 * `_datetime-expression_`
 +
 is an expression that evaluates to a datetime value of type DATE or
-TIMESTAMP. See <<datetime_value_expressions,Datetime ValueE xpressions>>.
+TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 
 [[examples_of_dayofmonth]]
 === Examples of DAYOFMONTH
@@ -2811,7 +2811,7 @@ All the _retval_ values and the _default_ value, if any, must be of
 comparable types.
 
 If _expr_ and a _test-expr_ value are character data, the comparison is
-made using nonpadded comparison semantics.
+made using non-padded comparison semantics.
 
 If _expr_ and a _test-expr_ value are numeric data, the comparison is
 made with a temporary copy of one of the numbers, according to defined
@@ -3538,7 +3538,7 @@ Start/Date Time/Shipped               (EXPR)
 The INSERT function returns a character string where a specified number
 of characters within the character string has been deleted, beginning at
 a specified start position, and where another character string has been
-inserted at the start position. Every character, including multibyte
+inserted at the start position. Every character, including multi-byte
 characters, is treated as one character.
 
 INSERT is a Trafodion SQL extension.
@@ -3712,7 +3712,7 @@ START_DATE (EXPR)
 == LASTNOTNULL Function
 
 The LASTNOTNULL function is a sequence function that returns the last
-nonnull value of a column in an intermediate result table ordered by a
+non-null value of a column in an intermediate result table ordered by a
 SEQUENCE BY clause in a SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
 LASTNOTNULL is a Trafodion SQL extension.
@@ -3729,7 +3729,7 @@ expression. If only null values have been returned, LASTNOTNULL returns null.
 [[examples_of_lastnotnull]]
 === Examples of LASTNOTNULL
 
-* Return the last nonnull value of a column:
+* Return the last non-null value of a column:
 +
 
 ```
@@ -3751,7 +3751,7 @@ lastnotnull
 [[lcase_function]]
 == LCASE Function
 
-The LCASE function downshifts alphanumeric characters. For
+The LCASE function down-shifts alphanumeric characters. For
 non-alphanumeric characters, LCASE returns the same character. LCASE can
 appear anywhere in a query where a value can be used, such as in a
 select list, an ON clause, a WHERE clause, a HAVING clause, a LIKE
@@ -3771,7 +3771,7 @@ LCASE (character-expression)
 * `_character-expression_`
 +
 is an SQL character value expression that specifies a string of
-characters to downshift. See
+characters to down-shift. See
 <<character_value_expressions,Character Value Expressions>>.
 
 [[examples_of_lcase]]
@@ -3799,7 +3799,7 @@ See <<ucase_function,UCASE Function>>.
 === LEFT Function
 
 The LEFT function returns the leftmost specified number of characters
-from a character expression. Every character, including multibyte
+from a character expression. Every character, including multi-byte
 characters, is treated as one character.
 
 LEFT is a Trafodion SQL extension.
@@ -3860,7 +3860,7 @@ SECRETARY COMNET
 The LOCATE function searches for a given substring in a character
 string. If the substring is found, Trafodion SQL returns the character
 position of the substring within the string. Every character, including
-multibyte characters, is treated as one character. The result returned
+multi-byte characters, is treated as one character. The result returned
 by the LOCATE function is equal to the result returned by the
 <<position_function,Position Function>>.
 
@@ -3985,7 +3985,7 @@ LOG10 (25)
 [[lower_function]]
 == LOWER Function
 
-The LOWER function downshifts alphanumeric characters. For
+The LOWER function down-shifts alphanumeric characters. For
 non-alphanumeric characters, LOWER returns the same character. LOWER can
 appear anywhere in a query where a value can be used, such as in a
 select list, an ON clause, a WHERE clause, a HAVING clause, a LIKE
@@ -4003,13 +4003,13 @@ LOWER (character-expression)
 * `_character-expression_`
 +
 is an SQL character value expression that specifies a string of
-characters to downshift.
+characters to down-shift.
 See <<character_value_expressions,Character Value Expressions>>.
 
 [[considerations_for_lower]]
 === Considerations for LOWER
 
-For a UTF8 character expression, the LOWER function downshifts all the
+For a UTF8 character expression, the LOWER function down-shifts all the
 uppercase or title case characters in a given string to lowercase and
 returns a character string with the same data type and character set as
 the argument.
@@ -4047,7 +4047,7 @@ See <<upper_function,UPPER Function>>.
 === LPAD Function
 
 The LPAD function pads the left side of a string with the specified
-string. Every character in the string, including multibyte characters,
+string. Every character in the string, including multi-byte characters,
 is treated as one character.
 
 LPAD is a Trafodion SQL extension.
@@ -4419,7 +4419,7 @@ Start/Date Time/Shipped               (EXPR)
 == MOVINGAVG Function
 
 The MOVINGAVG function is a sequence function that returns the average
-of nonnull values of a column in the current window of an intermediate
+of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4465,7 +4465,7 @@ the result table, negative, or NULL.
 [[examples_of_movingavg]]
 === Examples of MOVINGAVG
 
-* Return the average of nonnull values of a column in the current window
+* Return the average of non-null values of a column in the current window
 of three rows:
 +
 ```
@@ -4497,7 +4497,7 @@ MOVINGAVG3
 == MOVINGCOUNT Function
 
 The MOVINGCOUNT function is a sequence function that returns the number
-of nonnull values of a column in the current window of an intermediate
+of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4551,7 +4551,7 @@ values are counted.
 [[examples_of_movingcount]]
 === Examples of MOVINGCOUNT
 
-* Return the number of nonnull values of a column in the current window of
+* Return the number of non-null values of a column in the current window of
 three rows:
 +
 ```
@@ -4574,7 +4574,7 @@ MOVINGCOUNT3
 == MOVINGMAX Function
 
 The MOVINGMAX function is a sequence function that returns the maximum
-of nonnull values of a column in the current window of an intermediate
+of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4620,7 +4620,7 @@ the result table, negative, or NULL.
 [[examples_of_movingmax]]
 === Examples of MOVINGMAX
 
-* Return the maximum of nonnull values of a column in the current window
+* Return the maximum of non-null values of a column in the current window
 of three rows:
 +
 ```
@@ -4643,7 +4643,7 @@ MOVINGMAX3
 == MOVINGMIN Function
 
 The MOVINGMIN function is a sequence function that returns the minimum
-of nonnull values of a column in the current window of an intermediate
+of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4678,7 +4678,7 @@ RUNNINGMIN:
 ** The _integer-expression_ is out of range, and _max-rows_ is not
 specified. This condition includes the case in which both
 _integer-expression_ and _max-rows_ are larger than the result table.
-** The minimum of i_nteger-expression_ and _max-rows_ is out of range.
+** The minimum of _integer-expression_ and _max-rows_ is out of range.
 In this case, _integer-expression_ could be within range, but _max-rows_
 might be the minimum value of the two and be out of range (for example,
 a negative number).
@@ -4689,7 +4689,7 @@ the result table, negative, or NULL.
 [[examples_of_movingmin]]
 === Examples of MOVINGMIN
 
-* Return the minimum of nonnull values of a column in the current window
+* Return the minimum of non-null values of a column in the current window
 of three rows:
 +
 ```
@@ -4712,7 +4712,7 @@ MOVINGMIN3
 == MOVINGSTDDEV Function
 
 The MOVINGSTDDEV function is a sequence function that returns the
-standard deviation of nonnull values of a column in the current window
+standard deviation of non-null values of a column in the current window
 of an intermediate result table ordered by a SEQUENCE BY clause in a
 SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4758,7 +4758,7 @@ the result table, negative, or NULL.
 [[examples_of_movingstddev]]
 === Examples of MOVINGSTDDEV
 
-* Return the standard deviation of nonnull values of a column in the
+* Return the standard deviation of non-null values of a column in the
 current window of three rows:
 +
 ```
@@ -4798,7 +4798,7 @@ FROM mining.seqfcn SEQUENCE BY ts;
 == MOVINGSUM Function
 
 The MOVINGSUM function is a sequence function that returns the sum of
-nonnull values of a column in the current window of an intermediate
+non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4832,7 +4832,7 @@ _integer-expression_ and _max-rows_.
 RUNNINGSUM:
 ** The _integer-expression_ is out of range, and _max-rows_ is not
 specified. This condition includes the case in which both
-i_nteger-expression_ and _max-rows_ are larger than the result table.
+_integer-expression_ and _max-rows_ are larger than the result table.
 ** The minimum of _integer-expression_ and _max-rows_ is out of range.
 In this case, _integer-expression_ could be within range, but _max-rows_
 might be the minimum value of the two and be out of range (for example,
@@ -4844,7 +4844,7 @@ the result table, negative, or NULL.
 [[examples_of_movingsum]]
 === Examples of MOVINGSUM
 
-* Return the sum of nonnull values of a column in the current window of
+* Return the sum of non-null values of a column in the current window of
 three rows:
 +
 ```
@@ -4867,7 +4867,7 @@ MOVINGSUM3
 == MOVINGVARIANCE Function
 
 The MOVINGVARIANCE function is a sequence function that returns the
-variance of nonnull values of a column in the current window of an
+variance of non-null values of a column in the current window of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -4913,7 +4913,7 @@ the result table, negative, or NULL.
 [[examples_of_movingvariance]]
 === Examples of MOVINGVARIANCE
 
-* Return the variance of nonnull values of a column in the current window
+* Return the variance of non-null values of a column in the current window
 of three rows:
 +
 ```
@@ -5144,7 +5144,7 @@ column as the actual number of storage bytes.
 
 The OCTET_LENGTH and CHAR_LENGTH functions are similar. The OCTET_LENGTH
 function returns the number of bytes, rather than the number of
-characters, in the string. This distinction is important for multibyte
+characters, in the string. This distinction is important for multi-byte
 implementations. For an example of selecting a double-byte column, see
 <<examples_of_octet_length,Example of OCTET_LENGTH>>.
 
@@ -5243,7 +5243,7 @@ PI()
 The POSITION function searches for a given substring in a character
 string. If the substring is found, Trafodion SQL returns the character
 position of the substring within the string. Every character, including
-multibyte characters, is treated as one character. The result returned
+multi-byte characters, is treated as one character. The result returned
 by the POSITION function is equal to the result returned by the
 <<locate_function,LOCATE Function>>.
 
@@ -5698,7 +5698,7 @@ SYSTEM ANAL TDMNET
 == RIGHT Function
 
 The RIGHT function returns the rightmost specified number of characters
-from a character expression. Every character, including multibyte
+from a character expression. Every character, including multi-byte
 characters, is treated as one character.
 
 RIGHT is a Trafodion SQL extension.
@@ -5968,7 +5968,7 @@ FROM mining.seqfcn SEQUENCE BY ts;
 == RPAD Function
 
 The RPAD function pads the right side of a string with the specified
-string. Every character in the string, including multibyte characters,
+string. Every character in the string, including multi-byte characters,
 is treated as one character.
 
 RPAD is a Trafodion SQL extension.
@@ -6080,7 +6080,7 @@ See <<trim_function,TRIM Function>> and <<ltrim_function,LTRIM Function>>.
 == RUNNINGAVG Function
 
 The RUNNINGAVG function is a sequence function that returns the average
-of nonnull values of a column up to and including the current row of an
+of non-null values of a column up to and including the current row of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -6155,7 +6155,7 @@ the intermediate result table up to and including the current row.
 +
 specifies a derived column determined by the evaluation of the column
 expression. If _column-expression_ is the argument, RUNNINGCOUNT returns
-the number of rows containing nonnull values of _column-expression_ in the
+the number of rows containing non-null values of _column-expression_ in the
 intermediate result table up to and including the current row.
 
 
@@ -6285,7 +6285,7 @@ min_i1
 === RUNNINGSTDDEV Function
 
 The RUNNINGSTDDEV function is a sequence function that returns the
-standard deviation of nonnull values of a column up to and including the
+standard deviation of non-null values of a column up to and including the
 current row of an intermediate result table ordered by a SEQUENCE BY
 clause in a SELECT statement.
 See <<sequence_by_clause,SEQUENCE BY Clause>>.
@@ -6301,7 +6301,7 @@ RUNNINGSTDDEV (_column-expression_)
 specifies a derived column determined by the evaluation of the column
 expression.
 +
-RUNNINGSTDDEV returns the standard deviation of nonnull values of
+RUNNINGSTDDEV returns the standard deviation of non-null values of
 _column-expression_ up to and including the current row.
 
 [[considerations_for_runningstddev]]
@@ -6360,7 +6360,7 @@ FROM mining.seqfcn SEQUENCE BY ts;
 == RUNNINGSUM Function
 
 The RUNNINGSUM function is a sequence function that returns the sum of
-nonnull values of a column up to and including the current row of an
+non-null values of a column up to and including the current row of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -6375,13 +6375,13 @@ RUNNINGSUM (column-expression)
 specifies a derived column determined by the evaluation of the column
 expression.
 +
-RUNNINGSUM returns the sum of nonnull values of _column-expression_ up
+RUNNINGSUM returns the sum of non-null values of _column-expression_ up
 to and including the current row.
 
 [[examples_of_runningsum]]
 === Examples of RUNNINGSUM
 
-* Return the sum of nonnull values of _i1_ up to and including the current
+* Return the sum of non-null values of _i1_ up to and including the current
 row:
 +
 ```
@@ -6404,7 +6404,7 @@ sum_i1
 == RUNNINGVARIANCE Function
 
 The RUNNINGVARIANCE function is a sequence function that returns the
-variance of nonnull values of a column up to and including the current
+variance of non-null values of a column up to and including the current
 row of an intermediate result table ordered by a SEQUENCE BY clause in a
 SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
@@ -6419,13 +6419,13 @@ RUNNINGVARIANCE (column-expression)
 specifies a derived column determined by the evaluation of the column
 expression.
 +
-RUNNINGVARIANCE returns the variance of nonnull values of
+RUNNINGVARIANCE returns the variance of non-null values of
 _column-expression_ up to and including the current row.
 
 [[examples_of_runningvariance]]
 === Examples of RUNNINGVARIANCE
 
-* Return the variance of nonnull values of _i1_ up to and including the
+* Return the variance of non-null values of _i1_ up to and including the
 current row:
 +
 ```
@@ -6812,7 +6812,7 @@ value with an exact numeric data type and a scale of zero.
 * `_length_`
 +
 specifies the number of characters to extract from _character-expr_.
-Keep in mind that every character, including multibyte characters,
+Keep in mind that every character, including multi-byte characters,
 counts as one character. _length_ is the length of the extracted
 substring and must be a value greater than or equal to zero of exact
 numeric data type and with a scale of zero. The _length_ field is
@@ -6858,8 +6858,8 @@ start position to the end of the string is returned.
 * If the start position is greater than the length of the character
 expression, an empty string ('') is returned.
 * The resulting substring is always of type VARCHAR. If the source
-character string is an upshifted CHAR or VARCHAR string, the result is
-an upshifted VARCHAR type.
+character string is an up-shifted CHAR or VARCHAR string, the result is
+an up-shifted VARCHAR type.
 
 <<<
 [[examples_of_substring]]
@@ -7308,7 +7308,7 @@ is one of these translation names:
 |===
 | Translation Name | Source Character Set | Target Character Set | Comments
 | ISO88591TOUTF8   | ISO88591             | UTF8                 | Translates ISO8859-1 characters to UTF8 characters. No data loss is possible.
-| UTF8TOISO88591   | UTF8                 | ISO88591             | ranslates UTF8 characters to ISO88591 characters. Trafodion SQL will
+| UTF8TOISO88591   | UTF8                 | ISO88591             | Translates UTF8 characters to ISO88591 characters. Trafodion SQL will
 display an error if it encounters a Unicode character that cannot be converted to the target character set.
 |===
 
@@ -7336,7 +7336,7 @@ Trafodion SQL returns an error.
 == TRIM Function
 
 The TRIM function removes leading and trailing characters from a
-character string. Every character, including multibyte characters, is
+character string. Every character, including multi-byte characters, is
 treated as one character.
 
 ```
@@ -7374,8 +7374,8 @@ to trim characters. See <<character_value_expressions,Character Value Expression
 
 The result is always of type VARCHAR, with maximum length equal to the
 fixed length or maximum variable length of _trim-source_. If the
-source character string is an upshifts CHAR or VARCHAR string, the
-result is an upshifts VARCHAR type.
+source character string is an up-shifts CHAR or VARCHAR string, the
+result is an up-shifts VARCHAR type.
 
 <<<
 [[examples_of_trim]]
@@ -7399,7 +7399,7 @@ TRIM(first_name) || ' ' || TRIM (last_name)
 [[ucase_function]]
 == UCASE Function
 
-The UCASE function upshifts alphanumeric characters. For
+The UCASE function up-shifts alphanumeric characters. For
 non-alphanumeric characters, UCASE returns the same character. UCASE can
 appear anywhere in a query where a value can be used, such as in a
 select list, an ON clause, a WHERE clause, a HAVING clause, a LIKE
@@ -7425,7 +7425,7 @@ characters to upshift. See <<character_value_expressions,Character Value Express
 [[considerations_for_ucase]]
 === Considerations for UCASE
 
-For a UTF8 character_expression, the UCASE function upshifts all
+For a UTF8 character_expression, the UCASE function up-shifts all
 lowercase or title case characters to uppercase and returns a character
 string. If the argument is of type CHAR(_n_) or VARCHAR(_n_), the
 result is of type VARCHAR(min(3_n_, 2048)), where the maximum length
@@ -7463,7 +7463,7 @@ See <<lcase_function,LCASE Function>>.
 [[upper_function]]
 === UPPER Function
 
-The UPPER function upshifts alphanumeric characters. For
+The UPPER function up-shifts alphanumeric characters. For
 non-alphanumeric characters, UCASE returns the same character. UPPER can
 appear anywhere in a query where a value can be used, such as in a
 select list, an ON clause, a WHERE clause, a HAVING clause, a LIKE
@@ -7511,7 +7511,7 @@ see <<upshift_function,UPSHIFT Function>>.
 [[upshift_function]]
 === UPSHIFT Function
 
-The UPSHIFT function upshifts alphanumeric characters. For
+The UPSHIFT function up-shifts alphanumeric characters. For
 non-alphanumeric characters, UCASE returns the same character. UPSHIFT
 can appear anywhere in a query where a value can be used, such as in a
 select list, an ON clause, a WHERE clause, a HAVING clause, a LIKE
@@ -7584,12 +7584,12 @@ WHERE UPSHIFT(D1.deptname) = UPSHIFT(D2.deptname);
 [[user_function]]
 == USER Function
 
-The USER function returns either the database username associated with
-the specified user ID number or the database username of the current
+The USER function returns either the database user name associated with
+the specified user ID number or the database user name of the current
 user who invoked the function. The current user
 
 is the authenticated user who started the session. That database
-username is used for authorization of SQL statements in the current
+user name is used for authorization of SQL statements in the current
 session.
 
 ```
@@ -7598,7 +7598,7 @@ USER [(user-id)]
 
 * `_user-id_`
 +
-is the 32-bit number associated with a database username.
+is the 32-bit number associated with a database user name.
 +
 The USER function is similar to the <<authname_function,AUTHNAME Function>>
 and the <<current_user_function,CURRENT USER Function>>.
@@ -7612,7 +7612,7 @@ and the <<current_user_function,CURRENT USER Function>>.
 [[examples_of_user]]
 === Examples of USER
 
-* This example shows the database username of the current user who is
+* This example shows the database user name of the current user who is
 logged in to the session:
 +
 ```
@@ -7626,7 +7626,7 @@ TSHAW
 ```
 
 <<<
-* This example shows the database username associated with the user ID number, 33333:
+* This example shows the database user name associated with the user ID number, 33333:
 +
 ```
 SELECT USER (33333) FROM (values(1)) x(a);

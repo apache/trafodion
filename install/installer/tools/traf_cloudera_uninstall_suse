@@ -119,6 +119,11 @@ done
 echo "***INFO: Removing any Cloudera repos"
 
 sudo rm -rf /etc/yum.repos.d/cloudera*
+sudo rm -rf /etc/zypp/repos.d/cloudera-manager.repo*
+sudo rm -rf /var/cache/zypp/packages/cloudera*
+sudo rm -rf /var/cache/zypp/raw/cloudera*
+sudo rm -rf /var/cache/zypp/solv/cloudera*
+
 
 #=============================================
 echo "***INFO: Removing Cloudera symbolic directory links"

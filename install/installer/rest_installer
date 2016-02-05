@@ -110,14 +110,10 @@ cd $REST_DIR/conf
 echo "***INFO: modifying $REST_DIR/conf/rest-site.xml"
 # get zookeeper quorum
 
-if [ "$node_count" -ne "1" ]; then
-   lineNumber=$(grep -n "zookeeper\.quorum" /etc/hbase/conf/hbase-site.xml | sed 's/\:.*//')
-   lineNumber=$((lineNumber+1))
+lineNumber=$(grep -n "zookeeper\.quorum" /etc/hbase/conf/hbase-site.xml | sed 's/\:.*//')
+lineNumber=$((lineNumber+1))
 
-   ZOOKEEPER_NODES=`sed "$lineNumber!d" /etc/hbase/conf/hbase-site.xml | sed 's/\/value.*//' | sed 's/.*>//' | sed 's/.$//'`
-else
-   ZOOKEEPER_NODES=$(hostname -s)   
-fi
+ZOOKEEPER_NODES=`sed "$lineNumber!d" /etc/hbase/conf/hbase-site.xml | sed 's/\/value.*//' | sed 's/.*>//' | sed 's/.$//'`
 
 # add zookeeper quorum property to end of configuration
 rm rest-site.temp 2>/dev/null

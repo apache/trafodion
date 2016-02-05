@@ -394,7 +394,7 @@ Install Jython, a Java implementation of Python? [Y]: Y
 Jython URL (jython_installer-2.2.jar)
 ```
 
-11.  The setup proceeds to download and install the optional open-sourcecomponents. As each component is retrieved, dots (.) are printed to
+11.  The setup proceeds to download and install the optional open-source components. As each component is retrieved, dots (.) are printed to
 indicate the progress of the download.
 +
 ```
@@ -409,7 +409,7 @@ Downloading Perl XML SAX Module [1 of 1] - PerlSAX.pm
 ......................... 100%
 Downloading Jython [1 of 1] - jython_installer-2.2.jar
 ......................... 100%
-Sucessfully Installed Jython. Successfully added settings.py
+Successfully Installed Jython. Successfully added settings.py
 Trafodion Command Interface Installation Complete.
 /home/myname/trafcitemp>
 ```
@@ -447,8 +447,8 @@ http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodi
 |              | sample.sql        | Sample SQL script.
 |              | sampleDDL.py      | Sample Python file that uses Jython to execute DDL statements.
 |              | sampleDML.py      | Sample Python file that uses Jython to execute DML statements.
-|              | sampleTables.pl   | Sample Perl file that lists all tables and respective rowcounts. The file accepts a wildcard argument on the command line.
-|              | sampleTables.py   | Sample Python file that lists all tables and respective rowcounts. The file accepts a wildcard argument on the command line.
+|              | sampleTables.pl   | Sample Perl file that lists all tables and respective row counts. The file accepts a wild-card argument on the command line.
+|              | sampleTables.py   | Sample Python file that lists all tables and respective row counts. The file accepts a wild-card argument on the command line.
 |===
 
 <<<

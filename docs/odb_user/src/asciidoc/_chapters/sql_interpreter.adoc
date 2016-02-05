@@ -56,7 +56,7 @@ When you press the up arrow key the whole command (up to semi-colon) will be rea
 command is automatically updated.
 * *CTRL-U/CTRL-L* to change the command case.
 * *CTRL-X* to kill the current command.
-* See online help for the other `mreadline` commands.
+* See on-line help for the other `mreadline` commands.
 +
 <<<
 2. *History is saved* when you exit the SQL Interpreter in a file identified by the `ODB_HIST` environment variable.
@@ -103,7 +103,7 @@ will be just prepared, not executed.
 10.  Different databases use different commands to set default schema(s):
 * Trafodion: `set schema <name>;`
 * MySQL: `use <name>;`
-* Postgresql/Vertica: `set search_path to <name1,name2,…>;`
+* PostgreSQL/Vertica: `set search_path to <name1,name2,…>;`
 * Teradata: `set database <name>;`
 +
 `set chsch <command>` is used to define database specific commands to change your schema. When odb recognize the

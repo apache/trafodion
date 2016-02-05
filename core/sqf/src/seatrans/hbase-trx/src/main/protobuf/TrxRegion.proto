@@ -272,7 +272,8 @@ message TlogDeleteRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
   required Scan scan = 3;
-  required int64 auditSeqNum =4;
+  required int64 auditSeqNum = 4;
+  required bool ageCommitted = 5;
 }
 
 message TlogDeleteResponse {

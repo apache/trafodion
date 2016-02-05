@@ -39,7 +39,7 @@ This command:
 * Loads the file named `customer.tbl` (`src=customer.tbl`)
 * in the table `TRAFODION.MAURIZIO.CUSTOMER` (`tgt=TRAFODION.MAURIZIO.CUSTOMER`)
 * using `|` (vertical bar) as a field separator (`fs=\|`)
-* using `1000 rows` as rowset buffer (`rows=1000`)
+* using `1000 rows` as row-set buffer (`rows=1000`)
 * using `UPSERT USING LOAD` syntax to achieve better throughput as described in http://trafodion.incubator.apache.org/load.html[Trafodion Data Loading]
 * truncating the target table before loading (`truncate`)
 * using `4 parallel threads` to load the target table (`parallel=4`)
@@ -100,7 +100,7 @@ Default is `\` (back slash).
 You can define the size of this buffer in two different ways: +
  +
 1. number of rows (for example: `rows=100` means 100 rows as IO buffer) +
-2.* buffer size in kB or MB (for example: `rows=k512` (512 kB buffer) or `rows=m20` (20MB buffer)) +
+2.* buffer size in KB or MB (for example: `rows=k512` (512 KB buffer) or `rows=m20` (20MB buffer)) +
  +
 Default value is `100`.
 | `bad=[+]file` | Where to write rejected rows. If you omit this parameter, then rejected rows is printed to standard error together with the error returned by
@@ -116,13 +116,13 @@ If you add a `+` sign in front of the file-name, odb  *appends* to `<file>`inste
  +
 - one thread to read from the input file and +
 - as many threads as the parallel argument to write via ODBC. This option is database independent.
-| `errmax=num` | odb orints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error
+| `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of error messages printed to the standard error
 | `commit=auto\|end\|#rows\|x#rs` | Defines how odb commits the inserts. You have the following choices: +
  +
 - `auto` (default): Commit every single insert (see also rows load operator). +
 - `end`: Commit when all rows (assigned to a given thread) have been inserted. +
 - `#rows`: Commit every `#rows` inserted rows. +
-- `x#rs`: Commit every `#rs` rowsets (see `rows`)
+- `x#rs`: Commit every `#rs` rowset (see `rows`)
 | `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store inserted rows *directly* into
 the Read-Only Storage (ROS). See Vertica’s documentation.
 | `fieldtrunc=\{0-4}` | Defines how odb manages fields longer than the destination target column: +
@@ -133,7 +133,7 @@ the Read-Only Storage (ROS). See Vertica’s documentation.
 - `fieldtrunc=3`: Like `fieldtrunc=0` but tries to load the field even if the target column is NOT a text field. +
 - `fieldtrunc=4`: Like fieldtrunc=3 but no warnings are printed. +
  +
-WARNING: the last two options could bring to unwanted resilts. For example, an input string like `2001-10-2345` is loaded as a valid
+WARNING: the last two options could bring to unwanted results. For example, an input string like `2001-10-2345` is loaded as a valid
 2001-10-23 if the target field is a `DATE`.
 | `em=<char>\|<code>` | Character used to embed binary files. See <<load_default_values, Load Default Values>>. You can define
 the embed character the same way as the field separator. No default value.
@@ -152,7 +152,7 @@ _fits_ into the target tables, Normally used to analyze the first few rows of CS
 - `ifempty` to `false`. +
 - `truncate` to `false`.
 | `maxlen=#bytes` | odb limits the amount of memory allocated in the ODBC buffers for CHAR/VARCHAR fields to `#bytes`.
-| `time` | odb prints a *timeline* (milliseconds from start) for each insert.
+| `time` | odb prints a *time line* (milliseconds from start) for each insert.
 | `bpc=#` | Bytes allocated in the ODBC buffer for each (non wide) CHAR/VARCHAR column length unit. (Default: 1)
 | `bwpc=#` | Bytes allocated in the ODBC buffer for each (wide) CHAR/VARCHAR column length unit. (Default: 4)
 | `Xmltag=[+]tag` | Input file is XML. Load all _XML nodes_ under the one specified with this option. If a plus sign is
@@ -231,7 +231,7 @@ odb provides mapping/transformation capabilities though *mapfiles*. By specifyin
 * Skip input file fields
 * Generate sequences
 * Insert constants
-* Transform dates/timestamp formats
+* Transform dates/timestamps formats
 * Extract substrings
 * Replace input file strings. For example: insert `Maurizio Felici` when you read `MF`
 * Generate random values
@@ -307,7 +307,7 @@ like `SUBSTR:3:6`m then `Tib` is loaded into the database.
 Example: `DCONV:B.d.y` converts `August,24 1991` to `1991-08-24`
 * `TCONV:<FORMAT>`. Converts times from the input file format defined through `<FORMAT>` to `HH:MM:SS` (see `TSCONV` operator).
 * `REPLACE:<READ>:<WRITTEN>`. Loads the string `<WRITTEN>` when the input file fields contains `<READ>`.
-If the input file string doesn’t match `<READ>`, then it is loaded as is.
+If the input file string doesn't match `<READ>`, then it is loaded as is.
 +
 See <<load_mapfiles_ignore, Use mapfiles to Ignore and/or Transform Fields When Loading>>
 * `TOUPPER`. Converts the string read from the input file to uppercase before loading.
@@ -394,7 +394,7 @@ uno,00,48,due,_Antonella_,tre,[underline]#24 Apr 1962#
 * [underline]#Underline text# represents birth date.
 
 You want to load the marked fields into the appropriate column, *_generate_* a unique key for ID and ignore the fields in black text.
-In addition: you need to *_convert date format_* and replace all occurrances of `Lucia` with `Lucy`.
+In addition: you need to *_convert date format_* and replace all occurrences of `Lucia` with `Lucy`.
 
 The following map file accomplishes these goals:
 
@@ -597,7 +597,7 @@ Then:
 
 [[load_binary_files]]
 == Loading Binary Files
-Assuming that your backend database (and your ODBC Driver) supports BLOB data types, or equivalent,
+Assuming that your back-end database (and your ODBC Driver) supports BLOB data types, or equivalent,
 you can use odb to directly load binary (or any other) files into a database column using the `[:em=char]` symbol
 to identify the file to be loaded into that specific database field.
 
@@ -630,7 +630,7 @@ by running a command like this:
 $ odb64luo –u user –p xx –d dsn -l src=myphotos.csv:tgt=pers.myphotos:em=\@
 ```
 
-odb onsiders the string following the “em” character as the path of the file to be loaded in that specific field.
+odb considers the string following the “em” character as the path of the file to be loaded in that specific field.
 
 NOTE: odb does not load rows where the size of the input file is greater than the target database column.
 
@@ -865,7 +865,7 @@ is made of 32 partitions, then odb starts *four* threads (four ODBC connections)
 - thread 1 extracts partitions 8-15 +
 - thread 2 extracts partitions 16-23 +
 - thread 3 extracts partitions 24-31
-| `multi` | This option can be used in conjunction with parallel operator to write as many ouput files as the number of extraction
+| `multi` | This option can be used in conjunction with parallel operator to write as many output files as the number of extraction
 threads. Output file names are built adding four digits at the end of the file identified by the `tgt` operator. +
  +
 For example, with `src=trafodion.mauro.orders:tgt=%t.csv:parallel=4:multi` +
@@ -916,7 +916,7 @@ with `min(emp_id)=1` and `max(emp_id)=1000`, the four threads extract the follow
 `thread #2 emp_id >=501 and emp_id < 751` +
 `thread #3 emp_id >=751 and emp_id < 1001` (odb uses max(emp_id) + 1) +
  +
-If the values are not equally distributed, then data extraction is deskewed.
+If the values are not equally distributed, then data extraction is de-skewed.
 | `pre={@sqlfile}\|{[sqlcmd]` | odb runs a *single instance* of either the `sqlfile` script or `sqlcmd` SQL
 command (enclosed between square brackets) on the *source system* immediately before table extraction. +
  +
@@ -1009,7 +1009,7 @@ Complete list of the Copy Operators:
 - `%s/%S`: Expands to the (lower/upper case) source schema name. +
 - `%c/%C`: Expands to the (lower/upper case) source catalog name.
 | `sql={[sqlcmd]\|@sqlfile\|-file}` | odb uses a generic SQL &#8212; instead of a _real_ table &#8212; as source.
-| `max=num` | This is the max number of records to copy. Default is to copy all ecords in the source table.
+| `max=num` | This is the max number of records to copy. Default is to copy all records in the source table.
 | `rows=<num>\|k<num>\|m<num>` | Defines the size of the I/O buffer for each copy thread. You can
 define the size of this buffer in two different ways: +
  +
@@ -1053,7 +1053,7 @@ You can enclose the where condition between square brackets to avoid a misinterp
  +
 - `auto` (Default) &8212; Commits every single insert (see also rows load operator). `end` commits when all rows (assigned to a given thread) have been inserted. +
 - `#rows` &#8212; Commits every `#rows` copied rows. +
-- `x#rs` &#8212; Commits every `#rs` rowsets copied. (See `:rows`)
+- `x#rs` &#8212; Commits every `#rs` rowset copied. (See `:rows`)
 | `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store
 inserted rows _directly_ into the Read-Only Storage (ROS). See Vertica’s documentation.
 | `errmax=num` | odb prints up to num error messages per rowset. Normally used with soe to limit the number of
@@ -1074,12 +1074,12 @@ with `min(emp_id)=1` and `max(emp_id)=1000`, then the four threads extracts the 
 `thread #2 emp_id >=501 and emp_id < 751` +
 `thread #3 emp_id >=751 and emp_id < 1001 (odb uses max(emp_id) + 1)` +
  +
-If the values are not equally distributed data extraction is deskewed.
+If the values are not equally distributed data extraction is de-skewed.
 | `pre={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either a `sqlfile` script or `sqlcmd`
 (enclosed between square brackets) on the *target system* immediately before loading the target table.
 You can, for example, CREATE the target table before loading it. +
  +
-The target table isn'te loaded if SQL execution fails and Stop On Error is set.
+The target table isn't loaded if SQL execution fails and Stop On Error is set.
 | `mpre={@sqlfile}\|{[sqlcmd]}` | Each odb thread runs either a `sqlfile` script or `sqlcmd`
 (enclosed between square brackets) on the *source system* immediately before
 loading the target table. You can use `mpre` to set database specific features for each thread.
@@ -1090,7 +1090,7 @@ You can use `mpre` to set database specific features for each thread.
 (enclosed between square brackets) on the *target system* immediately after the target table has been
 loaded. You can, for example, update database stats after loading a table.
 | `tpar=num` | odb copies `num` tables in parallel when `src` is a list of files to be loaded.
-| `loaders=num` | odb uses `num` load threads for each extract thread. Ddefault is two loaders per extractor,
+| `loaders=num` | odb uses `num` load threads for each extract thread. Default is two loaders per extractor,
 | `fwc` | Force Wide Characters. odb considers SQL_CHAR/SQL_VARCHAR fields as they were defined SQL_WCHAR/SQL_WVARCHAR.
 | `bpwc=#` | odb internally allocates 4 bytes/char for SQL_WCHAR/SQL_WVARCHAR columns.
 You can modify the number of bytes allocated for each char using this parameter.
@@ -1149,7 +1149,7 @@ file.
 <<<
 *Example*
 
-Usinge different _splitby columns_.
+Using different _splitby columns_.
 
 ```
 ~/Devel/odb $ cat tlist2.txt
@@ -1164,12 +1164,12 @@ src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
 
 == Case-Sensitive Table and Column Names
 
-Your database configuration determiens whether you can use case sensitive table/column names.
+Your database configuration determines whether you can use case sensitive table/column names.
 odb maintains table/column case sensitiveness when they are enclosed in double quotes.
 
 *Example*
 
-The following commans create a `TRAFODION.MAURIZIO.Names` table made of three columns:
+The following commands create a `TRAFODION.MAURIZIO.Names` table made of three columns:
 “name”, “NAME” and “Name”.
 
 ```
@@ -1201,7 +1201,7 @@ in parallel; `:parallel` defines how many _data streams_ to use for each table. 
 allocates and start the “right” number of threads.
 
 A rule of thumb when copying/loading or extracting tables is to use as many _data streams_ as:
-`min(number of middletier CPUs, number of source CPUs, number of target CPUs)`
+`min(number of middle-tier CPUs, number of source CPUs, number of target CPUs)`
 
 The number of threads started for each _data stream_ depend on the operation type:
 

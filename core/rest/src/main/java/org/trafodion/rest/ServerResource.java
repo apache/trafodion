@@ -176,6 +176,52 @@ public class ServerResource extends ResourceBase {
 
 	    return jsonObject;
 	}
+	
+	private JSONObject dcscheck() throws IOException {
+	    ScriptContext scriptContext = new ScriptContext();
+	    scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+	    scriptContext.setCommand("dcscheck");
+	    scriptContext.setStripStdOut(false);
+	    try {
+	        ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new IOException(e);
+	    }
+
+        if(LOG.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("exit code [" + scriptContext.getExitCode() + "]");
+            if(! scriptContext.getStdOut().toString().isEmpty()) 
+                sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+            if(! scriptContext.getStdErr().toString().isEmpty())
+                sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+            LOG.debug(sb.toString());
+        }
+
+	    JSONObject jsonObject = new JSONObject();
+	    try {
+	        Scanner scanner = new Scanner(scriptContext.getStdOut().toString());
+
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				if(line.contains(":")){
+					String[] nameValue = line.split(":");
+					if(nameValue.length > 1){
+						jsonObject.put(nameValue[0].trim(), nameValue[1].trim());
+					}
+				}
+			}
+		
+			scanner.close();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new IOException(e);
+	    }
+
+	    return jsonObject;
+	}
 
 	private JSONArray pstack(String program) throws IOException {
 	    ScriptContext scriptContext = new ScriptContext();
@@ -572,6 +618,54 @@ public class ServerResource extends ResourceBase {
                     .build();
         }
     }   
+    
+    @GET
+    @Path("/dcs/summary")
+    @Produces({MIMETYPE_JSON})
+    public Response getDcsSummary(
+            final @Context UriInfo uriInfo,
+            final @Context Request request) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
+
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+            }
+
+            JSONObject jsonObject = dcscheck();
+            
+            if(jsonObject.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No dcs resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
+ 
+            ResponseBuilder response = Response.ok(jsonObject.toString());
+            response.cacheControl(cacheControl);
+            return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    } 
     
     @GET
     @Path("/dcs/connections")
