@@ -3788,6 +3788,11 @@ enum DefaultConstants
   // set to ON to aggressively allocate ESP per core
   AGGRESSIVE_ESP_ALLOCATION_PER_CORE,
 
+  // if ON, use older datetime value constructor in DatetimeValue::DatetimeValue
+  // Default is OFF. This cqd is used in case there are problems.
+  // It will be removed after testing is complete.
+  USE_OLD_DT_CONSTRUCTOR,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

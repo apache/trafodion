@@ -70,16 +70,16 @@ update statistics for table char8 on every column;
 create table date8 (a date not null not droppable, b int, primary key (a));
 
 insert into date8 values
-(date '01-02-2013', 1),
-(date '02-02-2013', 2),
-(date '03-02-2013', 3),
-(date '04-02-2013', 4),
-(date '05-02-2013', 5),
-(date '06-02-2013', 6),
-(date '07-02-2013', 7),
-(date '08-02-2013' ,8),
-(date '09-02-2013', 9),
-(date '10-02-2013', 10);
+(date '01/02/2013', 1),
+(date '02/02/2013', 2),
+(date '03/02/2013', 3),
+(date '04/02/2013', 4),
+(date '05/02/2013', 5),
+(date '06/02/2013', 6),
+(date '07/02/2013', 7),
+(date '08/02/2013' ,8),
+(date '09/02/2013', 9),
+(date '10/02/2013', 10);
 
 update statistics for table date8 clear;
 update statistics for table date8 on every column;

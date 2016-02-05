@@ -3462,6 +3462,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
+
+  DDkwd__(USE_OLD_DT_CONSTRUCTOR,      "OFF"),
+
   // Adaptive segmentation, use operator max to determine degree of parallelism
   DDui___(USE_OPERATOR_MAX_FOR_DOP,     "1"),
 

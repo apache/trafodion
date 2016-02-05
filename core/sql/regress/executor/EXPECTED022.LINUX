@@ -551,6 +551,248 @@
 2015-05-31 10:11:12
 
 --- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12-05:00' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 15:11:12
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12+05:00' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 05:11:12
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12.123-05:00' from t022t1;
+
+(EXPR)                 
+-----------------------
+
+2015-05-31 15:11:12.123
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12.123+05:00' from t022t1;
+
+(EXPR)                 
+-----------------------
+
+2015-05-31 05:11:12.123
+
+--- 1 row(s) selected.
+>>
+>>select cast('2015-05-31T10:11:12' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 10:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12Z' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 10:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12-05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 15:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12+05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 05:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12.123-05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 15:11:12.123000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12.123+05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 05:11:12.123000
+
+--- 1 row(s) selected.
+>>
+>>select time '10:11:12' from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12Z' from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12-05:00' from t022t1;
+
+(EXPR)  
+--------
+
+15:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12+05:00' from t022t1;
+
+(EXPR)  
+--------
+
+05:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12.123-05:00' from t022t1;
+
+(EXPR)      
+------------
+
+15:11:12.123
+
+--- 1 row(s) selected.
+>>select time '10:11:12.123+05:00' from t022t1;
+
+(EXPR)      
+------------
+
+05:11:12.123
+
+--- 1 row(s) selected.
+>>
+>>select cast('10:11:12' as time) from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12Z' as time) from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12-05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+15:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12+05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+05:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12.123-05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+15:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12.123+05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+05:11:12
+
+--- 1 row(s) selected.
+>>
+>>select time '23:11:06.123' from t022t1;
+
+(EXPR)      
+------------
+
+23:11:06.123
+
+--- 1 row(s) selected.
+>>select cast ('23:11:06.123' as time(2)) from t022t1;
+
+(EXPR)     
+-----------
+
+23:11:06.12
+
+--- 1 row(s) selected.
+>>
+>>-- negative cases
+>>select cast('2016-01-29Z' as date) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select cast('2016-01-29+05:00' as date) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select cast('10:11:12-05:000' as time) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select date '2016-01-29Z' from t022t1;
+
+*** ERROR[3045] The date '2016-01-29Z' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select date '2016-01-29+05:00' from t022t1;
+
+*** ERROR[3045] The date '2016-01-29+05:00' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select time '25:11:11' from t022t1;
+
+*** ERROR[3046] The time '25:11:11' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select time '23:11:11.1234567' from t022t1;
+
+*** ERROR[3046] The time '23:11:11.1234567' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select cast ('23:11:61' as time) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
 >>
 >>-- Prove these cases work since they're used in the succeeding negative tests.
 >>
@@ -3926,7 +4168,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2015-05-31 18:36:57.294491
+10:13:14.0000  10:13:14.0000  2016-02-03 06:33:46.601880
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -4991,6 +5233,248 @@ lkjihgfedc  ?                               ?
 2015-05-31 10:11:12
 
 --- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12-05:00' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 15:11:12
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12+05:00' from t022t1;
+
+(EXPR)             
+-------------------
+
+2015-05-31 05:11:12
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12.123-05:00' from t022t1;
+
+(EXPR)                 
+-----------------------
+
+2015-05-31 15:11:12.123
+
+--- 1 row(s) selected.
+>>select timestamp '2015-05-31T10:11:12.123+05:00' from t022t1;
+
+(EXPR)                 
+-----------------------
+
+2015-05-31 05:11:12.123
+
+--- 1 row(s) selected.
+>>
+>>select cast('2015-05-31T10:11:12' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 10:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12Z' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 10:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12-05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 15:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12+05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 05:11:12.000000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12.123-05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 15:11:12.123000
+
+--- 1 row(s) selected.
+>>select cast('2015-05-31T10:11:12.123+05:00' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2015-05-31 05:11:12.123000
+
+--- 1 row(s) selected.
+>>
+>>select time '10:11:12' from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12Z' from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12-05:00' from t022t1;
+
+(EXPR)  
+--------
+
+15:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12+05:00' from t022t1;
+
+(EXPR)  
+--------
+
+05:11:12
+
+--- 1 row(s) selected.
+>>select time '10:11:12.123-05:00' from t022t1;
+
+(EXPR)      
+------------
+
+15:11:12.123
+
+--- 1 row(s) selected.
+>>select time '10:11:12.123+05:00' from t022t1;
+
+(EXPR)      
+------------
+
+05:11:12.123
+
+--- 1 row(s) selected.
+>>
+>>select cast('10:11:12' as time) from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12Z' as time) from t022t1;
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12-05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+15:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12+05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+05:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12.123-05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+15:11:12
+
+--- 1 row(s) selected.
+>>select cast('10:11:12.123+05:00' as time) from t022t1;
+
+(EXPR)  
+--------
+
+05:11:12
+
+--- 1 row(s) selected.
+>>
+>>select time '23:11:06.123' from t022t1;
+
+(EXPR)      
+------------
+
+23:11:06.123
+
+--- 1 row(s) selected.
+>>select cast ('23:11:06.123' as time(2)) from t022t1;
+
+(EXPR)     
+-----------
+
+23:11:06.12
+
+--- 1 row(s) selected.
+>>
+>>-- negative cases
+>>select cast('2016-01-29Z' as date) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select cast('2016-01-29+05:00' as date) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select cast('10:11:12-05:000' as time) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select date '2016-01-29Z' from t022t1;
+
+*** ERROR[3045] The date '2016-01-29Z' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select date '2016-01-29+05:00' from t022t1;
+
+*** ERROR[3045] The date '2016-01-29+05:00' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select time '25:11:11' from t022t1;
+
+*** ERROR[3046] The time '25:11:11' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select time '23:11:11.1234567' from t022t1;
+
+*** ERROR[3046] The time '23:11:11.1234567' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select cast ('23:11:61' as time) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
 >>
 >>-- Prove these cases work since they're used in the succeeding negative tests.
 >>
@@ -8366,7 +8850,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2015-05-31 18:39:19.247095
+10:13:14.0000  10:13:14.0000  2016-02-03 06:36:01.915955
 
 --- 1 row(s) selected.
 >>--test on precision of time

@@ -73,6 +73,12 @@ Section missing, generate compiler error
 Section missing, generate compiler error
 #endif
 
+#define ptimez_h_computetimestamp
+#define ptimez_h_including_section
+#include "guardian/ptimez.h"
+#ifdef ptimez_h_computetimestamp
+Section missing, generate compiler error
+#endif
 
 // Forword declaration of static helper function.
 //
@@ -1144,7 +1150,7 @@ scaleFraction(Int32 srcFractPrec,
   // fraction value in the source, scale the fraction to the
   // destination precision.
   //
-  if (dstFractPrec > 0 && srcFractPrec > 0) {
+  if (dstFractPrec >= 0 && srcFractPrec > 0) {
 
     fraction = srcFraction;
 
@@ -1338,7 +1344,7 @@ copyDatetimeFields(rec_datetime_field startField,
   // If there is a fractional precision in the destination,
   // copy and scale the fraction from the source.
   //
-  if (endField == REC_DATE_SECOND && dstFractPrec > 0) {
+  if (endField == REC_DATE_SECOND && dstFractPrec >= 0) {
     Lng32 fraction = 0;
 
     // If there is a fraction precision in the source datetime
@@ -1746,7 +1752,7 @@ scanField(char *&src,
           char *srcEnd,
           rec_datetime_field field,
           char exptDelim,
-          short fractPrec,
+          Lng32 &fractPrec,
           Lng32 &value,
           CollHeap *heap,
           ComDiagsArea** diagsArea,
@@ -1832,6 +1838,7 @@ scanField(char *&src,
   //
   if (field == REC_DATE_FRACTION_MP) {
     value = scaleFraction(len, value, fractPrec);
+    fractPrec = len;
   }
 
   // For all but the FRACTION field, datetime fields are required to
@@ -1857,46 +1864,22 @@ scanField(char *&src,
   return TRUE;
 }
 
-// ExpDatetime::convAsciiToDatetime() ================================
-// This method is used to convert the given ASCII string to a datetime
-// value.
-//
-// The result is returned in the buffer pointed to by the parameter
-// 'dstData'.  This buffer must be allocated by the caller and it
-// must be large enough to hold the result.
-//
-// The ASCII string can be in one of three formats:
-//
-//  Default : yyyy-mm-dd hh:mm:ss.msssss
-//  USA     : mm/dd/yyyy hh:mm:ss.msssss [am|pm]
-//  European: dd.mm.yyyy hh.mm.ss.msssss
-//
-// There are some variations on the formats above:
-//   - the delimiter between the date and the time portion
-//     can be either a ' ' (space) or a ':'
-//   - the [am|pm] in the USA format is case insensitive.
-//   - any range of consectutive (YEAR to SECOND) fields may
-//     be present.
-//
-// Parsing the Date portion of a datetime is challenging since the
-// fields appear in different orders depending on the format and we do
-// not know ahead of time which one is being used.
-//
-// This method was added as part of the MP Datetime Compatibility
-// project.
-// =====================================================================
-//
 short
 ExpDatetime::convAsciiToDatetime(char *srcData,
                                  Lng32 srcLen,
                                  char *dstData,
                                  Lng32 dstLen,
+                                 rec_datetime_field dstStartField,
+                                 rec_datetime_field dstEndField,
+                                 Lng32 format,
+                                 Lng32 &scale,
                                  CollHeap *heap,
                                  ComDiagsArea** diagsArea,
 				 ULng32 flags)
 {
 
   NABoolean noDatetimeValidation = (flags & CONV_NO_DATETIME_VALIDATION) != 0;
+  NABoolean noHadoopDateFix = (flags & CONV_NO_HADOOP_DATE_FIX) != 0;
 
   // skip leading and trailing blanks and adjust srcData and srcLen
   // accordingly
@@ -1925,14 +1908,17 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     srcLen--;
   }
 
-    char hadoopDateFix[20];
-  if (srcLen == 10)
+  char hadoopDateFix[20];
+  if ((srcLen == 10) &&
+      (NOT noHadoopDateFix))
   {
     memcpy(hadoopDateFix, srcData, 10);
     hadoopDateFix[10] = '\0';
     strcat(hadoopDateFix, " 00:00:00");
     srcLen = 19;
     srcData = hadoopDateFix;
+
+    dstEndField = REC_DATE_SECOND;
   }
 
   // Indicates if an " AM" or " PM" strings appears at the end of the
@@ -1975,23 +1961,13 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     srcLen -= 1;
   } 
 
-  // Get the start and end fields for the destination datetime type.
-  //
-  rec_datetime_field dstStartField;
-  rec_datetime_field dstEndField;
-
-  if (getDatetimeFields(getPrecision(),
-                        dstStartField,
-                        dstEndField) != 0) {
-    return -1;
-  }
-
   char *src = srcData;
   char *srcEnd = srcData + srcLen;
 
   // Determine the format of the source string.
   //
-  Lng32 format = determineFormat(src, dstStartField, dstEndField);
+  if (format == DATETIME_FORMAT_NONE)
+    format = determineFormat(src, dstStartField, dstEndField);
   
   // If the format could not be determined, issue an error.
   //
@@ -1999,6 +1975,42 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
     return -1;
   }
+
+  // check to see if they are timezone adjustment designator
+  // as per ISO8601 datetime format.
+  // TZD is of the form: +HH:MM pr -HH:MM
+  //
+  NABoolean TZD = FALSE;
+  NABoolean isAdd = FALSE;
+  Lng32 hh = 0;
+  Lng32 mm = 0;
+  Lng32 tzdSize = strlen("+HH:MM");
+  char * tzd = NULL;
+  if ((srcLen > tzdSize) &&
+      (tzd = (srcEnd - tzdSize)) &&
+      ((tzd[0] == '+') ||
+       (tzd[0] == '-')) &&
+      (tzd[3] == ':')) {
+    hh = str_atoi(&tzd[1], strlen("HH"));
+    mm = str_atoi(&tzd[4], strlen("MM"));
+    
+    if (tzd[0] == '+')
+      isAdd = FALSE;
+    else
+      isAdd = TRUE;
+    
+    TZD = TRUE;
+    
+    srcLen -= tzdSize;
+    srcEnd -= tzdSize;
+  } // tzd specified
+
+  // if timezone is specified and end field is not DAY, return error.
+  if ((defZ || TZD) && (dstEndField == REC_DATE_DAY))
+    {
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      return -1;
+    }
 
   //  The order of the fields for the various formats.
   //
@@ -2057,6 +2069,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
   // Only fields the should be present are actually scanned.
   //
   Int32 field;
+  Lng32 trueScale = scale;
   for (field = 0; field < DATETIME_MAX_NUM_FIELDS; field++) {
     
     // Determine the field expected for this format.
@@ -2086,7 +2099,7 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
                      srcEnd,
                      realField,
                      delim,
-                     getScale(),
+                     trueScale,
                      datetimeValues[realField],
                      heap,
                      diagsArea,
@@ -2098,10 +2111,9 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
   }
 
   // If there are any remaining characters in the input string.
-  //
   if (src != srcEnd) {
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-    return -1;
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      return -1;
   }
 
   // Adjust the value of the hour field if an "AM" or "PM" was
@@ -2135,6 +2147,14 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     return -1;
   }
     
+  short year = 1900;
+  char month = 1;
+  char day = 1;
+  char hour = 0;
+  char minute = 0;
+  char second = 0;
+  Lng32 fraction = 0;
+  
   // Copy the parsed values to the destination.
   //
   char *dst = dstData;
@@ -2142,21 +2162,32 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
     switch (field) {
     case REC_DATE_YEAR:
       {
-        short year = (short)datetimeValues[field];
+        year = (short)datetimeValues[field];
         str_cpy_all(dst, (char *)&year, sizeof(year));
         dst += sizeof(year);
       }
       break;
     case REC_DATE_MONTH:
+      month = (char)datetimeValues[field];
+      *dst++ = month;
+      break;
     case REC_DATE_DAY:
+      day = (char)datetimeValues[field];
+      *dst++ = day;
+      break;
     case REC_DATE_HOUR:
+      hour = (char)datetimeValues[field];
+      *dst++ = hour;
+      break;
     case REC_DATE_MINUTE:
-      *dst++ = (char)datetimeValues[field];
+      minute = (char)datetimeValues[field];
+      *dst++ = minute;
       break;
     case REC_DATE_SECOND:
-      *dst++ = (char)datetimeValues[field];
-      if (getScale()) {
-        Lng32 fraction = datetimeValues[field + 1];
+      second = (char)datetimeValues[field];
+      *dst++ = second;
+      if (scale) {
+        fraction = datetimeValues[field + 1];
         str_cpy_all(dst, (char *)&fraction, sizeof(fraction));
         dst += sizeof(fraction);
       }
@@ -2166,6 +2197,8 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
       return -1;
     }
   }
+
+  scale = trueScale;
 
   // Validate the date fields of the result.
   //
@@ -2177,10 +2210,102 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
       return -1;
     };
 
+  if (TZD) {
+    // timezone specified. Compute the new datetime value.
+
+    // first, convert current datetime value to juliantimestamp
+    short timestamp[] = {
+      year, month, day, hour, minute, second, 
+      (short)(fraction / 1000), (short)(fraction % 1000)
+    };
+    
+    short error;
+    Int64 juliantimestamp = COMPUTETIMESTAMP(timestamp, &error);
+    if (error) {
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      return -1;
+    }
+
+    Int64 msec = (hh*60L + mm) * 60L * 1000000L;
+    if (isAdd)
+      juliantimestamp += msec;
+    else
+      juliantimestamp -= msec;
+
+    INTERPRETTIMESTAMP(juliantimestamp, timestamp);
+    
+    char *dst = dstData;
+    for (field = dstStartField; field <= dstEndField ; field++) {
+      switch (field) {
+      case REC_DATE_YEAR:
+        {
+          year = timestamp[0];
+          str_cpy_all(dst, (char *)&year, sizeof(year));
+          dst += sizeof(year);
+        }
+        break;
+      case REC_DATE_MONTH:
+        month = (char) timestamp[1];
+        *dst++ = month;
+        break;
+      case REC_DATE_DAY:
+        day = (char) timestamp[2];
+        *dst++ = day;
+        break;
+      case REC_DATE_HOUR:
+        hour = (char) timestamp[3];
+        *dst++ = hour;
+        break;
+      case REC_DATE_MINUTE:
+        minute = (char) timestamp[4];
+        *dst++ = minute;
+        break;
+      case REC_DATE_SECOND:
+        second = (char) timestamp[5];
+        *dst++ = second;
+        if (scale) {
+          fraction = timestamp[6] * 1000 + timestamp[7];
+          str_cpy_all(dst, (char *)&fraction, sizeof(fraction));
+          dst += sizeof(fraction);
+        }
+        break;
+      default:
+        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+        return -1;
+      }
+    }
+    
+  } // TZD
+  
   // Success
   //
   return 0;
     
+}
+
+short
+ExpDatetime::convAsciiToDatetime(char *srcData,
+                                 Lng32 srcLen,
+                                 char *dstData,
+                                 Lng32 dstLen,
+                                 Lng32 format,
+                                 CollHeap *heap,
+                                 ComDiagsArea** diagsArea,
+				 ULng32 flags)
+{
+  rec_datetime_field dstStartField;
+  rec_datetime_field dstEndField;
+
+  if (getDatetimeFields(getPrecision(),
+                        dstStartField,
+                        dstEndField) != 0) {
+    return -1;
+  }
+
+  Lng32 scale = getScale();
+  return convAsciiToDatetime(srcData, srcLen, dstData, dstLen,
+                             dstStartField, dstEndField, format, scale,
+                             heap, diagsArea, flags);
 }
 
 NA_EIDPROC
@@ -3102,225 +3227,6 @@ ExpDatetime::convAsciiToDate(char *srcData,
   return 0;
 }
 
-// ExpDatetime::convAsciiToTime() ================================
-// This method is used to convert the given ASCII string
-// to a datetime time value.
-//
-// The result is returned in the buffer pointed to by the parameter
-// 'dstData'. This buffer must be allocated by the caller and it
-// must be large enough to hold the result.
-//
-// The ASCII string can be in one of three formats:
-//
-//  Default : hh:mm:ss.msssss
-//  USA     : hh:mm:ss.msssss [am|pm]
-//  European: hh.mm.ss.msssss
-//
-// This method is called assuming the correct source format. The source
-// string must contain time in one of above format and, possibly, leading
-// and trailing blanks only. The size of destination buffer should enough
-// to hold internal representation of the time value, i.e. 3 bytes without
-// fraction or 7 bytes with fraction.
-//
-// This method was added as part of the IMPORT performance improvement
-// project.
-// =====================================================================
-//
-short
-ExpDatetime::convAsciiToTime(char *srcData,
-                             Lng32 srcLen,
-                             char *dstData,
-                             Lng32 dstLen,
-                             CollHeap *heap,
-                             ComDiagsArea** diagsArea,
-			     ULng32 flags)
-{
-  NABoolean noDatetimeValidation = (flags & CONV_NO_DATETIME_VALIDATION) != 0;
-
-  Lng32 fraction = 0, i;
-  Lng32 usaAmPm;
-
-  if (*srcData == ' ') {
-    // skip leading blanks and adjust srcData and srcLen accordingly
-    //
-    for (i = 0; i < srcLen && *srcData == ' '; i++) {
-      srcData++;
-    }
-
-    if (i == srcLen) {
-      // string contains only blanks.
-      //
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-      return -1;
-    };
-
-    srcLen -= i;
-  };
-
-  if (srcLen < 8) {
-    // string doesn't seem to contain all time fields.
-    //
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-    return -1;
-  }
-
-  // the delimiters have to be the right one and consistant
-  //
-  if (!((srcData[2] == ':' && srcData[5] == ':') ||
-        (srcData[2] == '.' && srcData[5] == '.'))) {
-    // string contains invalid delimiter
-    //
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-    return -1;
-  } else {
-    if (srcData[2] == ':')
-      usaAmPm = 1;  // AM/PM allowed and assume AM
-    else
-      usaAmPm = 0;
-  }
-
-  // first, the hour
-  //
-  if (isDigit8859_1(srcData[0]) && isDigit8859_1(srcData[1])) {
-#pragma nowarn(1506)   // warning elimination 
-    dstData[0] = char (srcData[0] - '0') * 10 + (srcData[1] - '0');
-#pragma warn(1506)  // warning elimination 
-  } else {
-    // string contains non-digit charecter(s)
-    //
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-    return -1;
-  }
-
-  // then, the minute
-  //
-  if (isDigit8859_1(srcData[3]) && isDigit8859_1(srcData[4])) {
-#pragma nowarn(1506)   // warning elimination 
-    dstData[1] = char (srcData[3] - '0') * 10 + (srcData[4] - '0');
-#pragma warn(1506)  // warning elimination 
-  } else {
-    // string contains non-digit charecter(s)
-    //
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-    return -1;
-  }
-
-  // then, the second
-  //
-  if (isDigit8859_1(srcData[6]) && isDigit8859_1(srcData[7])) {
-#pragma nowarn(1506)   // warning elimination 
-    dstData[2] = char (srcData[6] - '0') * 10 + (srcData[7] - '0');
-#pragma warn(1506)  // warning elimination 
-  } else {
-    // string contains non-digit charecter(s)
-    //
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-    return -1;
-  }
-
-  // Now the fraction part, if any
-  //
-  if (srcLen > 8 && srcData[8] == '.') {
-
-    fraction = 0;
-    srcLen -= 9;
-    srcData += 9;
-
-    // The fraction part, which is maximum 6 digit long.
-    // Please note here, unlike to other field, it is ok to have the
-    // fraction part in the source string even though the target type
-    // may or may not take any. This came from the original method,
-    // convAsciiToDatetime().
-    //
-    for (i = 0; i < srcLen && i < 6 && isDigit8859_1(*srcData); i++) {
-      fraction = (fraction * 10) + (*srcData++ - '0');
-    }
-
-    // Scale the fraction, this is OK even though fraction is still 0
-    //
-    if (getScale()) {
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination 
-      fraction = scaleFraction(i, fraction, getScale());
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)  //warning elimination
-      str_cpy_all(&dstData[3], (char *)&fraction, sizeof(fraction));
-    }
-    srcLen -= i;
-  } else {
-    srcLen -= 8;
-    srcData += 8;
-    // BEGIN 10-050208-4538 
-    // The changes are made to fix copying of junk values into
-    // fraction part of time.The destination length is more than 3
-    // if the target has fractional precision.
-     if (dstLen > 3)  // source has no fraction part but the target has
-        str_cpy_all(&dstData[3], (char *)&fraction, sizeof(fraction));
-
-    // END 10-050208-4538 
-  }
-
-  if (srcLen) {
-    // skip the trailing blanks
-    //
-    for (i = 0; i < srcLen && *srcData == ' '; i++)
-      srcData++;
-
-    srcLen -= i;
-    if (srcLen == 0)
-      ;  // Done
-    else if (2 <= srcLen && usaAmPm > 0) {
-      // now check if we see "am" or "pm" here
-      //
-      if (srcData[1] != 'm' && srcData[1] != 'M') {
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      if (srcData[0] == 'a' || srcData[0] == 'A') {
-        if (dstData[0] > 12) {
-          // the hour value can not be greater than 12
-          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-          return -1;
-        } else if (dstData[0] == 12)
-          dstData[0] = 0;  // 12 am is 00
-      } else if (srcData[0] == 'p' || srcData[0] == 'P')
-        dstData[0] += 12;  // adjust hour value
-      else {
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-      srcData += 2;
-      srcLen  -= 2;
-
-      // found AM/PM, the rest has to be space at most
-      for (i = 0; i < srcLen && *srcData == ' '; i++)
-        srcData++;
-      if (i < srcLen) {
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-
-      }
-    } else {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-      return -1;
-    }
-  }
-     
-  // validate time
-  //
-  if (NOT noDatetimeValidation)
-    if (dstData[0] > 23 || dstData[1] > 59 || dstData[2] > 59) {
-      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-      return -1;
-    }
-  
-  return 0;
-}
-
 // convertToAscii() ==============================================
 // This static helper function of the ExpDatetime class is used by
 // convDatetimeToASCII() to convert a numeric value to a string of the
@@ -3961,7 +3867,7 @@ short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
   ExpDatetime &tempDT = (ExpDatetime&)tempST;
   rc = 
     tempDT.convAsciiToDatetime
-    (srcData, srcLen, tempDTBuf, 12, heap, diagsArea, 0);
+    (srcData, srcLen, tempDTBuf, 12, DATETIME_FORMAT_NONE, heap, diagsArea, 0);
   if (rc)
     return rc;
 
