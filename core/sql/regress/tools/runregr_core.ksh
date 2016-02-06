@@ -135,7 +135,7 @@ if [ "$REGRCONCURRENT" -ne 0 ]; then
 else
   # sequential execution
   export TEST_CATALOG='cat'
-  export TEST_SCHEMA_NAME='sch'
+  export TEST_SCHEMA_NAME='SCH'
 fi
 
 seabase=0
@@ -302,7 +302,7 @@ skipTheseTests="TEST007 TEST030 TEST035 TEST040 TEST043 TEST050 TEST066 TEST113 
 # TEST051 TEST070
 skipTheseTests="$skipTheseTests TEST051 TEST070"
 
-skipTheseTests="$skipTheseTests TEST082 TEST088 TEST116"
+skipTheseTests="$skipTheseTests TEST082 TEST088"
 
 if [ "$SQ_COVERAGE" = "" -a "$SQ_COVERAGE_OPTIMIZER" = "" ]; then
   skipTheseTests="$skipTheseTests TESTNAHEAP"
