@@ -41,7 +41,7 @@
 >>invoke t012t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T012T1
--- Definition current  Thu Nov 20 07:44:05 2014
+-- Definition current  Fri Feb  5 15:58:51 2016
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -64,7 +64,7 @@
 >>invoke t012v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T012V1
--- Definition current  Thu Nov 20 07:44:08 2014
+-- Definition current  Fri Feb  5 15:58:54 2016
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -320,6 +320,55 @@ T012T11V1
 >>get views in schema trafodion.zschema;
 
 --- SQL operation complete.
+>>
+>>obey TEST012(getStmts);
+>>create schema trafodion.zschema1;
+
+--- SQL operation complete.
+>>create schema trafodion.zschema2;
+
+--- SQL operation complete.
+>>create table zschema1.t (a int);
+
+--- SQL operation complete.
+>>create table zschema2.t (a int);
+
+--- SQL operation complete.
+>>create view zschema1.v as select zschema1.t.a a, zschema2.t.a b 
++>   from zschema1.t, zschema2.t;
+
+--- SQL operation complete.
+>>create view zschema2.v as select zschema1.t.a a, zschema2.t.a b 
++>   from zschema1.t, zschema2.t;
+
+--- SQL operation complete.
+>>get tables in view zschema1.v;
+
+Tables in View ZSCHEMA1.V
+=========================
+
+ZSCHEMA1.T
+ZSCHEMA2.T
+
+--- SQL operation complete.
+>>get views on table zschema1.t;
+
+Views on Table ZSCHEMA1.T
+=========================
+
+ZSCHEMA1.V
+ZSCHEMA2.V
+
+--- SQL operation complete.
+>>drop schema zschema1 cascade;
+
+--- SQL operation complete.
+>>drop schema zschema2 cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>
 >>
 >>
 >>

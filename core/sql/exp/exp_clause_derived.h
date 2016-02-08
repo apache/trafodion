@@ -1775,7 +1775,13 @@ enum ConvDoItFlags
   //The following flag is set when performing intermediate conversions so
   //that if the conversion fails, error report would specify it as a failure
   //of an intermediate conversion.
-  CONV_INTERMEDIATE_CONVERSION = 0x0080
+  CONV_INTERMEDIATE_CONVERSION = 0x0080,
+
+  // during CAST from string to timestamp, a date value is extended with
+  // zeroed out time part. This flag, if set, disables it.
+  // Used when a TIMESTAMP literal is being created which requires the value
+  // to exactly match the specified type. 
+  CONV_NO_HADOOP_DATE_FIX  = 0x0010
 };
 
 // helper function for convDoIt and ex_conv_clause::pCodeGenerate:

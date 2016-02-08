@@ -5,6 +5,8 @@
 
 --- SQL operation complete.
 >>
+>>-- Simple create then rollback
+>>------------------------------
 >>begin work;
 
 --- SQL operation complete.
@@ -14,20 +16,48 @@
 >>create table t116t2(a2 int, c2 int, b2 char(6));
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T1
-TRAFODION.SCH.T116T2
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does exist
+0 row(s) in 1.2310 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.2080 seconds
+
 >>rollback work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
---- SQL operation complete.
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does not exist
+0 row(s) in 1.2200 seconds
+
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does not exist
+0 row(s) in 1.2600 seconds
+
 >>
 >>--repeat the same tables again
+>>------------------------------
 >>begin work;
 
 --- SQL operation complete.
@@ -37,20 +67,48 @@ TRAFODION.SCH.T116T2
 >>create table t116t2(a2 int, c2 int, b2 char(6));
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T1
-TRAFODION.SCH.T116T2
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does exist
+0 row(s) in 1.2480 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.1770 seconds
+
 >>rollback work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
---- SQL operation complete.
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does not exist
+0 row(s) in 1.1770 seconds
+
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does not exist
+0 row(s) in 1.1750 seconds
+
 >>
 >>-- unique constraint
+>>---------------------
 >>begin work;
 
 --- SQL operation complete.
@@ -60,20 +118,48 @@ TRAFODION.SCH.T116T2
 >>alter table t116t1 add constraint tc1 unique (c1);
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T1
-TRAFODION.SCH.TC1
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does exist
+0 row(s) in 1.2840 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.TC1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.TC1'
+Table TRAFODION.SCH.TC1 does exist
+0 row(s) in 1.1420 seconds
+
 >>rollback work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
---- SQL operation complete.
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does not exist
+0 row(s) in 1.2250 seconds
+
+>>sh `echo "exists '$TEST_SCHEMA.TC1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.TC1'
+Table TRAFODION.SCH.TC1 does not exist
+0 row(s) in 1.3010 seconds
+
 >>
 >>--setup two tables
+>>-------------------
 >>begin work;
 
 --- SQL operation complete.
@@ -94,12 +180,16 @@ TRAFODION.SCH.TC1
 --- SQL operation complete.
 >>
 >>--drop table simple case
->>get user hbase objects;
+>>--------------------------
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T1
-TRAFODION.SCH.T116T2
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does exist
+0 row(s) in 1.1350 seconds
 
---- SQL operation complete.
 >>begin work;
 
 --- SQL operation complete.
@@ -109,18 +199,27 @@ TRAFODION.SCH.T116T2
 >>commit work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T1'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T2
+exists 'TRAFODION.SCH.T116T1'
+Table TRAFODION.SCH.T116T1 does not exist
+0 row(s) in 1.1660 seconds
 
---- SQL operation complete.
 >>
 >>--drop table with rollback
->>get user hbase objects;
+>>----------------------------
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T2
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.2350 seconds
 
---- SQL operation complete.
 >>begin work;
 
 --- SQL operation complete.
@@ -151,14 +250,27 @@ A1           C1           B1
 
 *** ERROR[8822] The statement was not prepared.
 
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.2070 seconds
+
 >>rollback work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T2
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.2070 seconds
 
---- SQL operation complete.
 >>select * from t116t2;
 
 A1           C1           B1    
@@ -180,9 +292,26 @@ A1           C1           B1
 
 --- 2 row(s) selected.
 >>
->>
->>
 >>--create table1 with dml, drop table2
+>>-------------------------------------
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.1940 seconds
+
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does not exist
+0 row(s) in 1.2370 seconds
+
 >>begin work;
 
 --- SQL operation complete.
@@ -192,25 +321,69 @@ A1           C1           B1
 >>insert into t116t3 values(2,2,'b');
 
 --- 1 row(s) inserted.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T2
-TRAFODION.SCH.T116T3
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does exist
+0 row(s) in 1.2660 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does exist
+0 row(s) in 1.1690 seconds
+
 >>drop table t116t2;
 
 --- SQL operation complete.
 >>commit work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T2'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T3
+exists 'TRAFODION.SCH.T116T2'
+Table TRAFODION.SCH.T116T2 does not exist
+0 row(s) in 1.2380 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does exist
+0 row(s) in 1.2930 seconds
+
 >>
 >>--create table1 with dml , drop table2 and rollback
+>>---------------------------------------------------
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does exist
+0 row(s) in 1.2740 seconds
+
+>>sh `echo "exists '$TEST_SCHEMA.T116T4'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T4'
+Table TRAFODION.SCH.T116T4 does not exist
+0 row(s) in 1.1730 seconds
+
 >>begin work;
 
 --- SQL operation complete.
@@ -220,12 +393,24 @@ TRAFODION.SCH.T116T3
 >>insert into t116t4 values(2,2,'b');
 
 --- 1 row(s) inserted.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T3
-TRAFODION.SCH.T116T4
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does exist
+0 row(s) in 1.1590 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.T116T4'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T4'
+Table TRAFODION.SCH.T116T4 does exist
+0 row(s) in 1.2290 seconds
+
 >>select * from t116t3;
 
 A1           C1           B1    
@@ -243,14 +428,36 @@ A1           C1           B1
 
 *** ERROR[8822] The statement was not prepared.
 
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does exist
+0 row(s) in 1.3560 seconds
+
 >>rollback work;
 
 --- SQL operation complete.
->>get user hbase objects;
+>>sh `echo "exists '$TEST_SCHEMA.T116T3'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
 
-TRAFODION.SCH.T116T3
+exists 'TRAFODION.SCH.T116T3'
+Table TRAFODION.SCH.T116T3 does exist
+0 row(s) in 1.2320 seconds
 
---- SQL operation complete.
+>>sh `echo "exists '$TEST_SCHEMA.T116T4'" | regrhbase.ksh >> LOG116`;
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 0.98.6-cdh5.3.0, rUnknown, Tue Dec 16 19:18:44 PST 2014
+
+exists 'TRAFODION.SCH.T116T4'
+Table TRAFODION.SCH.T116T4 does not exist
+0 row(s) in 1.2680 seconds
+
 >>select * from t116t3;
 
 A1           C1           B1    

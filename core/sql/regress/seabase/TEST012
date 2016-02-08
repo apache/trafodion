@@ -35,6 +35,7 @@ obey TEST012(ddl);
 obey TEST012(tests);
 obey TEST012(negtests);
 obey TEST012(schemaDrop);
+obey TEST012(getStmts);
 log;
 exit;
 
@@ -112,6 +113,23 @@ drop schema trafodion.zschema cascade;
 get tables in schema trafodion.zschema;
 get indexes in schema trafodion.zschema;
 get views in schema trafodion.zschema;
+
+?section getStmts
+create schema trafodion.zschema1;
+create schema trafodion.zschema2;
+create table zschema1.t (a int);
+create table zschema2.t (a int);
+create view zschema1.v as select zschema1.t.a a, zschema2.t.a b 
+   from zschema1.t, zschema2.t;
+create view zschema2.v as select zschema1.t.a a, zschema2.t.a b 
+   from zschema1.t, zschema2.t;
+get tables in view zschema1.v;
+get views on table zschema1.t;
+drop schema zschema1 cascade;
+drop schema zschema2 cascade;
+
+
+
 
 
 
