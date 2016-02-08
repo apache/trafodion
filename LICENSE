@@ -210,21 +210,9 @@ notices and license terms. Your use of the source code for the these
 subcomponents is subject to the terms and conditions of the following licenses. 
 
 ===============================================================================
-Apache Trafodion uses Apache licenses as follows:
-
-For file incubator-trafodion/core/sql/export/FBString.h:
-
-Apache Trafodion uses Facebook's string class that has been adapted to use 
-Trafodion's memory manager 
-
- Copyright 2013 Facebook, Inc.
-
-For details see incubator-trafodion/licenses/LICENSE-facebook
-
-===============================================================================
 Apache Trafodion uses several BSD like licenses:
 
-For files:
+BSD-4 for files:
    incubator-trafodion/core/sql/common/swsprintf.cpp
    incubator-trafodion/core/sql/common/swscanf.cpp
 
@@ -235,15 +223,15 @@ For details see incubator-trafodion/licenses/LICENSE-bsd4
 
 +++++++++++++++++++++++++++++
 
-For file incubator-trafodion/core/sql/parser/ulexer.h
+BSD-3 for file incubator-trafodion/core/sql/parser/ulexer.h
 
  Copyright (c) 1993 The Regents of the University of California.
 
-For details see incubator-trafodion/licenses/LICENSE-bsd2
+For details see incubator-trafodion/licenses/LICENSE-bsd3
 
 +++++++++++++++++++++++++++++
 
-For files in:
+BSD-3 for files in:
   incubator-trafodion/tests/phx/src/test/java/org/trafodion/phoenix/end2end
 
 Apache Trafodion changed these files to work within its test environment
@@ -254,7 +242,7 @@ For details see incubator-trafodion/licenses/LICENSE-salesforce
 
 +++++++++++++++++++++++++++++
 
-For files in:  
+BSD-3 for files in:  
    incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/datatables
 
  Copyright 2009 Allan Jardine. All Rights Reserved
@@ -263,19 +251,10 @@ For files in:
 For details see:
   incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/datatables/license-bsd.txt
 
-+++++++++++++++++++++++++++++
-
-For files in:
-   incubator-trafodion/core/sqf/src/tm/*.pb.cc
-   incubator-trafodion/core/sqf/src/seatrans/hbase-trx/hbase-protocol/src/main/java/org/apache/hadoop/hbase/protobuf/generated/*
-
-Trafodion uses Protocol Buffer Java API (com.google.protobuf:protobuf-java:2.5.0) 
-For details see http://code.google.com/p/protobuf
-
 ===============================================================================
 Apache Trafodion uses several MIT like licenses:
 
-For files in: 
+MIT-Expat for files in: 
    incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/js/lib/jit.js
 
  Copyright (c) 2011 Sencha Inc. - Author: Nicolas Garcia Belmonte 
@@ -285,7 +264,7 @@ For details see incubator-trafodion/licenses/LICENSE-js
 
 +++++++++++++++++++++++++++++
 
-For files in: incubator-trafodion/core/sql/qmscommon/expat
+MIT-Expat for files in: incubator-trafodion/core/sql/qmscommon/expat
 
  Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
                                 and Clark Cooper
@@ -298,19 +277,14 @@ For details see incubator-trafodion/core/sql/qmscommon/expat/COPYING
 
 +++++++++++++++++++++++++++++
 
-For files in:
+MIT-Expat for files in:
    incubator-trafodion/dcs/src/main/resources/dcs-webapps/master/jquery-ui
 
  Copyright 2014 jQuery Foundation and other contributors
 
-For details see http://jquery.org/license
+For details see incubator-trafodion/licenses/LICENSE-jquery
 
 ++++++++++++++++++++++++++++++
-
-Apache Trafodion uses asciidocs to create its documentation which is licensed
-under MIT 
-
-For details see http://asciidoctor.org/
 
 ===============================================================================
 As part of test large objects (LOBs), the testware needs some object files.

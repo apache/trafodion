@@ -39,7 +39,7 @@ $MY_SQROOT/export/limited-support-tools/eclipse.*project*
 
 $MY_SQROOT/src/tm/*.pb.cc 
 $MY_SQROOT/src/seatrans/hbase-trx/hbase-protocol/src/main/java/org/apache/hadoop/hbase/protobuf/generated/* 
-                 :  Generated from google protobuf compiler
+                 :  Generated from .proto files that do contain Apache License statement, using google protobuf compiler.
                  -> generated files do not contain Apache license information
 
 $MY_SQROOT/src/seatrans/hbase-trx/src/main/cpp/gen-cpp/Hbase_server.skeleton.cpp  
