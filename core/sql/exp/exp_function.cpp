@@ -2565,14 +2565,14 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
 	{
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(0);
 	  if(datetimeOpType->convAsciiToDate(opData, 
-					     getOperand(1)->getLength(),
-					     result,
-					     getOperand(0)->getLength(),
-					     getDateFormat(),
-					     heap,
-					     diagsArea,
-                                	     0) < 0) {
-	
+                                             getOperand(1)->getLength(),
+                                             result,
+                                             getOperand(0)->getLength(),
+                                             getDateFormat(),
+                                             heap,
+                                             diagsArea,
+                                             0) < 0) {
+            
 	    ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
 				    derivedFunction(),
 				    origFunctionOperType());

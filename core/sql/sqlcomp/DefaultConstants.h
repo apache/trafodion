@@ -3788,6 +3788,11 @@ enum DefaultConstants
   // set to ON to aggressively allocate ESP per core
   AGGRESSIVE_ESP_ALLOCATION_PER_CORE,
 
+  // if ON, use older datetime value constructor in DatetimeValue::DatetimeValue
+  // Default is OFF. This cqd is used in case there are problems.
+  // It will be removed after testing is complete.
+  USE_OLD_DT_CONSTRUCTOR,
+
   // real charset in the HIVE table
   HIVE_FILE_CHARSET,
 
