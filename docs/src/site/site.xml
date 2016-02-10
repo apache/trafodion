@@ -183,9 +183,9 @@
     </links>
     <menu name="About">
       <item href="index.html" name="Project Overview"/>
-      <item href="new-features.html" name="New Features"/>
-      <item href="roadmap.html" name="Roadmap"/>
-      <item href="performance.html" name="Performance"/>
+      <!-- item href="new-features.html" name="New Features"/-->
+      <!-- item href="roadmap.html" name="Roadmap"/-->
+      <!-- item href="performance.html" name="Performance"/-->
       <item href="http:divider" name=""/>
       <item href="team-redirect.html" name="Team"/>
       <item href="presentations.html" name="Presentations"/>
@@ -196,7 +196,7 @@
       <item href="license.html" name="License"/>
     </menu>
     <menu name="Using">
-      <item href="quickstart.html" name="Quick Start"/>
+      <!--item href="quickstart.html" name="Quick Start"/-->
       <item href="download.html" name="Download"/>
       <item href="install.html" name="Install"/>
       <item href="uninstall.html" name="Uninstall"/>
