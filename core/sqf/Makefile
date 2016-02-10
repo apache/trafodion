@@ -68,7 +68,7 @@ smstub:
 	cd ../smstub/src; $(MAKE) 2>&1 | sed -e "s/$$/	##(SMSTUB)/" ; exit $${PIPESTATUS[0]}
 
 
-make_sql: $(SEAMONSTER_TARGET) win 
+make_sql: $(SEAMONSTER_TARGET) win hbase_utilities
 	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 	cd $(MY_SQROOT)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
@@ -85,7 +85,7 @@ monitor_ib:
 make_sqevlog: 
 	cd sqevlog; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
-hbase_utilities:
+hbase_utilities: tm
 	cd hbase_utilities; $(MAKE) 2>&1 | sed -e "s/$$/  ##(HBASE_UTIL)/" ; exit $${PIPESTATUS[0]}
 
 .PHONY: conn
