@@ -1434,7 +1434,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       if (hbaseErrStr)
         *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
 
-      retcode = -1394;
+      retcode = -1398;
       goto label_return;
     }
   else
