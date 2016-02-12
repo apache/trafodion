@@ -302,7 +302,8 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
                           /opt/cloudera/parcels/CDH/lib/hbase/lib/high-scale-lib-*.jar
                           /opt/cloudera/parcels/CDH/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hive/lib"
-  export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
+  export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
+                         /opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-common.jar"
 
   # suffixes to suppress in the classpath (set this to ---none--- to add all files)
   export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"

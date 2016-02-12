@@ -328,10 +328,54 @@ public class TransactionManager {
                   throw new Exception(msg);
                }
                if(result.size() == 0) {
-                  LOG.error("doCommitX, received incorrect result size: " + result.size() + " txid: "
-                       + transactionId + " location: " + location.getRegionInfo().getRegionNameAsString());
+                  if(LOG.isTraceEnabled()) LOG.trace("doCommitX,received incorrect result size: " + result.size() + " txid: "
+                        + transactionId + " location: " + location.getRegionInfo().getRegionNameAsString());
+                  
                   refresh = true;
                   retry = true;
+                  //if transaction for DDL operation, it is possible this table is disabled
+                  //as part of prepare if the table was intended for a drop. If this is the case
+                  //this exception can be ignored.
+                  if(transactionState.hasDDLTx())
+		  {
+                     if(LOG.isTraceEnabled()) LOG.trace("doCommitX, checking against DDL Drop list:  result size: " +
+                         result.size() + " txid: " + transactionId + " location: " + location.getRegionInfo().getRegionNameAsString() + 
+                         "table: " + table.getName().getNameAsString());
+                     
+                     ArrayList<String> createList = new ArrayList<String>(); //This list is ignored.
+           	     ArrayList<String> dropList = new ArrayList<String>();
+		     ArrayList<String> truncateList = new ArrayList<String>();
+  		     StringBuilder state = new StringBuilder ();
+ 		     try {
+                        tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
+ 		     }
+                     catch(Exception e){
+                       LOG.error("doCommitX, exception in tmDDL getRow: " + e);
+                       if(LOG.isTraceEnabled()) LOG.trace("doCommitX, exception in tmDDL getRow:: txID: " + transactionState.getTransactionId());
+		       state.append("INVALID"); //to avoid processing further down this path.
+                     }
+                    
+                     if(state.toString().equals("VALID") && dropList.size() > 0)
+                     {
+                       Iterator<String> di = dropList.iterator();
+		       while (di.hasNext())
+                       {
+                         if(table.getName().getNameAsString().equals(di.next().toString()))
+                         {
+                           retry = false; //match found
+                           refresh = false;//match found
+                           if(LOG.isTraceEnabled()) LOG.trace("doCommitX, found table in  DDL Drop list, this is expected exception. result size: " +
+                             result.size() + " txid: " + transactionId + " location: " + location.getRegionInfo().getRegionNameAsString() +
+                             "table: " + table.getName().getNameAsString());
+                         }
+                       }
+                     }
+		  }
+		  else
+		  {
+                  	LOG.error("doCommitX, received incorrect result size: " + result.size() + " txid: "
+                       	+ transactionId + " location: " + location.getRegionInfo().getRegionNameAsString());
+		  }
                }
                else if(result.size() == 1){
                   // size is 1
@@ -2937,7 +2981,7 @@ public class TransactionManager {
         }
         catch (TableNotEnabledException e) {
             //If table is not enabled, no need to throw exception. Continue.
-            if (LOG.isTraceEnabled()) LOG.trace("deleteTable , TableNotEnabledException, Step: disableTable, TxId: " +
+            if (LOG.isTraceEnabled()) LOG.trace("deleteTable , TableNotEnabledException. This could be a expected exception.  Step: disableTable, TxId: " +
                 transactionState.getTransactionId() + "TableName" + tblName + "Exception: " + e);
         }
         catch (Exception e) {
