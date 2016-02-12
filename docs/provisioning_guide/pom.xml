@@ -25,18 +25,19 @@
 -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.trafodion</groupId>
-  <artifactId>install-guide</artifactId>
-  <version>1.3.0</version>
+  <artifactId>provisioning-guide</artifactId>
+  <version>${env.TRAFODION_VER}</version>
   <packaging>pom</packaging>
-  <name>Trafodion Installation Guide</name>
-  <description>This guide describes how to install Trafodion.</description>
+  <name>Trafodion Provisioning Guide</name>
+  <description>This guide describes how to provision Trafodion.</description>
   <url>http://trafodion.incubator.apache.org</url>
   <inceptionYear>2015</inceptionYear>
+
   <parent>
     <groupId>org.apache.trafodion</groupId>
     <artifactId>trafodion</artifactId>
-    <version>1.3.0</version>
     <relativePath>../../pom.xml</relativePath>
+    <version>1.3.0</version>
   </parent>
 
 
@@ -74,12 +75,66 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <asciidoctor.maven.plugin.version>1.5.2.1</asciidoctor.maven.plugin.version>
-    <asciidoctorj.pdf.version>1.5.0-alpha.10.1</asciidoctorj.pdf.version>
-    <asciidoctorj.version>1.5.3.2</asciidoctorj.version>
+    <asciidoctorj.pdf.version>1.5.0-alpha.11</asciidoctorj.pdf.version>
+    <asciidoctorj.version>1.5.4</asciidoctorj.version>
+    <rubygems.prawn.version>2.0.2</rubygems.prawn.version>
+    <jruby.version>9.0.4.0</jruby.version>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>rubygems-proxy-releases</id>
+      <name>RubyGems.org Proxy (Releases)</name>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  
+  <dependencies>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>prawn</artifactId>
+      <version>${rubygems.prawn.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-complete</artifactId>
+      <version>${jruby.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.asciidoctor</groupId>
+      <artifactId>asciidoctorj</artifactId>
+      <version>${asciidoctorj.version}</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>1.0.10</version>
+        <configuration>
+          <!-- align JRuby version with AsciidoctorJ to avoid redundant downloading -->
+          <jrubyVersion>${jruby.version}</jrubyVersion>
+          <gemHome>${project.build.directory}/gems</gemHome>
+          <gemPath>${project.build.directory}/gems</gemPath>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>initialize</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -122,11 +177,15 @@
               <backend>html5</backend>
               <sourceHighlighter>coderay</sourceHighlighter>
               <outputDirectory>${basedir}/target/site</outputDirectory>
+              <requires>
+                <require>${basedir}/../shared/google-analytics-postprocessor.rb</require>
+              </requires>
               <attributes>
                 <!-- Location of centralized stylesheet -->
                 <stylesheet>${basedir}/../shared/trafodion-manuals.css</stylesheet>
-                <projectVersion>1.3.0</projectVersion>
-                <buildDate>${maven.build.timestamp}</buildDate>
+                <project-version>${env.TRAFODION_VER}</project-version>
+                <build-date>${maven.build.timestamp}</build-date>
+                <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
             </configuration>
           </execution>
@@ -142,6 +201,8 @@
               <sourceHighlighter>coderay</sourceHighlighter>
               <outputDirectory>${basedir}/target</outputDirectory>
               <attributes>
+                <pdf-stylesdir>${basedir}/../shared</pdf-stylesdir>
+                <pdf-style>trafodion</pdf-style>
                 <icons>font</icons>
                 <pagenums/>
                 <toc/>
@@ -152,7 +213,7 @@
           </execution>
         </executions>
       </plugin> 
-      <!-- Copy files to the web-site end destinations. -->
+      <!-- Rename target/site/index.pdf to client-install-guide.pdf -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -171,15 +232,15 @@
                   - target/docs/<version>/<document> contains the PDF version and the web book. The web book is named index.html
                 --> 
                 <!-- Copy the PDF file to its target directories -->
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/install_guide/Trafodion_Install_Guide.pdf" />
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/install_guide/Trafodion_Install_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/provisioning_guide/Trafodion_Provisioning_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/provisioning_guide/Trafodion_Provisioning_Guide.pdf" />
                 <!-- Copy the Web Book files to their target directories -->
-                <copy todir="${basedir}/../target/docs/install_guide">
+                <copy todir="${basedir}/../target/docs/provisioning_guide">
                   <fileset dir="${basedir}/target/site">
                     <include name="**/*.*"/>  <!--All sub-directories, too-->
                   </fileset>
                 </copy>
-                <copy todir="${basedir}/../target/docs/${project.version}/install_guide">
+                <copy todir="${basedir}/../target/docs/${project.version}/provisioning_guide">
                   <fileset dir="${basedir}/target/site">
                     <include name="**/*.*"/>  <!--All sub-directories, too-->
                   </fileset>

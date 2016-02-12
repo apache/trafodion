@@ -24,14 +24,33 @@
 ////
 
 = About This Document
-This manual describes how to install and configure client applications that enable you to connect to and use a Trafodion database.
+This guide describes how to provision Trafodion for end-user environments. This install allows you to store and query data using Trafodion, either via Trafodion clients
+(see http://trafodion.incubator.apache.org/client_install/index.html[Trafodion Client Installation Guide] or via application code you write.
+
+If you want to install a Trafodion developer-build environment, then please refer to the 
+http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for instructions.
 
 == Intended Audience
-This manual is intended for users who want to connect to and use a Trafodion database.
+This guide is intended for:
+
+* *Single-Node Environments*: Typically used when you want to evalulate Trafodion.
+* *Cluster (Multi-Node) Environments*: Typically used when you deploy Trafodion for application usage.
+
+NOTE: Trafodion can be provisioned on a single-node or multi-node enviroment. Unless specifically noted, the term *cluster* is used
+to mean both single- and multi-node environments.
+
+The provisioning instructions applies to a diverse set of platforms:
+
+* *Virtual Machines*: Often used for evaluations and Trafodion development.
+* *Cloud*: Used for Product Environments as well as for Developer Environments.
+* *Bare Metal*: Used for Product Environments as well as for Developer Environments.
+
+NOTE: The term *node* is used to represent a computing platform on which operating system, Hadoop, and Trafodion software is running. 
+Unless specifically qualified (bare-metal node, virtual-machin node, or cloud-node), *node* represents a computing platform in your cluster
+regardless of platform type.
 
 == New and Changed Information
-This manual shows updated versions for Trafodion Release 1.3.0. It also provides instructions on how to download and install <<odb,Trafodion odb>>, a
-new multi-threaded, ODBC-based command-line tool for parallel data loading and extracting.
+This is a new guide.
 
 == Notation Conventions
 This list summarizes the notation conventions for syntax presentation in this manual.
@@ -171,5 +190,6 @@ needs. Send any errors found, suggestions for improvement, or compliments to:
 
 issues@trafodion.incubator.apache.org
 
-Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
-
+Include the document title and any comment, error found, or suggestion for improvement you have concerning this document. Or, even
+better, join our community and help us improve our documentation. Please refer to 
+http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for details.

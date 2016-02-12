@@ -59,6 +59,7 @@ specific language governing permissions and limitations under the License.
 
 include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/requirements.adoc[]
+// include::asciidoc/_chapters/installation_process.adoc[]
 
 
 

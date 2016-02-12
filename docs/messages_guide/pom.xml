@@ -26,12 +26,19 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.trafodion</groupId>
   <artifactId>messages-guide</artifactId>
-  <version>1.3.0</version>
+  <version>${env.TRAFODION_VER}</version>
   <packaging>pom</packaging>
   <name>Trafodion Messages Guide</name>
   <description>This guide describes user-visible messages produced by Trafodion.</description>
   <url>http://trafodion.incubator.apache.org</url>
   <inceptionYear>2015</inceptionYear>
+
+  <parent>
+    <groupId>org.apache.trafodion</groupId>
+    <artifactId>trafodion</artifactId>
+    <relativePath>../../pom.xml</relativePath>
+    <version>1.3.0</version>
+  </parent>
 
   <licenses>
     <license>
@@ -67,8 +74,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <asciidoctor.maven.plugin.version>1.5.2.1</asciidoctor.maven.plugin.version>
-    <asciidoctorj.pdf.version>1.5.0-alpha.10.1</asciidoctorj.pdf.version>
-    <asciidoctorj.version>1.5.3.2</asciidoctorj.version>
+    <asciidoctorj.pdf.version>1.5.0-alpha.11</asciidoctorj.pdf.version>
+    <asciidoctorj.version>1.5.4</asciidoctorj.version>
     <rubygems.prawn.version>2.0.2</rubygems.prawn.version>
     <jruby.version>9.0.4.0</jruby.version>
   </properties>
@@ -175,8 +182,8 @@
               <attributes>
                 <!-- Location of centralized stylesheet -->
                 <stylesheet>${basedir}/../shared/trafodion-manuals.css</stylesheet>
-                <projectVersion>1.3.0</projectVersion>
-                <buildDate>${maven.build.timestamp}</buildDate>
+                <project-version>${env.TRAFODION_VER}</project-version>
+                <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
             </configuration>
@@ -224,8 +231,8 @@
                   - target/docs/<version>/<document> contains the PDF version and the web book. The web book is named index.html
                 --> 
                 <!-- Copy the PDF file to its target directories -->
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/client_install/Trafodion_Messages_Guide.pdf" />
-                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/client_install/Trafodion_Messages_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/messages_guide/Trafodion_Messages_Guide.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/messages_guide/Trafodion_Messages_Guide.pdf" />
                 <!-- Copy the Web Book files to their target directories -->
                 <copy todir="${basedir}/../target/docs/messages_guide">
                   <fileset dir="${basedir}/target/site">
