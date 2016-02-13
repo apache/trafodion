@@ -694,9 +694,6 @@ export SQ_DTM_PERSISTENT_PROCESS=1
 # Check the state of the node with the cluster manager during regroup
 export SQ_WDT_CHECK_CLUSTER_STATE=0
 
-# Perl libraries used by Seaquest (e.g. sqgen components)
-export PERL5LIB=$MY_SQROOT/export/lib
-
 # Enable SQ_PIDMAP if you want to get a record of process activity.
 # This can be useful in troubleshooting problems.  There is an overhead cost
 # incurred each time a process is started so do not enable this if performance
@@ -920,7 +917,7 @@ MANPATH=$(remove_duplicates_in_path "$MANPATH")
 ###################
 
 # Check variables that should refer to real directories
-VARLIST="MY_SQROOT $VARLIST JAVA_HOME PERL5LIB MPI_TMPDIR"
+VARLIST="MY_SQROOT $VARLIST JAVA_HOME MPI_TMPDIR"
 
 if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo "Checking variables reference existing directories ..."
