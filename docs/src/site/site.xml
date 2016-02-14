@@ -34,7 +34,7 @@
   <bannerLeft>
     <!-- Apache Trafodion, but with "Trafodion" highlighted -->
     <name><![CDATA[
-      Apache <span class="color-highlight">Trafodion</span>
+      <img id="trafodion-logo" alt="Trafodion Logo" src="images/logos/trafodion-logo-14.png" align="left"/>
       ]]>
     </name>
     <href>index.html</href>

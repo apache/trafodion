@@ -1,0 +1,148 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[install]]
+= Install
+
+You download the Trafodion binaries from the Trafodion http://trafodion.apache.org/download.html[Download] page. 
+Download the following packages:
+
+* Trafodion Installer (if planning to use the Trafodion Installer)
+* Trafodion Server
+
+NOTE: You can download and install the Trafodion Clients once you've installed and activated Trafodion. Refer to the
+http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Install Guide] for instructions.
+
+*Example*
+
+```
+$ mkdir $HOME/trafodion-download
+$ cd $HOME/trafodion-download
+$ Download the Trafodion Installer binarier
+$ wget http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+--2016-02-14 04:19:40--  http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+Resolving traf-builds.esgyn.com... 52.27.79.56
+Connecting to traf-builds.esgyn.com|52.27.79.56|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 68813 (67K) [application/x-gzip]
+Saving to: "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz"
+
+100%[=====================================================================================================================>] 68,813       124K/s   in 0.5s
+
+2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz" saved [68813/68813]
+
+$ # Download the Trafodion Server binaries
+$ wget http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-1.3.0-incubating-bin.tar.gz
+Resolving traf-builds.esgyn.com... 52.27.79.56
+Connecting to traf-builds.esgyn.com|52.27.79.56|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 214508243 (205M) [application/x-gzip]
+Saving to: "apache-trafodion-1.3.0-incubating-bin.tar.gz"
+
+100%[=====================================================================================================================>] 214,508,243 3.90M/s   in 55s
+
+2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion-1.3.0-incubating-bin.tar.gz" saved [214508243/214508243]
+
+$ ls -l
+total 209552
+-rw-rw-r-- 1 centos centos 214508243 Jan 12 20:10 apache-trafodion-1.3.0-incubating-bin.tar.gz
+-rw-rw-r-- 1 centos centos     68813 Jan 12 20:10 apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+$
+```
+
+[[install-trafodion-installer]]
+== Trafodion Installer
+
+The Trafodion Installer automates most of the tasks requires to install Trafodion. First, unpack the installation tar file.
+
+*Example*
+
+```
+$ mkdir $HOME/trafodion-installer
+$ cd $HOME/trafodion-downloads
+$ tar -zxf apache-trafodion-installer-1.3.0-incubating-bin.tar.gz -C $HOME/trafodion-installer
+$ ls $HOME/trafodion-installer/installer
+bashrc_default           tools                             traf_config_check           trafodion_apache_hadoop_install  traf_package_setup
+build-version-1.3.0.txt  traf_add_user                     traf_config_setup           trafodion_config_default         traf_setup
+dcs_installer            traf_apache_hadoop_config_setup   traf_create_systemdefaults  trafodion_install                traf_sqconfig
+rest_installer           traf_authentication_conf_default  traf_getHadoopNodes         trafodion_license                traf_start
+setup_known_hosts.exp    traf_cloudera_mods98              traf_hortonworks_mods98     trafodion_uninstaller
+$ 
+```
+
+The Trafodion Installer supports two different modes:
+
+1. *Guided Setup*: Prompts for information as it works through the installation process. This mode is recommended for new users.
+2. *Expert Setup*: Required information is provided in a pre-formatted bash-script configuration file, which is provided
+via a command argument when running the Trafodion Installer thereby surpressing all prompts.
++
+A template of the configuration file is available here within the installer directory: `trafodion_config_default`.
+Make a copy of the file in your directory and populate the needed information.
++
+Expert Setup is recommended for the expert user and/or for unattended installs.
+Refer to <<install-trafodion-expert-setup,Trafodion Installer: Expert Setup>> for information about how to
+populate this file.
+
+
+[[install-trafodion-installer-usage]]
+=== Trafodion Installer: Usage
+
+The following shows help for the Trafodion Installer.
+
+```
+./trafodion_install --help
+
+This script will install Trafodion. It will create a configuration
+file (if one has not been created), setup of the environment needed
+for Trafodion, configure HBase with Hbase-trx and co-processors needed,
+and install a specified Trafodion build.
+
+Options:
+    --help             Print this message and exit
+    --accept_license   If provided, the user agrees to accept all the
+                       provisions in the Trafodion license.  This allows
+                       for automation by skipping the display and prompt of
+                       the Trafodion license.
+    --config_file      If provided, all install prompts will be
+                       taken from this file and not prompted for.
+```
+
+[[install-trafodion-installer-guided-setup]]
+=== Trafodion Installer: Guided Setup
+
+You perform this step using the Trafodion Provisioning ID.
+
+The Guided Setup prompts you for the information you collected in the
+<<prepare-gather-configuration-information, Gather Configuration Information>> step in the <<prepare,Prepare>> activity.
+
+The following example shows how to install Trafodion a two-node Cloudera Hadoop cluster using Guided Setup.
+
+```
+```
+
+
+[[install-recipe-based-provisioning]]
+== Recipe-Based Provisioning
+To be written.

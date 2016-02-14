@@ -1,0 +1,126 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[introduction]]
+= Introduction
+
+Trafodion is a Hadoop add-on service that provides transactional SQL on top of HBase. Typically, you
+use Trafodion as the database for applications that require Online Transaction Processing (OLTP),
+Operational Data Store (ODS), and/or strong reporting capabilities. You access Trafodion using
+standard JDBC and ODBC APIs.
+
+You may choose whether to add Trafodion to an existing Hadoop environment or to create a standalone
+Hadoop environment specifically for Hadoop.
+
+[[introduction-security-considerations]]
+== Security Considerations
+
+The following users need be considered for Trafodion:
+
+* *Provisioning User*: A Linux-level user that performs the Trafodion provisioning tasks. This user ID
+requires `sudo` access and passwordless ssh among the nodes where Trafodion is installed. In addition,
+this user ID requires access to Hadoop distribution, HDFS, and HBase administrative users to change
+respective environment's configuration settings per Trafodion requirements. Refer to
+<<requirements-trafodion-provisioning-user,Trafodion Provisioning User>> for more information
+about the requirements and usage associated with this user ID.
+
+* *Runtime User*: A linux-level user under which the Trafodion software runs. This user ID must be registered
+as a user in the Hadoop Distributed File System (HDFS) to store and  access objects in HDFS, HBase, and Hive.
+In addition, this  user ID requires passwordless access among the nodes where Trafodion is installed.
+Refer to <<requirements-trafodion-runtime-user,Trafodion Runtime User>> for more information about this user ID.
+
+* *Trafodion Database Users*: Trafodion users are managed by the Trafodion security features (grant, revoke, etc.),
+which can be integrated with LDAP if so desired. These users are referred to as *database users* and
+do not have direct access to the operating system. Refer to 
+http://trafodion.apache.org/docs/sql_reference/index.html#register_user_statement[Register User],
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Grant], and other SQL statements
+in the http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual] for
+more information about managing Trafodion Database Users.
+ +
+ +
+Optionally, you can enable Trafodion Security. If you do not enable security in Trafodion, then a client interface
+to Trafodion may request a username and password, but Trafodion ignores the user name and password entered in the
+client interface, and the session runs as the database *root* user, `DB__ROOT*, without restrictions. If you want
+to restrict users, restrict access to certain users only, or restrict access to an object or operation, then you must
+enable security, which enforces authentication and authorization. Refer to
+<<enable-seurity,Enable Security>> for more information about this option.
+
+[[introduction-provisioning-options]]
+== Provisioning Options
+
+Trafodion ships with an installer that takes care of many of the installation and upgrade tasks associated with the Trafodion
+software and its requirements. Currently, the Trafodion Installer is able to install Trafodion on select Cloudera and 
+Hortonworks Hadoop distributions only. Trafodion Installer limitations are noted as they apply in the different
+chapters below. For example, the Trafodion Installer is less capable on SUSE than it is on RedHat/CentOS;
+you have to install the prerequisite software packages outside the Trafodion Installer. Refer to <<trafodion_installer, Trafodion Installer>> for more information.
+
+The Trafodion Installer automates many of the tasks required to install/upgrade Trafodion, spanning from downloading and
+installing required software packages and making required changes to your Hadoop environment via creating
+the Trafodion runtime user ID to installing and starting Trafodion. It is, therefore,  highly recommend that
+you use the Trafodion Installer for initial installation and upgrades of Trafodion.
+
+If, for any reason, you choose not to use the Trafodion Installer, then the different chapters provide
+step-by-step recipes for the tasks required to install/upgrade Trafodion. These steps are referred to as
+*Recipe-Based Provisioning* in this guide. It is assumed that you are well-versed in Linux and Hadoop
+administrative tasks if using Recipe-Based Provisioning.
+
+[[introduction-provisioning-activities]]
+== Provisioning Activities
+
+Trafodion provisioning is divided into the following main activities:
+
+* *<<requirements,Requirements>>*: Activities and documentation required to install the Trafodion software.
+These activities include tasks such as understanding hardware and operating system requirements,
+Hadoop requirements, what software packages that need to be downloaded, configuration settings that need to be changed,
+user IDs requirements, and so on.
+* *<<prepare,Prepare>>*: Activities to prepare the operating system and the Hadoop ecosystem to run
+Trafodion. These activities include tasks such as installing required software packages, configure
+the Trafodion Installation User, gather information about the Hadoop environment, modify configuration
+for different Hadoop services, and so forth.
+* *<<install,Install>>*: Activities related to installing the Trafodion software. These activities
+include tasks such as unpacking the Trafodion tar files, creating the Trafodion Runtime User,
+creating Trafodion HDFS directories, installing the Trafodion software, and so forth.
+* *<<upgrade,Upgrade>>*: Activities related to the upgrading the Trafodion software. These activities
+include tasks such as shutting down Trafodion, installing a new version of the Trafodion software,
+and so on. The upgrade tasks vary depending on the differences between the current and new release of
+Trafodion. For example, an upgrade may or may not include an upgrade of the Trafodion metadata.
+* *<<activate,Activate>>*: Activities related to starting the Trafodion software. These actives
+include basic management tasks such as starting and checking the status of the Trafodion components,
+performing basic smoke tests, and so forth.
+
+[[provisioning-master-node]]
+== Provisioning Master Node
+All provisioning tasks are performed from a single node in the cluster, which must be part
+of the Hadoop environment you're adding Trafodion to. This node is referred to as the
+"*Provisioning Master Node*" in this guide.
+
+The Trafodion Provisioning User must have access to all other nodes from the Provisioning
+Master Node in order to perform provisioning tasks on the cluster.
+
+
+
+
+
+
