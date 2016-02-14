@@ -23,38 +23,28 @@
 
 package org.trafodion.rest;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.List;
+import java.util.Scanner;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.hadoop.conf.Configuration;
-
 import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
-import org.trafodion.rest.script.ScriptManager;
 import org.trafodion.rest.script.ScriptContext;
-import org.trafodion.rest.Constants;
-import org.trafodion.rest.util.Bytes;
-import org.trafodion.rest.util.RestConfiguration;
-import org.trafodion.rest.zookeeper.ZkClient;
-import org.trafodion.rest.RestConstants;
+import org.trafodion.rest.script.ScriptManager;
 
 public class ServerResource extends ResourceBase {
 	private static final Log LOG =
@@ -176,6 +166,52 @@ public class ServerResource extends ResourceBase {
 
 	    return jsonObject;
 	}
+	
+	private JSONObject dcscheck() throws IOException {
+	    ScriptContext scriptContext = new ScriptContext();
+	    scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+	    scriptContext.setCommand("dcscheck");
+	    scriptContext.setStripStdOut(false);
+	    try {
+	        ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new IOException(e);
+	    }
+
+        if(LOG.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("exit code [" + scriptContext.getExitCode() + "]");
+            if(! scriptContext.getStdOut().toString().isEmpty()) 
+                sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+            if(! scriptContext.getStdErr().toString().isEmpty())
+                sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+            LOG.debug(sb.toString());
+        }
+
+	    JSONObject jsonObject = new JSONObject();
+	    try {
+	        Scanner scanner = new Scanner(scriptContext.getStdOut().toString());
+
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				if(line.contains(":")){
+					String[] nameValue = line.split(":");
+					if(nameValue.length > 1){
+						jsonObject.put(nameValue[0].trim(), nameValue[1].trim());
+					}
+				}
+			}
+		
+			scanner.close();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new IOException(e);
+	    }
+
+	    return jsonObject;
+	}
 
 	private JSONArray pstack(String program) throws IOException {
 	    ScriptContext scriptContext = new ScriptContext();
@@ -210,11 +246,13 @@ public class ServerResource extends ResourceBase {
 	            String line = scanner.nextLine();
 	            if(line.contains("pstack-ing")) {
 	                continue;
-	            } else if (line.contains("pstack")) {
-	                if(pstack == true) {
+				} else if (line.contains("pstack") || line.startsWith("--")) {
+					if (pstack == true && sb.length() > 0) {
 	                    json.put(new JSONObject().put("PROGRAM", sb.toString()));
 	                    sb.setLength(0);
-	                    sb.append(line + "\n");
+						if (line.contains("pstack"))
+							sb.append(line + "\n");
+						pstack = false;
 	                } else {
 	                    pstack = true;
 	                    sb.append(line + "\n");
@@ -572,6 +610,54 @@ public class ServerResource extends ResourceBase {
                     .build();
         }
     }   
+    
+    @GET
+    @Path("/dcs/summary")
+    @Produces({MIMETYPE_JSON})
+    public Response getDcsSummary(
+            final @Context UriInfo uriInfo,
+            final @Context Request request) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
+
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+            }
+
+            JSONObject jsonObject = dcscheck();
+            
+            if(jsonObject.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No dcs resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
+ 
+            ResponseBuilder response = Response.ok(jsonObject.toString());
+            response.cacheControl(cacheControl);
+            return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    } 
     
     @GET
     @Path("/dcs/connections")

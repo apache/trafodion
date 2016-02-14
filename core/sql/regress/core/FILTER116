@@ -1,5 +1,4 @@
-#!/bin/bash
-#
+#! /bin/sh
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,29 +19,15 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
 
-#Check if Trafodion is up and operational
-sqcheck -f
-sq_stat=$?
-if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
-   DCS_START_CMD=${DCS_INSTALL_DIR}/bin/start-dcs.sh
-
-   if [ -z ${DCS_INSTALL_DIR} ]; then
-      echo "DCS Install dir location not set via the env variable DCS_INSTALL_DIR."
-      exit 1;
-   fi
-
-   if [ ! -e ${DCS_START_CMD} ]; then
-     echo "${DCS_START_CMD} not found."
-     exit 1;
-   fi
-
-   echo "Starting the DCS environment now"
-   cd ${DCS_INSTALL_DIR}
-   ${DCS_START_CMD}
-   cds
-else
-   echo "DCS is not started. Please start Trafodion ..."
-   exit 1
+fil=$1
+if [ -z "$fil" ]; then
+  echo "Usage: $0 filename"
+  exit 1
 fi
+
+sed "
+s/0 row(s) in [0-9]\.[0-9][0-9][0-9][0-9] seconds//g
+/HBase Shell/d
+/Version/d
+" $fil

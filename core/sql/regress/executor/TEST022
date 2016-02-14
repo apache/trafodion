@@ -191,6 +191,44 @@ select time'12:00:00 am' - interval'1'second from t022t1;
 
 select timestamp '2015-05-31T10:11:12' from t022t1;
 select timestamp '2015-05-31T10:11:12Z' from t022t1;
+select timestamp '2015-05-31T10:11:12-05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12+05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12.123-05:00' from t022t1;
+select timestamp '2015-05-31T10:11:12.123+05:00' from t022t1;
+
+select cast('2015-05-31T10:11:12' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12Z' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12-05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12+05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12.123-05:00' as timestamp) from t022t1;
+select cast('2015-05-31T10:11:12.123+05:00' as timestamp) from t022t1;
+
+select time '10:11:12' from t022t1;
+select time '10:11:12Z' from t022t1;
+select time '10:11:12-05:00' from t022t1;
+select time '10:11:12+05:00' from t022t1;
+select time '10:11:12.123-05:00' from t022t1;
+select time '10:11:12.123+05:00' from t022t1;
+
+select cast('10:11:12' as time) from t022t1;
+select cast('10:11:12Z' as time) from t022t1;
+select cast('10:11:12-05:00' as time) from t022t1;
+select cast('10:11:12+05:00' as time) from t022t1;
+select cast('10:11:12.123-05:00' as time) from t022t1;
+select cast('10:11:12.123+05:00' as time) from t022t1;
+
+select time '23:11:06.123' from t022t1;
+select cast ('23:11:06.123' as time(2)) from t022t1;
+
+-- negative cases
+select cast('2016-01-29Z' as date) from t022t1;
+select cast('2016-01-29+05:00' as date) from t022t1;
+select cast('10:11:12-05:000' as time) from t022t1;
+select date '2016-01-29Z' from t022t1;
+select date '2016-01-29+05:00' from t022t1;
+select time '25:11:11' from t022t1;
+select time '23:11:11.1234567' from t022t1;
+select cast ('23:11:61' as time) from t022t1;
 
 -- Prove these cases work since they're used in the succeeding negative tests.
 

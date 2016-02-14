@@ -189,6 +189,15 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     HSColGroupStruct::allocCount = 1;  // start at 1 for each new statement
 #endif
 
+    // Disallow UPDATE STATS in a user transaction
+    HSTranMan *TM = HSTranMan::Instance();
+    if (TM->InTransaction())
+      {
+        HSFuncMergeDiags(-UERR_USER_TRANSACTION);
+        retcode = -1;
+        HSExitIfError(retcode);
+      }
+
 
                                              /*==============================*/
                                              /*       PARSE STATEMENT        */

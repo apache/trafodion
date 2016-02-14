@@ -1437,20 +1437,24 @@ NABoolean CacheData::backpatchParams
               charVal = (char*) (&val);
         }
 
+        Lng32 dataConversionErrorFlag = 0;
         short retCode = convDoIt((char*)charVal,
-           constVal->getStorageSize(),
-           (short)sourceType->getFSDatatype(),
-           sourceType->getPrecision(),
-           sourceScale,
-           (char*)(targetBugPtr+offset),
-           targetLen,
-           (short)(targetType->getFSDatatype()),
-           targetType->getPrecision(),
-           targetScale,
-           varCharLen, 
-           varCharLenSize);
+                                 constVal->getStorageSize(),
+                                 (short)sourceType->getFSDatatype(),
+                                 sourceType->getPrecision(),
+                                 sourceScale,
+                                 (char*)(targetBugPtr+offset),
+                                 targetLen,
+                                 (short)(targetType->getFSDatatype()),
+                                 targetType->getPrecision(),
+                                 targetScale,
+                                 varCharLen, 
+                                 varCharLenSize,
+                                 NULL, NULL, CONV_UNKNOWN,
+                                 &dataConversionErrorFlag);
 
-        if (retCode != ex_expr::EXPR_OK)
+        if ((retCode != ex_expr::EXPR_OK) ||
+            (dataConversionErrorFlag == ex_conv_clause::CONV_RESULT_ROUNDED_DOWN))
            return FALSE;
   
         offset += targetLen;

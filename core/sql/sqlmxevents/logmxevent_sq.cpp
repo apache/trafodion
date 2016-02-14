@@ -49,7 +49,7 @@
 #endif
 #include "common/sql.error_event.pb.h"
 #include "common/sql.info_event.pb.h"
-#include "wrapper/amqpwrapper.h"
+//#include "wrapper/amqpwrapper.h"
 #include "sq_sql_eventids.h"
 #include "common/evl_sqlog_eventnum.h"
 
