@@ -61,11 +61,13 @@ include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
 include::asciidoc/_chapters/requirements.adoc[]
 include::asciidoc/_chapters/prepare.adoc[]
-include::asciidoc/_chapters/install.adoc[]
-include::asciidoc/_chapters/upgrade.adoc[]
+include::asciidoc/_chapters/script_install.adoc[]
+include::asciidoc/_chapters/script_upgrade.adoc[]
 include::asciidoc/_chapters/activate.adoc[]
-include::asciidoc/_chapters/remove.adoc[]
+include::asciidoc/_chapters/script_remove.adoc[]
 include::asciidoc/_chapters/enable_security.adoc[]
+include::asciidoc/_chapters/recipe_install.adoc[]
+include::asciidoc/_chapters/recipe_upgrade.adoc[]
 
 
 

@@ -97,7 +97,7 @@ are met for each node in the cluster where you intend to install Trafodion.
 == Configure LDAP Identity Store
 
 If you plan to enable security in Trafodion, then you need to have an LDAP identity store available to perform authentication.
-The Trafodion installer prompts you to set up an authentication configuration file that points to an LDAP server (or servers),
+The Trafodion Installer prompts you to set up an authentication configuration file that points to an LDAP server (or servers),
 which enables security (that is, authentication and authorization) in the Trafodion database.
 
 If you wish to manually set up the authentication configuration file and enable security, then refer to the section on
@@ -107,7 +107,7 @@ If you wish to manually set up the authentication configuration file and enable 
 == Gather Configuration Information
 
 You need to gather/decide information about your environment to aid installation Trafodion, both for the Trafodion Installer
-and for recipe-based installation. (In alphabetical order to make it easier to find information later on in the provisioning process.)
+and for recipe-based provisioning. (In alphabetical order to make it easier to find information later on in the provisioning process.)
 
 [cols="15%l,30%,15%l,40%",options="header"]
 |===
@@ -249,8 +249,57 @@ sudo rpm -qa | grep log4cxx
 log4cxx-0.10.0-13.el6.x86_64
 ```
 
-[[prepare-perform-recipe-based-provisioning-tasks]]
-== Perform Recipe-Based Provisioning Tasks
+[[install-download-trafodion-binaries]]
+== Download Trafodion Binaries
+
+You download the Trafodion binaries from the Trafodion http://trafodion.apache.org/download.html[Download] page. 
+Download the following packages:
+
+* Trafodion Installer (if planning to use the Trafodion Installer)
+* Trafodion Server
+
+NOTE: You can download and install the Trafodion Clients once you've installed and activated Trafodion. Refer to the
+http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Install Guide] for instructions.
+
+*Example*
+
+```
+$ mkdir $HOME/trafodion-download
+$ cd $HOME/trafodion-download
+$ Download the Trafodion Installer binarier
+$ wget http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+--2016-02-14 04:19:40--  http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+Resolving traf-builds.esgyn.com... 52.27.79.56
+Connecting to traf-builds.esgyn.com|52.27.79.56|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 68813 (67K) [application/x-gzip]
+Saving to: "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz"
+
+100%[=====================================================================================================================>] 68,813       124K/s   in 0.5s
+
+2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz" saved [68813/68813]
+
+$ # Download the Trafodion Server binaries
+$ wget http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-1.3.0-incubating-bin.tar.gz
+Resolving traf-builds.esgyn.com... 52.27.79.56
+Connecting to traf-builds.esgyn.com|52.27.79.56|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 214508243 (205M) [application/x-gzip]
+Saving to: "apache-trafodion-1.3.0-incubating-bin.tar.gz"
+
+100%[=====================================================================================================================>] 214,508,243 3.90M/s   in 55s
+
+2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion-1.3.0-incubating-bin.tar.gz" saved [214508243/214508243]
+
+$ ls -l
+total 209552
+-rw-rw-r-- 1 centos centos 214508243 Jan 12 20:10 apache-trafodion-1.3.0-incubating-bin.tar.gz
+-rw-rw-r-- 1 centos centos     68813 Jan 12 20:10 apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+$
+```
+
+[[prepare-preparation-for-recipe-based-provisioning]]
+== Preparation for Recipe-Based Provisioning 
 
 NOTE: This step should be skipped if you plan to use the Trafodion Installer
 

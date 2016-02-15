@@ -155,6 +155,9 @@ have Trafodion, HBase, or HDFS servers on them.
 [[requirements-prerequisite-software]]
 == Prerequisite Software
 
+[[requirements-hadoop-software]]
+=== Hadoop Software
+
 Trafodion runs as an add-on service on Hadoop distributions. The following Hadoop services and their dependencies must be installed and running 
 on the cluster where you intend to install Trafodion:
 
@@ -488,7 +491,7 @@ Increase this value for big tables. Make it the same value as `hbase.client.scan
 that increasing the setting to six-hundred (600) seconds will prevent many of the timeout-related errors we encountered, 
 such as `OutOfOrderNextException` errors.
 | hbase.client.scanner.timeout.period | 10 minutes | Similar to the `hbase.rpc.timeout` setting. Sixty (60) seconds is the 
-default. Depending on the size of a user table, we have experienced timeout failures on count(\*) and update statistics commands 
+default. Depending on the size of a user table, we have experienced timeout failures on count(*) and update statistics commands 
 from this setting. The underlying issue is the length of the execution of the coprocessor within HBase.
  +
 NOTE: HBase uses the smaller of `hbase.rpc.timeout` and `hbase.client.scanner.timeout.period` to calculate the scanner timeout. 
