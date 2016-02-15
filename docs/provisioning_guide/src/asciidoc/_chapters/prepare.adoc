@@ -117,21 +117,25 @@ distribution manager's REST API.
 | BACKUP_DCS_NODES   | List of nodes where to start the backup DCS Master components. | None                          | Blank separated FQDN list. Not needed if $ENABLE_HA = N.
 | CLOUD_CONFIG       | Whether you're installing Trafodion on a cloud environment.    | N                             | N = bare-metal or VM installation.
 | CLOUD_TYPE         | What type of cloud environment you're installing Trafodion on. | None | { AWS \| OpenStack \| Other }. Not applicable for bare-metal or VM installation.
+| CLUSTER_NAME       | The name of the Hadoop Cluster.                                | None | From Apache Ambari or Cloudera Manager.
 | DCS_BUILD          | Tar file containing the DCS component.                         | None | Not needed if using a Trafodion package installation tar file.
 | DCS_PRIMARY_MASTER_NODE | The node where the primary DCS should run.                | None | The DCS Master handles JDBC and ODBC connection requests.
-| DCS_SERVER_FARM    | Number of concurrent client sessions per node.                 | 8 | This number specifies the concurrent sessions per node to be supported. Each session could require up to 1GB of physical memory. The number can be changed post-installation. For more information,
+| DCS_SERVER_PARM    | Number of concurrent client sessions per node.                 | 16 | This number specifies the concurrent sessions per node to be supported. Each session could require up to 1GB of physical memory. The number can be changed post-installation. For more information,
 refer to the http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
 | ENABLE_HA          | Whether to run DCS in high-availability (HA) mode.             | N                             | You need the floating IP address, the interface, and the backup nodes for DCS Master if enabling this feature.
+| EPEL_RPM           | Location of EPEL RPM.                                          | None                          | Specify if you don't have access to the Internet.
+Downloaded automatically by the Trafodion Installer.
 | FLOATING_IP        | IP address if running DCS in HA mode.                          | None                          | Not needed if $ENABLE_HA = N. An FQDN name or IP address.
+| HADOOP_TYPE        | The type of Hadoop distribution you're installing Trafodion on. | None                         | Lowercase. cloudera or hadoop.
 | HBASE_GROUP        | Linux group name for the HBASE administative user.             | hbase                         | Required in order to provide access to select HDFS directories to this user ID. 
 | HBASE_USER         | Linux user name for the HBASE administative user.              | hbase                         | Required in order to provide access to select HDFS directories to this user ID. 
 | HDFS_USER          | Linux user name for the HDFS administative user.               | hdfs                          | The Trafodion Installer uses `sudo su` to make HDFS
 configuration changes under this user.
-| HOME_DIR           | Root directory under which the `trafodion` home directory should be created. | \home           | *Example* +
+| HOME_DIR           | Root directory under which the `trafodion` home directory should be created. | /home           | *Example* +
  +
 If the home directory of the `trafodion` user is
 `/opt/home/trafodion`, then specify the root directory as `/opt/home`. 
-| INIT_TRAFODION     | Whether to start Trafodion after install/upgrade.              | N                             | Does not apply to Recipe-Based Provisioning.
+| INIT_TRAFODION     | Whether to automatically initialize the Trafodion database.    | N                             | Does not apply to Recipe-Based Provisioning. Applies if $START=Y only.
 | INTERFACE          | Interface type used for $FLOATING_IP.                          | None                          | Not needed if $ENABLE_HA = N. 
 | JAVA_HOME          | Location of Java 1.7.0_65 or higher (JDK).                     | $JAVA_HOME setting            | Fully qualified path of the JDK. For example:
 `/usr/java/jdk1.7.0_67-cloudera`
@@ -143,6 +147,7 @@ If the home directory of the `trafodion` user is
 | LDAP_PORT^2^       | Port used to communicate with LDAP Identity Store.             | None                          | Examples: 389 for no encryption or TLS, 636 for SSL.
 | LDAP_SECURITY^2^   | Whether to enable simple LDAP authentification.                | N                             | If Y, then you need to provide LDAP_HOSTS.
 | LDAP_USER^2^       | LDAP Search user name.                                         | None                          | If required. If so, must provide LDAP_PASSWORD, too.   
+| LOCAL_WORKDIR      | The directory where the Trafodion Installer is located.        | None                          | Full path, no environmental variables.
 | MANAGEMENT_ENABLED | Whether your installation uses separate management nodes.      | N                             | Y if using separate management nodes for Apache Ambari or Cloudera Manager.
 | MANAGEMENT_NODES   | The FQDN names of management nodes, if any.                    | None                          | Provide a blank-separated list of node names.
 | NODE_LIST          | The FQDN names of the nodes where Trafodion will be installed. | None                          | Provide a blank-separated list of node names. The Trafodion
@@ -150,10 +155,13 @@ Provisioning ID must have passwordless and `sudo` access to these nodes.
 | PASSWORD           | Administrator password for Apache Ambari or Cloudera Manager.  | admin                         | A user that can change configuration and restart services via the
 distribution manager's REST API.
 | REST_BUILD         | Tar file containing the REST component.                        | None | Not needed if using a Trafodion package installation tar file.
-| SQ_ROOT            | Directory where Trafodion is installed.                        | $HOME_DIR/trafodion           | Trafodion is installed in this directory on all nodes in `$NODE_LIST`.
+| SQ_ROOT            | Target directory for the Trafodion software.                   | $HOME_DIR/trafodion           | Trafodion is installed in this directory on all nodes in `$NODE_LIST`.
+| START              | Whether to start Trafodion after install/upgrade.              | N                             | Does not apply to Recipe-Based Provisioning.
+| SUSE_LINUX         | Whether your installing Trafodion on SUSE Linux.               | false                         | Autodetected by the Trafodion Installer.
 | TRAF_PACKAGE       | The location of the Trafodion installation package tar file or core installation tar file. | None | The package file contains the Trafodion server,
 DCS, and REST software while the core installation file contains the Trafodion server software only. If you're using a core installation file, then you need to
 record the location of the DCS and REST installation tar files, too. Normally, you perform Trafodion provisioning using a Trafodion package installation tar file.
+| TRAF_USER          | The Trafodion runtim user ID.                                  | trafodion                     | Must be `trafodion` in this release.
 | TRAF_USER_PASSWORD | The password used for the `trafodion:trafodion` user ID.       | traf123                       | Must be 6-8 characters long.
 | URL                | FQDN and port for the Distribution Manager's REST API.         | None                          | Include `http://` or `https://` as applicable. Specify in the form:
 `<IP-address>:<port>` or `<node name>:<port>` Example: `https://susevm-1.yourcompany.local:8080`
@@ -194,21 +202,25 @@ This step is required regardless of the <<introduction-provisioning-options,Prov
 +
 ```
 # Download required packages
-sudo yum install rpm-build
-sudo yum install apr-devel
-sudo yum install apr-util-devel
-sudo yum install doxygen
-sudo yum install gcc
-sudo yum install gcc-c++
+sudo yum -y install rpm-build apr-devel apr-util-devel doxygen gcc gcc-c++
 
-# Install the log4c++ source package
+# Download the log4c++ source rpm
+wget ftp://ftp.rpmfind.net/linux/fedora-secondary/development/rawhide/source/SRPMS/l/log4cxx-0.10.0-13.fc18.src.rpm
+
+# Install the log4c++ source rpm
 sudo rpm -ivv log4cxx-0.10.0-13.fc18.src.rpm
 
-# Build the log4c++ RPM package
+# Build the log4c++ rpm
 sudo rpmbuild -ba /root/rpmbuild/SPECS/log4cxx.spec
 
-# Install the log4++ package
-sudo rpm -U /root/rpmbuild/RPMS/x86_64/log4cxx<tab>
+# Install the log4c++ rpm
+sudo rpm -U /root/rpmbuild/RPMS/x86_64/log4cxx-0.10.0-13.el6.x86_64.rpm
+
+# Copy the log4c++ rpm to the local directory
+sudo cp /root/rpmbuild/RPMS/x86_64/log4cxx-0.10.0-13.el6.x86_64.rpm .
+
+# Change owner of the local log4c++ rpm
+sudo chown <your-id> log4cxx-0.10.0-13.el6.x86_64.rpm
 ```
 
 2. Copy and Install the log4c&#43;&#43; RPM on All Nodes
@@ -218,7 +230,13 @@ Use either `rpm -U` or `yum install`.
 *Example*
 +
 ```
-yum install BLAH
+# Repeat for all nodes in the cluster from the Provisioning Master Node
+scp log4cxx-0.10.0-13.el6.x86_64.rpm <other-node>:$PWD
+
+ssh <other-node>
+sudo yum -y install log4cxx-0.10.0-13.el6.x86_64.rpm
+exit
+
 ```
 
 3. Verify RPM Installation on Every Node
@@ -226,7 +244,9 @@ yum install BLAH
 Use the following command to verify that `log4c&#43;&#43;` has been installed on every node in the cluster.
 +
 ```
+# Repeat for all nodes in the cluster
 sudo rpm -qa | grep log4cxx
+log4cxx-0.10.0-13.el6.x86_64
 ```
 
 [[prepare-perform-recipe-based-provisioning-tasks]]

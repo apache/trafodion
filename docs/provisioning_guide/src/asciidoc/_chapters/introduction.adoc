@@ -109,6 +109,7 @@ Trafodion. For example, an upgrade may or may not include an upgrade of the Traf
 * *<<activate,Activate>>*: Activities related to starting the Trafodion software. These actives
 include basic management tasks such as starting and checking the status of the Trafodion components,
 performing basic smoke tests, and so forth.
+* *<<remove,Remove>>*: Activities related to removing Trafodion from your Hadoop cluster.
 
 [[provisioning-master-node]]
 == Provisioning Master Node
