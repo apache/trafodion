@@ -178,6 +178,9 @@ public:
   inline ElemDDLNode * getPassThroughInputsParseTree(void);
   inline ElemDDLNode * getRoutineAttributesParseTree(void);
 
+  NABoolean createIfNotExists() { return createIfNotExists_; }
+  void setCreateIfNotExists(NABoolean v) { createIfNotExists_ = v; }
+
   //
   // mutators
   //
@@ -373,6 +376,7 @@ protected:
 
   ElemDDLGrantee      *pOwner_;
 
+  NABoolean           createIfNotExists_;
   //
   // pointers to child parse nodes
   //

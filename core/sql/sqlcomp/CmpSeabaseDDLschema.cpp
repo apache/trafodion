@@ -96,9 +96,9 @@ static bool transferObjectPrivs(
 // *    do not return an error is schema already exists                        *
 // *****************************************************************************
 // *                                                                           *
-// * Returns: PrivStatus                                                       *
+// * Returns: status
 // *                                                                           *
-// *   0: Schema as added                                                      *
+// *   0: Schema was added                                                      *
 // *  -1: Schema was not added.  A CLI error is put into the diags area.       *
 // *                                                                           *
 // *****************************************************************************
@@ -207,7 +207,6 @@ Int32 cliRC = cliInterface.executeImmediate(buf);
 }
 //******************* End of CmpSeabaseDDL::addSchemaObject ********************
 
-
 // *****************************************************************************
 // *                                                                           *
 // * Function: CmpSeabaseDDL::createSeabaseSchema                              *
@@ -230,39 +229,38 @@ void CmpSeabaseDDL::createSeabaseSchema(
    NAString             & currentCatalogName)
    
 {
-
-ComSchemaName schemaName (createSchemaNode->getSchemaName());
+   ComSchemaName schemaName (createSchemaNode->getSchemaName());
   
    if (schemaName.getCatalogNamePart().isEmpty())
       schemaName.setCatalogNamePart(currentCatalogName);  
   
-NAString catName = schemaName.getCatalogNamePartAsAnsiString();
-ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
-NAString schName = schNameAsComAnsi.getInternalName();
+   NAString catName = schemaName.getCatalogNamePartAsAnsiString();
+   ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
+   NAString schName = schNameAsComAnsi.getInternalName();
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
-CmpCommon::context()->sqlSession()->getParentQid());
-ComSchemaClass schemaClass;
-Int32 objectOwner = NA_UserIdDefault;
-Int32 schemaOwner = NA_UserIdDefault;
+   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+   CmpCommon::context()->sqlSession()->getParentQid());
+   ComSchemaClass schemaClass;
+   Int32 objectOwner = NA_UserIdDefault;
+   Int32 schemaOwner = NA_UserIdDefault;
 
-int32_t retCode = verifyDDLCreateOperationAuthorized(&cliInterface,
-                                                     SQLOperation::CREATE_SCHEMA,
-                                                     catName,
-                                                     schName,
-                                                     schemaClass,
-                                                     objectOwner,
-                                                     schemaOwner);
+   int32_t retCode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                                        SQLOperation::CREATE_SCHEMA,
+                                                        catName,
+                                                        schName,
+                                                        schemaClass,
+                                                        objectOwner,
+                                                        schemaOwner);
    if (retCode != 0)
    {
       handleDDLCreateAuthorizationError(retCode,catName,schName);
       return;
    }
    
-Int32 schemaOwnerID = NA_UserIdDefault; 
+   Int32 schemaOwnerID = NA_UserIdDefault; 
 
-// If the AUTHORIZATION clause was not specified, the current user becomes
-// the schema owner. 
+   // If the AUTHORIZATION clause was not specified, the current user becomes
+   // the schema owner. 
 
    if (createSchemaNode->getAuthorizationID().isNull())
       schemaOwnerID = ComUser::getCurrentUser();
@@ -275,11 +273,27 @@ Int32 schemaOwnerID = NA_UserIdDefault;
          return;
       }
    
-   addSchemaObject(cliInterface,
-                   schemaName,
-                   createSchemaNode->getSchemaClass(),
-                   schemaOwnerID,
-                   createSchemaNode->createIfNotExists());
+   if (addSchemaObject(cliInterface,
+                       schemaName,
+                       createSchemaNode->getSchemaClass(),
+                       schemaOwnerID,
+                       createSchemaNode->createIfNotExists()))
+     return;
+
+   // Create histogram tables for schema, if the schema is not volatile and 
+   // not reserved
+   NAString tableNotCreated;
+
+   if (!createSchemaNode->isVolatile() && !ComIsTrafodionReservedSchemaName(schName))
+   {
+      if (createHistogramTables(&cliInterface, schemaName.getExternalName(), 
+                                FALSE, tableNotCreated))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_HISTOGRAM_TABLE_NOT_CREATED)
+                             << DgTableName(tableNotCreated.data());
+         return;
+      }
+   }
 
 }
 //***************** End of CmpSeabaseDDL::createSeabaseSchema ******************
@@ -408,49 +422,56 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
 void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    
 {
+   Lng32 cliRC = 0;
 
-Lng32 cliRC = 0;
+   ComSchemaName schemaName(dropSchemaNode->getSchemaName());
+   NAString catName = schemaName.getCatalogNamePartAsAnsiString();
+   ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
+   NAString schName = schNameAsComAnsi.getInternalName();
+   ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
-ComSchemaName schemaName(dropSchemaNode->getSchemaName());
-NAString catName = schemaName.getCatalogNamePartAsAnsiString();
-ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
-NAString schName = schNameAsComAnsi.getInternalName();
+   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                                CmpCommon::context()->sqlSession()->getParentQid());
+   Int32 objectOwnerID = 0;
+   Int32 schemaOwnerID = 0;
+   ComObjectType objectType;
 
-ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-CmpCommon::context()->sqlSession()->getParentQid());
-Int32 objectOwnerID = 0;
-Int32 schemaOwnerID = 0;
-ComObjectType objectType;
+   bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
+   int32_t length = 0;
+   int32_t rowCount = 0;
+   bool someObjectsCouldNotBeDropped = false;
+   Queue * objectsQueue = NULL;
+
+   NABoolean dirtiedMetadata = FALSE;
 
    Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
-                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID);
+                               SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID);
    
    // if schemaUID == -1, then either the schema does not exist or an unexpected error occurred
    if (schemaUID == -1)
    {
       // If an error occurred, return
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
-        return;
+          goto label_error;
  
       // schema does not exist and IF EXISTS specified, then ignore and continue
       if (dropSchemaNode->dropIfExists())
-        return;
+        goto label_error;
 
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
                           << DgSchemaName(schemaName.getExternalName().data());
-      return;
+      goto label_error;
    }
 
    if (!isDDLOperationAuthorized(SQLOperation::DROP_SCHEMA,
                                  schemaOwnerID,schemaOwnerID))
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-      return;
+      goto label_error;
    }
  
-ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
    if ((isSeabaseReservedSchema(objName) ||
         (schName == SEABASE_SYSTEM_SCHEMA)) &&
@@ -458,132 +479,159 @@ ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_CANNOT_DROP_SMD_SCHEMA)
                           << DgSchemaName(schemaName.getExternalName().data());
-      return;
+      goto label_error;
    }
-   
-bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
 
-// Can't drop a schema whose name begins with VOLATILE_SCHEMA unless the 
-// keyword VOLATILE was specified in the DROP SCHEMA command. 
+   // Can't drop a schema whose name begins with VOLATILE_SCHEMA unless the 
+   // keyword VOLATILE was specified in the DROP SCHEMA command. 
    if (isVolatile && !dropSchemaNode->isVolatile())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_RESERVED_METADATA_SCHEMA_NAME)
                           << DgTableName(schName);
-      return;
+      goto label_error;
    }
 
-// Get a list of all objects in the schema, excluding the schema object itself.
-char query[4000];
+   // Get a list of all objects in the schema, excluding the schema object itself.
+   char query[4000];
 
+   // select objects in the schema to drop, don't return PRIMARY_KEY_CONSTRAINTS,
+   // they always get removed when the parent table is dropped.
    str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
-                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"'" 
+                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                     "object_type <> 'PK' "
                      "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
   
-Queue * objectsQueue = NULL;
-
    cliRC = cliInterface.fetchAllRows(objectsQueue, query, 0, FALSE, FALSE, TRUE);
    if (cliRC < 0)
    {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+      goto label_error;
    }
 
-   objectsQueue->position();
-   if ((dropSchemaNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR) &&
-       (objectsQueue->numEntries() > 0))
+   // Check to see if non histogram objects exist in schema, if so, then 
+   // cascade is required
+   if (dropSchemaNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR)
    {
-      OutputInfo * oi = (OutputInfo*)objectsQueue->getCurr(); 
+     objectsQueue->position();
+     for (size_t i = 0; i < objectsQueue->numEntries(); i++)
+     {
+       OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+       NAString objName = vi->get(0);
+
+       if (!isHistogramTable(objName))
+       {
+          OutputInfo * oi = (OutputInfo*)objectsQueue->getCurr(); 
       
-      *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_IS_NOT_EMPTY)
-                          << DgTableName(oi->get(0));
-      return;
+          *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_IS_NOT_EMPTY)
+                              << DgTableName(objName.data());
+          goto label_error;
+       }
+     }
    }
 
-bool someObjectsCouldNotBeDropped = false;
-
-// Drop libraries, procedures (SPJs), UDFs (functions), and views 
+   // Drop histogram tables first
    objectsQueue->position();
-   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+   for (size_t i = 0; i < objectsQueue->numEntries(); i++)
    {
-      OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+     OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+     NAString objName = vi->get(0);
 
-      char * objName = vi->get(0);
-      NAString objectTypeLit = vi->get(1);
-      ComObjectType objectType = PrivMgr::ObjectLitToEnum(objectTypeLit.data());
-      char buf[1000];
-      NAString objectTypeString;
-      NAString cascade = " ";
+     if (isHistogramTable(objName))
+     {
+       dirtiedMetadata = TRUE;
+       if (dropOneTable(cliInterface,(char*)catName.data(),
+                        (char*)schName.data(),(char*)objName.data(),
+                         isVolatile))
+          someObjectsCouldNotBeDropped = true;
+     }
+   }
+
+   // Drop libraries, procedures (SPJs), UDFs (functions), and views 
+    objectsQueue->position();
+    for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+    {
+       OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+
+       char * objName = vi->get(0);
+       NAString objectTypeLit = vi->get(1);
+       ComObjectType objectType = PrivMgr::ObjectLitToEnum(objectTypeLit.data());
+       char buf[1000];
+       NAString objectTypeString;
+       NAString cascade = " ";
       
-      switch (objectType)
-      {
-         // These object types are handled later and can be ignored for now.
-         case COM_BASE_TABLE_OBJECT:
-         case COM_INDEX_OBJECT:
-         case COM_CHECK_CONSTRAINT_OBJECT:
-         case COM_NOT_NULL_CONSTRAINT_OBJECT:
-         case COM_PRIMARY_KEY_CONSTRAINT_OBJECT:
-         case COM_REFERENTIAL_CONSTRAINT_OBJECT:
-         case COM_SEQUENCE_GENERATOR_OBJECT:
-         case COM_UNIQUE_CONSTRAINT_OBJECT:
-         {
-            continue;
-         }
-         case COM_LIBRARY_OBJECT:
-         {
-            objectTypeString = "LIBRARY";
-            cascade = "CASCADE";
-            break;
-         }
-         case COM_STORED_PROCEDURE_OBJECT:
-         {
-            objectTypeString = "PROCEDURE";
-            break;
-         }
-         case COM_USER_DEFINED_ROUTINE_OBJECT:
-         {
-            objectTypeString = "FUNCTION";
-            cascade = "CASCADE";
-            break;
-         }
-         case COM_VIEW_OBJECT:
-         {
-            objectTypeString = "VIEW";
-            cascade = "CASCADE";
-            break;
-         }
-         // These object types should not be seen.
-         case COM_MV_OBJECT: 
-         case COM_MVRG_OBJECT:    
-         case COM_TRIGGER_OBJECT:
-         case COM_LOB_TABLE_OBJECT:
-         case COM_TRIGGER_TABLE_OBJECT:
-         case COM_SYNONYM_OBJECT:
-         case COM_PRIVATE_SCHEMA_OBJECT:
-         case COM_SHARED_SCHEMA_OBJECT:
-         case COM_EXCEPTION_TABLE_OBJECT:
-         case COM_LOCK_OBJECT:
-         case COM_MODULE_OBJECT:
-         default:
-            SEABASEDDL_INTERNAL_ERROR("Unrecognized object type in schema");
-            return;
-      }
+       switch (objectType)
+       {
+          // These object types are handled later and can be ignored for now.
+          case COM_BASE_TABLE_OBJECT:
+          case COM_INDEX_OBJECT:
+          case COM_CHECK_CONSTRAINT_OBJECT:
+          case COM_NOT_NULL_CONSTRAINT_OBJECT:
+          case COM_REFERENTIAL_CONSTRAINT_OBJECT:
+          case COM_SEQUENCE_GENERATOR_OBJECT:
+          case COM_UNIQUE_CONSTRAINT_OBJECT:
+          {
+             continue;
+          }
+          case COM_LIBRARY_OBJECT:
+          {
+             objectTypeString = "LIBRARY";
+             cascade = "CASCADE";
+             break;
+          }
+
+          // If the library where procedures and functions reside is dropped
+          // before its procedures and routines, then these objects may
+          // not exist anymore, use the IF EXISTS to prevent the drop from
+          // incurring errors.
+          case COM_STORED_PROCEDURE_OBJECT:
+          {
+             objectTypeString = "PROCEDURE IF EXISTS ";
+             break;
+          }
+          case COM_USER_DEFINED_ROUTINE_OBJECT:
+          {
+             objectTypeString = "FUNCTION IF EXISTS ";
+             cascade = "CASCADE";
+             break;
+          }
+          case COM_VIEW_OBJECT:
+          {
+             objectTypeString = "VIEW";
+             cascade = "CASCADE";
+             break;
+          }
+          // These object types should not be seen.
+          case COM_MV_OBJECT: 
+          case COM_MVRG_OBJECT:    
+          case COM_TRIGGER_OBJECT:
+          case COM_LOB_TABLE_OBJECT:
+          case COM_TRIGGER_TABLE_OBJECT:
+          case COM_SYNONYM_OBJECT:
+          case COM_PRIVATE_SCHEMA_OBJECT:
+          case COM_SHARED_SCHEMA_OBJECT:
+          case COM_EXCEPTION_TABLE_OBJECT:
+          case COM_LOCK_OBJECT:
+          case COM_MODULE_OBJECT:
+          default:
+             SEABASEDDL_INTERNAL_ERROR("Unrecognized object type in schema");
+             goto label_error;
+       }
          
-      str_sprintf(buf, "drop %s \"%s\".\"%s\".\"%s\" %s",
-                  objectTypeString.data(),(char*)catName.data(),(char*)schName.data(), 
-                  objName,cascade.data());
+       dirtiedMetadata =  TRUE;
+       str_sprintf(buf, "drop %s \"%s\".\"%s\".\"%s\" %s",
+                   objectTypeString.data(),(char*)catName.data(),(char*)schName.data(), 
+                   objName,cascade.data());
          
-      cliRC = cliInterface.executeImmediate(buf);
-      if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-         someObjectsCouldNotBeDropped = true;
+       cliRC = cliInterface.executeImmediate(buf);
+       if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+          someObjectsCouldNotBeDropped = true;
    } 
 
-// Drop all tables in the schema.  This will also drop any associated constraints. 
-// Drop of histogram tables is deferred.
-bool histExists = false;
+   // Drop all tables in the schema.  This will also drop any associated constraints. 
 
    objectsQueue->position();
    for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
@@ -596,35 +644,35 @@ bool histExists = false;
       // drop user objects first
       if (objType == COM_BASE_TABLE_OBJECT_LIT)
       {
-         if (!(objName == HBASE_HIST_NAME || objName == HBASE_HISTINT_NAME))
+         // histogram tables have already been dropped
+         if (!isHistogramTable(objName))
          {
+            dirtiedMetadata = TRUE;
             if (dropOneTable(cliInterface,(char*)catName.data(), 
                              (char*)schName.data(),(char*)objName.data(),
                              isVolatile))
                someObjectsCouldNotBeDropped = true;
          }
-         else
-            histExists = true;
       } 
    } 
-
-// Drop any remaining indexes.
+ 
+   // Drop any remaining indexes.
 
    str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
-                     "FROM %s.\"%s\".%s "
-                     "WHERE catalog_name = '%s' AND "
-                     "      schema_name = '%s' AND "
-                     "      object_type = '%s' "
-                     "FOR READ COMMITTED ACCESS ",
-               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
-               (char*)catName.data(),(char*)schName.data(), 
-               COM_INDEX_OBJECT_LIT);
+                       "FROM %s.\"%s\".%s "
+                       "WHERE catalog_name = '%s' AND "
+                       "      schema_name = '%s' AND "
+                       "      object_type = '%s' "
+                       "FOR READ COMMITTED ACCESS ",
+                 getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+                 (char*)catName.data(),(char*)schName.data(), 
+                 COM_INDEX_OBJECT_LIT);
    
    cliRC = cliInterface.fetchAllRows(objectsQueue,query,0,FALSE,FALSE,TRUE);
    if (cliRC < 0)
    {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+      goto label_error;
    }
 
    objectsQueue->position();
@@ -634,11 +682,12 @@ bool histExists = false;
 
       char * objName = vi->get(0);
       NAString objType = vi->get(1);
-    
+   
       if (objType == COM_INDEX_OBJECT_LIT)
       {
          char buf [1000];
 
+         dirtiedMetadata = TRUE;
          str_sprintf(buf, "DROP INDEX \"%s\".\"%s\".\"%s\" CASCADE",
                      (char*)catName.data(), (char*)schName.data(), objName);
          cliRC = cliInterface.executeImmediate(buf);
@@ -648,7 +697,7 @@ bool histExists = false;
       }  
    }  
 
-// Drop any remaining sequences.
+   // Drop any remaining sequences.
 
    str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
                      "FROM %s.\"%s\".%s "
@@ -659,12 +708,12 @@ bool histExists = false;
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data(), 
                COM_SEQUENCE_GENERATOR_OBJECT_LIT);
-   
+  
    cliRC = cliInterface.fetchAllRows(objectsQueue,query,0,FALSE,FALSE,TRUE);
    if (cliRC < 0)
    {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+      goto label_error;
    }
 
    objectsQueue->position();
@@ -679,6 +728,7 @@ bool histExists = false;
       {
          char buf [1000];
 
+         dirtiedMetadata = TRUE;
          str_sprintf(buf, "DROP SEQUENCE \"%s\".\"%s\".\"%s\"",
                      (char*)catName.data(), (char*)schName.data(), objName);
          cliRC = cliInterface.executeImmediate(buf);
@@ -688,33 +738,12 @@ bool histExists = false;
       }  
    }  
 
-// For volatile schemas, sometimes only the objects get dropped.    
-// If the dropObjectsOnly flag is set, just exit now, we are done.
+   // For volatile schemas, sometimes only the objects get dropped.    
+   // If the dropObjectsOnly flag is set, just exit now, we are done.
    if (dropSchemaNode->dropObjectsOnly())
       return;
 
-// Now drop any histogram objects
-   if (histExists)
-   {
-      if (dropOneTable(cliInterface,(char*)catName.data(),(char*)schName.data(), 
-                      (char*)HBASE_HISTINT_NAME,false))
-         someObjectsCouldNotBeDropped = true;
-      
-      if (dropOneTable(cliInterface,(char*)catName.data(),(char*)schName.data(), 
-                       (char*)HBASE_HIST_NAME,false))
-         someObjectsCouldNotBeDropped = true;
-   }
-
-   if (someObjectsCouldNotBeDropped)
-   {
-      CmpCommon::diags()->clear();
-      
-      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
-                          << DgSchemaName(catName + "." + schName);
-      return;
-   }
-   
-// Verify all objects in the schema have been dropped.   
+   // Verify all objects in the schema have been dropped.   
    str_sprintf(query,"SELECT COUNT(*) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
@@ -723,15 +752,12 @@ bool histExists = false;
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
                
-int32_t length = 0;
-int32_t rowCount = 0;
-
    cliRC = cliInterface.executeImmediate(query,(char*)&rowCount,&length,NULL);
   
    if (cliRC < 0)
    {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+      goto label_error;
    }
    
    if (rowCount > 0)
@@ -740,23 +766,42 @@ int32_t rowCount = 0;
       
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
                           << DgSchemaName(catName + "." + schName);
-      return;
+      goto label_error;
    }
-   
-// After all objects in the schema have been dropped, drop the schema object itself.
+ 
+   // After all objects in the schema have been dropped, drop the schema object itself.
     
-char buf [1000];
+   char buf [1000];
 
+   dirtiedMetadata = TRUE;
    str_sprintf(buf,"DELETE FROM %s.\"%s\".%s "
                    "WHERE CATALOG_NAME = '%s' AND SCHEMA_NAME = '%s' AND " 
                    "OBJECT_NAME = '"SEABASE_SCHEMA_OBJECTNAME"'",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data());
    cliRC = cliInterface.executeImmediate(buf);
-   if (cliRC < 0) 
+   if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION) 
+   {
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
                           << DgSchemaName(catName + "." + schName);
+      goto label_error;
+   }
+  
+  // Everything succeeded, return
+  return;
     
+label_error:
+  // If metadata has not been changed, just return
+  if (!dirtiedMetadata)
+  {
+    return;
+  }
+   
+  // Add an error asking for user to cleanup schema
+  *CmpCommon::diags() << DgSqlCode(-CAT_ATTEMPT_CLEANUP_SCHEMA)
+                      << DgSchemaName(catName + "." + schName);
+
+  return;
 }
 //****************** End of CmpSeabaseDDL::dropSeabaseSchema *******************
 
@@ -964,6 +1009,104 @@ int32_t rowCount = 0;
 // *****************************************************************************
 //    Private/static functions
 // *****************************************************************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: createHistogramTables                                           *
+// *                                                                           *
+// *    Creates all the histogram tables                                       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <cliInterface>                  ExeCliInterface *               In       *
+// *    is a reference to an Executor CLI interface handle.                    *
+// *                                                                           *
+// *  <schemaName>                    NAString &                      In       *
+// *    is the catalog.schema of the histogram table to create.                *
+// *                                                                           *
+// *  <ignoreIfExists>                NABoolean                       In       *
+// *    do not return an error if table already exists                         *
+// *                                                                           *
+// *  <tableNotCreeated>              NAString &                      Out      *
+// *    returns the name of first histogram table that could not be created    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: Int32                                                            *
+// *                                                                           *
+// * -mainSQLCODE: Could not create histogram tables.                          *
+// *            0: Create was successful.                                      *
+// *                                                                           *
+// *****************************************************************************
+short CmpSeabaseDDL::createHistogramTables(
+  ExeCliInterface *cliInterface,
+  const NAString &schemaName,
+  const NABoolean ignoreIfExists,
+  NAString &tableNotCreated)
+{
+   Int32 cliRC = 0;
+   tableNotCreated = "";
+
+   // allMDHistInfo (CmpSeabaseDDLmd.h) is the list of all histogram tables,
+   // MDTableInfo describes the table attributes,
+   // create each table found in the list
+   Int32 numHistTables = sizeof(allMDHistInfo) / sizeof(MDTableInfo);
+   NAString prefixText = ignoreIfExists ? "IF NOT EXISTS " : "";
+   for (Int32 i = 0; i < numHistTables; i++)
+   {
+      const MDTableInfo &mdh = allMDHistInfo[i];
+      Int32 qryArraySize = mdh.sizeOfnewDDL / sizeof(QString);
+
+      // Concatenate the create table text into a single string
+      NAString concatenatedQuery;
+      for (Int32 j = 0; j < qryArraySize; j++)
+      {
+         NAString tempStr = mdh.newDDL[j].str;
+         concatenatedQuery += tempStr.strip(NAString::leading, ' ');
+      }
+
+      // qualify create table text with (optional) "IF NOT EXISTS" & schema name
+      // and place in front of the table name:
+      //     "create table <textInsertion> hist-table ..."
+      std::string tableDDL (concatenatedQuery.data());
+      NAString textInsertion = prefixText + schemaName + ".";
+      size_t pos = tableDDL.find_first_of(mdh.newName);
+      if (pos == string::npos)
+      {
+        NAString errorText ("Unexpected error occurred while parsing create text for histogram table ");
+        errorText += mdh.newName;
+        SEABASEDDL_INTERNAL_ERROR(errorText.data());
+        tableNotCreated = mdh.newName;
+        return -CAT_INTERNAL_EXCEPTION_ERROR;
+      }
+      tableDDL = tableDDL.insert(pos, textInsertion.data());
+
+      // If the caller does not send in cliInterface, instantiate one now
+      ExeCliInterface cli; 
+      if (cliInterface == NULL)
+      {
+         ExeCliInterface newCli(STMTHEAP, NULL, NULL,
+            CmpCommon::context()->sqlSession()->getParentQid());
+         cli = newCli;
+      }
+      else
+         cli = *cliInterface;
+
+      // Create the table
+      cliRC = cli.executeImmediate(tableDDL.c_str());
+      if (cliRC < 0)
+      {
+        cli.retrieveSQLDiagnostics(CmpCommon::diags());
+        tableNotCreated = mdh.newName;
+        return cliRC;
+      }
+   }
+   return 0;
+}
+//************************ End of createHistogramTables ************************
 
 
 // *****************************************************************************

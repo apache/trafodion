@@ -3180,6 +3180,7 @@ SqlParserAux_buildDropRoutine ( ComRoutineType  drop_routine_type_tokens  // in
                               , ComDropBehavior optional_drop_behavior    // in
                               , NABoolean       optional_validate         // in
                               , NAString      * optional_logfile          // in - deep copy
+                              , NABoolean       optional_if_exists        // in
                               )
 {
   // If CLEANUP, VALIDATE, or LOG option specified,
@@ -3230,6 +3231,9 @@ SqlParserAux_buildDropRoutine ( ComRoutineType  drop_routine_type_tokens  // in
     , pLogFile                       // in - NAString *      - shallow copy
     , PARSERHEAP()
     );
+
+  pNode99->castToStmtDDLDropRoutine()->setDropIfExists(optional_if_exists);
+
   // Do not delete pLogFile because we did a shallow copy
   return pNode99;
 }

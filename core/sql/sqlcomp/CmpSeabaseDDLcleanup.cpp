@@ -720,6 +720,9 @@ short CmpSeabaseMDcleanup::deleteMDViewEntries(ExeCliInterface *cliInterface)
 
 short CmpSeabaseMDcleanup::deleteHistogramEntries(ExeCliInterface *cliInterface)
 {
+  if (isHistogramTable(objName_))
+    return 0;
+
   Lng32 cliRC = 0;
   char query[1000];
 
@@ -893,7 +896,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
     }
 
   Queue *schObjList = NULL;
-  str_sprintf(query, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' ",
+  str_sprintf(query, "select object_uid, object_type, object_name from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName_.data(), schName_.data());
   
@@ -907,6 +910,32 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
   
   stopOnError_ = FALSE;
   NABoolean cannotDropSchema = FALSE;
+ 
+  // Drop histogram tables first
+  schObjList->position();
+  for (size_t i = 0; i < schObjList->numEntries(); i++)
+    {
+      OutputInfo * oi = (OutputInfo*)schObjList->getCurr(); 
+      Int64 uid = *(Int64*)oi->get(0);
+      NAString obj_name((char*)oi->get(2));
+      if (isHistogramTable(obj_name))
+      {
+        str_sprintf(query, "cleanup uid %Ld", uid);
+        cliRC = cliInterface->executeImmediate(query);
+        if (cliRC < 0)
+          {
+            if (processCleanupErrors(NULL, errorSeen))
+              return;
+          }      
+        CorrName cn(objName_, STMTHEAP, schName_, catName_);
+        ActiveSchemaDB()->getNATableDB()->removeNATable(
+                                                        cn,
+                                                        NATableDB::REMOVE_FROM_ALL_USERS,
+                                                        COM_BASE_TABLE_OBJECT);
+      }
+   }
+
+  // Now drop remaining objects
   schObjList->position();
   for (size_t i = 0; i < schObjList->numEntries(); i++)
     {
@@ -919,6 +948,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
           (obj_type == COM_STORED_PROCEDURE_OBJECT_LIT) ||
           (obj_type == COM_USER_DEFINED_ROUTINE_OBJECT))
         {
+          schObjList->advance();
           cannotDropSchema = TRUE;
           continue;
         }
@@ -928,6 +958,7 @@ void CmpSeabaseMDcleanup::cleanupSchemaObjects(ExeCliInterface *cliInterface)
                (obj_type == COM_VIEW_OBJECT_LIT) ||
                (obj_type == COM_SEQUENCE_GENERATOR_OBJECT_LIT)))
         {
+          schObjList->advance();
           continue;
         }
 
