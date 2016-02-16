@@ -66,6 +66,7 @@
 #include "PrivMgrRoles.h"
 #include "ComUser.h"
 #include "ComMisc.h"
+#include "CmpSeabaseDDLmd.h"
 #include "hdfs.h"
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
@@ -1059,6 +1060,19 @@ NABoolean CmpSeabaseDDL::isUserUpdatableSeabaseMD(const NAString &catName,
     }
 
   return FALSE;
+}
+
+std::vector<std::string> CmpSeabaseDDL::getHistogramTables()
+{
+  Int32 numHistTables = sizeof(allMDHistInfo) / sizeof(MDTableInfo);
+  std::vector<std::string> histTables;
+  for (Int32 i = 0; i < numHistTables; i++)
+  {
+    const MDTableInfo &mdh = allMDHistInfo[i];
+    std::string tableName(mdh.newName);
+    histTables.push_back(tableName);
+  }
+  return histTables;
 }
 
 ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server, 
