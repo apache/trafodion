@@ -124,6 +124,15 @@ class SQLEXP_LIB_FUNC  atp_struct
     inline Int32 get_tag() const;
   NA_EIDPROC
     inline void unset_tag();
+
+  // The passed-in cri will be used if it is not NULL. Otherwise
+  // the cri associated with the atp is used.
+  NA_EIDPROC
+  void display(const char* title = "", ex_cri_desc* cri = NULL);
+  //
+  // print the content of a data field, based on the data type dt
+  NA_EIDPROC
+  void print(char* title, Int16 dt, char* ptr, UInt32 len);
   //---------------------------------------------
    
   //  inline              ~atp_struct();	// destructor
