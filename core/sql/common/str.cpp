@@ -1593,8 +1593,9 @@ void printBrief(char* dataPointer, Lng32 keyLen)
   // We don't know what the data type is, but we do know how
   // long the field is. So we will guess the data type.
 
-  // The Generator transforms varchars to chars, so we don't
-  // have to worry about varchar length fields.
+  // Note that varchar length fields are not handled here. For
+  // certain Tupp such as MdamPoint, this is OK because the Generator 
+  // transforms varchars to chars.
 
   // We might have a null indicator, but we have no way of knowing
   // that here. So we will ignore that possibility. (Sorry!)

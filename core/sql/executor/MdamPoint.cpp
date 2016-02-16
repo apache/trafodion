@@ -133,8 +133,6 @@ void MdamPoint::print(const char * header) const
        << endl;
 }
 
-//void printBrief(char* dataPointer, Lng32 keyLen);
-
 void MdamPoint::printBrief() const
 {
   char * dataPointer = getDataPointer();
