@@ -59,6 +59,7 @@ Typically, memory configuration range between 64-128 GB per node with minimum re
 The cluster size can span from 1 to _n_ nodes; a minimum of two nodes is recommended. 
 A minimum of two cores is required regardless of whether you're deploying Trafodion on a bare-metal or virtual environment. 
 
+<<<
 Recommended configurations:
 
 [cols="40%h,60%a",options="header"]
@@ -200,7 +201,8 @@ for installation. You need to build and install `log4c&#43;&#43;` manually.
 [cols="20%,45%,35%l",options="header"]
 |===
 | Package              | Usage                                                                             | Installation
-| EPEL                 | Add-on packages to completed the Linux distribution.                              | http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedora RPM]
+| EPEL                 | Add-on packages to completed the Linux distribution.                              | Download
+http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedora RPM]
 | pdsh                 | Parallelize shell commands during install and Trafodion runtime utilities.        | yum install pdsh
 | log4cxx              | Message logging.                                                                  | Manual process^1^
 | sqlite               | Internal configuration information managed by the Trafodion Foundation component. | yum install sqlite
@@ -335,6 +337,7 @@ trafodion  soft nofile  8192
 trafodion  hard nofile  65535
 ```
 
+<<<
 [[requirements-zookeeper-changes]]
 === ZooKeeper Changes
 

@@ -26,7 +26,7 @@
 [[enable-security]]
 = Enable Security
 
-If you do not enable security in Trafodion, then a client interface to Trafodion may request a username and password,
+If you do not enable security in Trafodion, then a client interface to Trafodion may request a user name and password,
 but Trafodion ignores the user name and password entered in the client interface, and the session runs as the database *root* user,
 `DB__ROOT`, without restrictions. If you want to restrict users, restrict access to certain users only, or restrict access to an
 object or operation, then you must enable security, which enforces authentication and authorization. You can enable security
@@ -144,8 +144,9 @@ ldapcheck --username=realuser@company.com --password=StrongPassword
 Authentication successful
 ```
 
+<<<
 [[enable-security-generate-trafodion-certificate]]
-== Generate a Trafodion Certificate
+== Generate Trafodion Certificate
 Trafodion clients such as `trafci` encrypt the password before sending it to Trafodion. A self-signed certificate is used to encrypt the password.
 The certificate and key should be generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
 in `$HOME/sqcert`. If those files are not present and since Trafodion clients does not send unencrypted passwords, then you need to manually generate
@@ -228,7 +229,7 @@ The results of this operation is logged in `$MY_SQROOT/logs/authEnable.log`.
 | --setup | Use this option if the Trafodion metadata has not been initialized. This option enables authentication but does not call the database
 to create privilege-related metadata tables. Later, when Trafodion metadata is initialized, privilege-related metadata tables and default permissions
 are automatically created.
-| --status | Reports the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATI+ON` in `$MY_SQROOT/sqenvcom.sh` on the current node and
+| --status | Reports the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATION` in `$MY_SQROOT/sqenvcom.sh` on the current node and
 reports the status of security features in the database.
 |===
 
@@ -285,6 +286,8 @@ If the environment variable is not set, then Trafodion next checks the variable 
 
 If neither is set, Trafodion defaults to `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
 
+<<<
+[[enable-security-template]]
 === Template
 
 ```
@@ -340,7 +343,7 @@ SECTION: local
 [[enable-security-configuration-attributes]]
 === Configuration Attributes
 
-[cols="20%,20%,20%l,40%",options="header"]
+[cols="25%,20%,20%l,35%",options="header"]
 |===
 | Attribute Name    | Purpose                                  | Example Value   | Notes
 | `LDAPHostName`    | Host name of the local LDAP server.      | ldap.master.com | If more than one `LDAPHostName` entry is provided,
@@ -434,6 +437,7 @@ to the configured LDAP server(s) without knowing a valid username or password.
 == ldapconfigcheck
 This page describes the `ldapconfigcheck` tool, which validates the syntactic correctness of a Trafodion authentication configuration file. Trafodion does not need to be running to run the tool.
 
+[[enable-security-ldapconfigcheck-considerations]]
 === Considerations
 If the configuration filename is not specified, then the tool  looks for a file using environment variables. Those environment variables and the search order are:
 
@@ -449,6 +453,8 @@ Filename `.traf_authentication_config/` is appended to the specified directory
 +
 `/sql/scripts/.traf_authentication_config` is appended to the value of `MY_SQROOT`.
     
+<<<
+[[enable-security-ldapconfigcheck-errors]]
 === Errors
 One of the following is output when the tool is run. Only the first error encountered is reported.
 

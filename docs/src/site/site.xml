@@ -34,7 +34,7 @@
   <bannerLeft>
     <!-- Apache Trafodion, but with "Trafodion" highlighted -->
     <name><![CDATA[
-      <img id="trafodion-logo" alt="Trafodion Logo" src="images/logos/trafodion-logo-14.png" align="left"/>
+      Apache <span class="color-highlight">Trafodion</span>
       ]]>
     </name>
     <href>index.html</href>
@@ -107,16 +107,6 @@
           <!-- Use H1 headings only for the TOC -->
           <tocTopFlatten>false</tocTopFlatten>
         </faq>
-        <install>
-          <shortTitle>Install</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </install>
-        <install-preparation>
-          <shortTitle>Install Preparation</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </install-preparation>
         <issue-tracking><toc>false</toc></issue-tracking>
         <ldapcheck><shortTitle>ldapcheck</shortTitle></ldapcheck>
         <ldapconfigcheck><shortTitle>ldapconfigcheck</shortTitle></ldapconfigcheck>
@@ -130,7 +120,7 @@
           <toc>false</toc>
           <shortTitle>Port Assignment</shortTitle>
         </port-assignment>
-        <quickstart><shortTitle>Quick Start</shortTitle></quickstart>
+        <!--quickstart><shortTitle>Quick Start</shortTitle></quickstart-->
         <release-notes><toc>false</toc></release-notes>
         <release-notes-1-3-0>
            <shortTitle>Release 1.3.0</shortTitle>
@@ -164,11 +154,6 @@
         </release-notes-0-8-0>
         <roadmap><shortTitle>Roadmap</shortTitle></roadmap>
         <traf_authentication_config><shortTitle>.traf_authentication_config Configuration File</shortTitle></traf_authentication_config>
-        <uninstall>
-          <shortTitle>Uninstall</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </uninstall>
       </pages>
     </reflowSkin>
   </custom>
@@ -197,13 +182,10 @@
     </menu>
     <menu name="Using">
       <!--item href="quickstart.html" name="Quick Start"/-->
+      <item href="documentation.html" name="Documentation"/>
       <item href="download.html" name="Download"/>
-      <item href="install.html" name="Install"/>
-      <item href="uninstall.html" name="Uninstall"/>
       <item href="management.html" name="Managing Trafodion"/>
       <item href="http:divider" name=""/>
-      <item href="documentation.html" name="Documentation"/>
-      <item href="port-assignment.html" name="Port Assignments"/>
       <item href="faq.html" name="FAQ"/>
       <item href="release-notes.html" name="Release Notes"/>
       <!-- 

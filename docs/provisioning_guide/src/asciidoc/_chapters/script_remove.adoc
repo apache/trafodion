@@ -28,23 +28,23 @@
 You use the Trafodion Provisioning User for these instructions.	
 
 NOTE: You do not need to use the `trafodion_uninstaller` script if upgrading Trafodion. Instead, use the `trafodion_install` script,
-which automatically upgrades the version of Trafodion. Please refer to the <<installl,Install>> chapter for further instructions.
+which automatically upgrades the version of Trafodion. Please refer to the <<install,Install>> chapter for further instructions.
 
 Run the commands from the first node of the cluster. Do not run them from a machine that is not part of the Trafodion cluster.
 
-1. Stop Trafodion
-+
+== Stop Trafodion
+
 Do the following:
-+
+
 ```
 su trafodion
 cd $MY_SQROOT/sql/scripts or cds
 sqstop
 exit
 ```
-+
+
 *Example*
-+
+
 ```
 [admin@trafodion-1 ~]$ su trafodion
 [trafodion@trafodion-1 scripts]$ cds
@@ -63,6 +63,11 @@ Processing cluster.conf on local host trafodion-1
 .
 .
 .
+```
+
+<<<
+
+```
 [$Z000HDS] 001,00024772 001 GEN  ES--A-- $Z010K7S    NONE        mxosrvr
 [$Z000HDS] 001,00024782 001 GEN  ES--U-- $ZLOBSRV1   NONE        mxlobsrvr
 shutdown
@@ -79,11 +84,12 @@ Mon Feb 15 07:49:26 UTC 2016
 [admin@trafodion-1 ~]$
 ```
 
-2. Run `trafodion_uninstaller`
-+
+== Run `trafodion_uninstaller`
+
 The `trafodion_uninstaller` completely removes Trafodion.
+
 *Example*
-+
+
 ```
 [admin@trafodion-1 ~]$ cd $HOME/trafodion-installer/installer
 [admin@trafodion-1 installer]$ ./trafodion_uninstaller

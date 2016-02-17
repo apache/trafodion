@@ -70,6 +70,7 @@ drop table table1;
 exit;
 ```
 
+<<<
 *Example*
 
 ```
@@ -122,6 +123,7 @@ A
 $
 ```
 
+<<<
 Assuming no errors, your installation has been successful. Next, do the following:
 
 * Install the Trafodion client software. Refer to the http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
