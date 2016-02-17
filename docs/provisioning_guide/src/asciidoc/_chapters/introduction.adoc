@@ -74,7 +74,7 @@ enable security, which enforces authentication and authorization. Refer to
 [[introduction-provisioning-options]]
 == Provisioning Options
 
-Trafodion ships with a set of scripts (the Trafodion Installer) that take care of many of the installation and upgrade
+Trafodion ships with a set of scripts (the Trafodion Installer) that takes care of many of the installation and upgrade
 tasks associated with the Trafodion software and its requirements. There is a separate set of scripts to remove Trafodion,
 if needed.
 
