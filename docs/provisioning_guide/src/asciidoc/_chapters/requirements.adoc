@@ -389,7 +389,7 @@ The following changes are required in `hdfs-site.xml`:
 [[requirements-hbase-changes]]
 === HBase Changes
 
-NOTE: These changes require a restart of ZooKeeper HBase on all nodes in the cluster.
+NOTE: These changes require a restart of ZooKeeper and HBase on all nodes in the cluster.
 
 Trafodion requires that the following changes to the HBase environment:
 
@@ -466,7 +466,7 @@ NOTE: The Trafodion Installer does *not* make these changes.
 === Recommended Security Changes
 
 The `trafodion` user ID should not be given other `sudo` privileges than what's specified in this manual. Also, we
-that this user ID is locked (`sudo passwd -l trafodion`) once the installation/upgrade activity has been completed.
+recommend that this user ID is locked (`sudo passwd -l trafodion`) once the installation/upgrade activity has been completed.
 Users that need issue commands as the `trafodion` ID should do so using `sudo`; for example, `sudo -u trafodion -i`.
 
 

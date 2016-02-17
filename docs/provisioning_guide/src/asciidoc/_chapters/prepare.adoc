@@ -108,7 +108,7 @@ If you wish to manually set up the authentication configuration file and enable 
 == Gather Configuration Information
 
 You need to gather/decide information about your environment to aid installation Trafodion, both for the Trafodion Installer
-and for recipe-based provisioning. (In alphabetical order to make it easier to find information later on in the provisioning process.)
+and for recipe-based provisioning. (Listed in alphabetical order to make it easier to find information when referenced in the install and upgrade instructions.)
 
 [cols="25%l,25%,15%l,35%",options="header"]
 |===
@@ -180,7 +180,7 @@ for more information.
 [[prepare-download-and-install-packages]]
 === Download and Install Packages
 
-The step is required if you're:
+This step is required if you're:
 
 * Installing Trafodion on SUSE.
 * Using Recipe-Based Provisioning.

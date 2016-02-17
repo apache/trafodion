@@ -24,7 +24,7 @@
 ////
 
 = About This Document
-This guide describes how to provision the end-user Trafodion binaries ontop of an existing Hadoop environment. This install allows you to store and query data using Trafodion, either via Trafodion clients
+This guide describes how to provision the end-user Trafodion binaries on top of an existing Hadoop environment. This install allows you to store and query data using Trafodion, either via Trafodion clients
 (see http://trafodion.incubator.apache.org/client_install/index.html[Trafodion Client Installation Guide] or via application code you write.
 
 If you want to install a Trafodion developer-build environment, then please refer to the 
@@ -34,7 +34,7 @@ http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contr
 This guide assumes that you are well-versed in Linux and Hadoop administration. If you don't have such experience, then
 you should consider going through the steps required to install a Hadoop environment before attempting to install Trafodion.
 
-The instructions contained herein applies to the following environments.
+The instructions contained herein apply to the following environments.
 
 * *Single-Node Environments*: Typically used when you want to evaluate Trafodion.
 * *Cluster (Multi-Node) Environments*: Typically used when you deploy Trafodion for application usage.

@@ -58,7 +58,7 @@ You can use sqlci (part of the base product) or trafci (requires separate instal
 http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide]) to validate your installation.
 
 === Smoke Test
-A simple smoke test to validate that Trafodion is function.
+A simple smoke test to validate that Trafodion is functioning.
 
 ```
 get schemas;

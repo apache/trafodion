@@ -50,7 +50,7 @@ respective environment's configuration settings per Trafodion requirements. Refe
 <<requirements-trafodion-provisioning-user,Trafodion Provisioning User>> for more information
 about the requirements and usage associated with this user ID.
 
-* *Runtime User*: A linux-level user under which the Trafodion software runs. This user ID must be registered
+* *Runtime User*: A Linux-level user under which the Trafodion software runs. This user ID must be registered
 as a user in the Hadoop Distributed File System (HDFS) to store and  access objects in HDFS, HBase, and Hive.
 In addition, this  user ID requires passwordless access among the nodes where Trafodion is installed.
 Refer to <<requirements-trafodion-runtime-user,Trafodion Runtime User>> for more information about this user ID.
@@ -74,7 +74,7 @@ enable security, which enforces authentication and authorization. Refer to
 [[introduction-provisioning-options]]
 == Provisioning Options
 
-Trafodion ships with a set of scripts (the Trafodion Installer) that takes care of many of the installation and upgrade
+Trafodion ships with a set of scripts (the Trafodion Installer) that take care of many of the installation and upgrade
 tasks associated with the Trafodion software and its requirements. There is a separate set of scripts to remove Trafodion,
 if needed.
 
@@ -200,7 +200,7 @@ Options:
 The Trafodion Installer automatically detects whether you're performing an install
 or an upgrade by looking for the Trafodion Runtime User in the `/etc/passwd` file.
 
-* If the user ID doesn't exists, then the Trafodion Installer runs in install mode.
+* If the user ID doesn't exist, then the Trafodion Installer runs in install mode.
 * If the user ID exists, then the Trafodion Installer runs in upgrade mode.
 
 

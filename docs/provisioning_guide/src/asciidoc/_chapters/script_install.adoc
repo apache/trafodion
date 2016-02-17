@@ -63,7 +63,7 @@ The `--config_file` option runs the Trafodion in Automated Setup mode. Refer to 
 in the <<introduction,Introduction>> chapter for instructions of how you edit your configuration file.
 
 Edit your config file using the information you collected in the <<prepare-gather-configuration-information,Gather Configuration Information>>
-in the <<prepare,Prepare>> chapter. 
+step in the <<prepare,Prepare>> chapter. 
 
 The following example shows an automated install of Trafodion on a two-node Hortonworks Hadoop cluster.
 
