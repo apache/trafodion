@@ -196,6 +196,8 @@ class CmpSeabaseDDL
     const NABoolean ignoreIfExists,
     NAString &tableNotCreated);
 
+  static std::vector<std::string> getHistogramTables();
+
   NABoolean isAuthorizationEnabled();
 
   short existsInHbase(const NAString &objName,
