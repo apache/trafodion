@@ -69,6 +69,7 @@
 #include "NLSConversion.h"
 #include "SqlciError.h"
 #include "ExpErrorEnums.h"
+#include "CmpSeabaseDDL.h" // call to createHistogramTables
 
 // -----------------------------------------------------------------------
 // Class to deallocate statement and descriptor.
@@ -412,125 +413,40 @@ Lng32 HSClearCLIDiagnostics()
 }
 
 // -----------------------------------------------------------------------
-// Create SB_Histograms and SB_Histogram_Intervals tables if they
-// don't already exist.
-// -----------------------------------------------------------------------
-Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
-                         HBASE_HIST_NAME, hsGlobal->catSch->data());
-        LM->Log(LM->msg);
-      }
-
-    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
-    ddl.append(hsGlobal->hstogram_table->data())
-       .append(" (  TABLE_UID      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HISTOGRAM_ID   INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COL_POSITION   INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COLUMN_NUMBER  INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COLCOUNT       INT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_COUNT SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , ROWCOUNT       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , TOTAL_UEC      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , STATS_TIME     TIMESTAMP(0) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , LOW_VALUE      VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HIGH_VALUE     VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , READ_TIME      TIMESTAMP(0) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , READ_COUNT     SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , SAMPLE_SECS    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , COL_SECS       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , SAMPLE_PERCENT SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , CV             FLOAT(54) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , REASON         CHAR(1) CHARACTER SET ISO88591 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V1             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V2             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V3             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V4             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V5             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-              "  , constraint "HBASE_HIST_PK" primary key"
-                "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
-               " ); ");
-
-    LM->StartTimer("Create Trafodion HISTOGRAMS table");
-
-    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                            "Create SeaBase histograms table", NULL);
-    LM->StopTimer();
-    if (retcode < 0 && LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creation of %s failed.", HBASE_HIST_NAME);
-        LM->Log(LM->msg);
-      }
-
-    return retcode;
-  }
-
-Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creating %s table for schema %s on demand.",
-                         HBASE_HISTINT_NAME, hsGlobal->catSch->data());
-        LM->Log(LM->msg);
-      }
-
-    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
-    ddl.append(hsGlobal->hsintval_table->data())
-       .append(" (  TABLE_UID         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , HISTOGRAM_ID      INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_NUMBER   SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_ROWCOUNT LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_UEC      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , INTERVAL_BOUNDARY VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , STD_DEV_OF_FREQ   NUMERIC(12, 3) NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V1                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V2                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V3                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V4                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V5                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
-               "  , constraint "HBASE_HISTINT_PK" primary key"
-              "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
-               " ) ;");
-
-    LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");
-    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                                    "Create SeaBase histogram intervals table", NULL);
-    LM->StopTimer();
-    if (retcode < 0 && LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Creation of %s failed.", HBASE_HISTINT_NAME);
-        LM->Log(LM->msg);
-      }
-
-    return retcode;
-  }
-
-// -----------------------------------------------------------------------
 // Create histogram tables if they don't exist.
 // -----------------------------------------------------------------------
 Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
   {
     Lng32 retcode = 0;
 
-    // do NOT check security for volatile tables
+    HSLogMan *LM = HSLogMan::Instance();
+    if (LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Creating histogram tables for schema %s on demand.",
+                         hsGlobal->catSch->data());
+        LM->Log(LM->msg);
+      }
+
+    // do NOT check volatile tables
     if (hsGlobal->objDef->isVolatile()) return retcode;
 
-    // Create HISTOGRAMS if is doesn't already exist
-    retcode = CreateSeabaseHist(hsGlobal);
-    HSFilterWarning(retcode);
-    HSHandleError(retcode);
+    LM->StartTimer("Table creation");
+    NAString tableNotCreated;
 
-    // create the  HISTOGRAM_INTERVALS, if it doesn't already exist.
-    hsGlobal->diagsArea.clear();
-    retcode = CreateSeabaseHistint(hsGlobal);
+    // Call createHistogramTables to create any table that does not yet exist.
+    NAString histogramsLocation = getHistogramsTableLocation(hsGlobal->catSch->data(), FALSE);
+    retcode = (CmpSeabaseDDL::createHistogramTables(NULL, histogramsLocation, TRUE, tableNotCreated)); 
+    if (retcode < 0 && LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Create failed for table %s.",
+                         tableNotCreated.data());
+        LM->Log(LM->msg);
+      }
+    LM->StopTimer();
+
     HSFilterWarning(retcode);
     HSHandleError(retcode);
+    hsGlobal->diagsArea.clear();
 
     return retcode;
  }

@@ -102,7 +102,10 @@ public:
   NA_EIDPROC void print(const char * header = "") const;
   NA_EIDPROC void printBrief() const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
-
+  
+  #ifdef _DEBUG
+  NA_EIDPROC static void printBrief(char* ptr, Lng32 len) ;
+  #endif 
 private:
 
   // The point's value.

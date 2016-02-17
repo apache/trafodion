@@ -70,7 +70,9 @@ ExpTupleDesc::ExpTupleDesc(UInt32 num_attrs,
       flags_ = 0;
       attrs_ = 0;
   
+#ifndef _DEBUG
       if (tdescF == LONG_FORMAT)
+#endif
 	{
 	  // allocate an array of num_attrs Attributes*. This array follows
 	  // 'this' class.
@@ -963,5 +965,25 @@ void ExpTupleDesc::assignAtpAndIndex(Int16 atp, Int16 atp_index)
 	  attrs_[i]->setAtpIndex(atp_index);
 	}
     }
+}
+
+void ExpTupleDesc::display(const char* title)
+{
+   if (title)
+      cout << title;
+   else
+      cout << "ExpTupleDesc::display()";
+
+   cout << endl;
+
+   UInt32 attrs = numAttrs();
+   cout << "this=" << this << ", num of attrs=" << attrs << endl;
+
+   for (Int32 j=0; j<attrs; j++) {
+       Attributes* attr = getAttr(j);
+       Int16 dt = attr->getDatatype();
+       UInt32 len = attr->getLength();
+       cout << j << "th attr: dt=" << dt << ", len=" << len << endl;
+   }
 }
 

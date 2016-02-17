@@ -25,6 +25,7 @@
 
 fil=$1
 sed "
+s/\(RegionName:[ ]*TRAFODION.[A-Z0-9._]*\/\)[A-Za-z0-9]*/\1REGION-NAME/g
 s/TRAFODION\.T002SCH\.T002[A-Z0-9]*\/[A-Za-z0-9]*/REGION_NAME /g
 s/ReadRequestsCount: [ ]*[0-9]*/READ_REQUESTS_COUNT /g
 s/WriteRequestsCount: [ ]*[0-9]*/WRITE_REQUESTS_COUNT /g
