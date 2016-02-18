@@ -23,38 +23,28 @@
 
 package org.trafodion.rest;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.List;
+import java.util.Scanner;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.hadoop.conf.Configuration;
-
 import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
-import org.trafodion.rest.script.ScriptManager;
 import org.trafodion.rest.script.ScriptContext;
-import org.trafodion.rest.Constants;
-import org.trafodion.rest.util.Bytes;
-import org.trafodion.rest.util.RestConfiguration;
-import org.trafodion.rest.zookeeper.ZkClient;
-import org.trafodion.rest.RestConstants;
+import org.trafodion.rest.script.ScriptManager;
 
 public class ServerResource extends ResourceBase {
 	private static final Log LOG =
@@ -67,28 +57,6 @@ public class ServerResource extends ResourceBase {
 		cacheControl.setNoTransform(false);
 	}
 
-	/**
-* @@@ START COPYRIGHT @@@
-
-	Licensed to the Apache Software Foundation (ASF) under one
-	or more contributor license agreements.  See the NOTICE file
-	distributed with this work for additional information
-	regarding copyright ownership.  The ASF licenses this file
-	to you under the Apache License, Version 2.0 (the
-	"License"); you may not use this file except in compliance
-	with the License.  You may obtain a copy of the License at
-
-	  http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing,
-	software distributed under the License is distributed on an
-	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-	KIND, either express or implied.  See the License for the
-	specific language governing permissions and limitations
-	under the License.
-
-* @@@ END COPYRIGHT @@@
-	 */
 	public ServerResource() throws IOException {
 		super();
 	}
@@ -256,17 +224,20 @@ public class ServerResource extends ResourceBase {
 	            String line = scanner.nextLine();
 	            if(line.contains("pstack-ing")) {
 	                continue;
-	            } else if (line.contains("pstack")) {
-	                if(pstack == true) {
+	       	    } else if (line.contains("pstack") || line.startsWith("--")) {
+                    if (pstack == true && sb.length() > 0) {
 	                    json.put(new JSONObject().put("PROGRAM", sb.toString()));
 	                    sb.setLength(0);
-	                    sb.append(line + "\n");
+                        if (line.contains("pstack"))
+                            sb.append(line + "\n");
+                        pstack = false;
 	                } else {
 	                    pstack = true;
-	                    sb.append(line + "\n");
+                        if (line.contains("pstack"))
+                            sb.append(line + "\n");
 	                }
 	            } else {
-	                sb.append(line + "\n");
+	                 sb.append(line + "\n");
 	            }
 	        }
             scanner.close();

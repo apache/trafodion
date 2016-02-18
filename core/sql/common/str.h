@@ -448,4 +448,7 @@ Int32 str_convertToHexAscii(const char * src,                   // in
                           char *       result,                // out
                           const size_t maxResultSize,         // in - including NULL terminator if addNullAtEnd
                           NABoolean    addNullAtEnd = TRUE);  // in
+
+NA_EIDPROC
+void printBrief(char* dataPointer, Lng32 keyLen); 
 #endif // STR_H

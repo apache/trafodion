@@ -90,6 +90,9 @@ public:
   inline const NABoolean isLogFileSpecified() const;
   inline const NAString & getLogFile() const;
 
+  const NABoolean dropIfExists() const { return dropIfExists_; }
+  void setDropIfExists(NABoolean v) { dropIfExists_ = v; }
+
   // for binding
   ExprNode * bindNode(BindWA *bindWAPtr);
 
@@ -108,6 +111,8 @@ private:
   NABoolean isCleanupSpec_;
   NABoolean isValidateSpec_;
   NAString  *pLogFile_;
+  NABoolean dropIfExists_;
+
 
 
 }; // class StmtDDLDropRoutine

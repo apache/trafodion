@@ -68,7 +68,7 @@ smstub:
 	cd ../smstub/src; $(MAKE) 2>&1 | sed -e "s/$$/	##(SMSTUB)/" ; exit $${PIPESTATUS[0]}
 
 
-make_sql: $(SEAMONSTER_TARGET) win 
+make_sql: $(SEAMONSTER_TARGET) win hbase_utilities
 	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 	cd $(MY_SQROOT)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
@@ -85,7 +85,7 @@ monitor_ib:
 make_sqevlog: 
 	cd sqevlog; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
-hbase_utilities:
+hbase_utilities: tm
 	cd hbase_utilities; $(MAKE) 2>&1 | sed -e "s/$$/  ##(HBASE_UTIL)/" ; exit $${PIPESTATUS[0]}
 
 .PHONY: conn
@@ -278,7 +278,7 @@ SRC_PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.tgz"
 PKG_PHX_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PHX}-tests.tgz"
 PKG_DCS_TEST_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_DCS}-tests.tgz"
 
-PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
+PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf hbase_utilities/backup_and_restore
 
 PKG_BIN_OBJS += trafci
 PKG_BIN_OBJS += export/limited-support-tools

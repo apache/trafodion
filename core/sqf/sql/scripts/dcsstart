@@ -22,10 +22,10 @@
 # @@@ END COPYRIGHT @@@
 #
 
-#Check if Trafodion is up and running
+#Check if Trafodion is up and operational
 sqcheck -f
 sq_stat=$?
-if [[ $sq_stat == 0 ]]; then
+if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
    DCS_START_CMD=${DCS_INSTALL_DIR}/bin/start-dcs.sh
 
    if [ -z ${DCS_INSTALL_DIR} ]; then

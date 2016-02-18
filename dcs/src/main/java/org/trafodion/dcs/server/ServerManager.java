@@ -251,6 +251,18 @@ public final class ServerManager implements Callable {
         }
 
         private boolean isTrafodionRunning() {
+
+        // Check if Trafodion is up and running
+        // If Trafodion is fully or partially up and operational 
+        // return true else return false.
+        // Invoke sqcheck to check Trafodion status. 
+        // 
+        //   sqcheck returns:
+        //   -1 - Not up ($?=255)
+        //    0 - Fully up and operational
+        //    1 - Partially up and operational
+        //    2 - Partially up and NOT operational
+
             ScriptContext scriptContext = new ScriptContext();
             scriptContext.setHostName(hostName);
             scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
@@ -260,7 +272,8 @@ public final class ServerManager implements Callable {
                                                                  // block while
                                                                  // script is
                                                                  // running
-            return scriptContext.getExitCode() != 0 ? false : true;
+            int exitCode = scriptContext.getExitCode();
+            return (exitCode == 0 || exitCode == 1) ? true : false;
         }
     }
 

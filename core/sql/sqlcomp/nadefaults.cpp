@@ -3472,7 +3472,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 // Specify the number of partitions before invoking parallel label operations
   DDui1__(USE_PARALLEL_FOR_NUM_PARTITIONS,       "32"),
 
-  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "OFF"),  // When ON, generate MCs for primary key prefixes as well as full key
+  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),

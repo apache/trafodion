@@ -57,7 +57,7 @@
 1055 ZZZZZ 99999 BEGINNER MINOR LOGONLY Object $0~TableName already exists.
 1056 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request: alter view $0~string0 compile failed. Prepare of the view's select statement encountered error  $1~Int1. 
 1057 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SQL objects cannot be created on $0~String0: File system error $1~NSKCode.
-1058 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Lock $0~TableName already exists.
+1058 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create histogram table $0~TableName.
 1059 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request failed.  Dependent constraint $0~ConstraintName exists.
 1060 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed. View $0~string0 is invalid. 
 1061 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata catalog $0~CatalogName is not allowed.
@@ -72,7 +72,7 @@
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
 1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be accessed. 
 1072 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unique constraint $0~String0 is disabled, so foreign key constraint $1~ConstraintName could not be created.
-1073 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only services ID can execute INITIALIZE SQL.
+1073 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName was partially dropped, call CLEANUP SCHEMA to remove remaining entries.
 1074 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create synonym: $0~String0, as part of re-compile for view $0~TableName.
 1075 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The catalog must be empty.  It contains at least one schema $0~SchemaName.
 1076 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to grant privilege: $0~String0, as part of re-compile for view $0~TableName.
@@ -1870,6 +1870,7 @@ drop the default context
 9241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Insufficient privileges to perform the statistics request for table $0~String0.
 9242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create schema for Hive statistics.
 9243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN This UPDATE STATISTICS command may take too long. It is recommended to use the SAMPLE clause instead. If you wish to do this without a SAMPLE clause, specify NO SAMPLE explicitly.
+9244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not allowed in a user transaction.
 9250 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
 10000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Sort Error: First Sort error
 10001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Sort Error : No error text defined. Unexpected error. $0~String0
