@@ -23,17 +23,8 @@
   */
 ////
 
-=== Special instructions: 
+[[upgrade-recipe]]
+= Upgrade Recipe
 
-sudo yum install rpm-build
-sudo yum install apr-devel
-sudo yum install apr-util-devel
-sudo yum install doxygen
-sudo yum install gcc
-sudo yum install gcc-c++
-sudo rpm -ivv log4cxx-0.10.0-13.fc18.src.rpm
-sudo rpmbuild -ba /root/rpmbuild/SPECS/log4cxx.spec
-sudo rpm -U /root/rpmbuild/RPMS/x86_64/log4cxx<tab>
-NOTE: The rpm that was created now must be copied and installed (either rpm -U or yum install) on every node of the cluster. 
-sudo rpm -qa | grep log4cxx
+To be written.
 

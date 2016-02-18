@@ -201,6 +201,8 @@
               <sourceHighlighter>coderay</sourceHighlighter>
               <outputDirectory>${basedir}/target</outputDirectory>
               <attributes>
+                <project-version>${env.TRAFODION_VER}</project-version>
+                <build-date>${maven.build.timestamp}</build-date>
                 <pdf-stylesdir>${basedir}/../shared</pdf-stylesdir>
                 <pdf-style>trafodion</pdf-style>
                 <icons>font</icons>
