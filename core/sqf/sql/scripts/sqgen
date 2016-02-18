@@ -228,6 +228,7 @@ fi
 
 if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
     echo
+    echo
     echo "Copying the generated files to all the nodes in the cluster"
     echo
     echo "Copying $SQCLUSTERCONF_FILE to $MPI_TMPDIR of all the nodes"
