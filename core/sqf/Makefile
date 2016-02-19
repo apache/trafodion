@@ -326,11 +326,11 @@ tmp/sqenv.sh:
 	cat $(SQENV_MTYPE) >> tmp/sqenv.sh
 
 # regular directories and files, following symlinks, minus simple links
-pkglist-files: pkglist-symlinks LICENSE NOTICE
+pkglist-files: pkglist-symlinks
 	find -L $(PKG_BIN_OBJS) -type d -o -type f | grep -v -xf pkglist-symlinks > $@
 
 # simple symlinks that point to filename (does not start with . or /)
-pkglist-symlinks:
+pkglist-symlinks: LICENSE NOTICE
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
 
 #	Targets to tar/gzip the self installer

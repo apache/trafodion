@@ -25,7 +25,7 @@ all: LICENSE-src LICENSE-dcs LICENSE-server LICENSE-install LICENSE-rest LICENSE
 LICENSE-src:
 	cat Apache lic-components-src lic-dcs-src lic-server-src lic-test-src > $@
 
-# Binary licenses for each separtely packaged component
+# Binary licenses for each separately packaged component
 # Must include source licenses as well as software bundled in at build time
 LICENSE-dcs:
 	cat Apache lic-dcs-src lic-dcs-bin > $@
