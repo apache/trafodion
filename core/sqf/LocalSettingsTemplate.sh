@@ -67,7 +67,7 @@ LOG4CXX_INC_DIR="$TOOLSDIR/apache-log4cxx-0.10.0/include"
 
 # Explicitly set QT_TOOLKIT here if Qt is installed and you want to build the SqlCompilerDebugger
 # QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
-# SqlCompilerDebugger ibrary will be dynamically linked with Qt libs.
+# SqlCompilerDebugger library will be dynamically linked with Qt libs.
 # Note that Qt uses LGPL license. It is not to be re-distributed under Apache license.
 
 # HBASE*, HIVE*, HADOOP* locations may be overridden here
