@@ -31,7 +31,10 @@ statcheck.sql   - TRAFODION-1765 reported that if statistics are on for a
                   error:
                      "*** ERROR[29003] Statement does not exist"
 
-                  This was a regression due to fix for TRAFODION-1709.
+                  This was a regression due to fix for TRAFODION-1709:
+
+                     When issuing an execdirect sql statement via trafci
+                     the statements are not being deallocated. 
 
                   To check for TRAFODION-1709 do the following while running
                   this test:

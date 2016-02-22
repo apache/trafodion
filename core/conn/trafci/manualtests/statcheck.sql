@@ -29,17 +29,17 @@ set schema trafci_manual;
 create table stat_check ( a int );
 insert into stat_check values (1);
 
-select * from stat_check;
 prepare s1 from select * from stat_check;
 execute s1;
+select * from stat_check;
+get statistics;
 
 -- with statistics on
 set statistics on;
 
-select * from stat_check;
-get statistics;
 prepare s2 from select * from stat_check;
 execute s2;
+select * from stat_check;
 get statistics;
 
 set statistics off;
