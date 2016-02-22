@@ -38,6 +38,7 @@
 #include "cextdecs/cextdecs.h"
 
 #include "OptimizerSimulator.h"
+#include "exp_function.h"
 
 #include "CliSemaphore.h"
 
@@ -1290,6 +1291,8 @@ NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
   Lng32 numNodes = gpClusterInfo->numOfSMPs();
   // an array of nodes in the cluster
   Int64 *nodes = new(CmpCommon::statementHeap()) Int64[numNodes];
+  for(Lng32 i = 0; i < numNodes ; i++ )
+    nodes[i] = 0; //init the array with 0
 
   for (Lng32 index = beginPos; index < endPos; index++) {
     CMPASSERT(map_.getUsage(index) != UNUSED_COLL_ENTRY);
@@ -1300,11 +1303,15 @@ NodeMap::getPopularNodeNumber(CollIndex beginPos, CollIndex endPos) const
   }
 
   Lng32 nodeFrequency = 0; 
-  Lng32 popularNodeNumber = 0; // first node number is popular to start with
+  Lng32 popularNodeNumber = -1; // first node number is popular to start with
+  // introduce a pseudo-random offset to avoid a bias
+  // towards particular nodes
+  Lng32 offset = ExHDPHash::hash((char*)&beginPos, 0, sizeof(beginPos)) % numNodes;
   for (Lng32 index = 0; index < numNodes; index++) {
-    if (nodes[index] > nodeFrequency) {
-      nodeFrequency = nodes[index];
-      popularNodeNumber = index;
+    Lng32 offsetIndex = (index+offset)%numNodes;
+    if (nodes[offsetIndex] > nodeFrequency) {
+      nodeFrequency = nodes[offsetIndex];
+      popularNodeNumber = offsetIndex;
     }
   }
   NADELETEBASIC(nodes, CmpCommon::statementHeap());
