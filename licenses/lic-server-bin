@@ -118,18 +118,3 @@ available under a University of Illinois/NCSA license. (http://llvm.org/)
 
 +++++++++++++++++++++++++++++
 
-To Do:
-
-Need to investigate and add info regarding third-party software bundled into jars:
-
-./export/lib/jdbcT2.jar
-./export/lib/jdbcT4.jar
-./export/lib/hbase-trx-hbase_98_4-2.0.0.jar
-./export/lib/hbase-trx-cdh5_3-2.0.0.jar
-./export/lib/hbase-trx-hdp2_2-2.0.0.jar
-./export/lib/sqmanvers.jar
-./export/lib/trafodion-sql-2.0.0.jar
-./export/lib/trafodion-utility-2.0.0.jar
-./export/lib/trafodion-dtm-2.0.0.jar
-./trafci/lib/trafci.jar
-
