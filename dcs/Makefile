@@ -31,8 +31,7 @@ GENVERS			    =./genvers
 
 all: build_all
 
-build_all:	 
-	$(MAKE) build_chk
+build_all: build_chk LICENSE NOTICE
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_dcs.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_dcs.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
@@ -45,8 +44,17 @@ build_chk:
 	@if [ $(GENVERS) -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
 	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_TRAFODION_DCS_TARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_TRAFODION_DCS_TARNAME); fi
 
+LICENSE: ../licenses/LICENSE-dcs
+	cp -f $? $@
+
+../licenses/LICENSE-dcs:
+	cd $(@D) && $(MAKE) $(@F)
+
+NOTICE: ../NOTICE
+	cp -f $? $@
+
 clean:
 	-$(MAVEN) clean | grep ERROR
 	$(RM) build_dcs.log
-	$(RM) $(VFILE)
+	$(RM) $(VFILE) LICENSE NOTICE
 	$(RM) ../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_DCS_TARNAME)

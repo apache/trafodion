@@ -1,5 +1,15 @@
-Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
+===============================================================================
+Software used to test Apache Trafodion bundles source with BSD-like licenses:
+
+BSD-3 clause for files in:
+  incubator-trafodion/tests/phx/src/test/java/org/trafodion/phoenix/end2end
+
+Apache Trafodion changed these files to work within its test environment
+
+ Copyright (c) 2013, Salesforce.com, Inc.
+
+ Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
      Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
@@ -21,3 +31,13 @@ Redistribution and use in source and binary forms, with or without
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
++++++++++++++++++++++++++++++
+
+As part of testing large objects (LOBs), the testware needs some object files.
+Two pictures were donated for this purpose by Christophe LeRouzo.  He has
+formally given Apache Trafodion to permission to use these picturs.
+
+ incubator-trafodion/core/sql/regress/executor/anoush.jpg
+ incubator-trafodion/core/sql/regress/executor/deep.jpg
+
++++++++++++++++++++++++++++++

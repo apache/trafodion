@@ -13,10 +13,10 @@ To get started using Apache Trafodion:
 
   - documentation for this release can be viewed on the Apache Trafodion 
     wiki page: 
-      https://cwiki.apache.org/confluence/display/TRAFODION/Documentation
+      http://trafodion.incubator.apache.org/documentation.html
 
-  - release notes describing changes for release 1.3.0 can be viewed:
-      https://cwiki.apache.org/confluence/display/TRAFODION/Software
+  - release notes describing changes for particular releases can be viewed:
+      http://trafodion.apache.org/release-notes.html
 
   - the latest Apache Trafodion can be downloaded from Apache incubator
     distribution site or accessed from git
@@ -29,7 +29,7 @@ To get started using Apache Trafodion:
 
   - To build and try out Apache Trafodion, please following our build 
     instructions as described:
-      https://cwiki.apache.org/confluence/display/TRAFODION/Using+the+Software
+      https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide
 
 =============================
 Cryptographic software notice

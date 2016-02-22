@@ -18,35 +18,29 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#
-# Makefile for packaging client products
 
-include ../macros.gmk #top level
+all: LICENSE-src LICENSE-dcs LICENSE-server LICENSE-install LICENSE-rest LICENSE-clients
 
-RM      = /bin/rm
-ifeq ($(SQ_BUILD_TYPE),release)
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER).tgz
-else
-  CLIENT_TAR	?= ../../${DISTRIBUTION_DIR}/trafodion_clients-$(TRAFODION_VER)-debug.tgz
-endif
+# All source code included in Trafodion source
+LICENSE-src:
+	cat Apache lic-components-src lic-dcs-src lic-server-src lic-test-src > $@
 
+# Binary licenses for each separately packaged component
+# Must include source licenses as well as software bundled in at build time
+LICENSE-dcs:
+	cat Apache lic-dcs-src lic-dcs-bin > $@
 
-.PHONY: all
-all: pkg-clients
+LICENSE-server:
+	cat Apache lic-server-src lic-server-bin > $@
 
-pkg-clients: clients/LICENSE clients/NOTICE
-	tar -zcvf $(CLIENT_TAR) clients
+LICENSE-install:
+	cat Apache > $@
 
-clients/LICENSE: ../../licenses/LICENSE-clients
-	cp -f $? $@
+LICENSE-rest:
+	cat Apache lic-rest-bin > $@
 
-../../licenses/LICENSE-clients:
-	cd $(@D) && $(MAKE) $(@F)
+LICENSE-clients:
+	cat Apache lic-clients-bin > $@
 
-clients/NOTICE: ../../NOTICE
-	cp -f $? $@
-
-clean:	
-	$(RM) -rf $(MY_SQROOT)/../conn/clients 
-	$(RM) -f $(MY_SQROOT)/../conn/*.mf
-	$(RM) -f $(CLIENT_TAR)
+clean:
+	rm LICENSE*
