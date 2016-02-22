@@ -279,7 +279,6 @@ class ConnectReply {
                 LOG.error(clientSocketAddress + ": " + "No Available Servers");
             else
                 LOG.error(clientSocketAddress + ": " + "No Available Servers - exception thrown");
-            }
         } else {
             
             if (cc.datasource.length() == 0)
