@@ -4095,6 +4095,8 @@ InputOutputExpr::inputValues(atp_struct *atp,
                         sourceType = REC_BYTE_F_ASCII;
                         sourcePrecision = 0;  // TBD $$$$ add source max chars later
                         sourceScale = SQLCHARSETCODE_ISO88591; // assume target charset is ASCII-compatible
+
+                        convFlags |= CONV_NO_HADOOP_DATE_FIX;
                       }
 		  }
 		else if ((sourceType == targetType) &&
