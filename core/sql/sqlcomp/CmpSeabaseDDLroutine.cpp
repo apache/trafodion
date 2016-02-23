@@ -610,8 +610,9 @@ void CmpSeabaseDDL::createSeabaseRoutine(
 
   if (retcode == 1) // already exists
     {
-      *CmpCommon::diags() << DgSqlCode(-1390)
-			  << DgString0(extRoutineName);
+      if (! createRoutineNode->createIfNotExists())
+        *CmpCommon::diags() << DgSqlCode(-1390)
+  			    << DgString0(extRoutineName);
       deallocEHI(ehi); 
       processReturn();
       return;
@@ -1181,8 +1182,9 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
-			  << DgString0(extRoutineName);
+      if (NOT dropRoutineNode->dropIfExists())
+        *CmpCommon::diags() << DgSqlCode(-1389)
+	      		    << DgString0(extRoutineName);
       deallocEHI(ehi); 
       processReturn();
       return;

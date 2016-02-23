@@ -41,6 +41,7 @@
 #include "ExpCriDesc.h"
 #include "exp_space.h"
 #include "exp_tuple_desc.h"
+#include <iostream>
 
 
 ex_cri_desc::ex_cri_desc(const unsigned short numTuples, void * space_) :
@@ -78,3 +79,20 @@ NA_EIDPROC Lng32 ex_cri_desc::unpack(void * base, void * reallocator)
     }
   return NAVersionedObject::unpack(base, reallocator);
 }
+
+NA_EIDPROC void ex_cri_desc::display(const char* title)
+{
+   cout << title << endl;
+
+   unsigned short tuples = noTuples();
+   char buf[100];
+   for (Int32 i=0; i<tuples; i++) {
+      ExpTupleDesc* tDesc = getTupleDescriptor(i);
+      if ( tDesc ) {
+         sprintf(buf, "%dth tuple:", i);
+         tDesc->display(buf);
+      } else
+         cout << i << "th tuple's TupleDesc is NULL" << endl;
+   }
+}
+

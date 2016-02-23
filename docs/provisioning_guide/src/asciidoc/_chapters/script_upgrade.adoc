@@ -1,0 +1,442 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[upgrade]]
+= Upgrade
+
+This chapter describes how to use the Trafodion Installer to upgrade Trafodion. You use the Trafodion Provisioning ID
+to run the Trafodion Installer.
+
+[[upgraded-download-updated-trafodion-binaries]]
+== Download Updated Trafodion Binaries
+
+You perform this step as the Trafodion Provisioning User.
+
+You download the updated Trafodion binaries from the Trafodion http://trafodion.apache.org/download.html[Download] page. 
+Download the following packages:
+
+* Trafodion Installer (if planning to use the Trafodion Installer)
+* Trafodion Server
+
+Refer to <<prepare-download-trafodion-binaries, Download Trafodion Binaries>> in the <<prepare,Prepare>> chapter for examples.
+
+
+[[upgrade-unpack-installer]]
+== Unpack Installer
+
+You perform this step as the Trafodion Provisioning User.
+
+You unpack the updated Trafodion Installer into a new directory.
+
+*Example*
+
+```
+$ mkdir $HOME/trafodion-installer-2.0
+$ cd $HOME/trafodion-downloads
+$ tar -zxf apache-trafodion-installer-2.0.0-incubating-bin.tar.gz -C $HOME/trafodion-installer
+$ ls $HOME/trafodion-installer/installer-2.0
+bashrc_default           tools                             traf_config_check           trafodion_apache_hadoop_install  traf_package_setup
+build-version-2.0.0.txt  traf_add_user                     traf_config_setup           trafodion_config_default         traf_setup
+dcs_installer            traf_apache_hadoop_config_setup   traf_create_systemdefaults  trafodion_install                traf_sqconfig
+rest_installer           traf_authentication_conf_default  traf_getHadoopNodes         trafodion_license                traf_start
+setup_known_hosts.exp    traf_cloudera_mods98              traf_hortonworks_mods98     trafodion_uninstaller
+$
+```
+
+[[upgrade-stop-tradodion]]
+== Stop Trafodion
+You perform this step as the Trafodion Runtime User.
+
+*Example*
+
+```
+$ sudo su trafodion
+$ sqstop
+Shutting down the REST environment now
+stopping rest.
+Shutting down the DCS environment now
+stopping master.
+trafodion-1: stopping server.
+trafodion-2: stopping server.
+stopped $zlobsrv0
+stopped $zlobsrv1
+Shutting down (normal) the SQ environment!
+Wed Feb 17 05:12:40 UTC 2016
+Processing cluster.conf on local host trafodion-1
+[$Z000KAE] Shell/shell Version 1.0.1 Apache_Trafodion Release 1.3.0 (Build release [1.3.0-0-g5af956f_Bld2], date 20160112_1927)
+ps
+```
+
+<<<
+
+```
+[$Z000KAE] %ps
+[$Z000KAE] NID,PID(os)  PRI TYPE STATES  NAME        PARENT      PROGRAM
+[$Z000KAE] ------------ --- ---- ------- ----------- ----------- ---------------
+[$Z000KAE] 000,00064198 000 WDG  ES--A-- $WDG000     NONE        sqwatchdog
+[$Z000KAE] 000,00064199 000 PSD  ES--A-- $PSD000     NONE        pstartd
+[$Z000KAE] 000,00064212 001 GEN  ES--A-- $TSID0      NONE        idtmsrv
+[$Z000KAE] 000,00064242 001 DTM  ES--A-- $TM0        NONE        tm
+[$Z000KAE] 000,00065278 001 GEN  ES--A-- $ZSC000     NONE        mxsscp
+[$Z000KAE] 000,00065305 001 SSMP ES--A-- $ZSM000     NONE        mxssmp
+[$Z000KAE] 000,00001219 001 GEN  ES--A-- $Z0000ZU    NONE        mxosrvr
+[$Z000KAE] 000,00001235 001 GEN  ES--A-- $Z00010A    NONE        mxosrvr
+[$Z000KAE] 000,00001279 001 GEN  ES--A-- $Z00011J    NONE        mxosrvr
+[$Z000KAE] 000,00001446 001 GEN  ES--A-- $Z00016B    NONE        mxosrvr
+[$Z000KAE] 000,00024864 001 GEN  ES--A-- $Z000KAE    NONE        shell
+[$Z000KAE] 001,00025180 000 PSD  ES--A-- $PSD001     NONE        pstartd
+[$Z000KAE] 001,00025179 000 WDG  ES--A-- $WDG001     NONE        sqwatchdog
+[$Z000KAE] 001,00025234 001 DTM  ES--A-- $TM1        NONE        tm
+[$Z000KAE] 001,00025793 001 GEN  ES--A-- $ZSC001     NONE        mxsscp
+[$Z000KAE] 001,00025797 001 SSMP ES--A-- $ZSM001     NONE        mxssmp
+[$Z000KAE] 001,00026587 001 GEN  ES--A-- $Z010LPM    NONE        mxosrvr
+[$Z000KAE] 001,00026617 001 GEN  ES--A-- $Z010LQH    NONE        mxosrvr
+[$Z000KAE] 001,00026643 001 GEN  ES--A-- $Z010LR8    NONE        mxosrvr
+[$Z000KAE] 001,00026644 001 GEN  ES--A-- $Z010LR9    NONE        mxosrvr
+shutdown
+[$Z000KAE] %shutdown
+exit
+Issued a 'shutdown normal' request
+
+Shutdown in progress
+
+# of SQ processes: 0
+SQ Shutdown (normal) from /home/trafodion Successful
+Wed Feb 17 05:12:47 UTC 2016
+$
+```
+
+<<<
+[[upgrade-automated-upgrade]]
+== Automated Upgrade
+
+You perform this step as the Trafodion Provisioning User.
+
+The `--config_file` option runs the Trafodion in Automated Setup mode. Refer to <<introduction-trafodion-installer,Trafodion Installer>>
+in the <<introduction,Introduction>> chapter for instructions of how you edit your configuration file.
+
+At a minimum, you need to change the following settings:
+
+* `LOCAL_WORKDIR`
+* `TRAF_PACKAGE`
+* `SQ_ROOT`
+
+*Example*
+
+```
+$ cd $HOME/trafodion-configuration
+$ cp my_config my_config_2.0
+$ # Pre edit content
+
+export LOCAL_WORKDIR="/home/centos/trafodion-installer/installer"
+export TRAF_PACKAGE="/home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz"
+export SQ_ROOT="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
+
+$ # Use your favorit editor to modify my_config_2.0
+$ emacs my_config_2.0
+$ # Post edit changes
+
+export LOCAL_WORKDIR="/home/centos/trafodion-installer-2.0/installer"
+export TRAF_PACKAGE="/home/centos/trafodion-download/apache-trafodion-2.0.0-incubating-bin.tar.gz"
+export SQ_ROOT="/home/trafodion/apache-trafodion-2.0.0-incubating-bin"
+```
+
+The following example shows an upgrade of Trafodion on a two-node Hortonworks Hadoop cluster using
+Automated Setup mode.
+
+NOTE: The Trafodion Installer performs the same configuration changes as it does for an installation,
+including restarting Hadoop services.
+
+*Example*
+
+1. Run the updated Trafodion Installer using the modified my_config_2.0 file.
++
+```
+$ cd $HOME/trafodion-installer-2.0/installer
+$ ./trafodion_install --config_file $HOME/trafodion-configuration/my_config_2.0
+******************************
+ TRAFODION INSTALLATION START
+******************************
+
+***INFO: Testing sudo access on node trafodion-1
+***INFO: Testing sudo access on node trafodion-2
+***INFO: Testing ssh on trafodion-1
+***INFO: Testing ssh on trafodion-2
+***INFO: Getting list of all hortonworks nodes
+***INFO: Getting list of all hortonworks nodes
+***INFO: hortonworks list of nodes:  trafodion-1 trafodion-2
+***INFO: Testing ssh on trafodion-1
+***INFO: Testing ssh on trafodion-2
+***INFO: Testing sudo access on trafodion-1
+***INFO: Testing sudo access on trafodion-2
+***INFO: Trafodion scanner will not be run.
+***DEBUG: trafodionFullName=trafodion_server-2.0.0.tgz
+***INFO: Trafodion version = 2.0.0
+***DEBUG: HBase's java_exec=/usr/jdk64/jdk1.7.0_67/bin/java
+
+******************************
+ TRAFODION SETUP
+******************************
+
+***INFO: Installing required RPM packages
+***INFO: Starting Trafodion Package Setup (2016-02-17-05-33-29)
+***INFO: Installing required packages
+***INFO: Log file located in /var/log/trafodion
+***INFO: ... pdsh on node trafodion-1
+***INFO: ... pdsh on node trafodion-2
+***INFO: Checking if log4cxx is installed ...
+.
+.
+.
+DcsMaster is not started. Please start DCS using 'dcsstart' command...
+
+Process         Configured      Actual          Down
+---------       ----------      ------          ----
+DcsMaster       1               0               1
+DcsServer       2               0               2
+mxosrvr         8               8
+
+
+You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-2.0.0-incubating-bin/logs/sqmon.log
+
+
+Startup time  0 hour(s) 1 minute(s) 9 second(s)
+Apache Trafodion Conversational Interface 1.3.0
+Copyright (c) 2015 Apache Software Foundation
+>>Metadata Upgrade: started
+
+Version Check: started
+  Metadata is already at Version 1.1.
+Version Check: done
+
+Metadata Upgrade: done
+
+
+--- SQL operation complete.
+>>
+
+End of MXCI Session
+
+***INFO: Installation completed successfully.
+
+*********************************
+ TRAFODION INSTALLATION COMPLETE
+*********************************
+
+$
+```
+
+2. Switch to the Trafodion Runtime User and check the status of Trafodion.
++
+```
+$ sudo su - trafodion
+$ sqcheck
+Checking if processes are up.
+Checking attempt: 1; user specified max: 2. Execution time in seconds: 0.
+
+The SQ environment is up!
+
+
+Process         Configured      Actual      Down
+-------         ----------      ------      ----
+DTM             2               2
+RMS             4               4
+MXOSRVR         8               8
+
+$
+```
+
+Trafodion is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
+basic instructions on how to verify the Trafodion management and how to perform basic management
+operations.
+
+<<<
+[[upgrade-guided-upgrade]]
+== Guided Upgrade
+
+You perform this step as the Trafodion Provisioning User.
+
+As in the case with an installation, the Trafodion Installer prompts you for the information you collected in the
+<<prepare-gather-configuration-information, Gather Configuration Information>> step in the <<prepare,Prepare>> chapter.
+Some of the prompts are populated with the current values.
+
+export LOCAL_WORKDIR="/home/centos/trafodion-installer/installer"
+export TRAF_PACKAGE="/home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz"
+export SQ_ROOT="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
+
+
+The following example shows a guided upgrade of Trafodion on a two-node Cloudera Hadoop cluster.
+
+*Example*
+
+1. Run the updated Trafodion Installer in Guided Setup mode to perform the upgrade. Change information
+at prompts as applicable.
++
+```
+$ cd $HOME/trafodion-installer-2.0/installer
+$ ./trafodion_install 
+******************************
+ TRAFODION INSTALLATION START
+******************************
+
+***INFO: testing sudo access
+***INFO: Log file located at /var/log/trafodion/trafodion_install_2016-02-17-08-15-33.log
+***INFO: Config directory: /etc/trafodion
+***INFO: Working directory: /usr/lib/trafodion
+
+*******************************
+ Trafodion Configuration Setup
+*******************************
+
+***INFO: Please press [Enter] to select defaults.
+
+Enter trafodion password, default is [traf123]:
+Enter list of nodes (blank separated), default []: trafodion-1.apache.org trafodion-2.apache.org
+Specify location of Java 1.7.0_65 or higher (JDK), default is [/usr/java/jdk1.7.0_67-cloudera]:
+Enter full path (including .tar or .tar.gz) of trafodion tar file []: /home/centos/trafodion-download/apache-trafodion-2.0.0-incubating-bin.tar.gz
+Enter Hadoop admin username, default is [admin]:
+Enter Hadoop admin password, default is [admin]:
+Enter Hadoop external network URL:port (no 'http://' needed), default is []: trafodion-1.apache.org:7180
+Enter HDFS username, default is [hdfs]:
+Enter HBase username, default is [hbase]:
+Enter HBase group, default is [hbase]:
+Enter directory to install trafodion to, default is [/home/trafodion/apache-trafodion-1.3.0-incubating-bin]: /home/centos/apache-trafodion-2.0.0-incubating-bin
+Start Trafodion after install (Y/N), default is Y:
+Total number of client connections per node, default [16]: 8
+Enable simple LDAP security (Y/N), default is N:
+***INFO: Configuration file: /etc/trafodion/trafodion_config
+***INFO: Trafodion configuration setup complete
+
+************************************
+ Trafodion Configuration File Check
+************************************
+
+
+***INFO: Testing sudo access on node trafodion-1
+***INFO: Testing sudo access on node trafodion-2
+***INFO: Testing ssh on trafodion-1
+***INFO: Testing ssh on trafodion-2
+***INFO: Getting list of all cloudera nodes
+***INFO: Getting list of all cloudera nodes
+***INFO: cloudera list of nodes:  trafodion-1 trafodion-2
+***INFO: Testing ssh on trafodion-1
+***INFO: Testing ssh on trafodion-2
+***INFO: Testing sudo access on trafodion-1
+***INFO: Testing sudo access on trafodion-2
+***INFO: Checking cloudera Version
+***INFO: nameOfVersion=cdh5.3.0
+***INFO: HADOOP_PATH=/usr/lib/hbase/lib
+***INFO: Trafodion scanner will not be run.
+***DEBUG: trafodionFullName=trafodion_server-1.3.0.tgz
+***INFO: Trafodion version = 1.3.0
+***DEBUG: HBase's java_exec=/usr/java/jdk1.7.0_67-cloudera/bin/java
+
+******************************
+ TRAFODION SETUP
+******************************
+
+***INFO: Installing required RPM packages
+***INFO: Starting Trafodion Package Setup (2016-02-17-08-16-11)
+***INFO: Installing required packages
+***INFO: Log file located in /var/log/trafodion
+***INFO: ... pdsh on node trafodion-1
+***INFO: ... pdsh on node trafodion-2
+***INFO: Checking if log4cxx is installed ...
+***INFO: Checking if sqlite is installed ...
+***INFO: Checking if expect is installed ...
+***INFO: Checking if perl-DBD-SQLite* is installed ...
+***INFO: Checking if protobuf is installed ...
+***INFO: Checking if xerces-c is installed ...
+***INFO: Checking if perl-Params-Validate is installed ...
+***INFO: Checking if perl-Time-HiRes is installed ...
+***INFO: Checking if gzip is installed ...
+***INFO: creating sqconfig file
+***INFO: Reserving DCS ports
+
+******************************
+ TRAFODION MODS
+******************************
+
+***INFO: Cloudera installed will run traf_cloudera_mods98
+***INFO: Detected JAVA version 1.7
+***INFO: copying hbase-trx-cdh5_3-1.3.0.jar to all nodes
+***INFO: Cloudera Manager is on trafodion-1
+.
+.
+.
+Zookeeper is listening on port 2181
+DcsMaster is listening on port 23400
+
+Process         Configured      Actual          Down
+---------       ----------      ------          ----
+DcsMaster       1               1
+DcsServer       2               2
+mxosrvr         8               8
+
+
+You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-2.0.0-incubating-bin/logs/sqmon.log
+
+
+Startup time  0 hour(s) 1 minute(s) 9 second(s)
+Apache Trafodion Conversational Interface 1.3.0
+Copyright (c) 2015 Apache Software Foundation
+>>
+
+End of MXCI Session
+
+***INFO: Installation completed successfully.
+
+*********************************
+ TRAFODION INSTALLATION COMPLETE
+*********************************
+
+$
+```
+
+2. Switch to the Trafodion Runtime User and check the status of Trafodion.
++
+```
+$ sudo su - trafodion
+$ sqcheck
+Checking if processes are up.
+Checking attempt: 1; user specified max: 2. Execution time in seconds: 0.
+
+The SQ environment is up!
+
+
+Process         Configured      Actual      Down
+-------         ----------      ------      ----
+DTM             2               2
+RMS             4               4
+MXOSRVR         8               8
+
+$
+```
+
+Trafodion is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
+basic instructions on how to verify the Trafodion management and how to perform basic management
+operations.
+
+

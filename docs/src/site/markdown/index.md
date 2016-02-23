@@ -49,7 +49,7 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
        <li><a href="http://trafodion.apache.org/documentation.html">Release Documentation</a></li>
        <li><a href="http://trafodion.apache.org/release-notes-1-3-0.html">Release Notes</a></li>
        <li><a href="https://trafodion.apache.org/download.html#Binaries">Download</a></li>
-       <li><a href="git@github.com:apache/incubator-trafodion">git Site</a></li>
+       <li><a href="https://github.com/apache/incubator-trafodion">git Site</a></li>
        <li><a href="http://trafodion.apache.org/download.html">Build Instructions</a></li>
      </ul>
    </p>

@@ -1,0 +1,25 @@
+===============================================================================
+To Do:
+
+Investigate and document third-pary licenses for SW bundled with binaries 
+for each of these client components:
+
+JDBCT4.zip  
+  lib/jdbcT4.jar
+
+odb64_linux.tar.gz  
+  bin/odb64luo
+
+trafci.zip  
+  trafciInstaller.jar
+
+TRAF_ODBC_Linux_Driver_64.tar.gz
+  libicu*Nv44.so.44 - ICU http://source.icu-project.org/repos/icu/icu/trunk/license.html
+  statically linked libraries:
+    /usr/lib64/libssl.a
+    /usr/lib64/libcrypto.a
+
+win-odbc
+  TFODBC64-*.exe
+
++++++++++++++++++++++++++++++

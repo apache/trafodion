@@ -118,7 +118,7 @@ fi
 cd $MY_SQROOT/sql/scripts
 
 # Check to make sure this is a real cluster
-if [ "$node_count" -gt "1" ]; then
+if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then 
 
     GetSQcnfg
 
@@ -147,8 +147,7 @@ mkdir -p $MPI_TMPDIR
 # mkdir a dir for CBF data used by SQL IUS feature
 mkdir -p $HOME/cbfs
 
-#If pdsh exists
-if [ $node_count -gt "1" ]; then
+if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
     echo
     echo "Creating directories on cluster nodes"
 
@@ -227,7 +226,8 @@ if [ -f $SQESPENV_FILE ]; then
     fi
 fi
 
-if [ $node_count -gt "1" ]; then
+if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
+    echo
     echo
     echo "Copying the generated files to all the nodes in the cluster"
     echo

@@ -190,6 +190,14 @@ class CmpSeabaseDDL
        Lng32 textSubID,
        NAString &constrText);
   
+  static short createHistogramTables(
+    ExeCliInterface *cliInterface,
+    const NAString &schemaName,
+    const NABoolean ignoreIfExists,
+    NAString &tableNotCreated);
+
+  static std::vector<std::string> getHistogramTables();
+
   NABoolean isAuthorizationEnabled();
 
   short existsInHbase(const NAString &objName,
@@ -881,6 +889,7 @@ class CmpSeabaseDDL
   void  createSeabaseSchema(
      StmtDDLCreateSchema  * createSchemaNode,
      NAString             & currCatName);
+
 
   void cleanupObjectAfterError(
                                ExeCliInterface &cliInterface,

@@ -40,6 +40,7 @@
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrObjects.h"
 #include "CmpSeabaseDDLauth.h"
+#include "CmpSeabaseDDL.h"
 #include "ComUser.h"
 
 #include <set>
@@ -546,16 +547,19 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (
 
   // Call Trafodion to drop the schema cascade
 
+  log (__FILE__, "dropping _PRIVMGR_MD_ schema cascade", -1);
   std::string schemaDDL("DROP SCHEMA IF EXISTS ");
   schemaDDL += metadataLocation_;
   schemaDDL += "CASCADE";
   cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
   if (cliRC < 0)
   {
+    traceMsg = "ERROR unable to drop schema cascade: ";
+    traceMsg += to_string((long long int)cliRC);
+    log(__FILE__, traceMsg, -1);
     cliInterface.retrieveSQLDiagnostics(pDiags_);
     retcode = STATUS_ERROR;
   }
-  log (__FILE__, "dropping _PRIVMGR_MD_ schema cascade", -1);
   CmpSeabaseDDLrole role;
     
   role.dropStandardRole(DB__ROOTROLE);
@@ -580,6 +584,14 @@ void PrivMgrMDAdmin::cleanupMetadata (ExeCliInterface &cliInterface)
 {
   std::string traceMsg;
   log (__FILE__, "cleaning up PRIVMGR tables: ", -1);
+
+  // cleanup histogram tables, if they exist
+  std::vector<std::string> histTables = CmpSeabaseDDL::getHistogramTables();
+  Int32 numHistTables = histTables.size();
+  for (Int32 i = 0; i < numHistTables; i++)
+  {
+    cleanupTable(histTables[i].c_str(), cliInterface, pDiags_);
+  }
 
   size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
   for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)

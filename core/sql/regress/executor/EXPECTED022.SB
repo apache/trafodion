@@ -748,6 +748,41 @@
 
 --- 1 row(s) selected.
 >>
+>>select cast('2010-01-01' as timestamp(3)) from t022t1;
+
+(EXPR)                 
+-----------------------
+
+2010-01-01 00:00:00.000
+
+--- 1 row(s) selected.
+>>select cast('2010-01-01 10' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2010-01-01 10:00:00.000000
+
+--- 1 row(s) selected.
+>>
+>>create table if not exists t022dtime(a date not null, b time, c timestamp);
+
+--- SQL operation complete.
+>>prepare s from upsert into t022dtime values (?, ?, ?);
+
+--- SQL command prepared.
+>>execute s using '2010-01-01', '10:10:10', '2010-01-01 10:10:10.123';
+
+--- 1 row(s) inserted.
+>>select * from t022dtime;
+
+A           B         C                         
+----------  --------  --------------------------
+
+2010-01-01  10:10:10  2010-01-01 10:10:10.123000
+
+--- 1 row(s) selected.
+>>
 >>-- negative cases
 >>select cast('2016-01-29Z' as date) from t022t1;
 
@@ -793,6 +828,22 @@
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
 --- 0 row(s) selected.
+>>select cast ('23:11:06' as timestamp) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select cast('2010-01-01' as time) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select timestamp'2010-01-01 10' from t022t1;
+
+*** ERROR[3047] The timestamp '2010-01-01 10' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Prove these cases work since they're used in the succeeding negative tests.
 >>
@@ -2669,7 +2720,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 11/20/1997 15:15:08.123456 am) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 11/20/1997 15:15:08.123456 am) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -2681,7 +2732,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 2100-01-01:ab:00:47.250000) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 2100-01-01:ab:00:47.250000) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -2691,7 +2742,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 1998-03-12 03:15:08.123456 pm) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 1998-03-12 03:15:08.123456 pm) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -2701,7 +2752,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 1996-05-23 16:15:08.123 am) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 1996-05-23 16:15:08.123 am) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -2776,7 +2827,7 @@ C1
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 00:a1:00) cannot be converted to type TIMESTAMP(2).
+*** ERROR[15015] PARAM ?p (value 00:a1:00) cannot be converted to type TIME(0).
 
 --- 0 row(s) inserted.
 >>
@@ -2786,7 +2837,7 @@ C1
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 14:59:59 am) cannot be converted to type TIMESTAMP(2).
+*** ERROR[15015] PARAM ?p (value 14:59:59 am) cannot be converted to type TIME(0).
 
 --- 0 row(s) inserted.
 >>
@@ -2796,7 +2847,7 @@ C1
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 11:60:59 am) cannot be converted to type TIMESTAMP(2).
+*** ERROR[15015] PARAM ?p (value 11:60:59 am) cannot be converted to type TIME(0).
 
 --- 0 row(s) inserted.
 >>
@@ -4168,7 +4219,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-02-03 06:33:46.601880
+10:13:14.0000  10:13:14.0000  2016-02-19 15:24:29.239482
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -5430,6 +5481,41 @@ lkjihgfedc  ?                               ?
 
 --- 1 row(s) selected.
 >>
+>>select cast('2010-01-01' as timestamp(3)) from t022t1;
+
+(EXPR)                 
+-----------------------
+
+2010-01-01 00:00:00.000
+
+--- 1 row(s) selected.
+>>select cast('2010-01-01 10' as timestamp) from t022t1;
+
+(EXPR)                    
+--------------------------
+
+2010-01-01 10:00:00.000000
+
+--- 1 row(s) selected.
+>>
+>>create table if not exists t022dtime(a date not null, b time, c timestamp);
+
+--- SQL operation complete.
+>>prepare s from upsert into t022dtime values (?, ?, ?);
+
+--- SQL command prepared.
+>>execute s using '2010-01-01', '10:10:10', '2010-01-01 10:10:10.123';
+
+--- 1 row(s) inserted.
+>>select * from t022dtime;
+
+A           B         C                         
+----------  --------  --------------------------
+
+2010-01-01  10:10:10  2010-01-01 10:10:10.123000
+
+--- 1 row(s) selected.
+>>
 >>-- negative cases
 >>select cast('2016-01-29Z' as date) from t022t1;
 
@@ -5475,6 +5561,22 @@ lkjihgfedc  ?                               ?
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
 --- 0 row(s) selected.
+>>select cast ('23:11:06' as timestamp) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select cast('2010-01-01' as time) from t022t1;
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
+
+--- 0 row(s) selected.
+>>select timestamp'2010-01-01 10' from t022t1;
+
+*** ERROR[3047] The timestamp '2010-01-01 10' is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Prove these cases work since they're used in the succeeding negative tests.
 >>
@@ -7351,7 +7453,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 11/20/1997 15:15:08.123456 am) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 11/20/1997 15:15:08.123456 am) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -7363,7 +7465,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 2100-01-01:ab:00:47.250000) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 2100-01-01:ab:00:47.250000) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -7373,7 +7475,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 1998-03-12 03:15:08.123456 pm) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 1998-03-12 03:15:08.123456 pm) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -7383,7 +7485,7 @@ A      B
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 1996-05-23 16:15:08.123 am) cannot be converted to type TIMESTAMP(3).
+*** ERROR[15015] PARAM ?p (value 1996-05-23 16:15:08.123 am) cannot be converted to type TIMESTAMP(6).
 
 --- 0 row(s) inserted.
 >>
@@ -7458,7 +7560,7 @@ C1
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 00:a1:00) cannot be converted to type TIMESTAMP(2).
+*** ERROR[15015] PARAM ?p (value 00:a1:00) cannot be converted to type TIME(0).
 
 --- 0 row(s) inserted.
 >>
@@ -7468,7 +7570,7 @@ C1
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 14:59:59 am) cannot be converted to type TIMESTAMP(2).
+*** ERROR[15015] PARAM ?p (value 14:59:59 am) cannot be converted to type TIME(0).
 
 --- 0 row(s) inserted.
 >>
@@ -7478,7 +7580,7 @@ C1
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
 
-*** ERROR[15015] PARAM ?p (value 11:60:59 am) cannot be converted to type TIMESTAMP(2).
+*** ERROR[15015] PARAM ?p (value 11:60:59 am) cannot be converted to type TIME(0).
 
 --- 0 row(s) inserted.
 >>
@@ -8850,7 +8952,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-02-03 06:36:01.915955
+10:13:14.0000  10:13:14.0000  2016-02-19 15:26:59.794585
 
 --- 1 row(s) selected.
 >>--test on precision of time

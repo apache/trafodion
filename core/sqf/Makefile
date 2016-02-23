@@ -278,10 +278,11 @@ SRC_PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.tgz"
 PKG_PHX_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PHX}-tests.tgz"
 PKG_DCS_TEST_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_DCS}-tests.tgz"
 
-PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
+PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf hbase_utilities/backup_and_restore
 
 PKG_BIN_OBJS += trafci
 PKG_BIN_OBJS += export/limited-support-tools
+PKG_BIN_OBJS += LICENSE NOTICE
 
 PKG_BIN_DIRS ?= sql export
 PKG_BIN_DIRS += trafci
@@ -308,6 +309,15 @@ package: pkglist-files pkglist-symlinks tmp/sqenv.sh
 	gzip -c $(PKG_TAR_UN) > $(PKG_TAR)
 	rm -f $(PKG_TAR_UN) pkglist-files pkglist-symlinks tmp/sqenv.sh
 
+LICENSE: ../../licenses/LICENSE-server
+	cp -f $? $@
+
+../../licenses/LICENSE-server:
+	cd $(@D) && $(MAKE) $(@F)
+
+NOTICE: ../../NOTICE
+	cp -f $? $@
+
 tmp/sqenv.sh:
 	@if [ ! -d tmp ]; then mkdir tmp; fi
 	echo "export SQ_BUILD_TYPE=$(SQ_BUILD_TYPE)" > tmp/sqenv.sh
@@ -320,7 +330,7 @@ pkglist-files: pkglist-symlinks
 	find -L $(PKG_BIN_OBJS) -type d -o -type f | grep -v -xf pkglist-symlinks > $@
 
 # simple symlinks that point to filename (does not start with . or /)
-pkglist-symlinks:
+pkglist-symlinks: LICENSE NOTICE
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
 
 #	Targets to tar/gzip the self installer
