@@ -191,40 +191,17 @@ If none of these situations exist, then we highly recommend that you use the Tra
 You perform this step as a user with `root` or `sudo` access.
 
 Install the packages listed in <<requirements-software-packages,Software Packages>> above on all nodes in the cluster. Note the special
-handling for `log4c&#43;&#43;`. See <<prepare-build-and-install-log4cplusplus, Build and Install log4c++>> below for more information.
+handling for `log4c&#43;&#43;`. See <<prepare-install-log4cplusplus, Install log4c++>> below for more information.
 
 <<<
-[[prepare-build-and-install-log4cplusplus]]
-=== Build and Install log4c++
+[[prepare-install-log4cplusplus]]
+=== Install log4c++
 
 You perform this step as a user with `root` or `sudo` access.
 
 This step is required regardless of the <<introduction-provisioning-options,Provisioning Options>> used.
 
-1. Perform the following steps on the Provisioning Master Node.
-+
-```
-# Download required packages
-sudo yum -y install rpm-build apr-devel apr-util-devel doxygen gcc gcc-c++
-
-# Download the log4c++ source rpm
-wget ftp://ftp.rpmfind.net/linux/fedora-secondary/development/rawhide/source/SRPMS/l/log4cxx-0.10.0-13.fc18.src.rpm
-
-# Install the log4c++ source rpm
-sudo rpm -ivv log4cxx-0.10.0-13.fc18.src.rpm
-
-# Build the log4c++ rpm
-sudo rpmbuild -ba /root/rpmbuild/SPECS/log4cxx.spec
-
-# Install the log4c++ rpm
-sudo rpm -U /root/rpmbuild/RPMS/x86_64/log4cxx-0.10.0-13.el6.x86_64.rpm
-
-# Copy the log4c++ rpm to the local directory
-sudo cp /root/rpmbuild/RPMS/x86_64/log4cxx-0.10.0-13.el6.x86_64.rpm .
-
-# Change owner of the local log4c++ rpm
-sudo chown <your-id> log4cxx-0.10.0-13.el6.x86_64.rpm
-```
+1. Download the log4c&#43;&#43; RPM from the Trafodion http://trafodion.incubator.apache.org/download.html[Download] page.
 
 2. Copy and Install the log4c&#43;&#43; RPM on All Nodes
 +
