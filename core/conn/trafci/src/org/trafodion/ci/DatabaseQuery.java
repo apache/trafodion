@@ -1163,9 +1163,10 @@ public class DatabaseQuery extends QueryWrapper
          super.setQueryRowCount(stmt);
          sessObj.setQryEndTime();
       }
-    
+
       stmt.close();
       sessObj.setStmtObj(sessObj.getConnObj().createStatement());
+      this.stmt=sessObj.getStmtObj();
       resetQryObj();
    }
 
