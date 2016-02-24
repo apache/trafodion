@@ -241,6 +241,10 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR "
     $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR
 
+    echo "Copying $SQETC_DIR/traf_coprocessor.properties to $SQETC_DIR of all the nodes"
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/traf_coprocessor.properties   $SQETC_DIR "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/traf_coprocessor.properties   $SQETC_DIR
+
     echo
     echo "Copying $SQETC_DIR/seamonster.env to $SQETC_DIR of all the nodes"
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR "
