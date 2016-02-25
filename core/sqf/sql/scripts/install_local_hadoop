@@ -629,7 +629,7 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HBASE_TAR=hbase-1.1.2.2.3.2.0-2950.tar.gz
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    HBASE_TAR=apache_hbase-1.0.2-bin.tar.gz
+    HBASE_TAR=hbase-1.0.2-bin.tar.gz
 fi
 
 echo "Checking for existing Hadoop processes..."
@@ -1602,6 +1602,7 @@ else
       <value>
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
+           org.apache.hadoop.hbase.coprocessor.transactional.SsccRegionEndpoint,
            org.apache.hadoop.hbase.coprocessor.AggregateImplementation ${VISIBILITY_COPROC}
       </value>
    </property>
