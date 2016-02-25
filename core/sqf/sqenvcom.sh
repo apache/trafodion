@@ -789,7 +789,7 @@ if [ -z $UDIS86 ]; then
   export UDIS86="${TOOLSDIR}/udis86-1.7.2"
 fi
 if [ -z $ICU ]; then
-  export ICU="${TOOLSDIR}/icu4.4"
+  export ICU="${TOOLSDIR}/icu4c_4.4"
 fi
 
 #######################
