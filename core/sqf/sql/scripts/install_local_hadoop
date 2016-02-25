@@ -599,8 +599,6 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-echo "install apache version"
-    HADOOP_MIRROR_URL=/opt/home/tools
     HADOOP_TAR=hadoop-2.5.2.tar.gz
 fi
 
@@ -619,7 +617,6 @@ HIVE_PREFIX=hive-1.1.0-cdh5.4.4
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    HIVE_MIRROR_URL=http://archive.apache.org/dist/hive/hive-1.2.1
     HIVE_PREFIX=apache-hive-1.2.0-bin
     HIVE_TAR=${HIVE_PREFIX}.tar.gz
 fi
@@ -632,7 +629,6 @@ if [[ "$HBASE_DISTRO" = "HDP" ]]; then
     HBASE_TAR=hbase-1.1.2.2.3.2.0-2950.tar.gz
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    HBASE_MIRROR_URL=/opt/home/tools
     HBASE_TAR=apache_hbase-1.0.2-bin.tar.gz
 fi
 
