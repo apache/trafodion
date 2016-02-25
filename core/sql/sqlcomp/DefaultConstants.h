@@ -3796,6 +3796,9 @@ enum DefaultConstants
   // real charset in the HIVE table
   HIVE_FILE_CHARSET,
 
+  // if ON, upsert into the table will use the default value for the omitted columns
+  // with default value 
+  TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

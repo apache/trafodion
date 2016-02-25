@@ -143,7 +143,8 @@ GenericUpdate(const CorrName &name,
     noIMneeded_(FALSE),
     useMVCC_(FALSE),
     useSSCC_(FALSE),
-    preconditionTree_(NULL)
+    preconditionTree_(NULL),
+    xformedUpsert_(FALSE) 
   {}
 
   // copy ctor
@@ -541,6 +542,8 @@ GenericUpdate(const CorrName &name,
            { precondition_ = pc; exprsInDerivedClasses_ += precondition_; }
 
   virtual ItemExpr * insertValues() { return NULL;}
+  NABoolean xformedUpsert() {return xformedUpsert_;}
+  void setXformedUpsert() {xformedUpsert_ = TRUE;}
 
 protected:
 
@@ -928,6 +931,8 @@ private:
   // LeafDelete (IM). Only insert/delete if TRUE
   ItemExpr *preconditionTree_;
   ValueIdSet precondition_;
+ 
+  NABoolean xformedUpsert_;
 
 };
 
@@ -1441,13 +1446,10 @@ public:
 
   ItemExpr * insertCols() {return insertCols_;}
   virtual ItemExpr * insertValues() { return insertValues_;}
-  NABoolean xformedUpsert() {return xformedUpsert_;}
-  void setXformedUpsert() {xformedUpsert_ = TRUE;}
 private:
   ItemExpr *insertCols_;
   ItemExpr *insertValues_;
   ItemExpr *where_;
-  NABoolean xformedUpsert_;
 };
 
 

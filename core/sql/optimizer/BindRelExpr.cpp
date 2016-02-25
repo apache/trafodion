@@ -9798,6 +9798,10 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   if (identityColumnGeneratedAlways)
     defaultColCount = totalColCount;
 
+  NABoolean isAlignedRowFormat = getTableDesc()->getNATable()->isSQLMXAlignedTable();
+  NABoolean omittedDefaultCols = FALSE;
+  NABoolean omittedCurrentDefaultClassCols = FALSE;
+
   if (defaultColCount) {
     NAWchar zero_w_Str[2]; zero_w_Str[0] = L'0'; zero_w_Str[1] = L'\0';  // wide version
     CollIndex sysColIx = 0, usrColIx = 0;
@@ -9877,11 +9881,15 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           //
           if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
+            omittedCurrentDefaultClassCols = TRUE;
+            omittedDefaultCols = TRUE;
           }
           else if ((nacol->getDefaultClass() == COM_IDENTITY_GENERATED_ALWAYS) ||
                    (nacol->getDefaultClass() == COM_IDENTITY_GENERATED_BY_DEFAULT)) {
             setSystemGeneratesIdentityValue(TRUE);
           }
+          else 
+            omittedDefaultCols = TRUE;
 
           // Bind the default value, make an Assign, etc, as above
           Parser parser(bindWA->currentCmpContext());
@@ -9942,10 +9950,11 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
 	      return boundExpr;
 	    }
-
           assign = new (bindWA->wHeap())
             Assign(target.getItemExpr(), defaultValueExpr,
-                   FALSE /*not user-specified*/);
+                    FALSE /*Not user Specified */);
+          if (nacol->getDefaultClass() != COM_CURRENT_DEFAULT)
+             assign->setToBeSkipped(TRUE);
           assign->bindNode(bindWA);
         }
 
@@ -10102,8 +10111,15 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
          *CmpCommon::diags() << DgSqlCode(-4490);
     }
-
   }
+  if (isUpsert() && (!getIsTrafLoadPrep()) && 
+        (((!isAlignedRowFormat) && omittedCurrentDefaultClassCols) || 
+             (isAlignedRowFormat && omittedDefaultCols)) 
+              && (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF)) {
+    boundExpr = xformUpsertToMerge(bindWA);
+    return boundExpr;
+  }
+  else 
   if (isUpsertThatNeedsMerge()) {
     boundExpr = xformUpsertToMerge(bindWA);
     return boundExpr;
@@ -10167,9 +10183,9 @@ NABoolean Insert::isUpsertThatNeedsMerge() const
 
   return TRUE;
 }
+
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
 {
-
   NATable *naTable = bindWA->getNATable(getTableName());
   if (bindWA->errStatus())
     return NULL;
@@ -10183,6 +10199,8 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
 
   const ValueIdList &tableCols = updateToSelectMap().getTopValues();
   const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+  NABoolean isAlignedRowFormat = getTableDesc()->getNATable()->isSQLMXAlignedTable();
 		    
   Scan * inputScan =
     new (bindWA->wHeap())
@@ -10225,17 +10243,6 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
                                                 keyPred);  
       }
     }
-    else
-    {
-      setAssignPrev = setAssign;
-      setAssign = new (bindWA->wHeap())
-        Assign(targetColRef, sourceVals[i].getItemExpr());
-      setCount++;
-      if (setCount > 1) 
-      {
-        setAssign = new(bindWA->wHeap()) ItemList(setAssign,setAssignPrev);
-      }
-    }
     if (sourceVals[i].getItemExpr()->getOperatorType() != ITM_CONSTANT)
       myOuterRefs += sourceVals[i];
 
@@ -10250,8 +10257,40 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       insertVal = new(bindWA->wHeap()) ItemList(insertVal,insertValPrev);
       insertCol = new(bindWA->wHeap()) ItemList(insertCol,insertColPrev);
     }
-  }   
+  }
   inputScan->addSelPredTree(keyPred);
+  for (CollIndex i = 0 ; i < newRecExprArray().entries(); i++) 
+  {
+      const Assign *assignExpr = (Assign *)newRecExprArray()[i].getItemExpr();
+      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+      NAColumn *col = tgtValueId.getNAColumn( TRUE );
+      NABoolean copySetAssign = FALSE;
+      if (! col->isClusteringKey()) 
+      {
+         // In case of aligned format we need to bind in the new = old values
+         // in GenericUpdate::bindNode. So skip the columns that are not user
+         // specified
+         if (isAlignedRowFormat) 
+         {
+            if (assignExpr->isUserSpecified())
+               copySetAssign = TRUE;
+            // copy the default value if the below CQD is set to ON
+            else if (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_ON)
+               copySetAssign = TRUE;
+         }
+         else
+         if (assignExpr->isUserSpecified())
+             copySetAssign = TRUE;
+         if (copySetAssign)
+         { 
+            setAssignPrev = setAssign;
+            setAssign = (ItemExpr *)assignExpr;
+            setCount++;
+            if (setCount > 1) 
+               setAssign = new(bindWA->wHeap()) ItemList(setAssign,setAssignPrev);
+         }
+     }
+  }
   RelExpr * re = NULL;
 
   re = new (bindWA->wHeap())
@@ -10288,7 +10327,15 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   re = re->bindNode(bindWA);
   if (bindWA->errStatus())
     return NULL;
-
+  // Copy the userSecified and canBeSkipped attribute to mergeUpdateInsertExprArray
+  ValueIdList mergeInsertExprArray = ((MergeUpdate *)mu)->mergeInsertRecExprArray();
+  for (CollIndex i = 0 ; i < newRecExprArray().entries(); i++) 
+  {
+      const Assign *assignExpr = (Assign *)newRecExprArray()[i].getItemExpr();
+      ((Assign *)mergeInsertExprArray[i].getItemExpr())->setToBeSkipped(assignExpr->canBeSkipped());
+      ((Assign *)mergeInsertExprArray[i].getItemExpr())->setUserSpecified(assignExpr->isUserSpecified());
+  }
+ 
   return re;
 }
 
@@ -12703,6 +12750,7 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
     }
   } // REL_UNARY_UPDATE or REL_UNARY_DELETE
 
+
   // QSTUFF
   // we need to check whether this code is executed as part of a create view
   // ddl operation using bindWA->inDDL() and prevent indices, contraints and
@@ -12838,7 +12886,6 @@ RelExpr *LeafInsert::bindNode(BindWA *bindWA)
     Assign *assign;
     assign = new (bindWA->wHeap())
       Assign(tgtcols[i].getItemExpr(), baseColRefs()[i], FALSE);
-
     assign->bindNode(bindWA);
     if (bindWA->errStatus()) return NULL;
     newRecExprArray().insertAt(i, assign->getValueId());
