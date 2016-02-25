@@ -67,8 +67,6 @@ step in the <<prepare,Prepare>> chapter.
 
 The following example shows an automated install of Trafodion on a two-node Hortonworks Hadoop cluster.
 
-NOTE: By default, the Trafodion Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
-This is shown in the example below.
 
 *Example*
 
@@ -196,7 +194,7 @@ You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-1.3.0-i
 Startup time  0 hour(s) 1 minute(s) 9 second(s)
 Apache Trafodion Conversational Interface 1.3.0
 Copyright (c) 2015 Apache Software Foundation
->> initialize trafodion;
+>> 
 --- SQL operation complete.
 >>
 
@@ -244,9 +242,6 @@ The Trafodion Installer prompts you for the information you collected in the
 <<prepare-gather-configuration-information, Gather Configuration Information>> step in the <<prepare,Prepare>> chapter.
 
 The following example shows a guided install of Trafodion on a two-node Cloudera Hadoop cluster.
-
-NOTE: By default, the Trafodion Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
-This is shown in the example below.
 
 *Example*
 
@@ -470,7 +465,7 @@ You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-1.3.0-i
 Startup time  0 hour(s) 1 minute(s) 9 second(s)
 Apache Trafodion Conversational Interface 1.3.0
 Copyright (c) 2015 Apache Software Foundation
->> initialize trafodion;
+>> 
 --- SQL operation complete.
 >>
 
