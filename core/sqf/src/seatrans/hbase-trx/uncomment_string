@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [[ -z $1 ]]; then
+  return;
+fi
+
+echo "preprocess for distro: $1"
+
+lv_fnames=`find -name "*.java.tmpl" | sed -e "s/\.tmpl$//"` 
+
+for lv_fname in $lv_fnames; do
+    echo "preprocessing $1 and generating file ${lv_fname}"
+    awk -f pp.awk -v distro=$1 ${lv_fname}.tmpl > ${lv_fname}
+done

@@ -21,20 +21,27 @@
 -->
   <repositories>
     <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      <id>Apache</id>
+      <url>http://mvnrepository.com/artifact/</url>
     </repository>
   </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop.version>2.6.0-cdh5.4.4</hadoop.version>
-    <hbase.version>1.0.0-cdh5.4.4</hbase.version>    
-    <hbase-trx.id>hbase-trx-cdh5_4</hbase-trx.id>
-    <hive.version>1.1.0-cdh5.4.4</hive.version>
+    <hadoop.version>2.6.0</hadoop.version>
+    <hbase.version>1.0.2</hbase.version>
+    <hbase-flavor-id>apache1_0_2</hbase-flavor-id>
+    <hbase-trx.id>hbase-trx-${hbase-flavor-id}</hbase-trx.id>
+    <hive.version>1.1.0</hive.version>
     <thrift.version>0.9.0</thrift.version>
     <java.version>1.7</java.version>
   </properties>
+
+  <build>
+    <defaultGoal>package</defaultGoal>
+      <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
+      <finalName>${project.artifactId}-${project.version}</finalName>
+  </build>
 
   <dependencies>
     <dependency>
@@ -48,11 +55,31 @@
       <version>${hbase.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-common</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-protocol</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.hbase.client.transactional</groupId>
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
       <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-exec</artifactId>
+      <version>${hive.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -62,11 +89,6 @@
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-metastore</artifactId>
-      <version>${hive.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
       <version>${hive.version}</version>
     </dependency>
     <dependency>
@@ -88,24 +110,9 @@
 
   <groupId>org.trafodion.sql</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-sql</artifactId>
+  <artifactId>trafodion-sql-apache1_0_2</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>trafodion-sql</name>
   <description>Java code for SQL engine in Trafodion</description>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>
-              src/main/resources/trafodion-sql.jar.mf
-            </manifestFile>
-          </archive>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>

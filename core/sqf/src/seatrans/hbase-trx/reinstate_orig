@@ -1,0 +1,8 @@
+#!/bin/sh
+
+lv_fnames=`find -name "*.java.tmpl" | sed -e "s/\.tmpl$//" `
+
+for lv_fname in $lv_fnames; do
+    echo "Deleting generated file ${lv_fname}"
+    rm -f ${lv_fname}
+done

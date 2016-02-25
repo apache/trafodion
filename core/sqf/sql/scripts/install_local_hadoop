@@ -391,7 +391,19 @@ else
     MY_START_PORT=`expr 24000 + $MY_START_PORT '*' 200`
   elif [ $MY_START_PORT == "rand" ]; then
     # pick a random number between 12000 and 24000 that is divisible by 200
-    MY_START_PORT=`expr $RANDOM '%' 60 '*' 200 + 12000`
+    lv_number=0   #initialize
+    FLOOR=10000
+    RANGE=31200
+    while [ "$lv_number" -le $FLOOR ]
+    do
+	lv_number=$RANDOM
+	let "lv_number %= $RANGE"  # Scales $lv_number down within $RANGE.
+    done
+    echo "Random lv_number between $FLOOR and $RANGE ---  $lv_number"
+    echo
+    let "lv_remainder=$lv_number % 200"
+    let "MY_START_PORT=$lv_number - $lv_remainder"
+    echo "Start Port ---  $MY_START_PORT"
   elif [ $MY_START_PORT == "available" ]; then
 
      portMsg=`python findPort.py`
@@ -579,17 +591,17 @@ fi
 #####################################################
 
 # See JIRA TRAFODION-1512 that will eliminate this check
-if [ -d $MY_LOCAL_SW_DIST ]; then
   
-  HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-  HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
-else
-  HADOOP_MIRROR_URL=http://download.nextag.com/apache/hadoop/common/hadoop-2.5.2
-  HADOOP_TAR=hadoop-2.5.2.tar.gz
-fi
+HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HADOOP_TAR=hadoop-2.6.0-cdh5.4.4.tar.gz
 
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    HADOOP_TAR=hadoop-2.6.0.2.2.0.0-2041.tar.gz
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+echo "install apache version"
+    HADOOP_MIRROR_URL=/opt/home/tools
+    HADOOP_TAR=hadoop-2.5.2.tar.gz
 fi
 
 # Alternative: Use MariaDB (not validated)
@@ -602,15 +614,26 @@ MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
-HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-0.13.1
-HIVE_PREFIX=apache-hive-0.13.1-bin
+HIVE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HIVE_PREFIX=hive-1.1.0-cdh5.4.4
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
-HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HIVE_MIRROR_URL=http://archive.apache.org/dist/hive/hive-1.2.1
+    HIVE_PREFIX=apache-hive-1.2.0-bin
+    HIVE_TAR=${HIVE_PREFIX}.tar.gz
+fi
 
-HBASE_TAR=hbase-0.98.6-cdh5.3.0.tar.gz
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    HBASE_TAR=hbase-0.98.4.2.2.0.0-2041-hadoop2.tar.gz
+
+HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HBASE_TAR=hbase-1.0.0-cdh5.4.4.tar.gz
+
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HBASE_TAR=hbase-1.1.2.2.3.2.0-2950.tar.gz
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HBASE_MIRROR_URL=/opt/home/tools
+    HBASE_TAR=apache_hbase-1.0.2-bin.tar.gz
 fi
 
 echo "Checking for existing Hadoop processes..."
@@ -818,16 +841,16 @@ EOF
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthbase
 #!/bin/sh
 echo "Starting HBase..."
-cd ${MY_SW_ROOT}
+cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-./hbase/bin/start-hbase.sh
+bin/start-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophbase
 #!/bin/sh
-cd ${MY_SW_ROOT}
+cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-./hbase/bin/stop-hbase.sh
+bin/stop-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
@@ -1494,6 +1517,18 @@ else
   if [ -r $HBASE_CONFIG_FILE ]; then
     mv -f $HBASE_CONFIG_FILE $HBASE_CONFIG_FILE.orig
   fi
+
+  if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    MASTER_VISBILITY_COPROC="<property>
+    <name>hbase.coprocessor.master.classes</name>
+    <value>org.apache.hadoop.hbase.security.access.AccessController,
+           org.apache.hadoop.hbase.security.visibility.VisibilityController
+    </value>
+    </property>"
+    VISIBILITY_COPROC=", 
+      org.apache.hadoop.hbase.security.visibility.VisibilityController"
+  fi
+
   cat <<EOF >$HBASE_CONFIG_FILE
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -1565,13 +1600,13 @@ else
      <name>hbase.hregion.impl</name>
      <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
    </property>
+   ${MASTER_VISBILITY_COPROC}
    <property>
     <name>hbase.coprocessor.region.classes</name>
       <value>
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
-           org.apache.hadoop.hbase.coprocessor.transactional.SsccRegionEndpoint,
-           org.apache.hadoop.hbase.coprocessor.AggregateImplementation
+           org.apache.hadoop.hbase.coprocessor.AggregateImplementation ${VISIBILITY_COPROC}
       </value>
    </property>
 </configuration>

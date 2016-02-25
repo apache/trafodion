@@ -314,4 +314,10 @@ public class TransactionalScanner extends AbstractClientScanner {
             return null;
         }
     }
+#ifdef HDP2.3
+    @Override
+#endif
+    public boolean renewLease() {
+        return true;
+    }
 }

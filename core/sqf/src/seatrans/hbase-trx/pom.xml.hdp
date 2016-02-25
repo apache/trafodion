@@ -49,19 +49,20 @@
   </repositories>
 
   <properties>
-    <hadoop.version>2.5.0</hadoop.version>
-    <hbase.version>0.98.4.2.2.4.0-2633-hadoop2</hbase.version>
+    <hadoop.version>2.7.1</hadoop.version>
+    <hbase.version>1.1.2</hbase.version>
     <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
     <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
-    <trx-suffix>hdp2_2</trx-suffix>
+    <trx-suffix>hdp2_3</trx-suffix>
+    <protocVersion>2.5.0</protocVersion>
   </properties>
 
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-hdp2_2</artifactId>
+  <artifactId>hbase-trx-hdp2_3</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>HBase - Trx</name>
   <description>Trx of HBase usage</description>
@@ -160,7 +161,7 @@
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
-      <version>3.4.5</version>
+      <version>3.4.6</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -333,6 +334,8 @@ if we can combine these profiles somehow -->
                     <param>${basedir}/src/main/protobuf</param>
                     <param>${basedir}/hbase-protocol/src/main/protobuf</param>
                   </imports>
+                  <protobuf.version>2.5.0</protobuf.version>
+                  <protocVersion>2.5.0</protocVersion>
                   <source>
                     <directory>${basedir}/src/main/protobuf</directory>
                     <includes>
