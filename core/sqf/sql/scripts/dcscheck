@@ -51,10 +51,10 @@ if [[ $? != 0 ]]; then
 fi
 
 echo
-#Check if Trafodion is up and running
+#Check if Trafodion is up and operational
 sqcheck -f > $tmp_chk 2>&1
 sq_stat=$?
-if [[ $sq_stat == 0 ]]; then
+if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
 
  if [ -d $DCS_INSTALL_DIR ];then
 
@@ -126,8 +126,8 @@ if [[ $sq_stat == 0 ]]; then
      down_dcsmaster_cnt=''
    fi
 
-### Get the current process status (all processes)
-  sqps > $tmp_ps 2>&1
+### Get the current cluster process status (all processes)
+  cstat > $tmp_ps 2>&1
 
 ### Get the actual number of mxosrvrs
   let act_mxo_cnt=`< $tmp_ps egrep -a -i ' mxosrvr' | wc -l`
@@ -181,7 +181,7 @@ if [[ $sq_stat == 0 ]]; then
    exit 1
  fi
 else
- echo "Trafodion is not started..."
+ echo "Trafodion is not started or is not operational..."
  echo
 fi
 exit 0

@@ -26,8 +26,6 @@
 = About This Document
 This manual describes how to install and configure client applications that enable you to connect to and use a Trafodion database.
 
---
-
 == Intended Audience
 This manual is intended for users who want to connect to and use a Trafodion database.
 
@@ -174,4 +172,5 @@ needs. Send any errors found, suggestions for improvement, or compliments to:
 issues@trafodion.incubator.apache.org
 
 Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
-
+Or, even better, join our community and help us improve our documentation. Please refer to 
+http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for details.

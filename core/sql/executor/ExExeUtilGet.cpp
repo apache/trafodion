@@ -377,7 +377,7 @@ static const QueryString getTrafViewsInSchemaQuery[] =
 
 static const QueryString getTrafObjectsInViewQuery[] =
 {
-  {" select T.object_name from "},
+  {" select trim(T.schema_name) || '.' || trim(T.object_name) from "},
   {"   %s.\"%s\".%s VU,  %s.\"%s\".%s T "},
   {"  where VU.using_view_uid = "},
   {"     (select T2.object_uid from  %s.\"%s\".%s T2 "},
@@ -392,7 +392,7 @@ static const QueryString getTrafObjectsInViewQuery[] =
 
 static const QueryString getTrafViewsOnObjectQuery[] =
 {
-  {" select %sT.object_name %s  from "},
+  {" select trim(T.schema_name) || '.' || trim(T.object_name) from "},
   {"   %s.\"%s\".%s T "},
   {"   where T.object_uid in "},
   {"   (select using_view_uid from  %s.\"%s\".%s VU "},
@@ -1835,24 +1835,22 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafViewsOnObjectQuery;
 		  sizeOfqs = sizeof(getTrafViewsOnObjectQuery);
 
-		  param_[0] = catSchValue;
-		  param_[1] = endQuote;
-		  param_[2] = cat;
-		  param_[3] = sch;
-		  param_[4] = tab;
-		  param_[5] = cat;
-		  param_[6] = sch;
-		  param_[7] = view_usage;
-		  param_[8] = cat;
-		  param_[9] = sch;
-		  param_[10] = tab;
-		  param_[11] = getMItdb().cat_;
-		  param_[12] = getMItdb().sch_;
-		  param_[13] = getMItdb().obj_;
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = view_usage;
+		  param_[6] = cat;
+		  param_[7] = sch;
+		  param_[8] = tab;
+		  param_[9] = getMItdb().cat_;
+		  param_[10] = getMItdb().sch_;
+		  param_[11] = getMItdb().obj_;
 
 		  if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_)
 		    strcpy(ausStr, " and T1.object_type = 'BT' ");
-		  param_[14] = ausStr;
+		  param_[12] = ausStr;
 		}
 	      break;
 

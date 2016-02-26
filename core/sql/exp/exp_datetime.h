@@ -240,15 +240,27 @@ NA_EIDPROC
                         char *srcData,
                         char *dstData);
 
-NA_EIDPROC
-  short convAsciiToDatetime(char *target,
-                            Lng32 targetLen,
-                            char *source,
+
+  static short convAsciiToDatetime(char *source,
+                                   Lng32 sourceLen,
+                                   char *target,
+                                   Lng32 targetLen,
+                                   rec_datetime_field dstStartField,
+                                   rec_datetime_field dstEndField,
+                                   Lng32 format,
+                                   Lng32 &scale,
+                                   CollHeap *heap,
+                                   ComDiagsArea** diagsArea,
+                                   ULng32 flags);
+  
+  short convAsciiToDatetime(char *source,
                             Lng32 sourceLen,
+                            char *target,
+                            Lng32 targetLen,
+                            Lng32 format,
                             CollHeap *heap,
                             ComDiagsArea** diagsArea,
                             ULng32 flags);
-
 
 NA_EIDPROC
   short convAsciiToDate(char *target,
@@ -259,27 +271,6 @@ NA_EIDPROC
                         CollHeap *heap,
                         ComDiagsArea** diagsArea,
                         ULng32 flags);
-
-
-NA_EIDPROC
-  short convAsciiToTime(char *target,
-                        Lng32 targetLen,
-                        char *source,
-                        Lng32 sourceLen,
-                        CollHeap *heap,
-                        ComDiagsArea** diagsArea,
-                        ULng32 flags);
-
-
-NA_EIDPROC
-  short convAsciiToTimestamp(char *target,
-                             Lng32 targetLen,
-                             char *source,
-                             Lng32 sourceLen,
-                             CollHeap *heap,
-                             ComDiagsArea** diagsArea,
-                             ULng32 flags);
-
 
 NA_EIDPROC
   Lng32 convDatetimeToASCII(char *srcData,

@@ -33,9 +33,8 @@
 
   <bannerLeft>
     <!-- Apache Trafodion, but with "Trafodion" highlighted -->
-    <name><![CDATA[
-      Apache <span class="color-highlight">Trafodion</span>
-      ]]>
+    <name>
+       <![CDATA[<img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo">]]>
     </name>
     <href>index.html</href>
   </bannerLeft>
@@ -54,9 +53,7 @@
       <brand>
         <!-- Brand text in top-left part of the site -->
         <name>
-          <![CDATA[
-          Apache <span class="color-highlight">Trafodion</span>
-          ]]>
+          <![CDATA[Apache <span class="color-highlight">Trafodion</span>]]>
         </name>
         <href>index.html</href>
       </brand>
@@ -65,10 +62,8 @@
       <toc>top</toc>
       <tocTopMax>9</tocTopMax>
       <bottomNav maxSpan="8" >
-        <column>About</column>
-        <column>Using</column>
+        <column>Project</column>
         <column>Features</column>
-        <column>Contributing</column>
       </bottomNav>
       <bottomDescription>
         <![CDATA[
@@ -97,41 +92,58 @@
             <body />
           </sections>
         </index>
-        <architecture-overview><shortTitle>Architecture Overview</shortTitle></architecture-overview>
-        <documentation><shortTitle>Documentation Library</shortTitle></documentation>
-        <download><shortTitle>Download</shortTitle></download>
-        <enable-secure-trafodion><shortTitle>Enabling Security Features in Trafodion</shortTitle></enable-secure-trafodion>
+        <architecture-overview>
+          <shortTitle>Architecture Overview</shortTitle>
+        </architecture-overview>
+        <documentation>
+          <shortTitle>Documentation Library</shortTitle>
+        </documentation>
+        <download>
+          <shortTitle>Download</shortTitle>
+           <!-- Use H1 headings only for the TOC -->
+           <tocTopFlatten>false</tocTopFlatten>
+        </download>
         <faq>
           <toc>top</toc>
           <shortTitle>Frequently Asked Questions</shortTitle>
           <!-- Use H1 headings only for the TOC -->
           <tocTopFlatten>false</tocTopFlatten>
         </faq>
-        <install>
-          <shortTitle>Install</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </install>
-        <install-preparation>
-          <shortTitle>Install Preparation</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </install-preparation>
-        <issue-tracking><toc>false</toc></issue-tracking>
-        <ldapcheck><shortTitle>ldapcheck</shortTitle></ldapcheck>
-        <ldapconfigcheck><shortTitle>ldapconfigcheck</shortTitle></ldapconfigcheck>
-        <license><shortTitle>License</shortTitle><toc>false</toc></license>
-        <mail-lists><shortTitle>Mailing Lists</shortTitle><toc>false</toc></mail-lists>
-        <management><shortTitle>Managing Trafodion</shortTitle><toc>false</toc></management>
-        <new-features><shortTitle>New Features</shortTitle></new-features>
-        <performance><shortTitle>Performance</shortTitle></performance>
-        <presentations><shortTitle>Presentations</shortTitle><toc>false</toc></presentations>
+        <issue-tracking>
+          <toc>false</toc>
+        </issue-tracking>
+        <license>
+          <shortTitle>License</shortTitle>
+          <toc>false</toc>
+        </license>
+        <mail-lists>
+          <shortTitle>Mailing Lists</shortTitle>
+          <toc>false</toc>
+        </mail-lists>
+        <management>
+          <shortTitle>Managing Trafodion</shortTitle>
+          <toc>false</toc>
+        </management>
+        <new-features>
+          <shortTitle>New Features</shortTitle>
+        </new-features>
+        <performance>
+          <shortTitle>Performance</shortTitle>
+        </performance>
+        <presentations>
+          <shortTitle>Presentations</shortTitle>
+          <toc>false</toc>
+        </presentations>
         <port-assignment>
           <toc>false</toc>
           <shortTitle>Port Assignment</shortTitle>
         </port-assignment>
-        <quickstart><shortTitle>Quick Start</shortTitle></quickstart>
-        <release-notes><toc>false</toc></release-notes>
+        <quickstart>
+ 	      <shortTitle>Quick Start</shortTitle>
+	    </quickstart>
+        <release-notes>
+          <toc>false</toc>
+        </release-notes>
         <release-notes-1-3-0>
            <shortTitle>Release 1.3.0</shortTitle>
            <!-- Use H1 headings only for the TOC -->
@@ -162,13 +174,9 @@
            <!-- Use H1 headings only for the TOC -->
            <tocTopFlatten>false</tocTopFlatten>
         </release-notes-0-8-0>
-        <roadmap><shortTitle>Roadmap</shortTitle></roadmap>
-        <traf_authentication_config><shortTitle>.traf_authentication_config Configuration File</shortTitle></traf_authentication_config>
-        <uninstall>
-          <shortTitle>Uninstall</shortTitle>
-          <!-- Use H1 headings only for the TOC -->
-          <tocTopFlatten>false</tocTopFlatten>
-        </uninstall>
+        <roadmap>
+          <shortTitle>Roadmap</shortTitle>
+        </roadmap>
       </pages>
     </reflowSkin>
   </custom>
@@ -179,13 +187,18 @@
     </breadcrumbs>
     <links>
       <item name="Download" href="download.html"/>
-      <item name="Contributing" href="contributing-redirect.html"/>
+      <item name="Quick Start" href="quickstart.html"/>
+      <item name="Docs" href="documentation.html"/>
+      <item name="Contribute" href="contributing-redirect.html"/>
     </links>
-    <menu name="About">
-      <item href="index.html" name="Project Overview"/>
-      <item href="new-features.html" name="New Features"/>
-      <item href="roadmap.html" name="Roadmap"/>
-      <item href="performance.html" name="Performance"/>
+    <menu name="Project">
+      <item href="index.html" name="Overview"/>
+      <item href="faq.html" name="FAQ"/>
+      <item href="release-notes.html" name="Release Notes"/>
+      <item href="management.html" name="Managing Trafodion"/>
+      <!-- item href="new-features.html" name="New Features"/-->
+      <!-- item href="roadmap.html" name="Roadmap"/-->
+      <!-- item href="performance.html" name="Performance"/-->
       <item href="http:divider" name=""/>
       <item href="team-redirect.html" name="Team"/>
       <item href="presentations.html" name="Presentations"/>
@@ -194,22 +207,6 @@
       <item href="source-repository.html" name="Source Repository"/>
       <item href="issue-tracking.html" name="Issue Tracking"/>
       <item href="license.html" name="License"/>
-    </menu>
-    <menu name="Using">
-      <item href="quickstart.html" name="Quick Start"/>
-      <item href="download.html" name="Download"/>
-      <item href="install.html" name="Install"/>
-      <item href="uninstall.html" name="Uninstall"/>
-      <item href="management.html" name="Managing Trafodion"/>
-      <item href="http:divider" name=""/>
-      <item href="documentation.html" name="Documentation"/>
-      <item href="port-assignment.html" name="Port Assignments"/>
-      <item href="faq.html" name="FAQ"/>
-      <item href="release-notes.html" name="Release Notes"/>
-      <!-- 
-      <item href="http:divider" name=""/>
-      <item href="udf-tutorial.html" name="UDF API Tutorial"/>
-      -->
     </menu>
     <menu name="Features">
       <item href="architecture-overview.html" name="Architecture Overview"/>
@@ -257,8 +254,7 @@
         <span>Apache, Apache Maven, Apache Maven Fluido Skin, the Apache feather logo, the Apache Maven project logo and the Apache Incubator project logo 
         are trademarks of The Apache Software Foundation.</span><br /><br />
         <span>
-          <a href="http://www.apache.org" target="_blank"><img id="asf-logo" alt="Apache Software Foundation" src="images/logos/feather-small.gif" /></a>
-          <a href="http://incubator.apache.org/" target="_blank"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.gif" /></a>
+          <a href="http://incubator.apache.org/" target="_blank"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.png" /></a>
         </span>
       </div>
     </footer>

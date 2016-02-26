@@ -174,6 +174,19 @@ if [ $? != 0 ]; then
 fi
 ssh -q -n $AMBARI_HOST 'sudo su hdfs --command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /lobs"'
 
+ssh -q -n $AMBARI_HOST 'sudo su' "$HDFS_USER" '--command "hadoop fs -mkdir /trafodion_backups" 2> $HOME/traf_temp_output'
+if [ $? != 0 ]; then
+   # ok if directory already exists
+   dir_exists=$(ssh -q -n $AMBARI_HOST 'grep "File exists" $HOME/traf_temp_output | wc -l')
+   if [ $dir_exists -eq 0 ]; then
+      echo "***ERROR: 'hadoop fs -mkdir /trafodion_backups' command failed"
+      echo "***ERROR: $(ssh -q -n $AMBARI_HOST cat $HOME/traf_temp_output)"
+      exit -1
+   fi
+fi
+ssh -q -n $AMBARI_HOST 'sudo su' "$HDFS_USER" '--command "hadoop fs -chown -R' "$TRAF_USER"':trafodion /trafodion_backups"'
+
+
 ssh -q -n $AMBARI_HOST 'rm -rf $HOME/traf_temp_output'
 #=====================================
 # change the hbase configuration using Ambari's script

@@ -158,6 +158,21 @@ if [ $? != 0 ]; then
 fi
 sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
 
+
+#Create Backup directory 
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /trafodion_backups" 2> $HOME/traf_temp_output
+if [ $? != 0 ]; then
+   # ok if directory already exists
+   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
+   if [ $dir_exists -eq 0 ]; then
+      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /trafodion_backups' command failed"
+      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
+      exit -1
+   fi
+fi
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /trafodion_backups"
+
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chmod 777 /trafodion_backups"
 #=====================================
 # Modify hadoop settings as needed by Trafodion
 

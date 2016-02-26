@@ -1628,10 +1628,43 @@ short SqlCmd::doDescribeInput(SqlciEnv * sqlci_env,
 						  , 0
 						  , 0
 						  );
-		  
+                  
+                  rec_datetime_field dtStartField = REC_DATE_YEAR;
+                  rec_datetime_field dtEndField = REC_DATE_SECOND;
+                  if (datatype == REC_DATETIME)
+                    {
+                      Lng32 dtCode;
+                      retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                                     SQLDESC_DATETIME_CODE,
+                                                     &dtCode, 0, 0, 0, 0);
+                      HandleCLIError(retcode, sqlci_env);
+
+                      // this will get fractional precision
+                      retcode = SQL_EXEC_GetDescItem(input_desc, entry,
+                                                     SQLDESC_PRECISION,
+                                                     &precision, 0, 0, 0, 0);
+                      HandleCLIError(retcode, sqlci_env);
+                      
+                      if (dtCode == REC_DTCODE_DATE)
+                        {
+                          dtStartField = REC_DATE_YEAR;
+                          dtEndField = REC_DATE_DAY;
+                        }
+                      else if (dtCode == REC_DTCODE_TIME)
+                        {
+                          dtStartField = REC_DATE_HOUR;
+                          dtEndField = REC_DATE_SECOND;
+                        }
+                      else if (dtCode == REC_DTCODE_TIMESTAMP)
+                        {
+                          dtStartField = REC_DATE_YEAR;
+                          dtEndField = REC_DATE_SECOND;
+                        }
+                     }
+
 		  NAType::convertTypeToText(tgttype,
 					    datatype, length, precision, scale,
-					    REC_DATE_YEAR, REC_DATE_SECOND,
+					    dtStartField, dtEndField,
 					    (short)precision,
 					    SQLInterval::DEFAULT_LEADING_PRECISION,
 					    FALSE/*upshift*/,

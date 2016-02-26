@@ -426,6 +426,9 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     short VCLenSize = 0;
     converted_value = new char[targetLen + 1];
 
+    UInt32 flags = 0;
+    flags |= CONV_NO_HADOOP_DATE_FIX;
+
 #pragma nowarn(1506)   // warning elimination 
     ex_expr::exp_return_type ok = convDoIt(value,
 					   sourceLen, 
@@ -440,7 +443,10 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
 					   VCLen,
 					   VCLenSize,
 					   0,
-					   &diags);
+					   &diags,
+                                           CONV_UNKNOWN,
+                                           NULL,
+                                           flags);
     
     if ( ok != ex_expr::EXPR_OK)
       {

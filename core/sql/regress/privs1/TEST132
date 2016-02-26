@@ -25,7 +25,6 @@
 -- This tests the following commands:
 --
 --   Library operations
---   LOAD/UNLOAD & PURGEDATA
 --   POPULATE INDEX
 --   SHOWDDL & INVOKE
 --   UPDATE STATISTICS
@@ -42,7 +41,6 @@ obey TEST132(clean_up);
 obey TEST132(set_up);
 log LOG132 clear;
 obey TEST132(test_libraries);
-obey TEST132(test_load_unload_purgedata);
 obey TEST132(test_popindex);
 obey TEST132(test_show);
 obey TEST132(test_stats);
@@ -112,48 +110,6 @@ get libraries in schema t132sch;
 drop library t132_l1;
 get libraries in schema t132sch;
 
-?section test_load_unload_purgedata
--- =================================================================
--- run tests to make sure users with correct privileges can load
--- and unload data.  To load a table, you must:
---   be DB__ROOT
---   be granted DB__ROOTROLE
---   have the MANAGE_LOAD
---   be table owner
---   have SELECT and INSERT (DELETE for TRUNCATE option) privilege
---
--- To unload a table, you must:`
---   be DB__ROOT
---   be granted DB__ROOTROLE
---   have the MANAGE_LOAD
---   be table owner
---   have SELECT privilege
--- 
--- To purgedata data, you must:
---   be DB__ROOT
---   be table owner
---   have SELECT and DELETE privileges
--- =================================================================
-
-set schema t132sch;
-get tables;
-
-
--- perform a load and unload as DB__ROOT
--- purgedata
--- perform a load and unload after being granted DB__ROOTROLE
--- purgedata
--- perform a load and unload without privileges
--- perform a load and unload as table owner
--- purgedata
--- perform a load and unload with SELECT
--- perform a load and unload with SELECT, INSERT
--- purgedata, grant DELETE and purgedata again
--- perform a load (truncate) and unload with select, insert, delete
--- perform a load and unload with MANAGE_LOAD privilege
- 
--- reset
-
 ?section test_popindex
 -- =================================================================
 -- run tests to make sure users that populate indexes have correct
@@ -164,6 +120,10 @@ get tables;
 -- =================================================================
 
 set schema t132sch;
+set parserflags 1;
+set parserflags 131072;
+cqd DDL_TRANSACTIONS 'ON';
+
 get tables;
 
 create table t132t1 (c1 int not null primary key, c2 int);
@@ -194,18 +154,21 @@ obey TEST132(popindex_check_reset);
 sh sqlci -i "TEST132(populate_index)" -u sql_user1;
 obey TEST132(popindex_check_reset);
 
--- if user belongs to DB__ROOTROLE, has no privilege
+-- if user belongs to DB__ROOTROLE, has DML privileges, so can populate indexes
 grant role DB__ROOTROLE to sql_user2;
 sh sqlci -i "TEST132(populate_index)" -u sql_user2;
+obey TEST132(popindex_check_reset);
+revoke role DB__ROOTROLE from sql_user2;
 
--- if user has SELECT and INSERT privileges
-grant SELECT,INSERT on t132t1 to sql_user3;
+-- sql_user3 requires both SELECT and INSERT privileges
+-- only t132t2 has granted both privileges
+grant SELECT on t132t1 to sql_user3;
 grant SELECT, INSERT on t132t2 to sql_user3 by sql_user1;
+grant INSERT on t132t3 to sql_user3 by sql_user1;
 sh sqlci -i "TEST132(populate_index)" -u sql_user3;
 obey TEST132(popindex_check_reset);
 
 -- reset
-revoke role DB__ROOTROLE from sql_user2;
 drop table t132t1 cascade;
 drop table t132t2 cascade;
 drop table t132t3 cascade;
@@ -222,7 +185,6 @@ populate index t132t3_ndx1 on t132t3;
 ?section popindex_check_reset
 set schema t132sch;
 log LOG132;
-set parserflags 1;
 
 select count(*) from table (index_table t132t1_ndx1);
 select count(*) from table (index_table t132t2_ndx1);

@@ -1325,53 +1325,24 @@ ex_expr::exp_return_type convAsciiToDatetime(char *target,
   // Setup attribute for the destination.
   //
   dstOpType.setPrecision(code);
+  dstOpType.setScale(fractionPrecision);
 
-  switch (code) {
-  case REC_DTCODE_DATE :
-  case REC_DTCODE_YEAR_DAY :
-    {
-    ret = dstOpType.convAsciiToDate(source,
-                                    sourceLen,
-                                    target,
-                                    targetLen,
-				    ExpDatetime::DATETIME_FORMAT_NONE,
-                                    heap,
-                                    diagsArea,
-				    flags);
-    }
-    break;
-  case REC_DTCODE_TIME :
-  case REC_DTCODE_HOUR_SECOND :
-    {
-    dstOpType.setScale(fractionPrecision);
-    ret = dstOpType.convAsciiToTime(source,
-                                    sourceLen,
-                                    target,
-                                    targetLen,
-                                    heap,
-                                    diagsArea,
-				    flags);
-    }
-    break;
-  default :
-    {
-    dstOpType.setScale(fractionPrecision);
-    ret = dstOpType.convAsciiToDatetime(source,
-                                        sourceLen,
-                                        target,
-                                        targetLen,
-                                        heap,
-                                        diagsArea,
-					flags);
-    }
-  }
-
+  ret = dstOpType.convAsciiToDatetime(source,
+                                      sourceLen,
+                                      target,
+                                      targetLen,
+                                      ExpDatetime::DATETIME_FORMAT_NONE,
+                                      heap,
+                                      diagsArea,
+                                      flags);
+  
   if (ret < 0)
     return ex_expr::EXPR_ERROR;
-
+  
   return ex_expr::EXPR_OK;
   
 }
+
 // LCOV_EXCL_START
 NA_EIDPROC
 ex_expr::exp_return_type convUnicodeToDatetime(char *target,

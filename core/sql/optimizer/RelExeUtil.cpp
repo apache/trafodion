@@ -3940,6 +3940,13 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 
       qualObjName_ = dropTableNode->getTableNameAsQualifiedName();
 
+      // Normally, when a drop table is executed and DDL transactions is not
+      // enabled, a user started transaction is not allow.  However, when a
+      // session ends, a call is made to drop a volatile table, this drop should
+      // succeed. Make this type of delete to allow transactions
+      if (dropTableNode->isVolatile())
+        hbaseDDLNoUserXn_ = TRUE;
+
       // Drops of Hive and HBase external tables are allowed 
       if (qualObjName_.isHive() || (qualObjName_.isHbase()))
         {
