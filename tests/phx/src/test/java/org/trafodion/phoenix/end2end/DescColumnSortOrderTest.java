@@ -482,7 +482,7 @@ public class DescColumnSortOrderTest extends BaseTest {
         Object[][] expectedRows = new Object[][]{{2, date(1, 1, 2001)}};
 
         if (tgtPH()) runQueryTest(ddl, upsert("id", "date"), insertedRows, expectedRows, new WhereCondition("date", "<", "TO_DATE('02-02-2001','mm-dd-yyyy')"));
-        else if (tgtSQ()||tgtTR()) runQueryTest(ddl, upsert("id", "date1"), insertedRows, expectedRows, new WhereCondition("date1", "<", "DATE '02-02-2001'"));
+        else if (tgtSQ()||tgtTR()) runQueryTest(ddl, upsert("id", "date1"), insertedRows, expectedRows, new WhereCondition("date1", "<", "DATE '02/02/2001'"));
     }
     
     private void runQueryTest(String ddl, String columnName, Object[][] rows, Object[][] expectedRows) throws Exception {
