@@ -10265,6 +10265,9 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
       NAColumn *col = tgtValueId.getNAColumn( TRUE );
       NABoolean copySetAssign = FALSE;
+      if (col->isSystemColumn())
+         continue;
+      else
       if (! col->isClusteringKey()) 
       {
          // In case of aligned format we need to bind in the new = old values
@@ -10287,7 +10290,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
             setAssign = (ItemExpr *)assignExpr;
             setCount++;
             if (setCount > 1) 
-               setAssign = new(bindWA->wHeap()) ItemList(setAssign,setAssignPrev);
+               setAssign = new(bindWA->wHeap()) ItemList(setAssignPrev, setAssign);
          }
      }
   }

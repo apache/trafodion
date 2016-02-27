@@ -12797,7 +12797,7 @@ MergeUpdate::MergeUpdate(const CorrName &name,
 			 ItemExpr *where)
      : Update(name,tabId,otype,child,setExpr,NULL,oHeap),
        insertCols_(insertCols), insertValues_(insertValues),
-       where_(where)
+       where_(where), xformedUpsert_(FALSE)
 {
   setCacheableNode(CmpMain::BIND);
   
