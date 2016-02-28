@@ -757,7 +757,7 @@ public class ProductMetricsTest extends BaseTest {
 
         String query = null;
         if (tgtPH()) query = "SELECT round(date,'hour',1),feature,sum(unique_users) FROM PRODUCT_METRICS WHERE organization_id=? GROUP BY round(date,'hour',1),feature";
-        else if (tgtSQ()||tgtTR()) query = "SELECT date_trunc('hour',date_add(date1,interval '30' minute)),feature,sum(unique_users) FROM PRODUCT_METRICS WHERE organization_id=? GROUP BY date_trunc('hour',date_add(date1,interval '30' minute)),feature order by 3";
+        else if (tgtSQ()||tgtTR()) query = "SELECT date_trunc('hour',date_add(date1,interval '30' minute)),feature,sum(unique_users) FROM PRODUCT_METRICS WHERE organization_id=? GROUP BY date_trunc('hour',date_add(date1,interval '30' minute)),feature order by 3, 1";
         try {
             initTableValues();
             PreparedStatement statement = conn.prepareStatement(query);
