@@ -477,7 +477,6 @@ update T056t34 set sma1 = 99 where vch2 like '%vch2';
 
 select orders, sma1, vch1, vch2 from T056t34;
 
---#ifndef SEABASE_REGRESS
 begin work;
 
 update T056t34 set vch1 = 'v' where num1 > 10;
@@ -494,7 +493,9 @@ alter table T056t34 add vch3 varchar(3) default 'neo';
 update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 rollback;
---#endif
+
+-- this should return error. Col vch3 will be removed as part of rollback.
+update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 delete from T056t34 where orders > 2 and orders < 12
                        or orders = 51;

@@ -3354,8 +3354,10 @@ short CmpDescribeSequence(
   cn.setSpecialType(ExtendedQualName::SG_TABLE);
 
   // remove NATable for this table so latest values in the seq table could be read.
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
-    NATableDB::REMOVE_MINE_ONLY, COM_SEQUENCE_GENERATOR_OBJECT);
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn, 
+     ComQiScope::REMOVE_MINE_ONLY, COM_SEQUENCE_GENERATOR_OBJECT,
+     FALSE, FALSE);
 
   ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);

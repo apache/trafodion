@@ -467,6 +467,18 @@ public :
   void addRoutineHandle(Int32 rh)
                                  { routineHandles_.insert(rh); }
 
+  // Used to keep track of objects that were part of ddl operations within
+  // a transactional begin/commit(rollback) session.
+  // Used at commit time for NATable cache invalidation.
+  struct DDLObjInfo
+  {
+    NAString ddlObjName;
+    ComQiScope qiScope;
+    ComObjectType ot;
+  };
+
+  NAList<DDLObjInfo>& ddlObjsList() { return ddlObjs_; }
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -481,6 +493,7 @@ private:
   void swithcContext();
   CmpStatementISP* getISPStatement(Int64 id);
 // MV
+
 private:
 
   CmpContext(const CmpContext &);
@@ -621,6 +634,11 @@ private:
   // CmpSeabaseDDL::sendAllControlsAndFlags(), so that we don't send
   // them again, see that method for more info.
   Int32 allControlCount_;
+
+  // Used to keep track of objects that were part of ddl operations within
+  // a transactional begin/commit(rollback) session.
+  // Used at commit time for NATable cache invalidation.
+  NAList<DDLObjInfo> ddlObjs_;
   
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 

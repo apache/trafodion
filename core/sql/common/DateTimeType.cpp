@@ -172,8 +172,6 @@ NABoolean DatetimeType::isEncodingNeeded() const
 
 NABoolean DatetimeType::operator==(const NAType& other) const
 {
-  DatetimeType &otherDT = (DatetimeType&)other;
-
   return NAType::operator==(other) &&
     getStartField()	  == ((DatetimeType&) other).getStartField() &&
     getEndField()	  == ((DatetimeType&) other).getEndField() &&
@@ -1415,6 +1413,7 @@ DatetimeValue::DatetimeValue
 , startField_(startField)
 , endField_  (endField)
 {
+  fractionPrecision = 0;
   if (useOldConstructor)
     {
       oldConstructor(strValue, startField, endField, fractionPrecision);

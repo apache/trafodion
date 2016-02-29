@@ -513,6 +513,17 @@ short DDLExpr::codeGen(Generator * generator)
     {
       if (NOT isHbase_)
 	generator->setTransactionFlag(-1);
+      else if (getExprNode() && 
+               getExprNode()->castToStmtDDLNode()->ddlXns() &&
+               (NOT hbaseDDLNoUserXn_))
+        {
+          // treat like a transactional IUD operation which need to be
+          // aborted in case of an error.
+          generator->setFoundAnUpdate(TRUE);
+	  generator->setUpdAbortOnError(TRUE);
+          
+          generator->setTransactionFlag(-1);
+        }
       else if (NOT hbaseDDLNoUserXn_) 
 	generator->setTransactionFlag(-1);
     }
@@ -2735,7 +2746,7 @@ short RelRoot::codeGen(Generator * generator)
 	{
 	  root_tdb->setUpdErrorOnError(-1);
 	}
-    }
+    } // transactionNeeded
 
   if ((oltOptLean()) &&
       (doOltQryOpt))

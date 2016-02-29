@@ -407,6 +407,7 @@
 1428 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata definitions could not be created and preloaded in global MDdescInfo struct. Make sure that metadata table definition syntax is correct.
 1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
 1430 3F000 99999 BEGINNER MAJOR DBADMIN A schema name that starts and ends with an "_"(underscore) is reserved for internal usage. It cannot be used to create a user schema.
+1431 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 exists in HBase. This could be due to a concurrent transactional ddl operation in progress on this table.
 1500 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The CATSYS - CAT_REFERENCES system schema relationship for catalog $0~CatalogName might be corrupt.
 1501 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
 1502 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The OBJECTS - REPLICAS definition schema relationship for $0~String0 $1~TableName might be corrupt.

@@ -179,7 +179,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282637448134
+PLAN_ID .................. 212321995066139995
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -218,13 +218,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151598413
+  ObjectUIDs ............. 6789829250703131337
   select_list ............ TRAFODION.HBASE.MCSTATPART7.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART7.
                              F)))
@@ -327,7 +328,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282637741686
+PLAN_ID .................. 212321995066491810
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 568.59
 STATEMENT ................ select f,count(f)
@@ -366,13 +367,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151600526
+  ObjectUIDs ............. 6789829250703135855
   select_list ............ TRAFODION.HBASE.MCSTATPART5.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.
                              F)))
@@ -475,7 +477,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282638023675
+PLAN_ID .................. 212321995066791768
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -514,13 +516,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151601389
+  ObjectUIDs ............. 6789829250703137455
   select_list ............ TRAFODION.HBASE.MCSTATPART3.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART3.
                              F)))
@@ -623,7 +626,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282638276314
+PLAN_ID .................. 212321995067094379
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 523.92
 STATEMENT ................ select f,count(f)
@@ -662,13 +665,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151602308
+  ObjectUIDs ............. 6789829250703138642
   select_list ............ TRAFODION.HBASE.MCSTATPART6.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART6.
                              F)))
@@ -771,7 +775,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282638589572
+PLAN_ID .................. 212321995067459222
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 523.92
 STATEMENT ................ select f,count(f)
@@ -810,13 +814,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151603186
+  ObjectUIDs ............. 6789829250703139741
   select_list ............ TRAFODION.HBASE.MCSTATPART2.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART2.
                              F)))
@@ -919,7 +924,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282638883341
+PLAN_ID .................. 212321995067792542
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 538.3
 STATEMENT ................ select f,count(f)
@@ -958,13 +963,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151604056
+  ObjectUIDs ............. 6789829250703141227
   select_list ............ TRAFODION.HBASE.MCSTATPART1.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART1.
                              F)))
@@ -1067,7 +1073,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212320282639174313
+PLAN_ID .................. 212321995068129313
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -1106,13 +1112,14 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 953725371151604853
+  ObjectUIDs ............. 6789829250703142594
   select_list ............ TRAFODION.HBASE.MCSTATPART8.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART8.
                              F)))

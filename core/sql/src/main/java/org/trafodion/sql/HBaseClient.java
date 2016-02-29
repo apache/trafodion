@@ -677,6 +677,8 @@ public class HBaseClient {
               table.dropTable(tblName, transID);
            }
            else {
+               if (! admin.isTableEnabled(tblName))
+                   admin.enableTable(tblName);
               admin.disableTable(tblName);
               admin.deleteTable(tblName);
               admin.close();
@@ -690,7 +692,7 @@ public class HBaseClient {
         return cleanupCache(tblName);
     }
 
-    public boolean dropAll(String pattern) 
+    public boolean dropAll(String pattern, long transID) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.dropAll(" + pattern + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
@@ -706,14 +708,32 @@ public class HBaseClient {
                 int idx = tblName.indexOf("TRAFODION._DTM_");
                 if (idx == 0)
                     continue;
+
+                try {
+                    if(transID != 0) {
+                        //                        System.out.println("tblName " + tblName);
+                        table.dropTable(tblName, transID);
+                    }
+                    else {
+                        if (! admin.isTableEnabled(tblName))
+                            admin.enableTable(tblName);
+                        
+                        admin.disableTable(tblName);
+                        admin.deleteTable(tblName);
+                    }
+                }
                 
-                //                System.out.println(tblName);
-                admin.disableTable(tblName);
-                admin.deleteTable(tblName);
-	    }
- 	    
+                catch (IOException e) {
+                    if (logger.isDebugEnabled()) logger.debug("HbaseClient.dropAll  error" + e);
+                    throw e;
+                }
+                
+                cleanupCache(tblName);
+            }
+
             admin.close();
-            return cleanup();
+            //            return cleanup();
+            return true;
     }
 
     public ByteArrayList listAll(String pattern) 
@@ -833,7 +853,7 @@ public class HBaseClient {
             return true;
     }
 
-    public boolean exists(String tblName)  
+    public boolean exists(String tblName, long transID)  
            throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.exists(" + tblName + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
@@ -1719,6 +1739,7 @@ public class HBaseClient {
         admin.close();
         return true;
     }
+
     HTableDescriptor desc = new HTableDescriptor(tn);
     HColumnDescriptor colDesc = new HColumnDescriptor(famName);
     // A counter table is non-DTM-transactional.

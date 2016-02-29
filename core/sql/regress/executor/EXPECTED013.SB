@@ -21,7 +21,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Jan 23 02:44:37 2016
+-- Definition current  Fri Feb 12 07:43:19 2016
 
   (
     A                                INT DEFAULT NULL
@@ -49,7 +49,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sat Jan 23 02:44:54 2016
+-- Definition current  Fri Feb 12 07:43:35 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -111,7 +111,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Jan 23 02:45:57 2016
+-- Definition current  Fri Feb 12 07:44:30 2016
 
   (
     A                                INT DEFAULT NULL
@@ -136,7 +136,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sat Jan 23 02:46:10 2016
+-- Definition current  Fri Feb 12 07:44:46 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -175,7 +175,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Jan 23 02:46:25 2016
+-- Definition current  Fri Feb 12 07:44:57 2016
 
   (
     A                                INT DEFAULT NULL
@@ -197,7 +197,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sat Jan 23 02:46:32 2016
+-- Definition current  Fri Feb 12 07:45:04 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -436,6 +436,7 @@ CONTROL QUERY DEFAULT
   HBASE_SMALL_SCANNER           	SYSTEM
   HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
+  DDL_TRANSACTIONS              	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   POS                           	OFF
   SCHEMA                        	TRAFODION.T013_SCH
@@ -448,7 +449,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Jan 23 02:47:38 2016
+-- Definition current  Fri Feb 12 07:46:03 2016
 
   (
     A                                INT DEFAULT NULL
@@ -468,7 +469,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Jan 23 02:47:43 2016
+-- Definition current  Fri Feb 12 07:46:09 2016
 
   (
     A                                INT DEFAULT NULL
@@ -559,7 +560,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sat Jan 23 02:48:28 2016
+-- Definition current  Fri Feb 12 07:46:43 2016
 
   (
     A                                INT DEFAULT NULL
@@ -576,7 +577,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Sat Jan 23 02:48:35 2016
+-- Definition current  Fri Feb 12 07:46:49 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -591,7 +592,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sat Jan 23 02:48:47 2016
+-- Definition current  Fri Feb 12 07:47:01 2016
 
   (
     A                                INT DEFAULT NULL
@@ -656,7 +657,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sat Jan 23 02:49:31 2016
+-- Definition current  Fri Feb 12 07:47:39 2016
 
   (
     A                                INT DEFAULT NULL
@@ -1277,7 +1278,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Jan 23 02:55:57 2016
+-- Definition current  Fri Feb 12 07:54:03 2016
 
   (
     A                                INT DEFAULT NULL

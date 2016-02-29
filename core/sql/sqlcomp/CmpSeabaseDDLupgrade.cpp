@@ -162,7 +162,7 @@ short CmpSeabaseMDupgrade::dropMDtables(ExpHbaseInterface *ehi,
       hbaseTable.val = (char*)extNameForHbase.data();
       hbaseTable.len = extNameForHbase.length();
       
-      retcode = dropHbaseTable(ehi, &hbaseTable);
+      retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
       if (retcode < 0)
 	{
 	  errcode = -1;
@@ -307,6 +307,7 @@ short CmpSeabaseDDL::isOldMetadataInitialized(ExpHbaseInterface * ehi)
 }
 
 short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
+                                                   NABoolean ddlXns,
 						   NAString &currCatName, NAString &currSchName)
 {
   Lng32 cliRC = 0;
@@ -1327,6 +1328,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      if (dropSeabaseObject(ehi, mdti.oldName,
 					    catName, schName,
                                             objectType,
+                                            FALSE,
 					    TRUE, FALSE))
 			{
 			  deallocEHI(ehi); 
@@ -1372,7 +1374,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
 		      if (dropSeabaseObject(ehi, oldViewName,
 					    catName, schName,
-					    COM_VIEW_OBJECT))
+					    COM_VIEW_OBJECT,
+                                            FALSE))
 			{
 			  deallocEHI(ehi); 
 
@@ -1546,7 +1549,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 		  
-		  cliRC = upgradePrivMgr(&cliInterface, privMgrDoneMsg);
+		  cliRC = upgradePrivMgr(&cliInterface, ddlXns, privMgrDoneMsg);
 		  if (cliRC != 0)
 		    {
 		      mdui->setStep(UPGRADE_FAILED);
@@ -1745,6 +1748,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      if (dropSeabaseObject(ehi, mdti.oldName,
 					    catName, schName,
 					    (mdti.isIndex ? COM_INDEX_OBJECT : COM_BASE_TABLE_OBJECT),
+                                            FALSE,
 					    FALSE, TRUE))
 			{
 			  // ignore errors. Continue dropping old md tables.
@@ -2426,13 +2430,15 @@ short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
 // ----------------------------------------------------------------------------
 short CmpSeabaseMDupgrade::upgradePrivMgr (
   ExeCliInterface *cliInterface, 
+  NABoolean ddlXns,
   NAString &privMgrDoneMsg)
 {
   std::vector<std::string> tablesCreated;
   std::vector<std::string> tablesUpgraded;
 
   // initSeabaseAuthorization will create or upgrade PrivMgr metadata tables
-  if (initSeabaseAuthorization(cliInterface, tablesCreated, tablesUpgraded) < 0)
+  if (initSeabaseAuthorization(cliInterface, ddlXns,
+                               tablesCreated, tablesUpgraded) < 0)
     return -1;
 
   // Report which tables were created and which were upgraded

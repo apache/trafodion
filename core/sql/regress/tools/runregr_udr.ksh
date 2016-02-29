@@ -741,9 +741,10 @@ function DO_DIFF
 	fi
     fi
 
-    printf "$RESULT\n"
-    printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
-
+#    printf "$RESULT\n"
+#    printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
+    modtime=`stat --printf=%y $LOG | cut -d'.' -f1`
+    printf "$modtime    $T\t  $RESULT\n" >> $rgrlog
 }
 
 function DO_TEST
@@ -895,7 +896,7 @@ do
         fi
     fi
 done
-echo "$(date '+%m/%d/%Y %R')" >> $rgrlog
+#echo "$(date '+%m/%d/%Y %R')" >> $rgrlog
 
 # stop the ODBC server
 if [ $MXODBC_USABLE -eq 1 ]; then
