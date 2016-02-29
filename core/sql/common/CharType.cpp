@@ -1536,6 +1536,7 @@ SQLBlob::SQLBlob(
 	   externalFormat,
 	   extFormatLen)
 {
+  setCharSet(CharInfo::DefaultCharSet);
 }
 
 NAType *SQLBlob::newCopy(NAMemory* h) const

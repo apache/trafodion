@@ -5506,7 +5506,8 @@ NATable::NATable(BindWA *bindWA,
 
   if(postCreateNATableWarnings != preCreateNATableWarnings)
     tableConstructionHadWarnings_=TRUE;
-
+  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   if (hasLobColumn())
     {
       // read lob related information from lob metadata
@@ -5546,7 +5547,7 @@ NATable::NATable(BindWA *bindWA,
 	 LOB_CLI_SELECT_CURSOR,
 	 lobNumList,
 	 lobTypList,
-	 lobLocList,0);
+	 lobLocList,(char *)lobHdfsServer,lobHdfsPort,0);
       
       if (cliRC == 0)
 	{

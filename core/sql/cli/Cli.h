@@ -895,7 +895,7 @@ Lng32 SQLCLI_LOBcliInterface
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
  /*IN*/     char * blackBox,
- /*IN*/     Lng32* blackBoxLen,
+ /*IN*/     Int32* blackBoxLen,
  /*OUT*/    char * outLobHandle,
  /*OUT*/    Lng32 * outLobHandleLen,
  /*IN*/     LOBcliQueryType qType,
@@ -909,6 +909,17 @@ Lng32 SQLCLI_LOBcliInterface
  /*INOUT*/  void* *inCliInterface,
  /*IN*/     Int64 xnId          /* xn id of the parent process, if non-zero */
  );
+Lng32 SQLCLI_LOB_GC_Interface
+(
+ /*IN*/     CliGlobals *cliGlobals,
+ /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     char * handle,
+ /*IN*/     Lng32  handleLen,
+ /*IN*/     char*  hdfsServer,
+ /*IN*/     Lng32  hdfsPort,
+ /*IN*/     char *lobLocation,
+ /*IN*/    Int64 lobMaxMemChunkLen // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ );
 
 Lng32 SQLCLI_LOBddlInterface
 (
@@ -921,6 +932,8 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
+ /*IN*/    char *hdfsServer,
+ /*IN*/    Int32 hdfsPort,
  /*IN*/     Int64 lobMaxSize
  );
 

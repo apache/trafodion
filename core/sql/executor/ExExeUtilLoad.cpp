@@ -2980,7 +2980,8 @@ short ExExeUtilLobExtractTcb::work()
 	       LOB_CLI_SELECT_UNIQUE,
 	       lobNumList,
 	       lobTypList,
-	       lobLocList,0);
+	       lobLocList,lobTdb().getLobHdfsServer(),
+               lobTdb().getLobHdfsPort(),0);
 	    if (cliRC < 0)
 	      {
 		getDiagsArea()->mergeAfter(diags);

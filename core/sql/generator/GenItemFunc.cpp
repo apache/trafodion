@@ -2839,6 +2839,9 @@ short LOBinsert::codeGen(Generator * generator)
   li->setLobStorageLocation((char*)lobStorageLocation().data());
   li->setLobMaxSize(getLobMaxSize());
   li->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
+  li->setLobGCLimit(getLobGCLimit());
+  li->setLobHdfsServer((char *)getLobHdfsServer().data());
+  li->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, li);
   
   return 0;
@@ -2864,7 +2867,8 @@ short LOBdelete::codeGen(Generator * generator)
   ld->lobNum() = lobNum();
   ld->setLobStorageType(lobStorageType());
   ld->setLobStorageLocation((char*)lobStorageLocation().data());
-  
+  ld->setLobHdfsServer((char *)getLobHdfsServer().data());
+  ld->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, ld);
  
   return 0;
@@ -2908,6 +2912,9 @@ short LOBupdate::codeGen(Generator * generator)
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
   lu->setLobMaxSize(getLobMaxSize());
   lu->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
+  lu->setLobGCLimit(getLobGCLimit());
+  lu->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lu->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2929,7 +2936,8 @@ short LOBselect::codeGen(Generator * generator)
   ls->lobNum() = lobNum();
   ls->setLobStorageType(lobStorageType());
   ls->setLobStorageLocation((char*)lobStorageLocation().data());
- 
+  ls->setLobHdfsServer((char *)getLobHdfsServer().data());
+  ls->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, ls);
  
   return 0;
@@ -2957,7 +2965,8 @@ short LOBconvertHandle::codeGen(Generator * generator)
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
-
+  lu->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lu->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2987,6 +2996,8 @@ short LOBconvert::codeGen(Generator * generator)
   lc->setLobStorageLocation((char*)lobStorageLocation().data());
   generator->getExpGenerator()->linkClause(this, lc);
   lc->setConvertSize(getTgtSize());
+  lc->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lc->setLobHdfsPort(getLobHdfsPort());
   return 0;
 }
 

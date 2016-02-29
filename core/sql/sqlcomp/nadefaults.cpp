@@ -2068,12 +2068,16 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
+ // Size in bytes  used to perform garbage collection  to lob data file 
+  // default size is 5GB   . Change to adjust disk usage. 
+  DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
+  
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
-   
+ 
    // Size of memoryin bytes  used to perform I/O to lob data file 
   // default size is 512MB   . Change to adjust memory usage. 
-  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "536870912"), 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
   // default size is 10 G  (10000 M)
   DDint__(LOB_MAX_SIZE,                         "10000"),
   // default size is 32000. Change this to extract more data into memory.
@@ -6919,6 +6923,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok >=0  && tok <= 512000)
 	isValid = TRUE;
       break;
+
+    case LOB_GC_LIMIT_SIZE:
+      if (tok >= 0 )
+        isValid=TRUE;
 
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)
