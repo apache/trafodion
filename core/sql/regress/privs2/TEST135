@@ -40,7 +40,6 @@ sh rm -f LOG135-SECONDARY;
 obey TEST135(set_up);
 obey TEST135(tbl_tests);
 obey TEST135(view_tests);
-obey TEST135(constraint_tests);
 obey TEST135(udr_tests);
 obey TEST135(negative_tests);
 log;
@@ -237,48 +236,6 @@ drop table t135_t2 cascade;
 
 drop role t135_role1;
 drop role t135_role2;
-
-?section constraint_tests
--- ============================================================================
-set schema t135sch;
-create table t135_t1 (c1 int not null primary key, c2 int);
-
--- have user3 create some objects
-sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
-
--- now have user3 create an RI constraint
--- fails because user3 has no privs
-sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
-grant references on t135_t1 to sql_user3;
-showddl t135_t1;
--- operation should succeed
-sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
-
--- now try to revoke references privileges
-revoke references on t135_t1 from sql_user3;
-sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
-revoke references on t135_t1 from sql_user3;
-showddl t135_t1;
-
--- repeat, but grant all privileges instead.
--- have user3 create some objects
-sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
-
--- now have user3 create an RI constraint
--- fails because user3 has no privs
-sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
-grant all on t135_t1 to sql_user3;
-showddl t135_t1;
--- operation should succeed
-sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
-
--- now try to revoke references privileges
-revoke references on t135_t1 from sql_user3;
-sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
-revoke references on t135_t1 from sql_user3;
-showddl t135_t1;
-
-drop table t135_t1 cascade;
 
 ?section udr_tests
 -- ============================================================================
