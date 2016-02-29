@@ -202,6 +202,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   asciiValue = NULL;
   castValue = NULL;
   CollHeap * h = generator->wHeap();
+  bool needTranslate = FALSE;
 
   // if this is an upshifted datatype, remove the upshift attr.
   // We dont want to upshift data during retrievals or while building keys.
@@ -214,22 +215,32 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
       ((CharType*)newGivenType)->setUpshifted(FALSE);
     }
 
+  if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
+      (CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" || CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "gbk") && CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) == "UTF8" )
+        needTranslate = TRUE;
+
   // source ascii row is a varchar where the data is a pointer to the source data
   // in the hdfs buffer.
   NAType *asciiType = NULL;
   
   if (DFS2REC::isDoubleCharacter(newGivenType->getFSDatatype()))
-    asciiType =  new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+  {
+      asciiType =  new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
 				    FALSE, FALSE, newGivenType->getCharSet());
+  }
+  // set the source charset to GBK if HIVE_FILE_CHARSET is set
+  // HIVE_FILE_CHARSET can only be empty or GBK
+  else if (  needTranslate == TRUE )
+  {
+      asciiType =  new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+                                      FALSE, FALSE, CharInfo::GBK);
+  }
   else
     asciiType = new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull());
-
   if (asciiType)
     {
       asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
-
-      castValue = new(h) Cast(asciiValue, newGivenType); 
-
+      castValue = new(h) Cast(asciiValue, newGivenType);
       if (castValue)
 	{
 	  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
@@ -840,6 +851,7 @@ short FileScan::codeGenForHive(Generator * generator)
     asciiVids.insert(asciiValue->getValueId());
       
     castValue->bindNode(generator->getBindWA());
+
     if (convertSkipList[ii] == 1 || convertSkipList[ii] == 2)
       executorPredCastVids.insert(castValue->getValueId());
     else
@@ -2643,7 +2655,8 @@ short HbaseAccess::codeGen(Generator * generator)
 					 ExpTupleDesc::LONG_FORMAT);     // [optional IN] target desc format
 
       work_cri_desc->setTupleDescriptor(hbaseFilterValTuppIndex, hbaseFilterValTupleDesc);
-
+    }
+  if (!hbaseFilterColVIDlist_.isEmpty()){// with unary operator we can have column without value
       genListOfColNames(generator, getIndexDesc(), hbaseFilterColVIDlist_,
 			hbaseFilterColNames);
 
@@ -2792,6 +2805,17 @@ short HbaseAccess::codeGen(Generator * generator)
                                   hbpa, samplePercent()) ;
   generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
                                  getEstRowsAccessed().getValue(),hbpa);
+
+  Lng32 hbaseBlockSize = 65536; //default HBaseValue, should not be useful as the if statement should always pass
+  if(getIndexDesc() && getIndexDesc()->getNAFileSet())
+    hbaseBlockSize = getIndexDesc()->getNAFileSet()->getBlockSize();
+
+  generator->setHBaseSmallScanner(computedHBaseRowSizeFromMetaData,
+                                getEstRowsAccessed().getValue(),
+                                hbaseBlockSize,
+                                hbpa);
+
+
 
   ComTdbHbaseAccess::HbaseAccessOptions * hbo = NULL;
   if (getHbaseAccessOptions())

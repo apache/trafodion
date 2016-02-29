@@ -447,4 +447,30 @@ TINT    SM      I            BIG                   STR                        F 
 
 --- 1 row(s) selected.
 >>
+>>cqd HIVE_FILE_CHARSET 'GBK';
+
+--- SQL operation complete.
+>>select c1, CONVERTTOHEX(c2) from tbl_gbk;
+
+C1           (EXPR)
+-----------  --------------------------------------------------
+
+          3  EC8B90EC978E
+          5  EC8B90EC978E
+          2  EC8B90EC978E
+          4  EC8B90EC978E
+          6  EC8B90EC978E
+          7  EC8B90EC978E
+          8  EC8B90EC978E
+          3  ECBB93EB9F8FECAB97EB9B91
+          2  ECBB93EB9F8FECAB97EB9B91
+          6  ECBB93EB9F8FECAB97EB9B91
+         19  ECBB93EB9F8FECAB97EB9B91
+          8  ECBB93EB9F8FECAB97EB9B91
+
+--- 12 row(s) selected.
+>>cqd HIVE_FILE_CHARSET reset;
+
+--- SQL operation complete.
+>>
 >>log;

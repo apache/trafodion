@@ -131,7 +131,7 @@ THRIFT_LIB=-lthrift
 THRIFT_SO=libthrift-*.so
 
 LOG4CXX_INC=-I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx
-LOG4CXX_LIB=-L$(LOG4CXX_LIB_DIR) -llog4cxx
+LOG4CXX_LIB=-llog4cxx
 LOG4CXX_SO=liblog4cxx*.so
 
 # for now, include these libs (copied to our local lib dir) everywhere
@@ -420,7 +420,8 @@ copytoolslibs:
 	mkdir -p $(LIBROOT)
 	-(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
 	           $(HADOOP_LIB_DIR)/$(LIBHADOOP_SO) \
-	           $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
+	           $(THRIFT_LIB_DIR)/$(THRIFT_SO) \
+	           $(LOG4CXX_LIB_DIR)/$(LOG4CXX_SO); \
 	 do\
 	   cp -Pf $$i* $(LIBROOT); \
 	 done\

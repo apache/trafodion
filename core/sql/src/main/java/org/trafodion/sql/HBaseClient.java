@@ -235,6 +235,7 @@ public class HBaseClient {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
+            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
@@ -486,7 +487,7 @@ public class HBaseClient {
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-
+            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
@@ -518,7 +519,6 @@ public class HBaseClient {
             metaColDesc.setInMemory(true);
             desc.addFamily(metaColDesc);
             HBaseAdmin admin = new HBaseAdmin(config);
-
             try {
                if (beginEndKeys != null && beginEndKeys.length > 0)
                {
@@ -854,6 +854,21 @@ public class HBaseClient {
              if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
           }
+
+          HBaseAdmin admin = new HBaseAdmin(config);
+          HTableDescriptor tblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));
+          if (logger.isDebugEnabled()) logger.debug("check coprocessor num for tbl : "+ tblName+". coprocessor size : "+tblDesc.getCoprocessors().size());
+          boolean added = CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), tblDesc);
+          if (added) {
+              if (logger.isDebugEnabled())
+                  logger.debug("  ==> add coprocessor for table : " + tblName);
+              synchronized (admin) {
+                  admin.disableTable(tblName);
+                  admin.modifyTable(tblName, tblDesc);
+                  admin.enableTable(tblName);
+              }
+          }
+
           if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
           hTableClientsInUse.put(htable.getTableName(), htable);
           htable.setJniObject(jniObject);

@@ -319,7 +319,7 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
   
   // TODO : loop over SDs
   if (findAToken(md, tblStr, pos, "sd:StorageDescriptor(", 
-                 "getTableDesc::sd:StorageDescriptor(###"))
+                 "getTableDesc::sd:StorageDescriptor(###)",FALSE))
     return NULL;
 
   return result;

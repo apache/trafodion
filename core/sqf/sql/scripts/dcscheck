@@ -31,6 +31,13 @@ down_dcsmaster_cnt=0
 cfg_dcsserver_cnt=0
 actual_dcsserver_cnt=0
 down_dcsserver_cnt=0
+activeMaster=localhost
+
+if [ -e $SQ_PDSH ]; then
+   L_PDSH="$SQ_PDSH $MY_NODES "
+else
+   L_PDSH=
+fi
 
 tmp_ps=`mktemp -t`
 if [[ $? != 0 ]]; then
@@ -44,17 +51,23 @@ if [[ $? != 0 ]]; then
 fi
 
 echo
-#Check if Trafodion is up and running
+#Check if Trafodion is up and operational
 sqcheck -f > $tmp_chk 2>&1
 sq_stat=$?
-if [[ $sq_stat == 0 ]]; then
+if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
 
  if [ -d $DCS_INSTALL_DIR ];then
+
+### Get the configured primary node for DcsMaster
+  if [ -s ${DCS_INSTALL_DIR}/conf/master ]; then
+     primary_dcsmaster=`cat ${DCS_INSTALL_DIR}/conf/master | /bin/egrep -v '^#|^$'`
+  fi
 
 ### Get the configured number of DcsMaster's
   if [ -s ${DCS_INSTALL_DIR}/conf/backup-masters ]; then
      let backup_dcsmaster_cnt=`/bin/egrep -cv '#|^$' ${DCS_INSTALL_DIR}/conf/backup-masters`
      let cfg_dcsmaster_cnt=$backup_dcsmaster_cnt+1
+     list_of_backups=`cat ${DCS_INSTALL_DIR}/conf/backup-masters | /bin/egrep -v '^#|^$'|paste -sd ' ' -`
    else
      let cfg_dcsmaster_cnt=1
    fi
@@ -66,14 +79,41 @@ if [[ $sq_stat == 0 ]]; then
    fi
 
 ### Check if there are any DcsMaster and DcsServer's that are started 
-   if [ -e $SQ_PDSH ]; then
-     actual_dcsmaster_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsMaster |wc -l` 
-     actual_dcsserver_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsServer |wc -l` 
+   actual_dcsmaster_cnt=`$L_PDSH $jpscmd |grep DcsMaster |wc -l` 
+   actual_dcsserver_cnt=`$L_PDSH $jpscmd |grep DcsServer |wc -l` 
+
+### Get the node where the active master is running
+   if [[ ! -z $CLUSTERNAME ]]; then
+     if [[ $ENABLE_HA == "true" ]]; then
+        echo "Cluster Configuration: HA"
+        floatip_interface=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f1`
+        floatip_port=`python $DCS_INSTALL_DIR/bin/scripts/parse_dcs_site.py|cut -d$'\n' -f3`
+        if [[ -z $floatip_port ]]; then
+            floatip_port=23400
+        fi
+        if [[ -z $AWS_CLOUD ]]; then
+           interface_to_use=$floatip_interface":"$floatip_port
+        else
+           interface_to_use=$floatip_interface
+        fi
+        activeMaster=`$L_PDSH /sbin/ip addr show |grep $interface_to_use$ |cut -d':' -f1`
+        if [[ ! -z $activeMaster ]]; then
+           activeDcsPid=`$L_PDSH $jpscmd |grep DcsMaster |grep $activeMaster |cut -d" " -f2 |paste -sd ' ' -`
+        fi
+     else
+        activeMaster=`$L_PDSH $jpscmd |grep DcsMaster |cut -d":" -f1 |paste -sd ' ' -`
+     fi
+
+     if ( [ -z $activeMaster ] && [ "$actual_dcsmaster_cnt" '>' 0 ] && [ "$actual_dcsserver_cnt" '>' 0 ] ); then
+        echo "Cluster Running      : Non-HA"
+     fi
    else
-     actual_dcsmaster_cnt=`$jpscmd |grep DcsMaster |wc -l`
-     actual_dcsserver_cnt=`$jpscmd |grep DcsServer |wc -l`
+     ### Get the pid of the active DcsMaster 
+     activeDcsPid=`$L_PDSH $jpscmd |grep DcsMaster |cut -d" " -f1`
    fi
 
+
+### Get the count of DcsMaster & DcsServers that are stopped
    if ( [ "$cfg_dcsserver_cnt" '!=' "$actual_dcsserver_cnt" ] ); then
      let down_dcsserver_cnt=cfg_dcsserver_cnt-actual_dcsserver_cnt
    else
@@ -86,8 +126,8 @@ if [[ $sq_stat == 0 ]]; then
      down_dcsmaster_cnt=''
    fi
 
-### Get the current process status (all processes)
-  sqps > $tmp_ps 2>&1
+### Get the current cluster process status (all processes)
+  cstat > $tmp_ps 2>&1
 
 ### Get the actual number of mxosrvrs
   let act_mxo_cnt=`< $tmp_ps egrep -a -i ' mxosrvr' | wc -l`
@@ -96,19 +136,30 @@ if [[ $sq_stat == 0 ]]; then
   else
     down_mxo_cnt=''
   fi 
-
+  echo
   if ( [ "$actual_dcsmaster_cnt" '!=' 0 ] && [ "$actual_dcsserver_cnt" '!=' 0 ] ); then
    echo "ls $dcsznode"|$DCS_INSTALL_DIR/bin/dcs zkcli > $dcstmp
    zkport=`cat $dcstmp | /usr/bin/head -n 1 | cut -d ":" -f2`
    if [ ! -z "$zkport" ]; then
-     echo "Zookeeper is listening on port $zkport"
+     echo "Zookeeper listen port: $zkport"
    else
      echo "Zookeeper is not started..."
      exit 1
    fi
    masterport=`cat $dcstmp | /usr/bin/tail -n 1 | cut -d ":" -f4`
    if [ ! -z "$masterport" ]; then
-     echo "DcsMaster is listening on port $masterport"
+     echo -e "DcsMaster listen port: $masterport\n"
+     if [[ ! -z "$primary_dcsmaster" ]]; then
+        echo "Configured Primary DcsMaster: \"$primary_dcsmaster\""
+     fi
+     if [[ ! -z "$list_of_backups" ]]; then
+        echo "Configured Backup DcsMasters: \"$list_of_backups\""
+     fi
+     if ( [ ! -z "$activeMaster" ] && [ ! -z "$activeDcsPid" ] ); then
+        echo "Active DcsMaster            : \"$activeMaster\", pid $activeDcsPid"
+     else
+        echo "Active DcsMaster            : \"$activeMaster\""
+     fi
      echo
    fi
    rm -f $dcstmp $tmp_chk $tmp_ps
@@ -130,7 +181,7 @@ if [[ $sq_stat == 0 ]]; then
    exit 1
  fi
 else
- echo "Trafodion is not started..."
+ echo "Trafodion is not started or is not operational..."
  echo
 fi
 exit 0

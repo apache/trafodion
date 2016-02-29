@@ -64,6 +64,7 @@ class Queue;
 typedef int             Lng32;
 #endif
 #include "ComSmallDefs.h"
+#include "NAUserId.h"
 #include "ExExeUtilCli.h"
 enum {INTERNAL_QUERY_FROM_EXEUTIL   = 0x20000};
 // LCOV_EXCL_STOP

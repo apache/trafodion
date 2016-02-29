@@ -120,6 +120,11 @@ class PrivMgr
        bitmap.set(REFERENCES_PRIV);
     }
 
+    static void log(
+      const std::string filename,
+      const std::string message,
+      const int_32 index);
+
     // -------------------------------------------------------------------
     // Constructors and destructors:
     // -------------------------------------------------------------------
@@ -151,10 +156,6 @@ class PrivMgr
        std::vector<PrivClass> privClasses);
     void resetFlags();
     void setFlags();
-    void log(
-      const std::string filename,
-      const std::string message,
-      const int_32 index);
 
 
   protected:

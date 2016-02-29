@@ -353,6 +353,9 @@ THREAD_P DefaultDefault defaultDefaults[] = {
 
 SDDint__(AFFINITY_VALUE,                        "-2"),
 
+// controls the ESP allocation per core. 
+ DDkwd__(AGGRESSIVE_ESP_ALLOCATION_PER_CORE,        "OFF"),
+
 SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if row sampling will use the sample operator in SQL/MX or the
 
  // this should be used for testing only. DML should not be executed on
@@ -1782,6 +1785,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDkwd__(HBASE_SERIALIZATION,		"ON"),
  
   DD_____(HBASE_SERVER,                         ""), 
+  DDkwd__(HBASE_SMALL_SCANNER,      "OFF"),
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
   DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
@@ -1955,6 +1959,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
   DD_____(HIVE_DEFAULT_SCHEMA,                  "HIVE"),
+  DD_____(HIVE_FILE_CHARSET,                    ""),
   DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
@@ -3462,13 +3467,16 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
   DDkwd__(USE_MAINTAIN_CONTROL_TABLE,          "OFF"),
+
+  DDkwd__(USE_OLD_DT_CONSTRUCTOR,      "OFF"),
+
   // Adaptive segmentation, use operator max to determine degree of parallelism
   DDui___(USE_OPERATOR_MAX_FOR_DOP,     "1"),
 
 // Specify the number of partitions before invoking parallel label operations
   DDui1__(USE_PARALLEL_FOR_NUM_PARTITIONS,       "32"),
 
-  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "OFF"),  // When ON, generate MCs for primary key prefixes as well as full key
+  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),
@@ -3587,6 +3595,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
+ XDDui1__(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
@@ -4047,6 +4056,7 @@ NADefaults::NADefaults(NAMemory * h)
   setFlagOn(ZIG_ZAG_TREES, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
   setFlagOn(COMPRESSED_INTERNAL_FORMAT, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
   setFlagOn(COMPRESSED_INTERNAL_FORMAT_BMO, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
+  setFlagOn(HBASE_SMALL_SCANNER, DEFAULT_ALLOWS_SEPARATE_SYSTEM);
 }
 
 NADefaults::~NADefaults()
@@ -4337,59 +4347,8 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
     case MAX_ESPS_PER_CPU_PER_OP:
       {
-        // set 2 ESPs per node, as a starting point.
-        #define DEFAULT_ESPS_PER_NODE 2
-
-        Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-        Lng32 coresPerNode = 1;        
-          // Make sure the gpClusterInfo points at an NAClusterLinux object.
-          // In osim simulation mode, the pointer can point at a NAClusterNSK
-          // object, for which the method numTSEsForPOS() is not defined.
-        NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
-
-          // number of POS TSE
-        Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
-
-          // cluster nodes
-        Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
-
-          // TSEs per node
-        Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
-
-          // cores per node
-        coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
-
-          // For Linux/nt, we conservatively allocate ESPs per node as follows
-          // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
-          // - 1 ESP per TSE if number of cores is more than double the TSEs
-          // - 1 ESP per 2 TSEs if cores are more than TSEs but less than double the TSEs
-          // - 1 ESP per node. Only possible on NT or workstations
-          //      - number of cores less than TSEs and there are 1 or 2 cpur cores per node
-          //      - number of TSEs is less than cpu cores and there 1 or 2 TSEs per node.
-          //        This case is probable if virtual nodes are used
-
-          // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
-          // in this case we only consider cpu cores
-        if ((coresPerNode <= TSEsPerNode) || (TSEsPerNode == 0))
-        {
-            if (coresPerNode > 1)
-                numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
-        }
-        else if (coresPerNode > (TSEsPerNode*2))
-        {
-             numESPsPerNode = TSEsPerNode;
-        }
-        else if (TSEsPerNode > 1)
-        {
-             numESPsPerNode = TSEsPerNode/2;
-        }
-        else // not really needed since numESPsPerNode is set to 1 from above
-        {
-             numESPsPerNode = DEFAULT_ESPS_PER_NODE;
-        }
-        
-
-        ftoa_((float)(numESPsPerNode)/(float)(coresPerNode), valuestr);
+        float espsPerCore = computeNumESPsPerCore(FALSE);
+        ftoa_(espsPerCore, valuestr);
         strcpy(newValue, valuestr);
         if(reInit)
           ActiveSchemaDB()->
@@ -5897,6 +5856,18 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
         }
      }
      break;
+
+     case AGGRESSIVE_ESP_ALLOCATION_PER_CORE:
+     {
+        NABoolean useAgg = (getToken(attrEnum) == DF_ON);
+        float numESPsPerCore = computeNumESPsPerCore(useAgg);
+        char valuestr[WIDEST_CPUARCH_VALUE];
+        ftoa_(numESPsPerCore, valuestr);
+        NAString val(valuestr);
+        insert(MAX_ESPS_PER_CPU_PER_OP, val, errOrWarn);
+     }
+     break;
+
       default:  break;
       }
     }	  // code to valid overwrite (insert)
@@ -5917,6 +5888,77 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
   return attrEnum;
 
 } // NADefaults::validateAndInsert()
+
+float NADefaults::computeNumESPsPerCore(NABoolean aggressive)
+{
+   #define DEFAULT_ESPS_PER_NODE 2   // for conservation allocation
+   #define DEFAULT_ESPS_PER_CORE 0.5 // for aggressive allocation
+
+     // Make sure the gpClusterInfo points at an NAClusterLinux object.
+     // In osim simulation mode, the pointer can point at a NAClusterNSK
+     // object, for which the method numTSEsForPOS() is not defined.
+   NAClusterInfoLinux* gpLinux = dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
+   assert(gpLinux);		
+
+   // cores per node
+   Lng32 coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
+
+   if ( aggressive ) {
+      float totalMemory = gpLinux->totalMemoryAvailable(); // per Node, in KB
+      totalMemory /= (1024*1024); // per Node, in GB
+      totalMemory /= coresPerNode ; // per core, in GB
+      totalMemory /= 2; // per core, 2GB per ESP
+      return MINOF(DEFAULT_ESPS_PER_CORE, totalMemory);
+   } else {
+      Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+      return (float)(numESPsPerNode)/(float)(coresPerNode);
+   }
+
+// The following lines of code are comment out but retained for possible
+// future references.
+//
+//     // number of POS TSE
+//   Lng32 numTSEsPerCluster = gpLinux->numTSEsForPOS();
+//
+//     // cluster nodes
+//   Lng32 nodesdPerCluster = gpClusterInfo->getTotalNumberOfCPUs();
+//
+//     // TSEs per node
+//   Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
+//
+//
+//
+//     // For Linux/nt, we conservatively allocate ESPs per node as follows
+//     // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
+//     // - 1 ESP per TSE if number of cores is more than double the TSEs
+//     // - 1 ESP per 2 TSEs if cores are more than TSEs but less than double the TSEs
+//     // - 1 ESP per node. Only possible on NT or workstations
+//     //      - number of cores less than TSEs and there are 1 or 2 cpur cores per node
+//     //      - number of TSEs is less than cpu cores and there 1 or 2 TSEs per node.
+//     //        This case is probable if virtual nodes are used
+//
+//     // TSEsPerNode is 0 for arkcmps started by the seapilot universal comsumers
+//     // in this case we only consider cpu cores
+//   if ( coresPerNode <= TSEsPerNode || TSEsPerNode == 0 )
+//   {
+//       if (coresPerNode > 1)
+//           numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
+//   }
+//   else if (coresPerNode > (TSEsPerNode*2))
+//   {
+//        numESPsPerNode = TSEsPerNode;
+//   }
+//   else if (TSEsPerNode > 1)
+//   {
+//        numESPsPerNode = TSEsPerNode/2;
+//   }
+//   else // not really needed since numESPsPerNode is set to 1 from above
+//   {
+//        numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+//   }
+//        
+//   return (float)(numESPsPerNode)/(float)(coresPerNode);
+}
 
 enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 						 Lng32 holdOrRestoreCQD)
@@ -6359,6 +6401,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
   else {
     if ((attrEnum == TERMINAL_CHARSET) ||
         (attrEnum == USE_HIVE_SOURCE) ||
+        (attrEnum == HIVE_FILE_CHARSET) ||
         (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
         (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
@@ -6432,6 +6475,14 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  case '2':	return DF_HIGH;
 	  case '3':	return DF_MAXIMUM;
 	}
+      // HBASE_FILTER_PREDS
+        if ((attrEnum == HBASE_FILTER_PREDS) && value.length()==1)
+      switch (*value.data()){
+        case '0': return DF_OFF;
+        case '1': return DF_MINIMUM;
+        case '2': return DF_MEDIUM;
+        // in the future add DF_HIGH and DF_MAXIMUM when we implement more pushdown capabilities
+      }
     if ( attrEnum == TEMPORARY_TABLE_HASH_PARTITIONS ||
          attrEnum == MVQR_REWRITE_CANDIDATES ||
          attrEnum == MVQR_PUBLISH_TABLE_LOCATION ||
@@ -6687,6 +6738,15 @@ DefaultToken NADefaults::token(Int32 attrEnum,
           tok == DF_MEDIUM	 || tok == DF_MAXIMUM)
         isValid = TRUE;
       break;
+
+    case HBASE_FILTER_PREDS:
+        if(tok == DF_OFF || tok == DF_ON)
+        {
+            if (tok == DF_ON)
+                tok = DF_MINIMUM; // to keep backward compatibility
+        isValid= TRUE;
+        }
+        break;
 
     case ROBUST_QUERY_OPTIMIZATION:
       if (tok == DF_MINIMUM || tok == DF_SYSTEM || tok == DF_MAXIMUM ||

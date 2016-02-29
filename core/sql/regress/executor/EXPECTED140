@@ -1,0 +1,927 @@
+>>obey TEST140(ddl);
+>>create table t140helper (a int not null, primary key(a));
+
+--- SQL operation complete.
+>>insert into t140helper values(1);
+
+--- 1 row(s) inserted.
+>>create table t140 (uniq int not null, uniq2 int not null , a int not null, b int not null,
++>    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) ;
+
+--- SQL operation complete.
+>>create table t140b (uniq int not null, uniq2 int not null , a int not null, b int not null,
++>    c int not null, an int, bn int, cn int, d varchar(10),                  primary key (uniq,uniq2)) salt using 2 partitions on (uniq,uniq2) ;
+
+--- SQL operation complete.
+>>
+>>upsert using load 
++>into t140
++>  select  x1,x1,10*x1,100*x1,1000*x1,10*x1+1,100*x1+1, 1000*x1+1, 'aaa'||cast(x1 as varchar(10)) 
++>
++>  from t140helper
++>transpose 0,1,2,3,4,5,6,7,8,9 as x1;
+
+--- 10 row(s) inserted.
+>>
+>>insert into t140 values(11,11,12,102,1002,13,103,1003,'nullabs11');
+
+--- 1 row(s) inserted.
+>>insert into t140 values(12,12,22,202,2002,NULL,NULL,2003,'nullabs12');
+
+--- 1 row(s) inserted.
+>>insert into t140 values(13,13,32,302,3002,33,303,3003,'nullupd13');
+
+--- 1 row(s) inserted.
+>>update t140 set an = null, bn=null where uniq=13;
+
+--- 1 row(s) updated.
+>>insert into t140 values(14,14,42,402,4002,43,403,4003,NULL);
+
+--- 1 row(s) inserted.
+>>insert into t140 values(15,15,52,502,5002,53,503,5003,'asd');
+
+--- 1 row(s) inserted.
+>>update t140 set d = null where uniq = 15;
+
+--- 1 row(s) updated.
+>>
+>>obey TEST140(run);
+>>-- test returned rows with or without adding key column and test of all pushdown functions with null or non null column
+>>-- only one column retrieved
+>>explain select a from t140 where b>500;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281519143599
+ROWS_OUT ................ 33
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select a from t140 where b>500;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 33
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 33
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.A
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 33
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 50
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:3
+  pushed_down_rpn ........ (#1:4>?)
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select a from t140 where b>=500;
+
+A          
+-----------
+
+         50
+         60
+         70
+         80
+         90
+         52
+
+--- 6 row(s) selected.
+>>--verify that the column retrieved for null handling is not the _SALT_ for optimization of skips, salt being the last physical column
+>>explain select an from t140b where b<=200;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281520763784
+ROWS_OUT ................ 33
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an from t140b where b<=200;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 33
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 75
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 33
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313847
+  select_list ............ TRAFODION.SCH.T140B.AN
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140B
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 33
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 75
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140B
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:2,#1:6
+  pushed_down_rpn ........ (#1:4<=?)
+  key_columns ............ _SALT_, UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>-- we should have 2 columns retrieved since an is nullable
+>>explain select an from t140 where b<=200;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281520871425
+ROWS_OUT ................ 33
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an from t140 where b<=200;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 33
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 75
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 33
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.AN
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 33
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 75
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:2,#1:6
+  pushed_down_rpn ........ (#1:4<=?)
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select an from t140 where b<=200;
+
+AN         
+-----------
+
+          1
+         11
+         21
+         13
+
+--- 4 row(s) selected.
+>>-- should not get back 2 column, only one since predicate says an is not null
+>>explain select an from t140 where b=200 and an is not null;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281520990973
+ROWS_OUT ................ 10
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an from t140 where b=200 and an is not null;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 10
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 99
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 10
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.AN
+  input_variables ........ %(200)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 10
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 99
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:6
+  pushed_down_rpn ........ (#1:4=?)(#1:6 is_not_null.)AND
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select an from t140 where b=200 and an is not null;
+
+AN         
+-----------
+
+         21
+
+--- 1 row(s) selected.
+>>-- should only get 2 column back since a is not null, no need to add key column
+>>explain select an, a from t140 where b!=500;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281521112920
+ROWS_OUT ................ 67
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an, a from t140 where b!=500;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 67
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est ......... 100
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 67
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 67
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est ......... 100
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:3,#1:6
+  pushed_down_rpn ........ (#1:4<?)(#1:4>?)OR
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select an, a from t140 where b!=500;
+
+AN           A          
+-----------  -----------
+
+          1            0
+         11           10
+         21           20
+         31           30
+         41           40
+         61           60
+         71           70
+         81           80
+         91           90
+         13           12
+          ?           22
+          ?           32
+         43           42
+         53           52
+
+--- 14 row(s) selected.
+>>-- see if we handle null logic correctly
+>>select a from t140 where bn>=501;
+
+A          
+-----------
+
+         50
+         60
+         70
+         80
+         90
+         52
+
+--- 6 row(s) selected.
+>>select an from t140 where bn<=201;
+
+AN         
+-----------
+
+          1
+         11
+         21
+         13
+
+--- 4 row(s) selected.
+>>explain select an from t140 where bn=201 and an is not null;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281521342888
+ROWS_OUT ................ 10
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an from t140 where bn=201 and an is not null;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 10
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 99
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 10
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.AN
+  input_variables ........ %(201)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 10
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 99
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:6
+  pushed_down_rpn ........ (#1:7=.?)(#1:6 is_not_null.)AND
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select an from t140 where bn=201 and an is not null;
+
+AN         
+-----------
+
+         21
+
+--- 1 row(s) selected.
+>>explain select an, a from t140 where bn!=501;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281521467017
+ROWS_OUT ................ 67
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an, a from t140 where bn!=501;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 67
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est ......... 100
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 67
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 67
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est ......... 100
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:3,#1:6
+  pushed_down_rpn ........ (#1:7<.?)(#1:7>.?)OR
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select an, a from t140 where bn!=501;
+
+AN           A          
+-----------  -----------
+
+          1            0
+         11           10
+         21           20
+         31           30
+         41           40
+         61           60
+         71           70
+         81           80
+         91           90
+         13           12
+         43           42
+         53           52
+
+--- 12 row(s) selected.
+>>select a from t140 where an is null;
+
+A          
+-----------
+
+         22
+         32
+
+--- 2 row(s) selected.
+>>select a from t140 where an is not null;
+
+A          
+-----------
+
+          0
+         10
+         20
+         30
+         40
+         50
+         60
+         70
+         80
+         90
+         12
+         42
+         52
+
+--- 13 row(s) selected.
+>>select a from t140 where a between 20 and 40;
+
+A          
+-----------
+
+         20
+         30
+         40
+         22
+         32
+
+--- 5 row(s) selected.
+>>-- make sure that we only retrieve one column as an cannot be null in the result set.
+>>explain select an from t140 where an between 20 and 40;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212320281521680638
+ROWS_OUT ................ 11
+EST_TOTAL_COST ........... 0.05
+STATEMENT ................ select an from t140 where an between 20 and 40;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 11
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 75
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  max_max_cardinality ... 11
+  total_overflow_size .... 0.00 KB
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  TARGET_CODE ............ DEBUG
+  TARGET_CPU_FREQUENCY   199
+  TARGET_IO_SEEK_TIME .... 0.02
+  TARGET_IO_SEQ_READ_RATE  2.5
+  TARGET_MSG_LOCAL_RATE   10
+  TARGET_MSG_LOCAL_TIME    0.01
+  TARGET_MSG_REMOTE_RAT  100
+  TARGET_MSG_REMOTE_TIME   0.01
+  ARKCMP_FAKE_HW ......... ON
+  SKIP_METADATA_VIEWS .... ON
+  DEF_NUM_SMP_CPUS ....... 2
+  MAX_ESPS_PER_CPU_PER_OP  1
+  DEF_NUM_NODES_IN_ACTIVE  1
+  POS_ALLOW_NON_PK_TABLES  ON
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_SMALL_SCANNER .... SYSTEM
+  HBASE_FILTER_PREDS ..... 2
+  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_INDEX_CREATE_OPT    ON
+  SCHEMA ................. TRAFODION.SCH
+  GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5476465295937313773
+  select_list ............ TRAFODION.SCH.T140.AN
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... T140
+REQUESTS_IN .............. 1
+ROWS_OUT ................ 11
+EST_OPER_COST ............ 0.05
+EST_TOTAL_COST ........... 0.05
+DESCRIPTION
+  max_card_est .......... 75
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  scan_type .............. subset scan of table TRAFODION.SCH.T140
+  object_type ............ Trafodion
+  columns ................ all
+  begin_keys(incl)
+  end_keys(incl)
+  cache_size ........... 100
+  small_scanner .......... ON
+  probes ................. 1
+  rows_accessed ........ 100
+  column_retrieved ....... #1:6
+  pushed_down_rpn ........ (#1:6>=.?)(#1:6<=.?)AND
+  key_columns ............ UNIQ, UNIQ2
+
+--- SQL operation complete.
+>>select an from t140 where an between 20 and 40;
+
+AN         
+-----------
+
+         21
+         31
+
+--- 2 row(s) selected.
+>>select an from t140 where an in (21,41,51,61,10);
+
+AN         
+-----------
+
+         21
+         41
+         51
+         61
+
+--- 4 row(s) selected.
+>>
+>>obey TEST140(clnup);
+>>drop table t140helper;
+
+--- SQL operation complete.
+>>drop table t140;
+
+--- SQL operation complete.
+>>drop table t140b;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

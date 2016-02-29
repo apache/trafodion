@@ -154,7 +154,6 @@ public final class ServerManager implements Callable {
                     StringTokenizer st = new StringTokenizer(nodes.get(0), ":");
                     while (st.hasMoreTokens()) {
                         masterHostName = st.nextToken();
-                        masterThriftPort = Integer.parseInt(st.nextToken());
                         masterStartTime = Long.parseLong(st.nextToken());
                     }
                     found = true;

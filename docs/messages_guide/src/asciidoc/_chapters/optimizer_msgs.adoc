@@ -1,0 +1,118 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[optimizer-messages]]
+= Optimizer Messages (6000 through 6999)
+
+[[SQL-6001]]
+== SQL 6001
+
+```
+DISTINCT aggregates can be computed for only one column per table expression.
+```
+
+*Cause:* You attempted to compute DISTINCT aggregates for more than one
+column.
+
+*Effect:* DISTINCT aggregates can be computed only for one column per
+table expression.
+
+*Recovery:* Correct syntax and resubmit.
+
+[[SQL-6002]]
+== SQL 6002
+
+```
+The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid values. If you have manually modified the metadata table, then you should undo your changes using the CLEAR option in UPDATE STATISTICS.
+```
+
+*Cause:* You have manually modified the metadata table, and now it
+contains invalid values.
+
+*Effect:* Trafodion is unable to complete
+compilation.
+
+*Recovery:* Undo your changes using the CLEAR option in UPDATE
+STATISTICS.
+
+<<<
+[[SQL-6003]]
+== SQL 6003
+
+```
+The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid boundary value <value> for column <name>. If you have manually modified the metadata table, then you should undo your changes using the CLEAR option in UPDATE STATISTICS.
+```
+
+*Cause:* You have manually modified the metadata table, and now it
+contains an invalid boundary value.
+
+*Effect:* The Trafodion database uses default histograms to compile the
+query. This is a warning message.
+
+*Recovery:* Undo your changes using the CLEAR option in UPDATE
+STATISTICS.
+
+[[SQL-6007]]
+== SQL 6007
+
+```
+Multi-column statistics for columns <names> from table <name> were not available; as a result, the access path chosen might not be the best possible.
+```
+
+*Cause:* Statistics are not available for the multicolumn join you are
+performing.
+
+This message appears when the user has not updated statistics for column
+<names> and when the row count in table <name> is more than the value of
+the defaults table constant HIST_ROWCOUNT_REQUIRING_STATS. If you want
+to suppress this message, set that value to a very large number, and you
+will see this message only for tables with more rows than that, and for
+which there are no updated statistics.
+
+*Effect:* None. This is a warning message.
+
+*Recovery:* None.
+
+<<<
+[[SQL-6008]]
+== SQL 6008
+
+```
+Statistics for column <name> were not available. As a result, the access path chosen might not be the best possible.
+```
+
+*Cause:* Statistics are not available for the statement you specified.
+
+This message appears when the user has not updated statistics for column
+<name> and when the ROWCOUNT in the table is more than the value of the
+defaults table constant HIST_ROWCOUNT_REQUIRING_STATS. If you want to
+suppress this message, set that value to a very large number, and you
+will see this message only for tables with more rows than that, and for
+which there are no updated statistics.
+
+*Effect:* None. This is a warning message.
+
+*Recovery:* None.
+

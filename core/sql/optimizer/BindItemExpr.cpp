@@ -1497,10 +1497,10 @@ ItemExpr* Assign::tryToRelaxCharTypeMatchRules(BindWA *bindWA)
 ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
 {
   ItemExpr *result = this;
-  enum {iUCS2 = 0, iISO = 1, iUTF8 = 2, iSJIS = 3, iUNK = 4};
-  Int32 Literals_involved[5] = { 0, 0, 0, 0, 0 };
-  Int32 nonLiterals_involved[5] = { 0, 0, 0, 0, 0 };
-  Int32 charsets_involved[5] = { 0, 0, 0, 0, 0 };
+  enum {iUCS2 = 0, iISO = 1, iUTF8 = 2, iSJIS = 3, iGBK = 4, iUNK = 5};
+  Int32 Literals_involved[6] = { 0, 0, 0, 0, 0, 0};
+  Int32 nonLiterals_involved[6] = { 0, 0, 0, 0, 0, 0 };
+  Int32 charsets_involved[6] = { 0, 0, 0, 0, 0, 0 };
   Int32 charsetsCount = 0;
   CharInfo::CharSet cs          = CharInfo::UnknownCharSet;
   CharInfo::CharSet curr_chld_cs= CharInfo::UnknownCharSet;
@@ -1543,6 +1543,10 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
 
         case CharInfo::SJIS:
           cur_chld_cs_ndx = iSJIS;
+          break;
+
+        case CharInfo::GBK:
+          cur_chld_cs_ndx = iGBK;
           break;
 
         //case CharInfo::KANJI_MP:
@@ -1593,6 +1597,8 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
           cs = CharInfo::UTF8;
        else if ( Literals_involved[iSJIS] > 0 )
           cs = CharInfo::SJIS;
+       else if ( Literals_involved[iGBK] > 0 )
+          cs = CharInfo::GBK;
 
        //
        // Now, we may be able to optimize by translating the 1st child
@@ -1601,7 +1607,7 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
        //
        if ( ( cs == chld0_cs ) &&  ( arity == 2 ) &&
                ( curr_chld_opType != ITM_TRANSLATE ) &&
-               ( charsetsCount == (charsets_involved[iUCS2] + charsets_involved[iUTF8]) ) )
+               ( charsetsCount == (charsets_involved[iUCS2] + charsets_involved[iUTF8] + charsets_involved[iGBK]) ) )
        {
           if ( chld0_opType == ITM_TRANSLATE )
              cs = curr_chld_cs;  //...because we will eliminate a translate op
@@ -1631,7 +1637,22 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
         if ( desiredType->getTypeQualifier() == NA_CHARACTER_TYPE )
         {
            CharInfo::CharSet Desired_cs = ((const CharType*)desiredType)->getCharSet();
-           if ( (chld_cs != Desired_cs) && ( ! ((Cast *)this)->tgtCharSetSpecified() ) )
+           /*
+           * this is a special handling for jira 1720, only used in a bulkload scenario
+           * that is, when user set the HIVE_FILE_CHARSET to 'gbk', it means the data saved in hive
+           * table is encoded as GBK. Trafodion default all Hive data charset as 'UTF8', so 
+           * this will allow the auto charset converting to happen during bulk load
+           * the reason is:
+           * hive scan will mark the source column as GBK when HIVE_FILE_CHARSET is set to GBK
+           * which is the only value it can be 
+           * So the bind will invoke this implicit casting method to check if an auto charset 
+           * converting is needed. 
+           * In the hive scan, it does not set the tgtCharSetSpecified field, so in order to 
+           * force it to perform a translate, add a checking here
+           */
+           if( (chld_cs != Desired_cs) && CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" )
+              result = performImplicitCasting( Desired_cs, bindWA );
+           else if ( (chld_cs != Desired_cs) && ( ! ((Cast *)this)->tgtCharSetSpecified() ) )
            {
               //
               // Looks like user said CAST( ... as [var]char(NNN) ) 
@@ -1695,6 +1716,9 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
         case Translate::UCS2_TO_SJIS:
         case Translate::UCS2_TO_UTF8:
              Required_cs = CharInfo::UNICODE;
+             break;
+	case Translate::GBK_TO_UTF8:
+	     Required_cs = CharInfo::GBK;
              break;
         default:
              break;

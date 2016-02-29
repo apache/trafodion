@@ -31,6 +31,8 @@ source $TRAF_CONFIG
 export PDSH="pdsh -R exec"
 export PDSH_SSH_CMD="ssh -q -n %h"
 export PDCP="pdcp -R ssh"
+export PDSH_HADOOP_NODES="$PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD"
+export PDCP_HADOOP_NODES="$PDCP $MY_HADOOP_NODES"
 #=====================================
 # copy Trafodion trx jar to Cloudera's plugins directory on all nodes
 
@@ -58,6 +60,7 @@ fi
 
 traf_util_jar="trafodion-utility-${TRAF_VERSION}.jar"
 
+
 # The permissions the Trafodion build process creates on the hbase-trx jar
 # files does not work well with the installation process so we change them
 sudo chmod -R 777 $UNTAR_DIR/export/lib
@@ -71,23 +74,23 @@ fi
 echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
     
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf $HADOOP_PATH/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
-    $PDSH $MY_NODES $PDSH_SSH_CMD mkdir -p $LOCAL_WORKDIR 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD mkdir -p $LOCAL_WORKDIR 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf $HADOOP_PATH/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    $PDSH_HADOOP_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
+    $TRAF_PDSH mkdir -p $LOCAL_WORKDIR 2>/dev/null
+    $PDSH_HADOOP_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     cp $UNTAR_DIR/export/lib/$traf_util_jar $LOCAL_WORKDIR
-    $PDCP $MY_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
-    $PDCP $MY_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD sudo chmod 644 $HADOOP_PATH/$traf_util_jar
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
-    $PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
+    $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
+    $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
+    $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
+    $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
+    $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
+    $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$traf_util_jar
+    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
+    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
 else
     for node in $HADOOP_NODES
     do
@@ -118,43 +121,58 @@ sudo chmod 777 $HOME/hbase-site.xml
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
-sudo su $HDFS_USER --command "hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
    if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: 'hadoop fs -mkdir /hbase-staging' command failed"
+      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /hbase-staging' command failed"
       echo "***ERROR: $(cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
 
-sudo su $HDFS_USER --command "hadoop fs -chown -R $HBASE_USER:$HBASE_GROUP /hbase-staging"
-sudo su $HDFS_USER --command "hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $HBASE_USER:$HBASE_GROUP /hbase-staging"
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
    if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: 'hadoop fs -mkdir /bulkload' command failed"
+      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /bulkload' command failed"
       echo "***ERROR: $(cat $HOME/traf_temp_output)"
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"
 
 # Create lobs directory
-sudo su $HDFS_USER --command "hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
    if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: 'hadoop fs -mkdir /lobs' command failed"
+      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /lobs' command failed"
       echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
 
+
+#Create Backup directory 
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /trafodion_backups" 2> $HOME/traf_temp_output
+if [ $? != 0 ]; then
+   # ok if directory already exists
+   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
+   if [ $dir_exists -eq 0 ]; then
+      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /trafodion_backups' command failed"
+      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
+      exit -1
+   fi
+fi
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /trafodion_backups"
+
+sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chmod 777 /trafodion_backups"
 #=====================================
 # Modify hadoop settings as needed by Trafodion
 
@@ -162,7 +180,7 @@ rm $HOME/traf_hdfs1_config_temp 2> /dev/null
 rm $HOME/traf_hbase_config_temp 2> /dev/null
 
 # change the hdfs configuration using Cloudera's REST API
-curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
+curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
 '{ "roleTypeConfigs" :  [ {
         "roleType" : "NAMENODE",
         "items": [ {
@@ -181,7 +199,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
              "value":"true"
              } ]
 }' \
-http://$URL/api/v1/clusters/$CLUSTER_NAME/services/hdfs/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
+$URL/api/v1/clusters/$CLUSTER_NAME/services/hdfs/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
 
 if [ $? != 0 ]; then
     echo "***ERROR: Unable to modify HDFS configuration through Cloudera's REST API."
@@ -211,7 +229,7 @@ rm $LOCAL_WORKDIR/traf_hdfs_config_temp 2> /dev/null
 # NOTE: hbase.regionserver.lease.period is used as it is equivalent to
 #       hbase.client.scanner.timeout.period and Cloudera only allows
 #       hbase.regionserver.lease.period to be set through the REST API.
-curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
+curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
 '{ "roleTypeConfigs" :	[ {
 	"roleType" : "MASTER",
 	"items" : [ { 
@@ -232,7 +250,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
 		} ] 
 	} ] 
 }' \
-http://$URL/api/v1/clusters/$CLUSTER_NAME/services/$HBASE/config > $LOCAL_WORKDIR/traf_hbase_config_temp
+$URL/api/v1/clusters/$CLUSTER_NAME/services/$HBASE/config > $LOCAL_WORKDIR/traf_hbase_config_temp
 
 if [ $? != 0 ]; then
     echo "***ERROR: Unable to modify HBase configuration through Cloudera's REST API."
@@ -260,7 +278,7 @@ rm $LOCAL_WORKDIR/traf_hbase_config_temp 2> /dev/null
 
 # Change zookeeper config using Cloudera REST API
 
-curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
+curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
 '{ "roleTypeConfigs" :  [ {
         "roleType" : "SERVER",
         "items": [ {
@@ -270,7 +288,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
         } ]
 
 }' \
-http://$URL/api/v1/clusters/$CLUSTER_NAME/services/zookeeper/config > $LOCAL_WORKDIR/traf_zookeeper_config_temp
+$URL/api/v1/clusters/$CLUSTER_NAME/services/zookeeper/config > $LOCAL_WORKDIR/traf_zookeeper_config_temp
 
 # in most cases curl does not return an error
 # so curl's actual output needs to be checked, too
@@ -296,8 +314,8 @@ rm $LOCAL_WORKDIR/traf_zookeeper_config_temp 2> /dev/null
 poll_time=30
 echo "***INFO: restarting Hadoop to pickup Trafodion transaction jar"
 echo "***INFO: ...polling every $poll_time seconds until restart is completed."
-restart_info=$(curl -X POST -u $ADMIN:$PASSWORD \
-    http://$URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
+restart_info=$(curl -k -X POST -u $ADMIN:$PASSWORD \
+    $URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
 echo $restart_info
 command_id=$(echo $restart_info | grep id | awk '{print $4}' | sed -e 's@,@@' )
 echo "***DEBUG: Cloudera command_id=$command_id"
@@ -306,8 +324,8 @@ echo "***DEBUG: Cloudera command_id=$command_id"
 active=1
 while [ $active -ne 0 ]; do
     sleep $poll_time
-    curl -u $ADMIN:$PASSWORD \
-        http://$URL/api/v1/commands/$command_id \
+    curl -k -u $ADMIN:$PASSWORD \
+        $URL/api/v1/commands/$command_id \
         > $LOCAL_WORKDIR/hbase_restart_status_temp
     cat $LOCAL_WORKDIR/hbase_restart_status_temp
     echo "***INFO: ...polling every $poll_time seconds until restart is completed."
@@ -326,35 +344,35 @@ echo "***INFO: Hadoop restart completed successfully"
 
 # wait to make sure HDFS is fully restarted and out of safemode
 echo "***INFO: waiting for HDFS to exit safemode"
-sudo su hdfs --command "hdfs dfsadmin -safemode wait"
+sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfsadmin -safemode wait"
 
 #====================================================
 # NOTE: These command must be done AFTER acls are 
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
-sudo su hdfs --command "hdfs dfs -mkdir -p /hbase/archive"
+sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive"
 if [ $? != 0 ]; then
-   echo "***ERROR: (hdfs dfs -mkdir -p /hbase/archive) command failed"
+   echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -chown hbase:hbase /hbase/archive"
+sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive"
 if [ $? != 0 ]; then
-   echo "***ERROR: (hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
+   echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive"
+sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive"
 if [ $? != 0 ]; then
-   echo "***ERROR: (hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
+   echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive"
+sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive"
 if [ $? != 0 ]; then
-   echo "***ERROR: (hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
+   echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"
+sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"
 if [ $? != 0 ]; then
-   echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
+   echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
    exit -1
 fi
 
@@ -364,4 +382,15 @@ sed -i '/MODS_COMPLETE\=/d' $TRAF_CONFIG
 echo "export MODS_COMPLETE=\"$MODS_COMPLETE\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
+
+TRAF_CONFIG_FILE="trafodion_config"
+TRAF_CONFIG_DIR="/etc/trafodion"
+
+if [ $node_count -ne 1 ]; then
+   cp $TRAF_CONFIG $LOCAL_WORKDIR
+   $TRAF_PDCP $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $HOME
+   $TRAF_PDSH sudo mkdir -p $TRAF_CONFIG_DIR
+   $TRAF_PDSH sudo cp $HOME/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
+   $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
+fi
 

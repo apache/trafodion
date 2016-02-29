@@ -211,19 +211,162 @@ else
    echo "export MY_NODES=\"$MY_NODES\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 
-   if [ $node_count -eq 1 ]; then
-      TRAF_PDSH=""
-      echo "export TRAF_PDSH=\"\"" >> $TRAF_CONFIG
-   else
-       TRAF_PDSH="pdsh -S $MY_NODES"
-       echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
-   fi
 fi
 source $TRAF_CONFIG
 }
 
-function checkJavaVersion {
+function checkManageNodeList {
 
+if [[ -z $MANAGEMENT_NODES ]]; then
+   errorFound=1
+   echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+   echo "***ERROR: MANAGEMENT_NODES variable not set in config file." >> $ERROR_LOG
+else
+
+   ERROR_NODES=""
+   NODES=""
+
+   for node in $MANAGEMENT_NODES
+   do
+      newNode=$(ssh -q -n $node hostname)
+
+      if [[ $? -ne "0" ]]; then
+         errorFound=1
+          echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+         echo "***ERROR: Could not ssh to $node." >> $ERROR_LOG
+         echo "***ERROR: Please check node names for typos" >> $ERROR_LOG
+         majorErrorFound
+      fi
+
+      nodeName=$(echo $newNode | sed 's/[^a-zA-Z0-9\ \.\-]//g')
+
+      if [[ "$nodeName" != "$newNode" ]]; then
+         errorFound=1
+         echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+         echo "***ERROR: Nodes are not named properly." >> $ERROR_LOG
+         echo "***ERROR: Nodes can have no special characters other than '-' and '.'" >> $ERROR_LOG
+      fi
+
+      if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
+         errorFound=1
+          echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+         echo "***ERROR: Nodes are not named properly." >> $ERROR_LOG
+         echo "***ERROR: IP addresses are not supported. Please use node names." >> $ERROR_LOG
+      fi
+
+      #Testing sudo access on all nodes
+      ssh -q -n $newNode sudo echo "***INFO: Testing sudo access on node $newNode"
+      if [ $? -ne "0" ]; then
+         error=1
+         ERROR_NODES="$ERROR_NODES $newNode"
+      fi
+      NODES="$NODES $newNode"
+   done
+
+   NODE_LIST=$NODES
+ if [[ $error == "1" ]]; then
+      errorFound=1
+       echo "MANAGEMENT NODE LIST" >> $ERROR_LOG
+      echo "***ERROR: $ERROR_NODES does not have sudo access." >> $ERROR_LOG
+      echo "***ERROR: Must have sudo access on all nodes." >> $ERROR_LOG
+   fi
+
+
+   for node in $MANAGEMENT_NODES
+   do
+      ssh -q -n $node echo "***INFO: Testing ssh on $node"
+      if [[ $? -ne "0" ]]; then
+         error=1
+         ERROR_NODES="$ERROR_NODES $node"
+      fi
+   done
+
+   if [[ $error == "1" ]]; then
+      errorFound=1
+      echo "TRAFODION NODE LIST" >> $ERROR_LOG
+      echo "***ERROR: Could not ssh to $ERROR_NODES." >> $ERROR_LOG
+      echo "***ERROR: Check permissions and known hosts files." >> $ERROR_LOG
+   fi
+
+
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/MANAGEMENT_NODES\=/d' $TRAF_CONFIG
+   echo "export MANAGEMENT_NODES=\"$MANAGEMENT_NODES\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+
+   manage_node_count=$(echo $MANAGEMENT_NODES | wc -w)
+
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/manage_node_count\=/d' $TRAF_CONFIG
+   echo "export manage_node_count=\"$manage_node_count\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+   
+
+   MY_MANAGEMENT_NODES=""
+
+   for node in $MANAGEMENT_NODES
+   do
+      MY_MANAGEMENT_NODES="$MY_MANAGEMENT_NODES -w $node"
+   done
+
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/MY_MANAGEMENT_NODES\=/d' $TRAF_CONFIG
+   echo "export MY_MANAGEMENT_NODES=\"$MY_MANAGEMENT_NODES\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+
+fi
+source $TRAF_CONFIG
+}
+
+function createAllNodes {
+
+ALL_NODE_LIST="$NODE_LIST $MANAGEMENT_NODES"
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/ALL_NODE_LIST\=/d' $TRAF_CONFIG
+echo "export ALL_NODE_LIST=\"$ALL_NODE_LIST\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+all_node_count=$(echo $ALL_NODE_LIST | wc -w)
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/all_node_count\=/d' $TRAF_CONFIG
+echo "export all_node_count=\"$all_node_count\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+ALL_NODES="$MY_MANAGEMENT_NODES $MY_NODES"
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/ALL_NODES\=/d' $TRAF_CONFIG
+echo "export ALL_NODES=\"$ALL_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+}
+
+function createPDSH {
+
+source $TRAF_CONFIG
+export PDSH_SSH_CMD="ssh -q -n %h"
+
+if [ $all_node_count -eq 1 ]; then
+    TRAF_PDSH=""
+    TRAF_PDCP=""
+else
+    TRAF_PDSH="pdsh -R exec $ALL_NODES $PDSH_SSH_CMD"
+    TRAF_PDCP="pdcp -R ssh $ALL_NODES"
+fi
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/TRAF_PDSH\=/d' $TRAF_CONFIG
+echo "export TRAF_PDSH=\"$TRAF_PDSH\"" >> $TRAF_CONFIG
+sed -i '/TRAF_PDCP\=/d' $TRAF_CONFIG
+echo "export TRAF_PDCP=\"$TRAF_PDCP\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+
+
+}
+
+function checkJavaVersion {
 if [[ -z "$JAVA_HOME" ]]; then
    errorFound=1
    echo "JAVA HOME" >> $ERROR_LOG
@@ -283,6 +426,12 @@ else
          fi
        done
     fi
+    export PATH=$PATH:$JAVA_HOME/bin
+    sudo chmod 777 $TRAF_CONFIG
+    sed -i '/PATH\=/d' $TRAF_CONFIG
+    echo "export PATH=\"$PATH\"" >>$TRAF_CONFIG
+    sudo chmod 777 $TRAF_CONFIG
+    source $TRAF_CONFIG
 fi
 
 }
@@ -338,6 +487,18 @@ if [[ "$SUSE_LINUX" != "true" ]]; then
 fi
 }
 
+function checkBackupUser {
+
+if [ -z $BACKUP_USER ]; then
+   echo "***ERROR: BACKUP_USER variable not set in config file."
+   echo "***WARNING: BACKUP_USER will be set to trafodion."
+   sudo chmod 777 $TRAF_CONFIG
+   sudo "export BACKUP_USER=\"trafodion\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+fi
+
+}
+
 function checkHadoopUserPass {
 
 if [ -z $ADMIN ]; then
@@ -363,21 +524,20 @@ if [[ -z "$URL" ]]; then
    echo "***ERROR: Hadoop URL variable not set in config file."
    majorErrorFound  
 else
-   validURL=$(curl -s --head $URL | head -n 1 | grep "OK" | wc -l)
+   validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
 
    if [[ $validURL -ne "1" ]]; then
       errorFound=1
       echo "HADOOP URL" >> $ERROR_LOG
-      echo "***ERROR: Could not access http://$URL" >> $ERROR_LOG
-      echo "***ERROR: Do not include 'http or https'" >> $ERROR_LOG
+      echo "***ERROR: Could not access $URL" >> $ERROR_LOG
       echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up" >> $ERROR_LOG
       majorErrorFound
    fi
 
-   hadoopVersion=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters | grep version | grep -c CDH)
+   hadoopVersion=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters | grep version | grep -c CDH)
 
    if [[ $hadoopVersion -ne "1" ]]; then
-      hadoopVersion=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters | grep version | grep -c HDP)
+      hadoopVersion=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters | grep version | grep -c HDP)
       if [[ $hadoopVersion -ne "1" ]]; then
          errorFound=1
          echo "HADOOP URL" >> $ERROR_LOG
@@ -396,14 +556,14 @@ else
    sudo chmod 777 $TRAF_CONFIG
    source $TRAF_CONFIG
 
-   temp=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
+   temp=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
    CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
    CLUSTER_NAME=${CLUSTER_NAME// /%20}
 
    if [ -z $CLUSTER_NAME ]; then
       errorFound=1
       echo "HADOOP URL" >> $ERROR_LOG
-      echo "***ERROR: Could not access http://$URL" >> $ERROR_LOG
+      echo "***ERROR: Could not access $URL" >> $ERROR_LOG
       echo "***ERROR: Check URL and port are correct or if $hadoop_type is up." >> $ERROR_LOG
       majorErrorFound
    fi
@@ -415,9 +575,10 @@ else
    source $TRAF_CONFIG
 
    if [[ $node_count -ne 1 ]]; then
+      nameOfInstallNode=$(hostname -s)
       sudo chmod 777 $TRAF_CONFIG
       sed -i '/CLUSTERNAME\=/d' $TRAF_CONFIG
-      echo "export CLUSTERNAME=\"$CLUSTER_NAME\"" >> $TRAF_CONFIG
+      echo "export CLUSTERNAME=\"$nameOfInstallNode\"" >> $TRAF_CONFIG
       sudo chmod 777 $TRAF_CONFIG
       source $TRAF_CONFIG
    fi
@@ -471,7 +632,7 @@ done
 
 function checkRoleGroups {
 
-   regionGroup1=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v10/clusters/$CLUSTER_NAME/services/hbase/roleConfigGroups | grep displayName | grep "RegionServer Group 1" | wc -l)
+   regionGroup1=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/clusters/$CLUSTER_NAME/services/hbase/roleConfigGroups | grep displayName | grep "RegionServer Group 1" | wc -l)
 
    if [[ $regionGroup1 -ge "1" ]]; then
       errorFound=1
@@ -500,8 +661,8 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
          fi
       fi
    else
-      versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
-      nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
+      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
       if [[ $versionInstalled -eq "0" ]]; then
          errorFound=1
          echo "HADOOP VERSION" >> $ERROR_LOG
@@ -511,10 +672,10 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
       fi
    fi
 else
-   nameOfVersion=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
+   nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
    #Check that Cloudera 5.[n>3].* is not installed.
    if [[ -z $nameOfVersion ]]; then
-      versionInstalled=$(ssh -q -n $node grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
+      versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
        if [[ $versionInstalled -gt "0" ]]; then
           errorFound=1
           echo "HADOOP VERSION" >> $ERROR_LOG
@@ -700,8 +861,8 @@ fi
 
 function checkHadoopSupport {
 
-if [[ -z $TRAF_BUILD ]]; then
-   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
+if [[ -z $TRAF_BUILD ]] || [[ ! -e $TRAF_BUILD ]] ; then
+   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_.*server")
    tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
    TRAF_BUILD_PATH=$LOCAL_WORKDIR/$TRAF_BUILD
 else
@@ -769,6 +930,14 @@ checkTrafPassword
 
 checkNodeList
 
+if [[ $MANAGEMENT_ENABLED == "Y" ]]; then
+   checkManageNodeList
+fi
+
+createAllNodes
+
+createPDSH
+
 checkJavaVersion
 
 checkHomeDir
@@ -776,6 +945,8 @@ checkHomeDir
 checkEPEL
 
 checkHadoopSupport
+
+checkBackupUser
 
 checkHadoopUserPass
 
@@ -794,3 +965,4 @@ checkDCS
 checkLDAP
 
 majorErrorFound
+

@@ -638,14 +638,12 @@ static void showColNames(Queue * listOfColNames, Space * space)
       char colFam[100];
       while (currPtr[currPos] != ':')
 	{
-	  colFam[jj] = currPtr[currPos];
 	  currPos++;
 	  jj++;
 	}
-      colFam[jj] = ':';
       jj++;
       currPos++;
-      colFam[jj] = 0;
+      snprintf(colFam,sizeof(colFam),"%.*s",jj,currPtr+sizeof(short));
       colNameLen -= jj;
       
       NABoolean withAt = FALSE;
@@ -696,19 +694,9 @@ static void showStrColNames(Queue * listOfColNames, Space * space,
 	}
       else
 	{
-	  Lng32 currPos = 0;
 	  short colNameLen = *(short*)currPtr;
-	  currPos += sizeof(short);
 	  char colName[500];
-	  
-	  for (Lng32 i = 0; i < colNameLen; i++)
-	    {
-	      colName[i] = currPtr[currPos];
-	      currPos++;
-	    }
-	  
-	  colName[colNameLen] = 0;
-	  
+	  snprintf(colName,sizeof(colName),"%.*s",colNameLen,currPtr+sizeof(short));
 	  colNamePtr = colName;
 	}
 

@@ -66,13 +66,11 @@ public class PlainTextMessageBodyProducer
 
   private ThreadLocal<byte[]> buffer = new ThreadLocal<byte[]>();
 
-  @Override
   public boolean isWriteable(Class<?> arg0, Type arg1, Annotation[] arg2,
       MediaType arg3) {
     return true;
   }
 
-	@Override
 	public long getSize(Object object, Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType) {
     byte[] bytes = object.toString().getBytes(); 
@@ -80,7 +78,6 @@ public class PlainTextMessageBodyProducer
     return bytes.length;
 	}
 
-	@Override
 	public void writeTo(Object object, Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream outStream)

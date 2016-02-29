@@ -98,6 +98,9 @@ NA_EIDPROC
   Long pack(void *);
 NA_EIDPROC
   Lng32 unpack(void *, void * reallocator);
+
+NA_EIDPROC
+  void display(const char* title = "");
   
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.

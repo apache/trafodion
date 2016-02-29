@@ -1,0 +1,202 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+= Comparing Tables (Technology Preview)
+
+You can use odb to compare two tables *with the same structure* on different databases.
+odb does the following to compare two tables:
+
+1.  Extracts source/target tables ordered by Primary Key or any other set of columns.
+2.  Compare source/target ODBC buffers without _unpacking_ them into columns/rows.
+
+Each _comparison stream_ is made up of three threads:
+
+* One thread reading from the source table.
+* One thread reading from the target table.
+* One thread comparing the source/target buffers.
+
+These three threads work in parallel: the _compare_ thread checks `buffer N` while the other two threads
+extract the net block of data from the source/target database in parallel.
+
+You can have multiple _triplets_ working in parallel on different section of the table using the `splitby` operator.
+
+*Example*
+
+```
+$ odb64luo -u mailto:maurizio.felici@hp.com[MFELICI:maurizio.felici@hp.com] \
+-d MFELICI:VMFELICI \
+-p xx:yy –diff src=trafodion.maurizio.lineitem:tgt=mftest.lineitem:&#42; \
+key=l_orderkey,l_linenumber:output=lineitem.diff:
+rows=m2:print=IDC:&#42;splitby=l_orderkey&#42;:parallel=8
+```
+
+The command above compares two tables using eight streams (`parallel=8`) made of three threads each.
+
+The comparison threads use double buffering and advanced memory-comparison techniques. odb can provide the following information in
+output as a CSV file:
+
+* Missing rows on target (`D` – deleted – rows) based on the *key* columns.
+* New rows on target (`I` – inserted – rows) based on the *key* columns.
+* Changed rows (same *key* columns but with different values in other fields).
++
+For these rows odb can print the original source version (`C` rows) and/or the modified target version (`U` rows).
+
+<<<
+*Example*
+
+odb output when comparing two tables:
+
+```
+$ cat lineitem.diff
+
+DTYPE,L_ORDERKEY,L_LINENUMBER,L_SUPPKEY,L_PARTKEY,L_QUANTITY,L_EXTENDEDPRICE,L_DISCOUNT,L_TAX,L_RETURNFLAG,
+L_LINESTATUS,L_SHIPDATE,L_COMMITDATE,L_RECEIPTDATE,L_SHIPINSTRUCT,L_SHIPMODE,L_COMMENT
+D,4532896,1,5974,100953,42.00,82065.90,0.03,0.00,R,F,1994-12-15,1995-01-17,1995-01-07,COLLECT COD,TRUCK,leep across the ca
+D,4532896,2,2327,102326,48.00,63759.36,0.07,0.05,A,F,1995-02-18,1994-12-10,1995-03-12,TAKE BACK RETURN,RAIL,usly regular platelets. careful
+D,4532896,3,612,193054,12.00,13764.60,0.05,0.02,R,F,1994-11-17,1994-11-23,1994-12-06,COLLECT COD,SHIP,s haggle quickly. ideas after the
+D,4532896,4,9867,47362,36.00,47136.96,0.10,0.06,A,F,1995-01-05,1994-11-29,1995-01-06,COLLECT COD,RAIL,s haggle carefully bo
+D,4532896,5,9576,2075,19.00,18564.33,0.00,0.05,R,F,1994-11-26,1995-01-17,1994-12-03,COLLECT COD,TRUCK,en sauternes integrate blithely alon
+D,4532896,6,1016,68509,9.00,13297.50,0.07,0.00,R,F,1995-02-16,1995-01-05,1995-02-24,TAKE BACK RETURN,RAIL,ily above the blithel
+C,1652227,3,2298,87281,28.00,35511.84,0.06,0.05,R,F,1993-05-04,1993-03-12,1993-05-12,TAKE BACK RETURN,MAIL,lly final acco
+U,1652227,3,2298,87281,99.99,35511.84,0.06,0.05,R,F,1993-05-04,1993-03-12,1993-05-12,TAKE BACK RETURN,MAIL,lly final acco
+D,3456226,1,8161,148160,22.00,26579.52,0.06,0.02,A,F,1994-06-26,1994-06-08,1994-07-10,DELIVER IN PERSON,FOB,uriously. furio
+D,3456226,2,6293,108762,20.00,35415.20,0.10,0.05,R,F,1994-05-07,1994-06-03,1994-05-15,NONE,RAIL,ously bold requests along the b
+```
+<<<
+```
+D,3456226,3,4542,159511,33.00,51826.83,0.05,0.03,A,F,1994-07-04,1994-05-15,1994-07-26,NONE,FOB,wake carefully al
+D,3456226,4,154,95135,33.00,37294.29,0.04,0.08,A,F,1994-05-27,1994-05-10,1994-06-14,DELIVER IN PERSON,AIR,ests. unusual dependencies wake fluffily
+D,3456226,5,9027,126514,31.00,47755.81,0.08,0.01,R,F,1994-06-13,1994-06-18,1994-07-10,TAKE BACK RETURN,FOB,according to the arefully regular instruct
+D,3456226,6,8477,110943,14.00,27355.16,0.03,0.01,R,F,1994-07-03,1994-05-28,1994-07-13,TAKE BACK RETURN,FOB,onic accounts. ironic,pend
+D,3456226,7,1773,4272,34.00,39993.18,0.08,0.00,A,F,1994-05-01,1994-05-29,1994-05-15,TAKE BACK RETURN,MAIL,ounts are finally ca
+D,3456227,7,3722,101211,22.00,26668.62,0.02,0.01,N,O,1997-12-16,1998-02-05,1997-12-19,NONE,TRUCK,uriously even platelets are fu
+I,3456227,8,3722,101211,22.00,26668.62,0.02,0.01,N,O,1997-12-16,1998-02-05,1997-12-19,NONE,TRUCK,uriously even platelets are fu
+I,9999999,1,8161,148160,22.00,26579.52,0.06,0.02,A,F,1994-06-26,1994-06-08,1994-07-10,DELIVER IN PERSON,FOB,uriously. furio
+I,9999999,2,6293,108762,20.00,35415.20,0.10,0.05,R,F,1994-05-07,1994-06-03,1994-05-15,NONE,RAIL,ously bold requests along the b
+I,9999999,3,4542,159511,33.00,51826.83,0.05,0.03,A,F,1994-07-04,1994-05-15,1994-07-26,NONE,FOB,wakecarefully al
+I,9999999,4,154,95135,33.00,37294.29,0.04,0.08,A,F,1994-05-27,1994-05-10,1994-06-14,DELIVER IN PERSON,AIR,ests. unusual dependencies wake fluffily
+I,9999999,5,9027,126514,31.00,47755.81,0.08,0.01,R,F,1994-06-13,1994-06-18,1994-07-10,TAKE BACK RETURN,FOB,according to the carefully regular instruct
+I,9999999,6,8477,110943,14.00,27355.16,0.03,0.01,R,F,1994-07-03,1994-05-28,1994-07-13,TAKE BACK RETURN,FOB,onic accounts. ironic, pend
+I,9999999,7,1773,4272,34.00,39993.18,0.08,0.00,A,F,1994-05-01,1994-05-29,1994-05-15,TAKE BACK RETURN,MAIL,ounts are finally ca
+```
+
+As you can see the first column defines the type of difference.
+
+== Diff Operators
+
+```
+-diff
+src={table|-file}:tgt=table:[key=columns][:output=[+]file][:pwhere=where_cond]
+[:pwhere=where_cond][:nomark][:rows=#rowset][:odad][:fs=fieldsep][:time]
+[:rs=recsep][:quick][:splitby=column][:parallel=number][:max=#max_rec]
+[:print=[I][D][C]][:ns=nullstring][:es=emptystring][:fwc][:uncommitted]
+[:pre={@sqlfile}|{[sqlcmd]}][:post={@sqlfile}|{[sqlcmd]}][tpar=#tables]
+```
+
+Detailed Descriptions of the Copy Operators:
+
+[cols="30%,70%",options="header",]
+|===
+| Diff Operator              | Meaning
+| `src=<CAT.SCH.TAB>\|-file` | Defines the source table(s). You can use: +
+ +
+- A single table (for example: TRAFODION.MFTEST.LINEITEM) +
+- A file containing a list of tables to compare (`-` should precede the filename)
+| `tgt=<CAT.SCH.TAB>`        | Target table.
+| `key=column[,column,&#8230;]`  | Define show to order records extracted from both source and target table.
+*If you do not specify any key column, then odb uses the Primary Key.*
+| `output=[+]file`           | Output file where the differences are reported. You can use stdout to print odb
+output on the standard output. A `+` sign in front of the file-name tells odb to *append* to an existing file. +
+ +
+Default value: `stdout`
+| `fs=<char>\|<code>`        | Field separator of the output file. You can define the field separator as follows: +
+ +
+- Normal character (for example `fs=,`) +
+- ASCII decimal (for example `fs=44` &#8212; 44 means comma) +
+- ASCII octal value (for example `fs=054` &#8212; 054 means comma) +
+- ASCII hex value (for example fs=`x2C` &#8212; x2C means comma) +
+ +
+The default field separator is `,` (comma).
+| `rs=<char>\|<code>`        | Record separator used in the output file. You can define the
+record separator the same way as the field separator. +
+ +
+The default record separator is `\n` (new line).
+| `max=num`                  | The max number of records to compare. Default is to compare all records.
+| `rows=<num>\|k<num>\|m<num>` | Defines the size of the I/O buffer for each extraction thread. You
+can define the size of this buffer in two different ways: +
+ +
+- number of rows (for example: `rows=100` means 100 rows as IO buffer) +
+- buffer size in kB or MB (for example: `rows=k512` (512 kB buffer) or `rows=m20` (20MB buffer))
+| `ns=<nullstring>`          | How odb represents NULL values in the output file. Default is the empty string (two field separators one after the other)
+| `es=<emptystring>`         | How odb represents VARCHAR empty strings (NOT NULL with zero length) values in the output file.
+Default is the empty string (two field separators one after the other)
+| `nomark`                   | Don’t print the number of records extracted so far by each thread.
+| `soe`                      | Stop On Error. odb stops as soon as it encounters an error.
+| `parallel=num`             | odb uses as many _threads triplets_ (extract from source, extract from target, compare) as the parallel argument. +
+ +
+Each thread will take care of a specific range of the source table data defined through the *splitby* option.
+| `uncommitted`              | odb adds `FOR READ UNCOMMITTED ACCESS` to the select(s) command(s).
+| `splitby=<column>`         | Lets you to use parallel extract from any database. *`<column>` has to be a SINGLE, numeric column (or expression)*. odb
+calculates min()/max() value for `<column>` and assigns it to each <parallel> thread the extraction of the rows in its _bucket_. +
+ +
+*Example* +
+ +
+`&#8230;:splitby=emp_id:parallel=4&#8230;` +
+ +
+with `min(emp_id)=1` and `max(emp_id)=1000`, the four threads will extract the following rows: +
+ +
+`thread #0 emp_id >=1 and emp_id < 251` +
+`thread #1 emp_id >=251 and emp_id < 501` +
+`thread #2 emp_id >=501 and emp_id < 751` +
+`thread #3 emp_id >=751 and emp_id < 1001 (odb uses max(emp_id) + 1)` +
+ +
+If the values are not equally distributed, then data extraction is deskewed.
+| `print=[I][C][D]`          | Specifies which rows are printed in the output file: +
+ +
+`I` prints the new rows on target. (Based on *key*.) +
+`D` prints the missing rows on target. (Based on *key*.) +
+`C` prints the source rows with the same *key* columns but differences in other fields. +
+ +
+The default value for print is `IDC`.
+| `pre={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either a `sqlfile` script or `sqlcmd` SQL
+command (enclosed between square brackets) on the *target system* immediately before reading the target table.
+| `post={@sqlfile}\|{[sqlcmd]}` | odb runs a *single instance* of either a `sqlfile` script or `sqlcmd` SQL
+command (enclosed between square brackets) on the *target system* immediately after the target table has been compared.
+| `tpar=num` | The number of tables to compare in parallel when you have a list of tables in input.
+| `loaders=num` | odb uses `num` load threads for each extract thread. Default is 2 loaders per extractor.
+| `pwhere=<where condition>` | This option is used in conjunction with parallel to _diff_ only records
+satisfying the where condition. +
+ +
+For example: you want to compare rows with `TRANS_TS > 1999-12-12 09:00:00` from the source table
+TRAFODION.MAURO.MFORDERS using eight parallel streams to a target table having the same name as the source table: +
+ +
+`src=trafodion.mauro.mforders:tgt=trafodion.dest_schema.%t:parallel=8:pwhere=[TRANS_TS > TIMESTAMP ‘1999-12- 12 09:00:00’]&#8230;` +
+ +
+You can enclose the where condition between square brackets to avoid a misinterpretation of the characters in the where condition.
+| `quick` | Limits the comparison to the columns in the key option (PK by default). This is a fast way to check for new/missing records but
+it will not find rows with differences in _non-key_ columns.
+| `time` | odb prints a _timeline_. (Milliseconds from starts)
+|===
+

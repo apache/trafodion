@@ -21,6 +21,9 @@
 export PATH=$QT_TOOLKIT/bin:$PATH
 export LD_LIBRARY_PATH=$QT_TOOLKIT/lib:$LD_LIBRARY_PATH
 
+# Important: QT_TOOLKIT must not be bundled in Trafodion build
+#     QT License is not compatible with ASF license policy
+
 
 qmake -o Makefile SqlCmpDbg.pro
 make

@@ -1,0 +1,239 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+= Install Windows ODBC Driver
+These installation instructions apply to Trafodion Release 1.3.*_n_* and subsequent updates of the product until otherwise indicated.
+
+== Installation Package
+The installer file for the Trafodion ODBC Driver for Windows is packaged within the Trafodion clients tar file, `clients-1.3.*_n_*.tar.gz`, on the
+Trafodion downloads site http://trafodion.incubator.apache.org/download.html. Use this installer file to install the Trafodion ODBC Driver for Windows:
+
+[cols="25%l,25%,50%",options="header"]
+|===
+| Installer File           | Description                | Client Operating System
+| TFODBC64-1.3.*_n_*.msi   | Windows MSI installer file | Windows 64-bit
+|===
+
+By default, a new version of the ODBC driver will be installed in this directory and its folders unless you specify a different directory
+during installation:
+
+[cols="40%l,60%",options="header"]
+|===
+| Default Installation Directory    | Client Operating System
+| C:\Program Files\Trafodion\TRAF   | ODBC 1.0 Windows 64-bit
+|===
+
+The ODBC client installation file installs or links to multiple client components:
+
+[cols="40%s,60%",options="header"]
+|===
+| This client component&#8230; | Does this&#8230;
+| Microsoft ODBC Driver Manager | Manages access to ODBC drivers for applications. The driver manager loads and unloads drivers and passes calls for ODBC functions to the
+correct driver.
+| Trafodion ODBC driver | Implements ODBC function calls to enable an ODBC client application to access the Trafodion database.
+| Microsoft ODBC Administrator | Adds, configures, and removes ODBC data sources on client workstations.
+|===
+
+<<<
+== Installation Requirements
+
+[cols="40%s,60%",options="header"]
+|===
+| Item             | Requirement
+| Computer         | Windows compatible PC workstation
+| Memory           | Recommended minimum 32 MB
+| Disk Space       | Minimum 30 MB additional free space
+| Operating System | x64 Edition of Microsoft Windows 7, Windows 8, or Windows Server 2008
+| Network Software | TCP/IP
+|===
+
+== Installation Instructions
+[[win_odbc_install]]
+=== Install Windows ODBC Driver
+NOTE: To install the driver on your PC, you must be logged on with a user ID that has administrator privileges.
+
+==== Task 1: Download the ODBC client installation file
+1.  Create a download folder on the client workstation.
+2.  Open a Web browser and navigate to the Trafodion downloads site http://trafodion.incubator.apache.com/download.html
+3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodion clients tar file to your workstation.
+4.  Place the `clients-1.3.*_n_*.tar.gz file` into the download folder.
+5.  Extract the contents of the `clients-1.3.*_n_*.tar.gz` file by using an extract tool like WinZip. The package file contains the
+`TFODBC64-1.3.*_n_*.msi` installer file, which is extracted to the clients sub-directory.
+
+==== Task 2: Start the InstallShield wizard
+The InstallShield wizard walks you through the steps to install the client components (Trafodion ODBC 1.0) on your workstation. You can
+perform the installation in _interactive mode_, in which you provide input or accept defaults when prompted as ODBC is installed. 
+Please refer to <<win_odbc_interactive_mode,Interactive Mode Installation>> below.
+
+<<<
+[[win_odbc_interactive_mode]]
+===== Interactive Mode Installation
+1.  Double-click the `.msi` distribution file to start the InstallShield wizard.
+2.  On the *Welcome* page, click *Next*.
+3.  On the *Destination Folder* page, click *Next* to select the default location: `C:\Program Files\Trafodion\TRAF ODBC 1.0\` 
++
+This location is the installation directory for ODBC header and help files. All other ODBC files are installed in `%SYSTEMROOT%\system32`.
+4.  On the *Set Certificate Directory* page, click *Next* to accept the default location for the security certificate (`SYSTEM_DEFAULT`).
+5.  On the *Ready to Install the Program* page, click *Install*. The installation begins. The *Installing Trafodion ODBC64 1.0* page displays a
+progress bar.
+6.  On the *InstallShield Wizard Completed* page, click *Finish* to exit the wizard. Do not add a new `Trafodion ODBC` data source to the MS ODBC
+Administrator until you have restarted your system.
+
+==== Task 3: Add a client data source
+1.  Start the Microsoft ODBC Administrator:
+* On Windows 7: *Start>All Programs>Trafodion ODBC 1.0>MS ODBC Administrator*
+* On Windows 8: Right-click the *Trafodion ODBC 1.0* icon on the desktop and select MS ODBC Administrator.
+2.  In the *ODBC Data Source Administrator* dialog box, click *Add*.
+3.  Select *TRAF ODBC 1.0*, and then click *Finish* to start the *Create a New Trafodion ODBC Data Source* wizard.
+4.  Enter the data source name (for example, `Default_DataSource_Schema1`) and an optional description, and click *Next*.
+5.  Enter the `IP address` or `host name` for the database platform. Enter the port number as *37800*. Leave the defaults as is, and click *Next*.
+6.  Enter the schema name. The default schema name is `SEABASE`. Click *Next*.
+7.  Enter the translate DLL name and its option, if you have one. If not, leave it blank. Leave the localization defaults as is.
++
+<<<
++
+The Replacement Character replaces any character that is incompatible for translation when retrieving data. It is one character (one or two
+bytes long). The Replacement Character is assumed to be in the character set specified in the Client/Server Character Set Interaction. If it is not specified, `?` is used as the default.
++
+Click *Next*.
+8.  Select the trace options, if desired. Change the *Log File Path* to the location you want, or leave the default as is, and click *Finish*.
+9.  The wizard gives you an opportunity to test the connection. Click *Test Connection* and click *OK*.
+10.  The server ID and schema are filled in for you. Enter a valid user name and password, and click *OK*.
++
+The wizard attempts to connect to the data source and displays a message stating whether it was successful or not.
+11.  Click *OK* to save the data source, or click *Cancel* _twice_ to quit the *Create Data Source* wizard.
+
+=== Reinstall Windows ODBC Driver
+To reinstall the driver, we recommend that you fully remove your ODBC driver and then install the new version. Please refer to
+<<win_odbc_uninstall,Uninstalling the Trafodion ODBC Driver for Windows>> and then <<win_odbc_install, Installing the Trafodion ODBC Driver for Windows>>.
+
+[[win_odbc_uninstall]]
+=== Uninstalling Windows ODBC Driver
+1.  Start to remove the ODBC driver:
+* On Windows 7: *Start>All Programs>Trafodion ODBC 1.0>Remove TRAF ODBC 1.0*
+* On Windows 8: Right-click the *Trafodion ODBC 1.0* icon on the desktop and select *Remove TRAF ODBC 1.0*.
+2.  When the *Windows Installer* dialog box asks you if you want to uninstall this product, click *Yes*.
+3.  The *Trafodion ODBC 1.0* dialog box displays the status and asks you to wait while `Windows configures Trafodion ODBC 1.0` (that is, removes
+the Trafodion ODBC Driver from your Windows workstation).
++
+After this dialog box disappears, Trafodion ODBC 1.0 is no longer on your workstation.
+
+NOTE: Uninstalling the ODBC driver does not remove pre-existing data source definitions from the Windows registry.
+
+<<<
+[[win_odbc_client_env]]
+=== Set Up Client Environment
+All client data sources connect to the pre-configured server data source on the database platform, which is `Default_DataSource`. 
+
+You can configure one data source only, `Default_DataSource`, on the database platform, but you can create other data source 
+definitions on the workstation. 
+
+For example, if you have more than one schema on the database platform and you want to connect 
+to each of those schemas on the database platform, you can create a client data source for each of those schemas. 
+
+Instead of changing the schema definition in the data source definition on the workstation, you can create multiple data source 
+definitions with different schemas on the workstation. The client data source will use the specified schema but will connect to 
+`Default_DataSource` on the database platform.
+
+To create a data source on the client workstation, follow these steps:
+
+1.  Launch the *MS ODBC Administrator*. 
++
+For example, on Windows 7, select *Start>All Programs>Trafodion ODBC 1.0>MS ODBC Administrator*.
+2.  In the *ODBC Data Source Administrator* dialog box, select the *User DSN* tab, and click *Add*.
+3.  Select the *TRAF ODBC 1.0* driver, and then click *Finish*.
++
+A new dialog box appears, prompting you to create a new data source.
+4.  Enter the name of the data source, `Default_DataSource`, and click *Next* to continue.
+5.  Enter the IP address and port number of the Trafodion system to which will be connecting. The port number must be *37800*. 
+Click *Next* to continue.
+6.  Select the default schema. If you do not select a schema, the default is `USR`. Click Next to continue.
+7.  If desired, configure the *translate dll*, which translates data from one character set to another, and configure the localization. By
+default, the client error message language is English, and the client’s local character set is used. Click *Next* to continue.
+8.  If desired, set the trace options and the file path of the trace log. Click *Finish*.
++
+The *Test Trafodion ODBC Connection* dialog box appears, allowing you to test the connection using the data source that you created.
+9.  Click *Test Connection*.
+10.  When prompted, enter your user name and password, and click *OK*.
++
+If the connection is successful, you will see `Connected Successfully` in the *Test Trafodion ODBC Connection* dialog box.
+
+=== Enable Compression
+When compression is enabled in the ODBC driver, the ODBC driver can send and receive large volumes of data quickly and efficiently to and from
+the Trafodion Database Connectivity Services (DCS) server over a TCP/IP network. By default, compression is disabled.
+
+To enable compression in the ODBC driver or to change the compression setting, follow these steps:
+
+1.  Launch the MS ODBC Administrator. For example, on Windows 7, select *Start>All Programs>Trafodion ODBC 1.0>MS ODBC Administrator*.
+2.  In the *ODBC Data Source Administrator* dialog box, select the *User DSN* tab, select the name of your data source under 
+*User Data Sources*, and click *Configure*. If you did not create a data source, please refer to 
+<<win_odbc_client_env, Setting Up the Client Environment>>.
++
+A new dialog box appears, showing the configuration of your data source.
+3.  Select the *Network* tab, and then select one of these values for *Compression*:
+* `SYSTEM_DEFAULT`, which is the same as no compression
+* `no compression`
+* `best speed`
+* `best compression`
+* `balance`
+* An integer from 0 to 9, with 0 being no compression and 9 being the
+maximum available compression
+4.  Click *OK* to accept the change.
+5.  Click *OK* to exit the *ODBC Data Source Administrator* dialog box.
+
+<<<
+[[win_odbc_run_basicsql]]
+=== Run Sample Program (`basicsql`)
+NOTE: The Basic SQL sample program is not currently bundled with the ODBC Windows driver. To obtain the source code and the build and run
+files for this program, please refer to  <<odbc_sample_program, ODBC Sample Program>>.
+
+To build and run the executable file, follow these steps:
+
+1.  Open a Visual Studio x64 Win64 Command Prompt. Make sure to select the x64 version of the command prompt. For example, on Windows 7, select
+*Start>All Programs>Microsoft Visual Studio 2010>Visual Studio Tools>Visual Studio x64 Win64 Command Prompt*.
+2.  At the command prompt, move to the directory where you put the `basicsql.cpp` and build files.
+3.  Run build at the command prompt. You will see `basicsql.exe` created in the same directory as the source file.
+4.  Before running the sample program, create a Trafodion data source named `Default_DataSource` on the client workstation using MS ODBC
+Administrator. For instructions, please refer to <<win_odbc_client_env,Set Up Client Environment>>.
+5.  From the command prompt, run the sample program by entering either run or this command:
++
+```
+basicsql DefaultDataSource <username> <password>
+```
++
+If the sample program executes successfully, you should see this output:
++
+*Example*
++
+```
+Using Connect String: DSN=Default_DataSource;UID=user1;PWD=pwd1;
+Successfully connected using SQLDriverConnect.
+Drop sample table if it exists...
+Creating sample table TASKS...
+Table TASKS created using SQLExecDirect.
+Inserting data using SQLBindParameter, SQLPrepare, SQLExecute
+Data inserted.
+Fetching data using SQLExecDirect, SQLFetch, SQLGetData
+Data selected: 1000 CREATE REPORTS 2014-3-22
+Basic SQL ODBC Test Passed!
+```
+

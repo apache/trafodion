@@ -30,7 +30,7 @@ package.exclude
 # readme files
 readme*
 README*
-RAT_README.txt
+RAT_README
 readme.md
 run_me*
 # documentation and build info 
@@ -45,6 +45,7 @@ SqlciErrors.txt
 # DCS config files
 backup-masters
 servers
+master
 # jquery
 jquery-ui.css*
 jquery-ui.js*
@@ -56,10 +57,8 @@ Sortingicons.psd*
 # licenses
 license*.txt*
 LICENSE.rtf*
-LICENSE-bsd2
-LICENSE-bsd4
-LICENSE-js
-LICENSE-salesforce
+lic-.*-src
+lic-.*-bin
 # win generated
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
@@ -158,7 +157,7 @@ UpsertSelectAutoCommitTest.java
 UpsertSelectTest.java
 UpsertValuesTest.java
 VariableLengthPKTest.java
-
-
+# asciidoc extention file -- MIT license
+google-analytics-postprocessor.rb
 
 

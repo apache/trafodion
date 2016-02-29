@@ -75,7 +75,7 @@ public class ServerListResource extends ResourceBase {
  
     try {
     	ServerListModel serverList = new ServerListModel();
-    	serverList.add(new ServerModel("Field1","field2","field3","field4","field5"));
+    	serverList.add(new ServerModel("field2","field3","field4","field5"));
 
     	ResponseBuilder response = Response.ok(serverList);
     	response.cacheControl(cacheControl);

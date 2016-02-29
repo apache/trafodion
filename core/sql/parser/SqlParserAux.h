@@ -859,6 +859,7 @@ SqlParserAux_buildDropRoutine ( ComRoutineType  drop_routine_type_tokens  // in
                               , ComDropBehavior optional_drop_behavior    // in
                               , NABoolean       optional_validate         // in
                               , NAString      * optional_logfile          // in - deep copy
+                              , NABoolean       optional_if_exists        // in
                               );
 
 ElemDDLNode *

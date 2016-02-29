@@ -1228,7 +1228,8 @@ ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc)
 {
   ItemExpr *returnValue = NULL;
   UInt32 fractionPrec;
-  DatetimeValue dtValue(*strptr, REC_DATE_YEAR, REC_DATE_DAY, fractionPrec);
+  DatetimeValue dtValue(*strptr, REC_DATE_YEAR, REC_DATE_DAY, fractionPrec,
+                        (CmpCommon::getDefault(USE_OLD_DT_CONSTRUCTOR) == DF_ON));
   if ((! dtValue.isValid()) &&
       (CmpCommon::getDefault(MARIAQUEST_PROCESS) == DF_OFF))
      *SqlParser_Diags << DgSqlCode(-3045) << DgString0(*strptr);
@@ -1249,7 +1250,8 @@ ItemExpr *literalOfTime(NAString *strptr)
 {
   ItemExpr *returnValue = NULL;
   UInt32 fractionPrec;
-  DatetimeValue dtValue(*strptr, REC_DATE_HOUR, REC_DATE_SECOND, fractionPrec);
+  DatetimeValue dtValue(*strptr, REC_DATE_HOUR, REC_DATE_SECOND, fractionPrec,
+                        (CmpCommon::getDefault(USE_OLD_DT_CONSTRUCTOR) == DF_ON));
   if ((! dtValue.isValid()) &&
       (CmpCommon::getDefault(MARIAQUEST_PROCESS) == DF_OFF))
       *SqlParser_Diags << DgSqlCode(-3046) << DgString0(*strptr);
@@ -1272,9 +1274,10 @@ ItemExpr *literalOfDateTime(NAString *strptr, DatetimeQualifier *qualifier)
   ItemExpr *returnValue = NULL;
   UInt32 fractionPrec = qualifier->getFractionPrecision();
   DatetimeValue    dtValue(*strptr,
-                          qualifier->getStartField(),
-                          qualifier->getEndField(),
-                          fractionPrec);                        // returned value
+                           qualifier->getStartField(),
+                           qualifier->getEndField(),
+                           fractionPrec,                   // returned value
+                           (CmpCommon::getDefault(USE_OLD_DT_CONSTRUCTOR) == DF_ON));
 
   DatetimeType  *dtType = DatetimeType::constructSubtype(       // This call is necessary to insure that we return
                                FALSE,                           // a standard DateTime, if possible.
@@ -1324,8 +1327,9 @@ ItemExpr *literalOfDateTime(NAString *strptr, DatetimeQualifier *qualifier)
 ItemExpr *literalOfTimestamp(NAString *strptr)
 {
   ItemExpr *returnValue = NULL;
-  UInt32 fractionPrec;
-  DatetimeValue dtValue(*strptr, REC_DATE_YEAR, REC_DATE_SECOND, fractionPrec);
+  UInt32 fractionPrec = 0;
+  DatetimeValue dtValue(*strptr, REC_DATE_YEAR, REC_DATE_SECOND, fractionPrec,
+                        (CmpCommon::getDefault(USE_OLD_DT_CONSTRUCTOR) == DF_ON));
   if ((! dtValue.isValid()) &&
       (CmpCommon::getDefault(MARIAQUEST_PROCESS) == DF_OFF))
      *SqlParser_Diags << DgSqlCode(-3047) << DgString0(*strptr);
@@ -3176,6 +3180,7 @@ SqlParserAux_buildDropRoutine ( ComRoutineType  drop_routine_type_tokens  // in
                               , ComDropBehavior optional_drop_behavior    // in
                               , NABoolean       optional_validate         // in
                               , NAString      * optional_logfile          // in - deep copy
+                              , NABoolean       optional_if_exists        // in
                               )
 {
   // If CLEANUP, VALIDATE, or LOG option specified,
@@ -3226,6 +3231,9 @@ SqlParserAux_buildDropRoutine ( ComRoutineType  drop_routine_type_tokens  // in
     , pLogFile                       // in - NAString *      - shallow copy
     , PARSERHEAP()
     );
+
+  pNode99->castToStmtDDLDropRoutine()->setDropIfExists(optional_if_exists);
+
   // Do not delete pLogFile because we did a shallow copy
   return pNode99;
 }

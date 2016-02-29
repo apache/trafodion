@@ -2112,6 +2112,7 @@ public:
         UTF8_TO_SJIS, SJIS_TO_UTF8, UTF8_TO_ISO88591,
         ISO88591_TO_UTF8,
         KANJI_MP_TO_ISO88591, KSC5601_MP_TO_ISO88591,
+        GBK_TO_UTF8,
         UNKNOWN_TRANSLATION};
 
   Translate(ItemExpr *valPtr, NAString* map_table_name);

@@ -36,6 +36,7 @@
 // *****************************************************************************
 
 #include "ComSmallDefs.h"
+#include "NAUserId.h"
 
 class StmtDDLRegisterUser;
 class StmtDDLAlterUser;

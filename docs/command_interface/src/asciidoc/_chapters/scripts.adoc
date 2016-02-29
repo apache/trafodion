@@ -1,0 +1,164 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+= Run Scripts
+
+[[script_create]]
+== Create a Script File
+
+A script file that you run in TrafCI must be an ASCII text file that contains only these elements:
+
+* <<script_sql_statements, SQL Statements>>
+* <<script_commands, Commands>>
+* <<script_comments, Comments>>
+* <<script_section_headers, Section Headers>>
+
+For an example, see <script_example, Example Script File>>.
+
+NOTE: You cannot use shell commands in a script file that you run in TrafCI. To create shell scripts
+that run TrafCI, see <<perl_or_python, Run TrafCI from Perl or Python>>.
+
+[[script_sql_statements]]
+== SQL Statements
+
+Script files support any of the various SQL statements that you can run in TrafCI. For more information about
+SQL statements, see the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+
+[[script_commands]]
+== Commands
+
+Most interface commands are supported in script files except the FC command. For a list of the interface commands, see
+<<commands, Commands>>.
+
+[[script_comments]]
+== Comments
+
+You can include comments anywhere in a script file. SQL also supports comments. Comments are useful for documenting
+the functionality of the script file and for debugging. When debugging, use comments to disable
+specific statements or commands without removing them from the script file.
+
+To denote a comment in a script file, use two hyphens before the comment:
+
+```
+-- comment
+```
+
+The end of the line marks the end of the comment.
+
+[[script_section_headers]]
+== Section Headers
+
+To create sections of commands within a script file, put a section header at the beginning of each section:
+
+====
+?SECTION section-name
+====
+
+The `_section-name_` cannot begin with a number or an underscore. Each section name in a script file should be unique
+because TrafCI executes the first section that it finds that matches the section name in the `@` or `OBEY` command.
+For more information, see the <<cmd_at_sign, @ Command>> <<cmd_obey, OBEY Command>>.
+
+[[script_example]]
+== Example Script File
+
+This script file creates tables in the inventory schema:
+
+image:{images}/script.jpg[Sample script]
+
+== Run a Script File
+
+To run a script file in TrafCI, use the `@` or OBEY command. The `@` and `OBEY` commands run one script file at a time
+in TrafCI. To run a script file when launching TrafCI, see <<trafci_run_script, Run Script When Launching TrafCI>>.
+
+*Example*
+
+This `@` command runs a script file, `sch_invent.sql`, that creates tables in the inventory schema:
+
+====
+@C:\ddl_scripts\sch_invent.sql
+====
+
+NOTE: If the script file is outside the directory of the `trafci.cmd` or `trafci.sh` file (by default, the `bin` directory),
+you must specify the full path of the script file in the `@` or `OBEY` command.
+
+```
+SQL>@C:\ddl_scripts\sch_invent.sql
+SQL>-- CREATE SCHEMA
+SQL>CREATE SCHEMA INVENT;
+
+--- SQL operation complete.
+
+SQL>-- CREATE TABLES/VIEWS in SCHEMA INVENT
+SQL> SET SCHEMA INVENT;
+
+--- SQL operation complete.
+
+SQL>CREATE TABLE INVENT.supplier (
++> suppnum NUMERIC (4) UNSIGNED
++> NO DEFAULT
++> NOT NULL
++> ,suppname CHARACTER (18)
++> NO DEFAULT
++> NOT NULL
++> ,street CHARACTER (22)
++> NO DEFAULT
++> NOT NULL
++> ,city CHARACTER (14)
++> NO DEFAULT
++> NOT NULL
++> ,state CHARACTER (12)
++> NO DEFAULT
++> NOT NULL
++> ,postcode CHARACTER (10)
++> NO DEFAULT
++> NOT NULL
++> ,PRIMARY KEY (suppnum)
++> );
+
+--- SQL operation complete.
+```
+
+For more information about the `@` and `OBEY` commands, see the <<cmd_at_sign, @ Command>> and
+the <<cmd_obey, OBEY Command>>.
+
+== Log Output
+
+To log output of an TrafCI session while running one script file at a time, use the `SPOOL` or `LOG` command.
+When you run an `OBEY` or `@` command, TrafCI displays each command in the script file, the output for each
+command, and diagnostic messages in TrafCI. The `SPOOL` or `LOG` command captures this output as it appears
+in TrafCI and logs it in a log file.
+
+For more information, <<interactive_log_output, Log Output>>.
+
+== Run Scripts in Parallel
+
+In TrafCI, the `@` and `OBEY` commands allow you to run only one script file at a time. However, the `PRUN` command
+allows you to run multiple script files simultaneously.
+
+The `PRUN` command is most useful for running sets of data definition language (DDL) statements simultaneously, which
+speeds up the process of creating large databases. Put all dependent or related DDL statements in the same script file.
+For more information on running scripts in parallel using the `PRUN` command, see the <<cmd_prun, PRUN Command>>.
+

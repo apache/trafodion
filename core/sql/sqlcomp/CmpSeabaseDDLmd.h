@@ -597,6 +597,17 @@ static const MDTableInfo allMDtablesInfo[] = {
    NULL, 0, FALSE}
 };
 
+static const MDTableInfo allMDHistInfo[] = {
+  {HBASE_HIST_NAME,
+   seabaseHistogramsDDL, sizeof(seabaseHistogramsDDL),
+   NULL, 0, FALSE},
+
+  {HBASE_HISTINT_NAME,
+   seabaseHistogramIntervalsDDL, sizeof(seabaseHistogramIntervalsDDL),
+   NULL, 0, FALSE}
+};
+
+
 /////////////////////////////////////////////////////////////////////
 //
 // Information about changed old metadata tables from which upgrade

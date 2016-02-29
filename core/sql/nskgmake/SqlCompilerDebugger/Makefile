@@ -28,9 +28,6 @@
 CMPGUI_FINAL:=$(RESULTDIR)/$(LIBPREFIX)$(notdir $(obj))
 CMPGUI_OBJ:=$(obj)
 
-# QT_TOOLKIT defined in environment
-QT_ROOT:=$(QT_TOOLKIT)
-
 #add to buildall prerequisite
 FINAL_DLLS += $(CMPGUI_FINAL)
 
@@ -40,11 +37,7 @@ $(CMPGUI_FINAL) : cmpdbg_qt_build
 
 cmpdbg_qt_build :
 	cd ../$(basename $(CMPGUI_OBJ)) && . ./mk.sh; \
-                                  cp -f $$PWD/$(LIBPREFIX)$(notdir $(obj)) $(CMPGUI_FINAL); \
-                                  cp -f $(QT_ROOT)/lib/libQtCoreCmpDbg.so.4 $(RESULTDIR)/libQtCoreCmpDbg.so.4; \
-                                  cp -f $(QT_ROOT)/lib/libQtGuiCmpDbg.so.4 $(RESULTDIR)/libQtGuiCmpDbg.so.4; \
-                                  ln -sf $$PWD/$(RESULTDIR)/libQtCoreCmpDbg.so.4 $(MY_SQROOT)/export/lib$(SQ_MBTYPE); \
-                                  ln -sf $$PWD/$(RESULTDIR)/libQtGuiCmpDbg.so.4  $(MY_SQROOT)/export/lib$(SQ_MBTYPE); 
+                                  cp -f $$PWD/$(LIBPREFIX)$(notdir $(obj)) $(CMPGUI_FINAL);
 
 #when clean, this clean first
 
@@ -52,8 +45,4 @@ clean: cmpdbg_qt_clean
 
 cmpdbg_qt_clean:
 	cd ../$(basename $(CMPGUI_OBJ)) && . ./cln.sh; \
-                                   rm -f $(CMPGUI_FINAL); \
-                                   rm -f $(RESULTDIR)/libQtGuiCmpDbg.so.4; \
-                                   rm -f $(RESULTDIR)/libQtCoreCmpDbg.so.4; \
-                                   rm -f $(MY_SQROOT)/export/lib$(SQ_MBTYPE)/libQtGuiCmpDbg.so.4; \
-                                   rm -f $(MY_SQROOT)/export/lib$(SQ_MBTYPE)/libQtCoreCmpDbg.so.4;
+                                   rm -f $(CMPGUI_FINAL);

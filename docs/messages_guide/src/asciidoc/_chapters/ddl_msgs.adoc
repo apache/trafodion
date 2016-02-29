@@ -1,0 +1,3046 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[data-definition-language-messages]]
+= Data Definition Language (DDL) Messages (1000 through 1999)
+
+[[SQL-1002]]
+== SQL 1002
+
+```
+Catalog <catalog> does not exist or has not been registered on node <node>.
+```
+
+Where <catalog> is the ANSI name of the target catalog.
+
+Where <node> is the node where the process executes.
+
+*Cause:* The catalog is not visible on the local node, either because it
+does not exist or because it exists elsewhere on the network but has not
+been registered on the local node.
+
+*Effect:* The operation fails.
+
+*Recovery:* Enter a valid catalog name (or register the catalog on the
+node indicated) and resubmit.
+
+[[SQL-1003]]
+== SQL 1003
+
+```
+Schema <schema> does not exist.
+```
+
+Where <schema> is the ANSI name of the affected schema.
+
+*Cause:* In a replication context: a REPLICATION SCHEMA operation
+specified a schema that does not exist.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that a schema named <schema> does exist and resubmit.
+
+<<<
+[[SQL-1004]]
+== SQL 1004
+
+```
+Table, view, or stored procedure <object-name> does not exist or object type is invalid for the current operation.
+```
+
+Where <object-name> is the name of a Trafodion database object.
+
+*Cause:* You attempted an operation on an object that does not exist.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that an object named <object-name> does exist. If you
+did not fully qualify the name, check that the defaults generate the
+correct fully qualified name and resubmit.
+
+[[SQL-1005]]
+== SQL 1005
+
+```
+Constraint <constraint-name> does not exist.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint.
+
+*Cause:* The ALTER TABLE statement you attempted requires the existence
+of a constraint named <constraint-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that a constraint named <constraint-name> exists for
+the table specified. You can use the SHOWDDL command to find the names
+of the constraints that exist on a table.
+
+<<<
+[[SQL-1006]]
+== SQL 1006
+
+```
+Index <index-name> does not exist.
+```
+
+Where <index-name> is a Trafodion database object name.
+
+*Cause:* The operation you attempted requires the existence of an index
+named <index-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that an index named <index-name> does exist. If you
+did not fully qualify the name, check that the defaults generate the
+correct qualified name.
+
+[[SQL-1008]]
+== SQL 1008
+
+```
+User name <user-name> does not exist.
+```
+
+Where <user-name> is a Trafodion platform user name.
+
+*Cause:* The user name specified in a GRANT or REVOKE statement, or the
+authorization ID in a CREATE SCHEMA statement, does not represent a
+valid Trafodion platform user.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the user name and resubmit.
+
+<<<
+[[SQL-1009]]
+== SQL 1009
+
+```
+Column <column-name> does not exist in the specified table.
+```
+
+Where <column-name> is an SQL identifier.
+
+*Cause:* The table that is referenced does not have a column with this
+name.
+
+*Effect:* The operation fails.
+
+*Recovery:* Replace either the name of the table or the name of the
+column (whichever is incorrect) and resubmit.
+
+[[SQL-1010]]
+== SQL 1010
+
+```
+The statement just specified is currently not supported.
+```
+
+*Cause:* The statement that you specified is not available for use.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not attempt to use this Trafodion database statement.
+
+<<<
+[[SQL-1012]]
+== SQL 1012
+
+```
+No privileges were granted. You lack grant option on the specified privileges.
+```
+
+*Cause:* You attempted to grant privileges for which you do not have
+grant options.
+
+*Effect:* No privileges are granted.
+
+*Recovery:* You must have grant options for privileges to grant them.
+
+[[SQL-1013]]
+== SQL 1013
+
+```
+Not all privileges were granted. You lack grant option on some of the specified privileges.
+```
+
+*Cause:* You attempted to grant privileges, but you do not have grant
+options for at least one of them.
+
+*Effect:* The Trafodion database granted some privileges, but not all
+that you attempted to grant.
+
+*Recovery:* You must have grant options for privileges to grant them.
+
+<<<
+[[SQL-1014]]
+== SQL 1014
+
+```
+Privileges were not revoked. Dependent privilege descriptors still exist.
+```
+
+*Cause:* You attempted to revoke a privilege for a user who has granted
+privileges to another user. Privileges must be revoked in reverse order
+from how they were granted. If you perform a grant to another user who
+then performs a grant to a third user, you cannot revoke privileges to
+the second user until that user revokes their privileges to the third
+user.
+
+*Effect:* The Trafodion database did not revoke the privileges.
+
+*Recovery:* Make sure that the dependent privileges from the user whose
+privileges you want to revoke are revoked first.
+
+[[SQL-1015]]
+== SQL 1015
+
+```
+Some of the specified privileges could not be revoked.
+```
+
+*Cause:* You attempted to revoke a privilege that does not exist or that
+was granted by another user.
+
+*Effect:* The Trafodion database did not revoke the privileges.
+
+*Recovery:* The user who granted the privileges must revoke them.
+
+<<<
+[[SQL-1016]]
+== SQL 1016
+
+```
+Redundant references to column <column-name> were specified in the constraint or trigger definition.
+```
+
+Where <column-name> is an SQL identifier.
+
+*Cause:* You created a constraint with multiple references to
+<column-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+[[SQL-1017]]
+== SQL 1017
+
+```
+You are not authorized to perform this operation.
+```
+
+*Cause:* You attempted a replication operation without proper
+authorization.
+
+*Effect:* The operation fails.
+
+*Recovery:* In a replication context: Only the catalog owner and the
+local super ID can perform a replication operation for a catalog and for
+multiple schemas in a single catalog. Additionally, the schema owner can
+perform a replication operation for a single schema.
+
+<<<
+[[SQL-1020]]
+== SQL 1020
+
+```
+Privilege settings on metadata tables cannot be changed.
+```
+
+*Cause:* You attempted to change privilege settings on a metadata table.
+They cannot be changed.
+
+*Effect:* Trafodion does not change the settings.
+
+*Recovery:* None.
+
+[[SQL-1021]]
+== SQL 1021
+
+```
+SQL is already initialized on system <node-name>.
+```
+
+Where <node-name> is the name of the system on which the INITIALIZE SQL
+statement was executed.
+
+*Cause:* The Trafodion database has already been initialized on this
+node.
+
+*Effect:* No operation is performed.
+
+*Recovery:* None needed if SQL is operating normally.
+
+<<<
+[[SQL-1022]]
+== SQL 1022
+
+```
+Schema <schema-name> already exists.
+```
+
+Where <schema-name> is the name of a Trafodion database schema.
+
+*Cause:* You attempted to create a schema in a catalog that already
+contains a schema with that name.
+
+*Effect:* The operation fails.
+
+*Recovery:* If you did not use a fully qualified name, check that the
+default generates the correct catalog name. Retry the request,
+specifying a schema that does not already exist.
+
+[[SQL-1023]]
+== SQL 1023
+
+```
+Only services ID can name an authorization ID other than the current user name.
+```
+
+*Cause:* You attempted to create a schema with the authorization ID of
+another user. Only the services ID can do this.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use the services ID to create a schema with another owner.
+
+<<<
+[[SQL-1024]]
+== SQL 1024
+
+```
+File system error <error-number> occurred on <text-string-1> <text-string-2>.
+```
+
+Where <error-number> is an error originating from the file system.
+
+Where <text-string-1> is the file name.
+
+Where <text-string-2> is (optionally) additional details about the
+error.
+
+*Cause:* Look up this error number in the file system manual to
+determine the cause.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-1025]]
+== SQL 1025
+
+```
+Request failed. One or more dependent objects exist.
+```
+
+*Cause:* This error can occur when you drop a constraint, index, or
+table. These objects cannot be dropped if they have dependent objects
+and the drop-behavior is RESTRICT.
+
+*Effect:* Trafodion does not perform the
+operation.
+
+*Recovery:* For DROP statements that support the CASCADE drop-behavior,
+you can reissue the statement specifying CASCADE. For other DROP
+statements, you must first drop each of the dependent objects, then drop
+the object.
+
+<<<
+[[SQL-1026]]
+== SQL 1026
+
+```
+Only the schema owner or services ID can drop a schema.
+```
+
+*Cause:* An attempt was made to drop a schema by someone other than its
+owner or the services ID.
+
+*Effect:* No SQL objects are dropped.
+
+*Recovery:* The owner of the schema (or services ID) needs to issue the
+DROP SCHEMA statement.
+
+[[SQL-1027]]
+== SQL 1027
+
+```
+The definition schema <definition-schema-name> is dropped when its catalog is dropped.
+```
+
+Where <definition-schema-name> is the name of the definition schema
+specified.
+
+*Cause:* You attempted to drop the schema containing the metadata tables
+for the catalog.
+
+*Effect:* No SQL objects are dropped.
+
+*Recovery:* Use DROP SCHEMA statements to drop all the user-created
+schemas in the catalog. Then use the DROP CATALOG statement to drop the
+catalog. The schema <definition-schema-name> is dropped when you drop
+its catalog.
+
+<<<
+[[SQL-1028]]
+== SQL 1028
+
+```
+The schema must be empty. It contains at least one object <object-name>.
+```
+
+Where <object-name> is the name of a Trafodion database object existing
+in the schema.
+
+*Cause:* You attempted to drop a schema that contains one or more
+objects.
+
+*Effect:* The schema is not dropped.
+
+*Recovery:* Either drop all the objects in <schema-name> and resubmit
+the statement, or resubmit the drop statement using the CASCADE option.
+
+[[SQL-1029]]
+== SQL 1029
+
+```
+Object <object-name> could not be created.
+```
+
+Where <object-name> is the name supplied in a CREATE statement.
+
+*Cause:* This error can result from various CREATE statements. See the
+accompanying error messages to determine the cause.
+
+*Effect:* The object is not created.
+
+*Recovery:* Apply the recovery of the accompanying error messages.
+
+<<<
+[[SQL-1030]]
+== SQL 1030
+
+```
+File label <file-name> could not be accessed. File system error <error>.
+```
+
+Where <file-name> is the name of a Trafodion database file.
+
+Where <error> is a file system error number.
+
+*Cause:* See the accompanying error message for the cause.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-1031]]
+== SQL 1031
+
+```
+Object <object-name> could not be dropped.
+```
+
+Where <object-name> is the SQL object.
+
+*Cause:* See the accompanying error message for the cause.
+
+*Effect:* Trafodion does not drop the object.
+
+*Recovery:* Apply the recovery of the accompanying error message.
+
+<<<
+[[SQL-1035]]
+== SQL 1035
+
+```
+Catalog <catalog-name> already exists.
+```
+
+Where <catalog-name> is the name of a Trafodion database catalog.
+
+*Cause:* You attempted to create a catalog using the name of an already
+existing catalog.
+
+*Effect:* The operation fails.
+
+*Recovery:* None if this is the desired catalog. Otherwise, correct the
+catalog name and resubmit.
+
+[[SQL-1036]]
+== SQL 1036
+
+```
+Only super ID can execute DROP SQL.
+```
+
+*Cause:* An attempt was made to drop SQL by a user who is not the super
+ID.
+
+*Effect:* The operation fails.
+
+*Recovery:* The super ID needs to issue the DROP SCHEMA statement.
+
+<<<
+[[SQL-1037]]
+== SQL 1037
+
+```
+Trafodion is not installed on system <node>.
+```
+
+Where <node> is the name of the node referenced by the operation.
+
+*Cause:* In a replication or distribution context: An operation
+attempted to create a catalog reference or a partition on a node where
+the Trafodion database has not been installed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Either reissue the statement specifying a different node, or
+install the Trafodion database on <node> and resubmit.
+
+[[SQL-1038]]
+== SQL 1038
+
+```
+Not all user catalogs have been dropped from the system.
+```
+
+*Cause:* You attempted to drop SQL while one or more user-created
+catalogs existed.
+
+*Effect:* The operation fails.
+
+*Recovery:* You must drop all user-created catalogs before dropping SQL.
+
+<<<
+[[SQL-1039]]
+== SQL 1039
+
+```
+The DROP SQL statement could not be executed.
+```
+
+*Cause:* See the accompanying error message for the cause.
+
+*Effect:* Trafodion does not drop SQL.
+
+*Recovery:* Apply the recovery of the accompanying error message.
+
+[[SQL-1040]]
+== SQL 1040
+
+```
+The use of ALTER on metadata tables is not permitted.
+```
+
+*Cause:* An ALTER TABLE statement was issued naming a table that is part
+of the Trafodion database metadata. Such tables cannot be altered.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1041]]
+== SQL 1041
+
+```
+The primary key has already been defined.
+```
+
+*Cause:* You attempted to add a primary key to a table that already has
+a primary key.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-1042]]
+== SQL 1042
+
+```
+All PRIMARY KEY or UNIQUE constraint columns must be NOT NULL.
+```
+
+*Cause:* You did not specify NOT NULL on one or more columns that are
+included in a UNIQUE or PRIMARY KEY constraint.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the statement with NOT NULL specified for all
+columns that are in the PRIMARY KEY and UNIQUE constraints.
+
+<<<
+[[SQL-1043]]
+== SQL 1043
+
+```
+Constraint <constraint-name> already exists.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint.
+
+*Cause:* You assigned the same constraint name to two constraints on the
+same table. Constraint names must be unique among all the constraints
+for a table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make all the constraint names for the table unique. Use
+SHOWDDL to see the names of existing constraints.
+
+[[SQL-1044]]
+== SQL 1044
+
+```
+Constraint <constraint-name> could not be created because the referenced columns in the referenced table are not part of a unique constraint.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint.
+
+*Cause:* The columns that <constraint-name> references in the referenced
+table are not part of a unique constraint.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that <constraint-name> references a unique or primary
+constraint in the referenced table.
+
+<<<
+[[SQL-1045]]
+== SQL 1045
+
+```
+The unique constraint cannot be used because it is deferrable.
+```
+
+*Cause:* The referential constraint is referencing the unique constraint
+that is declared as deferrable. This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that the referential constraint references a unique
+constraint that is not declared deferrable. Contact the Trafodion User
+Distribution List
+
+[[SQL-1046]]
+== SQL 1046
+
+```
+Referenced and referencing column lists do not match for constraint <constraint-name>.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint.
+
+*Cause:* The list of referencing columns in <constraint-name> does not
+match the list of unique key columns that it is referencing.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that the <constraint-name> list of referencing columns
+matches the list of referenced columns.
+
+<<<
+[[SQL-1047]]
+== SQL 1047
+
+```
+Request failed. Dependent view <view-name> exists.
+```
+
+Where <view-name> is the name of the view on the object being dropped.
+
+*Cause:* An object that has a dependent view cannot be dropped unless
+you use the CASCADE option on the DROP statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* To drop the object and all its dependent objects, you can
+either drop each of the dependent objects using individual DROP
+statements before dropping the object itself, or use the CASCADE clause
+on the DROP statement for the object.
+
+[[SQL-1048]]
+== SQL 1048
+
+```
+The statement currently supports only RESTRICT drop behavior.
+```
+
+*Cause:* Drop behavior CASCADE was specified on a DROP statement that
+supports only RESTRICT drop behavior.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the DROP statement, specifying RESTRICT or omitting
+the drop behavior (which will default to RESTRICT).
+
+<<<
+[[SQL-1049]]
+== SQL 1049
+
+```
+Constraint cannot be dropped because it was specified to be NOT DROPPABLE.
+```
+
+*Cause:* You attempted to drop a constraint that is NOT DROPPABLE.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-1050]]
+== SQL 1050
+
+```
+Constraint cannot be dropped because it is used as a referenced object for a foreign key.
+```
+
+*Cause:* You attempted to drop a unique or primary constraint, with
+dependent referential constraints, using the RESTRICT option, which does
+not remove such constraints.
+
+*Effect:* The drop command fails.
+
+*Recovery:* If you want to drop the dependent referential constraints,
+use the CASCADE option for the DROP CONSTRAINT command.
+
+<<<
+[[SQL-1051]]
+== SQL 1051
+
+```
+You do not have the required privilege(s) on <object-name>.
+```
+
+Where <object-name> is the name of the object for which you have
+insufficient privileges.
+
+*Cause:* You have insufficient privileges to create a view or a trigger.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for the required
+security needed to create a view or trigger.
+
+[[SQL-1053]]
+== SQL 1053
+
+```
+Unique index <index-name> could not be created because the specified column(s) contain duplicate data.
+```
+
+Where <index-name> is the name specified for the index to create.
+
+*Cause:* The rows already existing in the table violate the uniqueness
+constraint specified in the CREATE INDEX statement.
+
+*Effect:* The index is not created.
+
+*Recovery:* Either change the list of columns for the unique index, or
+change the rows in the table to remove duplicates. Then reissue the
+statement.
+
+<<<
+[[SQL-1057]]
+== SQL 1057
+
+```
+Trafodion objects cannot be created on <volume-name>: File system error <error-number>.
+```
+
+Where <volume-name> is the name of a volume.
+
+Where <error-number> is the file system error number.
+
+*Cause:* An attempt to create a file on volume <volume-name> resulted in
+file system error <error-number>.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-1058]]
+== SQL 1058
+
+```
+Lock <lock-name> already exists.
+```
+
+Where <lock-name> is the name of the DDL lock.
+
+*Cause:* The statement required creation of a lock with a unique lock
+name, which was not generated.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a unique lock name and resubmit.
+
+<<<
+[[SQL-1059]]
+== SQL 1059
+
+```
+Request failed. Dependent constraint <constraint-name> exists.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint.
+
+*Cause:* You attempted to drop a table that has a referential constraint
+or a check constraint that refers to another table.
+
+*Effect:* Trafodion does not drop the table.
+
+*Recovery:* Either drop all constraints that refer to other tables and
+then drop the table, or reissue the DROP TABLE statement, specifying the
+CASCADE option.
+
+[[SQL-1061]]
+== SQL 1061
+
+```
+Dropping metadata catalog <catalog-name> is not allowed.
+```
+
+Where <catalog-name> is the name of a Trafodion database catalog.
+
+*Cause:* You attempted to drop a catalog that is part of the Trafodion
+database metadata.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1062]]
+== SQL 1062
+
+```
+Dropping metadata schema <schema-name> is not allowed.
+```
+
+Where <schema-name> is the name of a Trafodion database metadata schema.
+
+*Cause:* You attempted to drop a schema that is part of the Trafodion
+database metadata.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-1063]]
+== SQL 1063
+
+```
+Dropping metadata index <index-name> is not allowed.
+```
+
+Where <index-name> is the name of a Trafodion database index.
+
+*Cause:* An attempt was made to drop an index that is part of the
+Trafodion database metadata.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1064]]
+== SQL 1064
+
+```
+Dropping metadata view <table-name> is not allowed.
+```
+
+Where <table-name> is the name of a Trafodion database table.
+
+*Cause:* An attempt was made to drop a view that is a metadata object.
+Metadata views and their creation are not currently supported, so this
+error should not be encountered.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-1065]]
+== SQL 1065
+
+```
+Creating constraint <constraint-name> in metadata schema is not allowed.
+```
+
+Where <constraint-name> is the name of the constraint.
+
+*Cause:* You attempted to create a constraint on a metadata table, which
+is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1066]]
+== SQL 1066
+
+```
+Creating index <index-name> in metadata schema is not allowed.
+```
+
+Where <index-name> is the name specified for the index.
+
+*Cause:* You attempted to create an index on a metadata table, which is
+not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+[[SQL-1069]]
+== SQL 1069
+
+```
+Schema <schema-name> could not be dropped.
+```
+
+Where <schema-name> is the name of a Trafodion database schema.
+
+*Cause:* See the accompanying error message for the cause of the
+problem.
+
+*Effect:* The operation fails.
+
+*Recovery:* Apply the recovery action from the accompanying error
+message.
+
+<<<
+[[SQL-1070]]
+== SQL 1070
+
+```
+Object <object-name> could not be created. File error: <error-number>.
+```
+
+Where <object-name> is the name of the Trafodion database object.
+
+Where <error-number> is the file system error number.
+
+*Cause:* An attempt to create object <object-name> resulted in file
+system error <error-number>.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-1071]]
+== SQL 1071
+
+```
+Object <ANSI-name> could not be accessed.
+```
+
+Where <ANSI-name> is the name of the Trafodion database object.
+
+*Cause:* The statement issued required access to the Trafodion platform
+file underlying object <ANSI-name>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Apply the recovery action from the accompanying error
+message.
+
+<<<
+[[SQL-1072]]
+== SQL 1072
+
+```
+Unique constraint <constraint-name-1> is disabled, so foreign key constraint <constraint-name-2> could not be created.
+```
+
+Where <constraint-name-1> is the name of the disabled constraint.
+
+Where <constraint-name-2> is the name of the foreign key constraint.
+
+*Cause:* You created a referential constraint that references a unique
+constraint that has been disabled. This is an internal error.
+
+*Effect:* The operation fails.
+
+*Recovery:* Create the referential constraint that references a unique
+constraint that has not been disabled.
+
+[[SQL-1073]]
+== SQL 1073
+
+```
+Only services ID can execute INITIALIZE SQL.
+```
+
+*Cause:* You attempted to initialize the Trafodion database, but you are
+not the services ID. Only the services ID can perform this function.
+
+*Effect:* The operation fails.
+
+*Recovery:* Log on as the services ID before executing this command.
+
+<<<
+[[SQL-1075]]
+== SQL 1075
+
+```
+The catalog must be empty. It contains at least one schema <schema-name>.
+```
+
+Where <schema-name> is the name of a schema in the specified catalog.
+
+*Cause:* An attempt was made to drop a catalog that is not empty.
+
+*Effect:* The catalog is not dropped. None of its schemas are dropped.
+
+*Recovery:* Drop all schemas in the catalog and resubmit.
+
+*Recovery:* None. Contact the Trafodion User Distribution List
+
+[[SQL-1078]]
+== SQL 1078
+
+```
+The format of the specified location name <location-name> is not valid.
+```
+
+Where <location-name> is a name specified in a LOCATION clause.
+
+*Cause:* An invalid name was supplied in a LOCATION clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for limitations on
+names allowed in the LOCATION clause. Correct the name and resubmit.
+
+<<<
+[[SQL-1079]]
+== SQL 1079
+
+```
+Trafodion was not able to prepare the statement.
+```
+
+*Cause:* See the accompanying error message for the cause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Apply the recovery of the accompanying error message.
+
+[[SQL-1080]]
+== SQL 1080
+
+```
+The create request has duplicate references to column <column-name>.
+```
+
+Where <column-name> is the name of a column of a table.
+
+*Cause:* You attempted to create a table that has two columns with the
+same name. If you name a column "SYSKEY," duplication can result from
+the implicit creation by the Trafodion database software of a column
+named SYSKEY to ensure uniqueness for the clustering key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove duplicate column names and resubmit.
+
+<<<
+[[SQL-1081]]
+== SQL 1081
+
+```
+Loading of index <index-name> failed unexpectedly.
+```
+
+Where <index-name> is the name of the index being populated.
+
+*Cause:* Population of the index failed, either because another
+concurrent operation was being performed on the base table or because
+data could not be loaded into the index by the Call-level interface
+(CLI).
+
+*Effect:* The operation fails.
+
+*Recovery:* Determine the cause of the CLI failure and resubmit.
+
+[[SQL-1082]]
+== SQL 1082
+
+```
+Validation for constraint <constraint-name> failed unexpectedly.
+```
+
+Where <constraint-name> is the name of a column or table constraint.
+
+*Cause:* The constraint validation failed, either because a concurrent
+operation was being performed on the table or on the referenced table
+(for a referential integrity constraint), or data in the table violates
+the constraint.
+
+*Effect:* The constraint operation fails.
+
+*Recovery:* If a concurrent operation is in progress, wait until it has
+finished and try the operation again. If data in the table violates the
+constraint, remove that data and resubmit.
+
+<<<
+[[SQL-1083]]
+== SQL 1083
+
+```
+Validation for constraint <constraint-name> failed; incompatible data exists in table.
+```
+
+Where <constraint-name> is the name of a column or table constraint.
+
+*Cause:* Data in the table violates the check constraint.
+
+*Effect:* The constraint operation fails.
+
+*Recovery:* Remove data that violates the constraint from the table and
+resubmit.
+
+[[SQL-1084]]
+== SQL 1084
+
+```
+An invalid default value was specified for column <column-name>.
+```
+
+Where <column-name> is the specified column.
+
+*Cause:* An invalid default value was specified in the column definition
+for <column-name>.
+
+*Effect:* Creation of the table or addition of the column fails.
+
+*Recovery:* Specify a valid default value for the column and resubmit.
+
+<<<
+[[SQL-1085]]
+== SQL 1085
+
+```
+The calculated key length is greater than 255 bytes.
+```
+
+*Cause:* The length of the primary key, which is calculated by the
+number of primary key columns and their data types, exceeds the maximum
+length.
+
+*Effect:* The operation fails.
+
+*Recovery:* Make sure the key length is less than 255 bytes and
+resubmit.
+
+[[SQL-1086]]
+== SQL 1086
+
+```
+Lock <lock-name> does not exist.
+```
+
+Where <lock-name> is the name of the specified lock.
+
+*Cause:* Lock <lock-name> was specified, but does not exist.
+
+*Effect:* The operation fails.
+
+*Recovery:* Create a lock <lock-name> or specify a valid lock name and
+resubmit.
+
+<<<
+[[SQL-1087]]
+== SQL 1087
+
+```
+DDL lock cannot be granted, invalid operation has been specified.
+```
+
+*Cause:* An invalid utility operation requested a DDL lock.
+
+*Effect:* The lock request fails.
+
+*Recovery:* Specify a valid utility operation, or check to see if
+invalid utilities are being run, and resubmit.
+
+[[SQL-1088]]
+== SQL 1088
+
+```
+The system generated column SYSKEY must be specified last or not specified at all in the STORE BY column list.
+```
+
+*Cause:* If the system-generated column SKSKEY is specified in the STORE
+BY list of columns, it must be specified last.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the STORE BY clause and resubmit.
+
+<<<
+[[SQL-1089]]
+== SQL 1089
+
+```
+The system generated column SYSKEY must be specified last or not specified at all in the index column list.
+```
+
+*Cause:* The system-generated SYSKEY column was not the last column in a
+CREATE INDEX statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the column list to place SYSKEY at the end of the
+list and resubmit the statement.
+
+[[SQL-1090]]
+== SQL 1090
+
+```
+Self-referencing constraints are currently not supported.
+```
+
+*Cause:* You attempted to create a self-referencing constraint. A
+referential constraint is self-referencing if the foreign key is
+referencing the primary key of the same table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the self-reference and resubmit.
+
+<<<
+[[SQL-1094]]
+== SQL 1094
+
+```
+Object <object-name> could not be dropped because it is not of type <object-type>.
+```
+
+Where <object-name> is the ANSI name of the object stated in the DROP
+command.
+
+Where <object-type> is the type of object that was stated in the DROP
+command.
+
+*Cause:* A DROP TABLE specified an object that is not a base table, or a
+DROP VIEW specified an object that is not a view, or a DROP PROCEDURE
+specified an object that is not a procedure.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the DROP statement with the correct combination of
+specified object type and actual object type.
+
+[[SQL-1095]]
+== SQL 1095
+
+```
+The PARTITION BY column <column-name> should also be part of the clustering/storage key.
+```
+
+Where <column-name> is the name of a column of the specified table.
+
+*Cause:* This error is reported if a column specified in the
+partitioning key of the "PARTITION BY (<partitioning-columns>)" clause
+of a CREATE TABLE or CREATE INDEX statement is not also a member of the
+clustering key.
+
+*Effect:* The table or index is not created.
+
+*Recovery:* Either remove the offending column from the partitioning key
+specification (and possibly replace it with a column that is a member of
+the clustering key) or add the offending column to the clustering key by
+using the STORE BY clause or by adding it to the primary key.
+
+<<<
+[[SQL-1098]]
+== SQL 1098
+
+```
+Duplicate partition key (<key>)specified for object <object-name>.
+```
+
+Where <key> is a partition key.
+
+Where <object-name> is the name of the table being created or changed.
+
+*Cause:* You attempted to create or change a table so that more than one
+partition has the same first key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the statement so that it does not define two
+partitions to have the same first key, and resubmit.
+
+[[SQL-1099]]
+== SQL 1099
+
+```
+Column <column-number> is unnamed. You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.
+```
+
+Where <column-number> is the specified column.
+
+*Cause:* You attempted to create a view by using a query expression in
+which <column-number> was unnamed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the statement to supply an AS clause for each
+unnamed column and resubmit.
+
+<<<
+[[SQL-1104]]
+== SQL 1104
+
+```
+Default value string is too long for column <column-name>.
+```
+
+Where <column-name> is the name of a character-type column for which a
+default value is specified.
+
+*Cause:* The specified default value for <column-name> is longer than
+the maximum of 239 characters.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the error and resubmit.
+
+[[SQL-1105]]
+== SQL 1105
+
+```
+CREATE TABLE LIKE statement cannot contain both HORIZONTAL PARTITIONS and STORE BY clauses.
+```
+
+*Cause:* A CREATE TABLE . . . LIKE statement specifies both the WITH
+PARTITIONS and STORE BY clause, which is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the error and resubmit.
+
+<<<
+[[SQL-1106]]
+== SQL 1106
+
+```
+The specified partition <partition-location> of object <table-name> does not exist.
+```
+
+Where <partition-location> is the location of the specified partition.
+
+Where <table-name> is the name of the table.
+
+*Cause:* The location name <partition-location> specified in the
+partition operation does not exist.
+
+*Effect:* The partition operation fails.
+
+*Recovery:* Specify a valid partition location name and resubmit.
+
+[[SQL-1108]]
+== SQL 1108
+
+```
+The number of columns specified in the view column list, <view-col-num>, does not match the degree of the query expression, <query-col-num>.
+```
+
+Where <view-col-num> is the number of columns in the view column list.
+
+Where <query-col-num> is the number of columns resulting from the query
+expression used to define the view.
+
+*Cause:* The number of columns in the query do not equal the number of
+columns specified for the view.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a query statement that has a degree that matches the
+number of columns in the view column list, and resubmit.
+
+<<<
+[[SQL-1109]]
+== SQL 1109
+
+```
+The WITH CHECK OPTION clause appears in the definition of view <view-name>, but the view is not updatable.
+```
+
+Where <view-name> is the name of the view being created.
+
+*Cause:* You used WITH CHECK OPTION in the definition of a view that is
+not updatable.
+
+*Effect:* The operation fails.
+
+*Recovery:* Either make the view updatable or omit the WITH CHECK OPTION
+and resubmit.
+
+[[SQL-1112]]
+== SQL 1112
+
+```
+An index column list cannot consist only of the system-generated column SYSKEY.
+```
+
+*Cause:* The column list specified in a CREATE INDEX statement consisted
+only of the system-generated column SYSKEY.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the column list to include additional columns and
+reissue the statement.
+
+<<<
+[[SQL-1114]]
+== SQL 1114
+
+```
+Metadata tables for catalog <catalog-name> could not be created on <location-info>.
+```
+
+Where <catalog-name> is the name of a Trafodion database catalog.
+
+Where <location-info> is the location where the tables could not be
+created.
+
+*Cause:* This error can result from various CREATE statements issued to
+create the metadata. See the accompanying error messages to determine
+the cause.
+
+*Effect:* One or more objects are not created.
+
+*Recovery:* See the accompanying error messages for recovery action.
+
+[[SQL-1115]]
+== SQL 1115
+
+```
+Label <file-name> could not be created for <ANSI-name> (file error <error>).
+```
+
+Where <file-name> is the name of the file for the label creation that
+failed.
+
+Where <ANSI-name> is the name of the table.
+
+Where <error> is the error number returned.
+
+*Cause:* A file system error occurred on the attempt to create the
+label.
+
+*Effect:* The table is not created.
+
+*Recovery:* Correct the file system error and reissue the CREATE
+statement. For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+<<<
+[[SQL-1116]]
+== SQL 1116
+
+```
+The current partitioning scheme requires a user-specified clustering key on object <table-name>.
+```
+
+Where <table-name> is the name of the table.
+
+*Cause:* The partitioning scheme requires a user-specified clustering
+key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a clustering key, either through a PRIMARY KEY,
+STORE BY, or PARTITION BY clause.
+
+[[SQL-1117]]
+== SQL 1117
+
+```
+Dropping the only partition of an object is not allowed. At least two partitions must exist to perform the drop.
+```
+
+*Cause:* You attempted to drop the only partition of the object.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1118]]
+== SQL 1118
+
+```
+Creating object <table-name> is not allowed in metadata schema.
+```
+
+Where <table-name> is the name of the object.
+
+*Cause:* You attempted to create an object in the metadata schema.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a different schema and resubmit.
+
+[[SQL-1119]]
+== SQL 1119
+
+```
+Dropping metadata object <table-name> is not allowed.
+```
+
+Where <table-name> is the name of a Trafodion database metadata table.
+
+*Cause:* You attempted to use the DROP TABLE statement to drop a table
+that is part of the Trafodion database metadata.
+
+*Effect:* The table is not dropped.
+
+*Recovery:* Metadata tables can be dropped only by using the DROP SQL
+statement or the MXTOOL GOAWAY utility. Both methods will irrevocably
+destroy the database.
+
+<<<
+[[SQL-1120]]
+== SQL 1120
+
+```
+Use of float datatype in a partitioning key is not allowed.
+```
+
+*Cause:* You attempted an operation on a partitionable table that has
+float datatype in the partitioning key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Enable the default
+ALLOW_FLOAT_DATATYPES_IN_PARTITIONING_KEY via a control query default
+statement and retry the operation.
+
+[[SQL-1121]]
+== SQL 1121
+
+```
+Partitions cannot be added or dropped on table <table-name>. These partition operations are not allowed on tables whose clustering key consists only of the SYSKEY.
+```
+
+Where <table-name> is the name of the table.
+
+*Cause:* You attempted to do an invalid ADD, DROP, or MODIFY of a
+partition.
+
+*Effect:* The operation fails.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1122]]
+== SQL 1122
+
+```
+The number of specified partition key values (<partitionkey-value-list>) for object <object-name> exceeds the number of user defined key columns, <key-col-number>.
+```
+
+Where <partition-key-value-list> is a list of the partition key values.
+
+Where <object-name> is the name of the object.
+
+Where <key-col-number> is the number of columns in the user-defined key.
+
+*Cause:* The number of specified partition key values
+(<partition-key-valuelist>) for object <object-name> exceeds the
+number of user-defined key columns, <key-col-number>.
+
+*Effect:* The operation fails.
+
+*Recovery:* Fix the statement and resubmit.
+
+[[SQL-1123]]
+== SQL 1123
+
+```
+Not all of the partition key values (<key>) for object <object-name> could be processed. Please verify that the correct key value data types were specified.
+```
+
+Where <key> is a list of the partition key values.
+
+Where <object-name> is the name of the object.
+
+*Cause:* You attempted to access a table using a first key value that
+contains an element that is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax and resubmit.
+
+<<<
+[[SQL-1124]]
+== SQL 1124
+
+```
+Use of a float datatype in a partitioning key has been enabled by the default ALLOW_FLOAT_DATATYPES_IN_PARTIONING_KEY. This could give some incorrect results and the users should be aware of it.
+```
+
+*Cause:* You attempted an operation on a partitionable table that has
+float datatype in the partitioning key.
+
+*Effect:* The operation completes without errors, but the results might
+not be correct.
+The float data value might not be evaluated consistently to the same
+value each time.
+
+*Recovery:* Do not use float data types in the partitioning key of a
+partitionable table.
+
+[[SQL-1127]]
+== SQL 1127
+
+```
+The specified table <table-name> is not a base table. Please verify that the correct table was specified.
+```
+
+Where <table-name> is the name of the table.
+
+*Cause:* You attempted to perform an operation that can be performed
+only on a base table, and the specified object is not a base table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a valid base table and resubmit.
+
+<<<
+[[SQL-1130]]
+== SQL 1130
+
+```
+The column requires a default value.
+```
+
+*Cause:* You attempted to create a column that requires a default value,
+without specifying a default value.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a valid default value for the column and resubmit.
+
+[[SQL-1132]]
+== SQL 1132
+
+```
+An added column cannot have both DEFAULT NULL and NOT NULL.
+```
+
+*Cause:* You attempted to add a column that is both DEFAULT NULL and NOT
+NULL.
+
+*Effect:* The operation fails.
+
+*Recovery:* Determine whether the column should be DEFAULT NULL or NOT
+NULL and resubmit.
+
+<<<
+[[SQL-1133]]
+== SQL 1133
+
+```
+Only super ID can perform this operation.
+```
+
+*Cause:* You attempted to perform an operation that can be performed
+only by the super ID.
+
+*Effect:* The operation fails.
+
+*Recovery:* Log on as the super ID and then resubmit.
+
+[[SQL-1134]]
+== SQL 1134
+
+```
+A concurrent utility or DDL is being performed on object <object-name>, its parent, or one of its dependencies. That operation must complete before the requested operation can run.
+```
+
+Where <object-name> is the name of the object.
+
+*Cause:* You attempted to execute a utility or alter the DDL of an
+object while a concurrent utility or DDL operation was being performed
+on the object, its parent, or its dependencies.
+
+*Effect:* The operation fails.
+
+*Recovery:* Wait until the concurrent operation has finished and then
+resubmit.
+
+<<<
+[[SQL-1135]]
+== SQL 1135
+
+```
+Clustering key column <column-name> must be assigned a NOT NULL NOT DROPPABLE constraint.
+```
+
+Where <column-name> is the name of the column in the clustering key.
+
+*Cause:* You attempted to make a column that is not NOT NULL NOT
+DROPPABLE a part of the clustering key of a table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify that the <column-name> is NOT NULL NOT DROPPABLE and
+resubmit.
+
+[[SQL-1136]]
+== SQL 1136
+
+```
+For an added column, the PRIMARY KEY clause cannot specify NOT DROPPABLE.
+```
+
+*Cause:* You used the ALTER TABLE statement to add a column specifying a
+primary key that is not droppable. A primary key added through ALTER
+TABLE must be droppable.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change the ALTER TABLE statement to specify DROPPABLE for
+the primary key.
+
+<<<
+[[SQL-1139]]
+== SQL 1139
+
+```
+System-generated column <column-name> of base table <table-name> cannot appear in the search condition of a check constraint definition.
+```
+
+Where <column-name> is the name of a column of <table-name>.
+
+Where <table-name> is the name of the affected table.
+
+*Cause:* You attempted to create a check constraint that references a
+system-generated column. The column named SYSKEY is often
+system-generated.
+
+*Effect:* The operation fails.
+
+*Recovery:* Modify the statement so that no check constraints reference
+any system-generated column and resubmit.
+
+[[SQL-1140]]
+== SQL 1140
+
+```
+Row-length <actual-row-length> exceeds the maximum allowed row-length of <maximum-row-length> for table <table-name>.
+```
+
+Where <actual-row-length> is the length of a row of the table.
+
+Where <maximum-row-length> is the largest row size allowed.
+
+Where <table-name> is the name of the table.
+
+*Cause:* On a CREATE or ALTER TABLE statement, the size of the row
+exceeds the maximum allowed row size.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for row size limit
+calculations. Change the column definitions and reissue the statement.
+
+<<<
+[[SQL-1141]]
+== SQL 1141
+
+```
+Label <file-name> for object could not be accessed. File system error <error-number>.
+```
+
+Where <file-name> is the Trafodion platform file name of a partition of
+object.
+
+Where <error-number> is a Trafodion platform file system error.
+
+*Cause:* An ALTER TABLE or ALTER INDEX operation encountered a file
+system error.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-1142]]
+== SQL 1142
+
+```
+Because it is not audited, this table cannot have a column added that is declared NOT NULL, or has a CHECK, UNIQUE, PRIMARY KEY, or FOREIGN KEY constraint.
+```
+
+*Cause:* Internal error.
+
+*Effect:* The Trafodion database is unable to perform the requested
+operation.
+
+*Recovery:* None. Contact the Trafodion User Distribution List
+
+<<<
+[[SQL-1143]]
+== SQL 1143
+
+```
+Validation for constraint <constraint-name> failed; incompatible data exists in referencing base table <referencing-table-name> and referenced base table <referenced-table-name>. To display the data violating the constraint, please use the following DML statement: <statement-text>.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint.
+
+Where <referencing-table-name> is the table on which the constraint is
+being added.
+
+Where <referenced-table-name> is the table specified in the FOREIGN KEY
+clause.
+
+Where <statement-text> is a query.
+
+*Cause:* You attempted to add a referential integrity constraint that is
+violated by rows already in the table.
+
+*Effect:* The operation fails.
+
+*Recovery:* Run the query <statement-text> to see the rows that violate
+the referential constraint. Either change those rows or change the
+referential constraint definition and resubmit.
+
+[[SQL-1144]]
+== SQL 1144
+
+```
+A quoted string was expected in first key clause for column <column-name> on table <table-name>, but the value detected is (<first-key-string>).
+```
+
+Where <column-name> is the column in <table-name>.
+
+Where <table-name> is the name of the table.
+
+Where <first-key-string> is the erroneous value used in the FIRST KEY
+clause for <column-name>.
+
+*Cause:* In a CREATE TABLE statement, a value specified as first key is
+not a quoted string, but the type of the column for which this value is
+specified is one of the character data types.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the value <first-key-string> to be a type that is
+compatible with the type of column <column-name> and resubmit.
+
+<<<
+[[SQL-1145]]
+== SQL 1145
+
+```
+The catalog name <catalog-name> is reserved for Trafodion metadata.
+```
+
+Where <catalog-name> is the name of a Trafodion database catalog.
+
+*Cause:* Trafodion reserves certain catalog names
+for its own use.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for reserved names.
+Change <catalog-name> to a name that is not reserved and resubmit.
+
+[[SQL-1146]]
+== SQL 1146
+
+```
+Object <object-name> could not be altered because it is not a <object-type>.
+```
+
+Where <object-name> is the name of the object being requested.
+
+Where <object-type> is the type of object required for the DDL statement
+issued.
+
+*Cause:* The type of the object specified in the command is inconsistent
+with the DDL command being used. For example, this occurs if DROP TABLE
+is used, and the object you specify is an INDEX.
+
+*Effect:* The operation fails.
+
+*Recovery:* Check that the correct object name was specified and execute
+a statement that is consistent with that type of object.
+
+<<<
+[[SQL-1147]]
+== SQL 1147
+
+```
+System-generated column <column-name> of base table <table-name> cannot appear in a unique or primary key constraint.
+```
+
+Where <column-name> is the SYSKEY column.
+
+Where <table-name> is the name of the table.
+
+*Cause:* You tried to create a unique or primary key constraint on the
+SYSKEY column.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not use the SYSKEY as part of the unique or primary key.
+
+[[SQL-1148]]
+== SQL 1148
+
+```
+System-generated column <column-name> of base table <table-name> cannot appear in a referential integrity constraint definition.
+```
+
+Where <column-name> is the SYSKEY column.
+
+Where <table-name> is the name of the table.
+
+*Cause:* You tried to create a referential constraint on a table column
+that is the SYSKEY, which is not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not use the SYSKEY as part of the referenced key.
+
+<<<
+[[SQL-1150]]
+== SQL 1150
+
+```
+Table <table-name> was not created as Partition Overlay Support could not generate volume names for the partitions to reside on.
+```
+
+Where <table-name> is the name of the table.
+
+*Cause:* When the Partition Overlay Support feature is enabled without
+setting volume names (through CQD POS_LOCATIONS) for table partitions to
+reside on, location names are generated automatically. However, the
+Trafodion database software could not generate the location names
+automatically and, because the CQD POS_RAISE_ERROR is set, the table is
+not created.
+
+*Effect:* The operation fails.
+
+*Recovery:* To correct the error, choose a recovery method:
+
+* Verify that the disk volumes are available on the current node and
+retry the request.
+* Specify the volume names where the partitions need to be created for
+the given CREATE TABLE statement through CONTROL QUERY DEFAULT
+POS_LOCATIONS, and then retry the request.
+* Do not set the CQD POS_RAISE_ERROR, in which case, a simple table
+without partitions is created when the volume names cannot be generated.
+
+<<<
+[[SQL-1151]]
+== SQL 1151
+
+```
+POS (Partition Overlay Support) was not applied as volume names could not be generated for the partitions. So a simple table <table-name> was created without partitions.
+```
+
+Where <table-name> is the name of the table.
+
+*Cause:* When the Partition Overlay Support feature is enabled without
+setting volume names (through CQD POS_LOCATIONS) for table partitions to
+reside on, location names are generated automatically. However, the
+Trafodion database software could not generate the location names
+automatically, and because the CQD POS_RAISE_ERROR is not set, the given
+table is created as a simple table without partitions as it would be if
+the Partition Overlay Support feature was not enabled.
+
+*Effect:* The POS feature was not applied. A simple table without
+partitions was created.
+
+*Recovery:* None if a non-partitioned table is requested. To request a
+partitioned table, delete the table, verify that disk volumes are
+available, and resubmit. You can also specify the volume names where the
+partitions need to be created for the given CREATE TABLE through
+CONTROL QUERY DEFAULT POS_LOCATIONS, and then retry the request.
+
+<<<
+[[SQL-1154]]
+== SQL 1154
+
+```
+Cannot create object <object-name> as the table size is too big to fit on the system.
+```
+
+*Cause:* Trafodion could not create the object
+because the requested table size is bigger than the total amount of disk
+space available on the system.
+
+*Effect:* The SQL operation fails.
+
+*Recovery:* Check that the table size requested is big enough to fit on
+the system and retry the statement.
+
+[[SQL-1155]]
+== SQL 1155
+
+```
+Operation cannot be performed because <object-name> is not a synonym.
+```
+
+*Cause:* You specified an alter or drop of synonym on an object <object-name>, which is not a synonym.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the correct <object-name> is used.
+
+<<<
+[[SQL-1156]]
+== SQL 1156
+
+```
+Synonym <name> does not exist or object type is invalid for the current operation.
+```
+
+*Cause:* You specified a create or alter of synonym <name> on an object
+that is not a table or view.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the correct <name> is used.
+
+[[SQL-1157]]
+== SQL 1157
+
+```
+Synonym object <name> is the same as previous mapping.
+```
+
+*Cause:* You specified an alter of synonym on an object <name>, which
+is the same as its previous mapping.
+
+*Effect:* The operation succeeds with a warning.
+
+*Recovery:* None.
+
+<<<
+[[SQL-1158]]
+== SQL 1158
+
+```
+Synonym <name> already exists.
+```
+
+*Cause:* You specified a create of synonym <name> on an object, but a
+synonym of that name already exists.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the correct <name> is used.
+
+[[SQL-1159]]
+== SQL 1159
+
+```
+The specified object <name> is not a table or a view. Please verify that the correct object was specified.
+```
+
+*Cause:* You specified an alter or drop of synonym <name>, but a synonym of that name already exists.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the syntax so that the correct <name> is used.
+
+<<<
+[[SQL-1160]]
+== SQL 1160
+
+```
+A mismatch between the NOT DROPPABLE PRIMARY KEY constraint and the STORE BY clause was detected. When both clauses are specified, the STORE BY key column list must be the same as, or a prefix of , the PRIMARY KEY column list. This mismatch is caused by differences between the columns themselves, the order of columns, or the ASC/DESC attribute.
+```
+
+*Cause:* You attempted to create a table that contains both a NOT
+DROPPABLE PRIMARY KEY constraint and a STORE BY clause. The syntax
+specified is not correct. The STORE BY column list must be the same as,
+or a prefix of, the NOT DROPPABLE PRIMARY KEY column list.
+
+*Effect:* The operation fails.
+
+*Recovery:* If you want the STORE BY column list that specifies the
+clustering key to be different than the PRIMARY KEY, specify a DROPPABLE
+PRIMARY KEY. If you want the PRIMARY KEY to be the same as the STORE BY
+key, do not specify a STORE BY clause. Correct the syntax and resubmit.
+
+[[SQL-1161]]
+== SQL 1161
+
+```
+System generated column SYSKEY cannot be specified as part of the PARTITION BY clause.
+```
+
+*Cause:* Trafodion could not create the object
+because system-generated column SYSKEY is not allowed as part of the
+PARTITION BY clause.
+
+*Effect:* The DDL operation fails.
+
+*Recovery:* Remove the system added column SYSKEY from the PARTITION BY
+clause and retry the DDL statement.
+
+<<<
+[[SQL-1180]]
+== SQL 1180
+
+```
+The required subvolume name for locations in schema <schema-name> is <directory-name>.
+```
+
+Where <schema-name> is the schema in which the object is being created.
+
+Where <directory-name> is the designated subvolume name for that schema.
+
+*Cause:* One or more LOCATION clauses in the CREATE or MODIFY statement
+contained a Trafodion platform location whose subvolume did not match
+the designated subvolume for the schema in which the object was being
+created.
+
+*Effect:* The object was not created.
+
+*Recovery:* Either correct the invalid LOCATION clauses or remove them
+and allow the system to generate the Trafodion platform locations.
+
+[[SQL-1181]]
+== SQL 1181
+
+```
+Label <file-name> could not be dropped. (file error <error>).
+```
+
+Where <file-name> is the name of the table, index, view, or routine
+being dropped.
+
+Where <error> is the returned file system error number.
+
+*Cause:* The object you attempted to drop resulted in file system error
+<error>.
+
+*Effect:* The DDL DROP operation fails.
+
+*Recovery:* See previous messages in this Trafodion database software
+operation to determine the necessary corrective actions. Also, use the
+file system error <error-number> to analyze the cause. For information
+about file system errors, see <<file_system_errors, File-System Errors>>.
+Fix the error and resubmit.
+
+<<<
+[[SQL-1182]]
+== SQL 1182
+
+```
+Error <error> was returned by the file system on resource fork <file-name>.
+```
+
+Where <error> is the error returned.
+
+Where <file-name> is the name of the file.
+
+*Cause:* File system error.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+[[SQL-1183]]
+== SQL 1183
+
+```
+Error <error> was returned by the file system on metadata table <ANSI-name> (file name <file-name>).
+```
+
+Where <error> is the error returned.
+
+Where <ANSI-name> is the metadata table.
+
+Where <file-name> is the name of the file.
+
+*Cause:* File system error.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+
+<<<
+[[SQL-1184]]
+== SQL 1184
+
+```
+You do not have the required privilege(s) on <column-name>.
+```
+
+Where <column-name> is the name of a column specified in the references
+part of a referential integrity constraint.
+
+*Cause:* You attempted to establish a referential integrity constraint
+on a column for which the executing user ID has no REFERENCES
+privileges.
+
+*Effect:* The operation fails.
+
+*Recovery:* Establish correct column privileges and resubmit.
+
+[[SQL-1185]]
+== SQL 1185
+
+```
+The location name is either invalid or missing.
+```
+
+*Cause:* A partition location is either invalid or missing.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify the correct location for all partitions involved in
+the affected command.
+
+<<<
+[[SQL-1186]]
+== SQL 1186
+
+```
+Column <column-name> is of type <column-data-type> which is not compatible with the default value's type, <value-datatype>.
+```
+
+Where <column-name> is the name of the column that has an error.
+
+Where <column-data-type> is the data type of <column-name>
+
+Where <value-data-type> is the value specified as the default value for the column.
+
+*Cause:* The value specified as the default for the column is
+incompatible with the type of the column.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change either the column data type or the value for the
+default to be compatible types and resubmit.
+
+[[SQL-1187]]
+== SQL 1187
+
+```
+The schema name <schema-name> is reserved for Trafodion metadata.
+```
+
+Where <schema-name> is the name of a Trafodion database schema.
+
+*Cause:* Trafodion reserves certain schema names
+for its own use.
+
+*Effect:* The operation fails.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for reserved schema
+names. Choose a name that is not reserved and reissue the CREATE statement.
+
+<<<
+[[SQL-1188]]
+== SQL 1188
+
+```
+Referential integrity constraint <constraint-name> for table <table-name> could not be created due to circular dependency: <dependency-information>.
+```
+
+Where <constraint-name> is the name of a column constraint or table
+constraint. Where <table-name> is the name of the table specified in the
+operation.
+
+Where <dependency-information> is a list of unique constraints that cause the circular dependency.
+
+*Cause:* You tried to define a referential constraint that is creating a
+circular dependency, where one of the columns of the table is
+referencing a column that belongs to the same table, either directly or
+indirectly.
+
+*Effect:* The operation fails.
+
+*Recovery:* None. You cannot define a referential constraint that creates a circular dependency.
+
+[[SQL-1224]]
+== SQL 1224
+
+```
+An invalid data type was specified for routine parameter <parameter-name>.
+```
+
+Where <parameter-name> is the name of the parameter.
+
+*Cause:* You specified a data type for this routine parameter that is
+not supported.
+
+*Effect:* Trafodion is unable to complete the operation.
+
+*Recovery:* Specify a different data type.
+
+<<<
+[[SQL-1225]]
+== SQL 1225
+
+```
+Mixing EXECUTE with other privileges is not allowed.
+```
+
+*Cause:* EXECUTE and another privilege were specified in the same GRANT
+or REVOKE statement, which is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use separate GRANT or REVOKE statements for EXECUTE and other privileges.
+
+[[SQL-1226]]
+== SQL 1226
+
+```
+No valid combination of privileges was specified.
+```
+
+*Cause:* The GRANT or REVOKE statement did not specify a valid
+combination of privileges.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a valid combination of privileges in the GRANT or REVOKE statement.
+
+<<<
+[[SQL-1231]]
+== SQL 1231
+
+```
+User-defined routine <procedure-name> could not be created.
+```
+
+Where <procedure-name> is the stored procedure's ANSI name.
+
+*Cause:* The stored procedure could not be created.
+
+*Effect:* The CREATE PROCEDURE statement fails.
+
+*Recovery:* Fix the error conditions identified in messages preceding
+this message and reissue the CREATE PROCEDURE statement.
+
+[[SQL-1232]]
+== SQL 1232
+
+```
+A file error occurred when saving dropped table DDL for table <table-name> to <path-name>.
+```
+
+Where <table-name> is the table being dropped whose DDL was to be saved.
+
+Where <path-name> is the pathname of the file to which the DDL was to
+be saved.
+
+*Cause:* A file system error occurred when you attempted to save a table
+DDL. Possible reasons are:
+
+* The directory `/usr/tandem/sqlmx/ddl` did not exist or could not be
+created.
+* The system did not have write access to `/usr/tandem/sqlmx/ddl`.
+* Insufficient file space was available.
+
+*Effect:* The table is not dropped.
+
+*Recovery:* Either correct the file system problem and drop the table or
+perform a SHOWDDL on the existing table, capture the output, set.
+SAVE_DROPPED_TABLE_DDL to "OFF," and drop the table. For information
+about file system errors, see <<file_system_errors,File-System Errors>>.
+
+<<<
+[[SQL-1233]]
+== SQL 1233
+
+```
+Creating schema in Trafodion system catalog <catalog-name> is prohibited.
+```
+
+Where <catalog-name> is the name of the Trafodion database catalog.
+
+*Cause:* You attempted to create a schema in the system catalog.
+
+*Effect:* The operation fails.
+
+*Recovery:* Choose a different catalog name and reissue the CREATE
+statement.
+
+[[SQL-1235]]
+== SQL 1235
+
+```
+An invalid combination of EXTENT sizes and MAXEXTENTS was specified
+```
+for table or index <table-name>.
+
+*Cause:* A CREATE or ALTER statement specified an invalid combination of
+EXTENT sizes and MAXEXTENTS.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the error and retry the operation.
+
+<<<
+[[SQL-1236]]
+== SQL 1236
+
+```
+The schema name specified for SQL object <object-name> is not valid. The schema name must be the same as the schema being created.
+```
+
+Where <object-name> is the name of the SQL object.
+
+*Cause:* You specified a schema name for an object that is different
+from the name of the schema being created.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a schema name for the object that matches the name
+of the schema being created.
+
+[[SQL-1238]]
+== SQL 1238
+
+```
+The character set for TRIGGER text must be ISO88591.
+```
+
+*Cause:* You specified a literal with a character set other than
+ISO88591 in the text of a create trigger statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify only ISO88591 literals in the command.
+
+<<<
+[[SQL-1239]]
+== SQL 1239
+
+```
+The character set for string literals in VIEW text must be ISO88591.
+```
+
+*Cause:* You specified a literal with a character set other than
+ISO88591 in the text of a create view statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify only ISO88591 literals in the command.
+
+[[SQL-1240]]
+== SQL 1240
+
+```
+The character set for a PARTITION KEY column must be ISO88591.
+```
+
+*Cause:* You specified a literal with a character set other than
+ISO88591 as a partition key.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify only ISO88591 literals as partition keys.
+
+<<<
+[[SQL-1241]]
+== SQL 1241
+
+```
+The character set for HEADING must be ISO88591.
+```
+
+*Cause:* You specified a literal with a character set other than
+ISO88591 in a HEADING clause.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify only ISO88591 literals in HEADING clauses.
+
+[[SQL-1242]]
+== SQL 1242
+
+```
+The character set for string literals in CONSTRAINT must be ISO88591.
+```
+
+*Cause:* You specified a literal with a character set other than
+
+ISO88591 in the text of a constraint.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify only ISO88591 literals in constraints.
+
+<<<
+[[SQL-1243]]
+== SQL 1243
+
+```
+The hexadecimal form of string literals is not allowed in this context.
+```
+
+*Cause:* You specified a hexadecimal literal in the text of the
+statement, which is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Do not specify hexadecimals in this type of command.
+
+[[SQL-1245]]
+== SQL 1245
+
+```
+The supplied partition key value (<key-value>) for column <column-name> of object <object-name> is not valid.
+```
+
+Where <key-value> is the specified first key value.
+
+Where <column-name> is the column of <object-name> that corresponds to
+the invalid key value.
+
+Where <object-name> is the name of the affected object.
+
+*Cause:* A utility command specified an invalid key value.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify valid key values and resubmit.
+
+<<<
+[[SQL-1246]]
+== SQL 1246
+
+```
+The supplied partition key value (<key-value>) is inconsistent
+```
+with the data type of column <column-name> of object <object-name>.
+
+Where <key-value> is the specified first key value.
+
+Where <column-name> is the column of <object-name> that corresponds to
+the invalid key value.
+
+Where <object-name> is the name of the affected object.
+
+*Cause:* A utility command specified a key value that is inconsistent
+with the data type of the column that corresponds to the key value.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify valid key values and resubmit.
+
+[[SQL-1248]]
+== SQL 1248
+
+```
+Partition name <partition-name> has already been used. Each partition in an object should have a unique name.
+```
+
+Where <partition-name> is the name specified for a partition.
+
+*Cause:* Partition names are required to be unique within the set of
+partitions of an object.
+
+*Effect:* The CREATE statement fails.
+
+*Recovery:* Choose a name that is not the same as any other partition
+name in this object and reissue the CREATE statement.
+
+<<<
+[[SQL-1250]]
+== SQL 1250
+
+```
+DROP cannot be performed on object <object-name> because a utility operation (<operation-type>) associated with DDL_LOCK <lock-name> is currently running.
+```
+
+Where <object-name> is the ANSI name of the object named in the DROP
+command.
+
+Where <operation-type> is the type of utility operation.
+
+Where <lock-name> is the ANSI name of the DDL lock object that is
+associated with the utility operation.
+
+*Cause:* You attempted to drop an object that a utility command is
+using.
+
+*Effect:* The operation fails.
+
+*Recovery:* Wait until the utility operation has finished, and then
+retry the DROP operation.
+
+[[SQL-1251]]
+== SQL 1251
+
+```
+The extra insignificant digits of default value <value> are truncated to match the scale of the data type of column <column-name>.
+```
+
+Where <value> is the default value that was specified for <column-name>.
+
+Where <column-name> is the name of the column in the table.
+
+*Cause:* A CREATE TABLE or ALTER TABLE. . .ADD COLUMN specified a default
+value with a scale greater than the scale of the column.
+
+*Effect:* The scale of the default value is set to that of the column;
+extra digits to the right are discarded.
+
+*Recovery:* None. This is a warning message only.
+
+<<<
+[[SQL-1252]]
+== SQL 1252
+
+```
+The existing index <index-name> to be used by a unique or primary constraint has not been populated. Please populate the index and then try to add the constraint again.
+```
+
+Where <index-name> is the name of an existing unpopulated index.
+
+*Cause:* An existing index that is not populated has been chosen for a
+unique or primary constraint, which is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Populate the index and resubmit.
+
+[[SQL-1254]]
+== SQL 1254
+
+```
+Duplicate unique constraints are not allowed with same set of columns.
+```
+
+*Cause:* You attempted to specify both the unique and primary key
+constraints or multiple unique constraints on the same set of columns,
+which is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* Change your query so that both unique and primary
+constraints or multiple unique constraints are not specified on the same
+set of columns.
+
+<<<
+[[SQL-1262]]
+== SQL 1262
+
+```
+The command cannot be executed because <operation> is in progress for <schema>.
+```
+
+Where <operation> is a schema-level operation.
+
+Where <schema> is the ANSI name of the affected schema.
+
+*Cause:* You attempted a DDL or utility operation on a database object
+while <operation> was in progress for that object's <schema>.
+
+*Effect:* The DDL or utility operation fails.
+
+*Recovery:* Wait until the operation has finished, and then retry the
+DDL or utility operation.
+
+[[SQL-1263]]
+== SQL 1263
+
+```
+Table, view, and stored procedure names that start with <text> are reserved for Trafodion metadata.
+```
+
+Where <text> is the disallowed name that was specified.
+
+*Cause:* You specified a Trafodion database reserved object name.
+
+*Effect:* The object is not created.
+
+*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for the list of
+reserved object names. Choose a name that is not reserved and reissue
+the CREATE statement.
+
+<<<
+[[SQL-1264]]
+== SQL 1264
+
+```
+Duplicate privileges are not allowed in a GRANT or REVOKE statement.
+```
+
+*Cause:* You specified duplicate privileges in a GRANT or REVOKE
+statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the GRANT or REVOKE statement, specifying a single
+privilege or a list of distinct privileges.
+
+[[SQL-1265]]
+== SQL 1265
+
+```
+Duplicate grantees not allowed in a GRANT or REVOKE statement.
+```
+
+*Cause:* You specified duplicate grantees in a GRANT or REVOKE
+statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the GRANT or REVOKE statement specifying a single
+grantee or a list of distinct grantees.
+
+<<<
+[[SQL-1266]]
+== SQL 1266
+
+```
+Only EXECUTE privilege is supported for a procedure or routine.
+```
+
+*Cause:* You specified an unsupported privilege on a procedure or
+routine in a GRANT statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the GRANT statement specifying the valid privilege
+for the procedure or routine.
+
+[[SQL-1267]]
+== SQL 1267
+
+```
+EXECUTE privilege is incompatible with this object type.
+```
+
+*Cause:* You specified a privilege that is not supported for the object
+type in a GRANT statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Reissue the GRANT statement specifying the valid privilege
+for the object type.
+
+<<<
+[[SQL-1268]]
+== SQL 1268
+
+```
+Duplicate columns are not allowed in a GRANT or REVOKE statement.
+```
+
+*Cause:* You specified duplicate column names with the update or
+references privilege in a GRANT or REVOKE statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Correct the GRANT or REVOKE statement by specifying a single
+column name or a list of distinct column names.
+
+[[SQL-1270]]
+== SQL 1270
+
+```
+ALLOCATE or DEALLOCATE failed for object <sql-object-name> due to
+file error <file-system-error-number> on <file-name>.
+```
+
+Where <sql-object-name> is the ANSI name of the affected SQL database
+object.
+
+Where <file-system-error-number> is a Trafodion platform file system
+error code.
+
+*Cause:* A CREATE or ALTER operation encountered a file system error
+<error-number> during processing of the ALLOCATE or DEALLOCATE attribute.
+
+*Effect:* The operation fails.
+
+*Recovery:* For information about file system errors, see
+<file-system-errors,File-System Errors>.
+
+<<<
+[[SQL-1271]]
+== SQL 1271
+
+```
+ALLOCATE failed for object <object-name> because extents to be allocated <number> is greater than the MAXEXTENTS for a partition of the object.
+```
+
+Where <object-name> is the ANSI name of the affected database object.
+
+Where <number> is the specified number of extents.
+
+*Cause:* A CREATE or ALTER operation specified an ALLOCATE attribute
+value that was greater than the MAXEXTENTS value for the affected
+database object, which is not allowed.
+
+*Effect:* The operation fails.
+
+*Recovery:* If possible, alter the MAXEXTENTS attribute value to be
+greater than the
+
+desired number of extents to be allocated. The current maximum value for
+MAXEXTENTS is 768.
+
+[[SQL-1273]]
+== SQL 1273
+
+```
+The specified MAXEXTENTS value must be greater than the number of extents allocated.
+```
+
+*Cause:* The value that you specified to change MAXEXTENTS is less than
+or equal to the allocated extents.
+
+*Effect:* The operation fails.
+
+*Recovery:* Use a MAXEXTENTS value greater than the allocated extents.
+
+<<<
+[[SQL-1274]]
+== SQL 1274
+
+```
+The specified or default MAXEXTENTS value is not sufficient. The MAXEXTENTS value has been automatically set to the new value of <value> for the file <file-name>.
+```
+
+*Cause:* You specified an insufficient MAXEXTENTS value while creating
+an index.
+
+*Effect:* The SQL operation completed with a warning.
+
+*Recovery:* This is a warning only.
+
+[[SQL-1275]]
+== SQL 1275
+
+```
+Constraint <constraint-1> cannot be dropped because it is needed by unique constraint <constraint-2>.
+```
+
+Where <constraint-1> is the constraint you are trying to drop.
+
+Where <constraint-2> is the UNIQUE constraint.
+
+*Cause:* You attempted to drop a constraint that is needed by a UNIQUE
+constraint, which is not allowed because it would leave a UNIQUE
+constraint on a column, but without a NOT NULL constraint for that
+column.
+
+*Effect:* The operation fails.
+
+*Recovery:* To drop the constraint, you must remove the UNIQUE
+constraint or add an additional NOT NULL constraint to the columns that
+contain UNIQUE constraints and only one NOT NULL constraint for that
+column.
+
+<<<
+[[SQL-1277]]
+== SQL 1277
+
+```
+Unrecognized partitioning scheme for object <object-name>.
+```
+
+<object-name> is the name of the SQL object (table or index).
+
+*Cause:* The Trafodion database does not recognize the partitioning
+scheme stored in the metadata for the named object.
+
+*Effect:* The named object is considered corrupt and is inaccessible.
+
+*Recovery:* None. Contact the Trafodion User Distribution List Consider
+running the VERIFY operation on the named object to check for
+inconsistencies in the metadata with respect to the partitioning scheme.
+
+[[SQL-1278]]
+== SQL 1278
+
+```
+The command cannot be executed because <operation> is in progress for all schemas in catalog <catalog>.
+```
+
+<operation> is a schema level operation, currently UPGRADE or DOWNGRADE,
+that uses the ALL SCHEMAS IN CATALOG flavor. <catalog> is a catalog name
+that is affected by <operation>.
+
+*Cause:* An attempt was made to execute a DDL or utility operation that
+affected <catalog>, or a schema in that catalog.
+
+*Effect:* The operation fails.
+
+*Recovery:* Wait until <operation> is finished, then retry the failed
+DDL or utility operation.
+
+<<<
+[[SQL-1301]]
+== SQL 1301
+
+```
+NO ACTION referential action for <referential-triggered-action> clause is not yet supported as specified by ANSI SQL-99 standard. To alter the behavior, set an appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
+```
+
+Where <referential-triggered-action> can either be ON DELETE or ON
+UPDATE.
+
+*Cause:* NO ACTION referential action is specified in the referential
+integrity definition, and the CONTROL QUERY DEFAULT value for
+REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT is 'OFF.'
+
+*Effect:* The NO ACTION referential action cannot be defined.
+
+*Recovery:* To alter the behavior of NO ACTION referential action, set
+the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT
+default.
+
+[[SQL-1302]]
+== SQL 1302
+
+```
+NO ACTION referential action for <referential-triggered-action> clause behaves like RESTRICT referential action. To alter the behavior, set the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT default.
+```
+
+Where <referential-triggered-action> can either be ON DELETE or ON
+UPDATE.
+
+*Cause:* NO ACTION referential action is specified in the referential
+definition and the CONTROL QUERY DEFAULT value for
+REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT is 'SYSTEM.'
+
+*Effect:* The NO ACTION referential action has RESTRICT referential
+action semantics. It is recorded as NO ACTION in the metadata table.
+
+*Recovery:* To alter the behavior of the NO ACTION referential action,
+set the appropriate value for the REF_CONSTRAINT_NO_ACTION_LIKE_RESTRICT
+default.
+
+<<<
+[[SQL-1305]]
+== SQL 1305
+
+```
+The specified schema location <directory> is already in use by schema <schema>.
+```
+
+Where <directory> is the Trafodion platform subvolume name specified in
+the LOCATION clause of the CREATE SCHEMA command.
+
+Where <schema> is the ANSI name of an existing schema that already uses
+<directory> as a schema subvolume.
+
+*Cause:* In a CREATE SCHEMA command, you specified <directory> in the
+LOCATION clause; however, this subvolume is already being used as schema
+subvolume by <schema>.
+
+*Effect:* The statement fails unless it includes the optional REUSE
+clause to allow reuse of the same schema subvolume name. If the REUSE
+clause is used, this is a warning message and the schema is created
+successfully. The warning can be issued repeatedly for a single CREATE
+SCHEMA command if multiple schemas already exist with <directory> as the
+schema subvolume.
+
+*Recovery:* Only schemas that are RDF replicated to another node should
+have the same subvolume names as their corresponding schemas on the
+other node. To create these, use the optional REUSE clause in the CREATE
+SCHEMA statement. All other schemas should have unique subvolume names.
+Schemas that are, or will be, related as RDF primary and backup schemas
+must have identical schema names and subvolumes on the primary and
+backup nodes.
+
+[[SQL-1307]]
+== SQL 1307
+
+```
+The schema location <directory> is reserved for Trafodion metadata.
+```
+
+Where <directory> is the Trafodion platform subvolume name specified in
+the LOCATION clause of the CREATE SCHEMA command.
+
+*Cause:* In a CREATE SCHEMA command, you specified subvolume in the
+LOCATION clause, however subvolume names with the format
+ZSD<digit><anything> are reserved for Trafodion database software
+metadata schemas.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify a subvolume name using the format
+ZSD<letter><anything> in the LOCATION clause, and resubmit.
+
+<<<
+[[SQL-1309]]
+== SQL 1309
+
+```
+Object type for <object-name> is not valid for the current operation.
+```
+
+Where <object-name> is the name of the object.
+
+*Cause:* You specified an object for an SQL operation that does not
+support its object type.
+
+*Effect:* The operation fails.
+
+*Recovery:* Specify an object of valid object type and retry the
+operation.
+
+[[SQL-1310]]
+== SQL 1310
+
+```
+The CREATE SCHEMA statement does not support the creation of triggers.
+```
+
+*Cause:* You specified creation of triggers in the CREATE SCHEMA
+statement.
+
+*Effect:* The operation fails.
+
+*Recovery:* Remove the creation of triggers from the CREATE SCHEMA
+statement and resubmit. Create triggers in separate statements.
+

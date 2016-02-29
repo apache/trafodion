@@ -1,0 +1,49 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+= Trafodion Client Products
+This manual describes how to install and configure the following client applications, which enable you to connect to and use a Trafodion
+database.
+
+== Client Summary
+The following table lists the clients supported by Trafodion.
+[cols="30%h,70%",options="header"]
+|===
+| Client Name | Description
+| Trafodion ODBC Driver for Windows | A driver that enables applications, which were developed for the Microsoft Open Database Connectivity (ODBC) application programming
+interface (API) and which run on a Windows workstation, to connect to a Trafodion database.
+| Trafodion ODBC Driver for Linux | A driver that enables applications, which were developed for the Microsoft ODBC API and run on a Linux workstation, to connect to a
+Trafodion database.
+| Trafodion JDBC Type 4 Driver | A driver that enables Java applications that run on a client workstation to connect to a Trafodion database.
+
+NOTE: The Trafodion Command Interface (TrafCI), DbVisualizer, and SQuirreL SQL Client require this driver to be installed on the client
+workstation.
+| Trafodion Command Interface (TrafCI) | A command-line interface that allows you to connect to a Trafodion database and run SQL statements and other commands interactively or from
+script files. For more information, see the http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+| Trafodion odb tool | A multi-threaded, ODBC-based command-line tool for parallel data loading and extracting. For more information, see the
+http://trafodion.incubator.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+| DbVisualizer | A third-party database tool that allows you to connect to a Trafodion database. For more information, see the http://www.dbvis.com/[_DbVisualizer website_].
+| SQuirreL SQL Client | A third-party database tool that allows you to connect to a Trafodion database. For more information, see the 
+http://squirrel-sql.sourceforge.net/[_SQuirreL SQL Client website_].
+|===
+
+

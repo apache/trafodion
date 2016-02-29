@@ -356,6 +356,9 @@ void CmpSeabaseDDL::createSeabaseTableLike(
         query += keyClause;
       }
 
+  // send any user CQDs down 
+  Lng32 retCode = sendAllControls(FALSE, FALSE, TRUE);
+
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
@@ -2908,9 +2911,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   else
      verifyName = tableName;
 
-  if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
-    ActiveSchemaDB()->getNATableDB()->useCache();
-
  // save the current parserflags setting
   ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
@@ -3093,17 +3093,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       // drop all constraints referencing me.
       if (uniqConstr->hasRefConstraintsReferencingMe())
         {
-          cliRC = cliInterface->holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
-          if (cliRC < 0)
-            {
-              cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-              
-              deallocEHI(ehi); 
-              processReturn();
-              
-              return -1;
-            }
-
           for (Lng32 j = 0; j < uniqConstr->getNumRefConstraintsReferencingMe(); j++)
             {
               const ComplementaryRIConstraint * rc = 
@@ -3122,9 +3111,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
               if (cliRC < 0)
                 {
                   cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-
-                  cliRC = cliInterface->restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
-                  
                   deallocEHI(ehi); 
                   processReturn();
                   
@@ -3132,9 +3118,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
                 }
               
             } // for
-          
-          cliRC = cliInterface->restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
-          
         } // if
     } // for
 
@@ -4754,23 +4737,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       (alterAddColNode->getAddConstraintUniqueArray().entries() NEQ 0) OR
       (alterAddColNode->getAddConstraintRIArray().entries() NEQ 0))
     {
-      cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          
-          processReturn();
-          
-          goto label_return;
-        }
-
       addConstraints(tableName, currCatAnsiName, currSchAnsiName,
                      alterAddColNode->getAddConstraintPK(),
                      alterAddColNode->getAddConstraintUniqueArray(),
                      alterAddColNode->getAddConstraintRIArray(),
                      alterAddColNode->getAddConstraintCheckArray());                 
-
-      cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
         return;
@@ -5580,8 +5551,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
-  if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
-    ActiveSchemaDB()->getNATableDB()->useCache();
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
@@ -5865,9 +5834,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
       return;
     }
 
-  if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
-    ActiveSchemaDB()->getNATableDB()->useCache();
-
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
@@ -6096,9 +6062,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 
       return;
     }
-
-  if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
-    ActiveSchemaDB()->getNATableDB()->useCache();
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(referencingTableName.getObjectNamePart().getInternalName(),
@@ -6832,9 +6795,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
 
       return;
     }
-
-  if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
-    ActiveSchemaDB()->getNATableDB()->useCache();
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
@@ -7583,7 +7543,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       if (pGranteeArray[j]->isPublic())
         {
           grantee = PUBLIC_USER;
-          authName = "PUBLIC";
+          authName = PUBLIC_AUTH_NAME;
         }
       else
         {
@@ -8625,12 +8585,6 @@ void populateRegionDescForEndKey(char* buf, Int32 len, struct desc_struct* targe
    target->body.hbase_region_desc.endKeyLen = len;
 }
 
-void populateRegionDescAsHASH2(char* buf, Int32 len, struct desc_struct* target, NAMemory*)
-{
-   target->header.nodetype = DESC_HBASE_HASH2_REGION_TYPE;
-   populateRegionDescForEndKey(buf, len, target);
-}
-
 void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*)
 {
    target->header.nodetype = DESC_HBASE_RANGE_REGION_TYPE;
@@ -9408,15 +9362,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
       ByteArrayList* bal = ehi->getRegionEndKeys(extNameForHbase);
 
-      // Set the header.nodetype to either HASH2 or RANGE based on whether
-      // the table is salted or not.  
-      if (tableIsSalted && CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_ON) 
-        ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-          assembleDescs(bal, populateRegionDescAsHASH2, STMTHEAP);
-      else
-       if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_ON ) 
-         ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-            assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
+      // create a list of region descriptors
+      ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
+        assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
       delete bal;
 
       // if this is base table or index and hbase object doesn't exist, then this object

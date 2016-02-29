@@ -93,21 +93,24 @@ BindScope::~BindScope()
 // ***********************************************************************
 // BindScope::mergeOuterRefs()
 // ***********************************************************************
-void BindScope::mergeOuterRefs(const ValueIdSet& other)
+void BindScope::mergeOuterRefs(const ValueIdSet& other, NABoolean keepLocalRefs)
 {
   outerRefs_ += other;
 
-  // Get the list of valueIds that this scope exposes and remove
-  // them from the local references
-  ValueIdList localRefList;
-  if (RETDesc_)
-    RETDesc_->getValueIdList(localRefList,USER_AND_SYSTEM_COLUMNS);
-
-  ValueIdSet localRefSet = localRefList;
-  outerRefs_ -= localRefSet;
-
-  // subtract any other local references
-  outerRefs_ -= localRefs_;
+  if (!keepLocalRefs)
+  {
+    // Get the list of valueIds that this scope exposes and remove
+    // them from the local references
+    ValueIdList localRefList;
+    if (RETDesc_)
+      RETDesc_->getValueIdList(localRefList,USER_AND_SYSTEM_COLUMNS);
+    
+    ValueIdSet localRefSet = localRefList;
+    outerRefs_ -= localRefSet;
+    
+    // subtract any other local references
+    outerRefs_ -= localRefs_;
+  }
 } // BindScope::mergeOuterRefs()
 
 
@@ -373,7 +376,7 @@ BindScope* BindWA::getSubqueryScope (BindScope *currentScope) const
 // ***********************************************************************
 // BindWA::removeCurrentScope()
 // ***********************************************************************
-void BindWA::removeCurrentScope()
+void BindWA::removeCurrentScope(NABoolean keepLocalRefs)
 {
   //
   // Remove the current scope from the BindScope list.  If there is a parent
@@ -385,7 +388,7 @@ void BindWA::removeCurrentScope()
   BindScope *currScope;
   scopes_.getLast(currScope);
   if (NOT scopes_.isEmpty())
-    getCurrentScope()->mergeOuterRefs(currScope->getOuterRefs());
+    getCurrentScope()->mergeOuterRefs(currScope->getOuterRefs(),keepLocalRefs);
 
   delete currScope;
 } // BindWA::removeCurrentScope()

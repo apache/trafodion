@@ -74,7 +74,7 @@ public class TransactionRegionLocation extends HRegionLocation {
    }
 
    public int compareTo(TransactionRegionLocation o) {
-      if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation ENTRY: " + o);
+      if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation ENTRY: " + o.getRegionInfo().getRegionNameAsString());
       int result = super.getHostname().compareTo(o.getHostname());
       if (result != 0){
          if (LOG.isTraceEnabled()) LOG.trace("compareTo hostnames differ: mine: " + super.getHostname() + " hex: " +
@@ -88,10 +88,22 @@ public class TransactionRegionLocation extends HRegionLocation {
       }
       result = super.getRegionInfo().compareTo(o.getRegionInfo());
       if (result != 0) {
-         if (super.getRegionInfo().getEncodedName().compareTo(o.getRegionInfo().getEncodedName()) == 0) {
-            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo differs:\n    mine: end key: " + Hex.encodeHexString(super.getRegionInfo().getEndKey()) + " hex: " +
-               Hex.encodeHexString(super.getRegionInfo().getRegionName()) + "\n object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey()) + " hex: " +
-               Hex.encodeHexString(o.getRegionInfo().getRegionName()) + "result is " + result);
+         if (super.getRegionInfo().getEncodedName().compareTo(o.getRegionInfo().getEncodedName()) == 0){
+            if (LOG.isTraceEnabled()) LOG.trace("compareTo regionInfo RegionNames match " + o.getRegionInfo().getEncodedName());
+            if (super.getRegionInfo().containsRange(o.getRegionInfo().getStartKey(), o.getRegionInfo().getEndKey())) {
+               if (LOG.isTraceEnabled()) LOG.trace("This region contains object's start and end keys.  Regions match " + o.getRegionInfo().getEncodedName());
+               result = 0;
+               return result;
+            }
+            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo RegionNames match, but object end keys differ:\n  this hex name: "
+                        + Hex.encodeHexString(super.getRegionInfo().getRegionName()) + "\n   obj hex name: "
+                        + Hex.encodeHexString(o.getRegionInfo().getRegionName())
+                        + "\n This end key    : " + Hex.encodeHexString(super.getRegionInfo().getEndKey())
+                        + "\n Object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey())  + "\n result " + result);
+         }
+         else {
+            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo.getEncodedName differs:\n      mine: "
+                    + super.getRegionInfo().getEncodedName() + "\n object's : " + o.getRegionInfo().getEncodedName() + " result is " + result);
          }
       }
       return result;
