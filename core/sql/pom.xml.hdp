@@ -28,8 +28,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop.version>2.7.1</hadoop.version>
-    <hbase.version>1.1.2</hbase.version>
+    <hadoop.version>2.7.1.2.3.2.0-2950</hadoop.version>
+    <hbase.version>1.1.2.2.3.2.0-2950</hbase.version>
     <hbase-flavor-id>hdp2_3</hbase-flavor-id>
     <hbase-trx.id>hbase-trx-${hbase-flavor-id}</hbase-trx.id>
     <hive.version>1.2.1</hive.version>

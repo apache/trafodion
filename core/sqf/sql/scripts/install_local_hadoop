@@ -917,6 +917,12 @@ EOF
 # Pick up MySQL JDBC driver
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 export HADOOP_HOME=${MY_SW_ROOT}/hadoop
+
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+  cd ${MY_SW_ROOT}/hadoop/share/hadoop/yarn/lib
+  rm jline*.jar
+fi
+
 ${MY_SW_ROOT}/hive/bin/hive "\$@"
 EOF
 

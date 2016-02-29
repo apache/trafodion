@@ -34,8 +34,8 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
+import org.apache.hadoop.hbase.classification.InterfaceAudience;
+import org.apache.hadoop.hbase.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -52,20 +52,21 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.io.FileLink;
 import org.apache.hadoop.hbase.io.HFileLink;
-import org.apache.hadoop.hbase.io.HLogLink;
-import org.apache.hadoop.hbase.io.hadoopbackport.ThrottledInputStream;
+import org.apache.hadoop.hbase.io.WALLink;
+import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.mapreduce.JobUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.hbase.mob.MobUtils;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.protobuf.generated.SnapshotProtos.SnapshotFileInfo;
 import org.apache.hadoop.hbase.protobuf.generated.SnapshotProtos.SnapshotRegionManifest;
-import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.hbase.snapshot.* ;
 import org.apache.hadoop.hbase.util.FSUtils;
-import org.apache.hadoop.hbase.snapshot.*;
+import org.apache.hadoop.hbase.util.HFileArchiveUtil;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -74,18 +75,22 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.mapreduce.security.TokenCache;
+import org.apache.hadoop.hbase.io.hadoopbackport.ThrottledInputStream;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+
 
 /**
  * Export the specified snapshot to a given FileSystem.
  *
  * The .snapshot/name folder is copied to the destination cluster
- * and then all the hfiles/hlogs are copied using a Map-Reduce Job in the .archive/ location.
+ * and then all the hfiles/wals are copied using a Map-Reduce Job in the .archive/ location.
  * When everything is done, the second cluster can restore the snapshot.
  */
 @InterfaceAudience.Public
@@ -114,7 +119,10 @@ public class TrafExportSnapshot extends Configured implements Tool {
   private static final String INPUT_FOLDER_PREFIX = "export-files.";
 
   // Export Map-Reduce Counters, to keep track of the progress
-  public enum Counter { MISSING_FILES, COPY_FAILED, BYTES_EXPECTED, BYTES_COPIED, FILES_COPIED };
+  public enum Counter {
+    MISSING_FILES, FILES_COPIED, FILES_SKIPPED, COPY_FAILED,
+    BYTES_EXPECTED, BYTES_SKIPPED, BYTES_COPIED
+  }
 
   private static class ExportMapper extends Mapper<BytesWritable, NullWritable,
                                                    NullWritable, NullWritable> {
@@ -155,33 +163,39 @@ public class TrafExportSnapshot extends Configured implements Tool {
       testFailures = conf.getBoolean(CONF_TEST_FAILURE, false);
 
       try {
+        conf.setBoolean("fs." + inputRoot.toUri().getScheme() + ".impl.disable.cache", true);
         inputFs = FileSystem.get(inputRoot.toUri(), conf);
       } catch (IOException e) {
         throw new IOException("Could not get the input FileSystem with root=" + inputRoot, e);
       }
 
       try {
+        conf.setBoolean("fs." + outputRoot.toUri().getScheme() + ".impl.disable.cache", true);
         outputFs = FileSystem.get(outputRoot.toUri(), conf);
       } catch (IOException e) {
         throw new IOException("Could not get the output FileSystem with root="+ outputRoot, e);
       }
 
       // Use the default block size of the outputFs if bigger
-      int defaultBlockSize = Math.max((int) outputFs.getDefaultBlockSize(), BUFFER_SIZE);
+      int defaultBlockSize = Math.max((int) outputFs.getDefaultBlockSize(outputRoot), BUFFER_SIZE);
       bufferSize = conf.getInt(CONF_BUFFER_SIZE, defaultBlockSize);
       LOG.info("Using bufferSize=" + StringUtils.humanReadableInt(bufferSize));
+
+      for (Counter c : Counter.values()) {
+        context.getCounter(c).increment(0);
+      }
     }
 
-    byte[] copyBytes(BytesWritable  bw) {
-      byte[] result = new byte[bw.getLength()];
-      System.arraycopy(bw.getBytes(), 0, result, 0, bw.getLength());
-      return result;
+    @Override
+    protected void cleanup(Context context) {
+      IOUtils.closeStream(inputFs);
+      IOUtils.closeStream(outputFs);
     }
 
     @Override
     public void map(BytesWritable key, NullWritable value, Context context)
         throws InterruptedException, IOException {
-      SnapshotFileInfo inputInfo = SnapshotFileInfo.parseFrom(copyBytes(key));
+      SnapshotFileInfo inputInfo = SnapshotFileInfo.parseFrom(key.copyBytes());
       Path outputPath = getOutputPath(inputInfo);
 
       copyFile(context, inputInfo, outputPath);
@@ -249,6 +263,8 @@ public class TrafExportSnapshot extends Configured implements Tool {
         FileStatus outputStat = outputFs.getFileStatus(outputPath);
         if (outputStat != null && sameFile(inputStat, outputStat)) {
           LOG.info("Skip copy " + inputStat.getPath() + " to " + outputPath + ", same file.");
+          context.getCounter(Counter.FILES_SKIPPED).increment(1);
+          context.getCounter(Counter.BYTES_SKIPPED).increment(inputStat.getLen());
           return;
         }
       }
@@ -396,16 +412,17 @@ public class TrafExportSnapshot extends Configured implements Tool {
     private FSDataInputStream openSourceFile(Context context, final SnapshotFileInfo fileInfo)
         throws IOException {
       try {
+        Configuration conf = context.getConfiguration();
         FileLink link = null;
         switch (fileInfo.getType()) {
           case HFILE:
             Path inputPath = new Path(fileInfo.getHfile());
-            link = new HFileLink(inputRoot, inputArchive, inputPath);
+            link = getFileLink(inputPath, conf);
             break;
           case WAL:
             String serverName = fileInfo.getWalServer();
             String logName = fileInfo.getWalName();
-            link = new HLogLink(inputRoot, serverName, logName);
+            link = new WALLink(inputRoot, serverName, logName);
             break;
           default:
             throw new IOException("Invalid File Type: " + fileInfo.getType().toString());
@@ -421,14 +438,15 @@ public class TrafExportSnapshot extends Configured implements Tool {
     private FileStatus getSourceFileStatus(Context context, final SnapshotFileInfo fileInfo)
         throws IOException {
       try {
+        Configuration conf = context.getConfiguration();
         FileLink link = null;
         switch (fileInfo.getType()) {
           case HFILE:
             Path inputPath = new Path(fileInfo.getHfile());
-            link = new HFileLink(inputRoot, inputArchive, inputPath);
+            link = getFileLink(inputPath, conf);
             break;
           case WAL:
-            link = new HLogLink(inputRoot, fileInfo.getWalServer(), fileInfo.getWalName());
+            link = new WALLink(inputRoot, fileInfo.getWalServer(), fileInfo.getWalName());
             break;
           default:
             throw new IOException("Invalid File Type: " + fileInfo.getType().toString());
@@ -442,6 +460,16 @@ public class TrafExportSnapshot extends Configured implements Tool {
         LOG.error("Unable to get the status for source file=" + fileInfo.toString(), e);
         throw e;
       }
+    }
+
+    private FileLink getFileLink(Path path, Configuration conf) throws IOException{
+      String regionName = HFileLink.getReferencedRegionName(path.getName());
+      TableName tableName = HFileLink.getReferencedTableName(path.getName());
+      if(MobUtils.getMobRegionInfo(tableName).getEncodedName().equals(regionName)) {
+        return HFileLink.buildFromHFileLinkPattern(MobUtils.getQualifiedMobRootDir(conf),
+                HFileArchiveUtil.getArchivePath(conf), path);
+      }
+      return HFileLink.buildFromHFileLinkPattern(inputRoot, inputArchive, path);
     }
 
     private FileChecksum getFileChecksum(final FileSystem fs, final Path path) {
@@ -513,7 +541,7 @@ public class TrafExportSnapshot extends Configured implements Tool {
             if (storeFile.hasFileSize()) {
               size = storeFile.getFileSize();
             } else {
-              size = new HFileLink(conf, path).getFileStatus(fs).getLen();
+              size = HFileLink.buildFromHFileLinkPattern(conf, path).getFileStatus(fs).getLen();
             }
             files.add(new Pair<SnapshotFileInfo, Long>(fileInfo, size));
           }
@@ -528,7 +556,7 @@ public class TrafExportSnapshot extends Configured implements Tool {
             .setWalName(logfile)
             .build();
 
-          long size = new HLogLink(conf, server, logfile).getFileStatus(fs).getLen();
+          long size = new WALLink(conf, server, logfile).getFileStatus(fs).getLen();
           files.add(new Pair<SnapshotFileInfo, Long>(fileInfo, size));
         }
     });
@@ -784,7 +812,7 @@ public class TrafExportSnapshot extends Configured implements Tool {
   }
 
   /**
-   * Execute the export snapshot by copying the snapshot metadata, hfiles and hlogs.
+   * Execute the export snapshot by copying the snapshot metadata, hfiles and wals.
    * @return 0 on success, and != 0 upon failure.
    */
   @Override
@@ -858,8 +886,10 @@ public class TrafExportSnapshot extends Configured implements Tool {
       targetName = snapshotName;
     }
 
+    conf.setBoolean("fs." + inputRoot.toUri().getScheme() + ".impl.disable.cache", true);
     FileSystem inputFs = FileSystem.get(inputRoot.toUri(), conf);
     LOG.debug("inputFs=" + inputFs.getUri().toString() + " inputRoot=" + inputRoot);
+    conf.setBoolean("fs." + outputRoot.toUri().getScheme() + ".impl.disable.cache", true);
     FileSystem outputFs = FileSystem.get(outputRoot.toUri(), conf);
     LOG.debug("outputFs=" + outputFs.getUri().toString() + " outputRoot=" + outputRoot.toString());
 
@@ -980,6 +1010,9 @@ public class TrafExportSnapshot extends Configured implements Tool {
       }
       outputFs.delete(outputSnapshotDir, true);
       return 1;
+    } finally {
+      IOUtils.closeStream(inputFs);
+      IOUtils.closeStream(outputFs);
     }
   }
   
@@ -1014,7 +1047,13 @@ public class TrafExportSnapshot extends Configured implements Tool {
 	   switch (inputInfo.getType()) {
 	   case HFILE:
 	       Path inputPath = new Path(inputInfo.getHfile());
-	       link = new HFileLink(inputRoot, inputArchive, inputPath);
+	       String regionName = HFileLink.getReferencedRegionName(inputPath.getName());
+	       TableName tableName = HFileLink.getReferencedTableName(inputPath.getName());
+	       if(MobUtils.getMobRegionInfo(tableName).getEncodedName().equals(regionName)) 
+	       {
+		   throw new IOException("Mob not supported. Use HBase ExportSnapshot");
+	       }
+	       link = HFileLink.buildFromHFileLinkPattern(inputRoot, inputArchive, inputPath);
 	       break;
 	   default:
 	       throw new IOException("Invalid File Type: " + inputInfo.getType().toString());
@@ -1044,8 +1083,9 @@ public class TrafExportSnapshot extends Configured implements Tool {
     System.err.println("  -chgroup GROUP          Change the group of the files to the specified one.");
     System.err.println("  -chmod MODE             Change the permission of the files to the specified one.");
     System.err.println("  -mappers                Number of mappers to use during the copy (mapreduce.job.maps).");
-	System.err.println("  -mr-lowlimit-mb         Use file copy command instead of MR copy for files \\" +
-	    		"smaller than this size.");
+    System.err.println("  -bandwidth              Limit bandwidth to this value in MB/second.");
+    System.err.println("  -mr-lowlimit-mb         Use file copy command instead of MR copy for files \\" +
+    		"smaller than this size.");
     System.err.println();
     System.err.println("Examples:");
     System.err.println("  hbase " + getClass().getName() + " \\");
