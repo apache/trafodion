@@ -7,6 +7,3 @@ docs/command_interface export-ignore
 docs/odb_manual export-ignore
 docs/sql_reference export-ignore
 docs/src/site export-ignore
-# used for Compiler GUI which we don't support yet
-core/sqf/export/limited-support-tools/QPDrawer
-core/sql/SqlCompilerDebugger/Resource.qrc

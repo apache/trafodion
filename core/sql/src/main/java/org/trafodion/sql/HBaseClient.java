@@ -794,12 +794,12 @@ public class HBaseClient {
             return regionInfo;
     }
 
-    public boolean copy(String currTblName, String oldTblName)
+    public boolean copy(String srcTblName, String tgtTblName, boolean force)
 	throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException {
-            if (logger.isDebugEnabled()) logger.debug("HBaseClient.copy(" + currTblName + oldTblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.copy(" + srcTblName + tgtTblName + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
 	    
-	    String snapshotName = currTblName + "_SNAPSHOT";
+	    String snapshotName = srcTblName + "_SNAPSHOT";
 	    
 	    List<SnapshotDescription> l = new ArrayList<SnapshotDescription>(); 
 	    //	    l = admin.listSnapshots(snapshotName);
@@ -807,28 +807,25 @@ public class HBaseClient {
 	    if (! l.isEmpty())
 		{
 		    for (SnapshotDescription sd : l) {
-			//			System.out.println("here 1");
-			//			System.out.println(snapshotName);
-			//			System.out.println(sd.getName());
 			if (sd.getName().compareTo(snapshotName) == 0)
 			    {
-				//				System.out.println("here 2");
-				//			    admin.enableTable(snapshotName);
-				//				System.out.println("here 3");
 				admin.deleteSnapshot(snapshotName);
-				//				System.out.println("here 4");
 			    }
 		    }
 		}
-	    //	    System.out.println(snapshotName);
-	    if (! admin.isTableDisabled(currTblName))
-		admin.disableTable(currTblName);
-	    //	    System.out.println("here 5");
-	    admin.snapshot(snapshotName, currTblName);
-	    admin.cloneSnapshot(snapshotName, oldTblName);
+
+            if ((force == true) &&
+                (admin.tableExists(tgtTblName))) {
+                admin.disableTable(tgtTblName);
+                admin.deleteTable(tgtTblName);
+            }
+                
+	    if (! admin.isTableDisabled(srcTblName))
+		admin.disableTable(srcTblName);
+	    admin.snapshot(snapshotName, srcTblName);
+	    admin.cloneSnapshot(snapshotName, tgtTblName);
 	    admin.deleteSnapshot(snapshotName);
-	    //	    System.out.println("here 6");
-	    admin.enableTable(currTblName);
+	    admin.enableTable(srcTblName);
             admin.close();
             return true;
     }

@@ -355,7 +355,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
            LM->Log(LM->msg);
         }
 
-        char *buf =  new (CmpCommon::statementHeap()) char[allowedCqdsSize];
         char* filterString = new (STMTHEAP) char[allowedCqdsSize+1];
         // We need to make a copy of the CQD value here since strtok
         // overwrites delims with nulls in stored cqd value.
@@ -377,6 +376,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
            {
              NAString quotedString;
              ToQuotedString (quotedString, value);
+             char buf[strlen(name)+quotedString.length()+4+1+1+1];  // room for "CQD %s %s;" and null terminator
              sprintf(buf, "CQD %s %s;", name, quotedString.data());
              retcode = HSFuncExecQuery(buf);
 
@@ -387,7 +387,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
         }
 
         NADELETEBASIC(filterString, STMTHEAP);
-        NADELETEBASIC(buf, STMTHEAP);
      }
      else // size is zero or too large
      {

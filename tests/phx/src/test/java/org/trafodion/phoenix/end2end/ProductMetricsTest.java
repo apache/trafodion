@@ -25,6 +25,28 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
+/**********************************
+ *
+ * Later modifications to test Trafodion instead of Phoenix were granted to ASF.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+*************************************/
+
 package test.java.org.trafodion.phoenix.end2end;
 
 import static org.junit.Assert.*;
@@ -735,7 +757,7 @@ public class ProductMetricsTest extends BaseTest {
 
         String query = null;
         if (tgtPH()) query = "SELECT round(date,'hour',1),feature,sum(unique_users) FROM PRODUCT_METRICS WHERE organization_id=? GROUP BY round(date,'hour',1),feature";
-        else if (tgtSQ()||tgtTR()) query = "SELECT date_trunc('hour',date_add(date1,interval '30' minute)),feature,sum(unique_users) FROM PRODUCT_METRICS WHERE organization_id=? GROUP BY date_trunc('hour',date_add(date1,interval '30' minute)),feature order by 3";
+        else if (tgtSQ()||tgtTR()) query = "SELECT date_trunc('hour',date_add(date1,interval '30' minute)),feature,sum(unique_users) FROM PRODUCT_METRICS WHERE organization_id=? GROUP BY date_trunc('hour',date_add(date1,interval '30' minute)),feature order by 3, 1";
         try {
             initTableValues();
             PreparedStatement statement = conn.prepareStatement(query);

@@ -31,8 +31,7 @@ GENVERS			    =./genvers
 
 all: build_all
 
-build_all:	 
-	$(MAKE) build_chk
+build_all: build_chk LICENSE NOTICE
 	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_rest.log"
 	set -o pipefail && $(MAVEN) site package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
@@ -50,3 +49,13 @@ clean:
 	$(RM) build_rest.log
 	$(RM) $(VFILE)
 	$(RM) ../../${DISTRIBUTION_DIR}/$(BLD_TRAFODION_REST_TARNAME)
+
+LICENSE: ../../licenses/LICENSE-rest
+	cp -f $? $@
+
+../../licenses/LICENSE-rest:
+	cd $(@D) && $(MAKE) $(@F)
+
+NOTICE: ../../NOTICE
+	cp -f $? $@
+

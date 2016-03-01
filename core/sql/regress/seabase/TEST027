@@ -20,6 +20,7 @@
 -- @@@ END COPYRIGHT @@@
 --
 -- tests for support of multiple column families
+-- tests for alter table alter column
 
 create schema trafodion.sch027;
 set schema trafodion.sch027;
@@ -178,8 +179,65 @@ create table t027t02 (
      a20.a20 int, a21.a21 int, a22.a22 int, a23.a23 int, a24.a24 int, a25.a25 int, a26.a26 int, a27.a27 int, a28.a28 int, a29.a29 int,
     a30.a30 int, a31.a31 int) attribute default column family 'cf';
 
+-- tests for alter varchar column 
+drop table if exists t027t7;
+create table t027t7(a int not null, b varchar(2), 
+   c varchar(4) character set utf8 not null, z int not null primary key)
+salt using 2 partitions;
+
+invoke t027t7;
+insert into t027t7 values (1, 'ab', 'cd', 10);
+select * from t027t7;
+alter table t027t7 alter column b varchar(3);
+invoke t027t7;
+alter table t027t7 alter column c varchar(5) character set utf8;
+invoke t027t7;
+alter table t027t7 alter column c varchar(4) character set utf8;
+invoke t027t7;
+
+alter table t027t7 alter column a largeint;
+invoke t027t7;
+alter table t027t7 alter column b varchar(4) character set utf8;
+invoke t027t7;
+alter table t027t7 alter column c varchar(6);
+invoke t027t7;
+alter table t027t7 alter column b varchar(2);
+invoke t027t7;
+alter table t027t7 alter column a int;
+invoke t027t7;
+alter table t027t7 alter column a smallint default 0 not null;
+invoke t027t7;
+select * from t027t7;
+
+-- aligned format
+drop table if exists t027t7;
+create table t027t7(a int not null, b varchar(2), 
+   c varchar(4) character set utf8 not null, z int not null primary key)
+salt using 2 partitions attribute aligned format;
+invoke t027t7;
+insert into t027t7 values (1, 'ab', 'cd', 10);
+select * from t027t7;
+alter table t027t7 alter column a largeint;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 drop column b;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 add column b char(10) default 'abc' not null;
+invoke t027t7;
+select * from t027t7;
+alter table t027t7 drop column b;
+invoke t027t7;
+select * from t027t7;
+
+-- negative tests for alter/drop column
+alter table t027t7 alter column b int;
+alter table t027t7 alter column a char(10);
+alter table t027t7 alter column c char(1);
+alter table t027t7 drop column e;
 
 -- cleanup
+drop table if exists t027t7;
 drop table if exists t027t01;
 drop table if exists t027t02;
 drop table if exists t027t011;

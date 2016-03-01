@@ -34,8 +34,18 @@ endif
 .PHONY: all
 all: pkg-clients
 
-pkg-clients: 
+pkg-clients: clients/LICENSE clients/NOTICE
 	tar -zcvf $(CLIENT_TAR) clients
+
+clients/LICENSE: ../../licenses/LICENSE-clients
+	cp -f $? $@
+
+../../licenses/LICENSE-clients:
+	cd $(@D) && $(MAKE) $(@F)
+
+clients/NOTICE: ../../NOTICE
+	cp -f $? $@
+
 clean:	
 	$(RM) -rf $(MY_SQROOT)/../conn/clients 
 	$(RM) -f $(MY_SQROOT)/../conn/*.mf

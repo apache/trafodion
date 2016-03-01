@@ -56,7 +56,7 @@ TOOLSDIR="/opt/home/tools" # convenient to put dependent tools in the same place
 BISON="${TOOLSDIR}/bison_3_linux/bin/bison"
 LLVM="${TOOLSDIR}/dest-llvm-3.2"
 UDIS86="${TOOLSDIR}/udis86-1.7.2"
-ICU="${TOOLSDIR}/icu4.4"
+ICU="${TOOLSDIR}/icu4c_4.4"
 MPICH_ROOT="$TOOLSDIR/dest-mpich-3.0.4"
 ZOOKEEPER_DIR="$TOOLSDIR/zookeeper-3.4.5"
 THRIFT_LIB_DIR="$TOOLSDIR/thrift-0.9.0/lib"
@@ -67,6 +67,8 @@ LOG4CXX_INC_DIR="$TOOLSDIR/apache-log4cxx-0.10.0/include"
 
 # Explicitly set QT_TOOLKIT here if Qt is installed and you want to build the SqlCompilerDebugger
 # QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
+# SqlCompilerDebugger library will be dynamically linked with Qt libs.
+# Note that Qt uses LGPL license. It is not to be re-distributed under Apache license.
 
 # HBASE*, HIVE*, HADOOP* locations may be overridden here
 # uncomment the following lines to describe where your Hadoop locations exist.

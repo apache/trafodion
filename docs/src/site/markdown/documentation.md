@@ -23,6 +23,7 @@ Trafodion Command Interface Guide              | [Web Book](docs/command_interfa
 Trafodion Database Connectivity Services Guide | [Web Book](docs/dcs_reference/index.html),[API](docs/dcs_reference/apidocs/index.html)
 Trafodion Messages Guide                       | [Web Book](docs/messages_guide/index.html),[PDF](docs/messages_guide/Trafodion_Messages_Guide.pdf)
 Trafodion odb User Guide                       | [Web Book](docs/odb/index.html),[PDF](docs/odb/Trafodion_odb_User_Guide.pdf)
+Trafodion Provisioning Guide                   | [Web Book](docs/provisioning_guide/index.html),[PDF](docs/provisioning_guide/Trafodion_Provisioning_Guide.pdf)
 Trafodion REST Server Reference Guide          | [Web Book](docs/rest_reference/index.html),[API](docs/rest_reference/apidocs/index.html)
 Trafodion SQL Reference Manual                 | [Web Book](docs/sql_reference/index.html),[PDF](docs/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
 
@@ -35,6 +36,7 @@ Trafodion Command Interface Guide              | [Web Book](docs/2.0.0/command_i
 Trafodion Database Connectivity Services Guide | [Web Book](docs/2.0.0/dcs_reference/index.html),[API](docs/2.0.0/dcs_reference/apidocs/index.html)
 Trafodion Messages Guide                       | [Web Book](docs/2.0.0/messages_guide/index.html),[PDF](docs/2.0.0/messages_guide/Trafodion_Messages_Guide.pdf)
 Trafodion odb User Guide                       | [Web Book](docs/2.0.0/odb/index.html),[PDF](docs/2.0.0/odb/Trafodion_odb_User_Guide.pdf)
+Trafodion Provisioning Guide                   | [Web Book](docs/2.0.0/provisioning_guide/index.html),[PDF](docs/2.0.0/provisioning_guide/Trafodion_Provisioning_Guide.pdf)
 Trafodion REST Server Reference Guide          | [Web Book](docs/2.0.0/rest_reference/index.html),[API](docs/2.0.0/rest_reference/apidocs/index.html)
 Trafodion SQL Reference Manual                 | [Web Book](docs/2.0.0/sql_reference/index.html),[PDF](docs/2.0.0/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
 
@@ -47,6 +49,7 @@ Trafodion Command Interface Guide              | [Web Book](docs/1.3.0/command_i
 Trafodion Database Connectivity Services Guide | [Web Book](docs/1.3.0/dcs_reference/index.html),[API](docs/1.3.0/dcs_reference/apidocs/index.html)
 Trafodion Messages Guide                       | [Web Book](docs/1.3.0/messages_guide/index.html),[PDF](docs/1.3.0/messages_guide/Trafodion_Messages_Guide.pdf)
 Trafodion odb User Guide                       | [Web Book](docs/1.3.0/odb/index.html),[PDF](docs/1.3.0/odb/Trafodion_odb_User_Guide.pdf)
+Trafodion Provisioning Guide                   | [Web Book](docs/1.3.0/provisioning_guide/index.html),[PDF](docs/1.3.0/provisioning_guide/Trafodion_Provisioning_Guide.pdf)
 Trafodion REST Server Reference Guide          | [Web Book](docs/1.3.0/rest_reference/index.html),[API](docs/1.3.0/rest_reference/apidocs/index.html)
 Trafodion SQL Reference Manual                 | [Web Book](docs/1.3.0/sql_reference/index.html),[PDF](docs/1.3.0/sql_reference/Trafodion_SQL_Reference_Manual.pdf)
 

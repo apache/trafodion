@@ -1759,6 +1759,7 @@ scanField(char *&src,
 	  ULng32 flags) 
 {
   NABoolean noDatetimeValidation = (flags & CONV_NO_DATETIME_VALIDATION) != 0;
+  NABoolean noHadoopDateFix = (flags & CONV_NO_HADOOP_DATE_FIX) != 0;
 
   // The maximum lengths of the various fields.  Since the value of
   // REC_DATE_YEAR is 1, the first entry is just a place holder.
@@ -1846,10 +1847,17 @@ scanField(char *&src,
   //
   if (len < maxLens[field] && field != REC_DATE_FRACTION_MP) {
 
-    // An unknown character was encountered in the string.
-    //
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-    return FALSE;
+    if ((NOT noHadoopDateFix) &&
+        (field >= REC_DATE_HOUR)) {
+      // extend with zeroes
+      value = 0;
+    }
+    else {
+      // An unknown character was encountered in the string.
+      //
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+      return FALSE;
+    }
   } else if (src < srcEnd && isDigit8859_1(*src)) {
     return FALSE;
   }
@@ -1879,7 +1887,6 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
 {
 
   NABoolean noDatetimeValidation = (flags & CONV_NO_DATETIME_VALIDATION) != 0;
-  NABoolean noHadoopDateFix = (flags & CONV_NO_HADOOP_DATE_FIX) != 0;
 
   // skip leading and trailing blanks and adjust srcData and srcLen
   // accordingly
@@ -1906,19 +1913,6 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
   //
   while (srcData[srcLen - 1] == ' ') {
     srcLen--;
-  }
-
-  char hadoopDateFix[20];
-  if ((srcLen == 10) &&
-      (NOT noHadoopDateFix))
-  {
-    memcpy(hadoopDateFix, srcData, 10);
-    hadoopDateFix[10] = '\0';
-    strcat(hadoopDateFix, " 00:00:00");
-    srcLen = 19;
-    srcData = hadoopDateFix;
-
-    dstEndField = REC_DATE_SECOND;
   }
 
   // Indicates if an " AM" or " PM" strings appears at the end of the

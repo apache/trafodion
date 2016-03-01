@@ -645,6 +645,9 @@ if [[ -z "$QT_TOOLKIT" && -d $TOOLSDIR/Qt-4.8.5-64 ]];
 then
    # QT_TOOLKIT is optional, if the directory doesn't exist
    # then we won't build the compiler GUI
+   # QT_TOOLKIT components must not be bundled into Trafodion build
+   # LGPL license is not compatible with ASF license policy.
+   # Do not re-distribute shared libs or any componet of Qt. Do not link statically.
    export QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
 fi
 
@@ -786,7 +789,7 @@ if [ -z $UDIS86 ]; then
   export UDIS86="${TOOLSDIR}/udis86-1.7.2"
 fi
 if [ -z $ICU ]; then
-  export ICU="${TOOLSDIR}/icu4.4"
+  export ICU="${TOOLSDIR}/icu4c_4.4"
 fi
 
 #######################

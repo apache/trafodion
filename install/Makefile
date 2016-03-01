@@ -26,8 +26,17 @@ RELEASE_VER ?= 1.0.0_v002
 
 all: pkg-installer 
 
-pkg-installer: 
+pkg-installer: installer/LICENSE installer/NOTICE
 	tar czf installer-$(RELEASE_VER).tar.gz installer
+
+installer/LICENSE: ../licenses/LICENSE-install
+	cp -f $? $@
+
+../licenses/LICENSE-install:
+	cd $(@D) && $(MAKE) $(@F)
+
+installer/NOTICE: ../NOTICE
+	cp -f $? $@
 
 version:
 	@echo "$(RELEASE_VER)"

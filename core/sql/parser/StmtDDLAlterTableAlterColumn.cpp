@@ -55,16 +55,22 @@ StmtDDLAlterTableAlterColumn::getText() const
 //----------------------------------------------------------------------------
 // CLASS StmtDDLAlterTableAlterColumnDatatype
 //----------------------------------------------------------------------------
-StmtDDLAlterTableAlterColumnDatatype::StmtDDLAlterTableAlterColumnDatatype( 
-     const NAString &columnName 
-     , NAType * natype
-     , CollHeap *heap)
+StmtDDLAlterTableAlterColumnDatatype::StmtDDLAlterTableAlterColumnDatatype(
+     ElemDDLNode * pColumnToAlter
+     ,CollHeap    * heap)
      : StmtDDLAlterTableAlterColumn(DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE,
-                                    columnName,
+                                    NAString(""),
                                     NULL,
-                                    heap)
+                                    heap),
+       pColumnToAlter_(pColumnToAlter)
 {
-  natype_ = natype->newCopy(heap);
+  ElemDDLColDef *pColDef = pColumnToAlter->castToElemDDLColDef();
+  if (pColDef NEQ NULL)
+    {
+      getColDefArray().insert(pColDef);
+    }
+  else
+    *SqlParser_Diags << DgSqlCode(-1001);
 }
 
 //

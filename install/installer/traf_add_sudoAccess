@@ -24,8 +24,9 @@ TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
 
 sudoFile="trafodion"
-echo "***INFO: Creating $TRAF_USER sudo access file"
 echo
+
+function haSudoAdd {
 
 echo "## Trafodion Floating IP commands" > $sudoFile
 echo "Cmnd_Alias IP = /sbin/ip" >>  $sudoFile
@@ -33,7 +34,17 @@ echo "Cmnd_Alias ARP = /sbin/arping" >> $sudoFile
  
 echo "## Allow Trafodion id to run commands needed to configure floating IP" >> $sudoFile
 echo "%trafodion ALL = NOPASSWD: IP, ARP" >> $sudoFile
+}
 
+function backupRestore {
+
+echo "## Allow $BACKUP_USER id to run commands needed for backup and restore" >> $BACKUP_USER
+echo "%$BACKUP_USER ALL =(hbase) NOPASSWD: /usr/bin/hbase" >> $BACKUP_USER
+
+}
+
+
+function copyTrafFile {
 
 if [[ $all_node_count -gt "1" ]]; then
    $TRAF_PDCP $sudoFile $HOME
@@ -42,4 +53,31 @@ if [[ $all_node_count -gt "1" ]]; then
 else 
    sudo cp $TRAF_USR /etc/sudoers.d
 fi
- 
+
+}
+
+function copyFile {
+
+if [[ $all_node_count -gt "1" ]]; then
+   $TRAF_PDCP $BACKUP_USER $HOME
+   $TRAF_PDSH sudo cp $HOME/$BACKUP_USER /etc/sudoers.d/
+   $TRAF_PDSH sudo rm -f $HOME/$BACKUP_USER
+else
+   sudo cp $BACKUP_USER /etc/sudoers.d
+fi
+
+}
+
+
+#Main
+echo "***INFO: Creating $TRAF_USER sudo access file"
+echo
+
+if [[ "$ENABLE_HA" == "Y" ]]; then
+   haSudoAdd
+   copyTrafFile
+fi 
+
+backupRestore
+copyFile
+

@@ -23,6 +23,7 @@
   */
 ////
 
+[[requirements]]
 = Requirements
 
 Trafodion requires an x86 version of Linux. 
@@ -37,45 +38,48 @@ The current release of Trafodion has been tested with:
 
 Other OS releases may work, too. The Trafodion project is currently working on better support for non-distribution version of Hadoop.
 
-[[general-cluster-and-os-requirements-and-recommendations]]
+[[requirements-general-cluster-and-os-requirements-and-recommendations]]
 == General Cluster and OS Requirements and Recommendations
 
 64-bit x86 instruction set running a Linux distribution is required. Further, Trafodion assumes an environment 
-based on the requirements of the supported Hadoop distributions. 
+based on the requirements of the tested Hadoop distributions/services. 
 
-[[cluster-requirements-and-recommendations]]
+[[requirements-cluster-requirements-and-recommendations]]
 === Hardware Requirements and Recommendations
 
+[[requirements-single-node-cluster]]
 ==== Single-Node Cluster
 It is possible to run Trafodion on a single-node sandbox environment. Typically, any sandbox running a Hadoop distribution 
-can be used. A typical single-node configuration uses 4-8 cores with 16 GB of memory, and  20 GB free disk space beyond 
-what's used for the Hadoop environment.
+can be used. A typical single-node configuration uses 4-8 cores with 16 GB of memory, and  20 GB free disk space.
 
+[[requirements-multi-node-cluster]]
 ==== Multi-Node Cluster 
 For multi-node end-user clusters, your typical HBase environment should suffice for Trafodion.
 Typically, memory configuration range between 64-128 GB per node with minimum requirement of 16 GB. 
 The cluster size can span from 1 to _n_ nodes; a minimum of two nodes is recommended. 
-A minumum of two cores is required regardless of whether you're deploying Trafodion on a bare-metal or virtual environment. 
+A minimum of two cores is required regardless of whether you're deploying Trafodion on a bare-metal or virtual environment. 
 
+<<<
 Recommended configurations:
 
-[cols="40%h,60%a"]
+[cols="40%h,60%a",options="header"]
 |===
+| Attribute | Guidance
 | Processors per Node |
-* Small: 2 cores
-* Medium: 4 cores
-* Large: 8+ cores
+&#8226; Small: 2 cores +
+&#8226; Medium: 4 cores +
+&#8226; Large: 8+ cores
 | Memory per Node |
-* Small: 16 GB
-* Medium: 64 GB
-* Large: 128 GB
+&#8226; Small: 16 GB +
+&#8226; Medium: 64 GB +
+&#8226; Large: 128 GB
 | Concurrency:Nodes |
-* Two Small Nodes: Four concurrent queries
-* Two Medium Nodes: 64 concurrent queries
-* Two Large Nodes: 256 concurrent queries
+&#8226; Two Small Nodes: Four concurrent queries +
+&#8226; Two Medium Nodes: 64 concurrent queries +
+&#8226; Two Large Nodes: 256 concurrent queries
 |===
 
-[[os-requirements-and-recommendations]]
+[[requirements-os-requirements-and-recommendations]]
 === OS Requirements and Recommendations
 
 Please verify these requirements on each node you will install Trafodion on:
@@ -85,24 +89,24 @@ Please verify these requirements on each node you will install Trafodion on:
 | Function | Requirement                                                                                  | Verification Guidance
 | Linux    | 64-bit version of Red Hat 6.5 or later, or SUSE SLES 11.3 or later.                          |
 | sshd     | The `ssh` daemon is running on each node in the cluster.                                     | 
-* `ps aux  \| grep sshd`
-* `sudo netstat -plant \| grep :22`
-| ntpd     | The `ntp` daemon is running and synchronizign time on each node in the cluster.              |
-* `ps aux \| grep ntp`
-* `ntpq -p`
+&#8226; `ps aux  \| grep sshd` +
+&#8226; `sudo netstat -plant \| grep :22`
+| ntpd     | The `ntp` daemon is running and synchronizing time on each node in the cluster.              |
+&#8226; `ps aux \| grep ntp` +
+&#8226; `ntpq -p`
 | FQDN    | 
-* `/etc/hosts` is set up for fully-qualified node names (FQDN).
-* `/etc/resolv.conf` is configured to use a name server. | 
-* `host -T <FQDN>` (responds if using a DNS server, times out otherwise)
-* Simply ssh among nodes using `ssh <FQDN>`. 
-| Port Availability | The Linux Kernel Firewall (`iptables`) has either been disabled or <<ip_ports,ports required by Trafodion>> have been opened. |
-* `lsmod \| grep ip_tables` checks whether `iptables` is loaded. If not, no further checking is needed.
-* `sudo iptables -nL \| grep <port>` checks the configuration of a port. An empty response indicates no rule for the port, which often means 
+&#8226; `/etc/hosts` is set up for fully-qualified node names (FQDN). +
+&#8226; `/etc/resolv.conf` is configured to use a name server. |  
+&#8226; `host -T <FQDN>` (responds if using a DNS server, times out otherwise) +
+&#8226; Simply ssh among nodes using `ssh <FQDN>`. 
+| Port Availability | The Linux Kernel Firewall (`iptables`) has either been disabled or <<ip-ports,ports required by Trafodion>> have been opened. |
+&#8226; `lsmod \| grep ip_tables` checks whether `iptables` is loaded. If not, no further checking is needed. +
+&#8226; `sudo iptables -nL \| grep <port>` checks the configuration of a port. An empty response indicates no rule for the port, which often means 
 the port is *not* open.
 | passwordless ssh | The user name used to provision Trafodion must have passwordless ssh access to all nodes. | ssh to the nodes, ensure that no password prompt appears.
-| sudo priviliges  | The user name used to provision Trafodion must sudo access to a number of root functions . | `sudo echo "test"` on each node.
+| sudo privileges  | The user name used to provision Trafodion must sudo access to a number of root functions . | `sudo echo "test"` on each node.
 | bash     | Available for shell-script execution.                                                        | `bash --version`
-| java     | Available to run the Trafodion software. Sama version as HBase is using.                     | `java --version`
+| java     | Available to run the Trafodion software. Same version as HBase is using.                     | `java --version`
 | perl     | Available for script execution.                                                              | `perl --version`
 | python   | Available for script execution.                                                              | `python --version`
 | yum      | Available for installs, updates, and removal of software packages.                           | `yum --version`
@@ -115,11 +119,11 @@ the port is *not* open.
 |===
 
 
-[[ip_ports]]
+[[requirements-ip-ports]]
 === IP Ports
 The following table lists the default ports used by the different Trafodion components plus the configuration file and configuration attribute associated with each port setting.
 
-[cols="10%h,20%l,20%l,10%,10%,10%,20%",options="header"]
+[cols="10%h,20%l,20%l,10%,5%,10%,25%",options="header"]
 |===
 | Default Port | Configuration File | Configuration Entry             | Required | Range | Protocol | Comment 
 | 4200         | rest-site.xml      | trafodion.rest.port             | Yes      | 1     | REST     | Trafodion REST Server.
@@ -149,9 +153,13 @@ On top of the ports identified above, you also need the ports required by your H
 Although not all the ports will be used on every node of the cluster, you need to open most of them for all the nodes in the cluster that
 have Trafodion, HBase, or HDFS servers on them.
 
+[[requirements-prerequisite-software]]
 == Prerequisite Software
 
-Trafodion runs as an add-on service on Hadoop distributions. The following Hadoop services and their dependiencies must be installed and running 
+[[requirements-hadoop-software]]
+=== Hadoop Software
+
+Trafodion runs as an add-on service on Hadoop distributions. The following Hadoop services and their dependencies must be installed and running 
 on the cluster where you intend to install Trafodion:
 
 * Hadoop Distributed File System (HDFS)
@@ -161,39 +169,46 @@ on the cluster where you intend to install Trafodion:
 * Hive
 * Apache Ambari (Hortonworks) or Cloudera Manager (Cloudera) with associated embedded databases.
 
-The following distributions are supported for Trafodion:
+The following distributions have been tested with Trafodion.^1^
 
 [cols="25%,15%,10%,50%",options="header"]
 |===
 | Distribution                                        | Version        | HBase Version | Installation Documentation
 | Cloudera Distribution Including Apache Hadoop (CDH) | 5.2 or 5.3     | 0.98          | http://www.cloudera.com/downloads/manager/5-2-0.html[CHD 5.2 Installation] +
-http://www.cloudera.com/downloads/manager/5-3-0.html[CDH 5.3 Installation]^1^ 
+http://www.cloudera.com/downloads/manager/5-3-0.html[CDH 5.3 Installation]^2^ 
 | Hortonworks Data Platform (HDP)                     | 2.2            | 0.98          | http://hortonworks.com/products/releases/hdp-2-2/#install[HDP 2.2 Installation]
 |===
 
-^1^ When possible, install using *parcels* to simply the installation process.
+1. Future releases of Trafodion will move away from distribution-specific integration. Instead, Trafodion will be tested with
+specific version of the Hadoop, HDFS, HBase, and other services/products only.
+2. When possible, install using *parcels* to simply the installation process.
 
 NOTE: Trafodion does not yet support installation on a non-distribution version of Hadoop; that is,
 Hadoop downloaded from the Apache web site. This restriction will be lifted in a later release of
 Trafodion.
 
+[[requirements-software-packages]]
 === Software Packages
 
 In addition to the software packages required to run different Hadoop services listed above (for example, `Java`), 
-the following software packages and their dependencies must be installed on all nodes where Trafodion will be installed.
+Trafodion requires supplementary software to be installed on the cluster before it is installed. These are Linux
+tools that are not typically packaged as part of the core Linux distribution.
 
-NOTE: For RedHat/CentOS, the Trafodion Installer can install a subset of the packages below.
+NOTE: For RedHat/CentOS, the Trafodion Installer automatically attempts get a subset of these packages over the Internet.
+If the cluster's access to the Internet is disabled, then you need to manually download the packages and make them available
+for installation. You need to build and install `log4c&#43;&#43;` manually.
 
 [cols="20%,45%,35%l",options="header"]
 |===
 | Package              | Usage                                                                             | Installation
-| EPEL                 | Add-on packages to completed the Linux distribution.                              | http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedora RPM]
-| pdsh                 | Parellelize shell commands during install and Trafodion runtime utilities.        | yum install pdsh
+| EPEL                 | Add-on packages to completed the Linux distribution.                              | Download
+http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedora RPM]
+| pdsh                 | Parallelize shell commands during install and Trafodion runtime utilities.        | yum install pdsh
 | log4cxx              | Message logging.                                                                  | Manual process^1^
 | sqlite               | Internal configuration information managed by the Trafodion Foundation component. | yum install sqlite
 | expect               | Not used?                                                                         | yum install expect
 | perl-DBD-SQLite      | Allows Perl scripts to connect to SQLite.                                         | yum install perl-DBD-SQLite
-| perl-Params-Validate | Validates method/function parameters in Perl sripts.                              | yum install perl-Params-Validate
+| perl-Params-Validate | Validates method/function parameters in Perl scripts.                              | yum install perl-Params-Validate
 | perl-Time-HiRes      | High resolution alarm, sleep, gettimeofday, interval timers in Perl scripts.      | yum install perl-Time-HiRes
 | protobuf             | Data serialization.                                                               | yum install protobuf
 | xerces-c             | C++ XML parsing.                                                                  | yum install xerces-c
@@ -208,43 +223,47 @@ NOTE: For RedHat/CentOS, the Trafodion Installer can install a subset of the pac
 
 1. `log4c&#43;&#43;` was recently withdrawn from public repositories. Therefore, you will need to build the `log4c&#43;&#43;` RPM
 on your system and then install the RPM using the procedure described in <<log4cplusplus_installation,log4c++ Installation>>.
-2. Software package required to build `log4c&#43;&#43;`. Not required otherwise. These packages are *not* installed by the Trafodon Installer in this release.
+2. Software package required to build `log4c&#43;&#43;`. Not required otherwise. These packages are *not* installed by the Trafodion Installer in this release.
 
 The Trafodion Installer requires Internet access to install the required software packages.
 
-== Trafodion User IDs and Their Priviliges
+[[requirements-trafodion-user-ids-and-their-privileges]]
+== Trafodion User IDs and Their Privileges
 
-=== Runtime
+[[requirements-trafodion-runtime-user]]
+=== Trafodion Runtime User
 
 The `trafodion:trafodion` user ID is created as part of the installation process. The default password is: `traf123`.
 
-Trafodion runs under this ID, which must be registered as a user in the Hadoop Distributed File System (HDFS) to store and 
-access objects in HDFS, HBase, and Hive.  In addition, the `trafodion` user ID required passwordless access among the nodes 
-where Trafodion is installed.
+Trafodion requires that either HDFS ACL support or Kerberos is enabled. The Trafodion Installer will enable HDFS ACL support.
+Kerberos-based security settings are outside the scope of this guide. Please refer to the security information in
+https://hbase.apache.org/book.html#security[Apache HBase(TM) Reference Guide] for information about how to set up
+HBase security with Kerberos.
 
-Trafodion requires that either HDFS ACLs or Kerberos is enabled.
-
-Trafodion users are managed by the Trafodion security features (grant, revoke, etc.), which can be integrated with LDAP if so desired. 
-These users are referred to as *database users* and do not have direct access to the operating system.
+Also, Trafodion requires `sudo` access to `ip` and `arping` so that floating or elastic IP addresses can be moved from one node to
+another in case of node failures.
 
 NOTE: Do *not* create the `trafodion:trafodion` user ID in advance. The Trafodion Installer uses the presence of this user ID to determine
 whether you're doing an installation or upgrade.
 
-=== Installation/Upgrades
+[[requirements-trafodion-provisioning-user]]
+=== Trafodion Provisioning User
 
-Typically, the Trafodion Installer is used for Trafodion installations. It requires access to the following user IDs:
+Typically, the Trafodion Installer is used for Trafodion installations. It requires access to the user IDs documented below.
 
-[cols="20%a,30%a,50%a",options="header"]
-|===
-| User ID              | Usage           | Requirements
-| Linux                | Run the Trafodion Installer, which sets up the enviroment and installs the Trafodion software.  | 
+[[requirements-linux-installation-user]]
+==== Linux Installation User
+The user ID that performs the Trafodion installation steps. Typically, this User ID runs the Trafodion Installer.
+
+*Requirements*:
+
 * User name or group cannot be `trafodion`.
 * Passwordless ssh access to all nodes in the cluster.
 * Internet access to download software packages.
 * `requiretty` must be disabled in `/etc/sudoers`.
 * `sudo`^1^ access to:
 ** Download and install software packages.
-** Mofify `/etc/sudoers.d` (allow the `trafodion` user to modify floating IP: `ip` and `arping`).
+** Modify `/etc/sudoers.d` (allow the `trafodion` user to modify floating IP: `ip` and `arping`).
 ** Create the `trafodion` user ID and group.
 ** Install Trafodion software into the HBase environment.
 ** Run Java version command on each node in the cluster.
@@ -260,26 +279,45 @@ Typically, the Trafodion Installer is used for Trafodion installations. It requi
 *** Reserve IP ports.
 
 ^1^ `sudo` is *required* in the current release of Trafodion. This restriction may be relaxed in later releases.
-Alternative mechanisms for priviliged access (such as running as `root` or `sudo` alternative commands) are not supported.
-| Distribution Manager | Modify configuration and stop/start services. | 
+Alternative mechanisms for privileged access (such as running as `root` or `sudo` alternative commands) are not supported.
+
+[[requirements-distribution-manager-user]]
+==== Distribution Manager User
+A user ID that can change the configuration using Apache Ambari or Cloudera Manager. The Trafodion Installer makes REST
+request to perform configuration and control functions to the distribution manager using this user ID.
+
+*Requirements*:
+
 * Administrator user name and password.
 * URL to Distribution Manager's REST API.
-| HDFS Administator | Create directories and change security setting, if needed. | 
-* HDFS Administrator user name and password.
-* Write access to home directory on the node where the Distribution Manager is running.
-| HBase Administator | | 
-* HBase Administrator user name and password.
-* Read access to `hbase-site.xml`.
-|===
 
-[[required-configuration-changes]]
+[[requirements-hdfs-administrator-user]]
+==== HDFS Administrator User
+The HDFS super user. Required to create directories and change security settings, as needed.
+The Trafodion Installer uses `su` to run commands under this user ID.
+
+*Requirements*:
+
+* HDFS Administrator user name.
+* Write access to home directory on the node where the Distribution Manager is running.
+
+[[requirements-hbase-administrator-user]]
+==== HBase Administrator User
+The HBase super user. Required to change directory ownership in HDFS.
+
+*Requirements*:
+
+* HBase Administrator user name and group.
+* Read access to `hbase-site.xml`.
+
+[[requirements-required-configuration-changes]]
 == Required Configuration Changes
 
 Trafodion requires changes to a number of different areas of your system configuration: operating system, HDFS, and HBase.
 
 NOTE: These changes are performed by the Trafodion Installer, if used.
 
-[[operating-system-changes]]
+[[requirements-operating-system-changes]]
 === Operating System Changes
 
 `/etc/security/limits.d/trafodion.conf` on each node in the cluster must contain the following settings:
@@ -299,6 +337,8 @@ trafodion  soft nofile  8192
 trafodion  hard nofile  65535
 ```
 
+<<<
+[[requirements-zookeeper-changes]]
 === ZooKeeper Changes
 
 NOTE: These changes require a restart of ZooKeeper on all nodes in the cluster.
@@ -308,9 +348,10 @@ Trafodion requires the following changes to `zoo.cfg`:
 [cols="30%l,40%l,30%a",options="header"]
 |===
 | Setting        | New Value | Purpose
-| maxClientCnxns | 0         | Tell ZooKeeper to impose no limit to the number of connections.
+| maxClientCnxns | 0         | Tell ZooKeeper to impose no limit to the number of connections to enable better Trafodion concurrency.
 |===
 
+[[requirements-hdfs-changes]]
 === HDFS Changes
 
 NOTE: These changes require a restart of HDFS on all nodes in the cluster.
@@ -320,19 +361,19 @@ Trafodion requires the following changes to the HDFS environment:
 [cols="60%a,40%a",options="header"]
 |===
 | Action  | Purpose 
-| * Create `/hase-staging` directory. 
-  * Change owner to HBase Administrator. |
-| * Create `/bulkload` directory. 
-  * Change owner to `trafodion`. |
-| * Create `/lobs` directory. 
-  * Change owner to `trafodion`. |
-| * Create `/apps/hbase/data/archive`^1^. 
-  * Change owner to:
-  ** `hbase:hbase` (Cloudera)
-  ** `hbase:hdfs` (Hortonworks) 
-  * Give the `trafodion` user RWX access to `/apps/hbase/data/archive`
-  * Set default user of `/apps/hbase/data/archive` to `trafodion`
-  * Recursively change `setafcl` of `/apps/hbase/data/archive` to RWX | 
+| &#8226; Create `/hbase-staging` directory.  +
+  &#8226; Change owner to HBase Administrator. |
+| &#8226; Create `/bulkload` directory.  +
+  &#8226; Change owner to `trafodion`. | Used to stage data when processing the Trafodion
+http://trafodion.apache.org/docs/sql_reference/index.html#load_statement[LOAD INTO table]
+statement and as a temporary directory to create links to actual HFile for snapshot scanning.
+| &#8226; Create `/lobs` directory.  +
+  &#8226; Change owner to `trafodion`. |
+| &#8226; Create `/apps/hbase/data/archive`^1^.  +
+  &#8226; Change owner to: `hbase:hbase` (Cloudera) or `hbase:hdfs` (Hortonworks) +
+  &#8226; Give the `trafodion` user RWX access to `/apps/hbase/data/archive` +
+  &#8226; Set default user of `/apps/hbase/data/archive` to `trafodion` +
+  &#8226; Recursively change `setafcl` of `/apps/hbase/data/archive` to RWX | 
 |===
 
 1. These steps are performed *after* HDFS ACLs have been enabled.
@@ -345,29 +386,28 @@ The following changes are required in `hdfs-site.xml`:
 | dfs.namenode.acls.enabled | true | Enable HDFS  POSIX Access Control Lists (ACLs).
 |===
 
+[[requirements-hbase-changes]]
 === HBase Changes
 
-NOTE: These changes require a restart of ZooKeeper on all nodes in the cluster.
+NOTE: These changes require a restart of ZooKeeper and HBase on all nodes in the cluster.
 
 Trafodion requires that the following changes to the HBase environment:
 
-[cols="30%a,30%a,40%a",options="header"]
+[cols="25%a,40%a,35%a",options="header"]
 |===
 | Action | Affected Directories | Purpose
-| Install/replace Trafodion's version of `hbase-trx` |
-* `/usr/lib/hbase/lib/`
-* `/usr/share/cmf/lib/plugins/` (Cloudera)
-* `/usr/hdp/current/hbase-regionserver/lib/` (Hortonworks) |
+| Install/replace Trafodion's version of `hbase-trx` | &#8226; `/usr/lib/hbase/lib/` +
+&#8226; `/usr/share/cmf/lib/plugins/` (Cloudera) +
+&#8226; `/usr/hdp/current/hbase-regionserver/lib/` (Hortonworks) |
 Trafodion transaction management relies on an enhanced version of `hbase-trx`.
-| Install/Replace Trafodion utility jar file. |
-* `/usr/lib/hbase/lib/`
-* `/usr/share/cmf/lib/plugins/` (Cloudera)
-* `/usr/hdp/current/hbase-regionserver/lib` (Hortonworks) |
+| Install/Replace Trafodion utility jar file. | &#8226; `/usr/lib/hbase/lib/` +
+&#8226; `/usr/share/cmf/lib/plugins/` (Cloudera) +
+&#8226; `/usr/hdp/current/hbase-regionserver/lib` (Hortonworks) |
 TODO: Add purpose here.
 |===
 
 The following changes are required in `hbase-site.xml`. Please refer to the 
-https://hbase.apache.org/book.html[Apache HBase Reference Guide] for additional descriptions of these settings.
+https://hbase.apache.org/book.html[Apache HBase(TM) Reference Guide] for additional descriptions of these settings.
 
 [cols="30%l,40%l,30%a",options="header"]
 |===
@@ -387,7 +427,8 @@ hbase.coprocessor.
 AggregateImplementation | Install Trafodion coprocessor classes.
 | hbase.hregion.impl | org.apache.hadoop.
 hbase.regionserver.
-transactional.TransactionalRegion | Install the Trafodion class for Write Ahead Log reading.
+transactional.TransactionalRegion | Trafodion needs to be able to read the Write Ahead Log from a coprocessor using the getScanner method. This method
+is protected in standard HBase. This change overloads the getScanner method to be public thereby allowing coprocessor code to use it.
 | hbase.regionserver.
 region.split.policy | org.apache.hadoop.
 hbase.regionserver.
@@ -398,7 +439,7 @@ enabled | true | Enable the HBase Snapshot feature. Used for Trafodion backup an
 | hbase.bulkload.
 staging.dir | hbase-staging | Use `/hbase-staging` as the bulk load staging directory.
 | hbase.regionserver.region.
-transactional.tlog | true | The HBase Regions requests that the Transaction Manager redrives in-doubt transactions.
+transactional.tlog | true | The HBase Regions requests that the Transaction Manager re-drives in-doubt transactions.
 | hbase.snapshot.
 master.timeoutMillis | 600000 | HMaster timeout when waiting for RegionServers involved in the snapshot operation.
 | hbase.snapshot.
@@ -415,11 +456,34 @@ java.heapsize^1^ | 1073741824 (1GB) | Java Heap Size for the HDFS Secondary Name
 
 1. Applies to Cloudera distributions only.
 
+[[requirements-recommended-configuration-changes]]
 == Recommended Configuration Changes
 The following configuration changes are recommended but not required.
 
 NOTE: The Trafodion Installer does *not* make these changes.
 
+[[requirements-recommended-security-changes]]
+=== Recommended Security Changes
+
+The `trafodion` user ID should not be given other `sudo` privileges than what's specified in this manual. Also, we
+recommend that this user ID is locked (`sudo passwd -l trafodion`) once the installation/upgrade activity has been completed.
+Users that need issue commands as the `trafodion` ID should do so using `sudo`; for example, `sudo -u trafodion -i`.
+
+
+[[requirements-recommended-hdfs-configuration-changes]]
+=== Recommended HDFS Configuration Changes
+
+These settings are configured in the `hadoop-env.sh` file.
+
+[cols="40%l,20%,40%a",options="header"]
+|===
+| Property                          | Recommended Setting | Guidance
+| DataNode Java Heap Size           | 2 GB                | Use this setting for a large configuration.
+| NameNode Java Heap Size           | 2 GB                | Use this setting for a large configuration.
+| Secondary NameNode Java Heap Size | 2 GB                | Use this setting for a large configuration.
+|===
+
+[[requirements-recommended-hbase-configuration-changes]]
 === Recommended HBase Configuration Changes
 
 [cols="30%l,20%,50%a",options="header"]
@@ -430,7 +494,7 @@ Increase this value for big tables. Make it the same value as `hbase.client.scan
 that increasing the setting to six-hundred (600) seconds will prevent many of the timeout-related errors we encountered, 
 such as `OutOfOrderNextException` errors.
 | hbase.client.scanner.timeout.period | 10 minutes | Similar to the `hbase.rpc.timeout` setting. Sixty (60) seconds is the 
-default. Depending on the size of a user table, we have experienced timeout failures on count(\*) and update statistics commands 
+default. Depending on the size of a user table, we have experienced timeout failures on count(*) and update statistics commands 
 from this setting. The underlying issue is the length of the execution of the coprocessor within HBase.
  +
 NOTE: HBase uses the smaller of `hbase.rpc.timeout` and `hbase.client.scanner.timeout.period` to calculate the scanner timeout. 

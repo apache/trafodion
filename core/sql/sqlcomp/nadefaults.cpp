@@ -3296,9 +3296,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TEST_PASS_TWO_ASSERT_TASK_NUMBER,	"-1"),
 
  XDDintN2(TIMEOUT,				"6000"),
-
-  DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
-  DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
+ 
+ DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
+ DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
 
@@ -3309,6 +3309,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
 
  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
+ DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
@@ -3472,7 +3474,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 // Specify the number of partitions before invoking parallel label operations
   DDui1__(USE_PARALLEL_FOR_NUM_PARTITIONS,       "32"),
 
-  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "OFF"),  // When ON, generate MCs for primary key prefixes as well as full key
+  DDkwd__(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC, "ON"),   // When ON, generate MCs for primary key prefixes as well as full key
                                                          //   of salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   DDkwd__(USTAT_ATTEMPT_ESP_PARALLELISM,        "ON"),   // for reading column values
   DDui___(USTAT_AUTOMATION_INTERVAL,            "0"),

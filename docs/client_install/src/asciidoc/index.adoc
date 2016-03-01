@@ -21,7 +21,7 @@
 * @@@ END COPYRIGHT @@@ 
 ////
 
-= Trafodion Client Installation Guide
+= Client Installation Guide
 :doctype: book
 :numbered:
 :toc: left
@@ -32,6 +32,7 @@
 :experimental:
 :source-language: text
 :revnumber: {project-version}
+:title-logo-image: ../../../shared/trafodion-logo.jpg
 
 :images: ../images
 :sourcedir: ../../resources/source
