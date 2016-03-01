@@ -830,7 +830,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
   , C2                               INT DEFAULT NULL
-  , C3                               INT DEFAULT 0 /* added col */
+  , C3                               INT DEFAULT 0 /*added_col*/
   , PRIMARY KEY (C1 ASC)
   )
 ;

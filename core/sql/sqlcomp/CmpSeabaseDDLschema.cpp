@@ -100,6 +100,8 @@ static bool transferObjectPrivs(
 // *                                                                           *
 // *   0: Schema was added                                                      *
 // *  -1: Schema was not added.  A CLI error is put into the diags area.       *
+// *   1: Schema already exists and ignoreIfExists is specified.               *
+// *      No error is added to the diags area.                                 *
 // *                                                                           *
 // *****************************************************************************
 int CmpSeabaseDDL::addSchemaObject(
@@ -136,7 +138,7 @@ Lng32 retcode = existsInSeabaseMDTable(&cliInterface,catalogName,schemaNamePart,
    if (retcode == 1 ) // already exists
    {
       if (ignoreIfExists)
-        return 0;
+        return 1;
       else
         *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_ALREADY_EXISTS)
                             << DgSchemaName(schemaName.getExternalName().data());

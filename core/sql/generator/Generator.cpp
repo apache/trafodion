@@ -1594,6 +1594,11 @@ desc_struct* Generator::createColDescs(
 	  col_desc->body.columns_desc.colclass = 'A';
 	  col_desc->body.columns_desc.addedColumn = 1;
 	}
+      else if (info->columnClass == COM_ALTERED_USER_COLUMN)
+	{
+	  col_desc->body.columns_desc.colclass = 'C';
+	  col_desc->body.columns_desc.addedColumn = 1;
+	}
 
       if (info->colHeading)
 	col_desc->body.columns_desc.heading = (char*)info->colHeading;

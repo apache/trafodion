@@ -2799,6 +2799,67 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
   return 0;
 }
 
+short CmpSeabaseDDL::getNAColumnFromColDef
+(ElemDDLColDef * colNode,
+ NAColumn* &naCol)
+{
+  NAString colFamily;
+  NAString colName;
+  Lng32 datatype, length, precision, scale, dt_start, dt_end;
+  Lng32 nullable, upshifted;
+  ComColumnClass colClass;
+  ComColumnDefaultClass defaultClass;
+  NAString charset, defVal;
+  NAString heading;
+  ULng32 hbaseColFlags;
+  Int64 colFlags;
+  LobsStorage lobStorage;
+  NABoolean alignedFormat = FALSE;
+  if (getColInfo(colNode,
+                 colFamily,
+                 colName,
+                 alignedFormat,
+                 datatype, length, precision, scale, dt_start, dt_end, 
+                 upshifted, nullable,
+                 charset, colClass, defaultClass, defVal, heading, lobStorage, 
+                 hbaseColFlags, colFlags))
+    {
+     *CmpCommon::diags() << DgSqlCode(-2004);
+     return -1;
+    }
+
+  NAType * naType = colNode->getColumnDataType();
+  if (! naType)
+    {
+      *CmpCommon::diags() << DgSqlCode(-2004);
+      return -1;
+    }
+
+  char * defV = NULL;
+  if ((defaultClass != COM_NO_DEFAULT) &&
+      (! defVal.isNull()))
+    {
+      char * data = (char*) defVal.data();
+      Lng32 len = defVal.length();
+      defV = new(STMTHEAP) char[len + 2];
+      str_cpy_all((char*)defV, data, len);
+      char * c = (char*)defV;
+      c[len] = 0;
+      c[len+1] = 0;
+    }
+
+  naCol = new(STMTHEAP) NAColumn(colNode->getColumnName().data(),
+                                 -1, // position
+                                 naType, NULL, NULL,
+                                 USER_COLUMN, //colClass, 
+                                 defaultClass,
+                                 defV);
+
+  naCol->setHbaseColFlags(hbaseColFlags);
+
+  return 0;
+}
+
 short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode, 
                                 NAString &colFamily,
                                 NAString &colName,
@@ -7801,6 +7862,95 @@ void CmpSeabaseDDL::updateVersion()
 
 }
 
+// this method truncates an hbase table by dropping it and then recreating
+// it. Options that were used for the original hbase table are stored in
+// traf metadata and are passed in to hbase during table create.
+// When hbase truncate api is available (HBAse 1.0 and later), then this
+// method will call it instead of drop/recreate.
+short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart, 
+                                        const NAString &schemaNamePart, 
+                                        const NAString &objectNamePart,
+                                        NATable * naTable,
+                                        ExpHbaseInterface * ehi)
+{
+  Lng32 retcode = 0;
+
+  const NAString extNameForHbase = 
+    catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  HbaseStr hbaseTable;
+  hbaseTable.val = (char*)extNameForHbase.data();
+  hbaseTable.len = extNameForHbase.length();
+
+  // drop this table from hbase
+  retcode = dropHbaseTable(ehi, &hbaseTable, FALSE);
+  if (retcode)
+    {
+      deallocEHI(ehi); 
+      
+      processReturn();
+      
+      return -1;
+    }
+
+  // and recreate it.
+  NAFileSet * naf = naTable->getClusteringIndex();
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions = 
+    naTable->hbaseCreateOptions();
+  Lng32 numSaltPartns = naf->numSaltPartns();
+  Lng32 numSaltSplits = numSaltPartns - 1;
+  Lng32 numSplits = 0;
+  const Lng32 numKeys = naf->getIndexKeyColumns().entries();
+  Lng32 keyLength = naf->getKeyLength();
+  char ** encodedKeysBuffer = NULL;
+
+  const desc_struct * tableDesc = naTable->getTableDesc();
+  desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
+  desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
+
+  if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
+                              numSplits/*out*/,
+                              colDescs, keyDescs,
+                              numSaltPartns,
+                              numSaltSplits,
+                              NULL,
+                              numKeys, 
+                              keyLength,
+                              FALSE))
+    {
+      deallocEHI(ehi); 
+
+      processReturn();
+      
+      return -1;
+    }
+  
+  std::vector<NAString> userColFamVec;
+  std::vector<NAString> trafColFamVec;
+  NAString outColFam;
+  for (int i = 0; i < naTable->allColFams().entries(); i++)
+    {
+      processColFamily(naTable->allColFams()[i], outColFam,
+                       &userColFamVec, &trafColFamVec);
+    } // for
+  
+  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
+                             hbaseCreateOptions,
+                             numSplits, keyLength, 
+                             encodedKeysBuffer);
+  if (retcode == -1)
+    {
+      deallocEHI(ehi); 
+
+      processReturn();
+
+      return -1;
+    }
+
+  return 0;
+}
+
 void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
                                        NAString &currCatName, NAString &currSchName)
 {
@@ -7966,73 +8116,14 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
     }
                                  
   NABoolean asyncDrop = (CmpCommon::getDefault(HBASE_ASYNC_DROP_TABLE) == DF_ON);
-
-  HbaseStr hbaseTable;
-  hbaseTable.val = (char*)extNameForHbase.data();
-  hbaseTable.len = extNameForHbase.length();
-
-  // drop this table from hbase
-  retcode = dropHbaseTable(ehi, &hbaseTable, FALSE);
-  if (retcode)
-    {
-      deallocEHI(ehi); 
-      
-      processReturn();
-      
-      return;
-    }
-
-  // and recreate it.
-  NAFileSet * naf = naTable->getClusteringIndex();
-
-  NAList<HbaseCreateOption*> * hbaseCreateOptions = naTable->hbaseCreateOptions();
-  Lng32 numSaltPartns = naf->numSaltPartns();
-  Lng32 numSaltSplits = numSaltPartns - 1;
-  Lng32 numSplits = 0;
-  Lng32 numKeys = naf->getIndexKeyColumns().entries();
-  Lng32 keyLength = naf->getKeyLength();
-  char ** encodedKeysBuffer = NULL;
-
-  const desc_struct * tableDesc = naTable->getTableDesc();
-  desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
-  desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
-
-  if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
-                              numSplits/*out*/,
-                              colDescs, keyDescs,
-                              numSaltPartns,
-                              numSaltSplits,
-                              NULL,
-                              numKeys, 
-                              keyLength,
-                              FALSE))
-    {
-      deallocEHI(ehi); 
-
-      processReturn();
-      
-      return;
-    }
   
-  std::vector<NAString> userColFamVec;
-  std::vector<NAString> trafColFamVec;
-  NAString outColFam;
-  for (int i = 0; i < naTable->allColFams().entries(); i++)
-    {
-      processColFamily(naTable->allColFams()[i], outColFam,
-                       &userColFamVec, &trafColFamVec);
-    } // for
-  
-  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
-                             hbaseCreateOptions,
-                             numSplits, keyLength, 
-                             encodedKeysBuffer);
-  if (retcode == -1)
+  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
+                         naTable, ehi))
     {
       deallocEHI(ehi); 
-
+      
       processReturn();
-
+      
       return;
     }
 
@@ -8190,6 +8281,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
         (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
+        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+
         (ddlNode->getOperatorType() == DDL_DROP_TABLE))))
     {
       // transaction will be started and commited in called methods.
