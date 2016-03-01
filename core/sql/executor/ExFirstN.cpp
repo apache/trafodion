@@ -227,11 +227,11 @@ short ExFirstNTcb::work()
 		centry->downState.request = ex_queue::GET_N;
 
 		// if I got a GET_ALL request then send a GET_N request to
-		// my child with the N value being firstNRows_.
+		// my child with the N value being effectiveFirstN_.
 		// if I got a GET_N request, then send the minimum of the
-		// GET_N request value and firstNRows_ to my child.
+		// GET_N request value and effectiveFirstN_ to my child.
 		if ((pentry_down->downState.request != ex_queue::GET_N) ||
-		    (pentry_down->downState.requestValue == firstnTdb().firstNRows()))
+		    (pentry_down->downState.requestValue == effectiveFirstN_))
 		  centry->downState.requestValue = effectiveFirstN_;
 		else
 		  {
