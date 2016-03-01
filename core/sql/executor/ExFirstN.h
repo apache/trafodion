@@ -134,7 +134,9 @@ class ExFirstNTcb : public ex_tcb
   Int64 returnedLastNRows_;
 
   atp_struct     * workAtp_;
-  Lng32 firstNParamVal_;
+  Lng32 firstNParamVal_;   // first N computed from parameter
+  Lng32 effectiveFirstN_;  // effective first n (constant or param)
+  Lng32 returnedSoFar_;    // number of rows returned so far
 
   // Stub to cancel() subtask used by scheduler. 
   static ExWorkProcRetcode sCancel(ex_tcb *tcb) 
