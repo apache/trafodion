@@ -806,6 +806,7 @@ alter table t056t56 add column t056t56_col3 pic 9 default +00;
 alter table t056t56 add column t056t56_col4 decimal default 0;
 select * from t056t56;
 
+cqd hbase_filter_preds 'on' ;
 create table t056t57 (a1 numeric(2,2) signed default 0 not null);
 showddl t056t57;
 insert into t056t57 default values;
@@ -830,6 +831,7 @@ create table t056t61 (a1 numeric(2,2) default -0.0 not null);
 showddl t056t61;
 insert into t056t61 default values;
 select * from t056t61;
+cqd hbase_filter_preds '2' ;
 
 ?section test4ddl
 ------------------------------------------------
