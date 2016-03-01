@@ -75,8 +75,7 @@ struct ColumnReference {
 
   void describe (std::string &details) const
   {
-    details = "column usage ";
-    details += " column number is ";
+    details = "column usage - column number is ";
     details += to_string((long long int) columnOrdinal);
   }
 
@@ -123,15 +122,19 @@ class ObjectReference
     
   virtual ~ObjectReference ( void )
   {
-    while(!columnReferences->empty())
-      delete columnReferences->back(), columnReferences->pop_back();
-    delete columnReferences;
+    if (columnReferences)
+    {
+      while(!columnReferences->empty())
+        delete columnReferences->back(), columnReferences->pop_back();
+      delete columnReferences;
+    }
   }
 
   int64_t objectUID;
   int32_t objectOwner;
   ComObjectType objectType;
   std::string objectName;
+  //TBD - make columnReferences a map instead of a vector
   std::vector<ColumnReference *> *columnReferences;
   PrivMgrDesc updatedPrivs;
 
