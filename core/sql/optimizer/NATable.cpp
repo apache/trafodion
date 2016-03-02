@@ -3379,6 +3379,7 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 	  colClass = USER_COLUMN;
 	  break;
         case 'A':
+        case 'C':
 	  colClass = USER_COLUMN;
 	  break;
         case 'M':  // MVs --
@@ -3454,14 +3455,16 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 			       defaultValue,
                                heading,
 			       column_desc->upshift,
-			       (column_desc->colclass == 'A'),
+			       ((column_desc->colclass == 'A') ||
+                                (column_desc->colclass == 'C')),
                                COM_UNKNOWN_DIRECTION,
                                FALSE,
                                NULL,
                                column_desc->stored_on_disk,
                                computed_column_text,
                                isSaltColumn,
-                               isDivisioningColumn);
+                               isDivisioningColumn,
+                               (column_desc->colclass == 'C'));
 	}
       else
         {
@@ -8381,13 +8384,26 @@ void NATableDB::removeNATable(CorrName &corrName, ComQiScope qiScope,
   if ((ddlXns) &&
       (NOT atCommit))
     {
-      removeNATable2(corrName, ComQiScope::REMOVE_MINE_ONLY, ot);
-
       CmpContext::DDLObjInfo ddlObj;
       ddlObj.ddlObjName = corrName.getQualifiedNameAsString();
       ddlObj.qiScope = qiScope;
       ddlObj.ot = ot;
-      CmpCommon::context()->ddlObjsList().insert(ddlObj);
+
+      NABoolean found = FALSE;
+      for (Lng32 i = 0;
+           ((NOT found) && (i <  CmpCommon::context()->ddlObjsList().entries()));
+           i++)
+        {
+          CmpContext::DDLObjInfo &ddlObjInList = 
+            CmpCommon::context()->ddlObjsList()[i];
+          if (ddlObj.ddlObjName == ddlObjInList.ddlObjName)
+            found = TRUE;
+        }
+
+      removeNATable2(corrName, qiScope, ot); //ComQiScope::REMOVE_MINE_ONLY, ot);
+
+      if (NOT found)
+        CmpCommon::context()->ddlObjsList().insert(ddlObj);
  
       return;
     }

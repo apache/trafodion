@@ -21,7 +21,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Feb 12 07:43:19 2016
+-- Definition current  Sun Feb 21 07:35:15 2016
 
   (
     A                                INT DEFAULT NULL
@@ -49,7 +49,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Fri Feb 12 07:43:35 2016
+-- Definition current  Sun Feb 21 07:35:27 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -111,7 +111,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Feb 12 07:44:30 2016
+-- Definition current  Sun Feb 21 07:36:26 2016
 
   (
     A                                INT DEFAULT NULL
@@ -136,7 +136,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Fri Feb 12 07:44:46 2016
+-- Definition current  Sun Feb 21 07:36:38 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -175,7 +175,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Feb 12 07:44:57 2016
+-- Definition current  Sun Feb 21 07:36:52 2016
 
   (
     A                                INT DEFAULT NULL
@@ -197,7 +197,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Fri Feb 12 07:45:04 2016
+-- Definition current  Sun Feb 21 07:36:58 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -449,12 +449,12 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Feb 12 07:46:03 2016
+-- Definition current  Sun Feb 21 07:37:55 2016
 
   (
     A                                INT DEFAULT NULL
-  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
-      added col */
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE
+      /*added_col*/
   )
 
 --- SQL operation complete.
@@ -469,12 +469,12 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Feb 12 07:46:09 2016
+-- Definition current  Sun Feb 21 07:38:00 2016
 
   (
     A                                INT DEFAULT NULL
-  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
-      added col */
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE
+      /*added_col*/
   )
 
 --- SQL operation complete.
@@ -560,7 +560,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Fri Feb 12 07:46:43 2016
+-- Definition current  Sun Feb 21 07:38:45 2016
 
   (
     A                                INT DEFAULT NULL
@@ -577,7 +577,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Fri Feb 12 07:46:49 2016
+-- Definition current  Sun Feb 21 07:38:50 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -592,7 +592,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Fri Feb 12 07:47:01 2016
+-- Definition current  Sun Feb 21 07:39:03 2016
 
   (
     A                                INT DEFAULT NULL
@@ -657,7 +657,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Fri Feb 12 07:47:39 2016
+-- Definition current  Sun Feb 21 07:39:46 2016
 
   (
     A                                INT DEFAULT NULL
@@ -1278,12 +1278,12 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Fri Feb 12 07:54:03 2016
+-- Definition current  Sun Feb 21 07:46:01 2016
 
   (
     A                                INT DEFAULT NULL
-  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
-      added col */
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE
+      /*added_col*/
   )
 
 --- SQL operation complete.

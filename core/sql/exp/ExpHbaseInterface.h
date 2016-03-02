@@ -135,8 +135,10 @@ class ExpHbaseInterface : public NABasicObject
   // retrieve all objects from hbase that match the pattern
   virtual ByteArrayList* listAll(const char * pattern) = 0;
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   virtual Lng32 exists(HbaseStr &tblName) = 0;
 
@@ -448,8 +450,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual ByteArrayList* listAll(const char * pattern);
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   // -1, if table exists. 0, if doesn't. -ve num, error.
   virtual Lng32 exists(HbaseStr &tblName);

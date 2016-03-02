@@ -1230,6 +1230,8 @@ short ExTransTcb::work()
                diagsArea);
             if (cmpStatus == ExSqlComp::ERROR)
               {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
                 handleErrors(pentry_down, NULL, 
                              (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
  
@@ -1273,6 +1275,8 @@ short ExTransTcb::work()
                diagsArea);
             if (cmpStatus == ExSqlComp::ERROR)
               {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
                 handleErrors(pentry_down, NULL, 
                              (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
  
@@ -1319,6 +1323,8 @@ short ExTransTcb::work()
                diagsArea);
             if (cmpStatus == ExSqlComp::ERROR)
               {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
                 handleErrors(pentry_down, NULL, 
                              (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
  
@@ -1361,6 +1367,8 @@ short ExTransTcb::work()
                diagsArea);
             if (cmpStatus == ExSqlComp::ERROR)
               {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
                 handleErrors(pentry_down, NULL, 
                              (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
  

@@ -249,7 +249,8 @@ Lng32  ExpHbaseInterface::fetchAllRows(
   return retcode;
 }
 
-Lng32 ExpHbaseInterface::copy(HbaseStr &currTblName, HbaseStr &oldTblName)
+Lng32 ExpHbaseInterface::copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                              NABoolean force)
 {
   return -HBASE_COPY_ERROR;
 }
@@ -589,7 +590,8 @@ ByteArrayList* ExpHbaseInterface_JNI::listAll(const char * pattern)
 }
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::copy(HbaseStr &currTblName, HbaseStr &oldTblName)
+Lng32 ExpHbaseInterface_JNI::copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                                  NABoolean force)
 {
   if (client_ == NULL)
   {
@@ -597,7 +599,7 @@ Lng32 ExpHbaseInterface_JNI::copy(HbaseStr &currTblName, HbaseStr &oldTblName)
       return -HBASE_ACCESS_ERROR;
   }
     
-  retCode_ = client_->copy(currTblName.val, oldTblName.val);
+  retCode_ = client_->copy(srcTblName.val, tgtTblName.val, force);
 
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;

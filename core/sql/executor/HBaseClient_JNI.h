@@ -511,7 +511,8 @@ public:
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async, Int64 transID);
-  HBC_RetCode copy(const char* currTblName, const char* oldTblName);
+  HBC_RetCode copy(const char* srcTblName, const char* tgtTblName,
+                   NABoolean force);
   ByteArrayList* listAll(const char* pattern);
   ByteArrayList* getRegionStats(const char* tblName);
   static HBC_RetCode flushAllTablesStatic();

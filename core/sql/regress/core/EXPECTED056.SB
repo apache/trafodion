@@ -106,10 +106,10 @@ CREATE TABLE TRAFODION.SCH.T056T10
   (
     SWALLOW                          INT DEFAULT 121 NOT NULL NOT DROPPABLE
   , BARNOWL                          INT DEFAULT 1000 NOT NULL NOT DROPPABLE
-  , DUCK                             INT DEFAULT 20 NOT NULL NOT DROPPABLE /*
-      added col */
-  , GOSLING                          INT DEFAULT 700 HEADING 'goose' /* added
-      col */
+  , DUCK                             INT DEFAULT 20 NOT NULL NOT DROPPABLE
+      /*added_col*/
+  , GOSLING                          INT DEFAULT 700 HEADING 'goose'
+      /*added_col*/
   )
 ;
 
@@ -140,12 +140,12 @@ CREATE TABLE TRAFODION.SCH.T056T11
     WREN                             INT NO DEFAULT NOT NULL NOT DROPPABLE
   , JUNCO                            INT NO DEFAULT NOT NULL NOT DROPPABLE
   , BLACKBIRD                        INT DEFAULT NULL
-  , BLUEJAY                          INT DEFAULT 203 NOT NULL NOT DROPPABLE /*
-      added col */
-  , RAVEN                            INT DEFAULT NULL /* added col */
-  , SEAGULL                          INT DEFAULT 400 NOT NULL NOT DROPPABLE /*
-      added col */
-  , ROBIN                            INT DEFAULT 410 /* added col */
+  , BLUEJAY                          INT DEFAULT 203 NOT NULL NOT DROPPABLE
+      /*added_col*/
+  , RAVEN                            INT DEFAULT NULL /*added_col*/
+  , SEAGULL                          INT DEFAULT 400 NOT NULL NOT DROPPABLE
+      /*added_col*/
+  , ROBIN                            INT DEFAULT 410 /*added_col*/
   , PRIMARY KEY (WREN ASC, JUNCO ASC)
   )
 ;

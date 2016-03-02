@@ -1092,7 +1092,7 @@ short CmpSeabaseMDcleanup::cleanupOrphanObjectsEntries(ExeCliInterface *cliInter
   NABoolean errorSeen = FALSE;
 
   // find out all entries which do not have corresponsing hbase objects
-  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', '_PRIVMGR_MD_') and schema_name not like '|_HV|_%%' escape '|'  and schema_name not like '|_HB|_%%' escape '|' and (object_type = 'BT' or object_type = 'IX') ",
+  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', '_PRIVMGR_MD_') and schema_name not like '|_HV|_%%|_' escape '|'  and schema_name not like '|_HB|_%%|_' escape '|' and (object_type = 'BT' or object_type = 'IX') ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog());
   cliRC = cliInterface->fetchRowsPrologue(query);

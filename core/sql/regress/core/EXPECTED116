@@ -363,7 +363,7 @@ A1           C1           B1
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
+      DEFAULT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
@@ -380,7 +380,7 @@ A1           C1           B1
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
+      DEFAULT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
@@ -401,7 +401,7 @@ A1           C1           B1
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
+      DEFAULT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
@@ -419,7 +419,7 @@ A1           C1           B1
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
+      DEFAULT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )

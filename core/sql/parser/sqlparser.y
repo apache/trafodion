@@ -31229,13 +31229,11 @@ alter_table_column_clause : TOK_COLUMN identifier heading
                                 }
 
 // type pStmtDDL
-alter_table_alter_column_datatype : TOK_ALTER TOK_COLUMN column_name predefined_type
+alter_table_alter_column_datatype : TOK_ALTER TOK_COLUMN column_definition
 				{
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableAlterColumnDatatype(
-                                         *$3, // column name
-                                         $4 );
-                                  delete $3;
+                                         $3 /* column definition */);
                                   restoreInferCharsetState();
 				}
 

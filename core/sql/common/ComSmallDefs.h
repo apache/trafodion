@@ -560,6 +560,7 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
                     , COM_USER_COLUMN
                     , COM_ADDED_USER_COLUMN
                     , COM_MV_SYSTEM_ADDED_COLUMN
+                    , COM_ALTERED_USER_COLUMN
                     };
 
 #define COM_UNKNOWN_CLASS_LIT               "  "
@@ -567,6 +568,7 @@ enum ComColumnClass { COM_UNKNOWN_CLASS
 #define COM_USER_COLUMN_LIT                 "U "
 #define COM_ADDED_USER_COLUMN_LIT           "A "
 #define COM_MV_SYSTEM_ADDED_COLUMN_LIT      "M "
+#define COM_ALTERED_USER_COLUMN_LIT         "C "
 
 enum ComColumnDefaultClass { COM_CURRENT_DEFAULT
                            , COM_NO_DEFAULT
