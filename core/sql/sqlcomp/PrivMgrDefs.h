@@ -266,10 +266,10 @@ const static int32_t NBR_OF_PRIVS = NBR_DML_PRIVS+NBR_DDL_PRIVS;
 //using PrivMgrBitmap = std::bitset<NBR_OF_PRIVS>;
 #define PrivMgrBitmap std::bitset<NBR_OF_PRIVS>
 typedef std::bitset<NBR_OF_PRIVS> PrivObjectBitmap;
-typedef std::bitset<NBR_DML_COL_PRIVS> PrivColumnBitmap;
+typedef std::bitset<NBR_OF_PRIVS> PrivColumnBitmap;
 typedef std::bitset<NBR_OF_PRIVS> PrivSchemaBitmap;
 typedef std::map<size_t,PrivColumnBitmap> PrivColList;
-typedef std::map<size_t,std::bitset<NBR_DML_COL_PRIVS> >::const_iterator PrivColIterator;
+typedef std::map<size_t,std::bitset<NBR_OF_PRIVS> >::const_iterator PrivColIterator;
 
 inline bool isDMLPrivType(PrivType privType)
 {
