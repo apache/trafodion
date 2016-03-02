@@ -40,7 +40,8 @@ This command:
 * in the table `TRAFODION.MAURIZIO.CUSTOMER` (`tgt=TRAFODION.MAURIZIO.CUSTOMER`)
 * using `|` (vertical bar) as a field separator (`fs=\|`)
 * using `1000 rows` as row-set buffer (`rows=1000`)
-* using `UPSERT USING LOAD` syntax to achieve better throughput as described in http://trafodion.incubator.apache.org/load.html[Trafodion Data Loading]
+* using `UPSERT USING LOAD` syntax to achieve better throughput as described in
+http://trafodion.incubator.apache.org/docs/load_transform/index.html[Trafodion Load and Transform Guide]
 * truncating the target table before loading (`truncate`)
 * using `4 parallel threads` to load the target table (`parallel=4`)
 
@@ -382,37 +383,37 @@ The following example explains mapfile usage to skip/transform or generate field
 
 And an input file like this:
 
-```
-uno,00,51,due,_Maurizio_,tre,[underline]#07 Mar 1959#, ignore,remaining, fields
-uno,00,46,due,_Lucia_,tre,[underline]#13 Oct 1964#, ignore, this
-uno,00,34,due,_Giovanni_,tre,[underline]#30 Mar 1976#
-uno,00,48,due,_Antonella_,tre,[underline]#24 Apr 1962#
-```
+***
+uno,00,*51*,due,_Maurizio_,tre,[underline]#07 Mar 1959#, ignore,remaining, fields +
+uno,00,*46*,due,_Lucia_,tre,[underline]#13 Oct 1964#, ignore, this +
+uno,00,*34*,due,_Giovanni_,tre,[underline]#30 Mar 1976# +
+uno,00,*48*,due,_Antonella_,tre,[underline]#24 Apr 1962#
+***
 
 * *Bold text* represents age.
 * _Italics  text_ represents name.
 * [underline]#Underline text# represents birth date.
 
-You want to load the marked fields into the appropriate column, *_generate_* a unique key for ID and ignore the fields in black text.
+You want to load the marked fields into the appropriate column, *_generate_* a unique key for ID and ignore the remaining fields.
 In addition: you need to *_convert date format_* and replace all occurrences of `Lucia` with `Lucy`.
 
 The following map file accomplishes these goals:
 
-```
-~/Devel/odb $ cat test/load_map/ml1.map
-# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat
-ID:seq:1                  <- Inserts into ID column a sequence starting from 1
-NAME:4:REPLACE:Lucia:Lucy <- Loads field #4 into NAME and replace all occurrences of Lucia with Lucy
-AGE:2                     <- Loads field #2 (they start from zero) into AGE 
-BDATE:6:DCONV:d.b.y       <- Loads field #6 into BDATE converting date format from dd mmm yyyy
-```
+***
+$ cat test/load_map/ml1.map +
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat +
+ID:seq:1                  # Inserts into ID column a sequence starting from 1 +
+NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy +
+AGE:2                     # Loads field #2 (they start from zero) into AGE +
+BDATE:6:DCONV:d.b.y       # Loads field #6 into BDATE converting date format from dd mmm yyyy
+***
 
 <<<
 Load as follows:
 
 ```
 $ odb64luo –u user –p xx –d dsn \
-  -l src=frends.dat:tgt=TRAFODION.MFTEST.FRIENDS:map=ml1.map:fs=,
+  -l src=friends.dat:tgt=TRAFODION.MFTEST.FRIENDS:map=ml1.map:fs=,
 ```
 
 == Use mapfiles to Load Fixed Format Files
@@ -572,11 +573,11 @@ create table TRAFODION.maurizio.dtest
 
 If you have an input file containing:
 
-```
-ignoreme,Maurizio,xyz,_commentM_, ignore,remaining, fields
-ignoreme,Lucia,xyz,_commentL_, ignore, this
-ignoreme,Giovanni,xyz,_commentG_, ignoreme,Antonella,xyz,commentA
-```
+***
+ignoreme,*Maurizio*,xyz,_commentM_, ignore,remaining, fields
+ignoreme,*Lucia*,xyz,_commentL_, ignore, this
+ignoreme,*Giovanni*,xyz,_commentG_, ignoreme,Antonella,xyz,commentA
+***
 
 * *Bold text* represents `fname`.
 * _Italic text_ represents `comment`.
@@ -759,7 +760,7 @@ The example above:
 * Saves data into files `ext_%t.csv.gz` (`%t` is expanded to the real table name).
 * Compresses the output file (gzip) on the fly (uncompressed data never lands to disk).
 * Trims text fields.
-* Used a 10 MB IO buffer.
+* Uses a 10 MB IO buffer.
 * Uses three threads (ODBC connection) for the extraction process.
 
 === Extraction Options
@@ -1160,7 +1161,6 @@ src=TRAFODION.MAURIZIO.CUSTOMER:splitby=C_CUSTOMERKEY
 src=TRAFODION.MAURIZIO.PART:splitby=P_PARTKEY 
 src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
 ```
-
 
 == Case-Sensitive Table and Column Names
 

@@ -1,0 +1,83 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[runtime-controls]]
+= Runtime Controls
+
+This section describes CQDs that are used for runtime controls.
+
+[[last0-mode]]
+== LAST0_MODE
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Runtime Controls
+| *Description*               | Ensures that all parts of the query plan are executed but no rows are returned by the query.
+| *Values*                    | *'ON'* or *'OFF'*. +
+ +
+The default value is *'OFF'*.
+| *Usage*                     | This setting provides a realistic measure of the query's performance, minus the cost/time of
+returning the rows to the client. It is especially useful for testing the plans and performance of queries that return large result sets.
+| *Production Usage*          | Only use this CQD to assess the performance of a query. 
+| *Impact*                    | The query runs completely but no rows are returned.
+| *Level*                     | Query.
+| *Conflicts/Synergies*       | Not to be confused with SELECT [LAST 0] which behaves the same way but does not guarantee that the plan
+is the same as when you do not use the [LAST 0] clause in the query.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[query-limit-sql-process-cpu]]
+== QUERY_LIMIT_SQL_PROCESS_CPU
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Runtime Controls
+| *Description*               | Use to limit the amount of CPU time that a query is allowed to use in any one server process (MXESP)
+including the NDCS server (MXOSRVR). Also includes the CPU time the query spends in the disk process (ESAM). $$$ +
+ +
+If a query exceeds the limit, then an error is raised and the query is terminated. This is a way to limit the impact on the
+system of a poorly written or badly optimized query.
+| *Values*                    |
+*'0'*:  There is no limit. +
+*Greater than *'0'* and up through *'2,147,483,583'*: The limit, in seconds, to how much CPU time a query is allowed. +
+ +
+The default value is *'0'*.
+| *Usage*                     | This setting helps you with queries that are poorly written or are badly optimized. A poorly written
+query does not use predicates to limit the number of rows processed. A query that joins large tables without a predicate can have a
+severe impact on the system. A badly optimized query can result from failure to maintain histograms. Typically, these are ad-hoc queries. +
+ +
+These types of queries seldom run to completion, and are instead stopped after the problems that they cause to other users of the system are noticed.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | Use of this default can prevent any one query from using an unlimited amount of CPU time.
+However, if the default is set too low, then even well behaved, useful queries fail to complete.
+| *Level*                     | Service.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Use standard processed for creating high-quality queries, and procedures that ensure that table histograms are always current.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===

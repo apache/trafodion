@@ -1,0 +1,496 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[trickle-load]]
+= Trickle Load
+
+Trafodion Trickle Load allows data to be committed in batches, with sizes ranging from 1 row to a several
+thousand rows in each commit. Trickle Load uses the following SQL statements (defined in the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]:
+
+* http://trafodion.incubator.apache.org/docs/sql_reference/index.html#insert_statement[INSERT]
+* http://trafodion.apache.org/docs/sql_reference/index.html#upsert_statement[UPSERT]
+* http://trafodion.apache.org/docs/sql_reference/index.html#upsert_statement[UPSERT USING LOAD]
+
+Contrary to <<bulk-load,Bulk Load>>, committed rows are immediately visible from other transactions
+thereby leading to minimal latency in making newly ingested rows visible to applications and end users. 
+
+You use Trickle Load in the following situations:
+
+* Inserting and/or updating data on an ongoing basis. Typically, you create a custom JDBC or ODBC
+application for this approach.
+
+* You want to migrate a smaller amount of data (a few millions rows). Typically, you use JDBC- or
+ODBC-based ETL tools for this approach; for example:
+** <<trickle-load-odb,Trafodion odb^1^>>
+** http://squirrel-sql.sourceforge.net[SQuirrel-SQL]
+** http://www.pentaho.com/[Pentaho]
+** http://www.informatica.com/us/[Informatica].
+
+^1^ Trafodion obd typically achieves better load throughput than third-party ETL tools.
+
+[[trickle-load-improving-throughput]]
+== Improving Throughput
+
+Trickle Load uses the HBase write path, with every row being written to the WAL (Write-Ahead Log) and HBase MemStore.
+When memstore is full data is flushed to HStorefile in background.
+
+Throughput can be improved by use of:
+
+* Rowsets or Batch Updates.
+* UPSERT instead of INSERT statements, if applicable.
+* Multiple simultaneous connections.
+
+In addition, when using INSERT or UPSERT USING LOAD with the objective of maximizing data ingestion throughput,
+increasing the HBase table attribute MEMSTORE_FLUSHSIZE from its default value helps.
+
+The actual value you use depends on the heap size allocated to each Region Server, the concurrent query workload, and the
+number of tables for which simultaneous fast data ingestion is needed. With a heap size of 31 GB for each Region Server in
+an environment with heavy concurrent query workload, setting this attribute 1 GB gives good performance.
+
+You can specify this attribute in the HBASE_OPTIONS clause when creating the table. Alternatively, you can also set it from
+the `hbase shell` through an `ALTER 'TRAFODION.<schema-name>.<table-name>', MEMSTORE_FLUSHSIZE &#62;&#61; '1073741824'` command.
+
+[[trickle-load-odb]]
+== odb
+
+odb is a Linux and Windows Trafodion client that is:
+
+* ODBC based
+* Database agnostic query driver
+* Query interpreter
+* Loader and extractor
+
+odb may be installed on:
+
+* The Trafodion cluster.
+* The machine that contains source data
+* An intermediate machine that is being used for data loading.
+
+Source data can be in any database (local or remote) that supports ODBC or in flat files local to the machine hosting
+the odb tool.
+
+odd uses threads to achieve parallelism, rowsets to improve throughput. You can specify INSERT, UPSERT or UPSERT USING LOAD
+insert types.
+
+NOTE: odb does not use the bulk load command LOAD, and, therefore, throughput when using odb may be lower than what can be achieved
+with the bulk loader. However, when using the odb tool, source data need not be moved to the Trafodion cluster in a separate step.
+
+odb allows you to access Hadoop data using one of the following methods:
+
+1.  *Use Hive and its ODBC Driver*: odb can access HIVE like any other relational database.
+For example, you can copy to from HIVE and other databases using odb's copy option.
+2.  *Add the hdfs.*` prefix to the input or output file during loads/extracts*: The file is read/written
+from/to Hadoop. odb interacts directly with the HDFS file system using *libhdfs*.
++
+This option is currently available only under Linux.
+
+The following odb commands/features are discussed in this guide:
+
+* <<trickle-load-odb-load, odb Load>>
+* <<trickle-load-odb-copy, odb Copy>>
+* <<trickle-load-odb-extract, odb Extract>>
+* <<trickle-load-odb-transform, odb Transform>>
+
+See the http://trafodion.incubator.apache.org/docs/odb_user/index.html[Trafodion odb User Guide]
+for installation instructions and usage syntax for the odb tool.
+
+The following subsections assume that you've installed odb.
+
+[[trickle-load-odb-throughput]]
+=== odb Throughput 
+
+You achieve the best throughput with odb if using the UPSERT USING LOAD option.
+
+The default insert type used by odb is INSERT; to use UPSERT USING LOAD, please specify `:loadcmd=UL` in odb's `load` or
+`copy` command.
+
+*Example*
+
+Copy the table `mytable` from `<source_catalog>.<source_schema>` on the source database to `trafodion.my
+schema.mytable`
+on Trafodion.
+
+```
+odb64luo -u <src_username>:<tgt_username> -p <src_pswd>:<tgt_pswd>
+-d <src_dsn>:<tgt_dsn>
+-cp src:<source_catalog>.<source_schema>.mytable tgt:trafodion.myschema.mytable
+:splitby=<col-name>:parallel=4:loadcmd=UL
+```
+
+[cols="25%,75%", options="header"]
+|===
+| Option             | Defines
+| `src_username`     | User name for the source database.
+| `src_pswd`         | Password for the source database.
+| `src_dsn`          | ODBC DSN for the source database.
+| `tgt_username`     | User name for the Trafodion database.
+| `tgt_pswd`         | Password for the Trafodion database.
+| `tgt_dsn`          | ODBC DSN for the Trafodion database.
+| `splitby`          | Defines the column used to evenly distributed values for parallelism. Consider using a leading key column.
+| `parallel=4`       | Use four connections to extract data from the source database and another four connections to write data to the target Trafodion database.
+| `loadcmd=UL`       | Use UPSERT USING LOAD syntax to write data. 
+|===
+
+[[trickle-load-odb-load]]
+=== odb Load
+
+Refer to the http://trafodion.apache.org/docs/odb/index.html#_load_files[Load Files] section
+in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete
+documentation of this option.
+
+You use the `-l` option to load into a table from:
+
+* File or standard input (pipe)
+* gzip compressed files with no external dependencies
+* HDFS 
+* Load XML files 
+* Delimited and fixed format files
+* "Binary" files (example images)
+* Generic SQL scripts before/after loads
+
+The `-l` option provides:
+
+* Data generation (constant, sequences, random values, from external datasets)
+* Configurable rowsets
+
+You can load single tables or list of tables in the same session using single/parallel threads.
+Limited "ETL like" functionalities are provided; for example:
+SUBSTR, TRANSLITERATION, TRUNCATE target, DATE/TIME format conversion, and TOUPPER. 
+
+*Important Options*
+
+[cols="25%,75%", options="header"]
+|===
+| Option             | Defines
+| `src`              | Source file. If empty, then odb generates sample data.
+| `fs`               | Field separator.
+| `tgt`              | Target table, required.
+| `map`              | Map file. A text file describing which input column is mapped to which target table column. See
+<<trickle-load-odb-transform, odb Transform>> below.
+| `rows`             | Rowset size to be used.
+| `parallel`         | Number of connections/threads to be used.`
+| `loadcmd`          | `IN`, `UP` or `UL`. INSERT, UPSERT or UPSERT USING LOAD. Use UL for best throughput.
+|===
+
+*Example*
+
+```
+$ odb64luo -u user -p xx -d dsn -l src=customer.tbl:tgt=TRAFODION.MAURIZIO.CUSTOMER \
+:fs=\|:rows=1000:loadcmd=UL:truncate:parallel=4
+```
+
+This command:
+
+* Loads the file named `customer.tbl` (`src=customer.tbl`)
+* in the table `TRAFODION.MAURIZIO.CUSTOMER` (`tgt=TRAFODION.MAURIZIO.CUSTOMER`)
+* using `|` (vertical bar) as a field separator (`fs=\|`)
+* using `1000 rows` as row-set buffer (`rows=1000`)
+* using UPSERT USING LOAD syntax to achieve better throughput
+* truncating the target table before loading (`truncate`)
+* using `4 parallel threads` to load the target table (`parallel=4`)
+
+```
+./odb64luo -u xx -p yy -d traf_sqws125 -l src=myfile:fs=|:tgt=TRAFODION.SEABASE.REGION:map=region.map:max=10000:rows=500:parallel=2:loadcmd=UL
+```
+
+You can load multiple files using different `-l` options. By default odb creates as many threads (and ODBC connections) as the sum
+of parallel load threads.
+
+*Example*
+
+Truncates and load the CUSTOMER, ORDERS and LINEITEM tables in parallel.
+
+```
+odb64luo -u user -p xx -d dsn -T 5 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.CUSTOMER:fs=\
+|:rows=m2:truncate:norb:parallel=4 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.ORDERS:fs=\
+|:rows=1000:truncate:norb:parallel=4 \
+-l src=./data/%t.tbl.gz:tgt=TRAFODION.MAURO.LINEITEM:fs=\
+|:rows=m10:truncate:norb:parallel=4
+```
+
+[[trickle-load-odb-copy]]
+=== odb Copy
+
+Refer to the
+http://trafodion.apache.org/docs/odb/index.html#_copy_tables_from_one_database_to_another[Copy Tables From One Database to Another]
+section in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete documentation of this option.
+
+Use the `-cp` option to copy tables *directly* from one data-source to another using ODBC (for example, from Trafodion to Teradata
+or vice-versa):
+
+* Single/Multiple table(s) copy from one database to another
+* Data never lands to disk (ODBC buffers moved from source to target)
+* Multi-threaded copy: single/multiple tables in parallel using single/multiple "data streams"/table
+* Each "data stream" consists of one "extractor" and one or more "loaders"
+* Table subsets copy (columns and/or rows)
+* No data conversion required
+* Other functionalities: sequence creation, limit text col length, max rows to copy, . . .
+* Each data stream is "multiple buffered" with loaders and extractors working in parallel (no need to extract before loading).
+
+The target table has to be be created in advance and should have a compatible structure.
+
+*Important Options*
+
+[cols="25%,75%", options="header"]
+|===
+| Option             | Defines
+| `src`              | Source file. If empty, then odb generates sample data.
+| `fs`               | Field separator.
+| `tgt`              | Target table, required.
+| `parallel`         | Number of connections/threads to be used.`
+| `splitby`          | Source column to parallelize copy operation on.
+| `pwhere`           | `where` condition on source 
+| `loadcmd`          | `IN`, `UP` or `UL`. INSERT, UPSERT or UPSERT USING LOAD. Use UL for best throughput.
+|===
+
+When copying data from one data source to another, odb needs user/password/dsn for both source and target system.
+User credentials and DSN for the target system are specified this way:
+
+```
+$ odb64luo -u src_user:tgt_user -p src_pwd:tgt:pwd -d src_dsn:tgt_dsn ... -cp src=...:tgt=...
+```
+
+You can use odb to copy a list of tables from one database to another.
+
+*Example*
+
+```
+$ cat tlist.txt 
+# List of tables to extract
+src=TRAFODION.MAURIZIO.ORDERS
+src=TRAFODION.MAURIZIO.CUSTOMER
+src=TRAFODION.MAURIZIO.PART
+src=TRAFODION.MAURIZIO.LINEITEM
+```
+
+You can extract all these tables by running:
+
+```
+$ odb64luo -u user1:user2 -p xx:yy -d dsn1:dsn2 \
+-cp src=-tlist.txt:tgt=tpch.stg_%t:rows=m2:truncate:parallel=4
+```
+
+Please note the `src=-tlist.txt`. This command copies:
+
+[cols="50%,50%",options="header",]
+|===
+| Source                        | Target 
+| `TRAFODION.MAURIZIO.ORDERS`   | `tpch.stg_orders`
+| `TRAFODION.MAURIZIO.CUSTOMER` | `tpch.stg_customer`
+| `TRAFODION.MAURIZIO.PART`     | `tpch.stg_part`
+| `TRAFODION.MAURIZIO.LINEITEM` | `tpch.stg_lineitem`
+|===
+
+Optionally, you can define any other command-line options in the input file.
+
+*Example*
+
+Using different _splitby columns_.
+
+```
+$ cat tlist2.txt
+# List of tables to extract and their "splitby columns" 
+src=TRAFODION.MAURIZIO.ORDERS:splitby=O_ORDERKEY 
+src=TRAFODION.MAURIZIO.CUSTOMER:splitby=C_CUSTOMERKEY 
+src=TRAFODION.MAURIZIO.PART:splitby=P_PARTKEY 
+src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
+```
+
+[[trickle-load-odb-extract]]
+=== odb Extract
+
+Refer to the http://trafodion.apache.org/docs/odb/index.html#_extract_tables[Extract Tables]
+section in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete documentation of this option.
+
+Use then -e option to extract from data a table and write it to standard files or named pipes.
+
+You can:
+
+* Export single tables, list of tables or generic SQL output.
+* Export table subsets (columns and/or rows).
+* Exports one or multiple tables in parallel using one or multiple data streams for each table
+* Invoke other functionalities (trim, remote trim, cast, limit text col length, max rows to export,. . .)
+
+You can write the extracted data to:
+
+* Single/multiple files or standard output (pipe).
+* gzip compressed files (no external libraries required).
+* XML formatted files (no external libraries required).
+* Hadoop File System (requires libhdfs).
+
+Other useful features:
+
+* Configurable NULL/EMPTY strings, field/record separators
+* Configurable rowset
+* Possibility to run generic SQL scripts before/after extracts
+* Multi-threaded export
+
+*Important Options*
+
+[cols="25%,75%", options="header"]
+|===
+| Option             | Defines
+| `src`              | Source file. If empty, then odb generates sample data.
+| `fs`               | Field separator.
+| `tgt`              | Target table, required.
+| `parallel`         | Number of connections/threads to be used.`
+| `splitby`          | Source column to parallelize extract operation on.
+| `pwhere`           | `where` condition on source 
+|===
+
+*Example*
+
+```
+$ odb64luo -u user -p xx -d dsn -T 3 \
+-e src=TRAFODION.MAURIZIO.LIN%:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip: \
+-e src=TRAFODION.MAURIZIO.REGION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip \
+-e src=TRAFODION.MAURIZIO.NATION:tgt=$\{DATA}/ext_%t.csv.gz:rows=m10:fs=\|:trim:gzip
+```
+
+The example above:
+
+* Extracts tables `REGION`, `NATION`, and all tables starting with `LIN` from the `TRAFODION.MAURIZIO` schema.
+* Saves data into files `ext_%t.csv.gz` (`%t` is expanded to the real table name).
+* Compresses the output file (gzip) on the fly (uncompressed data never lands to disk).
+* Trims text fields.
+* Uses a 10 MB IO buffer.
+* Uses three threads (ODBC connection) for the extraction process.
+
+*Example*
+
+Use odb to extract all tables listed in a file.
+
+```
+$ cat tlist.txt
+
+# List of tables to extract src=TRAFODION.MAURIZIO.ORDERS
+src=TRAFODION.MAURIZIO.CUSTOMER src=TRAFODION.MAURIZIO.PART
+src=TRAFODION.MAURIZIO.LINEITEM
+
+```
+
+Extract all these tables by running:
+
+```
+$ odb64luo -u user -p xx -d dsn -e src=-tlist.txt:tgt=%t_%d%m:rows=m20:sq=\"
+```
+
+The example above:
+
+* Reads the list of source tables from `tlist.txt`.
+* Extracts the data into file using the table name in lowercase (`%t`).
+appending extraction data and time (`_%d%m`) for the target file name.
+* Uses a 20MB I/O buffer for each extraction thread.
+* Encloses strings with double-quote characters (`sq=\"`).
+
+
+[[trickle-load-odb-transform]]
+=== odb Transform
+
+Refer to the http://trafodion.apache.org/docs/odb/index.html#load_map_fields[Map Source File Fields to Target Table Columns]
+section in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete documentation of
+odb's mapping/transformation capabilities.
+
+odb provides mapping/transformation capabilities though mapfiles. By specifying `map=<mapfile>` load option you can:
+
+* Associate any input file field to any table column
+* Skip input file fields
+* Generate sequences
+* Insert constants
+* Transform dates/timestamps formats
+* Extract substrings
+* Replace input file strings. For example: insert Maurizio Felici when you read MF
+* Generate random values
+* And much more
+
+A generic mapfile contains:
+
+* *Comments* (line starting with #)
+* *Mappings* to link input file fields to the corresponding target table columns.
+
+Mappings use the following syntax:
+
+```
+<colname>:<field>[:transformation operator]
+```
+
+*Example*
+
+Suppose you have a target table like this:
+
+```
++------+---------------+----+-------+------------+
+|COLUMN|TYPE           |NULL|DEFAULT|INDEX       |
++------+---------------+----+-------+------------+
+|ID    |INTEGER SIGNED |NO  |       |mf_pkey 1 U |
+|NAME  |CHAR(10)       |YES |       |            |
+|AGE   |SMALLINT SIGNED|YES |       |            |
+|BDATE |DATE           |YES |       |            |
++------+---------------+----+-------+------------+
+```
+
+And an input file like this:
+
+***
+uno,00,*51*,due,_Maurizio_,tre,[underline]#07 Mar 1959#, ignore,remaining, fields +
+uno,00,*46*,due,_Lucia_,tre,[underline]#13 Oct 1964#, ignore, this +
+uno,00,*34*,due,_Giovanni_,tre,[underline]#30 Mar 1976# +
+uno,00,*48*,due,_Antonella_,tre,[underline]#24 Apr 1962#
+***
+
+* *Bold text* represents age.
+* _Italics  text_ represents name.
+* [underline]#Underline text# represents birth date.
+
+You want to load the marked fields into the appropriate column, generate a unique key for ID and ignore the remaining fields,
+In addition, you need to convert the date format and replace all occurrences of `Lucia` with `Lucy`.
+
+The following map file accomplishes these goals:
+
+***
+$ cat test/load_map/ml1.map +
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat +
+ID:seq:1                  # Inserts into ID column a sequence starting from 1 +
+NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy +
+AGE:2                     # Loads field #2 (they start from zero) into AGE +
+BDATE:6:DCONV:d.b.y       # Loads field #6 into BDATE converting date format from dd mmm yyyy
+***
+
+Load as follows:
+
+```
+$ odb64luo -u user -p xx -d dsn \
+  -l src=friends.dat:tgt=TRAFODION.MFTEST.FRIENDS:map=ml1.map:fs=,
+```
+
+The above example:
+
+* Reads data from `friends.dat` (`src`).
+* Writes data to the `TRAFODION.MFTEST.FRIENDS` Trafodion table (`tgt`).
+* Uses `ml1.map` to define transformation specifications (`map`).
+* Uses comma as a field separator (`fs`).
