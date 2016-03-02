@@ -39,8 +39,21 @@
 
   <build>
     <defaultGoal>package</defaultGoal>
-      <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
-      <finalName>${project.artifactId}-${project.version}</finalName>
+    <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestFile>
+              src/main/resources/trafodion-sql.jar.mf
+            </manifestFile>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
   <dependencies>
@@ -112,7 +125,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>trafodion-sql-apache1_0_2</artifactId>
   <version>${env.TRAFODION_VER}</version>
-  <name>trafodion-sql</name>
+  <name>trafodion-sql-apache1_0_2</name>
   <description>Java code for SQL engine in Trafodion</description>
 
 </project>

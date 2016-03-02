@@ -63,7 +63,6 @@ import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionScannerHolder;
 import org.apache.hadoop.hbase.regionserver.transactional.TrxTransactionState;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState;
-import org.apache.hadoop.hbase.client.transactional.STRConfig;
 import org.apache.hadoop.hbase.wal.WAL;
 //import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.regionserver.wal.HLogKey;
@@ -178,7 +177,6 @@ private static ZooKeeperWatcher zkw1 = null;
 private static Object zkRecoveryCheckLock = new Object();
 
 SplitBalanceHelper sbHelper;
-STRConfig pSTRConfig;
 // Region Observer Coprocessor START
 @Override
 public void start(CoprocessorEnvironment e) throws IOException {
@@ -538,35 +536,20 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
     //for each indoubt transaction from pendingTransactionsById, build related transaction state object and add it into required lists for endPoint
 
     //build a list of TMs for in-doubt transactions, -2 is used for all peer's transactions
-    try {
-         pSTRConfig = STRConfig.getInstance(my_config);
-    } catch (Exception xe) {
-            LOG.error("An ERROR occurred while getting the STR Configuration");
-    }
     for (Entry<Long, List<WALEdit>> entry : pendingTransactionsById.entrySet()) {
         synchronized (recoveryCheckLock) {
                       long transactionId = entry.getKey();
 		      String key = String.valueOf(transactionId);
                       if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
-
-                      int clusterid = (int) TransactionState.getClusterId(transactionId);
-                      int tmid = (int) TransactionState.getNodeId(transactionId);
+                      int tmid = (int) (transactionId >> 32);
                       int count = 1;
-                      if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);
-                      if ((clusterid == 0) || (clusterid == pSTRConfig.getMyClusterIdInt())) {                      
-                          if ((m_isTrafodionMetadata) || LOG.isTraceEnabled()) LOG.info("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " add local prepared " + transactionId);
-                      }
-                      else {
-                           tmid = -2; // peer transactions is always sent to -1 ZK, which LDTM peer recovery thread will pick up
-			   if ((m_isTrafodionMetadata) || (LOG.isTraceEnabled())) 
-			       LOG.info("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() 
-					+ " add peer prepared " + transactionId);
-                      }
+                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);
                       if (indoubtTransactionsCountByTmid.containsKey(tmid))
                             count =  (int) indoubtTransactionsCountByTmid.get(tmid) + 1;
 
                       indoubtTransactionsCountByTmid.put(tmid, count);
-                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " has " + count + " in-doubt-transaction from TM " + tmid);
+                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: Region " + regionInfo.getRegionNameAsString() + " has " + count +
+                                                    " in-doubt-transaction from TM " + tmid);
 
                       //TBD may need to write the LOG again for reinstated txn (redo does not generate edits)
                       //since after open, HBase may toss out split-log while there are indoubt list in memory
