@@ -34,29 +34,29 @@ GENVERS			    =./genvers
 
 all: build_all
 
-jdk_1_7_cdh:
-	$(MAKE) build_chk_cdh
+jdk_1_7_cdh: build_chk_cdh
 	set -o pipefail && $(MAVEN) -f pom.xml.cdh package install -DskipTests | tee -a build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_CDH_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-jdk_1_7_mapr:
-	$(MAKE) build_chk_mapr
+jdk_1_7_mapr: build_chk_mapr
 	set -o pipefail && $(MAVEN) -f pom.xml.mapr package -DskipTests | tee -a build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_MAPR_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-jdk_1_7_hdp:
-	$(MAKE) build_chk_hdp
+jdk_1_7_hdp: build_chk_hdp
 	set -o pipefail && $(MAVEN) -f pom.xml.hdp package -DskipTests | tee -a build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_HDP_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-jdk_1_7_apache:
-	$(MAKE) build_chk_apache
+jdk_1_7_apache: build_chk_apache
 	echo "$(MAVEN) package -DskipTests"
 	echo "### For full Maven output, see file build_trx.log"
 	set -o pipefail && $(MAVEN) -f pom.xml.apache package -DskipTests | tee build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 

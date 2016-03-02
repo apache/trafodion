@@ -610,8 +610,9 @@ public:
   Queue* listOfDeletedColNames() { return listOfUpDeldColNames_; }
   Queue* listOfMergedColNames() { return listOfMergedColNames_; }
   Queue* listOfIndexesAndTable() { return listOfIndexesAndTable_; }
-
+  Queue* listOfOmittedColNames() { return listOfOmittedColNames_; }
   void setListOfIndexesAndTable(Queue* val) {listOfIndexesAndTable_ = val; }
+  void setListOfOmittedColNames(Queue* val) {listOfOmittedColNames_ = val; }
 
   // overloading listOfUpdatedColNames and listOfMergedColNames...for now.
   Queue* listOfHbaseFilterColNames() { return listOfUpDeldColNames_; }
@@ -977,6 +978,7 @@ public:
   QueuePtr listOfUpDeldColNames_;
   QueuePtr listOfMergedColNames_;
   QueuePtr listOfIndexesAndTable_; // used by bulk load
+  QueuePtr listOfOmittedColNames_;
 
   // information about key ranges
   keyRangeGenPtr keyInfo_;                             

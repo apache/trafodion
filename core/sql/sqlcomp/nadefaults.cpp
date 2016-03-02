@@ -3402,6 +3402,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_AUTO_FLUSH,                      "OFF"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
+  DDkwd__(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS,   "OFF"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),

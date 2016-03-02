@@ -6757,6 +6757,9 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
     }
 
   // User must have REFERENCES privilege on the referenced table 
+  // First check for REFERENCES at the object level (column checks happen
+  // later)
+  NABoolean noObjPriv = FALSE;
   if (isAuthorizationEnabled())
     {
       PrivMgrUserPrivs* privs = refdNaTable->getPrivInfo();
@@ -6772,15 +6775,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
         }
 
       if (!ComUser::isRootUserID() && !privs->hasReferencePriv())
-        {
-          *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-
-          deallocEHI(ehi);
-
-          processReturn();
-
-          return;
-        }
+        noObjPriv = TRUE;
     }
 
   ElemDDLColNameArray &ringCols = alterAddConstraint->getConstraint()->castToElemDDLConstraintRI()->getReferencingColumns();
@@ -6906,6 +6901,23 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
           
           return;
         }
+
+       // If the user/role does not have REFERENCES privilege at the object 
+       // level, check to see if the user/role has been granted the privilege 
+       // on all affected columns
+       if (noObjPriv)
+         {
+           PrivMgrUserPrivs* privs = refdNaTable->getPrivInfo();
+           if (!privs->hasColReferencePriv(refdNAC->getPosition()))
+             {
+                *CmpCommon::diags() << DgSqlCode(-4481)
+                            << DgString0("REFERENCES")
+                            << DgString1(referencedTableName.getObjectNamePart().getExternalName().data());
+
+                 processReturn();
+                 return;
+             }
+          }
     }
 
   // method getCorrespondingConstraint expects an empty input list if there are no

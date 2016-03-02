@@ -1,0 +1,108 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<!-- 
+	* @@@ START COPYRIGHT @@@                                                       
+	*
+	* Licensed to the Apache Software Foundation (ASF) under one
+	* or more contributor license agreements.  See the NOTICE file
+	* distributed with this work for additional information
+	* regarding copyright ownership.  The ASF licenses this file
+	* to you under the Apache License, Version 2.0 (the
+	* "License"); you may not use this file except in compliance
+	* with the License.  You may obtain a copy of the License at
+	*
+	*   http://www.apache.org/licenses/LICENSE-2.0
+	*
+	* Unless required by applicable law or agreed to in writing,
+	* software distributed under the License is distributed on an
+	* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	* KIND, either express or implied.  See the License for the
+	* specific language governing permissions and limitations
+	* under the License.
+	*
+	* @@@ END COPYRIGHT @@@
+	-->
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.trafodion</groupId>
+	<artifactId>lib_mgmt</artifactId>
+	<version>${env.TRAFODION_VER}</version>
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.12</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+	<properties>
+		<maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>${maven.antrun.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>generate</id>
+						<phase>generate-sources</phase>
+						<configuration>
+							<target>
+<property name="vproc.dir"
+	value="${basedir}/src/main/java/org/trafodion/libmgmt" />
+<property name="manifest.file" value="${basedir}/src/main/resources/MANIFEST.MF" />
+<property name="vproc.str" value="Traf_libmgmt_Build_" />
+<property file="${env.MY_SQROOT}/export/include/SCMBuildMan.mf"/>
+<exec executable="git" outputproperty="rev_head">
+	<arg value="rev-parse" />
+	<arg value="--short" />
+	<arg value="HEAD" />
+</exec>
+<echo file="${manifest.file}" append="false">Manifest-Version: 1.0</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Main-Class: org.trafodion.libmgmt.Vproc</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Vproc: Traf_JDBC_Type4_Build_${rev_head}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-1: Version 1.0.0</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-2: ${Implementation-Version-2}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-3: ${Implementation-Version-3}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-4: ${Implementation-Version-4}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-5: ${Implementation-Version-5}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-6: ${Implementation-Version-6}${line.separator}</echo>
+<copy file="${vproc.dir}/Vproc.java.tmpl" tofile="${vproc.dir}/Vproc.java" overwrite="true" />
+<replace file="${vproc.dir}/Vproc.java" token="@@@VPROC@@@" value="${vproc.str}${rev_head}" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.3</version>
+				<configuration>
+					<appendAssemblyId>false</appendAssemblyId>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifestFile>${basedir}/src/main/resources/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>assembly</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

@@ -39,6 +39,7 @@ obey TEST020(tests);
 obey TEST020(test_10_020913_3920);
 obey TEST020(test_10_030916_9668);
 obey TEST020(test_LP_1360493);
+obey TEST020(trafodion_1700_and_1847);
 log;
 obey TEST020(clean_up);
 exit;
@@ -87,6 +88,8 @@ drop table test020_LP_1360493;
 drop table test020_t34 cascade;
 drop table test020_t33 cascade;
 drop table test020t40 cascade;
+drop table test020t41 cascade;
+drop table test020t42 cascade;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -761,3 +764,54 @@ insert into test020t40 values (3,3);
 select * from test020t40;
 select * from table(index_table test020t40i1);
 
+?section trafodion_1700_and_1847
+set parserflags 1;
+--test for timestamp column default value
+cqd traf_aligned_row_format 'off' ;
+create table test020t41(a largeint not null primary key, b char(10),
+c timestamp(6) default current , d int , e int default 3);
+-- check if the timestamp is inserted with the recent timestamp
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+select a,b,d,e from test020t41 where current_timestamp-c < cast(10 as interval second);
+-- check to ensure the timestamp column is not updated with upsert
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- check to ensure the value for column d is retained
+upsert into test020t41 (a,b) values (1, 'd');
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- upsert with non-matching rows  
+upsert into test020t41 (a,b) values (3, 'e'), (4, 'f');
+select a,b,d,e from test020t41 ;
+upsert into test020t41 (a,b) values (3, 'g');
+select a,b,d,e from test020t41 where a = 3 and c = (select c from test020t41 where a = 4);
+create index test020t41ix on test020t41(e);
+select * from table(index_table test020t41ix) ;
+upsert into test020t41 (a,b,e) values (5,'h',6);
+select * from table(index_table test020t41ix) ;
+-- check if the updated d column is reflected in the index
+upsert into test020t41 (a,b,e) values (1, 'c', 4);
+select * from table(index_table test020t41ix) ;
+
+create table test020t42(a largeint not null primary key, b char(10),
+c timestamp(6) default current , d int , e int default 3) attribute aligned format;
+-- check if the timestamp is inserted with the recent timestamp
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+select a,b,d,e from test020t42 where current_timestamp-c < cast(10 as interval second);
+-- check to ensure the timestamp column is not updated with upsert
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+select a,b,d,e from test020t42 where a = 1 and c = (select c from test020t42 where a = 2);
+-- check to ensure the value for column d is retained
+upsert into test020t42 (a,b) values (1, 'd');
+select a,b,d,e from test020t42 where a = 1 and c = (select c from test020t42 where a = 2);
+-- upsert with non-matching rows  
+upsert into test020t42 (a,b) values (3, 'e'), (4, 'f');
+select a,b,d,e from test020t42 ;
+upsert into test020t42 (a,b) values (3, 'g');
+select a,b,d,e from test020t42 where a = 3 and c = (select c from test020t42 where a = 4);
+create index test020t42ix on test020t42(e);
+select * from table(index_table test020t42ix) ;
+upsert into test020t42 (a,b,e) values (5,'h',6);
+select * from table(index_table test020t42ix) ;
+-- check if the updated d column is reflected in the index
+upsert into test020t42 (a,b,e) values (1, 'c', 4);
+select * from table(index_table test020t42ix) ;
