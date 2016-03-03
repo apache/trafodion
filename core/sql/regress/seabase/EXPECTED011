@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Wed Feb 24 09:06:39 2016
+-- Definition current  Wed Mar  2 05:16:53 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -142,7 +142,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212323064800054288
+PLAN_ID .................. 212323655814425974
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -178,10 +178,11 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   QUERY_CACHE ............ 0
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 2452863879398277316
+  ObjectUIDs ............. 4553793696580766799
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -1268,7 +1269,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Wed Feb 24 09:08:40 2016
+-- Definition current  Wed Mar  2 05:18:55 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1450,7 +1451,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000020741212323064781124001000000000206U3333300_1924_EXPLSTMT
+MXID11000008089212323655795185001000000000206U3333300_1994_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1502,7 +1503,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000020741212323064781124001000000000206U3333300_1935_EXPLSTMT2
+MXID11000008089212323655795185001000000000206U3333300_2005_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;

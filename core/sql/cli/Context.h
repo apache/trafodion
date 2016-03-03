@@ -59,6 +59,7 @@
 #ifdef NA_CMPDLL
 #include "CmpCommon.h"
 #endif // NA_CMPDLL
+#include "ExSqlComp.h"
 #include "ExStats.h"
 #include "ExpSeqGen.h"
 #include "ssmpipc.h"
@@ -209,6 +210,10 @@ public:
   LmRoutine *findTrustedRoutine(CollIndex ix);
   void putTrustedRoutine(CollIndex ix);
 
+  ExSqlComp::ReturnStatus sendXnMsgToArkcmp
+  (char * data, Lng32 dataSize, 
+   Lng32 xnMsgType, ComDiagsArea* &diagsArea);
+    
 private:
 
   // The heap where executor 'stuff' will be allocated from.
@@ -472,6 +477,10 @@ private:
   bool cbServerInUse_;
   NABoolean dropInProgress_;
 
+  // set to true if ddl stmts are issued.
+  // Reset at begin and commit Xn. Used to do NATable invalidation
+  // for ddl stmts issued within a transaction.
+  NABoolean ddlStmtsExecuted_;
 
   //   
   //
@@ -835,7 +844,9 @@ SQLCLI_LIB_FUNC
 
   ExTransaction * getTransaction()	{ return transaction_; }
 
-Lng32 setAuthID(
+  NABoolean &ddlStmtsExecuted() { return ddlStmtsExecuted_; }
+
+  Lng32 setAuthID(
    const char * externalUsername,
    const char * databaseUsername,
    const char * authToken,

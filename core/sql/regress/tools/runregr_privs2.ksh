@@ -466,7 +466,8 @@ rm -f $ix.tmp 2>$NULL
   #  Print date, time, test name and test result in log file. --
   #-------------------------------------------------------------
   echo $logtxt
-  echo "`date +'%D %T'`	$ix  $logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $lfile | cut -d'.' -f1`
+  echo "$modtime  $ix  $logtxt" >> $rgrlog
 
 done
 

@@ -446,7 +446,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
-    JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_LIST_ALL       ].jm_name      = "listAll";
     JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/ByteArrayList;";
     JavaMethods_[JM_GET_REGION_STATS       ].jm_name      = "getRegionStats";
@@ -454,7 +454,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;Z)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
-    JavaMethods_[JM_EXISTS     ].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_EXISTS     ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_GRANT      ].jm_name      = "grant";
     JavaMethods_[JM_GRANT      ].jm_signature = "([B[B[Ljava/lang/Object;)Z";
     JavaMethods_[JM_REVOKE     ].jm_name      = "revoke";
@@ -1359,7 +1359,7 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 tran
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async)
+HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::dropAll(%s) called.", pattern);
 
@@ -1383,9 +1383,11 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async)
     return HBC_ERROR_DROP_PARAM;
   }
 
+  jlong j_tid = transID;  
+
   // boolean drop(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_DROP_ALL].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DROP_ALL].methodID, js_pattern);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DROP_ALL].methodID, js_pattern, j_tid);
 
   jenv_->DeleteLocalRef(js_pattern);  
 
@@ -1584,7 +1586,7 @@ HBC_RetCode HBaseClient_JNI::copy(const char* srcTblName,
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBC_RetCode HBaseClient_JNI::exists(const char* fileName)
+HBC_RetCode HBaseClient_JNI::exists(const char* fileName, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::exists(%s) called.", fileName);
   if (jenv_ == NULL)
@@ -1603,9 +1605,11 @@ HBC_RetCode HBaseClient_JNI::exists(const char* fileName)
     return HBC_ERROR_EXISTS_PARAM;
   }
 
+  jlong j_tid = transID;  
+
   // boolean exists(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_EXISTS].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EXISTS].methodID, js_fileName);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EXISTS].methodID, js_fileName, j_tid);
 
   jenv_->DeleteLocalRef(js_fileName);  
 

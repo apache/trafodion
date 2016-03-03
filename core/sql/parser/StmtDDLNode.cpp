@@ -60,6 +60,20 @@ StmtDDLInitializeSQL_visitRegisterUserElement(ElemDDLNode * pInitSQLNode,
 // member functions for class StmtDDLNode
 // -----------------------------------------------------------------------
 
+StmtDDLNode::StmtDDLNode(OperatorTypeEnum otype)
+     : ElemDDLNode(otype),
+       tableType_(COM_REGULAR_TABLE),
+       objectClass_(COM_CLASS_USER_TABLE),
+       isVolatile_(FALSE),
+       exeUtil_(FALSE),
+       isGhostObject_(FALSE),
+       inMemoryObjectDefn_(FALSE),
+       isExternal_(FALSE),
+       ddlXns_(FALSE)
+{ 
+  ddlXns_ = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);
+}
+
 // virtual destructor
 // To improve performance, do not use inline with virtual destructor
 StmtDDLNode::~StmtDDLNode()

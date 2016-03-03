@@ -206,7 +206,7 @@ short CmpSeabaseMDupgrade::dropReposTables(ExpHbaseInterface *ehi,
       hbaseTable.val = (char*)extNameForHbase.data();
       hbaseTable.len = extNameForHbase.length();
       
-      retcode = dropHbaseTable(ehi, &hbaseTable);
+      retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
       if (retcode < 0)
 	{
 	  errcode = -1;

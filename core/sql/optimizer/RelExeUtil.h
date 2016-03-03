@@ -99,9 +99,14 @@ public:
 		       ValueIdSet &pulledNewInputs);
   virtual short codeGen(Generator*);
 
+  // no return from this method, the atp and atpindex is changed to
+  // returned atp (= 0) and returned atp index (last entry of returnedDesc).
+  // If noAtpOrIndexChange flag is set, then they are not changed.
   short processOutputRow(Generator * generator,
-                         const Int32 work_atp, const Int32 output_row_atp_index,
-                         ex_cri_desc * returnedDesc);
+                         const Int32 work_atp, 
+                         const Int32 output_row_atp_index,
+                         ex_cri_desc * returnedDesc,
+                         NABoolean noAtpOrIndexChange = FALSE);
 
   // The set of values that I can potentially produce as output.
   virtual void getPotentialOutputValues(ValueIdSet & vs) const;
@@ -197,6 +202,14 @@ public:
 // -----------------------------------------------------------------------
 class DDLExpr : public GenericUtilExpr
 {
+  void setDDLXns(NABoolean v)
+  {
+    if (v)
+      ddlXns_ = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);
+    else
+      ddlXns_ = FALSE;
+  }
+
 public:
   DDLExpr(ExprNode * ddlNode,
 	  char * ddlStmtText,
@@ -234,6 +247,8 @@ public:
   {
     if (explObjName)
       explObjName_ = *explObjName;
+
+    setDDLXns(TRUE);
   };
 
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
@@ -273,6 +288,8 @@ public:
     
     if (dropMDviews)
       setDropMDViews(TRUE);
+
+    setDDLXns(TRUE);
   };
 
  DDLExpr(NABoolean purgedataHbase,
@@ -306,6 +323,8 @@ public:
   {
     purgedataTableName_ = purgedataTableName;
     qualObjName_ = purgedataTableName.getQualifiedNameObj();
+
+    setDDLXns(TRUE);
   };
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
@@ -402,6 +421,8 @@ public:
   {(v ? flags_ |= CLEANUP_AUTH : flags_ &= ~CLEANUP_AUTH); }
   NABoolean cleanupAuth() { return (flags_ & CLEANUP_AUTH) != 0;}
 
+  NABoolean ddlXns() { return ddlXns_; }
+
  protected:
   enum Flags
   {
@@ -472,6 +493,11 @@ public:
   NABoolean returnStatus_;
 
   UInt32 flags_;
+
+  // if TRUE, ddl transactions are enabled. Actual operation may
+  // run under one transaction or multiple transactions.
+  // Details in sqlcomp/CmpSeabaseDDL*.cpp.
+  NABoolean ddlXns_;
 };
 
 // -----------------------------------------------------------------------

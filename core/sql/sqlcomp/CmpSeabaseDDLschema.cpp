@@ -60,7 +60,8 @@ static bool dropOneTable(
    const char * catalogName, 
    const char * schemaName, 
    const char * objectName,
-   bool isVolatile);
+   bool isVolatile,
+   bool ddlXns);
    
 static bool transferObjectPrivs(
    const char * systemCatalogName, 
@@ -98,7 +99,7 @@ static bool transferObjectPrivs(
 // *                                                                           *
 // * Returns: status
 // *                                                                           *
-// *   0: Schema was added                                                      *
+// *   0: Schema was added                                                     *
 // *  -1: Schema was not added.  A CLI error is put into the diags area.       *
 // *   1: Schema already exists and ignoreIfExists is specified.               *
 // *      No error is added to the diags area.                                 *
@@ -547,7 +548,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        dirtiedMetadata = TRUE;
        if (dropOneTable(cliInterface,(char*)catName.data(),
                         (char*)schName.data(),(char*)objName.data(),
-                         isVolatile))
+                        isVolatile, dropSchemaNode->ddlXns()))
           someObjectsCouldNotBeDropped = true;
      }
    }
@@ -652,7 +653,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
             dirtiedMetadata = TRUE;
             if (dropOneTable(cliInterface,(char*)catName.data(), 
                              (char*)schName.data(),(char*)objName.data(),
-                             isVolatile))
+                             isVolatile, dropSchemaNode->ddlXns()))
                someObjectsCouldNotBeDropped = true;
          }
       } 
@@ -745,7 +746,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    if (dropSchemaNode->dropObjectsOnly())
       return;
 
-   // Verify all objects in the schema have been dropped.   
+  // Verify all objects in the schema have been dropped. 
    str_sprintf(query,"SELECT COUNT(*) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
@@ -764,7 +765,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    
    if (rowCount > 0)
    {
-      CmpCommon::diags()->clear();
+     CmpCommon::diags()->clear();
       
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
                           << DgSchemaName(catName + "." + schName);
@@ -1149,7 +1150,8 @@ static bool dropOneTable(
    const char * catalogName, 
    const char * schemaName, 
    const char * objectName,
-   bool isVolatile)
+   bool isVolatile,
+   bool ddlXns)
    
 {
 
@@ -1195,8 +1197,10 @@ ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
 // remove NATable entry for this table
    CorrName cn(objectName,STMTHEAP,schemaName,catalogName);
 
-   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
-     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+   ActiveSchemaDB()->getNATableDB()->removeNATable
+     (cn,
+      ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
+      ddlXns, FALSE);
 
    return someObjectsCouldNotBeDropped;
    

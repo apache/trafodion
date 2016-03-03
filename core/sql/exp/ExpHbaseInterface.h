@@ -130,7 +130,7 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
 
   // drops all objects from hbase that match the pattern
-  virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn) = 0;
 
   // retrieve all objects from hbase that match the pattern
   virtual ByteArrayList* listAll(const char * pattern) = 0;
@@ -446,7 +446,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
-  virtual Lng32 dropAll(const char * pattern, NABoolean async);
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn);
 
   virtual ByteArrayList* listAll(const char * pattern);
 

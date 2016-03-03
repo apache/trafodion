@@ -62,16 +62,7 @@ class StmtDDLNode : public ElemDDLNode
 public:
 
   // default constructor
-  StmtDDLNode(OperatorTypeEnum otype = DDL_ANY_STMT)
-  : ElemDDLNode(otype),
-    tableType_(COM_REGULAR_TABLE),
-    objectClass_(COM_CLASS_USER_TABLE),
-    isVolatile_(FALSE),
-    exeUtil_(FALSE),
-    isGhostObject_(FALSE),
-    inMemoryObjectDefn_(FALSE),
-    isExternal_(FALSE)
-  { }
+  StmtDDLNode(OperatorTypeEnum otype = DDL_ANY_STMT);
 
   // virtual destructor
   virtual ~StmtDDLNode();
@@ -132,6 +123,8 @@ public:
 
   virtual NABoolean explainSupported() { return FALSE; }
 
+  NABoolean ddlXns() { return ddlXns_; }
+  void setDdlXns(NABoolean v) { ddlXns_ = v; }
 private:
 
   ComTableType	  tableType_;
@@ -155,6 +148,8 @@ private:
   // if this DDL operation was specified using EXTERNAL syntax.
   NABoolean isExternal_;
 
+  // if TRUE, this ddl operation will run using DTM transactions
+  NABoolean ddlXns_;
 }; // class StmtDDLNode
 
 // -----------------------------------------------------------------------

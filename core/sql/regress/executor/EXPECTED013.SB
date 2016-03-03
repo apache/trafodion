@@ -436,6 +436,7 @@ CONTROL QUERY DEFAULT
   HBASE_SMALL_SCANNER           	SYSTEM
   HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
+  DDL_TRANSACTIONS              	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
   POS                           	OFF
   SCHEMA                        	TRAFODION.T013_SCH

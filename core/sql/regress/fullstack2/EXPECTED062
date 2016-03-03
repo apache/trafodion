@@ -501,6 +501,7 @@ CONTROL QUERY DEFAULT
   HBASE_SMALL_SCANNER           	SYSTEM
   HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
+  DDL_TRANSACTIONS              	ON
   SHOWCONTROL_SHOW_ALL          	ON
   SCHEMA                        	AAA.BBB
   CATALOG                       	CCC
@@ -545,6 +546,7 @@ CONTROL QUERY DEFAULT
   HBASE_SMALL_SCANNER           	SYSTEM
   HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
+  DDL_TRANSACTIONS              	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
@@ -580,6 +582,7 @@ CONTROL QUERY DEFAULT
   HBASE_SMALL_SCANNER           	SYSTEM
   HBASE_FILTER_PREDS            	2
   TRAF_INDEX_CREATE_OPT         	ON
+  DDL_TRANSACTIONS              	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001

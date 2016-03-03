@@ -173,11 +173,10 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     lobGlobals_(NULL),
     seqGen_(NULL),
     dropInProgress_(FALSE),
-#ifdef NA_CMPDLL
     isEmbeddedArkcmpInitialized_(FALSE),
-    embeddedArkcmpContext_(NULL)
-#endif // NA_CMPDLL
-    , numCliCalls_(0)
+    embeddedArkcmpContext_(NULL),
+    ddlStmtsExecuted_(FALSE)
+   , numCliCalls_(0)
    , jniErrorStr_(&exHeap_)
    , hbaseClientJNI_(NULL)
    , hiveClientJNI_(NULL)
@@ -4174,6 +4173,105 @@ void ContextCli::resetVolTabList()
 
 void ContextCli::closeAllTables()
 {
+}
+
+// this method is used to send a transaction operation specific message
+// to arkcmp by executor.
+// Based on that, arkcmp takes certain actions.
+// Called from executor/ex_transaction.cpp.
+// Note: most of the code in this method has been moved from ex_transaction.cpp
+ExSqlComp::ReturnStatus ContextCli::sendXnMsgToArkcmp
+(char * data, Lng32 dataSize, 
+ Lng32 xnMsgType, ComDiagsArea* &diagsArea)
+{
+  // send the set trans request to arkcmp so compiler can
+  // set this trans mode in its memory. This is done so any
+  // statement compiled after this could be compiled with the
+  // current trans mode.
+  ExSqlComp *cmp = NULL;
+  ExSqlComp::ReturnStatus cmpStatus ;
+  // the dummyReply is moved up because otherwise the 
+  // compiler would complain about
+  // initialization of variables afer goto statements.
+  
+  char* dummyReply = NULL;
+  ULng32 dummyLength;
+  ContextCli *currCtxt = this;
+  Int32 cmpRet = 0;
+
+  // If use embedded compiler, send the settings to it
+  if (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() &&
+      currCtxt->isEmbeddedArkcmpInitialized() &&  
+      (CmpCommon::context()) &&
+      (CmpCommon::context()->getRecursionLevel() == 0))
+    {
+      NAHeap *arkcmpHeap = currCtxt->exHeap();
+      
+      cmpRet = CmpCommon::context()->compileDirect(
+           data, dataSize,
+           arkcmpHeap,
+           SQLCHARSETCODE_UTF8,
+           CmpMessageObj::MessageTypeEnum(xnMsgType),
+           dummyReply, dummyLength,
+           currCtxt->getSqlParserFlags(),
+           NULL, 0);
+      if (cmpRet != 0)
+        {
+          char emsText[120];
+          str_sprintf(emsText,
+                      "Set transaction mode to embedded arkcmp failed, return code %d",
+                      cmpRet);
+          SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, emsText, 0);
+          diagsArea = CmpCommon::diags();
+        }
+      
+      if (dummyReply != NULL)
+        {
+          arkcmpHeap->deallocateMemory((void*)dummyReply);
+          dummyReply = NULL;
+        }
+    }
+
+  if (!currCtxt->getSessionDefaults()->callEmbeddedArkcmp()  || 
+      (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() && 
+       ((cmpRet != 0) || 
+        (CmpCommon::context()->getRecursionLevel() > 0) ||
+        currCtxt->getArkcmp()->getServer())
+       )
+      )
+    {
+      for (short i = 0; i < currCtxt->getNumArkcmps();i++)
+        {
+          cmp = currCtxt->getArkcmp(i);
+          cmpStatus = cmp->sendRequest(CmpMessageObj::MessageTypeEnum(xnMsgType),
+                                       data, dataSize,
+                                       TRUE, NULL,
+                                       SQLCHARSETCODE_UTF8,
+                                       TRUE /*resend, if needed*/
+                                       );
+          
+          if (cmpStatus != ExSqlComp::SUCCESS) {
+            diagsArea = cmp->getDiags();
+            // If its an error don't proceed further.
+            if (cmpStatus == ExSqlComp::ERROR)
+              return cmpStatus;
+          }
+	  
+          cmpStatus = cmp->getReply(dummyReply, dummyLength);
+          cmp->getHeap()->deallocateMemory((void*)dummyReply);
+          if (cmpStatus != ExSqlComp::SUCCESS) {
+            diagsArea = cmp->getDiags();
+            //Don't proceed if its an error.
+            if (cmpStatus == ExSqlComp::ERROR)
+              return cmpStatus;
+          }
+	  
+          if (cmp->status() != ExSqlComp::FETCHED)
+            diagsArea = cmp->getDiags();
+        } // for
+    }
+  
+  return ExSqlComp::SUCCESS;
 }
 
 Lng32 ContextCli::setSecInvalidKeys(

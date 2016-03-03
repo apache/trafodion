@@ -1849,6 +1849,15 @@ enum ComAuthenticationType{
 #define COM_DBS_FAIL_LIT       "F"
 #define COM_DBS_YES_LIT        "Y"
 #define COM_DBS_NO_LIT         "N"
+
+// used with removeNATable for QI support
+enum ComQiScope 
+  {
+    REMOVE_FROM_ALL_USERS = 100,
+    REMOVE_MINE_ONLY
+  };
+
+
 //
 // (Maximum) size of TEXT.TEXT metadata column in bytes (for NSK) or NAWchars (for SeaQuest)
 //
