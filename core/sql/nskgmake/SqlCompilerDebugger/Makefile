@@ -37,8 +37,8 @@ $(CMPGUI_FINAL) : cmpdbg_qt_build
 
 # optional component, ignore cp return code
 cmpdbg_qt_build :
-	-cd ../$(basename $(CMPGUI_OBJ)) && . ./mk.sh; \
-                                  cp -f $$PWD/$(LIBPREFIX)$(notdir $(obj)) $(CMPGUI_FINAL);
+	cd ../$(basename $(CMPGUI_OBJ)) && . ./mk.sh
+	-cp -f ../$(basename $(CMPGUI_OBJ))/$(LIBPREFIX)$(notdir $(obj)) $(CMPGUI_FINAL)
 
 #when clean, this clean first
 
