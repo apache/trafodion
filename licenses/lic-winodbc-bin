@@ -1,0 +1,50 @@
+
+The Windows ODBC driver (TFODBC4) is removed from the binary distribution
+of Trafodion clients package.  This is due to inclusion of vcredist_x64.exe.
+See JIRA TRAFODION-1836.
+
+If the license issues with that software are resolved, and the driver is
+added back to the clients binary distribution package, then the license info
+below must be integrated back into lic-clients-bin file.
+
+This only affects binary distribution. This issue does not apply to the source
+distribution of win-odbc or derivative products.
+
+===============================================================================
+The binary distribution of Apache Trafodion bundles OpenSSL software. Specifically,
+the Linux ODBC driver is statically linked with OpenSSL libraries. The Windows
+ODBC driver (TFODBC64) also links in OpenSSL libraries.
+
+(Documented in licenses/lic-clients-bin.)
+
++++++++++++++++++++++++++++++
+
+The binary distribution of Apache Trafodion bundles zlib software. Specifically,
+the Windows ODBC driver (TFODBC64) links in zlib libraries. Zlib is 
+available under the zlib/libpng license.
+
+  zlib.h -- interface of the 'zlib' general purpose compression library
+  version 1.2.8, April 28th, 2013
+
+  Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jean-loup Gailly        Mark Adler
+  jloup@gzip.org          madler@alumni.caltech.edu
+
++++++++++++++++++++++++++++++
