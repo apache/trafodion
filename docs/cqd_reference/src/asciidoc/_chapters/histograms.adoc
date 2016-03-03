@@ -1,0 +1,215 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[manage-histograms]]
+= Manage Histograms
+
+This section describes CQDs that are used to manage histograms.
+
+[[cache-histograms-refresh-interval]]
+== CACHE_HISTOGRAMS_REFRESH_INTERVAL
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Manage Histograms 
+| *Description*               | Defines the time interval after which timestamps for cached histograms are checked to be refreshed.
+| *Values*                    | Unsigned integer Unit is seconds. +
+ + 
+The default value is *'3600'* (1 hour).
+| *Usage*                     | Histogram statistics are cached so that the compiler can avoid access to the metadata tables, thereby reducing compile times.
+The timestamp of the tables are checked against those of the cached histograms at an interval specified by this CQD, in order to see if the cached histograms
+need to be refreshed. +
+ +
+You can increase the interval to reduce the impact on compile times as long as you do not need to obtain fresh statistics more frequently in order to improve
+query performance. It may be that the default interval is too long and you would rather refresh the statistics more frequently than the default one hour,
+in order to improve query performance at the cost of increased compile times. +
+ +
+This setting depends on how frequently you are updating statistics on tables. There is no point in refreshing statistics frequently when statistics are not
+being updated during that time. On the other hand, if you are updating statistics, or generating them for the first time on freshly loaded tables frequently
+enough, and you want these to be picked up immediately by the compiler because you have seen this to have a dramatic impact on plan quality, then you can
+make the refresh more frequent.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | Longer histogram refresh intervals can improve compile times. However, the longer the refresh interval the more obsolete
+the histograms. That could result in poor performance for queries that could leverage recently updated statistics.
+| *Level*                     | System or Service.
+| *Conflicts/Synergies*       | Frequency of update statistics run either using MAINTAIN or using Update Statistics Automation Server.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hist-missing-stats-warning-level]]
+== HIST_MISSING_STATS_WARNING_LEVEL
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Manage Histograms 
+| *Description*               | Controls the level of missing statistics warnings that should be displayed. The warnings impacted are 6007, 6008, 6010 and 6011.
+| *Values*                    |
+*'0'*: Display no warnings. Update Statistics Automation Server still continues to record missing column statistics. +
+ +
+*'1'*: Display only missing single column statistics warnings. These include 6008 and 6011. +
+ +
+*'2'*: Display all missing single and multi-column statistics warnings for scans only. +
+ +
+*'3'*: Display all missing single and multi-column statistics warnings for scans and join operators only.
+Update Statistics Automation Server continues to record missing column statistics. +
+ +
+*'4'*: Display all missing single and multi-column statistics warnings. +
+ +
+The default value is *'4'*.
+| *Usage*                     | Update Statistics Automation Server captures these warnings and gathers appropriate statistics.
+If you do not want to see these warnings, then change the setting to '0'. If you want to track the warnings, then you have a
+choice of which warnings you want to track. Each setting gives you the ability to filter the warnings seen for missing single
+or multi-column statistics for join or scan operations. This controls the resulting number of warning messages. +
+ +
+If poor query plans are being caused by cardinality estimations that seem to be off, then you can check the histogram statistics
+to see if statistics are being collected for those columns and how accurate they are. If you don't find statistics being collected,
+then you could look for the warnings by setting this CQD to the appropriate setting. Based on that you could take appropriate action:
+either find out why USAS is not collecting appropriate statistics, or if USAS is not being used then ensure that update statistics
+is being run to generate those statistics. 
+| *Production Usage*          | Many tools divide a query into several steps. During the first phases volatile tables are created
+and populated, the last phase usually joins all the volatile tables created in the previous steps. Usually statistics are not needed
+for those volatile tables because the final join is straight forward and the optimizer has no big choices. Nevertheless the log is
+flooded with useless warnings if you don't set the warning level to 0. If possible, try to direct queries from those tools to a
+dedicated service where you set the warning level to 0.
+| *Impact*                    | Though the warnings give information about all statistics that are missing, it can be overwhelming
+to get several warnings. Not all warnings may contribute to plan improvements. The optimizer issues multi-column statistics warnings
+based on the search path, some of which may not even impact the plan quality. Also, the cost of gathering statistics on those columns
+may not bring commensurate benefit to a large number of queries.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Update Statistics Automation Server does capture these warnings and gathers statistics felt appropriate
+for query performance. If you are using USAS then you may set the warning level to low or 0.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hist-no-stats-refresh-interval]]
+== HIST_NO_STATS_REFRESH_INTERVAL
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Manage Histograms 
+| *Description*               | Defines the time interval after which the fake histograms in the cache should be refreshed unconditionally.
+| *Values*                    | Unsigned integer Unit is seconds. +
+ + 
+The default value is *'3600'* (1 hour).
+| *Usage*                     | Histogram statistics are "fake" when update statistics is not being run, but instead the customer is
+updating the histogram tables directly with statistics to guide the optimizer. This may be done if the data in the table is very
+volatile (such as for temporary tables), update statistics is not possible because of constant flush and fill of the table occurring,
+and statistics are manually set to provide some guidance to the optimizer to generate a good plan. +
+ +
+If these fake statistics are updated constantly to reflect the data churn, then this default can be set to 0. This would ensure that
+the histograms with fake statistics are not cached and are always refreshed. If these fake statistics are set and not touched again,
+then this interval could be set very high.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | Setting a high interval improves compilation time. However, if statistics are being updated,
+then the compiler may be working with obsolete histogram statistics, potentially resulting in poorer plans.
+| *Level*                     | Service.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hist-prefetch]]
+== HIST_PREFETCH
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Manage Histograms 
+| *Description*               | Influences the compiler to pre-fetch the histograms and save them in cache.
+| *Values*                    |
+*'ON'*: Pre-fetches the histograms. +
+*'OFF'*: Does not pre-fetch the histograms. +
+ +
+The default value is *'ON'*.
+| *Usage*                     | You may want to turn this off if you don't want to pre-fetch a large number of histograms, many of which may not be used.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | Though it makes compilation time faster, it may result in the histogram cache to be filled with histograms that may never be used.
+| *Level*                     | System or Service.
+| *Conflicts/Synergies*       | Use this CQD with CACHE_HISTOGRAMS. If CACHE_HISTOGRAMS is OFF, then this CQD has no effect. $$$
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hist-rowcount-requiring-stats]]
+== HIST_ROWCOUNT_REQUIRING_STATS
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Manage Histograms 
+| *Description*               | Specifies the minimum row count for which the optimizer needs histograms, in order to compute better cardinality estimates.
+The optimizer does not issue any missing statistics warnings for tables whose size is smaller than the value of this CQD.
+| *Values*                    | Integer. +
+ +
+The default value is *'50000'*.
+| *Usage*                     | Use this CQD to reduce the number of statistics warnings.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | Missing statistics warnings are not displayed for smaller tables, which in most cases don't impact plan quality much.
+However, there may be some exceptions where missing statistics on small tables could result in less than optimal plans.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Use this CQD with <<hist-missing-stats-warning-level,HIST_MISSING_STATS_WARNING_LEVEL>>. If the warning level CQD is 0,
+then this CQD does not have any effect. Also, for tables having fewer rows than set in this CQD, no warnings are displayed irrespective of the warning level.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hist-use-sample-for-cardinality-estimation]]
+== HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Manage Histograms 
+| *Description*               | Enables the Compile Time Stats feature. Compile Time Stats are produced during query plan generation by executing a
+subset of the query on a subset of data to gather more accurate cardinality estimations.
+| *Values*                    |
+*'ON'*: Compile Time Statistics is enabled. + 
+*'OFF'*: Compile Time Statistics is disabled. +
+ +
+The default value is *'ON'*.
+| *Usage*                     | The feature is very helpful for cases when the query contains complex predicates on a table. These predicates include
+LIKE, CASE, any other expressions or more than one range predicates and equality on large character columns. +
+ +
+It can be disabled if most of the queries are single table or at most two-way joins. +
+ +
+It can also be disabled if the extra collection of statistics seems to be adversely affecting the total query compile and execution time.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | The feature improves cardinality estimates for Scan operators thus improving the plan quality.
+However, it can also increase the compile time.
+| *Level*                     | Any.
+| *Conflicts/Synergies*       | In order to use the feature in its default form, sample tables should exist in `public_access_schema`. $$$
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===

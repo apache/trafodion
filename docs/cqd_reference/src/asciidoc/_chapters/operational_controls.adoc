@@ -1,0 +1,110 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[operational-controls]]
+= Operational Controls
+
+This section describes CQDs that are used for operational controls.
+
+[[auto-query-retry-warnings]]
+== AUTO_QUERY_RETRY_WARNINGS
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Operational Controls
+| *Description*               | Indicates whether a warning should be issued when a query is retried, in case a failed query is automatically retried.
+| *Values*                    | *'ON'* or *'OFF'* +
+ +
+The default value is *'OFF'*.
+| *Usage*                     | There are certain cases, such as when a node failure occurs, where a query may fail midstream. In many of such failure scenarios,
+if the query has not returned any data, then it is retried automatically. +
+ +
+When such retries happen, you may want to see a warning that an automatic retry took place. That would be a reason to turn this on.
+| *Production Usage*          | Not applicable.
+| *Impact*                    | You get a warning message every time a query is automatically retried due to a failure. When there is a node failure,
+then a large number of queries may be impacted. Therefore, you need to assess if you want to see a flood of warnings. The warning is returned after the query completes.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[query-cache]]
+== QUERY_CACHE
+
+[cols="25%h,75%"]
+|===
+| *Category*                  | Operational Controls $$$
+| *Description*               | Attempts to reduce compilation times by storing and reusing previously compiled query plans.
+It maximizes the chances of plan reuse by parameterizing literals in equality predicates. Two equality predicates, "col = val1" and "col = val2",
+are considered to match if their selectivities match. +
+ +
+A query cache setting of *'16384'* means a maximum of 16,384 KB of compiler memory can be used for keeping previously compiled plans
+before evicting the oldest unused plan(s) to make room for the latest cacheable plan.
+| *Values*                    |
+*Up through 4294967295*: Kilobytes of memory allocated to query cache. +
+*'0'*: Turns off query plan caching. +
+ +
+The default value is *'16384'* (16 MB).
+| *Usage*                     | To choose the appropriate size for the query cache, examine your applications. Applications that use a PREPARE
+statement to pre-compile queries once and then EXECUTE the prepared plan, should turn off plan caching. +
+ +
+Ad-hoc query applications can specify a size that can hold most of the frequently processed queries. For example, if an application processes
+40 classes of queries frequently with an average plan size of 100 KB per query, a cache size of 4000 KB might be optimal.
+(Plan size is not the same as the size of the SQL statement and is not easy to assess.) +
+ +
+There may be applications that are operational in nature, with many small queries, and others that are analytical in nature with large complex queries.
+Cache size can be set differently for different service levels handling such workloads based on the classes and types of queries, size of the queries,
+and propensity to get cache hits. +
+ +
+Another consideration is how frequently the cache is getting flushed due to the compiler being shutdown and a new one started by an MXOSRVR
+(ODBC/Connect server), in order to run queries on behalf of a different role than the role that was using the compiler before.
+If this happens often and not enough static servers can be started to reduce this from happening, then creating a large cache may not be useful,
+because it has to be flushed and filled too often. +
+ +
+After taking the above into account the best way to really assess whether caching is effective, and tune it for your specific applications,
+is to understand the cache hit statistics, how many queries are forced to be removed from cache (on a least recently used basis), and a number
+of other statistics about the efficiency of query plan caching for your applications. 
+| *Production Usage*          | Not applicable.
+| *Impact*                    | A larger cache size allows more query plans to be cached. This increases the probability of finding a plan in
+cache that can be reused for a query, thereby reducing compile time. It does mean that the compiler uses more memory, but because there are
+usually not that many compilers running in a node, the negative effects may be minimal. +
+ +
+However, you do need to know the amount of physical memory available on each node and the number of compilers that run on a node
+(influenced by the number of concurrent connections configured to run on the cluster). If the cache size is disproportionately large,
+it is likely to result in reduced performance as the operating system may repeatedly swap the compiler (bloated by a huge cache) in and out of physical memory.
+| *Level*                     | Service.
+| *Conflicts/Synergies*       | You should be aware that the cache allocated is divided into text caching and template caching.
+Text caching gets approximately 25% of the cache memory. Query plan caching occurs prior to parsing (text-based caching) and after parsing (template-based caching).
+The compiler caches same-text queries as text cache hits. Same-text queries are queries whose SQL texts are identical in everything,
+including case and white space. By caching text-based queries, the compiler avoids redundant re-computation of previously compiled
+queries and improves performance by reducing compile times and increasing compiler throughput. The text cache is always searched first for a query.
+If the plan object is not produced due to a text cache miss, then the plan is stored in the template cache if it meets the criteria for template caching.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===

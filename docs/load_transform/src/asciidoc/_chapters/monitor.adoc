@@ -1,0 +1,77 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[monitor-progress]]
+= Monitor Progress
+
+== INSERT and UPSERT
+
+For an INSERT statement, rows are written to the HBase table that represents the Trafodion table when the transaction commits. 
+It is more difficult to see query progress here.
+
+== UPSERT USING LOAD
+
+For an UPSERT USING LOAD statement, rows added are visible in the Trafodion table after each `ListOfPut` call succeeds. 
+You can use a `SELECT COUNT(*)` statement to monitor progress. That way, you know how many rows are already in the table when the 
+statement starts executing. 
+
+```
+SELECT COUNT(*) FROM trafodion.sch.demo ;
+```
+
+== LOAD
+For LOAD, query progress goes through a few phases, which sometimes overlap:
+
+1. Hive scan.
+2. Sort.
+3. Create prep HFiles in HDFS bulkload staging directory (`/bulkload` by default).
+4. Move HFiles into HBase.
+
+You can monitor progress in step 2, sort, with this shell command:
+
+```
+lsof +L1 | grep SCR | wc -l
+```
+
+This command returns a count of the number of overflow files for sort. Each file is 2GB in size.
+You need to have an approximate idea of  the volume of data being loaded to know how much more
+data needs to be sorted. On a cluster, sort is done on all nodes with a pdsh-like utility.
+Trafodion data volume can also be larger than Hive data volume by a factor of 2 or 3. 
+
+In step 3, create prep HFiles, use the following command to monitor the volume of data written
+out to the staging directory:
+
+```
+hadoop fs -dus /bulkload 
+```
+
+The `hadoop fs` command must be run from one node and does not have to be repeated across the cluster.
+
+If compression and encoding are used, then the size should be similar to the Hive source data volume.
+There may be some remnant data in the staging directory from previous commands, so we have to 
+take that into account. This step will start only when sort has completed.
+
+Step 4 is usually the shortest and typically does not exceed a few minutes.
+
