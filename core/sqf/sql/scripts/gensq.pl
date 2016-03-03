@@ -21,7 +21,6 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-require "ctime.pl";
 use sqnodes;
 use POSIX;
 use DBI;
@@ -145,6 +144,10 @@ my $DBH = 0;
 # instance type
 my $instanceType = "";
 
+sub getTime {
+    return strftime("%a %b %d %H:%M:%S %Y\n", localtime(time));
+}
+
 sub printScript {
     ($dWhich, @rest) = @_;
 
@@ -199,7 +202,7 @@ sub printRMSCheckScript{
 }
 
 sub printTime {
-    printScript(1, "# Trafodion Startup script generated @ ",&ctime(time),"\n");
+    printScript(1, "# Trafodion Startup script generated @ ",getTime(),"\n");
 }
 
 sub validate_config_script {
@@ -660,30 +663,30 @@ sub generateRMS {
     
     #generate rmsstart and rmsstop scripts
     printRMSScript(0, "#!/bin/sh\n");
-    printRMSScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(0, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSScript(0, "\n# Start the RMS processes\n");
     printRMSScript(0, "sscpstart\n");
     printRMSScript(0, "ssmpstart\n");
 
     printRMSStopScript(0, "#!/bin/sh\n");
-    printRMSStopScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(0, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSStopScript(0, "\n# Stop the RMS processes\n");
     printRMSStopScript(0, "ssmpstop\n");
     printRMSStopScript(0, "sscpstop\n");
 
     #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
     printRMSScript(1, "#!/bin/sh\n");
-    printRMSScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(1, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSScript(2, "\n# Start the SSMP processes\n");
     printRMSScript(3, "\n# Start the SSCP processes\n");
 
     printRMSStopScript(1, "#!/bin/sh\n");
-    printRMSStopScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(1, "# SQ config/utility file generated @ ",getTime(),"\n");
     printRMSStopScript(1, "sqshell -a << eof\n"); 
     printRMSStopScript(2, "\n!Stop the SSMP processes\n");
     printRMSStopScript(3, "\n!Stop the SSCP processes\n");
 
-    printRMSCheckScript(1, "-- SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSCheckScript(1, "-- SQ config/utility file generated @ ",getTime(),"\n");
     printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
     printRMSCheckScript(1, "cast('Node' as varchar(5)), \n");
     printRMSCheckScript(1, "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node, \n");
@@ -1028,7 +1031,7 @@ sub printInitLinesAuxFiles {
     my $file_ptr  = @_[0];
 
     print $file_ptr "#!/bin/sh\n";
-    print $file_ptr "# SQ config/utility file generated @ ", &ctime(time), "\n";
+    print $file_ptr "# SQ config/utility file generated @ ", getTime(), "\n";
 }
 
 sub openFiles {
