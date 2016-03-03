@@ -122,7 +122,7 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
   struct timespec startTime;
   struct timespec endTime;
   Int64 secs, nsecs, totalnsecs;
-
+ 
   if (dir) 
     {
       if (dir_.empty()) 

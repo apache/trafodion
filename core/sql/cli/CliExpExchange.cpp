@@ -207,7 +207,9 @@ ex_expr::exp_return_type InputOutputExpr::describeOutput(void * output_desc_,
 	  
           // Use SQLDESC_CHAR_SET_NAM (one-part name) for charset
 
-	  if ( DFS2REC::isAnyCharacter(operand->getDatatype()) ) 
+	  if ( DFS2REC::isAnyCharacter(operand->getDatatype()) || 
+               (operand->getDatatype() == REC_BLOB) || 
+               (operand->getDatatype() == REC_CLOB )) 
             {
               output_desc->setDescItem(entry, SQLDESC_CHAR_SET_NAM, 0, 
                                        (char*)CharInfo::getCharSetName(operand->getCharSet()));

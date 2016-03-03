@@ -294,7 +294,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
 
       attr->setIsoMapping((CharInfo::CharSet)SqlParser_ISO_MAPPING);
 
-      if (naType->getTypeQualifier() == NA_CHARACTER_TYPE)
+      if (naType->getTypeQualifier() == NA_CHARACTER_TYPE) 
 	{
 	  const CharType *charType = (CharType *)naType;
 
@@ -378,6 +378,7 @@ Attributes * ExpGenerator::convertNATypeToAttributes
 	  Int16 scale = lobLen & 0xFFFF;
 	  attr->setPrecision(precision);
 	  attr->setScale(scale);
+          attr->setCharSet(lobType->getCharSet());
 	}
       
       else

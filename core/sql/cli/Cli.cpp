@@ -10482,7 +10482,7 @@ Lng32 SQLCLI_LOB_GC_Interface
             {
               cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
-              //tbd Give warning and rollback transaction and return with warning. For now return error and abort the iud operation itself.
+              //tbd Give warning and rollback just these updates  and return with warning. For now return error and abort the iud operation itself since there is no support for nested transactions or SUSPEND and RESUME. 
               goto error_return;
             }
           i++;
@@ -10509,7 +10509,7 @@ Lng32 SQLCLI_LOB_GC_Interface
 
       // Restore original data file.
       Int32 rc2=ExpLOBoper::restoreLobDataFile(lobGlobals,tgtLobName, (void *)currContext.exHeap(),hdfsServer,hdfsPort,lobLocation);
-      // if error restoring, mark this lob  as corrupt.
+      // if error restoring, this lob could become corrupt.
       goto error_return;
     }
   else
