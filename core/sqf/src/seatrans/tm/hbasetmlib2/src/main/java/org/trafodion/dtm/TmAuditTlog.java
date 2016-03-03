@@ -705,6 +705,8 @@ public class TmAuditTlog {
 
       if (recoveryASN != -1){
          // We need to send this to a remote Tlog, not our local one, so open the appropriate table
+         if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord writing to remote Tlog for transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn
+                  + " in thread " + threadId);
          HTableInterface recoveryTable;
          int lv_ownerNid = (int)(lvTransid >> 32);
          String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(lv_ownerNid) + "_LOG_" + Integer.toHexString(lv_lockIndex));
@@ -982,9 +984,8 @@ public class TmAuditTlog {
 //         Connection deleteConnection = ConnectionFactory.createConnection(this.config);
 
          if (LOG.isTraceEnabled()) LOG.trace("delete table is: " + lv_tLogName);
-         HConnection deleteConnection = HConnectionManager.createConnection(this.config);
 
-         deleteTable = deleteConnection.getTable(TableName.valueOf(lv_tLogName));
+         deleteTable = connection.getTable(TableName.valueOf(lv_tLogName));
          try {
             boolean scanComplete = false;
             Scan s = new Scan();
@@ -1050,7 +1051,7 @@ public class TmAuditTlog {
               }
            }
            catch(Exception e){
-              LOG.error("deleteAgedEntries Exception getting results for table index " + i + "; " + e);
+              LOG.error("deleteAgedEntries Exception getting results for table " + lv_tLogName + "; " + e);
               throw new RuntimeException(e);
            }
            finally {
@@ -1063,22 +1064,21 @@ public class TmAuditTlog {
               deleteTable.delete(deleteList);
            }
            catch(IOException e){
-              LOG.error("deleteAgedEntries Exception deleting from table index " + i + "; " + e);
+              LOG.error("deleteAgedEntries Exception deleting from table " + lv_tLogName + "; " + e);
               throw new RuntimeException(e);
            }
         }
         catch (IOException e) {
-           LOG.error("deleteAgedEntries IOException setting up scan on table index "
-                   + i + ", Exception: " + e);
+           LOG.error("deleteAgedEntries IOException setting up scan on table "
+                   + lv_tLogName + ", Exception: " + e);
            e.printStackTrace();
         }
         finally {
            try {
               deleteTable.close();
-              deleteConnection.close();
            }
            catch (IOException e) {
-              LOG.error("deleteAgedEntries IOException closing table or connection for table index " + i);
+              LOG.error("deleteAgedEntries IOException closing table " + lv_tLogName);
               e.printStackTrace();
            }
         }
@@ -1213,8 +1213,7 @@ public class TmAuditTlog {
       String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(lv_ownerNid) + "_LOG_" + Integer.toHexString(lv_lockIndex));
       if (LOG.isTraceEnabled()) LOG.trace("getTransactionState reading from: " + lv_tLogName);
 
-      HConnection unknownTableConnection = HConnectionManager.createConnection(this.config);
-      unknownTransactionTable = unknownTableConnection.getTable(TableName.valueOf(lv_tLogName));
+      unknownTransactionTable = connection.getTable(TableName.valueOf(lv_tLogName));
 
       try {
          String transidString = new String(String.valueOf(lvTransid));
@@ -1396,7 +1395,6 @@ public class TmAuditTlog {
       // send to regions in order to retrience the desired set of transactions
       TransactionState transactionState = new TransactionState(0);
       CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(tlogThreadPool);
-      HConnection targetTableConnection = HConnectionManager.createConnection(this.config);
 
       try {
          if (LOG.isTraceEnabled()) LOG.trace("deleteEntriesOlderThanASN: "
@@ -1407,7 +1405,7 @@ public class TmAuditTlog {
          // For every Tlog table for this node
          for (int index = 0; index < tlogNumLogs; index++) {
             String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(this.dtmid) + "_LOG_" + Integer.toHexString(index));
-            regionList = targetTableConnection.locateRegions(TableName.valueOf(lv_tLogName), false, false);
+            regionList = connection.locateRegions(TableName.valueOf(lv_tLogName), false, false);
             loopCount++;
             // For every region in this table
             for (HRegionLocation location : regionList) {
@@ -1441,7 +1439,6 @@ public class TmAuditTlog {
                  + " " + e2);
          throw new IOException(e2);
       }
-      HConnectionManager.deleteStaleConnection(targetTableConnection);
       if (LOG.isTraceEnabled()) LOG.trace("deleteEntriesOlderThanASN tlog callable requests completed in thread "
             + threadId);
       return;

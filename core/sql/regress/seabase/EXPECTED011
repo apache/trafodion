@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Sat Jan 23 04:06:15 2016
+-- Definition current  Wed Mar  2 05:16:53 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -142,7 +142,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212320281977039065
+PLAN_ID .................. 212323655814425974
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -178,10 +178,11 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... 2
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   QUERY_CACHE ............ 0
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 3130652840489752733
+  ObjectUIDs ............. 4553793696580766799
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -1268,7 +1269,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Sat Jan 23 04:08:38 2016
+-- Definition current  Wed Mar  2 05:18:55 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1450,7 +1451,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000005561212320281953925061000000000206U3333300_1924_EXPLSTMT
+MXID11000008089212323655795185001000000000206U3333300_1994_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1502,7 +1503,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000005561212320281953925061000000000206U3333300_1935_EXPLSTMT2
+MXID11000008089212323655795185001000000000206U3333300_2005_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -2067,91 +2068,6 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>-- tests for alter column
->>create table t011t7(a int not null, b varchar(2), 
-+>   c varchar(4) character set utf8 not null);
-
---- SQL operation complete.
->>invoke t011t7;
-
--- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Sat Jan 23 04:09:41 2016
-
-  (
-    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , B                                VARCHAR(2) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>alter table t011t7 alter column b varchar(3);
-
---- SQL operation complete.
->>invoke t011t7;
-
--- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Sat Jan 23 04:09:45 2016
-
-  (
-    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>alter table t011t7 alter column c varchar(5) character set utf8;
-
---- SQL operation complete.
->>invoke t011t7;
-
--- Definition of Trafodion table TRAFODION.SCH.T011T7
--- Definition current  Sat Jan 23 04:09:49 2016
-
-  (
-    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , B                                VARCHAR(3) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  , C                                VARCHAR(20 BYTES) CHARACTER SET UTF8
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>
->>-- negative tests for alter column
->>alter table t011t7 alter column a largeint;
-
-*** ERROR[1404] Column A cannot be altered. Reason: Old and New datatypes must be VARCHAR.
-
---- SQL operation failed with errors.
->>alter table t011t7 alter column b int;
-
-*** ERROR[1404] Column B cannot be altered. Reason: Old and New datatypes must be VARCHAR.
-
---- SQL operation failed with errors.
->>alter table t011t7 alter column b varchar(4) character set utf8;
-
-*** ERROR[1404] Column B cannot be altered. Reason: Old and New character sets must be the same.
-
---- SQL operation failed with errors.
->>alter table t011t7 alter column c varchar(6);
-
-*** ERROR[1404] Column C cannot be altered. Reason: Old and New character sets must be the same.
-
---- SQL operation failed with errors.
->>alter table t011t7 alter column b varchar(2);
-
-*** ERROR[1404] Column B cannot be altered. Reason: New length must be greater than or equal to old length.
-
---- SQL operation failed with errors.
->>alter table t011t7 alter column c varchar(4) character set utf8;
-
-*** ERROR[1404] Column C cannot be altered. Reason: New length must be greater than or equal to old length.
-
---- SQL operation failed with errors.
 >>
 >>
 >>
@@ -2191,7 +2107,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>
 >>drop table t011t7;
 
---- SQL operation complete.
+*** ERROR[1389] Object TRAFODION.SCH.T011T7 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
 >>
 >>-- delete explain for statement explstmt from repository
 >>set parserflags 131072;

@@ -3300,9 +3300,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TEST_PASS_TWO_ASSERT_TASK_NUMBER,	"-1"),
 
  XDDintN2(TIMEOUT,				"6000"),
-
-  DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
-  DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
+ 
+ DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
+ DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
 
@@ -3313,6 +3313,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
 
  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
+ DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
@@ -3404,6 +3406,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_AUTO_FLUSH,                      "OFF"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
+  DDkwd__(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS,   "OFF"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),

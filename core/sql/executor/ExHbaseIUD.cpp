@@ -494,6 +494,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	    retcode = createDirectRowBuffer( hbaseAccessTdb().convertTuppIndex_,
                                              convertRow_,
                                              hbaseAccessTdb().listOfUpdatedColNames(),
+                                             hbaseAccessTdb().listOfOmittedColNames(),
                                              (hbaseAccessTdb().hbaseSqlIUD() ? FALSE : TRUE));
 
 	    if (retcode == -1)
@@ -880,6 +881,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 				      hbaseAccessTdb().convertTuppIndex_,
 				      convertRow_,
 				      hbaseAccessTdb().listOfUpdatedColNames(),
+				      hbaseAccessTdb().listOfOmittedColNames(),
 				      TRUE);
 	    if (retcode == -1)
 	      {
@@ -1492,6 +1494,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
                                       hbaseAccessTdb().convertTuppIndex_,
                                       convertRow_,
                                       hbaseAccessTdb().listOfUpdatedColNames(),
+                                      hbaseAccessTdb().listOfOmittedColNames(),
                                       FALSE, //TRUE,
                                       &posVec_,
                                       samplingRate);
@@ -2002,6 +2005,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    retcode = tcb_->createDirectRowBuffer( tcb_->hbaseAccessTdb().updateTuppIndex_,
 					    tcb_->updateRow_, 
 					    tcb_->hbaseAccessTdb().listOfUpdatedColNames(),
+                                            tcb_->hbaseAccessTdb().listOfOmittedColNames(),
 					    TRUE);
 	    if (retcode == -1)
 	      {
@@ -2060,7 +2064,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	    retcode = tcb_->createDirectRowBuffer( tcb_->hbaseAccessTdb().mergeInsertTuppIndex_,
 					    tcb_->mergeInsertRow_,
-					    tcb_->hbaseAccessTdb().listOfMergedColNames());
+					    tcb_->hbaseAccessTdb().listOfMergedColNames(),
+				            tcb_->hbaseAccessTdb().listOfOmittedColNames());
 	    if (retcode == -1)
 	      {
 		step_ = HANDLE_ERROR;
@@ -2947,6 +2952,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 				 tcb_->hbaseAccessTdb().updateTuppIndex_,
 				 tcb_->updateRow_,
 				 tcb_->hbaseAccessTdb().listOfUpdatedColNames(),
+				 tcb_->hbaseAccessTdb().listOfOmittedColNames(),
 				 TRUE);
 	    if (retcode == -1)
 	      {
@@ -4191,7 +4197,8 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    retcode = createDirectRowBuffer(
 				      hbaseAccessTdb().updateTuppIndex_,
 				      updateRow_,
-				      hbaseAccessTdb().listOfUpdatedColNames(),
+			  	      hbaseAccessTdb().listOfUpdatedColNames(),
+				      hbaseAccessTdb().listOfOmittedColNames(),
 				      TRUE);
 	    if (retcode == -1) {
 		step_ = HANDLE_ERROR;

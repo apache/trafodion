@@ -737,7 +737,8 @@ for i in $prettyfiles; do
     logtxt="### FAIL ($diffsize lines$knownsize)     ###$logtxt"
   fi
   echo $logtxt
-  echo "`date +'%D %T'`  $test 	$logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $log | cut -d'.' -f1`
+  echo "$modtime  $test  $logtxt" >> $rgrlog
   echo
 
 done # for i in $prettyfiles

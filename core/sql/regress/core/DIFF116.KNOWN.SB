@@ -1,0 +1,21 @@
+467c467,469
+< --- SQL operation complete.
+---
+> *** ERROR[8606] Transaction subsystem TMF returned error 73 on a commit transaction.
+> 
+> --- SQL operation failed with errors.
+470,471c472
+< -- Definition of table #CAT.#SCH.T116T1
+< -- Definition current
+---
+> *** ERROR[4254] Object #CAT.#SCH.T116T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+473,475c474
+<  (
+<  A INT NO DEFAULT NOT NULL NOT DROPPABLE
+<  )
+---
+> *** ERROR[4082] Object #CAT.#SCH.T116T1 does not exist or is inaccessible.
+477c476
+< --- SQL operation complete.
+---
+> --- SQL operation failed with errors.

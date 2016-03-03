@@ -176,34 +176,34 @@ setupdir:
 	mkdir -p $(EXPORTLIB_DIR)
 	mkdir -p $(EXPORTINCSQL_DIR)
 	mkdir -p $(EXPORTINCEVL_DIR)
+	@# side-effect directory creation in these targets
 	-cd monitor/linux; $(MAKE) setup
 	-cd src/win; $(MAKE) setup
 	-cd src/seabed; $(MAKE) setup
 	-cd src/tm; $(MAKE) setup
-	cd sql; $(MAKE) WROOT=$(SQL_W) setup
 	-cd sqevlog; $(MAKE) setup
-	-@./makelink ../../mondump $(EXPORTBIN_DIR)
-	-@./makelink ../../sqid $(EXPORTBIN_DIR)
-	-@./makelink ../../sqinfo $(EXPORTBIN_DIR)
-	-@./makelink ../../sqvers $(EXPORTBIN_DIR)
-	@# SQL .mdf files
-
+	@# builds/copies 3rd party dependencies as necessary
+	cd sql; $(MAKE) WROOT=$(SQL_W) setup
+	@# commands to export
+	-ln -sf ../../mondump $(EXPORTBIN_DIR)
+	-ln -sf ../../sqid $(EXPORTBIN_DIR)
+	-ln -sf ../../sqinfo $(EXPORTBIN_DIR)
+	-ln -sf ../../sqvers $(EXPORTBIN_DIR)
 	@# SQL Messages .txt file
-	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
-
+	-ln -sf $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
 	@# copy some header files
 	-ln -sf $(SQL_W)/cli/sqlcli.h $(EXPORTINCSQL_DIR)
 	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
 	@#
-	-mkdir -p export/include/nsk
-	-cp -p inc/cextdecs/cextdecs.h export/include/nsk
+	mkdir -p export/include/nsk
+	-ln -sf inc/cextdecs/cextdecs.h export/include/nsk
 	@# USTAT
 	-mkdir -p export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/USAS.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/FillAutoTbl.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/RunLogUstats.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/StopAutoStats.sh export/lib/mx_ustat
-	-cp -f $(SQL_W)/ustat/stats_profile export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/USAS.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/FillAutoTbl.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/RunLogUstats.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/StopAutoStats.sh export/lib/mx_ustat
+	-ln -sf $(SQL_W)/ustat/stats_profile export/lib/mx_ustat
 
 # "setupdir" target clean up
 setupdir_clean:

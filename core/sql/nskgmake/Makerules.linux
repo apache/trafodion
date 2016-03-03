@@ -418,18 +418,15 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 #   need extra command to get the link (without extra libs)
 copytoolslibs:
 	mkdir -p $(LIBROOT)
-	-(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
-	           $(HADOOP_LIB_DIR)/$(LIBHADOOP_SO) \
-	           $(THRIFT_LIB_DIR)/$(THRIFT_SO) \
-	           $(LOG4CXX_LIB_DIR)/$(LOG4CXX_SO); \
-	 do\
-	   cp -Pf $$i* $(LIBROOT); \
-	 done\
-	)
-	-cp -Pf $(THRIFT_LIB_DIR)/libthrift.so $(LIBROOT)
+	# these must be found
+	cp -Pf $(LOG4CXX_LIB_DIR)/$(LOG4CXX_SO)* $(LIBROOT)
+	cp -Pf $(THRIFT_LIB_DIR)/$(THRIFT_SO)* $(LIBROOT)
+	cp -Pf $(THRIFT_LIB_DIR)/libthrift.so $(LIBROOT)
+	# if these are not found, then...
+	-cp -Pf $(HADOOP_LIB_DIR)/$(LIBHDFS_SO)* $(LIBROOT)
+	-cp -Pf $(HADOOP_LIB_DIR)/$(LIBHADOOP_SO)* $(LIBROOT)
 	-cp -Pf $(HADOOP_INC_DIR)/hdfs.h $(MY_SQROOT)/export/include
-	# if the above did not copy the files yet,
-	# download Hadoop and make the hdfs library
+	# download Hadoop source and build the hdfs library
 	get_libhdfs_files --verbose
 
 linuxmklinksdebug linuxmklinksrelease: copytoolslibs

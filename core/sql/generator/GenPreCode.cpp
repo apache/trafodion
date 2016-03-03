@@ -4504,19 +4504,6 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
     {
       ItemExpr * item_expr = val_id.getItemExpr();
 
-      if (isMerge())
-	{
-	  // column being updated must be from the same table that is being
-	  // updated.
-	  if (((BaseColumn *)(item_expr->child(0)->castToItemExpr()))->getTableDesc() !=
-	      getTableDesc())
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-3241)
-				  << DgString0("Invalid column being updated.");
-	      GenExit();
-	    }
-	}
-
       for (short i = 0; i < getTableDesc()->getNATable()->getKeyCount(); i++)
 	{
 	  const char * key_colname = key_column_array[i]->getColName();

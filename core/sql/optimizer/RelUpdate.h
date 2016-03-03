@@ -928,6 +928,7 @@ private:
   // LeafDelete (IM). Only insert/delete if TRUE
   ItemExpr *preconditionTree_;
   ValueIdSet precondition_;
+ 
 
 };
 
@@ -1441,6 +1442,7 @@ public:
 
   ItemExpr * insertCols() {return insertCols_;}
   virtual ItemExpr * insertValues() { return insertValues_;}
+
   NABoolean xformedUpsert() {return xformedUpsert_;}
   void setXformedUpsert() {xformedUpsert_ = TRUE;}
 private:

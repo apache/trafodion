@@ -911,12 +911,13 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
 //
 // method:  getReferencingTablesForConstraints
 //
-// This method returns the list of underlying tables that are associated with
-// RI constraints referencing an ObjectUsage.
+// This method returns the list of underlying tables and their columns that are 
+// associated with RI constraints referencing an ObjectUsage.
 //
 // An RI constraint is a relationship between a set of columns on one table 
-// with a set of columns on another table.  Each set of columns must be
-// defined as an unique constraint (which include primary key constraints.  
+// (the referencing table) with a set of columns on another table (the 
+// referenced table).  The set of columns must be defined as an unique 
+// constraint (which include primary key constraints) on the referenced table.  
 // Relationships are stored through the constraints not their underlying tables.
 //
 //  for example:
@@ -926,25 +927,41 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
 //    
 //    user2:
 //      create table empl (empl_no int not null primary key, dept_no int, ... );
-//      alter table empl add constraint empl_dept foreign key references dept;
+//      alter table empl 
+//          add constraint empl_dept foreign key(dept_no) references dept;
 //
 //  empl_dept is the name of the RI constraint
 //     The empl table references dept 
 //     The dept table is being referenced by empl
 //
-//  The following query is called to get the list of tables:  
-//    <Gets underlying table for the foreign key's constraint>
-//    select distinct o.object_uid, o.object_owner, o.create_time
-//    from table_constraints t, objects o
-//      where o.object_uid = t.table_uid;
-//      and t.constraint_uid in
+//  The following query is called to get the list of tables and their columns:  
+//    <Gets underlying table and columns for the foreign key's constraint>
+//    select (for referenced table)
+//       objects (o): object_uid, object_owner, object_type, create_time, name,
+//       list of columns (c): column_number
+//    from table_constraints t, objects o, unique_ref_constr_usage u
+//         (list of foreign key/unique constraint uids on referenced table) r,
+//         (list of column numbers on referenced table's unique constraints) c
+//    where o.object_uid = t.table_uid
+//      and t.constraint_uid = r.foreign_constraint_uid
+//      and r.unique_constraint_uid = c.object_uid
+//    order by object_owner & create time
 //
-//        <Gets foreign key's constraints referencing table>
-//        (select foreign_constraint_uid
-//        from table_constraints t, unique_ref_constr_usage u
-//           where t.table_uid = objectUsage.objectUID
-//           and t.constraint_uid = u.unique_constraint_uid)
-//        order by o.create_time
+//    <Get list of foreign key/unique constraint uids on reference table>
+//    (select foreign_constraint_uid, unique_constraint_uid
+//     from table_constraints t, unique_ref_constr_usage u
+//     where t.table_uid = objectUsage.objectUID
+//       and t.constraint_uid = u.unique_constraint_uid)
+//     order by o.create_time
+//
+//    <Get list of column numbers on referenced table's unique constraints>
+//    (select object_uid, column_number, column_name
+//     from TRAFODION."_MD_".KEYS 
+//     where object_uid in
+//       (select unique_constraint_uid
+//        from TABLE_CONSTRAINTS t,UNIQUE_REF_CONSTR_USAGE u
+//        where t.table_uid = objectUsage.objectUID
+//          and t.constraint_uid = u.unique_constraint_uid))
 //    
 // input:  ObjectUsage - object desiring list of referencing tables
 //         In the example above, this would be the DEPT table
@@ -962,29 +979,41 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
     trafMetadataLocation_ + ".OBJECTS o";
   std::string tblConstraintsMDTable = 
     trafMetadataLocation_ + ".TABLE_CONSTRAINTS t";
+  std::string keysMDTable = 
+    trafMetadataLocation_ + ".KEYS k";
   std::string uniqueRefConstraintsMDTable = 
     trafMetadataLocation_ + ".UNIQUE_REF_CONSTR_USAGE u";
 
   // Select all the constraints that are referenced by the table
-  // create_time is included to order by the oldest to newest
   std::string selectStmt = "select distinct o.object_uid, o.object_owner, o.object_type, o.create_time, ";
   selectStmt += "trim(o.catalog_name) || '.\"' || ";
-  selectStmt += "trim (o.schema_name) || '\".\"' ||";
-  selectStmt += "trim (o.object_name)|| '\"' from ";
+  selectStmt +=   "trim (o.schema_name) || '\".\"' ||";
+  selectStmt +=   "trim (o.object_name)|| '\"' ";
+  selectStmt += ", c.column_number "; 
+  selectStmt += "from " + uniqueRefConstraintsMDTable + std::string(", ");
   selectStmt += tblConstraintsMDTable + std::string(", ") + objectsMDTable;
-  selectStmt += " where o.object_uid = t.table_uid and t.constraint_uid in ";
-  selectStmt += "(select foreign_constraint_uid from ";
+  selectStmt += " , (select foreign_constraint_uid, unique_constraint_uid from ";
   selectStmt += tblConstraintsMDTable + std::string(", ") + uniqueRefConstraintsMDTable;
   selectStmt += " where t.table_uid = " + UIDToString(objectUsage.objectUID);
-  selectStmt += " and t.constraint_uid = u.unique_constraint_uid)";
-  selectStmt += " order by o.create_time ";
+  selectStmt += " and t.constraint_uid = u.unique_constraint_uid) r ";
+  selectStmt += " , (select object_uid, column_number, column_name from ";
+  selectStmt += keysMDTable;
+  selectStmt += " where object_uid in (select unique_constraint_uid from ";
+  selectStmt += tblConstraintsMDTable + std::string(", ") ; 
+  selectStmt += uniqueRefConstraintsMDTable + std::string(" where t.table_uid = ");
+  selectStmt += UIDToString(objectUsage.objectUID);
+  selectStmt += " and t.constraint_uid = u.unique_constraint_uid)) c ";
+  selectStmt += "where o.object_uid = t.table_uid ";
+  selectStmt += " and t.constraint_uid = r.foreign_constraint_uid ";
+  selectStmt += " and r.unique_constraint_uid = c.object_uid ";
+  selectStmt += " order by o.object_owner, o.create_time ";
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
-// set pointer in diags area
-int32_t diagsMark = pDiags_->mark();
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
 
   int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
@@ -1004,35 +1033,74 @@ int32_t diagsMark = pDiags_->mark();
   char value[MAX_SQL_IDENTIFIER_NAME_LEN + 1];
   objectsQueue->position();
 
+  std::vector<ColumnReference *> *columnReferences = new std::vector<ColumnReference *>;
+  ObjectReference *pObjectReference(NULL);
+  ColumnReference *pColumnReference(NULL);
+  int64_t currentObjectUID = 0;
+
   // Set up an objectReference for any objects found, the caller manages
   // space for this list
   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
   {
     OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
-    ObjectReference *pObjectReference = new ObjectReference;
 
     // column 0:  object uid
     pCliRow->get(0,ptr,len);
-    pObjectReference->objectUID = *(reinterpret_cast<int64_t*>(ptr));
+    int64_t nextObjectUID = *(reinterpret_cast<int64_t*>(ptr));
 
-    // column 1: object owner
-    pCliRow->get(1,ptr,len);
-    pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
+    // If a new object uid then save previous object reference
+    // and prepare for new object reference
+    if (nextObjectUID != currentObjectUID)
+    {
+      // Save off previous reference, if previous reference exists
+      if (currentObjectUID > 0)
+      {
+        pObjectReference->columnReferences = columnReferences;
+        objectReferences.push_back(pObjectReference);
+      }
+      currentObjectUID = nextObjectUID;
 
-    // column 2: object type
-    pCliRow->get(2,ptr,len);
-    strncpy(value, ptr, len);
-    value[len] = 0;
-    pObjectReference->objectType = ObjectLitToEnum(value);
+      // prepare for new object reference
+      pObjectReference = new ObjectReference;
+      columnReferences = new std::vector<ColumnReference *>;
 
-    // column 3: object name
-    pCliRow->get(3,ptr,len);
-    strncpy(value, ptr, len);
-    value[len] = 0;
-    pObjectReference->objectName = value;
+      // object UID
+      pObjectReference->objectUID = nextObjectUID;
 
-    objectReferences.push_back(pObjectReference);
+      // column 1: object owner
+      pCliRow->get(1,ptr,len);
+      pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
+
+      // column 2: object type
+      pCliRow->get(2,ptr,len);
+      strncpy(value, ptr, len);
+      value[len] = 0;
+      pObjectReference->objectType = ObjectLitToEnum(value);
+
+      // skip create_time (column 3)
+    
+      // column 4: object name
+      pCliRow->get(4,ptr,len);
+      strncpy(value, ptr, len);
+      value[len] = 0;
+      pObjectReference->objectName = value;
+      
+    }
+
+    // set up the column reference
+    // column 5: column number
+    ColumnReference *pColumnReference = new ColumnReference;
+    pCliRow->get(5,ptr,len);
+    pColumnReference->columnOrdinal = *(reinterpret_cast<int32_t*>(ptr));
+
+    // add to column list
+    columnReferences->push_back(pColumnReference);
   }
+
+  //  Add the final object reference to list
+  pObjectReference->columnReferences = columnReferences;
+  objectReferences.push_back(pObjectReference);
+
   return STATUS_GOOD;
 }
 
@@ -1053,21 +1121,23 @@ int32_t diagsMark = pDiags_->mark();
 //    
 //    user2:
 //      create table empl (empl_no int not null primary key, dept_no int, ... );
-//      alter table empl add constraint empl_dept foreign key references dept;
+//      alter table empl add constraint empl_dept foreign key(dept_no) references dept;
 //
 // This method returns the constraint named empl_dept
 //
 // The following query is called to get the constraint name:
 //
 // select [first 1] object_name as referenced_constraint_name 
-//   from objects o, table_constraints t
+//   from objects o, table_constraints t, keys k
 //   where o.object_uid = t.constraint_uid 
 //     and t.table_uid = <referencing table UID>
 //     and t.constraint_uid in 
 //        (select ref_constraint_uid from ref_constraints
 //         where unique_constraint_uid in 
 //            (select constraint_uid from table_constraints
-//             where t.table_uid = <referenced table uid>)) 
+//             where t.table_uid = <referenced table uid> 
+//               and constraint_uid = k.object_uid
+//               and k.column_number = <column number>))
 //
 // input:   referencedTableUID - the referenced table
 //          in the example above, the is the DEPT table UID
@@ -1085,6 +1155,7 @@ int32_t diagsMark = pDiags_->mark();
 bool PrivMgrMDAdmin::getConstraintName(
   const int64_t referencedTableUID,
   const int64_t referencingTableUID,
+  const int32_t columnNumber,
   std::string &constraintName)
 {
   std::string objectsMDTable = trafMetadataLocation_ + ".OBJECTS o";
@@ -1092,6 +1163,8 @@ bool PrivMgrMDAdmin::getConstraintName(
     trafMetadataLocation_ + ".TABLE_CONSTRAINTS t";
   std::string refConstraintsMDTable = 
     trafMetadataLocation_ + ".REF_CONSTRAINTS u";
+  std::string keysMDTable = 
+    trafMetadataLocation_ + ".KEYS k";
 
   // select object_name based on passed in object UID
   std::string quote("\"");
@@ -1103,11 +1176,12 @@ bool PrivMgrMDAdmin::getConstraintName(
   selectStmt += " where o.object_uid = t.constraint_uid";
   selectStmt += " and t.table_uid = " + UIDToString(referencingTableUID);
   selectStmt += " and t.constraint_uid in (select ref_constraint_uid from ";
-  selectStmt += refConstraintsMDTable;
+  selectStmt += refConstraintsMDTable + ", " + keysMDTable;
   selectStmt += " where unique_constraint_uid in ";
   selectStmt += " (select constraint_uid from " + tblConstraintsMDTable;
   selectStmt += " where t.table_uid = " + UIDToString(referencedTableUID);
-  selectStmt += "))";
+  selectStmt += ") and k.column_number = " + UIDToString(columnNumber);
+  selectStmt += " and unique_constraint_uid = k.object_uid) ";
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
@@ -1145,6 +1219,7 @@ int32_t diagsMark = pDiags_->mark();
   
   return true;
 }
+
 
 // ----------------------------------------------------------------------------
 // method: compareTableDefs

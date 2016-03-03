@@ -332,6 +332,7 @@ protected:
 
   short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
                         Queue * listOfColNames,
+                        Queue * listOfOmittedColNames,
 			NABoolean isUpdate = FALSE,
 			std::vector<UInt32> * posVec = NULL,
 			double sampleRate = 0.0);
