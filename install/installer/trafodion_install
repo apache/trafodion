@@ -103,9 +103,9 @@ do
                   exit -1
                fi
             else
-               supportedHBase=$(echo $version | grep "1.1.1" | wc -l)
+               supportedHBase=$(echo $version | grep "1.1.2" | wc -l)
                if [[ $supportedHBase -eq "0" ]]; then
-                  echo "***ERROR: HBase installed must be 1.1.1 on node $node"
+                  echo "***ERROR: HBase installed must be 1.1.2 on node $node"
                   exit -1
                fi
             fi
@@ -759,7 +759,7 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
       $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
       if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
          echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
-         $TRAF_PDCP $LDAP_CERT $HOME
+         $TRAF_PCP $LDAP_CERT $HOME
          $TRAF_PDSH sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
          $TRAF_PDSH sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
          $TRAF_PDSH sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
@@ -802,6 +802,19 @@ else
 fi
 
 echo "***INFO: Trafodion Mods ran successfully."
+
+#Get HBaseSite.xml information 
+$LOCAL_WORKDIR/parseHBaseSite.py
+
+if [[ $HADOOP_TYPE == "cloudera" ]]; then
+   sudo chmod 777 $TRAF_CONFIG
+   sed -i '/HBASE_MASTER_INFO_PORT\=/d' $TRAF_CONFIG
+   echo "export HBASE_MASTER_INFO_PORT=\"60010\"" >> $TRAF_CONFIG
+   sed -i '/REGIONSERVER_INFO_PORT\=/d' $TRAF_CONFIG
+   echo "export REGIONSERVER_INFO_PORT=\"60030\"" >> $TRAF_CONFIG 
+   sudo chmod 777 $TRAF_CONFIG
+
+fi
 
 #==============================================
 #Install Trafodion
