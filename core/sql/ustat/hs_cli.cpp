@@ -5751,6 +5751,8 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
 
     HSLogMan *LM = HSLogMan::Instance();
 
+    HSFuncExecQuery("CQD DEFAULT_CHARSET 'ISO88591'"); // to avoid buffer overruns in row
+
     NAString ppStmtStr = ppStmtText;
     ppStmtStr.append((char *)stmt->identifier).append("')) ORDER BY SEQ_NUM DESC;");
 
@@ -5794,11 +5796,15 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
             LM->Log(LM->msg);
           }
         else if (retcode != 100)
-          HSLogError(retcode);
+          {
+            HSFuncExecQuery("CQD DEFAULT_CHARSET RESET");
+            HSLogError(retcode);
+          }
       }
 
     // ppStmtId will be closed by ~HSCursor if closeStmtNeeded_ is set.
 
+    HSFuncExecQuery("CQD DEFAULT_CHARSET RESET");
     return retcode;
   }
 
