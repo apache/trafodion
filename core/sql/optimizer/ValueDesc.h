@@ -194,9 +194,9 @@ public:
   NABoolean isSaltColumn() const;
 
   // return TRUE if I am a ValueId associated with an Index Column, or
-  // a base column , and I am an added column with a default value that is not
+  // a base column , and I am a column with a default value that is not
   // null.
-  NABoolean isAddedColumnWithNonNullDefault() const;
+  NABoolean isColumnWithNonNullDefault() const;
 
   // ---------------------------------------------------------------------
   // change the ValueId's type to the given type

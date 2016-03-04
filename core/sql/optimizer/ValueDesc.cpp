@@ -514,7 +514,7 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
 }
 
 
-NABoolean ValueId::isAddedColumnWithNonNullDefault() const{
+NABoolean ValueId::isColumnWithNonNullDefault() const{
   NAColumn * nac = NULL;
   ItemExpr *ck = getItemExpr();
   if ( ck == NULL )
@@ -529,12 +529,11 @@ NABoolean ValueId::isAddedColumnWithNonNullDefault() const{
   default:
       break;
   }
-  if (nac && nac->isAddedColumn() && nac->getDefaultValue())
+  if (nac &&  nac->getDefaultValue() && strcmp(nac->getDefaultValue(),"NULL") != 0)
       return TRUE;
   else
       return FALSE;
 }
-
 
 
 // Since we *can* have an INSTANTIATE_NULL inside a VEG_REFERENCE, a loop
