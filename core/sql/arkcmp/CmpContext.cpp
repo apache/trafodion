@@ -906,7 +906,17 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         break;
       } // end of case (CmpMessageObj::SET_TRANS)
 
-      case (CmpMessageObj::INTERNALSP_REQUEST) :
+       case (CmpMessageObj::DDL_NATABLE_INVALIDATE) :
+      {
+        cmpStatement = new CTXTHEAP CmpStatement(this);
+        CmpMessageDDLNATableInvalidate ddlInvalidateStmt(data, data_len, CTXTHEAP);
+        Assign_SqlParser_Flags(parserFlags);
+        rs = cmpStatement->process(ddlInvalidateStmt);
+        copyData = TRUE;
+        break;
+      } // end of case (CmpMessageObj::DDL_NATABLE_INVALIDATE)
+
+     case (CmpMessageObj::INTERNALSP_REQUEST) :
       { 
         //request is from ExStoredProcTcb::work(), 
         cmpStatement = new CTXTHEAP CmpStatementISP(this);

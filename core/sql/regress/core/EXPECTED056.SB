@@ -1127,7 +1127,6 @@ ORDERS       SmallInt  VCH1  VCH2
 
 --- 14 row(s) selected.
 >>
->>--#ifndef SEABASE_REGRESS
 >>begin work;
 
 --- SQL operation complete.
@@ -1149,21 +1148,23 @@ ORDERS       SmallInt  VCH1  VCH2
 >>
 >>alter table T056t34 add vch3 varchar(3) default 'neo';
 
-*** ERROR[20123] A user-defined transaction has been started. This DDL operation cannot be performed.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
+>>update T056t34 set vch3 = 'new' where vch1 = 'v';
+
+--- 1 row(s) updated.
+>>
+>>rollback;
+
+--- SQL operation complete.
+>>
+>>-- this should return error. Col vch3 will be removed as part of rollback.
 >>update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 *** ERROR[4001] Column VCH3 is not found.  Tables in scope: TRAFODION.SCH.T056T34.  Default schema: TRAFODION.SCH.
 
 *** ERROR[8822] The statement was not prepared.
 
->>
->>rollback;
-
---- SQL operation complete.
->>--#endif
 >>
 >>delete from T056t34 where orders > 2 and orders < 12
 +>                       or orders = 51;

@@ -113,8 +113,10 @@ void deleteVirtExplainTableDesc(desc_struct *);
 
 
 short GenericUtilExpr::processOutputRow(Generator * generator,
-                                        const Int32 work_atp, const Int32 output_row_atp_index,
-                                        ex_cri_desc * returnedDesc)
+                                        const Int32 work_atp, 
+                                        const Int32 output_row_atp_index,
+                                        ex_cri_desc * returnedDesc,
+                                        NABoolean noAtpOrIndexChange)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
@@ -155,11 +157,14 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
   // it.
   NADELETEBASIC(attrs, generator->wHeap());
 
-  // The output row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
-  
+  if (NOT noAtpOrIndexChange)
+    {
+      // The output row will be returned as the last entry of the returned atp.
+      // Change the atp and atpindex of the returned values to indicate that.
+      expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+                                   0, returnedDesc->noTuples()-1);
+    }
+
   return 0;
 }
                                     
@@ -243,7 +248,10 @@ short ExeUtilProcessVolatileTable::codeGen(Generator * generator)
   if (isHbase_)
     {
       pvt_tdb->setHbaseDDL(TRUE);
-      pvt_tdb->setHbaseDDLNoUserXn(TRUE);
+
+      if ((NOT getExprNode()->castToStmtDDLNode()->ddlXns()) &&
+          (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+        pvt_tdb->setHbaseDDLNoUserXn(TRUE);
     }
 
   // no tupps are returned
@@ -1513,7 +1521,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     }
 
   short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
-                              returnedDesc);
+                              returnedDesc, TRUE);
   if (rc)
     {
       return -1;
@@ -1545,6 +1553,11 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       expGen->generateExpr(pred->getValueId(),ex_expr::exp_SCAN_PRED,&scanExpr);
     }
   
+  // The output row will be returned as the last entry of the returned atp.
+  // Change the atp and atpindex of the returned values to indicate that.
+  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+			       0, returnedDesc->noTuples()-1);
+
   struct QueryInfoStruct
   {
     const char * ausStr;

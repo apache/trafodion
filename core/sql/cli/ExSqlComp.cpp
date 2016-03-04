@@ -1280,6 +1280,11 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
 	CmpMessageSetTrans(input_data,(CmpMsgBufLenType)size,h_);
       break;
       
+    case EXSQLCOMP::DDL_NATABLE_INVALIDATE :
+      request = new(h_) 
+	CmpMessageDDLNATableInvalidate(input_data,(CmpMsgBufLenType)size,h_);
+      break;
+      
     case EXSQLCOMP::DATABASE_USER :
       request = new(h_) 
 	CmpMessageDatabaseUser(input_data,(CmpMsgBufLenType)size,h_);

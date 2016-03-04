@@ -1,0 +1,208 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[tables-indexes]]
+= Tables and Indexes
+
+The following guidance helps you set up your tables and indexes for better load performance.
+
+[[choose-primary-key]]
+== Choose Primary Key
+
+The primary key for a Trafodion table must be chosen based on the workload that  accesses the table.
+
+Keyed access to Trafodion tables is very efficient since HBase is a key-value store. You need to analyze the queries
+that are used to access the tables to understand their predicates and join conditions. Once identified, you can 
+choose a primary key that ensures that the leading key columns have highly selective predicates applied to them.
+
+This technique limits the number of rows that need to scanned in the HBase. Trafodion uses MDAM (Multi Dimensional Access Method) to limit
+the rows scanned when predicates are present to only trailing key columns and not the leading key column. MDAM works best when the
+unique entry count of leading key columns (on which predicates are absent) is low.
+
+[[salting]]
+== Salting 
+
+With range partitioned data in some workloads, certain key ranges of data may see more access than other key ranges. This can lead to an
+unbalanced usage pattern with some HBase RegionServers handling most of the load. This behavior is referred to as "hot-spotting."
+
+With Native HBase tables, hot-spotting is often addressed by designing appropriate keys. In Trafodion, once you choose the key to a table, as
+discussed in <<choose-primary-key,Choose Primary Key>>, you can use *salting* to distribute the data evenly. Salting applies a
+hash function to the salt keys and distributes data to partitions based on this hash value. The hash value is physically stored in the
+table as the leading key value. Each split of the table will have only one salt key value. 
+
+The salting key can be any subset (including the whole set) of the primary key. It is a good practice to keep the salting key as small 
+as possible. The key should provide an even distribution of data, which can be achieved when the key values have a large unique entry 
+count and no significant skew.
+
+The number of partitions must also be specified during table creation. You choose the number of partition depending on the size of the 
+cluster and the expected size of the table. A salted table can split if more data is added to it than initially estimated. If this
+happens, then more than one partition having rows with the same salt value, which may result in suboptimal execution plans for the table.
+
+You can also choose not to salt Trafodion tables. This is similar to range partitioning in a traditional database. The number of partitions
+grows with the size of the table, and range boundaries are determined by HBase based on the specified split policy.
+
+[[compression-encoding]]
+== Compression and Encoding
+
+Large Trafodion tables must be encoded and compressed. Trafodion tables that have a large key or several columns grow in size to 10X or more
+when compared to a Hive table with equivalent data since HBase stores the key separately for every column in a row. 
+
+HBase provides several types of encoding to avoid storing the same key value to disk for every column in the row. HBase also supports various
+types of compression of the entire data block, regardless whether it is encoded or not.
+
+See http://hbase.apache.org/book.html#compression[Appendix E: Compression and Data Block Encoding In HBase] in the
+http://hbase.apache.org/book.html[Apache HBase Reference Guide] for a comparison of various compression and encoding algorithms. 
+
+For a discussion on the space savings achieved by various types of encoding and compression schemes, please see the
+https://blogs.apache.org/hbase/category/General["The Effect of ColumnFamily, RowKey and KeyValue Design on HFile Size"] HBase blog entry,
+dated Friday April 11, 2014. 
+
+The performance of an algorithm is also a relevant factor when deciding on the type of compression. For more information, see slides 6, 7, 
+and 8 of Govind Kamat's and Sumeet Singh's presentation,
+http://www.slideshare.net/Hadoop_Summit/kamat-singh-june27425pmroom210cv2["Compression Options in Hadoop - A Tale of Tradeoffs"].
+
+[[create-trafodion-tables-and-indexes]]
+== Create Tables and Indexes 
+
+Create Trafodion tables using the CREATE TABLE statements with the `SALT USING <num> PARTITIONS` clause for salting and
+the `HBASE_OPTIONS` clause for compression and encoding.
+
+*Example*
+
+```
+CREATE TABLE trafodion.sch.demo
+( demo_sk INT NOT NULL
+, name VARCHAR(100)
+, PRIMARY KEY (demo_sk)
+)
+HBASE_OPTIONS
+( DATA_BLOCK_ENCODING = 'FAST_DIFF'
+, COMPRESSION = 'SNAPPY'
+, MEMSTORE_FLUSH_SIZE = '1073741824'
+)
+SALT USING 8 PARTITIONS ON (demo_sk);
+```
+
+ANY indexes on the table may be salted or not. However, if they are salted, their salting key and number of partitions must be the same as the table.
+
+*Example*
+
+```
+CREATE INDEX demo_ix ON sch.demo(name)
+HBASE_OPTIONS
+( DATA_BLOCK_ENCODING = 'FAST_DIFF'
+, COMPRESSION = 'GZ'
+)
+SALT LIKE TABLE;
+```
+
+== Update Statistics
+
+To generate good plans that allow queries to execute quickly and use resources wisely, the Trafodion Optimizer must have a good idea about how the
+values of columns are distributed, the number of distinct values, and so on. Trafodion supplies this information to the optimizer in the
+form of histograms generated by executing the UPDATE STATISTICS statement. See the
+http://trafodion.apache.org/docs/sql_reference/index.html#update_statistics_statement[Trafodion SQL Reference Manual] for a full
+description of this statement.
+
+=== Default Sampling
+While accurate statistics are important, the time required to generate them by reading every row in the table may be prohibitive and is
+usually unnecessary. Random sampling of the rows of the table can give adequate results in a fraction of the time required to read all
+the values in the table. For most situations, the best option is to simply specify SAMPLE at the end of the UPDATE STATISTICS statement,
+which will use the default sampling protocol. For example, to use default sampling in the construction of histograms for each column of
+table T1, you would execute the following statement:
+
+```
+UPDATE STATISTICS FOR TABLE t1 ON EVERY COLUMN SAMPLE;
+```
+
+This default sampling protocol uses a high sampling rate for small tables, reducing the rate with a steep gradient until hitting 1% and
+capping the sample size at one million rows. The specific details of default sampling are as follows:
+
+* Use the full table for tables up to 10,000 rows.
+* For table sizes from 10,000 up to a million rows, 10,000 rows are randomly sampled. In effect, this causes the sampling rate to decline
+from 100% to 1% as a function of increasing table size.
+* For tables with one million to 100 million rows, use a 1% random sample.
+* For tables exceeding 100 million rows, the sampling rate is calculated as 1 million divided by the number of rows in the table.
+This limits the overall sample size to 1 million rows while ensuring uniform random sampling across the entire table.
+
+== Generate Single-Column and Multi-Column Histograms From One Statement
+
+If you use the ON EVERY COLUMN syntax in an UPDATE STATISTICS statement, then it is important to realize that multi-column histograms can be
+requested in the same statement. For example, if you wanted to generate a histogram for each single column of table T1, as well as
+multi-column histograms for column sets (c1, c2) and (c5, c6, c7), then you could use the following statement:
+
+```
+UPDATE STATISTICS FOR TABLE t1 ON EVERY COLUMN, (c1,c2), (c5,c6,c7) SAMPLE;
+```
+
+In terms of the end result, this is equivalent to the following pair of statements:
+
+```
+UPDATE STATISTICS FOR TABLE t1 ON EVERY COLUMN SAMPLE;
+UPDATE STATISTICS FOR TABLE t1 ON (c1, c2), (c5, c6, c7) SAMPLE;
+```
+
+However, the performance is superior when they are combined into a single statement because a multi-column histogram depends
+on the single-column histograms of its component columns. Therefore, separating the generation of single-column and multi-column histograms
+for a table into two statements leads to redundantly calculating some of the single-column histograms. Even though the
+relevant single-column histograms already exist, they are recomputed at the time the multi-column histograms are generated.
+
+=== Enable Update Statistics Automation
+
+If a standard set of queries is run on a regular basis, then one way to generate only those histograms that are needed for efficient execution
+of those queries is to enable update statistics automation, and then PREPARE each of the queries:
+
+```
+CONTROL QUERY DEFAULT USTAT_AUTOMATION_INTERVAL '1440';
+PREPARE s FROM SELECT...;
+```
+
+The value of the CQD USTAT_AUTOMATION_INTERVAL is intended to determine the automation interval (in minutes) for update statistics
+automation. The PREPARE statement causes the Trafodion Compiler to compile and optimize a query without executing it. In the process
+of doing so with automation enabled, any histograms needed by the optimizer that are missing causes those columns to be marked
+as needing histograms. Then, the following UPDATE STATISTICS statement can be run against each table to generate the needed histograms:
+
+```
+UPDATE STATISTICS FOR TABLE <table-name> ON NECESSARY COLUMNS SAMPLE;
+```
+
+=== Regenerate Histograms
+
+Histograms can become "stale" as the underlying data changes and possibly reflects a different distribution of values, although
+it is possible that data turnover or accumulation can be high while maintaining the same distribution. To ensure that statistics
+remain accurate, you should regenerate histograms for a table once significant changes have been made to that table since its
+histograms were last generated. To refresh existing histograms without adding new ones, use the following statement:
+
+```
+UPDATE STATISTICS FOR TABLE <table-name> ON EXISTING COLUMNS SAMPLE;
+```
+
+The critical set of histograms that were previously generated with the ON NECESSARY COLUMNS syntax can be periodically regenerated
+using ON EXISTING COLUMNS. Note that using ON NECESSARY COLUMNS will only identify those columns that have been previously
+requested by the optimizer but do not exist. The current implementation of automation does not know which existing histograms might be stale.
+
+
+
+LocalWords:  c7

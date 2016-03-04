@@ -1971,6 +1971,17 @@ StmtDDLAlterTableAddColumn::synthesize()
     theColumn->traverseList(
          this,
          StmtDDLAlterTableAddColumn_visit);
+
+    ElemDDLColDefArray ColDefArray = getColDefArray();
+    ElemDDLColDef *pColDef = ColDefArray[0];
+    if (NOT pColDef->getColumnFamily().isNull())
+      {
+        //TEMPTEMP 
+        // Currently, DTM doesnt handle add columns with an explicit 
+        // column family as a transactional operation.
+        // Do not use ddl xns until that bug is fixed.
+        setDdlXns(FALSE);
+      }
   }
 }  //StmtDDLAlterTableAddColumn::synthesize()
 

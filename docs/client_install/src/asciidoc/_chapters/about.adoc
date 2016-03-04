@@ -111,6 +111,7 @@ ATTRIBUTE[S] attribute [, attribute] ...
 An ellipsis immediately following a single syntax item indicates that you can repeat that syntax item any number of times.
 +
 For example:
++
 ```
 expression-n ...
 ```

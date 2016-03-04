@@ -87,6 +87,7 @@ public:
       DDL = PROCESSDDL,	// synonyms
       UPDATE_HIST_STAT,
       SET_TRANS,
+      DDL_NATABLE_INVALIDATE,
       INTERNALSP_REQUEST,
       INTERNALSP_GETNEXT,
       ENVS_REFRESH,
@@ -1014,6 +1015,28 @@ private:
   CmpMessageSetTrans& operator=(const CmpMessageSetTrans&);
   CmpMessageSetTrans(const CmpMessageSetTrans&);
 }; // end of CmpMessageSetTrans
+
+// -----------------------------------------------------------------------
+// The DDL NATABLE INVALIDATION command
+// This command is send from executor to arkcmp at the end of a 
+// transaction. On receiving it, arkcmp invalidates NATable for ddl objects 
+// that were part of that transaction. They are then reloaded when that
+// object is accessed.
+// -----------------------------------------------------------------------
+
+class CmpMessageDDLNATableInvalidate : public CmpMessageRequest 
+{
+public:
+  CmpMessageDDLNATableInvalidate(char* stmt=NULL,CmpMsgBufLenType size=0,CollHeap* h=0):
+  CmpMessageRequest(DDL_NATABLE_INVALIDATE, stmt,size,h)
+    { };
+
+  virtual ~CmpMessageDDLNATableInvalidate() {};
+   
+private:
+  CmpMessageDDLNATableInvalidate& operator=(const CmpMessageDDLNATableInvalidate&);
+  CmpMessageDDLNATableInvalidate(const CmpMessageDDLNATableInvalidate&);
+}; // end of CmpMessageDDLNATableInvalidate
 
 // -----------------------------------------------------------------------
 // Database user ID

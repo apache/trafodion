@@ -1,0 +1,117 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+  */
+////
+
+[[introduction]]
+= Introduction
+
+[[introduction-load-methods]]
+== Load Methods
+There are two methods used to load data into a Trafodion table. Both methods can run while the database is concurrently queried: 
+
+[cols="20%,40%,40%",options="header"]
+|===
+| Type           | Description         | Methods/Tools
+| *Bulk Load* | Large data volumes +
+Stage data and load in the batches | Trafodion Bulk Loader
+| *Trickle Load* | Small data volumes +
+Insert data at it arrives | odb tool +
+ETL tool or custom ODBC/JDBC application
+|===
+
+These two methods use four types of SQL insert statements
+
+* *Bulk Load*
+** http://trafodion.apache.org/docs/sql_reference/index.html#load_statement[LOAD]
+
+* *Trickle Load*
+** http://trafodion.incubator.apache.org/docs/sql_reference/index.html#insert_statement[INSERT]
+** http://trafodion.apache.org/docs/sql_reference/index.html#upsert_statement[UPSERT]
+** http://trafodion.apache.org/docs/sql_reference/index.html#upsert_statement[UPSERT USING LOAD]
+
+The http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+provides syntax descriptions for these statements.
+
+The data source defines what type of load approach and method you use:
+
+* *Bulk Load* (LOAD statement)
+** _Text Files_: Map an external Hive table.
+** _JDBC-Compliant Database_: Load into Hive on the Trafodion cluster using `sqoop`.
+** _Hive Tables_: Direct load.
+** _Native HBase Tables_: Direct load.
+** _Disparate Data Source_: Write Java/C++ UDF to read data from source and pass rows to LOAD.
+
+* *Trickle Load* (odb utility)
+** _Text Files_: Direct access
+** _pipes_: Via `stdin`
+** _ODBC-Compliant Database_: odb COPY command, no intermediate storage
+
+For more information, refer to:
+
+* <<bulk-load,Bulk Load>>
+* <<trickle-load, Trickle Load>>
+
+[[introduction-insert-types]]
+=== Insert Types
+
+The following insert types are supported in Trafodion:
+
+* `INSERT INTO T &#8230;`
+* `UPSERT INTO T &#8230;`
+* `UPSERT USING LOAD INTO T &#8230;`
+* `LOAD INTO T &#8230;`
+
+The following table compares the different insert types:
+
+[cols="20%,20%,20%,20%,20%",options="header"]
+|===
+| Characteristic | INSERT | UPSERT | UPSERT USING LOAD | LOAD
+| *Transaction* | Yes | Yes | No, uses HBase WAL for recovery | No, uses snapshot for recovery
+| *Method of Operation* | Uses the standard HBase write path through its `CheckAndPut` call. Rows are held in transaction co-processor memory until the transaction is committed. | Uses the standard HBase write path through its `Put` call. | Uses the standard HBase write path through its `Put` call. | Uses the HBase bulk load write path and creates HFiles directly, bypassing HBase RegionServers for most of its operation.
+| *Uniqueness Constraint* | Enforced | Not enforced. New row with the same key value overwrites previous row. | Not enforced. New row with same key value overwrites the previous row. | Enforced only within the set of rows in a single statement. Not enforced with rows already in the table.
+| *Index* | Can be used on a table with an index. | Can be used on a table with an index. | When used on a table with an index, it reverts to UPSERT. | Can be used on a table with an index. Index is off-line during the LOAD.
+| *Max Size/Invocation* | 10,000 * n^1^ rows | 10,000 * n^1^ rows | 5 million * n^1^ rows | 2 billion * n^1^ rows
+| *Min Size/Invocation* | 1 row | 1 row | 1 row | Suitable for greater than 1 million * n^1^ rows
+| *Speed* | Slowest | Faster than INSERT | Faster than UPSERT | Fastest
+|===
+
+^1^ *n* is the number of nodes in each invocation.
+
+Throughput, max/min sizes depends on multiple factors:
+
+* Format of rows in Trafodion table (aligned format or not).
+* Length of row.
+* Number of columns in row.
+* Data type of columns.
+* Network between nodes in cluster.
+* WAL setting.
+* Number of clients.
+* Use of rowsets.
+
+== Unload
+
+The Trafodion UNLOAD statement exports data from Trafodion tables into an HDFS directory. Refer to <<bulk-unload,Bulk Unload>> for more information.
+
+
+

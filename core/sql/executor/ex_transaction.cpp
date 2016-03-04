@@ -506,7 +506,7 @@ short ExTransaction::rollbackStatement()
 
 
 //This method does nowaited rollback transaction.
-short ExTransaction::rollbackTransaction()
+short ExTransaction::rollbackTransaction(NABoolean isWaited)
 {
   dp2Xns_ = FALSE;
 
@@ -518,7 +518,8 @@ short ExTransaction::rollbackTransaction()
 	transDiagsArea_ = NULL;
       }
       ExRaiseSqlError(heap_, &transDiagsArea_,
-		      EXE_ROLLBACK_TRANSACTION_ERROR, &errorCond_);
+                      (isWaited ? EXE_ROLLBACK_TRANSACTION_WAITED_ERROR :
+                       EXE_ROLLBACK_TRANSACTION_ERROR), &errorCond_);
       return -1;
     }
 
@@ -542,6 +543,8 @@ short ExTransaction::rollbackTransaction()
       return -1;
     }
 
+  if (isWaited)
+    waitForRollbackCompletion(transid_);
 
   if ((NOT volatileSchemaExists_) &&
      cliGlob_->currContext()->volatileSchemaCreated())
@@ -556,52 +559,7 @@ short ExTransaction::rollbackTransaction()
 
 short ExTransaction::rollbackTransactionWaited()
 {
-  dp2Xns_ = FALSE;
-
-  if (! xnInProgress())
-    {
-      if (transDiagsArea_)
-      {
-	transDiagsArea_->decrRefCount();
-	transDiagsArea_ = NULL;
-      }
-      ExRaiseSqlError(heap_, &transDiagsArea_,
-		      EXE_ROLLBACK_TRANSACTION_WAITED_ERROR, &errorCond_);
-      return -1;
-    }
-
-  if (! exeStartedXn_)
-    {
-      if (transDiagsArea_)
-      {
-	transDiagsArea_->decrRefCount();
-	transDiagsArea_ = NULL;
-      }
-      ExRaiseSqlError(heap_, &transDiagsArea_,
-		      EXE_CANT_COMMIT_OR_ROLLBACK, &errorCond_);
-      return -1;
-    }
-
-  Int32 rc = ABORTTRANSACTION();
-  if (rc != 0 && rc != FENOTRANSID)
-    {
-      createDiagsArea (EXE_ROLLBACK_WAITED_ERROR_TRANS_SUBSYS, rc,
-		       "TMF");
-      genLinuxCorefile("Issue trying to rollback a transaction");
-      return -1;
-    }
-  
-  waitForRollbackCompletion(transid_);
-
-  if ((NOT volatileSchemaExists_) &&
-     cliGlob_->currContext()->volatileSchemaCreated())
-    {
-       cliGlob_->currContext()->resetVolatileSchemaState();
-    }
-
-  resetXnState();
-
-  return 0;
+  return rollbackTransaction(TRUE);
 }
 
 short ExTransaction::doomTransaction()
@@ -1159,12 +1117,9 @@ ExTransTcb::~ExTransTcb()
   pool_ = 0;
 };
 
-
-
-    //////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // work() for ExTransTcb
 //////////////////////////////////////////////////////
-#pragma nowarn(262)   // warning elimination 
 short ExTransTcb::work()
 {
   while (1) {
@@ -1264,6 +1219,27 @@ short ExTransTcb::work()
         rc = ta->commitTransaction(FALSE);
         if (rc != 0)
           handleErrors(pentry_down, ta->getDiagsArea());
+
+        if (cliGlobals->currContext()->ddlStmtsExecuted())
+          {
+            ComDiagsArea * diagsArea = NULL;
+            ExSqlComp::ReturnStatus cmpStatus = 
+              cliGlobals->currContext()->sendXnMsgToArkcmp
+              (NULL, 0,
+               EXSQLCOMP::DDL_NATABLE_INVALIDATE,
+               diagsArea);
+            if (cmpStatus == ExSqlComp::ERROR)
+              {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
+                handleErrors(pentry_down, NULL, 
+                             (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
+ 
+                return -1;
+              }
+          }
+        
+        cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
 	      	    
         // if user had specified AUTO COMMIT, turn it back on.
         ta->enableAutoCommit();
@@ -1288,7 +1264,28 @@ short ExTransTcb::work()
         rc = ta->commitTransaction(TRUE);
         if (rc != 0)
           handleErrors(pentry_down, ta->getDiagsArea());
-	      	    
+	      	  
+        if (cliGlobals->currContext()->ddlStmtsExecuted())
+          {
+            ComDiagsArea * diagsArea = NULL;
+            ExSqlComp::ReturnStatus cmpStatus = 
+              cliGlobals->currContext()->sendXnMsgToArkcmp
+              (NULL, 0,
+               EXSQLCOMP::DDL_NATABLE_INVALIDATE,
+               diagsArea);
+            if (cmpStatus == ExSqlComp::ERROR)
+              {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
+                handleErrors(pentry_down, NULL, 
+                             (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
+ 
+                return -1;
+              }
+          }
+        
+        cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+   
         // if user had specified AUTO COMMIT, turn it back on.
         ta->enableAutoCommit();
       }
@@ -1316,11 +1313,31 @@ short ExTransTcb::work()
           // create a diagsArea and return it to the parent.
           handleErrors(pentry_down, ta->getDiagsArea());
 
+        if (cliGlobals->currContext()->ddlStmtsExecuted())
+          {
+            ComDiagsArea * diagsArea = NULL;
+            ExSqlComp::ReturnStatus cmpStatus = 
+              cliGlobals->currContext()->sendXnMsgToArkcmp
+              (NULL, 0,
+               EXSQLCOMP::DDL_NATABLE_INVALIDATE,
+               diagsArea);
+            if (cmpStatus == ExSqlComp::ERROR)
+              {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
+                handleErrors(pentry_down, NULL, 
+                             (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
+ 
+                return -1;
+              }
+          }
+        
+        cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
         // if user had specified AUTO COMMIT, turn it back on.
         ta->enableAutoCommit();
       }
       break;
-      // LCOV_EXCL_STOP
 
       case ROLLBACK_WAITED_:  {
         if (ta->userEndedExeXn()) {
@@ -1340,6 +1357,27 @@ short ExTransTcb::work()
         if (rc != 0) 
           handleErrors(pentry_down, ta->getDiagsArea());
 	      
+        if (cliGlobals->currContext()->ddlStmtsExecuted())
+          {
+            ComDiagsArea * diagsArea = NULL;
+            ExSqlComp::ReturnStatus cmpStatus = 
+              cliGlobals->currContext()->sendXnMsgToArkcmp
+              (NULL, 0,
+               EXSQLCOMP::DDL_NATABLE_INVALIDATE,
+               diagsArea);
+            if (cmpStatus == ExSqlComp::ERROR)
+              {
+                cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
+                handleErrors(pentry_down, NULL, 
+                             (ExeErrorCode)(-EXE_CANT_COMMIT_OR_ROLLBACK));
+ 
+                return -1;
+              }
+          }
+        
+        cliGlobals->currContext()->ddlStmtsExecuted() = FALSE;
+
         // if user had specified AUTO COMMIT, turn it back on.
         ta->enableAutoCommit();
       }
@@ -1355,112 +1393,36 @@ short ExTransTcb::work()
 	    break;
 	  }
 
-        // send the set trans request to arkcmp so compiler can
-        // set this trans mode in its memory. This is done so any
-	    // statement compiled after this could be compiled with the
-	    // current trans mode.
-        ExSqlComp *cmp = NULL;
-        ExSqlComp::ReturnStatus cmpStatus ;
-        // the dummyReply is moved up because otherwise the 
-        // compiler would complain about
-        // initialization of variables afer goto statements.
-
-        char* dummyReply = NULL;
-        ULng32 dummyLength;
-	ContextCli *currCtxt = getGlobals()->castToExExeStmtGlobals()->
-            castToExMasterStmtGlobals()->getStatement()->getContext();
-	Int32 cmpRet = 0;
-#ifdef NA_CMPDLL
-        // If use embedded compiler, send the settings to it
-        if (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() &&
-            currCtxt->isEmbeddedArkcmpInitialized() &&  
-	    (CmpCommon::context()) &&
-	    (CmpCommon::context()->getRecursionLevel() == 0))
-          {
-           
-            char * data = (char *)(transTdb().transMode_.getPointer());
-            NAHeap *arkcmpHeap = currCtxt->exHeap();
-
-            cmpRet = CmpCommon::context()->compileDirect(
-                                              data, sizeof(TransMode),
-                                              arkcmpHeap,
-                                              SQLCHARSETCODE_UTF8,
-                                              EXSQLCOMP::SET_TRANS,
-                                              dummyReply, dummyLength,
-                                              currCtxt->getSqlParserFlags(),
-                                              NULL, 0);
-            if (cmpRet != 0)
-              {
-                char emsText[120];
-                str_sprintf(emsText,
-                        "Set transaction mode to embedded arkcmp failed, return code %d",
-                        cmpRet);
-                SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, emsText, 0);
-                handleErrors(pentry_down, CmpCommon::diags());
-              }
-
-            if (dummyReply != NULL)
-              {
-                arkcmpHeap->deallocateMemory((void*)dummyReply);
-                dummyReply = NULL;
-              }
+        char * data = (char *)(transTdb().transMode_.getPointer());
+        ComDiagsArea * diagsArea = NULL;
+        ExSqlComp::ReturnStatus cmpStatus =
+          getGlobals()->castToExExeStmtGlobals()->
+          castToExMasterStmtGlobals()->getStatement()->
+          getContext()->sendXnMsgToArkcmp(data, sizeof(TransMode),
+                                          EXSQLCOMP::SET_TRANS,
+                                          diagsArea);
+        if (cmpStatus == ExSqlComp::ERROR)
+          handleErrors(pentry_down, diagsArea);
+          
+        if (diagAreaSizeExpr()) {
+          // compute the diag area size
+          if (diagAreaSizeExpr()->eval(pentry_down->getAtp(), workAtp_) 
+              == ex_expr::EXPR_ERROR)  {
+            // handle errors
+            handleErrors(pentry_down, pentry_down->getAtp()->getDiagsArea()); 
           }
-#endif // NA_CMPDLL
-	if (!currCtxt->getSessionDefaults()->callEmbeddedArkcmp()  || 
-	    (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() && 
-	     (CmpCommon::context()) &&
-	     ((cmpRet != 0) || 
-	     (CmpCommon::context()->getRecursionLevel() > 0) ||
-	      currCtxt->getArkcmp()->getServer())
-	     )
-	    )
-	  {
-	    for (short i = 0; i < currCtxt->getNumArkcmps();i++)
-	      {
-		cmp = currCtxt->getArkcmp(i);
-		cmpStatus = cmp->sendRequest(EXSQLCOMP::SET_TRANS, 
-					     (char *)(transTdb().transMode_.getPointer()),
-					     sizeof(TransMode),
-					     TRUE, NULL,
-					     SQLCHARSETCODE_UTF8,
-					     TRUE /*resend, if needed*/
-					     );
 
-		if (cmpStatus != ExSqlComp::SUCCESS) {
-		  handleErrors(pentry_down, cmp->getDiags());
-		  // If its an error don't proceed further.
-		  if (cmpStatus == ExSqlComp::ERROR)
-		    break;
-		}
-	    
-		cmpStatus = cmp->getReply(dummyReply, dummyLength);
-		cmp->getHeap()->deallocateMemory((void*)dummyReply);
-		if (cmpStatus != ExSqlComp::SUCCESS) {
-		  handleErrors(pentry_down, cmp->getDiags());
-		  //Don't proceed if its an error.
-		  if (cmpStatus == ExSqlComp::ERROR)
-		    break;
-		}
-	    
-		if (cmp->status() != ExSqlComp::FETCHED)
-		  handleErrors(pentry_down, cmp->getDiags());
-	      } // for
-	  }
-	    if (diagAreaSizeExpr()) {
-	      // compute the diag area size
-	      if (diagAreaSizeExpr()->eval(pentry_down->getAtp(), workAtp_) 
-		  == ex_expr::EXPR_ERROR)  {
-		// handle errors
-		handleErrors(pentry_down, pentry_down->getAtp()->getDiagsArea()); 
-	      }
-	      ta->getTransMode()->diagAreaSize() = *(Lng32 *)(workAtp_->getTupp(
-										transTdb().workCriDesc_->noTuples()-1).getDataPointer());
-	    }
-
-	    if(ta->setTransMode(transTdb().transMode_)) {
-	      handleErrors(pentry_down, ta->getDiagsArea());		
-	      break;
-	    }
+          ta->getTransMode()->diagAreaSize() = 
+            *(Lng32 *)(workAtp_->getTupp
+                       (transTdb().workCriDesc_->noTuples()-1).getDataPointer());
+        }
+        
+        if (cmpStatus != ExSqlComp::ERROR) {
+          if(ta->setTransMode(transTdb().transMode_)) {
+            handleErrors(pentry_down, ta->getDiagsArea());		
+            break;
+          }
+        }
       } 
       break;
 	  

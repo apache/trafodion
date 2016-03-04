@@ -8272,8 +8272,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
   return table;
 }
 
-void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
-                              ComObjectType ot)
+void NATableDB::removeNATable2(CorrName &corrName, ComQiScope qiScope,
+                               ComObjectType ot)
 {
   const ExtendedQualName* toRemove = &(corrName.getExtendedQualNameObj());
   NAHashDictionaryIterator<ExtendedQualName,NATable> iter(*this); 
@@ -8362,6 +8362,53 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
         long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
       }
     }
+}
+
+void NATableDB::removeNATable(CorrName &corrName, ComQiScope qiScope,
+                              ComObjectType ot, 
+                              NABoolean ddlXns, NABoolean atCommit)
+{
+  // if ddl xns are being used, add this name to ddlObjsList and
+  // invalidate NATable in my environment. This will allow subsequent 
+  // operations running in my environemnt under my current transaction 
+  // to access the latest definition.
+  // 
+  // NATable removal for other users will happen at xn commit/rollback time.
+  //
+  // If atCommit is set, then this is being called at commit time.
+  // In that case, do NATable removal processing for all users 
+  // instead of adding to ddlObjsList.
+  //
+  // If ddl xns are not being used, then invalidate NATable cache for
+  // all users.
+  if ((ddlXns) &&
+      (NOT atCommit))
+    {
+      CmpContext::DDLObjInfo ddlObj;
+      ddlObj.ddlObjName = corrName.getQualifiedNameAsString();
+      ddlObj.qiScope = qiScope;
+      ddlObj.ot = ot;
+
+      NABoolean found = FALSE;
+      for (Lng32 i = 0;
+           ((NOT found) && (i <  CmpCommon::context()->ddlObjsList().entries()));
+           i++)
+        {
+          CmpContext::DDLObjInfo &ddlObjInList = 
+            CmpCommon::context()->ddlObjsList()[i];
+          if (ddlObj.ddlObjName == ddlObjInList.ddlObjName)
+            found = TRUE;
+        }
+
+      removeNATable2(corrName, qiScope, ot); //ComQiScope::REMOVE_MINE_ONLY, ot);
+
+      if (NOT found)
+        CmpCommon::context()->ddlObjsList().insert(ddlObj);
+ 
+      return;
+    }
+
+  removeNATable2(corrName, qiScope, ot);
 }
 
 //This method is called at the end of each statement to reset statement
