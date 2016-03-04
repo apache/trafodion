@@ -119,10 +119,7 @@ public class TrafExportSnapshot extends Configured implements Tool {
   private static final String INPUT_FOLDER_PREFIX = "export-files.";
 
   // Export Map-Reduce Counters, to keep track of the progress
-  public enum Counter {
-    MISSING_FILES, FILES_COPIED, FILES_SKIPPED, COPY_FAILED,
-    BYTES_EXPECTED, BYTES_SKIPPED, BYTES_COPIED
-  }
+  public enum Counter { MISSING_FILES, COPY_FAILED, BYTES_EXPECTED, BYTES_COPIED, FILES_COPIED };
 
   private static class ExportMapper extends Mapper<BytesWritable, NullWritable,
                                                    NullWritable, NullWritable> {
@@ -263,8 +260,6 @@ public class TrafExportSnapshot extends Configured implements Tool {
         FileStatus outputStat = outputFs.getFileStatus(outputPath);
         if (outputStat != null && sameFile(inputStat, outputStat)) {
           LOG.info("Skip copy " + inputStat.getPath() + " to " + outputPath + ", same file.");
-          context.getCounter(Counter.FILES_SKIPPED).increment(1);
-          context.getCounter(Counter.BYTES_SKIPPED).increment(inputStat.getLen());
           return;
         }
       }
