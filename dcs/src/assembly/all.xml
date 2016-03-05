@@ -78,10 +78,13 @@
       <outputDirectory>/lib</outputDirectory>
       <unpack>false</unpack>
       <scope>runtime</scope>
-      <excludes>
-        <exclude>tomcat:jasper-runtime</exclude>
-        <exclude>org.trafodion:dcs</exclude>
-      </excludes>
+      <includes>
+         <include>displaytag:displaytag</include>
+         <include>org.python:jython-standalone</include>
+         <include>org.slf4j:slf4j-log4j12</include>
+         <include>org.slf4j:slf4j-api</include>
+         <include>org.mortbay.jetty</include>
+      </includes>
       <fileMode>0644</fileMode>
       <directoryMode>0644</directoryMode>
     </dependencySet>
