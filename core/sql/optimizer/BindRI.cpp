@@ -409,6 +409,10 @@ void RefConstraint::getMatchOptionPredicateText(NAString &text,
 }
 
 //helper function to check if the given column name is reserved hidden coloum
+//NOTE:
+//  this function hardcode the special name string for SALT, DIVSION columns
+//  if the naming convension of SALT/DIVISION column is changed,
+//  this function MUST be changed as well
 static NABoolean isHiddenColumn(const char *colname)
 {
   int len = strlen(colname);
@@ -419,7 +423,7 @@ static NABoolean isHiddenColumn(const char *colname)
   //must longer than 12
   if(len >= 12) {
     //must end with _
-    if(colname[len] == '_')
+    if(colname[len-1] == '_')
     {
       //if begin with _DIVISION_?
       if(strncmp(colname,"_DIVISION_",10) == 0) 

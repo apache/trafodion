@@ -367,7 +367,55 @@ SCAN
 
 --- 2 row(s) inserted.
 >>
+>>create table fksalta ( id int not null, PRIMARY KEY (id))SALT USING 4 PARTITIONS;
+
+--- SQL operation complete.
 >>
+>>CREATE TABLE fksaltb ( id int not null, val int,
++>  PRIMARY KEY (id),
++>  CONSTRAINT FKsalt FOREIGN KEY (val) REFERENCES fksalta (id))
++>  SALT USING 4 PARTITIONS;
+
+--- SQL operation complete.
+>>
+>>INSERT INTO fksalta VALUES ( 1 );
+
+--- 1 row(s) inserted.
+>>
+>>INSERT INTO fksaltb VALUES ( 1, 1);
+
+--- 1 row(s) inserted.
+>>
+>>INSERT INTO fksaltb VALUES ( 2, 2);
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.SCH.FKSALT on table TRAFODION.SCH.FKSALTB.
+
+--- 0 row(s) inserted.
+>>
+>>CREATE TABLE fkdiva( store_id integer not null,
++>                   item_id  integer not null,
++>                sale_date date default date '2000-01-01' not null,
++>                  sale_amt numeric(10,2),
++>                   primary key (store_id, item_id, sale_date))
++> division by (date_part('YEARMONTH', sale_date));
+
+--- SQL operation complete.
+>>
+>>create table fkdivb(c1 int not null, c2 int , c3 int, c4  date, primary key(c1), CONSTRAINT FKDIV FOREIGN KEY (c2,c3, c4) REFERENCES fkdiva (store_id,item_id, sale_date));
+
+--- SQL operation complete.
+>>
+>>INSERT INTO fkdiva VALUES ( 1 , 1, date'2016-03-05', 10.2 );
+
+--- 1 row(s) inserted.
+>>INSERT INTO fkdivb VALUES ( 1 , 1, 1, date'2016-03-05');
+
+--- 1 row(s) inserted.
+>>INSERT INTO fkdivb VALUES ( 2 , 2, 1, date'2016-01-25');
+
+*** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.SCH.FKDIV on table TRAFODION.SCH.FKDIVB.
+
+--- 0 row(s) inserted.
 >>
 >>--- uk0 should be eliminated
 >>-- two table RI constraint join
