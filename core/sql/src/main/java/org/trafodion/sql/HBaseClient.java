@@ -44,6 +44,7 @@ import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -915,7 +916,7 @@ public class HBaseClient {
            cleanupCache(htable.getTableName());
         else
         {
-           if (hTableClientsInUse.remove(htable.getTableName(), htable))
+           if (hTableClientsInUse.removeValue(htable.getTableName(), htable))
               hTableClientsFree.put(htable.getTableName(), htable);
            else
               if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
@@ -993,9 +994,9 @@ public class HBaseClient {
       int kvCount = 0;
       int nonPuts = 0;
       do {
-        KeyValue kv = scanner.getKeyValue();
-        System.out.println(kv.toString());
-        if (kv.getType() == KeyValue.Type.Put.getCode())
+        Cell kv = scanner.getKeyValue();
+        //System.out.println(kv.toString());
+        if (kv.getTypeByte() == KeyValue.Type.Put.getCode())
           qualifiers = qualifiers + kv.getQualifier()[0] + " ";
         else
           nonPuts++;
@@ -1069,8 +1070,8 @@ public class HBaseClient {
     // right class to host this method
 
     // compares two qualifiers as unsigned, lexicographically ordered byte strings
-    static private boolean isQualifierLessThanOrEqual(KeyValue nextKv,
-                                                      KeyValue currKv)
+    static private boolean isQualifierLessThanOrEqual(Cell nextKv,
+                                                      Cell currKv)
     {
        int currLength = currKv.getQualifierLength(); 
        int currOffset = currKv.getQualifierOffset();
@@ -1187,8 +1188,8 @@ public class HBaseClient {
             scanner.seekTo();  //position at beginning of first data block
 
             // the next line should succeed, as we know the HFile is non-empty
-            KeyValue currKv = scanner.getKeyValue();
-            while ((more) && (currKv.getType() != KeyValue.Type.Put.getCode())) {
+            Cell currKv = scanner.getKeyValue();
+            while ((more) && (currKv.getTypeByte() != KeyValue.Type.Put.getCode())) {
               nonPutKVsSampled++;
               more = scanner.next();
               currKv = scanner.getKeyValue();
@@ -1202,8 +1203,8 @@ public class HBaseClient {
               more = scanner.next();
     
               while ((more) && (sampleRowCount <= ROWS_TO_SAMPLE)) {
-                KeyValue nextKv = scanner.getKeyValue();
-                if (nextKv.getType() == KeyValue.Type.Put.getCode()) {
+                Cell nextKv = scanner.getKeyValue();
+                if (nextKv.getTypeByte() == KeyValue.Type.Put.getCode()) {
                   if (isQualifierLessThanOrEqual(nextKv,currKv)) {
                     // we have crossed a row boundary
                     sampleRowCount++;

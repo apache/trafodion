@@ -1920,7 +1920,7 @@ public class TransactionManager {
      */
     public void tryCommit(final TransactionState transactionState)
         throws CommitUnsuccessfulException, UnsuccessfulDDLException, IOException {
-        long startTime = EnvironmentEdgeManager.currentTimeMillis();
+        long startTime = EnvironmentEdgeManager.currentTime();
         if (LOG.isTraceEnabled()) LOG.trace("Attempting to commit transaction: " + transactionState.toString());
         int status = prepareCommit(transactionState);
 
@@ -1936,7 +1936,7 @@ public class TransactionManager {
           throw new CommitUnsuccessfulException();
         }
         if (LOG.isTraceEnabled()) LOG.trace("Committed transaction [" + transactionState.getTransactionId() + "] in ["
-                + ((EnvironmentEdgeManager.currentTimeMillis() - startTime)) + "]ms");
+                + ((EnvironmentEdgeManager.currentTime() - startTime)) + "]ms");
     }
 
     public void retryCommit(final TransactionState transactionState, final boolean ignoreUnknownTransaction) {

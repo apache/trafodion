@@ -62,8 +62,8 @@ import org.apache.hadoop.hbase.regionserver.ScanInfo;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.hbase.wal.WAL;
 import org.apache.hadoop.io.DataInputBuffer;
-import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.client.SsccConst;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -82,7 +82,7 @@ public class SsccTransactionState extends TransactionState{
     private long startId_;
 
     public SsccTransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
-                                                 HTableDescriptor htd, HLog hLog, boolean logging, long SsccSequenceId) {
+                                                 HTableDescriptor htd, WAL hLog, boolean logging, long SsccSequenceId) {
 
         super(transactionId,rLogStartSequenceId,hlogSeqId,regionInfo,htd,hLog,logging);
         setStartId(SsccSequenceId);

@@ -69,11 +69,10 @@ export MALLOC_ARENA_MAX=1
 export SQ_USE_INTC=0
 
 if [[ "$SQ_BUILD_TYPE" = "release" ]]; then
-  SQ_BTYPE=
+  export SQ_BTYPE=
 else
-  SQ_BTYPE=d
+  export SQ_BTYPE=d
 fi
-export SQ_BTYPE
 export SQ_MBTYPE=$SQ_MTYPE$SQ_BTYPE
 
 # To enable code coverage, set this to 1
@@ -142,12 +141,23 @@ export SQ_HOME=$PWD
 
 # general Hadoop & TRX dependencies - not distro specific, choose one to build against
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_ID=hbase-trx-cdh5_3
-export HBASE_DEP_VER=0.98.6-cdh5.3.0
+export HBASE_TRX_ID=hbase-trx-cdh5_4
+export HBASE_DEP_VER=hbase-1.0.0-cdh5.4.4.tar.gz
 export HBASE_TRX_JAR=${HBASE_TRX_ID}-${TRAFODION_VER}.jar
+export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
+export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    export HBASE_VERSION_ID=hdp2_3
+    export HBASE_TRX_JAR=hbase-trx-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+    export DTM_COMMON_JAR=trafodion-dtm-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    export HBASE_VERSION_ID=apache1_0_2
+    export HBASE_TRX_JAR=hbase-trx-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+    export DTM_COMMON_JAR=trafodion-dtm-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
 fi
 # set common version to be consistent between shared lib and maven dependencies
 export THRIFT_DEP_VER=0.9.0
@@ -164,6 +174,9 @@ if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
 fi
 
 export SQ_IDTMSRV=1
+
+# Turn on/off generation of Service Monitor
+export SQ_SRVMON=1
 
 export MY_MPI_ROOT="$MY_SQROOT"
 export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
@@ -280,6 +293,8 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
+  lv_hbase_cp=`hbase classpath`
+
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
@@ -322,6 +337,8 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
+  lv_hbase_cp=`hbase classpath`
+
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
@@ -363,6 +380,8 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
 
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
+
+  lv_hbase_cp=`hbase classpath`
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
@@ -673,6 +692,14 @@ export SQ_MON_ALTLOG=0
 # Monitor sync thread responsiveness timeout
 # default 15 mins
 export SQ_MON_SYNC_TIMEOUT=900
+export SQ_MON_KEEPALIVE=1
+export SQ_MON_KEEPIDLE=60
+export SQ_MON_KEEPINTVL=6
+export SQ_MON_KEEPCNT=5
+
+# The wait timeout is in seconds
+export SQ_MON_EPOLL_WAIT_TIMEOUT=12
+export SQ_MON_EPOLL_RETRY_COUNT=15
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
@@ -849,13 +876,14 @@ if [[ -n "$HADOOP_CNF_DIR" ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HADOOP_CNF_DIR"
 if [[ -n "$HBASE_CNF_DIR"  ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
-SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
+SQ_CLASSPATH=${SQ_CLASSPATH}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
-$MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
-$MY_SQROOT/export/lib/trafodion-utility-${TRAFODION_VER}.jar:\
-$MY_SQROOT/export/lib/trafodion-dtm-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\
+$MY_SQROOT/export/lib/${SQL_JAR}:\
+$MY_SQROOT/export/lib/${UTIL_JAR}:\
 $MY_SQROOT/export/lib/jdbcT4.jar:\
 $MY_SQROOT/export/lib/jdbcT2.jar
+
 
 # Check whether the current shell environment changed from a previous execution of this
 # script.

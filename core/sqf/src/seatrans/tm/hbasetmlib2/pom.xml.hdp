@@ -21,15 +21,17 @@
 -->
   <repositories>
     <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      <id>Horton Works</id>
+      <url>http://repo.hortonworks.com/content/groups/public/</url>
     </repository>
   </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hbase.version>${env.HBASE_DEP_VER}</hbase.version>
-    <hbase-trx.id>${env.HBASE_TRX_ID}</hbase-trx.id>
+    <hadoop.version>2.7.1.2.3.2.0-2950</hadoop.version>
+    <hbase.version>1.1.2.2.3.2.0-2950</hbase.version>
+    <hbase-flavor-id>hdp2_3</hbase-flavor-id>
+    <hbase-trx.id>hbase-trx-${hbase-flavor-id}</hbase-trx.id>
     <java.version>1.7</java.version>
   </properties>
 
@@ -49,28 +51,26 @@
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.HBASE_TRXDIR}/${env.HBASE_TRX_JAR}</systemPath>
+      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.7.7</version>
     </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.1.3</version>
-    </dependency>
   </dependencies>
 
-  <groupId>org.trafodion.sql</groupId>
+  <groupId>org.trafodion.dtm</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-dtm</artifactId>
+  <artifactId>trafodion-dtm-hdp2_3</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>trafodion-dtm</name>
   <description>Java code for the Trafodion DTM (Distributed Transaction Manager)</description>
 
   <build>
+    <defaultGoal>package</defaultGoal>
+    <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
