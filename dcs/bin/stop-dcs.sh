@@ -41,7 +41,7 @@ fi
 master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master|tail -n 1`
 errCode=$?
 zkerror=`echo $master| grep -i error`
-if ( [ $errCode -ne 0 ] || [ ! -z $zkerror ] );
+if ( [ ${errCode} -ne 0 ] || [ -n "${zkerror}" ] );
 then
   echo "Zookeeper exception occurred, killing all DcsMaster and DcsServers..."
   "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" stop master 

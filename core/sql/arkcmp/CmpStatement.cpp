@@ -1097,7 +1097,8 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
     {
       CmpSeabaseMDupgrade cmpMDU(heap_);
       
-      if (cmpMDU.executeSeabaseMDupgrade(dws,
+      NABoolean ddlXns = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);
+      if (cmpMDU.executeSeabaseMDupgrade(dws, ddlXns,
                                          currCatName, currSchName))
         return CmpStatement_ERROR;
     }
@@ -1237,6 +1238,18 @@ CmpStatement::process (const CmpMessageSetTrans& statement)
 }
 
 CmpStatement::ReturnStatus
+CmpStatement::process (const CmpMessageDDLNATableInvalidate& statement)
+{
+  CmpSeabaseDDL cmpSBD(heap_);
+  if (cmpSBD.ddlInvalidateNATables())
+    {
+      return CmpStatement_ERROR;
+    }
+
+  return CmpStatement_SUCCESS;
+}
+
+CmpStatement::ReturnStatus
 CmpStatement::process(const CmpMessageDatabaseUser &statement)
 {
   NABoolean doDebug = FALSE;
@@ -1347,6 +1360,10 @@ CmpStatement::process (const CmpMessageObj& request)
 
       case (CmpMessageObj::SET_TRANS) :
 	ret = process(*(CmpMessageSetTrans*)(&request));
+	break;
+
+      case (CmpMessageObj::DDL_NATABLE_INVALIDATE) :
+	ret = process(*(CmpMessageDDLNATableInvalidate*)(&request));
 	break;
 
       case (CmpMessageObj::DATABASE_USER) :

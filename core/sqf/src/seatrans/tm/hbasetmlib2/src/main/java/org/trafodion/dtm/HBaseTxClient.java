@@ -885,8 +885,18 @@ public class HBaseTxClient {
           return 0;
        }
        int participants = ts.getParticipantCount() - ts.getRegionsToIgnoreCount();
-       if (LOG.isTraceEnabled()) LOG.trace("Exit participatingRegions , txid: [" + transactionId + "] " + participants + " participants");
-       return (ts.getParticipantCount() - ts.getRegionsToIgnoreCount());
+       if (LOG.isTraceEnabled()) LOG.trace("Exit participatingRegions , txid: [" + transactionId + "] " + participants + " participants" +
+                                            "hasDDL Operation: " + ts.hasDDLTx());
+    
+       //In some scenarios, it is possible only DDL operation is performed
+       //within a transaction, example initialize trafodion, drop; In this
+       //scenario, region participation is zero. For the prepareCommit to
+       //continue to doCommit, there needs to be atleast one participant.
+       if(participants == 0 && ts.hasDDLTx())
+           participants++;
+
+       //return (ts.getParticipantCount() - ts.getRegionsToIgnoreCount());
+       return participants;
    }
 
    public long addControlPoint() throws Exception {

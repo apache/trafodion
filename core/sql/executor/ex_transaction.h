@@ -78,7 +78,7 @@ public:
   // only rollbacks if executor started the Xn.
   //////////////////////////////////////////////////////////////
   short rollbackStatement();
-  short rollbackTransaction();
+  short rollbackTransaction(NABoolean isWaited = FALSE);
   short rollbackTransactionWaited();
   short doomTransaction();
   short waitForRollbackCompletion(Int64 transid);

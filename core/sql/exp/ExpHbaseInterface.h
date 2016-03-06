@@ -130,13 +130,15 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
 
   // drops all objects from hbase that match the pattern
-  virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn) = 0;
 
   // retrieve all objects from hbase that match the pattern
   virtual ByteArrayList* listAll(const char * pattern) = 0;
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   virtual Lng32 exists(HbaseStr &tblName) = 0;
 
@@ -444,12 +446,14 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
-  virtual Lng32 dropAll(const char * pattern, NABoolean async);
+  virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean noXn);
 
   virtual ByteArrayList* listAll(const char * pattern);
 
-  // make a copy of currTableName as oldTblName.
-  virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
+  // make a copy of srcTblName as tgtTblName
+  // if force is true, remove target before copying.
+  virtual Lng32 copy(HbaseStr &srcTblName, HbaseStr &tgtTblName,
+                     NABoolean force = FALSE);
 
   // -1, if table exists. 0, if doesn't. -ve num, error.
   virtual Lng32 exists(HbaseStr &tblName);

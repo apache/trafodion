@@ -1,0 +1,280 @@
+-- ============================================================================
+-- TEST142 - tests grant and revoke privileges for RI constraints
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+obey TEST142(clean_up);
+log LOG142 clear;
+obey TEST142(create_db);
+obey TEST142(set_up);
+obey TEST142(test_grants);
+obey TEST142(test_revokes);
+log;
+obey TEST142(clean_up);
+exit;
+
+?section clean_up
+-- drop database
+drop schema if exists t142user1 cascade;
+drop schema if exists t142user2 cascade;
+drop schema if exists t142user3 cascade;
+drop schema if exists t142user4 cascade;
+drop schema if exists t142user5 cascade;
+drop schema if exists t142user6 cascade;
+
+?section create_db
+create schema t142user1 authorization sql_user1;
+create schema t142user2 authorization sql_user2;
+create schema t142user3 authorization sql_user3;
+create schema t142user4 authorization sql_user4;
+create schema t142user5 authorization sql_user5;
+create schema t142user6 authorization sql_user6;
+
+set schema t142user4;
+create table referencedTable
+( c1 int not null primary key,
+  c2 int not null,
+  c3 char(10) not null,
+  c4 char(10) not null,
+  c5 largeint not null );
+alter table referencedTable add constraint u1 unique (c3, c2);
+alter table referencedTable add constraint u2 unique (c4);
+alter table referencedTable add constraint u3 unique(c5);
+showddl referencedTable;
+
+-- compile cpp program for function
+sh rm -f ./etest140.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
+  2>&1 | tee LOG140-SECONDARY;
+set pattern $$DLL$$ etest140.dll;
+set pattern $$QUOTE$$ '''';
+
+-- create the library and udf
+create library t142_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+create function t142_translatePrivsBitmap(bitmap largeint) returns (bitmap_string char (20))
+language c parameter style sql external name 'translateBitmap'
+library t142_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+grant execute on function t142_translatePrivsBitmap to "PUBLIC";
+
+set schema t142user1;
+create table user1
+(u1_c1 int not null,
+ u1_c2 int not null primary key,
+ u1_c3 char(10) not null,
+ u1_c4 char(10));
+showddl user1;
+
+set schema t142user2;
+create table user2
+(u2_c1 int not null,
+ u2_c2 int not null primary key,
+ u2_c3 char(10) not null,
+ u2_c4 largeint);
+showddl user2;
+
+set schema t142user3;
+create table user3
+(u3_c1 int not null,
+ u3_c2 int not null primary key,
+ u3_c3 char(10) not null,
+ u3_c4 char(10));
+showddl user3;
+
+set schema t142user5;
+create table user5
+(u5_c1 int not null,
+ u5_c2 int not null primary key,
+ u5_c3 char(10) not null,
+ u5_c4 char(10));
+showddl user5;
+
+set schema t142user6;
+create table user6
+(u6_c1 int not null,
+ u6_c2 int not null primary key,
+ u6_c3 char(10) not null,
+ u6_c4 char(10));
+showddl user6;
+
+?section set_up
+set schema "_PRIVMGR_MD_";
+prepare get_privs from
+select distinct
+   trim(substring (o.object_name,1,20)) as object_name,
+   grantor_id, grantee_id, 'all',
+   t142user4.t142_translatePrivsBitmap(privileges_bitmap) as granted_privs,
+   t142user4.t142_translatePrivsBitmap(grantable_bitmap) as grantable_privs
+from object_privileges p, "_MD_".objects o 
+where p.object_uid in 
+  (select object_uid
+   from "_MD_".objects
+     where schema_name like 'T142USER%'
+       and object_name not like 'SB_%')
+  and p.object_uid = o.object_uid
+union
+  (select distinct
+      trim(substring (o.object_name,1,20)) as object_name,
+      grantor_id, grantee_id, cast (column_number as char(3)), 
+      t142user4.t142_translatePrivsBitmap(privileges_bitmap) as granted_privs,
+      t142user4.t142_translatePrivsBitmap(grantable_bitmap) as grantable_privs
+   from column_privileges p, "_MD_".objects o 
+   where p.object_uid in 
+     (select object_uid
+      from "_MD_".objects
+      where schema_name like 'T142USER%'
+        and object_name not like 'SB_%')
+     and p.object_uid = o.object_uid)
+order by 1, 2, 3, 4
+;
+
+?section test_grants
+-- =================================================================
+-- this set of tests run basic grant tests for constraints
+-- schema t142user4 contains the referenced table
+-- =================================================================
+set schema t142user4;
+
+-- all should fail, no one has permissions
+execute get_privs;
+sh sqlci -i "TEST142(user1_cmds)" -u sql_user1;
+sh sqlci -i "TEST142(user2_cmds)" -u sql_user2;
+sh sqlci -i "TEST142(user3_cmds)" -u sql_user3;
+sh sqlci -i "TEST142(user5_cmds)" -u sql_user5;
+sh sqlci -i "TEST142(user6_cmds)" -u sql_user6;
+
+-- user1, user3, & user5 can create constraints
+grant references on referencedTable to sql_user1;
+grant references(c2, c3) on referencedTable to sql_user1;
+grant all_dml on referencedTable to sql_user3 with grant option;
+grant references on referencedTable to sql_user5 by sql_user3;
+execute get_privs;
+
+sh sqlci -i "TEST142(user1_cmds)" -u sql_user1;
+sh sqlci -i "TEST142(user3_cmds)" -u sql_user3;
+sh sqlci -i "TEST142(user5_cmds)" -u sql_user5;
+
+--  first time, user2 can only create one, second time it works
+grant references (c5) on referencedTable to sql_user2;
+sh sqlci -i "TEST142(user2_cmds)" -u sql_user2;
+grant references (c4) on referencedTable to sql_user2 with grant option;
+sh sqlci -i "TEST142(user2_cmds)" -u sql_user2;
+
+-- user6 can create first but not second constraint
+grant references (c4) on referencedTable to sql_user6 by sql_user2;
+sh sqlci -i "TEST142(user6_cmds)" -u sql_user6;
+
+?section test_revokes
+-- ============================================================================
+-- verify that revoking privileges handle REFERENCES privilege correctly
+-- ============================================================================
+set schema t142user4;
+execute get_privs;
+
+-- unable to revoke because of u1_fk2  
+revoke references on referencedTable from sql_user1;
+-- revoke succeeds because user2 has references at the object level
+revoke references (c2, c3) on referencedTable from sql_user1;
+
+-- remove u1_fk2 and retry
+alter table t142user1.user1 drop constraint u1_fk2;
+grant references (c2, c3) on referencedTable to sql_user1;
+
+-- now able to revoke references privilege
+revoke references on referencedTable from sql_user1;
+-- but not able to remove column privileges
+revoke references (c2) on referencedTable from sql_user1;
+revoke references (c3) on referencedTable from sql_user1;
+revoke references (c2, c3) on referencedTable from sql_user1;
+
+-- and vice versa
+grant references on referencedTable to sql_user1;
+-- can revoke
+revoke references (c2) on referencedTable from sql_user1;
+revoke references (c3) on referencedTable from sql_user1;
+-- cannot revoke
+revoke references on referencedTable from sql_user1;
+
+-- drop constraint and revoke succeeds
+alter table t142user1.user1 drop constraint u1_fk1;
+revoke references on referencedTable from sql_user1;
+
+?section user1_cmds
+-- ============================================================================
+-- creates RI constraints on referenced tables
+-- ============================================================================
+log LOG142;
+values (user);
+set schema t142user1;
+alter table user1 add constraint u1_fk1 foreign key (u1_c4, u1_c1) 
+   references t142user4.referencedTable (c3, c2);
+alter table user1 add constraint u1_fk2 foreign key (u1_c2) 
+   references t142user4.referencedTable(c1);
+
+?section user2_cmds
+-- ============================================================================
+-- creates RI constraints on referenced tables
+-- ============================================================================
+log LOG142;
+values (user);
+set schema t142user2;
+alter table user2 add constraint u2_fk1 foreign key (u2_c3)
+   references t142user4.referencedTable (c4);
+alter table user2 add constraint u2_fk2 foreign key (u2_c4)
+   references t142user4.referencedTable(c5);
+
+?section user3_cmds
+-- ============================================================================
+-- creates RI constraints on referenced tables
+-- ============================================================================
+log LOG142;
+values (user);
+set schema t142user3;
+alter table user3 add constraint u3_fk1 foreign key (u3_c1)
+   references t142user4.referencedTable;
+
+?section user5_cmds
+-- ============================================================================
+-- creates RI constraints on referenced tables
+-- ============================================================================
+log LOG142;
+values (user);
+set schema t142user5;
+alter table user5 add constraint u5_fk1 foreign key (u5_c1)
+   references t142user4.referencedTable;
+
+?section user6_cmds
+-- ============================================================================
+-- creates RI constraints on referenced tables
+-- ============================================================================
+log LOG142;
+values (user);
+set schema t142user6;
+alter table user6 add constraint u6_fk1 foreign key (u6_c3)
+   references t142user4.referencedTable(c4);
+-- this case always fails
+alter table user6 add constraint u6_fk2 foreign key (u6_c1)
+   references t142user4.referencedTable(c2);
+

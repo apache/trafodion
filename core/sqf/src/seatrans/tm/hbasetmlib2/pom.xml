@@ -28,8 +28,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hbase.version>1.0.0-cdh5.4.4</hbase.version>
-    <hbase-trx.id>hbase-trx-cdh5_4</hbase-trx.id>
+    <hbase.version>${env.HBASE_DEP_VER}</hbase.version>
+    <hbase-trx.id>${env.HBASE_TRX_ID}</hbase-trx.id>
     <java.version>1.7</java.version>
   </properties>
 
@@ -49,7 +49,7 @@
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+      <systemPath>${env.HBASE_TRXDIR}/${env.HBASE_TRX_JAR}</systemPath>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

@@ -159,7 +159,6 @@ static const QueryString getUsersForRoleQuery[] =
   {"   from %s.\"%s\".%s RU "},
   {" where (RU.grantor_ID != -2) and "},
   {"       (RU.role_name='%s') "},
-  {" for read uncommitted access "},
   {" order by 1"},
   {" ; "}
 };
@@ -171,7 +170,6 @@ static const QueryString getRolesForUserQuery[] =
   {"   from %s.\"%s\".%s RU "},
   {" where (RU.grantor_ID != -2) and "},
   {"       (RU.grantee_name='%s') "},
-  {" for read uncommitted access "},
   {" order by 1 "},
   {" ; "}
 };
@@ -180,7 +178,6 @@ static const QueryString getComponents[] =
 {
   {" select translate(rtrim(component_name) using ucs2toutf8)  "},
   {"   from %s.\"%s\".%s "},
-  {" for read uncommitted access "},
   {" order by component_name "},
   {" ; "}
 };
@@ -193,7 +190,6 @@ static const QueryString getComponentOperations[] =
   {"    %s.\"%s\".%s o "},
   {" where (c.component_uid=o.component_uid) and "},
   {"       (c.component_name='%s')  "},
-  {" for read uncommitted access "},
   {" order by 1 "},
   {" ; "}
 };
@@ -214,7 +210,6 @@ static const QueryString getComponentPrivilegesForUser[] =
   {"          %s.\"%s\".%s ru "},
   {"          where ru.grantee_name = '%s')))"},
   {" order by 1 " },
-  {" for read uncommitted access "},
   {" ; " }
 };
 
@@ -227,7 +222,6 @@ static const QueryString getTrafTablesInSchemaQuery[] =
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
   {"        object_type = 'BT'  "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -239,7 +233,6 @@ static const QueryString getTrafIndexesInSchemaQuery[] =
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
   {"        object_type = 'IX'  "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -268,7 +261,6 @@ static const QueryString getTrafProceduresInSchemaQuery[] =
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
   {"        R.udr_type = 'P ' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -280,7 +272,6 @@ static const QueryString getTrafLibrariesInSchemaQuery[] =
   {"  where T.catalog_name = '%s' and "},
   {"        T.schema_name = '%s'  and "},
   {"        T.object_type = 'LB' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -294,7 +285,6 @@ static const QueryString getTrafFunctionsInSchemaQuery[] =
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
   {"        R.udr_type = 'F ' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -308,7 +298,6 @@ static const QueryString getTrafTableFunctionsInSchemaQuery[] =
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
   {"        R.udr_type = 'T ' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -323,7 +312,6 @@ static const QueryString getTrafProceduresForLibraryQuery[] =
   {"      where T1.object_type = 'LB' and T1.catalog_name = '%s' and "},
   {"            T1.schema_name = '%s' and T1.object_name = '%s') and "},
   {"      %s  "}, // fot udr_type: procedure, function, or table_mapping fn.
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -335,7 +323,6 @@ static const QueryString getTrafSequencesInSchemaQuery[] =
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
   {"        object_type = 'SG' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -346,7 +333,6 @@ static const QueryString getTrafSequencesInCatalogQuery[] =
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
   {"        object_type = 'SG' "},
-  {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -358,7 +344,6 @@ static const QueryString getTrafViewsInCatalogQuery[] =
   {"   %s.\"%s\".%s,  %s.\"%s\".%s "},
   {"  where view_uid = object_uid and "},
   {"            catalog_name = '%s' "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -370,7 +355,6 @@ static const QueryString getTrafViewsInSchemaQuery[] =
   {"  where view_uid = object_uid and "},
   {"             catalog_name = '%s' and "},
   {"             schema_name = '%s' "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -385,7 +369,6 @@ static const QueryString getTrafObjectsInViewQuery[] =
   {"                   T2.schema_name = '%s' and "},
   {"                   T2.object_name = '%s' ) "},
   {"     and VU.used_object_uid = T.object_uid "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -415,7 +398,6 @@ static const QueryString getTrafSchemasInCatalogQuery[] =
   {"   from %s.\"%s\".%s "},
   {"  where catalog_name = '%s' "},
   {"        and (object_type = 'PS' or object_type = 'SS') "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -427,7 +409,6 @@ static const QueryString getTrafSchemasForAuthIDQuery[] =
   {"        %s.\"%s\".%s A "},
   {"  where (T.object_type = 'PS' or T.object_type = 'SS') and "},
   {"         A.auth_db_name = '%s' and T.object_owner = A.auth_id  "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -437,7 +418,6 @@ static const QueryString getTrafUsers[] =
   {" select distinct auth_db_name "},
   {"   from %s.\"%s\".%s "},
   {"  where auth_type = '%s' "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -448,7 +428,6 @@ static const QueryString getTrafRoles[] =
   {"   from %s.\"%s\".%s "},
   {"  where auth_type = 'R' "},
   {" union select * from (values ('PUBLIC')) "},
-  {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -1238,7 +1217,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupPrivilegesTypeForUserQuery()
          " O.object_uid  = SP.table_uid AND "
          " SP.grantee    = U.user_id AND "
          " SP.grantor   != -2 "
-   " FOR READ UNCOMMITTED ACCESS "
    " ; "
   };
 
@@ -1269,7 +1247,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupPrivilegesTypeForUserQuery()
          " O.object_uid = TP.table_uid AND"
          " TP.grantee   = U.user_id AND"
          " TP.grantor  != -2"
-   " FOR READ UNCOMMITTED ACCESS"
    " ; "
   };
 
@@ -1364,7 +1341,6 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupObjectTypeForUserQuery()
          " O.OBJECT_TYPE  = '%s' AND"
          " O.OBJECT_OWNER = U.USER_ID"
          " %s"
-   " FOR READ UNCOMMITTED ACCESS"
    " ; "
   };
 
@@ -1511,7 +1487,7 @@ Int32 ExExeUtilGetMetadataInfoTcb::setupAuthIDInfo(const char *authName,
            " where auth_id = (select role_id from "
            "                    hp_system_catalog.hp_security_schema.roles "
            "                   where role_name = '%s') "
-           " for read uncommitted access; ",
+           " ; ",
         authName, authName);
       break;
 
@@ -1521,7 +1497,7 @@ Int32 ExExeUtilGetMetadataInfoTcb::setupAuthIDInfo(const char *authName,
            " where auth_id = (select user_id from "
            "                    hp_system_catalog.hp_security_schema.users "
            "                   where user_name = '%s') "
-           " for read uncommitted access; ",
+           " ; ",
         authName, authName);
       break;
      
@@ -1533,8 +1509,8 @@ Int32 ExExeUtilGetMetadataInfoTcb::setupAuthIDInfo(const char *authName,
            "                   where user_name = '%s') "
            "    or  auth_id = (select role_id from "
            "                    hp_system_catalog.hp_security_schema.roles "
-           "                   where role_name = '%s')) "
-           " for read uncommitted access; ",
+              "                   where role_name = '%s')) "
+           " ; ",
         authName, authName);
       break;
   }
@@ -3118,7 +3094,7 @@ short ExExeUtilGetHbaseObjectsTcb::work()
 
             if (getMItdb().allObjs())
               {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
 
@@ -3153,23 +3129,38 @@ short ExExeUtilGetHbaseObjectsTcb::work()
             if ((getMItdb().externalObjs()) &&
                 (externalObj))
               {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
             else if ((getMItdb().systemObjs()) &&
                 (sysObj))
               {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
             else if ((getMItdb().userObjs()) &&
                      ((NOT sysObj) && (NOT externalObj)))
              {
-                step_ = RETURN_ROW_;
+                step_ = EVAL_EXPR_;
                 break;
               }
  
             step_ = PROCESS_NEXT_ROW_;
+          }
+          break;
+
+        case EVAL_EXPR_:
+          {
+            exprRetCode = evalScanExpr(hbaseName_, strlen(hbaseName_));
+	    if (exprRetCode == ex_expr::EXPR_FALSE)
+	      {
+		// row does not pass the scan expression,
+		// move to the next row.
+		step_ = PROCESS_NEXT_ROW_;
+		break;
+	      }
+            
+            step_ = RETURN_ROW_;
           }
           break;
 

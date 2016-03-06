@@ -1123,16 +1123,16 @@ EXECUTE y;                              -- uses MYSCHEMA;
 [[control_query_default_examples]]
 === Examples of CONTROL QUERY DEFAULT
 
-* Change the maximum supported length of the column names to 200 for the current process:
+* Increase the cache refresh time for the histogram cache to two hours (7,200 minutes).
 +
 ```
-CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH '200';
+CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL '7200';
 ```
 
-* Reset the HBASE_MAX_COLUMN_NAME_LENGTH attribute to its initial value in the current process:
+* Reset the CACHE_HISTOGRAMS_REFRESH_INTERVAL attribute to its initial value in the current process:
 +
 ```
-CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH RESET;
+CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL RESET;
 ```
 
 <<<

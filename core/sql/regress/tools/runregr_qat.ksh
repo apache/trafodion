@@ -361,7 +361,8 @@ for i in $testfiles; do
   fi
 
   echo $logtxt
-  echo "`date +'%D %T'`	$tfile  $logtxt" >> $rgrlog
+  modtime=`stat --printf=%y $afile | cut -d'.' -f1`
+  echo "$modtime  $tfile  $logtxt" >> $rgrlog
 
   # save off the DIFF file for debugging
   if [ $nsk -eq 1 ]; then

@@ -1854,6 +1854,12 @@ public class TransactionManager {
         //requests is recorded, then those tables need to disabled as part of prepare.
         if(transactionState.hasDDLTx())
         {
+            if (LOG.isTraceEnabled()) LOG.trace("prepareCommit process DDL operations, txid: " + transactionState.getTransactionId());
+
+            //since DDL is involved, mark this prepare allReadOnly as false.
+            //There are cases such as initialize drop, that only has DDL operations. 
+             allReadOnly = false;
+
             //if tables were created, then nothing else needs to be done.
             //if tables were recorded dropped, then they need to be disabled.
             //Disabled tables will ultimately be deleted in commit phase.
@@ -2127,6 +2133,10 @@ public class TransactionManager {
                 //return; //Do not return here. This thread should continue servicing DDL operations.
             }
 
+            if (LOG.isDebugEnabled()) LOG.debug("doCommit() [" + transactionState.getTransactionId()
+                              + "] performing commit DDL");
+
+
             try{
                 doCommitDDL(transactionState);
 
@@ -2139,6 +2149,8 @@ public class TransactionManager {
 
     public void doCommitDDL(final TransactionState transactionState) throws UnsuccessfulDDLException
     {
+      
+        if (LOG.isTraceEnabled()) LOG.trace("doCommitDDL  ENTRY [" + transactionState.getTransactionId() + "]"); 
 
         //if tables were created, then nothing else needs to be done.
         //if tables were recorded dropped, then they need to be physically dropped.
@@ -2265,6 +2277,9 @@ public class TransactionManager {
             }
         }
     }while (retryCount < RETRY_ATTEMPTS && retry == true);
+
+    if (LOG.isTraceEnabled()) LOG.trace("doCommitDDL  EXIT [" + transactionState.getTransactionId() + "]");
+
 }
 
 
@@ -2981,8 +2996,8 @@ public class TransactionManager {
         }
         catch (TableNotEnabledException e) {
             //If table is not enabled, no need to throw exception. Continue.
-            if (LOG.isTraceEnabled()) LOG.trace("deleteTable , TableNotEnabledException. This could be a expected exception.  Step: disableTable, TxId: " +
-                transactionState.getTransactionId() + "TableName" + tblName + "Exception: " + e);
+            //if (LOG.isTraceEnabled()) LOG.trace("deleteTable , TableNotEnabledException. This is a expected exception.  Step: disableTable, TxId: " +
+            //    transactionState.getTransactionId() + "TableName" + tblName + "Exception: " + e);
         }
         catch (Exception e) {
             LOG.error("deleteTable Exception TxId: " + transactionState.getTransactionId() + "TableName" + tblName + "Exception: " + e);
@@ -3042,7 +3057,8 @@ public class TransactionManager {
             hbadmin.disableTable(tblName);
         }
         catch (Exception e) {
-            LOG.error("disableTable Exception TxId: " + transactionState.getTransactionId() + "TableName" + tblName + "Exception: " + e);
+            //LOG.error("disableTable Exception TxId: " + transactionState.getTransactionId() + "TableName" + tblName + "Exception: " + e);
+            //Let the caller handle this exception since table being disabled could be redundant many times.
             throw e;
         }
     }

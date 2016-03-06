@@ -97,9 +97,11 @@ INTERVAL { start-field TO end-field }
 { single-field } 
 INTERVAL { start-field TO end-field | single-field }
 ``` 
+
 * | Vertical Line 
 +
 A vertical line separates alternatives in a horizontal list that is enclosed in brackets or braces.
++
 ```
 {expression | NULL} 
 ```
@@ -117,6 +119,7 @@ ATTRIBUTE[S] attribute [, attribute] ...
 An ellipsis immediately following a single syntax item indicates that you can repeat that syntax item any number of times.
 +
 For example:
++
 ```
 expression-n ...
 ```

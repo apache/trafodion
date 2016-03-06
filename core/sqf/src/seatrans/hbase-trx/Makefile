@@ -36,35 +36,38 @@ REINSTATE_ORIG   	    =./reinstate_orig
 
 all: build_all
 
-jdk_1_7_cdh:
+jdk_1_7_cdh: build_chk_cdh
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) CDH1.0
 	$(MAKE) build_chk_cdh
 	set -o pipefail && $(MAVEN) -f pom.xml.cdh package install -DskipTests | tee -a build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_CDH_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-jdk_1_7_mapr:
-	$(MAKE) build_chk_mapr
+jdk_1_7_mapr: build_chk_mapr
 	set -o pipefail && $(MAVEN) -f pom.xml.mapr package -DskipTests | tee -a build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_MAPR_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-jdk_1_7_hdp:
+jdk_1_7_hdp: build_chk_hdp
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) HDP2.3 
 	$(MAKE) build_chk_hdp
 	set -o pipefail && $(MAVEN) -f pom.xml.hdp package -DskipTests | tee -a build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_HDP_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-jdk_1_7_apache:
+jdk_1_7_apache: build_chk_apache
 	$(REINSTATE_ORIG)
 	$(UNCOMMENT_STRING) APACHE
 	$(MAKE) build_chk_apache
 	echo "$(MAVEN) package -DskipTests"
 	echo "### For full Maven output, see file build_trx.log"
 	set -o pipefail && $(MAVEN) -f pom.xml.apache package -DskipTests | tee build_trx.log
+	mkdir -p $(MY_SQROOT)/export/lib
 	cp -pf target/$(BLD_HBASE_APACHE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 	$(REINSTATE_ORIG)

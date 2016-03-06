@@ -412,6 +412,8 @@ short ExDDLTcb::work()
       if (ddlTdb().workCriDesc_)
 	workAtp_->release();
 
+      currContext->ddlStmtsExecuted() = TRUE;
+       
     } // while 
   return WORK_OK;
 }

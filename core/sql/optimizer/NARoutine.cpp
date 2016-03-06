@@ -857,7 +857,7 @@ void NARoutineDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
 // in cache.
 // ----------------------------------------------------------------------------
 void NARoutineDB::removeNARoutine(QualifiedName &routineName, 
-                                  QiScope qiScope, 
+                                  ComQiScope qiScope, 
                                   Int64 objUID)
 {
 

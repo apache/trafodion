@@ -477,7 +477,6 @@ update T056t34 set sma1 = 99 where vch2 like '%vch2';
 
 select orders, sma1, vch1, vch2 from T056t34;
 
---#ifndef SEABASE_REGRESS
 begin work;
 
 update T056t34 set vch1 = 'v' where num1 > 10;
@@ -494,7 +493,9 @@ alter table T056t34 add vch3 varchar(3) default 'neo';
 update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 rollback;
---#endif
+
+-- this should return error. Col vch3 will be removed as part of rollback.
+update T056t34 set vch3 = 'new' where vch1 = 'v';
 
 delete from T056t34 where orders > 2 and orders < 12
                        or orders = 51;
@@ -806,6 +807,7 @@ alter table t056t56 add column t056t56_col3 pic 9 default +00;
 alter table t056t56 add column t056t56_col4 decimal default 0;
 select * from t056t56;
 
+cqd hbase_filter_preds 'on' ;
 create table t056t57 (a1 numeric(2,2) signed default 0 not null);
 showddl t056t57;
 insert into t056t57 default values;
@@ -830,6 +832,7 @@ create table t056t61 (a1 numeric(2,2) default -0.0 not null);
 showddl t056t61;
 insert into t056t61 default values;
 select * from t056t61;
+cqd hbase_filter_preds '2' ;
 
 ?section test4ddl
 ------------------------------------------------

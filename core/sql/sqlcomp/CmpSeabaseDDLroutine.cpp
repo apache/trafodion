@@ -521,6 +521,7 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
 
      if (dropSeabaseObject(ehi, routineName,
                            currCatName, currSchName, objectType,
+                           dropLibraryNode->ddlXns(),
                            TRUE, FALSE))
      {
        deallocEHI(ehi); 
@@ -532,6 +533,7 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
   // can get a slight perf. gain if we pass in objUID
   if (dropSeabaseObject(ehi, objName,
                         currCatName, currSchName, COM_LIBRARY_OBJECT,
+                        dropLibraryNode->ddlXns(),
                         TRUE, FALSE))
     {
       deallocEHI(ehi); 
@@ -1293,7 +1295,9 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   
   // Removed routine from metadata 
   if (dropSeabaseObject(ehi, dropRoutineNode->getRoutineName(),
-                        currCatName, currSchName, COM_USER_DEFINED_ROUTINE_OBJECT,
+                        currCatName, currSchName, 
+                        COM_USER_DEFINED_ROUTINE_OBJECT,
+                        dropRoutineNode->ddlXns(),
                         TRUE, FALSE))
     {
       deallocEHI(ehi); 
@@ -1303,7 +1307,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
 
   // Remove cached entries in other processes
   pRoutineDBCache->removeNARoutine(qualRoutineName, 
-                                   NARoutineDB::REMOVE_FROM_ALL_USERS,
+                                   ComQiScope::REMOVE_FROM_ALL_USERS,
                                    objUID);
 
   deallocEHI(ehi);      

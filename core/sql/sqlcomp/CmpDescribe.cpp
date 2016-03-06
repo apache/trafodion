@@ -200,11 +200,13 @@ short CmpDescribeSeabaseTable (
                              NABoolean withoutDivisioning = FALSE,
                              NABoolean noTrailingSemi = FALSE,
 
-                             // used to add or remove column definition from col list.
-                             // valid for 'createLike' mode. Used for 'alter add/drop col'.
+                             // used to add,rem,alter column definition from col list.
+                             // valid for 'createLike' mode. 
+                             // Used for 'alter add/drop/alter col'.
                              char * colName = NULL,
-                             NABoolean isAdd = FALSE,
-                             const NAColumn * nacol = NULL);
+                             short ada = 0, // 0,add. 1,drop. 2,alter
+                             const NAColumn * nacol = NULL,
+                             const NAType * natype = NULL);
 
 short CmpDescribeSequence ( 
                              const CorrName  &dtName,
@@ -2304,26 +2306,37 @@ short CmpDescribeHiveTable (
 }
 
 // type:  1, invoke. 2, showddl. 3, create_like
-static short cmpDisplayColumn(const NAColumn *nac,
-                              short type,
-                              Space &space, char * buf,
-                              Lng32 &ii,
-                              NABoolean namesOnly,
-                              NABoolean &identityCol,
-                              NABoolean isExternalTable,
-                              NABoolean isAlignedRowFormat)
+short cmpDisplayColumn(const NAColumn *nac,
+                       char * inColName,
+                       const NAType *inNAT,
+                       short displayType,
+                       Space *inSpace,
+                       char * buf,
+                       Lng32 &ii,
+                       NABoolean namesOnly,
+                       NABoolean &identityCol,
+                       NABoolean isExternalTable,
+                       NABoolean isAlignedRowFormat)
 {
+  Space lSpace;
+  
+  Space * space;
+  if (inSpace)
+    space = inSpace;
+  else
+    space = &lSpace;
+
   identityCol = FALSE;
   
-  const NAString &colName = nac->getColName();
+  NAString colName(inColName ? inColName : nac->getColName());
   NATable * naTable = (NATable*)nac->getNATable();
 
   NAString colFam;
-  if ((nac->getNATable()->isSQLMXAlignedTable()) || 
+  if ((nac->getNATable() && nac->getNATable()->isSQLMXAlignedTable()) || 
       (nac->getHbaseColFam() == SEABASE_DEFAULT_COL_FAMILY) ||
       isExternalTable)
     colFam = "";
-  else if (nac->getNATable()->isSeabaseTable())
+  else if (nac->getNATable() && nac->getNATable()->isSeabaseTable())
     {
       int index = 0;
       CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);
@@ -2336,7 +2349,7 @@ static short cmpDisplayColumn(const NAColumn *nac,
       colFam += ".";
     }
 
-  if (type == 3)
+  if (displayType == 3)
     {
       NAString quotedColName = "\"";
       quotedColName += colName.data(); 
@@ -2358,12 +2371,12 @@ static short cmpDisplayColumn(const NAColumn *nac,
     {
       NAString colString(buf);
       Int32 j = ii;
-      outputColumnLine(space, colString, j);
+      outputColumnLine(*space, colString, j);
       
       return 0;
     }
   
-  const NAType * nat = nac->getType();
+  const NAType * nat = (inNAT ? inNAT : nac->getType());
   
   NAString nas;
   ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
@@ -2399,7 +2412,7 @@ static short cmpDisplayColumn(const NAColumn *nac,
         defVal = "GENERATED ALWAYS AS IDENTITY";
       
       NAString idOptions;
-      if ((type != 1) && (nac->getNATable()->getSGAttributes()))
+      if ((displayType != 1) && (nac->getNATable()->getSGAttributes()))
         nac->getNATable()->getSGAttributes()->display(NULL, &idOptions, TRUE);
       
       if (NOT idOptions.isNull())
@@ -2434,35 +2447,43 @@ static short cmpDisplayColumn(const NAColumn *nac,
   
   char * sqlmxRegr = getenv("SQLMX_REGRESS");
   if ((! sqlmxRegr) ||
-      (type == 3))
+      (displayType == 3))
     {
       if ((NOT isAlignedRowFormat) &&
             CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
         attrStr += " SERIALIZED";
       else if ((CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) ||
-                (type == 3))
+                (displayType == 3))
         attrStr += " NOT SERIALIZED";
     }
   
-  if (nac->isAddedColumn())
+  if (displayType != 3)
     {
-      attrStr += " /* added col */ ";
+      if (nac->isAlteredColumn())
+        {
+          attrStr += " /*altered_col*/ ";
+        }
+      else if (nac->isAddedColumn())
+        {
+          attrStr += " /*added_col*/ ";
+        }
     }
-  
+
   sprintf(&buf[strlen(buf)], "%s %s", 
           nas.data(), 
           attrStr.data());
   
   NAString colString(buf);
   Int32 j = ii;
-  outputColumnLine(space, colString, j);
+  if (inSpace)
+    outputColumnLine(*space, colString, j);
 
   return 0;
 }
 
 // type:  1, invoke. 2, showddl. 3, create_like
 short cmpDisplayColumns(const NAColumnArray & naColArr,
-                        short type,
+                        short displayType,
                         Space &space, char * buf, 
                         NABoolean displaySystemCols,
                         NABoolean namesOnly,
@@ -2470,8 +2491,9 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         NABoolean isExternalTable,
 			NABoolean isAlignedRowFormat,
                         char * inColName = NULL,
-                        NABoolean isAdd = FALSE,
-                        const NAColumn * nacol = NULL)
+                        short ada = 0, // 0,add. 1,drop. 2,alter
+                        const NAColumn * nacol = NULL,
+                        const NAType * natype = NULL)
 {
   Lng32 ii = 0;
   identityColPos = -1;
@@ -2488,14 +2510,25 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
 
       const NAString &colName = nac->getColName();
 
-      if ((inColName) && (NOT isAdd))
+      if ((inColName) && (ada == 1))
         {
           if (colName == inColName) // remove this column
             continue;
         }
       
-       if (cmpDisplayColumn(nac, type, space, buf, ii, namesOnly, identityCol, isExternalTable, isAlignedRowFormat))
-        return -1;
+      if ((inColName) && (colName == inColName) &&
+          (ada == 2) && (nacol) && (natype))
+        {
+          if (cmpDisplayColumn(nac, NULL, natype, displayType, &space, buf, ii, namesOnly, identityCol, 
+                               isExternalTable, isAlignedRowFormat))
+            return -1;
+        }
+      else
+        {
+          if (cmpDisplayColumn(nac, NULL, NULL, displayType, &space, buf, ii, namesOnly, identityCol, 
+                               isExternalTable, isAlignedRowFormat))
+            return -1;
+        }
 
       if (identityCol)
         identityColPos = i;
@@ -2503,31 +2536,36 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
       ii++;
     }
 
-  if ((inColName) && (isAdd) && (nacol))
+  if ((inColName) && (ada == 0) && (nacol))
     {
-      if (cmpDisplayColumn(nacol, type, space, buf, ii, namesOnly, identityCol, isExternalTable, isAlignedRowFormat))
+      if (cmpDisplayColumn(nacol, NULL, NULL, displayType, &space, buf, ii, namesOnly, identityCol, 
+                           isExternalTable, isAlignedRowFormat))
         return -1;
     }
 
   return 0;
 }
 
-static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
-                                  Lng32 numKeys,
-                                  NABoolean displaySystemCols,
-                                  Space &space, char * buf, 
-                                  NABoolean displayCompact,
-                                  NABoolean displayAscDesc)
+short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
+                           Lng32 numKeys,
+                           NABoolean displaySystemCols,
+                           Space &space, char * buf, 
+                           NABoolean displayCompact,
+                           NABoolean displayAscDesc,
+                           NABoolean displayParens)
 {
   if (numKeys > 0)
     {
-      if (displayCompact)
-        sprintf(&buf[strlen(buf)],  "(");
-      else
+      if (displayParens)
         {
-          outputShortLine(space, "  ( ");
+          if (displayCompact)
+            sprintf(&buf[strlen(buf)],  "(");
+          else
+            {
+              outputShortLine(space, "  ( ");
+            }
         }
-      
+
       NABoolean isFirst = TRUE;
       Int32 j = -1;
       for (Int32 jj = 0; jj < numKeys; jj++)
@@ -2544,12 +2582,14 @@ static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
           
           const NAString &keyName = nac->getColName();
           if (displayCompact)
-            sprintf(&buf[strlen(buf)], "%s%s%s", 
-                    (NOT isFirst ? ", " : ""),
-                    ANSI_ID(keyName.data()),
-                    (displayAscDesc ?
-                     (! naColArr.isAscending(jj) ? " DESC" : " ASC") :
-                     " "));
+            {
+              sprintf(&buf[strlen(buf)], "%s%s%s", 
+                      (NOT isFirst ? ", " : ""),
+                      ANSI_ID(keyName.data()),
+                      (displayAscDesc ?
+                       (! naColArr.isAscending(jj) ? " DESC" : " ASC") :
+                       " "));
+            }
           else
             {
               sprintf(buf, "%s%s", 
@@ -2564,15 +2604,18 @@ static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
 
           isFirst = FALSE;
         } // for
-      
-      if (displayCompact)
+
+      if (displayParens)
         {
-          sprintf(&buf[strlen(buf)],  ")");
-          outputLine(space, buf, 2);
-        }
-      else
-        {
-          outputShortLine(space, "  )");
+          if (displayCompact)
+            {
+              sprintf(&buf[strlen(buf)],  ")");
+              outputLine(space, buf, 2);
+            }
+          else
+            {
+              outputShortLine(space, "  )");
+            }
         }
     } // if
   
@@ -2593,8 +2636,9 @@ short CmpDescribeSeabaseTable (
                                NABoolean withoutDivisioning,
                                NABoolean noTrailingSemi,
                                char * colName,
-                               NABoolean isAdd,
-                               const NAColumn * nacol)
+                               short ada,
+                               const NAColumn * nacol,
+                               const NAType * natype)
 {
   const NAString& tableName =
     dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
@@ -2646,6 +2690,7 @@ short CmpDescribeSeabaseTable (
     displayPrivilegeGrants = FALSE;
  
   // display syscols for invoke if not running regrs
+  //
   NABoolean displaySystemCols = ((!sqlmxRegr) && (type == 1));
 
   NABoolean isView = (naTable->getViewText() ? TRUE : FALSE);
@@ -2782,7 +2827,7 @@ short CmpDescribeSeabaseTable (
 		    FALSE,
                     identityColPos,
                     isExternalTable, naTable->isSQLMXAlignedTable(),
-                    colName, isAdd, nacol);
+                    colName, ada, nacol, natype);
 
   Int32 nonSystemKeyCols = 0;
   NABoolean isStoreBy = FALSE;
@@ -2861,7 +2906,7 @@ short CmpDescribeSeabaseTable (
           cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), 
                                naf->getIndexKeyColumns().entries(),
                                displaySystemCols,
-                               space, buf, TRUE, TRUE);
+                               space, buf, TRUE, TRUE, TRUE);
         } // if
     }
 
@@ -2876,7 +2921,7 @@ short CmpDescribeSeabaseTable (
           cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), 
                                naf->getIndexKeyColumns().entries(),
                                displaySystemCols,
-                               space, buf, TRUE, TRUE);
+                               space, buf, TRUE, TRUE, TRUE);
         }
       
       if ((isSalted) && !withoutSalt)
@@ -2985,6 +3030,7 @@ short CmpDescribeSeabaseTable (
 
       NABoolean attributesSet = FALSE;
       if (((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned))) ||
+          ((sqlmxRegr) && (type == 3) && ((NOT isAudited) || (isAligned))) ||
           ((NOT naTable->defaultColFam().isNull()) && 
            (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY)))
         {
@@ -3132,7 +3178,7 @@ short CmpDescribeSeabaseTable (
 
 	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), numIndexCols, 
 			       displaySystemCols,
-			       space, buf, FALSE, TRUE);
+			       space, buf, FALSE, TRUE, TRUE);
 
           if ((NOT sqlmxRegr) && isAligned)
           {
@@ -3207,7 +3253,7 @@ short CmpDescribeSeabaseTable (
               cmpDisplayPrimaryKey(nacarr, 
                                    uniqConstr->keyColumns().entries(),
                                    FALSE,
-                                   space, &buf[strlen(buf)], FALSE, FALSE);
+                                   space, &buf[strlen(buf)], FALSE, FALSE, TRUE);
 
               outputShortLine(space, ";");
             } // for
@@ -3252,7 +3298,7 @@ short CmpDescribeSeabaseTable (
               cmpDisplayPrimaryKey(nacarr, 
                                    refConstr->keyColumns().entries(),
                                    FALSE,
-                                   space, &buf[strlen(buf)], FALSE, FALSE);
+                                   space, &buf[strlen(buf)], FALSE, FALSE, TRUE);
 
               const NAString& ansiOtherTableName = 
                 uniqueConstraintReferencedByMe.getTableName().getQualifiedNameAsAnsiString(TRUE);             
@@ -3272,7 +3318,7 @@ short CmpDescribeSeabaseTable (
               cmpDisplayPrimaryKey(nacarr2, 
                                    otherConstr->keyColumns().entries(),
                                    FALSE,
-                                   space, &buf[strlen(buf)], FALSE, FALSE);
+                                   space, &buf[strlen(buf)], FALSE, FALSE, TRUE);
 
               if (NOT refConstr->getIsEnforced())
                 {
@@ -3354,8 +3400,10 @@ short CmpDescribeSequence(
   cn.setSpecialType(ExtendedQualName::SG_TABLE);
 
   // remove NATable for this table so latest values in the seq table could be read.
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
-    NATableDB::REMOVE_MINE_ONLY, COM_SEQUENCE_GENERATOR_OBJECT);
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn, 
+     ComQiScope::REMOVE_MINE_ONLY, COM_SEQUENCE_GENERATOR_OBJECT,
+     FALSE, FALSE);
 
   ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);

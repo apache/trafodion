@@ -1249,7 +1249,7 @@ ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc)
 ItemExpr *literalOfTime(NAString *strptr)
 {
   ItemExpr *returnValue = NULL;
-  UInt32 fractionPrec;
+  UInt32 fractionPrec = 0;
   DatetimeValue dtValue(*strptr, REC_DATE_HOUR, REC_DATE_SECOND, fractionPrec,
                         (CmpCommon::getDefault(USE_OLD_DT_CONSTRUCTOR) == DF_ON));
   if ((! dtValue.isValid()) &&

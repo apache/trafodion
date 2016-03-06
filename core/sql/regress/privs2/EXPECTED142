@@ -1,0 +1,760 @@
+>>obey TEST142(create_db);
+>>create schema t142user1 authorization sql_user1;
+
+--- SQL operation complete.
+>>create schema t142user2 authorization sql_user2;
+
+--- SQL operation complete.
+>>create schema t142user3 authorization sql_user3;
+
+--- SQL operation complete.
+>>create schema t142user4 authorization sql_user4;
+
+--- SQL operation complete.
+>>create schema t142user5 authorization sql_user5;
+
+--- SQL operation complete.
+>>create schema t142user6 authorization sql_user6;
+
+--- SQL operation complete.
+>>
+>>set schema t142user4;
+
+--- SQL operation complete.
+>>create table referencedTable
++>( c1 int not null primary key,
++>  c2 int not null,
++>  c3 char(10) not null,
++>  c4 char(10) not null,
++>  c5 largeint not null );
+
+--- SQL operation complete.
+>>alter table referencedTable add constraint u1 unique (c3, c2);
+
+--- SQL operation complete.
+>>alter table referencedTable add constraint u2 unique (c4);
+
+--- SQL operation complete.
+>>alter table referencedTable add constraint u3 unique(c5);
+
+--- SQL operation complete.
+>>showddl referencedTable;
+
+CREATE TABLE TRAFODION.T142USER4.REFERENCEDTABLE
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C3                               CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C4                               CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C5                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX U1 ON TRAFODION.T142USER4.REFERENCEDTABLE
+  (
+    C3 ASC
+  , C2 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX U2 ON TRAFODION.T142USER4.REFERENCEDTABLE
+  (
+    C4 ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX U3 ON TRAFODION.T142USER4.REFERENCEDTABLE
+  (
+    C5 ASC
+  )
+;
+
+ALTER TABLE TRAFODION.T142USER4.REFERENCEDTABLE ADD CONSTRAINT
+  TRAFODION.T142USER4.U1 UNIQUE
+  (
+    C3
+  , C2
+  )
+;
+
+ALTER TABLE TRAFODION.T142USER4.REFERENCEDTABLE ADD CONSTRAINT
+  TRAFODION.T142USER4.U2 UNIQUE
+  (
+    C4
+  )
+;
+
+ALTER TABLE TRAFODION.T142USER4.REFERENCEDTABLE ADD CONSTRAINT
+  TRAFODION.T142USER4.U3 UNIQUE
+  (
+    C5
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T142USER4.REFERENCEDTABLE TO SQL_USER4 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>-- compile cpp program for function
+>>sh rm -f ./etest140.dll;
+>>sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
++>  2>&1 | tee LOG140-SECONDARY;
+>>set pattern $$DLL$$ etest140.dll;
+>>set pattern $$QUOTE$$ '''';
+>>
+>>-- create the library and udf
+>>create library t142_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>create function t142_translatePrivsBitmap(bitmap largeint) returns (bitmap_string char (20))
++>language c parameter style sql external name 'translateBitmap'
++>library t142_l1
++>deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>grant execute on function t142_translatePrivsBitmap to "PUBLIC";
+
+--- SQL operation complete.
+>>
+>>set schema t142user1;
+
+--- SQL operation complete.
+>>create table user1
++>(u1_c1 int not null,
++> u1_c2 int not null primary key,
++> u1_c3 char(10) not null,
++> u1_c4 char(10));
+
+--- SQL operation complete.
+>>showddl user1;
+
+CREATE TABLE TRAFODION.T142USER1.USER1
+  (
+    U1_C1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U1_C2                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U1_C3                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U1_C4                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (U1_C2 ASC)
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T142USER1.USER1 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>set schema t142user2;
+
+--- SQL operation complete.
+>>create table user2
++>(u2_c1 int not null,
++> u2_c2 int not null primary key,
++> u2_c3 char(10) not null,
++> u2_c4 largeint);
+
+--- SQL operation complete.
+>>showddl user2;
+
+CREATE TABLE TRAFODION.T142USER2.USER2
+  (
+    U2_C1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U2_C2                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U2_C3                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U2_C4                            LARGEINT DEFAULT NULL
+  , PRIMARY KEY (U2_C2 ASC)
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T142USER2.USER2 TO SQL_USER2 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>set schema t142user3;
+
+--- SQL operation complete.
+>>create table user3
++>(u3_c1 int not null,
++> u3_c2 int not null primary key,
++> u3_c3 char(10) not null,
++> u3_c4 char(10));
+
+--- SQL operation complete.
+>>showddl user3;
+
+CREATE TABLE TRAFODION.T142USER3.USER3
+  (
+    U3_C1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U3_C2                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U3_C3                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U3_C4                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (U3_C2 ASC)
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T142USER3.USER3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>set schema t142user5;
+
+--- SQL operation complete.
+>>create table user5
++>(u5_c1 int not null,
++> u5_c2 int not null primary key,
++> u5_c3 char(10) not null,
++> u5_c4 char(10));
+
+--- SQL operation complete.
+>>showddl user5;
+
+CREATE TABLE TRAFODION.T142USER5.USER5
+  (
+    U5_C1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U5_C2                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U5_C3                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U5_C4                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (U5_C2 ASC)
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T142USER5.USER5 TO SQL_USER5 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>set schema t142user6;
+
+--- SQL operation complete.
+>>create table user6
++>(u6_c1 int not null,
++> u6_c2 int not null primary key,
++> u6_c3 char(10) not null,
++> u6_c4 char(10));
+
+--- SQL operation complete.
+>>showddl user6;
+
+CREATE TABLE TRAFODION.T142USER6.USER6
+  (
+    U6_C1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U6_C2                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U6_C3                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , U6_C4                            CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (U6_C2 ASC)
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T142USER6.USER6 TO SQL_USER6 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>obey TEST142(set_up);
+>>set schema "_PRIVMGR_MD_";
+
+--- SQL operation complete.
+>>prepare get_privs from
++>select distinct
++>   trim(substring (o.object_name,1,20)) as object_name,
++>   grantor_id, grantee_id, 'all',
++>   t142user4.t142_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>   t142user4.t142_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>from object_privileges p, "_MD_".objects o 
++>where p.object_uid in 
++>  (select object_uid
++>   from "_MD_".objects
++>     where schema_name like 'T142USER%'
++>       and object_name not like 'SB_%')
++>  and p.object_uid = o.object_uid
++>union
++>  (select distinct
++>      trim(substring (o.object_name,1,20)) as object_name,
++>      grantor_id, grantee_id, cast (column_number as char(3)), 
++>      t142user4.t142_translatePrivsBitmap(privileges_bitmap) as granted_privs,
++>      t142user4.t142_translatePrivsBitmap(grantable_bitmap) as grantable_privs
++>   from column_privileges p, "_MD_".objects o 
++>   where p.object_uid in 
++>     (select object_uid
++>      from "_MD_".objects
++>      where schema_name like 'T142USER%'
++>        and object_name not like 'SB_%')
++>     and p.object_uid = o.object_uid)
++>order by 1, 2, 3, 4
++>;
+
+--- SQL command prepared.
+>>
+>>obey TEST142(test_grants);
+>>-- =================================================================
+>>-- this set of tests run basic grant tests for constraints
+>>-- schema t142user4 contains the referenced table
+>>-- =================================================================
+>>set schema t142user4;
+
+--- SQL operation complete.
+>>
+>>-- all should fail, no one has permissions
+>>execute get_privs;
+
+OBJECT_NAME                                                                       GRANTOR_ID            GRANTEE_ID            (EXPR)  GRANTED_PRIVS         GRANTABLE_PRIVS
+--------------------------------------------------------------------------------  --------------------  --------------------  ------  --------------------  --------------------
+
+REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
+T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
+T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
+T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
+USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
+USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
+USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
+USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
+USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
+
+--- 9 row(s) selected.
+>>sh sqlci -i "TEST142(user1_cmds)" -u sql_user1;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user1;
+
+--- SQL operation complete.
+>>alter table user1 add constraint u1_fk1 foreign key (u1_c4, u1_c1) 
++>   references t142user4.referencedTable (c3, c2);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>alter table user1 add constraint u1_fk2 foreign key (u1_c2) 
++>   references t142user4.referencedTable(c1);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST142(user2_cmds)" -u sql_user2;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user2;
+
+--- SQL operation complete.
+>>alter table user2 add constraint u2_fk1 foreign key (u2_c3)
++>   references t142user4.referencedTable (c4);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>alter table user2 add constraint u2_fk2 foreign key (u2_c4)
++>   references t142user4.referencedTable(c5);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST142(user3_cmds)" -u sql_user3;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user3;
+
+--- SQL operation complete.
+>>alter table user3 add constraint u3_fk1 foreign key (u3_c1)
++>   references t142user4.referencedTable;
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST142(user5_cmds)" -u sql_user5;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user5;
+
+--- SQL operation complete.
+>>alter table user5 add constraint u5_fk1 foreign key (u5_c1)
++>   references t142user4.referencedTable;
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST142(user6_cmds)" -u sql_user6;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER6                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user6;
+
+--- SQL operation complete.
+>>alter table user6 add constraint u6_fk1 foreign key (u6_c3)
++>   references t142user4.referencedTable(c4);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>-- this case always fails
+>>alter table user6 add constraint u6_fk2 foreign key (u6_c1)
++>   references t142user4.referencedTable(c2);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user1, user3, & user5 can create constraints
+>>grant references on referencedTable to sql_user1;
+
+--- SQL operation complete.
+>>grant references(c2, c3) on referencedTable to sql_user1;
+
+--- SQL operation complete.
+>>grant all_dml on referencedTable to sql_user3 with grant option;
+
+--- SQL operation complete.
+>>grant references on referencedTable to sql_user5 by sql_user3;
+
+--- SQL operation complete.
+>>execute get_privs;
+
+OBJECT_NAME                                                                       GRANTOR_ID            GRANTEE_ID            (EXPR)  GRANTED_PRIVS         GRANTABLE_PRIVS
+--------------------------------------------------------------------------------  --------------------  --------------------  ------  --------------------  --------------------
+
+REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                  33336                 33338  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  1       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  2       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33336  all     SIDU-R-               SIDU-R-             
+T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
+T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
+T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
+USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
+USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
+USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
+USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
+USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
+
+--- 14 row(s) selected.
+>>
+>>sh sqlci -i "TEST142(user1_cmds)" -u sql_user1;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user1;
+
+--- SQL operation complete.
+>>alter table user1 add constraint u1_fk1 foreign key (u1_c4, u1_c1) 
++>   references t142user4.referencedTable (c3, c2);
+
+--- SQL operation complete.
+>>alter table user1 add constraint u1_fk2 foreign key (u1_c2) 
++>   references t142user4.referencedTable(c1);
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST142(user3_cmds)" -u sql_user3;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user3;
+
+--- SQL operation complete.
+>>alter table user3 add constraint u3_fk1 foreign key (u3_c1)
++>   references t142user4.referencedTable;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST142(user5_cmds)" -u sql_user5;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user5;
+
+--- SQL operation complete.
+>>alter table user5 add constraint u5_fk1 foreign key (u5_c1)
++>   references t142user4.referencedTable;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>--  first time, user2 can only create one, second time it works
+>>grant references (c5) on referencedTable to sql_user2;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST142(user2_cmds)" -u sql_user2;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user2;
+
+--- SQL operation complete.
+>>alter table user2 add constraint u2_fk1 foreign key (u2_c3)
++>   references t142user4.referencedTable (c4);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>alter table user2 add constraint u2_fk2 foreign key (u2_c4)
++>   references t142user4.referencedTable(c5);
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>grant references (c4) on referencedTable to sql_user2 with grant option;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST142(user2_cmds)" -u sql_user2;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user2;
+
+--- SQL operation complete.
+>>alter table user2 add constraint u2_fk1 foreign key (u2_c3)
++>   references t142user4.referencedTable (c4);
+
+--- SQL operation complete.
+>>alter table user2 add constraint u2_fk2 foreign key (u2_c4)
++>   references t142user4.referencedTable(c5);
+
+*** ERROR[1043] Constraint TRAFODION.T142USER2.U2_FK2 already exists.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user6 can create first but not second constraint
+>>grant references (c4) on referencedTable to sql_user6 by sql_user2;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST142(user6_cmds)" -u sql_user6;
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER6                                                                                                                        
+
+--- 1 row(s) selected.
+>>set schema t142user6;
+
+--- SQL operation complete.
+>>alter table user6 add constraint u6_fk1 foreign key (u6_c3)
++>   references t142user4.referencedTable(c4);
+
+--- SQL operation complete.
+>>-- this case always fails
+>>alter table user6 add constraint u6_fk2 foreign key (u6_c1)
++>   references t142user4.referencedTable(c2);
+
+*** ERROR[4481] The user does not have REFERENCES privilege on table or view REFERENCEDTABLE.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>obey TEST142(test_revokes);
+>>-- ============================================================================
+>>-- verify that revoking privileges handle REFERENCES privilege correctly
+>>-- ============================================================================
+>>set schema t142user4;
+
+--- SQL operation complete.
+>>execute get_privs;
+
+OBJECT_NAME                                                                       GRANTOR_ID            GRANTEE_ID            (EXPR)  GRANTED_PRIVS         GRANTABLE_PRIVS
+--------------------------------------------------------------------------------  --------------------  --------------------  ------  --------------------  --------------------
+
+REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                  33335                 33339  3       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33336                 33338  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  1       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  2       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33335  3       -----R-               -----R-             
+REFERENCEDTABLE                                                                                  33337                 33335  4       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33336  all     SIDU-R-               SIDU-R-             
+T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
+T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
+T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
+USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
+USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
+USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
+USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
+USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
+
+--- 17 row(s) selected.
+>>
+>>-- unable to revoke because of u1_fk2  
+>>revoke references on referencedTable from sql_user1;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK2" exists.
+
+--- SQL operation failed with errors.
+>>-- revoke succeeds because user2 has references at the object level
+>>revoke references (c2, c3) on referencedTable from sql_user1;
+
+--- SQL operation complete.
+>>
+>>-- remove u1_fk2 and retry
+>>alter table t142user1.user1 drop constraint u1_fk2;
+
+--- SQL operation complete.
+>>grant references (c2, c3) on referencedTable to sql_user1;
+
+--- SQL operation complete.
+>>
+>>-- now able to revoke references privilege
+>>revoke references on referencedTable from sql_user1;
+
+--- SQL operation complete.
+>>-- but not able to remove column privileges
+>>revoke references (c2) on referencedTable from sql_user1;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK1" exists.
+
+--- SQL operation failed with errors.
+>>revoke references (c3) on referencedTable from sql_user1;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK1" exists.
+
+--- SQL operation failed with errors.
+>>revoke references (c2, c3) on referencedTable from sql_user1;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK1" exists.
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK1" exists.
+
+--- SQL operation failed with errors.
+>>
+>>-- and vice versa
+>>grant references on referencedTable to sql_user1;
+
+--- SQL operation complete.
+>>-- can revoke
+>>revoke references (c2) on referencedTable from sql_user1;
+
+--- SQL operation complete.
+>>revoke references (c3) on referencedTable from sql_user1;
+
+--- SQL operation complete.
+>>-- cannot revoke
+>>revoke references on referencedTable from sql_user1;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK1" exists.
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T142USER1"."U1_FK1" exists.
+
+--- SQL operation failed with errors.
+>>
+>>-- drop constraint and revoke succeeds
+>>alter table t142user1.user1 drop constraint u1_fk1;
+
+--- SQL operation complete.
+>>revoke references on referencedTable from sql_user1;
+
+--- SQL operation complete.
+>>
+>>log;

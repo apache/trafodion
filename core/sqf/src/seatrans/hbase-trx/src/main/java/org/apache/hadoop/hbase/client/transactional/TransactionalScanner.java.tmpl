@@ -51,7 +51,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 import com.google.protobuf.ServiceException;
 import com.google.protobuf.ByteString;
-
+import org.apache.commons.codec.binary.Hex;
 
 /*
  *   Transaction Scanner
@@ -171,19 +171,21 @@ public class TransactionalScanner extends AbstractClientScanner {
                 return false;
             }
             else
-                this.currentBeginKey = TransactionManager.binaryIncrementPos(this.currentEndKey,1);
+                //this.currentBeginKey = TransactionManager.binaryIncrementPos(this.currentEndKey,1);
+                  this.currentBeginKey = this.currentEndKey;
         }
         else {
             // First call to nextScanner
             this.currentBeginKey = this.scan.getStartRow();
         }
 
-        this.currentRegion = ttable.getRegionLocation(this.currentBeginKey).getRegionInfo();
+        this.currentRegion = ttable.getRegionLocation(this.currentBeginKey, false).getRegionInfo();
         this.currentEndKey = this.currentRegion.getEndKey();
 
-        if(LOG.isTraceEnabled()) LOG.trace("Region Info: " + currentRegion.getRegionNameAsString());
-        if(this.currentEndKey != HConstants.EMPTY_END_ROW)
-            this.currentEndKey = TransactionManager.binaryIncrementPos(currentRegion.getEndKey(), -1);
+        if(LOG.isTraceEnabled()) LOG.trace("nextScanner() txID: " + ts.getTransactionId() + " Region Info: " + currentRegion.getRegionNameAsString()+ 
+                         "currentBeginKey: " + Hex.encodeHexString(this.currentBeginKey) + "currentEndKey: " + Hex.encodeHexString(this.currentEndKey));
+        //if(this.currentEndKey != HConstants.EMPTY_END_ROW)
+        //   this.currentEndKey = TransactionManager.binaryIncrementPos(currentRegion.getEndKey(), -1);
 
         this.closed = false;
 

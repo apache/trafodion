@@ -55,7 +55,7 @@
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sat Jan 23 04:01:01 2016
+-- Definition current  Wed Feb 10 17:24:52 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -67,7 +67,7 @@
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:01:01 2016
+-- Definition current  Wed Feb 10 17:24:53 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -85,7 +85,7 @@
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:01:01 2016
+-- Definition current  Wed Feb 10 17:24:53 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -215,7 +215,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281664020120
+PLAN_ID .................. 212321885094893012
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -249,6 +249,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -257,7 +258,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494669981
+  ObjectUIDs ............. 5395965056177977067
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -297,7 +298,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281664086937
+PLAN_ID .................. 212321885094974287
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -332,6 +333,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -340,7 +342,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494669981
+  ObjectUIDs ............. 5395965056177977067
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -379,7 +381,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281664157405
+PLAN_ID .................. 212321885095061744
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -413,6 +415,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -421,7 +424,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494669981
+  ObjectUIDs ............. 5395965056177977067
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -461,7 +464,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281662697400
+PLAN_ID .................. 212321885093467820
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -496,6 +499,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -504,7 +508,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494669981
+  ObjectUIDs ............. 5395965056177977067
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -767,7 +771,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212320281665503778
+PLAN_ID .................. 212321885096382137
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -803,6 +807,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -811,7 +816,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -845,7 +850,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212320281665589110
+PLAN_ID .................. 212321885096449206
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -882,6 +887,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -890,7 +896,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -925,7 +931,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212320281665683917
+PLAN_ID .................. 212321885096528149
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -961,6 +967,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -969,7 +976,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1004,7 +1011,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212320281665757275
+PLAN_ID .................. 212321885096610874
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1040,6 +1047,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1048,7 +1056,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   input_variables ........ %('a')
 
 
@@ -1112,7 +1120,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212320281665928341
+PLAN_ID .................. 212321885096769866
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1150,6 +1158,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1158,7 +1167,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   input_variables ........ %('upd'), %(4)
 
 
@@ -1185,7 +1194,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212320281666010633
+PLAN_ID .................. 212321885096839283
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1221,6 +1230,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1230,7 +1240,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -1264,7 +1274,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212320281666077909
+PLAN_ID .................. 212321885096892358
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1301,6 +1311,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1310,7 +1321,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1345,7 +1356,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212320281666171032
+PLAN_ID .................. 212321885096964168
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1381,6 +1392,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1390,7 +1402,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -1425,7 +1437,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212320281666244170
+PLAN_ID .................. 212321885097028060
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1461,6 +1473,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1470,7 +1483,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   input_variables ........ %('a')
 
 
@@ -1534,7 +1547,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212320281666386850
+PLAN_ID .................. 212321885097193080
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1572,6 +1585,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1581,7 +1595,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494670058
+  ObjectUIDs ............. 5395965056177977162
   input_variables ........ %('uuu'), %(4)
 
 
@@ -1758,7 +1772,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sat Jan 23 04:01:30 2016
+-- Definition current  Wed Feb 10 17:25:15 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1770,7 +1784,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:01:30 2016
+-- Definition current  Wed Feb 10 17:25:15 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1788,7 +1802,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:01:30 2016
+-- Definition current  Wed Feb 10 17:25:15 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1918,7 +1932,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281691991711
+PLAN_ID .................. 212321885117562364
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -1952,6 +1966,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -1960,7 +1975,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672887
+  ObjectUIDs ............. 5395965056177979649
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -2000,7 +2015,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281692055544
+PLAN_ID .................. 212321885117630076
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -2035,6 +2050,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2043,7 +2059,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672887
+  ObjectUIDs ............. 5395965056177979649
   select_list ............ 1, '1'
 
 
@@ -2081,7 +2097,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281692112737
+PLAN_ID .................. 212321885117688131
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -2115,6 +2131,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2123,7 +2140,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672887
+  ObjectUIDs ............. 5395965056177979649
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -2162,7 +2179,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281692166711
+PLAN_ID .................. 212321885117743655
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -2197,6 +2214,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2205,7 +2223,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672887
+  ObjectUIDs ............. 5395965056177979649
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -2467,7 +2485,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212320281693859527
+PLAN_ID .................. 212321885119498869
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2503,6 +2521,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2511,7 +2530,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2545,7 +2564,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212320281693893981
+PLAN_ID .................. 212321885119535261
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2582,6 +2601,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2590,7 +2610,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2637,7 +2657,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212320281693944028
+PLAN_ID .................. 212321885119574822
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2673,6 +2693,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2681,7 +2702,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -2719,7 +2740,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212320281694009640
+PLAN_ID .................. 212321885119613489
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -2755,6 +2776,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2763,7 +2785,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -2830,7 +2852,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212320281694115560
+PLAN_ID .................. 212321885119716625
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -2868,6 +2890,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2876,7 +2899,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -2906,7 +2929,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212320281694199247
+PLAN_ID .................. 212321885119793180
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2942,6 +2965,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -2951,7 +2975,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -2986,7 +3010,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212320281694237753
+PLAN_ID .................. 212321885119836459
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -3023,6 +3047,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3032,7 +3057,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3068,7 +3093,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212320281694275393
+PLAN_ID .................. 212321885119870483
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -3104,6 +3129,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3113,7 +3139,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -3149,7 +3175,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212320281694315295
+PLAN_ID .................. 212321885119915606
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -3185,6 +3211,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3194,7 +3221,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -3258,7 +3285,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212320281694410969
+PLAN_ID .................. 212321885119998609
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -3296,6 +3323,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3305,7 +3333,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494672953
+  ObjectUIDs ............. 5395965056177979769
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -3482,7 +3510,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sat Jan 23 04:01:56 2016
+-- Definition current  Wed Feb 10 17:25:37 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3494,7 +3522,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:01:56 2016
+-- Definition current  Wed Feb 10 17:25:37 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3512,7 +3540,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:01:56 2016
+-- Definition current  Wed Feb 10 17:25:37 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3642,7 +3670,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281718221565
+PLAN_ID .................. 212321885139456457
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -3676,6 +3704,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3684,7 +3713,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675461
+  ObjectUIDs ............. 5395965056177981872
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -3724,7 +3753,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281718303893
+PLAN_ID .................. 212321885139522620
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -3759,6 +3788,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3767,7 +3797,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675461
+  ObjectUIDs ............. 5395965056177981872
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -3806,7 +3836,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281718370185
+PLAN_ID .................. 212321885139598890
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -3840,6 +3870,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3848,7 +3879,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675461
+  ObjectUIDs ............. 5395965056177981872
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -3888,7 +3919,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281716619250
+PLAN_ID .................. 212321885138325650
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -3923,6 +3954,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -3931,7 +3963,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675461
+  ObjectUIDs ............. 5395965056177981872
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -4194,7 +4226,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212320281720176181
+PLAN_ID .................. 212321885141453521
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4230,6 +4262,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4238,7 +4271,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4273,7 +4306,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212320281720217936
+PLAN_ID .................. 212321885141492306
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4310,6 +4343,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4318,7 +4352,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4354,7 +4388,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212320281720273981
+PLAN_ID .................. 212321885141528792
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4390,6 +4424,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4398,7 +4433,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4434,7 +4469,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212320281720323716
+PLAN_ID .................. 212321885141575489
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4470,6 +4505,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4478,7 +4514,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   input_variables ........ %('a')
 
 
@@ -4542,7 +4578,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212320281720405459
+PLAN_ID .................. 212321885141664461
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4580,6 +4616,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4588,7 +4625,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   input_variables ........ %('upd'), %(4)
 
 
@@ -4615,7 +4652,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212320281720484708
+PLAN_ID .................. 212321885141733289
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4651,6 +4688,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4660,7 +4698,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -4695,7 +4733,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212320281720528006
+PLAN_ID .................. 212321885141769945
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4732,6 +4770,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4741,7 +4780,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4777,7 +4816,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212320281720569729
+PLAN_ID .................. 212321885141803748
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4813,6 +4852,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4822,7 +4862,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -4858,7 +4898,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212320281720614265
+PLAN_ID .................. 212321885141846512
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4894,6 +4934,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -4903,7 +4944,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   input_variables ........ %('a')
 
 
@@ -4967,7 +5008,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212320281720711912
+PLAN_ID .................. 212321885141938820
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -5005,6 +5046,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -5014,7 +5056,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... OFF
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494675536
+  ObjectUIDs ............. 5395965056177981941
   input_variables ........ %('uuu'), %(4)
 
 
@@ -5191,7 +5233,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sat Jan 23 04:02:21 2016
+-- Definition current  Wed Feb 10 17:26:00 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -5203,7 +5245,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:02:21 2016
+-- Definition current  Wed Feb 10 17:26:00 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5221,7 +5263,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:02:21 2016
+-- Definition current  Wed Feb 10 17:26:00 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5351,7 +5393,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281743053460
+PLAN_ID .................. 212321885161677240
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -5385,6 +5427,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -5393,7 +5436,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678027
+  ObjectUIDs ............. 5395965056177984042
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -5433,7 +5476,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281743117227
+PLAN_ID .................. 212321885161745895
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -5468,6 +5511,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -5476,7 +5520,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678027
+  ObjectUIDs ............. 5395965056177984042
   select_list ............ 1, '1'
 
 
@@ -5514,7 +5558,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281743176860
+PLAN_ID .................. 212321885161799613
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -5548,6 +5592,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -5556,7 +5601,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678027
+  ObjectUIDs ............. 5395965056177984042
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -5595,7 +5640,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281743246484
+PLAN_ID .................. 212321885161866012
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -5630,6 +5675,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -5638,7 +5684,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678027
+  ObjectUIDs ............. 5395965056177984042
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -5900,7 +5946,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212320281745015132
+PLAN_ID .................. 212321885163649284
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5936,6 +5982,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -5944,7 +5991,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -5977,7 +6024,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212320281745087517
+PLAN_ID .................. 212321885163703104
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6014,6 +6061,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6022,7 +6070,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6056,7 +6104,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212320281745168948
+PLAN_ID .................. 212321885163762184
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6092,6 +6140,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6100,7 +6149,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6134,7 +6183,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212320281745247545
+PLAN_ID .................. 212321885163841840
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -6170,6 +6219,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6178,7 +6228,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6241,7 +6291,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212320281745391932
+PLAN_ID .................. 212321885164005046
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6279,6 +6329,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6287,7 +6338,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... OFF
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -6317,7 +6368,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212320281745461688
+PLAN_ID .................. 212321885164071839
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6353,6 +6404,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6362,7 +6414,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -6395,7 +6447,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212320281745519235
+PLAN_ID .................. 212321885164141735
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6432,6 +6484,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6441,7 +6494,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6475,7 +6528,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212320281745602890
+PLAN_ID .................. 212321885164217816
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6511,6 +6564,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6520,7 +6574,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -6554,7 +6608,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212320281745680127
+PLAN_ID .................. 212321885164282567
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -6590,6 +6644,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6599,7 +6654,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -6662,7 +6717,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212320281745815496
+PLAN_ID .................. 212321885164415433
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6700,6 +6755,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -6709,7 +6765,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494678094
+  ObjectUIDs ............. 5395965056177984162
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -6906,7 +6962,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sat Jan 23 04:02:47 2016
+-- Definition current  Wed Feb 10 17:26:23 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -6918,7 +6974,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:02:47 2016
+-- Definition current  Wed Feb 10 17:26:23 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -6936,7 +6992,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:02:47 2016
+-- Definition current  Wed Feb 10 17:26:23 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -7066,7 +7122,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281769455347
+PLAN_ID .................. 212321885185091978
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -7100,6 +7156,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7108,7 +7165,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680591
+  ObjectUIDs ............. 5395965056177986351
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -7148,7 +7205,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281769524707
+PLAN_ID .................. 212321885185152819
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -7183,6 +7240,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7191,7 +7249,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680591
+  ObjectUIDs ............. 5395965056177986351
   select_list ............ %(1), %('1')
   input_variables ........ %(1), %('1')
 
@@ -7230,7 +7288,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281769600364
+PLAN_ID .................. 212321885185203931
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -7264,6 +7322,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7272,7 +7331,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680591
+  ObjectUIDs ............. 5395965056177986351
   select_list ............ TRAFODION.SCH.T010T1.A, %('1')
   input_variables ........ %('1')
 
@@ -7313,7 +7372,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281768043999
+PLAN_ID .................. 212321885183743840
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -7348,6 +7407,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7356,7 +7416,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680591
+  ObjectUIDs ............. 5395965056177986351
   select_list ............ %(2), TRAFODION.SCH.T010T1.B
   input_variables ........ %(2)
 
@@ -7619,7 +7679,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212320281771478099
+PLAN_ID .................. 212321885186898865
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7655,6 +7715,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7663,7 +7724,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -7697,7 +7758,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212320281771540990
+PLAN_ID .................. 212321885186959156
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7734,6 +7795,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7742,7 +7804,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7777,7 +7839,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212320281771619386
+PLAN_ID .................. 212321885187022838
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7813,6 +7875,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7821,7 +7884,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -7856,7 +7919,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212320281771701423
+PLAN_ID .................. 212321885187080416
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -7892,6 +7955,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -7900,7 +7964,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   input_variables ........ %('a')
 
 
@@ -7964,7 +8028,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212320281771859617
+PLAN_ID .................. 212321885187212767
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -8002,6 +8066,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8010,7 +8075,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   input_variables ........ %('upd'), %(4)
 
 
@@ -8037,7 +8102,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212320281771944803
+PLAN_ID .................. 212321885187278448
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8073,6 +8138,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8082,7 +8148,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'), %(1),
                              TRAFODION.SCH.T010T2.D
   input_variables ........ %('a'), %(1)
@@ -8116,7 +8182,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212320281772013281
+PLAN_ID .................. 212321885187324046
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8153,6 +8219,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8162,7 +8229,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8197,7 +8264,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212320281772086217
+PLAN_ID .................. 212321885187382745
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8233,6 +8300,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8242,7 +8310,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   select_list ............ TRAFODION.SCH.T010T2.A, %('a'),
                              TRAFODION.SCH.T010T2.C, TRAFODION.SCH.T010T2.D
   input_variables ........ %('a')
@@ -8277,7 +8345,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212320281772144692
+PLAN_ID .................. 212321885187439570
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -8313,6 +8381,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8322,7 +8391,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   input_variables ........ %('a')
 
 
@@ -8386,7 +8455,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212320281772251652
+PLAN_ID .................. 212321885187560565
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -8424,6 +8493,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8433,7 +8503,7 @@ DESCRIPTION
   QUERY_CACHE ........ 1,024
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494680674
+  ObjectUIDs ............. 5395965056177986475
   input_variables ........ %('uuu'), %(4)
 
 
@@ -8610,7 +8680,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Sat Jan 23 04:03:12 2016
+-- Definition current  Wed Feb 10 17:26:44 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -8622,7 +8692,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:03:12 2016
+-- Definition current  Wed Feb 10 17:26:44 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8640,7 +8710,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Sat Jan 23 04:03:12 2016
+-- Definition current  Wed Feb 10 17:26:44 2016
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8770,7 +8840,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281794686700
+PLAN_ID .................. 212321885206481311
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -8804,6 +8874,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8812,7 +8883,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683147
+  ObjectUIDs ............. 5395965056177988580
   select_list ............ TRAFODION.SCH.T010T1.A, TRAFODION.SCH.T010T1.B
 
 
@@ -8852,7 +8923,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281794747175
+PLAN_ID .................. 212321885206545625
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -8887,6 +8958,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8895,7 +8967,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683147
+  ObjectUIDs ............. 5395965056177988580
   select_list ............ 1, '1'
 
 
@@ -8933,7 +9005,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281794805796
+PLAN_ID .................. 212321885206601773
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -8967,6 +9039,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -8975,7 +9048,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683147
+  ObjectUIDs ............. 5395965056177988580
   select_list ............ TRAFODION.SCH.T010T1.A, '1'
 
 
@@ -9015,7 +9088,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212320281794880384
+PLAN_ID .................. 212321885206657193
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -9050,6 +9123,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9058,7 +9132,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683147
+  ObjectUIDs ............. 5395965056177988580
   select_list ............ 1, TRAFODION.SCH.T010T1.B
 
 
@@ -9320,7 +9394,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212320281796634779
+PLAN_ID .................. 212321885208444428
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9356,6 +9430,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9364,7 +9439,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9397,7 +9472,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212320281796682738
+PLAN_ID .................. 212321885208506444
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9434,6 +9509,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9442,7 +9518,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9476,7 +9552,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212320281796742478
+PLAN_ID .................. 212321885208569011
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9512,6 +9588,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9520,7 +9597,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9554,7 +9631,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212320281796802225
+PLAN_ID .................. 212321885208626953
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9590,6 +9667,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9598,7 +9676,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -9661,7 +9739,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212320281796946620
+PLAN_ID .................. 212321885208874924
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -9699,6 +9777,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9707,7 +9786,7 @@ DESCRIPTION
   HBASE_FILTER_PREDS ..... ON
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -9737,7 +9816,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212320281797018083
+PLAN_ID .................. 212321885208941580
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9773,6 +9852,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9782,7 +9862,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', 1,
                              TRAFODION.SCH.T010T2.D
 
@@ -9815,7 +9895,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212320281797069719
+PLAN_ID .................. 212321885208994111
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9852,6 +9932,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9861,7 +9942,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9895,7 +9976,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212320281797141253
+PLAN_ID .................. 212321885209059552
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9931,6 +10012,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -9940,7 +10022,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
   select_list ............ TRAFODION.SCH.T010T2.A, 'a', TRAFODION.SCH.T010T2.C,
                              TRAFODION.SCH.T010T2.D
 
@@ -9974,7 +10056,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212320281797228858
+PLAN_ID .................. 212321885209136694
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -10010,6 +10092,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -10019,7 +10102,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
 
 
 TUPLE_FLOW ================================  SEQ_NO 3        CHILDREN 1, 2
@@ -10082,7 +10165,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212320281797351556
+PLAN_ID .................. 212321885209255812
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -10120,6 +10203,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... SYSTEM
   TRAF_ALIGNED_ROW_FORMAT  OFF
   TRAF_INDEX_CREATE_OPT    ON
+  DDL_TRANSACTIONS ....... ON
   SCHEMA ................. TRAFODION.SCH
   HBASE_MAX_COLUMN_NAME_  10
   HBASE_MAX_COLUMN_VAL_L  20
@@ -10129,7 +10213,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   MDAM_SCAN_METHOD ....... ON
   HBASE_MAX_NUM_SEARCH_KE  1
-  ObjectUIDs ............. 963295519494683224
+  ObjectUIDs ............. 5395965056177988641
 
 
 TRAFODION_UPDATE ==========================  SEQ_NO 1        NO CHILDREN
@@ -10637,12 +10721,12 @@ CREATE TABLE TRAFODION.SCH."delim_tab"
 --- SQL operation complete.
 >>get all volatile schemas;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000180952123202816309420130000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000259692123218850742930010000000002
 
 --- SQL operation complete.
 >>get all volatile tables;
 
-Schema(Active  ): VOLATILE_SCHEMA_MXID110000180952123202816309420130000000002
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000259692123218850742930010000000002
   Table: VTAB1
   Table: VTAB2
 
