@@ -28,8 +28,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hbase.version>${env.HBASE_DEP_VER}</hbase.version>
-    <hbase-trx.id>${env.HBASE_TRX_ID}</hbase-trx.id>
+    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
+    <hbase-trx.id>${env.HBASE_TRX_ID_CDH}</hbase-trx.id>
     <java.version>1.7</java.version>
   </properties>
 

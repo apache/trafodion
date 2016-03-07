@@ -601,28 +601,24 @@ MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
 HIVE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HIVE_PREFIX=hive-1.1.0-cdh5.4.4
+HIVE_PREFIX=hive-${HIVE_DEP_VER_CDH}
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER_APACHE}
+    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_APACHE}-bin
+fi
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_HDP}-bin
+fi
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
-if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER}
-    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER}-bin
-    HIVE_TAR=${HIVE_PREFIX}.tar.gz
-fi
-
-if [[ "$HBASE_DISTRO" = "HDP" ]]; then
-    HIVE_PREFIX=apache-hive-1.2.1.2.3.2.0-2950-bin
-    HIVE_TAR=${HIVE_PREFIX}.tar.gz
-fi
-
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HBASE_TARR=hbase-${HBASE_DEP_VER}.tar.gz
-
+HBASE_TAR=hbase-${HBASE_DEP_VER_CDH}.tar.gz
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
-    HBASE_TAR=hbase-1.1.2.2.3.2.0-2950.tar.gz
+    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    HBASE_TAR=hbase-1.0.2-bin.tar.gz
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/hbase-${HBASE_DEP_VER_APACHE}
+    HBASE_TAR=hbase-${HBASE_DEP_VER_APACHE}-bin.tar.gz
 fi
 
 echo "Checking for existing Hadoop processes..."
@@ -1019,7 +1015,7 @@ if [ -d hadoop/bin ]; then
 else
   echo "Setting up Hadoop..."
   #####################################################
-
+echo "$MY_LOCAL_SW_DIST/${HADOOP_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HADOOP_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HADOOP_TAR} .
     echo "Copied Hadoop tar file from: $MY_LOCAL_SW_DIST/${HADOOP_TAR}" 
@@ -1239,7 +1235,7 @@ if [ -d mysql/bin ]; then
 else
   #####################################################
   echo "Setting up MySQL..."
-
+echo "$MY_LOCAL_SW_DIST/${MYSQL_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
     echo "Copied MySql tar file from: $MY_LOCAL_SW_DIST/${MYSQL_TAR}"
@@ -1318,7 +1314,7 @@ if [ -f mysql-connector-java-*/mysql-connector-java-*.jar ]; then
 else
   #####################################################
   echo "Setting up MySQL JDBC driver..."
-
+echo "$MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} .
     echo "Copied MySql JDBC tar file from: $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
@@ -1344,7 +1340,7 @@ if [ -d hive/bin ]; then
 else
   #####################################################
   echo "Setting up Hive..."
-
+echo "$MY_LOCAL_SW_DIST/${HIVE_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HIVE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HIVE_TAR} .
     echo "Copied Hive tar file from: $MY_LOCAL_SW_DIST/${HIVE_TAR}"
@@ -1472,7 +1468,7 @@ if [ -d hbase/bin ]; then
 else
   #####################################################
   echo "Setting up HBase..."
-
+echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HBASE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HBASE_TAR} .
     echo "Copied HBase tar file from: $MY_LOCAL_SW_DIST/${HBASE_TAR}"

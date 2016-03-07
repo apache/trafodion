@@ -28,7 +28,7 @@
 
   <properties>
     <hadoop.version>2.6.0</hadoop.version>
-    <hbase.version>1.0.0-cdh5.4.4</hbase.version>
+    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
     <protobuf.version>2.5.0</protobuf.version>
     <protocVersion>2.5.0</protocVersion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

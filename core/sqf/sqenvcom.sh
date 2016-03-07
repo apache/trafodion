@@ -139,29 +139,41 @@ fi
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
+# set common version to be consistent between shared lib and maven dependencies
+export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
+export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
+export HBASE_DEP_VER_HDP=1.1.2.2.3.2.0-2950
+export HIVE_DEP_VER_HDP=1.2.1.2.3.2.0-2950
+export HBASE_DEP_VER_APACHE=1.0.2
+export HIVE_DEP_VER_APACHE=1.1.0
+export THRIFT_DEP_VER=0.9.0
+export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
+export HBASE_TRX_ID_APACHE=hbase-trx-apache1_0_2
+export HBASE_TRX_ID_HDP=hbase-trx-hdp2_3
+
 # general Hadoop & TRX dependencies - not distro specific, choose one to build against
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_ID=hbase-trx-cdh5_4
-export HBASE_DEP_VER=hbase-1.0.0-cdh5.4.4.tar.gz
-export HBASE_TRX_JAR=${HBASE_TRX_ID}-${TRAFODION_VER}.jar
-export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
-export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
-export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
+export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
-    export HBASE_VERSION_ID=hdp2_3
-    export HBASE_TRX_JAR=hbase-trx-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
-    export DTM_COMMON_JAR=trafodion-dtm-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
-    export SQL_JAR=trafodion-sql-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    export HBASE_VERSION_ID=apache1_0_2
-    export HBASE_TRX_JAR=hbase-trx-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
-    export DTM_COMMON_JAR=trafodion-dtm-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
-    export SQL_JAR=trafodion-sql-${HBASE_VERSION_ID}-${TRAFODION_VER}.jar
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
 fi
-# set common version to be consistent between shared lib and maven dependencies
-export THRIFT_DEP_VER=0.9.0
-export HIVE_DEP_VER=0.13.1
+export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
+export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
+HBVER=""
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HBVER="hdp2_3"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HBVER="apache1_0_2"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+fi
+export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart

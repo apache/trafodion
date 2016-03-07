@@ -63,4 +63,3 @@
 # perform some additional support for this.
 export CDH_5_3_HDP_2_2_SUPPORT="N"
 export CDH_5_4_SUPPORT="Y"
-export HDP_2_3_SUPPORT="Y"

@@ -50,9 +50,7 @@
 
   <properties>
     <hadoop.version>2.7.1.2.3.2.0-2950</hadoop.version>
-    <hbase.version>1.1.2.2.3.2.0-2950</hbase.version>
-    <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
-    <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
+    <hbase.version>${env.HBASE_DEP_VER_HDP}</hbase.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
     <trx-suffix>hdp2_3</trx-suffix>
