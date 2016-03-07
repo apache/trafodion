@@ -275,7 +275,7 @@
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>control query default MODE_SPECIAL_3 'ON';
+>>control query default MODE_SPECIAL_4 'ON';
 
 --- SQL operation complete.
 >>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
@@ -284,7 +284,7 @@
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
+>>control query default MODE_SPECIAL_4 reset;
 
 --- SQL operation complete.
 >>
@@ -548,7 +548,7 @@
 
 >>
 >>-- Error 4065
->>control query default MODE_SPECIAL_3 'ON';
+>>control query default MODE_SPECIAL_4 'ON';
 
 --- SQL operation complete.
 >>prepare xx from select * from t006t1 where to_date(A, '201005') = A;
@@ -559,11 +559,11 @@
 
 >>prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
 
-*** ERROR[4065] The format, "YYYYMM", specified in the TO_DATE function is not supported.
+*** ERROR[4041] Type DATE cannot be compared with type INTEGER.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
+>>control query default MODE_SPECIAL_4 reset;
 
 --- SQL operation complete.
 >>
@@ -723,13 +723,13 @@
 
 --- SQL command prepared.
 >>
->>control query default MODE_SPECIAL_3 'ON';
+>>control query default MODE_SPECIAL_4 'ON';
 
 --- SQL operation complete.
 >>prepare xx from select * from t006t2 where to_date(A, '99:99:99:99') = A;
 
 --- SQL command prepared.
->>control query default MODE_SPECIAL_3 reset;
+>>control query default MODE_SPECIAL_4 reset;
 
 --- SQL operation complete.
 >>

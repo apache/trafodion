@@ -2534,9 +2534,8 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
   char *formatStr = op_data[2];
   char *result = op_data[0];
   
-  if ((getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME1) ||
-      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME2) ||
-      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_TIME_STR))
+  if ((getDateFormat() == ExpDatetime::DATETIME_FORMAT_NUM1) ||
+      (getDateFormat() == ExpDatetime::DATETIME_FORMAT_NUM2))
     {
       // numeric to TIME conversion.
       if(ExpDatetime::convNumericTimeToASCII(opData, 
@@ -2573,10 +2572,13 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
                                              diagsArea,
                                              0) < 0) {
             
-	    ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
-				    derivedFunction(),
-				    origFunctionOperType());
-	    
+            if (diagsArea && (*diagsArea) && 
+                (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)
+              {
+                ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
+                                        derivedFunction(),
+                                        origFunctionOperType());
+              }
 	    return ex_expr::EXPR_ERROR;
 	  }
 	}
@@ -2584,7 +2586,7 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
 	{
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(1);
 	  if(datetimeOpType->convDatetimeToASCII(opData, 
-					     result,
+                                                 result,
 						 getOperand(0)->getLength(),
 						 getDateFormat(),
 						 formatStr,

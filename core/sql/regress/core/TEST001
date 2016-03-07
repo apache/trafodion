@@ -111,6 +111,8 @@ select Position 	(b in null) from t001t1;
 select rtrim            (null) from t001t1;
 select Substring	(null from 2) from t001t1;
 select Substring	(b from null) from t001t1;
+select To_char   	(null, 'YYYYMMDD') from t001t1;
+select To_date   	(null, 'YYYYMMDD') from t001t1;
 select Trim  		(null) from t001t1;
 select Upper  		(null) from t001t1;
 select Upshift  	(null) from t001t1;
