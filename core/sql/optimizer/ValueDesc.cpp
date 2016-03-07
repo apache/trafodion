@@ -514,7 +514,7 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
 }
 
 
-NABoolean ValueId::isColumnWithNonNullDefault() const{
+NABoolean ValueId::isColumnWithNonNullNonCurrentDefault() const{
   NAColumn * nac = NULL;
   ItemExpr *ck = getItemExpr();
   if ( ck == NULL )
@@ -529,7 +529,7 @@ NABoolean ValueId::isColumnWithNonNullDefault() const{
   default:
       break;
   }
-  if (nac &&  nac->getDefaultValue() && strcmp(nac->getDefaultValue(),"NULL") != 0)
+  if (nac &&  nac->getDefaultValue() && nac->getDefaultClass()!=COM_NULL_DEFAULT && nac->getDefaultClass()!=COM_CURRENT_DEFAULT)
       return TRUE;
   else
       return FALSE;

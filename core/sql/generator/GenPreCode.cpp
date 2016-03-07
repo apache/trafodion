@@ -11386,7 +11386,7 @@ NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
   }
   //check if not an added column with default non null
   if ((foundBinary || foundUnary)&& (NOT hbaseLookupPred)){
-        if (colVID.isColumnWithNonNullDefault()){
+        if (colVID.isColumnWithNonNullNonCurrentDefault()){
             foundBinary=FALSE;
             foundUnary=FALSE;
         }
@@ -11827,7 +11827,7 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
           {
             if (originExePreds->isNotNullable(vid)){// it is non nullable
                 OperatorTypeEnum operatorType = vid.getItemExpr()->getOperatorType();
-                if ((operatorType == ITM_BASECOLUMN || operatorType == ITM_INDEXCOLUMN) && !vid.isColumnWithNonNullDefault()){//check if with non null default... notgood
+                if ((operatorType == ITM_BASECOLUMN || operatorType == ITM_INDEXCOLUMN) && !vid.isColumnWithNonNullNonCurrentDefault()){//check if with non null or non current default... notgood
                     needAddingNonNullableColumn = false; // we found one column meeting all criteria
                     break;
                 }

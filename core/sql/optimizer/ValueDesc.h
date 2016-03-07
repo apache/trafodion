@@ -195,8 +195,8 @@ public:
 
   // return TRUE if I am a ValueId associated with an Index Column, or
   // a base column , and I am a column with a default value that is not
-  // null.
-  NABoolean isColumnWithNonNullDefault() const;
+  // null or not Current.
+  NABoolean isColumnWithNonNullNonCurrentDefault() const;
 
   // ---------------------------------------------------------------------
   // change the ValueId's type to the given type
