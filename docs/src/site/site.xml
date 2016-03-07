@@ -34,7 +34,7 @@
   <bannerLeft>
     <!-- Apache Trafodion, but with "Trafodion" highlighted -->
     <name>
-       <![CDATA[<img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo">]]>
+       <![CDATA[<img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo" width="383">]]>
     </name>
     <href>index.html</href>
   </bannerLeft>
@@ -46,14 +46,16 @@
       <theme>bootswatch-cerulean</theme>
       <titleTemplate>%1$s %2$s</titleTemplate>
       <skinAttribution>false</skinAttribution>
-      <breadcrumbs>true</breadcrumbs>   
+      <breadcrumbs>false</breadcrumbs>   
+      <imgLightbox>false</imgLightbox>
+      <markPageHeader>false</markPageHeader>
       <smoothScroll>true</smoothScroll>
       <!--  Enable code highlighting -->
       <highlightJs>true</highlightJs>
       <brand>
         <!-- Brand text in top-left part of the site -->
         <name>
-          <![CDATA[Apache <span class="color-highlight">Trafodion</span>]]>
+          <![CDATA[<span class="brand-apache">Apache</span> <span class="brand-trafodion">Trafodion</span>]]>
         </name>
         <href>index.html</href>
       </brand>
@@ -116,6 +118,14 @@
           <shortTitle>License</shortTitle>
           <toc>false</toc>
         </license>
+        <logo>
+          <shortTitle>Logo</shortTitle>
+          <toc>false</toc>
+           <sections>
+              <body />
+              <thumbs>2</thumbs>
+           </sections>
+        </logo>        
         <mail-lists>
           <shortTitle>Mailing Lists</shortTitle>
           <toc>false</toc>
@@ -188,13 +198,14 @@
     <links>
       <item name="Download" href="download.html"/>
       <item name="Quick Start" href="quickstart.html"/>
-      <item name="Docs" href="documentation.html"/>
+      <item name="Documentation" href="documentation.html"/>
       <item name="Contribute" href="contributing-redirect.html"/>
     </links>
     <menu name="Project">
       <item href="index.html" name="Overview"/>
       <item href="faq.html" name="FAQ"/>
       <item href="release-notes.html" name="Release Notes"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home" name="Wiki"/>
       <item href="management.html" name="Managing Trafodion"/>
       <!-- item href="new-features.html" name="New Features"/-->
       <!-- item href="roadmap.html" name="Roadmap"/-->
@@ -202,6 +213,7 @@
       <item href="http:divider" name=""/>
       <item href="team-redirect.html" name="Team"/>
       <item href="presentations.html" name="Presentations"/>
+      <item href="logo.html" name="Logo"/>
       <item href="mail-lists.html" name="Mailing List"/>
       <item href="http:divider" name=""/>
       <item href="source-repository.html" name="Source Repository"/>

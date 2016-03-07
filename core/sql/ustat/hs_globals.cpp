@@ -5568,16 +5568,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
     //The result will always be a VARCHAR(len) CHARACTER SET UCS2
     //In most cases, this will reduce the number of fetches.
 
-    //10-040618-7112: temporary workaround for compiler issue
-    //make sure no parallel plans get generated for single partitioned tables
-    //The sample table for SQLMP tables are always single partition. Whereas for
-    //SQLMX, the table may be partitioned based on the HIST_SCRATCH_VOL cqd.
-    if ((sampleTableUsed && tableFormat == SQLMP) ||
-        (NOT sampleTableUsed && objDef->getNumPartitions() == 1))
-      {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF'");
-      }
-
     if (CmpCommon::getDefault(USTAT_ATTEMPT_ESP_PARALLELISM) == DF_OFF)
       HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM 'OFF'");
 
@@ -5734,16 +5724,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
             }
           }
         LM->StopTimer();
-      }
-
-    //10-040618-7112: temporary workaround for compiler issue
-    //make sure no parallel plans get generated for single partitioned tables
-    //The sample table for SQLMP tables are always single partition. Whereas for
-    //SQLMX, the table may be partitioned based on the HIST_SCRATCH_VOL cqd.
-    if ((sampleTableUsed && tableFormat == SQLMP) ||
-        (NOT sampleTableUsed && objDef->getNumPartitions() == 1))
-      {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT ATTEMPT_ESP_PARALLELISM RESET");
       }
 
     if (CmpCommon::getDefault(USTAT_ATTEMPT_ESP_PARALLELISM) == DF_OFF)
@@ -7763,7 +7743,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 #else // NA_USTAT_USE_STATIC not defined, use dynamic query
     char sbuf[25];
     NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, "
-                          "cast(READ_TIME as char(19)), REASON "
+                          "cast(READ_TIME as char(19) character set iso88591), REASON "
                    "FROM ";
     qry.append(hstogram_table->data());
     qry.append(    " WHERE TABLE_UID = ");

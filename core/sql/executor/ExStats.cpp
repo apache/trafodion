@@ -10000,7 +10000,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
           		  Lng32 maxLen)
 {
   char *buf = dataBuffer;
-  char transIdText[129];
   
   Int64 exeElapsedTime;
   Int64 compElapsedTime;
@@ -10027,10 +10026,6 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
   }
   else
     exeElapsedTime = exeEndTime_ - exeStartTime_;
-  {
-    str_cpy_all(transIdText, "-1", 2);
-    transIdText[2] = '\0';
-  }
   short stmtState = stmtState_;
 
 #ifndef __EID
@@ -10045,7 +10040,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %s EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
     "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %s suspended: %s lastSuspendTime: %Ld "
+    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d "
     "reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
@@ -10077,7 +10072,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               numSqlProcs_,
               numCpus_,
               exePriority_,
-              transIdText,
+              transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
               aqrLastErrorCode_,
@@ -10100,7 +10095,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "subqueryType: %d EstRowsAccessed: %f EstRowsUsed: %f compElapsedTime: %Ld "
     "exeElapsedTime: %Ld parentQid: %s parentQidSystem: %s childQid: %s "
     "rowsReturned: %Ld firstRowReturnTime: %Ld numSqlProcs: %d  numCpus: %d "
-    "exePriority: %d transId: %s suspended: %s lastSuspendTime: %Ld "
+    "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
                   "sqlSrcLen: %d sqlSrc: \"%s\"",
@@ -10131,7 +10126,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               numSqlProcs_,
               numCpus_,
               exePriority_,
-              transIdText,
+              transId_,
               (isQuerySuspended_ ? "yes" : "no" ),
               querySuspendedTime_,
               aqrLastErrorCode_,
