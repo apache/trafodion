@@ -851,9 +851,9 @@ if [ $LINUX -ne 0 ]; then
 fi
 
 export JDBC_T4_URL="jdbc:t4jdbc://localhost:23400/:"
-if [ -r $MY_SQROOT/sql/scripts/swenv.sh ]; then
+if [ -r $MY_SQROOT/sql/scripts/sw_env.sh ]; then
   # use a custom port for the JDBC Type 4 driver
-  . $MY_SQROOT/sql/scripts/swenv.sh
+  . $MY_SQROOT/sql/scripts/sw_env.sh
   export JDBC_T4_URL="jdbc:t4jdbc://localhost:${MY_DCS_MASTER_PORT}/:"
 fi
 
