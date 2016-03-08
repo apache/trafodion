@@ -620,6 +620,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("LZO",                TOK_LZO,         NONRESTOKEN_),
   ParKeyWord("M",                  TOK_M,           NONRESTOKEN_),
   ParKeyWord("MAINTAIN",           TOK_MAINTAIN,    SECOND_|COMPAQ_|RESWORD_),
+  ParKeyWord("MANAGEMENT",         TOK_MANAGEMENT,  NONRESTOKEN_),
   ParKeyWord("MANUAL",             TOK_MANUAL,      FLAGSNONE_),
   ParKeyWord("MAP",                TOK_MAP,         COMPAQ_|RESWORD_),
   ParKeyWord("MASTER",             TOK_MASTER,      NONRESTOKEN_),
