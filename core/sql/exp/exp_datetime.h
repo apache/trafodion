@@ -49,7 +49,9 @@
 class SQLEXP_LIB_FUNC  ExpDatetime : public SimpleType {
 
 public:
-  enum asciiFormats 
+  // these enums must be in the same order as the datetimeFormat[] array 
+  // (defined in exp_datetime.cpp).
+  enum DatetimeFormats 
   { 
     DATETIME_FORMAT_MIN       =  0,
     DATETIME_FORMAT_MIN_DATE  =  DATETIME_FORMAT_MIN,
@@ -99,9 +101,9 @@ public:
 
   struct DatetimeFormatInfo
   {
-    Lng32 format;
-    const char * str;
-    Lng32 minLen;
+    Lng32 format;       // defined by enum DatetimeFormats
+    const char * str;   // string representation of datetime format
+    Lng32 minLen;       // minimum length to hold this format
     Lng32 maxLen;
   };
   
@@ -317,12 +319,12 @@ static
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  static const char * getFormatStr(Lng32 frmt)
+  static const char * getDatetimeFormatStr(Lng32 frmt)
   {
     return datetimeFormat[frmt].str;
   }
 
-  static const Lng32 getFormat(const char * formatStr)
+  static const Lng32 getDatetimeFormat(const char * formatStr)
   {
     for (Lng32 i = DATETIME_FORMAT_MIN; i <= DATETIME_FORMAT_MAX; i++)
       {
@@ -361,7 +363,7 @@ static
             (frmt <= DATETIME_FORMAT_MAX_DATE));
   }
 
-  static NABoolean isTSFormat(Lng32 frmt)
+  static NABoolean isTimestampFormat(Lng32 frmt)
   {
     return ((frmt >= DATETIME_FORMAT_MIN_TS) &&
             (frmt <= DATETIME_FORMAT_MAX_TS));
@@ -378,12 +380,12 @@ static
     return ((frmt == DATETIME_FORMAT_NUM1) || (frmt == DATETIME_FORMAT_NUM2));
   }
 
-  static Lng32 getAsciiFormatLen(Lng32 frmt)
+  static Lng32 getDatetimeFormatLen(Lng32 frmt)
   {
     return datetimeFormat[frmt].minLen;
   }
 
-  static Lng32 getAsciiFormatMaxLen(Lng32 frmt)
+  static Lng32 getDatetimeFormatMaxLen(Lng32 frmt)
   {
     return datetimeFormat[frmt].maxLen;
   }

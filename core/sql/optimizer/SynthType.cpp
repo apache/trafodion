@@ -2828,8 +2828,8 @@ const NAType *DateFormat::synthesizeType()
 
   if (vid.getType().getTypeQualifier() == NA_DATETIME_TYPE)
     {
-      Lng32 frmt = ExpDatetime::getFormat(formatStr_.data());
-      length = ExpDatetime::getAsciiFormatMaxLen(frmt);
+      Lng32 frmt = ExpDatetime::getDatetimeFormat(formatStr_.data());
+      length = ExpDatetime::getDatetimeFormatMaxLen(frmt);
     }
   else if (vid.getType().getTypeQualifier() == NA_CHARACTER_TYPE)
     {

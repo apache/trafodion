@@ -3994,11 +3994,9 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
   return newIE;
 }
 
-//
-// <format>: date(year to day), time(hour to sec), timestamp(year to sec)
-//         
-// TO_DATE(<char>, <format>)
-// 
+///////////////////////////////////////////////////////
+// various error checks, details below.
+//////////////////////////////////////////////////////
 NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA, 
                                   const NAType* opType)
 {
@@ -4008,35 +4006,51 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
   NABoolean td  = (formatType_ == FORMAT_TO_DATE);
   NABoolean df  = ExpDatetime::isDateFormat(frmt);
   NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
-  NABoolean tsf = ExpDatetime::isTSFormat(frmt);
+  NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
   NABoolean nf  = ExpDatetime::isNumericFormat(frmt);
   NABoolean ms4 = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
   
   if (NOT (df || tf || tsf || nf))
-    error = 1; // error 4065
+    {
+      // format must be date, time, timestamp or numeric
+      error = 1; // error 4065
+    }
   else if ((NOT ms4) && nf)
-    error = 1; // error 4065
+    {
+      // format can only be numeric in mode_special_4
+      error = 1; // error 4065
+    }
+
   if (!error && tc)
     {
+      // source must be datetime with to_char function
       if (opType->getTypeQualifier() != NA_DATETIME_TYPE)
         error = 2; // error 4071
+
+      // cannot convert date source to time format
       else if (tf && (opType->getPrecision() == SQLDTCODE_DATE))
         error = 3; // error 4072
     }
+
   if (!error && td)
     {
+      // source must be char or numeric with to_date
       if ((opType->getTypeQualifier() != NA_CHARACTER_TYPE) &&
           (opType->getTypeQualifier() != NA_NUMERIC_TYPE))
         error = 4; //error 4043
+
+      // source can only be numeric in mode_special_4
       else if ((NOT ms4) && (opType->getTypeQualifier() != NA_CHARACTER_TYPE))
         error = 4; // error 4043
-    }
-  if (!error && ms4 && nf)
-    {
-      if ((opType->getTypeQualifier() != NA_NUMERIC_TYPE) ||
-          (NOT ((NumericType*)opType)->isExact()) || 
-          (NOT((NumericType*)opType)->getScale() == 0))
-        error = 5; // error 4045
+
+      // numeric must be exact with scale of 0
+      else if (ms4 && (opType->getTypeQualifier() == NA_NUMERIC_TYPE))
+        {
+          if (NOT ((NumericType*)opType)->isExact())
+            error = 5; // error 4046
+          else if (NOT ((NumericType*)opType)->getScale() == 0)
+            error = 6; // error 4047
+        }
     }
 
   if (error)
@@ -4075,18 +4089,26 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
           
         case 5:
           {
-            *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("FORMAT");
+            *CmpCommon::diags() << DgSqlCode(-4046) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+          
+        case 6:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4047) << DgString0("TO_DATE");
             bindWA->setErrStatus();
           }
           break;
         } // switch
-
+      
       return TRUE;
     }
-
+  
   return FALSE;
 }
 
+// used for TO_DATE, TO_CHAR, TO_TIME, DATEFORMAT functions.
 DateFormat::DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
                        Lng32 formatType, NABoolean wasDateformat)
      : CacheableBuiltinFunction(ITM_DATEFORMAT,
@@ -4104,7 +4126,7 @@ DateFormat::DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
   else if (formatStr_ == "HH:MI:SS")
     formatStr_ = "HH24:MI:SS";
 
-  frmt_ = ExpDatetime::getFormat(formatStr_.data());
+  frmt_ = ExpDatetime::getDatetimeFormat(formatStr_.data());
 }
 
 ItemExpr * DateFormat::bindNode(BindWA * bindWA)
@@ -4133,7 +4155,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
 
   if (ExpDatetime::isDateTimeFormat(frmt_))
     {
-      if (ExpDatetime::isTSFormat(frmt_))
+      if (ExpDatetime::isTimestampFormat(frmt_))
         dateFormat_ = DateFormat::TIMESTAMP_FORMAT_STR;
       else if (ExpDatetime::isTimeFormat(frmt_))
         dateFormat_ = DateFormat::TIME_FORMAT_STR;
@@ -4178,6 +4200,8 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
       CMPASSERT(FALSE); // should not reach here
     }
 
+  // if source is a timestamp and target is date or time, extract
+  // date or time part from source before formatting.
   ItemExpr * newChild = NULL;
   if (naType0->getPrecision() == SQLDTCODE_TIMESTAMP)
     {
@@ -4203,19 +4227,6 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
       
       if (newChild)
         setChild(0, newChild->bindNode(bindWA));
-      
-      naType0 = &child(0)->getValueId().getType();
-      if (DFS2REC::isAnyVarChar(naType0->getFSDatatype()))
-	{
-	  // convert to fixed char.
-	  newChild =
-	    new (bindWA->wHeap())
-	    Cast(child(0),
-		 new (bindWA->wHeap())
-		 SQLChar(naType0->getNominalSize(),
-			 naType0->supportsSQLnull()));
-	  setChild(0, newChild->bindNode(bindWA));
-	}
     }
 
   BuiltinFunction::bindNode(bindWA);

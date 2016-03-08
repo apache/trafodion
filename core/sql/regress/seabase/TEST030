@@ -24,10 +24,6 @@
 
 log LOG030 clear;
 
-drop table if exists t030t1;
-create table t030t1 (a date);
-insert into t030t1 values (date '2016-03-01');
-
 select to_date('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 select to_date('03/01/2016', 'MM/DD/YYYY') from (values(1)) x(a);
 select to_date('01.03.2016', 'DD.MM.YYYY') from (values(1)) x(a);
@@ -79,8 +75,17 @@ select to_char(TIMESTAMP '2016-03-01 10:11:12', 'MONTH DD, YYYY, HH:MI') from (v
 select to_char (time '10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
 select to_char (time '10:23:34', 'HH:MI:SS') from (values(1)) x(a);
 
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'HH:MI:SS') from (values(1)) x(a);
+
+drop table if exists t030t1;
+create table t030t1 (a date, b char(30), c varchar(30));
+insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01');
+
 select to_char(a, 'YYYYMMDD') from t030t1;
 select a (date, format 'YYYYMMDD') from t030t1;
+select to_date(b, 'YYYY-MM-DD') from t030t1;
+select to_date(c, 'YYYY-MM-DD') from t030t1;
 
 -- negative tests
 select to_date('2016-03-01', 'YYYYMM-DD') from (values(1)) x(a);
@@ -88,14 +93,18 @@ select to_date(DATE '2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 select to_date('0103.2016', 'DD.MM.YYYY') from (values(1)) x(a);
 select to_char('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 select to_date(20160301, 'YYYYMMDD') from (values(1)) x(a);
+select to_char(date '2016-03-01', 'HH:MI:SS') from (values(1)) x(a);
 
 -- some formats only enabled in special mode. Not externalized.
 cqd mode_special_4 'ON';
 select to_date(20160301, 'YYYYMMDD') from (values(1)) x(a);
 select to_date(12345678, '99:99:99:99') from (values(1)) x(a);
 select to_date(-12345678, '-99:99:99:99') from (values(1)) x(a);
--- error case
+
+-- ms4 error cases
 select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
 select to_date(-12345678, '99:99:99:99') from (values(1)) x(a);
+select to_date(1e0, '99:99:99:99') from (values(1)) x(a);
+select to_date(1.2, '99:99:99:99') from (values(1)) x(a);
 
 log;

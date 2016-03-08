@@ -3218,7 +3218,6 @@ literal :       numeric_literal
                       $$ = new (PARSERHEAP()) ConstValue
                         (*$1, getStringCharSet(&$1));
                       SqlParser_CurrentParser->collectItem4HQC($$);	
-		      // $$ = new (PARSERHEAP()) Format($$, *$6, TRUE);
                       $$ = new (PARSERHEAP()) DateFormat($$, *$6, DateFormat::FORMAT_TO_DATE);
 		    }
 		  else
@@ -3227,7 +3226,6 @@ literal :       numeric_literal
 		      if (! $$) YYERROR;
                       SqlParser_CurrentParser->collectItem4HQC($$);
 		      restoreInferCharsetState();
-		      // $$ = new (PARSERHEAP()) Format($$, *$6, FALSE);
                       $$ = new (PARSERHEAP()) DateFormat($$, *$6, DateFormat::FORMAT_TO_CHAR);
 		    }
 
@@ -7915,7 +7913,6 @@ primary :     '(' value_expression ')'
 	      | dml_column_reference TOK_LPAREN_BEFORE_DATE_COMMA_AND_FORMAT TOK_DATE ',' TOK_FORMAT character_string_literal ')'
                 {
                   // DEFAULT_CHARSET has no effect on character_string_literal in this context
-		  // $$ = new (PARSERHEAP()) Format($1, *$6, FALSE);
                   $$ = new (PARSERHEAP()) DateFormat($1, *$6, DateFormat::FORMAT_TO_CHAR);
 		}
 
@@ -8596,7 +8593,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_TO_NUMBER '(' value_expression ')'
                                {
-				 // CheckModeSpecial3;
+				 CheckModeSpecial3;
 
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_NUMBER, $3);
@@ -8608,7 +8605,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 			       }
     | TOK_TO_TIMESTAMP '(' value_expression ')'
                                {
-				 // CheckModeSpecial4;
+				 CheckModeSpecial4;
 
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
@@ -10316,15 +10313,15 @@ trim_spec : TOK_LEADING     {  $$ = (Int32) Trim::LEADING;  }
 /* type stringval */
 date_format : TOK_DEFAULT   
     {  
-      $$ = new (PARSERHEAP()) NAString(ExpDatetime::getFormatStr(ExpDatetime::DATETIME_FORMAT_DEFAULT));
+      $$ = new (PARSERHEAP()) NAString(ExpDatetime::getDatetimeFormatStr(ExpDatetime::DATETIME_FORMAT_DEFAULT));
     }
 	| TOK_EUROPEAN      
     {  
-      $$ = new (PARSERHEAP()) NAString(ExpDatetime::getFormatStr(ExpDatetime::DATETIME_FORMAT_EUROPEAN));
+      $$ = new (PARSERHEAP()) NAString(ExpDatetime::getDatetimeFormatStr(ExpDatetime::DATETIME_FORMAT_EUROPEAN));
     }
 	| TOK_USA           
     {  
-      $$ = new (PARSERHEAP()) NAString(ExpDatetime::getFormatStr(ExpDatetime::DATETIME_FORMAT_USA));
+      $$ = new (PARSERHEAP()) NAString(ExpDatetime::getDatetimeFormatStr(ExpDatetime::DATETIME_FORMAT_USA));
     }
 
 

@@ -2562,9 +2562,11 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
       if ((DFS2REC::isAnyCharacter(getOperand(1)->getDatatype())) &&
 	  (DFS2REC::isDateTime(getOperand(0)->getDatatype())))
 	{
+          Lng32 sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+
 	  ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(0);
 	  if(datetimeOpType->convAsciiToDate(opData, 
-                                             getOperand(1)->getLength(),
+                                             sourceLen,
                                              result,
                                              getOperand(0)->getLength(),
                                              getDateFormat(),

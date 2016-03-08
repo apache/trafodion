@@ -1,14 +1,4 @@
 >>
->>drop table if exists t030t1;
-
---- SQL operation complete.
->>create table t030t1 (a date);
-
---- SQL operation complete.
->>insert into t030t1 values (date '2016-03-01');
-
---- 1 row(s) inserted.
->>
 >>select to_date('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 
 (EXPR)    
@@ -403,6 +393,33 @@ March 01, 2016, 10:11:12
 
 --- 1 row(s) selected.
 >>
+>>select to_char(TIMESTAMP '2016-03-01 10:11:12', 'YYYY-MM-DD') from (values(1)) x(a);
+
+(EXPR)    
+----------
+
+2016-03-01
+
+--- 1 row(s) selected.
+>>select to_char(TIMESTAMP '2016-03-01 10:11:12', 'HH:MI:SS') from (values(1)) x(a);
+
+(EXPR)  
+--------
+
+10:11:12
+
+--- 1 row(s) selected.
+>>
+>>drop table if exists t030t1;
+
+--- SQL operation complete.
+>>create table t030t1 (a date, b char(30), c varchar(30));
+
+--- SQL operation complete.
+>>insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01');
+
+--- 1 row(s) inserted.
+>>
 >>select to_char(a, 'YYYYMMDD') from t030t1;
 
 (EXPR)  
@@ -417,6 +434,22 @@ March 01, 2016, 10:11:12
 --------
 
 20160301
+
+--- 1 row(s) selected.
+>>select to_date(b, 'YYYY-MM-DD') from t030t1;
+
+(EXPR)    
+----------
+
+2016-03-01
+
+--- 1 row(s) selected.
+>>select to_date(c, 'YYYY-MM-DD') from t030t1;
+
+(EXPR)    
+----------
+
+2016-03-01
 
 --- 1 row(s) selected.
 >>
@@ -450,6 +483,12 @@ March 01, 2016, 10:11:12
 
 *** ERROR[8822] The statement was not prepared.
 
+>>select to_char(date '2016-03-01', 'HH:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a time.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- some formats only enabled in special mode. Not externalized.
 >>cqd mode_special_4 'ON';
@@ -479,7 +518,8 @@ March 01, 2016, 10:11:12
 -12:34:56:78
 
 --- 1 row(s) selected.
->>-- error case
+>>
+>>-- ms4 error cases
 >>select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
 
 *** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted.
@@ -494,5 +534,17 @@ March 01, 2016, 10:11:12
 *** ERROR[8001] An internal executor error occurred.
 
 --- 0 row(s) selected.
+>>select to_date(1e0, '99:99:99:99') from (values(1)) x(a);
+
+*** ERROR[4046] The operands of function TO_DATE must be exact numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_date(1.2, '99:99:99:99') from (values(1)) x(a);
+
+*** ERROR[4047] The operands of function TO_DATE must have a scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>log;

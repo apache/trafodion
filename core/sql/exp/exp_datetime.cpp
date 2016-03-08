@@ -1634,7 +1634,7 @@ ExpDatetime::extractDatetime(rec_datetime_field srcStartField,
 //
 NA_EIDPROC
 static
-ExpDatetime::asciiFormats
+ExpDatetime::DatetimeFormats
 determineFormat(char *src,
                 rec_datetime_field startField,
                 rec_datetime_field endField)
@@ -2449,9 +2449,11 @@ static short convSrcDataToDst(Lng32 numSrcBytes, char* &srcData,
       return -1;
     }
 
-  if (numTgtBytes == 2)
+  if (numTgtBytes == sizeof(Lng32))
+    *(Lng32*)dstData = val;
+  else if (numTgtBytes == sizeof(short))
     *(short*)dstData = val;
-  else if (numTgtBytes == 1)
+  else if (numTgtBytes == sizeof(char))
     *(char*)dstData = val;
   else 
     return -1;
@@ -2471,6 +2473,7 @@ static short convSrcDataToDst(Lng32 numSrcBytes, char* &srcData,
   return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////
 // ExpDatetime::convAsciiToDate() ================================
 // This method is used to convert the given ASCII string
 // to a datetime date value.
@@ -2479,22 +2482,26 @@ static short convSrcDataToDst(Lng32 numSrcBytes, char* &srcData,
 // 'dstData'. This buffer must be allocated by the caller and it
 // must be large enough to hold the result.
 //
-// The ASCII string can be in one of three formats:
-//
-//  Default : yyyy-mm-dd
-//  USA     : mm/dd/yyyy
-//  European: dd.mm.yyyy
-//
 // This method is called assuming the correct source format. The source
 // string must contain date and, possibly, leading and trailing blanks
 // only. The size of destination buffer should be just enough to hold
 // internal representation of the date value, i.e. 4 bytes.
 //
+// target dstData has the format:
+//  Timestamp:
+//    dstData[0..1]               2-bytes for year.
+//    dstData[2] .. dstData[6]    1-byte for month through second.
+//    dstData[7..10]              4-bytes for fraction.
+// Date:
+//    dstData[0..1]               2-bytes for year.
+//    dstData[2] .. dstData[3]    1-byte for month through day.
+//  Time:
+//    dstData[0] .. dstData[2]    1-byte for hour through second.
 // =====================================================================
 //
 short
 ExpDatetime::convAsciiToDate(char *srcData,
-                             Lng32 srcLen,
+                             Lng32 inSrcLen,
                              char *dstData,
                              Lng32 dstLen,
 			     Int32 format,
@@ -2508,6 +2515,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
   Lng32  srcFormat, i;
   NABoolean LastDayPrevMonth = FALSE;
 
+  Lng32 srcLen = inSrcLen;
   if (*srcData == ' ') {
     // skip leading blanks and adjust srcData and srcLen accordingly
     //
@@ -3053,7 +3061,7 @@ Lng32 ExpDatetime::getDatetimeFormatLen(Lng32 format, NABoolean to_date,
       {
 	if (to_date)
 	  {
-            return ExpDatetime::getAsciiFormatLen(format);
+            return ExpDatetime::getDatetimeFormatLen(format);
  	  }
 	else
 	  {
@@ -3093,7 +3101,7 @@ Lng32 ExpDatetime::getDatetimeFormatLen(Lng32 format, NABoolean to_date,
     break;
 
     default:
-      return ExpDatetime::getAsciiFormatLen(format);
+      return ExpDatetime::getDatetimeFormatLen(format);
     }
 
   return 0;
@@ -3444,14 +3452,7 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 
   // if format includes time field but source is a DATE datatype, extend
   // the returned string with zeroes
-  if ((format == DATETIME_FORMAT_TS1) ||
-      (format == DATETIME_FORMAT_TS2) ||
-      (format == DATETIME_FORMAT_TS3) ||
-      (format == DATETIME_FORMAT_TS5) ||
-      (format == DATETIME_FORMAT_TS6) ||
-      (format == DATETIME_FORMAT_TS7) ||
-      (format == DATETIME_FORMAT_TS8) ||
-      (format == DATETIME_FORMAT_TS9))
+  if (isTimestampFormat(format))
     {
       if (format == DATETIME_FORMAT_TS1)
         {
@@ -3564,6 +3565,7 @@ ExpDatetime::convNumericTimeToASCII(char *srcData,
       part1 = (Lng32)(temp - (temp/100)*100);
       temp = temp/100;
   
+      // if more digits left in input, error out.
       if (temp > 0)
         {
           ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
