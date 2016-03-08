@@ -45,6 +45,7 @@
 # Thrift: Communications and data serialization tool
 # Maven: Build tool that is only installed if compatible version does not exist
 # log4cxx: standard logging framework for C++
+# hadoop: shared libraries for libhadoop, libhdfs, and hdfs header file
 #
 # Script can be modified to meet the needs of your environment
 # May need root or SUDO access to install tools in desired location
@@ -65,29 +66,26 @@ function Usage {
 
 # -----------------------------------------------------------------------------
 # function: downloadSource - downloads and un-tars the requested file
-#    $1 - tar file to download 
-#    $2 - directory where source is untarred
+#    $1 - tar file URL to download
+#    $2 - directory where source is untarred (leave empty to skip untar)
 #
-# Suggestion:  instead use a single argument $1 and figure out the name of the
-#              file to extract with basename $1
 # -----------------------------------------------------------------------------
 function downloadSource
 {
-  # currently only tar files ending in "tar.gz" and "tgz" are recognized
-  TARSUFFIX="tar.gz"
-  if [[ ! $1 == *$"$TARSUFFIX" ]]; then
-    TARSUFFIX="tgz"
-  fi
+  URL="$1"
+  SRCDIR="$2"
+  TARFILE="${URL##*/}"
 
-  if [ ! -e $BASEDIR/$2.$TARSUFFIX ]; then
-    wget $1  >>$LOGFILE 2>&1
+  if [ ! -e $BASEDIR/$TARFILE ]; then
+    wget $URL  >>$LOGFILE 2>&1
+    echo "INFO:   downloaded tar file: $TARFILE " | tee -a $LOGFILE
   else
-    echo "INFO:   tar file already downloaded, step skipped" | tee -a $LOGFIL
+    echo "INFO:   tar file already downloaded, step skipped" | tee -a $LOGFILE
   fi
 
-  if [ ! -e $BASEDIR/$2 ]; then
-    tar -xzf $BASEDIR/$2.$TARSUFFIX
-    echo "INFO:   downloaded tar file: $2.$TARSUFFIX " | tee -a $LOGFILE
+  if [ ! -e $BASEDIR/$SRCDIR ]; then
+    cd $BASEDIR
+    tar -xzf $BASEDIR/$TARFILE
   else
     echo "INFO:   source tree already exists" | tee -a $LOGFILE
   fi
@@ -156,6 +154,11 @@ if [ "$BASEDIR" == "" ]; then
   Usage;
   exit 1;
 fi
+# handle relative path
+if [[ ! $BASEDIR =~ ^/ ]]
+then
+  BASEDIR=$(pwd)/$BASEDIR
+fi
 
 if [ ! -d "$BASEDIR" ]; then
   echo
@@ -169,6 +172,11 @@ if [ "$TOOLSDIR" == "" ]; then
   echo "ERROR: install directory (-t)  is not specified"
   Usage;
   exit 1;
+fi
+# handle relative path
+if [[ ! $TOOLSDIR =~ ^/ ]]
+then
+  TOOLSDIR=$(pwd)/$TOOLSDIR
 fi
 
 if [ ! -d "$TOOLSDIR" ]; then                                                    
@@ -399,6 +407,24 @@ if [[ !  -e /usr/lib64/liblog4cxx.so ]]; then
 else
   echo "INFO:  log4cxx is already installed, skipping to next tool" | tee -a $LOGFILE
 fi
+
+# -----------------------------------------------------------------------------
+# download hadoop/hdfs libs
+echo
+echo "INFO: Hadoop/HDFS libs on $(date)" | tee -a $LOGFILE
+HVER="2.6.0"
+if [ -d $TOOLSDIR/hadoop-${HVER} ]; then
+  echo "INFO: Hadoop/HDFS is already installed, skipping to next tool" | tee -a $LOGFILE
+else
+  downloadSource http://archive.apache.org/dist/hadoop/common/hadoop-${HVER}/hadoop-${HVER}.tar.gz # no un-tar
+  cd $TOOLSDIR
+  tar -xzf $BASEDIR/hadoop-${HVER}.tar.gz \
+    hadoop-${HVER}/lib/native/libhadoop\*so\* \
+    hadoop-${HVER}/lib/native/libhdfs\*so\* \
+    hadoop-${HVER}/include/hdfs.h
+  echo "INFO:   extraction complete" | tee -a $LOGFILE
+fi
+echo " *********************************************************** " | tee -a $LOGFILE
 
 # -----------------------------------------------------------------------------
 
