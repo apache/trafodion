@@ -248,7 +248,7 @@ Int32 ExpLOBoper::restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap
     }
   else
     lobGlobL = lobGlob;
-  rc = initLOBglobal(lobGlobL, lobHeap);
+ 
   if (rc)
     return -1;
     
@@ -269,7 +269,7 @@ Int32 ExpLOBoper::purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobH
     }
   else
     lobGlobL = lobGlob;
-  rc = initLOBglobal(lobGlobL, lobHeap);
+  
   if (rc)
     return -1;
   

@@ -9622,7 +9622,6 @@ Lng32 SQLCLI_LOBcliInterface
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	     cliInterface->retrieveSQLDiagnostics(myDiags);
 	    if (myDiags->containsError(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION))
 	      {
 		cliRC = 0;
@@ -9673,8 +9672,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
+	    cliInterface->retrieveSQLDiagnostics(myDiags);	    
 	    goto error_return;
 	  }
 
