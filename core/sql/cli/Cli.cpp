@@ -9572,8 +9572,7 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->executeImmediate(query);
 
 	currContext.resetSqlParserFlags(0x1);
-	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-	  cliRC = 0;
+	
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
@@ -9591,8 +9590,6 @@ Lng32 SQLCLI_LOBcliInterface
 
 	currContext.resetSqlParserFlags(0x1);
 
-	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-	  cliRC = 0;
 	
 	if (cliRC < 0)
 	  {
@@ -9622,11 +9619,6 @@ Lng32 SQLCLI_LOBcliInterface
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    if (myDiags->containsError(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION))
-	      {
-		cliRC = 0;
-		break;
-	      }
 	    goto error_return;
 	  }
 
@@ -9643,11 +9635,6 @@ Lng32 SQLCLI_LOBcliInterface
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    if (myDiags->containsError(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION))
-	      {
-		cliRC = 0;
-		break;
-	      }
 	    goto error_return;
 	  }	   
 	cliRC = 0;
@@ -10685,8 +10672,7 @@ Lng32 SQLCLI_LOBddlInterface
 	cliRC = cliInterface->executeImmediate(query);
 	
 	currContext.resetSqlParserFlags(0x1);
-	if (cliRC == -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-	  cliRC = 0;
+
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(&diags);
