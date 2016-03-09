@@ -4569,6 +4569,18 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     // Ensure that we are on a node that is part of the configuration
     char mynode[MPI_MAX_PROCESSOR_NAME];
     gethostname(mynode, MPI_MAX_PROCESSOR_NAME);
+    //JIRA: TRAFODION-1854, hostname contains upper case letters
+    //change all char in mynode to lowercase
+    //since cluster config strings will all in lowercase , see CTokenizer::NormalizeCase()
+    if(!VirtualNodes)  // for VirtualNodes, it use same gethostname, so do not tolower
+    {
+      char *tmpptr = mynode;
+      while ( *tmpptr )
+      {
+        *tmpptr = tolower( *tmpptr );
+	tmpptr++;
+      }
+    }
     bool nodeInConfig = false;
     for ( i = 0; i < NumNodes; i++ )
     {
