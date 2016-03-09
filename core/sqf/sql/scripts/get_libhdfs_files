@@ -43,7 +43,7 @@ LOGFILE=${LIBHDFS_TEMP_DIR}/build.log
 
 # Hadoop source tar file to build libhdfs from
 HADOOP_MIRROR_URL=https://archive.apache.org/dist/hadoop/common/hadoop-2.6.0
-HADOOP_ID=hadoop-2.6.0
+HADOOP_ID=hadoop-${HADOOP_DEP_VER}
 HADOOP_SRC_ID=${HADOOP_ID}-src
 HADOOP_SRC_TAR=${HADOOP_SRC_ID}.tar.gz
 HADOOP_BIN_TAR=${HADOOP_ID}.tar.gz
