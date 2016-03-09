@@ -335,7 +335,7 @@ ComTdbHbaseAccess::getExpressionName(Int32 expNum) const
     case 3: 
       return "UpdateExpr";
     case 4: 
-      return "MergeInsertExpr";
+      return ((getAccessType() == DELETE_) ? "LobDeleteExpr" : "MergeInsertExpr");
     case 5:
       return "LowKeyExpr";
     case 6:

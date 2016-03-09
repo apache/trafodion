@@ -23,8 +23,8 @@
 /* -*-C++-*-
  *****************************************************************************
  *
- * File:         ex_lob.C
- * Description:  class to store and retrieve LOB data.
+ * File:         ExpLOBprocess.cpp
+ * Description:  class to store and retrieve LOB info from mxlobsrvr process.
  *               
  *               
  * Created:      10/29/2012
@@ -35,7 +35,13 @@
  *
  *****************************************************************************
  */
+/*** Note *** This file is currently compiled and creates the mxlobsrvr executable. But the functions in this file are not active or used at this point. Code 
+    maybe added in the near future to offload any tasks like garbage collection, to this process .Hence we are retainign this file as part of the mxlobsrvr 
+infrastructure .If any functionas are added and need to be executed in the 
+mxlobsrvr process, the sqstart/sqstop need to modified to call lobstop and 
+lostart**/
 
+/****************************************************************************/
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -351,85 +357,7 @@ void process_mon_msg(MS_Mon_Msg *msg) {
     }
 }
 
-Ex_Lob_Error ExLob::append(ExLobRequest *request)
-{
-    Ex_Lob_Error err; 
-    Int64 offset;
-    Int64 dummyParam;
-    Lng32 handleOutLen;
-    Lng32 clierr;
 
-    Int64 size = request->getDesc().getSize();
-    offset = request->getDataOffset();
-
-    /* This is done in the master 
-    // allocate a new lob desc
-    err = allocateDesc(size, dummyParam, offset);
-
-    if (err != LOB_OPER_OK)
-      return err;
-
-    request->getDesc().setOffset(offset);
-    */
-
-    clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(), 
-				      0, 0,
-                                      request->getHandleOut(), &handleOutLen,
-                                      LOB_CLI_INSERT_APPEND, LOB_CLI_ExecImmed,
-                                      &offset, &size,
-                                      &dummyParam, &dummyParam, 
-				      0,
-				      request->getTransId());
-
-    request->setCliError(clierr);
-    
-    return LOB_OPER_OK;
-}
-
-Ex_Lob_Error ExLob::update(ExLobRequest *request)
-{
-    Ex_Lob_Error err; 
-    Int64 offset;
-    Int64 dummyParam;
-    Lng32 handleOutLen;
-    Lng32 clierr;
-
-    Int64 size = request->getDesc().getSize();
-    offset = request->getDataOffset();
-    /* sss this is done in the master
-    // allocate a new lob desc
-    err = allocateDesc(size, dummyParam, offset);
-
-    if (err != LOB_OPER_OK)
-      return err;
-
-    request->getDesc().setOffset(offset);
-    */
-    clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(), 
-				      0, 0,
-                                      request->getHandleOut(), &handleOutLen,
-                                      LOB_CLI_UPDATE_UNIQUE, LOB_CLI_ExecImmed,
-                                      &offset, &size,
-                                      &dummyParam, &dummyParam, 
-				      0,
-				      request->getTransId());
-
-    request->setCliError(clierr);
-    
-    return LOB_OPER_OK;
-}
-
-Ex_Lob_Error ExLob::putDesc(ExLobDesc &desc, Int64 descNum) 
-{
-  /*  Ex_Lob_Error err = LOB_OPER_OK;
-
-    Lng32 offset = sizeof(ExLobDescHeader) + sizeof(ExLobDesc) * descNum;
-    if (pwrite(fdDesc_, &desc, sizeof(ExLobDesc), offset) == -1) {
-       return LOB_DESC_WRITE_ERROR;
-    }
-  */
-    return LOB_OPER_OK;
-}
 
 Ex_Lob_Error ExLob::getDesc(ExLobRequest *request) 
 {
@@ -452,242 +380,14 @@ Ex_Lob_Error ExLob::getDesc(ExLobRequest *request)
 
    request->setHandleOutLen(handleOutLen);
    request->setBlackBoxLen(blackBoxLen);
-   request->getDesc().setOffset(offset);
-   request->getDesc().setSize(size);
    request->setCliError(clierr);
 
    return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::delDesc(ExLobRequest *request)
-{ 
-    Ex_Lob_Error err; 
-    Int64 offset;
-    Int64 dummyParam;
-    Lng32 handleOutLen;
-    Lng32 clierr;
-
-    clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(), 
-				      0, 0,
-                                      (char *)&dummyParam, (Lng32 *)&dummyParam,
-                                      LOB_CLI_DELETE, LOB_CLI_ExecImmed,
-                                      &dummyParam, &dummyParam,
-                                      &dummyParam, &dummyParam, 
-				      0,
-				      request->getTransId());
-
-    request->setCliError(clierr);
-    
-    return LOB_OPER_OK;
-}
-
-/*Ex_Lob_Error ExLob::purgeLob()
-{
-    Ex_Lob_Error err = LOB_OPER_OK;
-
-    close(fdDesc_);
-    fdDesc_ = -1;
-
-    if (remove(lobDescFile_) != 0) {
-      return LOB_DESC_FILE_DELETE_ERROR;
-    }
-
-    return LOB_OPER_OK;
-    } */
-
-Ex_Lob_Error ExLob::purgeLob()
-{
-    Ex_Lob_Error err = LOB_OPER_OK;
-
-    hdfsCloseFile(fs_,fdDesc_);
-    fdDesc_ = NULL;
-
-    if (hdfsDelete(fs_,lobDescFile_,0) != 0) {
-      return LOB_DESC_FILE_DELETE_ERROR;
-    }
-
-    return LOB_OPER_OK;
-}
-
-/*Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset)
-{
-    Ex_Lob_Error err = LOB_OPER_OK;
 
 
-    err = lockDesc();
-    if (err != LOB_OPER_OK)
-      return err;
-    ExLobDescHeader header;
 
-	 if (pread(fdDesc_, &header, sizeof(ExLobDescHeader), 0) == -1) {
-	   flock(fdDesc_, LOCK_UN);
-	   return LOB_DESC_HEADER_READ_ERROR;
-	 }
-
-    if (header.getAvailSize() >= size) {
-      descNum = header.getFreeDesc(); 
-      dataOffset = header.getDataOffset();
-      header.incFreeDesc();
-      header.decAvailSize(size);
-      header.incDataOffset(size);
-
-      if (pwrite(fdDesc_, &header, sizeof(ExLobDescHeader), 0) == -1) {
-        err = LOB_DESC_HEADER_WRITE_ERROR;
-      }
-
-    }
-    else {
-      err = LOB_DATA_FILE_FULL_ERROR;
-    }
-   
-
-    ExLobDesc desc(dataOffset, size, descNum);
-    if (pwrite(fdDesc_, &desc, sizeof(ExLobDesc), 
-        sizeof(ExLobDescHeader) + sizeof(ExLobDesc) * descNum) == -1) {
-      return LOB_DESC_WRITE_ERROR;
-    }
-
-    err = unlockDesc();
-    if (err != LOB_OPER_OK)
-      return err;
-
-    return err;
-} */
-
-   
-
-Ex_Lob_Error ExLob::insertDesc(ExLobRequest *request) 
-{
-   Ex_Lob_Error err;
-   Lng32 clierr;
-   Int64 dummyParam;
-   Lng32 handleOutLen = 0;
-   Lng32 blackBoxLen = 0;
-   Int64 offset = request->getDataOffset();
-   Int64 size = request->getDesc().getSize();
-
-   blackBoxLen = request->getBlackBoxLen();
-   clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(), 
-				     request->getBlackBox(), &blackBoxLen,
-                                     request->getHandleOut(), &handleOutLen,
-                                     LOB_CLI_INSERT, LOB_CLI_ExecImmed,
-                                     &offset, &size,
-                                     &dummyParam, &dummyParam, 
-				     0,
-				     request->getTransId());
-
-   request->setHandleOutLen(handleOutLen);
-   request->setBlackBoxLen(blackBoxLen);
-   request->setCliError(clierr);
-
-   return LOB_OPER_OK;
-}
-
-Ex_Lob_Error ExLob::selectCursorDesc(ExLobRequest *request) 
-{
-   Ex_Lob_Error err;
-   Int64 dummyParam;
-   void *cliInterface = NULL;
-   cursor_t cursor;
-   int clierr;
-
-   clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(),
-				     0, 0,
-                                     (char *)&dummyParam, (Lng32 *)&dummyParam,
-                                     LOB_CLI_SELECT_CURSOR, LOB_CLI_ExecImmed,
-                                     &dummyParam, &dummyParam,
-                                     &dummyParam, &dummyParam, 
-				     &cliInterface,
-				     request->getTransId());
-
-   cursor.cliInterface_ = cliInterface;
-   // these are only used in library, but initialize them here anyway.
-   cursor.bytesRead_ = -1;
-   cursor.descOffset_ = -1;
-   cursor.descSize_ = -1;
-   cursor.eod_ = false; 
-
-   lobCursors_it it = lobCursors_.find(string(request->getHandleIn(), request->getHandleInLen()));
-
-   if (it == lobCursors_.end())
-   {
-      lobCursors_.insert(pair<string, cursor_t>
-                        (string(request->getHandleIn(), request->getHandleInLen()), cursor));                         
-   }
-   else
-   {
-      it->second = cursor;
-   }
-
-   request->setCliError(clierr);
-
-   return LOB_OPER_OK;
-}
-
-Ex_Lob_Error ExLob::fetchCursorDesc(ExLobRequest *request) 
-{
-   Ex_Lob_Error err;
-   Int64 dummyParam;
-   Int64 offset = -1;
-   Int64 size = -1;
-   int clierr;
-
-   lobCursors_it it = lobCursors_.find(string(request->getHandleIn(), request->getHandleInLen()));
-
-   if (it == lobCursors_.end())
-   {
-      return LOB_CURSOR_NOT_OPEN;                         
-   }
-
-   void *cliInterface = it->second.cliInterface_;
-
-   clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(), 
-				     0, 0,
-                                     (char *)&dummyParam, (Lng32 *)&dummyParam,
-                                     LOB_CLI_SELECT_FETCH, LOB_CLI_ExecImmed,
-                                     &offset, &size,
-                                     &dummyParam, &dummyParam, 
-				     &cliInterface,
-				     request->getTransId());
-
-   request->getDesc().setOffset(offset);
-   request->getDesc().setSize(size);
-   request->setCliError(clierr);
-
-   return LOB_OPER_OK;
-}
-
-Ex_Lob_Error ExLob::closeCursorDesc(ExLobRequest *request)
-{
-   Ex_Lob_Error err;
-   Int64 dummyParam;
-   int clierr;
-
-   lobCursors_it it = lobCursors_.find(string(request->getHandleIn(), request->getHandleInLen()));
-
-   if (it == lobCursors_.end())
-   {
-      return LOB_CURSOR_NOT_OPEN;                         
-   }
-
-   void *cliInterface = it->second.cliInterface_;
-
-   clierr = SQL_EXEC_LOBcliInterface(request->getHandleIn(), request->getHandleInLen(), 
-				     NULL, NULL,
-                                     (char *)&dummyParam, (Lng32 *)&dummyParam,
-                                     LOB_CLI_SELECT_CLOSE, LOB_CLI_ExecImmed,
-                                     &dummyParam, &dummyParam,
-                                     &dummyParam, &dummyParam, 
-				     &cliInterface,
-				     request->getTransId());
-
-   // do not update cliErr in request because the fetch would have updated it. 
-
-   // remove cursor from the map.
-   err = closeCursor(request->getHandleIn(), request->getHandleInLen());
-
-   return LOB_OPER_OK;
-}
 
 void processRequest(ExLobRequest *request)
 {
@@ -699,7 +399,7 @@ void processRequest(ExLobRequest *request)
      ExLob *lobPtr;
      ExLobDesc desc;
      ExLobDesc *descPtr;
-     Lng32 clierr;\
+     Lng32 clierr;
      Lng32 handleOutLen;
      Int64 size;
     
@@ -728,57 +428,9 @@ void processRequest(ExLobRequest *request)
        }
      switch(request->getType())
      {
-       case Lob_Req_Allocate_Desc:
-	 /* sss no need for this since it's done in master
-	   err = lobPtr->allocateDesc(request->getDesc().getSize(), descNum, dataOffset);
-
-	 request->setDescNumOut(descNum);
-         request->setDataOffset(dataOffset);
-	 */
-         err = lobPtr->insertDesc(request);
-         break;
-
-       case Lob_Req_Append:
-         err = lobPtr->append(request);
-         break;
-
-       case Lob_Req_Select_Cursor:
-         err = lobPtr->selectCursorDesc(request);
-         break;
-
-       case Lob_Req_Fetch_Cursor:
-         err = lobPtr->fetchCursorDesc(request);
-         if (request->getCliError() == 100) {
-            lobPtr->closeCursorDesc(request);
-         }
-         break;
-
-       case Lob_Req_Update:
-         err = lobPtr->update(request);
-         break;
-
        case Lob_Req_Get_Desc:
          err = lobPtr->getDesc(request);
          break;   
-
-       case Lob_Req_Put_Desc:
-         err = lobPtr->putDesc(request->getDesc(), request->getDescNumIn());
-         break;   
-
-       case Lob_Req_Del_Desc:
-         err = lobPtr->delDesc(request);
-         break;
-
-       case Lob_Req_Purge_Desc:
-         /* no op ..it is dropped in mastererr = lobPtr->purgeLob();
-         if (err == LOB_OPER_OK) {
-            err = lobGlobals->delLobPtr(request->getDescFileName());
-	    } */
-         break;
-
-       case Lob_Req_Print:
-         lobPtr->print();
-         break; 
 
        default:
          err = LOB_REQUEST_UNDEFINED_ERROR;
@@ -788,23 +440,12 @@ void processRequest(ExLobRequest *request)
 
      request->setError(err);
 
-     request->log();
+    
 
      return;
 }
 
-void ExLobRequest::log()
-{
-    printf("req num = %ld\n", getReqNum());
-    printf("req type = %d\n", getType());
-    printf("trans id = %ld\n", getTransId());
-    printf("file = %s\n", getDescFileName());
-    printf("size = %d\n", getDesc().getSize());
-    printf("offset = %d\n", getDesc().getOffset());
-    printf("lob err = %d\n", getError());
-    printf("cli err = %d\n", getCliError());
-    printf("\n");
-}
+
 
 void receive_message(ExLobRequest *request)
 {
@@ -846,27 +487,9 @@ Ex_Lob_Error ExLobGlobals::initialize()
     return LOB_OPER_OK;
 }
 
-/*Ex_Lob_Error ExLob::initialize(char *lobFile)
-{
-    mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-    Lng32 openFlags = O_RDWR;
 
-    strcpy(lobDescFile_, lobFile);
 
-    fdDesc_ = open(lobDescFile_, openFlags);
-    if (fdDesc_ == -1) {
-      return LOB_DESC_FILE_OPEN_ERROR;
-    }
 
-    return LOB_OPER_OK;
-    }*/
-
-Ex_Lob_Error ExLob::initialize(char *lobDescFile)
-{
-  // Made this obsolete
-
-    return LOB_OPER_OK;
-}
 
 Ex_Lob_Error ExLobGlobals::getLobPtr(char *lobName, ExLob *& lobPtr)
 {
@@ -909,106 +532,11 @@ Ex_Lob_Error ExLobGlobals::delLobPtr(char *lobName)
 
     return LOB_OPER_OK;
 }
-/*
-Ex_Lob_Error ExLob::lockDesc()
-{
-
-    // get exclusive lock because read and write has to be atomic
-    if (flock(fdDesc_, LOCK_EX) == -1) {
-      return LOB_DESC_FILE_LOCK_ERROR;
-    }
-  
-      return LOB_OPER_OK;
-}
-
-Ex_Lob_Error ExLob::unlockDesc()
-{
-    // release the lock
-
-    if (flock(fdDesc_, LOCK_UN) == -1) {
-      return LOB_DESC_FILE_LOCK_ERROR;
-    }
-
-      return LOB_OPER_OK;
-}
-*/
 
 
-Ex_Lob_Error ExLobDescHeader::print(char *descFileName)
-{
-  printf("Header: \n");
-  printf("freeDesc = %d\n", freeDesc_);
-  printf("dataOffset = %d\n", dataOffset_);
-  printf("avail Size = %d\n", availSize_);
-  return LOB_OPER_OK;
-}
 
-/*Ex_Lob_Error ExLob::print() 
-{
-  // get exclusive lock because read and write has to be atomic
-  if (flock(fdDesc_, LOCK_EX) == -1) {
-    return LOB_DESC_FILE_LOCK_ERROR;
-  }
 
-  ExLobDescHeader header;
-  if (pread(fdDesc_, &header, sizeof(ExLobDescHeader), 0) == -1) {
-    return LOB_DESC_HEADER_READ_ERROR;
-  }
 
-  header.print(NULL);
-
-  printf("Descriptors:\n");
-
-  printf("dNum size state tail prev next nextfree  offset\n");
-  ExLobDesc desc;
-  for (Lng32 numDescs = 0; numDescs < header.getFreeDesc(); numDescs++) {
-    if (pread(fdDesc_, &desc, sizeof(ExLobDesc), 
-               sizeof(ExLobDescHeader) + sizeof(ExLobDesc) * numDescs) == -1) {
-      flock(fdDesc_, LOCK_UN);
-      return LOB_DESC_READ_ERROR;
-    }
-    printf("%4d ", numDescs);
-    desc.print();
-  }
-
-  flock(fdDesc_, LOCK_UN);
-  return LOB_OPER_OK;
-}
-*/
-
-Ex_Lob_Error ExLob::print() 
-{
-  // get exclusive lock because read and write has to be atomic
-  Int32 retval = 0;
-  //get a mutex to prevent multiple updates
-  retval = pthread_mutex_lock(&g_mutex);    
-  if (retval != 0 )
-    return LOB_ALLOC_ERROR;
-  long openFlags = O_RDONLY ;
-  ExLobDescHeader header;
-  if (hdfsPread(fs_,fdDesc_,0, &header, sizeof(ExLobDescHeader)) <= 0) {
-    return LOB_DESC_HEADER_READ_ERROR;
-  }
-
-  header.print(NULL);
-
-  printf("Descriptors:\n");
-
-  printf("dNum size state tail prev next nextfree  offset\n");
-  ExLobDesc desc;
-  for (Lng32 numDescs = 0; numDescs < header.getFreeDesc(); numDescs++) {
-    if (hdfsPread(fs_,fdDesc_, sizeof(ExLobDescHeader) + sizeof(ExLobDesc) * numDescs, &desc, sizeof(ExLobDesc) ) <= 0 ) {
-       pthread_mutex_unlock(&g_mutex);
-      return LOB_DESC_READ_ERROR;
-    }
-    printf("%4d ", numDescs);
-    desc.print();
-  }
-
-  
-  pthread_mutex_unlock(&g_mutex);
-  return LOB_OPER_OK;
-}
 
 
 Lng32 main(Lng32 argc, char *argv[])

@@ -2931,9 +2931,9 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
           if ( charset_name == NULL )
              charset_name = (char*)CharInfo::getCharSetName(newCharSet);
 
-          if ( !DFS2REC::isAnyCharacter(descItem.datatype) || 
-               !CharInfo::isCharSetSupported(newCharSet) 
-             ) 
+          if (( !DFS2REC::isAnyCharacter(descItem.datatype)  || 
+               !CharInfo::isCharSetSupported(newCharSet)  
+                ) && !((descItem.datatype != REC_BLOB) ||(descItem.datatype != REC_CLOB)))
           {
               //Error 8895: An invalid character set name for the descriptor item SQLDESC_CHAR_SET.
       	      diags << DgSqlCode(-CLI_INVALID_CHARSET_FOR_DESCRIPTOR) << DgString0(charset_name);

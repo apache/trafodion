@@ -237,7 +237,10 @@ typedef enum {
 
    Lob_Empty_Directory,
 
-   Lob_Cleanup // destroy everything under globals
+   Lob_Cleanup, // destroy everything under globals
+   Lob_PerformGC,
+   Lob_RestoreLobDataFile,
+   Lob_PurgeBackupLobDataFile
 } LobsOper;
 
 typedef enum {

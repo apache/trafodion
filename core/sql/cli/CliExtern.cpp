@@ -7359,7 +7359,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
  /*IN*/     char * blackBox,
- /*IN*/     Lng32* blackBoxLen,
+ /*IN*/     Int32* blackBoxLen,
  /*OUT*/    char * outLobHandle,
  /*OUT*/    Lng32 * outLobHandleLen,
  /*IN*/     LOBcliQueryType qType,
@@ -7415,6 +7415,51 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
   RecordError(NULL, retcode);
   return retcode;
 }
+Lng32 SQL_EXEC_LOB_GC_Interface
+(
+ /*IN*/     void *lobGlobals, // can be passed or NULL
+ /*IN*/     char * handle,
+ /*IN*/     Lng32  handleLen,
+ /*IN*/     char*  hdfsServer,
+ /*IN*/     Lng32  hdfsPort,
+ /*IN*/     char *lobLocation,
+ /*IN*/    Int64 lobMaxMemChunkLen // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ )
+{
+  Lng32 retcode;
+ CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_LOB_GC_Interface(GetCliGlobals(),
+                                        lobGlobals,
+                                        handle,
+                                        handleLen,
+                                        hdfsServer,
+                                        hdfsPort,lobLocation,
+                                        lobMaxMemChunkLen);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+     }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+ }
 
 Lng32 SQL_EXEC_LOBddlInterface
 (
@@ -7426,6 +7471,8 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
+ /*IN*/     char *hdfsServer,
+ /*IN*/     Int32 hdfsPort,
  /*IN */    Int64 lobMaxSize
  )
 {
@@ -7446,7 +7493,10 @@ Lng32 SQL_EXEC_LOBddlInterface
 				      qType,
 				      lobNumList,
 				      lobTypList,
-				       lobLocList, lobMaxSize);
+				       lobLocList,
+                                       hdfsServer,
+                                       hdfsPort, 
+                                       lobMaxSize);
     }
   catch(...)
     {
