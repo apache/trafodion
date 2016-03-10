@@ -591,7 +591,7 @@ struct hive_bkey_desc* populateBucketingCols(HiveMetaData *md, Int32 sdID,
         // this is the last bucket col
       }
       NAText nameStr = tblStr->substr(pos, foundB-pos);
-      pos = foundB;
+      pos = foundB + 1;
       
       hive_bkey_desc* newBkey  = new (CmpCommon::contextHeap())
         struct hive_bkey_desc(nameStr.c_str(),

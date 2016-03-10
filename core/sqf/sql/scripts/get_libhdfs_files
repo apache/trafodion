@@ -23,6 +23,11 @@
 # This script downloads and/or makes the required libhdfs files
 # to be able to build Trafodion, which acts as a libhdfs client.
 #
+# This script is now redundant, given that install/traf_tools_setup.sh
+# puts the libhdfs dependency in TOOLSDIR. This is now just a
+# transitional script until build environment is updated to include
+# these files as prerequisite.
+#
 # Basically, what we need are three files:
 #
 # hdfs.h       (copied to $TGT_INC_DIR)
@@ -37,10 +42,11 @@ fi
 LOGFILE=${LIBHDFS_TEMP_DIR}/build.log
 
 # Hadoop source tar file to build libhdfs from
-HADOOP_SRC_MIRROR_URL=https://archive.apache.org/dist/hadoop/common/hadoop-2.6.0
-HADOOP_ID=hadoop-2.6.0
+HADOOP_ID=hadoop-${HADOOP_DEP_VER}
+HADOOP_MIRROR_URL=https://archive.apache.org/dist/hadoop/common/${HADOOP_ID}
 HADOOP_SRC_ID=${HADOOP_ID}-src
 HADOOP_SRC_TAR=${HADOOP_SRC_ID}.tar.gz
+HADOOP_BIN_TAR=${HADOOP_ID}.tar.gz
 
 # files to build required version of Google Protocol Buffers
 PROTOBUF_MIRROR_URL=https://github.com/google/protobuf/releases/download/v2.5.0
@@ -56,11 +62,13 @@ TGT_INC_DIR=$MY_SQROOT/export/include
 TGT_LIB_DIR=$MY_SQROOT/export/lib${SQ_MBTYPE}
 
 FORCE_BUILD=false
+SOURCE_BUILD=false
 VERBOSE=false
 
 usage() {
   echo "Usage: $0"
   echo "    [ -f | --force ]"
+  echo "    [ -s | --source ]"
   echo "    [ -v | --verbose ]"
   echo "    [ -d <temp dir> | --tempDir <temp dir> ]"
 }
@@ -72,6 +80,10 @@ do
   case $arg in
     -f|--force)
        FORCE_BUILD=true
+       ;;
+
+    -s|--source)
+       SOURCE_BUILD=true
        ;;
 
     -v|--verbose)
@@ -99,8 +111,9 @@ do
 done
 
 
-if [[ $FORCE_BUILD == true || \
-      ! -e ${TGT_INC_DIR}/hdfs.h || \
+if [[ $FORCE_BUILD == true ||
+      ! -e ${TGT_INC_DIR}/hdfs.h ||
+      ! -e ${TGT_LIB_DIR}/libhadoop.so ||
       ! -e ${TGT_LIB_DIR}/libhdfs.so ]]; then
 
   if [[ ! -d $LIBHDFS_TEMP_DIR ]]; then
@@ -110,113 +123,141 @@ if [[ $FORCE_BUILD == true || \
       exit 1
     fi
   fi
-
   cd $LIBHDFS_TEMP_DIR
 
-  PROTOBUF_VER=`protoc --version 2>/dev/null | cut -f 2 -d ' '`
+  if [[ $SOURCE_BUILD != true ]]; then
+    echo "Downloading Hadoop-common binary distro..." | tee -a ${LOGFILE}
+    wget ${HADOOP_MIRROR_URL}/${HADOOP_BIN_TAR} 2>&1 >>${LOGFILE}
+    tar -xzf $HADOOP_BIN_TAR  \
+       $HADOOP_ID/lib/native/libhadoop\*so\* \
+       $HADOOP_ID/lib/native/libhdfs\*so\* \
+       $HADOOP_ID/include/hdfs.h
 
-  # download and build protoc v2.5.0 if not already in the path
-  if [[ "$PROTOBUF_VER" != "${PROTOBUF_VERSION}" ]]; then
-    if [[ ! -f ${PROTOBUF_TAR} ]]; then
-      echo "Downloading Google Protocol Buffers..." | tee -a ${LOGFILE}
-      wget ${PROTOBUF_MIRROR_URL}/${PROTOBUF_TAR} >${LOGFILE}
+    cp -f ${HADOOP_ID}/include/hdfs.h ${TGT_INC_DIR}
+    cp -Pf ${HADOOP_ID}/lib/native/libhdfs*.so* ${TGT_LIB_DIR}
+    cp -Pf ${HADOOP_ID}/lib/native/libhadoop*.so* ${TGT_LIB_DIR}
+
+  else
+
+    PROTOBUF_VER=`protoc --version 2>/dev/null | cut -f 2 -d ' '`
+
+    # download and build protoc v2.5.0 if not already in the path
+    if [[ "$PROTOBUF_VER" != "${PROTOBUF_VERSION}" ]]; then
+      if [[ ! -f ${PROTOBUF_TAR} ]]; then
+        echo "Downloading Google Protocol Buffers..." | tee -a ${LOGFILE}
+        wget ${PROTOBUF_MIRROR_URL}/${PROTOBUF_TAR} >${LOGFILE}
+      fi
+
+      if [[ $FORCE_BUILD == true ]]; then
+        rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_ID}
+        rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}
+      fi
+
+      if [[ ! -d ${PROTOBUF_ID} ]]; then
+        echo "Unpacking Google Protocol Buffer tar file..." | tee -a ${LOGFILE}
+        rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}
+        tar -xzf ${PROTOBUF_TAR} >>${LOGFILE}
+      fi
+
+      if [[ ! -d $PROTOBUF_TGT_ID ]]; then
+        cd ${PROTOBUF_ID}
+        echo "Building Google Protocol Buffers, this could take a while..." | tee -a ${LOGFILE}
+        if [[ $VERBOSE == true ]]; then
+          ./configure --prefix=${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID} 2>&1 | tee -a ${LOGFILE}
+        else
+          ./configure --prefix=${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID} 2>&1 >>${LOGFILE}
+        fi
+        if [[ $? != 0 ]]; then
+          echo "Error during configure step, exiting" | tee -a ${LOGFILE}
+          exit 1
+        fi
+        make 2>&1 >>${LOGFILE}
+        if [[ $? != 0 ]]; then
+          echo "Error during make step, exiting" | tee -a ${LOGFILE}
+          exit 1
+        fi
+        # skip the tests
+        # make check 2>&1 >>${LOGFILE}
+        # if [[ $? != 0 ]]; then
+        #   echo "Error during check step, exiting" | tee -a ${LOGFILE}
+        #   exit 1
+        # fi
+        make install 2>&1 >>${LOGFILE}
+        if [[ $? != 0 ]]; then
+          echo "Error during install step, exiting" | tee -a ${LOGFILE}
+          # remove partial results, if any
+          rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}
+          exit 1
+        fi
+      fi
+
+      # Tell the Hadoop build to use our custom-built protoc
+      export HADOOP_PROTOC_PATH=${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}/bin/protoc
+    fi
+
+    cd $LIBHDFS_TEMP_DIR
+
+    if [[ ! -f ${HADOOP_SRC_TAR} ]]; then
+      echo "Downloading Hadoop tar file ${HADOOP_SRC_TAR}..." | tee -a ${LOGFILE}
+      wget ${HADOOP_MIRROR_URL}/${HADOOP_SRC_TAR} 2>&1 >>${LOGFILE}
     fi
 
     if [[ $FORCE_BUILD == true ]]; then
-      rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_ID}
-      rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}
+      rm -rf ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}
     fi
 
-    if [[ ! -d ${PROTOBUF_ID} ]]; then
-      echo "Unpacking Google Protocol Buffer tar file..." | tee -a ${LOGFILE}
-      rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}
-      tar -xzf ${PROTOBUF_TAR} >>${LOGFILE}
+    if [[ ! -d ${HADOOP_SRC_ID} ]]; then
+      echo "Unpacking Hadoop tar file..." | tee -a ${LOGFILE}
+      tar -xzf ${HADOOP_SRC_TAR}
     fi
 
-    if [[ ! -d $PROTOBUF_TGT_ID ]]; then
-      cd ${PROTOBUF_ID}
-      echo "Building Google Protocol Buffers, this could take a while..." | tee -a ${LOGFILE}
+    if [[ ! -d ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target ]]; then
+      cd ${HADOOP_SRC_ID}
+      echo "Building native library, this will take several minutes..." | tee -a ${LOGFILE}
       if [[ $VERBOSE == true ]]; then
-        ./configure --prefix=${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID} 2>&1 | tee -a ${LOGFILE}
+        mvn package -Pdist,native -Dmaven.javadoc.skip=true -DskipTests -Dtar 2>&1 | tee -a ${LOGFILE}
       else
-        ./configure --prefix=${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID} 2>&1 >>${LOGFILE}
+        mvn package -Pdist,native -Dmaven.javadoc.skip=true -DskipTests -Dtar 2>&1 >>${LOGFILE}
       fi
       if [[ $? != 0 ]]; then
-        echo "Error during configure step, exiting" | tee -a ${LOGFILE}
-        exit 1
-      fi
-      make 2>&1 >>${LOGFILE}
-      if [[ $? != 0 ]]; then
-        echo "Error during make step, exiting" | tee -a ${LOGFILE}
-        exit 1
-      fi
-      # skip the tests
-      # make check 2>&1 >>${LOGFILE}
-      # if [[ $? != 0 ]]; then
-      #   echo "Error during check step, exiting" | tee -a ${LOGFILE}
-      #   exit 1
-      # fi
-      make install 2>&1 >>${LOGFILE}
-      if [[ $? != 0 ]]; then
-        echo "Error during install step, exiting" | tee -a ${LOGFILE}
-        # remove partial results, if any
-        rm -rf ${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}
+        echo "Error during Maven build step for libhdfs, exiting" | tee -a ${LOGFILE}
         exit 1
       fi
     fi
 
-    # Tell the Hadoop build to use our custom-built protoc
-    export HADOOP_PROTOC_PATH=${LIBHDFS_TEMP_DIR}/${PROTOBUF_TGT_ID}/bin/protoc
-  fi
-
-  cd $LIBHDFS_TEMP_DIR
-
-  if [[ ! -f ${HADOOP_SRC_TAR} ]]; then
-    echo "Downloading Hadoop tar file ${HADOOP_SRC_TAR}..." | tee -a ${LOGFILE}
-    wget ${HADOOP_SRC_MIRROR_URL}/${HADOOP_SRC_TAR} 2>&1 >>${LOGFILE}
-  fi
-
-  if [[ $FORCE_BUILD == true ]]; then
-    rm -rf ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}
-  fi
-
-  if [[ ! -d ${HADOOP_SRC_ID} ]]; then
-    echo "Unpacking Hadoop tar file..." | tee -a ${LOGFILE}
-    tar -xzf ${HADOOP_SRC_TAR}
-  fi
-
-  if [[ ! -d ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target ]]; then
-    cd ${HADOOP_SRC_ID}
-    echo "Building native library, this will take several minutes..." | tee -a ${LOGFILE}
+    echo "Copying include file and built libraries to Trafodion export dir..." | tee -a ${LOGFILE}
     if [[ $VERBOSE == true ]]; then
-      mvn package -Pdist,native -Dmaven.javadoc.skip=true -DskipTests -Dtar 2>&1 | tee -a ${LOGFILE}
-    else
-      mvn package -Pdist,native -Dmaven.javadoc.skip=true -DskipTests -Dtar 2>&1 >>${LOGFILE}
+      set -x
     fi
-    if [[ $? != 0 ]]; then
-      echo "Error during Maven build step for libhdfs, exiting" | tee -a ${LOGFILE}
-      exit 1
-    fi
-  fi
-
-  echo "Copying include file and built libraries to Trafodion export dir..." | tee -a ${LOGFILE}
-  if [[ $VERBOSE == true ]]; then
-    set -x
-  fi
-  cp -f ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target/${HADOOP_ID}/include/hdfs.h ${TGT_INC_DIR}
-  cp -Pf ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target/${HADOOP_ID}/lib/native/libhdfs*.so* ${TGT_LIB_DIR}
-  cp -Pf ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target/${HADOOP_ID}/lib/native/libhadoop*.so* ${TGT_LIB_DIR}
+    cp -f ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target/${HADOOP_ID}/include/hdfs.h ${TGT_INC_DIR}
+    cp -Pf ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target/${HADOOP_ID}/lib/native/libhdfs*.so* ${TGT_LIB_DIR}
+    cp -Pf ${LIBHDFS_TEMP_DIR}/${HADOOP_SRC_ID}/hadoop-dist/target/${HADOOP_ID}/lib/native/libhadoop*.so* ${TGT_LIB_DIR}
+  fi # source build
 
   ls -l ${TGT_INC_DIR}/hdfs.h       >> ${LOGFILE}
   ls -l ${TGT_LIB_DIR}/libhdfs.so   >> ${LOGFILE}
   ls -l ${TGT_LIB_DIR}/libhadoop.so >> ${LOGFILE}
 
   # Final check whether all the needed files are there
-  if [[ ! -r ${TGT_INC_DIR}/hdfs.h || \
+  if [[ ! -r ${TGT_INC_DIR}/hdfs.h ||
+        ! -r ${TGT_LIB_DIR}/libhadoop.so ||
         ! -r ${TGT_LIB_DIR}/libhdfs.so ]]; then
     echo "Error, not all files were created" | tee -a ${LOGFILE}
     ls -l ${TGT_INC_DIR}/hdfs.h
     ls -l ${TGT_LIB_DIR}/libhdfs.so
+    ls -l ${TGT_LIB_DIR}/libhadoop.so
     exit 1
   fi
+  # check that we have 64=-bit libs
+  libcheck=0
+  file -L ${TGT_LIB_DIR}/libhdfs.so | grep -q 'ELF 64-bit' || libcheck=1
+  file -L ${TGT_LIB_DIR}/libhadoop.so | grep -q 'ELF 64-bit' || libcheck=1
+  if [[ $libcheck == 1 ]]; then
+    echo "Error, libraries are not 'ELF 64-bit'" | tee -a ${LOGFILE}
+    file -L ${TGT_LIB_DIR}/libhdfs.so
+    file -L ${TGT_LIB_DIR}/libhadoop
+    exit 1
+  fi
+
 fi
+exit 0

@@ -423,10 +423,10 @@ copytoolslibs:
 	cp -Pf $(THRIFT_LIB_DIR)/$(THRIFT_SO)* $(LIBROOT)
 	cp -Pf $(THRIFT_LIB_DIR)/libthrift.so $(LIBROOT)
 	# if these are not found, then...
-	-cp -Pf $(HADOOP_LIB_DIR)/$(LIBHDFS_SO)* $(LIBROOT)
-	-cp -Pf $(HADOOP_LIB_DIR)/$(LIBHADOOP_SO)* $(LIBROOT)
-	-cp -Pf $(HADOOP_INC_DIR)/hdfs.h $(MY_SQROOT)/export/include
-	# download Hadoop source and build the hdfs library
+	-cp -Pf $(HADOOP_BLD_LIB)/$(LIBHDFS_SO)* $(LIBROOT)
+	-cp -Pf $(HADOOP_BLD_LIB)/$(LIBHADOOP_SO)* $(LIBROOT)
+	-cp -Pf $(HADOOP_BLD_INC)/hdfs.h $(MY_SQROOT)/export/include
+	# download Hadoop-common distro
 	get_libhdfs_files --verbose
 
 linuxmklinksdebug linuxmklinksrelease: copytoolslibs

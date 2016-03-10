@@ -152,6 +152,11 @@ fi
 # set common version to be consistent between shared lib and maven dependencies
 export THRIFT_DEP_VER=0.9.0
 export HIVE_DEP_VER=0.13.1
+export HADOOP_DEP_VER=2.6.0
+
+# staged build-time dependencies
+export HADOOP_BLD_LIB=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/lib/native
+export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart

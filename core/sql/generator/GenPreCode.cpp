@@ -4824,7 +4824,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
     }
    NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
-  if  (producesOutputs())
+  if  (producesOutputs()) 
     {
       retColRefSet_ = getIndexDesc()->getIndexColumns();
     }
@@ -4890,6 +4890,15 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
           // value is needed to retrieve a row. 
           HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
         }
+
+      if (getTableDesc()->getNATable()->hasLobColumn())
+        {
+          for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
+            {
+              const ValueId vid = getIndexDesc()->getIndexColumns()[i];
+              retColRefSet_.insert(vid);
+            }
+        }
     }
 
   NABoolean inlinedActions = FALSE;
@@ -4915,8 +4924,9 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
      uniqueHbaseOper() = FALSE;
      if ((generator->oltOptInfo()->multipleRowsReturned()) &&
 	  (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
-	  (NOT generator->isRIinliningForTrafIUD()))
-	 uniqueRowsetHbaseOper() = TRUE;
+         (NOT generator->isRIinliningForTrafIUD()) &&
+         (NOT getTableDesc()->getNATable()->hasLobColumn()))
+       uniqueRowsetHbaseOper() = TRUE;
   }
   else
   if (isUnique)
@@ -4933,7 +4943,8 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	{
 	  if ((generator->oltOptInfo()->multipleRowsReturned()) &&
 	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
-	      (NOT generator->isRIinliningForTrafIUD()))
+	      (NOT generator->isRIinliningForTrafIUD()) &&
+              (NOT getTableDesc()->getNATable()->hasLobColumn()))
 	    uniqueRowsetHbaseOper() = TRUE;
 	  else if ((NOT generator->oltOptInfo()->multipleRowsReturned()) &&
 		   (listOfDelUniqueRows_.entries() == 0))
@@ -4952,6 +4963,12 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
       // set an indication that multiple rows will be returned.
       generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
       generator->oltOptInfo()->setOltCliOpt(FALSE);
+    }
+
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      canDoCheckAndUpdel() = FALSE;
+      uniqueRowsetHbaseOper() = FALSE;
     }
 
   generator->setUpdSavepointOnError(FALSE);
@@ -4988,7 +5005,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 
   // flag for hbase tables
   generator->setHdfsAccess(TRUE);
-
+  
   markAsPreCodeGenned();
 
   return this;  
@@ -11386,7 +11403,7 @@ NABoolean HbaseAccess::isHbaseFilterPredV2(Generator * generator, ItemExpr * ie,
   }
   //check if not an added column with default non null
   if ((foundBinary || foundUnary)&& (NOT hbaseLookupPred)){
-        if (colVID.isAddedColumnWithNonNullDefault()){
+        if (colVID.isColumnWithNonNullNonCurrentDefault()){
             foundBinary=FALSE;
             foundUnary=FALSE;
         }
@@ -11827,7 +11844,7 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
           {
             if (originExePreds->isNotNullable(vid)){// it is non nullable
                 OperatorTypeEnum operatorType = vid.getItemExpr()->getOperatorType();
-                if ((operatorType == ITM_BASECOLUMN || operatorType == ITM_INDEXCOLUMN) && !vid.isAddedColumnWithNonNullDefault()){//check if  added and  with default... notgood
+                if ((operatorType == ITM_BASECOLUMN || operatorType == ITM_INDEXCOLUMN) && !vid.isColumnWithNonNullNonCurrentDefault()){//check if with non null or non current default... notgood
                     needAddingNonNullableColumn = false; // we found one column meeting all criteria
                     break;
                 }

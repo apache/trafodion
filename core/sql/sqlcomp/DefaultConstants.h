@@ -3297,6 +3297,7 @@ enum DefaultConstants
 
   LOB_HDFS_SERVER,
   LOB_HDFS_PORT,
+  LOB_GC_LIMIT_SIZE,
 
   // Should the DISK POOL be turned on when replicating the DDL using COPY DDL
   REPLICATE_DISK_POOL,

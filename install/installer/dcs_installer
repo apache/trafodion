@@ -110,7 +110,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 checkOpts
-
+source $TRAF_CONFIG
 echo "***INFO: Start of DCS install"
 
 # Make sure required env vars have been set first
@@ -155,12 +155,6 @@ rm dcs-env.temp 2>/dev/null
 
 
 echo "***INFO: modifying $DCS_DIR/conf/dcs-site.xml"
-# get zookeeper quorum
-
-lineNumber=$(grep -n "zookeeper\.quorum" $TRAF_WORKDIR/hbase-site.xml | sed 's/\:.*//')
-lineNumber=$((lineNumber+1))
-
-ZOOKEEPER_NODES=$(sed "$lineNumber!d" $TRAF_WORKDIR/hbase-site.xml | sed 's/\/value.*//' | sed 's/.*>//' | sed 's/.$//')
 
 # add zookeeper quorum property to end of configuration
 rm dcs-site.temp 2>/dev/null
