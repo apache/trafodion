@@ -193,7 +193,7 @@ class CmpSeabaseDDLrole : public CmpSeabaseDDLauth
 
      void createRole(StmtDDLCreateRole * pNode);
         
-     void createStandardRole(
+     bool createStandardRole(
         const std::string roleName,
         const int32_t roleID);
         

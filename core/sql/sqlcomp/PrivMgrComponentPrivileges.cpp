@@ -854,12 +854,13 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilegeInternal(
    const std::string & grantorName,
    const int32_t granteeID,
    const std::string & granteeName,
-   const int32_t grantDepth)
+   const int32_t grantDepth,
+   const bool checkExistence)
   
 {
 
-MyTable &myTable = static_cast<MyTable &>(myTable_);
-MyRow row(fullTableName_);
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+   MyRow row(fullTableName_);
 
    row.componentUID_ = componentUID;
    row.grantDepth_ = grantDepth;
@@ -868,9 +869,17 @@ MyRow row(fullTableName_);
    row.grantorID_ = grantorID;
    row.grantorName_ = grantorName;
    
+   const std::string componentUIDString = to_string((long long int)componentUID);
+
    for (size_t oc = 0; oc < operationCodes.size(); oc++)
    {
       row.operationCode_ = operationCodes[oc];
+
+      if (checkExistence &&
+          grantExists(componentUIDString, row.operationCode_, row.grantorID_,
+                      row.granteeID_, row.grantDepth_))
+         continue;
+
       PrivStatus privStatus = myTable.insert(row);
       
       if (privStatus != STATUS_GOOD)
