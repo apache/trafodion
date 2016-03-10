@@ -1969,7 +1969,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
     char * catName = NULL;
     char * schName = NULL;
     indexes->position();
-    for (int idx = 0; idx < indexes->numEntries(); idx++)
+    for (int ii = 0; ii < indexes->numEntries(); ii++)
     {
       OutputInfo * idx = (OutputInfo*) indexes->getNext();
 

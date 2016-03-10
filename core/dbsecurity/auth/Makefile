@@ -73,7 +73,7 @@ INCLUDES	= -I. -I./inc -I ../shared/inc \
 	        -I ../../sql/common
 
 
-LINK_OPTIONS	= -L$(LIBEXPDIR) -lldap -lssl
+LINK_OPTIONS	= -L$(LIBEXPDIR) -lldap -lssl -llber
 LINK_OPTIONS   += $(LNK_FLGS) 
 
 COMMON_LIBS =  -ltdm_sqlcli -larkcmp_dll  
