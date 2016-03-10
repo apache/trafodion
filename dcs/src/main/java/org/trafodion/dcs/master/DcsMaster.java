@@ -61,7 +61,6 @@ import org.trafodion.dcs.util.VersionInfo;
 import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.zookeeper.ZKConfig;
 import org.trafodion.dcs.master.listener.ListenerService;
-import org.trafodion.dcs.rest.DcsRest;
 
 public class DcsMaster implements Runnable {
     private static final Log LOG = LogFactory.getLog(DcsMaster.class);
@@ -74,7 +73,6 @@ public class DcsMaster implements Runnable {
     private int port;
     private int portRange;
     private InfoServer infoServer;
-    private DcsRest restServer;
     private String serverName;
     private int infoPort;
     private long startTime;
