@@ -568,7 +568,7 @@ echo "export DCS_PRIMARY_MASTER_NODE=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRA
 #==============================================
 #Enable HA
 
-echo -n "Enable High Avalability (Y/N), default is N: "
+echo -n "Enable High Availability (Y/N), default is N: "
 read answer
 
 if [[ ! -z $answer ]]; then
