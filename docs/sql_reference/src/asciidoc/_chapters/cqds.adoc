@@ -31,26 +31,6 @@
 This section describes CQDs that are used to override system-level
 default settings.
 
-[[hbase_environment_cqds]]
-== HBase Environment CQDs
-
-Defines the HBase interface.
-
-[[cqd_hbase_interface]]
-=== HBASE_INTERFACE
-
-[cols="25%h,75%"]
-|===
-| Category                    | HBase
-| Description                 | Interface to use to access HBase. 
-| Values                      | Specify one of these values: +
- +
-- JNI to use a JNI interface +
-- JNI_TRX to use a transactional interface with HBase-trx via JNI. +
- +
- The default value is JNI_TRX.
-|===
-
 [[hive_environment_cqds]]
 == Hive Environment CQDs
 

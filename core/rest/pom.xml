@@ -417,7 +417,7 @@
   	<compileSource>1.6</compileSource>
     
   	<!-- Dependencies -->
-    <hadoop.version>2.4.0</hadoop.version>
+    <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
   	<commons-cli.version>1.2</commons-cli.version>
   	<commons-codec.version>1.4</commons-codec.version>
   	<commons-io.version>2.1</commons-io.version>

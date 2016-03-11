@@ -28,7 +28,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop.version>2.5.0</hadoop.version>
+    <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
     <hbase.version>${env.HBASE_DEP_VER}</hbase.version>
     <java.version>1.7</java.version>
   </properties>

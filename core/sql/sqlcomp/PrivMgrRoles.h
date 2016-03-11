@@ -93,7 +93,9 @@ public:
       
    bool isUserGrantedAnyRole(const int32_t authID);
    
-   PrivStatus populateCreatorGrants(const std::string &authsLocation);      
+   PrivStatus populateCreatorGrants(
+      const std::string &authsLocation,
+      const std::vector<std::string> &rolesToAdd);      
      
    PrivStatus revokeRole(
       const std::vector<int32_t> & roleIDs,

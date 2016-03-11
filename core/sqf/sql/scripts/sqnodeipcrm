@@ -25,7 +25,7 @@ function rm_shm {
     lv_port_file=$1
     echo "Using Portfile $lv_port_file"
     declare -i lv_virtual_node
-    let lv_virtual_node=`echo $lv_port_file | cut -d '.' -f 3`
+    let lv_virtual_node=`echo $lv_port_file | awk -F/ '{print $NF}' | cut -d '.' -f 3`
     lv_port_no=`cat $lv_port_file | cut -d ':' -f 2`
     #echo "lv_virtual_node=$lv_virtual_node"
     #echo "lv_port_no=$lv_port_no"

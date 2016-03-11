@@ -1,0 +1,119 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- This tests the following commands:
+--
+--   INITIALIZE TRAFODION, CREATE LIBRARY MANAGEMENT
+--   INITIALIZE TRAFODION, DROP LIBRARY MANAGEMENT
+--   INITIALIZE TRAFODION, UPGRADE LIBRARY MANAGEMENT
+
+-- start with both authorization and library management disabled
+initialize trafodion, drop library management;
+initialize authorization, drop;
+
+log LOG102 clear;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+set schema "_LIBMGR_";
+
+prepare get_schemas from
+select distinct substring (schema_name,1,16) as schema_name
+from trafodion."_MD_".objects
+where schema_name in ('SEABASE', '_LIBMGR_', '_MD_', '_PRIVMGR_MD_', '_REPOS_')
+order by 1;
+
+
+-- ****************************************************************************
+--  Verify enabling library management followed by authorization is correct
+-- ****************************************************************************
+
+-- authorization and library management should be disabled
+execute get_schemas;
+
+-- create library management 
+initialize trafodion, create library management;
+execute get_schemas;
+get libraries;
+get procedures;
+showddl procedure rm;
+set param ?h 'PUT';
+call help (?h);
+
+-- enable authorization
+initialize authorization;
+execute get_schemas;
+get roles;
+showddl procedure rm;
+
+-- reset
+initialize authorization, drop;
+initialize trafodion, drop library management;
+execute get_schemas;
+get procedures;
+get roles;
+
+-- ****************************************************************************
+--  Verify enabling authorization followed by library management is correct
+-- ****************************************************************************
+
+-- enable authorization
+initialize authorization;
+execute get_schemas;
+get roles;
+
+-- enable library management
+initialize trafodion, create library management;
+execute get_schemas;
+get libraries;
+get procedures;
+showddl procedure rm;
+set param ?h 'PUT';
+call help (?h);
+
+-- ****************************************************************************
+--  Test upgrade
+-- ****************************************************************************
+
+-- upgrade, remove a couple of procedures and run upgrade
+set parserflags 131072;
+drop procedure PUT;
+drop procedure ls;
+reset parserflags 131072;
+get procedures;
+call ls(?);
+
+initialize trafodion, upgrade library management;
+get procedures;
+showddl procedure put;
+call ls ('lib_mgmt.jar',?);
+
+-- should fail - library management already enabled
+initialize trafodion, create library management;
+
+-- make sure everything is enabled
+execute get_schemas;
+get procedures;
+
+-- we are done
+exit;
+
+
+
+

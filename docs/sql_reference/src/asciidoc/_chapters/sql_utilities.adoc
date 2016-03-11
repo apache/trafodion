@@ -59,16 +59,26 @@ associated with it. The write path begins at a client, moves to a region
 server, and ends when data eventually is written to an HBase data file
 called an HFile.
 
-The Trafodion bulk load process takes place in two phases:
+The Trafodion bulk load process takes place in the following phases:
 
-* _Preparation phase_: In this phase, Trafodion reads the data from
-the source files in Hive or HDFS, partitions the data based on the
-target table's partitioning scheme, sorts the data, and then generates
-key-value pairs that will populate the HFiles. Trafodion also encodes the
-data for faster storage and retrieval.
-* _Loading-the-files-into-HBase phase_: This phase uses the
-LoadIncrementalHFiles (also known as the computebulkload tool) and load
-the generated HFiles into the region servers.
+* *Disable Indexes* (if incremental index build not used)
+
+* *Prepare* (takes most time, heart of the bulk load operation)
+** Read source files (Trafodion Table, Hive table, or Hive external table)
+** Data encoded in Trafodion encoding
+** Data repartitioned and sorted to match regions of target table
+** Data written to HFiles
+** Data repartitioned and written to index HFiles (if incremental index build IS used)
+
+* *Complete* (with or without Snapshot recovery)
+** Take a snapshot of the table
+** Merge HFiles into HBase table (very fast – move, not a copy)
+** Delete snapshot or restore from snapshot if merge fails
+
+* *Populate Indexes* (if incremental index build is NOT used)
+
+* *Cleanup*
+** HFiles temporary space cleanup
 
 LOAD is a Trafodion SQL extension.
 
@@ -121,6 +131,7 @@ specifies that the Bulk Loader not use HBase snapshots for recovery. By
 default, the Bulk Loader handles recovery using the HBase snapshots
 mechanism.
 
+<<<
 ** `NO POPULATE INDEXES`
 +
 specifies that the Bulk Loader not handle index maintenance or populate
@@ -176,10 +187,10 @@ guidelines.
 ==== Staging Folder for HFiles
 
 The Bulk Loader uses an HDFS folder as a staging area for the HFiles
-before calling HBase APIs to merge them into the Trafodion table. By
-default, Trafodion uses /bulkload/ as the staging
-folder. This folder must be owned by the same user as the one under
-which Trafodion runs. Trafodion
+before calling HBase APIs to merge them into the Trafodion table.
+
+By default, Trafodion uses /bulkload as the staging folder. This folder
+must be owned by the same user as the one under which Trafodion runs. Trafodion
 also must have full permissions on this folder. The HBase user (that is,
 the user under which HBase runs) must have read/write access to this
 folder.
@@ -190,27 +201,99 @@ Example:
 drwxr-xr-x - trafodion trafodion 0 2014-07-07 09:49 /bulkload.
 ```
 
+<<<
+==== Improving Throughput
+
+The following CQD (Control Query Default) settings help improve the Bulk Loader
+throughput:
+
+* `TRAF_LOAD_MAX_HFILE_SIZE`
++
+Specifies the HFile size limit beyond which the current file is closed and a
+new file is created for the same partition. Adjust this setting to minimize
+HBase splitting/merging.
++
+*Default*: 10GB
+
+* `TRAF_LOAD_PREP_TMP_LOCATION`
++
+Specifies the HDFS directory where HFiles are created during load.
++
+*Default*: `/bulkload`
+
+Also, consider using `NO DUPLICATE CHECK` to improve througput if your
+source data is clean.
+
 ==== Hive Source Table
 
-To load data stored in HDFS, you will need to create a Hive table with
+To load data stored in HDFS, you need to create a Hive table with
 the right fields and types pointing to the HDFS folder containing the
 data before you start the load.
 
-<<<
 ==== HBase Snapshots
 
 If you do not specify the NO RECOVERY OPTION in the LOAD statement, the
 Bulk Loader uses HBase snapshots as a mechanism for recovery. Snapshots
 are a lightweight operation where some metadata is copied. (Data is not
-copied.) A snapshot is taken before the load starts and is removed after
+copied.)
+
+A snapshot is taken before the load starts and is removed after
 the load completes successfully. If something goes wrong and it is
 possible to recover, the snapshot is used to restore the table to its
 initial state before the load started. To use this recovery mechanism,
 HBase needs to be configured to allow snapshots.
 
+==== Incremental Loads
+
+The Bulk Loader allows for incremental loads by default. Snapshots are
+taken before second phase starts and deleted once the bulk load completes.
+
+If something goes wrong with the load, then the snapshot is restored to
+go to the previous state.
+
+<<<
+==== Non-Incremental Loads
+
+These following bulk load options can be used to do non-incremental load:
+
+* `NO RECOVERY`: Do not take a snapshot of the table.
+* `TRUNCATE TABLE`: Truncates the table before starting the load.
+
+==== Space Usage
+
+The target table values for SYSKEY, SALT, identity, divisioning columns
+are created automatically the during transformation step. The size of the
+HBase files is determined based on encoding, compression, HDFS replication
+factor, and row format. Target table can be pre-split into regions using
+salting, a Java Program, by seeding the table with data.
+
+==== Performance
+
+The overall throughput is influenced by row format, row length, number of
+columns, skew in data, etc. LOAD sas upsert semantics (duplicate constraint
+not checked with existing data). LOAD has lower CPU abd disk activity than
+similar trickle load (INSERT, UPSERT, or UPSERT USING LOAD), Also, LOAD has
+lower compaction activity after completion than Trickle Load. 
+
+==== Hive Scans
+
+Direct access for Hive table data supports:
+
+* Only text input format and sequence files.
+* Only structured data types.
+
+Tables must be created/dropped/altered through Hive itself.
+
+Trafodion:
+
+* Reads Hive metadata to determine information about table.
+* UPDATE STATISTICS can be performed on Hive tables - improves performance! 
+* Can write to Hive tables in both Text and Sequence formats (used by UNLOAD).
+
+<<<
 [[load_examples]]
 === Examples of LOAD
-
+    
 * For customer demographics data residing in
 `/hive/tpcds/customer_demographics`, create an external Hive table using
 the following Hive SQL:

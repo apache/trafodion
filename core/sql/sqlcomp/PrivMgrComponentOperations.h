@@ -71,7 +71,8 @@ public:
       const std::string & operationDescription,
       const int32_t granteeID,
       const std::string & granteeName,
-      const int32_t grantDepth);
+      const int32_t grantDepth,
+      const bool checkExistence);
       
   PrivStatus describeComponentOperations(
       const std::string & componentUIDString,

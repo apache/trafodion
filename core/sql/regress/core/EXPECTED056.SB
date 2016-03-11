@@ -2026,9 +2026,6 @@ T056T56_COL            T056T56_COL2  T056T56_COL3  T056T56_COL4
 
 --- 1 row(s) selected.
 >>
->>cqd hbase_filter_preds 'on' ;
-
---- SQL operation complete.
 >>create table t056t57 (a1 numeric(2,2) signed default 0 not null);
 
 --- SQL operation complete.
@@ -2153,9 +2150,6 @@ A1
     .00
 
 --- 1 row(s) selected.
->>cqd hbase_filter_preds '2' ;
-
---- SQL operation complete.
 >>
 >>obey TEST056(tests4);
 >>obey test056(test4OLTops);

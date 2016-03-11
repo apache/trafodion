@@ -818,6 +818,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LSDECIMAL
 %token <tokval> TOK_LTRIM               /*  ODBC extension  */
 %token <tokval> TOK_MAINTAIN
+%token <tokval> TOK_MANAGEMENT
 %token <tokval> TOK_MANUAL				// MV
 %token <tokval> TOK_MASTER
 %token <tokval> TOK_MATCH
@@ -16122,6 +16123,57 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
+
+                 $$ = de;
+
+               }
+
+             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_LIBRARY TOK_MANAGEMENT
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+					         , PARSERHEAP() 
+	                                         );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+                                                          (char*)stmt->data(),
+                                                           stmtCharSet);
+
+                 de->setCreateLibmgr(TRUE);
+
+                 $$ = de;
+
+               }
+
+             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_DROP TOK_LIBRARY TOK_MANAGEMENT
+               {
+                 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+                 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                 , PARSERHEAP()
+                                                 );
+
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+                                                          (char*)stmt->data(),
+                                                          stmtCharSet);
+
+                 de->setDropLibmgr(TRUE);
+
+                 $$ = de;
+
+               }
+
+             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_UPGRADE TOK_LIBRARY TOK_MANAGEMENT
+               {
+                 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+                 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                 , PARSERHEAP()
+                                                 );
+
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+                                                          (char*)stmt->data(),
+                                                          stmtCharSet);
+
+                 de->setUpgradeLibmgr(TRUE);
 
                  $$ = de;
 
@@ -33147,6 +33199,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SEQUENCES
                       | TOK_SINCE
 //		      | TOK_MAINTAIN
+                      | TOK_MANAGEMENT
 		      | TOK_MANUAL
 		      | TOK_MIXED
 		      | TOK_MVS  // MV

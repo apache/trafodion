@@ -815,7 +815,8 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
     return 0;
 
   NAString newSchName = "\"" + catName_ + "\"" + "." + "\"" + schName_ + "\"";
-
+  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   cliRC = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
                                    newSchName.length(),
                                    objUID_,
@@ -823,7 +824,9 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
                                    LOB_CLI_CLEANUP,
                                    lobNumList_,
                                    lobTypList_,
-                                   lobLocList_,0);
+                                   lobLocList_,
+                                   (char *)lobHdfsServer,
+                                   lobHdfsPort,0);
 
   return 0;
 }

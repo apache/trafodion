@@ -102,7 +102,8 @@ public:
       const std::string & grantorName,
       const int32_t granteeID,
       const std::string & granteeName,
-      const int32_t grantDepth);
+      const int32_t grantDepth,
+      const bool checkExistence);
       
    PrivStatus grantPrivilegeToCreator(
       const int64_t componentUID,

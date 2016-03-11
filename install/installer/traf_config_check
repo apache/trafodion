@@ -426,7 +426,7 @@ else
          fi
        done
     fi
-    export PATH=$PATH:$JAVA_HOME/bin
+    export PATH="$PATH:$JAVA_HOME/bin"
     sudo chmod 777 $TRAF_CONFIG
     sed -i '/PATH\=/d' $TRAF_CONFIG
     echo "export PATH=\"$PATH\"" >>$TRAF_CONFIG
@@ -489,11 +489,15 @@ fi
 
 function checkBackupUser {
 
+TRAF_CONFIG="/etc/trafodion/trafodion_config"
+
+source $TRAF_CONFIG
+
 if [ -z $BACKUP_USER ]; then
    echo "***ERROR: BACKUP_USER variable not set in config file."
    echo "***WARNING: BACKUP_USER will be set to trafodion."
    sudo chmod 777 $TRAF_CONFIG
-   sudo "export BACKUP_USER=\"trafodion\"" >> $TRAF_CONFIG
+   sudo echo "export BACKUP_USER=\"trafodion\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 fi
 

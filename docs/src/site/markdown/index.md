@@ -46,11 +46,11 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
   <p><h5>The Apache Trafodion team is happy to announce the first Apache release &#8212; version 1.3.0-incubating!</h5></p>
   <p><strong>How to get started with Apache Trafodion:</strong>
      <ul>
-       <li><a href="http://trafodion.apache.org/documentation.html">Release Documentation</a></li>
-       <li><a href="http://trafodion.apache.org/release-notes-1-3-0.html">Release Notes</a></li>
-       <li><a href="https://trafodion.apache.org/download.html#Binaries">Download</a></li>
+       <li><a href="http://trafodion.incubator.apache.org/documentation.html">Release Documentation</a></li>
+       <li><a href="http://trafodion.incubator.apache.org/release-notes-1-3-0.html">Release Notes</a></li>
+       <li><a href="https://trafodion.incubator.apache.org/download.html">Download</a></li>
        <li><a href="https://github.com/apache/incubator-trafodion">git Site</a></li>
-       <li><a href="http://trafodion.apache.org/download.html">Build Instructions</a></li>
+       <li><a href="http://trafodion.incubator.apache.org/contributing-redirect.html">Build Instructions</a></li>
      </ul>
    </p>
    <p><h5>The Trafodion team thanks all our contributors and mentors who made the release possible!</h5></p>
@@ -126,9 +126,9 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
         <div class="customHr">.</div>
       </center>
       <ul>
-        <li><a href="contribution-redirect.html">Contribute</a></li>
+        <li><a href="contributing-redirect.html">Contribute</a></li>
         <li><a href="mail-lists.html">Discuss</a></li>
-        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home">Wiki</a></li>
         <li><a href="presentations.html">Presentations</a></li>
       </ul>
     </td>
