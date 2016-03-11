@@ -4434,12 +4434,14 @@ Lng32 ex_function_hivehash::hashForCharType(char* data, Lng32 length)
 {
   // To compute: SUM (i from 0 to n-1) (s(i) * 31^(n-1-i)
 
+  ULng32 resultCopy = 0;
   ULng32 result = (ULng32)data[0];
   for (Lng32 i=1; i<length; i++ ) {
 
      // perform result * 31, optimized as (result <<5 - result)
-     result << 5;
-     result -= result;
+     resultCopy = result;
+     result <<= 5;
+     result -= resultCopy;
 
      result += (ULng32)(data[i]);
   }
