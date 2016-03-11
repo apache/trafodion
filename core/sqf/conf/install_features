@@ -62,4 +62,5 @@
 # verify the hadoop distro versions are correct as well as 
 # perform some additional support for this.
 export CDH_5_3_HDP_2_2_SUPPORT="N"
+export HDP_2_3_SUPPORT="N"
 export CDH_5_4_SUPPORT="Y"
