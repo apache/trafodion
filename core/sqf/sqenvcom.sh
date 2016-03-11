@@ -281,6 +281,8 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
     HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
   done
 
+  lv_hbase_cp=
+
   export HIVE_JAR_DIRS="$HIVE_HOME/lib"
   export HIVE_JAR_FILES="$HIVE_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-*.jar"
 
@@ -312,18 +314,6 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
                           /opt/cloudera/parcels/CDH/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hbase/hbase-*-security.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-client.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-common.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-server.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-examples.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-protocol.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/zookeeper.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/$protobuf-*.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/snappy-java-*.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/high-scale-lib-*.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hive/lib"
   export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
                          /opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-common.jar"
@@ -356,18 +346,6 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
                           /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
-                          /usr/lib/hbase/hbase-client.jar
-                          /usr/lib/hbase/hbase-common.jar
-                          /usr/lib/hbase/hbase-server.jar
-                          /usr/lib/hbase/hbase-examples.jar
-                          /usr/lib/hbase/hbase-protocol.jar
-                          /usr/lib/hbase/lib/htrace-core.jar
-                          /usr/lib/hbase/lib/zookeeper.jar
-                          /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar
-                         /usr/lib/hbase/lib/high-scale-lib-*.jar
-                         /usr/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
 
@@ -399,18 +377,6 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
                           /usr/hdp/current/hadoop-client/lib"
   export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/hdp/current/hbase-client/hbase-*-security.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-common.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-client.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-server.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-protocol.jar
-                          /usr/hdp/current/hbase-client/lib/htrace-core*.jar
-                          /usr/hdp/current/hbase-client/lib/zookeeper.jar
-                          /usr/hdp/current/hbase-client/lib/protobuf-*.jar
-                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar
-                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar
-                         /usr/hdp/current/hbase-client/lib/hbase-hadoop-compat-*-hadoop2.jar "
-
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
@@ -599,23 +565,12 @@ EOF
                             $APACHE_HADOOP_HOME/share/hadoop/mapreduce
                             $APACHE_HADOOP_HOME/share/hadoop/hdfs"
     export HADOOP_JAR_FILES=
-
-
-    export HBASE_JAR_FILES="$APACHE_HBASE_HOME/lib/hbase-common-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-client-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-server-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-protocol-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-examples-*.jar
-                            $APACHE_HBASE_HOME/lib/htrace-core-*.jar
-                            $APACHE_HBASE_HOME/lib/zookeeper-*.jar
-                            $APACHE_HBASE_HOME/lib/protobuf-*.jar
-                            $APACHE_HBASE_HOME/lib/snappy-java-*.jar
-                            $APACHE_HBASE_HOME/lib/high-scale-lib-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-hadoop-compat-*-hadoop2.jar "
-
     export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
 
-    export HBASE_TRX_JAR=hbase-trx-hbase_98_4-${TRAFODION_VER}.jar
+    #hbase classpath captures all the right set of jars hbase is using.
+    #this also includes the trx jar that gets installed as part of install.
+    #Additional testing needed.Including it here for future validation.
+    lv_hbase_cp=`hbase classpath`
 
     # end of code for Apache Hadoop/HBase installation w/o distro
   else
@@ -857,6 +812,8 @@ done
 for d in $HIVE_JAR_DIRS; do
   HIVE_JAR_FILES="$HIVE_JAR_FILES $d/*.jar"
 done
+
+SQ_CLASSPATH=$lv_hbase_cp;
 
 # assemble all of them into a classpath
 for j in $HBASE_JAR_FILES $HADOOP_JAR_FILES $HIVE_JAR_FILES; do
