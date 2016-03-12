@@ -23,8 +23,8 @@
   */
 ////
 
-[[influence-query-plans]]
-= Influence Query Plans
+[[query-plans]]
+= Query Plans
 
 This section describes CQDs that are used to influence query plans.
 
@@ -33,24 +33,29 @@ This section describes CQDs that are used to influence query plans.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
-| *Description*               | Defines the minimum size for query operator parallelism. 
-The optimizer may choose an adaptive segment size that is equal to, or the multiple of, 
-the value of this CQD, depending on the maximum estimated resource consumed by any single 
-operator in the query. The optimizer may also decide to run the query with no parallelism 
-if the resource consumption estimate is very low.
-| *Values*                    | Unsigned Integer. +
+| *Description*               | Defines the minimum size of the adaptive segment; that is, the number of processors 
+available for query operator parallelism. The optimizer may choose an adaptive-segment size that is equal to, or the multiple of, 
+the value of this CQD depending on the maximum estimated resource consumed by any single operator in the query. 
+The optimizer may also decide to run the query with no parallelism if the resource consumption estimate is very low.
+| *Values*                    |
+Unsigned Integer. +
+ +
 The default value is *'16'*.
-| *Usage*                     | For clusters running at higher levels of concurrency with 
-workloads that include a large number of small queries, reducing the default degree of 
-parallelism may help achieve higher throughput.
+| *Usage*                     | For systems running at higher levels of concurrency with workloads that include a large 
+number of small queries, reducing the default degree of parallelism may help achieve higher throughput. +
+ +
+With the default of 16, for 32-node systems, adaptive segmentation can use two 16-node virtual segments to execute queries that 
+do not require a degree of parallelism of 32.  This default setting can, for example, be changed to 8 for a 16-node system, 
+to allow adaptive segmentation to leverage a lower degree of parallelism.
+
 | *Production Usage*          | Not applicable.
 | *Impact*                    | Lowering the value of this CQD can increase the throughput of 
 high-concurrency small-query workloads, but has the potential disadvantage of increasing the 
-elapsed time for some of the longer running queries.
-| *Level*                     | System. 
+elapsed time for some of the longer running queries that leverage adaptive segmentation.
+| *Level*                     | System. There may be scenarios where you want to influence the degree of adaptive segmentation 
+parallelism only for a certain set of queries and use it at the service level.
 | *Conflicts/Synergies*       | Not applicable.
-| *Real Problem Sddressed*    | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
@@ -61,19 +66,68 @@ elapsed time for some of the longer running queries.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
-| *Description*               | Determines if Hash Join is considered by the optimizer to generate an execution plan.
-| *Values*                    | *'ON'* Hash Join is considered. +
-'OFF Hash Join is disabled. +
+| *Description*               | Determines whether the Trafodion Optimizer considers Hash Join when generating an execution plan.
+| *Values*                    |
+*'ON'* Hash Join is considered. +
+*'OFF'* Hash Join is not considered. +
  +
 The default value is *'ON'*.
-| *Usage*                     | Use this CQD when you want to force a query plan not to use any Hash Joins.
+| *Usage*                     | Use this CQD when you want to force the optimizer to generate a query plan that does not use any Hash Joins.
 | *Production Usage*          | Hash Join is an important join implementation strategy for most complex queries.
-It is highly recommended not to turn Hash Join OFF. It should only be used to force a query plan for a particular query on an exception basis.
-| *Impact*                    | Turning Hash Join OFF may result in very inefficient query plans with expensive nested joins or sorts for merge joins.
+It is highly recommended that you do not turn HASH_JOINS OFF; that is, this CQD should be used to force a query plan for a particular query on an exception basis only.
+| *Impact*                    | Turning HASH_JOINS OFF may result in very inefficient query plans that use expensive nested joins or sorts for merge joins.
 | *Level*                     | Query.
-| *Conflicts/Synergies*       | Avoid turning all the three join implementations OFF (Hash Joins, Nested Joins, and Merge Joins).
-This may result in the compiler failing to generate query plans.
+| *Conflicts/Synergies*       | If you turn all three join implementations OFF (Hash Joins, Nested Joins, and Merge Joins), then the compiler may fail to generate query plans.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hbase-coprocessors]]
+== HBASE_COPROCESSORS
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Allow HBase coprocessors to be used when computing aggregates.
+| *Values*                    |
+*'ON'*: Use HBase coprocessors. +
+*'OFF'*: Do not use HBase coprocessors. +
+ +
+The default value is *'ON'*.
+| *Usage*                     | Enables Trafodion to use HBase coprocessors to do early aggregation and filtering
+at the HBase Region Server level. This CQD does not affect Transaction coprocessors used by Trafodion. +
+ +
+As of Release 2.0 only COUNT(*) queries will be affected by this attribute.
+| *Production Usage*          | Yes.
+| *Impact*                    | Network traffic between Region Server and Trafodion processes is reduced but
+the Region Server can become very busy when aggregating over large tables.
+| *Level*                     | Query.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hive-num-esps-per-datanode]]
+== HIVE_NUM_ESPS_PER_DATANODE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Determines number of ESP processes used to scan a Hive table, per HDFS DataNode. 
+| *Values*                    |
+Positive integer. +
+ +
+The default value is *'2'*.
+| *Usage*                     | Use this CQD to increase or decrease the number of scanners that process a single Hive table.
+If a Hive scan is found to be the bottleneck for a particular query, then increasing this attribute to; for example, 4 or higher will help.
+On the other hand decreasing the attribute to 1 could help with concurrency.
+| *Production Usage*          | Yes.
+| *Impact*                    | Controls number of ESPs and, therefore, affects query execution time and system workload.
+| *Level*                     | Query.
+| *Conflicts/Synergies*       | The CQD <<hive-min-bytes-per-esp-partition,HIVE_MIN_BYTES_PER_ESP_PARTITION>> (default = 67108864) may need to be adjusted downward
+when this attribute is used to increase the parallelism of scanning smaller Hive tables.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.
@@ -85,10 +139,10 @@ This may result in the compiler failing to generate query plans.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Enables or disables the join order in which the optimizer joins the tables to be the sequence of the
 tables in the FROM clause of the query.
-| *Values*                    | *'ON'* Join order is forced. +
+| *Values*                    |
+*'ON'* Join order is forced. +
 *'OFF'* Join order is decided by the optimizer. +
  +
 The default value is *'OFF'*.
@@ -105,6 +159,67 @@ specified in the FROM clause, the plan generated may not be the optimal one.
 | *Deprecated In Release*     | Not applicable.
 |===
 
+<<<
+[[mc-skew-sensitivity-threshold]]
+== MC_SKEW_SENSITIVITY_THRESHOLD
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Define the multi-column skew sensitivity threshold T used by multi-column skew-insensitive hash join (Skew Buster). +
+ +
+Let `f` be the occurrence frequency of a skew value `v`, `DoP` be the degree of parallelism of a hash join operator, and `RC` be the row count of
+the source data (for example, fact table) where the skew originates. +
+ +
+The hash join will run in the anti-skew mode for `v` if `f >= T * DoP / RC`.
+| *Values*                    |
+*< 0*: Disable the multi-column skew buster. +
+*&#62;= 0*: Define the threshold T. + 
+ +
+Default value: *0.1*.  
+| *Usage*                     | Use of a *negative value* to disable multi-column anti-skew hash joins. This may slow down query performance when
+multi-column skew values are present in the fact table. +
+ +
+A value of *0* treats every multi-column value as skew values. This may increase network traffic since skewed values are broadcasted from the inner
+side child of the hash join to all join processes. +
+ +
+A value *greater than 0* selects those multi-column values as skewed values if their occurrence frequencies are high enough. 
+| *Production Usage*          | Consult the Trafodion community.
+| *Impact*                    | This CQD impacts runtime performance.
+| *Level*                     | Session.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[mdam-no-stats-positions-threshold]]
+== MDAM_NO_STATS_POSITIONS_THRESHOLD
+
+[cols="25%h,75%"]
+|===
+| *Description*               | This CQD effects the behavior of the query optimizer when there are no statistics available for a query
+having range predicates on key columns. The Trafodion Optimizer calculates the worst case number of seeks that the MDAM access method
+would do if chosen for the query. +
+ +
+If this number is greater than the value of MDAM_NO_STATS_POSITIONS_THRESHOLD, then MDAM is not considered for the query execution plan. 
+| *Values*                    |
+Any integer greater than equal to zero. +
+ +
+Default value: *10*.  
+| *Usage*                     | In certain situations, queries on tables lacking statistics may not be optimal because MDAM was not chosen.
+Increasing the value for this CQD allows MDAM to be chosen in more cases. On the other hand, if the value is made too high and the worst case
+scenario actually occurs, an MDAM plan may perform poorly.
+| *Production Usage*          | Consult the Trafodion community.
+| *Impact*                    | Table scans on tables lacking statistics may improve by varying the value of this CQD.
+Results vary depending on the actual data in the table and the semantics of the query.
+| *Level*                     | Query.
+| *Conflicts/Synergies*       | If <<mdam-scan-method,MDAM_SCAN_METHOD>> is set to *'OFF'*, then this CQD has no effect.
+| *Real Problem Addressed*    | Perform UPDATE STATISTICS on the table (at the very least on key columns) to obtain statistics.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
 
 <<<
 [[mdam-scan-method]]
@@ -112,15 +227,15 @@ specified in the FROM clause, the plan generated may not be the optimal one.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
-| *Description*               | Enables or disables the Multi-Dimensional Access Method.
-| *Values*                    | *'ON'* MDAM is considered. +
+| *Description*               | Enables or disables the Multi-Dimensional Access Method (MDAM).
+| *Values*                    |
+*'ON'* MDAM is considered. +
 *'OFF'* MDAM is disabled. +
  +
 The default value is *'ON'*.
-| *Usage*                     | In certain situations, the optimizer might choose MDAM inappropriately, causing poor performance.
+| *Usage*                     | In certain situations, the Trafodion Optimizer might choose MDAM inappropriately, causing poor performance.
 In such situations you may want to turn MDAM OFF for the query it is effecting.
-| *Production Usage*          | Not applicable.
+| *Production Usage*          | Yes.
 | *Impact*                    | Table scans with predicates on non-leading clustering key column(s) could benefit from MDAM access
 method if the leading column(s) has a small number of distinct values. Turning MDAM off results in a longer scan time for such queries.
 | *Level*                     | Set this CQD at the query level when MDAM is not working efficiently for a specific query. However,
@@ -138,24 +253,26 @@ to set it at the service or system level.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Determines if Merge Join is considered by the optimizer to generate an execution plan.
-| *Values*                    | *'ON'* Merge Join is considered. +
-*'OFF'* Merge Join is disabled. +
+| *Values*                    |
+*'ON'*: Merge Join is considered. +
+*'OFF'*: Merge Join is disabled. +
  +
 The default value is *'ON'*.
 | *Usage*                     | Use this CQD when you want to force a query plan not to use Merge Joins. This is useful as a workaround
-for query plans with very expensive sorts for Merge Joins. Turning Merge Join OFF also has the advantage of reducing the query compile time. 
+for query plans with very expensive sorts for Merge Joins. Turning MERGE_JOINS OFF also has the advantage of reducing the query compile time. 
 | *Production Usage*          | Merge Join is an efficient join implementation strategy if the physical schema was designed to take advantage
 of it. For example, large tables are physically ordered based on the most frequently joined column(s).
-| *Impact*                    | Turning Merge Join OFF may result in the optimizer not considering potentially efficient query plans,
-for queries with large joins on tables that are physically ordered by the join column(s). Turning Merge Join ON causes an increase in compile
+| *Impact*                    | Turning MERGE_JOINS OFF may result in the optimizer not considering potentially efficient query plans,
+for queries with large joins on tables that are physically ordered by the join column(s). +
+ +
+Turning MERGE_JOINS ON causes an increase in compile
 time because the optimizer now has to consider many more join options.
 | *Level*                     | Set this CQD at the query level when a Merge Join is not working efficiently for a specific query. However,
 there may be cases (usually a defect) where a larger set of queries is being negatively impacted by Merge Joins. In those cases you may want to
 set it at the service or system level.
 | *Conflicts/Synergies*       | Avoid turning all the three join implementations OFF (Hash Joins, Nested Joins, and Merge Joins).
-This may result in the compiler failing to generate query plans.
+This may result in the Trafodion Compiler failing to generate query plans.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.
@@ -167,24 +284,24 @@ This may result in the compiler failing to generate query plans.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Determines if Nested Join is considered by the optimizer to generate an execution plan.
-| *Values*                    | *'ON'* Nested Join is considered. +
-*'OFF'* Nested Join is disabled. +
+| *Values*                    |
+*'ON'*: Nested Join is considered. +
+*'OFF'*: Nested Join is disabled. +
  +
 The default value is *'ON'*.
 | *Usage*                     | Use this CQD when you want to force a query plan not to use Nested Joins. This is useful
 as a workaround for query plans with very expensive Nested Joins, which may occur if the optimizer fails to estimate the
 cost of a Nested Join correctly.
 | *Production Usage*          | Nested Join is an important join implementation strategy for many complex queries. It is
-recommended not to turn Nested Join OFF. It should only be used to force a query plan for a particular query on an exception basis.
-| *Impact*                    | Turning Nested Join OFF may result in inefficient query plans for certain type of queries,
+recommended not to turn NESTED_JOINS OFF. It should only be used to force a query plan for a particular query on an exception basis.
+| *Impact*                    | Turning NESTED_JOINS OFF may result in inefficient query plans for certain type of queries,
 such as light workloads and star join queries.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Avoid turning all the three join implementations OFF (Hash Joins, Nested Joins, and Merge Joins).
 This may result in the compiler failing to generate query plans.
 | *Real Problem Addressed*    | The problem of inefficient Nested Joins can be better handled using a higher degree of query plan
-robustness as set by the ROBUST_QUERY_OPTIMIZATION CQD.
+robustness as set by the <<robust-query-optimization,ROBUST_QUERY_OPTIMIZATION>> CQD.
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
@@ -195,11 +312,12 @@ robustness as set by the ROBUST_QUERY_OPTIMIZATION CQD.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Controls the optimizer resources and time spent for optimizing a query plan, with level 0 indicating
 the least amount of optimization effort and level 5 indicating the most. Lower optimization levels produce lower plan quality with
 minimal compile time, while higher optimization levels cause the compiler to spend more compilation time to produce better plan quality.
-| *Values*                    | '0', '2', '3', '5'
+| *Values*                    |
+'0', '2', '3', '5' +
+ +
 The default value is *'3'*.
 | *Usage*                     | Reduce the optimization level when compile time is longer than desired and queries have relatively small
 execution cost and are simple in structure.
@@ -219,8 +337,7 @@ Increasing the optimization level over the system default may result in very hig
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
-| *Description*               | Controls the maximum number of parallel ESPs that work on a particular operation, like a join.
+| *Description*               | Controls the maximum number of parallel ESPs that work on a particular operation; for example, a join.
 | *Values*                    | Unsigned Integer: The maximum number of ESPs that should be used for a particular operation.
 The value must be less than the number of nodes in the cluster. +
  +
@@ -245,9 +362,9 @@ query workloads, but has the potential disadvantage of increasing the elapsed ti
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Influences the optimizer to choose other types of joins over nested joins, by making a nested join plan relatively more expensive.
-| *Values*                    | Any positive fractional value. +
+| *Values*                    |
+Any positive fractional value. +
  +
 The default value is *'1.2'*.
 | *Usage*                     | Review <<robust-query-optimization,ROBUST_QUERY_OPTIMIZATION>> before considering the use of this CQD. +
@@ -261,7 +378,7 @@ may be used to influence the optimizer to consider another join instead, such as
  +
 NESTED_JOINS OFF could turn nested joins off completely. However, there are many cases where nested joins do provide better performance than hash
 joins, and turning them off completely may negatively impact the performance of queries that can do a lot better with nested joins.
-| *Production Usage*          | Not applicable.
+| *Production Usage*          | Consult with the Trafodion community.
 | *Impact*                    | Specifying a risk premium insures against nested joins being chosen when they should not have been. However,
 this can also result in nested joins not being chosen where the cardinality estimation was in fact accurate and a nested join could have
 performed better. Therefore, this setting should be used with care in order to get robustness with a net gain in performance.
@@ -281,9 +398,9 @@ addressing nested join issues and need to use this setting independent of that C
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Influences the optimizer to choose a parallel plan over a serial plan, by making a serial plan relatively more expensive.
-| *Values*                    | Any positive fractional value. +
+| *Values*                    |
+Any positive fractional value. +
  +
 The default value is *'1.2'*.
 | *Usage*                     | Review <<robust-query-optimization,ROBUST_QUERY_OPTIMIZATION>> before considering the use of this CQD. +
@@ -294,7 +411,7 @@ allowed to win over competing parallel plans. +
  +
 If it is determined that the optimizer is using serial plans often enough where these plans are resulting in poor performance, then this CQD
 may be used to influence the optimizer to consider parallel plans instead in some of those cases. +
-| *Production Usage*          | Not applicable.
+| *Production Usage*          | Consult with the Trafodion community.
 | *Impact*                    | Specifying a risk premium insures against serial plans being chosen when they should not have been.
 However, this can also result in serial plans not being chosen where the cardinality estimation was in fact accurate and a serial plan
 could have performed better. Therefore, this setting should be used with care in order to get robustness with a net gain in performance.
@@ -309,12 +426,37 @@ addressing serial plan issues and need to use this setting independent of that C
 |===
 
 <<<
+[[risk-premium-serial-scaleback-maxcard-threshold]]
+== RISK_PREMIUM_SERIAL_SCALEBACK_MAXCARD_THRESHOLD
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Defines the minimal estimated max cardinality or row count of any relational operators in a query above
+which the risk premium for serial plan is applied. +
+ +
+A serial query plan is favored by the Trafodion Compiler when it estimates the query reads and processes small amount of data.
+The estimation error could become large when some operator is calculated to produce many rows yielding a non-optimal serial plan.
+This CQD helps prevent utilizing serial plan in such cases.
+| *Values*                    | An unsigned integer value. 
+| *Usage*                     | Adjust this CQD when necessary only.  +
+ +
+Use of a value smaller than the default (10,000) to penalize more serial plans or favor more parallel plans for operators produce less number of rows. 
+Otherwise, use of a larger value.
+| *Production Usage*          | Consult with the Trafodion community.
+| *Impact*                    | This CQD impacts plan quality.
+| *Level*                     | Session.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
 [[robust-query-optimization]]
 == ROBUST_QUERY_OPTIMIZATION
 
 [cols="25%h,75%a"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Provides a simpler way to influence the optimizer's choice of query plans. The optimizer chooses query plans
 based on cardinality estimates (the number of result rows estimated at each step of a query execution plan). Actual cardinalities encountered
 at query execution often differ from estimates. The optimizer considers risky choices and exacts risk premiums before it chooses a plan that
@@ -397,7 +539,6 @@ optimizer may warn about. However, cardinality underestimations may still happen
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Turns on the reporting of anti-skew join plan details in EXPLAIN or EXPLAIN OPTIONS 'f'.
 | *Values*                    |
 *'OFF'*: Disables the use of SKEW_EXPLAIN. +
@@ -420,7 +561,6 @@ The default value is *'OFF'*.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | The optimizer looks for skewed values and address that skew if the number of rows in the table exceeds this threshold.
 | *Values*                    |
 *'n'*: where n is the number of rows +
@@ -460,7 +600,6 @@ is relevant if this threshold allows a skew to be detected only.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Used to specify a threshold that determines whether a value in the join column is considered skewed.
 | *Values*                    |
 *'-1'*: Disables the use of skew buster. +
@@ -489,12 +628,85 @@ However, there may be design opportunities that could help address the problem a
 |===
 
 <<<
+[[subquery_unnesting]]
+== SUBQUERY_UNNESTING
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Allows correlated subqueries in a SQL statement to be unnested, so that they can be executed efficiently.
+| *Values*                    |
+*'ON'*: Unnesting enabled. +
+*'OFF'*: Unnesting disabled. +
+ +
+The default value is *'ON'*.
+| *Usage*                     | Turn this CQD OFF when (in rare cases) unnesting a correlated subquery causes performance to degrade.
+If this attribute has to be turned OFF, then that could indicate a bug in the Trafodion Optimizer. Consult with the Trafodion community.
+| *Production Usage*          | Yes.
+| *Impact*                    | Turn OFF with caution at a system level, as other queries which rely on un-nesting could be adversely impacted.
+| *Level*                     | Query.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[traf-allow-esp-colocation]]
+== TRAF_ALLOW_ESP_COLOCATION
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Enables or disables whether ESP are colocated with HBase Region Servers, which minimizes the inter-node
+network traffic between the ESP processes and the HBase Region Servers.
+| *Values*                    |
+*'ON'*: Colocation enabled. +
+*'OFF'*: Colocation disabled. +
+ +
+The default value is *'OFF'*.
+| *Usage*                     | Enable the feature when each region server serves approximately equal amount of data, and/or reducing network traffic is important.  
+| *Production Usage*          | Consult with the Trafodion community.
+| *Impact*                    | Plan quality.
+| *Level*                     | Session.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[traf-upsert-with-insert-default-semantics]]
+== TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Enables population of omitted columns in an UPSERT statement with default values when the table is created in aligned-row format mode.
+| *Values*                    |
+*'ON'*: Default population enabled. +
+*'OFF'*: Default population disabled. +
+ +
+The default value is *'ON'*.
+| *Usage*                     | When a column with default value is omitted in an UPSERT statement of a table in aligned row format mode,
+then the statement is transformed to merge. +
+ +
+If the row already exists, then the omitted columns are populated with values from the existing row. +
+ +
+If the row doesn't exist, then the omitted columns are populated with default values. This default behavior can be changed by setting this CQD to 'ON',
+which improves the performance of the UPSERT statements with omitted default value columns.
+| *Production Usage*          | Yes.
+| *Impact*                    | Improved upsert performance of aligned row format tables.
+| *Level*                     | Query.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
 [[upd-ordered]]
 == UPD_ORDERED
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influence Query Plans 
 | *Description*               | Controls whether rows should be inserted, updated, or deleted in clustering key order.
 | *Values*                    |
 *'ON'*: The optimizer generates and considers plans where the rows are inserted, updated, or deleted in clustering key order. +

@@ -112,8 +112,8 @@ you can specify the default attribute, USE_HIVE_SOURCE. This causes the Hive tab
 
 NOTE: The name of the Hive table must use the Trafodion table name as its prefix.
 For example, if the Trafodion table is TRAFODION.SCH.DEMO, then the Hive 
-table name can be DEMO_SRC. In this case, set the attribute as follows: 
-+
+table name can be DEMO_SRC. In this case, set the attribute as follows: +
+ +
 ```
 CONTROL QUERY DEFAULT USE_HIVE_SOURCE '_SRC' ;
 CREATE INDEX demo_ix ON sch.demo(name) ;
