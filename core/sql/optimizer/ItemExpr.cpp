@@ -49,7 +49,7 @@
 #include "exp_function.h" // for calling ExHDPHash::hash(data, len)
 #include "ItemFuncUDF.h"
 #include "CmpStatement.h"
-//#include "ItmFlowControlFunction.h"
+#include "exp_datetime.h"
 
 #include "OptRange.h"
 
@@ -8241,12 +8241,16 @@ DateFormat::~DateFormat() {}
 ItemExpr * DateFormat::copyTopNode(ItemExpr *derivedNode,
 				   CollHeap* outHeap)
 {
-  ItemExpr *result;
+  DateFormat *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) DateFormat(child(0), child(1), getDateFormat());
+    result = new (outHeap) DateFormat(child(0), 
+                                      formatStr_, formatType_, 
+                                      wasDateformat_);
   else
-    result = derivedNode;
+    result = (DateFormat*)derivedNode;
+
+  frmt_ = result->frmt_;
 
   return BuiltinFunction::copyTopNode(result,outHeap);
 
@@ -8265,6 +8269,46 @@ NABoolean DateFormat::hasEquivalentProperties(ItemExpr * other)
   return 
       (this->dateFormat_ == df->dateFormat_);
 }
+
+void DateFormat::unparse(NAString &result,
+		      PhaseEnum phase,
+                      UnparseFormatEnum form,
+		      TableDesc * tabId) const
+{
+  if (wasDateformat_)
+    result += "DATEFORMAT(";
+  else if (formatType_ == FORMAT_TO_DATE)
+    result += "TO_DATE(";
+  else if (formatType_ == FORMAT_TO_CHAR)
+    result += "TO_CHAR(";
+  else
+    result += "unknown(";
+
+  child(0)->unparse(result, phase, form, tabId);
+
+  result += ", ";
+
+  if (wasDateformat_)
+    {
+      if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)
+        result += "DEFAULT";
+      else if (frmt_ == ExpDatetime::DATETIME_FORMAT_USA)
+        result += "USA";
+      else if (frmt_ == ExpDatetime::DATETIME_FORMAT_EUROPEAN)
+        result += "EUROPEAN";
+      else
+        result += "unknown";
+    }
+  else
+    {
+      result += "'";
+      result += formatStr_;
+      result += "'";
+    }
+
+  result += ")";  
+}
+
 // -----------------------------------------------------------------------
 // member functions for class DayOfWeek
 // -----------------------------------------------------------------------

@@ -714,7 +714,10 @@ void DateFormat::generateCacheKey(CacheWA& cwa) const
 {
   BuiltinFunction::generateCacheKey(cwa); 
   cwa += " fmt:";
-  char dFmt[20]; str_itoa(dateFormat_, dFmt); 
+  char dFmt[20]; 
+  str_itoa(dateFormat_, dFmt); 
+  cwa += dFmt;
+  str_itoa(frmt_, dFmt);
   cwa += dFmt;
 }
 
