@@ -131,7 +131,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 
-  <!--modules>
+  <modules>
     <module>docs/client_install</module>
     <module>dcs</module>
     <module>core/rest</module>
@@ -142,7 +142,7 @@
     <module>docs/messages_guide</module>
     <module>docs/odb_user</module>
     <module>docs/sql_reference</module>
-  </modules-->
+  </modules>
 
   <build>
     <resources>
