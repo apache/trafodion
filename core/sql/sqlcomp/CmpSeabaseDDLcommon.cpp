@@ -3919,6 +3919,39 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
   
   return 0;
 }
+
+// finds all views that directly or indirectly(thru another view) contains
+// the given object.
+// Returns them in ascending order of their create time.
+short CmpSeabaseDDL::getAllUsingViews(ExeCliInterface *cliInterface,
+                                      NAString &catName,
+                                      NAString &schName,
+                                      NAString &objName,
+                                      Queue * &usingViewsQueue)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+              
+  str_sprintf(buf, "select '\"' || trim(o.catalog_name) || '\"' || '.' || '\"' || trim(o.schema_name) || '\"' || '.' || '\"' || trim(o.object_name) || '\"' "
+    ", o.create_time from %s.\"%s\".%s O, "
+    " (get all views on table \"%s\".\"%s\".\"%s\") x(a) "
+    " where trim(O.schema_name) || '.' || trim(O.object_name) = x.a "
+    " order by 2",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName.data(), schName.data(), objName.data());
+  
+  cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return cliRC;
+    }
+  
+  return 0;
+}
+
 /* 
 Get the salt column text for a given table or index.
 Returns 0 for object does not have salt column
@@ -5822,9 +5855,24 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
                                      Int64 objUID, 
                                      ComTextType textType, 
                                      Lng32 subID, 
-                                     NAString &text)
+                                     NAString &text,
+                                     NABoolean withDelete)
 {
   Lng32 cliRC = 0;
+  if (withDelete)
+    {
+      // Note: It might be tempting to try an upsert instead of a
+      // delete followed by an insert, but this won't work. It is
+      // possible that the metadata text could shrink and take fewer
+      // rows in its new form than the old. So we do the simple thing
+      // to avoid such complications.
+       cliRC = deleteFromTextTable(cliInterface, objUID, textType, subID);
+      if (cliRC < 0)
+        {
+          return -1;
+        }
+    }
+
   Lng32 textLen = text.length();
   Lng32 bufLen = (textLen>TEXTLEN ? TEXTLEN : textLen) + 1000;
   char * buf = new(STMTHEAP) char[bufLen];
@@ -8356,7 +8404,6 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     }
 
   NABoolean startXn = TRUE;
-
   // no DDL transactions.
   if ((NOT ddlExpr->ddlXns()) &&
       ((ddlExpr->dropHbase()) ||
@@ -8389,6 +8436,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+       //       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_RENAME) ||
        (ddlNode->getOperatorType() == DDL_DROP_TABLE)))
     {
       // transaction will be started and commited in called methods.
@@ -8424,7 +8472,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        ddlNode->castToStmtDDLNode()->ddlXns()) &&
       ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-       (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
     {
       // transaction will be started and commited in called methods.
       startXn = FALSE;
@@ -8935,6 +8983,14 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            alterSeabaseTableAlterColumnDatatype(alterColNode, 
                                                 currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_RENAME)
+         {
+           StmtDDLAlterTableAlterColumnRename * alterColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnRename();
+           
+           alterSeabaseTableAlterColumnRename(alterColNode, 
+                                              currCatName, currSchName);
+        }
        else if (ddlNode->getOperatorType() ==  DDL_CLEANUP_OBJECTS)
          {
            StmtDDLCleanupObjects * co = 
@@ -8961,13 +9017,13 @@ label_return:
       cliRC = -1;
 
       // some ddl stmts are executed as multiple sub statements.
-      // with ddl xns, some of those sub stmts may abort the enclosing
-      // xn in case of an error amd add an error condition that the xn
+      // some of those sub stmts may abort the enclosing xn started here
+      // in case of an error, and add an error condition that the xn
       // was aborted.
       // remove that error condition from the diags area. But dont do it
-      // if it is main error.
-      if (ddlXns && xnWasStartedHere && 
-          (CmpCommon::diags()->mainSQLCODE() != -CLI_VALIDATE_TRANSACTION_ERROR))
+      // if it is the main error.
+      //      if (xnWasStartedHere && 
+      if (CmpCommon::diags()->mainSQLCODE() != -CLI_VALIDATE_TRANSACTION_ERROR)
         {
           CollIndex i = 
             CmpCommon::diags()->returnIndex(-CLI_VALIDATE_TRANSACTION_ERROR);

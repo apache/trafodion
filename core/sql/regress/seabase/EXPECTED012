@@ -41,7 +41,7 @@
 >>invoke t012t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T012T1
--- Definition current  Fri Feb  5 15:58:51 2016
+-- Definition current  Thu Feb 25 09:14:19 2016
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -55,6 +55,7 @@
       DEFAULT DEFAULT NULL
   , G                                NUMERIC(5, 2) DEFAULT NULL
   )
+  PRIMARY KEY (A DESC)
 
 --- SQL operation complete.
 >>
@@ -64,7 +65,7 @@
 >>invoke t012v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T012V1
--- Definition current  Fri Feb  5 15:58:54 2016
+-- Definition current  Thu Feb 25 09:14:22 2016
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE

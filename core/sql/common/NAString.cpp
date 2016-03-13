@@ -280,6 +280,29 @@ NAString Int64ToNAString(Int64 l)
   return NAString(resultstr);
 }
 
+NAString &replaceAll(NAString &source, const NAString &searchFor,
+                     const NAString &replaceWith)
+{
+  size_t indexOfReplace = NA_NPOS;
+  indexOfReplace = source.index(searchFor);
+  if (indexOfReplace != NA_NPOS)
+    {
+      // Replace all occurences of searchFor with replaceWith. When no
+      // more occurences are found or end of string is reached, index()
+      // will return NA_NPOS.
+      while (indexOfReplace != NA_NPOS)
+        {
+          source.replace(indexOfReplace, searchFor.length(), 
+                         replaceWith);
+          // Find index of next occurence to replace.
+          indexOfReplace = 
+            source.index(searchFor, indexOfReplace + replaceWith.length()); 
+        }
+    }
+
+  return source;
+}
+
 // ---------------------------------------------------------------------
 // Hash function for NAString types in NAKeyLookup
 // ---------------------------------------------------------------------

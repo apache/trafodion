@@ -6,13 +6,14 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Fri Jun  5 10:06:01 2015
+-- Definition current  Tue Mar  8 22:57:06 2016
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
   , C2                               CHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT _ISO88591't20t1''s column c2'
   )
+  PRIMARY KEY (C1 ASC)
 
 --- SQL operation complete.
 >>showddl test020t1;
@@ -48,13 +49,14 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Fri Jun  5 10:06:03 2015
+-- Definition current  Tue Mar  8 22:57:08 2016
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (C ASC, D ASC)
 
 --- SQL operation complete.
 >>showddl test020t2;
@@ -158,13 +160,14 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Fri Jun  5 10:06:10 2015
+-- Definition current  Tue Mar  8 22:57:24 2016
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SYSKEY                           CHAR(4) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (C ASC)
 
 --- SQL operation complete.
 >>showddl test020t5;
@@ -215,6 +218,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 *** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.TEST020T5C1 on table TRAFODION.SCH.TEST020T5.
 
 --- 0 row(s) inserted.
+>>
 >>--------------------------------------------
 >>-- test cases for solution 10-040607-6721 --
 >>--------------------------------------------
@@ -251,10 +255,11 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Fri Jun  5 10:06:54 2015
+-- Definition current  Tue Mar  8 22:58:27 2016
 
   (
-    C                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
   )
 
 --- SQL operation complete.
@@ -415,10 +420,10 @@ ATEST        BTEST        CTEST        DTEST
 A          
 -----------
 
-          ?
           1
-          ?
           3
+          ?
+          ?
 
 --- 4 row(s) selected.
 >>

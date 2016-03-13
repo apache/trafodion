@@ -12,11 +12,12 @@
 >>log;
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:07 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:23 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -39,11 +40,12 @@ A            B
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:11 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:30 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -66,11 +68,12 @@ A            B
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:15 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:35 2016
 
   (
-    A                                LARGEINT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                LARGEINT DEFAULT NULL
   , B                                DOUBLE PRECISION NO DEFAULT NOT NULL NOT
       DROPPABLE
   )
@@ -94,11 +97,12 @@ A                     B
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:18 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:42 2016
 
   (
-    C                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -121,11 +125,12 @@ C            D
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:22 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:46 2016
 
   (
-    C                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -148,11 +153,12 @@ C            D
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:26 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:51 2016
 
   (
-    C                                NUMERIC(11, 0) DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                NUMERIC(11, 0) DEFAULT NULL
   , D                                NUMERIC(11, 0) NO DEFAULT NOT NULL NOT
       DROPPABLE
   )
@@ -176,11 +182,12 @@ C                     D
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:29 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:03:55 2016
 
   (
-    C                                NUMERIC(11, 0) DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                NUMERIC(11, 0) DEFAULT NULL
   , D                                NUMERIC(11, 0) NO DEFAULT NOT NULL NOT
       DROPPABLE
   )
@@ -204,11 +211,12 @@ C                     D
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:33 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:04:00 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -234,11 +242,12 @@ A            B
 --- 2 row(s) inserted.
 >>invoke t014t1t;
 
--- Definition of Seabase table CAT.SCH.T014T1T
--- Definition current  Thu Mar 22 15:48:36 2012
+-- Definition of Trafodion table TRAFODION.SCH.T014T1T
+-- Definition current  Thu Feb 25 08:04:04 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -272,7 +281,7 @@ A            B
 --- 2 row(s) inserted.
 >>showddl t014t1t;
 
-CREATE TABLE CAT.SCH.T014T1T
+CREATE TABLE TRAFODION.SCH.T014T1T
   (
     A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -299,7 +308,7 @@ A            B
 --- 2 row(s) inserted.
 >>showddl t014t1t;
 
-CREATE TABLE CAT.SCH.T014T1T
+CREATE TABLE TRAFODION.SCH.T014T1T
   (
     C                                INT DEFAULT NULL
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -326,7 +335,7 @@ C            D
 --- 2 row(s) inserted.
 >>showddl t014t1t;
 
-CREATE TABLE CAT.SCH.T014T1T
+CREATE TABLE TRAFODION.SCH.T014T1T
   (
     C                                INT DEFAULT NULL
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -353,7 +362,7 @@ C            D
 --- 2 row(s) inserted.
 >>showddl t014t1t;
 
-CREATE TABLE CAT.SCH.T014T1T
+CREATE TABLE TRAFODION.SCH.T014T1T
   (
     A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -408,7 +417,7 @@ A            B
 
 *** ERROR[15001] A syntax error occurred at or before: 
 create schema tempsch create table t014t1 as select * from t014t1s;
-                                                                  ^ (67 characters from start of SQL statement)
+                           ^ (28 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 

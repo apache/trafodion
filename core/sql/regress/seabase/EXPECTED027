@@ -12,11 +12,12 @@
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:16 2016
+-- Definition current  Sat Mar 12 02:58:49 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -39,11 +40,12 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:25 2016
+-- Definition current  Sat Mar 12 02:58:59 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -67,12 +69,13 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:30 2016
+-- Definition current  Sat Mar 12 02:59:05 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   , "cf2".B                          INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -98,13 +101,14 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:39 2016
+-- Definition current  Sat Mar 12 02:59:14 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   , "cf2".B                          INT DEFAULT NULL
   , CF3.C                            INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -127,13 +131,14 @@ CREATE TABLE TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:40 2016
+-- Definition current  Sat Mar 12 02:59:16 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   , "cf2".B                          INT DEFAULT NULL
   , CF3.C                            INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -191,7 +196,7 @@ A            B            C
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:46 2016
+-- Definition current  Sat Mar 12 02:59:22 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -199,6 +204,7 @@ A            B            C
   , CF3.C                            INT DEFAULT NULL
   , "cf2".D                          INT DEFAULT NULL /*added_col*/
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -228,7 +234,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:49 2016
+-- Definition current  Sat Mar 12 02:59:26 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -237,6 +243,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
   , "cf2".D                          INT DEFAULT NULL /*added_col*/
   , "cf4".E                          INT DEFAULT NULL /*added_col*/
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -267,7 +274,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:54 2016
+-- Definition current  Sat Mar 12 02:59:31 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -275,6 +282,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
   , CF3.C                            INT DEFAULT NULL
   , "cf4".E                          INT DEFAULT NULL /*added_col*/
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -304,7 +312,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t01;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T01
--- Definition current  Fri Feb 26 20:36:55 2016
+-- Definition current  Sat Mar 12 02:59:32 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -313,6 +321,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
   , "cf4".E                          INT DEFAULT NULL /*added_col*/
   , "cf2".D                          INT DEFAULT NULL /*added_col*/
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t01;
@@ -343,7 +352,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Feb 26 20:37:02 2016
+-- Definition current  Sat Mar 12 02:59:40 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -352,6 +361,7 @@ CREATE INDEX T027T01I1 ON TRAFODION.SCH027.T027T01
   , "cf4".E                          INT DEFAULT NULL
   , "cf2".D                          INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t011;
@@ -387,7 +397,7 @@ A            B            C            E            D
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Feb 26 20:37:06 2016
+-- Definition current  Sat Mar 12 02:59:43 2016
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -396,6 +406,7 @@ A            B            C            E            D
   , "cf4".E                          INT DEFAULT NULL
   , "cf2".D                          INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t011;
@@ -426,10 +437,11 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Feb 26 20:37:15 2016
+-- Definition current  Sat Mar 12 02:59:53 2016
 
   (
-    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                INT DEFAULT NULL
   , C                                INT DEFAULT NULL
   , E                                INT DEFAULT NULL
@@ -460,10 +472,11 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t011;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T011
--- Definition current  Fri Feb 26 20:37:19 2016
+-- Definition current  Sat Mar 12 02:59:57 2016
 
   (
-    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   , "cf2".B                          INT DEFAULT NULL
   , CF3.C                            INT DEFAULT NULL
   , "cf4".E                          INT DEFAULT NULL
@@ -491,13 +504,14 @@ CREATE TABLE TRAFODION.SCH027.T027T011
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Fri Feb 26 20:37:25 2016
+-- Definition current  Sat Mar 12 03:00:03 2016
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
   , "cf2".B                          INT DEFAULT NULL
   , C                                INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t03;
@@ -522,13 +536,14 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion volatile table T027T03
--- Definition current  Fri Feb 26 20:37:45 2016
+-- Definition current  Sat Mar 12 03:00:24 2016
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
   , "cf2".B                          INT DEFAULT NULL
   , "cf".C                           INT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>showddl t027t03;
@@ -570,10 +585,11 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t02;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T02
--- Definition current  Fri Feb 26 20:38:04 2016
+-- Definition current  Sat Mar 12 03:00:45 2016
 
   (
-    "cf".A0A0                        INT DEFAULT NULL
+    "cf".SYSKEY                      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".A0A0                        INT DEFAULT NULL
   , "cf".A1A1                        INT DEFAULT NULL
   , "cf".A2A2                        INT DEFAULT NULL
   , "cf".A3A3                        INT DEFAULT NULL
@@ -621,7 +637,7 @@ CREATE VOLATILE TABLE T027T03
 >>invoke t027t03;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T03
--- Definition current  Fri Feb 26 20:38:26 2016
+-- Definition current  Sat Mar 12 03:01:07 2016
 
   (
     "cf1".A                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -629,6 +645,7 @@ CREATE VOLATILE TABLE T027T03
   , C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (A ASC, B ASC)
 
 --- SQL operation complete.
 >>insert into t027t03 values (1,1,1,1);
@@ -657,7 +674,7 @@ A            B            C            D
 >>invoke t027t02;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T02
--- Definition current  Fri Feb 26 20:38:40 2016
+-- Definition current  Sat Mar 12 03:01:20 2016
 
   (
     OBJECT_UID                       LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -669,6 +686,7 @@ A            B            C            D
   , NONKEYCOL                        INT NO DEFAULT NOT NULL NOT DROPPABLE
   , FLAGS                            LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (OBJECT_UID ASC, KEYSEQ_NUMBER ASC)
 
 --- SQL operation complete.
 >>select * from t027t02;
@@ -769,7 +787,7 @@ create index t027t01i2 on t027t01("cf2".b);
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:39:06 2016
+-- Definition current  Sat Mar 12 03:01:46 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -778,7 +796,10 @@ create index t027t01i2 on t027t01("cf2".b);
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>insert into t027t7 values (1, 'ab', 'cd', 10);
@@ -798,7 +819,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:39:13 2016
+-- Definition current  Sat Mar 12 03:01:54 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -807,7 +828,10 @@ A            B   C                 Z
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column c varchar(5) character set utf8;
@@ -816,7 +840,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:39:35 2016
+-- Definition current  Sat Mar 12 03:02:19 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -825,7 +849,10 @@ A            B   C                 Z
   , C                                VARCHAR(5 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column c varchar(4) character set utf8;
@@ -834,7 +861,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:39:50 2016
+-- Definition current  Sat Mar 12 03:02:42 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -843,7 +870,10 @@ A            B   C                 Z
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>
@@ -853,7 +883,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:40:08 2016
+-- Definition current  Sat Mar 12 03:03:05 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -862,7 +892,10 @@ A            B   C                 Z
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column b varchar(4) character set utf8;
@@ -871,7 +904,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:40:26 2016
+-- Definition current  Sat Mar 12 03:03:25 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -880,7 +913,10 @@ A            B   C                 Z
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column c varchar(6);
@@ -889,7 +925,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:40:43 2016
+-- Definition current  Sat Mar 12 03:03:42 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -898,7 +934,10 @@ A            B   C                 Z
   , C                                VARCHAR(6) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column b varchar(2);
@@ -907,7 +946,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:40:58 2016
+-- Definition current  Sat Mar 12 03:04:05 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -916,7 +955,10 @@ A            B   C                 Z
   , C                                VARCHAR(6) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column a int;
@@ -925,7 +967,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:41:12 2016
+-- Definition current  Sat Mar 12 03:04:25 2016
 
   (
     A                                INT DEFAULT NULL /*altered_col*/
@@ -934,7 +976,10 @@ A            B   C                 Z
   , C                                VARCHAR(6) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>alter table t027t7 alter column a smallint default 0 not null;
@@ -943,7 +988,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:41:30 2016
+-- Definition current  Sat Mar 12 03:04:44 2016
 
   (
     A                                SMALLINT DEFAULT 0 NOT NULL NOT DROPPABLE
@@ -953,7 +998,10 @@ A            B   C                 Z
   , C                                VARCHAR(6) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL /*altered_col*/
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>select * from t027t7;
@@ -966,7 +1014,7 @@ A       B   C       Z
 --- 1 row(s) selected.
 >>
 >>-- aligned format
->>drop table if exists t027t7;
+>>drop table if exists t027t7 cascade;
 
 --- SQL operation complete.
 >>create table t027t7(a int not null, b varchar(2), 
@@ -977,7 +1025,7 @@ A       B   C       Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:41:52 2016
+-- Definition current  Sat Mar 12 03:05:07 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -986,7 +1034,10 @@ A       B   C       Z
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>insert into t027t7 values (1, 'ab', 'cd', 10);
@@ -1006,7 +1057,7 @@ A            B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:42:09 2016
+-- Definition current  Sat Mar 12 03:05:32 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
@@ -1015,7 +1066,10 @@ A            B   C                 Z
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>select * from t027t7;
@@ -1032,14 +1086,17 @@ A                     B   C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:42:35 2016
+-- Definition current  Sat Mar 12 03:05:57 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>select * from t027t7;
@@ -1056,16 +1113,19 @@ A                     C                 Z
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:42:38 2016
+-- Definition current  Sat Mar 12 03:06:00 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT _ISO88591'abc' NOT NULL NOT DROPPABLE /*added_col*/
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>select * from t027t7;
@@ -1082,14 +1142,17 @@ A                     C                 Z            B
 >>invoke t027t7;
 
 -- Definition of Trafodion table TRAFODION.SCH027.T027T7
--- Definition current  Fri Feb 26 20:43:02 2016
+-- Definition current  Sat Mar 12 03:06:25 2016
 
   (
     A                                LARGEINT DEFAULT NULL /*altered_col*/
   , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
 
 --- SQL operation complete.
 >>select * from t027t7;
@@ -1100,6 +1163,46 @@ A                     C                 Z
                    1  cd                         10
 
 --- 1 row(s) selected.
+>>create view t027v1 as select * from t027t7;
+
+--- SQL operation complete.
+>>get all views on table t027t7;
+
+Views on Table SCH027.T027T7
+============================
+
+SCH027.T027V1
+
+--- SQL operation complete.
+>>invoke t027v1;
+
+-- Definition of Trafodion view TRAFODION.SCH027.T027V1
+-- Definition current  Sat Mar 12 03:06:33 2016
+
+  (
+    A                                LARGEINT DEFAULT NULL
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>alter table t027t7 alter column a smallint;
+
+--- SQL operation complete.
+>>invoke t027v1;
+
+-- Definition of Trafodion view TRAFODION.SCH027.T027V1
+-- Definition current  Sat Mar 12 03:07:06 2016
+
+  (
+    A                                SMALLINT DEFAULT NULL
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
 >>
 >>-- negative tests for alter/drop column
 >>alter table t027t7 alter column b int;
@@ -1116,8 +1219,6 @@ A                     C                 Z
 
 *** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII,2 BYTES,ISO88591) Source Value:cd to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,ISO88591).
 
-*** ERROR[8839] Transaction was aborted.
-
 *** ERROR[1404] Column C cannot be altered. Reason: Old data could not be updated using the altered column definition.
 
 --- SQL operation failed with errors.
@@ -1126,9 +1227,263 @@ A                     C                 Z
 *** ERROR[1009] Column E does not exist in the specified table.
 
 --- SQL operation failed with errors.
+>>alter table t027t7 drop column a;
+
+*** ERROR[4003] Column TRAFODION.SCH027.T027T7.A is not a column in table TRAFODION.SCH027.T027T7, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[1404] Column A cannot be altered. Reason: Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
+
+--- SQL operation failed with errors.
+>>alter table t027v1 alter column a smallint;
+
+*** ERROR[1146] Object TRAFODION.SCH027.T027V1 could not be altered because it either does not exist or is not a table.
+
+--- SQL operation failed with errors.
+>>get all views on table t027t7;
+
+Views on Table SCH027.T027T7
+============================
+
+SCH027.T027V1
+
+--- SQL operation complete.
+>>
+>>-- tests for alter column rename
+>>drop table if exists t027t7 cascade;
+
+--- SQL operation complete.
+>>create table t027t7(a int not null, b varchar(2), 
++>   c varchar(4) character set utf8 not null, z int not null primary key)
++>salt using 2 partitions;
+
+--- SQL operation complete.
+>>create index t027t7i1 on t027t7(b);
+
+--- SQL operation complete.
+>>insert into t027t7 values (1, 'ab', 'cd', 10);
+
+--- 1 row(s) inserted.
+>>invoke t027t7;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T7
+-- Definition current  Sat Mar 12 03:09:01 2016
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                VARCHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
+
+--- SQL operation complete.
+>>select * from t027t7;
+
+A            B   C                 Z          
+-----------  --  ----------------  -----------
+
+          1  ab  cd                         10
+
+--- 1 row(s) selected.
+>>alter table t027t7 alter column b rename to bb;
+
+--- SQL operation complete.
+>>invoke t027t7;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T7
+-- Definition current  Sat Mar 12 03:09:12 2016
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , BB                               VARCHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL /*altered_col*/
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , Z                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+  PRIMARY KEY ("_SALT_" ASC, Z ASC)
+
+--- SQL operation complete.
+>>select * from t027t7;
+
+A            BB  C                 Z          
+-----------  --  ----------------  -----------
+
+          1  ab  cd                         10
+
+--- 1 row(s) selected.
+>>alter table t027t7 alter column z rename to zz;
+
+--- SQL operation complete.
+>>invoke t027t7;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T7
+-- Definition current  Sat Mar 12 03:09:24 2016
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , BB                               VARCHAR(2) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL /*altered_col*/
+  , C                                VARCHAR(4 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ZZ                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+      /*altered_col*/
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  )
+  PRIMARY KEY ("_SALT_" ASC, ZZ ASC)
+
+--- SQL operation complete.
+>>select * from t027t7;
+
+A            BB  C                 ZZ         
+-----------  --  ----------------  -----------
+
+          1  ab  cd                         10
+
+--- 1 row(s) selected.
+>>create view t027v1(zz) as select zz from t027t7;
+
+--- SQL operation complete.
+>>alter table t027t7 alter column c rename to cc;
+
+--- SQL operation complete.
+>>create view t027v2(zz) as select zz from t027t7 where cc = 'a';
+
+--- SQL operation complete.
+>>showddl t027v2;
+
+CREATE VIEW TRAFODION.SCH027.T027V2 (ZZ) AS
+  SELECT TRAFODION.SCH027.T027T7.ZZ FROM TRAFODION.SCH027.T027T7 WHERE
+    TRAFODION.SCH027.T027T7.CC = 'a' ;
+
+--- SQL operation complete.
+>>
+>>-- negative tests for alter column rename
+>>alter table t027t7 alter column zz rename to a;
+
+*** ERROR[1404] Column ZZ cannot be altered. Reason: Renamed column A already exist in the table.
+
+--- SQL operation failed with errors.
+>>alter table t027t7 alter column "_SALT_" rename to nosalt;
+
+*** ERROR[1404] Column _SALT_ cannot be altered. Reason: Cannot rename system or computed column.
+
+--- SQL operation failed with errors.
+>>alter table t027t7 alter column cc rename to "_SALT_";
+
+*** ERROR[1404] Column CC cannot be altered. Reason: Renamed column _SALT_ already exist in the table.
+
+--- SQL operation failed with errors.
+>>alter table t027t7 alter column zz rename to zzz;
+
+*** ERROR[4003] Column TRAFODION.SCH027.T027T7.ZZ is not a column in table TRAFODION.SCH027.T027T7, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[1404] Column ZZ cannot be altered. Reason: Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
+
+--- SQL operation failed with errors.
+>>alter table t027t7 alter column cc rename to ccc;
+
+*** ERROR[4003] Column TRAFODION.SCH027.T027T7.CC is not a column in table TRAFODION.SCH027.T027T7, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[1404] Column CC cannot be altered. Reason: Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
+
+--- SQL operation failed with errors.
+>>
+>>-- alter col with views
+>>drop table if exists t027t7 cascade;
+
+--- SQL operation complete.
+>>create table t027t7 (a varchar(10), b int);
+
+--- SQL operation complete.
+>>create view t027v1 as select * from t027t7;
+
+--- SQL operation complete.
+>>create view t027v12 as select * from t027v1;
+
+--- SQL operation complete.
+>>create view t027v11 as select * from t027t7;
+
+--- SQL operation complete.
+>>create view t027v122 as select * from t027v12;
+
+--- SQL operation complete.
+>>create view t027v113 as select * from t027v11;
+
+--- SQL operation complete.
+>>get all views on table t027t7;
+
+Views on Table SCH027.T027T7
+============================
+
+SCH027.T027V1
+SCH027.T027V11
+SCH027.T027V113
+SCH027.T027V12
+SCH027.T027V122
+
+--- SQL operation complete.
+>>alter table t027t7 alter column a varchar(20);
+
+--- SQL operation complete.
+>>get all views on table t027t7;
+
+Views on Table SCH027.T027T7
+============================
+
+SCH027.T027V1
+SCH027.T027V11
+SCH027.T027V113
+SCH027.T027V12
+SCH027.T027V122
+
+--- SQL operation complete.
+>>
+>>-- some alter operations cannot be performed within a user xn
+>>cqd ddl_transactions 'ON';
+
+--- SQL operation complete.
+>>begin work;
+
+--- SQL operation complete.
+>>alter table t027t7 drop column b;
+
+*** ERROR[20123] A user-defined transaction has been started. ALTER cannot be performed.
+
+*** ERROR[8839] Transaction was aborted.
+
+--- SQL operation failed with errors.
+>>rollback work;
+
+*** ERROR[8609] Waited rollback performed without starting a transaction.
+
+--- SQL operation failed with errors.
+>>begin work;
+
+--- SQL operation complete.
+>>alter table t027t7 alter column b largeint;
+
+*** ERROR[20123] A user-defined transaction has been started. ALTER cannot be performed.
+
+*** ERROR[8839] Transaction was aborted.
+
+--- SQL operation failed with errors.
+>>rollback work;
+
+*** ERROR[8609] Waited rollback performed without starting a transaction.
+
+--- SQL operation failed with errors.
 >>
 >>-- cleanup
->>drop table if exists t027t7;
+>>?section clean_up
+>>drop table if exists t027t7 cascade;
 
 --- SQL operation complete.
 >>drop table if exists t027t01;
