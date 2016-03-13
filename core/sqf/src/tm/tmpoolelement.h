@@ -46,7 +46,7 @@ protected:
 
 public:
    CTmPoolElement();
-   ~CTmPoolElement();
+   virtual ~CTmPoolElement();
 
    // Required callbacks for CTmPool elements:
    static CTmPoolElement* constructPoolElement(int64);
