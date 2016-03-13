@@ -174,6 +174,11 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
 #define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
 
+// reserved column names for traf internal system usage
+#define TRAF_SALT_COLNAME "_SALT_"
+#define TRAF_DIVISION_COLNAME_PREFIX "_DIVISION_"
+#define TRAF_SYSKEY_COLNAME "SYSKEY"
+
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
 // rows in metric_text_table

@@ -4100,6 +4100,7 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
             bindWA->setErrStatus();
           }
           break;
+
         } // switch
       
       return TRUE;
