@@ -52,6 +52,8 @@ LICENSE: ../licenses/LICENSE-dcs
 
 NOTICE: ../NOTICE
 	cp -f $? $@
+	# Add notice file from jython 2.5.3
+	cat ../licenses/not-dcs-bin >> $@
 
 clean:
 	-$(MAVEN) clean | grep ERROR
