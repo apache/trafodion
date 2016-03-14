@@ -817,7 +817,7 @@ public:
 	  NABoolean allowSQLnull	= TRUE,
 	  NABoolean inlineIfPossible = FALSE,
 	  NABoolean externalFormat = FALSE,
-	  Lng32 extFormatLen = 100);
+	  Lng32 extFormatLen = 1024);
  SQLClob(const SQLClob & aClob,NAMemory * heap)
    :SQLlob(aClob,heap)
     {}

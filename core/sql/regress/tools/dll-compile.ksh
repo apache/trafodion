@@ -66,12 +66,12 @@ TARGET=
     fi
   CC_OPTS="-g "
   CC_OPTS="$CC_OPTS -I$MY_SQROOT/sql/sqludr"
-  CC_OPTS="$CC_OPTS -I$MY_SQROOT/export/include/sql  -I$MY_SQROOT/export/include/nsk -I${TOOLSDIR}/${HADOOP_DIST}/${HADOOP_INC_DIR} -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux"
+  CC_OPTS="$CC_OPTS -I$MY_SQROOT/export/include/sql  -I$MY_SQROOT/export/include/nsk -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux"
   CC_OPTS="$CC_OPTS -w -O0 -Wno-unknown-pragmas -fPIC -fshort-wchar -c -o $BASE.o $1"
   TARGET=$BASE.dll
   LD=$CC
   LD_OPTS=" -w -O0 -Wno-unknown-pragmas -fshort-wchar"
-  LD_OPTS="$LD_OPTS -shared -rdynamic -o $TARGET -lc -lhdfs -ljvm -L$MY_SQROOT/export/lib${SQ_MBTYPE} -ltdm_sqlcli -L${TOOLSDIR}/${HADOOP_DIST}/${HADOOP_LIB_DIR} -L${JAVA_HOME}/jre/lib/amd64/server $2 $BASE.o"
+  LD_OPTS="$LD_OPTS -shared -rdynamic -o $TARGET -lc -lhdfs -ljvm -L$MY_SQROOT/export/lib${SQ_MBTYPE} -ltdm_sqlcli -L${JAVA_HOME}/jre/lib/amd64/server $2 $BASE.o"
 
 LONGLINE=\
 ------------------------------------------------------------------------------

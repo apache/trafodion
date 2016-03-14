@@ -3819,6 +3819,11 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
   }
+  else if (createLibmgr() || dropLibmgr() || upgradeLibmgr())
+    {
+      isHbase_ = TRUE;
+      hbaseDDLNoUserXn_ = TRUE;
+    }
   else if (createRepos() || dropRepos() || upgradeRepos())
     {
       isHbase_ = TRUE;

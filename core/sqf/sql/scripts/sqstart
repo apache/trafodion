@@ -542,7 +542,8 @@ dcsstart
 sleep 10
 sqcheck | tee -a $SQMON_LOG
 # Start the LOB Service
-lobstart
+#comment out since it's unused right now
+#lobstart
 # Start the REST Service
 reststart
 

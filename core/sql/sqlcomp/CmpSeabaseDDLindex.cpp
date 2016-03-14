@@ -152,7 +152,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      const NAType * naType = tableCol->getType();
      if ((naType->getFSDatatype() == REC_BLOB) || (naType->getFSDatatype() == REC_CLOB))
      {
-      *CmpCommon::diags() << DgSqlCode(CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+      *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
                               << DgColumnName(col_name);
       processReturn();
       return -1;
@@ -1969,7 +1969,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
     char * catName = NULL;
     char * schName = NULL;
     indexes->position();
-    for (int idx = 0; idx < indexes->numEntries(); idx++)
+    for (int ii = 0; ii < indexes->numEntries(); ii++)
     {
       OutputInfo * idx = (OutputInfo*) indexes->getNext();
 

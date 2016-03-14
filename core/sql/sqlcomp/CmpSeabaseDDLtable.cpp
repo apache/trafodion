@@ -1904,7 +1904,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       if (colType->getFSDatatype() == REC_BLOB || colType->getFSDatatype() == REC_CLOB)
 	//Cannot allow LOB in primary or clustering key 
 	{
-	  *CmpCommon::diags() << DgSqlCode(CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
+	  *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COL_CANNOT_BE_INDEX_OR_KEY)
                               << DgColumnName(colName);
 
           deallocEHI(ehi); 
@@ -2224,6 +2224,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
     }
   
   Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
+
+  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+   
   if (j > 0)
     {
       //if the table is a volatile table return an error
@@ -2241,7 +2245,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                   catalogNamePart.data(), schemaNamePart.data(), 
                                   objectNamePart.data(),
                                   COM_BASE_TABLE_OBJECT_LIT);
-      
+     
       ComString newSchName = "\"";
       newSchName += catalogNamePart;
       newSchName.append("\".\"");
@@ -2255,8 +2259,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                           lobNumList,
                                           lobTypList,
                                           lobLocList,
+                                          (char *)lobHdfsServer,
+                                          lobHdfsPort,
                                           lobMaxSize);
-      
+       
       if (rc < 0)
         {
           //sss TBD need to retrive the cli diags here.
@@ -2264,11 +2270,12 @@ short CmpSeabaseDDL::createSeabaseTable2(
                               << DgTableName(extTableName);
           deallocEHI(ehi); 	   
           processReturn();
-          
+	   
           return -2;
         }
-    } // j > 0
-  
+    }
+
+
   // if not a compound create, update valid def to true.
   if (NOT ((createTableNode->getAddConstraintUniqueArray().entries() > 0) ||
            (createTableNode->getAddConstraintRIArray().entries() > 0) ||
@@ -3553,6 +3560,8 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   short *lobNumList = new (STMTHEAP) short[numCols];
   short *lobTypList = new (STMTHEAP) short[numCols];
   char  **lobLocList = new (STMTHEAP) char*[numCols];
+  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   Lng32 j = 0;
   for (Int32 i = 0; i < nacolArr.entries(); i++)
     {
@@ -3573,7 +3582,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 	  
 	  const char* f = ActiveSchemaDB()->getDefaults().
 	    getValue(LOB_STORAGE_FILE_DIR);
-	  
+	   
 	  strcpy(loc, f);
 	  
 	  lobLocList[j] = loc;
@@ -3599,7 +3608,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 					  LOB_CLI_DROP,
 					  lobNumList,
 					  lobTypList,
-					  lobLocList,0);
+					  lobLocList,(char *)lobHdfsServer, lobHdfsPort,0);
       if (rc < 0)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)

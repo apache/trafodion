@@ -405,6 +405,18 @@ public:
   {(v ? flags_ |= GET_MD_VERSION : flags_ &= ~GET_MD_VERSION); }
   NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION) != 0;}
 
+  void setCreateLibmgr(NABoolean v)
+  {(v ? flags_ |= CREATE_LIBMGR : flags_ &= ~CREATE_LIBMGR); }
+  NABoolean createLibmgr() { return (flags_ & CREATE_LIBMGR) != 0;}
+
+  void setDropLibmgr(NABoolean v)
+  {(v ? flags_ |= DROP_LIBMGR : flags_ &= ~DROP_LIBMGR); }
+  NABoolean dropLibmgr() { return (flags_ & DROP_LIBMGR) != 0;}
+
+  void setUpgradeLibmgr(NABoolean v)
+  {(v ? flags_ |= UPGRADE_LIBMGR : flags_ &= ~UPGRADE_LIBMGR); }
+  NABoolean upgradeLibmgr() { return (flags_ & UPGRADE_LIBMGR) != 0;}
+
   void setCreateRepos(NABoolean v)
   {(v ? flags_ |= CREATE_REPOS : flags_ &= ~CREATE_REPOS); }
   NABoolean createRepos() { return (flags_ & CREATE_REPOS) != 0;}
@@ -432,7 +444,10 @@ public:
     CREATE_REPOS            = 0x0008,
     DROP_REPOS              = 0x0010,
     UPGRADE_REPOS           = 0x0020,
-    CLEANUP_AUTH            = 0X0040  
+    CLEANUP_AUTH            = 0X0040,
+    CREATE_LIBMGR           = 0x0080,
+    DROP_LIBMGR             = 0x0100,
+    UPGRADE_LIBMGR          = 0x0200
   };
 
   // see method processSpecialDDL in sqlcomp/parser.cpp

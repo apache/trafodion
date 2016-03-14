@@ -196,7 +196,7 @@ setupdir:
 	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
 	@#
 	mkdir -p export/include/nsk
-	-ln -sf inc/cextdecs/cextdecs.h export/include/nsk
+	-ln -sf $(MY_SQROOT)/inc/cextdecs/cextdecs.h export/include/nsk
 	@# USTAT
 	-mkdir -p export/lib/mx_ustat
 	-ln -sf $(SQL_W)/ustat/USAS.sh export/lib/mx_ustat

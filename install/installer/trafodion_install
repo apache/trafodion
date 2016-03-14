@@ -68,7 +68,7 @@ function removePassword {
 
  $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
  $TRAF_PDSH sudo sed -i '/TRAF_USER_PASSWORD\=/d' $TRAF_CONFIG
- $TRAF_PDSH sudo sed -i '/PASSWORD\=/d' $TRAF_CONFIG
+ $TRAF_PDSH sudo sed -i '/\<PASSWORD\>/d' $TRAF_CONFIG
  $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
 
 }
@@ -93,7 +93,6 @@ do
    if [[ $hbaseInstalled -eq "1" ]]; then
 
       version=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
-
       if [[ $HADOOP_TYPE == "hortonworks" ]]; then
          if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
             if [[ "$HDP_2_3_SUPPORT" == "N" ]]; then
@@ -103,9 +102,9 @@ do
                   exit -1
                fi
             else
-               supportedHBase=$(echo $version | grep "1.1.1" | wc -l)
+               supportedHBase=$(echo $version | grep "1.1.2" | wc -l)
                if [[ $supportedHBase -eq "0" ]]; then
-                  echo "***ERROR: HBase installed must be 1.1.1 on node $node"
+                  echo "***ERROR: HBase installed must be 1.1.2 on node $node"
                   exit -1
                fi
             fi
@@ -119,11 +118,17 @@ do
       fi
       if [[ $HADOOP_TYPE == "cloudera" ]]; then
          if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-            if [[ $CDH_5_4_SUPPORT == "Y" ]]; then
+            if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
                supportedHBase=$(echo $version | grep "1.0.0" | wc -l)
                if [[ $supportedHBase -eq "0" ]]; then
                   echo "***ERROR: HBase installed must be 1.0.0 on node $node"
                   exit -1
+               fi
+               cdhVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | grep "cdh5.4.*" | wc -l)
+               if [[ "$cdhVersion" -ge "1" ]]; then
+                  CDH_VERSION="5.4"
+               else
+                  CDH_VERSION="5.5"
                fi
             else
                supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
@@ -139,6 +144,7 @@ do
                exit -1
             fi
          fi
+
       fi
       hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
       break
@@ -154,6 +160,8 @@ sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
 echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
 sed -i '/HBASE\=/d' $TRAF_CONFIG
 echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
+sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
+echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sudo rm -rf hbaseVersion.txt
 
@@ -247,6 +255,14 @@ export TRAF_CONFIG_FILE=$(basename $TRAF_CONFIG)
 export TRAF_USER="trafodion"
 #==============================================
 #Prechecks 
+#Check if HBase is up
+
+#$LOCAL_WORKDIR/checkHBase
+
+#if [[ "$?" -ne "0" ]]; then
+#   exit -1
+#fi
+
 
 #Check not installing as userid Trafodion
 if [[ "$(whoami)" == "$TRAF_USER" ]]; then
@@ -524,7 +540,6 @@ source $TRAF_CONFIG
 #Check to make sure HBase Version is the correct version
 
 checkHBaseVersion
-
 #==============================================
 # Determine Trafodion version by parsing it
 # from the trafodion_server tar file.
@@ -550,60 +565,9 @@ TRAF_VERSION=$(echo $traf_version | sed -e 's@\([0-9*].*\)-debug@\1@')
 
 # Detect java version
 
-for node in $HADOOP_NODES
-do
-   java_exec=$(ssh -q -n $node ps -C java --noheader -o pid,user,cmd \
-      | grep --max-count=1 " hbase" \
-      | awk '{print $3}' )
-   echo "***DEBUG: HBase's java_exec=$java_exec"
-   if [ ! -z $java_exec ]; then
-      JAVA_VERSION=$(ssh -q -n $node $java_exec -version 2>&1)
-      break;
-      echo "***ERROR: Unable to determine HBase's Java version"
-      echo "***ERROR: Check that HBase is up on node $HOSTNAME"
-      exit -1
-   fi
-done 
-
-if [[ -z $JAVA_VERSION ]]; then
-   echo "***ERROR: Unable to determine HBase's Java version"
-   echo "***ERROR: Check that HBase is up on $CLUSTER_NAME"
-   exit -1
-else
-   JAVA_VERSION=$(echo $JAVA_VERSION \
-      | grep version \
-      | awk '{print $3}' \
-      | sed -e 's@"@@g')
-fi
-
-# test for java 1.7
-java_17=$(echo $JAVA_VERSION | grep "1.7." | wc -l)
-java_18=$(echo $JAVA_VERSION | grep "1.8." | wc -l)
-
-# if not java 1.7 then test for java 1.6
-if [ "$java_17" == "0" ] && [ "$java_18" == "0" ]; then
-   java_16=$(echo $JAVA_VERSION | grep "1.6." | wc -l)
-
-   # if not 1.7 nor 1.6 then we have a problem
-   if [ "$java_16" == "0" ]; then
-      echo "***ERROR: Unsupported HBase java version.  HBase java version must be 1.6 or 1.7"
-      exit -1
-   else
-      JAVA_VERSION="1.6"
-   fi
-else
-   if [[ $java_17 == "0" ]]; then
-      JAVA_VERSION="1.8"
-   else
-      JAVA_VERSION="1.7"
-   fi
-fi
-
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/TRAF_VERSION\=/d' $TRAF_CONFIG
 echo "export TRAF_VERSION=\"$TRAF_VERSION\"" >> $TRAF_CONFIG
-sed -i '/JAVA_VERSION\=/d' $TRAF_CONFIG
-echo "export JAVA_VERSION=\"$JAVA_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 #==============================================
 # Run trafodion_setup
@@ -663,7 +627,6 @@ $TRAF_PDSH sudo chmod 777 $LOCAL_WORKDIR
 
 copyConfig
 fixPermissions
-
 
 $LOCAL_WORKDIR/traf_sqconfig
 if [ $? != 0 ]; then
@@ -766,6 +729,7 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
       fi
    fi
 fi
+
 #=============================================
 #Run trafodion_mods
 
@@ -803,6 +767,8 @@ fi
 
 echo "***INFO: Trafodion Mods ran successfully."
 
+#Get HBaseSite.xml information 
+$LOCAL_WORKDIR/parseHBaseSite.py
 #==============================================
 #Install Trafodion
 echo
@@ -840,7 +806,6 @@ if [[ $START_ALL == "Y" ]]; then
      exit -1
   fi
 fi
-
 #==============================================
 MODS_COMPLETE="N"
 sudo chmod 777 $TRAF_CONFIG

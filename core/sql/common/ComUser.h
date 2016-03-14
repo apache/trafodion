@@ -90,6 +90,12 @@ class ComUser
      static Int16 getAuthIDFromAuthName (const char  * authName,
                                          Int32 & authID);
 
+     static Int32 getRoleList (char *roleList,
+                               Int32 &actualLen,
+                               const Int32 maxLen,
+                               const char delimiter = '\'',
+                               const char separator =',',
+                               const bool includeSpecialAuths = false);
 private:
    // default constructor
    ComUser ();

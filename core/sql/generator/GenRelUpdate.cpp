@@ -787,6 +787,7 @@ short HbaseDelete::codeGen(Generator * generator)
   ex_expr *convert_expr = NULL;
   ex_expr * keyColValExpr = NULL;
   ex_expr *preCondExpr = NULL;
+  ex_expr *lobExpr = NULL;
 
   ex_cri_desc * givenDesc 
     = generator->getCriDesc(Generator::DOWN);
@@ -891,6 +892,7 @@ short HbaseDelete::codeGen(Generator * generator)
 
   ULng32 convertRowLen = 0;
 
+  ValueIdList lobDelVIDlist;
   for (CollIndex ii = 0; ii < numColumns; ii++)
     {
       ItemExpr * col_node = ((columnList[ii]).getValueDesc())->getItemExpr();
@@ -917,6 +919,15 @@ short HbaseDelete::codeGen(Generator * generator)
       
       castValue->bindNode(generator->getBindWA());
       convertExprCastVids.insert(castValue->getValueId());
+
+      if (col_node->getValueId().getType().isLob())
+        {
+          ItemExpr * ld = new(generator->wHeap())
+            LOBdelete(castValue);
+          ld->bindNode(generator->getBindWA());
+          lobDelVIDlist.insert(ld->getValueId());
+        }
+      
     } // for (ii = 0; ii < numCols; ii++)
 
   // Add ascii columns to the MapTable. After this call the MapTable
@@ -1060,7 +1071,39 @@ short HbaseDelete::codeGen(Generator * generator)
       expGen->generateExpr(newPredTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &scanExpr);
     }
-  
+
+  ex_expr * lobDelExpr = NULL;
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      // generate code to delete rows from LOB desc table
+      expGen->generateListExpr(lobDelVIDlist, 
+                               ex_expr::exp_ARITH_EXPR, &lobDelExpr);
+    }
+
+#ifdef __ignore
+  ex_expr * lobDelExpr = NULL;
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      // generate code to delete rows from LOB desc table
+
+      ValueIdList lobDelVIDlist;
+      for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
+        {
+	  const ValueId vid = getIndexDesc()->getIndexColumns()[i];
+          if (vid.getType().isLob())
+            {
+              ItemExpr * ld = new(generator->wHeap())
+                LOBdelete(vid.getItemExpr());
+              ld->bindNode(generator->getBindWA());
+              lobDelVIDlist.insert(ld->getValueId());
+            }
+        }
+
+      expGen->generateListExpr(lobDelVIDlist, 
+                               ex_expr::exp_ARITH_EXPR, &lobDelExpr);
+    }
+#endif
+
   ULng32 rowIdAsciiRowLen = 0; 
   ExpTupleDesc * rowIdAsciiTupleDesc = 0;
   ex_expr * rowIdExpr = NULL;
@@ -1219,7 +1262,7 @@ short HbaseDelete::codeGen(Generator * generator)
 		      scanExpr,
 		      rowIdExpr,
 		      NULL, // updateExpr
-		      NULL, // mergeInsertExpr
+		      lobDelExpr, // NULL, // mergeInsertExpr
 		      NULL, // mergeInsertRowIdExpr
 		      NULL, // mergeUpdScanExpr
 		      NULL, // projExpr

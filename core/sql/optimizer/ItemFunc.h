@@ -2709,8 +2709,12 @@ public:
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
    lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)),
-   lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE))
-   {}
+     lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)),
+     lobGCLimit_(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)),
+     hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
+     hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
+   {
+   }
 
  // copyTopNode method
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
@@ -2737,8 +2741,10 @@ public:
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
   Int64 getLobMaxSize() {return lobMaxSize_*1024*1024; }
-  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
-  
+  Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_*1024*1024;}
+  Int64 getLobGCLimit() { return lobGCLimit_*1025*1024;}
+  Int32 getLobHdfsPort() { return hdfsPort_;}
+  NAString &getLobHdfsServer(){return hdfsServer_;}
  protected:
   ObjectType obj_;
 
@@ -2747,6 +2753,9 @@ public:
   NAString lobStorageLocation_;
   Int32 lobMaxSize_; // In MB units
   Int32 lobMaxChunkMemSize_; //In MB Units
+  Int32 lobGCLimit_ ;//In MB Units
+  Int32 hdfsPort_;
+  NAString hdfsServer_;
   
 }; // LOBoper
 

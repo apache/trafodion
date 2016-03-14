@@ -73,7 +73,7 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
 
    #Check traf_authentication_config for errors
    echo "***INFO: Checking LDAP Configuration file for errors."
-   $SQ_ROOT/export/bin64/ldapconfigcheck -file $SQ_ROOT/sql/scripts/traf_authentication_config
+   $SQ_ROOT/export/bin${SQ_MBTYPE}/ldapconfigcheck -file $SQ_ROOT/sql/scripts/traf_authentication_config
    if [ "$?" != "0" ]; then
       echo "***ERROR: traf_authentication_config not configured correctly."
       echo "***ERROR: Install will continue WITHOUT simple security turned on."
