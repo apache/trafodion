@@ -1473,7 +1473,6 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
 short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
 {
   Lng32 cliRC = 0;
-  char queryBuf[2000];
 
  // Create the procedures if they don't already exist
   for (Int32 i = 0; i < sizeof(allLibmgrRoutineInfo)/sizeof(LibmgrRoutineInfo); i++)
@@ -1498,6 +1497,11 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
       param_[2] = getSystemCatalog();
       param_[3] = SEABASE_LIBMGR_SCHEMA;
       param_[4] = SEABASE_LIBMGR_LIBRARY;
+
+      // Review comment - make sure size of queryBuf is big enough to hold
+      // generated text.
+      char queryBuf[strlen(getSystemCatalog())*2 + strlen(SEABASE_LIBMGR_SCHEMA)*2 +
+                    strlen(SEABASE_LIBMGR_LIBRARY) + gluedQuerySize + 200]; 
 
       str_sprintf(queryBuf, gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
       NADELETEBASIC(gluedQuery, STMTHEAP);
