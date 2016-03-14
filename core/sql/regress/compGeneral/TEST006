@@ -159,9 +159,9 @@ prepare xx from select user(a) from t006t1;
 prepare xx from select ~a from t006t1;
 prepare xx from select sin(a) from t006t1;
 
-control query default MODE_SPECIAL_3 'ON';
+control query default MODE_SPECIAL_4 'ON';
 prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
-control query default MODE_SPECIAL_3 reset;
+control query default MODE_SPECIAL_4 reset;
 
 -- Error 4046
 prepare xx from select ~(a) from t006t7;
@@ -233,10 +233,10 @@ control query default MODE_SPECIAL_3 reset;
 prepare xx from select a**a from t006t1;
 
 -- Error 4065
-control query default MODE_SPECIAL_3 'ON';
+control query default MODE_SPECIAL_4 'ON';
 prepare xx from select * from t006t1 where to_date(A, '201005') = A;
 prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
-control query default MODE_SPECIAL_3 reset;
+control query default MODE_SPECIAL_4 reset;
 
 -- Error 4067
 prepare xx from select * from table (explain(NULL, 5));
@@ -295,9 +295,9 @@ prepare xx from select queryid_extract(a, b) from t006t4;
 prepare xx from select round(3.224, 3, 2) from t006t1;
 prepare xx from select user(a) from t006t1;
 
-control query default MODE_SPECIAL_3 'ON';
+control query default MODE_SPECIAL_4 'ON';
 prepare xx from select * from t006t2 where to_date(A, '99:99:99:99') = A;
-control query default MODE_SPECIAL_3 reset;
+control query default MODE_SPECIAL_4 reset;
 
 prepare xx from select current_running from t006t1;
 prepare xx from select position(a in a) from t006t4;
