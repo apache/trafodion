@@ -127,11 +127,14 @@ int CCmsh::GetClusterState( PhysicalNodeNameMap_t &physicalNodeMap )
             it = physicalNodeMap.find( nodeName.c_str() );
             if (it != physicalNodeMap.end())
             {
-                // TEST_POINT: to force state down on node name 
+               // TEST_POINT and Exclude List : to force state down on node name 
                 const char *downNodeName = getenv( TP001_NODE_DOWN );
-                if ( downNodeName != NULL && 
-                    !strcmp( downNodeName, nodeName.c_str() ) )
-                {
+                const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+                if (( downNodeList != NULL && 
+                    (strstr(downNodeList,nodeName.c_str()))) ||
+                    ( downNodeName != NULL && 
+                   !strcmp( downNodeName, nodeName.c_str() ) ))
+                 {
                     nodeState = StateDown ;
                 }
                 // Set physical node state
