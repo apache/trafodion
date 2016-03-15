@@ -927,6 +927,12 @@ int main (int argc, char *argv[])
     SnmpLog->setPNid( MyPNID );
 
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
+    char *tmpptr = Node_name;
+    while ( *tmpptr )
+    {
+        *tmpptr = (char)tolower( *tmpptr );
+        tmpptr++;
+    }
 
 #ifdef MULTI_TRACE_FILES
     setThreadVariable( (char *)"mainThread" );

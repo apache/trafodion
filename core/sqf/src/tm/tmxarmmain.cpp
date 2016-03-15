@@ -544,7 +544,7 @@ void tm_process_xa_recover(CTmTxMessage * pp_msg)
    lv_recoverReply.iv_end = true;
    lv_recoverReply.iv_count = 0;
    //lv_recoverReply.iv_recovery_index = 0; not found in RM_Recover_Req_Type??
-   memset(&lv_recoverReply.iv_xid, NULL, sizeof(lv_recoverReply.iv_xid));
+   memset(&lv_recoverReply.iv_xid, 0, sizeof(lv_recoverReply.iv_xid));
 
    // Need to handle TMSTATRSCAN, TMENDRSCAN
    pp_msg->reply(XA_OK);

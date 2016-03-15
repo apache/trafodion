@@ -3818,6 +3818,12 @@ int msg_mon_init_attach(const char *pp_where,
     }
     gethostname(la_host_name, sizeof(la_host_name));
     lp_nodes = getenv(gp_ms_env_sq_vnodes);
+    char *tmpptr = la_host_name;
+    while ( *tmpptr )
+    {
+        *tmpptr = (char)tolower( *tmpptr );
+        tmpptr++;
+    }
     lp_nid = getenv(gp_ms_env_sq_vnid);
     if ((lp_nid != NULL) && *lp_nid)
         lv_nid = atoi(lp_nid);
