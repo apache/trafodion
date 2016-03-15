@@ -37,7 +37,7 @@ This guide targets anyone wanting to load data into a Trafodion database.
 You need to have skills in the following areas to make full use of the information in this guide:
 
 * SQL DDL and DML.
-* Installion and configuration of Linux software.
+* Installation and configuration of Linux software.
 * Trafodion administration.
 * Depending on your data source, Java and/or Hadoop ecosystem usage.
 

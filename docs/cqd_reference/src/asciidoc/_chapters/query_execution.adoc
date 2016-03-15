@@ -71,7 +71,7 @@ data blocks cached earlier thereby impacting the performance of the random reads
 in such a case. +
  +
 Set the CQD <<hbase-region-server-max-heap-size,HBASE_REGION_SERVER_MAX_HEAP_SIZE>> value to reflect the amount of java heap size reserved for the region servers.
-This CQD is used by the Trafodion Optimizer to evaluate if the block cache to be turned off. 
+This CQD is used by the Trafodion Optimizer to evaluate if the block cache should be turned off. 
 | *Production Usage*          | Leave the setting to be 'SYSTEM' when HBase is configured to use LRU block cache. If needed,
 you can override this settings with 'ON' or 'OFF'.  +
  +
@@ -162,8 +162,8 @@ if you think that you need to use this CQD.
 |===
 
 <<<
-[[hbase-rowset-vssb-opt]]
-== HBASE_ROWSET_VSSB_OPT
+[[hbase-rowset-vsbb-opt]]
+== HBASE_ROWSET_VSBB_OPT
 
 [cols="25%h,75%"]
 |===
@@ -187,8 +187,8 @@ If possible, then the query plan involves VSBB operators. The Virtual Sequential
 |===
 
 <<<
-[[hbase-rowset-vssb-size]]
-== HBASE_ROWSET_VSSB_SIZE
+[[hbase-rowset-vsbb-size]]
+== HBASE_ROWSET_VSBB_SIZE
 
 [cols="25%h,75%"]
 |===
@@ -201,7 +201,7 @@ The default value is *'1024'*.
 the queue to IUD (INSERT,UPDATE,DELETE) operator is filled up in the data flow architecture of Trafodion. +
  +
 You can adjust the maximum size to suit your application needs and thus tune it to perform optimally.
-| *Production Usage*          | Yes. You can disable this feature by setting the HBASE_ROWSET_VSSB_OPT CQD to 'OFF'.
+| *Production Usage*          | Yes. You can disable this feature by setting the HBASE_ROWSET_VSBB_OPT CQD to 'OFF'.
 | *Impact*                    | The performance of your application may be affected by setting this CQD too low.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
@@ -216,7 +216,7 @@ You can adjust the maximum size to suit your application needs and thus tune it 
 
 [cols="25%h,75%"]
 |===
-| *Description*               |	Enables Trafodion to leverage the HBase small scanner optimization. This optimization reduces I/O usage with up to 66% 
+| *Description*               |	Enables Trafodion to leverage the HBase small scanner optimization. This optimization reduces I/O usage up to 66% 
 and enables non-blocking reads for higher concurrency support. When a scan is known to require less than a HBASE BLOCK SIZE (default is 64K),
 then enabling the HBase small scanner optimization increases performance.
 | *Values*                    |

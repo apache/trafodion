@@ -52,8 +52,8 @@ LOAD INTO target_table SELECT * FROM source_table WHERE custkey >= 1000 ;
 [[bulk-load-data-from-hdfs-files]]
 == Load Data From HDFS Files
 
-You copy your data (local or remote) into an HDFS folder. Then, you create an external Hive table (with correct fields) that point to the HDFS folder containing the data.
-You may also specify a WHERE clause on the source data as a filter, if needed.
+You copy your data (local or remote) into an HDFS folder. Then, you create an external Hive table (with correct fields) that points
+to the HDFS folder containing the data. You may also specify a WHERE clause on the source data as a filter, if needed.
 See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-ExternalTables[External Tables]
 page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for more information.
 

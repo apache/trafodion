@@ -53,7 +53,7 @@ make the refresh more frequent.
 | *Impact*                    | Longer histogram refresh intervals can improve compile times. However, longer refresh intervals yield more obsolete
 the histograms. More obsolete histograms may result in poor performance for queries that could leverage recently updated statistics.
 | *Level*                     | System or Service.
-| *Conflicts/Synergies*       | Frequency of update statistics run either using MAINTAIN.
+| *Conflicts/Synergies*       | Frequency of update statistics run using MAINTAIN.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.
@@ -67,19 +67,18 @@ the histograms. More obsolete histograms may result in poor performance for quer
 |===
 | *Description*               | Controls the level of missing statistics warnings that should be displayed. The warnings impacted are 6007, 6008, 6010, and 6011.
 | *Values*                    |
-*'0'*: Display no warnings. The Update Statistics Automation Server still continues to record missing column statistics. +
+*'0'*: Display no warnings. +
  +
 *'1'*: Display only missing single column statistics warnings. These include 6008 and 6011. +
  +
 *'2'*: Display all missing single and multi-column statistics warnings for scans only. +
  +
-*'3'*: Display all missing single and multi-column statistics warnings for scans and join operators only.
-The Update Statistics Automation Server continues to record missing column statistics. +
+*'3'*: Display all missing single and multi-column statistics warnings for scans and join operators only. +
  +
 *'4'*: Display all missing single and multi-column statistics warnings. +
  +
 The default value is *'4'*.
-| *Usage*                     | The Update Statistics Automation Server (USAS) captures these warnings and gathers appropriate statistics.
+| *Usage*                     | 
 If you do not want to see these warnings, then change the setting to '0'. If you want to track the warnings, then you have a
 choice of which warnings you want to track. Each setting gives you the ability to filter the warnings seen for missing single
 or multi-column statistics for join or scan operations. This controls the resulting number of warning messages. +
@@ -99,8 +98,7 @@ to get several warnings. Not all warnings may contribute to plan improvements. T
 based on the search path, some of which may not even impact the plan quality. Also, the cost of gathering statistics on those columns
 may not bring commensurate benefit to a large number of queries.
 | *Level*                     | System.
-| *Conflicts/Synergies*       | The USAS does capture these warnings and gathers statistics felt appropriate
-for query performance. If you are using USAS, then you may set the warning level to 1 or 0.
+| *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.

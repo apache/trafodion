@@ -114,13 +114,13 @@ are cached and larger scans are not cached to avoid cache trashing.
 *> 0*: The cached Hive meta-data is valid only for <value> seconds. +
  +
 Default: *'0'*.
-| *Usage*                     | Use of value -1 when the Hive tables are read-only and no updates are possible to avoid reading the
-Hive metadata when the same table is referenced in queries again. +
+| *Usage*                     | Use a value of -1 when the Hive tables are read-only. This allows Trafodion to avoid repeatedly reading the
+metadata when the table is referenced in multiple queries. +
  +
-Use of value 0 when frequent update of Hive tables are possible. +
+Use a value of 0 when updates to the Hive tables are likely to be frequent. +
  +
-Use of a positive value when when infrequent update of Hive tables can take place and the value can be set so that it is impossible
-for the Hive tables to be updated within next <value> seconds. 
+Use a positive value _n_ to cause Trafodion to re-read metadata after n seconds has elapsed.
+Use this option when updates to the Hive table happen at least _n_ seconds apart. 
 | *Production Usage*          | Consult with the Trafodion community.
 | *Impact*                    | Compilation time.
 | *Level*                     | Session.
@@ -200,7 +200,7 @@ If the plan object is not produced due to a text cache miss, then the plan is st
 Default: *'OFF'*.
 | *Usage*                     | When this CQD is ON during a bulk load, then any indexes on a table are maintained incrementally.
 New rows are added to the base table and all the indexes in HFiles and then during LOAD COMPLETE phase all new files are moved to HBase.
-Indexes are not offline. However, it causes the index to be inconsistent with the base table if any of the new rows have the same key value as an existing.
+Indexes are not offline. However, it causes the index to be inconsistent with the base table if any of the new rows have the same key value as an existing row.
 Change the default to ON only when certain that new rows do not have a conflict with existing rows in table.
 | *Production Usage*          | Yes.
 | *Impact*                    | Bulk load into tables with index is faster, when the attribute is set to ON.
