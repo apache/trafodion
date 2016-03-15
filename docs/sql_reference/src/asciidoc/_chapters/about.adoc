@@ -87,9 +87,7 @@ Trafodion SQL statements.
 Management System (RMS) and describes the RMS counters that are returned.
 | <<OLAP_Functions,OLAP Functions>>                               | Describes specific on line analytical processing functions.
 | <<Reserved_Words,Appendix A: Reserved Words>>                   | Lists the words that are reserved in Trafodion SQL.
-| <<Control_Query_Default,Appendix B: Control Query Default (CQD) Attributes>> |
-Describes the Control Query Default (CQD) attributes that are supported in a Trafodion SQL environment.
-| <<Limits,Appendix C: Limits>>                                  | Describes limits in Trafodion SQL.
+| <<Limits,Appendix B: Limits>>                                  | Describes limits in Trafodion SQL.
 |===
 
 

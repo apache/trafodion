@@ -33,7 +33,6 @@ This section describes CQDs that are used for transaction control and locking.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Transaction Control and Locking
 | *Description*               | Specifies the default transaction isolation level that queries use.
 | *Values*                    | *'READ UNCOMMITTED'*, *'READ COMMITTED'*, *'REPEATABLE READ'*, or *'SERIALIZABLE'*. +
  +
@@ -76,7 +75,6 @@ then its value is used as the isolation level for updates and DDL statements. UP
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Transaction Control and Locking
 | *Description*               | Specifies the default transaction isolation level for these update operations: INSERT, UPDATE, or DELETE.
 | *Values*                    | *'READ UNCOMMITTED'*, *'READ COMMITTED'*, *'REPEATABLE READ'*, or *'SERIALIZABLE'*. +
  +
@@ -86,7 +84,7 @@ The default value is *'READ COMMITTED'* (ANSI).
 | *Impact*                    | When set, this CQD prevents users from doing any of these update operations: INSERT, UPDATE, or DELETE.
 | *Level*                     | Service.
 | *Conflicts/Synergies*       | Works with the ISOLATION_LEVEL setting. Both settings are READ COMMITTED by default.
-ISOLATION_LEVEL can be set to READ UNCOMMITTED. This CQD still remains READ COMMITTED. You can change it to READ UNCOMMITED to prevent queries
+ISOLATION_LEVEL can be set to READ UNCOMMITTED. This CQD still remains READ COMMITTED. You can change it to READ UNCOMMITTED to prevent queries
 running at the service level to not perform any updates.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.

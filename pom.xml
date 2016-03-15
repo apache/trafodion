@@ -136,6 +136,8 @@
     <module>dcs</module>
     <module>core/rest</module>
     <module>docs/command_interface</module>
+    <module>docs/cqd_reference</module>
+    <module>docs/load_transform</module>
     <module>docs/provisioning_guide</module>
     <module>docs/messages_guide</module>
     <module>docs/odb_user</module>
