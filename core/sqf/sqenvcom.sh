@@ -380,8 +380,7 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
-  export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
-
+  export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
   # Configuration directories
 
   export HADOOP_CNF_DIR=/etc/hadoop/conf
@@ -573,6 +572,7 @@ EOF
     lv_hbase_cp=`hbase classpath`
 
     # end of code for Apache Hadoop/HBase installation w/o distro
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
   else
     # print usage information, not enough information about Hadoop/HBase
     vanilla_apache_usage
