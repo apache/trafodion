@@ -2454,7 +2454,7 @@ Lng32 SQLCLI_ProcessRetryQuery(
             return retcode;
         }
 
-      if (rootTdb->updDelInsertQuery())
+      if (rootTdb->updDelInsertQuery()|| (rootTdb->ddlQuery()))
         {
           if (rootTdb->transactionReqd() &&
               (NOT exTransaction->xnInProgress()))

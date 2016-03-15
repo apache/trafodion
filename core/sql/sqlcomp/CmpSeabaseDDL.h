@@ -162,7 +162,7 @@ class CmpSeabaseDDL
   static NABoolean isHbase(const NAString &catName);
 
   static bool isHistogramTable(const NAString &tabName);
-
+  static NABoolean isLOBDependentNameMatch(const NAString &name);
   static NABoolean isSeabaseMD(const NAString &catName,
 			       const NAString &schName,
 			       const NAString &objName);
