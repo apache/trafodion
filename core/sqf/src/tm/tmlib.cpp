@@ -2730,21 +2730,20 @@ bool TMLIB::phandle_get(TPT_PTR(pp_phandle), int pv_node)
 
 void TMLIB::phandle_set (TPT_PTR(pp_phandle), int pv_node)
 {
-    short lv_error = 0;
 
     ia_tm_phandle[pv_node].iv_phandle = *pp_phandle;
     ia_tm_phandle[pv_node].iv_open = true;
     
     //call decompose to get out the nid/pid
-    lv_error = XPROCESSHANDLE_DECOMPOSE_(pp_phandle, 
+    XPROCESSHANDLE_DECOMPOSE_(pp_phandle, 
                                           NULL, // node - already know it
                                           &ia_tm_phandle[pv_node].iv_pid, // pid
                                           NULL, // don't care
                                           NULL, // don't care
+                                          0, // don't care
                                           NULL, // don't care
                                           NULL, // don't care
-                                          NULL, // don't care
-                                          NULL, // don't care
+                                          0, // don't care
                                           NULL, // don't care
                                           NULL); //sdon't care
 
@@ -2754,7 +2753,6 @@ void TMLIB::phandle_set (TPT_PTR(pp_phandle), int pv_node)
 
 void TMLIB::initialize()
 {
-   int lv_err = 0;
    msg_mon_get_process_info(NULL, &iv_my_nid,
                                     &iv_my_pid);
 
@@ -2766,7 +2764,7 @@ void TMLIB::initialize()
     //TODO: switch the following call to msg_mon_get_node_info2 when available.
     // This call has been changed so that the node count includes spare nodes, so 
     // will give the wrong value for iv_node_count.
-    lv_err = msg_mon_get_node_info(&iv_node_count, MAX_NODES, NULL);
+    msg_mon_get_node_info(&iv_node_count, MAX_NODES, NULL);
     is_initialized(true);
     // We don't use gv_tmlib_initialized but set it here just to keep things aligned.
     gv_tmlib_initialized = true;
@@ -3142,11 +3140,10 @@ short TMLIB::setupJNI()
 ///////////////////////////////////////////////
 short TMLIB::initConnection(short pv_nid)
 {
-   jboolean jresult = 0;
   jthrowable exc;
   jshort   jdtmid = pv_nid;
   //sleep(30);
-  jresult = _tlp_jenv->CallBooleanMethod(javaObj_, TMLibJavaMethods_[JM_INIT1].methodID, jdtmid);
+  _tlp_jenv->CallBooleanMethod(javaObj_, TMLibJavaMethods_[JM_INIT1].methodID, jdtmid);
   exc = _tlp_jenv->ExceptionOccurred();
   if(exc) {
     _tlp_jenv->ExceptionDescribe();
