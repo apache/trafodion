@@ -2230,6 +2230,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
    
   if (j > 0)
     {
+      Int32 rc = sendAllControls(FALSE, FALSE, TRUE);
       //if the table is a volatile table return an error
       if (createTableNode->isVolatile())
         {
@@ -2251,7 +2252,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
       newSchName.append("\".\"");
       newSchName.append(schemaNamePart);
       newSchName += "\"";
-      Lng32 rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
+       rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
                                           newSchName.length(),
                                           objUID,
                                           j,
@@ -3341,8 +3342,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
           processReturn();
           
           return -1;
-        }
-      
+        }     
     }
 
   // drop all check constraints from metadata if 'no check' is not specified.
@@ -3591,6 +3591,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
     }
   if (j > 0)
     {
+      Int32 rc = sendAllControls(FALSE, FALSE, TRUE);
       Int64 objUID = getObjectUID(cliInterface,
 				  catalogNamePart.data(), schemaNamePart.data(), 
 				  objectNamePart.data(),
@@ -3601,7 +3602,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       newSchName.append("\".\"");
       newSchName.append(schemaNamePart);
       newSchName += "\"";
-      Lng32 rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
+      rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
 					  newSchName.length(),
 					  objUID,
 					  j,

@@ -926,6 +926,17 @@ bool CmpSeabaseDDL::isHistogramTable(const NAString &name)
 
 }
 
+NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
+{
+  if ((name(0,min((sizeof(LOB_MD_PREFIX)-1), name.length())) == LOB_MD_PREFIX) ||
+      (name(0,min((sizeof(LOB_DESC_CHUNK_PREFIX)-1), name.length()))==LOB_DESC_CHUNK_PREFIX)||
+      (name(0,min((sizeof(LOB_DESC_HANDLE_PREFIX)-1), name.length()))==LOB_DESC_HANDLE_PREFIX)
+      )
+    return true;
+  else
+    return false;
+}
+
 NABoolean CmpSeabaseDDL::isSeabase(const NAString &catName)
 {
   if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
