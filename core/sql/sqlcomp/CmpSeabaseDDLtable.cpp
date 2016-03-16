@@ -3893,6 +3893,18 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
+  const CheckConstraintList &checkList = naTable->getCheckConstraints();
+  if (checkList.entries() > 0)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1427)
+        << DgString0("Reason: Operation not allowed if check constraints are presenr. Drop the constraints and recreate them after rename.");
+      
+      processReturn();
+      
+      return;
+    }
+    
   Int64 objUID = getObjectUID(&cliInterface,
                               catalogNamePart.data(), schemaNamePart.data(), 
                               objectNamePart.data(),
