@@ -154,26 +154,23 @@ export HBASE_TRX_ID_HDP=hbase-trx-hdp2_3
 # general Hadoop & TRX dependencies - not distro specific, choose one to build against
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
 export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
-if [[ "$HBASE_DISTRO" = "HDP" ]]; then
-    export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
-fi
-if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
-    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
-fi
 export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
+export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
+
 HBVER=""
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
     HBVER="hdp2_3"
     export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
 fi
 if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
     HBVER="apache1_0_2"
     export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
 fi
-export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
@@ -381,6 +378,10 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
   export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
+  HBVER="hdp2_3"
+  export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+  export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+  
   # Configuration directories
 
   export HADOOP_CNF_DIR=/etc/hadoop/conf
@@ -573,6 +574,9 @@ EOF
 
     # end of code for Apache Hadoop/HBase installation w/o distro
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
+    HBVER="apache1_0_2"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
   else
     # print usage information, not enough information about Hadoop/HBase
     vanilla_apache_usage
