@@ -1,27 +1,4 @@
 /**
-* @@@ START COPYRIGHT @@@
-
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-
-* @@@ END COPYRIGHT @@@
- */
-/**
- * Copyright 2010 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -120,10 +97,17 @@ public class ZKConfig {
 
     final String[] serverHosts = conf.getStrings(Constants.ZOOKEEPER_QUORUM,
                                                  Constants.LOCALHOST);
+    String serverHost;
+    String address;
+    String key;
     for (int i = 0; i < serverHosts.length; ++i) {
-      String serverHost = serverHosts[i];
-      String address = serverHost + ":" + peerPort + ":" + leaderPort;
-      String key = "server." + i;
+      if (serverHosts[i].contains(":")) {
+        serverHost = serverHosts[i].substring(0, serverHosts[i].indexOf(':'));
+      } else {
+        serverHost = serverHosts[i];
+      }
+      address = serverHost + ":" + peerPort + ":" + leaderPort;
+      key = "server." + i;
       zkProperties.put(key, address);
     }
 
