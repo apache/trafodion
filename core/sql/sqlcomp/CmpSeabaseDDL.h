@@ -1130,6 +1130,13 @@ class CmpSeabaseDDL
   void dropSeabaseRoutine(StmtDDLDropRoutine  * dropRoutineNode,
                           NAString &currCatName, NAString &currSchName);
 
+  short createSeabaseLibmgr(ExeCliInterface * cliInterface);
+  short upgradeSeabaseLibmgr(ExeCliInterface * inCliInterface);
+  short dropSeabaseLibmgr(ExeCliInterface *inCliInterface);
+  short createLibmgrProcs(ExeCliInterface * cliInterface);
+  short grantLibmgrPrivs(ExeCliInterface *cliInterface);
+
+
   void createSeabaseSequence(StmtDDLCreateSequence  * createSequenceNode,
 			     NAString &currCatName, NAString &currSchName);
 

@@ -48,6 +48,9 @@ endif
 
 #TESTAROBJS        = adp_read_test.o \
 
+#gcc 4.8 need explicit enable flag to search for dependent shared object
+CXXFLAGS       += -Xlinker --copy-dt-needed-entries
+
 PROGS = dtmci \
         tmshutdown 
 

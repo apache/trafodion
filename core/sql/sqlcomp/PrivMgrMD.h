@@ -301,8 +301,7 @@ class PrivMgrMDAdmin : public PrivMgr
     PrivStatus updatePrivMgrMetadata(
        const std::string &objectsLocation,
        const std::string &authsLocation,
-       const bool shouldPopulateObjectPrivs,
-       const bool shouldPopulateRoleGrants);
+       const bool shouldPopulateObjectPrivs);
 
     PrivStatus upgradeMetadata (
       const PrivMgrTableStruct &tableDefinition,

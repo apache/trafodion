@@ -67,6 +67,7 @@
 #include "ComUser.h"
 #include "ComMisc.h"
 #include "CmpSeabaseDDLmd.h"
+#include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
@@ -6840,6 +6841,11 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns)
      goto label_error;
    }
 
+ if (createSeabaseLibmgr (&cliInterface))
+   {
+     goto label_error;
+   }
+
   cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
   return;
@@ -7659,10 +7665,28 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
 
   if (retcode != STATUS_ERROR)
   {
-    // change authorization status in compiler context and kill arkcmps
-    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
-    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+     // Commit the transaction so privmgr schema exists in other processes
+     endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+     if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+     {
+       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+       return -1;
+     }
+
+     // change authorization status in compiler context and kill arkcmps
+     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
+     for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+       GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+
+     // If someone initializes trafodion with library management but does not 
+     // initialize authorization, then the role DB__LIBMGRROLE has not been 
+     // granted to LIBMGR procedures.  Do this now
+     cliRC = existsInSeabaseMDTable(cliInterface,
+                                    getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
+                                    SEABASE_LIBMGR_LIBRARY,
+                                    COM_LIBRARY_OBJECT, TRUE, FALSE);
+     if (cliRC == 1) // library exists
+       cliRC = grantLibmgrPrivs(cliInterface);
   }
   else
   {
@@ -8303,6 +8327,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        (ddlExpr->dropRepos()) ||
        (ddlExpr->upgradeRepos()) ||
        (ddlExpr->addSchemaObjects()) ||
+       (ddlExpr->createLibmgr()) ||
        (ddlExpr->updateVersion())))
     ignoreUninitTrafErr = TRUE;
 
@@ -8486,6 +8511,18 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->addSchemaObjects())
     {
       createSeabaseSchemaObjects();
+    }
+  else if (ddlExpr->createLibmgr())
+    {
+      createSeabaseLibmgr(&cliInterface);
+    }
+  else if (ddlExpr->dropLibmgr())
+    {
+      dropSeabaseLibmgr(&cliInterface);
+    }
+  else if (ddlExpr->upgradeLibmgr())
+    {
+      upgradeSeabaseLibmgr(&cliInterface);
     }
   else if (ddlExpr->updateVersion())
     {

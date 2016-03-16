@@ -171,6 +171,11 @@ typedef NABoolean               ComBoolean;
 
 #define SEABASE_REGRESS_DEFAULT_SCHEMA "SCH"
 
+// Trafodion system library and procedures reserved schema
+// Procedures are defined in CmpSeabaseDDLroutine.h
+#define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
+#define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
+
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
 // rows in metric_text_table

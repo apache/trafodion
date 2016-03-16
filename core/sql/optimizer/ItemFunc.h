@@ -1703,22 +1703,23 @@ public:
 class DateFormat : public CacheableBuiltinFunction
 {
 public:
-  enum 
-  { 
-    DEFAULT,  // YYYY-MM-DD
-    USA,      // MM/DD/YYYY AM|PM
-    EUROPEAN, // DD.MM.YYYY
-    DATE_FORMAT_STR, // formatStr_ contains date format    
-    TIME_FORMAT_STR, // formatStr_ contains time format
-    TIMESTAMP_FORMAT_STR  // formatStr_ contains time format
+  enum FormatType
+  {
+    FORMAT_GENERIC = 0,
+    FORMAT_TO_DATE,
+    FORMAT_TO_CHAR
   };
 
-  DateFormat(ItemExpr *val1Ptr, ItemExpr *formatStrPtr,
-	     Int32 dateFormat)
-	: CacheableBuiltinFunction(ITM_DATEFORMAT,
-			  2, val1Ptr, formatStrPtr),
-	  dateFormat_(dateFormat)
-	{ allowsSQLnullArg() = FALSE; }
+  enum 
+  { 
+    DATE_FORMAT_NONE = 0,
+    DATE_FORMAT_STR,       // formatStr_ contains date format    
+    TIME_FORMAT_STR,       // formatStr_ contains time format
+    TIMESTAMP_FORMAT_STR   // formatStr_ contains timestamp format
+  };
+
+  DateFormat(ItemExpr *val1Ptr, const NAString &formatStr,
+             Lng32 formatType, NABoolean wasDateformat = FALSE);
 
   // virtual destructor
   virtual ~DateFormat();
@@ -1726,12 +1727,20 @@ public:
   // accessor functions
   Int32 getDateFormat() const { return dateFormat_; }
 
+  Int32 getExpDatetimeFormat() const { return frmt_; }
+
   // do not change format literals of DateFormat into constant parameters
   virtual ItemExpr* normalizeForCache(CacheWA& cwa, BindWA& bindWA)
     { return this; } 
 
   // append an ascii-version of ItemExpr into cachewa.qryText_
   virtual void generateCacheKey(CacheWA& cwa) const;
+
+  NABoolean errorChecks(Lng32 frmt, BindWA *bindWA, const NAType* opType);
+
+  ItemExpr * quickDateFormatOpt(BindWA * bindWA);
+
+  ItemExpr * bindNode(BindWA * bindWA);
 
   // a virtual function for type propagating the node
   virtual const NAType * synthesizeType();
@@ -1742,7 +1751,11 @@ public:
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
   
-  
+  void unparse(NAString &result,
+               PhaseEnum phase,
+               UnparseFormatEnum form,
+               TableDesc * tabId) const;
+    
   virtual NABoolean hasEquivalentProperties(ItemExpr * other);
 
   virtual QR::ExprElement getQRExprElem() const
@@ -1751,8 +1764,20 @@ public:
   }
 
 private:
+  // string contains user specified format string
+  NAString formatStr_;
 
+  // TO_DATE or TO_CHAR
+  Lng32 formatType_;
+
+  // DATE, TIME or TIMESTAMP
   Int32 dateFormat_;
+
+  // original function was DATEFORMAT
+  NABoolean wasDateformat_; 
+
+  // actual datetime format (defined in class ExpDatetime in exp_datetime.h)
+  Lng32 frmt_;
 }; // class DateFormat
 
 class DayOfWeek : public CacheableBuiltinFunction
@@ -2663,6 +2688,8 @@ public:
 
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
+
+  ItemExpr * quickDateFormatOpt(BindWA * bindWA);
 
   const NAString& getFormatStr() const
   {

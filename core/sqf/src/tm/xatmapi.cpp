@@ -127,7 +127,7 @@ bool tm_XARM_amIaTM()
    msg_mon_get_my_info2(NULL,       // mon node-id
                         NULL,       // mon process-id
                         NULL,       // mon name
-                        NULL,       // mon name-len
+                        0,       // mon name-len
                         &lv_process_type, // mon process-type
                         NULL,       // mon zone-id
                         NULL,       // os process-id
@@ -1075,7 +1075,7 @@ int tm_xa_recover_waitReply(int *pp_rmid, XID *pp_xids, int64 *pp_count,
    int32 lv_type = -1;
    bool  lv_retryLink = false;
 
-   if (!pp_rmid || !pp_xids || !pp_count || pp_count <= 0 || !pp_end || !pp_index || !pp_int_error)
+   if (!pp_rmid || !pp_xids || !pp_count || *pp_count <= 0 || !pp_end || !pp_index || !pp_int_error)
    {
       XATrace(XATM_TraceAPIError,("XATM: tm_xa_recover_waitReply failed with XAER_INVAL "
                                   "(invalid parameter or bad address)\n"));
@@ -1295,7 +1295,6 @@ int complete_one(int pv_rmid, int *pp_handle)
    char           la_buf[DTM_STRING_BUF_SIZE];
    int            lv_xaError = XA_OK;
    bool           lv_retryLink = false;
-   short          lv_event = 0;
 
    XATrace(XATM_TraceXAAPI,("XATM: complete_one ENTRY, rmid(%d), handle(%d).\n", 
          pv_rmid, *pp_handle));
@@ -1321,7 +1320,7 @@ int complete_one(int pv_rmid, int *pp_handle)
    }
 
    // Wait forever for a completion
-   lv_event = XWAIT(LDONE, -1);
+   XWAIT(LDONE, -1);
 
    // It's possible for us to have multiple outstanding requests
    // to the same RM (XARM, so DTM TM process) complete.

@@ -426,10 +426,15 @@ else
          fi
        done
     fi
+    hadoopPath="$HADOOP_PATH"
+    hadoopBinPath="$HADOOP_BIN_PATH"
+
     export PATH="$PATH:$JAVA_HOME/bin"
     sudo chmod 777 $TRAF_CONFIG
     sed -i '/PATH\=/d' $TRAF_CONFIG
     echo "export PATH=\"$PATH\"" >>$TRAF_CONFIG
+    echo "export HADOOP_BIN_PATH=\"$hadoopBinPath\"" >>$TRAF_CONFIG
+    echo "export HADOOP_PATH=\"$hadoopPath\"" >>$TRAF_CONFIG
     sudo chmod 777 $TRAF_CONFIG
     source $TRAF_CONFIG
 fi
@@ -651,11 +656,11 @@ function checkClouderaVersion {
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
-   if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
+   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-5].*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-6].[0-9].* | wc -l)
+         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[6-9].[0-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
@@ -690,18 +695,7 @@ else
    fi
 fi
 
-export HADOOP_PATH="/usr/lib/hbase/lib"
-#Check for Cloudera parcels of packages.
-parcelsInstalled=$(ssh -q -n $node sudo ls /opt/cloudera/parcels/ | wc -l)
-if [[ $parcelsInstalled -gt "0" ]]; then
-   export HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
-fi
-
 echo "***INFO: nameOfVersion=$nameOfVersion"
-echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
-sudo chmod 777 $TRAF_CONFIG
-sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
-echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
@@ -731,9 +725,8 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
             ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
          fi
        fi
-       export HADOOP_PATH="/usr/lib/hbase/lib"
    else
-       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.3.*)
+       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.[3-4].*)
        #Check that HDP 2.[n>3].* is not installed.
        if [[ -z $nameOfVersion ]]; then
           versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version [0-9]*.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
@@ -745,7 +738,6 @@ if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
              ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
           fi
        fi
-   export HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
    fi
 else
    nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
@@ -762,14 +754,9 @@ if [[ -z $nameOfVersion ]]; then
       ssh -q -n $node cat hbaseVersion.txt >> $ERROR_LOG
    fi
 fi
-export HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
 
 echo "***INFO: nameOfVersion=$nameOfVersion"
 echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
-sudo chmod 777 $TRAF_CONFIG
-sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
-echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
-sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
 }
@@ -881,6 +868,15 @@ if [[ ! -z $install_features_path ]]; then
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
+   if [[ -z $CDH_5_5_SUPPORT ]]; then
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export CDH_5_5_SUPPORT=\"N\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   else
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export CDH_5_5_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   fi 
    if [[ -z $CDH_5_4_SUPPORT ]]; then
       sudo chmod 777 $TRAF_CONFIG
       echo "export CDH_5_4_SUPPORT=\"N\"" >> $TRAF_CONFIG
@@ -902,10 +898,12 @@ if [[ ! -z $install_features_path ]]; then
 else
    CDH_5_3_HDP_2_2_SUPPORT="N"
    CDH_5_4_SUPPORT="N"
+   CDH_5_5_SUPPORT="N"
    HDP_2_3_SUPPORT="N"
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $TRAF_CONFIG
+   echo "export CDH_5_5_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
    echo "export HDP_2_3_SUPPORT=\"$HDP_2_3_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 fi
@@ -916,11 +914,7 @@ fi
 #===========================================
 #Main 
 
-echo
-echo "************************************"
-echo " Trafodion Configuration File Check"
-echo "************************************"
-echo
+echo " ***INFO: Trafodion Configuration File Check"
 
 setUpErrorLog
 

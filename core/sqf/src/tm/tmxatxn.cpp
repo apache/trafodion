@@ -145,7 +145,7 @@ void CTmXaTxn::cleanup()
    iv_txnType = TM_TX_TYPE_XARM;
    iv_txnObj.ip_xaTxn = this;
    iv_rmid = -1;
-   memset(&iv_XID, NULL, sizeof(iv_XID));
+   memset(&iv_XID, 0, sizeof(iv_XID));
    iv_tx_state = TM_TX_STATE_NOTX;
    iv_in_use = false;
    
@@ -175,7 +175,7 @@ void CTmXaTxn::initialize(int32 pv_nid, int64 pv_flags, int32 pv_trace_level,
    iv_txnType = TM_TX_TYPE_XARM;
    iv_txnObj.ip_xaTxn = this;
    iv_rmid = -1;
-   memset(&iv_XID, NULL, sizeof(iv_XID));
+   memset(&iv_XID, 0, sizeof(iv_XID));
 
    CTmTxBase::initialize(pv_nid, pv_flags, pv_trace_level, pv_seq, pv_creator_nid, 
                          pv_creator_pid, pv_rm_wait_time);

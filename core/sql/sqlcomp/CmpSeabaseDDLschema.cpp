@@ -556,7 +556,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
      }
    }
 
-   // Drop libraries, procedures (SPJs), UDFs (functions), and views 
+   // Drop procedures (SPJs), UDFs (functions), and views 
     objectsQueue->position();
     for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
     {
@@ -579,14 +579,9 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
           case COM_REFERENTIAL_CONSTRAINT_OBJECT:
           case COM_SEQUENCE_GENERATOR_OBJECT:
           case COM_UNIQUE_CONSTRAINT_OBJECT:
-          {
-             continue;
-          }
           case COM_LIBRARY_OBJECT:
           {
-             objectTypeString = "LIBRARY";
-             cascade = "CASCADE";
-             break;
+             continue;
           }
 
           // If the library where procedures and functions reside is dropped
@@ -636,6 +631,29 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
           someObjectsCouldNotBeDropped = true;
    } 
+
+   // Drop libraries in the schema
+   objectsQueue->position();
+   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+   {
+      OutputInfo * vi = (OutputInfo*)objectsQueue->getNext();
+
+      char * objName = vi->get(0);
+      NAString objType = vi->get(1);
+
+      if (objType == COM_LIBRARY_OBJECT_LIT)
+      {
+         char buf [1000];
+
+         dirtiedMetadata = TRUE;
+         str_sprintf(buf, "DROP LIBRARY \"%s\".\"%s\".\"%s\" CASCADE",
+                     (char*)catName.data(), (char*)schName.data(), objName);
+         cliRC = cliInterface.executeImmediate(buf);
+
+         if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+            someObjectsCouldNotBeDropped = true;
+      }
+   }
 
    // Drop all tables in the schema.  This will also drop any associated constraints. 
 
