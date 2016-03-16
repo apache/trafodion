@@ -1231,7 +1231,7 @@ SCH027.T027V1
 
 *** ERROR[4003] Column TRAFODION.SCH027.T027T7.A is not a column in table TRAFODION.SCH027.T027T7, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
 
-*** ERROR[1404] Column A cannot be altered. Reason: Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
+*** ERROR[1404] Column A cannot be altered. Reason: Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
 
 --- SQL operation failed with errors.
 >>alter table t027v1 alter column a smallint;
@@ -1385,14 +1385,14 @@ CREATE VIEW TRAFODION.SCH027.T027V2 (ZZ) AS
 
 *** ERROR[4003] Column TRAFODION.SCH027.T027T7.ZZ is not a column in table TRAFODION.SCH027.T027T7, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
 
-*** ERROR[1404] Column ZZ cannot be altered. Reason: Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
+*** ERROR[1404] Column ZZ cannot be altered. Reason: Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
 
 --- SQL operation failed with errors.
 >>alter table t027t7 alter column cc rename to ccc;
 
 *** ERROR[4003] Column TRAFODION.SCH027.T027T7.CC is not a column in table TRAFODION.SCH027.T027T7, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
 
-*** ERROR[1404] Column CC cannot be altered. Reason: Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
+*** ERROR[1404] Column CC cannot be altered. Reason: Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.
 
 --- SQL operation failed with errors.
 >>

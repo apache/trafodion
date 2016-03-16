@@ -4973,7 +4973,7 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   ddlXns)) < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(altColName)
                           << DgString0(reason);
@@ -5109,7 +5109,7 @@ short CmpSeabaseDDL::hbaseFormatTableDropColumn(
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   ddlXns)) < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(altColName)
                           << DgString0(reason);
@@ -5321,7 +5321,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   NAList<NAString> viewDefnList;
   if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
     {
-      NAString reason = "Error occured while saving views.";
+      NAString reason = "Error occurred while saving views.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -5389,7 +5389,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   alterDropColNode->ddlXns())) < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -5886,7 +5886,7 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   ddlXns)) < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(altColName)
                           << DgString0(reason);
@@ -5971,7 +5971,7 @@ short CmpSeabaseDDL::mdOnlyAlterColumnAttr(
                              alterColNode->ddlXns());
   if (cliRC < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(naCol->getColName().data())
                           << DgString0(reason);
@@ -6412,7 +6412,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
   NAList<NAString> viewDefnList;
   if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
      {
-      NAString reason = "Error occured while saving views.";
+      NAString reason = "Error occurred while saving views.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -6482,7 +6482,7 @@ label_error:
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   alterColNode->ddlXns())) < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -6689,7 +6689,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
   NAList<NAString> viewDefnList;
   if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
     {
-      NAString reason = "Error occured while saving dependent views.";
+      NAString reason = "Error occurred while saving dependent views.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -6807,7 +6807,7 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
                              alterColNode->ddlXns());
   if (cliRC < 0)
     {
-      NAString reason = "Error occured while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
