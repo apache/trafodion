@@ -71,7 +71,8 @@ You can use Trafodion SQL statements to read, update, and create HBase tables.
 * <<trafodion_sql_tables_versus_native_hbase_tables,Trafodion SQL Tables Versus Native HBase Tables>>
 * <<supported_sql_statements_with_hbase_tables,Supported SQL Statements With HBase Tables>>
 
-For a list of Control Query Default (CQD) settings for the HBase environment, see <<HBase_Environment_CQDs,HBase Environment CQDs>>.
+For a list of Control Query Default (CQD) settings for the HBase environment, see the
+http://trafodion.incubator.apache.org/docs/cqd_reference/index.hmtl[Trafodion Control Query Default (CQD) Reference Guide].
 
 [[ways_to_access_hbase_tables]]
 === Ways to Access HBase Tables
@@ -223,7 +224,8 @@ You can use Trafodion SQL statements to access Hive tables.
 * <<type_mapping_from_hive_to_trafodion_sql,Type Mapping From Hive to Trafodion SQL>>
 * <<supported_sql_statements_with_hive_tables,Supported SQL Statements With Hive Tables>>
 
-For a list of Control Query Default (CQD) settings for the Hive environment, see <<Hive_Environment_CQDs,Hive Environment CQDs>>.
+For a list of Control Query Default (CQD) settings for the Hive environment, see the
+http://trafodion.incubator.apache.org/docs/cqd_reference/index.hmtl[Trafodion Control Query Default (CQD) Reference Guide].
 
 [[ansi_names_for_hive_tables]]
 === ANSI Names for Hive Tables
@@ -239,7 +241,7 @@ This example should work if a Hive table named `T` has already been defined:
 ```
 set schema hive.hive;
 
-cqd hive_max_string_length '20'; -- creates a more readable display
+CQD HIVE_MAX_STRING_LENGTH '20'; -- creates a more readable display
 select * from t; -- implicit table name
 
 set schema trafodion.seabase;
@@ -267,7 +269,8 @@ Trafodion performs the following data-type mappings:
 | `timestamp`           | `timestamp(6)`^2^
 |===
 
-1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See <<hive_environment_cqds,Hive Environment CQDs>>.
+1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See the
+http://trafodion.incubator.apache.org/docs/cqd_reference/index.hmtl[Trafodion Control Query Default (CQD) Reference Guide].
 2. Hive supports timestamps with nanosecond resolution (precision of 9). Trafodion SQL supports only microsecond resolution (precision 6).
 
 [[supported_sql_statements_with_hive_tables]]

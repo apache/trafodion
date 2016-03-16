@@ -60,6 +60,7 @@ The number of partitions must also be specified during table creation. You choos
 cluster and the expected size of the table. A salted table can split if more data is added to it than initially estimated. If this
 happens, then more than one partition having rows with the same salt value, which may result in suboptimal execution plans for the table.
 
+<<<
 You can also choose not to salt Trafodion tables. This is similar to range partitioning in a traditional database. The number of partitions
 grows with the size of the table, and range boundaries are determined by HBase based on the specified split policy.
 
@@ -71,18 +72,11 @@ when compared to a Hive table with equivalent data since HBase stores the key se
 
 HBase provides several types of encoding to avoid storing the same key value to disk for every column in the row. HBase also supports various
 types of compression of the entire data block, regardless whether it is encoded or not.
-
 See http://hbase.apache.org/book.html#compression[Appendix E: Compression and Data Block Encoding In HBase] in the
-http://hbase.apache.org/book.html[Apache HBase Reference Guide] for a comparison of various compression and encoding algorithms. 
-
-For a discussion on the space savings achieved by various types of encoding and compression schemes, please see the
-https://blogs.apache.org/hbase/category/General["The Effect of ColumnFamily, RowKey and KeyValue Design on HFile Size"] HBase blog entry,
-dated Friday April 11, 2014. 
-
-The performance of an algorithm is also a relevant factor when deciding on the type of compression. For more information, see slides 6, 7, 
-and 8 of Govind Kamat's and Sumeet Singh's presentation,
-http://www.slideshare.net/Hadoop_Summit/kamat-singh-june27425pmroom210cv2["Compression Options in Hadoop - A Tale of Tradeoffs"].
-
+http://hbase.apache.org/book.html[Apache HBase Reference Guide] for a comparison of various compression and encoding algorithms. Use the
+information in the http://hbase.apache.org/book.html#data.block.encoding.types[Which Compressor or Data Block Encoder To Use] section to 
+determine the best compression technique for your tables.
+<<<
 [[create-trafodion-tables-and-indexes]]
 == Create Tables and Indexes 
 
@@ -204,5 +198,3 @@ using ON EXISTING COLUMNS. Note that using ON NECESSARY COLUMNS will only identi
 requested by the optimizer but do not exist. The current implementation of automation does not know which existing histograms might be stale.
 
 
-
-LocalWords:  c7

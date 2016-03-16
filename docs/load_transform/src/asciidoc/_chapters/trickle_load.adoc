@@ -472,14 +472,14 @@ In addition, you need to convert the date format and replace all occurrences of 
 
 The following map file accomplishes these goals:
 
-***
+```
 $ cat test/load_map/ml1.map +
-# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat +
-ID:seq:1                  # Inserts into ID column a sequence starting from 1 +
-NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy +
-AGE:2                     # Loads field #2 (they start from zero) into AGE +
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat
+ID:seq:1                  # Inserts into ID column a sequence starting from 1 
+NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy
+AGE:2                     # Loads field #2 (they start from zero) into AGE
 BDATE:6:DCONV:d.b.y       # Loads field #6 into BDATE converting date format from dd mmm yyyy
-***
+```
 
 Load as follows:
 

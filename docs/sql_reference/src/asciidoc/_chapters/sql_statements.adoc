@@ -1086,7 +1086,7 @@ control-default-option is:
 * `_attribute_`
 +
 is a character string that represents an attribute name. For descriptions of these attributes,
-see <<Control_Query_Default_Attributes,Control Query Default (CQD) Attributes>>.
+see the http://trafodion.incubator.apache.org/docs/cqd_reference/index.html[Trafodion Control Query Default (CQD) Reference Guide].
 
 * `_attr-value_`
 +
@@ -7444,8 +7444,8 @@ see the <<control_query default_statement,Control Query Default Statement>>.
 * `_attribute-name_[, MATCH {FULL | PARTIAL }]`
 +
 displays only the defaults that match, either fully or partially, the _attribute_ used in CONTROL QUERY DEFAULT
-statements. The match is not case-sensitive. For descriptions of these attributes, see
-<<control_query_default_attributes,CONTROL QUERY (CQD) DEFAULT Attributes>>.
+statements. The match is not case-sensitive. For descriptions of these attributes, see the
+http://trafodion.incubator.apache.org/docs/cqd_reference/index.html[Trafodion Control Query Default (CQD) Reference Guide].
 +
 MATCH FULL specifies that _attribute-name_ must be the same as the attribute name used in a control query default
 statement. match partial specifies that _attribute-name_ must be included in the attribute name used in a control

@@ -39,23 +39,18 @@ export PDCP_HADOOP_NODES="$PDCP $MY_HADOOP_NODES"
 cd $UNTAR_DIR
 
 # determine java version for hbase 0.98 only java 1.7 is allowed
-echo "***INFO: Detected JAVA version $JAVA_VERSION"
-if [ "$JAVA_VERSION" == "1.6" ]; then
-   echo "***ERROR: Java 1.6 not supported for Trafodion HBase 0.98"
-   exit -1
-elif [ "$JAVA_VERSION" == "1.7" ]; then
-   if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-      if [[ $CDH_5_4_SUPPORT == "Y" ]]; then
+if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+   if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
+      if [[ $CDH_VERSION == "5.4" ]]; then
          hbase_trx_jar="hbase-trx-cdh5_4-${TRAF_VERSION}.jar"
       else
-         hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar" 
-      fi 
+         hbase_trx_jar="hbase-trx-cdh5_5-${TRAF_VERSION}.jar"
+      fi
    else
-      hbase_trx_jar="hbase-trx-cdh5_3-${TRAF_VERSION}.jar"
-   fi
+      hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar" 
+   fi 
 else
-    echo "***ERROR: unable to determine Hadoop's java version"
-    exit -1
+    hbase_trx_jar="hbase-trx-cdh5_3-${TRAF_VERSION}.jar"
 fi
 
 traf_util_jar="trafodion-utility-${TRAF_VERSION}.jar"
@@ -109,6 +104,25 @@ else
     ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$traf_util_jar
     done
 fi
+
+#====================================
+#Make sure hbase-trx*jar got copied
+
+for node in $HADOOP_NODES
+do
+   copiedOver=$(ssh -q -n $node sudo ls $HADOOP_PATH/hbase-trx* | wc -l)
+   if [[ $copiedOver -ne "1" ]]; then
+      echo "***ERROR: $hbase_trx_jar was not copied on $node"
+      echo "***ERROR: Please investigate why this happened"
+      echo "***ERROR: Trafodion can not start without this. EXITING..."
+      exit -1
+   fi
+done
+
+echo "***INFO: $hbase_trx_jar copied correctly! Huzzah."
+
+
+
 #=====================================
 # create new directories for bulkload and lobs if not already there
 rm $LOCAL_WORKDIR/traf_temp_output 2>/dev/null

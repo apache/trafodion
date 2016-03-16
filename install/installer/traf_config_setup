@@ -395,6 +395,7 @@ echo "export UTT_INSTALL=\"$UTT_INSTALL\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 #Backup restore user
+export BACKUP_USER="trafodion"
 
 echo -n "Enter Backup/Restore username (can be Trafodion), default is [$BACKUP_USER]: "
 read answer
@@ -791,8 +792,6 @@ sudo mkdir -p $TRAF_CONFIG_DIR
 sudo chmod 777 $TRAF_CONFIG_DIR
 sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-echo "***INFO: Configuration file: $TRAF_CONFIG"
-
 
 #==============================================
 #Call user defined prompting script

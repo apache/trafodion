@@ -90,6 +90,7 @@ drop table test020_t33 cascade;
 drop table test020t40 cascade;
 drop table test020t41 cascade;
 drop table test020t42 cascade;
+drop table test020t43 cascade;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -816,3 +817,9 @@ select * from table(index_table test020t42ix) ;
 -- check if the updated d column is reflected in the index
 upsert into test020t42 (a,b,e) values (1, 'c', 4);
 select * from table(index_table test020t42ix) ;
+
+create table test020t43(c1 int, c2 int ) attribute aligned format ;
+upsert into test020t43 values (1,1);
+upsert into test020t43 (c1) values(1);
+select * from test020t43 ; 
+

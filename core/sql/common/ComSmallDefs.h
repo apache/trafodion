@@ -122,7 +122,9 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 #define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
-
+#define LOB_MD_PREFIX                  "LOBMD_"
+#define LOB_DESC_CHUNK_PREFIX          "LOBDescChunks_"
+#define LOB_DESC_HANDLE_PREFIX         "LOBDescHandle_"
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
 
 // reserved names for seabase metadata where SQL table information is kept

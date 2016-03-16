@@ -28,12 +28,34 @@
 
 This section describes CQDs that are used for schema controls.
 
+[[catalog]]
+== Catalog
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies the default catalog name for all DDL and DML statements.
+| *Values*                    | Any valid ANSI name, including delimited names. +
+ +
+The default is *'TRAFODION'*.
+| *Usage*                     | Trafodion tables must be in a catalog called TRAFODION. If you mostly access Hive or native HBase tables,
+then the catalog could be changed to HIVE or HBASE respectively. +
+ +
+The default setting is overridden by any catalog name specified in a SQL statement.
+| *Production Usage*          | Yes.
+| *Impact*                    | Not applicable.
+| *Level*                     | Any.
+| *Conflicts/Synergies*       | Alternately you can use the SET CATALOG statement.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
 [[schema]]
 == Schema
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Influencing Query Plans 
 | *Description*               | Sets the default schema for the session. 
 | *Values*                    | SQL identifier. +
  +
