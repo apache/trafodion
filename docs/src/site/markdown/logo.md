@@ -44,7 +44,7 @@ when referencing our project. Download as needed.
 
 #### [trafodion-logo.jpg][3]
 
-[![Trafodion Logo jog](images/logos/trafodion-logo.jpg)][3]
+[![Trafodion Logo jpg](images/logos/trafodion-logo.jpg)][3]
 
 [3]: images/logos/trafodion-logo.jpg
 

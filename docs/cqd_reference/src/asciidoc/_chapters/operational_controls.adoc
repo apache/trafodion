@@ -33,19 +33,97 @@ This section describes CQDs that are used for operational controls.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Operational Controls
 | *Description*               | Indicates whether a warning should be issued when a query is retried, in case a failed query is automatically retried.
-| *Values*                    | *'ON'* or *'OFF'* +
+| *Values*                    |
+*'ON'* or *'OFF'* +
  +
 The default value is *'OFF'*.
-| *Usage*                     | There are certain cases, such as when a node failure occurs, where a query may fail midstream. In many of such failure scenarios,
-if the query has not returned any data, then it is retried automatically. +
+| *Usage*                     | There are certain cases, such as when a node failure occurs, where a query may fail midstream. The query is usually
+retried automatically if it has not returned any data. +
  +
-When such retries happen, you may want to see a warning that an automatic retry took place. That would be a reason to turn this on.
+When such retries happen, then you may want to see a warning that an automatic retry took place. That would be a reason to turn this on.
 | *Production Usage*          | Not applicable.
 | *Impact*                    | You get a warning message every time a query is automatically retried due to a failure. When there is a node failure,
 then a large number of queries may be impacted. Therefore, you need to assess if you want to see a flood of warnings. The warning is returned after the query completes.
 | *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[explain-description-column-size]]
+== EXPLAIN_DESCRIPTION_COLUMN_SIZE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies maximum length of DESCRIPTION column for EXPLAIN virtual tables.
+| *Values*                    |
+Positive integer > 10,000 +
+ +
+Default: -1, indicating a maximum size of 10,000.
+| *Usage*                     | Query-plan information for a SQL DML statement is stored temporarily in the Explain virtual table. 
+For large queries or queries with complex predicates, the default size of 10 KB may be insufficient to describe certain nodes in the query plan. 
+Specifying a larger value for this CQD allows more bytes to be stored in the description column. +
+ +
+Change this setting if you see explain plan being undesirably truncated only.
+| *Production Usage*          | Yes.
+| *Impact*                    | The explain plan truncation is reduced or removed.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hbase-region-server-max-heap-size]]
+== HBASE_REGION_SERVER_MAX_HEAP_SIZE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Enables Trafodion to use HBase block cache in an optimal manner.  Defines the maximum Java
+heap size (-Xmx option) the HBase Region Server are assigned, in MB units.
+| *Values*                    |
+Positive integer. +
+ +
+Default: *'1024'*.
+| *Usage*                     | If the HBase Region servers are configured with a maximum Java heap size different than 1 GB, then
+set this attribute so that Trafodion is aware of the actual maximum heap size of the Region Servers.
+| *Production Usage*          | Yes.
+| *Impact*                    | When set correctly, this CQD ensures that HBase block cache are be used optimally. Small scans
+are cached and larger scans are not cached to avoid cache trashing.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[hive-metadata-refresh-interval]]
+== HIVE_METADATA_REFRESH_INTERVAL
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Controls the metadata cache for Hive tables.
+| *Values*                    | 
+*-1*: Never invalidate any cache entries. +
+*0*: Always check the latest meta-data from Hive. +
+*> 0*: The cached Hive meta-data is valid only for <value> seconds. +
+ +
+Default: *'0'*.
+| *Usage*                     | Use a value of -1 when the Hive tables are read-only. This allows Trafodion to avoid repeatedly reading the
+metadata when the table is referenced in multiple queries. +
+ +
+Use a value of 0 when updates to the Hive tables are likely to be frequent. +
+ +
+Use a positive value _n_ to cause Trafodion to re-read metadata after n seconds has elapsed.
+Use this option when updates to the Hive table happen at least _n_ seconds apart. 
+| *Production Usage*          | Consult with the Trafodion community.
+| *Impact*                    | Compilation time.
+| *Level*                     | Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
 | *Introduced In Release*     | Trafodion 1.3.0.
@@ -58,7 +136,6 @@ then a large number of queries may be impacted. Therefore, you need to assess if
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Operational Controls $$$
 | *Description*               | Attempts to reduce compilation times by storing and reusing previously compiled query plans.
 It maximizes the chances of plan reuse by parameterizing literals in equality predicates. Two equality predicates, "col = val1" and "col = val2",
 are considered to match if their selectivities match. +
@@ -108,3 +185,52 @@ If the plan object is not produced due to a text cache miss, then the plan is st
 | *Introduced In Release*     | Trafodion 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
+
+<<<
+[[traf-load-allow-risky-index-maintenance]]
+== TRAF_LOAD_ALLOW_RISKY_INDEX_MAINTENANCE
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Allows incremental index maintenance during bulk load.
+| *Values*                    |
+*'ON'*: Incremental index maintenance enabled. +
+*'OFF'*: Incremental index maintenance disabled. +
+ +
+Default: *'OFF'*.
+| *Usage*                     | When this CQD is ON during a bulk load, then any indexes on a table are maintained incrementally.
+New rows are added to the base table and all the indexes in HFiles and then during LOAD COMPLETE phase all new files are moved to HBase.
+Indexes are not offline. However, it causes the index to be inconsistent with the base table if any of the new rows have the same key value as an existing row.
+Change the default to ON only when certain that new rows do not have a conflict with existing rows in table.
+| *Production Usage*          | Yes.
+| *Impact*                    | Bulk load into tables with index is faster, when the attribute is set to ON.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+
+<<<
+[[traf-load-flush-size-in-kb]]
+== TRAF_LOAD_FLUSH_SIZE_IN_KB
+
+[cols="25%h,75%"]
+|===
+| *Description*               | Specifies the flush size used by bulk load when writing to HFiles.
+| *Values*                    |
+Positive integer. +
+ +
+Default: *'2014'*.
+| *Usage*                     | If the system is not memory constrained, then specifying a larger value may make the write phase of the LOAD statement to proceed faster. +
+ +
+Consider using lower values if the table has several indexes and is memory constrained.
+| *Production Usage*          | Yes.
+| *Impact*                    | Affects memory usage patterns and write performance of LOAD.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 1.3.0.
+| *Deprecated In Release*     | Not applicable.
+|===
+

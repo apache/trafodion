@@ -25,22 +25,23 @@ source /etc/trafodion/trafodion_config
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 
 
-echo "***INFO: Getting list of all $HADOOP_TYPE nodes"
-
 curlRC=0
-if [[ $HADOOP_TYPE == "cloudera" ]]; then
+if [ $HADOOP_TYPE == "cloudera" ]; then
    curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts > tempFile
    curlRC=$?
    numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
    grep -r "hostname" tempFile > tempFile2
 
-   if [[ -d /opt/cloudera/parcels/CDH ]]; then
-      HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
-      HADOOP_BIN_PATH="/opt/cloudera/parcels/CDH/bin"
+   if [ -d /opt/cloudera/parcels/CDH ]; then
+      export HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
+      export HADOOP_BIN_PATH="/opt/cloudera/parcels/CDH/bin"
    else
-      HADOOP_PATH="/usr/lib/hbase/lib"
-      HADOOP_BIN_PATH="/usr/bin"
+      export HADOOP_PATH="/usr/lib/hbase/lib"
+      export HADOOP_BIN_PATH="/usr/bin"
    fi
+  echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
+  echo "***INFO: HADOOP_BIN_PATH=$HADOOP_BIN_PATH"
+
 fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
@@ -49,11 +50,13 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
    grep -r "host_name" tempFile > tempFile2
 
-   if [[ -d /usr/lib/hbase/lib ]]; then
+   if [ -d /usr/lib/hbase/lib ]; then
       HADOOP_PATH="/usr/lib/hbase/lib"
    else
       HADOOP_PATH="/usr/hdp/current/hbase-regionserver/lib"
    fi
+   echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
+
 fi
 
 if [ $curlRC != 0 ]; then

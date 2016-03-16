@@ -3501,4 +3501,24 @@ E@           A
           6                     5
 
 --- 5 row(s) selected.
+>>
+>>create table test020t43(c1 int, c2 int ) attribute aligned format ;
+
+--- SQL operation complete.
+>>upsert into test020t43 values (1,1);
+
+--- 1 row(s) inserted.
+>>upsert into test020t43 (c1) values(1);
+
+--- 1 row(s) inserted.
+>>select * from test020t43 ;
+
+C1           C2
+-----------  -----------
+
+          1            1
+          1            ?
+
+--- 2 row(s) selected.
+>>
 >>log;

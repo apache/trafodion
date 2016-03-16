@@ -86,9 +86,9 @@
       </releases>
     </repository>
     <repository>
-      <id>codehaus</id>
-      <name>Codehaus Public</name>
-      <url>http://repository.codehaus.org/</url>
+      <id>codehaus-mule</id>
+      <name>Codehaus Mule Public</name>
+      <url>https://repository-master.mulesoft.org/nexus/content/groups/public/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>

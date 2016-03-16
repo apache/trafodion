@@ -32,17 +32,19 @@ The information herein is complementary to the following Trafodion documentation
 * http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide]
 
 == Intended Audience
-This guide targets anyone wanting to load data into a Trafodion database. You need to have the
-following skill sets to make full of the information in this guide:
+This guide targets anyone wanting to load data into a Trafodion database. 
+
+You need to have skills in the following areas to make full use of the information in this guide:
 
 * SQL DDL and DML.
-* Install and configure Linux software.
+* Installation and configuration of Linux software.
 * Trafodion administration.
 * Depending on your data source, Java and/or Hadoop ecosystem usage.
 
 == New and Changed Information
 This is a new guide.
 
+<<<
 == Notation Conventions
 This list summarizes the notation conventions for syntax presentation in this manual.
 

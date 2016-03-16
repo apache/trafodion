@@ -6149,6 +6149,12 @@ int main (int argc, char *argv[])
     else
     {
         gethostname(MyNode, MPI_MAX_PROCESSOR_NAME);
+        char *tmpptr = MyNode;
+        while ( *tmpptr )
+        {
+            *tmpptr = (char)tolower( *tmpptr );
+            tmpptr++;
+        }
         if ( !load_nodes() )
         {
             exit (1);

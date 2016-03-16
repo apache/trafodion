@@ -72,7 +72,6 @@ include::asciidoc/_chapters/sql_functions_and_expressions.adoc[]
 include::asciidoc/_chapters/olap_functions.adoc[]
 include::asciidoc/_chapters/runtime_stats.adoc[]
 include::asciidoc/_chapters/reserved_words.adoc[]
-include::asciidoc/_chapters/cqds.adoc[]
 include::asciidoc/_chapters/limits.adoc[]
 
 

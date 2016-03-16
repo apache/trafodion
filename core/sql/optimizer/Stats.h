@@ -965,7 +965,7 @@ public:
   // NB: no need for a dtor
   //
   Interval () :
-      loIndex_(NULL_COLL_INDEX), hist_(NULL)
+      loIndex_(NULL_COLL_INDEX), hist_(0)
   {}
 
   Interval (CollIndex startIndex, const HistogramSharedPtr& hist) :
@@ -1137,10 +1137,10 @@ public:
   inline NABoolean isNull() const { return (hiBound().isNullValue()) ; }
 
   // make sure we don't use Intervals that have been compromised
-  inline void setInvalid() { hist_ = NULL ; }
+  inline void setInvalid() { hist_ = 0; }
   inline NABoolean isValid() const
   {
-    return ( (hist_ != NULL) &&
+    return ( (hist_ != 0) &&
              ((loIndex_+2) <= hist_->entries()) ) ;
   }
   // was loIndex_ <= hist_->entries()-2, but we hate underflow!
@@ -1446,7 +1446,7 @@ public:
   ColStats (ComUID & histid, CostScalar uec = 0, CostScalar rowcount = 0,
             CostScalar baseRowCount = -1,
 	    NABoolean unique = FALSE, NABoolean shapeChanged = FALSE,
-	    const HistogramSharedPtr& desc = NULL, NABoolean modified = FALSE,
+	    const HistogramSharedPtr& desc = 0, NABoolean modified = FALSE,
 	    CostScalar rowRedFactor = 1.0, CostScalar uecRedFactor = 1.0,
                  Int32 avgVarcharSize = 0,  
 	    NAMemory* heap=0, NABoolean allowMinusOne=FALSE);
