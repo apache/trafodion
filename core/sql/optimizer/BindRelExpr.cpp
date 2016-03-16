@@ -9888,7 +9888,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
                    (nacol->getDefaultClass() == COM_IDENTITY_GENERATED_BY_DEFAULT)) {
             setSystemGeneratesIdentityValue(TRUE);
           }
-          else 
+          else if (nacol->getDefaultClass() != COM_NO_DEFAULT)
             omittedDefaultCols = TRUE;
 
           // Bind the default value, make an Assign, etc, as above
@@ -10112,15 +10112,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
          *CmpCommon::diags() << DgSqlCode(-4490);
     }
   }
-  if (isUpsert() && (!getIsTrafLoadPrep()) && 
-        (((!isAlignedRowFormat) && omittedCurrentDefaultClassCols) || 
-             (isAlignedRowFormat && omittedDefaultCols)) 
-              && (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF)) {
-    boundExpr = xformUpsertToMerge(bindWA);
-    return boundExpr;
-  }
-  else 
-  if (isUpsertThatNeedsMerge()) {
+
+  if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
     boundExpr = xformUpsertToMerge(bindWA);
     return boundExpr;
   }
@@ -10171,17 +10164,26 @@ matched clause of merge). If the upsert caused a row to be updated in the
 base table then the old version of the row will have to be deleted from 
 indexes, and a new version inserted. Upsert is being transformed to merge
 so that we can delete the old version of an updated row from the index.
-*/
-NABoolean Insert::isUpsertThatNeedsMerge() const
-{
-  if (!isUpsert() || getIsTrafLoadPrep() || 
-      (getTableDesc()->isIdentityColumnGeneratedAlways() && 
-       getTableDesc()->hasIdentityColumnInClusteringKey()) ||
-      getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey() || 
-      !(getTableDesc()->hasSecondaryIndexes()))
-    return FALSE;
 
-  return TRUE;
+Upsert is also converted into merge when there are omitted cols with default values and 
+TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS is set to  OFF in case of aligned format table or 
+omitted current timestamp cols in case of non-aligned row format
+*/
+NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
+                                   NABoolean omittedCurrentDefaultClassCols) const
+{
+  if (isUpsert() && 
+      (NOT getIsTrafLoadPrep()) && 
+      (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
+      (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
+       ((getTableDesc()->hasSecondaryIndexes()) ||
+         (( NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+             ((isAlignedRowFormat && omittedDefaultCols
+              && (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF)))
+       ))
+     return TRUE;
+  else
+     return FALSE;
 }
 
 RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA) 
