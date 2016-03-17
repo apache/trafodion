@@ -228,4 +228,3 @@ NAString ComConvertTrafNameToNativeName(
   return convertedName;
 }
 
-

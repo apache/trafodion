@@ -65,10 +65,11 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Apr 22 14:46:39 2015
+-- Definition current  Thu Feb 25 08:40:12 2016
 
   (
-    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
 --- SQL operation complete.
@@ -117,10 +118,11 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Apr 22 14:46:39 2015
+-- Definition current  Thu Feb 25 08:40:13 2016
 
   (
-    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
 --- SQL operation complete.
@@ -176,10 +178,11 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Apr 22 14:46:59 2015
+-- Definition current  Thu Feb 25 08:40:32 2016
 
   (
-    A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 
@@ -226,10 +229,11 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Apr 22 14:47:01 2015
+-- Definition current  Thu Feb 25 08:40:34 2016
 
   (
-    A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
 

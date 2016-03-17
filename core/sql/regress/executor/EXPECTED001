@@ -32,11 +32,12 @@
 >>
 >>invoke t001t1;
 
--- Definition of table CAT.SCH.T001T1
--- Definition current  Tue Aug 10 22:34:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T001T1
+-- Definition current  Thu Feb 25 07:44:34 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                CHAR(9) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   , C                                INT DEFAULT NULL
@@ -47,13 +48,13 @@
 --- SQL operation complete.
 >>invoke t001tn;
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>invoke t001t2;
 
--- Definition of table CAT.SCH.T001T2
--- Definition current  Tue Aug 10 22:34:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T001T2
+-- Definition current  Thu Feb 25 07:44:36 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -63,12 +64,13 @@
   , D                                CHAR(4) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke t001t3;
 
--- Definition of table CAT.SCH.T001T3
--- Definition current  Tue Aug 10 22:34:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T001T3
+-- Definition current  Thu Feb 25 07:44:38 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -78,17 +80,19 @@
   , D                                CHAR(4) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC, B ASC)
 
 --- SQL operation complete.
 >>
 >>#ifMX
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
--- Definition of table CAT.SCH.T001UT1
--- Definition current  Tue Aug 10 22:34:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T001UT1
+-- Definition current  Thu Feb 25 07:44:38 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                CHAR(9) CHARACTER SET UCS2 COLLATE DEFAULT
       DEFAULT NULL
   , C                                INT DEFAULT NULL
@@ -99,8 +103,8 @@
 --- SQL operation complete.
 >>invoke $$TEST_SCHEMA_NAME$$.t001ut2;
 
--- Definition of table CAT.SCH.T001UT2
--- Definition current  Tue Aug 10 22:34:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T001UT2
+-- Definition current  Thu Feb 25 07:44:39 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -110,12 +114,13 @@
   , D                                CHAR(4) CHARACTER SET UCS2 COLLATE DEFAULT
       DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>invoke         t001ut3;
 
--- Definition of table CAT.SCH.T001UT3
--- Definition current  Tue Aug 10 22:34:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T001UT3
+-- Definition current  Thu Feb 25 07:44:40 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -125,6 +130,7 @@
   , D                                CHAR(4) CHARACTER SET UCS2 COLLATE DEFAULT
       DEFAULT NULL
   )
+  PRIMARY KEY (A ASC, B ASC)
 
 --- SQL operation complete.
 >>#ifMX
@@ -173,8 +179,8 @@ A            B          C            D
 A            B          C            D   
 -----------  ---------  -----------  ----
 
-         20  defg                30  wx  
          10  abc                 20  xy  
+         20  defg                30  wx  
 
 --- 2 row(s) selected.
 >>select * from t001t3;
@@ -202,8 +208,8 @@ A            B                   C            D
 A            B                   C            D       
 -----------  ------------------  -----------  --------
 
-         20  defg                         30  wx      
          10  abc                          20  xy      
+         20  defg                         30  wx      
 
 --- 2 row(s) selected.
 >>select * from t001ut3;
@@ -211,8 +217,8 @@ A            B                   C            D
 A            B                   C            D       
 -----------  ------------------  -----------  --------
 
-         20  defg                         30  wx      
          10  abc                          20  xy      
+         20  defg                         30  wx      
 
 --- 2 row(s) selected.
 >>#ifMX
@@ -396,10 +402,10 @@ A            D
 A            B                   C            D         A            B                   C            D
 -----------  ------------------  -----------  --------  -----------  ------------------  -----------  --------
 
-         10  abc                          20  xy                 20  defg                         30  wx      
          10  abc                          20  xy                 10  abc                          20  xy      
-         20  defg                         30  wx                 20  defg                         30  wx      
+         10  abc                          20  xy                 20  defg                         30  wx      
          20  defg                         30  wx                 10  abc                          20  xy      
+         20  defg                         30  wx                 20  defg                         30  wx      
 
 --- 4 row(s) selected.
 >>#ifMX
@@ -554,14 +560,14 @@ select a from t001t1 where b like _SJIS'sj';
 >>
 >>select b from t001tn UNION     select d from t001tn;
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>			-- not comparable
 >>select b from t001tn UNION ALL select d from t001tn;
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -569,7 +575,7 @@ select a from t001t1 where b like _SJIS'sj';
 >>select * from (
 +>  select b from t001tn UNION ALL select d from t001tn) u(b) where b='x';
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -577,7 +583,7 @@ select a from t001t1 where b like _SJIS'sj';
 >>select * from (
 +>  select b from t001tn UNION ALL select d from t001tn) u(b) where b=(select b from t001tn);
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -586,7 +592,7 @@ select a from t001t1 where b like _SJIS'sj';
 
 *** WARNING[3169] SJIS is not a known collation.
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -595,7 +601,7 @@ select a from t001t1 where b like _SJIS'sj';
 
 *** WARNING[3169] SJIS is not a known collation.
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -605,7 +611,7 @@ select a from t001t1 where b like _SJIS'sj';
 
 *** WARNING[3169] SJIS is not a known collation.
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -613,7 +619,7 @@ select a from t001t1 where b like _SJIS'sj';
 
 *** WARNING[3169] XYZW is not a known collation.
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -622,7 +628,7 @@ select a from t001t1 where b like _SJIS'sj';
 
 *** WARNING[3169] XYZW is not a known collation.
 
-*** ERROR[4082] Object CAT.SCH.T001TN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T001TN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -663,8 +669,8 @@ A            A
 A            A          
 -----------  -----------
 
-         10           20
          10           10
+         10           20
          20           10
 
 --- 3 row(s) selected.
@@ -675,8 +681,8 @@ A            A
 A            A          
 -----------  -----------
 
-         10           20
          10           10
+         10           20
          20           10
 
 --- 3 row(s) selected.
@@ -696,10 +702,10 @@ A            A
 A            B          C            D     A            B          C            D
 -----------  ---------  -----------  ----  -----------  ---------  -----------  ----
 
-         10  abc                 20  xy             20  defg                30  wx  
          10  abc                 20  xy             10  abc                 20  xy  
-         20  defg                30  wx             20  defg                30  wx  
+         10  abc                 20  xy             20  defg                30  wx  
          20  defg                30  wx             10  abc                 20  xy  
+         20  defg                30  wx             20  defg                30  wx  
 
 --- 4 row(s) selected.
 >>
@@ -737,8 +743,8 @@ A
 A            B        
 -----------  ---------
 
-         20  defg     
          10  abc      
+         20  defg     
 
 --- 2 row(s) selected.
 >>
@@ -766,8 +772,8 @@ A
 A          
 -----------
 
-         20
          10
+         20
 
 --- 2 row(s) selected.
 >>select x.a, x.b from (select a, b, c from t001ut1 natural join t001ut2) x join t001ut3
@@ -886,8 +892,8 @@ A            B          C            D
 A            B          C            D   
 -----------  ---------  -----------  ----
 
-         20  gfe                 31  wx  
          10  abc                 20  xy  
+         20  gfe                 31  wx  
 
 --- 2 row(s) selected.
 >>
@@ -914,8 +920,8 @@ A            B                   C            D
 A            B                   C            D       
 -----------  ------------------  -----------  --------
 
-         20  gfe                          31  wx      
          10  abc                          20  xy      
+         20  gfe                          31  wx      
 
 --- 2 row(s) selected.
 >>#ifMX

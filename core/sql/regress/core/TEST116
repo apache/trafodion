@@ -143,22 +143,31 @@ insert into t116t3 values(2,2,'b');
 drop table if exists t116t1;
 create table t116t1(a int not null, b varchar(2), 
    c varchar(4) character set utf8 not null);
+create view t116v1 as select * from t116t1;
 invoke t116t1;
 begin work;
+invoke t116t1;
+invoke t116v1;
 alter table t116t1 alter column b varchar(3);
 invoke t116t1;
+invoke t116v1;
 commit work;
 invoke t116t1;
+invoke t116v1;
 
 begin work;
+invoke t116t1;
+invoke t116v1;
 alter table t116t1 alter column b varchar(4);
 invoke t116t1;
+invoke t116v1;
 rollback work;
 
 invoke t116t1;
+invoke t116v1;
 
 -- concurrent ddl operations
-drop table if exists t116t1;
+drop table if exists t116t1 cascade;
 begin work;
 create table t116t1 (a int);
 

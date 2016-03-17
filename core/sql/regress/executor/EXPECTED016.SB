@@ -71,7 +71,8 @@
 -- Definition current  Wed May 14 05:01:26 2014
 
   (
-    A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
   , B                                NUMERIC(18, 0) UNSIGNED NO DEFAULT NOT
       NULL NOT DROPPABLE
   , C                                NUMERIC(20, 0) DEFAULT
@@ -135,6 +136,7 @@ CREATE TABLE TRAFODION.SCH.T016T1
       NULL NOT DROPPABLE
   , C                                NUMERIC(21, 21) DEFAULT NULL
   )
+  PRIMARY KEY (A ASC, B ASC)
 
 --- SQL operation complete.
 >>showddl t016t2;
@@ -382,7 +384,8 @@ A                                          B                      C
 -- Definition current  Wed May 14 05:01:40 2014
 
   (
-    A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                NUMERIC(10, 0) UNSIGNED DEFAULT NULL
   , B                                NUMERIC(18, 0) UNSIGNED NO DEFAULT NOT
       NULL NOT DROPPABLE
   , C                                NUMERIC(20, 0) DEFAULT NULL
@@ -416,7 +419,8 @@ A                                          B                      C
 -- Definition current  Wed May 14 05:01:42 2014
 
   (
-    JJ                               NUMERIC(128, 0) UNSIGNED DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , JJ                               NUMERIC(128, 0) UNSIGNED DEFAULT NULL
   , KF                               NUMERIC(128, 0) DEFAULT NULL
   )
 

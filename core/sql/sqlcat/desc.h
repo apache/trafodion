@@ -171,6 +171,7 @@ struct indexes_desc_struct {
   char *indexname;  // physical name of index. Different from ext_indexname
                     // for ARK tables.
   ULng32 redeftime[2];
+  Int64 indexUID;
   Int32 issystemtablecode;	// ...but too much bother in ReadTableDef.C
   // Indicates whether it is a vertical partition or an index
   ComPartitioningScheme partitioningScheme;     // round robin, range, etc.

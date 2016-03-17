@@ -75,10 +75,11 @@
 >>invoke table_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.TABLE_NAME
--- Definition current  Fri Aug  8 22:34:29 2014
+-- Definition current  Thu Feb 25 06:24:08 2016
 
   (
-    ABSOLUTE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ABSOLUTE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
   , ACCESS                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   , ANSIVARCHAR                      INT NO DEFAULT NOT NULL NOT DROPPABLE
   , ASCENDING                        INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -223,10 +224,11 @@
 >>invoke system_name;
 
 -- Definition of Trafodion table TRAFODION.SCH.SYSTEM_NAME
--- Definition current  Fri Aug  8 22:34:33 2014
+-- Definition current  Thu Feb 25 06:24:10 2016
 
   (
-    LARGEINT                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LARGEINT                         INT NO DEFAULT NOT NULL NOT DROPPABLE
   , LEADING_PRECISION                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , LENGTH                           INT NO DEFAULT NOT NULL NOT DROPPABLE
   , LINE_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -648,7 +650,7 @@ SELECT GENERAL GENERAL from (values(0)) GENERAL(GENERAL);
 
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT IDENTITY IDENTITY from (values(0)) IDENTITY(IDENTITY);
-                       ^ (24 characters from start of SQL statement)
+              ^ (15 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1010,7 +1012,7 @@ SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);
 
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT ROW ROW from (values(0)) ROW(ROW);
-             ^ (14 characters from start of SQL statement)
+         ^ (10 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
