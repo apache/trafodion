@@ -24,13 +24,13 @@
 ////
 
 = Run Commands Interactively
-After launching TrafCI, you can run SQL statements and interface commands in the command-line interface.
+After launching trafci, you can run SQL statements and interface commands in the command-line interface.
 
 == User Interface
 
 === Product Banner
 
-After you launch TrafCI and connect to the database platform, the product banner appears in the
+After you launch trafci and connect to the database platform, the product banner appears in the
 command-line interface:
 
 image:{images}/launch02.jpg[Product banner]
@@ -68,7 +68,7 @@ for parts that you enclose in single-quotes (`'`) or double-quotes (`"`).
 <<<
 == Interface Commands
 
-The interface commands allow you to customize TrafCI (for example, by using `SET` commands) or 
+The interface commands allow you to customize trafci (for example, by using `SET` commands) or 
 return information about the interface settings or database objects (for example, 
 by using `SHOW commands`).
 
@@ -79,7 +79,7 @@ command across more than one line, enter the SQL terminator and then reenter the
 
 === Show Session Attributes
 
-To display the attributes and settings of the current TrafCI session, use the `ENV`, `SHOW SESSION`, 
+To display the attributes and settings of the current trafci session, use the `ENV`, `SHOW SESSION`, 
 or `SESSION` command. 
 
 *Example*
@@ -98,7 +98,7 @@ LOG OPTIONS      APPEND,CMDTEXT ON
 MARKUP           RAW
 PROMPT           SQL>
 SCHEMA           SEABASE
-SERVER           sqws135.houston.host.com:37800 
+SERVER           sqws135.houston.host.com:23400 
 SQLTERMINATOR    ;
 STATISTICS       OFF
 TIME             OFF
@@ -233,7 +233,7 @@ the <<cmd_show_sqlterminator, SHOW SQLTERMINATOR Command>>.
 [[interactive_display_elapsed_time]]
 === Display the Elapsed Time
 
-By default, TrafCI does not display the elapsed time of an SQL statement after the statement 
+By default, trafci does not display the elapsed time of an SQL statement after the statement 
 executes. To display the elapsed time after each SQL statement executes, enter the `SET TIMING ON` 
 command:
 
@@ -274,7 +274,7 @@ For more information, see the <<cmd_set_timing, SET TIMING Command>>.
 === Set and Show the Current Schema
 
 By default, the schema of the session is `USR`. The SQL statement, `SET SCHEMA`, 
-allows you to set the schema for the TrafCI session. 
+allows you to set the schema for the trafci session. 
 
 *Example*
 
@@ -352,7 +352,7 @@ For more information, see the <<cmd_set_list_count, SET LIST_COUNT Command>> and
 [[interactive_history]]
 === Display Executed Commands
 
-To display commands that were recently executed in the TrafCI session, enter the 
+To display commands that were recently executed in the trafci session, enter the 
 `HISTORY` command. The `HISTORY` command associates each command with a number that 
 you can use to re-execute or edit the command with the `FC` command. See 
 <<edit_reexecute_command, Edit and Reexecute a Command>>.
@@ -376,7 +376,7 @@ To save the session history in a user-specified file, enter the `SAVEHIST` comma
 *Example*
 
 This `SAVEHIST` command saves the session history in a file named `history.txt` in the 
-local directory where you are running TrafCI:
+local directory where you are running trafci:
 
 ```
 SQL> SAVEHIST history.txt
@@ -389,7 +389,7 @@ the <<cmd_savehist, SAVEHIST Command>>.
 [[edit_reexecute_command]]
 === Edit and Reexecute a Command
 
-To edit and reexecute a command in the history buffer of an TrafCI session, enter the `FC` command. 
+To edit and reexecute a command in the history buffer of an trafci session, enter the `FC` command. 
 To display the commands in the history buffer, use the `HISTORY` command. See 
 <<interactive_history, Display Executed Commands>>.
 
@@ -412,7 +412,7 @@ Pressing Enter executes the corrected `SELECT` statement. For more information, 
 <<<
 === Clear the Interface Window
 
-After entering commands in TrafCI, you can clear the interface window by using the `CLEAR` command. 
+After entering commands in trafci, you can clear the interface window by using the `CLEAR` command. 
 
 *Example*
 
@@ -427,7 +427,7 @@ For more information, see the <<cmd_clear, CLEAR Command>>.
 
 === Obtain Help
 
-To display help text for an interface command that is supported in TrafCI, enter the `HELP` command. 
+To display help text for an interface command that is supported in trafci, enter the `HELP` command. 
 
 *Example*
 
@@ -442,19 +442,19 @@ For more information, see the <<cmd_help, HELP Command>>.
 <<<
 == Run SQL Statements
 
-In TrafCI, you can run SQL statements interactively. TrafCI supports all the SQL statements, 
+In trafci, you can run SQL statements interactively. trafci supports all the SQL statements, 
 SQL utilities, and other SQL-related commands that the Trafodion database engine supports. 
 For more information about those SQL statements, see the 
 http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
-To run SQL statements from script files in TrafCI, see <<run_scripts, Run Scripts>>.
+To run SQL statements from script files in trafci, see <<run_scripts, Run Scripts>>.
 
 === Execute an SQL Statement
 
 *Example*
 
 You can query the `EMPLOYEE` table and return an employee’s salary by executing this `SELECT` statement 
-in TrafCI:
+in trafci:
 
 ```
 SQL> SELECT salary
@@ -480,9 +480,9 @@ SALARY
 SQL>
 ```
 
-If the SQL statement executes successfully, TrafCI returns a message indicating that the SQL 
+If the SQL statement executes successfully, trafci returns a message indicating that the SQL 
 operation was successful, followed by the standard prompt. If a problem occurs during the 
-execution of the SQL statement, TrafCI returns an error message.
+execution of the SQL statement, trafci returns an error message.
 
 <<<
 === Repeat an SQL Statement
@@ -587,7 +587,7 @@ http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion S
 
 [[interactive_set_parameters]]
 ==== Setting Parameters
-In an TrafCI session, you can set a parameter of an SQL statement (either prepared or not) 
+In an trafci session, you can set a parameter of an SQL statement (either prepared or not) 
 by using the SET PARAM command.
 
 NOTE: The parameter name is case-sensitive. If you specify it in lowercase in the 
@@ -793,7 +793,7 @@ http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion S
 [[interactive_log_output]]
 == Log Output
 
-To log an TrafCI session, use the `SPOOL` or `LOG` command. The `SPOOL` and `LOG` commands 
+To log an trafci session, use the `SPOOL` or `LOG` command. The `SPOOL` and `LOG` commands 
 record into a log file the commands that you enter in the command-line interface and the 
 output of those commands.
 
@@ -811,7 +811,7 @@ the <<cmd_spool, SPOOL Command>>.
 ==== `SPOOL ON` or `LOG ON` Command
 
 The `SPOOL ON` or `LOG ON` command logs information about a session in the `sqlspool.lst`
-file, which TrafCI stores in the bin directory:
+file, which trafci stores in the bin directory:
 
 * On Windows:
 +
@@ -820,7 +820,7 @@ file, which TrafCI stores in the bin directory:
 ```
 +
 `_trafci-installation-directory_` is the directory where you installed the
-TrafCI software files.
+trafci software files.
 
 * On Linux:
 +
@@ -829,7 +829,7 @@ TrafCI software files.
 ```
 +
 `_trafci-installation-directory_` is the directory where you installed
-the TrafCI software files.
+the trafci software files.
 
 *Example*
 
@@ -844,7 +844,7 @@ SQL> SPOOL ON
 The `SPOOL _log-file_` and `LOG _log-file_` commands record information about a session 
 in a log file that you specify. If you specify a directory for the log file, the 
 directory must exist as specified. Otherwise, an error occurs when you try to run the 
-`SPOOL` or `LOG` command. If you do not specify a directory for the log file, TrafCI uses the 
+`SPOOL` or `LOG` command. If you do not specify a directory for the log file, trafci uses the 
 `bin` directory.
 
 *Example*
@@ -860,7 +860,7 @@ SQL> SPOOL C:\log\persnl_updates.log
 ==== Using the `CLEAR` Option
 
 The CLEAR option clears the contents of an existing log file before logging new information to 
-the file. If you omit CLEAR, TrafCI appends new information to existing information in the log file.
+the file. If you omit CLEAR, trafci appends new information to existing information in the log file.
 
 *Example*
 
@@ -871,9 +871,9 @@ starts logging the session in the log file:
 SQL> SPOOL C:\log\persnl_updates.log clear
 ```
 
-==== Log Concurrent the TrafCI Sessions
+==== Log Concurrent the trafci Sessions
 
-If you plan to run two or more TrafCI sessions concurrently on the same workstation, use the 
+If you plan to run two or more trafci sessions concurrently on the same workstation, use the 
 `SPOOL _log-file_` or `LOG _log-file_` command and specify a unique name for each log file. 
 Otherwise, each session writes information to the same log file, making it difficult to determine 
 which information belongs to each session.
@@ -887,7 +887,7 @@ To stop logging, enter one of these commands:
 
 *Example*
 
-This SPOOL OFF command stops logging in an TrafCI session:
+This SPOOL OFF command stops logging in an trafci session:
 
 ```
 SQL> SPOOL OFF
@@ -896,7 +896,7 @@ SQL> SPOOL OFF
 <<<
 === View the Contents of a Log File
 
-The log file is an ASCII text file that contains all the lines in TrafCI from the time you start 
+The log file is an ASCII text file that contains all the lines in trafci from the time you start 
 logging to the time you stop logging. The logged lines include prompts, entered commands, 
 output from commands, and diagnostic messages.
 

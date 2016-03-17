@@ -66,13 +66,13 @@ Microsoft® and Windows® are U.S. registered trademarks of Microsoft Corporatio
 
 include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
-include::asciidoc/_chapters/odbc_windows.adoc[]
-include::asciidoc/_chapters/odbc_linux.adoc[]
 include::asciidoc/_chapters/jdbct4.adoc[]
 include::asciidoc/_chapters/trafci.adoc[]
-include::asciidoc/_chapters/odb.adoc[]
 include::asciidoc/_chapters/dbviz.adoc[]
 include::asciidoc/_chapters/SQuirrel.adoc[]
+include::asciidoc/_chapters/odbc_linux.adoc[]
+include::asciidoc/_chapters/odb.adoc[]
+include::asciidoc/_chapters/odbc_windows.adoc[]
 
 = Appendix
 include::asciidoc/_chapters/sample_prog.adoc[]

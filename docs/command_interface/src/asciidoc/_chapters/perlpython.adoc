@@ -23,17 +23,17 @@
   */
 ////
 
-= Run TrafCI From Perl or Python
+= Run trafci From Perl or Python
 
-You can execute SQL statements in Perl or Python by invoking the TrafCI
+You can execute SQL statements in Perl or Python by invoking the trafci
 Perl or Python wrapper script.
 
-These instructions assume that you installed the TrafCI product. For more information,
+These instructions assume that you installed the trafci product. For more information,
 see <<install, Install and Configure>>.
 
 == Set the Login Environment Variables
 
-Before launching TrafCI from Perl or Python, set these login environment variables:
+Before launching trafci from Perl or Python, set these login environment variables:
 
 
 [cols="45%l,55%",options="header"]
@@ -181,9 +181,9 @@ script is `trafci.py`. By default, these wrapper scripts are located in the `bin
 | Linux/Unix       | <trafci-installation-directory>/trafci/bin
 |===
 
-_trafci-installation-directory_ is the directory where you installed the TrafCI software files.
+_trafci-installation-directory_ is the directory where you installed the trafci software files.
 
-== Launch TrafCI From the Perl or Python Command Line
+== Launch trafci From the Perl or Python Command Line
 
 You can launch the Perl or Python wrapper scripts as shown below:
 
@@ -206,7 +206,7 @@ use Session;
 $sess = Session->new();
 
 # connect to the database
-$sess->connect("user1","password","16.123.456.78","37800");
+$sess->connect("user1","password","16.123.456.78","23400");
 
 $retval=$sess->execute(" set schema TRAFODION.CI_SAMPLE ");
 print $retval;
@@ -235,7 +235,7 @@ import Session
 sess = Session.Session()
 
 # Connect to the database
-x=sess. connect ("user1","password","16.123.456.78","37800")
+x=sess. connect ("user1","password","16.123.456.78","23400")
 
 # Execute sample queries
 
