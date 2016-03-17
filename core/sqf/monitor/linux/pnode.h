@@ -285,6 +285,7 @@ public:
     inline void SetTmSyncNid( int nid ) { tmSyncNid_ = nid; }
     inline void SetTmSyncState( SyncState syncState ) { tmSyncState_ = syncState; }
     inline void SetZone( int zid ) { zid_ = zid; }
+    inline void SetName( char *newName ) { if (newName) strcpy (name_, newName); }
     void StartPStartDProcess( void );
     void StartPStartDPersistent( void );
     void StartPStartDPersistentDTM( int nid );

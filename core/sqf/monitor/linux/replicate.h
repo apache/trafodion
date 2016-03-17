@@ -284,6 +284,20 @@ private:
     int pnid_;
 };
 
+class CReplNodeName: public CReplObj
+{
+public:
+    CReplNodeName(const char *current_name, const char *new_name);
+    virtual ~CReplNodeName();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    string current_name_;
+    string new_name_;
+};
+
+
 class CReplNodeUp: public CReplObj
 {
 public:
