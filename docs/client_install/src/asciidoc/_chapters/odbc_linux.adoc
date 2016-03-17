@@ -63,7 +63,6 @@ NOTE: The following header files are not packaged with the Trafodion ODBC driver
  +
 To install those header files, <<win_odbc_client_env, Setting Up the Client Environment>>..
 
-<<<
 === Install/Reinstall Linux ODBC Driver
 
 NOTE: You must have root access to install the Trafodion ODBC Driver for Linux at the default system location.
@@ -92,6 +91,7 @@ Except for the sample file, the `install.sh` script saves a copy (`.SAV`) of you
 6.  Enter a directory for the data-source template file, or press *Enter* to use the default directory (`/etc/odbc`).
 7.  Enter a directory for the sample program, or press *Enter* to use the default directory (`/etc/odbc`).
 
+<<<
 === Set Up Client Environment
 
 If you selected default options during installation, ensure that:
@@ -166,6 +166,7 @@ NOTE: For better performance, we recommend that you use at least version `2.3._x
 * For information on the necessary data-source configuration options, you will need to add to the respective configuration files (for example,
 to `odbc.ini`).
 
+<<<
 === Run Sample Program (`connect_test`)
 
 NOTE: The examples after each step assume that you have default installation directories.
@@ -211,6 +212,8 @@ SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
 SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
 SQL_QUERY_TIMEOUT = NO_TIMEOUT
 ```
++
+<<<
 
 4.  Compile the sample program.
 +
@@ -255,8 +258,6 @@ export LD_LIBRARY_PATH=<path-to-odbc-driver-dlls>
 
 3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`. For example:
 +
-<<<
-+
 *Example*
 +
 ```
@@ -271,6 +272,8 @@ SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
 SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
 SQL_QUERY_TIMEOUT = NO_TIMEOUT
 ```
++
+<<<
 
 4.  Compile the sample program.
 +

@@ -27,7 +27,7 @@
 == Installation Requirements
 
 The Trafodion Command Interface (trafci) runs on Windows and Linux. Before installing trafci on the client workstation, 
-ensure that you've installed the JBDC Type-4 driver. See the <<jdbct4, Install JDBC Type-4 Driver>> chapter above.
+ensure that you've installed the JDBC Type-4 driver. See the <<jdbct4, Install JDBC Type-4 Driver>> chapter above.
 
 [[trafci_perl_python]]
 === Install Perl or Python
@@ -45,6 +45,7 @@ If you plan to run the sample scripts provided with trafci, verify that you have
 installed on your client workstation. Use the trafci Installation Wizard to automatically download and install both the Perl JavaServer and
 Jython open source extensions. To download them manually, see the `README` in the samples directory.
 
+<<<
 [[trafci-installation-instructions]]
 == Installation Instructions
 
@@ -268,6 +269,9 @@ Do you want to install the optional components? [Y]:
 
 6.  If you do not wish to download and install the optional components, type *N* at the prompt and press Enter, and your installation
 is complete. Otherwise, type *Y*, press *Enter*, and proceed through the remainder of the installation.
++
+<<<
+
 7.  Type *Y* and press *Enter* if you agree to the terms. If you are doing an optional install only, you are prompted to enter a valid trafci
 installation directory:
 +
@@ -331,6 +335,7 @@ Trafodion Command Interface Installation Complete.
 /home/myname/trafcitemp>
 ```
 
+<<<
 [[trafci-post-installation-instructions]]
 == Post-Installation Instructions
 
@@ -364,7 +369,7 @@ http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodi
 |===
 
 <<<
-=== Test Launching trafci
+== Test Launching trafci
 
 Before launching trafci, make sure that you have set the Java path to the correct location. For more information, see:
 
@@ -381,8 +386,8 @@ momentarily in the trafci window before the trafci window disappears:
 For information about setting up and using trafci, such as choosing the look and feel of the interface or presetting launch parameters, see the
 http://trafodion.incubator.apache.com/docs/command_interface/index.html[Trafodion Command Interface Guide].
 
-
-==== Windows Example
+<<<
+=== Windows Example
 
 On Windows, do the following:
 
@@ -428,7 +433,8 @@ SEABASE   _MD_      _REPOS_   _LIBMGR_
 SQL>
 ```
 
-==== Linux Example
+<<<
+=== Linux Example
 
 On Linux, do the following:
 
@@ -455,6 +461,7 @@ SEABASE   _MD_      _REPOS_   _LIBMGR_
 SQL>
 ```
 
+<<<
 [[trafci-uninstall]]
 == Uninstall trafci
 

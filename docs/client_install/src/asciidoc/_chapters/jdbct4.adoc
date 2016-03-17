@@ -1,4 +1,4 @@
-////
+a////
 /**
  *@@@ START COPYRIGHT @@@
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -58,6 +58,7 @@ C:\>
 The Java version should be *1.7* or higher. If the returned version is not supported, please refer to
 <<jdbct4-install-java, Installing a Supported Java Version>> below.
 
+<<<
 If you see this message:
 
 ```
@@ -178,16 +179,10 @@ You download and extract the Trafodion client package using the instructions in 
 ```
 unzip JDBCT4.zip -d $HOME/jdbc
 ```
-+
-The command creates these subdirectories and files:
-+
-[cols="65%,35%",options="header"]
-|===
-| Default Installation Directory                                  | Client Operating System
-| _<user-specified directory>_ (For example: $HOME/jdbc)          | Windows or Linux
-|===
 
-[cols="30%l,25%l,45%",options="header"]
+The content of the target directory is as follows:
+
+[cols="33%l,30%l,37%",options="header"]
 |===
 | Installation Folder                | Files                        | Description
 | /lib                               | jdbcT4.jar                   | Product JAR file.
@@ -223,6 +218,7 @@ replacing `_jdbc-installation-directory_` with the name of the directory where y
 
 ^1^ Enclose the _jdk-directory_ in quotes to ensure that Windows can find the directory correctly. You can use the `set <variable>` command to verify the setting.
 
+<<<
 === Configure Applications
 
 Edit the `t4jdbc.properties` file in the `samples` folder. Refer to the `README` file in the `samples` folder for instructions.
@@ -256,6 +252,7 @@ url = jdbc:t4jdbc://trafodion.host.com:23400/:
 
 NOTE: The driver’s class name is `org.trafodion.jdbc.t4.T4Driver`.
 
+<<<
 [[jdbct4-test-programs]]
 == Test Programs
 
@@ -274,7 +271,7 @@ C:\Development Tools\Trafodion JDBCT4\samples>cd StatementSample
 C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
 Note: ..\common\sampleUtils.java uses or overrides a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
-
+v
 C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties StatementSample
 Mar 16, 2016 9:36:54 PM common.sampleUtils getPropertiesConnection
 INFO: DriverManager.getConnection(url, props) passed
@@ -347,6 +344,7 @@ End of Data
 C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>
 ```
 
+<<<
 == Uninstall JDBC Type-4 Driver
 Run one of these sets of commands to remove the Trafodion JDBC Type 4 Driver:
 
@@ -368,6 +366,8 @@ rm -rf ~/jdbc
 del <jdbc-installation-directory>
 rmdir <jdbc-installation-directory>
 ```
++
+<<<
 +
 *Example*
 +
@@ -404,6 +404,7 @@ JDBC, Are you sure (Y/N)? Y
 C:\>
 ```
 
+<<<
 == Reinstall JDBC Type-4 Driver
 
 1. Close all applications running on the workstation, except the Web browser.
