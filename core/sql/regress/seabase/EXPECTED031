@@ -1,0 +1,214 @@
+>>
+>>-- tests for PRIMARY KEY constraint usage
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null, b int not null, constraint ppk primary key(a));
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk2 primary key(b);
+
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk unique(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 drop constraint ppk;
+
+*** ERROR[1255] Constraint TRAFODION.SCH.PPK is the clustering key constraint for table TRAFODION.SCH.T031T1 and cannot be dropped.
+
+--- SQL operation failed with errors.
+>>
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null, b int not null);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(a);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk2 primary key(b);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk unique(b);
+
+*** ERROR[1043] Constraint TRAFODION.SCH.PPK already exists.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 drop constraint ppk;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null, b int not null) store by (a);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(a);
+
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk unique(b);
+
+--- SQL operation complete.
+>>alter table t031t1 drop constraint ppk;
+
+--- SQL operation complete.
+>>
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint ppk primary key(a);
+
+*** ERROR[1254] Duplicate unique constraints are not allowed with same set of columns.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 add constraint ppk primary key(b);
+
+*** ERROR[1256] PRIMARY KEY constraint cannot be added since table TRAFODION.SCH.T031T1 already has a user specified clustering key.
+
+--- SQL operation failed with errors.
+>>
+>>-- primary key update transformed into delete/insert incorrectly 
+>>-- deletes row after conflict
+>>create table if not exists t031t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>delete from t031t1;
+
+--- 0 row(s) deleted.
+>>insert into t031t1 values (1,1), (2,2), (3,3), (4,4);
+
+--- 4 row(s) inserted.
+>>update t031t1 set a = 4 where a = 2;
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) updated.
+>>select * from t031t1;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+
+--- 4 row(s) selected.
+>>
+>>-- incorrect ddl with salt clause should not crash
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (
++>T2C1 int not null not droppable,
++>T2C1 int not null not droppable,
++>T2C1 int)
++>salt using 2 partitions on (T2C1, T2C2)
++>store by (T2C1, T2C2);
+
+*** ERROR[1009] Column T2C2 does not exist in the specified table.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot rename table with check constraints.
+>>-- cascade option with rename not supported.
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1 (a int);
+
+--- SQL operation complete.
+>>alter table t031t1 add constraint t031t1_c1 check (a > 0);
+
+--- SQL operation complete.
+>>alter table t031t1 rename to t031t1_ren cascade;
+
+*** ERROR[1427] Table cannot be renamed. Reason: Cascade option not supported.
+
+--- SQL operation failed with errors.
+>>alter table t031t1 rename to t031t1_ren;
+
+*** ERROR[1427] Table cannot be renamed. Reason: Operation not allowed if check constraints are present. Drop the constraints and recreate them after rename.
+
+--- SQL operation failed with errors.
+>>
+>>-- time datatype conversion was returning incorrect results
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create table t031t1
++>(id int not null,
++>time1 time default null,
++>time2 time default null,
++>type1 time default null,
++>type2 char(5) default null,
++>diff char(6) default null,
++>primary key (id));
+
+--- SQL operation complete.
+>>insert into t031t1 (id, time1, time2, diff) values (1, time '00:00:30.758788', time '00:00:29.615308', 'MATCH');
+
+--- 1 row(s) inserted.
+>>select * from t031t1 order by 1;
+
+ID           TIME1     TIME2     TYPE1     TYPE2  DIFF  
+-----------  --------  --------  --------  -----  ------
+
+          1  00:00:30  00:00:29  ?         ?      MATCH 
+
+--- 1 row(s) selected.
+>>update t031t1
++>set type1 =
++>case when (time1 + interval '1' second) < time2 then time1 else time2
++>end,
++>type2 =
++>case when (time1 + interval '1' second) < time2 then 'T1' else 'T2'
++>end
++>where id = 1;
+
+--- 1 row(s) updated.
+>>select
++>type2, diff, type1,
++>case
++>when diff = 'MATCH' then 'PASS' else 'FAIL'
++>end
++>from t031t1
++>where id = 1;
+
+TYPE2  DIFF    TYPE1     (EXPR)
+-----  ------  --------  ------
+
+T2     MATCH   00:00:29  PASS  
+
+--- 1 row(s) selected.
+>>select * from t031t1;
+
+ID           TIME1     TIME2     TYPE1     TYPE2  DIFF  
+-----------  --------  --------  --------  -----  ------
+
+          1  00:00:30  00:00:29  00:00:29  T2     MATCH 
+
+--- 1 row(s) selected.
+>>
+>>log;

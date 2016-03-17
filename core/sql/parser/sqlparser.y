@@ -28743,6 +28743,8 @@ before_trigger_prefix: create_trigger_keywords ddl_qualified_name
              TOK_BEFORE iud_event optional_update_column_list TOK_ON
              ddl_qualified_name referencing_clause before_action_orientation
              {
+               *SqlParser_Diags << DgSqlCode(-3131);
+               YYERROR;
 
 		InsideTriggerDefinition = TRUE;
 
@@ -28817,6 +28819,9 @@ after_trigger_prefix: create_trigger_keywords ddl_qualified_name
              TOK_AFTER iud_event optional_update_column_list TOK_ON
              ddl_qualified_name referencing_clause after_action_orientation
              {
+               *SqlParser_Diags << DgSqlCode(-3131);
+               YYERROR;
+
 		InsideTriggerDefinition = TRUE;
 
 	     //  if (NonISO88591LiteralEncountered) {
@@ -29097,6 +29102,9 @@ mv_definition: create_mv_keywords ddl_qualified_name
                 optional_in_memory_clause
                 as_token query_expression
     {
+      *SqlParser_Diags << DgSqlCode(-3131);
+      YYERROR;
+
       RelRoot *top = finalize($11);
       ForUpdateSpec spec(FALSE);
       spec.finalizeUpdatability(top);
@@ -29226,6 +29234,9 @@ create_mv_keywords: TOK_CREATE optional_ghost mv_token
 // type pStmtDDL 
 create_mvrgroup_statement : TOK_CREATE TOK_MVGROUP ddl_qualified_name
 {
+  *SqlParser_Diags << DgSqlCode(-3131);
+  YYERROR;
+
   $$ = new (PARSERHEAP())StmtDDLCreateMvRGroup(*$3);
   delete $3;
 }
@@ -30640,10 +30651,13 @@ alter_view_statement : TOK_ALTER TOK_VIEW ddl_qualified_name
 // type pStmtDDL
 alter_mv_statement : TOK_ALTER optional_ghost mv_token alter_mv_body
 					 {
-						 $4->castToStmtDDLAlterMV()->synthesize();
-						 $$ = $4 /*alter_mv_body*/;
-                                                 if ($2) /*optional_ghost*/
-                                                   $$->setIsGhostObject(TRUE);
+                                           *SqlParser_Diags << DgSqlCode(-3131);
+                                           YYERROR;
+                                           
+                                           $4->castToStmtDDLAlterMV()->synthesize();
+                                           $$ = $4 /*alter_mv_body*/;
+                                           if ($2) /*optional_ghost*/
+                                             $$->setIsGhostObject(TRUE);
 					 }
 
 
@@ -31845,6 +31859,9 @@ drop_table_start_tokens : TOK_DROP TOK_TABLE
 // MV - RG
 drop_mvrgroup_statement : TOK_DROP TOK_MVGROUP ddl_qualified_name
 {
+  *SqlParser_Diags << DgSqlCode(-3131);
+  YYERROR;
+
   $$ = new (PARSERHEAP())StmtDDLDropMvRGroup(*$3);
   delete $3;
 }
@@ -31853,6 +31870,9 @@ drop_mvrgroup_statement : TOK_DROP TOK_MVGROUP ddl_qualified_name
 drop_trigger_statement : TOK_DROP TOK_TRIGGER ddl_qualified_name 
                          optional_cleanup optional_validate optional_logfile
                 {
+                  *SqlParser_Diags << DgSqlCode(-3131);
+                  YYERROR;
+
                   /* If VALIDATE, or LOG option specified, */
                   /* ALLOW_SPECIALTABLETYPE must also be specified  */
                   if (($5 || $6) &&
@@ -31881,6 +31901,9 @@ drop_trigger_statement : TOK_DROP TOK_TRIGGER ddl_qualified_name
 drop_mv_statement : TOK_DROP optional_ghost mv_token ddl_qualified_name optional_cleanup
                     optional_drop_behavior optional_validate optional_logfile
                 {
+                  *SqlParser_Diags << DgSqlCode(-3131);
+                  YYERROR;
+
                   /* If VALIDATE, or LOG option specified, */
                   /* ALLOW_SPECIALTABLETYPE must also be specified  */
                   if (($7 || $8) &&
