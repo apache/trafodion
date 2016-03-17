@@ -857,6 +857,7 @@ enum OperatorTypeEnum {
                         DDL_ALTER_TABLE_TOGGLE_ONLINE,
                         DDL_ALTER_TABLE_NAMESPACE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE,
+                        DDL_ALTER_TABLE_ALTER_COLUMN_RENAME,
                         DDL_ALTER_TABLE_ALTER_COLUMN_DEFAULT_VALUE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION,
                         DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS,

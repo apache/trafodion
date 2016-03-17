@@ -10,10 +10,11 @@
 >>invoke t2421;
 
 -- Definition of Trafodion table TRAFODION.SCH.T2421
--- Definition current  Sun Aug 17 13:04:04 2014
+-- Definition current  Thu Feb 25 06:40:41 2016
 
   (
-    A                                DECIMAL(1, 0) UNSIGNED DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                DECIMAL(1, 0) UNSIGNED DEFAULT NULL
   , B                                DECIMAL(1, 1) UNSIGNED DEFAULT NULL
   , C                                DECIMAL(18, 8) DEFAULT NULL
   , D                                DECIMAL(2, 1) DEFAULT NULL
@@ -47,10 +48,11 @@ A  B   C                     D     E    F   H
 >>invoke        t101t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T101T2
--- Definition current  Sun Aug 17 13:04:07 2014
+-- Definition current  Thu Feb 25 06:40:43 2016
 
   (
-    C01                              CHAR(2) CHARACTER SET ISO88591 COLLATE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C01                              CHAR(2) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   , C02                              CHAR(2) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
@@ -103,13 +105,14 @@ ab   4    abcdefghijklmnopqrstu  1
 >>invoke t104t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T104T2
--- Definition current  Sun Aug 17 13:04:09 2014
+-- Definition current  Thu Feb 25 06:40:45 2016
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (C ASC, D ASC)
 
 --- SQL operation complete.
 >>showddl t104t2;

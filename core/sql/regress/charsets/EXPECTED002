@@ -92,7 +92,7 @@
 >>--no UCS2 strings in a view text
 >>create view nt006v1 as select * from t013 where c > _UCS2'aaaa';
 
-*** ERROR[4082] Object CAT.SCH.T013 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T013 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>
@@ -143,11 +143,12 @@
 --- SQL operation complete.
 >>invoke t013;
 
--- Definition of table CAT.SCH.T013
--- Definition current  Fri Jul 23 16:05:50 2010
+-- Definition of Trafodion table TRAFODION.SCH.T013
+-- Definition current  Thu Feb 25 10:20:47 2016
 
   (
-    A                                CHAR(10) CHARACTER SET UCS2 COLLATE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                CHAR(10) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT _UCS2'aa'
   )
 

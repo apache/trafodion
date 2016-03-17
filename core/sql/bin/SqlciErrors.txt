@@ -145,7 +145,7 @@
 1143 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation of constraint $0~ConstraintName failed; incompatible data exists in referencing base table $1~TableName and referenced base table $2~String0.  To display the data that violates the constraint, please use the following DML statement: $3~String1
 1144 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A quoted string was expected in first key clause for column $0~ColumnName on table $1~TableName, but the value detected is ($2~String0).
 1145 3D000 99999 BEGINNER MAJOR DBADMIN The catalog name $0~CatalogName is reserved for SQL metadata.
-1146 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be altered because it is not a $1~String0.
+1146 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 could not be altered because it either does not exist or is not a table.
 1147 ZZZZZ 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a unique or primary key constraint definition.
 1148 23000 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a referential integrity constraint definition.
 1149 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~ColumnName does not exist in table $1~TableName.

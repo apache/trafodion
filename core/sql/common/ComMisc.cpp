@@ -242,4 +242,3 @@ NABoolean ComTrafReservedColName(
 
   return FALSE;
 }
-

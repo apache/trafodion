@@ -13,6 +13,7 @@
   , C2                               CHAR(20) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT _ISO88591't20t1''s column c2'
   )
+  PRIMARY KEY (C1 ASC)
 
 --- SQL operation complete.
 >>showddl test020t1;
@@ -48,13 +49,14 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Sun Mar 13 06:02:19 2016
+-- Definition current  Tue Mar  8 22:57:08 2016
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
       DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (C ASC, D ASC)
 
 --- SQL operation complete.
 >>showddl test020t2;
@@ -159,13 +161,14 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Sun Mar 13 06:02:32 2016
+-- Definition current  Tue Mar  8 22:57:24 2016
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , SYSKEY                           CHAR(4) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (C ASC)
 
 --- SQL operation complete.
 >>showddl test020t5;
@@ -256,10 +259,11 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Sun Mar 13 06:03:34 2016
+-- Definition current  Tue Mar  8 22:58:27 2016
 
   (
-    C                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT DEFAULT NULL
   )
 
 --- SQL operation complete.

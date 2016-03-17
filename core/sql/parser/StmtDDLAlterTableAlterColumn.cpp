@@ -51,7 +51,6 @@ StmtDDLAlterTableAlterColumn::getText() const
 }
 	
 
-
 //----------------------------------------------------------------------------
 // CLASS StmtDDLAlterTableAlterColumnDatatype
 //----------------------------------------------------------------------------
@@ -94,6 +93,44 @@ const NAString
 StmtDDLAlterTableAlterColumnDatatype::getText() const
 {
   return "StmtDDLAlterTableAlterColumnDatatype" ;
+}
+	
+//----------------------------------------------------------------------------
+// CLASS StmtDDLAlterTableAlterColumnRename
+//----------------------------------------------------------------------------
+StmtDDLAlterTableAlterColumnRename::StmtDDLAlterTableAlterColumnRename( 
+     const NAString &columnName,
+     const NAString &renamedColumnName,
+     CollHeap *heap)
+    : StmtDDLAlterTableAlterColumn(DDL_ALTER_TABLE_ALTER_COLUMN_RENAME, 
+                                   columnName,
+                                   NULL,
+                                   heap),
+      renamedColumnName_(renamedColumnName)
+{
+}
+
+//
+// Virtual destructor
+//
+
+StmtDDLAlterTableAlterColumnRename::~StmtDDLAlterTableAlterColumnRename()
+{}
+
+//
+// Cast function: to provide the safe castdown to the current object
+//
+
+StmtDDLAlterTableAlterColumnRename *
+StmtDDLAlterTableAlterColumnRename::castToStmtDDLAlterTableAlterColumnRename()
+{
+  return this;
+}
+
+const NAString
+StmtDDLAlterTableAlterColumnRename::getText() const
+{
+  return "StmtDDLAlterTableAlterColumnRename" ;
 }
 	
 

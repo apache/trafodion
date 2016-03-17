@@ -151,6 +151,7 @@ alter table test020t5 add constraint test020t5c1 check (syskey >= 'aaaa');
 showddl test020t5;
 -- Expecting an error message when the following insert statement is executed.
 insert into test020t5 values (3, '1234');
+
 cqd traf_allow_reserved_colnames reset;
 
 --------------------------------------------

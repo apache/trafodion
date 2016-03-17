@@ -4043,6 +4043,12 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
       else if ((NOT ms4) && (opType->getTypeQualifier() != NA_CHARACTER_TYPE))
         error = 4; // error 4043
 
+      // operand must be numeric with nf (numeric format)
+      else if (ms4 && nf && (opType->getTypeQualifier() != NA_NUMERIC_TYPE))
+        {
+          error = 7; // error 4045
+        }
+
       // numeric must be exact with scale of 0
       else if (ms4 && (opType->getTypeQualifier() == NA_NUMERIC_TYPE))
         {
@@ -4101,8 +4107,15 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
           }
           break;
 
+        case 7:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+
         } // switch
-      
+
       return TRUE;
     }
   
