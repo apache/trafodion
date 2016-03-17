@@ -186,14 +186,23 @@ bool init_pnode_map( void )
         // TEST_POINT and exclude list : to force state down on node name
          NodeState_t nodeState = StateUp;
          const char *downNodeName = getenv( TP001_NODE_DOWN );
-        const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
-        if (( downNodeList != NULL && 
-            (strstr(downNodeList,pnodeConfig->GetName()))) ||
+         const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+	 string downNodeString = " ";
+	 if (downNodeList)
+	 {
+	   downNodeString += downNodeList;
+	   downNodeString += " ";
+	 }
+	 string downNodeToFind = " ";
+	 downNodeToFind += pnodeConfig->GetName();
+	 downNodeToFind += " ";
+         if (((downNodeList != NULL) && 
+	    (strstr(downNodeString.c_str(),downNodeToFind.c_str()))) ||
             ( downNodeName != NULL && 
              !strcmp( downNodeName, pnodeConfig->GetName() ) ))
-        {
-            nodeState = StateDown;
-        }
+         {
+             nodeState = StateDown;
+         }
 
         // effectively remove spare nodes on startup only
         if ( SpareNodeColdStandby && pnodeConfig->IsSpareNode() )
@@ -3184,6 +3193,13 @@ void listNodeInfo( int nid )
     }
 
     const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+    string downNodeString = " ";
+    if (downNodeList)
+    {
+      downNodeString += downNodeList;
+      downNodeString += " ";
+    }
+		 
     bool needBanner = true;
     bool getMoreInfo = false;
     do
@@ -3230,10 +3246,18 @@ void listNodeInfo( int nid )
                         for (i=0; i < msg->u.reply.u.node_info.num_returned; i++)
                         {
                              CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (msg->u.reply.u.node_info.node[i].pnid);
-                            if ((downNodeList != NULL ) && (pConfig != NULL) && (strstr(downNodeList, pConfig->GetName())))
-                            {
-                                continue; // We do not want to consider this node since it is in our exclude list
-                            }
+			     
+			     if (pConfig != NULL)
+			     {
+			       string downNodeToFind = " ";
+	                       downNodeToFind += pConfig->GetName();
+	                       downNodeToFind += " ";
+
+                               if  ((downNodeList != NULL) && strstr(downNodeString.c_str(),downNodeToFind.c_str()))
+                               {
+                                   continue; // We do not want to consider this node since it is in our exclude list
+                               }
+			     }
 
                             if ( last_nid != -1 )
                             {
@@ -3592,6 +3616,13 @@ void node_cmd (char *cmd_tail)
     char delimiter;
     char *ptr;
     const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+    string downNodeString = " ";
+    
+    if (downNodeList)
+    {
+	 downNodeString += downNodeList;
+	 downNodeString += " ";
+    }
 
     if (*cmd_tail == '\0')
     {
@@ -3615,7 +3646,11 @@ void node_cmd (char *cmd_tail)
                 pnodeConfig = lnodeConfig->GetPNodeConfig();
                 if ( pnodeConfig )
                 {
-                   if ((!downNodeList) || ((downNodeList) && !(strstr(downNodeList,pnodeConfig->GetName()))))
+		   string downNodeToFind = " ";
+	           downNodeToFind += pnodeConfig->GetName();
+	           downNodeToFind += " ";
+     
+                   if (((!downNodeList) || ((downNodeList) && !(strstr(downNodeString.c_str(),downNodeToFind.c_str())))))
                        printf( "[%s] Node[%d]=%s, %s, %s\n"
                           , MyName
                           , i 
