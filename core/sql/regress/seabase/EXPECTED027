@@ -1378,7 +1378,7 @@ CREATE VIEW TRAFODION.SCH027.T027V2 (ZZ) AS
 --- SQL operation failed with errors.
 >>alter table t027t7 alter column cc rename to "_SALT_";
 
-*** ERROR[1404] Column CC cannot be altered. Reason: Renamed column _SALT_ already exist in the table.
+*** ERROR[1404] Column CC cannot be altered. Reason: Renamed column _SALT_ is reserved for internal system usage.
 
 --- SQL operation failed with errors.
 >>alter table t027t7 alter column zz rename to zzz;
@@ -1480,6 +1480,70 @@ SCH027.T027V122
 *** ERROR[8609] Waited rollback performed without starting a transaction.
 
 --- SQL operation failed with errors.
+>>
+>>-- reserved words cannot be used as colnames in create/add/alter stmts
+>>drop table if exists t027t7 cascade;
+
+--- SQL operation complete.
+>>create table t027t7 (syskey int);
+
+*** ERROR[1269] Column name SYSKEY is reserved for internal system usage. It cannot be specified as a user column.
+
+--- SQL operation failed with errors.
+>>create table t027t7 ("_SALT_" int);
+
+*** ERROR[1269] Column name _SALT_ is reserved for internal system usage. It cannot be specified as a user column.
+
+--- SQL operation failed with errors.
+>>create table t027t7 ("_DIVISION_2_" int);
+
+*** ERROR[1269] Column name _DIVISION_2_ is reserved for internal system usage. It cannot be specified as a user column.
+
+--- SQL operation failed with errors.
+>>create table t027t7 (a int not null primary key);
+
+--- SQL operation complete.
+>>alter table t027t7 add column "_SALT_" int;
+
+*** ERROR[1269] Column name _SALT_ is reserved for internal system usage. It cannot be specified as a user column.
+
+--- SQL operation failed with errors.
+>>alter table t027t7 alter column a rename to SYSKEY;
+
+*** ERROR[1404] Column A cannot be altered. Reason: Renamed column SYSKEY is reserved for internal system usage.
+
+--- SQL operation failed with errors.
+>>
+>>-- if cqd is specified, then reserved cols can be used. 
+>>-- Use this cqd carefully.
+>>cqd traf_allow_reserved_colnames 'ON';
+
+--- SQL operation complete.
+>>drop table if exists t027t7 cascade;
+
+--- SQL operation complete.
+>>create table t027t7 (syskey int not null primary key, b int);
+
+--- SQL operation complete.
+>>alter table t027t7 add column "_DIVISION_1" int;
+
+--- SQL operation complete.
+>>alter table t027t7 alter column b rename to "_SALT_";
+
+--- SQL operation complete.
+>>invoke t027t7;
+
+-- Definition of Trafodion table TRAFODION.SCH027.T027T7
+-- Definition current  Thu Mar 17 14:48:27 2016
+
+  (
+    SYSKEY                           INT NO DEFAULT NOT NULL NOT DROPPABLE 
+  , "_SALT_"                         INT DEFAULT NULL /*altered_col*/
+  , "_DIVISION_1"                    INT DEFAULT NULL /*added_col*/
+  )
+  PRIMARY KEY (SYSKEY ASC)
+
+--- SQL operation complete.
 >>
 >>-- cleanup
 >>?section clean_up

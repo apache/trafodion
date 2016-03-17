@@ -219,6 +219,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 *** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.TEST020T5C1 on table TRAFODION.SCH.TEST020T5.
 
 --- 0 row(s) inserted.
+>>
 >>cqd traf_allow_reserved_colnames reset;
 
 --- SQL operation complete.

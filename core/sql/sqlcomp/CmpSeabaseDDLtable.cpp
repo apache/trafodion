@@ -3901,7 +3901,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
     {
       *CmpCommon::diags()
         << DgSqlCode(-1427)
-        << DgString0("Reason: Operation not allowed if check constraints are presenr. Drop the constraints and recreate them after rename.");
+        << DgString0("Reason: Operation not allowed if check constraints are present. Drop the constraints and recreate them after rename.");
       
       processReturn();
       
@@ -6640,12 +6640,10 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
       return;
     }
 
-  /*  Temporarily commenting out this code. It will be enabled after
-      support for reserved colnames check is delivered.
   if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
       (ComTrafReservedColName(renamedColName)))
     {
-      NAString reason = "Renamed column is a reserved name.";
+      NAString reason = "Renamed column " + renamedColName + " is reserved for internal system usage.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -6654,7 +6652,6 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
 
       return;
     }
-  */
 
   if (nacol->isComputedColumn() || nacol->isSystemColumn())
     {
