@@ -35,6 +35,9 @@ using namespace std;
 #include <unistd.h>
 #include <malloc.h>
 #include <sys/ipc.h>
+#include <sys/time.h>
+#include <sys/resource.h> //add for getrlimit, strange centos6/gcc4.4 don't need this
+
 //#include <sys/stat.h>
 #include "monlogging.h"
 #include "monprof.h"

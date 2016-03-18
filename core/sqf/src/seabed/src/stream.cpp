@@ -353,11 +353,9 @@ void SB_Trans::Trans_Stream::checksum_recv_check(Rd_Type     *pp_rd,
     int   lv_chk;
     int   lv_ctrl_len;
     int   lv_data_len;
-    int   lv_data_off;
     int   lv_inx;
 
     lv_chk = -1;
-    lv_data_off = 0;
     pv_client = pv_client; // touch
     lp_ctrl = pp_rd->ip_ctrl;
     lv_ctrl_len = pp_rd->iv_ctrl_len;
