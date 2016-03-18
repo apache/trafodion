@@ -444,6 +444,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
   Lng32 retcode = 0;
   rc = 0;
   Lng32 remainingInBatch = batchSize_;
+  NABoolean isFirstBatch = false;
 
   while (1)
     {
@@ -467,7 +468,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-
+	    isFirstBatch = true;
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
 					   tcb_->columns_, -1,
@@ -606,6 +607,8 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case SCAN_CLOSE:
 	  {
+	      if (isFirstBatch) //only if closed happen in a single batch, batchSize - remainingInBatch = nb rows retrieved
+	          tcb_->hbaseAccessTdb().getHbasePerfAttributes()->setUseSmallScannerForMDAMifNeeded(batchSize_ - remainingInBatch); //calculate MDAM small scanner flag for next scan if it was MDAM
 	    retcode = tcb_->ehi_->scanClose();
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanClose"))
 	      step_ = HANDLE_ERROR;
@@ -647,8 +650,9 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
 				 tcb_->beginRowId_, tcb_->endRowId_,
 				 tcb_->columns_, -1,
 				 tcb_->hbaseAccessTdb().readUncommittedScan(),
-				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
-				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScanner(),
+				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks() ||
+				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScannerForProbes(), // when small scanner feature is ON or SYSTEM force cache ON
+				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useSmallScannerForProbes(),
 				 probeSize,
 				 TRUE, NULL, NULL, NULL);
   if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
