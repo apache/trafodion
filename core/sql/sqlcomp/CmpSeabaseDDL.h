@@ -1136,6 +1136,7 @@ class CmpSeabaseDDL
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
 
+  short adjustHiveExternalSchemas(ExeCliInterface *cliInterface);
 
   void createSeabaseSequence(StmtDDLCreateSequence  * createSequenceNode,
 			     NAString &currCatName, NAString &currSchName);

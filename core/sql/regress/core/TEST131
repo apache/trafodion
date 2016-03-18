@@ -33,8 +33,10 @@ log LOG131 ;
 -- run the test in sqlci sessions which start after authorization
 -- is enabled.
 log;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 sh sqlci -i"TEST131(test_session1)";
 log LOG131 ;
+sh sqlci -i"TEST131(test_native)" -u sql_user3;
 
 obey TEST131(clnup);
 
@@ -74,6 +76,11 @@ revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
 revoke role role131  from sql_user7;
 revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
 drop role role131;
+ 
+-- cleanup for test_native
+drop external table item for hive.hive.item;
+revoke role DB__HIVEROLE from SQL_USER4;
+showddl role DB__HIVEROLE;
 
 ?section setup
 
@@ -111,6 +118,10 @@ grant all on t131a to SQL_USER7;
 grant all on t131b to SQL_USER7;
 grant all on t131c to SQL_USER7;
 
+-- setup for test_native
+grant role DB__HIVEROLE to SQL_USER4;
+showddl role DB__HIVEROLE;
+create external table item for hive.hive.item;
 
 ?section dml
 
@@ -360,6 +371,35 @@ log LOG131;
 revoke role role131  from sql_user7;
 revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
 drop role role131;
+
+?section test_native
+-- user3
+log LOG131;
+values(user);
+ 
+-- user3 has no privs
+select count(*) from hive.hive.item;
+
+-- grant privs to user3, now user3 can execute dml
+sh sqlci -i"TEST131(grant_hive_privs)" -u"SQL_User4"  ;
+select count(*) from hive.hive.item;
+
+-- revoke privs from user3, user3 can no longer perform dml
+-- verify that query invalidate works as designed
+sh sqlci -i"TEST131(revoke_hive_privs)" -u"SQL_User4"  ;
+select count(*) from hive.hive.item;
+
+?section grant_hive_privs
+-- user4 who has been granted DB__HIVEROLE
+values (user);
+log LOG131;
+grant select on hive.hive.item to sql_user3;
+
+?section revoke_hive_privs
+-- user4, has been granted DB__HIVEROLE
+values (user);
+log LOG131;
+revoke select on hive.hive.item from sql_user3;
 
 ?section end_of_test
 -- end of test.
