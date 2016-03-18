@@ -1530,11 +1530,18 @@ short CmpSeabaseDDL::createSeabaseTable2(
     objectOwnerID = schemaOwnerID;
 
   // check if SYSKEY is specified as a column name.
-  NABoolean explicitSyskeySpecified = FALSE;
   for (Lng32 i = 0; i < colArray.entries(); i++)
     {
-      if (colArray[i]->getColumnName() == "SYSKEY")
-        explicitSyskeySpecified = TRUE;
+      if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+          (ComTrafReservedColName(colArray[i]->getColumnName())))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1269)
+                              << DgString0(colArray[i]->getColumnName());
+          
+          deallocEHI(ehi);
+          processReturn();
+          return -1;
+        }
     }
 
   NABoolean implicitPK = FALSE;
@@ -1562,18 +1569,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
       numSysCols++;
     }
 
-  if ((implicitPK) && (explicitSyskeySpecified))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1080)
-                                << DgColumnName("SYSKEY");
-
-      deallocEHI(ehi); 
-
-      processReturn();
-
-      return -1;
-    }
-
   int numSaltPartns = 0; // # of "_SALT_" values
   int numSplits = 0;     // # of initial region splits
 
@@ -1582,7 +1577,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   
   if ((createTableNode->getSaltOptions()) ||
       ((numSaltPartnsFromCQD > 0) &&
-       (NOT (implicitPK || explicitSyskeySpecified))))
+       (NOT implicitPK)))
     {
       // add a system column SALT INTEGER NOT NULL with a computed
       // default value HASH2PARTFUNC(<salting cols> FOR <num salt partitions>)
@@ -4457,6 +4452,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       return;
     }
 
+  if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+      (ComTrafReservedColName(colName)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1269)
+                          << DgString0(colName);
+      
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
   if (colFamily.isNull())
     {
       colFamily = naTable->defaultColFam();
@@ -6622,12 +6628,10 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
       return;
     }
 
-  /*  Temporarily commenting out this code. It will be enabled after
-      support for reserved colnames check is delivered.
   if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
       (ComTrafReservedColName(renamedColName)))
     {
-      NAString reason = "Renamed column is a reserved name.";
+      NAString reason = "Renamed column " + renamedColName + " is reserved for internal system usage.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -6636,7 +6640,6 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
 
       return;
     }
-  */
 
   if (nacol->isComputedColumn() || nacol->isSystemColumn())
     {

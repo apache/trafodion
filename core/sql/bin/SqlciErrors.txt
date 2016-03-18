@@ -261,6 +261,7 @@
 1266 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only EXECUTE privilege is supported for a procedure or routine.
 1267 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 privilege is incompatible with this object type.
 1268 ZZZZZ 99999 BEGINNER MINOR DBADMIN Duplicate columns are not allowed in a GRANT or REVOKE statement.
+1269 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column name $0~String0 is reserved for internal system usage. It cannot be specified as a user column.
 1270 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ALLOCATE or DEALLOCATE failed for object $0~TableName due to file error $1~Int0 on $2~String0.
 1271 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ALLOCATE failed for object $0~TableName because the number of extents to be allocated ($1~Int0) is greater than the MAXEXTENTS for a partition of the object.
 1272 ZZZZZ 99999 BEGINNER CRTCL DIALOUT The system is not licensed for use of SQL format tables.

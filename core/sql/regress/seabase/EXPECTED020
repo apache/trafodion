@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Tue Mar  8 22:57:06 2016
+-- Definition current  Sun Mar 13 06:02:17 2016
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -144,15 +144,16 @@ G0
 >>-- Test columns named SYSKEY
 >>--
 >>
->>-- Expecting error 1080 message: Duplicate references to column SYSKEY
->>--                               in the create request
->>-- when the following Create Table command is executed.
+>>-- Expecting error 1269 message: Col name SYSKEY is reserved.
 >>create table test020t5(syskey int);
 
-*** ERROR[1080] The DDL request has duplicate references to column SYSKEY.
+*** ERROR[1269] Column name SYSKEY is reserved for internal system usage. It cannot be specified as a user column.
 
 --- SQL operation failed with errors.
 >>
+>>cqd traf_allow_reserved_colnames 'ON';
+
+--- SQL operation complete.
 >>create table test020t5(c int not null not droppable primary key not droppable,
 +>                    syskey char(4));
 
@@ -218,6 +219,10 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 *** ERROR[8101] The operation is prevented by check constraint TRAFODION.SCH.TEST020T5C1 on table TRAFODION.SCH.TEST020T5.
 
 --- 0 row(s) inserted.
+>>
+>>cqd traf_allow_reserved_colnames reset;
+
+--- SQL operation complete.
 >>
 >>--------------------------------------------
 >>-- test cases for solution 10-040607-6721 --

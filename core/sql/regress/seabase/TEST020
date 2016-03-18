@@ -137,11 +137,10 @@ create table test020t31 (g0 smallint default 32768 not null primary key);
 -- Test columns named SYSKEY
 --
 
--- Expecting error 1080 message: Duplicate references to column SYSKEY
---                               in the create request
--- when the following Create Table command is executed.
+-- Expecting error 1269 message: Col name SYSKEY is reserved.
 create table test020t5(syskey int);
 
+cqd traf_allow_reserved_colnames 'ON';
 create table test020t5(c int not null not droppable primary key not droppable,
                     syskey char(4));
 invoke test020t5;
@@ -152,6 +151,8 @@ alter table test020t5 add constraint test020t5c1 check (syskey >= 'aaaa');
 showddl test020t5;
 -- Expecting an error message when the following insert statement is executed.
 insert into test020t5 values (3, '1234');
+
+cqd traf_allow_reserved_colnames reset;
 
 --------------------------------------------
 -- test cases for solution 10-040607-6721 --
