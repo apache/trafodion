@@ -10157,7 +10157,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 } // Insert::bindNode()
 
 /* Upsert into a table with an index is converted into a Merge to avoid
-the problem described in LP 1460771. An upsert may overwrite an existing row
+the problem described in Trafodion-14. An upsert may overwrite an existing row
 in the base table (identical to the update when matched clause of Merge) or
 it may insert a new row into the base table (identical to insert when not
 matched clause of merge). If the upsert caused a row to be updated in the 
@@ -10172,15 +10172,21 @@ omitted current timestamp cols in case of non-aligned row format
 NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
                                    NABoolean omittedCurrentDefaultClassCols) const
 {
+  // The necessary conditions to convert upsert to merge and
   if (isUpsert() && 
       (NOT getIsTrafLoadPrep()) && 
       (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
       (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
-       ((getTableDesc()->hasSecondaryIndexes()) ||
-         (( NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
-             ((isAlignedRowFormat && omittedDefaultCols
-              && (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF)))
-       ))
+        // table has secondary indexes or
+        (getTableDesc()->hasSecondaryIndexes() ||
+         // CQD is set off and  
+         ((CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF) &&
+            // omitted current default columns with non-aligned row format tables
+            // or omitted default columns with aligned row format tables 
+          (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+          (isAlignedRowFormat && omittedDefaultCols)))
+        ) 
+     )
      return TRUE;
   else
      return FALSE;
@@ -10272,19 +10278,14 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       else
       if (! col->isClusteringKey()) 
       {
-         // In case of aligned format we need to bind in the new = old values
+         // We need to bind in the new = old values
          // in GenericUpdate::bindNode. So skip the columns that are not user
          // specified
-         if (isAlignedRowFormat) 
-         {
-            if (assignExpr->isUserSpecified())
-               copySetAssign = TRUE;
-            // copy the default value if the below CQD is set to ON
-            else if (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_ON)
-               copySetAssign = TRUE;
-         }
-         else
+         //
          if (assignExpr->isUserSpecified())
+             copySetAssign = TRUE;
+         // copy the default value if the below CQD is set to ON
+         else if (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_ON)
              copySetAssign = TRUE;
          if (copySetAssign)
          { 

@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Tue Mar  8 22:57:06 2016
+-- Definition current  Fri Mar 18 11:37:39 2016
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -49,7 +49,7 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Tue Mar  8 22:57:08 2016
+-- Definition current  Fri Mar 18 11:37:41 2016
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -160,7 +160,7 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Tue Mar  8 22:57:24 2016
+-- Definition current  Fri Mar 18 11:37:50 2016
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -255,7 +255,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Tue Mar  8 22:58:27 2016
+-- Definition current  Fri Mar 18 11:38:28 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3273,6 +3273,9 @@ C@           A
 
 --- SQL operation complete.
 >>--test for timestamp column default value
+>>cqd traf_upsert_with_insert_default_semantics 'off';
+
+--- SQL operation complete.
 >>cqd traf_aligned_row_format 'off' ;
 
 --- SQL operation complete.
@@ -3389,8 +3392,90 @@ E@           A
 
 --- 5 row(s) selected.
 >>
+>>--  With index it will be merge anyway, but default values needs to be 
+>>--  populated
+>>cqd traf_upsert_with_insert_default_semantics 'on';
+
+--- SQL operation complete.
+>>delete from test020t41 ;
+
+--- 5 row(s) deleted.
+>>insert into test020t41 (a,b) values (1,'a'), (2,'b');
+
+--- 2 row(s) inserted.
+>>upsert into test020t41 (a,b,e) values (1, 'c', 5);
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1
+>>select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  c                     ?            5
+
+--- 1 row(s) selected.
+>>upsert into test020t41 (a,b) values (1, 'd');
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1 and e should be 3
+>>select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  d                     ?            3
+
+--- 1 row(s) selected.
+>>select * from table(index_table test020t41ix) ;
+
+E@           A                   
+-----------  --------------------
+
+          3                     1
+          3                     2
+
+--- 2 row(s) selected.
+>>drop index test020t41ix ;
+
+--- SQL operation complete.
+>>-- Without index 
+>>delete from test020t41 ;
+
+--- 2 row(s) deleted.
+>>insert into test020t41 (a,b) values (1,'a'), (2,'b');
+
+--- 2 row(s) inserted.
+>>upsert into test020t41 (a,b,e) values (1, 'c', 5);
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1
+>>select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  c                     ?            5
+
+--- 1 row(s) selected.
+>>upsert into test020t41 (a,b) values (1, 'd');
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1 and e should be 3
+>>select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  d                     ?            3
+
+--- 1 row(s) selected.
+>>
 >>create table test020t42(a largeint not null primary key, b char(10),
 +>c timestamp(6) default current , d int , e int default 3) attribute aligned format;
+
+--- SQL operation complete.
+>>cqd traf_upsert_with_insert_default_semantics 'off';
 
 --- SQL operation complete.
 >>-- check if the timestamp is inserted with the recent timestamp
@@ -3502,7 +3587,89 @@ E@           A
 
 --- 5 row(s) selected.
 >>
+>>--  With index it will be merge anyway, but default values needs to be 
+>>--  populated
+>>cqd traf_upsert_with_insert_default_semantics 'on';
+
+--- SQL operation complete.
+>>delete from test020t42 ;
+
+--- 5 row(s) deleted.
+>>insert into test020t42 (a,b) values (1,'a'), (2,'b');
+
+--- 2 row(s) inserted.
+>>upsert into test020t42 (a,b,e) values (1, 'c', 5);
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1
+>>select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  c                     ?            5
+
+--- 1 row(s) selected.
+>>upsert into test020t42 (a,b) values (1, 'd');
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1 and e should be 3
+>>select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  d                     ?            3
+
+--- 1 row(s) selected.
+>>select * from table(index_table test020t42ix) ;
+
+E@           A                   
+-----------  --------------------
+
+          3                     1
+          3                     2
+
+--- 2 row(s) selected.
+>>drop index test020t42ix ;
+
+--- SQL operation complete.
+>>-- Without index 
+>>delete from test020t42 ;
+
+--- 2 row(s) deleted.
+>>insert into test020t42 (a,b) values (1,'a'), (2,'b');
+
+--- 2 row(s) inserted.
+>>upsert into test020t42 (a,b,e) values (1, 'c', 5);
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1
+>>select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  c                     ?            5
+
+--- 1 row(s) selected.
+>>upsert into test020t42 (a,b) values (1, 'd');
+
+--- 1 row(s) inserted.
+>>-- Should display a row with = 1 and e should be 3
+>>select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+A                     B           D            E          
+--------------------  ----------  -----------  -----------
+
+                   1  d                     ?            3
+
+--- 1 row(s) selected.
+>>
 >>create table test020t43(c1 int, c2 int ) attribute aligned format ;
+
+--- SQL operation complete.
+>>cqd traf_upsert_with_insert_default_semantics 'off';
 
 --- SQL operation complete.
 >>upsert into test020t43 values (1,1);
@@ -3513,7 +3680,7 @@ E@           A
 --- 1 row(s) inserted.
 >>select * from test020t43 ;
 
-C1           C2
+C1           C2         
 -----------  -----------
 
           1            1

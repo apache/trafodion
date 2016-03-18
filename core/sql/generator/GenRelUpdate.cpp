@@ -2025,6 +2025,7 @@ short HbaseUpdate::codeGen(Generator * generator)
               col = tgtValueId.getNAColumn( TRUE );
 
               if ((NOT isAlignedFormat) &&
+                 (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF) && 
                  (((Assign*)assignExpr)->canBeSkipped()) &&
                  (NOT col->isSystemColumn()) &&
                  (NOT col->isClusteringKey()) &&
@@ -2341,6 +2342,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
       col = tgtValueId.getNAColumn( TRUE );
       if ((NOT isAlignedFormat) &&
+         (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF) && 
          (((Assign*)assignExpr)->canBeSkipped()) && 
          (NOT col->isSystemColumn()) &&
          (NOT col->isClusteringKey()) &&
