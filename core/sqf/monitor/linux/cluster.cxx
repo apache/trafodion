@@ -1888,7 +1888,13 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
         // Queue the node down request for processing by a worker thread.
         ReqQueue.enqueueDownReq( recv_msg->u.down.pnid );
         break;
+    case InternalType_NodeName:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal node name request (%s to %s)\n", method_name, __LINE__, recv_msg->u.nodename.current_name, recv_msg->u.nodename.new_name);
 
+        // Queue the node down request for processing by a worker thread.
+        ReqQueue.enqueueNodeNameReq( recv_msg->u.nodename.current_name, recv_msg->u.nodename.new_name );
+        break;
     case InternalType_SoftNodeDown:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal soft node down request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
@@ -2392,6 +2398,11 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
     case InternalType_Down:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal down node request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
+        break;
+
+    case InternalType_NodeName:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal node name request (%s to %s)\n", method_name, __LINE__, recv_msg->u.nodename.current_name, recv_msg->u.nodename.new_name);
         break;
 
     case InternalType_SoftNodeDown:

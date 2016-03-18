@@ -7,13 +7,14 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Wed Mar  2 05:16:53 2016
+-- Definition current  Tue Mar  8 05:49:30 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+  PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>
@@ -142,7 +143,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212323655814425974
+PLAN_ID .................. 212324176171390042
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -182,7 +183,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   QUERY_CACHE ............ 0
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 4553793696580766799
+  ObjectUIDs ............. 7433846178641183029
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -1269,7 +1270,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Wed Mar  2 05:18:55 2016
+-- Definition current  Tue Mar  8 05:51:31 2016
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1424,7 +1425,10 @@ METRIC_TEXT_TABLE
   , NUM_NODES                        LARGEINT DEFAULT NULL
   , UDR_PROCESS_BUSY_TIME            LARGEINT DEFAULT NULL
   , PERTABLE_STATS                   INT DEFAULT NULL
+  , "_SALT_"                         INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
   )
+  PRIMARY KEY ("_SALT_" ASC, EXEC_START_UTC_TS ASC, QUERY_ID ASC)
 
 --- SQL operation complete.
 >>
@@ -1451,7 +1455,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000008089212323655795185001000000000206U3333300_1994_EXPLSTMT
+MXID11000029589212324176152856001000000000206U3333300_1994_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1503,7 +1507,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000008089212323655795185001000000000206U3333300_2005_EXPLSTMT2
+MXID11000029589212324176152856001000000000206U3333300_2005_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;

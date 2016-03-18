@@ -17,7 +17,8 @@
 -- Definition current  Mon Mar  7 19:30:10 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                CHAR(9) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   , C                                INT DEFAULT NULL
@@ -34,7 +35,8 @@
 -- Definition current  Mon Mar  7 19:30:10 2016
 
   (
-    A                                INT DEFAULT NULL
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
   , B                                CHAR(9) CHARACTER SET UCS2 COLLATE DEFAULT
       DEFAULT NULL
   , C                                INT DEFAULT NULL

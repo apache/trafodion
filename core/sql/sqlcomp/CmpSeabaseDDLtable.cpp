@@ -1,4 +1,4 @@
- /**********************************************************************
+/**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -1530,11 +1530,18 @@ short CmpSeabaseDDL::createSeabaseTable2(
     objectOwnerID = schemaOwnerID;
 
   // check if SYSKEY is specified as a column name.
-  NABoolean explicitSyskeySpecified = FALSE;
   for (Lng32 i = 0; i < colArray.entries(); i++)
     {
-      if (colArray[i]->getColumnName() == "SYSKEY")
-        explicitSyskeySpecified = TRUE;
+      if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+          (ComTrafReservedColName(colArray[i]->getColumnName())))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1269)
+                              << DgString0(colArray[i]->getColumnName());
+          
+          deallocEHI(ehi);
+          processReturn();
+          return -1;
+        }
     }
 
   NABoolean implicitPK = FALSE;
@@ -1562,18 +1569,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
       numSysCols++;
     }
 
-  if ((implicitPK) && (explicitSyskeySpecified))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1080)
-                                << DgColumnName("SYSKEY");
-
-      deallocEHI(ehi); 
-
-      processReturn();
-
-      return -1;
-    }
-
   int numSaltPartns = 0; // # of "_SALT_" values
   int numSplits = 0;     // # of initial region splits
 
@@ -1582,7 +1577,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   
   if ((createTableNode->getSaltOptions()) ||
       ((numSaltPartnsFromCQD > 0) &&
-       (NOT (implicitPK || explicitSyskeySpecified))))
+       (NOT implicitPK)))
     {
       // add a system column SALT INTEGER NOT NULL with a computed
       // default value HASH2PARTFUNC(<salting cols> FOR <num salt partitions>)
@@ -3068,7 +3063,9 @@ short CmpSeabaseDDL::dropSeabaseTable2(
     }
   else if (dropTableNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
     {
-      cliRC = getUsingViews(cliInterface, objUID, usingViewsQueue);
+      cliRC = getAllUsingViews(cliInterface, 
+                               catalogNamePart, schemaNamePart, objectNamePart,
+                               usingViewsQueue);
       if (cliRC < 0)
         {
           deallocEHI(ehi); 
@@ -3117,13 +3114,14 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   // Drop referencing objects
   char query[4000];
 
+  // drop the views.
+  // usingViewsQueue contain them in ascending order of their create
+  // time. Drop them from last to first.
   if (usingViewsQueue)
     {
-      usingViewsQueue->position();
-      for (int idx = 0; idx < usingViewsQueue->numEntries(); idx++)
+      for (int idx = usingViewsQueue->numEntries()-1; idx >= 0; idx--)
         {
-          OutputInfo * vi = (OutputInfo*)usingViewsQueue->getNext(); 
-          
+          OutputInfo * vi = (OutputInfo*)usingViewsQueue->get(idx);
           char * viewName = vi->get(0);
           
           if (dropOneTableorView(*cliInterface,viewName,COM_VIEW_OBJECT,false))
@@ -4303,26 +4301,6 @@ short CmpSeabaseDDL::cloneSeabaseTable(
   return 0;
 }
 
-short CmpSeabaseDDL::recreateViews(ExeCliInterface &cliInterface,
-                                   NAList<NAString> &viewNameList,
-                                   NAList<NAString> &viewDefnList)
-{
-  Lng32 cliRC = 0;
-
-  for (Lng32 i = 0; i < viewDefnList.entries(); i++)
-    {
-      cliRC = cliInterface.executeImmediate(viewDefnList[i]);
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          
-          return -1;
-        }
-    }
-
-  return 0;
-}
-
 void CmpSeabaseDDL::alterSeabaseTableAddColumn(
                                                StmtDDLAlterTableAddColumn * alterAddColNode,
                                                NAString &currCatName, NAString &currSchName)
@@ -4370,6 +4348,16 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
                                    TRUE, TRUE);
   if (retcode < 0)
     {
+      processReturn();
+
+      return;
+    }
+
+  if (retcode == 0) // does not exist
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_WRONG_TYPE)
+                          << DgString0(extTableName);
+
       processReturn();
 
       return;
@@ -4493,6 +4481,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
     {
       processReturn();
       
+      return;
+    }
+
+  if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+      (ComTrafReservedColName(colName)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1269)
+                          << DgString0(colName);
+      
+      deallocEHI(ehi);
+      processReturn();
       return;
     }
 
@@ -4886,6 +4885,285 @@ short CmpSeabaseDDL::updateMDforDropCol(ExeCliInterface &cliInterface,
   return 0;
 }
 
+///////////////////////////////////////////////////////////////////////
+//
+// An aligned table constains all columns in one hbase cell.
+// To drop a column, we need to read each row, create a
+// new row with the removed column and insert into the original table.
+//
+// Steps to drop a column from an aligned table:
+//
+// -- make a copy of the source aligned table using hbase copy
+// -- truncate the source table
+// -- Update metadata and remove the dropped column.
+// -- bulk load data from copied table into the source table
+// -- drop the copied temp table
+//
+// If an error happens after the source table has been truncated, then
+// it will be restored from the copied table.
+//
+///////////////////////////////////////////////////////////////////////
+short CmpSeabaseDDL::alignedFormatTableDropColumn
+(
+ const NAString &catalogNamePart,
+ const NAString &schemaNamePart,
+ const NAString &objectNamePart,
+ const NATable * naTable,
+ const NAString &altColName,
+ ElemDDLColDef *pColDef,
+ NABoolean ddlXns,
+ NAList<NAString> &viewNameList,
+ NAList<NAString> &viewDefnList)
+{
+  Lng32 cliRC = 0;
+
+  const NAFileSet * naf = naTable->getClusteringIndex();
+  
+  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+
+  ComUID comUID;
+  comUID.make_UID();
+  Int64 objUID = comUID.get_value();
+  
+  char objUIDbuf[100];
+
+  NAString tempTable(naTable->getTableName().getQualifiedNameAsAnsiString());
+  tempTable += "_";
+  tempTable += str_ltoa(objUID, objUIDbuf);
+
+  ExpHbaseInterface * ehi = allocEHI();
+  ExeCliInterface cliInterface
+    (STMTHEAP, NULL, NULL, 
+     CmpCommon::context()->sqlSession()->getParentQid());
+
+  Int64 tableUID = naTable->objectUid().castToInt64();
+  const NAColumnArray &naColArr = naTable->getNAColumnArray();
+  const NAColumn * altNaCol = naColArr.getColumn(altColName);
+  Lng32 altColNum = altNaCol->getPosition();
+
+  NAString tgtCols;
+  NAString srcCols;
+
+ NABoolean xnWasStartedHere = FALSE;
+
+  char buf[4000];
+
+  if (cloneSeabaseTable(cn, naTable, tempTable, ehi, &cliInterface))
+    {
+      cliRC = -1;
+      goto label_drop;
+    }
+  
+  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
+                         (NATable*)naTable, ehi))
+    {
+      cliRC = -1;
+      goto label_restore;
+    }
+
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    {
+      cliRC = -1;
+      goto label_restore;
+    }
+
+  if (updateMDforDropCol(cliInterface, naTable, altColNum))
+    {
+      cliRC = -1;
+      goto label_restore;
+    }
+  
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, 
+     COM_BASE_TABLE_OBJECT, ddlXns, FALSE);
+
+  for (Int32 c = 0; c < naColArr.entries(); c++)
+    {
+      const NAColumn * nac = naColArr[c];
+      if (nac->getColName() == altColName)
+        continue;
+
+      if (nac->isComputedColumn())
+        continue;
+
+      if (nac->isSystemColumn())
+        continue;
+
+      tgtCols += nac->getColName();
+      tgtCols += ",";
+    } // for
+
+  tgtCols = tgtCols.strip(NAString::trailing, ',');
+
+  str_sprintf(buf, "upsert using load into %s(%s) select %s from %s",
+              naTable->getTableName().getQualifiedNameAsAnsiString().data(),
+              tgtCols.data(),
+              tgtCols.data(),
+              tempTable.data());
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_restore;
+    }
+
+  if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
+                                  ddlXns)) < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(altColName)
+                          << DgString0(reason);
+      goto label_restore;
+    }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+
+  str_sprintf(buf, "drop table %s", tempTable.data());
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_restore;
+    }
+  
+  deallocEHI(ehi); 
+  
+  return 0;
+
+ label_restore:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
+  cloneHbaseTable(tempTable, 
+                  naTable->getTableName().getQualifiedNameAsAnsiString(),
+                  ehi);
+ 
+ label_drop:  
+  str_sprintf(buf, "drop table %s", tempTable.data());
+  Lng32 cliRC2 = cliInterface.executeImmediate(buf);
+  
+  deallocEHI(ehi); 
+  
+  return (cliRC < 0 ? -1 : 0);  
+}
+
+short CmpSeabaseDDL::hbaseFormatTableDropColumn(
+     ExpHbaseInterface *ehi,
+     const NAString &catalogNamePart,
+     const NAString &schemaNamePart,
+     const NAString &objectNamePart,
+     const NATable * naTable,
+     const NAString &altColName,
+     const NAColumn * nacol,
+     NABoolean ddlXns,
+     NAList<NAString> &viewNameList,
+     NAList<NAString> &viewDefnList)
+{
+  Lng32 cliRC = 0;
+
+  const NAString extNameForHbase = 
+    catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  ExeCliInterface cliInterface(
+       STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
+
+  Lng32 colNumber = nacol->getPosition();
+
+  NABoolean xnWasStartedHere = FALSE;
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    {
+      cliRC = -1;
+      goto label_error;
+    }
+  
+  if (updateMDforDropCol(cliInterface, naTable, colNumber))
+    {
+      cliRC = -1;
+      goto label_error;
+    }
+  
+  // remove column from all rows of the base table
+  HbaseStr hbaseTable;
+  hbaseTable.val = (char*)extNameForHbase.data();
+  hbaseTable.len = extNameForHbase.length();
+  
+  {
+    NAString column(nacol->getHbaseColFam(), heap_);
+    column.append(":");
+    
+    char * colQualPtr = (char*)nacol->getHbaseColQual().data();
+    Lng32 colQualLen = nacol->getHbaseColQual().length();
+    Int64 colQval = str_atoi(colQualPtr, colQualLen);
+    if (colQval <= UCHAR_MAX)
+      {
+        unsigned char c = (unsigned char)colQval;
+        column.append((char*)&c, 1);
+      }
+    else if (colQval <= USHRT_MAX)
+      {
+        unsigned short s = (unsigned short)colQval;
+        column.append((char*)&s, 2);
+      }
+    else if (colQval <= ULONG_MAX)
+      {
+        Lng32 l = (Lng32)colQval;
+        column.append((char*)&l, 4);
+      }
+    else
+      column.append((char*)&colQval, 8);
+    
+    HbaseStr colNameStr;
+    char * col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
+    if (col)
+      {
+        memcpy(col, column.data(), column.length());
+        col[column.length()] = 0;
+        colNameStr.val = col;
+        colNameStr.len = column.length();
+      }
+    else
+      {
+        cliRC = -EXE_NO_MEM_TO_EXEC;
+        *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
+        
+        goto label_error;
+      }
+    
+    cliRC = ehi->deleteColumns(hbaseTable, colNameStr);
+    if (cliRC < 0)
+      {
+        *CmpCommon::diags() << DgSqlCode(-8448)
+                            << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
+                            << DgString1(getHbaseErrStr(-cliRC))
+                            << DgInt0(-cliRC)
+                            << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+        
+        goto label_error;
+      }
+  }
+  
+  if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
+                                  ddlXns)) < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(altColName)
+                          << DgString0(reason);
+      goto label_error;
+    }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+  
+  return 0;
+
+ label_error:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
+  return -1;
+}
+
 void CmpSeabaseDDL::alterSeabaseTableDropColumn(
                                                 StmtDDLAlterTableDropColumn * alterDropColNode,
                                                 NAString &currCatName, NAString &currSchName)
@@ -4933,6 +5211,16 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
                                    TRUE, TRUE);
   if (retcode < 0)
     {
+      processReturn();
+
+      return;
+    }
+
+  if (retcode == 0) // does not exist
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_WRONG_TYPE)
+                          << DgString0(extTableName);
+
       processReturn();
 
       return;
@@ -5058,13 +5346,28 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   // this operation cannot be done if a xn is already in progress.
   if (xnInProgress(&cliInterface))
     {
-      *CmpCommon::diags() << DgSqlCode(-20123);
+      *CmpCommon::diags() << DgSqlCode(-20123)
+                          << DgString0("ALTER");
       
       processReturn();
       return;
     }
 
   Int64 objUID = naTable->objectUid().castToInt64();
+
+  NAList<NAString> viewNameList;
+  NAList<NAString> viewDefnList;
+  if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
+    {
+      NAString reason = "Error occurred while saving views.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+      
+      return;
+    }
 
   NABoolean xnWasStartedHere = FALSE;
 
@@ -5077,81 +5380,27 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
            catalogNamePart, schemaNamePart, objectNamePart,
            naTable, 
            alterDropColNode->getColName(),
-           NULL, alterDropColNode->ddlXns()))
+           NULL, alterDropColNode->ddlXns(),
+           viewNameList, viewDefnList))
         {
-          processReturn();
-          return;
+          cliRC = -1;
+          goto label_error;
         }
      }
   else
     {
-      if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
-        return;
-
-      if (updateMDforDropCol(cliInterface, naTable, colNumber))
+      if (hbaseFormatTableDropColumn
+          (
+               ehi,
+               catalogNamePart, schemaNamePart, objectNamePart,
+               naTable, 
+               alterDropColNode->getColName(),
+               nacol, alterDropColNode->ddlXns(),
+               viewNameList, viewDefnList))
         {
-          goto label_return;
+          cliRC = -1;
+          goto label_error;
         }
-
-      // remove column from all rows of the base table
-      HbaseStr hbaseTable;
-      hbaseTable.val = (char*)extNameForHbase.data();
-      hbaseTable.len = extNameForHbase.length();
-      
-      {
-        NAString column(nacol->getHbaseColFam(), heap_);
-        column.append(":");
-        
-        char * colQualPtr = (char*)nacol->getHbaseColQual().data();
-        Lng32 colQualLen = nacol->getHbaseColQual().length();
-        Int64 colQval = str_atoi(colQualPtr, colQualLen);
-        if (colQval <= UCHAR_MAX)
-          {
-            unsigned char c = (unsigned char)colQval;
-            column.append((char*)&c, 1);
-          }
-        else if (colQval <= USHRT_MAX)
-          {
-            unsigned short s = (unsigned short)colQval;
-            column.append((char*)&s, 2);
-          }
-        else if (colQval <= ULONG_MAX)
-          {
-            Lng32 l = (Lng32)colQval;
-            column.append((char*)&l, 4);
-          }
-        else
-          column.append((char*)&colQval, 8);
-        
-        HbaseStr colNameStr;
-        col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
-        if (col)
-          {
-            memcpy(col, column.data(), column.length());
-            col[column.length()] = 0;
-            colNameStr.val = col;
-            colNameStr.len = column.length();
-          }
-        else
-          {
-            cliRC = -EXE_NO_MEM_TO_EXEC;
-            *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
-            
-            goto label_return;
-          }
-
-        cliRC = ehi->deleteColumns(hbaseTable, colNameStr);
-        if (cliRC < 0)
-          {
-            *CmpCommon::diags() << DgSqlCode(-8448)
-                                << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
-                                << DgString1(getHbaseErrStr(-retcode))
-                                << DgInt0(-retcode)
-                                << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-            
-            goto label_return;
-          }
-      }
     } // hbase format table
 
   cliRC = updateObjectRedefTime(&cliInterface,
@@ -5159,12 +5408,31 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
                                 COM_BASE_TABLE_OBJECT_LIT);
   if (cliRC < 0)
     {
-      goto label_return;
+      goto label_error;
     }
 
  label_return:
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
-  
+
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
+     alterDropColNode->ddlXns(), FALSE);
+
+  return;
+
+ label_error:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+
+  if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
+                                  alterDropColNode->ddlXns())) < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+    }
+
   deallocEHI(ehi); 
   heap_->deallocateMemory(col);
 
@@ -5344,155 +5612,151 @@ void CmpSeabaseDDL::alterSeabaseTableAlterIdentityColumn(
   return;
 }
 
-///////////////////////////////////////////////////////////////////////
-//
-// An aligned table constains all columns in one hbase cell.
-// To drop a column, we need to read each row, create a
-// new row with the removed column and insert into the original table.
-//
-// Steps to drop a column from an aligned table:
-//
-// -- make a copy of the source aligned table using hbase copy
-// -- truncate the source table
-// -- Update metadata and remove the dropped column.
-// -- bulk load data from copied table into the source table
-// -- drop the copied temp table
-//
-// If an error happens after the source table has been truncated, then
-// it will be restored from the copied table.
-//
-///////////////////////////////////////////////////////////////////////
-short CmpSeabaseDDL::alignedFormatTableDropColumn
-(
- const NAString &catalogNamePart,
- const NAString &schemaNamePart,
- const NAString &objectNamePart,
- const NATable * naTable,
- const NAString &altColName,
- ElemDDLColDef *pColDef,
- NABoolean ddlXns)
+short CmpSeabaseDDL::saveAndDropUsingViews(Int64 objUID,
+                                           ExeCliInterface *cliInterface,
+                                           NAList<NAString> &viewNameList,
+                                           NAList<NAString> &viewDefnList)
 {
   Lng32 cliRC = 0;
 
-  const NAFileSet * naf = naTable->getClusteringIndex();
-  
-  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-
-  ComUID comUID;
-  comUID.make_UID();
-  Int64 objUID = comUID.get_value();
-  
-  char objUIDbuf[100];
-
-  NAString tempTable(naTable->getTableName().getQualifiedNameAsAnsiString());
-  tempTable += "_";
-  tempTable += str_ltoa(objUID, objUIDbuf);
-
-  ExpHbaseInterface * ehi = allocEHI();
-  ExeCliInterface cliInterface
-    (STMTHEAP, NULL, NULL, 
-     CmpCommon::context()->sqlSession()->getParentQid());
-
-  Int64 tableUID = naTable->objectUid().castToInt64();
-  const NAColumnArray &naColArr = naTable->getNAColumnArray();
-  const NAColumn * altNaCol = naColArr.getColumn(altColName);
-  Lng32 altColNum = altNaCol->getPosition();
-
-  NAString tgtCols;
-  NAString srcCols;
-
- NABoolean xnWasStartedHere = FALSE;
-
-  char buf[4000];
-
-  if (cloneSeabaseTable(cn, naTable, tempTable, ehi, &cliInterface))
-    {
-      cliRC = -1;
-      goto label_drop;
-    }
-  
-  if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
-                         (NATable*)naTable, ehi))
-    {
-      cliRC = -1;
-      goto label_restore;
-    }
-
-  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
-    {
-      cliRC = -1;
-      goto label_restore;
-    }
-
-  if (updateMDforDropCol(cliInterface, naTable, altColNum))
-    {
-      cliRC = -1;
-      goto label_restore;
-    }
-  
-  ActiveSchemaDB()->getNATableDB()->removeNATable
-    (cn,
-     ComQiScope::REMOVE_FROM_ALL_USERS, 
-     COM_BASE_TABLE_OBJECT, ddlXns, FALSE);
-
-  for (Int32 c = 0; c < naColArr.entries(); c++)
-    {
-      const NAColumn * nac = naColArr[c];
-      if (nac->getColName() == altColName)
-        continue;
-
-      if (nac->isComputedColumn())
-        continue;
-
-      if (nac->isSystemColumn())
-        continue;
-
-      tgtCols += nac->getColName();
-      tgtCols += ",";
-    } // for
-
-  tgtCols = tgtCols.strip(NAString::trailing, ',');
-
-  str_sprintf(buf, "upsert using load into %s(%s) select %s from %s",
-              naTable->getTableName().getQualifiedNameAsAnsiString().data(),
-              tgtCols.data(),
-              tgtCols.data(),
-              tempTable.data());
-  cliRC = cliInterface.executeImmediate(buf);
+  NAString catName, schName, objName;
+  cliRC = getObjectName(cliInterface, objUID,
+                        catName, schName, objName);
   if (cliRC < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      goto label_restore;
+      processReturn();
+      
+      return -1;
     }
 
-  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
-
-  str_sprintf(buf, "drop table %s", tempTable.data());
-  cliRC = cliInterface.executeImmediate(buf);
+  Queue * usingViewsQueue = NULL;
+  cliRC = getAllUsingViews(cliInterface, 
+                           catName, schName, objName, 
+                           usingViewsQueue);
   if (cliRC < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      goto label_restore;
+      processReturn();
+      
+      return -1;
     }
+
+  if (usingViewsQueue->numEntries() == 0)
+    return 0;
+
+  NABoolean xnWasStartedHere = FALSE;
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    return -1;
   
-  deallocEHI(ehi); 
-  
+  // find out any views on this table.
+  // save their definition and drop them.
+  // they will be recreated before return.
+  usingViewsQueue->position();
+  for (int idx = 0; idx < usingViewsQueue->numEntries(); idx++)
+    {
+      OutputInfo * vi = (OutputInfo*)usingViewsQueue->getNext(); 
+      char * viewName = vi->get(0);
+      
+      viewNameList.insert(viewName);
+      
+      ComObjectName viewCO(viewName, COM_TABLE_NAME);
+      
+      const NAString catName = viewCO.getCatalogNamePartAsAnsiString();
+      const NAString schName = viewCO.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objName = viewCO.getObjectNamePartAsAnsiString(TRUE);
+      
+      Int64 viewUID = getObjectUID(cliInterface,
+                                   catName.data(), schName.data(), objName.data(), 
+                                   COM_VIEW_OBJECT_LIT);
+      if (viewUID < 0 )
+        {
+          endXnIfStartedHere(cliInterface, xnWasStartedHere, -1);
+          
+          return -1;
+        }
+      
+      NAString viewText;
+      if (getTextFromMD(cliInterface, viewUID, COM_VIEW_TEXT, 0, viewText))
+        {
+          endXnIfStartedHere(cliInterface, xnWasStartedHere, -1);
+          
+          return -1;
+        }
+      
+      viewDefnList.insert(viewText);
+    }
+
+  // drop the views.
+  // usingViewsQueue contain them in ascending order of their create
+  // time. Drop them from last to first.
+  for (int idx = usingViewsQueue->numEntries()-1; idx >= 0; idx--)
+    {
+      OutputInfo * vi = (OutputInfo*)usingViewsQueue->get(idx);
+      char * viewName = vi->get(0);
+
+      if (dropOneTableorView(*cliInterface,viewName,COM_VIEW_OBJECT,false))
+        {
+          endXnIfStartedHere(cliInterface, xnWasStartedHere, -1);
+          
+          processReturn();
+          
+          return -1;
+        }
+    }
+
+  endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+   
   return 0;
+}
 
- label_restore:
-  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+short CmpSeabaseDDL::recreateUsingViews(ExeCliInterface *cliInterface,
+                                        NAList<NAString> &viewNameList,
+                                        NAList<NAString> &viewDefnList,
+                                        NABoolean ddlXns)
+{
+  Lng32 cliRC = 0;
 
-  cloneHbaseTable(tempTable, 
-                  naTable->getTableName().getQualifiedNameAsAnsiString(),
-                  ehi);
+  if (viewDefnList.entries() == 0)
+    return 0;
+
+  NABoolean xnWasStartedHere = FALSE;
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    return -1;
+
+  for (Lng32 i = 0; i < viewDefnList.entries(); i++)
+    {
+      cliRC = cliInterface->executeImmediate(viewDefnList[i]);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          cliRC = -1;
+          goto label_return;
+        }
+    }
+
+  cliRC = 0;
+  
+label_return:
+  for (Lng32 i = 0; i < viewDefnList.entries(); i++)
+    {
+      ComObjectName tableName(viewNameList[i], COM_TABLE_NAME);
+      const NAString catalogNamePart = 
+        tableName.getCatalogNamePartAsAnsiString();
+      const NAString schemaNamePart = 
+        tableName.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objectNamePart = 
+        tableName.getObjectNamePartAsAnsiString(TRUE);
+
+      CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cn,
+         ComQiScope::REMOVE_MINE_ONLY, COM_VIEW_OBJECT,
+         ddlXns, FALSE);
+    }
+
+  endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC);
  
- label_drop:  
-  str_sprintf(buf, "drop table %s", tempTable.data());
-  Lng32 cliRC2 = cliInterface.executeImmediate(buf);
-  
-  deallocEHI(ehi); 
-  
-  return (cliRC < 0 ? -1 : 0);  
+  return cliRC;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -5501,19 +5765,24 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 // To alter a column, we need to read each row, create a
 // new row with the altered column and insert into the original table.
 //
+// Validation that altered col datatype is compatible with the
+// original datatype has already been done before this method
+// is called.
+//
 // Steps to alter a column from an aligned table:
 //
 // -- make a copy of the source aligned table using hbase copy
 // -- truncate the source table
 // -- Update metadata column definition with the new definition
 // -- bulk load data from copied table into the source table
+// -- recreate views, if existed, based on the new definition
 // -- drop the copied temp table
 //
 // If an error happens after the source table has been truncated, then
 // it will be restored from the copied table.
 //
 ///////////////////////////////////////////////////////////////////////
-short CmpSeabaseDDL::alignedFormatTableAlterColumn
+short CmpSeabaseDDL::alignedFormatTableAlterColumnAttr
 (
  const NAString &catalogNamePart,
  const NAString &schemaNamePart,
@@ -5521,7 +5790,9 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumn
  const NATable * naTable,
  const NAString &altColName,
  ElemDDLColDef *pColDef,
- NABoolean ddlXns)
+ NABoolean ddlXns,
+ NAList<NAString> &viewNameList,
+ NAList<NAString> &viewDefnList)
 {
   Lng32 cliRC = 0;
 
@@ -5650,13 +5921,33 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumn
       goto label_restore;
     }
 
-  deallocEHI(ehi); 
-  
+  if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
+                                  ddlXns)) < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(altColName)
+                          << DgString0(reason);
+      goto label_restore;
+    }
+
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+  
+  str_sprintf(buf, "drop table %s", tempTable.data());
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_restore;
+    }
+
+  deallocEHI(ehi); 
   
   return 0;
 
  label_restore:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
   cloneHbaseTable(tempTable, 
                   naTable->getTableName().getQualifiedNameAsAnsiString(),
                   ehi);
@@ -5672,7 +5963,90 @@ short CmpSeabaseDDL::alignedFormatTableAlterColumn
   return (cliRC < 0 ? -1 : 0);
 }
 
-short CmpSeabaseDDL::alterColumnAttr(
+/////////////////////////////////////////////////////////////////////
+// this method is called if alter could be done by metadata changes
+// only and without affecting table data.
+/////////////////////////////////////////////////////////////////////
+short CmpSeabaseDDL::mdOnlyAlterColumnAttr(
+     const NAString &catalogNamePart, const NAString &schemaNamePart,
+     const NAString &objectNamePart,
+     const NATable * naTable, const NAColumn * naCol, NAType * newType,
+     StmtDDLAlterTableAlterColumnDatatype * alterColNode,
+     NAList<NAString> &viewNameList,
+     NAList<NAString> &viewDefnList)
+{
+  Lng32 cliRC = 0;
+
+  ExeCliInterface cliInterface
+    (STMTHEAP, NULL, NULL, 
+     CmpCommon::context()->sqlSession()->getParentQid());
+  
+  Int64 objUID = naTable->objectUid().castToInt64();
+  
+  Lng32 colNumber = naCol->getPosition();
+  
+  NABoolean xnWasStartedHere = FALSE;
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    return -1;
+
+  char buf[4000];
+  str_sprintf(buf, "update %s.\"%s\".%s set column_size = %d, column_class = '%s' where object_uid = %Ld and column_number = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+              newType->getNominalSize(),
+              COM_ALTERED_USER_COLUMN_LIT,
+              objUID,
+              colNumber);
+  
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      goto label_error;
+    }
+  
+  cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList, 
+                             alterColNode->ddlXns());
+  if (cliRC < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(naCol->getColName().data())
+                          << DgString0(reason);
+      
+      goto label_error;
+    }
+  
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+
+  return 0;
+
+ label_error:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+
+  return -1;
+}
+
+///////////////////////////////////////////////////////////////////////
+//
+// Steps to alter a column from an hbase format table:
+//
+// Validation that altered col datatype is compatible with the
+// original datatype has already been done before this method
+// is called.
+//
+// -- add a temp column based on the altered datatype
+// -- update temp col with data from the original col 
+// -- update metadata column definition with the new col definition
+// -- update original col with data from temp col
+// -- recreate views, if existed, based on the new definition
+// -- drop the temp col. Dependent views will be recreated during drop.
+//
+// If an error happens after the source table has been truncated, then
+// it will be restored from the copied table.
+//
+///////////////////////////////////////////////////////////////////////
+short CmpSeabaseDDL::hbaseFormatTableAlterColumnAttr(
      const NAString &catalogNamePart, const NAString &schemaNamePart,
      const NAString &objectNamePart,
      const NATable * naTable, const NAColumn * naCol, NAType * newType,
@@ -5681,35 +6055,6 @@ short CmpSeabaseDDL::alterColumnAttr(
   ExeCliInterface cliInterface
     (STMTHEAP, NULL, NULL, 
      CmpCommon::context()->sqlSession()->getParentQid());
-
-  // this operation cannot be done if a xn is already in progress.
-  if (xnInProgress(&cliInterface))
-    {
-      *CmpCommon::diags() << DgSqlCode(-20123);
-
-      processReturn();
-      return -1;
-    }
-
-  if (naTable->isSQLMXAlignedTable())
-    {
-      ElemDDLColDef *pColDef = 
-        alterColNode->getColToAlter()->castToElemDDLColDef();
-
-      if (alignedFormatTableAlterColumn
-          (
-           catalogNamePart, schemaNamePart, objectNamePart,
-           naTable,
-           naCol->getColName(), 
-           pColDef,
-           alterColNode->ddlXns()))
-        {
-          processReturn();
-          return -1;
-        }
-
-      return 0;
-    }
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart,catalogNamePart);
 
@@ -5908,6 +6253,16 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
       return;
     }
 
+  if (retcode == 0) // does not exist
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_WRONG_TYPE)
+                          << DgString0(extTableName);
+
+      processReturn();
+
+      return;
+    }
+
   ActiveSchemaDB()->getNATableDB()->useCache();
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
@@ -6075,36 +6430,428 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
       return;
     }
 
+  // this operation cannot be done if a xn is already in progress.
+  if ((NOT mdAlterOnly) && (xnInProgress(&cliInterface)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-20123)
+                          << DgString0("ALTER");
+
+      processReturn();
+      return;
+    }
+
+  Int64 objUID = naTable->objectUid().castToInt64();
+
+  // if there are views on the table, save the definition and drop
+  // the views.
+  // At the end of alter, views will be recreated. If an error happens
+  // during view recreation, alter will fail.
+  NAList<NAString> viewNameList;
+  NAList<NAString> viewDefnList;
+  if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
+     {
+      NAString reason = "Error occurred while saving views.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+       
+      return;
+    }
+
   if (mdAlterOnly)
     {
-      Int64 objUID = naTable->objectUid().castToInt64();
-      
-      Lng32 colNumber = nacol->getPosition();
-      
-      char buf[4000];
-      str_sprintf(buf, "update %s.\"%s\".%s set column_size = %d, column_class = '%s' where object_uid = %Ld and column_number = %d",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-                  newType->getNominalSize(),
-                  COM_ALTERED_USER_COLUMN_LIT,
-                  objUID,
-                  colNumber);
-      
-      cliRC = cliInterface.executeImmediate(buf);
-      if (cliRC < 0)
+      if (mdOnlyAlterColumnAttr
+          (catalogNamePart, schemaNamePart, objectNamePart,
+           naTable, nacol, newType, alterColNode,
+           viewNameList, viewDefnList))
         {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          cliRC = -1;
           
-          processReturn();
-          return;
+          goto label_error;
         }
     }
-  else
+  else if (naTable->isSQLMXAlignedTable())
     {
-      if (alterColumnAttr(catalogNamePart, schemaNamePart, objectNamePart,
-                          naTable, nacol, newType, alterColNode))
-        return;
+      ElemDDLColDef *pColDef = 
+        alterColNode->getColToAlter()->castToElemDDLColDef();
+      
+      if (alignedFormatTableAlterColumnAttr
+          (catalogNamePart, schemaNamePart, objectNamePart,
+           naTable,
+           colName,
+           pColDef,
+           alterColNode->ddlXns(),
+           viewNameList, viewDefnList))
+        {
+          cliRC = -1;
+          goto label_error;
+        }
+    }
+  else if (hbaseFormatTableAlterColumnAttr
+           (catalogNamePart, schemaNamePart, objectNamePart,
+            naTable, nacol, newType, alterColNode))
+    {
+      cliRC = -1;
+      
+      goto label_error;
+    }
+
+  cliRC = updateObjectRedefTime(&cliInterface,
+                                catalogNamePart, schemaNamePart, objectNamePart,
+                                COM_BASE_TABLE_OBJECT_LIT);
+  if (cliRC < 0)
+    {
+      goto label_error;
     }
   
+label_return:
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
+     alterColNode->ddlXns(), FALSE);
+
+  processReturn();
+  
+  return;
+
+label_error:
+  if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
+                                  alterColNode->ddlXns())) < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+    }
+
+  ActiveSchemaDB()->getNATableDB()->removeNATable
+    (cn,
+     ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
+     alterColNode->ddlXns(), FALSE);
+
+  processReturn();
+
+  return;
+}
+
+/////////////////////////////////////////////////////////////////////
+// this method renames an existing column to the specified new name.
+//
+// A column cannot be renamed if it is a system, salt, division by,
+// computed or a lob column.
+// 
+// If any index exists on the renamed column, then the index column
+// is also renamed.
+//
+// If views exist on the table, they are dropped and recreated after
+// rename. If recreation runs into an error, then alter fails.
+//
+///////////////////////////////////////////////////////////////////
+void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
+     StmtDDLAlterTableAlterColumnRename * alterColNode,
+     NAString &currCatName, NAString &currSchName)
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  const NAString &tabName = alterColNode->getTableName();
+
+  ComObjectName tableName(tabName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extTableName = tableName.getExternalName(TRUE);
+  const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_BASE_TABLE_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+
+  if (retcode == 0) // does not exist
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_WRONG_TYPE)
+                          << DgString0(extTableName);
+
+      processReturn();
+
+      return;
+    }
+
+  ActiveSchemaDB()->getNATableDB()->useCache();
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  CorrName cn(tableName.getObjectNamePart().getInternalName(),
+              STMTHEAP,
+              tableName.getSchemaNamePart().getInternalName(),
+              tableName.getCatalogNamePart().getInternalName());
+
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-4082)
+        << DgTableName(cn.getExposedNameAsAnsiString());
+    
+      processReturn();
+
+      return;
+    }
+
+  // Make sure user has the privilege to perform the alter column
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner(),naTable->getSchemaOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
+  // return an error if trying to alter a column from a volatile table
+  if (naTable->isVolatileTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT);
+     
+      processReturn ();
+
+      return;
+    }
+
+  const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+  const NAString &colName = alterColNode->getColumnName();
+  const NAString &renamedColName = alterColNode->getRenamedColumnName();
+
+  const NAColumn * nacol = nacolArr.getColumn(colName);
+  if (! nacol)
+    {
+      // column doesnt exist. Error.
+      *CmpCommon::diags() << DgSqlCode(-CAT_COLUMN_DOES_NOT_EXIST_ERROR)
+                          << DgColumnName(colName);
+
+      processReturn();
+
+      return;
+    }
+
+  if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+      (ComTrafReservedColName(renamedColName)))
+    {
+      NAString reason = "Renamed column " + renamedColName + " is reserved for internal system usage.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+
+      return;
+    }
+
+  if (nacol->isComputedColumn() || nacol->isSystemColumn())
+    {
+      NAString reason = "Cannot rename system or computed column.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+
+      return;
+    }
+
+  const NAColumn * renNacol = nacolArr.getColumn(renamedColName);
+  if (renNacol)
+    {
+      // column already exist. Error.
+      NAString reason = "Renamed column " + renamedColName + " already exist in the table.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+
+      return;
+    }
+
+  const NAType * currType = nacol->getType();
+
+  // If column is a LOB column , error
+  if ((currType->getFSDatatype() == REC_BLOB) || (currType->getFSDatatype() == REC_CLOB))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_LOB_COLUMN_ALTER)
+                          << DgColumnName(colName);
+      processReturn();
+      return;
+     }
+
+  const NAFileSet * naFS = naTable->getClusteringIndex();
+  const NAColumnArray &naKeyColArr = naFS->getIndexKeyColumns();
+  NABoolean isPkeyCol = FALSE;
+  if (naKeyColArr.getColumn(colName))
+    {
+      isPkeyCol = TRUE;
+    }
+
+  Int64 objUID = naTable->objectUid().castToInt64();
+  
+  NAList<NAString> viewNameList;
+  NAList<NAString> viewDefnList;
+  if (saveAndDropUsingViews(objUID, &cliInterface, viewNameList, viewDefnList))
+    {
+      NAString reason = "Error occurred while saving dependent views.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+      
+      processReturn();
+       
+      return;
+    }
+
+  Lng32 colNumber = nacol->getPosition();
+  
+  char buf[4000];
+  str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s', column_class = '%s' where object_uid = %Ld and column_number = %d",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+              renamedColName.data(),
+              COM_ALTERED_USER_COLUMN_LIT,
+              objUID,
+              colNumber);
+  
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+      return;
+    }
+
+  if (isPkeyCol)
+    {
+      Lng32 divColPos = -1;
+      if ((naTable->hasDivisioningColumn(&divColPos)))
+        {
+          NAString reason = "Not supported with DIVISION BY clause.";
+          *CmpCommon::diags() << DgSqlCode(-1404)
+                              << DgColumnName(colName)
+                              << DgString0(reason);
+          
+          processReturn();
+          
+          return;
+        }
+
+      Lng32 saltColPos = -1;
+      if ((naTable->hasSaltedColumn(&saltColPos)))
+        {
+          NAString saltText;
+          cliRC = getTextFromMD(&cliInterface, objUID, COM_COMPUTED_COL_TEXT,
+                                saltColPos, saltText);
+          if (cliRC < 0)
+            {
+              processReturn();
+              return;
+            }   
+          
+          // replace col reference with renamed col
+          NAString quotedColName = "\"" + colName + "\"";
+          NAString renamedQuotedColName = "\"" + renamedColName + "\"";
+          saltText = replaceAll(saltText, quotedColName, renamedQuotedColName);
+          cliRC = updateTextTable(&cliInterface, objUID, COM_COMPUTED_COL_TEXT,
+                                  saltColPos, saltText, TRUE);
+          if (cliRC < 0)
+            {
+              processReturn();
+              return;
+            }   
+        } // saltCol
+    } // pkeyCol being renamed
+
+  if (naTable->hasSecondaryIndexes())
+    {
+      const NAFileSetList &naFsList = naTable->getIndexList();
+
+      for (Lng32 i = 0; i < naFsList.entries(); i++)
+        {
+          naFS = naFsList[i];
+          
+          // skip clustering index
+          if (naFS->getKeytag() == 0)
+            continue;
+
+          str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s' || '@' where object_uid = %Ld and column_name = '%s' || '@'",
+                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                      renamedColName.data(),
+                      naFS->getIndexUID(),
+                      colName.data());
+  
+          cliRC = cliInterface.executeImmediate(buf);
+          if (cliRC < 0)
+            {
+              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+              
+              processReturn();
+              return;
+            }
+
+         str_sprintf(buf, "update %s.\"%s\".%s set column_name = '%s' where object_uid = %Ld and column_name = '%s'",
+                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                      renamedColName.data(),
+                      naFS->getIndexUID(),
+                      colName.data());
+  
+          cliRC = cliInterface.executeImmediate(buf);
+          if (cliRC < 0)
+            {
+              cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+              
+              processReturn();
+              return;
+            }
+        } // for
+    } // secondary indexes present
+
+  cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
+                             alterColNode->ddlXns());
+  if (cliRC < 0)
+    {
+      NAString reason = "Error occurred while recreating views due to dependency on older column definition. Drop dependent views before doing the alter.";
+      *CmpCommon::diags() << DgSqlCode(-1404)
+                          << DgColumnName(colName)
+                          << DgString0(reason);
+
+      processReturn();
+      
+      return;
+    }
+
   cliRC = updateObjectRedefTime(&cliInterface,
                                 catalogNamePart, schemaNamePart, objectNamePart,
                                 COM_BASE_TABLE_OBJECT_LIT);
@@ -6115,9 +6862,10 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
   
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
-     ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
+     ComQiScope::REMOVE_FROM_ALL_USERS,
+     COM_BASE_TABLE_OBJECT,
      alterColNode->ddlXns(), FALSE);
-
+  
   processReturn();
   
   return;
@@ -9475,7 +10223,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       populateKeyInfo(keyInfoArray[idx], vi);
     }
 
-  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access order by 1,2,3",
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format, I.index_uid from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access order by 1,2,3",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
@@ -9544,6 +10292,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       Lng32 nonKeyColCount = *(Lng32*)vi->get(7);
       Lng32 idxNumSaltPartns = *(Lng32*)vi->get(8);
       char * format = vi->get(9);
+      Int64 indexUID = *(Int64*)vi->get(10);
       ComRowFormat idxRowFormat;
 
       if (memcmp(format, COM_ALIGNED_FORMAT_LIT, 2) == 0)
@@ -9595,6 +10344,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
         new(STMTHEAP) NAString(coIdxName.getExternalName(TRUE));
 
       indexInfoArray[idx].indexName = (char*)extIndexName->data();
+      indexInfoArray[idx].indexUID = indexUID;
       indexInfoArray[idx].keytag = keyTag;
       indexInfoArray[idx].isUnique = isUnique;
       indexInfoArray[idx].isExplicit = isExplicit;

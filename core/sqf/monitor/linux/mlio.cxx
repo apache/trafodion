@@ -113,7 +113,8 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( TmSync_def ),          // ReqType_TmSync
    sizeof(REQTYPE) + sizeof( TransInfo_def ),       // ReqType_TransInfo
    sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
-   sizeof(REQTYPE) + sizeof( ZoneInfo_def )         // ReqType_ZoneInfo
+   sizeof(REQTYPE) + sizeof( ZoneInfo_def ),        // ReqType_ZoneInfo
+   sizeof(REQTYPE) + sizeof( NodeName_def )         // ReqType_NodeName
 };
 
 // The serviceReplySize array holds the size of the request messages for
@@ -136,7 +137,8 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( Startup_reply_def ),     // ReplyType_Startup
    sizeof(REPLYTYPE) + sizeof( Mount_reply_def ),       // ReplyType_Mount
    sizeof(REPLYTYPE) + sizeof( MonStats_reply_def ),    // ReplyType_MonStats
-   sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def )     // ReplyType_ZoneInfo
+   sizeof(REPLYTYPE) + sizeof( ZoneInfo_reply_def ),    // ReplyType_ZoneInfo
+   sizeof(REPLYTYPE) + sizeof( NodeName_reply_def )     // ReplyType_NodeName
 };
 
 

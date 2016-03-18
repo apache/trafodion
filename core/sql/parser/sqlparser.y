@@ -2494,6 +2494,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>  		alter_table_alter_column_default_value 
 %type <pStmtDDL>  		alter_table_alter_column_datatype
 %type <pStmtDDL>  		alter_table_alter_column_set_sg_option 
+%type <pStmtDDL>  		alter_table_alter_column_rename
 %type <boolean>   		alter_column_type //++ MV
 %type <pStmtDDL>  		alter_table_set_constraint_clause
 %type <pStmtDDL>                alter_table_disable_constraint_clause
@@ -31231,9 +31232,11 @@ alter_table_action : add_table_constraint_definition
 		      | alter_table_alter_column_datatype
 			{
       				$$ = $1;
-
 			}
-			
+		      | alter_table_alter_column_rename
+			{
+      				$$ = $1;
+			}
 		      | alter_table_alter_column_default_value 
 			{
       				$$ = $1;
@@ -31311,6 +31314,18 @@ alter_table_alter_column_default_value : TOK_ALTER TOK_COLUMN column_name TOK_DE
 						 $6 /*alter_col_default_clause_arg*/);
                 		       delete $3;
 			       	       restoreInferCharsetState();
+				}
+
+// type pStmtDDL
+alter_table_alter_column_rename : TOK_ALTER TOK_COLUMN column_name TOK_RENAME TOK_TO column_name
+				{
+				  $$ = new (PARSERHEAP())
+                                    StmtDDLAlterTableAlterColumnRename(
+                                         *$3,  // column name
+                                         *$6); // renamed column name
+                                  delete $3;
+                                  delete $6;
+                                  restoreInferCharsetState();
 				}
 				
 // type pStmtDDL

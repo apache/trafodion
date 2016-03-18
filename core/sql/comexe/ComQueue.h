@@ -203,7 +203,7 @@ NA_EIDPROC
 NA_EIDPROC
   void * get();
 
-  // returns the i'th entry
+  // returns the i'th entry. 0 based. First entry is i = 0
 NA_EIDPROC
   void * get(ULng32 i);
 

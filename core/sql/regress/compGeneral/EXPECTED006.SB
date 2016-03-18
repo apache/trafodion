@@ -281,7 +281,10 @@
 --- SQL operation complete.
 >>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
 
---- SQL command prepared.
+*** ERROR[4045] The operand of function TO_DATE must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>control query default MODE_SPECIAL_4 reset;
 
 --- SQL operation complete.

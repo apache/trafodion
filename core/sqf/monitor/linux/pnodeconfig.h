@@ -77,7 +77,7 @@ public:
     inline const char   *GetName( void ) { return ( name_ ); }
     inline CPNodeConfig *GetNext( void ) { return ( next_ ); }
     inline int           GetPNid( void ) { return ( pnid_ ); }
-
+    void                 SetName( char *newName ); 
     int                  GetSpareList( int sparePNid[] );
     inline int           GetSparesCount( void ) { return ( sparePNidsCount_ ); }
 

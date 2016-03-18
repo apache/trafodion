@@ -11,18 +11,19 @@
 >>--INVOKE and SHOWDDL work for tables with columns associated with UCS2.
 >>invoke t002;
 
--- Definition of table CAT.SCH.T002
--- Definition current  Fri Apr 23 14:40:12 2010
+-- Definition of Trafodion table TRAFODION.SCH.T002
+-- Definition current  Thu Feb 25 10:23:15 2016
 
   (
-    C                                CHAR(10) CHARACTER SET UCS2 COLLATE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                CHAR(10) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT NULL
   )
 
 --- SQL operation complete.
 >>showddl t002;
 
-CREATE TABLE CAT.SCH.T002
+CREATE TABLE TRAFODION.SCH.T002
   (
     C                                CHAR(10) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT NULL
@@ -71,7 +72,7 @@ ucs2      iso88591  xxxx
 
 *** ERROR[15001] A syntax error occurred at or before: 
 insert into t002 values(_UNICODE'asdf');
-                        ^ (25 characters from start of SQL statement)
+                              ^ (31 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
