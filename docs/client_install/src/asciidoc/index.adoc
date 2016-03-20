@@ -56,7 +56,7 @@ specific language governing permissions and limitations under the License.
 
 **Acknowledgements**
 
-Microsoft® and Windows® are U.S. registered trademarks of Microsoft Corporation. Java® is a registered trademark of Oracle and/or its affiliates. DbVisualizer™ is a trademark of DbVis Software AB.
+Microsoft(R) and Windows® are U.S. registered trademarks of Microsoft Corporation. Java® is a registered trademark of Oracle and/or its affiliates. DbVisualizer™ is a trademark of DbVis Software AB.
 
 *Revision History*
 

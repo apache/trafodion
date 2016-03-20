@@ -1,4 +1,4 @@
-a////
+////
 /**
  *@@@ START COPYRIGHT @@@
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -88,7 +88,7 @@ system of your client workstation:
 
 ===== Windows 10
 
-1. Right-clock on the Windows icon on the menu bar. Select *System*.
+1. Right-click on the Windows icon on the menu bar. Select *System*.
 
 2. Click on *Advanced System Settings*.
 
