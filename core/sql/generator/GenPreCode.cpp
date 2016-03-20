@@ -4956,10 +4956,13 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	    }
 	}
     }
-  else if (producesOutputs())
+
+  if ((producesOutputs()) &&
+      ((NOT isUnique) || (getUpdateCKorUniqueIndexKey())))
     {
       // Cannot do olt msg opt if:
       //   -- values are to be returned and unique operation is not being used.
+      //   -- or this delete was transformed from an update of pkey/index key
       // set an indication that multiple rows will be returned.
       generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
       generator->oltOptInfo()->setOltCliOpt(FALSE);

@@ -1610,7 +1610,17 @@ short CmpSeabaseDDL::createSeabaseTable2(
         {
           const NAString &colName = (*saltArray)[i]->getColumnName();
           ComAnsiNamePart cnp(colName, ComAnsiNamePart::INTERNAL_FORMAT);
-          CollIndex      colIx    = colArray.getColumnIndex(colName);
+          Lng32      colIx    = colArray.getColumnIndex(colName);
+          if (colIx < 0)
+            {
+              *CmpCommon::diags() << DgSqlCode(-1009)
+                                  << DgColumnName(colName);
+              
+              deallocEHI(ehi); 
+              processReturn();
+              return -1;
+            }
+
           NAType         *colType = colArray[colIx]->getColumnDataType();
           NAString       typeText;
           short          rc       = colType->getMyTypeAsText(&typeText, FALSE);
@@ -3896,7 +3906,29 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
-  Int64 objUID = getObjectUID(&cliInterface,
+  // cascade option not supported
+  if (renameTableNode->isCascade())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1427)
+                          << DgString0("Reason: Cascade option not supported.");
+      
+      processReturn();
+      return;
+    }
+
+  const CheckConstraintList &checkList = naTable->getCheckConstraints();
+  if (checkList.entries() > 0)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1427)
+        << DgString0("Reason: Operation not allowed if check constraints are present. Drop the constraints and recreate them after rename.");
+      
+      processReturn();
+      
+      return;
+    }
+    
+   Int64 objUID = getObjectUID(&cliInterface,
                               catalogNamePart.data(), schemaNamePart.data(), 
                               objectNamePart.data(),
                               COM_BASE_TABLE_OBJECT_LIT);
@@ -3921,7 +3953,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
   if (usingViewsQueue->numEntries() > 0)
     {
       *CmpCommon::diags() << DgSqlCode(-1427)
-                          << DgString0("Reason: Dependent views exist.");
+                          << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
       
       processReturn();
       return;
@@ -6891,7 +6923,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
-
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
@@ -6947,6 +6978,19 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
                             COM_UNIQUE_CONSTRAINT, //TRUE, 
                             keyColList))
     {
+      return;
+    }
+
+  // if table already has a primary key, return error.
+  if ((naTable->getClusteringIndex()) && 
+      (NOT naTable->getClusteringIndex()->hasOnlySyskey()))
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1256)
+        << DgString0(extTableName);
+      
+      processReturn();
+      
       return;
     }
 
@@ -8471,6 +8515,17 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       if (NOT constrFound)
         {
           *CmpCommon::diags() << DgSqlCode(-1052);
+          
+          processReturn();
+          
+          return;
+        }
+
+      if (isPkeyConstr)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1255)
+                              << DgString0(dropConstrName)
+                              << DgString1(extTableName);
           
           processReturn();
           

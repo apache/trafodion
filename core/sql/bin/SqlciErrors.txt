@@ -247,8 +247,8 @@
 1252 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The existing index $0~TableName to be used by a unique or primary constraint has not been populated.  Please populate the index and then try to add the constraint again.
 1253 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in.  ------   
 1254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Duplicate unique constraints are not allowed with same set of columns.
-1255 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
-1256 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
+1255 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~String0 is the clustering key constraint for table $1~String1 and cannot be dropped.
+1256 ZZZZZ 99999 BEGINNER MINOR DBADMIN PRIMARY KEY constraint cannot be added since table $0~String0 already has a user specified clustering key. 
 1257 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1258 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  

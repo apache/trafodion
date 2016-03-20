@@ -222,6 +222,7 @@ NA_EIDPROC
                              rec_datetime_field dstEndField,
                              short dstFractPrec,
                              char *dstData,
+                             Lng32 dstLen,
 			     short validateFlag,
                              NABoolean *roundedDownFlag = NULL);
 
