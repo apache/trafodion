@@ -578,7 +578,7 @@ function DO_DIFF
     if [ $OK -eq 0 ]; then
 	RESULT="### FAIL (missing files) ###"
 	printf "\n$RESULT\n"
-	printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
+	printf "$(date '+%m/%d/%Y %R')  $T  $RESULT\n" >> $rgrlog
 	return
     fi
 
@@ -709,7 +709,7 @@ function DO_DIFF
 #    printf "$RESULT\n"
 #    printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
     modtime=`stat --printf=%y $LOG | cut -d'.' -f1`
-    printf "$modtime    $T\t  $RESULT\n" >> $rgrlog
+    printf "$modtime  $T  $RESULT\n" >> $rgrlog
 }
 
 function DO_TEST
@@ -828,7 +828,7 @@ do
              TEST_CAN_BE_RUN=0
 	     RESULT="### FAIL (!! Test SKIPPED because NDCS SETUP is NOT RIGHT !! ) ###"
 	     printf "\n$RESULT\n"
-	     printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
+	     printf "$(date '+%m/%d/%Y %R')  $T  $RESULT\n" >> $rgrlog
 	     break;
            fi
         done
