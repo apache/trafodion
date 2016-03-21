@@ -129,7 +129,12 @@ SRVR_STMT_HDL::SRVR_STMT_HDL()
 	IRD = NULL;
 	outputDataValue._length = 0;
 	outputDataValue._buffer = NULL;
-	outputDataValue.pad_to_offset_8_ = {'\0', '\0', '\0', '\0'};
+        //outputDataValue.pad_to_offset_8_ = {'\0', '\0', '\0', '\0'};
+        //use trafodional way to initialze array, above is c++11 in gcc 4.8
+        //for gcc 4.4 backward compatibilty, Trafodion now is using c++0x , gcc 4.4 cannot support c++11 mode
+        //once tested with -std=c++11, may recover this coding style
+        memset( outputDataValue.pad_to_offset_8_ , 0, sizeof(outputDataValue.pad_to_offset_8_) );
+
 	inputDataValue._length = 0;
 	inputDataValue._buffer = NULL;
 	delayedOutputDataValue._length = 0;

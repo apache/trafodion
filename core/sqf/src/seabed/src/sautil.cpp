@@ -95,11 +95,6 @@ void SB_SA_Util_assert_fun_com(const char *pp_exp,
                                const char *pp_file,
                                unsigned    pv_line,
                                const char *pp_fun) {
-    pid_t lv_pid;
-    pid_t lv_tid;
-
-    lv_pid = getpid();
-    lv_tid = sb_sa_util_gettid();
     gv_sb_sa_util_save_assert.iv_errno = errno;
     gv_sb_sa_util_save_assert.iv_line = pv_line;
     gv_sb_sa_util_save_assert.iv_lhs = pv_lhs;
