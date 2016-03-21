@@ -445,6 +445,15 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
   rc = 0;
   Lng32 remainingInBatch = batchSize_;
   NABoolean isFirstBatch = false;
+  // isFirstInBatch is a stack variable for optimization reason. It is used for the mdam small scanner optimization heuristic that
+  // is performed at runtime. Since this function is invoke intensively for all scan (mdam or regular scan), minimizing CPU/memory access
+  // impact on runtime code to a strict minimum is attempted. Given that we are trying to detect if the actual scan is bellow the size
+  // of an HBase block, having the runtime logic performing the detection only affect the first work invoke looks like the right idea.
+  // and leveraging an existing counter (remainingInBatch) instead of creating a new one. The reasonable asumption to allow this is that
+  // 1- batchSize_ being 8K, most likely times the row size, we are good in assuming that first hbase block will fit in batchSize
+  // 2- parent buffer size will be large enough to deal with one HBAse_Block_size without having to rely on re-invoking work in the middle.
+  // and anyway, if none of the reasonable assumption is true, then that's fine, the heuristic won't work, and we will use regular scanner,
+  // meaning optimization is off for the scan part of MDAM (still on for the probe side of it).
 
   while (1)
     {
