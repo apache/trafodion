@@ -308,6 +308,22 @@ alter table t027t7 add column "_DIVISION_1" int;
 alter table t027t7 alter column b rename to "_SALT_";
 invoke t027t7;
 
+-- not null and default clause can appear in any order
+drop table if exists t027t1 cascade;
+create table t027t1 (a int, b int not null, c int default 10,
+   d int default 10 not null, e int not null default 10, 
+   f int not null default 10 check (f > 0),
+   g int not null not droppable default 10);
+invoke t027t1;
+insert into t027t1 (b) values (10);
+select * from t027t1;
+alter table t027t1 add column h int not null default 10;
+invoke t027t1;
+select * from t027t1;
+
+--should give error
+create table t027t2 (a int default 10 not null default 20);
+
 -- cleanup
 ?section clean_up
 drop table if exists t027t7 cascade;

@@ -801,7 +801,7 @@ $1~String1 --------------------------------
 3049 42000 99999 BEGINNER MAJOR DBADMIN Host variables, such as $0~string0, are not allowed in a dynamic compilation.
 3050 42000 99999 BEGINNER MAJOR DBADMIN The constraint must have the same catalog and schema as the specified table.
 3051 42000 99999 BEGINNER MAJOR DBADMIN Duplicate HEADING clauses were specified in column definition $0~ColumnName.
-3052 42000 99999 BEGINNER MAJOR DBADMIN Duplicate NOT NULL clauses were specified in column definition $0~ColumnName.
+3052 42000 99999 BEGINNER MAJOR DBADMIN Duplicate $0~String0 clauses were specified in column definition $0~ColumnName.
 3053 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PRIMARY KEY clauses were specified in column definition $0~ColumnName.
 3054 42000 99999 BEGINNER MAJOR DBADMIN The NOT DROPPABLE clause is allowed only in PRIMARY KEY and NOT NULL constraint definitions.
 3055 42000 99999 BEGINNER MAJOR DBADMIN Duplicate DELETE rules were specified.
