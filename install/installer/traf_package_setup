@@ -151,7 +151,7 @@ if [[ $SUSE_LINUX == "false" ]]; then
    # it doesn't hurt if it was already enabled and we try to enable it again
    $TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
 
-   package_list="sqlite expect perl-DBD-SQLite* protobuf xerces-c perl-Params-Validate perl-Time-HiRes gzip"
+   package_list="apr apr-util sqlite expect perl-DBD-SQLite* protobuf xerces-c perl-Params-Validate perl-Time-HiRes gzip"
    if [[ $internetAccess == "true" ]]; then
       for package in $package_list
       do

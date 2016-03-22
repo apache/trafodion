@@ -41,29 +41,20 @@ export PDCP_HADOOP_NODES="$PDCP $MY_HADOOP_NODES"
 cd $UNTAR_DIR
 
 PORT=`echo $URL | sed 's/.*://'`
-AMBARI_HOST=$(echo $URL | sed 's@:.*@@')
+AMBARI_HOST=$(echo $URL | sed 's@.*://@@' | sed 's@:.*@@')
 echo "export AMBARI_HOST=\"$AMBARI_HOST\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 source $TRAF_CONFIG
 
 #determine java version and choose corresponding jar files
-echo "***INFO: Detected JAVA version $JAVA_VERSION"
-if [ "$JAVA_VERSION" == "1.6" ]; then
-   echo "***ERROR: JAVA 1.6 not supported for Trafodion HBase 0.98"
-   exit -1
-elif [ "$JAVA_VERSION" == "1.7" ] || [ "$JAVA_VERSION" == "1.8" ]; then
-     if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-        if [[ $HDP_2_3_SUPPORT == "Y" ]]; then
-           hbase_trx_jar="hbase-trx-hdp2_3-${TRAF_VERSION}.jar"
-        else
-	   hbase_trx_jar="hbase-trx-hdp2_1-${TRAF_VERSION}.jar"
-        fi
-     else
-        hbase_trx_jar="hbase-trx-hdp2_2-${TRAF_VERSION}.jar"
-     fi
+if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+   if [[ $HDP_2_3_SUPPORT == "Y" ]]; then
+      hbase_trx_jar="hbase-trx-hdp2_3-${TRAF_VERSION}.jar"
+   else
+      hbase_trx_jar="hbase-trx-hdp2_1-${TRAF_VERSION}.jar"
+   fi
 else
-    echo "***ERROR: unable to determine Hadoop's java version"
-    exit -1
+   hbase_trx_jar="hbase-trx-hdp2_2-${TRAF_VERSION}.jar"
 fi
 
 traf_util_jar="trafodion-utility-${TRAF_VERSION}.jar"
@@ -119,6 +110,23 @@ else
     ssh -q -n $node sudo chmod 644 $HADOOP_PATH/$traf_util_jar
     done
 fi
+
+#=======================================
+#Check that HBase-trx copied to all nodes
+
+for node in $HADOOP_NODES
+do
+   copiedOver=$(ssh -q -n $node sudo ls $HADOOP_PATH/hbase-trx* | wc -l)
+   if [[ $copiedOver -ne "1" ]]; then
+      echo "***ERROR: $hbase_trx_jar was not copied on $node"
+      echo "***ERROR: Please investigate why this happened"
+      echo "***ERROR: Trafodion can not start without this. EXITING..."
+      exit -1
+   fi
+done
+
+echo "***INFO: $hbase_trx_jar copied correctly! Huzzah."
+
 
 
 #Copy hbase-site.xml file

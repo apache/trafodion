@@ -1528,6 +1528,14 @@ void CNodeContainer::AddNodes( )
     int pnid;
     int rank;
     int *sparePNids = NULL;
+    
+    //  only relevant on a workstation acting as a single node
+    const char* envVar = getenv("SQ_MAX_RANK"); 
+    int maxNode;
+    if (envVar != NULL)
+      maxNode = atoi (envVar);
+    else
+      maxNode = MAX_NODES; 
 
     CPNodeConfig *pnodeConfig = clusterConfig_->GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
@@ -1561,6 +1569,8 @@ void CNodeContainer::AddNodes( )
         }
         else
         {
+           if (pnid >= maxNode) // only for workstation acting as single node
+              rank = -1;
             node = new CNode( (char *)pnodeConfig->GetName(), pnid, rank );
             assert( node != NULL );
         }

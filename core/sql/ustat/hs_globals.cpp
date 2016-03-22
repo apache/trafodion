@@ -7743,7 +7743,7 @@ Lng32 HSGlobalsClass::groupListFromTable(HSColGroupStruct*& groupList,
 #else // NA_USTAT_USE_STATIC not defined, use dynamic query
     char sbuf[25];
     NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, "
-                          "cast(READ_TIME as char(19)), REASON "
+                          "cast(READ_TIME as char(19) character set iso88591), REASON "
                    "FROM ";
     qry.append(hstogram_table->data());
     qry.append(    " WHERE TABLE_UID = ");

@@ -275,6 +275,7 @@ class StmtDDLAlterTablePartition;
 class StmtDDLAlterTableRename;
 class StmtDDLAlterTableNamespace;
 class StmtDDLAlterTableAlterColumnDatatype;
+class StmtDDLAlterTableAlterColumnRename;
 class StmtDDLAlterTableAlterColumnDefaultValue;
 class StmtDDLAlterTableAlterColumnSetSGOption;
 class StmtDDLAlterTableSetConstraint;
@@ -606,6 +607,8 @@ public:
                 castToStmtDDLAlterTableAlterColumnDefaultValue();
   virtual StmtDDLAlterTableAlterColumnDatatype* 
                 castToStmtDDLAlterTableAlterColumnDatatype();
+  virtual StmtDDLAlterTableAlterColumnRename* 
+                castToStmtDDLAlterTableAlterColumnRename();
   virtual StmtDDLAlterTableSetConstraint*
                 castToStmtDDLAlterTableSetConstraint();
   virtual StmtDDLAlterTableToggleConstraint*

@@ -67,6 +67,7 @@
 #include "ComUser.h"
 #include "ComMisc.h"
 #include "CmpSeabaseDDLmd.h"
+#include "CmpSeabaseDDLroutine.h"
 #include "hdfs.h"
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
@@ -924,6 +925,17 @@ bool CmpSeabaseDDL::isHistogramTable(const NAString &name)
     
   return false;
 
+}
+
+NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
+{
+  if ((name(0,min((sizeof(LOB_MD_PREFIX)-1), name.length())) == LOB_MD_PREFIX) ||
+      (name(0,min((sizeof(LOB_DESC_CHUNK_PREFIX)-1), name.length()))==LOB_DESC_CHUNK_PREFIX)||
+      (name(0,min((sizeof(LOB_DESC_HANDLE_PREFIX)-1), name.length()))==LOB_DESC_HANDLE_PREFIX)
+      )
+    return true;
+  else
+    return false;
 }
 
 NABoolean CmpSeabaseDDL::isSeabase(const NAString &catName)
@@ -3918,6 +3930,39 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
   
   return 0;
 }
+
+// finds all views that directly or indirectly(thru another view) contains
+// the given object.
+// Returns them in ascending order of their create time.
+short CmpSeabaseDDL::getAllUsingViews(ExeCliInterface *cliInterface,
+                                      NAString &catName,
+                                      NAString &schName,
+                                      NAString &objName,
+                                      Queue * &usingViewsQueue)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+              
+  str_sprintf(buf, "select '\"' || trim(o.catalog_name) || '\"' || '.' || '\"' || trim(o.schema_name) || '\"' || '.' || '\"' || trim(o.object_name) || '\"' "
+    ", o.create_time from %s.\"%s\".%s O, "
+    " (get all views on table \"%s\".\"%s\".\"%s\") x(a) "
+    " where trim(O.schema_name) || '.' || trim(O.object_name) = x.a "
+    " order by 2",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName.data(), schName.data(), objName.data());
+  
+  cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return cliRC;
+    }
+  
+  return 0;
+}
+
 /* 
 Get the salt column text for a given table or index.
 Returns 0 for object does not have salt column
@@ -5821,9 +5866,24 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
                                      Int64 objUID, 
                                      ComTextType textType, 
                                      Lng32 subID, 
-                                     NAString &text)
+                                     NAString &text,
+                                     NABoolean withDelete)
 {
   Lng32 cliRC = 0;
+  if (withDelete)
+    {
+      // Note: It might be tempting to try an upsert instead of a
+      // delete followed by an insert, but this won't work. It is
+      // possible that the metadata text could shrink and take fewer
+      // rows in its new form than the old. So we do the simple thing
+      // to avoid such complications.
+       cliRC = deleteFromTextTable(cliInterface, objUID, textType, subID);
+      if (cliRC < 0)
+        {
+          return -1;
+        }
+    }
+
   Lng32 textLen = text.length();
   Lng32 bufLen = (textLen>TEXTLEN ? TEXTLEN : textLen) + 1000;
   char * buf = new(STMTHEAP) char[bufLen];
@@ -6829,6 +6889,11 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns)
      goto label_error;
    }
 
+ if (createSeabaseLibmgr (&cliInterface))
+   {
+     goto label_error;
+   }
+
   cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
   return;
@@ -7648,10 +7713,28 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
 
   if (retcode != STATUS_ERROR)
   {
-    // change authorization status in compiler context and kill arkcmps
-    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
-    for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
-      GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+     // Commit the transaction so privmgr schema exists in other processes
+     endXnIfStartedHere(cliInterface, xnWasStartedHere, 0);
+     if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+     {
+       SEABASEDDL_INTERNAL_ERROR("initialize authorization");
+       return -1;
+     }
+
+     // change authorization status in compiler context and kill arkcmps
+     GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
+     for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+       GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+
+     // If someone initializes trafodion with library management but does not 
+     // initialize authorization, then the role DB__LIBMGRROLE has not been 
+     // granted to LIBMGR procedures.  Do this now
+     cliRC = existsInSeabaseMDTable(cliInterface,
+                                    getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, 
+                                    SEABASE_LIBMGR_LIBRARY,
+                                    COM_LIBRARY_OBJECT, TRUE, FALSE);
+     if (cliRC == 1) // library exists
+       cliRC = grantLibmgrPrivs(cliInterface);
   }
   else
   {
@@ -8292,6 +8375,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        (ddlExpr->dropRepos()) ||
        (ddlExpr->upgradeRepos()) ||
        (ddlExpr->addSchemaObjects()) ||
+       (ddlExpr->createLibmgr()) ||
        (ddlExpr->updateVersion())))
     ignoreUninitTrafErr = TRUE;
 
@@ -8331,7 +8415,6 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     }
 
   NABoolean startXn = TRUE;
-
   // no DDL transactions.
   if ((NOT ddlExpr->ddlXns()) &&
       ((ddlExpr->dropHbase()) ||
@@ -8364,6 +8447,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+       //       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_RENAME) ||
        (ddlNode->getOperatorType() == DDL_DROP_TABLE)))
     {
       // transaction will be started and commited in called methods.
@@ -8399,7 +8483,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        ddlNode->castToStmtDDLNode()->ddlXns()) &&
       ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-       (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
+       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
     {
       // transaction will be started and commited in called methods.
       startXn = FALSE;
@@ -8475,6 +8559,18 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->addSchemaObjects())
     {
       createSeabaseSchemaObjects();
+    }
+  else if (ddlExpr->createLibmgr())
+    {
+      createSeabaseLibmgr(&cliInterface);
+    }
+  else if (ddlExpr->dropLibmgr())
+    {
+      dropSeabaseLibmgr(&cliInterface);
+    }
+  else if (ddlExpr->upgradeLibmgr())
+    {
+      upgradeSeabaseLibmgr(&cliInterface);
     }
   else if (ddlExpr->updateVersion())
     {
@@ -8898,6 +8994,14 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            alterSeabaseTableAlterColumnDatatype(alterColNode, 
                                                 currCatName, currSchName);
         }
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_RENAME)
+         {
+           StmtDDLAlterTableAlterColumnRename * alterColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnRename();
+           
+           alterSeabaseTableAlterColumnRename(alterColNode, 
+                                              currCatName, currSchName);
+        }
        else if (ddlNode->getOperatorType() ==  DDL_CLEANUP_OBJECTS)
          {
            StmtDDLCleanupObjects * co = 
@@ -8924,13 +9028,13 @@ label_return:
       cliRC = -1;
 
       // some ddl stmts are executed as multiple sub statements.
-      // with ddl xns, some of those sub stmts may abort the enclosing
-      // xn in case of an error amd add an error condition that the xn
+      // some of those sub stmts may abort the enclosing xn started here
+      // in case of an error, and add an error condition that the xn
       // was aborted.
       // remove that error condition from the diags area. But dont do it
-      // if it is main error.
-      if (ddlXns && xnWasStartedHere && 
-          (CmpCommon::diags()->mainSQLCODE() != -CLI_VALIDATE_TRANSACTION_ERROR))
+      // if it is the main error.
+      //      if (xnWasStartedHere && 
+      if (CmpCommon::diags()->mainSQLCODE() != -CLI_VALIDATE_TRANSACTION_ERROR)
         {
           CollIndex i = 
             CmpCommon::diags()->returnIndex(-CLI_VALIDATE_TRANSACTION_ERROR);

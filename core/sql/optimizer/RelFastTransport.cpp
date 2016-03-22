@@ -203,7 +203,7 @@ short FastExtract::setOptions(NAList<UnloadOption*> *
 
   for (CollIndex i = 0; i < fastExtractOptionList->entries(); i++)
   {
-    UnloadOption::UnloadOption * feo = (*fastExtractOptionList)[i];
+    UnloadOption * feo = (*fastExtractOptionList)[i];
     switch (feo->option_)
     {
       case UnloadOption::DELIMITER_:

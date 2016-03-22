@@ -1244,7 +1244,6 @@ int32 TM_Recov::resolve_in_doubt_txs(int32 pv_dtm, int_32 delay)
 {
    TM_TX_Info * lp_txn = NULL;
    int64        lv_last_key = 0;
-   int32        lv_error = 0;
 
    // The total number of transactions to recover for this node has already been set when we created the Transaction State List
    //iv_total_txs_to_recover = ip_tm_info->num_active_txs() + txnStateList()->size();
@@ -1261,7 +1260,7 @@ int32 TM_Recov::resolve_in_doubt_txs(int32 pv_dtm, int_32 delay)
 
     while (lp_txn)
     {
-        lv_error = resolveTxn(lp_txn);
+        resolveTxn(lp_txn);
 
         lv_last_key = txnList()->curr_key();
         lp_txn = (TM_TX_Info *) txnList()->get_next();

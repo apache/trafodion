@@ -40,6 +40,7 @@
 // CmpCommon.h contains STMTHEAP declaration
 #include "CmpCommon.h"
 #include "CmpDDLCatErrorCodes.h"
+#include "NAUserId.h"
 #include "ComUser.h"
 #include "ComSecurityKey.h"
 
@@ -119,7 +120,9 @@ public:
    
    virtual PrivStatus insert(const PrivMgrMDRow &row);
    
-   PrivStatus insertSelect(const std::string & authsLocation); 
+   PrivStatus insertSelect(
+      const std::string & authsLocation,
+      const std::string & inClause); 
    
    PrivStatus selectAllWhere(
       const std::string & whereClause,
@@ -1296,7 +1299,9 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 // *              the diags area.                                              *
 // *                                                                           *
 // *****************************************************************************
-PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation)
+PrivStatus PrivMgrRoles::populateCreatorGrants(
+  const std::string & authsLocation,
+  const std::vector<std::string> &rolesToAdd)
 
 {
 
@@ -1305,22 +1310,28 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
 
    MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-   // See if the table is empty before inserting any rows
+   int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct) - 
+                         NUMBER_SPECIAL_SYSTEM_ROLES;
+
+   // Calculate the number of roles that have already been created
+   int64_t expectedRows = numberRoles - rolesToAdd.size();
 
    std::string whereClause;
 
-   int64_t expectedRows = 0;
+   int64_t foundRows = 0;
 
-   PrivStatus privStatus = myTable.selectCountWhere(whereClause,expectedRows);
+   PrivStatus privStatus = myTable.selectCountWhere(whereClause,foundRows);
 
    if (privStatus == STATUS_ERROR)
       return privStatus;
 
-   if (expectedRows != 0)
+   if (foundRows != expectedRows)
    {
       std::string message ("Found ");
+      message += to_string((long long int)foundRows);
+      message += " rows in ROLE_USAGE table, expecting ";
       message += to_string((long long int)expectedRows);
-      message += " rows in ROLE_USAGE table, expecting 0 rows";
+      message += " rows";
       traceMsg = "ERROR: ";
       traceMsg += message;
       PrivMgr::log(__FILE__, message, -1);
@@ -1329,7 +1340,19 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
    }
 
    // insert the rows
-   privStatus = myTable.insertSelect(authsLocation);
+   std::string inClause (" auth_db_name in (");
+   std::string sep = "";
+   for (size_t i = 0; i < rolesToAdd.size(); i++)
+   {
+     inClause.append(sep);
+     inClause.append ("'");
+     inClause.append(rolesToAdd[i]);
+     inClause.append ("'");
+     sep = ",";
+   }
+   inClause += ")";
+
+   privStatus = myTable.insertSelect(authsLocation, inClause);
 
    if (privStatus == STATUS_ERROR)
    {
@@ -1340,7 +1363,7 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
       return privStatus;
    }
   
-   // make sure that the number rows inserted match the expected.
+   // make sure that the number rows inserted match the total.
    // get the number of rows inserted
    int64_t insertedRows;
 
@@ -1352,7 +1375,17 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
    // get number rows expected
    std::string selectStmt ("SELECT COUNT(*) FROM  ");
 
-   whereClause = " where AUTH_TYPE = 'R'";
+   int32_t actualSize = 0;
+   char buf[500];
+   if (ComUser::getRoleList(buf, actualSize, 500))
+   {
+      PRIVMGR_INTERNAL_ERROR("internal error getting role list");
+      return STATUS_ERROR;
+   }
+   whereClause = " where AUTH_TYPE = 'R' AND AUTH_DB_NAME IN (";
+   whereClause += buf;
+   whereClause += ")";
+
    selectStmt += authsLocation;
    selectStmt += " ";
    selectStmt += whereClause;
@@ -1371,9 +1404,9 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
    }
 
    // Check to see if rows inserted match expected rows
-   if (expectedRows != insertedRows)
+   if (numberRoles != insertedRows)
    {
-      std::string message ("Expected to insert ");
+      std::string message ("Expected to find ");
       message += to_string((long long int)expectedRows);
       message += " rows into ROLE_USAGE table, instead ";
       message += to_string((long long int)insertedRows);
@@ -1885,7 +1918,9 @@ char grantorAuthClass[3] = {0};
 // *           *: Insert failed. A CLI error is put into the diags area.       *
 // *                                                                           *
 // *****************************************************************************
-PrivStatus MyTable::insertSelect(const std::string & authsLocation)
+PrivStatus MyTable::insertSelect(
+  const std::string & authsLocation,
+  const std::string & inClause)
 
 {
 
@@ -1894,9 +1929,9 @@ char insertStatement[2000];
    sprintf(insertStatement, "INSERT INTO %s SELECT A1.AUTH_ID, A1.AUTH_DB_NAME, A1.AUTH_CREATOR,"
            "(SELECT AUTH_DB_NAME FROM %s A2 WHERE A2.auth_ID = A1.AUTH_CREATOR)," 
            "(SELECT AUTH_TYPE FROM %s A3 WHERE A3.auth_ID = A1.AUTH_CREATOR),"
-           "-2,'_SYSTEM','%c',-1 FROM %s A1 WHERE A1.AUTH_TYPE = 'R'",
+           "-2,'_SYSTEM','%c',-1 FROM %s A1 WHERE A1.AUTH_TYPE = 'R' AND %s",
            tableName_.c_str(),authsLocation.c_str(),authsLocation.c_str(), 
-           'U',authsLocation.c_str()); 
+           'U',authsLocation.c_str(), inClause.c_str()); 
                
    return CLIImmediate(insertStatement);
                   

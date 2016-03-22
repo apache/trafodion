@@ -1149,7 +1149,8 @@ public:
     baseColRefs_ = val;
   }
 
-  NABoolean isUpsertThatNeedsMerge() const;
+  NABoolean isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
+                                   NABoolean omittedCurrentDefaultCols) const;
   RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
 
 protected:

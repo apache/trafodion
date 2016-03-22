@@ -142,10 +142,9 @@ void print_transid_str(int32 pv_node, int32 pv_seqnum) {
 
 long now()
 {  
-   struct timezone lv_tz =  {0, NULL};
    timeval lv_now;
 
-   int lv_success = gettimeofday(&lv_now, &lv_tz);
+   int lv_success = gettimeofday(&lv_now, NULL);
    if (lv_success != 0)
    {
       printf("\n** gettimeofday returned error %d.", lv_success);
@@ -502,7 +501,6 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
 
 void process_tmstats(bool pv_reset, int32 pv_node, bool json)
 {
-    int lv_error = 0;
     int lv_dtm_count = 0;
     bool del = false;
 
@@ -513,7 +511,7 @@ void process_tmstats(bool pv_reset, int32 pv_node, bool json)
         process_tmstats_node(pv_reset, pv_node, json);
     else
     {
-        lv_error = msg_mon_get_node_info        ( &lv_dtm_count,
+        msg_mon_get_node_info        ( &lv_dtm_count,
                                                   MAX_NODES,
                                                   NULL);
         
@@ -598,14 +596,13 @@ void process_statusalltransactions_node(int32 pv_node)
 
 void process_statusalltransactions(int32 pv_node)
 {
-  int lv_error = 0;
   int lv_dtm_count = 0;
 
   if(pv_node !=-1)
      cout << "Info specific node: " << pv_node << "\n";
   else
   {
-     lv_error = msg_mon_get_node_info(&lv_dtm_count,
+     msg_mon_get_node_info(&lv_dtm_count,
                                       MAX_NODES,
                                       NULL);
 
@@ -666,14 +663,13 @@ void process_list_node(int32 pv_node)
 
 void process_list(int32 pv_node)
 {
-    int lv_error = 0;
     int lv_dtm_count = 0;
 
     if (pv_node != -1)
         process_list_node(pv_node);
     else
     {
-        lv_error = msg_mon_get_node_info (&lv_dtm_count,
+        msg_mon_get_node_info (&lv_dtm_count,
                                           MAX_NODES,
                                           NULL);
 
@@ -1699,7 +1695,7 @@ int main(int argc, char *argv[])
                 lv_param1 = atoi(lp_nextcmd);
             }
             if (lv_param1 == 0)
-                lv_resume_error= RESUMETRANSACTION(NULL);
+                lv_resume_error= RESUMETRANSACTION(0);
             else
                 lv_resume_error= RESUMETRANSACTION(lv_param1);
                 cout << "RESUMETRANSACTION(" << lv_param1 << ") returned error " << lv_resume_error << endl;

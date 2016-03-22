@@ -46,30 +46,31 @@ You copy data between two Trafodion tables by using the appropriate SELECT state
 === Example
 
 ```
+LOAD INTO target_table SELECT * FROM source_table WHERE custkey >= 1000 ;
 ```
 
 [[bulk-load-data-from-hdfs-files]]
 == Load Data From HDFS Files
 
-You can copy your data into an HDFS folder and then create an external Hive tables with the correct fields that
-you point to the HDFS folder containing the data. You can also specify a WHERE clause on the source data as a filter.
+You copy your data (local or remote) into an HDFS folder. Then, you create an external Hive table (with correct fields) that points
+to the HDFS folder containing the data. You may also specify a WHERE clause on the source data as a filter, if needed.
 See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-ExternalTables[External Tables]
 page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for more information.
 
-When Hive tables are accessed through Trafodion columns with integral, string, and char types are accessible.
+Trafodion can access columns in Hive tables having integer, string and char types.
 See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[LanguageManual Types]
 page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for the data types available in Hive.
 
 Overall, you do the following:
 
-1. Export the data on the remote cluster.
-2. Transport files to Trafodion cluster via FTP, scp, or some other method.
+1. Export the data on the local or remote cluster.
+2. If applicable, transport files to Trafodion cluster via FTP, scp, or some other method.
 3. Use LOAD referencing HIVE external tables.
 
 === Example
 
-
-NEED A DESCRIPTION OF THE USE CASE, THE LOAD FILE, AND ITS LAYOUT.
+You have a customer-demographics in a text file, which you need to load into Trafodion.
+The columns are separated by `|`.
 
 Do the following:
 
@@ -141,12 +142,12 @@ Task: POPULATE INDEX Status: Ended ET: 00:00:05.262
 [[bulk-load-data-from-hive-tables]]
 == Load Data From Hive Tables
 
-You can import data from Hive using the TrafCI or sqlci command interface. Do the following:
+You can import data from Hive using the trafci or sqlci command interface. Do the following:
 
 1. Set these required Control Query Defaults (CQDs) to improve load performance:
 +
 ```
-CQD HIVE_MAX_STRING_LENGTH '1000'; // if the widest column is 1KB
+CQD HIVE_MAX_STRING_LENGTH '1000'; -- if the widest column is 1KB
 ```
 +
 This setting is required if there are time-related column types in the target Trafodion table.
@@ -162,10 +163,10 @@ LOAD WITH NO POPULATE INDEXES INTO trafodion.sch.demo SELECT * FROM hive.hive.de
 ```
 
 See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html#load_statement[Trafodion SQL Reference Manual].
-for the completed syntax of the LOAD statement.
+for the complete syntax of the LOAD statement.
 
-If multiple invocations of the LOAD statement are used to incrementally load sets of data to a single target table, then several HFiles
-for each partition of the target table are created. This causes inefficient access during SELECT queries and may also cause a compaction
+If you use multiple LOAD statements to incrementally load sets of data into a single target table, then several HFiles are created
+for each partition of the target table. This causes inefficient access during SELECT queries and may also cause a compaction
 to be triggered based on the policies configured in the HBase settings.
 
 To avoid this issue, it is good practice to perform a major compaction on a table that has been the target of more than two LOAD statements
@@ -184,8 +185,6 @@ NOTE: The `major_compact` command returns immediately since it's not waited. Typ
 >> CQD HIVE_MAX_STRING_LENGTH '1000' ;
 >> CQD ALLOW_INCOMPATIBLE_ASSIGNMENT 'on' ;
 >> LOAD WITH NO POPULATE INDEXES INTO trafodion.sch.demo SELECT * FROM hive.hive.demo ;
-
-<NEED MORE HERE, INCLUDING CREATING THE TRAFODION TABLE AND WHAT TO DO ABOUT INDEXES>
 ```
 
 [[bulk-load-data-from-external-databases]]
@@ -243,7 +242,8 @@ export JAVA_OPTIONS=-Dmapred.child.java.opts=\-Djava.security.egd=file:/dev/uran
 ==== List All Oracle Tables
 
 ```
-sqoop list-tables --driver oracle.jdbc.OracleDriver --connect jdbc:oracle:thin:@<Oracle host name>:<port>/<database>
+sqoop list-tables --driver oracle.jdbc.OracleDriver 
+--connect jdbc:oracle:thin:@<Oracle host name>:<port>/<database>
 --username <user-name> --password <password>
 ```
 
@@ -279,9 +279,12 @@ which does not exist in the data itself.
 
 === Example
 
-ADD EXAMPLE HERE.
-
 ```
+sqoop import --connect jdbc:oracle:thin:@localhost:1521/orcl
+--username trafdemo --password traf123 --table CUSTOMER
+--split-by CUSTNUM --hive-import --create-hive-table
+--hive-table customers --hive-overwrite --null-string ''
+--null-non-string '' --hive-drop-import-delims--verbose
 ```
 
 

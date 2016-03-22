@@ -23,7 +23,7 @@
 /* -*-C++-*-
  *****************************************************************************
  *
- * File:         ex_lob.h
+ * File:         ExLOBprocess.h
  * Description:  header file for LOB storage and retrieval
  *               
  *               

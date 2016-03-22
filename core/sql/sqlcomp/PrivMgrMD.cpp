@@ -159,24 +159,20 @@ PrivStatus PrivMgrMDAdmin::initializeComponentPrivileges()
    log(__FILE__, "initializing component privileges", -1);
    PrivStatus privStatus = STATUS_GOOD;
 
-   // First, let's start with a clean slate.  Drop all components as well as 
-   // their respective operations and and any privileges granted.  This should be  
-   // a NOP unless PrivMgr metadata was damaged and reintialization is occurring.
-
-   PrivMgrComponents components(metadataLocation_,pDiags_);
-   components.dropAll();
-   
-   // Next, register the component.
-
-   privStatus = components.registerComponentInternal(SQL_OPERATION_NAME,
-                                                     SQL_OPERATIONS_COMPONENT_UID,
-                                                     true,"Component for SQL operations");
-                                             
-   if (privStatus != STATUS_GOOD)
-   {
+  // First register the component.
+  PrivMgrComponents components(metadataLocation_,pDiags_);
+  bool componentExists = (components.exists(SQL_OPERATION_NAME));
+  if (!componentExists)
+  {
+    privStatus = components.registerComponentInternal(SQL_OPERATION_NAME,
+                                                      SQL_OPERATIONS_COMPONENT_UID,
+                                                      true,"Component for SQL operations");
+    if (privStatus != STATUS_GOOD)
+    {
       log(__FILE__, "ERROR: unable to register SQL_OPERATIONS component", -1);
-      return STATUS_ERROR;  
-   }
+      return STATUS_ERROR;
+    }
+  }
       
 // Component is registered, now create all the operations associated with
 // the component.  A grant from the system to the grantee (DB__ROOT) will
@@ -197,7 +193,8 @@ std::string DB__ROOTName(ComUser::getRootUserName());
                                                                PrivMgr::getSQLOperationName(operation),
                                                                codePtr,true,
                                                                PrivMgr::getSQLOperationDescription(operation),
-                                                               DB__ROOTID,DB__ROOTName,-1);
+                                                               DB__ROOTID,DB__ROOTName,-1,
+                                                               componentExists);
                                                        
       if (privStatus == STATUS_GOOD)
          operationCodes.push_back(codePtr); 
@@ -221,7 +218,8 @@ PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
                                                            ComUser::getRootUserID(),
                                                            ComUser::getRootUserName(),
                                                            ROOT_ROLE_ID,
-                                                           DB__ROOTROLE,-1);
+                                                           DB__ROOTROLE,-1,
+                                                           componentExists);
                                                            
    if (privStatus != STATUS_GOOD)
    {
@@ -241,7 +239,8 @@ std::vector<std::string> CSOperationCodes;
                                                            ComUser::getRootUserID(),
                                                            ComUser::getRootUserName(),
                                                            PUBLIC_USER,
-                                                           PUBLIC_AUTH_NAME,0);
+                                                           PUBLIC_AUTH_NAME,0,
+                                                           componentExists);
                                       
    if (privStatus != STATUS_GOOD)
    {
@@ -342,7 +341,6 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
   //     If doesn't need upgrading - done
   //     else - upgrade table 
   bool populateObjectPrivs = false;
-  bool populateRoleGrants = false;
 
   try
   {
@@ -385,8 +383,6 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
 
         if (tableDefinition.tableName == PRIVMGR_OBJECT_PRIVILEGES)
           populateObjectPrivs = true;
-        if (tableDefinition.tableName == PRIVMGR_ROLE_USAGE)
-          populateRoleGrants = true;
       }
 
       // upgrade tables
@@ -406,7 +402,7 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (
     // populate metadata tables
     PrivStatus privStatus = updatePrivMgrMetadata
       (objectsLocation,authsLocation,
-       populateObjectPrivs,populateRoleGrants);
+       populateObjectPrivs);
 
     // if error occurs, drop tables already created
     if (privStatus == STATUS_ERROR)
@@ -560,13 +556,28 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (
     cliInterface.retrieveSQLDiagnostics(pDiags_);
     retcode = STATUS_ERROR;
   }
+
   CmpSeabaseDDLrole role;
-    
-  role.dropStandardRole(DB__ROOTROLE);
-  role.dropStandardRole(DB__HIVEROLE);
-  role.dropStandardRole(DB__HBASEROLE);
-  log(__FILE__, "dropped roles DB__ROOTROLE, DB_HIVEROLE, DB_HBASEROLE", -1);
-   
+  std::vector<std::string> rolesCreated;
+  int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct);
+  for (int32_t i = 0; i < numberRoles; i++)
+  {
+    const SystemRolesStruct &roleDefinition = systemRoles[i];
+
+    // special Auth includes roles that are not registered in the metadata
+    if (roleDefinition.isSpecialAuth)
+      continue;
+
+    role.dropStandardRole(roleDefinition.roleName);
+  }
+
+  int32_t actualSize = 0;
+  char buf[500];
+  ComUser::getRoleList(buf, actualSize, 500);
+  buf[actualSize] = 0;
+  traceMsg = "dropped roles: ";
+  traceMsg + buf;
+  log(__FILE__, traceMsg,  -1);
 
 //TODO: should notify QI
   log (__FILE__, "*** drop authorization completed ***", -1);
@@ -1220,7 +1231,6 @@ int32_t diagsMark = pDiags_->mark();
   return true;
 }
 
-
 // ----------------------------------------------------------------------------
 // method: compareTableDefs
 //
@@ -1471,8 +1481,7 @@ static int32_t renameTable (
 PrivStatus PrivMgrMDAdmin::updatePrivMgrMetadata(
    const std::string &objectsLocation,
    const std::string &authsLocation,
-   const bool shouldPopulateObjectPrivs,
-   const bool shouldPopulateRoleGrants)
+   const bool shouldPopulateObjectPrivs)
    
 {
    std::string traceMsg;
@@ -1486,27 +1495,57 @@ PrivStatus PrivMgrMDAdmin::updatePrivMgrMetadata(
          return STATUS_ERROR;
    }
    
-    
+   // Create any roles.  If this is an upgrade operation, some roles may
+   // already exist, just create any new roles. If this is an initialize
+   // operation, than all system roles are created.
    CmpSeabaseDDLrole role;
-    
-   role.createStandardRole(DB__ROOTROLE,ROOT_ROLE_ID);
-   role.createStandardRole(DB__HIVEROLE,HIVE_ROLE_ID);
-   role.createStandardRole(DB__HBASEROLE,HBASE_ROLE_ID);
-   log(__FILE__, "created roles DB__ROOTROLE, DB__HIVEROLE, and DB__HBASEROLE", -1);
+   std::vector<std::string> rolesCreated;
+   int32_t numberRoles = sizeof(systemRoles)/sizeof(SystemRolesStruct);
+   for (int32_t i = 0; i < numberRoles; i++)
+   {
+     const SystemRolesStruct &roleDefinition = systemRoles[i];
+
+     // special Auth includes roles that are not registered in the metadata
+     if (roleDefinition.isSpecialAuth)
+       continue;
+
+     // returns true is role was created, false if it already existed
+     if (role.createStandardRole(roleDefinition.roleName, roleDefinition.roleID))
+       rolesCreated.push_back(roleDefinition.roleName);
+   }
+
+   // Report the number roles created
+   traceMsg = "created roles ";
+   char buf[MAX_AUTHNAME_LEN + 5];
+   char sep = ' ';
+   for (size_t i = 0; i < rolesCreated.size(); i++)
+   {
+      sprintf(buf, "%c'%s' ", sep, rolesCreated[i].c_str());
+      traceMsg.append(buf);
+      sep = ',';
+   }
+   log(__FILE__, traceMsg, -1);
    
-   if (shouldPopulateRoleGrants)
+   if (rolesCreated.size() > 0)
    {
       PrivMgrRoles role(" ",metadataLocation_,pDiags_);
                         
-      privStatus = role.populateCreatorGrants(authsLocation);
+      privStatus = role.populateCreatorGrants(authsLocation, rolesCreated);
       if (privStatus != STATUS_GOOD)
          return STATUS_ERROR;
    }
+ 
+   // If someone initializes authorization, creates some roles, then drops 
+   // authorization, these roles exist in th system metadata (e.g. AUTHS table)
+   // but all usages are lost, including the initial creator grants.
+   // See if there are any roles that exist in AUTHS but do not have creator 
+   // grants - probably should add creator grants.
+   // TBD
     
-      privStatus = initializeComponentPrivileges();
-   
-      if (privStatus != STATUS_GOOD)
-         return STATUS_ERROR;
+   privStatus = initializeComponentPrivileges();
+  
+   if (privStatus != STATUS_GOOD)
+      return STATUS_ERROR;
       
    // When new components and component operations are added
    // add an upgrade procedure

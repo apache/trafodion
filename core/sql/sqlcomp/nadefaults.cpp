@@ -2073,12 +2073,16 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
+ // Size in bytes  used to perform garbage collection  to lob data file 
+  // default size is 5GB   . Change to adjust disk usage. 
+  DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
+  
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
-   
+ 
    // Size of memoryin bytes  used to perform I/O to lob data file 
   // default size is 512MB   . Change to adjust memory usage. 
-  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "536870912"), 
+  DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
   // default size is 10 G  (10000 M)
   DDint__(LOB_MAX_SIZE,                         "10000"),
   // default size is 32000. Change this to extract more data into memory.
@@ -3295,28 +3299,30 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
   DDint__(TEST_PASS_TWO_ASSERT_TASK_NUMBER,	"-1"),
 
- XDDintN2(TIMEOUT,				"6000"),
+  XDDintN2(TIMEOUT,				"6000"),
  
- DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
- DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
+  DDflt0_(TMUDF_CARDINALITY_FACTOR, "1"),
+  DDflt0_(TMUDF_LEAF_CARDINALITY, "1"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
-
+ 
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
-
- DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
-
+ 
+  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+ 
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
+ 
+  DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
+ 
+  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
- DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+  DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
- DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
+  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
- DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
 
- DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
-
- DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
+  DDkwd__(TRAF_CLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
@@ -6982,6 +6988,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok >=0  && tok <= 512000)
 	isValid = TRUE;
       break;
+
+    case LOB_GC_LIMIT_SIZE:
+      if (tok >= 0 )
+        isValid=TRUE;
 
     case TRAF_TRANS_TYPE:
       if (tok  == DF_MVCC || tok == DF_SSCC)

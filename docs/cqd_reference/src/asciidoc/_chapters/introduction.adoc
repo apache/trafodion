@@ -27,7 +27,7 @@
 = Introduction
 
 Refer to the 
-http://trafodion.apache.org/docs/sql_reference/index.html#control_query_cancel_statement[Trafofion SQL Reference Manual]
+http://trafodion.apache.org/docs/sql_reference/index.html#control_query_cancel_statement[Trafodion SQL Reference Manual]
 full documentation of the CQD (CONTROL QUERY DEFAULT) statement.
 
 The CONTROL QUERY DEFAULT statement changes the default settings for the current process. You can execute
@@ -71,22 +71,13 @@ CONTROL QUERY DEFAULT HBASE_MAX_COLUMN_NAME_LENGTH RESET;
 ```
 
 <<<
-[[introduction-cqd-descriptin]]
+[[introduction-cqd-descriptions]]
 == CQD Descriptions
 
 The following information is provided for each CQD:
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Identifies one of these categories with which the CQD is associated: +
- +
-&#8226; Influence Query Plans +
-&#8226; Manage Histograms +
-&#8226; Transaction control and locking +
-&#8226; Run time controls +
-&#8226; Schema controls +
-&#8226; Update Statistics and Reorg +
-&#8226; Operational controls 
 | *Description*               | Describes the purpose of the CQD.
 | *Values*                    | Identifies this information: +
  +

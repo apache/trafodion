@@ -543,22 +543,11 @@ static void addFunctionParameters(ItemExpr* ie,
 
       case ITM_DATEFORMAT:
         {
-          // Only include the parameter if it is one of the predefined values
-          // DEFAULT, USA, or EUROPEAN. The other possible values indicate that
-          // a format string is used to determine the format, and this takes
-          // the form of an explicit operand in the ItemExpr tree.
           DateFormat* dateFormatFn = static_cast<DateFormat*>(ie);
-          Int32 dateFormat = dateFormatFn->getDateFormat();
-          if (dateFormat == DateFormat::DEFAULT ||
-              dateFormat == DateFormat::USA     ||
-              dateFormat == DateFormat::EUROPEAN)
-            {
-              param->setName("dateFormat");
-              param->setValue(dateFormat);
-              function->addHiddenParam(param);
-            }
-          else
-            deletePtr(param);
+          Int32 dateFormat = dateFormatFn->getExpDatetimeFormat();
+          param->setName("dateFormat");
+          param->setValue(dateFormat);
+          function->addHiddenParam(param);
         }
         break;
 

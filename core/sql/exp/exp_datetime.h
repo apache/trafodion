@@ -49,67 +49,65 @@
 class SQLEXP_LIB_FUNC  ExpDatetime : public SimpleType {
 
 public:
-  enum asciiFormats 
+  // these enums must be in the same order as the datetimeFormat[] array 
+  // (defined in exp_datetime.cpp).
+  enum DatetimeFormats 
   { 
-    DATETIME_FORMAT_DEFAULT  = 0,  // YYYY-MM-DD
-    DATETIME_FORMAT_USA      = 1,  // MM/DD/YYYY AM|PM
-    DATETIME_FORMAT_EUROPEAN = 2,  // DD.MM.YYYY
-    DATETIME_FORMAT_DEFAULT2,      // YYYY-MM
-    DATETIME_FORMAT_USA2,          // MM/DD/YYYY
-    DATETIME_FORMAT_USA3,          // YYYY/MM/DD
-    DATETIME_FORMAT_USA4,          // YYYYMMDD
-    DATETIME_FORMAT_USA5,          // YY/MM/DD
-    DATETIME_FORMAT_USA6,          // MM/DD/YY
-    DATETIME_FORMAT_USA7,          // MM-DD-YYYY
-    DATETIME_FORMAT_USA8,          // YYYYMM
-    DATETIME_FORMAT_EUROPEAN2,     // DD-MM-YYYY
-    DATETIME_FORMAT_EUROPEAN3,     // DD-MON-YYYY
-    DATETIME_FORMAT_EUROPEAN4,     // DDMONYYYY
-    DATETIME_FORMAT_TIME1,         // 99:99:99:99
-    DATETIME_FORMAT_TIME2,         // -99:99:99:99
-    DATETIME_FORMAT_TS1,           // YYYYMMDDHH24MISS
-    DATETIME_FORMAT_TS2,           // DD.MM.YYYY:HH24:MI:SS
-    DATETIME_FORMAT_TS3,           // YYYY-MM-DD HH24:MI:SS
-    DATETIME_FORMAT_TS4,           // HH24:MI:SS
-    DATETIME_FORMAT_TS5,           // YYYYMMDD:HH24:MI:SS
-    DATETIME_FORMAT_TS6,           // MMDDYYYY HH24:MI:SS
-    DATETIME_FORMAT_TS7,           // MM/DD/YYYY HH24:MI:SS
-    DATETIME_FORMAT_TS8,           // DD-MON-YYYY HH:MI:SS
-    DATETIME_FORMAT_DATE_STR,      // format in str
-    DATETIME_FORMAT_TIME_STR,      // format in str
+    DATETIME_FORMAT_MIN       =  0,
+    DATETIME_FORMAT_MIN_DATE  =  DATETIME_FORMAT_MIN,
+    DATETIME_FORMAT_DEFAULT   =  DATETIME_FORMAT_MIN_DATE, // YYYY-MM-DD
+    DATETIME_FORMAT_USA,        // MM/DD/YYYY AM|PM
+    DATETIME_FORMAT_EUROPEAN,   // DD.MM.YYYY
+    DATETIME_FORMAT_DEFAULT2,   // YYYY-MM
+    DATETIME_FORMAT_USA2,       // MM/DD/YYYY
+    DATETIME_FORMAT_USA3,       // YYYY/MM/DD
+    DATETIME_FORMAT_USA4,       // YYYYMMDD
+    DATETIME_FORMAT_USA5,       // YY/MM/DD
+    DATETIME_FORMAT_USA6,       // MM/DD/YY
+    DATETIME_FORMAT_USA7,       // MM-DD-YYYY
+    DATETIME_FORMAT_USA8,       // YYYYMM
+    DATETIME_FORMAT_EUROPEAN2,  // DD-MM-YYYY
+    DATETIME_FORMAT_EUROPEAN3,  // DD-MON-YYYY
+    DATETIME_FORMAT_EUROPEAN4,  // DDMONYYYY
+    DATETIME_FORMAT_MAX_DATE  = DATETIME_FORMAT_EUROPEAN4,
+
+    DATETIME_FORMAT_MIN_TIME,
+    DATETIME_FORMAT_TS4       = DATETIME_FORMAT_MIN_TIME, // HH24:MI:SS
+    DATETIME_FORMAT_MAX_TIME  = DATETIME_FORMAT_TS4,
+
+    DATETIME_FORMAT_MIN_TS,
+    DATETIME_FORMAT_TS1       = DATETIME_FORMAT_MIN_TS, // YYYYMMDDHH24MISS
+    DATETIME_FORMAT_TS2,     // DD.MM.YYYY:HH24:MI:SS
+    DATETIME_FORMAT_TS3,     // YYYY-MM-DD HH24:MI:SS
+    DATETIME_FORMAT_TS5,     // YYYYMMDD:HH24:MI:SS
+    DATETIME_FORMAT_TS6,     // MMDDYYYY HH24:MI:SS
+    DATETIME_FORMAT_TS7,     // MM/DD/YYYY HH24:MI:SS
+    DATETIME_FORMAT_TS8,     // DD-MON-YYYY HH:MI:SS
+    DATETIME_FORMAT_TS9,     // MONTH DD, YYYY, HH:MI AM|PM
+    DATETIME_FORMAT_MAX_TS    = DATETIME_FORMAT_TS9,
+
+    DATETIME_FORMAT_MAX       = DATETIME_FORMAT_MAX_TS,
+
+    DATETIME_FORMAT_MIN_NUM = DATETIME_FORMAT_MAX,
+    DATETIME_FORMAT_NUM1,     // 99:99:99:99
+    DATETIME_FORMAT_NUM2,     // -99:99:99:99
+    DATETIME_FORMAT_MAX_NUM = DATETIME_FORMAT_NUM2,
+
+    DATETIME_FORMAT_DATE_STR, // format in str
+    DATETIME_FORMAT_TIME_STR, // format in str
     DATETIME_FORMAT_NONE,
-    DATETIME_FORMAT_ERROR
+    DATETIME_FORMAT_ERROR     = -1
   };
-  enum asciiFormtLen {
-    DATETIME_FORMAT_DEFAULT_LEN   = 10,  // YYYY-MM-DD
-    DATETIME_FORMAT_USA_LEN       = 10,  // MM/DD/YYYY AM|PM
-    DATETIME_FORMAT_EUROPEAN_LEN  = 10,  // DD.MM.YYYY
-    DATETIME_FORMAT_DEFAULT2_LEN  =  7,  // YYYY-MM
-    DATETIME_FORMAT_USA2_LEN      = 10,  // MM/DD/YYYY
-    DATETIME_FORMAT_USA3_LEN      = 10,  // YYYY/MM/DD
-    DATETIME_FORMAT_USA4_LEN      =  8,  // YYYYMMDD
-    DATETIME_FORMAT_USA5_LEN      =  8,  // YY/MM/DD
-    DATETIME_FORMAT_USA6_LEN      =  8,  // MM/DD/YY
-    DATETIME_FORMAT_USA7_LEN      = 10,  // MM-DD-YYYY
-    DATETIME_FORMAT_USA8_LEN      =  6,  // YYYYMM
-    DATETIME_FORMAT_EUROPEAN2_LEN = 10,  // DD-MM-YYYY
-    DATETIME_FORMAT_EUROPEAN3_LEN = 11,  // DD-MON-YYYY
-    DATETIME_FORMAT_EUROPEAN4_LEN =  9,  // DDMONYYYY
-    DATETIME_FORMAT_TIME1_LEN     = 11,  // 99:99:99:99
-    DATETIME_FORMAT_TIME2_LEN     = 12,  // -99:99:99:99
-    DATETIME_FORMAT_TS1_LEN       = 14,  // YYYYMMDDHH24MISS
-    DATETIME_FORMAT_TS2_LEN       = 19,  // DD.MM.YYYY:HH24:MI:SS
-    DATETIME_FORMAT_TS3_LEN       = 19,  // YYYY-MM-DD HH24:MI:SS
-    DATETIME_FORMAT_TS4_LEN       =  8,  // HH24:MI:SS
-    DATETIME_FORMAT_TS5_LEN       = 17,  // YYYYMMDD:HH24:MI:SS
-    DATETIME_FORMAT_TS6_LEN       = 17,  // MMDDYYYY HH24:MI:SS
-    DATETIME_FORMAT_TS7_LEN       = 19,  // MM/DD/YYYY HH24:MI:SS
-    DATETIME_FORMAT_TS8_LEN       = 20,  // DD-MON-YYYY HH:MI:SS
-    DATETIME_FORMAT_DATE_STR_LEN  = -1,  // format in str
-    DATETIME_FORMAT_TIME_STR_LEN  = -1,  // format in str
-    DATETIME_FORMAT_NONE_LEN      = -1,
-    DATETIME_FORMAT_ERROR_LEN     = -1
+
+  struct DatetimeFormatInfo
+  {
+    Lng32 format;       // defined by enum DatetimeFormats
+    const char * str;   // string representation of datetime format
+    Lng32 minLen;       // minimum length to hold this format
+    Lng32 maxLen;
   };
+  
+  static const DatetimeFormatInfo datetimeFormat[];
 
   enum { DATETIME_MAX_NUM_FIELDS = 7 };
   enum { MAX_DATETIME_SIZE = 11 };
@@ -224,6 +222,7 @@ NA_EIDPROC
                              rec_datetime_field dstEndField,
                              short dstFractPrec,
                              char *dstData,
+                             Lng32 dstLen,
 			     short validateFlag,
                              NABoolean *roundedDownFlag = NULL);
 
@@ -302,9 +301,7 @@ static
 				 CollHeap *heap,
 				 ComDiagsArea** diagsArea);
   
-#ifndef __EID
   char *getDefaultStringValue(CollHeap *heap);
-#endif
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
@@ -323,10 +320,80 @@ static
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
+  static const char * getDatetimeFormatStr(Lng32 frmt)
+  {
+    return datetimeFormat[frmt].str;
+  }
+
+  static const Lng32 getDatetimeFormat(const char * formatStr)
+  {
+    for (Lng32 i = DATETIME_FORMAT_MIN; i <= DATETIME_FORMAT_MAX; i++)
+      {
+        if (strcmp(formatStr, datetimeFormat[i].str) == 0)
+          {
+            if (datetimeFormat[i].format != i)
+              return -1;
+
+            return i;
+          }
+      }
+
+    for (Lng32 i = DATETIME_FORMAT_MIN_NUM; i <= DATETIME_FORMAT_MAX_NUM; i++)
+      {
+        if (strcmp(formatStr, datetimeFormat[i].str) == 0)
+          {
+            if (datetimeFormat[i].format != i)
+              return -1;
+
+            return i;
+          }
+      }
+
+    return -1;
+  }
+  
+  static NABoolean isDateTimeFormat(Lng32 frmt)
+  {
+    return ((frmt >= DATETIME_FORMAT_MIN) &&
+            (frmt <= DATETIME_FORMAT_MAX));
+  }
+
+  static NABoolean isDateFormat(Lng32 frmt)
+  {
+    return ((frmt >= DATETIME_FORMAT_MIN_DATE) &&
+            (frmt <= DATETIME_FORMAT_MAX_DATE));
+  }
+
+  static NABoolean isTimestampFormat(Lng32 frmt)
+  {
+    return ((frmt >= DATETIME_FORMAT_MIN_TS) &&
+            (frmt <= DATETIME_FORMAT_MAX_TS));
+  }
+
+  static NABoolean isTimeFormat(Lng32 frmt)
+  {
+    return ((frmt >= DATETIME_FORMAT_MIN_TIME) &&
+            (frmt <= DATETIME_FORMAT_MAX_TIME));
+  }
+
+  static NABoolean isNumericFormat(Lng32 frmt)
+  {
+    return ((frmt == DATETIME_FORMAT_NUM1) || (frmt == DATETIME_FORMAT_NUM2));
+  }
+
+  static Lng32 getDatetimeFormatLen(Lng32 frmt)
+  {
+    return datetimeFormat[frmt].minLen;
+  }
+
+  static Lng32 getDatetimeFormatMaxLen(Lng32 frmt)
+  {
+    return datetimeFormat[frmt].maxLen;
+  }
+
 private:
 
 };
-
 
 #pragma warning ( default : 4251 )
 

@@ -35,6 +35,9 @@ using namespace std;
 #include <unistd.h>
 #include <malloc.h>
 #include <sys/ipc.h>
+#include <sys/time.h>
+#include <sys/resource.h> //add for getrlimit, strange centos6/gcc4.4 don't need this
+
 //#include <sys/stat.h>
 #include "monlogging.h"
 #include "monprof.h"
@@ -927,6 +930,12 @@ int main (int argc, char *argv[])
     SnmpLog->setPNid( MyPNID );
 
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
+    char *tmpptr = Node_name;
+    while ( *tmpptr )
+    {
+        *tmpptr = (char)tolower( *tmpptr );
+        tmpptr++;
+    }
 
 #ifdef MULTI_TRACE_FILES
     setThreadVariable( (char *)"mainThread" );

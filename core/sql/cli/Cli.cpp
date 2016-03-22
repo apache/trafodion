@@ -93,6 +93,8 @@
 #include "LmLangManagerC.h"
 #include "LmLangManagerJava.h"
 #include "LmRoutine.h"
+#include "CmpDDLCatErrorCodes.h"
+#include "ExpLOBaccess.h"
 
 #define DISPLAY_DONE_WARNING 1032
 extern Lng32 getTotalTcbSpace(char * tdb, char * otherInfo, 
@@ -2454,7 +2456,8 @@ Lng32 SQLCLI_ProcessRetryQuery(
             return retcode;
         }
 
-      if (rootTdb->updDelInsertQuery())
+      if ((rootTdb->updDelInsertQuery()) ||
+          (rootTdb->ddlQuery()))
         {
           if (rootTdb->transactionReqd() &&
               (NOT exTransaction->xnInProgress()))
@@ -9393,7 +9396,7 @@ Lng32 SQLCLI_LOBcliInterface
  /*IN*/     char * inLobHandle,
  /*IN*/     Lng32  inLobHandleLen,
  /*IN*/     char * blackBox,
- /*INOUT*/  Lng32 *blackBoxLen,
+ /*INOUT*/  Int32 *blackBoxLen,
  /*OUT*/    char * outLobHandle,
  /*OUT*/    Lng32 * outLobHandleLen,
  /*IN*/     LOBcliQueryType qType,
@@ -9402,8 +9405,9 @@ Lng32 SQLCLI_LOBcliInterface
                                    OUT: for select */
  /*INOUT*/  Int64 * dataLen,    /* length of data.
                                    IN: for insert, out: for select */
- /*OUT*/    Int64 * outDescPartnKey,  /* returned after insert and select */
- /*OUT*/    Int64 * outDescSyskey,    /* returned after insert and select */
+ /*INOUT*/    Int64 * inoutDescPartnKey,  /* returned after insert and select 
+                                                                             
+ /*INOUT*/    Int64 * inoutDescSyskey,    /* returned after insert and select                                                                                 
  /*INOUT*/  void* *inCliInterface,
  /*IN*/     Int64 xnId          /* xn id of the parent process, if non-zero */
  )
@@ -9458,13 +9462,7 @@ Lng32 SQLCLI_LOBcliInterface
     ExpLOBoper::ExpGetLOBDescChunksName(schNameLen, schName, uid, lobNum,
 					lobDescChunksNameBuf, lobDescChunksNameLen);
   
-  char lobHdrNameBuf[1024];
-  Lng32 lobHdrNameLen = 1024;
-  char * lobHdrName = 
-    ExpLOBoper::ExpGetLOBHdrName(schNameLen, schName, uid, lobNum,
-				 lobHdrNameBuf, lobHdrNameLen);
-
-
+ 
   char * query = new(currContext.exHeap()) char[4096];
 
   if (outLobHandleLen)
@@ -9498,52 +9496,6 @@ Lng32 SQLCLI_LOBcliInterface
       SQL_EXEC_Xact(SQLTRANS_INHERIT, NULL);
       } 
 
-  /*  if ((qType == LOB_CLI_CREATE) ||
-      (qType == LOB_CLI_DROP) ||
-      (qType == LOB_CLI_INSERT) ||
-      (qType == LOB_CLI_INSERT_APPEND) ||
-      (qType == LOB_CLI_UPDATE_UNIQUE) ||
-      (qType == LOB_CLI_DELETE) ||
-      (qType == LOB_CLI_PURGEDATA))
-  */
-  if (0)
-    {
-      Int64 transId;
-      cliRC = GETTRANSID((short *)&transId);
-
-      if (xnId == 0) // no xn passed in
-	{
-	  if (cliRC == 75)  // no transid present
-	    {
-	      strcpy(query, "set transaction autocommit on;");
-	      cliRC = cliInterface->executeImmediate(query);
-	      
-	      xnAutoCommit = TRUE;
-	    }
-	}
-      else
-	{
-	  if ((cliRC == 0) && // transid present
-	      (xnId == transId))
-	    {
-	      // Same as the current transaction in progress.
-	      // do nothing.
-	    }
-	  else
-	    {
-	      cliRC = JOINTRANSACTION(xnId);
-	      if (cliRC)
-		return -EXE_BEGIN_TRANSACTION_ERROR;
-	      
-	      cliRC = GETTRANSID((short *)&transId);
-	      if ((cliRC) ||
-		  (xnId != transId))// transid present
-		return -EXE_BEGIN_TRANSACTION_ERROR;
-
-	      xnJoined = TRUE;
-	    }
-	}
-    }
  
   switch (qType)
     {
@@ -9565,8 +9517,7 @@ Lng32 SQLCLI_LOBcliInterface
 
     case LOB_CLI_CREATE:
       {
-	cliRC = cliInterface->executeImmediate("cqd pos hold;");
-	cliRC = cliInterface->executeImmediate("cqd pos 'OFF';");
+	
 
 	// create lob descriptor handle table salted	
    	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, numChunks int not null, lobLen largeint not null) salt using 8 partitions store by (descPartnKey, syskey) ",
@@ -9581,15 +9532,14 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
-	    cliInterface->executeImmediate("cqd pos restore;");
-
+	    
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    goto error_return;
 	  }
 
            	// create lob descriptor chunks table salted
-       	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, intParam largeint, stringParam varchar(400), primary key(descPartnKey, descSysKey, chunkNum)) salt using 8 partitions",
+       	str_sprintf(query, "create ghost table %s (descPartnKey largeint not null, descSysKey largeint not null, chunkNum int not null, chunkLen largeint not null, dataOffset largeint, stringParam varchar(400), primary key(descPartnKey, descSysKey, chunkNum)) salt using 8 partitions",
 	lobDescChunksName); 
 
 
@@ -9602,14 +9552,11 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
-	    cliInterface->executeImmediate("cqd pos restore;");
-
+	    
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
 	    goto error_return;
 	  }
-
-	cliInterface->executeImmediate("cqd pos restore;");
 	
 	cliRC = 0;
       }
@@ -9626,7 +9573,7 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->executeImmediate(query);
 
 	currContext.resetSqlParserFlags(0x1);
-
+	
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
@@ -9644,6 +9591,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	currContext.resetSqlParserFlags(0x1);
 
+	
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
@@ -9651,6 +9599,7 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
+	  
 	
 	cliRC = 0;
       }
@@ -9671,7 +9620,6 @@ Lng32 SQLCLI_LOBcliInterface
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
 	  }
 
@@ -9684,15 +9632,12 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = cliInterface->executeImmediate(query);
 
 	currContext.resetSqlParserFlags(0x1);
-
+	
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
 	    goto error_return;
-	  }
-
-	
+	  }	   
 	cliRC = 0;
       }
       break;
@@ -9715,8 +9660,7 @@ Lng32 SQLCLI_LOBcliInterface
 
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
-	    
+	    cliInterface->retrieveSQLDiagnostics(myDiags);	    
 	    goto error_return;
 	  }
 
@@ -9751,11 +9695,11 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
-	if (outDescPartnKey)
-	  *outDescPartnKey = descPartnKey;
+	if (inoutDescPartnKey)
+	  *inoutDescPartnKey = descPartnKey;
 
-	if (outDescSyskey)
-	  *outDescSyskey = descSyskey;
+	if (inoutDescSyskey)
+	  *inoutDescSyskey = descSyskey;
 
 	// update lob handle with the returned values
 	if (outLobHandle)
@@ -9766,7 +9710,9 @@ Lng32 SQLCLI_LOBcliInterface
 	    if (outLobHandleLen)
 	      *outLobHandleLen = inLobHandleLen;
 	  }
+       
 
+    
 	cliRC = 0;
       }
       break;
@@ -9825,7 +9771,8 @@ Lng32 SQLCLI_LOBcliInterface
 	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, %d, %Ld, %Ld, NULL)",
 			lobDescChunksName, descPartnKey, inDescSyskey, 
 			numChunks, (dataLen ? *dataLen : 0),
-			(dataOffset ? *dataOffset : 0));
+			(dataOffset ? *dataOffset : 0)
+			);
 	  }
 	
 	// set parserflags to allow ghost table
@@ -9841,7 +9788,14 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
+      	if (inoutDescPartnKey)
+	  *inoutDescPartnKey = descPartnKey;
 
+	if (inoutDescSyskey)
+	  *inoutDescSyskey = inDescSyskey;
+
+        if(blackBoxLen)
+          *blackBoxLen = numChunks;
 	cliRC = 0;
 
 	//	if (outDescSyskey)
@@ -9923,7 +9877,7 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
-
+       
 	// update lob handle with the returned values
 	if (outLobHandle)
 	  {
@@ -9933,7 +9887,11 @@ Lng32 SQLCLI_LOBcliInterface
 	    if (outLobHandleLen)
 	      *outLobHandleLen = inLobHandleLen;
 	  }
+	if (inoutDescPartnKey)
+	  *inoutDescPartnKey = descPartnKey;
 
+	if (inoutDescSyskey)
+	  *inoutDescSyskey = inDescSyskey;
 	cliRC = 0;
       }
       break;
@@ -9975,10 +9933,7 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
-
-	cliRC = 0;
-	//	if (outDescSyskey)
-	//	  *outDescSyskey = inDescSyskey;
+        
       }
       break;
 
@@ -10038,7 +9993,7 @@ Lng32 SQLCLI_LOBcliInterface
 	  }
 	
 	// This lob has only one chunk. Read and return the single descriptor.
-	str_sprintf(query, "select c.chunkLen, c.intParam from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %Ld and h.syskey = %Ld and c.chunkNum = h.numChunks for read committed access",
+	str_sprintf(query, "select c.chunkLen, c.dataOffset from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %Ld and h.syskey = %Ld and c.chunkNum = h.numChunks for read committed access",
 		    lobDescHandleName, lobDescChunksName, 
 		    descPartnKey, inDescSyskey);
 
@@ -10081,11 +10036,11 @@ Lng32 SQLCLI_LOBcliInterface
 	    if (dataOffset)
 	      str_cpy_all((char*)dataOffset, ptr, len);
 
-	    if (outDescPartnKey)
-	      *outDescPartnKey = descPartnKey;
+	    if (inoutDescPartnKey)
+	      *inoutDescPartnKey = descPartnKey;
 
-	    if (outDescSyskey)
-	      *outDescSyskey = inDescSyskey;
+	    if (inoutDescSyskey)
+	      *inoutDescSyskey = inDescSyskey;
 	  }
 	//	else
 	//cliRC = -100;
@@ -10106,7 +10061,7 @@ Lng32 SQLCLI_LOBcliInterface
 
    case LOB_CLI_SELECT_CURSOR:
       {
-	str_sprintf(query, "select intParam, chunkLen from table(ghost table %s) where descPartnKey = %Ld and descSyskey = %Ld order by chunkNum for read committed access",
+	str_sprintf(query, "select dataOffset, chunkLen from table(ghost table %s) where descPartnKey = %Ld and descSyskey = %Ld order by chunkNum for read committed access",
 		    lobDescChunksName, descPartnKey, inDescSyskey);
 
 	// set parserflags to allow ghost table
@@ -10233,7 +10188,7 @@ Lng32 SQLCLI_LOBcliInterface
 	
 	//aggregate on chunklen for this lob.
 
-	str_sprintf (query,  "select sum(chunklen) from %s   where descpartnkey = %Ld and descsyskey = %Ld ", lobDescChunksName, descPartnKey, inDescSyskey );
+	str_sprintf (query,  "select sum(chunklen) from  %s   where descpartnkey = %Ld and descsyskey = %Ld ", lobDescChunksName, descPartnKey, inDescSyskey );
 
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
@@ -10241,11 +10196,11 @@ Lng32 SQLCLI_LOBcliInterface
 
 	Int64 outlen = 0;Lng32 len = 0;
 	cliRC = cliInterface->executeImmediate(query,(char *)dataLen, &len, FALSE);
-	    if (outDescPartnKey)
-	      *outDescPartnKey = descPartnKey;
+	    if (inoutDescPartnKey)
+	      *inoutDescPartnKey = descPartnKey;
 
-	    if (outDescSyskey)
-	      *outDescSyskey = inDescSyskey;
+	    if (inoutDescSyskey)
+	      *inoutDescSyskey = inDescSyskey;
 	    
 
 
@@ -10262,6 +10217,7 @@ Lng32 SQLCLI_LOBcliInterface
 	cliRC = saveCliErr;
       }
       break;
+        
     } // switch 
 
   // normal return. Fall down to deallocate of structures.
@@ -10302,10 +10258,274 @@ Lng32 SQLCLI_LOBcliInterface
   else
     return 0;
 }
+/* The process for GC is as follows:
+1. Check LOB descriptor chunks table (per column) for any holes in the LOB sections.
+2. Create an in memory array that can be used to calculate new offsets.
+3. Update the lob descriptor chunks table to reflect the new offsets
+   if any error, return an error and rollback the user transaction.
+4. Compact the lob data file buy doing hte following :
+   a) Save a copy of the LOB data file.
+   b) Create a temp lob file to copy the sections contiguously from the lob data file to the temp file.
+        If any error return an error and rollback all updates to the lob descriptor chunks table.
+   c) Delete the lob data file. 
+   d) Rename the tempfile to original lob data file name.
+      If any error, restore the lob data file from the saved backup in step (a)
+   e) Purge the saved backup.
+*/
 
+
+Lng32 SQLCLI_LOB_GC_Interface
+(
+     /*IN*/     CliGlobals *cliGlobals,
+     /*IN*/     void *lobGlobals, // can be passed or NULL
+     /*IN*/     char * handle,
+     /*IN*/     Lng32  handleLen,
+     /*IN*/     char*  hdfsServer,
+     /*IN*/     Lng32  hdfsPort,
+     /*IN*/     char  *lobLocation,
+     /*IN*/    Int64 lobMaxMemChunkLen // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ )
+{
+  Lng32 cliRC = 0;
+
+  ContextCli   & currContext = *(cliGlobals->currContext());
+  ComDiagsArea & diags       = currContext.diags();
+
+  ComDiagsArea * myDiags = ComDiagsArea::allocate(currContext.exHeap());
+
+  ExeCliInterface *cliInterface = NULL;
+  cliInterface = new (currContext.exHeap()) 
+    ExeCliInterface(currContext.exHeap(),
+		    SQLCHARSETCODE_UTF8,
+		    &currContext,
+		    NULL);
+  Int32 rc = 0;
+  Int16 flags = 0;
+  Lng32 lobType = 1;
+  Lng32 lobNum = 0;
+  Int64 uid = 0;
+  Int64 inDescSyskey, inDescPartnKey;
+  short schNameLen = 0;
+  char schName[512];
+  if (handle)
+    {
+      ExpLOBoper::extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,  
+				       &inDescSyskey, &inDescPartnKey,
+				       &schNameLen, schName,
+				       handle);
+    }
+
+  char tgtLobNameBuf[100];
+  char * tgtLobName = 
+    ExpLOBoper::ExpGetLOBname(uid, lobNum, tgtLobNameBuf, 100);
+
+  char lobDescHandleNameBuf[1024];
+  Lng32 lobDescHandleNameLen = 1024;
+  char * lobDescHandleName = 
+    ExpLOBoper::ExpGetLOBDescHandleName(schNameLen, schName, uid, lobNum,
+					lobDescHandleNameBuf, lobDescHandleNameLen);
+  
+  char lobDescChunksNameBuf[1024];
+  Lng32 lobDescChunksNameLen = 1024;
+  char * lobDescChunksName = 
+    ExpLOBoper::ExpGetLOBDescChunksName(schNameLen, schName, uid, lobNum,
+					lobDescChunksNameBuf, lobDescChunksNameLen);
+  
+ 
+  char * query = new(currContext.exHeap()) char[4096];
+  //Find how many entries in the descchunks table to allocate 
+  //in memory array.
+  str_sprintf(query, "select count(*) from table(ghost table %s) ",
+              lobDescChunksName);		    
+
+  // set parserflags to allow ghost table
+  currContext.setSqlParserFlags(0x1);
+	
+  Lng32 numEntries = 0;
+  Lng32 len;
+  cliRC = cliInterface->executeImmediate(query, (char*)&numEntries, &len, FALSE);
+
+  currContext.resetSqlParserFlags(0x1);
+
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+      goto error_return;
+    }  
+  {     
+  //Allocate an inmemory array of numEntries.
+  ExLobInMemoryDescChunksEntry *dcInMemoryArray = new ExLobInMemoryDescChunksEntry[numEntries];
+  //Read the desc chunks table into memory
+        
+  str_sprintf(query, "select dataOffset, descPartnKey,descSyskey,chunkLen,chunkNum from table(ghost table %s) order by dataOffset for read committed access",
+              lobDescChunksName);
+
+  // set parserflags to allow ghost table
+  currContext.setSqlParserFlags(0x1);
+	
+  cliRC = cliInterface->fetchRowsPrologue(query);
+
+  currContext.resetSqlParserFlags(0x1);
+
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+      goto error_return;
+    }
+  cliRC = cliInterface->fetch();
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(myDiags);
+
+      cliInterface->fetchRowsEpilogue(0);
+
+      goto error_return;
+    }
+  
+  short i = 0;
+  Int64 currentOffset = 0;
+  Int64 descPartnKey = 0;
+  Int64 descSyskey = 0;
+  Int64 chunkLen = 0;
+  Int64 chunkNum = 0;
+  while (cliRC != 100)
+    {
+      char * ptr;
+      Lng32 len;
+
+      cliInterface->getPtrAndLen(1, ptr, len);	   
+      str_cpy_all((char*)&currentOffset, ptr, len);
+
+      cliInterface->getPtrAndLen(2, ptr, len);	    	    
+      str_cpy_all((char*)&descPartnKey, ptr, len);
+
+      cliInterface->getPtrAndLen(3, ptr, len);	    	    
+      str_cpy_all((char*)&descSyskey, ptr, len);
+
+      cliInterface->getPtrAndLen(4, ptr, len);	    	    
+      str_cpy_all((char*)&chunkLen, ptr, len);
+
+      cliInterface->getPtrAndLen(5, ptr, len);	    	    
+      str_cpy_all((char*)&chunkNum, ptr, len);
+           
+      dcInMemoryArray[i].setCurrentOffset(currentOffset);
+      dcInMemoryArray[i].setNewOffset(currentOffset);
+      dcInMemoryArray[i].setDescPartnKey(descPartnKey);
+      dcInMemoryArray[i].setSyskey(descSyskey);
+      dcInMemoryArray[i].setChunkLen(chunkLen);
+      dcInMemoryArray[i].setChunkNum(chunkNum);
+      cliRC = cliInterface->fetch();
+      i++;
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(myDiags);
+
+          cliInterface->fetchRowsEpilogue(0);
+
+          goto error_return;
+        }
+    }
+	
+  cliRC = cliInterface->fetchRowsEpilogue(0);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+      goto error_return;
+    }
+ 
+  // adjust in memory array to calculate holes and new offsets.
+  ExpLOBoper::calculateNewOffsets(dcInMemoryArray,numEntries);
+        
+        
+  // Update the descChunks table with new offsets
+  //TBD start a separate transaction to manage this.
+  //For now use the transaction associated with the IUD operation 
+  //that triggered this GC
+
+  i = 0;
+  while (i < numEntries)
+    {
+      if (dcInMemoryArray[i].getCurrentOffset() == dcInMemoryArray[i].getNewOffset())
+        i++;
+      else
+        {
+          str_sprintf(query, "update table(ghost table %s) set dataOffset=%Ld, chunkLen = %Ld where descPartnKey = %Ld and descSysKey = %Ld",
+                      lobDescChunksName, 
+                      dcInMemoryArray[i].getNewOffset(),
+                      dcInMemoryArray[i].getChunkLen(),
+                      dcInMemoryArray[i].getDescPartnKey(), 
+                      dcInMemoryArray[i].getSyskey());
+          // set parserflags to allow ghost table
+          currContext.setSqlParserFlags(0x1);
+	
+          cliRC = cliInterface->executeImmediate(query);
+          currContext.resetSqlParserFlags(0x1);
+
+          if (cliRC < 0)
+            {
+              cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+              //tbd Give warning and rollback just these updates  and return with warning. For now return error and abort the iud operation itself since there is no support for nested transactions or SUSPEND and RESUME. 
+              goto error_return;
+            }
+          i++;
+        }
+    }
+       
+  // Compact into new temp file
+       
+        
+  rc = ExpLOBoper::compactLobDataFile(lobGlobals,dcInMemoryArray,numEntries,tgtLobName,lobMaxMemChunkLen, (void *)currContext.exHeap(), hdfsServer, hdfsPort,lobLocation);
+               
+  if (rc )
+    {
+      cliRC = 9999; // Warning 
+      ComDiagsArea * da = &diags;
+      ExRaiseSqlError(currContext.exHeap(), &da, 
+                      (ExeErrorCode)(8442), NULL, &cliRC    , 
+                      &rc, NULL, (char*)"Lob GC call",
+                      getLobErrStr(rc));
+      // TBD When local transaction support is in
+      // rollback all the updates to the lob desc chunks file too. 
+      // return with warning
+      // For now, return error for the IUD operation
+
+      // Restore original data file.
+      Int32 rc2=ExpLOBoper::restoreLobDataFile(lobGlobals,tgtLobName, (void *)currContext.exHeap(),hdfsServer,hdfsPort,lobLocation);
+      // if error restoring, this lob could become corrupt.
+      goto error_return;
+    }
+  else
+    {
+      //TBD :commit all updates and remove the saved copy of datafile
+      ExpLOBoper::purgeBackupLobDataFile(lobGlobals, tgtLobName,(void *)currContext.exHeap(),hdfsServer,hdfsPort,lobLocation);
+    }
+  }
+ error_return:
+
+  Lng32 tempCliRC = 0;
+  NADELETEBASIC(query, currContext.exHeap());
+
+
+  if (cliRC < 0)
+    {
+      if (myDiags->getNumber() > 0)
+	{
+	  diags.mergeAfter(*myDiags);
+	}
+      return cliRC;
+    }
+  else if (cliRC == 100)
+    return 100;
+  else
+    return 0;   
+}
 Lng32 SQLCLI_LOBddlInterface
 (
- /*IN*/     CliGlobals *cliGlobals,
+/*IN*/     CliGlobals *cliGlobals,
  /*IN*/     char * schName,
  /*IN*/     Lng32  schNameLen,
  /*IN*/     Int64  objectUID,
@@ -10314,8 +10534,11 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
+ /*IN*/     char *hdfsServer,
+ /*IN*/     Int32 hdfsPort,
  /*IN*/    Int64 lobMaxSize
  )
+ 
 {
   Lng32 cliRC = 0;
 
@@ -10343,22 +10566,14 @@ Lng32 SQLCLI_LOBddlInterface
     {
     case LOB_CLI_CREATE:
       {
-	cliRC = cliInterface->executeImmediate("cqd pos hold;");
-	cliRC = cliInterface->executeImmediate("cqd pos 'OFF';");
-
+	
 	// create lob metadata table
-	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) location $system",
-		    //	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) no partition",
-		    lobMDName);
+	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) ",lobMDName);
 	
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
 	
-	cliRC = cliInterface->executeImmediate(query);
-
-	cliInterface->executeImmediate("cqd pos restore;");
-
-	
+	cliRC = cliInterface->executeImmediate(query);	
 	currContext.resetSqlParserFlags(0x1);
 	
 	if (cliRC < 0)
@@ -10397,8 +10612,8 @@ Lng32 SQLCLI_LOBddlInterface
 	    // create lob data tables
 	    Lng32 rc = ExpLOBoper::createLOB
 	      (NULL, currContext.exHeap(),
-	       lobLocList[i],
-	       objectUID, lobNumList[i], lobMaxSize);
+	       lobLocList[i],  hdfsPort,hdfsServer,
+	       objectUID, lobNumList[i],lobMaxSize);
 	    
 	    if (rc)
 	      {
@@ -10407,6 +10622,7 @@ Lng32 SQLCLI_LOBddlInterface
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
 			    &rc, NULL, (char*)"ExpLOBInterfaceCreate",
+
 			    getLobErrStr(rc));
 		goto error_return;
 	      }
@@ -10457,10 +10673,11 @@ Lng32 SQLCLI_LOBddlInterface
 	cliRC = cliInterface->executeImmediate(query);
 	
 	currContext.resetSqlParserFlags(0x1);
-	
+
 	if (cliRC < 0)
 	  {
-	    cliInterface->retrieveSQLDiagnostics(&diags);	    
+	    cliInterface->retrieveSQLDiagnostics(&diags);
+	    
 	    goto error_return;
 	  }
 	
@@ -10469,7 +10686,7 @@ Lng32 SQLCLI_LOBddlInterface
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
 	      (NULL, currContext.exHeap(),
-	       lobLocList[i],
+	       lobLocList[i],hdfsPort,hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
 	    if (rc)
@@ -10541,7 +10758,7 @@ Lng32 SQLCLI_LOBddlInterface
 	  {
 	    Lng32 rc = ExpLOBoper::dropLOB
 	      (NULL, currContext.exHeap(),
-	       lobLocList[i],
+	       lobLocList[i],hdfsPort, hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
 	    if (rc)

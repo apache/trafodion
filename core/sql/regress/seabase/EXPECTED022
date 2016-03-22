@@ -426,7 +426,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Mon Jul 27 15:00:54 2015
+-- Definition current  Thu Feb 25 09:47:53 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -439,12 +439,13 @@ ROW_ID      (EXPR)
   , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Mon Jul 27 15:00:54 2015
+-- Definition current  Thu Feb 25 09:47:53 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -452,6 +453,7 @@ ROW_ID      (EXPR)
   , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>cqd hbase_max_column_val_length '100000';
@@ -463,7 +465,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Mon Jul 27 15:00:54 2015
+-- Definition current  Thu Feb 25 09:47:53 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -476,12 +478,13 @@ ROW_ID      (EXPR)
   , COL_VALUE                        VARCHAR(100000) CHARACTER SET ISO88591
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Mon Jul 27 15:00:54 2015
+-- Definition current  Thu Feb 25 09:47:53 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -489,6 +492,7 @@ ROW_ID      (EXPR)
   , COLUMN_DETAILS                   VARCHAR(100000) CHARACTER SET ISO88591
       COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+  PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>insert into hbase."_CELL_".t022hbt2 values ('1', 'cf', 'a', -1, repeat('a', 100000));

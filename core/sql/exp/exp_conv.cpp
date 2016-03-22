@@ -1467,6 +1467,7 @@ ex_expr::exp_return_type convDatetimeDatetime(char * target,
                                              dstEndField,
                                              (short)targetScale,
                                              target,
+                                             targetLen,
                                              validateFlag,
                                              &roundedDown) != 0) {
 

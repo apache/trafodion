@@ -40,6 +40,7 @@
 
 #include "ComObjectName.h"
 #include "ComUser.h"
+#include "CmpSeabaseDDLroutine.h"
 
 #include "StmtDDLCreateRoutine.h"
 #include "StmtDDLDropRoutine.h"
@@ -1425,3 +1426,173 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
   return -1;
 
 } // CmpSeabaseDDL::validateRoutine
+
+short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
+{
+  Lng32 cliRC = 0;
+  
+  if ((CmpCommon::context()->isUninitializedSeabase()) &&
+      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1393))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1393);
+      return -1;
+    }
+
+  NAString jarLocation(getenv("MY_SQROOT"));
+  jarLocation += "/export/lib/lib_mgmt.jar";
+  char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
+                strlen(SEABASE_LIBMGR_LIBRARY) + strlen(DB__LIBMGRROLE) + 
+                jarLocation.length() + 100];
+
+  // Create the SEABASE_LIBMGR_SCHEMA schema
+  str_sprintf(queryBuf, "create schema if not exists %s.\"%s\" authorization %s ",
+              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  // Create the SEABASE_LIBMGR_LIBRARY library
+  str_sprintf(queryBuf, "create library %s.\"%s\".%s file '%s'",
+                         getSystemCatalog(), SEABASE_LIBMGR_SCHEMA, SEABASE_LIBMGR_LIBRARY,
+                         jarLocation.data());
+
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  return (createLibmgrProcs(cliInterface));
+}
+
+short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
+{
+  Lng32 cliRC = 0;
+
+ // Create the procedures if they don't already exist
+  for (Int32 i = 0; i < sizeof(allLibmgrRoutineInfo)/sizeof(LibmgrRoutineInfo); i++)
+    {
+      // Get the next procedure routine details
+      const LibmgrRoutineInfo &prd = allLibmgrRoutineInfo[i];
+
+      const QString * qs = NULL;
+      Int32 sizeOfqs = 0;
+
+      qs = prd.newDDL;
+      sizeOfqs = prd.sizeOfnewDDL;
+
+      Int32 qryArraySize = sizeOfqs / sizeof(QString);
+      char * gluedQuery;
+      Lng32 gluedQuerySize;
+      glueQueryFragments(qryArraySize,  qs,
+                         gluedQuery, gluedQuerySize);
+
+      param_[0] = getSystemCatalog();
+      param_[1] = SEABASE_LIBMGR_SCHEMA;
+      param_[2] = getSystemCatalog();
+      param_[3] = SEABASE_LIBMGR_SCHEMA;
+      param_[4] = SEABASE_LIBMGR_LIBRARY;
+
+      // Review comment - make sure size of queryBuf is big enough to hold
+      // generated text.
+      char queryBuf[strlen(getSystemCatalog())*2 + strlen(SEABASE_LIBMGR_SCHEMA)*2 +
+                    strlen(SEABASE_LIBMGR_LIBRARY) + gluedQuerySize + 200]; 
+
+      str_sprintf(queryBuf, gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
+      NADELETEBASIC(gluedQuery, STMTHEAP);
+
+      cliRC = cliInterface->executeImmediate(queryBuf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+        return -1;
+        }
+    } // for
+
+  return (grantLibmgrPrivs(cliInterface));
+}
+
+// If authorization is enabled, grant privileges to DB__LIBMGRROLE
+short CmpSeabaseDDL::grantLibmgrPrivs(ExeCliInterface *cliInterface)
+{
+  if (!isAuthorizationEnabled())
+    return 0;
+
+  Lng32 cliRC = 0;
+  char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
+                strlen(SEABASE_LIBMGR_LIBRARY) + strlen(DB__LIBMGRROLE) + 200];
+  for (Int32 i = 0; i < sizeof(allLibmgrRoutineInfo)/sizeof(LibmgrRoutineInfo); i++)
+    {
+      // Get the next procedure routine details
+      const LibmgrRoutineInfo &prd = allLibmgrRoutineInfo[i];
+
+      str_sprintf (queryBuf, "grant execute on procedure %s.\"%s\".%s to %s with grant option",
+                              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA,prd.newName,
+                              DB__LIBMGRROLE);
+      cliRC = cliInterface->executeImmediate(queryBuf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+    }
+  return 0;
+}
+
+short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
+{
+  Lng32 cliRC = 0;
+
+  cliRC = existsInSeabaseMDTable(cliInterface,
+                                 getSystemCatalog(), SEABASE_LIBMGR_SCHEMA,
+                                 SEABASE_LIBMGR_LIBRARY,
+                                 COM_LIBRARY_OBJECT, TRUE, FALSE);
+  if (cliRC < 0)
+    return -1;
+
+  if (cliRC == 0) // does not exist
+    {
+      NAString libraryName(getSystemCatalog());
+      libraryName + ".\"" + SEABASE_LIBMGR_SCHEMA + "\"" + SEABASE_LIBMGR_LIBRARY;
+      *CmpCommon::diags() << DgSqlCode(-1389)
+                          << DgString0(libraryName.data());
+      return -1;
+    }
+
+  return (createLibmgrProcs(cliInterface));
+}
+
+short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
+{
+  Lng32 cliRC = 0;
+
+  char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) + 100];
+
+  // save the current parserflags setting
+  ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+  Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+
+  str_sprintf(queryBuf, "drop schema if exists %s.\"%s\" cascade ",
+              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA, DB__ROOT);
+
+  // Drop the SEABASE_LIBMGR_SCHEMA schema
+  cliRC = cliInterface->executeImmediate(queryBuf);
+
+  // Restore parser flags settings to what they originally were
+  Assign_SqlParser_Flags(savedParserFlags);
+
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+  return 0;
+}
+
+
+  

@@ -46,7 +46,7 @@
 #include "ExpLOBstats.h"
 #include "ExpLOBinterface.h"
 #include "ComSmallDefs.h"
-
+#include "Globals.h"
 #include <seabed/ms.h>
 #include <seabed/fs.h>
 
@@ -79,6 +79,79 @@ using namespace std;
 #define LOB_CURSOR_PREFETCH_BYTES_MAX (1 << 27) // 128MB
 
 class ExLobGlobals;
+// This class defines the request used to construct the message to send over 
+// to the mxlobsrvr process. It's currently not used. All lob functionailty is 
+// now in te master process. We are retaining it here for furture use.
+class ExLobRequest
+{
+  public:
+    ExLobRequest();
+    ~ExLobRequest();
+    Ex_Lob_Error send();
+
+    void setValues(char *descFileName, Int64 descNumIn, Int64 handleInLen, 
+                   char *handleIn, LobsStorage storage, Int64 transId,
+                   SB_Transid_Type transIdBig,
+                   SB_Transseq_Type transStartId,
+                   char *blackBox, Int64 blackBoxLen);
+    void getValues(Int64 &descNumOut, Int64 &handleOutLen, 
+                   char *handleOut, Ex_Lob_Error &requestStatus,
+                   Int64 &cliError,
+                   char *blackBox, Int64 &blackBoxLen);
+
+    Int64 getDescNumIn() { return descNumIn_; }
+    void setDescNumIn(Int64 descNum) { descNumIn_ = descNum; }
+    Int64 getDescNumOut() { return descNumOut_; }
+    void setDescNumOut(Int64 descNum) { descNumOut_ = descNum; }
+    Int64 getDataOffset() { return dataOffset_; }
+    void setDataOffset(int dataOffset) { dataOffset_ = dataOffset; }
+    LobsRequest getType() { return type_; }
+    void setType(LobsRequest type) { type_ = type; }
+    char *getDescFileName() { return descFileName_; }
+    Int64 getOperLen() { return operLen_; }
+    void setOperLen(Int64 len) { operLen_ = len; }
+    void log();   
+    void setError(Ex_Lob_Error err) { error_ = err; }
+    Ex_Lob_Error getError() { return error_; }
+    Ex_Lob_Error getStatus() { return status_; }
+    char *getHandleIn() { return handleIn_; }
+    Int64 getHandleInLen() { return handleInLen_; }
+    char *getHandleOut() { return handleOut_; }
+    void setHandleOutLen(Lng32 len) { handleOutLen_ = len; }
+    void setCliError(int cliErr) { cliError_ = cliErr; }
+    int getCliError() { return (int)cliError_; }
+    Int64 getTransId() { return transId_; }
+    SB_Transid_Type getTransIdBig() { return transIdBig_; }
+    SB_Transseq_Type getTransStartId() { return transStartId_; }
+    Int64 getBlackBoxLen() { return blackBoxLen_; };
+    void setBlackBoxLen(Int64 len) { blackBoxLen_ = len; }
+    char *getBlackBox() { return blackBox_; }
+    
+    void incrReqNum() { reqNum_++; }
+    Int64 getReqNum() { return reqNum_; }
+
+  private:
+    Int64 reqNum_;
+    Int64 descNumIn_;
+    Int64 descNumOut_;
+    char handleIn_[MAX_HANDLE_IN_LEN];
+    Int64 handleInLen_;
+    char handleOut_[MAX_HANDLE_OUT_LEN];
+    Int64 handleOutLen_;
+    Int64 dataOffset_;
+    LobsRequest type_;
+    LobsStorage storage_;
+    Int64 operLen_;
+    Ex_Lob_Error error_;
+    Int64 cliError_;
+    Ex_Lob_Error status_;
+    Int64 transId_;
+    SB_Transid_Type transIdBig_;
+    SB_Transseq_Type transStartId_;
+    char descFileName_[MAX_LOB_FILE_NAME_LEN];
+    char blackBox_[MAX_BLACK_BOX_LEN];
+    Int64 blackBoxLen_;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // THE SQL LOB API
@@ -87,11 +160,11 @@ class ExLobGlobals;
 Ex_Lob_Error ExLobsOper (
     char        *lobName,          // lob name
     char        *handleIn,         // input handle (for cli calls)
-    Int64       handleInLen,       // input handle len
+    Int32       handleInLen,       // input handle len
     char       *hdfsServer,       // server where hdfs fs resides
     Int64       hdfsPort,          // port number to access hdfs server
     char        *handleOut,        // output handle (for cli calls)
-    Int64       &handleOutLen,     // output handle len
+    Int32       &handleOutLen,     // output handle len
     Int64       descNumIn,         // input desc Num (for flat files only)
     Int64       &descNumOut,       // output desc Num (for flat files only)
     Int64       &retOperLen,       // length of data involved in this operation
@@ -111,9 +184,10 @@ Ex_Lob_Error ExLobsOper (
     void        *&globPtr,         // ptr to the Lob objects. 
     Int64       transId,
     void        *blackBox,         // black box to be sent to cli
-    Int64       blackBoxLen,        // length of black box
+    Int32       blackBoxLen,        // length of black box
     Int64       lobMaxSize = 0,        // max size of lob.
     Int64       lobMaxChunkMemSize = 0 ,//max length of intermediate mem buffer used to do i/o.
+    Int64 lobGCLimit = 0, // size at which GC must be triggered
     int         bufferSize =0,
     short       replication =0,
     int         blocksize=0,
@@ -160,7 +234,7 @@ class ExLobDescHeader
     int getDataOffset() { return dataOffset_; }
     void incDataOffset(int size) { dataOffset_ += size; }
     
-    Ex_Lob_Error print(char *descFileName);
+  
 
   private:
 
@@ -200,7 +274,6 @@ class ExLobDesc
     void setOffset(int offset) { dataOffset_ = offset; }
     void setDataState(int dataState) { dataState_ = dataState; }
 
-    Ex_Lob_Error print();
 
   private:
 
@@ -213,79 +286,46 @@ class ExLobDesc
     int nextFree_;
 };
 
-class ExLobRequest
+class ExLobInMemoryDescChunksEntry
 {
-  public:
-    ExLobRequest();
-    ~ExLobRequest();
-    Ex_Lob_Error send();
+public:
+  ExLobInMemoryDescChunksEntry():
+       currentOffset_ (-1),
+       newOffset_( -1),
+       descPartnKey_(-1),
+       descSyskey_(-1),
+       chunkLen_(-1),
+       chunkNum_(-1)
+  {}
+    ExLobInMemoryDescChunksEntry(Int64 co,Int64 partnKey,Int64 syskey,Int64 chunkLen,Int32 chunkNum)
+  {
+    currentOffset_ = co; newOffset_ = -1;descPartnKey_ = partnKey; descSyskey_ = syskey; chunkLen_ = chunkLen; chunkNum_ =chunkNum;
+  }
 
-    void setValues(char *descFileName, Int64 descNumIn, Int64 handleInLen, 
-                   char *handleIn, LobsStorage storage, Int64 transId,
-                   SB_Transid_Type transIdBig,
-                   SB_Transseq_Type transStartId,
-                   char *blackBox, Int64 blackBoxLen);
-    void getValues(Int64 &descNumOut, Int64 &handleOutLen, 
-                   char *handleOut, Ex_Lob_Error &requestStatus,
-                   Int64 &cliError,
-                   char *blackBox, Int64 &blackBoxLen);
+  void setCurrentOffset(Int64 co) { currentOffset_ = co;}
+  Int64 getCurrentOffset(){return currentOffset_;}
+  
+  void setNewOffset(Int64 no) { newOffset_ = no;}
+  Int64 getNewOffset(){return newOffset_;}
 
-    Int64 getDescNumIn() { return descNumIn_; }
-    void setDescNumIn(Int64 descNum) { descNumIn_ = descNum; }
-    Int64 getDescNumOut() { return descNumOut_; }
-    void setDescNumOut(Int64 descNum) { descNumOut_ = descNum; }
-    Int64 getDataOffset() { return dataOffset_; }
-    void setDataOffset(int dataOffset) { dataOffset_ = dataOffset; }
-    LobsRequest getType() { return type_; }
-    void setType(LobsRequest type) { type_ = type; }
-    char *getDescFileName() { return descFileName_; }
-    Int64 getOperLen() { return operLen_; }
-    void setOperLen(Int64 len) { operLen_ = len; }
-    void log();
-    void getDescOut(ExLobDesc &desc); 
-    void putDescIn(ExLobDesc &desc); 
-    ExLobDesc &getDesc() { return desc_; }
-    void setError(Ex_Lob_Error err) { error_ = err; }
-    Ex_Lob_Error getError() { return error_; }
-    Ex_Lob_Error getStatus() { return status_; }
-    char *getHandleIn() { return handleIn_; }
-    Int64 getHandleInLen() { return handleInLen_; }
-    char *getHandleOut() { return handleOut_; }
-    void setHandleOutLen(Lng32 len) { handleOutLen_ = len; }
-    void setCliError(int cliErr) { cliError_ = cliErr; }
-    int getCliError() { return (int)cliError_; }
-    Int64 getTransId() { return transId_; }
-    SB_Transid_Type getTransIdBig() { return transIdBig_; }
-    SB_Transseq_Type getTransStartId() { return transStartId_; }
-    Int64 getBlackBoxLen() { return blackBoxLen_; };
-    void setBlackBoxLen(Int64 len) { blackBoxLen_ = len; }
-    char *getBlackBox() { return blackBox_; }
-    
-    void incrReqNum() { reqNum_++; }
-    Int64 getReqNum() { return reqNum_; }
+  void setDescPartnKey(Int64 dk) { descPartnKey_ = dk;}
+  Int64 getDescPartnKey(){return descPartnKey_;}
 
-  private:
-    Int64 reqNum_;
-    Int64 descNumIn_;
-    Int64 descNumOut_;
-    char handleIn_[MAX_HANDLE_IN_LEN];
-    Int64 handleInLen_;
-    char handleOut_[MAX_HANDLE_OUT_LEN];
-    Int64 handleOutLen_;
-    Int64 dataOffset_;
-    LobsRequest type_;
-    LobsStorage storage_;
-    Int64 operLen_;
-    ExLobDesc desc_;
-    Ex_Lob_Error error_;
-    Int64 cliError_;
-    Ex_Lob_Error status_;
-    Int64 transId_;
-    SB_Transid_Type transIdBig_;
-    SB_Transseq_Type transStartId_;
-    char descFileName_[MAX_LOB_FILE_NAME_LEN];
-    char blackBox_[MAX_BLACK_BOX_LEN];
-    Int64 blackBoxLen_;
+  void setSyskey(Int64 sk) { descSyskey_ = sk;}
+  Int64 getSyskey(){return descSyskey_;}
+
+  void setChunkLen(Int64 cl) { chunkLen_ = cl;}
+  Int64 getChunkLen(){return chunkLen_;}
+
+  void setChunkNum(Int32 cn) { chunkNum_ = cn;}
+  Int32 getChunkNum(){return chunkNum_;}
+private:
+  Int64 currentOffset_;
+  Int64 newOffset_;
+  Int64 descPartnKey_;
+  Int64 descSyskey_;
+  Int64 chunkLen_;
+  Int32 chunkNum_;
 };
 
 class ExLobCursorBuffer
@@ -369,105 +409,103 @@ class ExLob
 
     Ex_Lob_Error initialize(char *lobFile, Ex_Lob_Mode mode, char *dir, 
                             LobsStorage storage, char *hdfsServer, Int64 hdfsPort,
-                            int bufferSize = 0, short replication =0, int blocksize=0, Int64 lobMaxSize = 0, ExLobGlobals *lobGlobals = NULL);
+                            char *lobLocation,
+                            int bufferSize = 0, short replication =0, 
+                            int blocksize=0, Int64 lobMaxSize = 0, 
+                            ExLobGlobals *lobGlobals = NULL);
     Ex_Lob_Error initialize(char *lobFile);
-    Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize);
+  Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
     Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, 
 			      LobsSubOper subOperation, 
 			      Int64 tgtOffset,Int64 &operLen, 
 			      Int64 lobMaxMemChunkLen);
     Ex_Lob_Error writeDataSimple(char *data, Int64 size, LobsSubOper subOperation, Int64 &operLen,
                                  int bufferSize = 0, short replication =0, int blocksize=0);
-    Ex_Lob_Error readToMem(char *memAddr, Int64 size,  Int64 &operLen);
-    Ex_Lob_Error readToFile(char *fileName, Int64 tgtLen,Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags);
-    Ex_Lob_Error readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int64 handleInLen, Int64 &operLen);
-    Ex_Lob_Error readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
+    Ex_Lob_Error readToMem(char *memAddr, Int64 size,  Int64 &operLen,char * handleIn, Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 transId);
+  Ex_Lob_Error readToFile(char *fileName, Int64 tgtLen,Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags, char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 transId);
+  Ex_Lob_Error readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int32 handleInLen, Int64 &operLen,Int64 transId);
+  Ex_Lob_Error readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen,char *handleIn, Int32 handeLenIn,Int64 transId);
     Ex_Lob_Error readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
     Ex_Lob_Error readDataCursorSimple(char *fileName, char *tgt, Int64 tgtSize, Int64 &operLen, ExLobGlobals *lobGlobals);
     bool hasNoOpenCursors() { return lobCursors_.empty(); }
-    Ex_Lob_Error openCursor(char *handleIn, Int64 handleInLen);
+  Ex_Lob_Error openCursor(char *handleIn, Int32 handleInLen,Int64 transId);
     Ex_Lob_Error openDataCursor(char *fileName, LobsCursorType type, Int64 range, 
                                 Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals);
     Ex_Lob_Error deleteCursor(char *cursorName, ExLobGlobals *lobGlobals);
-    Ex_Lob_Error fetchCursor();
-    Ex_Lob_Error selectCursorDesc(ExLobRequest *request);
-    Ex_Lob_Error fetchCursorDesc(ExLobRequest *request);
-    Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize);
-    Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen);
-    Ex_Lob_Error append(ExLobRequest *request);
-    Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen);
-    Ex_Lob_Error update(ExLobRequest *request);
+  Ex_Lob_Error fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOffset, Int64 &outSize,NABoolean &isEOD,Int64 transId);
+  Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
+  Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
+  Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen,Int64 lobGCLimit,char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
     Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
     Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
     Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
     Ex_Lob_Error readExternalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
     Ex_Lob_Error statSourceFile(char *srcfile, Int64 &sourceEOF);
-    Ex_Lob_Error delDesc();
-    Ex_Lob_Error delDesc(ExLobRequest *request);
+    Ex_Lob_Error delDesc(char *handleIn, Int32 handleInLen, Int64 transId);
     Ex_Lob_Error purgeLob();
     Ex_Lob_Error closeFile();
     LobInputOutputFileType fileType(char *ioFileName);
-    Ex_Lob_Error closeCursor(char *handleIn, Int64 handleInLen);
+    Ex_Lob_Error closeCursor(char *handleIn, Int32 handleInLen);
     Ex_Lob_Error closeDataCursorSimple(char *fileName, ExLobGlobals *lobGlobals);
-    Ex_Lob_Error closeCursorDesc(ExLobRequest *request);
+   
     Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
-                                Int64 handleInLen, Int64 handleOutLen, 
-                                Int64 blackBoxLen);
-    Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize);
+                                Int32 handleInLen, Int32 handleOutLen, 
+                                Int32 blackBoxLen);
+  Ex_Lob_Error allocateDesc(unsigned int size, Int64 &descNum, Int64 &dataOffset,Int64 lobMaxSize,Int64 lobMaxChunkMemSize, char *handleIn, Int32 handleInLen,Int64 lobGCLimit, void *lobGlobals);
     Ex_Lob_Error readStats(char *buffer);
     Ex_Lob_Error initStats();
 
-    Ex_Lob_Error insertDesc(ExLobRequest *request) ;
-
-    ExLobRequest *getRequest() { return &request_; }
+    Ex_Lob_Error insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,void *lobGlobals) ;
 
     Ex_Lob_Error lockDesc();
     Ex_Lob_Error unlockDesc();
-    //int getfdDesc() { return fdDesc_; }
-    hdfsFile *getfdDesc() { return &fdDesc_;}
-    char *getDescFileName() { return lobDescFile_; }
     char *getDataFileName() { return lobDataFile_; }
-
-    Ex_Lob_Error print();
+   
     int getErrNo();
 
-    Ex_Lob_Error delDesc(Int64 descNum);
-    Ex_Lob_Error getDesc(ExLobDesc &desc);
-    Ex_Lob_Error putDesc(ExLobDesc &desc, Int64 descNum);
-    Ex_Lob_Error getDesc(ExLobRequest *request);
+  
+    Ex_Lob_Error getDesc(ExLobDesc &desc,char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 transId);
 
     Ex_Lob_Error writeData(Int64 offset, char *data, Int32 size, Int64 &operLen);
-    Ex_Lob_Error readDataToMem(char *memAddr, Int64 offset, Int64 size, Int64 &operLen);
+  Ex_Lob_Error readDataToMem(char *memAddr, Int64 offset, Int64 size,
+                             Int64 &operLen,char *handleIn, Int32 handleLenIn, 
+                             NABoolean multipleChunks, Int64 transId);
    
-    Ex_Lob_Error readDataToLocalFile(char *fileName, Int64 offset, Int64 size,Int64 &operLen,Int64 lobMaxChunkMemLen ,Int32 fileFlags);
-    Ex_Lob_Error readCursorDataToLocalFile(char *fileName,  Int64 offset, Int64 size, Int64 &writeOperLen, Int64 lobMaxChunkMemSize, Int32 fileflags);
-    Ex_Lob_Error readDataToHdfsFile(char *fileName, Int64 offset, Int64 size, Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags);
-    Ex_Lob_Error readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 size, Int64 &operLen, Int64 lobMaxChunkMemLen, Int32 fileflags);
-    Ex_Lob_Error readDataFromFile(char *memAddr, Int64 len, Int64 &operLen);
+  Ex_Lob_Error readDataToLocalFile(char *fileName, Int64 offset, Int64 size,Int64 &operLen,Int64 lobMaxChunkMemLen ,Int32 fileFlags,char *handleIn,Int32 handleInLen, NABoolean multipleChunks,Int64 transId);
+  Ex_Lob_Error readDataToHdfsFile(char *fileName, Int64 offset, Int64 size, Int64 &operLen,Int64 lobMaxChunkMemLen, Int32 fileflags,char *handleIn,Int32 handleInLen, NABoolean multipleChunks,Int64 transId);
+  Ex_Lob_Error readDataToExternalFile(char *tgtFileName,  Int64 offset, Int64 size, Int64 &operLen, Int64 lobMaxChunkMemLen, Int32 fileflags,char *handleIn,Int32 handleInLen, NABoolean multipleChunks,Int64 transId);
+  Ex_Lob_Error readDataFromFile(char *memAddr, Int64 len, Int64 &operLen);
+  Ex_Lob_Error compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int32 numEntries);
+  Ex_Lob_Error  restoreLobDataFile();
+  Ex_Lob_Error purgeBackupLobDataFile();
 
     Ex_Lob_Error emptyDirectory();
-
     ExLobStats *getStats() { return &stats_; }
     NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
+  ExLobRequest *getRequest() { return &request_; }
+
+  //The next 2 functions are not active at this point. They serve as an example
+  //on how to send requests across to the mxlobsrvr process from the master 
+  //process
+  Ex_Lob_Error getDesc(ExLobRequest *request);
+  Ex_Lob_Error sendReqToLobServer() ;
   public:
 
     char lobDataFile_[MAX_LOB_FILE_NAME_LEN];
-    char lobDescFile_[MAX_LOB_FILE_NAME_LEN];
-    //int fdDesc_;
-    hdfsFile fdDesc_;
     lobCursors_t lobCursors_;
     ExLobLock lobCursorLock_;
     LobsStorage storage_;
     string dir_; // lob data directory
     char *hdfsServer_;
     Int64 hdfsPort_;
+    char *lobLocation_;
     hdfsFS fs_;
     hdfsFile fdData_;
     int openFlags_;
-    ExLobRequest request_; 
     ExLobStats stats_;
     bool prefetchQueued_;
     NAHeap *lobGlobalHeap_;
+    ExLobRequest request_;
 };
 
 typedef map<string, ExLob *> lobMap_t;
@@ -537,8 +575,6 @@ class ExLobGlobals
     ~ExLobGlobals();
 
     Ex_Lob_Error initialize();
-    Ex_Lob_Error setServerPhandle();
-    Ex_Lob_Error resetServerPhandle();
     lobMap_t * getLobMap() { return lobMap_; }
     Ex_Lob_Error getLobPtr(char *lobName, ExLob *& lobPtr);
     Ex_Lob_Error delLobPtr(char *lobName);
@@ -597,5 +633,7 @@ class ExLobGlobals
     FILE *threadTraceFile_;
     NAHeap *heap_;
 };
+
+
 
 #endif 

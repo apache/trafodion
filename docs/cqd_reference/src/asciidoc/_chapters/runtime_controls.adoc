@@ -33,7 +33,6 @@ This section describes CQDs that are used for runtime controls.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Runtime Controls
 | *Description*               | Ensures that all parts of the query plan are executed but no rows are returned by the query.
 | *Values*                    | *'ON'* or *'OFF'*. +
  +
@@ -56,9 +55,8 @@ is the same as when you do not use the [LAST 0] clause in the query.
 
 [cols="25%h,75%"]
 |===
-| *Category*                  | Runtime Controls
 | *Description*               | Use to limit the amount of CPU time that a query is allowed to use in any one server process (MXESP)
-including the NDCS server (MXOSRVR). Also includes the CPU time the query spends in the disk process (ESAM). $$$ +
+including the NDCS server (MXOSRVR). Also includes the CPU time the query spends in the disk process (ESAM). +
  +
 If a query exceeds the limit, then an error is raised and the query is terminated. This is a way to limit the impact on the
 system of a poorly written or badly optimized query.

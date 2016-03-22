@@ -55,6 +55,8 @@ public:
     inline const char *GetName( void ) { return( name_.c_str() ); }
     inline NodeState_t GetState( void ) { return( state_ ); }
     inline void    SetState( NodeState_t state ) { state_ = state; }
+    inline void SetName( const char * newName ) { if (newName) name_ = newName; } 
+ 
 
 private:
     string          name_;

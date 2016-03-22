@@ -86,9 +86,9 @@
       </releases>
     </repository>
     <repository>
-      <id>codehaus</id>
-      <name>Codehaus Public</name>
-      <url>http://repository.codehaus.org/</url>
+      <id>codehaus-mule</id>
+      <name>Codehaus Mule Public</name>
+      <url>https://repository-master.mulesoft.org/nexus/content/groups/public/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -182,13 +182,6 @@
                              outputdir="${generated.sources}/java"
                              package="org.trafodion.dcs.generated.server"
                              webxml="${build.webapps}/server/WEB-INF/web.xml"/>
-<!-- 
-                <mkdir dir="${build.webapps}/rest/WEB-INF"/>
-                <jspcompiler uriroot="${src.webapps}/rest"
-                             outputdir="${generated.sources}/java"
-                             package="org.trafodion.dcs.generated.rest"
-                             webxml="${build.webapps}/rest/WEB-INF/web.xml"/>
--->
               <exec executable="sh">
                   <arg line="${basedir}/src/saveVersion.sh ${project.version} ${generated.sources}/java"/>
                 </exec>
@@ -498,7 +491,7 @@
   	<compileSource>1.6</compileSource>
     
   	<!-- Dependencies -->
-    <hadoop.version>2.6.0</hadoop.version>
+        <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
   	<commons-cli.version>1.2</commons-cli.version>
   	<commons-codec.version>1.4</commons-codec.version>
   	<commons-io.version>2.1</commons-io.version>
@@ -508,7 +501,7 @@
   	<commons-configuration.version>1.6</commons-configuration.version>
   	<metrics-core.version>2.1.2</metrics-core.version>
   	<guava.version>11.0.2</guava.version>
-  	<jackson.version>1.8.8</jackson.version>
+  	<jackson.version>1.9.13</jackson.version>
   	<jasper.version>5.5.23</jasper.version>
   	<jamon.runtime.version>2.4.0</jamon.runtime.version>
   	<jaxb-api.version>2.1</jaxb-api.version>
@@ -516,7 +509,7 @@
   	<jetty.jspapi.version>6.1.14</jetty.jspapi.version>
   	<jersey.version>1.8</jersey.version>
   	<junit.version>4.10</junit.version>
-  	<slf4j.version>1.4.3</slf4j.version>
+  	<slf4j.version>1.4.3</slf4j.version> 
   	<log4j.version>1.2.16</log4j.version>
   	<zookeeper.version>3.4.5</zookeeper.version>
   	<jython-standalone.version>2.5.3</jython-standalone.version>
@@ -566,16 +559,6 @@
     </dependency>
     
     <!-- General dependencies -->
-  	<dependency>
-      <groupId>com.yammer.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-      <version>${metrics-core.version}</version>
-  	</dependency>
-  	<dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-  	</dependency>
     <dependency>
 	  <groupId>org.python</groupId>
 	  <artifactId>jython-standalone</artifactId>
@@ -587,24 +570,9 @@
       <version>${commons-cli.version}</version>
   	</dependency>
     <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>${commons-configuration.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>${commons-codec.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons-io.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>${commons-lang.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
@@ -671,33 +639,13 @@
       <version>${jetty.jspapi.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>servlet-api-2.5</artifactId>
-      <version>${jetty.jspapi.version}</version>
+      <groupId>displaytag</groupId>
+      <artifactId>displaytag</artifactId>
+      <version>${displaytag.version}</version>
     </dependency>
     <!-- While jackson is also a dependency of both jersey and avro, these
          can bring in jars from different, incompatible versions. We force
          the same version with these dependencies -->
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-core-asl</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-jaxrs</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-xc</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -708,98 +656,13 @@
       <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
-    <dependency>
-      <!--If this is not in the runtime lib, we get odd
-      "2009-02-27 11:38:39.504::WARN:  failed jsp
-       java.lang.NoSuchFieldError: IS_SECURITY_ENABLED"
-       exceptions out of jetty deploying webapps.
-       St.Ack Thu May 20 01:04:41 PDT 2010
-      -->
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-compiler</artifactId>
-      <version>${jasper.version}</version>
-      <scope>runtime</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>jsp-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>ant</groupId>
-          <artifactId>ant</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-runtime</artifactId>
-      <version>${jasper.version}</version>
-      <scope>runtime</scope>
-      <exclusions>
-       <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>jsp-api</artifactId>
-        </exclusion>          
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+
     <dependency>
       <groupId>org.jamon</groupId>
       <artifactId>jamon-runtime</artifactId>
       <version>${jamon.runtime.version}</version>
     </dependency>
-
-    <!-- REST dependencies -->
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-core</artifactId>
-      <version>${jersey.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-json</artifactId>
-      <version>${jersey.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-server</artifactId>
-      <version>${jersey.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>${jaxb-api.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.xml.stream</groupId>
-          <artifactId>stax-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jettison</groupId>
-      <artifactId>jettison</artifactId>
-      <version>${jettison.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>displaytag</groupId>
-      <artifactId>displaytag</artifactId>
-      <version>${displaytag.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>displaytag</groupId>
-      <artifactId>displaytag-export-poi</artifactId>
-      <version>${displaytag.version}</version>
-    </dependency> 
   </dependencies>
-  
   <profiles>
     <!-- JDBC drivers needed for compile, but not site docs 
 	 This allows turning off dependency on command line (-P '!jdbc') -->

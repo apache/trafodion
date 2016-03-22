@@ -58,6 +58,4 @@ void sendParserFlag (ULng32 flag);
 
 short setParentQidAtSession(NAHeap *heap, const char *parentQid);
 
-NAString &replaceAll(NAString &source, NAString &searchFor, NAString &replaceWith);
-
 #endif

@@ -183,14 +183,26 @@ bool init_pnode_map( void )
     pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
     {
-        // TEST_POINT: to force state down on node name 
-        NodeState_t nodeState = StateUp;
-        const char *downNodeName = getenv( TP001_NODE_DOWN );
-        if ( downNodeName != NULL && 
-            !strcmp( downNodeName, pnodeConfig->GetName() ) )
-        {
-            nodeState = StateDown;
-        }
+        // TEST_POINT and exclude list : to force state down on node name
+         NodeState_t nodeState = StateUp;
+         const char *downNodeName = getenv( TP001_NODE_DOWN );
+         const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+	 string downNodeString = " ";
+	 if (downNodeList)
+	 {
+	   downNodeString += downNodeList;
+	   downNodeString += " ";
+	 }
+	 string downNodeToFind = " ";
+	 downNodeToFind += pnodeConfig->GetName();
+	 downNodeToFind += " ";
+         if (((downNodeList != NULL) && 
+	    (strstr(downNodeString.c_str(),downNodeToFind.c_str()))) ||
+            ( downNodeName != NULL && 
+             !strcmp( downNodeName, pnodeConfig->GetName() ) ))
+         {
+             nodeState = StateDown;
+         }
 
         // effectively remove spare nodes on startup only
         if ( SpareNodeColdStandby && pnodeConfig->IsSpareNode() )
@@ -2822,7 +2834,7 @@ void help_cmd (void)
     printf ("[%s] -- ls [{[detail]}] [<path>]\n", MyName);
     printf ("[%s] -- measure | measure_cpu\n", MyName);
     printf ("[%s] -- monstats\n", MyName);
-    printf ("[%s] -- node [info [<nid>]]\n", MyName);
+    printf ("[%s] -- node [[info [<nid>]] | [name <old name> <new name>]]\n", MyName);
     printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
     printf ("[%s] -- ps [{ASE|TSE|DTM|AMP|BO|VR|CS}] [<process_name>|<nid,pid>]\n", MyName);
     printf ("[%s] -- pwd\n", MyName);
@@ -3069,6 +3081,103 @@ const char *zone_type_string( ZoneType type )
     return( str );
 }
 
+void changeNodeName (char *current_name, char *new_name)
+{
+  
+    if ((current_name == NULL) || (new_name == NULL))
+    {
+         printf( "[%s] Error: Invalid node name while attempting to change node name.\n", MyName );           
+         return;
+    }
+    int count;
+    MPI_Status status;
+    CPhysicalNode  *physicalNode;
+    PhysicalNodeNameMap_t::iterator it;
+    pair<PhysicalNodeNameMap_t::iterator, bool> pnmit;
+
+    // Look up name
+    it = PhysicalNodeMap.find( current_name );
+
+    if (it != PhysicalNodeMap.end())
+    {
+        physicalNode = it->second;
+        if (physicalNode)
+        {
+           CPhysicalNode  *newPhysicalNode = new CPhysicalNode( new_name, physicalNode->GetState() );
+           if (newPhysicalNode == NULL)
+          {
+               printf( "[%s] Error: Internal error with configuration while changing node name.\n", MyName );           
+              return;
+           }
+           //remove and read
+           PhysicalNodeMap.erase(current_name);
+           pnmit = PhysicalNodeMap.insert( PhysicalNodeNameMap_t::value_type 
+                                            ( newPhysicalNode->GetName(), newPhysicalNode ));
+           if (pnmit.second == false)
+           {   // Already had an entry with the given key value.  
+                printf( "[%s] Error: Internal error while changing node name. Node name exists, node name=%s\n", MyName, new_name );
+                return;
+           }
+        }
+        else
+        {
+           printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName,new_name );           
+           return;
+        }
+    }
+    else
+    {
+        printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName, new_name );           
+        return;
+    }
+    
+    // change in another local location
+    int pnid = ClusterConfig.GetPNid (current_name); 
+    CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (pnid); 
+    if (pConfig != NULL) 
+        pConfig->SetName(new_name);
+      
+     //and..... in another local location
+     for( int i=0; i<NumNodes; i++)
+     {
+        if ( strcmp (PNode[i], current_name) == 0)
+           strcpy(PNode[i],new_name);
+     }       
+    
+     // now change it in the monitors
+     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+     {   // Could not acquire a message buffer
+         printf ("[%s] Unable to acquire message buffer.\n", MyName);
+         return;
+     }
+
+     msg->type = MsgType_Service;
+     msg->noreply = false;
+     msg->reply_tag = REPLY_TAG;
+     msg->u.request.type = ReqType_NodeName;
+     msg->u.request.u.nodename.nid = MyNid;
+     msg->u.request.u.nodename.pid = MyPid;
+     strcpy (msg->u.request.u.nodename.new_name, new_name);
+     strcpy (msg->u.request.u.nodename.current_name, current_name);
+  
+     gp_local_mon_io->send_recv( msg );
+     count = sizeof( *msg );
+     status.MPI_TAG = msg->reply_tag;
+ 
+     if ((status.MPI_TAG == REPLY_TAG) &&
+            (count == sizeof (struct message_def)))
+     {
+        if ((msg->type == MsgType_Service) &&
+            (msg->u.reply.type == ReplyType_NodeName))
+            {
+                if (msg->u.reply.u.node_info.return_code != MPI_SUCCESS)
+                   printf ("[%s] Unable to change node name in monitors.\n", MyName);
+            }
+     }
+     else
+       printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
+}
+
 void listNodeInfo( int nid )
 {
     int i;
@@ -3083,6 +3192,14 @@ void listNodeInfo( int nid )
         return;
     }
 
+    const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+    string downNodeString = " ";
+    if (downNodeList)
+    {
+      downNodeString += downNodeList;
+      downNodeString += " ";
+    }
+		 
     bool needBanner = true;
     bool getMoreInfo = false;
     do
@@ -3128,6 +3245,20 @@ void listNodeInfo( int nid )
 
                         for (i=0; i < msg->u.reply.u.node_info.num_returned; i++)
                         {
+                             CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (msg->u.reply.u.node_info.node[i].pnid);
+			     
+			     if (pConfig != NULL)
+			     {
+			       string downNodeToFind = " ";
+	                       downNodeToFind += pConfig->GetName();
+	                       downNodeToFind += " ";
+
+                               if  ((downNodeList != NULL) && strstr(downNodeString.c_str(),downNodeToFind.c_str()))
+                               {
+                                   continue; // We do not want to consider this node since it is in our exclude list
+                               }
+			     }
+
                             if ( last_nid != -1 )
                             {
                                 if ( (msg->u.reply.u.node_info.node[i].pnid != 
@@ -3484,6 +3615,14 @@ void node_cmd (char *cmd_tail)
     char token[MAX_TOKEN];
     char delimiter;
     char *ptr;
+    const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
+    string downNodeString = " ";
+    
+    if (downNodeList)
+    {
+	 downNodeString += downNodeList;
+	 downNodeString += " ";
+    }
 
     if (*cmd_tail == '\0')
     {
@@ -3505,9 +3644,14 @@ void node_cmd (char *cmd_tail)
                 }
                 
                 pnodeConfig = lnodeConfig->GetPNodeConfig();
-                if ( lnodeConfig )
+                if ( pnodeConfig )
                 {
-                    printf( "[%s] Node[%d]=%s, %s, %s\n"
+		   string downNodeToFind = " ";
+	           downNodeToFind += pnodeConfig->GetName();
+	           downNodeToFind += " ";
+     
+                   if (((!downNodeList) || ((downNodeList) && !(strstr(downNodeString.c_str(),downNodeToFind.c_str())))))
+                       printf( "[%s] Node[%d]=%s, %s, %s\n"
                           , MyName
                           , i 
                           , pnodeConfig->GetName()
@@ -3521,7 +3665,16 @@ void node_cmd (char *cmd_tail)
     else
     {
         ptr = get_token (cmd_tail, token, &delimiter);
-        if (strcmp (token, "info") == 0)
+        if (strcmp (token, "name") == 0)
+        {
+             char* ptr2 = get_token (ptr, token, &delimiter);
+             if (ptr2 && *ptr2)
+                changeNodeName(token, ptr2);
+             else
+                printf ("[%s] Invalid node name\n", MyName);
+        }
+        else if (strcmp (token, "info") == 0)
+
         {
             if (Started)
             {
@@ -4569,6 +4722,18 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     // Ensure that we are on a node that is part of the configuration
     char mynode[MPI_MAX_PROCESSOR_NAME];
     gethostname(mynode, MPI_MAX_PROCESSOR_NAME);
+    //JIRA: TRAFODION-1854, hostname contains upper case letters
+    //change all char in mynode to lowercase
+    //since cluster config strings will all in lowercase , see CTokenizer::NormalizeCase()
+    if(!VirtualNodes)  // for VirtualNodes, it use same gethostname, so do not tolower
+    {
+      char *tmpptr = mynode;
+      while ( *tmpptr )
+      {
+        *tmpptr = tolower( *tmpptr );
+	tmpptr++;
+      }
+    }
     bool nodeInConfig = false;
     for ( i = 0; i < NumNodes; i++ )
     {
@@ -6137,6 +6302,12 @@ int main (int argc, char *argv[])
     else
     {
         gethostname(MyNode, MPI_MAX_PROCESSOR_NAME);
+        char *tmpptr = MyNode;
+        while ( *tmpptr )
+        {
+            *tmpptr = (char)tolower( *tmpptr );
+            tmpptr++;
+        }
         if ( !load_nodes() )
         {
             exit (1);

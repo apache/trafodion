@@ -94,7 +94,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleObjNamePrefix(Int64 uid,
   if (outBufLen < 512)
     return NULL;
   
-  str_sprintf(outBuf, "LOBDescHandle_%020Ld", uid);
+  str_sprintf(outBuf, "%s_%020Ld", LOB_DESC_HANDLE_PREFIX,uid);
   
   return outBuf;
 }
@@ -107,8 +107,8 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"LOBDescHandle_%020Ld_%04d\"",
-	      schName, uid, num);
+  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+	      schName, LOB_DESC_HANDLE_PREFIX,uid, num);
   
   return outBuf;
 }
@@ -116,7 +116,7 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
 Lng32 ExpLOBoper::ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen)
 {
   // Desc Name Format: LOBDescHandle_%020Ld_%04d
-  char * lobNumPtr = &descName[strlen("LOBDescHandle_") + 20 + 1];
+  char * lobNumPtr = &descName[sizeof(LOB_DESC_HANDLE_PREFIX) + 20 + 1];
   Lng32 lobNum = str_atoi(lobNumPtr, 4);
   
   return lobNum;
@@ -131,26 +131,13 @@ char * ExpLOBoper::ExpGetLOBDescChunksName(Lng32 schNameLen, char * schName,
       (schName == NULL))
     return NULL;
   
-  str_sprintf(outBuf, "%s.\"LOBDescChunks_%020Ld_%04d\"",
-	      schName, uid, num);
+  str_sprintf(outBuf, "%s.\"%s_%020Ld_%04d\"",
+	      schName, LOB_DESC_CHUNK_PREFIX,uid, num);
 
   return outBuf;
 }
 
-char * ExpLOBoper::ExpGetLOBHdrName(Lng32 schNameLen, char * schName,
-				    Int64 uid, Lng32 num, 
-				    char * outBuf, Lng32 outBufLen)
-{
-  if ((outBufLen < 512) ||
-      (schNameLen == 0) ||
-      (schName == NULL))
-    return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBHdr_%020Ld_%04d\"",
-	      schName, uid, num);
-
-  return outBuf;
-}
 
 char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 				    Int64 uid,  
@@ -159,14 +146,14 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
   if (outBufLen < 512)
     return NULL;
 
-  str_sprintf(outBuf, "%s.\"LOBMD_%020Ld\"",
-	      schName, uid);
+  str_sprintf(outBuf, "%s.\"%s_%020Ld\"",
+	      schName, LOB_MD_PREFIX,uid);
 
   return outBuf;
 }
 Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap, 
-			    char * lobLoc,
-			    Int64 uid, Lng32 num, Int64 lobMaxSize)
+			    char * lobLoc,Int32 hdfsPort,char *hdfsServer,
+			    Int64 uid, Lng32 num, Int64 lobMaxSize )
 {
   char buf[100];
   
@@ -186,13 +173,114 @@ Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap,
   else
     lobGlobL = lobGlob;
 
-  rc = ExpLOBinterfaceCreate(lobGlobL, lobName, lobLoc, Lob_HDFS_File,(char *)"default",lobMaxSize);
+  rc = ExpLOBinterfaceCreate(lobGlobL, lobName, lobLoc, Lob_HDFS_File,hdfsServer,lobMaxSize, hdfsPort);
 
   return rc;
 }
+void ExpLOBoper::calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries)
+{
+  Int32 i = 0;
+  //Check if there is a hole right up front for the first entry. If so start compacting with the first entry.
+  if (dcArray[0].getCurrentOffset() != 0)
+    {
+      dcArray[0].setNewOffset(0);
+      for (i = 1; i < numEntries; i++)
+        {
+          dcArray[i].setNewOffset(dcArray[i-1].getNewOffset() + dcArray[i-1].getChunkLen());
+        }
+    }
+  else
+    //Look for the first unused section and start compacting from there.
+    {
+      NABoolean done = FALSE;
+      i = 0;
+      Int32 j = 0;
+      while (i < numEntries && !done )
+        {
+          if ((dcArray[i].getCurrentOffset()+dcArray[i].getChunkLen()) != 
+              dcArray[i+1].getCurrentOffset())
+            {
+              j = i+1;
+              while (j < numEntries)
+                {
+                   dcArray[j].setNewOffset(dcArray[j-1].getNewOffset()+dcArray[j-1].getChunkLen());
+                   j++;
+                }
+              done = TRUE;
+            }
+          i++;
+        }
+    }
+  return ;
+}
+
+Lng32 ExpLOBoper::compactLobDataFile(void *lobGlob,ExLobInMemoryDescChunksEntry *dcArray,Int32 numEntries,char *tgtLobName,Int64 lobMaxChunkMemSize, void *lobHeap, char *hdfsServer, Int32 hdfsPort, char *lobLoc)
+{
+  Int32 rc = 0;
+  void * lobGlobL = NULL;
+  // Call ExeLOBinterface to create the LOB
+  if (lobGlob == NULL)
+    {
+      rc = initLOBglobal(lobGlobL, lobHeap);
+      if (rc)
+	return -1;
+    }
+  else
+    lobGlobL = lobGlob;
+ 
+  if (rc)
+	return -1;
+   
+  rc = ExpLOBinterfacePerformGC(lobGlobL,tgtLobName, (void *)dcArray, numEntries,hdfsServer,hdfsPort,lobLoc,lobMaxChunkMemSize);
+  
+  return rc;
+}
+
+Int32 ExpLOBoper::restoreLobDataFile(void *lobGlob, char *lobName, void *lobHeap, char *hdfsServer, Int32 hdfsPort, char *lobLoc)
+{
+  Int32 rc = 0;
+  void * lobGlobL = NULL;
+   if (lobGlob == NULL)
+    {
+      rc = initLOBglobal(lobGlobL, lobHeap);
+      if (rc)
+	return -1;
+    }
+  else
+    lobGlobL = lobGlob;
+ 
+  if (rc)
+    return -1;
+    
+  rc = ExpLOBinterfaceRestoreLobDataFile(lobGlobL,hdfsServer,hdfsPort,lobLoc,lobName);
+   return rc;
+
+}
+
+Int32 ExpLOBoper::purgeBackupLobDataFile(void *lobGlob,char *lobName, void *lobHeap, char * hdfsServer, Int32 hdfsPort, char *lobLoc)
+{
+  Int32 rc = 0;
+  void * lobGlobL = NULL;
+  if (lobGlob == NULL)
+    {
+      rc = initLOBglobal(lobGlobL, lobHeap);
+      if (rc)
+	return -1;
+    }
+  else
+    lobGlobL = lobGlob;
+  
+  if (rc)
+    return -1;
+  
+
+  rc = ExpLOBinterfacePurgeBackupLobDataFile(lobGlobL,(char *)hdfsServer,hdfsPort,lobLoc,lobName);
+  return rc;
+}
+
 
 Lng32 ExpLOBoper::dropLOB(void * lobGlob, void * lobHeap,
-			  char * lobLoc,
+			  char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 			  Int64 uid, Lng32 num)
 {
   char buf[101];
@@ -214,12 +302,13 @@ Lng32 ExpLOBoper::dropLOB(void * lobGlob, void * lobHeap,
     lobGlobL = lobGlob;
 
   // Call ExeLOBinterface to drop the LOB
-  rc = ExpLOBinterfaceDrop(lobGlobL,(char *)"default", 0, lobName, lobLoc);
+  rc = ExpLOBinterfaceDrop(lobGlobL,hdfsServer, hdfsPort, lobName, lobLoc);
 
   return rc;
 }
 
 Lng32 ExpLOBoper::purgedataLOB(void * lobGlob, char * lobLoc, 
+                               
 			       Int64 uid, Lng32 num)
 {
   char buf[100];
@@ -229,7 +318,7 @@ Lng32 ExpLOBoper::purgedataLOB(void * lobGlob, char * lobLoc,
     return -1;
 
   // Call ExeLOBinterface to purgedata the LOB
-  Lng32 rc = ExpLOBInterfacePurgedata(lobGlob,(char *)"default", 0, lobName, lobLoc);
+  Lng32 rc = ExpLOBInterfacePurgedata(lobGlob, lobName, lobLoc);
   if (rc < 0)
     return ex_expr::EXPR_ERROR;
 
@@ -252,11 +341,12 @@ ExpLOBoper::ExpLOBoper(OperatorTypeEnum oper_type,
   lobHandleSaved_[0] = 0;
   lobStorageLocation_[0] = 0;
   lobHdfsServer_[0] = 0;
-  strcpy(lobHdfsServer_,"default");
-  lobHdfsPort_ = 0;
+  strcpy(lobHdfsServer_,"");
+  lobHdfsPort_ = -1;
   descSchName_[0] = 0;
   lobMaxSize_ = 0;
   lobMaxChunkMemSize_ = 0;
+  lobGCLimit_ = 0;
 };
 
 
@@ -725,7 +815,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
      &cliError,
      so,
      waitedOp,
-     lobData, lobLen, getLobMaxSize(), getLobMaxChunkMemSize());
+     lobData, lobLen, getLobMaxSize(), getLobMaxChunkMemSize(),getLobGCLimit());
   
   if (rc == LOB_ACCESS_PREEMPT)
     {
@@ -891,7 +981,9 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 				 so,
 				 waitedOp,				 
 				 lobData,
-				 lobLen,getLobMaxSize(), getLobMaxChunkMemSize());
+				 lobLen,getLobMaxSize(),
+                                 getLobMaxChunkMemSize(),
+                                 getLobGCLimit());
     }
 
   if (rc == LOB_ACCESS_PREEMPT)
@@ -1231,7 +1323,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
 	 fromDescKey, fromDescTS,
-	 getLobMaxSize(), getLobMaxChunkMemSize());
+	 getLobMaxSize(), getLobMaxChunkMemSize(),getLobGCLimit());
     }
   else
     {
@@ -1254,7 +1346,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
 	 fromDescKey, fromDescTS,
-	 getLobMaxSize(), getLobMaxChunkMemSize());
+	 getLobMaxSize(), getLobMaxChunkMemSize(),getLobGCLimit());
     }
 
   if (rc < 0)

@@ -3297,6 +3297,7 @@ enum DefaultConstants
 
   LOB_HDFS_SERVER,
   LOB_HDFS_PORT,
+  LOB_GC_LIMIT_SIZE,
 
   // Should the DISK POOL be turned on when replicating the DDL using COPY DDL
   REPLICATE_DISK_POOL,
@@ -3800,7 +3801,13 @@ enum DefaultConstants
   // If this cqd is on, then other alters (name, datatype) are also supported.
   TRAF_ALTER_COL_ATTRS,
 
-  // if ON, upsert into the table will use the default value for the omitted columns
+  // if set, let users create system reserved names. Default is OFF.
+  // This cqd should only be used to debug or if system column names are
+  // REALLY needed by users.
+  // Currently syskey, _salt_, _division_.
+  TRAF_ALLOW_RESERVED_COLNAMES,
+
+   // if ON, upsert into the table will use the default value for the omitted columns
   // with default value 
   TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS,
 

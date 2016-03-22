@@ -1536,6 +1536,7 @@ SQLBlob::SQLBlob(
 	   externalFormat,
 	   extFormatLen)
 {
+  setCharSet(CharInfo::ISO88591);//lobhandle can only be in ISO format
 }
 
 NAType *SQLBlob::newCopy(NAMemory* h) const
@@ -1588,7 +1589,7 @@ SQLClob::SQLClob(
 	   externalFormat,
 	   extFormatLen)
 {
-  setCharSet(CharInfo::DefaultCharSet);
+  setCharSet(CharInfo::ISO88591); //lob handle can only be in this format
 }
 
 NAType *SQLClob::newCopy(NAMemory* h) const

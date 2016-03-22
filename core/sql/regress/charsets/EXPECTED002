@@ -92,7 +92,7 @@
 >>--no UCS2 strings in a view text
 >>create view nt006v1 as select * from t013 where c > _UCS2'aaaa';
 
-*** ERROR[4082] Object CAT.SCH.T013 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.T013 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>
@@ -108,7 +108,7 @@
 >>create trigger t013t1 after insert on nt008
 +>	update nt008 set i = 7 where i = 9;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
+*** ERROR[3131] The statement just entered is currently not supported.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -116,7 +116,7 @@
 >>create trigger t013t2 after insert on nt008
 +>	update nt007 set d = _UCS2'qwer' where d = _UCS2'aaaa';
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
+*** ERROR[3131] The statement just entered is currently not supported.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -143,11 +143,12 @@
 --- SQL operation complete.
 >>invoke t013;
 
--- Definition of table CAT.SCH.T013
--- Definition current  Fri Jul 23 16:05:50 2010
+-- Definition of Trafodion table TRAFODION.SCH.T013
+-- Definition current  Sun Mar 20 15:28:28 2016
 
   (
-    A                                CHAR(10) CHARACTER SET UCS2 COLLATE
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                CHAR(10) CHARACTER SET UCS2 COLLATE
       DEFAULT DEFAULT _UCS2'aa'
   )
 

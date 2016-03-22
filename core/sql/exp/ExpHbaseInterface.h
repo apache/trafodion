@@ -42,7 +42,6 @@
 
 #include <iostream>
 
-#include <boost/lexical_cast.hpp>
 #include <protocol/TBinaryProtocol.h>
 #include <transport/TSocket.h>
 #include <transport/TTransportUtils.h>

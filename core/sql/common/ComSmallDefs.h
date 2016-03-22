@@ -122,7 +122,9 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 #define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
-
+#define LOB_MD_PREFIX                  "LOBMD_"
+#define LOB_DESC_CHUNK_PREFIX          "LOBDescChunks_"
+#define LOB_DESC_HANDLE_PREFIX         "LOBDescHandle_"
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
 
 // reserved names for seabase metadata where SQL table information is kept
@@ -168,6 +170,16 @@ typedef NABoolean               ComBoolean;
 #define REPOS_METRIC_TEXT_TABLE  "METRIC_TEXT_TABLE"
 
 #define SEABASE_REGRESS_DEFAULT_SCHEMA "SCH"
+
+// Trafodion system library and procedures reserved schema
+// Procedures are defined in CmpSeabaseDDLroutine.h
+#define SEABASE_LIBMGR_SCHEMA "_LIBMGR_"
+#define SEABASE_LIBMGR_LIBRARY "DB__LIBMGRNAME"
+
+// reserved column names for traf internal system usage
+#define TRAF_SALT_COLNAME "_SALT_"
+#define TRAF_DIVISION_COLNAME_PREFIX "_DIVISION_"
+#define TRAF_SYSKEY_COLNAME "SYSKEY"
 
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple

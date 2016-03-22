@@ -1,0 +1,117 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+
+-- tests for TO_DATE, TO_CHAR, TO_TIMESTAMP, TO_NUMBER functions
+
+log LOG030 clear;
+
+select to_date('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_date('03/01/2016', 'MM/DD/YYYY') from (values(1)) x(a);
+select to_date('01.03.2016', 'DD.MM.YYYY') from (values(1)) x(a);
+select to_date('2016-03', 'YYYY-MM') from (values(1)) x(a);
+select to_date('2016/03/01', 'YYYY/MM/DD') from (values(1)) x(a);
+select to_date('20160301', 'YYYYMMDD') from (values(1)) x(a);
+select to_date('16/03/01', 'YY/MM/DD') from (values(1)) x(a);
+select to_date('03/01/16', 'MM/DD/YY') from (values(1)) x(a);
+select to_date('03-01-2016', 'MM-DD-YYYY') from (values(1)) x(a);
+select to_date('201603', 'YYYYMM') from (values(1)) x(a);
+select to_date('01-03-2016', 'DD-MM-YYYY') from (values(1)) x(a);
+select to_date('01-MAR-2016', 'DD-MON-YYYY') from (values(1)) x(a);
+select to_date('01MAR2016', 'DDMONYYYY') from (values(1)) x(a);
+select to_date('20160301101112', 'YYYYMMDDHH24MISS') from (values(1)) x(a);
+select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+select to_date('2016-03-01 10:11:12', 'YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
+select to_date('03/01/2016 10:11:12', 'MM/DD/YYYY HH24:MI:SS') from (values(1)) x(a);
+select to_date('01-MAR-2016 10:11:12', 'DD-MON-YYYY HH:MI:SS') from (values(1)) x(a);
+select to_date('March 01, 2016, 10:11', 'MONTH DD, YYYY, HH:MI') from (values(1)) x(a);
+select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
+select to_date ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
+select to_time ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
+select to_time ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
+
+select to_char(DATE '2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'MM/DD/YYYY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'DD.MM.YYYY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YYYY-MM') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YYYY/MM/DD') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YYYYMMDD') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YY/MM/DD') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'MM/DD/YY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'MM-DD-YYYY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YYYYMM') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'DD-MM-YYYY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'DD-MON-YYYY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'DDMONYYYY') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YYYYMMDDHH24MISS') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'MM/DD/YYYY HH24:MI:SS') from (values(1)) x(a);
+select to_char(DATE '2016-03-01', 'DD-MON-YYYY HH:MI:SS') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'YYYYMMDDHH24MISS') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'MM/DD/YYYY HH24:MI:SS') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'DD-MON-YYYY HH:MI:SS') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'MONTH DD, YYYY, HH:MI') from (values(1)) x(a);
+select to_char (time '10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
+select to_char (time '10:23:34', 'HH:MI:SS') from (values(1)) x(a);
+
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_char(TIMESTAMP '2016-03-01 10:11:12', 'HH:MI:SS') from (values(1)) x(a);
+
+select dateformat(time '10:11:12.1', default) from (values(1)) x(a);
+select dateformat(time '10:11:12.123', usa) from (values(1)) x(a);
+select dateformat(time '10:11:12', european) from (values(1)) x(a);
+select dateformat(timestamp '2016-03-01 10:11:12.1', default) from (values(1)) x(a);
+select dateformat(timestamp '2016-03-01 10:11:12', usa) from (values(1)) x(a);
+select dateformat(timestamp '2016-03-01 10:11:12.123', european) from (values(1)) x(a);
+
+drop table if exists t030t1;
+create table t030t1 (a date, b char(30), c varchar(30));
+insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01');
+
+select to_char(a, 'YYYYMMDD') from t030t1;
+select a (date, format 'YYYYMMDD') from t030t1;
+select to_date(b, 'YYYY-MM-DD') from t030t1;
+select to_date(c, 'YYYY-MM-DD') from t030t1;
+
+-- negative tests
+select to_date('2016-03-01', 'YYYYMM-DD') from (values(1)) x(a);
+select to_date(DATE '2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_date('0103.2016', 'DD.MM.YYYY') from (values(1)) x(a);
+select to_char('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_date(20160301, 'YYYYMMDD') from (values(1)) x(a);
+select to_char(date '2016-03-01', 'HH:MI:SS') from (values(1)) x(a);
+
+-- some formats only enabled in special mode. Not externalized.
+cqd mode_special_4 'ON';
+select to_date(20160301, 'YYYYMMDD') from (values(1)) x(a);
+select to_date(12345678, '99:99:99:99') from (values(1)) x(a);
+select to_date(-12345678, '-99:99:99:99') from (values(1)) x(a);
+
+-- ms4 error cases
+select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
+select to_date(-12345678, '99:99:99:99') from (values(1)) x(a);
+select to_date(1e0, '99:99:99:99') from (values(1)) x(a);
+select to_date(1.2, '99:99:99:99') from (values(1)) x(a);
+
+log;

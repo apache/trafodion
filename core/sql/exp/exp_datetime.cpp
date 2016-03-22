@@ -89,7 +89,52 @@ copyDatetimeFields(rec_datetime_field startField,
                    short dstFractPrec,
                    char *srcData,
                    char *dstData,
+                   Lng32 dstLen,
                    NABoolean *roundedDownFlag);
+
+//////////////////////////////////////////////
+// Defined in exp_datetime.h
+//
+//  struct DatetimeFormatInfo
+//  {
+//    Lng32 format;
+//    const char * str;
+//    Lng32 minLen;
+//    Lng32 maxLen
+//  };
+////////////////////////////////////////////// 
+const ExpDatetime::DatetimeFormatInfo ExpDatetime::datetimeFormat[] =
+  {
+    {ExpDatetime::DATETIME_FORMAT_DEFAULT,   "YYYY-MM-DD",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_USA,       "MM/DD/YYYY",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_EUROPEAN,  "DD.MM.YYYY",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_DEFAULT2,  "YYYY-MM",                7,  7},
+    {ExpDatetime::DATETIME_FORMAT_USA2,      "MM/DD/YYYY",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_USA3,      "YYYY/MM/DD",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_USA4,      "YYYYMMDD",               8,  8},
+    {ExpDatetime::DATETIME_FORMAT_USA5,      "YY/MM/DD",               8,  8},
+    {ExpDatetime::DATETIME_FORMAT_USA6,      "MM/DD/YY",               8,  8},
+    {ExpDatetime::DATETIME_FORMAT_USA7,      "MM-DD-YYYY",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_USA8,      "YYYYMM",                 6,  6},
+    {ExpDatetime::DATETIME_FORMAT_EUROPEAN2, "DD-MM-YYYY",            10, 10},
+    {ExpDatetime::DATETIME_FORMAT_EUROPEAN3, "DD-MON-YYYY",           11, 11},
+    {ExpDatetime::DATETIME_FORMAT_EUROPEAN4, "DDMONYYYY",              9,  9},
+
+    {ExpDatetime::DATETIME_FORMAT_TS4,       "HH24:MI:SS",             8,  8},
+
+    {ExpDatetime::DATETIME_FORMAT_TS1,       "YYYYMMDDHH24MISS",      14, 14},
+    {ExpDatetime::DATETIME_FORMAT_TS2,       "DD.MM.YYYY:HH24:MI:SS", 19, 19},
+    {ExpDatetime::DATETIME_FORMAT_TS3,       "YYYY-MM-DD HH24:MI:SS", 19, 19},
+    {ExpDatetime::DATETIME_FORMAT_TS5,       "YYYYMMDD:HH24:MI:SS",   17, 17},
+    {ExpDatetime::DATETIME_FORMAT_TS6,       "MMDDYYYY HH24:MI:SS",   17, 17},
+    {ExpDatetime::DATETIME_FORMAT_TS7,       "MM/DD/YYYY HH24:MI:SS", 19, 19},
+    {ExpDatetime::DATETIME_FORMAT_TS8,       "DD-MON-YYYY HH:MI:SS",  20, 20},
+    {ExpDatetime::DATETIME_FORMAT_TS9,       "MONTH DD, YYYY, HH:MI", 19, 25},
+
+    {ExpDatetime::DATETIME_FORMAT_NUM1,      "99:99:99:99",           11, 11},
+    {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12}
+
+  };
 
 ExpDatetime::ExpDatetime()
 {
@@ -911,6 +956,7 @@ ExpDatetime::arithDatetimeInterval(arithOps operation,
                          datetimeOpType->getScale(),
                          datetimeOpData,
                          dateTimeValue,
+                         MAX_DATETIME_SIZE,
                          NULL) != 0) {
     ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
     return -1;
@@ -1326,6 +1372,7 @@ copyDatetimeFields(rec_datetime_field startField,
                    short dstFractPrec,
                    char *srcData,
                    char *dstData,
+                   Lng32 dstLen,
                    NABoolean *roundedDownFlag)
 {
 
@@ -1360,7 +1407,9 @@ copyDatetimeFields(rec_datetime_field startField,
                                dstFractPrec,
                                roundedDownFlag);
     }
-    str_cpy_all(dstData, (char *) &fraction, sizeof(fraction));
+    // if destination has space for fraction, copy it.
+    if ((dstLen > 0) && (dstLen >= (size + sizeof(fraction))))
+      str_cpy_all(dstData, (char *) &fraction, sizeof(fraction));
   }
   return 0;
 }
@@ -1439,6 +1488,7 @@ ExpDatetime::convDatetimeDatetime(char *srcData,
                                   rec_datetime_field dstEndField,
                                   short dstFractPrec,
                                   char *dstData,
+                                  Lng32 dstLen,
                                   short validateFlag,
                                   NABoolean *roundedDownFlag)
 {
@@ -1487,6 +1537,7 @@ ExpDatetime::convDatetimeDatetime(char *srcData,
                          dstFractPrec,
                          srcData,
                          dstData,
+                         dstLen,
                          roundedDownFlag) != 0) {
     return -1;
   }
@@ -1552,13 +1603,13 @@ ExpDatetime::extractDatetime(rec_datetime_field srcStartField,
                                   (rec_datetime_field)(dstStartField - 1),
                                   srcFractPrec);
   
-
   if (copyDatetimeFields(dstStartField,
                          dstEndField,
                          srcFractPrec,
                          getScale(),
                          srcData,
                          dstData,
+                         getLength(),
                          NULL) != 0) {
     return -1;
   }
@@ -1590,7 +1641,7 @@ ExpDatetime::extractDatetime(rec_datetime_field srcStartField,
 //
 NA_EIDPROC
 static
-ExpDatetime::asciiFormats
+ExpDatetime::DatetimeFormats
 determineFormat(char *src,
                 rec_datetime_field startField,
                 rec_datetime_field endField)
@@ -2302,9 +2353,9 @@ ExpDatetime::convAsciiToDatetime(char *srcData,
                              heap, diagsArea, flags);
 }
 
-NA_EIDPROC
-static NABoolean 
-convertStrToMonth(char * value, char *result)
+static NABoolean convertStrToMonth(char* &srcData, char *result,
+                                   const char * nextByte,
+                                   CollHeap * heap, ComDiagsArea** diagsArea)
 {
   const char * months[] = 
   {
@@ -2325,10 +2376,59 @@ convertStrToMonth(char * value, char *result)
   for (Int32 i = 0; i < 12; i++)
     {
       char upVal[3];
-      str_cpy_convert(upVal, value, 3, 1);
+      str_cpy_convert(upVal, srcData, 3, 1);
       if (memcmp(upVal, months[i], 3) == 0)
 	{
 	  *result = (char)(i + 1);
+
+          srcData += 3;
+
+          if (nextByte)
+            {
+              if (*srcData != *nextByte)
+                {
+                  // string contains non-digit
+                  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+                  return FALSE; // error
+                }    
+              srcData++;
+            }
+
+	  return TRUE;
+	}
+    } // for
+  
+  // error
+  return FALSE;
+}
+
+static NABoolean 
+convertStrToMonthLongFormat(char* &value, char *result)
+{
+  const char * months[] = 
+  {
+    "JANUARY", 
+    "FEBRUARY", 
+    "MARCH", 
+    "APRIL", 
+    "MAY", 
+    "JUNE", 
+    "JULY", 
+    "AUGUST", 
+    "SEPTEMBER", 
+    "OCTOBER",
+    "NOVEMBER", 
+    "DECEMBER"
+  };
+
+  for (Int32 i = 0; i < 12; i++)
+    {
+      char upVal[10];
+      str_cpy_convert(upVal, value, strlen(months[i]), 1);
+      if (memcmp(upVal, months[i], strlen(months[i])) == 0)
+	{
+	  *result = (char)(i + 1);
+          value += strlen(months[i]);
 	  return TRUE;
 	}
     }
@@ -2337,6 +2437,50 @@ convertStrToMonth(char * value, char *result)
   return FALSE;
 }
 
+static short convSrcDataToDst(Lng32 numSrcBytes, char* &srcData, 
+                               Lng32 numTgtBytes, char *dstData,
+                               const char * nextByte,
+                               CollHeap * heap, ComDiagsArea** diagsArea)
+{
+  Lng32 src = 0;
+  Lng32 val = 0;
+  for (val = 0, src = 0; src < numSrcBytes && isDigit8859_1(*srcData); 
+       src++, srcData++)
+    val = val * 10 + (*srcData - '0');
+  
+  if (src < numSrcBytes) 
+    {
+      // string contains non-digit
+      //
+      ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      return -1;
+    }
+
+  if (numTgtBytes == sizeof(Lng32))
+    *(Lng32*)dstData = val;
+  else if (numTgtBytes == sizeof(short))
+    *(short*)dstData = val;
+  else if (numTgtBytes == sizeof(char))
+    *(char*)dstData = val;
+  else 
+    return -1;
+
+  if (nextByte && (strlen(nextByte) > 0))
+    {
+      if (*srcData != *nextByte)
+        {
+          // string contains non-digit
+          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+          return -1;
+        }    
+
+      srcData++;
+    }
+
+  return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
 // ExpDatetime::convAsciiToDate() ================================
 // This method is used to convert the given ASCII string
 // to a datetime date value.
@@ -2345,24 +2489,26 @@ convertStrToMonth(char * value, char *result)
 // 'dstData'. This buffer must be allocated by the caller and it
 // must be large enough to hold the result.
 //
-// The ASCII string can be in one of three formats:
-//
-//  Default : yyyy-mm-dd
-//  USA     : mm/dd/yyyy
-//  European: dd.mm.yyyy
-//
 // This method is called assuming the correct source format. The source
 // string must contain date and, possibly, leading and trailing blanks
 // only. The size of destination buffer should be just enough to hold
 // internal representation of the date value, i.e. 4 bytes.
 //
-// This method was added as part of the IMPORT performance improvement
-// project.
+// target dstData has the format:
+//  Timestamp:
+//    dstData[0..1]               2-bytes for year.
+//    dstData[2] .. dstData[6]    1-byte for month through second.
+//    dstData[7..10]              4-bytes for fraction.
+// Date:
+//    dstData[0..1]               2-bytes for year.
+//    dstData[2] .. dstData[3]    1-byte for month through day.
+//  Time:
+//    dstData[0] .. dstData[2]    1-byte for hour through second.
 // =====================================================================
 //
 short
 ExpDatetime::convAsciiToDate(char *srcData,
-                             Lng32 srcLen,
+                             Lng32 inSrcLen,
                              char *dstData,
                              Lng32 dstLen,
 			     Int32 format,
@@ -2376,6 +2522,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
   Lng32  srcFormat, i;
   NABoolean LastDayPrevMonth = FALSE;
 
+  Lng32 srcLen = inSrcLen;
   if (*srcData == ' ') {
     // skip leading blanks and adjust srcData and srcLen accordingly
     //
@@ -2410,773 +2557,363 @@ ExpDatetime::convAsciiToDate(char *srcData,
   };
 
   switch (srcFormat) {
-  case DATETIME_FORMAT_DEFAULT:
-  case DATETIME_FORMAT_DEFAULT2:
-  case DATETIME_FORMAT_TS3:
+  case DATETIME_FORMAT_DEFAULT: // YYYY-MM-DD
     {
-      // this is default format: yyyy-mm-dd. first, the year
-      for (year = 0, i = 0; i < 4 && isDigit8859_1(*srcData); i++, srcData++)
-#pragma nowarn(1506)   // warning elimination 
-        year = year * 10 + *srcData - '0';
-#pragma warn(1506)  // warning elimination 
-
-      if (i < 4 || *srcData != '-') {
-        // string contains non-digit or invalid delimiter
-        //
-        if (i < 4)
-          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, "-", heap, diagsArea))
         return -1;
-      }
-      str_cpy_all(dstData, (char *)&year, sizeof(year));
-      srcData++;  // move on to the next field
 
       // the month
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[2] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], "-", heap, diagsArea))
         return -1;
-      }
-
-      srcData += 2;
 
       // the day
-      if (srcFormat == DATETIME_FORMAT_DEFAULT2)
-	{
-	  // day is not specified, fill in as '1' (first day of month).
-	  dstData[3] = 1;
-	}
-      else
-	{
-	  if (*srcData != '-') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[3] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData += 2;
-	}
-
-      if (srcFormat == DATETIME_FORMAT_TS3)
-	{
-	  if (*srcData != ' ') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-
-	  // the hour
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[4] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  // the minute
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[5] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  // the second
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[6] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	  
-	  dstData[7]  = 0;
-	  dstData[8]  = 0;
-	  dstData[9]  = 0;
-	  dstData[10] = 0;
-	}
-    };  // case DEFAULT format
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], NULL, heap, diagsArea))
+        return -1;
+    }; 
     break;
 
-  case DATETIME_FORMAT_USA:
-  case DATETIME_FORMAT_USA2:  // MM/DD/YYYY
-  case DATETIME_FORMAT_USA6:  // MM/DD/YY
-  case DATETIME_FORMAT_USA7:  // MM-DD-YYYY
-  case DATETIME_FORMAT_TS6:   // MMDDYYYY HH24:MI:SS
-  case DATETIME_FORMAT_TS7:   // MM/DD/YYYY HH24:MI:SS
+  case DATETIME_FORMAT_DEFAULT2: // YYYY-MM
     {
-      // this is USA format: mm/dd/yyyy. first, the month
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[2] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, "-", heap, diagsArea))
         return -1;
-      }
 
-      char delim = (srcFormat == DATETIME_FORMAT_USA7 ? '-' 
-		    : (srcFormat == DATETIME_FORMAT_TS6 ? 0 : '/'));
-      srcData += 2;  // move on to the delimiter field
-      if (delim != 0)
-	{
-	  if (*srcData != delim) {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	}
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], NULL, heap, diagsArea))
+        return -1;
 
       // the day
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[3] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      srcData += 2;  // move on to the delimiter field
-
-      if (delim != 0)
-	{
-	  if (*srcData != delim) {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	}
-
-      // the year
-      Int32 numOfYdigits = (srcFormat == DATETIME_FORMAT_USA6 ? 2 : 4);
-      for (year = 0, i = 0; i < numOfYdigits && isDigit8859_1(*srcData); i++, srcData++)
-#pragma nowarn(1506)   // warning elimination 
-        year = year * 10 + *srcData - '0';
-#pragma warn(1506)  // warning elimination 
-
-      if (i < numOfYdigits) {
-        // string contains non-digit
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      str_cpy_all(dstData, (char *)&year, sizeof(year));
-      if ((srcFormat == DATETIME_FORMAT_TS6) ||
-	  (srcFormat == DATETIME_FORMAT_TS7))
-	{
-	  if (*srcData != ' ') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-
-	  // the hour
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[4] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  // the minute
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[5] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  // the second
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[6] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	  
-	  dstData[7]  = 0;
-	  dstData[8]  = 0;
-	  dstData[9]  = 0;
-	  dstData[10] = 0;
-	}
-    };  // case USA format
+      // day is not specified, fill in as '1' (first day of month).
+      dstData[3] = 1;
+    }; 
     break;
 
-  case DATETIME_FORMAT_USA3:
-  case DATETIME_FORMAT_USA4:
-  case DATETIME_FORMAT_USA5:
-  case DATETIME_FORMAT_USA8:
+  case DATETIME_FORMAT_TS3: // YYYY-MM-DD HH24:MI:SS
     {
-      // this is USA format: See exp_datetime.h for details.
-
       // the year
-      Lng32 numYearDigits = 4;
-      if (srcFormat == DATETIME_FORMAT_USA5)
-	numYearDigits = 2;
-      for (year = 0, i = 0; 
-	   i < numYearDigits && isDigit8859_1(*srcData); i++, srcData++)
-#pragma nowarn(1506)   // warning elimination 
-        year = year * 10 + *srcData - '0';
-#pragma warn(1506)  // warning elimination 
-
-      if (i < numYearDigits) {
-        // string contains non-digit
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      if (convSrcDataToDst(4, srcData, 2, dstData, "-", heap, diagsArea))
         return -1;
-      }
 
-      str_cpy_all(dstData, (char *)&year, sizeof(year));
-
-      if ((srcFormat != DATETIME_FORMAT_USA4) &&
-	  (srcFormat != DATETIME_FORMAT_USA8)) {
-	if (*srcData != '/') {
-	  // string contains invalid delimiter
-	  //
-	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	  return -1;
-	}
-	srcData++;  // move on to the next field
-      }
-
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[2] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], "-", heap, diagsArea))
         return -1;
-      }
-
-      srcData += 2;  // move on to the delimiter field
-      if ((srcFormat != DATETIME_FORMAT_USA4) &&
-	  (srcFormat != DATETIME_FORMAT_USA8)) {
-	if (*srcData != '/') {
-	  // string contains invalid delimiter
-	  //
-	  ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	  return -1;
-	}
-	srcData++;  // move on to the next field
-      }
 
       // the day
-      if (srcFormat == DATETIME_FORMAT_USA8)
-	{
-	  // day is not specified, fill in as '1' (first day of month).
-	  dstData[3] = 1;
-	}
-      else
-	{
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[3] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	}
-     };  // case USA format
-    break;
-
-  case DATETIME_FORMAT_TS1:
-  case DATETIME_FORMAT_TS5:
-    {
-      // this is TS1 format: YYYYMMDDHH24MISS
-      //         TS5 format: YYYYMMDD:HH24:MI:SS
-      // See exp_datetime.h for details.
-
-      // the year
-      Lng32 numYearDigits = 4;
-      for (year = 0, i = 0; 
-	   i < numYearDigits && isDigit8859_1(*srcData); i++, srcData++)
-#pragma nowarn(1506)   // warning elimination 
-        year = year * 10 + *srcData - '0';
-#pragma warn(1506)  // warning elimination 
-
-      if (i < numYearDigits) {
-        // string contains non-digit
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], " ", heap, diagsArea))
         return -1;
-      }
-
-      str_cpy_all(dstData, (char *)&year, sizeof(year));
-
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[2] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      srcData += 2;  // move on to the delimiter field
-
-      // the day
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[3] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      srcData += 2;
-
-      if (srcFormat == DATETIME_FORMAT_TS5)
-	{
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	}
-
-      // the hour
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[4] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      srcData += 2;
       
-      if (srcFormat == DATETIME_FORMAT_TS5)
-	{
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	}
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+        return -1;
 
       // the minute
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[5] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ":", heap, diagsArea))
         return -1;
-      }
-
-      srcData += 2;
-
-      if (srcFormat == DATETIME_FORMAT_TS5)
-	{
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	}
 
       // the second
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[6] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      if (convSrcDataToDst(2, srcData, 1, &dstData[6], NULL, heap, diagsArea))
         return -1;
-      }
-
-      srcData += 2;
 
       dstData[7]  = 0;
       dstData[8]  = 0;
       dstData[9]  = 0;
       dstData[10] = 0;
-
-     };  // case TS1 format
+    };  
     break;
 
-  case DATETIME_FORMAT_EUROPEAN:
-  case DATETIME_FORMAT_EUROPEAN2:
-  case DATETIME_FORMAT_EUROPEAN3:
-  case DATETIME_FORMAT_EUROPEAN4:
-  case DATETIME_FORMAT_TS2:
+  case DATETIME_FORMAT_USA:   // MM/DD/YYYY AM|PM
+  case DATETIME_FORMAT_USA2:  // MM/DD/YYYY
+  case DATETIME_FORMAT_USA6:  // MM/DD/YY
+  case DATETIME_FORMAT_USA7:  // MM-DD-YYYY
     {
-      // this is European format: dd.mm.yyyy. first, the day
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-        dstData[3] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-        // string contains non-digit charecter(s)
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      srcData += 2;  // move on to the delimiter field
-      if ((((srcFormat == DATETIME_FORMAT_EUROPEAN) ||
-	    (srcFormat == DATETIME_FORMAT_TS2)) &&
-	  (*srcData != '.')) ||
-	  (((srcFormat == DATETIME_FORMAT_EUROPEAN2) ||
-	    (srcFormat == DATETIME_FORMAT_EUROPEAN3)) &&
-	   (*srcData != '-'))) {
-        // string contains invalid delimiter
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-        return -1;
-      }
-
-      if (srcFormat != DATETIME_FORMAT_EUROPEAN4)
-	srcData++;  // move on to the next field
+      char sep = (srcFormat == DATETIME_FORMAT_USA7 ? '-' : '/');
 
       // the month
-      if ((srcFormat == DATETIME_FORMAT_EUROPEAN3) ||
-	  (srcFormat == DATETIME_FORMAT_EUROPEAN4))
-	{
-	  if (! convertStrToMonth(srcData, &dstData[2])) {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData += 3;  // move on to the delimiter field
-	}
-      else
-	{
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[2] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData += 2;  // move on to the delimiter field
-	}
-
-      if ((((srcFormat == DATETIME_FORMAT_EUROPEAN) ||
-	    (srcFormat == DATETIME_FORMAT_TS2)) &&
-	  (*srcData != '.')) ||
-	  (((srcFormat == DATETIME_FORMAT_EUROPEAN2) ||
-	    (srcFormat == DATETIME_FORMAT_EUROPEAN3)) &&
-	   (*srcData != '-'))) {
-        // string contains invalid delimiter
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], &sep, heap,diagsArea))
         return -1;
-      }
- 
-     if (srcFormat != DATETIME_FORMAT_EUROPEAN4)
-       srcData++;  // move on to the next field
+
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], &sep, heap, diagsArea))
+        return -1;
 
       // the year
-      for (year = 0, i = 0; i < 4 && isDigit8859_1(*srcData); i++, srcData++)
-#pragma nowarn(1506)   // warning elimination 
-        year = year * 10 + *srcData - '0';
-#pragma warn(1506)  // warning elimination 
+      Int32 numOfYdigits = (srcFormat == DATETIME_FORMAT_USA6 ? 2 : 4);
+      if (convSrcDataToDst(numOfYdigits, srcData, 2, dstData, NULL, heap, diagsArea))
+        return -1;
+    }; 
+    break;
 
-      if (i < 4) {
-        // string contains non-digit
-        //
-        ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
+  case DATETIME_FORMAT_TS6:   // MMDDYYYY HH24:MI:SS
+  case DATETIME_FORMAT_TS7:   // MM/DD/YYYY HH24:MI:SS
+    {
+      char sep = '/';
+      char * septr = (srcFormat == DATETIME_FORMAT_TS7 ? &sep : NULL);
+
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], septr, heap, diagsArea))
+        return -1;
+
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], septr, heap, diagsArea))
+        return -1;
+      
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, " ", heap, diagsArea))
+        return -1;
+
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+        return -1;
+
+      // the minute
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ":", heap, diagsArea))
+        return -1;
+
+      // the second
+      if (convSrcDataToDst(2, srcData, 1, &dstData[6], NULL, heap, diagsArea))
+        return -1;
+
+      dstData[7]  = 0;
+      dstData[8]  = 0;
+      dstData[9]  = 0;
+      dstData[10] = 0;
+     };
+    break;
+
+  case DATETIME_FORMAT_USA3: // YYYY/MM/DD
+  case DATETIME_FORMAT_USA4: // YYYYMMDD
+  case DATETIME_FORMAT_USA5: // YY/MM/DD
+    {
+      // the year
+      Lng32 numYearDigits = (srcFormat == DATETIME_FORMAT_USA5 ? 2 : 4);
+      char sep = '/';
+      char * septr = (srcFormat == DATETIME_FORMAT_USA4 ? NULL : &sep);
+
+      // the year
+      if (convSrcDataToDst(numYearDigits, srcData, 2, dstData, septr, heap, diagsArea))
+        return -1;
+
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], septr, heap, diagsArea))
+        return -1;
+
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], NULL, heap, diagsArea))
+        return -1;
+
+     };
+    break;
+
+  case DATETIME_FORMAT_USA8: // YYYYMM
+    {
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, NULL, heap, diagsArea))
+        return -1;
+
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], NULL, heap, diagsArea))
+        return -1;
+
+      // the day
+      // day is not specified, fill in as '1' (first day of month).
+      dstData[3] = 1;
+    };
+    break;
+
+  case DATETIME_FORMAT_TS1: // YYYYMMDDHH24MISS
+  case DATETIME_FORMAT_TS5: // YYYYMMDD:HH24:MI:SS
+    {
+      char sep = ':';
+      char * septr = (srcFormat == DATETIME_FORMAT_TS1 ? NULL : &sep);
+      
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, NULL, heap, diagsArea))
+        return -1;
+
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], NULL, heap, diagsArea))
+        return -1;
+
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], septr, heap, diagsArea))
+        return -1;
+      
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], septr, heap, diagsArea))
+        return -1;
+
+      // the minute
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], septr, heap, diagsArea))
+        return -1;
+
+      // the second
+      if (convSrcDataToDst(2, srcData, 1, &dstData[6], NULL, heap, diagsArea))
+        return -1;
+
+      dstData[7]  = 0;
+      dstData[8]  = 0;
+      dstData[9]  = 0;
+      dstData[10] = 0;
+     };  
+    break;
+
+  case DATETIME_FORMAT_TS9: // MONTH DD, YYYY, HH:MI AM|PM
+    {
+      // the month
+      char * prevSrcData = srcData;
+      if (! convertStrToMonthLongFormat(srcData, &dstData[2])) {
         ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
         return -1;
       }
+      minLength += (srcData - prevSrcData);
+      srcData += 1; // skip blank after "Month"
 
-      str_cpy_all(dstData, (char *)&year, sizeof(year));
+      // the day
+     if (convSrcDataToDst(2, srcData, 1, &dstData[3], ",", heap, diagsArea))
+        return -1;
+      srcData++;  // skip over blank
 
-      if (srcFormat == DATETIME_FORMAT_TS2)
-	{
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-
-	  // the hour
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[4] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  // the minute
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[5] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	  if (*srcData != ':') {
-	    // string contains invalid delimiter
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  srcData++;  // move on to the next field
-	  
-	  // the second
-	  if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	    dstData[6] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-	  } else {
-	    // string contains non-digit charecter(s)
-	    //
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	    return -1;
-	  }
-	  
-	  srcData += 2;
-	  
-	  dstData[7]  = 0;
-	  dstData[8]  = 0;
-	  dstData[9]  = 0;
-	  dstData[10] = 0;
-	}
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, ",", heap, diagsArea))
+        return -1;
+      srcData++;  // skip over blank
       
-    };  // case EUROPEAN format
-    break;
-
-  case DATETIME_FORMAT_TS4:
-    {
       // the hour
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	dstData[0] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-	// string contains non-digit charecter(s)
-	//
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	return -1;
-      }
-      
-      srcData += 2;
-      
-      if (*srcData != ':') {
-	// string contains invalid delimiter
-	//
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	return -1;
-      }
-      srcData++;  // move on to the next field
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+        return -1;
       
       // the minute
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	dstData[1] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-	// string contains non-digit charecter(s)
-	//
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	return -1;
-      }
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], NULL, heap, diagsArea))
+        return -1;
       
-      srcData += 2;
-      if (*srcData != ':') {
-	// string contains invalid delimiter
-	//
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	return -1;
-      }
-      srcData++;  // move on to the next field
+      dstData[6]  = 0;
+      dstData[7]  = 0;
+      dstData[8]  = 0;
+      dstData[9]  = 0;
+      dstData[10] = 0;
+
+    }
+    break;
+
+  case DATETIME_FORMAT_EUROPEAN:  // DD.MM.YYYY
+  case DATETIME_FORMAT_EUROPEAN2: // DD-MM-YYYY
+    {
+      char sep = (srcFormat == DATETIME_FORMAT_EUROPEAN ? '.' : '-');
+
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], &sep, heap, diagsArea))
+        return -1;
       
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], &sep, heap, diagsArea))
+        return -1;
+      
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, NULL, heap, diagsArea))
+        return -1;
+    };  
+    break;
+
+  case DATETIME_FORMAT_EUROPEAN3: // DD-MON-YYYY
+  case DATETIME_FORMAT_EUROPEAN4: // DDMONYYYY
+    {
+      char sep = '-';
+      char * septr = (srcFormat == DATETIME_FORMAT_EUROPEAN3 ? &sep : NULL);
+      
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], septr, heap, diagsArea))
+        return -1;
+      
+      // the month
+      if (! convertStrToMonth(srcData, &dstData[2], septr, heap, diagsArea))
+        return -1;
+
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, NULL, heap, diagsArea))
+        return -1;
+    };  
+    break;
+
+  case DATETIME_FORMAT_TS2: // DD.MM.YYYY:HH24:MI:SS
+    {
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], ".", heap, diagsArea))
+        return -1;
+      
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], ".", heap, diagsArea))
+        return -1;
+      
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, ":", heap, diagsArea))
+        return -1;
+
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+        return -1;
+
+      // the minute
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ":", heap, diagsArea))
+        return -1;
+
       // the second
-      if (isDigit8859_1(*srcData) && isDigit8859_1(*(srcData+1))) {
-#pragma nowarn(1506)   // warning elimination 
-	dstData[2] = char (*srcData - '0') * 10 + (*(srcData+1) - '0');
-#pragma warn(1506)  // warning elimination 
-      } else {
-	// string contains non-digit charecter(s)
-	//
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR);
-	ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
-	return -1;
-      }
+      if (convSrcDataToDst(2, srcData, 1, &dstData[6], NULL, heap, diagsArea))
+        return -1;
+
+      dstData[7]  = 0;
+      dstData[8]  = 0;
+      dstData[9]  = 0;
+      dstData[10] = 0;
+    };  
+    break;
+
+  case DATETIME_FORMAT_TS8: // DD-MON-YYYY HH:MI:SS
+    {
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], "-", heap, diagsArea))
+        return -1;
       
-      srcData += 2;
+      // the month
+      if (! convertStrToMonth(srcData, &dstData[2], "-", heap, diagsArea))
+        return -1;
       
-      dstData[3]  = 0;
-      dstData[4]  = 0;
-      dstData[5]  = 0;
-      dstData[6] = 0;
-      
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, " ", heap, diagsArea))
+        return -1;
+
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+        return -1;
+
+      // the minute
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ":", heap, diagsArea))
+        return -1;
+
+      // the second
+      if (convSrcDataToDst(2, srcData, 1, &dstData[6], NULL, heap, diagsArea))
+        return -1;
+
+      dstData[7]  = 0;
+      dstData[8]  = 0;
+      dstData[9]  = 0;
+      dstData[10] = 0;
+     };  
+    break;
+
+  case DATETIME_FORMAT_TS4: // HH24:MI:SS
+    {
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[0], ":", heap, diagsArea))
+        return -1;
+
+      // the minute
+      if (convSrcDataToDst(2, srcData, 1, &dstData[1], ":", heap, diagsArea))
+        return -1;
+
+      // the second
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], NULL, heap, diagsArea))
+        return -1;
     };
   break;
 
@@ -3293,6 +3030,32 @@ convertMonthToStr(Lng32 value, char *&result, UInt32 width)
   result += width;
 }
 
+static void 
+convertMonthToStrLongFormat(Lng32 value, char *&result, UInt32 width)
+{
+  const char * months[] = 
+  {
+    "January", 
+    "February", 
+    "March", 
+    "April", 
+    "May", 
+    "June", 
+    "July", 
+    "August", 
+    "September", 
+    "October",
+    "November", 
+    "December"
+  };
+
+  strcpy(result, months[value-1]);
+
+  // Update result pointer to point to end of string.
+  //
+  result += strlen(months[value-1]);
+}
+
 Lng32 ExpDatetime::getDatetimeFormatLen(Lng32 format, NABoolean to_date,
 				       rec_datetime_field startField,
 				       rec_datetime_field endField)
@@ -3305,13 +3068,8 @@ Lng32 ExpDatetime::getDatetimeFormatLen(Lng32 format, NABoolean to_date,
       {
 	if (to_date)
 	  {
-	    if (format == DATETIME_FORMAT_DEFAULT)
-	      return DATETIME_FORMAT_DEFAULT_LEN;
-	    else if (format == DATETIME_FORMAT_USA)
-	      return DATETIME_FORMAT_USA_LEN;
-	    else //if (format == DATETIME_FORMAT_EUROPEAN)
-	      return DATETIME_FORMAT_EUROPEAN_LEN;
-	  }
+            return ExpDatetime::getDatetimeFormatLen(format);
+ 	  }
 	else
 	  {
 	    Lng32 minReqDstLen = 0;
@@ -3348,34 +3106,12 @@ Lng32 ExpDatetime::getDatetimeFormatLen(Lng32 format, NABoolean to_date,
 	  }
       }
     break;
-    case DATETIME_FORMAT_DEFAULT2:  return DATETIME_FORMAT_DEFAULT2_LEN;
 
-    case DATETIME_FORMAT_USA2:      return DATETIME_FORMAT_USA2_LEN;
-    case DATETIME_FORMAT_USA3:      return DATETIME_FORMAT_USA3_LEN;
-    case DATETIME_FORMAT_USA4:      return DATETIME_FORMAT_USA4_LEN;
-    case DATETIME_FORMAT_USA5:      return DATETIME_FORMAT_USA5_LEN;
-    case DATETIME_FORMAT_USA6:      return DATETIME_FORMAT_USA6_LEN;
-    case DATETIME_FORMAT_USA7:      return DATETIME_FORMAT_USA7_LEN;
-    case DATETIME_FORMAT_USA8:      return DATETIME_FORMAT_USA8_LEN;
-
-    case DATETIME_FORMAT_EUROPEAN2: return DATETIME_FORMAT_EUROPEAN2_LEN;
-    case DATETIME_FORMAT_EUROPEAN3: return DATETIME_FORMAT_EUROPEAN3_LEN;
-    case DATETIME_FORMAT_EUROPEAN4: return DATETIME_FORMAT_EUROPEAN4_LEN;
-
-    case DATETIME_FORMAT_TIME1:     return DATETIME_FORMAT_TIME1_LEN;
-    case DATETIME_FORMAT_TIME2:     return DATETIME_FORMAT_TIME2_LEN;
-
-    case DATETIME_FORMAT_TS1:       return DATETIME_FORMAT_TS1_LEN;
-    case DATETIME_FORMAT_TS2:       return DATETIME_FORMAT_TS2_LEN;
-    case DATETIME_FORMAT_TS3:       return DATETIME_FORMAT_TS3_LEN;
-    case DATETIME_FORMAT_TS4:       return DATETIME_FORMAT_TS4_LEN;
-    case DATETIME_FORMAT_TS5:       return DATETIME_FORMAT_TS5_LEN;
-    case DATETIME_FORMAT_TS6:       return DATETIME_FORMAT_TS6_LEN;
-    case DATETIME_FORMAT_TS7:       return DATETIME_FORMAT_TS7_LEN;
-    case DATETIME_FORMAT_TS8:       return DATETIME_FORMAT_TS8_LEN;
-
-    default:                        return -1;
+    default:
+      return ExpDatetime::getDatetimeFormatLen(format);
     }
+
+  return 0;
 }
 
 // convDatetimeToASCII() ============================================
@@ -3572,6 +3308,20 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
     }
     break;
 
+  case DATETIME_FORMAT_TS9:
+    {
+      convertMonthToStrLongFormat(month, dstDataPtr, 3);
+      *dstDataPtr++ = ' ';
+      
+      convertToAscii(day, dstDataPtr, 2);
+      *dstDataPtr++ = ',';
+      *dstDataPtr++ = ' ';
+      
+      convertToAscii(year, dstDataPtr, 4);
+      *dstDataPtr++ = ',';
+    }
+    break;
+
   case DATETIME_FORMAT_TS4:
     {
       // do nothing for date part.
@@ -3707,6 +3457,29 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
     dstDataPtr += 3;
   }
 
+  // if format includes time field but source is a DATE datatype, extend
+  // the returned string with zeroes
+  if (isTimestampFormat(format))
+    {
+      if (format == DATETIME_FORMAT_TS1)
+        {
+        }
+      else if ((format == DATETIME_FORMAT_TS2) ||
+          (format == DATETIME_FORMAT_TS5))
+        {
+          *dstDataPtr = ':';
+          dstDataPtr++;
+        }
+      else
+        {
+          *dstDataPtr = ' ';
+          dstDataPtr++;
+        }
+      
+      str_cpy_all(dstDataPtr, "00:00:00", 8);
+      dstDataPtr += 8;
+    }
+      
   // Return the actual number of bytes formatted.
   //
   return dstDataPtr - dstData;
@@ -3745,15 +3518,15 @@ ExpDatetime::convNumericTimeToASCII(char *srcData,
 				    CollHeap *heap,
 				    ComDiagsArea** diagsArea)
 {
-  if ((format != DATETIME_FORMAT_TIME1) &&
-      (format != DATETIME_FORMAT_TIME2))
+  if ((format != DATETIME_FORMAT_NUM1) &&
+      (format != DATETIME_FORMAT_NUM2))
     return -1;
 
-  if ((format == DATETIME_FORMAT_TIME1) &&
+  if ((format == DATETIME_FORMAT_NUM1) &&
       (dstLen < 11))
     return -1;
 
-  if ((format == DATETIME_FORMAT_TIME2) &&
+  if ((format == DATETIME_FORMAT_NUM2) &&
       (dstLen < 12))
     return -1;
 
@@ -3761,9 +3534,16 @@ ExpDatetime::convNumericTimeToASCII(char *srcData,
   NABoolean negative = FALSE;
   if (temp < 0)
     {
+      // cannot convert negative number with NUM1 format
+      if (format == DATETIME_FORMAT_NUM1)
+        {
+          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+          return -1;
+        }
+
       temp = -temp;
 
-     if (format == DATETIME_FORMAT_TIME2)
+     if (format == DATETIME_FORMAT_NUM2)
        {
 	 negative = TRUE;
        }
@@ -3792,7 +3572,14 @@ ExpDatetime::convNumericTimeToASCII(char *srcData,
       part1 = (Lng32)(temp - (temp/100)*100);
       temp = temp/100;
   
-      if (format == DATETIME_FORMAT_TIME2)
+      // if more digits left in input, error out.
+      if (temp > 0)
+        {
+          ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR);
+          return -1;
+        }
+
+      if (format == DATETIME_FORMAT_NUM2)
 	{
 	  if (negative)
 	    str_sprintf(dstData, "-%02d:%02d:%02d:%02d", part1, part2, part3, part4);

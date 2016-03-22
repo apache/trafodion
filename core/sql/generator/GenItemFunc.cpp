@@ -1851,143 +1851,11 @@ short DateFormat::codeGen(Generator * generator)
                                                 -1) == 1)
     return 0;
 
-  Int32 expDateFormat = ExpDatetime::DATETIME_FORMAT_ERROR;
-  switch (getDateFormat())
-    {
-    case DEFAULT: 
-      expDateFormat = ExpDatetime::DATETIME_FORMAT_DEFAULT;
-      break;
-      
-    case USA: 
-      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA;
-      break;
-      
-    case EUROPEAN: 
-      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN;
-      break;
-      
-    case DATE_FORMAT_STR:
-      {
-	if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	  {
-	    ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	    if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY-MM-DD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_DEFAULT;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY-MM")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_DEFAULT2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM/DD/YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY/MM/DD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA3;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMMDD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA4;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YY/MM/DD")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA5;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM/DD/YY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA6;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM-DD-YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA7;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMM")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_USA8;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "DD.MM.YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "DD-MM-YYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN2;
-	    else if ((NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "DD-MMM-YYYY") ||
-		     (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "DD-MON-YYYY"))
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN3;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		      == "DDMONYYYY")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_EUROPEAN4;
-	    else
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;
-	  }
-	else
-	  {
-	    expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;
-	  }
-      }
-    break;
-    
-    case TIME_FORMAT_STR:
-      {
-	if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	  {
-	    ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-	    if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "99:99:99:99")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME1;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "-99:99:99:99")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS4;
-	    else
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME_STR;
-	  }
-	else
-	  {
-	    expDateFormat = ExpDatetime::DATETIME_FORMAT_TIME_STR;
-	  }
-      }
-    break;
-
-    case TIMESTAMP_FORMAT_STR:
-      {
-	if (child(1)->castToItemExpr()->getOperatorType() == ITM_CONSTANT)
-	  {
-	    ConstValue * cv = (ConstValue*)(child(1)->castToItemExpr());
-
-	    if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMMDDHH24MISS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS1;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "DD.MM.YYYY:HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS2;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYY-MM-DD HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS3;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "YYYYMMDD:HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS5;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MMDDYYYY HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS6;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-		== "MM/DD/YYYY HH24:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS7;
-	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
-                     == "DD-MON-YYYY HH:MI:SS")
-	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS8;
-	    else
-	      {
-		expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;
-	      }
-	  }
-      }
-    break;
-    
-    };
-
   ex_clause * function_clause = 
     new(generator->getSpace()) ex_function_dateformat(getOperatorType(),
                                                       attr, 
                                                       generator->getSpace(),
-                                                      expDateFormat);
+                                                      getExpDatetimeFormat());
   generator->getExpGenerator()->linkClause(this, function_clause);
   
   return 0;
@@ -2842,6 +2710,9 @@ short LOBinsert::codeGen(Generator * generator)
   li->setLobStorageLocation((char*)lobStorageLocation().data());
   li->setLobMaxSize(getLobMaxSize());
   li->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
+  li->setLobGCLimit(getLobGCLimit());
+  li->setLobHdfsServer((char *)getLobHdfsServer().data());
+  li->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, li);
   
   return 0;
@@ -2867,7 +2738,8 @@ short LOBdelete::codeGen(Generator * generator)
   ld->lobNum() = lobNum();
   ld->setLobStorageType(lobStorageType());
   ld->setLobStorageLocation((char*)lobStorageLocation().data());
-  
+  ld->setLobHdfsServer((char *)getLobHdfsServer().data());
+  ld->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, ld);
  
   return 0;
@@ -2911,6 +2783,9 @@ short LOBupdate::codeGen(Generator * generator)
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
   lu->setLobMaxSize(getLobMaxSize());
   lu->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
+  lu->setLobGCLimit(getLobGCLimit());
+  lu->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lu->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2932,7 +2807,8 @@ short LOBselect::codeGen(Generator * generator)
   ls->lobNum() = lobNum();
   ls->setLobStorageType(lobStorageType());
   ls->setLobStorageLocation((char*)lobStorageLocation().data());
- 
+  ls->setLobHdfsServer((char *)getLobHdfsServer().data());
+  ls->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, ls);
  
   return 0;
@@ -2960,7 +2836,8 @@ short LOBconvertHandle::codeGen(Generator * generator)
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());
   lu->setLobStorageLocation((char*)lobStorageLocation().data());
-
+  lu->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lu->setLobHdfsPort(getLobHdfsPort());
   generator->getExpGenerator()->linkClause(this, lu);
  
   return 0;
@@ -2990,6 +2867,8 @@ short LOBconvert::codeGen(Generator * generator)
   lc->setLobStorageLocation((char*)lobStorageLocation().data());
   generator->getExpGenerator()->linkClause(this, lc);
   lc->setConvertSize(getTgtSize());
+  lc->setLobHdfsServer((char *)getLobHdfsServer().data());
+  lc->setLobHdfsPort(getLobHdfsPort());
   return 0;
 }
 

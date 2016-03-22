@@ -150,6 +150,13 @@ export THRIFT_DEP_VER=0.9.0
 export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
 export HBASE_TRX_ID_APACHE=hbase-trx-apache1_0_2
 export HBASE_TRX_ID_HDP=hbase-trx-hdp2_3
+export HIVE_DEP_VER=0.13.1
+export HADOOP_DEP_VER=2.6.0
+
+
+# staged build-time dependencies
+export HADOOP_BLD_LIB=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/lib/native
+export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
 
 # general Hadoop & TRX dependencies - not distro specific, choose one to build against
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
@@ -171,6 +178,7 @@ if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
     export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
 fi
+
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart

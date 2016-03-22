@@ -38,7 +38,9 @@ echo "%trafodion ALL = NOPASSWD: IP, ARP" >> $sudoFile
 
 function backupRestore {
 
-echo "## Allow $BACKUP_USER id to run commands needed for backup and restore" >> $BACKUP_USER
+source $TRAF_CONFIG
+
+echo "## Allow $BACKUP_USER id to run commands needed for backup and restore" > $BACKUP_USER
 echo "%$BACKUP_USER ALL =(hbase) NOPASSWD: /usr/bin/hbase" >> $BACKUP_USER
 
 }
@@ -73,7 +75,7 @@ fi
 echo "***INFO: Creating $TRAF_USER sudo access file"
 echo
 
-if [[ "$ENABLE_HA" == "Y" ]]; then
+if [[ "$ENABLE_HA" == "true" ]]; then
    haSudoAdd
    copyTrafFile
 fi 
