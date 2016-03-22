@@ -26,7 +26,7 @@ The Trafodion end-user environment is installed using the Trafodion Installer, w
 * [log4c++ RPM](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/log4cxx-0.10.0-13.el6.x86_64.rpm)
 * [Trafodion Installer](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz)
 * [Trafodion Server](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-1.3.0-incubating-bin.tar.gz)
-* [Trafodion Clients](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-clients-1.3.0-incubating-bin.tar.gz)
+* [Trafodion Clients](http://traf-builds.esgyn.com/downloads/trafodion/publish/release/1.3.0/apache-trafodion-clients-1.3.0-incubating-bin.tar.gz) (JDBC, odb, ODBC, trafci)
 
 # Install
 

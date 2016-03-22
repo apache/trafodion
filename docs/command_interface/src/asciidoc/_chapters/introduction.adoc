@@ -21,14 +21,14 @@
 ////
 
 = Introduction
-The Trafodion Command Interface (TrafCI) is a command-line interface that you download and install on a client workstation that has the
+The Trafodion Command Interface (trafci) is a command-line interface that you download and install on a client workstation that has the
 Trafodion JDBC Type 4 Driver installed. Operating systems that support the JDBC driver include Windows and Linux. The JDBC driver connects
-TrafCI on a client workstation to a Trafodion database.
+trafci on a client workstation to a Trafodion database.
 
-image:{images}/VST101.jpg["TrafCI Connected to a Trafodion Database"]
+image:{images}/VST101.jpg["trafci Connected to a Trafodion Database"]
 
-TrafCI enables you to perform daily administrative and database management tasks by running SQL statements or other commands
-interactively or from script files. You can also run TrafCI from a Perl or Python command line or from Perl or Python programs.
+trafci enables you to perform daily administrative and database management tasks by running SQL statements or other commands
+interactively or from script files. You can also run trafci from a Perl or Python command line or from Perl or Python programs.
 
 
 
