@@ -333,7 +333,7 @@ if [ ! -z $TRAF_PACKAGE ]; then
    # untar the package
    sudo tar -xzf $TRAF_PACKAGE --directory=$UNTAR_DIR
 
-   build_file=$(ls $UNTAR_DIR | grep "trafodion_server")
+   build_file=$(ls $UNTAR_DIR | grep "trafodion_.*server")
    if [[ -z $build_file ]]; then
       echo "***ERROR: trafodion_server-*.tgz could not be found in $UNTAR_DIR"
       exit -1
@@ -454,7 +454,7 @@ sudo rm -rf hbaseVersion.txt
 trafodionFullName=$(basename $TRAF_BUILD)
 echo "***DEBUG: trafodionFullName=$trafodionFullName"
 #Debug version
-trafodionVersion=$(echo $trafodionFullName | sed 's/trafodion_server-//' | sed 's/-debug//' | sed 's/.tgz//')
+trafodionVersion=$(echo $trafodionFullName | sed 's/trafodion_.*server-//' | sed 's/-debug//' | sed 's/.tgz//')
 
 echo "***INFO: Trafodion version = $trafodionVersion"
 #==============================================
@@ -473,12 +473,6 @@ if [ ${PIPESTATUS[0]} != 0 ]; then
     echo "***ERROR: unable to find export/lib/ directory in $TRAF_BUILD" 2>&1 | tee -a $INSTALL_LOG
     exit -1
 fi
-
-# parse the version string from the trafodion_server-n.n.n.jar filename
-traf_version=$(sudo ls $UNTAR_DIR | \
-               grep --max-count=1 trafodion_server | \
-               sed -e 's@trafodion_server-\([0-9*].*\).tgz@\1@')
-TRAF_VERSION=$(echo $traf_version | sed -e 's@\([0-9*].*\)-debug@\1@')
 
 # Detect java version
 
@@ -527,8 +521,6 @@ else
 fi
 
 sudo chmod 777 $TRAF_CONFIG
-sed -i '/TRAF_VERSION\=/d' $TRAF_CONFIG
-echo "export TRAF_VERSION=\"$TRAF_VERSION\"" >> $TRAF_CONFIG
 sed -i '/JAVA_VERSION\=/d' $TRAF_CONFIG
 echo "export JAVA_VERSION=\"$JAVA_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG

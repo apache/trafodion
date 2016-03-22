@@ -31,8 +31,10 @@ source $TRAF_CONFIG
 export PDSH="pdsh -R exec"
 export PDSH_SSH_CMD="ssh -q -n %h"
 export PDCP="pdcp -R ssh"
-export PDSH_HADOOP_NODES="$PDSH $MY_HADOOP_NODES $PDSH_SSH_CMD"
-export PDCP_HADOOP_NODES="$PDCP $MY_HADOOP_NODES"
+export PDSH_HADOOP_NODES="$PDSH $MY_HBASE_NODES $PDSH_SSH_CMD"
+export PDCP_HADOOP_NODES="$PDCP $MY_HBASE_NODES"
+export HDFS_NODE=$(echo $HDFS_NODES | head -n1 | awk '{print $1;}')
+export HBASE_NODE=$(echo $HBASE_NODES | head -n1 | awk '{print $1;}')
 #=====================================
 # copy Trafodion trx jar to Cloudera's plugins directory on all nodes
 
@@ -42,18 +44,18 @@ cd $UNTAR_DIR
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
       if [[ $CDH_VERSION == "5.4" ]]; then
-         hbase_trx_jar="hbase-trx-cdh5_4-${TRAF_VERSION}.jar"
+         hbase_trx_jar="hbase-trx-cdh5_4-*.jar"
       else
-         hbase_trx_jar="hbase-trx-cdh5_5-${TRAF_VERSION}.jar"
+         hbase_trx_jar="hbase-trx-cdh5_5-*.jar"
       fi
    else
-      hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar" 
+      hbase_trx_jar="hbase-trx-*.jar" 
    fi 
 else
-    hbase_trx_jar="hbase-trx-cdh5_3-${TRAF_VERSION}.jar"
+    hbase_trx_jar="hbase-trx-cdh5_3-*.jar"
 fi
 
-traf_util_jar="trafodion-utility-${TRAF_VERSION}.jar"
+traf_util_jar="trafodion-utility-*.jar"
 
 
 # The permissions the Trafodion build process creates on the hbase-trx jar
@@ -78,7 +80,9 @@ if [ $node_count -ne 1 ]; then
     $PDSH_HADOOP_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     cp $UNTAR_DIR/export/lib/$traf_util_jar $LOCAL_WORKDIR
+    echo "here"
     $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
+    echo "there"
     $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
     $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
     $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
@@ -87,7 +91,7 @@ if [ $node_count -ne 1 ]; then
     $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
     $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
 else
-    for node in $HADOOP_NODES
+    for node in $HBASE_NODES
     do
     ssh -q -n $node sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
     ssh -q -n $node sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
@@ -108,7 +112,7 @@ fi
 #====================================
 #Make sure hbase-trx*jar got copied
 
-for node in $HADOOP_NODES
+for node in $HBASE_NODES
 do
    copiedOver=$(ssh -q -n $node sudo ls $HADOOP_PATH/hbase-trx* | wc -l)
    if [[ $copiedOver -ne "1" ]]; then
@@ -128,14 +132,20 @@ echo "***INFO: $hbase_trx_jar copied correctly! Huzzah."
 rm $LOCAL_WORKDIR/traf_temp_output 2>/dev/null
 
 #Copy hbase-site.xml file
-sudo cp /etc/hbase/conf/hbase-site.xml $HOME
-sudo chown $(whoami).$(whoami) $HOME/hbase-site.xml
-sudo chmod 777 $HOME/hbase-site.xml
+ssh -q -n $HBASE_NODE sudo cp /etc/hbase/conf/hbase-site.xml $HOME
+ssh -q -n $HBASE_NODE sudo chown "$(whoami)"."$(whoami)" "$HOME"/hbase-site.xml
+ssh -q -n $HBASE_NODE sudo chmod 777 $HOME/hbase-site.xml
+
+scp -q $(whoami)@$HBASE_NODE:$HOME/hbase-site.xml $HOME
+if [[ $? -gt 1 ]]; then
+   echo "***ERROR: Unable to find /etc/hbase/conf/hbase-site.xml file on $HBASE_NODE or unable to copy."
+   exit -1
+fi
 
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
@@ -146,8 +156,8 @@ if [ $? != 0 ]; then
    fi
 fi
 
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $HBASE_USER:$HBASE_GROUP /hbase-staging"
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chown -R '"$HBASE_USER"':'"$HBASE_GROUP"' /hbase-staging"'
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
@@ -157,10 +167,10 @@ if [ $? != 0 ]; then
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"'
 
 # Create lobs directory
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
@@ -170,11 +180,11 @@ if [ $? != 0 ]; then
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -chown -R $TRAF_USER:trafodion /lobs"'
 
 
 #Create Backup directory 
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -mkdir /trafodion_backups" 2> $HOME/traf_temp_output
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir /trafodion_backups" 2> $HOME/traf_temp_output'
 if [ $? != 0 ]; then
    # ok if directory already exists
    dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
@@ -184,9 +194,9 @@ if [ $? != 0 ]; then
       exit -1
    fi
 fi
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chown -R $TRAF_USER:trafodion /trafodion_backups"
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -chown -R $TRAF_USER:trafodion /trafodion_backups"'
 
-sudo su $HDFS_USER --command "$HADOOP_BIN_PATH/hadoop fs -chmod 777 /trafodion_backups"
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chmod 777 /trafodion_backups"'
 #=====================================
 # Modify hadoop settings as needed by Trafodion
 
@@ -358,33 +368,33 @@ echo "***INFO: Hadoop restart completed successfully"
 
 # wait to make sure HDFS is fully restarted and out of safemode
 echo "***INFO: waiting for HDFS to exit safemode"
-sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfsadmin -safemode wait"
+ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfsadmin -safemode wait"'
 
 #====================================================
 # NOTE: These command must be done AFTER acls are 
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
-sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive"
+ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -mkdir -p /hbase/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -mkdir -p /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive"
+ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -chown hbase:hbase /hbase/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive"
+ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m user:'"$TRAF_USER"':rwx /hbase/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive"
+ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m default:user:'"$TRAF_USER"':rwx /hbase/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
    exit -1
 fi
-sudo su hdfs --command "$HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"
+ssh -q -n $HDFS_NODE 'sudo su hdfs --command "' "$HADOOP_BIN_PATH"'/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"'
 if [ $? != 0 ]; then
    echo "***ERROR: ($HADOOP_BIN_PATH/hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
    exit -1
@@ -404,7 +414,7 @@ if [ $node_count -ne 1 ]; then
    cp $TRAF_CONFIG $LOCAL_WORKDIR
    $TRAF_PDCP $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $HOME
    $TRAF_PDSH sudo mkdir -p $TRAF_CONFIG_DIR
-   $TRAF_PDSH sudo cp $HOME/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
+   $TRAF_PDSH sudo cp -rf$HOME/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
    $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
 fi
 

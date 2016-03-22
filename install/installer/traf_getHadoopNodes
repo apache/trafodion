@@ -31,6 +31,7 @@ if [ $HADOOP_TYPE == "cloudera" ]; then
    curlRC=$?
    numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
    grep -r "hostname" tempFile > tempFile2
+   grep -r "hostId" tempFile > tempHadoop
 
    if [ -d /opt/cloudera/parcels/CDH ]; then
       export HADOOP_PATH="/opt/cloudera/parcels/CDH/lib/hbase/lib"
@@ -42,14 +43,51 @@ if [ $HADOOP_TYPE == "cloudera" ]; then
   echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
   echo "***INFO: HADOOP_BIN_PATH=$HADOOP_BIN_PATH"
 
+  HADOOP_IDS=""
+  HBASE_NODES=""
+  MY_HBASE_NODES=""
+  HDFS_NODES=""
+  MY_HDFS_NODES=""
+  while read line
+  do
+     hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+     HADOOP_IDS="$HADOOP_IDS $hostName"
+   done < tempHadoop
+
+   for id in $HADOOP_IDS
+   do
+      hasHBase=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "serviceName" | grep hbase | wc -l)
+      if [[ "$hasHBase" -ge "1" ]]; then
+         name=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "hostname")
+         hostName=$(echo $name | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+         HBASE_NODES="$HBASE_NODES $hostName"
+         MY_HBASE_NODES="$MY_HBASE_NODES -w $hostName"
+      fi
+      
+      hasHDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "serviceName" | grep hdfs | wc -l)
+      if [[ "$hasHDFS" -ge "1" ]]; then
+         name=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "hostname")
+         hostName=$(echo $name | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+         HDFS_NODES="$HDFS_NODES $hostName"
+         MY_HDFS_NODES="$MY_HDFS_NODES -w $hostName"
+      fi 
+   done
 fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
+   curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services/HDFS > tempFileHDFS
+   curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services/HBASE > tempFileHBase
    curlRC=$?
    numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
    grep -r "host_name" tempFile > tempFile2
+      
+   numberHadoopNodes=$(grep -r "host_name" tempFileHDFS | wc -l)
+   grep -r "host_name" tempFileHDFS > tempFileHDFS2
 
+   numberHadoopNodes=$(grep -r "host_name" tempFileHBase | wc -l)
+   grep -r "host_name" tempFileHBase > tempFileHBase2
+ 
    if [ -d /usr/lib/hbase/lib ]; then
       HADOOP_PATH="/usr/lib/hbase/lib"
    else
@@ -57,6 +95,41 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    fi
    echo "***INFO: HADOOP_PATH=$HADOOP_PATH"
 
+   HDFS_NODES=""
+   MY_HDFS_NODES=""
+   while read line
+   do
+      hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+      if [[ "$HDFS_NODES" != *"$hostName"* ]] && [[ "$hostName" != "null" ]]; then
+         HDFS_NODES="$HDFS_NODES $hostName"
+         MY_HDFS_NODES="$MY_HDFS_NODES -w $hostName"
+      fi
+   done < tempFileHDFS2
+
+   if [[ -z $HDFS_NODES ]]; then
+      echo "***ERROR: List of HDFS nodes not found."
+      echo "***ERROR: Check that $HADOOP_TYPE is up and running."
+      exit -1
+   fi
+
+   echo "***INFO: $HADOOP_TYPE list of HDFS nodes: $HDFS_NODES"
+
+   HBASE_NODES=""
+   MY_HBASE_NODES=""
+   while read line
+   do
+      hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+      if [[ "$HBASE_NODES" != *"$hostName"* ]] && [[ "$hostName" != "null" ]]; then
+         HBASE_NODES="$HBASE_NODES $hostName"
+         MY_HBASE_NODES="$MY_HBASE_NODES -w $hostName"
+      fi
+   done < tempFileHBase2
+
+   if [[ -z $HBASE_NODES ]]; then
+      echo "***ERROR: List of HBase nodes not found."
+      echo "***ERROR: Check that $HADOOP_TYPE is up and running."
+      exit -1
+   fi
 fi
 
 if [ $curlRC != 0 ]; then
@@ -95,6 +168,7 @@ if [[ -z $HADOOP_NODES ]]; then
 fi
 
 echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
+
 hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
 
 sudo chmod 777 $TRAF_CONFIG
@@ -103,6 +177,18 @@ echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/MY_HADOOP_NODES\=/d' $TRAF_CONFIG
 echo "export MY_HADOOP_NODES=\"$MY_HADOOP_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HDFS_NODES\=/d' $TRAF_CONFIG
+echo "export HDFS_NODES=\"$HDFS_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HDFS_NODES\=/d' $TRAF_CONFIG
+echo "export MY_HDFS_NODES=\"$MY_HDFS_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HBASE_NODES\=/d' $TRAF_CONFIG
+echo "export HBASE_NODES=\"$HBASE_NODES\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/MY_HBASE_NODES\=/d' $TRAF_CONFIG
+echo "export MY_HBASE_NODES=\"$MY_HBASE_NODES\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/HADOOP_PATH\=/d' $TRAF_CONFIG
 echo "export HADOOP_PATH=\"$HADOOP_PATH\"" >> $TRAF_CONFIG
@@ -143,3 +229,5 @@ if [[ $error == "1" ]]; then
    exit -1
 fi
 
+
+rm -rf tempFile*
