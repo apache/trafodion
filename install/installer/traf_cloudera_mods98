@@ -80,9 +80,7 @@ if [ $node_count -ne 1 ]; then
     $PDSH_HADOOP_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     cp $UNTAR_DIR/export/lib/$traf_util_jar $LOCAL_WORKDIR
-    echo "here"
     $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
-    echo "there"
     $PDCP_HADOOP_NODES $LOCAL_WORKDIR/$traf_util_jar $LOCAL_WORKDIR
     $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar $HADOOP_PATH
     $PDSH_HADOOP_NODES sudo cp $LOCAL_WORKDIR/$traf_util_jar $HADOOP_PATH
@@ -414,7 +412,7 @@ if [ $node_count -ne 1 ]; then
    cp $TRAF_CONFIG $LOCAL_WORKDIR
    $TRAF_PDCP $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $HOME
    $TRAF_PDSH sudo mkdir -p $TRAF_CONFIG_DIR
-   $TRAF_PDSH sudo cp -rf$HOME/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
+   $TRAF_PDSH sudo cp -rf $HOME/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
    $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
 fi
 
