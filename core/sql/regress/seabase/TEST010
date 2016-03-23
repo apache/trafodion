@@ -281,7 +281,7 @@ select "_SALT_", * from table(table t010t3, partition number from 1 to 3);
 
 ?section otherMdam
 drop table if exists minotaur.events_load75;
-create schema minotaur;
+create schema if not exists minotaur;
 CREATE TABLE if not exists TRAFODION.MINOTAUR.EVENTS_LOAD75
   (
     SRCIP                            CHAR(45) CHARACTER SET ISO88591 COLLATE

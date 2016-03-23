@@ -1,0 +1,899 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[develop-spj-methods]]
+= Develop SPJ Methods
+
+Before creating, or registering, an SPJ in the database, you must write
+and compile the Java method to be used as the body of the SPJ. The
+manual refers to those Java methods as _SPJ methods_.
+
+This chapter requires a familiarity with writing and compiling Java
+programs and covers these topics:
+
+* <<guidelines-for-writing-spj-methods, Guidelines for Writing SPJ Methods>>
+* <<accessing-a-trafodion-database, Accessing a Trafodion Database>>
+* <<handling-java-exceptions,Handling Java Exceptions>>
+* <<compiling-and-packaging-java-classes,Compiling and Packaging Java Classes>>
+
+[[guidelines-for-writing-spj-methods]]
+== Guidelines for Writing SPJ Methods
+
+Follow the guidelines for these topics when you write SPJ methods to be
+used as SPJs in the database:
+
+* <<signature of the java method, Signature of the Java Method>>
+* <<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>
+* <<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>
+* <<using-the-main-method, Using the main() Method>>
+* <<null-input-and-output, Null Input and Output>>
+* <<static-java-variables, Static Java Variables>>
+* <<nested-java-method-invocations, Nested Java Method Invocations>>
+
+[[signature-of-the-java-method]]
+=== Signature of the Java Method
+
+A Java method that you use as an SPJ must have this general signature:
+
+[source, java]
+----
+public static void myMethodName ( java-parameter-list )
+----
+
+[[public-access-and-static-modifiers]]
+==== Public Access and Static Modifiers
+
+The Java method must be defined as public and static. If a method is
+private or protected, the database engine is unable to find the Java
+method when you try to register the SPJ and returns an error. The Java
+method must be defined as static so that the method can be invoked
+without having to instantiate its class.
+
+[[void-return-type]]
+==== Void Return Type
+
+The return type of the Java method must be `void`. The method must not
+return a value directly to the caller.
+
+[[java-parameters]]
+==== Java Parameters
+
+Except for result sets, which are described in
+<<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>,
+the parameter types in the Java signature must correspond to the SQL
+parameters of the stored procedure that you are planning to create. For
+type mappings, see the table below.
+
+[[table-1]]
+.Mapping of Java Data Types to SQL Data Types
+
+[cols="40%,60%",options="header",]
+|===
+| Java Data Type | Maps to SQL Data Type. . .
+| `java.lang.String`             |
+CHAR[ACTER] +
+CHAR[ACTER] VARYING +
+VARCHAR +
+PIC[TURE] X^1^ +
+NCHAR +
+NCHAR VARYING +
+NATIONAL CHAR[ACTER] +
+NATIONAL CHAR[ACTER] VARYING 
+| `java.sql.Date`               | DATE
+| `java.sql.Time`               | TIME
+| `java.sql.Timestamp`          | TIMESTAMP
+| `java.math.BigDecimal`        |
+NUMERIC (including NUMERIC with a precision greater than eighteen)^2^ +
+DEC[IMAL]^2^ +
+PIC[TURE] S9^3^
+| `short`                         | SMALLINT^2^
+| `int or java.lang.Integer`^4^   | INT[EGER]^2^
+| `long or java.lang.Long`^4^     | LARGEINT2
+| `double or java.lang.Double`^4^ | FLOAT
+| `float or java.lang.Float`^4^   | REAL
+| `double or java.lang.Double`^4^ | DOUBLE PRECISION
+| `java.sql.ResultSet[]`          | None
+|===
+
+1. The Trafodion database stores `PIC X` as a `CHAR` data type.
+
+2. Numeric data types of SQL parameters must be `SIGNED`, which is the
+default in the Trafodion database.
+
+3. The Trafodion database stores `PIC S9` as a `DECIMAL` or `NUMERIC` data type.
+
+4. Choose a Java wrapper class if you plan to pass null values as
+arguments to or from the method. See
+<<null-input-and-output, Null Input and Output>>
+
+Output parameters in the Java signature must be arrays (for example,
+`int[]` or `String[]`) that accept only one value in the first element of
+the array at index 0. For more information, see
+<<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>.
+
+[[returning-output-values-from-the-java-method]]
+=== Returning Output Values From the Java Method
+
+The Java method can return data to the calling application in the form
+of output parameters or result sets.
+
+_Output parameters_ in the Java signature are parameter arrays that
+accept only one value in the first element of the array at index 0. The
+array objects have a fixed size of one element.
+
+IMPORTANT: You cannot return more than one value to an output parameter of an SPJ.
+Any attempt to return more than one value to an output parameter results in a Java exception,
+`ArrayIndexOutOfBounds`.
+
+_Result sets_ in the Java signature are one-element `java.sql.ResultSet[]`
+arrays that contain ResultSet objects that have multiple rows of data.
+For more information about result sets, see
+<<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>
+
+This subsection covers these topics related to output parameters:
+
+* <<using-arrays-for-output-parameters, Using Arrays for Output Parameters>>
+* <<type-mapping-of-output-parameters, Type Mapping of Output Parameters>>
+
+[[using-arrays-for-output-parameters]]
+==== Using Arrays for Output Parameters
+
+You must use arrays for the output parameters of a Java method because
+of how Java handles the arguments of a method. Java supports arguments
+that are passed by value to a method and does not support arguments that
+are passed by reference. As a result, Java primitive types can be passed
+only to a method, not out of a method. Because a Java array is an
+object, its reference is passed by value to a method, and changes to the
+array are visible to the caller of the method. Therefore, arrays must be
+used for output parameters in a Java method.
+
+IMPORTANT: An output parameter accepts only one value in the first element
+of the array at index 0. Any attempt to return more than one value to an
+output parameter results in a Java exception, `ArrayIndexOutOfBounds`.
+
+For each output parameter, specify the Java type followed by empty
+square brackets (`[]`) to indicate that the type is an array. For example,
+specify an int type as `int[]` for an output parameter in the Java
+signature.
+
+To return multiple values from a Java method, use an output parameter
+for each returned value. For example, the `supplierInfo()` method returns
+a supplier's name, address, city, state, and post code, each as a single
+string in an output parameter:
+
+The `supplyQuantities()` method returns an average quantity, a minimum
+quantity, and a maximum quantity to separate output parameters of the
+integer type:
+
+[source, java]
+----
+public static void supplyQuantities( int[] avgQty
+                                   , int[] minQty
+                                   , int[] maxQty
+                                   )
+{
+
+...
+
+throws SQLException
+----
+
+For more information about the SPJ examples, see
+<<sample-spjs, Appendix A: Sample SPJs>>.
+
+[[type-mapping-of-output-parameters]]
+==== Type Mapping of Output Parameters
+
+When writing an SPJ method, consider how the output of the SPJ is
+used in the calling application. For output parameters, the Java data
+type of the SPJ method must map to an SQL data type. See
+<<table-1, Table 1>>.
+
+The SQL data type must then map to a compatible data type in the calling
+application. For the client application programming interfaces (APIs) that
+support SPJs and for cross-references to the appropriate manuals for type
+mappings between Trafodion SQL and each API, see
+<<execute-spjs, Execute SPJs>> below.
+
+[[returning-stored-procedure-result-sets]]
+=== Returning Stored Procedure Result Sets
+
+The Trafodion database engine supports SPJs that return stored procedure
+result sets. A stored procedure result set is a cursor that is left open
+after the SPJ method executes (that is, after the CALL statement
+executes successfully). After the CALL statement executes successfully,
+the calling application can issue requests to open and then retrieve
+multiple rows of data from the returned result sets.
+
+An SPJ method returns an ordered collection of result sets to the
+calling application by executing SELECT statements and placing each
+returned ResultSet object into a one-element Java array of type
+`java.sql.ResultSet[]`. The `java.sql.ResultSet[]` array is part of the Java
+method's signature and is recognized by the database engine as a
+container for a single stored procedure result set.
+
+Place the `java.sql.ResultSet[]` parameters after the other Java
+parameters, if any, in the Java signature. If you do not place the
+`java.sql.ResultSet[]` parameters after the other
+parameters in the signature, the database engine prevents you from
+creating an SPJ using that Java method. This example shows the
+declaration of an SPJ method, `orderSummary()`, which returns a maximum of
+two result sets:
+
+[source, java]
+----
+public static void orderSummary( java.lang.String onOrAfter
+                               , long[] numOrders
+                               , java.sql.ResultSet[] orders
+                               , java.sql.ResultSet[] detail
+                               )
+----
+
+This code fragment shows how the `orderSummary()` method returns one of
+its result sets by executing a SELECT statement and assigning the
+`java.sql.ResultSet` object to a `java.sql.ResultSet[]` output array:
+
+[source,java]
+----
+// Open a result set for order num, order info rows
+java.lang.String s =
+     "SELECT amounts.*, orders.order_date, emps.last_name "
+   + "FROM ( SELECT o.ordernum, COUNT( d.partnum ) AS num_parts, "
+   + "       SUM( d.unit_price * d.qty_ordered ) AS amount "
+   + "       FROM demo.sales.orders o, demo.sales.odetail d "
+   + "       WHERE o.ordernum = d.ordernum "
+   + "         AND o.order_date >= CAST(? AS DATE) "
+   + "       GROUP BY o.ordernum ) amounts, "
+   + "   demo.sales.orders orders, demo.persnl.employee emps "
+   + "WHERE amounts.ordernum = orders.ordernum "
+   + "  AND orders.salesrep = emps.empnum "
+   + "ORDER BY orders.ordernum "
+   ;
+
+java.sql.PreparedStatement ps2 = conn.prepareStatement(s) ;
+ps2.setString( 1, onOrAfter ) ;
+
+// Assign the returned result set object to the first element of a
+// java.sql.ResultSet[] output array
+orders[0] = ps2.executeQuery() ;
+----
+
+For the entire example, see 
+<<ordersummary-procedure, ORDERSUMMARY Procedure>>.
+
+IMPORTANT: In an SPJ method that returns result sets, do not explicitly close
+the default connection or the statement object. The database engine closes the
+connection used to return result sets after it finishes processing the result
+sets. If you close the connection on which the result sets are being returned,
+those result sets will be lost, and the calling application will not be able
+to process them.
+
+An SPJ method can return result sets that contain any data types, except
+large object (LOB) data. An SPJ method can return a holdable or
+updatable cursor as a result set. However, Trafodion SQL does not expose
+those attributes in the calling application. An SPJ method can return a
+ResultSet object that is a stored procedure result set acquired from a
+nested CALL statement executed by the SPJ method. However, you are
+discouraged from nesting CALL statements in SPJ methods. For more
+information, see <<nested-java-method-invocations, Nested Java Method Invocations>>.
+
+If an SPJ method returns multiple ResultSet objects, the database engine
+sorts the collection of valid result sets in chronological order
+according to when the underlying SQL statements were executed. If the
+number of result sets exceeds the declared maximum for the SPJ, only the
+first set of result sets up to the maximum number are returned. The
+database engine discards the other result sets and returns a warning to
+the calling application.
+
+When an SPJ method returns a ResultSet object through a
+`java.sql.ResultSet[]` parameter, Trafodion SQL exposes the underlying rows
+of data as an SQL cursor in the calling application.
+
+If a returned result set is a scrollable cursor, all underlying rows are
+included in the result set and are available to the calling application.
+If a returned result set is not scrollable, only those rows not
+processed by the SPJ method are included in the result set and are
+available to the calling application. If an SPJ method returns multiple
+occurrences of the same ResultSet object, the database engine ignores
+all but one occurrence and makes the underlying rows available to the
+calling application as a single result set.
+
+For information about processing result sets in different calling
+applications, see:
+
+* <<returning-result-sets-in-trafci, Returning Result Sets in trafci>>
+* <<returning-result-sets-in-an-odbc-client-application, Returning Result Sets in an ODBC Client Application>>
+* <<returning-result-sets-in-a-jdbc-client-application, Returning Result Sets in a JDBC Client Application>>
+
+[[using-the-main-method]]
+=== Using the main() Method
+
+You can use the `main()` method of a Java class file as an SPJ method. The
+`main()` method is different from other Java methods because it accepts
+input values in an array of `java.lang.String` objects and does not return
+any values in its array parameter.
+
+For example, you can register this main() method as an SPJ:
+
+[source,java]
+----
+public static void main (java.lang.String [] args)
+{
+
+...
+
+}
+----
+
+When you register a `main()` method as an SPJ, you can specify zero or
+more SQL parameters, even though the underlying `main()` method has only
+one array parameter. All the SQL parameters of the SPJ must have the
+character string data type, CHAR or VARCHAR, and be declared with the IN
+mode.
+
+If you specify the optional Java signature, the signature must be
+(`java.lang.String []`). For more information about registering an SPJ,
+see <<create-spjs, Create SPJs>>.
+
+[[null-input-and-output]]
+=== Null Input and Output
+
+You can pass a `null` value as input to or output from an SPJ method,
+provided that the Java data type of the parameter supports nulls. Java
+primitive data types do not support nulls. However, Java wrapper classes
+that correspond to primitive data types do support nulls. If a null is
+input or output for a parameter that does not support nulls, the
+database engine raises an error condition.
+
+To anticipate null input or output for your SPJ, use Java wrapper
+classes instead of primitive data types in the method signature.
+
+For example, this Java method uses a Java primitive data type in its
+signature where no null values are expected:
+
+[source, java]
+----
+public static void employeeJob( int empNum, Integer[] jobCode )
+----
+
+This Java method also uses a Java wrapper class in its signature to
+anticipate a possible returned null value:
+
+[source, java]
+----
+public static void employeeJob( int empNum, Integer[] jobCode )
+----
+
+[[static-java-variables]]
+=== Static Java Variables
+
+To ensure that your SPJ method is portable, you should avoid using
+static variables in the method. The database engine does not ensure the
+scope and persistence of static Java variables.
+
+[[nested-java-method-invocations]]
+=== Nested Java Method Invocations
+
+An SPJ that invokes another SPJ by issuing a CALL statement causes
+additional system resources to be used. If you want an SPJ method to
+call another SPJ method, consider invoking the other Java method
+directly through Java instead of using a CALL statement. The other Java
+method should be packaged in the same JAR file as the SPJ method. For
+more information, see
+<<compiling-and-packaging-java-classes, Compiling and Packaging Java Classes>>.
+
+[[accessing-a-trafodion-database]]
+== Accessing a Trafodion Database
+
+SPJ methods that access a Trafodion database must be from a Java class
+that uses JDBC method calls. Follow these guidelines when writing an SPJ
+method that accesses a Trafodion database:
+
+* <<use-of-java.sql.connection-objects, Use of java.sql.Connection Objects>>
+* <<using-jdbc-method-calls, Using JDBC Method Calls>>
+* <<referring-to-database-objects-in-an-spj-method, Referring to Database Objects in an SPJ Method>>
+* <<using-the-session_user-or-current_user-function-in-an-spj-method, Using the SESSION_USER or CURRENT_USER Function in an SPJ Method>>
+* <<exception-handling, Exception Handling>>
+
+[[use-of-java.sql.connection-objects]]
+=== Use of java.sql.Connection Objects
+
+The Trafodion database engine supports a default connection in an SPJ
+execution environment, which has a data source URL of
+`"jdbc:default:connection"`. For example:
+
+[source, java]
+----
+Connection conn =
+   DriverManager.getConnection( "jdbc:default:connection" ) ;
+----
+
+`java.sql.Connection` objects that use the `"jdbc:default:connection"` URL
+are portable to the Trafodion platform from other database management
+systems (DBMSs).
+
+[[closing-default-connections]]
+==== Closing Default Connections
+
+The Trafodion database engine controls default connections in the SPJ
+environment and closes default connections when they are no longer
+needed. Therefore, you do not need to use the `close()` method in an SPJ
+method to explicitly close a default connection when the connection is
+no longer needed.
+
+IMPORTANT: If an SPJ method returns result sets, you should not explicitly
+close the default connection. The database engine closes the connection used
+to return result sets after it finishes processing the result sets. If an SPJ
+method closes the connection on which the result sets are being returned, those
+result sets will be lost, and the calling application will not be able to
+process them. The JVM does not return an error or warning when the
+connection is closed.
+
+A default connection that is acquired when an SPJ method executes does
+not necessarily remain open for future invocations of the SPJ method.
+Therefore, do not store default connections in static variables for
+future use.
+
+[[default-connection-url]]
+==== Default Connection URL
+
+The default connection URL, `"jdbc:default:connection"`, is invalid when
+the Java method is invoked outside the DBMS, such as when you execute
+the Java method in a client application. To write an SPJ method that
+operates in a DBMS, in a client application, or both, without having to
+change and recompile the code, use the `sqlj.defaultconnection` system
+property:
+
+[source, java]
+----
+String s = System.property( "sqlj.defaultconnection" ) ;
+if ( s == null )
+{
+   s = other-url ;
+}
+
+Connection c = DriverManager.getConnection( s ) ;
+----
+
+The value of `sqlj.defaultconnection` is `"jdbc:default:connection"` in a
+DBMS and `null` outside a DBMS.
+
+[[connection-pooling]]
+==== Connection Pooling
+
+Connection pooling, where a cache of database connections is assigned to
+a client session and reused, is enabled by default in the SPJ
+environment. The SPJ environment sets the initial connection pool size
+to `1`, but it does not limit the number of connections an SPJ method can
+make.
+
+The SPJ environment also sets the minimum connection pool size to 1 so that
+there is always at least one connection available in the pool. The
+default settings in the SPJ environment are:
+
+* `maxPoolSize=0`
+* `minPoolSize=1`
+* `initialPoolSize=1`
+
+To change these settings, use the properties parameter of the
+`DriverManager.getConnection()` method as shown below:
+
+[source, java]
+----
+java.util.Properties props = new Properties() ;
+
+props.setProperty( "maxPoolSize", "10" ) ;
+props.setProperty( "minPoolSize", "5" ) ;
+props.setProperty( "initialPoolSize", "5" ) ;
+
+Connection conn =
+   DriverManager.getConnection( "jdbc:default:connection", props ) ;
+----
+
+[[using-jdbc-method-calls]]
+=== Using JDBC Method Calls
+
+The Trafodion platform uses a JDBC Type-4 driver internally to execute
+the SQL statements inside an SPJ method. To enable an SPJ to perform SQL
+operations on a Trafodion database, use JDBC method calls in the SPJ
+method. The JDBC method calls must be supported by the JDBC Type-4
+driver on the Trafodion platform.
+
+For example, if you want the SPJ method to operate on a Trafodion database,
+use the JDBC API that is supported by Trafodion.
+
+NOTE: You do not have to explicitly load the JDBC driver before
+establishing a connection to the Trafodion database. The database engine
+automatically loads the JDBC driver when the SPJ is called.
+
+Here is an example of an SPJ method, `adjustSalary()`, that uses JDBC
+method calls to adjust an employee's salary in the EMPLOYEE table:
+
+[source, java]
+----
+public class Payroll
+{
+   public static void adjustSalary( BigDecimal empNum
+                                  , double percent
+                                  , BigDecimal[] newSalary
+                                  ) throws SQLException
+   {
+      Connection conn =
+         DriverManager.getConnection( "jdbc:default:connection" ) ;
+
+      PreparedStatement setSalary =
+         conn.prepareStatement( "UPDATE demo.persnl.employee "
+                              + "SET salary = salary * (1 + (? / 100)) "
+                              + "WHERE empnum = ?"
+                              ) ;
+ 
+      PreparedStatement getSalary =
+         conn.prepareStatement( "SELECT salary "
+                              + "FROM demo.persnl.employee "
+                              + "WHERE empnum = ?"
+                              ) ;
+
+      setSalary.setDouble( 1, percent ) ;
+      setSalary.setBigDecimal( 2, empNum ) ;
+      setSalary.executeUpdate() ;
+
+      getSalary.setBigDecimal( 1, empNum ) ;
+      ResultSet rs = getSalary.executeQuery() ;
+      rs.next() ;
+
+      newSalary[0] = rs.getBigDecimal( 1 ) ;
+
+      rs.close();
+      conn.close();
+   }
+}
+----
+
+For other examples of SPJ methods, see <<sample-spjs, Appendix A: Sample SPJs>>.
+
+[[referring-to-database-objects-in-an-spj-method]]
+=== Referring to Database Objects in an SPJ Method
+
+In an SPJ method, you can refer to SQL database objects by specifying
+three-part ANSI names that include the catalog, schema, and object name.
+For more information about database object names, see the
+http://trafodion.incubator.apache.org/docs/sql_reference/index.hmtl[Trafodion SQL Reference Manual].
+
+The database engine propagates the names of the catalog and schema where
+the SPJ is registered to the SPJ environment. By default, database
+connections created in the SPJ method are associated with that catalog
+and schema, meaning that unqualified database objects with one-part or
+two-part names in the SPJ method are qualified with the same catalog
+and/or schema name as the SPJ. For example, this SPJ method, which is
+registered as an SPJ in the DEMO.SALES schema, refers to the unqualified
+database object, ORDERS:
+
+[source, java]
+----
+public static void numDailyOrders( Date date
+                                 , int[] numOrders
+				 ) throws SQLException
+{
+   Connection conn =
+      DriverManager.getConnection( "jdbc:default:connection" ) ;
+
+   PreparedStatement getNumOrders =
+      conn.prepareStatement( "SELECT COUNT( order_date ) "
+                           + "FROM orders "
+			   + "WHERE order_date = ?"
+			   ) ;
+
+   getNumOrders.setDate( 1, date ) ;
+
+   ResultSet rs = getNumOrders.executeQuery() ;
+   rs.next() ;
+
+   numOrders[0] = rs.getInt( 1 ) ;
+
+   rs.close() ;
+   conn.close() ;
+
+}
+----
+
+In the SPJ environment, the ORDERS table is qualified by default with
+the same catalog and schema as the SPJ, DEMO.SALES.
+
+The default behavior takes effect only when `getConnection()` does not
+contain catalog and schema properties. Catalog and schema property
+values in `getConnection()` have higher precedence over the default
+behavior. To override the default schema name and associate a database
+connection with a different schema, specify the schema property during
+connection creation. For example, `getConnection()` in this SPJ method
+specifies the schema, SALES2, which overrides the default schema, SALES:
+
+[source, java]
+----
+public static void numDailyOrders( Date date
+                                 , int[] numOrders
+				 ) throws SQLException
+{
+   Properties prop = new Properties() ;
+   prop.setProperty( "schema", "SALES2" ) ;
+
+   Connection conn =
+      DriverManager.getConnection( "jdbc:default:connection", prop) ;
+
+   PreparedStatement getNumOrders =
+      conn.prepareStatement( "SELECT COUNT( order_date ) "
+                           + "FROM orders "
+			   + "WHERE order_date = ?"
+			   ) ;
+
+   getNumOrders.setDate( 1, date ) ;
+
+   ResultSet rs = getNumOrders.executeQuery() ;
+   rs.next() ;
+
+   numOrders[0] = rs.getInt( 1 ) ;
+
+   rs.close() ;
+   conn.close() ;
+
+}
+----
+
+Be aware that overriding the default values by using getConnection()
+requires you to hard-code the catalog or schema name and might make SPJ
+methods less portable across systems.
+
+[[using-the-session_user-or-current_user-function-in-an-spj-method]]
+=== Using the SESSION_USER or CURRENT_USER Function in an SPJ Method
+
+SESSION_USER is an SQL function that returns the name of the
+authenticated database user who started the session and invoked the
+function, and CURRENT_USER (or USER) is an SQL function that returns the
+name of the database user who is authorized to invoke the function. If
+you plan to use the SESSION_USER or CURRENT_USER (or USER) function in
+an SPJ method, you should be aware of differences in their behavior
+depending on how extenal security is defined for the stored procedure.
+
+Suppose that you write this Java method, which uses the CURRENT_USER
+function to return the name of the database user who is authorized to
+invoke the function:
+
+[source, java]
+----
+public static void getUser( ResultSet [] rs ) throws SQLException
+{
+   Connection conn =
+      DriverManager.getConnection( "jdbc:default:connection" ) ;
+
+   Statement stmt = conn.createStatement() ;
+
+   rs[0] =
+      stmt.executeQuery( "SELECT CURRENT_USER FROM (VALUES(1)) X(A) ; " ) ;
+}
+----
+
+If this method is used in a stored procedure with external security
+defined as _invoker_, the CURRENT_USER function returns the name of
+the database user who is authorized to invoke the function, which
+happens to be the authenticated database user who started the session
+and called the stored procedure.
+
+For example, suppose that DB USERADMINUSER creates a stored procedure
+named GETINVOKER using the `getUser()` method and sets the external
+security to invoker. If a database user named PAULLOW1, who has the
+EXECUTE privilege on the stored procedure, calls GETINVOKER, the procedure
+returns his name:
+
+```
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
+
+User Name:PAULLOW1 Password:
+
+Connected to Data Source: TDM_Default_DataSource
+
+SQL> CALL demo.persnl.getinvoker() ;
+
+(EXPR)
+--------------------------------------------------------------------------------
+PAULLOW1
+
+--- 1 row(s) selected.
+
+--- SQL operation complete.
+```
+
+If the method is used in a stored procedure with external security
+defined as _definer_, the CURRENT_USER function returns the name of
+the database user who is authorized to invoke the function, which
+happens to be the user who created the stored procedure (that is, the
+definer of the stored procedure). When a stored procedure's external
+security is set to definer, any user who has the execute privilege on
+the stored procedure can call the procedure using the privileges of the
+user who created the stored procedure.
+
+For example, suppose that DB USERADMINUSER creates a stored procedure
+named GETDEFINER using the `getUser(`) method and sets the external
+security to definer. If the database user named PAULLOW1, who has the
+EXECUTE privilege on the stored procedure, calls GETDEFINER, the procedure
+returns the name of the stored procedures's creator, DB USERADMINUSER,
+whose privileges PAULLOW1 is using to call the procedure:
+
+```
+SQL> SHOW USER
+
+USER PAULLOW1 (NONE)
+
+SQL> CALL demo.persnl.getdefiner() ;
+
+(EXPR)
+--------------------------------------------------------------------------------
+DB USERADMINUSER
+
+--- 1 row(s) selected.
+
+--- SQL operation complete.
+```
+
+Suppose that you write this Java method, which uses the SESSION_USER
+function to return the name of the authenticated database user who
+started the session and invoked the function:
+
+[source, java]
+----
+public static void getSessionUser( ResultSet [] rs ) throws SQLException
+{
+   Connection conn =
+      DriverManager.getConnection( "jdbc:default:connection" ) ;
+
+   Statement stmt = conn.createStatement() ;
+
+   rs[0] = stmt.executeQuery( "SELECT SESSION_USER FROM (VALUES(1) ) X(A) ; " ) ;
+}
+----
+
+The SESSION_USER function returns the name of the authenticated database
+user who started the session and invoked the function, regardless of the
+external security setting of the stored procedure.
+
+For example, suppose that DB USERADMINUSER creates a stored procedure named
+GETSESSIONUSER using the `getSessionUser()` method and sets the external
+security to definer. If the database user named PAULLOW1, who has the EXECUTE
+privilege on the stored procedure, calls GETSESSIONUSER, the procedure
+returns his name because he is the authenticated user who started the
+session and invoked the function:
+
+```
+SQL> SHOW USER
+
+USER PAULLOW1 (NONE)
+
+SQL> CALL demo.persnl.getsessionuser() ;
+
+(EXPR)
+--------------------------------------------------------------------------------
+PAULLOW1
+
+--- 1 row(s) selected.
+
+--- SQL operation complete.
+```
+
+For more information about external security, see
+<<understand-external-security, Understand External Security>>.
+
+[[exception-handling]]
+=== Exception Handling
+
+For SPJ methods that access a Trafodion database, no special code is
+necessary for handling exceptions. If an SQL operation fails inside an
+SPJ, the error message associated with the failure is returned to the
+application that issues the CALL statement.
+
+[[handling-java-exceptions]]
+== Handling Java Exceptions
+
+If an SPJ method returns an uncaught Java exception or an uncaught chain
+of `java.sql.SQLException` objects, the database engine converts each Java
+exception object into an SQL error condition, and the CALL statement
+fails. Each SQL error condition contains the message text associated
+with one Java exception object.
+
+If an SPJ method catches and handles exceptions itself, those exceptions
+do not affect SQL processing.
+
+[[user-defined-exceptions]]
+=== User-Defined Exceptions
+
+The SQLSTATE values 38001 to 38999 are reserved for you to define your
+own error conditions that SPJ methods can return. By coding your SPJ
+method to throw a `java.sql.SQLException` object, you cause the CALL
+statement to fail with a specific user-defined SQLSTATE value and your
+own error message text.
+
+If you define the SQLSTATE to be outside the range of 38001 to 38999,
+the database engine raises SQLSTATE 39001, external routine invocation
+exception.
+
+This example uses the throw statement in the SPJ method named
+`numMonthlyOrders()` to raise a user-defined error condition when an
+invalid argument value is entered for the month:
+
+[source, java]
+----
+public static void numMonthlyOrders( int month
+                                   , int[] numOrders
+				   ) throws java.sql.SQLException
+{
+   if ( month < 1 || month > 12 )
+   {
+      throw new
+         java.sql.SQLException ( "Invalid value for month. "
+                               + "Retry the CALL statement using a number "
+                               + "from 1 to 12 to represent the month."
+			       , "38001"
+			       ) ;
+   }
+
+   ....
+}
+----
+
+For more information about the numMonthlyOrders() method, see the
+<<monthlyorders-procedure, MONTHLYORDERS Procedure>>.
+
+For information about specific SQL errors, see the
+http://trafodion.incubator.apache.org/docs/messages_guide/index.html[Trafodion Messages Manual], which lists
+the SQLCODE, SQLSTATE, message text, and cause-effect-recovery information for all SQL errors.
+
+[[compiling-and-packaging-java-classes]]
+== Compiling and Packaging Java Classes
+
+On the Trafodion database, the class files of SPJ methods must be
+packaged in Java archive (JAR) files. After writing an SPJ method,
+compile the Java source file of the SPJ method into Java bytecode and
+package the Java bytecode in a JAR file. A Java method that you register
+as an SPJ might need to access, either directly or indirectly, other
+Java classes to operate properly. Those Java classes might include other
+application classes. To enable an SPJ method to refer to other
+application classes, put the application classes in the same JAR file as
+the SPJ class. All classes stored in the same JAR file as the SPJ class
+are accessible by default to the SPJ method.
+
+.After writing the SPJ method
+
+1.  Compile the Java source file into Java bytecode by using the Java
+programming language compiler, `javac`:
++
+```
+javac Payroll.java
+```
+
+2.  Put the SPJ class file and all associated class files into a Java
+archive (JAR) file:
++
+```
+jar cvf Payroll.jar Payroll.class
+```
++
+A manifest file is not needed for the JAR file.
+
+

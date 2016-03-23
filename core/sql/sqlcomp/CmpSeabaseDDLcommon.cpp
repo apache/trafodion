@@ -5727,7 +5727,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       ElemDDLParamDef *paramNode = (*paramArray)[index];
       ElemDDLColDef colNode(NULL, &paramNode->getParamName(), 
                             paramNode->getParamDataType(),
-                            NULL, NULL, STMTHEAP);
+                            NULL, STMTHEAP);
 
       NAString colFamily;
       NAString colName;

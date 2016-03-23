@@ -74,13 +74,14 @@ public:
   enum defaultClauseStatusType { DEFAULT_CLAUSE_NOT_SPEC = 0,
                                  NO_DEFAULT_CLAUSE_SPEC = 1,
                                  DEFAULT_CLAUSE_SPEC = 2};
-  
+  enum { INDEX_ELEM_DDL_COL_ATTR_LIST = 0,
+         MAX_ELEM_DDL_COL_DEF_ARITY = 1};
+
   // default constructor
   ElemDDLColDef(
        const NAString * columnFamily,
        const NAString * columnName,
        NAType * pColumnDataType,
-       ElemDDLNode * pColDefaultValue = NULL,
        ElemDDLNode * pColAttrList = NULL,
        CollHeap * heap = PARSERHEAP());
 
@@ -115,6 +116,8 @@ public:
 
   void setDefaultClauseStatus(defaultClauseStatusType d)
   { defaultClauseStatus_ = d; }
+
+  void setDefaultAttribute(ElemDDLNode * pColDefaultNode);
 
   inline const defaultClauseStatusType getDefaultClauseStatus() const;
 
@@ -200,6 +203,8 @@ public:
 
   NABoolean isSerializedSpecified() { return isSeabaseSerializedSpec_; }
   inline NABoolean isSeabaseSerialized() { return seabaseSerialized_; }
+
+  NABoolean isColDefaultSpecified() { return isColDefaultSpec_; }
 
   //
   // methods for tracing
@@ -292,10 +297,6 @@ private:
   //   Column Attributes list includes column constraint definitions
   //   and column heading specification (HEADING clause).
   //
-  enum { INDEX_ELEM_DDL_COL_DEFAULT_VALUE = 0,
-         INDEX_ELEM_DDL_COL_ATTR_LIST,
-         MAX_ELEM_DDL_COL_DEF_ARITY };
-
   ElemDDLNode * children_[MAX_ELEM_DDL_COL_DEF_ARITY];
 
   ComColumnDirection direction_;  // IN / OUT / INOUT
@@ -307,6 +308,7 @@ private:
   NABoolean isSeabaseSerializedSpec_;
   NABoolean seabaseSerialized_;
 
+  NABoolean isColDefaultSpec_;
 }; // class ElemDDLColDef
 
 // -----------------------------------------------------------------------

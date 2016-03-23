@@ -28,7 +28,7 @@
 [[script_create]]
 == Create a Script File
 
-A script file that you run in TrafCI must be an ASCII text file that contains only these elements:
+A script file that you run in trafci must be an ASCII text file that contains only these elements:
 
 * <<script_sql_statements, SQL Statements>>
 * <<script_commands, Commands>>
@@ -37,13 +37,13 @@ A script file that you run in TrafCI must be an ASCII text file that contains on
 
 For an example, see <script_example, Example Script File>>.
 
-NOTE: You cannot use shell commands in a script file that you run in TrafCI. To create shell scripts
-that run TrafCI, see <<perl_or_python, Run TrafCI from Perl or Python>>.
+NOTE: You cannot use shell commands in a script file that you run in trafci. To create shell scripts
+that run trafci, see <<perl_or_python, Run trafci from Perl or Python>>.
 
 [[script_sql_statements]]
 == SQL Statements
 
-Script files support any of the various SQL statements that you can run in TrafCI. For more information about
+Script files support any of the various SQL statements that you can run in trafci. For more information about
 SQL statements, see the
 http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
 
@@ -78,7 +78,7 @@ To create sections of commands within a script file, put a section header at the
 ====
 
 The `_section-name_` cannot begin with a number or an underscore. Each section name in a script file should be unique
-because TrafCI executes the first section that it finds that matches the section name in the `@` or `OBEY` command.
+because trafci executes the first section that it finds that matches the section name in the `@` or `OBEY` command.
 For more information, see the <<cmd_at_sign, @ Command>> <<cmd_obey, OBEY Command>>.
 
 [[script_example]]
@@ -90,8 +90,8 @@ image:{images}/script.jpg[Sample script]
 
 == Run a Script File
 
-To run a script file in TrafCI, use the `@` or OBEY command. The `@` and `OBEY` commands run one script file at a time
-in TrafCI. To run a script file when launching TrafCI, see <<trafci_run_script, Run Script When Launching TrafCI>>.
+To run a script file in trafci, use the `@` or OBEY command. The `@` and `OBEY` commands run one script file at a time
+in trafci. To run a script file when launching trafci, see <<trafci_run_script, Run Script When Launching trafci>>.
 
 *Example*
 
@@ -146,16 +146,16 @@ the <<cmd_obey, OBEY Command>>.
 
 == Log Output
 
-To log output of an TrafCI session while running one script file at a time, use the `SPOOL` or `LOG` command.
-When you run an `OBEY` or `@` command, TrafCI displays each command in the script file, the output for each
-command, and diagnostic messages in TrafCI. The `SPOOL` or `LOG` command captures this output as it appears
-in TrafCI and logs it in a log file.
+To log output of an trafci session while running one script file at a time, use the `SPOOL` or `LOG` command.
+When you run an `OBEY` or `@` command, trafci displays each command in the script file, the output for each
+command, and diagnostic messages in trafci. The `SPOOL` or `LOG` command captures this output as it appears
+in trafci and logs it in a log file.
 
 For more information, <<interactive_log_output, Log Output>>.
 
 == Run Scripts in Parallel
 
-In TrafCI, the `@` and `OBEY` commands allow you to run only one script file at a time. However, the `PRUN` command
+In trafci, the `@` and `OBEY` commands allow you to run only one script file at a time. However, the `PRUN` command
 allows you to run multiple script files simultaneously.
 
 The `PRUN` command is most useful for running sets of data definition language (DDL) statements simultaneously, which

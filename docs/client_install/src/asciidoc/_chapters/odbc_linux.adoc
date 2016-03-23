@@ -21,14 +21,19 @@
 ////
 
 = Install Linux ODBC Driver
-These installation instructions apply to Trafodion Release 1.3.*_n_* and subsequent updates of the product until otherwise indicated.
 
-== Installation Packaged
+== Installation Requirements
 
-The distribution file for the Trafodion ODBC Driver for Linux is packaged within the Trafodion clients tar file,
-`clients-1.3.*_n_*.tar.gz`, on the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
+The driver for Linux requires `libgcc 3.4.3` and `libstd++ 6.0`.
 
-`TRAF_ODBC_Linux_Driver_64.tar.gz` is used to install the Trafodion ODBC Driver for Linux. It contains the following files:
+If you are building ODBC applications, please use the preferred build platform, RedHat 6.x or CentOS 6.x.
+
+== Installation Instructions
+
+You download and extract the Trafodion client package using the instructions in <<introduction-download, Download Installation Package>> above.
+
+The package file contains the Trafodion ODBC distribution file, `TRAF_ODBC_Linux_Driver_64.tar.gz`, which is extracted to the `clients` subdirectory.
+It contains the following files:
 
 ```
 connect_test.cpp 
@@ -43,43 +48,20 @@ MD5SUM
 TRAFDSN 
 ```
 
-By default, a new version of the Trafodion ODBC driver will be installed in the following directories unless you specify a different directory
+By default, a new version of the Trafodion ODBC driver is installed in the following directories unless you specify a different directory
 during installation:
 
 * `/usr/lib64`
 * `/etc/odbc`
 
-NOTE: The following header files are not packaged with the Trafodion ODBC driver:
-
-* `sql.h`
-* `sqlext.h`
-* `sqltypes.h`
-* `sqlucode.h`
-
+NOTE: The following header files are not packaged with the Trafodion ODBC driver: +
+ +
+- `sql.h` +
+- `sqlext.h` +
+- `sqltypes.h` +
+- `sqlucode.h` +
+ +
 To install those header files, <<win_odbc_client_env, Setting Up the Client Environment>>..
-
-<<<
-== Installation Requirements
-
-The driver for Linux requires `libgcc 3.4.3` and `libstd++ 6.0`.
-
-If you are building ODBC applications, please use the preferred build platform, RedHat 6.4 or CentOS 6.4.
-
-== Installation Instructions
-
-=== Download Linux ODBC Driver
-
-1.  Create a download folder on the client workstation.
-2.  Open a Web browser and navigate to http://trafodion.incubator.apache.org/download.html.
-3.  Click on the `clients-1.3.*_n_*.tar.gz` link to start downloading the Trafodion clients tar file to your workstation.
-4.  Place the `clients-1.3.*_n_*.tar.gz` file into the download folder.
-5.  Unpack the `clients-1.3.*_n_*.tar.gz` file.
-+
-```
-tar -xzf clients-1.3.0.tar.gz
-```
-
-The package file contains the Trafodion ODBC distribution file, `TRAF_ODBC_Linux_Driver_64.tar.gz`, which is extracted to the clients subdirectory.
 
 === Install/Reinstall Linux ODBC Driver
 
@@ -100,7 +82,7 @@ tar –xvf TRAF_ODBC_Linux_Driver_64.tar
 +
 ```
 cd PkgTmp 
-./install.sh
+sudo ./install.sh
 ```
 +
 Except for the sample file, the `install.sh` script saves a copy (`.SAV`) of your previous installation files if they exist.
@@ -109,6 +91,7 @@ Except for the sample file, the `install.sh` script saves a copy (`.SAV`) of you
 6.  Enter a directory for the data-source template file, or press *Enter* to use the default directory (`/etc/odbc`).
 7.  Enter a directory for the sample program, or press *Enter* to use the default directory (`/etc/odbc`).
 
+<<<
 === Set Up Client Environment
 
 If you selected default options during installation, ensure that:
@@ -122,7 +105,7 @@ installation.
 The driver expects the `TRAFDSN` file to be present in either the default location (`/etc/odbc`) or the current working directory (`CWD`) of the
 application.
 
-If you are building ODBC applications, you will need to install these header files in your build environment:
+If you are building ODBC applications, you need to install these header files in your build environment:
 
 * `sql.h`
 * `sqlext.h`
@@ -132,7 +115,7 @@ If you are building ODBC applications, you will need to install these header fil
 To install those header files from the latest packages, run this `yum` command:
 
 ```
-yum install libiodbc libiodbc-devel
+sudo yum -y install libiodbc libiodbc-devel
 ```
 
 The `yum` command automatically installs the header files in the `/usr/include` and `/usr/include/libiodbc` directories.
@@ -175,7 +158,7 @@ The `_compression-level_` is one of these values:
 
 NOTE: For better performance, we recommend that you use at least version `2.3._x_` of unixODBC.
 
-* If you are using an external driver manager, you must point to `libtrafodbc_drvr64.so` and not to `libtrafodbc64.so`.
+* If you are using an external driver manager, then you must point to `libtrafodbc_drvr64.so` and not to `libtrafodbc64.so`.
 * The driver, `libtrafodbc_l64_drvr.so`, has been verified with iODBC and unixODBC driver managers.
 * These driver managers, as well as documentation, can be found at these Web sites:
 * http://www.iodbc.org/
@@ -183,6 +166,7 @@ NOTE: For better performance, we recommend that you use at least version `2.3._x
 * For information on the necessary data-source configuration options, you will need to add to the respective configuration files (for example,
 to `odbc.ini`).
 
+<<<
 === Run Sample Program (`connect_test`)
 
 NOTE: The examples after each step assume that you have default installation directories.
@@ -205,6 +189,12 @@ cd /etc/odbc
 ```
 export LD_LIBRARY_PATH=<path-to-odbc-library-files or /usr/lib64>
 ```
++
+*Example*
++
+```
+export LD_LIBRARY_PATH=/usr/lib64
+```
 
 3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`.
 +
@@ -217,16 +207,18 @@ Catalog = TRAFODION
 Schema = SEABASE
 DataLang = 0
 FetchBufferSize = SYSTEM_DEFAULT
-Server = TCP:1.2.3.4:37800 <- _Set IP Address_
+Server = TCP:1.2.3.4:23400 <- _Set IP Address_
 SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
 SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
 SQL_QUERY_TIMEOUT = NO_TIMEOUT
 ```
++
+<<<
 
 4.  Compile the sample program.
 +
 ```
-g++ -g connect_test.cpp -L/usr/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
+sudo g++ -g connect_test.cpp -L/usr/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
 ```
 
 5.  Run the sample program:
@@ -266,8 +258,6 @@ export LD_LIBRARY_PATH=<path-to-odbc-driver-dlls>
 
 3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`. For example:
 +
-<<<
-+
 *Example*
 +
 ```
@@ -277,11 +267,13 @@ Catalog = TRAFODION
 Schema = SEABASE
 DataLang = 0
 FetchBufferSize = SYSTEM_DEFAULT
-Server = TCP:1.2.3.4:37800 
+Server = TCP:1.2.3.4:23400 
 SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
 SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
 SQL_QUERY_TIMEOUT = NO_TIMEOUT
 ```
++
+<<<
 
 4.  Compile the sample program.
 +

@@ -24,8 +24,8 @@
 ////
 
 = About This Document
-This guide describes how to use the Trafodion Command Interface (TrafCI) on a client workstation to connect to and query a Trafodion database.
-The TrafCI enables you to run SQL statements interactively or from script files.
+This guide describes how to use the Trafodion Command Interface (trafci) on a client workstation to connect to and query a Trafodion database.
+The trafci enables you to run SQL statements interactively or from script files.
 
 == Intended Audience
 This guide is intended for database administrators and support personnel who are maintaining and monitoring a Trafodion database.

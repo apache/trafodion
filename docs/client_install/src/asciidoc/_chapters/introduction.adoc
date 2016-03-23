@@ -20,30 +20,128 @@
  */
 ////
 
-= Trafodion Client Products
+[[introduction]]
+= Introduction
 This manual describes how to install and configure the following client applications, which enable you to connect to and use a Trafodion
 database.
 
 == Client Summary
-The following table lists the clients supported by Trafodion.
-[cols="30%h,70%",options="header"]
+
+=== JDBC-Based Clients
+
+The following table lists JDBC-based clients supported by Trafodion.
+[cols="30%,70%",options="header"]
 |===
 | Client Name | Description
-| Trafodion ODBC Driver for Windows | A driver that enables applications, which were developed for the Microsoft Open Database Connectivity (ODBC) application programming
-interface (API) and which run on a Windows workstation, to connect to a Trafodion database.
-| Trafodion ODBC Driver for Linux | A driver that enables applications, which were developed for the Microsoft ODBC API and run on a Linux workstation, to connect to a
-Trafodion database.
-| Trafodion JDBC Type 4 Driver | A driver that enables Java applications that run on a client workstation to connect to a Trafodion database.
-
-NOTE: The Trafodion Command Interface (TrafCI), DbVisualizer, and SQuirreL SQL Client require this driver to be installed on the client
+| *Trafodion JDBC Type 4 Driver* | A driver that enables Java applications that run on a client workstation to connect to a Trafodion database. +
+ +
+*NOTE:* The Trafodion Command Interface (TrafCI), DbVisualizer, and SQuirreL SQL Client require this driver to be installed on the client
 workstation.
-| Trafodion Command Interface (TrafCI) | A command-line interface that allows you to connect to a Trafodion database and run SQL statements and other commands interactively or from
-script files. For more information, see the http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
-| Trafodion odb tool | A multi-threaded, ODBC-based command-line tool for parallel data loading and extracting. For more information, see the
-http://trafodion.incubator.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
-| DbVisualizer | A third-party database tool that allows you to connect to a Trafodion database. For more information, see the http://www.dbvis.com/[_DbVisualizer website_].
-| SQuirreL SQL Client | A third-party database tool that allows you to connect to a Trafodion database. For more information, see the 
-http://squirrel-sql.sourceforge.net/[_SQuirreL SQL Client website_].
+| *Trafodion Command Interface (TrafCI)* | A command-line interface that allows you to connect to a Trafodion database and run SQL statements and other commands interactively or from
+script files. For more information, see the http://trafodion.incubator.apache.org/docs/command_interface/index.html[Trafodion Command Interface Guide].
+| *DbVisualizer* | A third-party database tool that allows you to connect to a Trafodion database. For more information, see the http://www.dbvis.com/[DbVisualizer website].
+| *SQuirreL SQL Client* | A third-party database tool that allows you to connect to a Trafodion database. For more information, see the 
+http://squirrel-sql.sourceforge.net/[SQuirreL SQL Client website].
 |===
+
+=== ODBC-Based Clients
+
+The following table lists ODBC-based clients supported by Trafodion.
+[cols="30%,70%",options="header"]
+|===
+| Client Name | Description
+| *Trafodion ODBC Driver for Linux* | A driver that enables applications, which were developed for the Microsoft ODBC API and run on a Linux workstation, to connect to a
+Trafodion database.
+| *Trafodion ODBC Driver for Windows* | *[Not included in this release]*^1^ +
+ +
+A driver that enables applications, which were developed for the Microsoft Open Database Connectivity (ODBC) application programming
+interface (API) and which run on a Windows workstation, to connect to a Trafodion database.
+| *Trafodion odb tool* | A multi-threaded, ODBC-based command-line tool for parallel data loading and extracting. For more information, see the
+http://trafodion.incubator.apache.org/docs/odb_user/index.html[Trafodion odb User Guide].
+|===
+
+^1^ License issues prevent us from including the ODBC Driver for Windows in this release. Contact the
+Trafodion user e-mail list (user@trafodion.incubator.apache.org) for help obtaining the driver.
+
+<<<
+[[introduction-download]]
+== Download Installation Package
+The Trafodion client software is available from the http://http://trafodion.apache.org/download.html[Trafodion Download] page. There is one
+`Trafodion Clients` package per release listed under *<version> Binaries*.
+
+The `Trafodion Clients` package consists of a zipped tar file that contains the Trafodion Clients tar file. The Trafodion Client
+binaries are located in the Clients folder, which contains the following files:
+
+[cols="30%l,70%", options="header"]
+|===
+| File                             | Usage
+| odbc64_linux.tar.gz              | Trafodion odb tool.
+| TFODBC64-*.exe                   | *[Not included in this release]*^1^ Trafodion ODBC Driver for Windows.
+| TRAF_ODBC_Linux_Driver_64.tar.gz | Trafodion ODBC driver for Linux.
+| trafci.zip                       | The Trafodion command interpreter `trafci`.
+| JDBCT4.zip                       | Trafodion JDBC Type 4 Driver.
+|===
+
+^1^ License issues prevent us from including the ODBC Driver for Windows in this release. Contact the
+Trafodion user e-mail list (user@trafodion.incubator.apache.org) for help obtaining the driver.
+
+[[introduction-windows-download]]
+=== Windows Download
+
+Do the following:
+
+1.  Create a download folder on the client workstation. For example, `Trafodion Downloads`.
+
+2.  Open a Web browser and navigate to the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
+
+3.  Orient yourself to the binaries for the release you're installing.
+Click on the `Trafodion Clients` link to start downloading the Trafodion clients tar file to your workstation.
+
+4.  Place the `apache-trafodion-clients-*.tar.gz` file into the download folder.
+
+5.  Unpack the `apache-trafodion-clients-\*.tar.gz` file using an unzip program of your choice. This creates
+an `apache-trafodion-clients-*.tar` file.
+
+6. Unpack the `apache-trafodion-clients-*.tar` file using an unzip program of your choice. This creates
+the `clients` folder, which has the following content:
++
+```
+JDBCT4.zip odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
+```
++
+You use these files to install the different Trafodion clients.
+
+[[introduction-linux-download]]
+=== Linux Download
+
+Do the following:
+
+1. Create a download directory on the client workstation. For example, `$HOME/trafodion-downloads`.
+
+2. Open a Web browser and navigate to the Trafodion downloads site http://trafodion.incubator.apache.org/download.html.
+
+3.  Orient yourself to the binaries for the release you're installing.
+Right-click on the `Trafodion Clients` link and select *Copy link address*.
+
+4.  Go to the download directory on the client workstation and use `wget` to download the client package
+using the link address you copied in step 3 above.
+
+5.  Unpack the `apache-trafodion-clients-*.tar.gz` using `tar`.
++
+*Example*
++
+```
+$ mkdir $HOME/trafodion-downloads
+$ cd $HOME/trafodion-downloads
+$ wget <link to package>
+$ tar -xzf apache-trafodion-clients-1.3.0-incubating-bin.tar.gz
+$ cd clients
+$ ls
+JDBCT4.zip  odb64_linux.tar.gz  trafci.zip  TRAF_ODBC_Linux_Driver_64.tar.gz
+$
+```
++
+You use these files to install the different Trafodion clients.
+
 
 

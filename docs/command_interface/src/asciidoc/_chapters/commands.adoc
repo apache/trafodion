@@ -537,7 +537,7 @@ LOG OPTIONS      APPEND,CMDTEXT ON
 MARKUP           RAW
 PROMPT           SQL>
 SCHEMA           SEABASE
-SERVER           sqws135.houston.host.com:37800 
+SERVER           sqws135.houston.host.com:23400 
 SQLTERMINATOR    ;
 STATISTICS       OFF
 TIME             OFF
@@ -561,7 +561,7 @@ LOG              OFF
 MARKUP           RAW
 PROMPT           SQL>
 SCHEMA           SEABASE
-SERVER           sqws135.houston.host.com:37800 
+SERVER           sqws135.houston.host.com:23400 
 SQLTERMINATOR    ;
 STATISTICS       OFF
 TIME             OFF
@@ -3872,7 +3872,7 @@ LOG OPTIONS        APPEND,CMDTEXT ON
 MARKUP             RAW
 PROMPT             SQL> 
 SCHEMA             SEABASE
-SERVER             sqws135.houston.host.com:37800 
+SERVER             sqws135.houston.host.com:23400 
 SQLTERMINATOR      ;
 STATISTICS         OFF
 TIME               OFF
@@ -3893,7 +3893,7 @@ LOG                OFF
 MARKUP             RAW
 PROMPT             SQL> 
 SCHEMA             SEABASE
-SERVER             sqws135.houston.host.com:37800 
+SERVER             sqws135.houston.host.com:23400 
 SQLTERMINATOR      ;
 STATISTICS         OFF
 TIME               OFF
