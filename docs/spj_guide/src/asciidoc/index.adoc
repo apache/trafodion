@@ -32,6 +32,7 @@
 :experimental:
 :source-language: text
 :revnumber: {project-version}
+// :title-logo-image: {project-logo}
 :title-logo-image: ../../../shared/trafodion-logo.jpg
 
 :images: ../images
@@ -61,18 +62,17 @@ U.S. registered trademarks of Microsoft Corporation. Intel® and Intel®
 Itanium® are trademarks of Intel Corporation in the U.S. and other
 countries. Java® is a registered trademark of Oracle and/or its
 affiliates. Motif, OSF/1, UNIX®, X/Open®, and the X device is a
-trademark of X/Open Company Ltd. in the UK and other countries. OSF,
-OSF/1, OSF/Motif, Motif, and Open Software Foundation are trademarks of
-the Open Software Foundation in the U.S. and other countries.
+trademark of X/Open Company Ltd. in the UK and other countries.
 
-© 1990, 1991, 1992, 1993 Open Software Foundation, Inc. The OSF
-documentation and the OSF software to which it relates are derived in
-part from materials supplied by the following: © 1987, 1988, 1989
-Carnegie-Mellon University. © 1989, 1990, 1991 Digital Equipment
-Corporation.
+OSF, OSF/1, OSF/Motif, Motif, and Open Software Foundation are trademarks of
+the Open Software Foundation in the U.S. and other countries.
+© 1990, 1991, 1992, 1993 Open Software Foundation, Inc.
 
 <<<
-© 1985, 1988, 1989, 1990 Encore Computer Corporation. © 1988 Free
+The OSF documentation and the OSF software to which it relates are derived in
+part from materials supplied by the following: © 1987, 1988, 1989
+Carnegie-Mellon University. © 1989, 1990, 1991 Digital Equipment
+Corporation. © 1985, 1988, 1989, 1990 Encore Computer Corporation. © 1988 Free
 Software Foundation, Inc. © 1987, 1988, 1989, 1990, 1991 Hewlett-Packard
 Company. © 1985, 1987, 1988, 1989, 1990, 1991, 1992 International
 Business Machines Corporation. © 1988, 1989 Massachusetts Institute of
@@ -108,6 +108,13 @@ include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
 include::asciidoc/_chapters/get_started.adoc[]
 include::asciidoc/_chapters/develop_spjs.adoc[]
+include::asciidoc/_chapters/deploy_spjs.adoc[]
+include::asciidoc/_chapters/create_spjs.adoc[]
+include::asciidoc/_chapters/grant_privileges.adoc[]
 include::asciidoc/_chapters/execute_spjs.adoc[]
+include::asciidoc/_chapters/performance_troubleshooting.adoc[]
+include::asciidoc/_chapters/sample_spjs.adoc[]
+include::asciidoc/_chapters/sample_database.adoc[]
+
 
 

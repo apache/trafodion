@@ -24,7 +24,7 @@
 ////
 
 = About This Document
-This guide describes how to develop, deploy, and manage Stored Procedures in Java (SPJs) on the Trafodion database.
+This guide describes how to develop, deploy, and manage Stored Procedures in Java (SPJs) on the {project-name} database.
 
 == Intended Audience
 This manual is intended for application programmers who are writing and compiling Java code for stored procedures
@@ -50,7 +50,7 @@ and lists steps for developing and deploying SPJs on Trafodion.
 | *<<get-started, Get Started>>*                       | Describes the software requirements for using SPJs on the Trafodion database.
 | *<<develop-spj-methods, Develop SPJ Methods>>*       | Provides guidelines for writing and compiling a Java method to be used as the
 body of a stored procedure.
-| *<<xeploy-spj-jar-files, Deploy SPJ JAR Files>>*     | Explains how to deploy SPJ JAR files on the Trafodion database.
+| *<<deploy-spj-jar-files, Deploy SPJ JAR Files>>*     | Explains how to deploy SPJ JAR files on the Trafodion database.
 | *<<create-spjs, Create SPJs>>*                       | Explains how to create, drop, and alter an SPJ on the Trafodion database.            
 | *<<grant-privileges, Grant Privileges>>*             | Explains how to grant and revoke privileges for executing SPJs on the
 Trafodion database.

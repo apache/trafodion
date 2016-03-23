@@ -184,6 +184,8 @@
                 <!-- Location of centralized stylesheet -->
                 <stylesheet>${basedir}/../shared/trafodion-manuals.css</stylesheet>
                 <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>${env.PROJECT_NAME}</project-name>
+                <project-logo>${env.PROJECT_LOGO}</project-logo>
                 <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
@@ -209,6 +211,8 @@
                 <idprefix/>
                 <idseparator>-</idseparator>
                 <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>${env.PROJECT_NAME}</project-name>
+                <project-logo>${env.PROJECT_LOGO}</project-logo>
                 <build-date>${maven.build.timestamp}</build-date>
               </attributes>
             </configuration>

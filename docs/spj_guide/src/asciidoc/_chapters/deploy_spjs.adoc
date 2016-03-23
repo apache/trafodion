@@ -20,7 +20,7 @@
  */
 ////
 
-[[Deploy-spj-jar-files]]
+[[deploy-spj-jar-files]]
 = Deploy SPJ JAR Files
 
 After developing and packaging the SPJ code into JAR files, you must
@@ -40,7 +40,7 @@ to deploy JAR files.
 See these instructions:
 
 * <<create-a-library, Create a Library>>
-* <alter-a-library, Alter a Library>>
+* <<alter-a-library, Alter a Library>>
 * <<drop-a-library, Drop a Library>>
 * <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
 * <<display-libraries-and-their-properties, Display Libraries and Their Properties>>
@@ -56,7 +56,7 @@ library, and you must have the required privileges for creating
 libraries in order to deploy a JAR file. To create a library in a
 schema, you must have both the CREATE_LIBRARY component privilege and
 the CREATE_LIBRARY schema-level privilege for the schema. For more
-information, see the requirements in <create-a-library, Create a Library>>.
+information, see the requirements in <<create-a-library, Create a Library>>.
 
 To alter a library in a schema, you must have both the UPDATE privilege
 for the library and the ALTER_LIBRARY privilege for the schema. For more
@@ -94,8 +94,8 @@ library or have the CREATE_LIBRARY privilege for the schema to create
 the library. The schema owner can grant such a schema-level privilege to
 other users or roles. For more information, see the
 
-Grant/Revoke Privileges Tool in HPDM or the GRANT SCHEMA statement in
-the __Trafodion SQL Reference Manual__.
+Grant/Revoke Privileges Tool in HPDM or the GRANT SCHEMA statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
 
 * The JAR file that you select for the library must contain valid Java
 bytecode and must not be used by another library in the catalog.
@@ -103,10 +103,8 @@ bytecode and must not be used by another library in the catalog.
 threshold if one has been set for HPDM's internal WMS service, the data
 source, or the system defaults.
 
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
-
-has been set for the HPS_MANAGEABILITY service, it will limit the size
+For example, if the CONTROL QUERY DEFAULT (CQD) `POS_ABSOLUTE_MAX_TABLE_SIZE`
+has been set for the `HPS_MANAGEABILITY` service, it limits the size
 of JAR files that can be uploaded by HPDM. If the JAR file's size
 exceeds the threshold, a warning message is displayed, and the file is
 not uploaded. By default, this CQD is not set for HPDM's internal WMS
@@ -120,47 +118,45 @@ To upload a JAR file and create a library for the JAR file in a schema:
 of the schema where you want to create the library.
 3.  Right-click the Libraries folder, and select Create Library. The
 Create Library dialog box appears. For more information, see
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)].
+<<use-the-create-library-dialog-box, Use the Create Library Dialog Box>>.
 4.  In the Create Library dialog box, enter a name for the library.
-
++
 The name must be unique among the libraries in the schema and must not
-exceed 128 characters. The library name is not case-sensitive. For
-example, if you enter Payroll as the library name, the database engine
-stores the library as
-
-__catalog-name__.__schema-name__.PAYROLL. The database engine
+exceed 128 characters. The library name is not case-sensitive.
++
+For example, if you enter `Payroll` as the library name, the database engine
+stores the library as `_catalog-name_._schema-name_.PAYROLL`. The database engine
 automatically qualifies the library name with the name of the catalog
 and schema in which you are creating the library.
 
-1.  Click the [ Browse ] button to locate and select a JAR file on the
-client workstation. The "Select a code file" dialog box appears.
-2.  In the "Select a code file" dialog box, locate and select the JAR
+5.  Click the [ Browse ] button to locate and select a JAR file on the
+client workstation. The *Select a code file* dialog box appears.
+
+6.  In the *Select a code file* dialog box, locate and select the JAR
 file on the client workstation, and click [ Open ] to return to the
 Create Library dialog box. The Create Library dialog box displays the
 full path of the JAR file in the Code File field.
-3.  Click [ Create ] to create the library, or click [ Close ] to quit
-the dialog box without creating the library.
 
+7.  Click [ Create ] to create the library, or click [ Close ] to quit
+the dialog box without creating the library.
++
 If you click [ Create ], HPDM validates the JAR file, uploads the JAR
 file, and creates a library for the JAR file in the schema.
 
-1.  When notified that the library was created successfully, click [ OK
-].
-2.  To upload another JAR file and create a library, repeat steps 4
+8.  When notified that the library was created successfully, click [ OK ].
+9.  To upload another JAR file and create a library, repeat steps 4
 through 8.
-3.  When you are done uploading JAR files and creating libraries, click
-the [ Close ] button image:media/image4.png[image]) to quit the Create
+10.  When you are done uploading JAR files and creating libraries, click
+the [ Close ] button to quit the Create
 Library dialog box and return to the HPDM main window.
 
-Related Topics
+*Related Topics*
 
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)]
-link:#_bookmark100["Alter a Library" (page 32)]
-
-link:#_bookmark105["Drop a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+* <<use-the-create-library-dialog-box, Use the Create Library Dialog Box>>
+* <<alter-a-library, Alter a Library>>
+* <<drop-a-library, Drop a Library>>
+* <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
+* <<display-libraries-and-their-properties, Display Libraries and Their Properties>>
 
 [[use-the-create-library-dialog-box]]
 == Use the Create Library Dialog Box
@@ -174,98 +170,83 @@ Requirements:
 * You must have the CREATE_LIBRARY privilege for the SQL_OPERATIONS
 component. For more information, see the component privileges in the _HP
 Database Manager (HPDM) User Guide_ or the online help in HPDM.
+
 * You must either be the owner of the schema where you will create the
 library or have the CREATE_LIBRARY privilege for the schema to create
 the library. The schema owner can grant such a schema-level privilege to
 other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
+Privileges Tool in HPDM or the GRANT SCHEMA statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+
 * The JAR file that you select for the library must contain valid Java
 bytecode and must not be used by another library in the catalog.
+
 * The JAR file that you select for the library must not exceed a size
 threshold if one has been set for HPDM's internal WMS service, the data
 source, or the system defaults.
 
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
-
+For example, if the CONTROL QUERY DEFAULT (CQD) `POS_ABSOLUTE_MAX_TABLE_SIZE`
 has been set for the HPS_MANAGEABILITY service, it will limit the size
-of JAR files that can be uploaded by HPDM. If the JAR file's size
-exceeds the threshold, a warning message is displayed, and the file is
-not uploaded. By default, this CQD is not set for HPDM's internal WMS
+of JAR files that can be uploaded by HPDM.
+
+If the JAR file's size exceeds the threshold, then a warning message is displayed,
+and the file is not uploaded. By default, this CQD is not set for HPDM's internal WMS
 service, the data source, or the system defaults, and HPDM allows you to
 upload JAR files of any size.
 
-[cols=",,",options="header",]
+[cols="20%,30%,50%",options="header",]
 |===
-[[group-box]]
-Group Box
-Control or Field
-Description or Action
-Library
-Catalog
-Name of the catalog where the library will be created. This is a
-read-only field.
-Schema
-Name of the schema where the library will be created. This is a
-read-only field.
-Library Name
-Enter a name for the library. The name must be unique among the
-libraries in the schema and must not exceed 128 characters. The library
-name is not case-sensitive. For example, if you enter Payroll as the
-library name, the database engine stores the library as
-
-__catalog-name__.__schema-name__.PAYROLL. The database engine
-automatically qualifies the library name with the name of the catalog
-and schema in which you are creating the library.
-Code File
-Code File
-Click [ Browse ] to launch the "Select a code file" dialog box and
+| Group Box    | Control or Field | Description or Action
+| *Library*    | Catalog          | Name of the catalog where the library is created. This is a read-only field.
+|              | Schema           | Name of the schema where the library is created. This is a read-only field.
+|              | Library Name     | Enter a name for the library. The name must be unique among the  libraries
+in the schema and must not exceed 128 characters. The library name is not case-sensitive. +
+ +
+For example, if you enter Payroll as the library name, the database engine stores the library as
+`_catalog-name_._schema-name_.PAYROLL`. The database engine automatically qualifies the library name with the
+name of the catalog and schema in which you are creating the library.
+| *Code File* | Code File         | Click [ Browse ] to launch the *Select a code file* dialog box and
 navigate to a JAR file on the client workstation.
-[ Create ]
-Creates the library.
-[ Close ]
-Closes the dialog box without creating a library.
-[ Help ]
-Displays context-sensitive help for this dialog box.
+|             | [ Create ]        | Creates the library.
+|             | [ Close ]         | Closes the dialog box without creating a library.
+|             | [ Help ]          | Displays context-sensitive help for this dialog box.
 |===
 
-[[related-topics]]
-Related Topics
+*Related Topics*
 
-link:#_bookmark95["Create a Library" (page 29)]
-link:#_bookmark100["Alter a Library" (page 32)] link:#_bookmark105["Drop
-a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
+* <<create-a-library, Create a Library>>
+* <<alter-a-library, Alter a Library>>
+* <<drop-a-library, Drop a Library>>
+* <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
 
 [[alter-a-library]]
 == Alter a Library
 
-When you alter a library, you can change the underlying JAR file of the
-library.
+When you alter a library, you can change the underlying JAR file of the library.
 
 Requirements:
 
 * You must have been granted the UPDATE privilege for the library. For
 more information, see the Grant/Revoke Privileges Tool in HPDM or the
-GRANT LIBRARY statement in the __Trafodion SQL Reference Manual__.
-* You must either be the owner of the schema where you will alter the
+GRANT LIBRARY statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+
+* You must either be the owner of the schema where you're altering the
 library or have the ALTER_LIBRARY privilege for the schema to alter the
 library. The schema owner can grant such a schema-level privilege to
 other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
+Privileges Tool in HPDM or the GRANT SCHEMA statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+
 * The JAR file that you select for the library must contain valid Java
 bytecode and must not be used by another library in the catalog.
+
 * The JAR file that you select for the library must not exceed a size
 threshold if one has been set for HPDM's internal WMS service, the data
 source, or the system defaults.
 
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
-
-has been set for the HPS_MANAGEABILITY service, it will limit the size
+For example, if the CONTROL QUERY DEFAULT (CQD) `POS_ABSOLUTE_MAX_TABLE_SIZE`
+has been set for the HPS_MANAGEABILITY service, then it limits the size
 of JAR files that can be uploaded by HPDM. If the JAR file's size
 exceeds the threshold, a warning message is displayed, and the file is
 not uploaded. By default, this CQD is not set for HPDM's internal WMS
@@ -282,18 +263,20 @@ to display the libraries within it.
 you selected a system library, a dialog box appears warning you that you
 cannot alter a system library. If you selected a user library, the Alter
 Library dialog box appears. For more information, see
-link:#_bookmark103["Use the Alter] link:#_bookmark103[Library Dialog
-Box" (page 33)].
+<<use-the-alter-library-dialog-box, Use the Alter Library Dialog Box>>.
+
 4.  In the Alter Library dialog box, click the [ Browse ] button to
-locate and select a new JAR file on the client workstation. The "Select
-a code file" dialog box appears.
-5.  In the "Select a code file" dialog box, locate and select the JAR
+locate and select a new JAR file on the client workstation. The *Select
+a code file* dialog box appears.
+
+5.  In the *Select a code file* dialog box, locate and select the JAR
 file on the client workstation, and click [ Open ] to return to the
 Alter Library dialog box. The Alter Library dialog box displays the full
 path of the new JAR file in the Code File field.
+
 6.  Click [ Alter ] to alter the library, or click [ Close ] to quit the
 dialog box without altering the library.
-
++
 If you click [ Alter ], a dialog box appears warning you that altering a
 library might affect stored procedures that use the library and asking
 if you wish to continue the alter operation. Click [ Yes ] to proceed,
@@ -301,19 +284,17 @@ or click [ No ] to cancel the operation. If you click [ Yes ], HPDM
 validates the JAR file, uploads the JAR file, and alters the library in
 the schema.
 
-1.  When notified that the library was altered successfully, click [ OK
-] to close the Alter Library dialog box and return to the HPDM main
+7.  When notified that the library was altered successfully, click
+[ OK ] to close the Alter Library dialog box and return to the HPDM main
 window.
 
-Related Topics
+*Related Topics*
 
-link:#_bookmark103["Use the Alter Library Dialog Box" (page 33)]
-link:#_bookmark95["Create a Library" (page 29)]
-
-link:#_bookmark105["Drop a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+* <<use-the-alter-library-dialog-box, Use the Alter Library Dialog Box>>
+* <<create-a-library, Create a Library>>
+* <<drop-a-library, Drop a Library>>
+* <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
+* <<display-libraries-and-their-properties, Display Libraries and Their Properties>>
 
 [[use-the-alter-library-dialog-box]]
 == Use the Alter Library Dialog Box
@@ -325,65 +306,53 @@ Requirements:
 
 * You must have been granted the UPDATE privilege for the library. For
 more information, see the Grant/Revoke Privileges Tool in HPDM or the
-GRANT LIBRARY statement in the __Trafodion SQL Reference Manual__.
+GRANT LIBRARY statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+
 * You must either be the owner of the schema where you will alter the
 library or have the ALTER_LIBRARY privilege for the schema to alter the
 library. The schema owner can grant such a schema-level privilege to
 other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
+Privileges Tool in HPDM or the GRANT SCHEMA statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+
 * The JAR file that you select for the library must contain valid Java
 bytecode and must not be used by another library in the catalog.
+
 * The JAR file that you select for the library must not exceed a size
 threshold if one has been set for HPDM's internal WMS service, the data
 source, or the system defaults.
-
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
-
-has been set for the HPS_MANAGEABILITY service, it will limit the size
++
+For example, if the CONTROL QUERY DEFAULT (CQD) `POS_ABSOLUTE_MAX_TABLE_SIZE`
+has been set for the HPS_MANAGEABILITY service, then it limits the size
 of JAR files that can be uploaded by HPDM. If the JAR file's size
 exceeds the threshold, a warning message is displayed, and the file is
-not uploaded. By default, this CQD is not set for HPDM's internal WMS
+not uploaded.
++
+By default, this CQD is not set for HPDM's internal WMS
 service, the data source, or the system defaults, and HPDM allows you to
 upload JAR files of any size.
 
 
-[cols=",,",options="header",]
+[cols="20%,30%,50%",options="header",]
 |===
-[[group-box]]
-Group Box
-Control or Field
-Description or Action
-Library
-Catalog
-Name of the catalog where the library will be created. This is a
-read-only field.
-Schema
-Name of the schema where the library will be created. This is a
-read-only field.
-Library Name
-Name of the library. This is a read-only field.
-Code File
-Code File
-Click [ Browse ] to launch the "Select a code file" dialog box and
+| Group Box   | Control or Field | Description or Action
+| *Library*   | Catalog          | Name of the catalog where the library is created. This is a read-only field.
+|             | Schema           | Name of the schema where the library is created. This is a read-only field.
+|             | Library Name     | Name of the library. This is a read-only field.
+| *Code File* | Code File        | Click [ Browse ] to launch the "Select a code file" dialog box and
 navigate to a new JAR file on the client workstation.
-[ Alter ]
-Alters the library.
-[ Close ]
-Closes the dialog box without altering the library.
-[ Help ]
-Displays context-sensitive help for this dialog box.
+|             | [ Alter ]        | Alters the library.
+|             | [ Close ]        | Closes the dialog box without altering the library.
+|             | [ Help ]         | Displays context-sensitive help for this dialog box.
 |===
 
-[[related-topics]]
 Related Topics
 
-link:#_bookmark100["Alter a Library" (page 32)]
-link:#_bookmark95["Create a Library" (page 29)] link:#_bookmark105["Drop
-a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
+* <<alter-a-library, Alter a Library>>
+* <<create-a-library, Create a Library>>
+* <<drop-a-library, Drop a Library>>
+* <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
 
 [[drop-a-library]]
 == Drop a Library
@@ -398,8 +367,8 @@ Requirements:
 library or have the DROP_LIBRARY privilege for the schema to drop the
 library. The schema owner can grant such a schema-level privilege to
 other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
+Privileges Tool in HPDM or the GRANT SCHEMA statement in the
+http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
 
 To drop a library from the database:
 
@@ -417,13 +386,12 @@ fail with an error message.
 5.  Click [ Yes ] to drop the library, or click [ No ] to quit the
 dialog box without dropping the library.
 
-Related Topics
+*Related Topics*
 
-link:#_bookmark95["Create a Library" (page 29)]
-link:#_bookmark100["Alter a Library" (page 32)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+* <<create-a-library, Create a Library>>
+* <<alter-a-library, Alter a Library>>
+* <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
+* <<display-libraries-and-their-properties, Display Libraries and Their Properties>>
 
 [[download-a-jar-file-from-a-library]]
 == Download a JAR File From a Library
@@ -437,32 +405,36 @@ Database Manager (HPDM) User Guide_ or the online help in HPDM.
 To download a JAR file from a library:
 
 1.  In HPDM, select the Database area.
+
 2.  In the navigation tree pane, expand the tree to display the folders
 of the schema that contains the library, and expand the Libraries folder
 to display the libraries within it.
+
 3.  Right-click the name of the library, and select Browse Library. The
 Browse Library dialog box appears with the name of the library selected
 in the tree pane and displayed in the right pane. For more information,
-see link:#_bookmark109["Use the Library Browser" (page 35)].
-4.  Click the [ Download ] button. The Browse For Folder dialog box
+see <<use-the-library-browser, Use the Library Browser>>.
+
+4.  Click the [ Download ] button. The *Browse For Folder* dialog box
 appears.
-5.  In the Browse For Folder dialog box, select a target folder on the
+
+5.  In the *Browse For Folder* dialog box, select a target folder on the
 client workstation for downloading the JAR file.
+
 6.  Click [ OK ] to start downloading the library's underlying JAR file
 to the client workstation, or click [ Cancel ] to quit the Browse For
 Folder dialog box and return to the Browse Library dialog box.
+
 7.  When notified that the download completed successfully, click [ OK ]
 to return to the Browse Library dialog box.
 
-Related Topics
+*Related Topics*
 
-link:#_bookmark109["Use the Library Browser" (page 35)]
-link:#_bookmark95["Create a Library" (page 29)]
-
-link:#_bookmark100["Alter a Library" (page 32)] link:#_bookmark105["Drop
-a Library" (page 33)]
-
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+* <<use-the-library-browser, Use the Library Browser>>
+* <<create-a-library, Create a Library>>
+* <<alter-a-library, Alter a Library>>
+* <<drop-a-library, Drop a Library>>
+* <<display-libraries-and-their-properties, Display Libraries and Their Properties>>
 
 [[use-the-library-browser]]
 == Use the Library Browser
@@ -471,70 +443,7 @@ Depending on the context in which the Library Browser is launched, you
 can use it to view, create, or drop libraries in the database; to
 download a JAR file from a library in the database to the client
 workstation; or to select a Java method in a library when creating a
-stored procedure. The Library Browser consists of these main parts:
-
-image:media/image5.jpeg[image]
-
-Use these buttons to perform various library management tasks:
-
-Button Function
-
-[ Create ]
-
-Launches the Create Library dialog box so that you can create a library
-in the database. In the navigation tree pane, select a schema name or
-the Libraries folder to activate this button. For more information, see
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)].
-
-[ Drop ]
-
-Launches the Drop Library dialog box so that you can delete a library
-from the database. In the navigation tree pane, select the name of a
-library to activate this button. For more information, see
-link:#_bookmark105["Drop a Library" (page 33)].
-
-[ Download ]
-
-[ Refresh ]
-
-Launches the Browse For Folder dialog box so that you can select a
-folder on the client workstation for downloading a library's underlying
-JAR file. In the navigation tree pane, select the name of a library to
-activate this button. For more information, see
-link:#_bookmark107["Download] link:#_bookmark107[a JAR File From a
-Library" (page 34)].
-
-Refreshes the data grid with the latest metadata.
-
-[ OK ]
-
-[ Close ]
-
-Accepts your selected Java method for the stored procedure that you are
-creating, closes the Library Browser, and returns to the Create
-Procedure dialog box. This button appears only if you launched the
-Library Browser from the Create Procedure tool. It is activated after
-you select a Java class name in the navigation tree pane and then select
-a Java method name in the data grid. For more information, see
-link:#_bookmark116["Create a Procedure" (page 37)] or
-link:#_bookmark120["Use] link:#_bookmark120[the Create Procedure Dialog
-Box" (page 39)].
-
-Closes the Library Browser.
-
-[ Help ] Displays context-sensitive help for the Library Browser.
-
-Related Topics
-
-link:#_bookmark95["Create a Library" (page 29)]
-
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)]
-link:#_bookmark105["Drop a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark116["Create a Procedure" (page 37)]
-
-link:#_bookmark120["Use the Create Procedure Dialog Box" (page 39)]
+stored procedure.
 
 [[display-libraries-and-their-properties]]
 == Display Libraries and Their Properties
@@ -549,9 +458,4 @@ so that you can see the object folders underneath it.
 name, or open the Libraries
 folder and select a library name in the tree. HPDM displays the
 libraries for this schema.
-
-image:media/image6.jpeg[image]
-
-For more information about the library properties displayed in HPDM, see
-the _HP Database Manager (HPDM) User Guide_ or the online help in HPDM.
 
