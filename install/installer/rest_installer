@@ -44,7 +44,7 @@ EOF
 # Default parameters
 typeset REST_BUILD_FILE=""
 typeset REST_INSTALL_PATH="$MY_SQROOT"
-
+typeset TRAF_CONFIG="/etc/trafodion/trafodion_config"
 # Parse input parameters
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -76,7 +76,9 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+source 
 echo "***INFO: Start of REST Server install"
+source $TRAF_CONFIG
 
 # Make sure required env vars have been set first
 if [[ -z "$MY_SQROOT" ]]; then
