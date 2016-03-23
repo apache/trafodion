@@ -61,7 +61,7 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile,
-   bool ifExists,
+//   bool ifExists,
    bool ddlXns);
    
 static bool transferObjectPrivs(
@@ -553,7 +553,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        dirtiedMetadata = TRUE;
        if (dropOneTable(cliInterface,(char*)catName.data(),
                         (char*)schName.data(),(char*)objName.data(),
-                        isVolatile, FALSE,dropSchemaNode->ddlXns()))
+                        isVolatile ,dropSchemaNode->ddlXns()))
           someObjectsCouldNotBeDropped = true;
      }
    }
@@ -679,7 +679,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 	       dirtiedMetadata = TRUE;
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
 				(char*)schName.data(),(char*)objName.data(),
-				isVolatile, FALSE,dropSchemaNode->ddlXns()))
+				isVolatile, dropSchemaNode->ddlXns()))
 		 someObjectsCouldNotBeDropped = true;
 	     }
 	 } 
@@ -709,7 +709,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 	       // happen to have the same name patterns.
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
 				(char*)schName.data(),(char*)objName.data(),
-				isVolatile,TRUE, dropSchemaNode->ddlXns()))
+				isVolatile, dropSchemaNode->ddlXns()))
 		 someObjectsCouldNotBeDropped = true;
 	     }
 	 } 
@@ -1221,7 +1221,7 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile,
-   bool ifExists,
+//   bool ifExists,
    bool ddlXns)
    
 {
@@ -1239,8 +1239,8 @@ Lng32 cliRC = 0;
    if (isVolatile)
       strcpy(volatileString,"VOLATILE");
 
-   if (ifExists)
-     strcpy(ifExistsString,"IF EXISTS");
+//   if (ifExists)
+//     strcpy(ifExistsString,"IF EXISTS");
 
    if (ComIsTrafodionExternalSchemaName(schemaName))
      str_sprintf(buf,"DROP EXTERNAL TABLE \"%s\" FOR \"%s\".\"%s\".\"%s\" CASCADE",
@@ -1266,8 +1266,8 @@ ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
    }
    
 // Restore parser flags settings to what they originally were
-   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
-   
+   Assign_SqlParser_Flags(savedParserFlags); 
+
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;
    
