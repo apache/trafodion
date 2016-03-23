@@ -56,7 +56,7 @@ if [ $HADOOP_TYPE == "cloudera" ]; then
 
    for id in $HADOOP_IDS
    do
-      hasHBase=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "serviceName" | grep hbase | wc -l)
+      hasHBase=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "serviceName" | grep -i hbase | wc -l)
       if [[ "$hasHBase" -ge "1" ]]; then
          name=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "hostname")
          hostName=$(echo $name | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
@@ -64,7 +64,7 @@ if [ $HADOOP_TYPE == "cloudera" ]; then
          MY_HBASE_NODES="$MY_HBASE_NODES -w $hostName"
       fi
       
-      hasHDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "serviceName" | grep hdfs | wc -l)
+      hasHDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "serviceName" | grep -i hdfs | wc -l)
       if [[ "$hasHDFS" -ge "1" ]]; then
          name=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v10/hosts/$id | grep "hostname")
          hostName=$(echo $name | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
@@ -72,22 +72,25 @@ if [ $HADOOP_TYPE == "cloudera" ]; then
          MY_HDFS_NODES="$MY_HDFS_NODES -w $hostName"
       fi 
    done
+
+   HADOOP_NODES=""
+   MY_HADOOP_NODES=""
+   while read line
+   do
+      hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+      HADOOP_NODES="$HADOOP_NODES $hostName"
+      MY_HADOOP_NODES="$MY_HADOOP_NODES -w $hostName"
+   done < tempFile2
+   rm tempFile
+   rm tempFile2
 fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
-   curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services/HDFS > tempFileHDFS
-   curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services/HBASE > tempFileHBase
    curlRC=$?
    numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
    grep -r "host_name" tempFile > tempFile2
       
-   numberHadoopNodes=$(grep -r "host_name" tempFileHDFS | wc -l)
-   grep -r "host_name" tempFileHDFS > tempFileHDFS2
-
-   numberHadoopNodes=$(grep -r "host_name" tempFileHBase | wc -l)
-   grep -r "host_name" tempFileHBase > tempFileHBase2
- 
    if [ -d /usr/lib/hbase/lib ]; then
       HADOOP_PATH="/usr/lib/hbase/lib"
    else
@@ -97,39 +100,35 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
 
    HDFS_NODES=""
    MY_HDFS_NODES=""
-   while read line
-   do
-      hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
-      if [[ "$HDFS_NODES" != *"$hostName"* ]] && [[ "$hostName" != "null" ]]; then
-         HDFS_NODES="$HDFS_NODES $hostName"
-         MY_HDFS_NODES="$MY_HDFS_NODES -w $hostName"
-      fi
-   done < tempFileHDFS2
-
-   if [[ -z $HDFS_NODES ]]; then
-      echo "***ERROR: List of HDFS nodes not found."
-      echo "***ERROR: Check that $HADOOP_TYPE is up and running."
-      exit -1
-   fi
-
-   echo "***INFO: $HADOOP_TYPE list of HDFS nodes: $HDFS_NODES"
-
    HBASE_NODES=""
    MY_HBASE_NODES=""
+   
+   HADOOP_NODES=""
+   MY_HADOOP_NODES=""
    while read line
    do
-      hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
-      if [[ "$HBASE_NODES" != *"$hostName"* ]] && [[ "$hostName" != "null" ]]; then
-         HBASE_NODES="$HBASE_NODES $hostName"
-         MY_HBASE_NODES="$MY_HBASE_NODES -w $hostName"
-      fi
-   done < tempFileHBase2
+      hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\,//g')
+      HADOOP_NODES="$HADOOP_NODES $hostName"
+      MY_HADOOP_NODES="$MY_HADOOP_NODES -w $hostName"
+   done < tempFile2
 
-   if [[ -z $HBASE_NODES ]]; then
-      echo "***ERROR: List of HBase nodes not found."
-      echo "***ERROR: Check that $HADOOP_TYPE is up and running."
-      exit -1
-   fi
+   for node in $HADOOP_NODES
+   do
+       hasHBase=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/hosts/$node | grep component_name| grep -i hbase | wc -l)
+       if [[ "$hasHBase" -ge "1" ]]; then
+          HBASE_NODES="$HBASE_NODES $node"
+          MY_HBASE_NODES="$MY_HBASE_NODES -w $node"
+       fi
+
+       hasHDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/hosts/$node | grep component_name | grep -i datanode | wc -l)
+       hasHDFS1=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/hosts/$node | grep component_name | grep -i namenode | wc -l)
+       
+       if [[ "$hasHDFS" -ge "1" ]] || [[ "$hasHDFS1" -ge "1" ]]; then
+          HDFS_NODES="$HDFS_NODES $node"
+          MY_HDFS_NODES="$MY_HDFS_NODES -w $node"
+       fi
+        
+   done
 fi
 
 if [ $curlRC != 0 ]; then
@@ -148,18 +147,6 @@ if [ $curl_error -ne 0 ]; then
    exit -1
 fi
 
-#Get list of all hadoop nodes
-HADOOP_NODES=""
-MY_HADOOP_NODES=""
-while read line
-do
-   hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
-   HADOOP_NODES="$HADOOP_NODES $hostName"
-   MY_HADOOP_NODES="$MY_HADOOP_NODES -w $hostName"
-done < tempFile2
-rm tempFile
-rm tempFile2
-
 if [[ -z $HADOOP_NODES ]]; then
    echo "***ERROR: List of $HADOOP_TYPE nodes not found."
    echo "***ERROR: Check that $HADOOP_TYPE is up and running."
@@ -168,6 +155,10 @@ if [[ -z $HADOOP_NODES ]]; then
 fi
 
 echo "***INFO: $HADOOP_TYPE list of nodes: $HADOOP_NODES"
+echo "***INFO: $HADOOP_TYPE list of HDFS nodes: $HDFS_NODES"
+echo "***INFO: $HADOOP_TYPE list of HBASE nodes: $HBASE_NODES"
+
+
 
 hadoop_node_count=$(echo $HADOOP_NODES | wc -w)
 
