@@ -215,7 +215,29 @@ public class SplitBalanceHelper {
     }
 
     protected boolean pendingListClear(Set<TrxTransactionState> commitPendingTransactions) throws IOException {
-        return commitPendingTransactions.isEmpty();
+        if (commitPendingTransactions.isEmpty()) {
+            if (LOG.isDebugEnabled())
+                LOG.debug("pendingListClear is true because commitPendingTransactions is empty " + hri.getRegionNameAsString());
+            return true;
+        } else {
+            // Check to see if all of the TrxTransaction state objects
+            // have dropTable Recorded, in which case the pending list is
+            // considered clear of pending list.
+            for (TrxTransactionState transactionState : commitPendingTransactions) {
+                // if even one transaction state does not have drop table recorded
+                // then pendingList is not yet clear.
+                if (!transactionState.dropTableRecorded()) {
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("pendingListClear is false commitPendingTransactions is not empty "
+                                + hri.getRegionNameAsString());
+                    return false;
+                }
+            }
+            // Reaching here means pendingListClear.
+            if (LOG.isDebugEnabled())
+                LOG.debug("pendingListClear is true because dropTableRecorded is true " + hri.getRegionNameAsString());
+            return true;
+        }
     }
 
     protected boolean scannersListClear(ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners) throws IOException {

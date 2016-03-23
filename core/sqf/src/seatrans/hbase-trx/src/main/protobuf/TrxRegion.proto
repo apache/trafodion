@@ -36,6 +36,7 @@ message AbortTransactionRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
   required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
 }
 
 message AbortTransactionResponse {
@@ -92,6 +93,7 @@ message CommitRequestRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
   required int32 participantNum = 3;
+  required bool dropTableRecorded = 4;
 }
 
 message CommitRequestResponse {

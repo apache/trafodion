@@ -151,11 +151,27 @@ public class TrxTransactionState extends TransactionState {
     private List<WriteAction> writeOrdering = Collections.synchronizedList(new LinkedList<WriteAction>());
     private Set<TrxTransactionState> transactionsToCheck = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
     private WALEdit e;
+    private boolean dropTableRecorded;
 
     public TrxTransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId,
             final HRegionInfo regionInfo, HTableDescriptor htd, WAL hLog, boolean logging) {
         super(transactionId, rLogStartSequenceId, hlogSeqId, regionInfo, htd, hLog, logging);
         this.e = new WALEdit();
+        dropTableRecorded = false;
+    }
+
+    public void setDropTableRecorded(boolean dropTableRecord) {
+        if (LOG.isTraceEnabled()) LOG.trace("setDropTableRecorded:" + dropTableRecord + " Region " + regionInfo.getRegionNameAsString());
+        dropTableRecorded = dropTableRecord;
+    }
+    
+    public void resetDropTableRecorded() {
+        if (LOG.isTraceEnabled()) LOG.trace("resetDropTableRecorded,  Region :" + regionInfo.getRegionNameAsString());
+        dropTableRecorded = false;
+    }
+    
+    public boolean dropTableRecorded() {
+        return dropTableRecorded;
     }
 
     public synchronized void addRead(final byte[] rowKey) {
@@ -330,6 +346,7 @@ public class TrxTransactionState extends TransactionState {
         clearDeletes();
         clearTags();
         clearWALEdit();
+        dropTableRecorded = false;
     }
 
     public void clearTransactionsToCheck() {

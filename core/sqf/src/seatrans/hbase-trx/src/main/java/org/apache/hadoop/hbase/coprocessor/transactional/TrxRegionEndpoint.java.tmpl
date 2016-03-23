@@ -427,8 +427,9 @@ CoprocessorService, Coprocessor {
     AbortTransactionResponse response = AbortTransactionResponse.getDefaultInstance();
 
     long transactionId = request.getTransactionId();
-
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abortTransaction - txId " + transactionId + ", regionName " + regionInfo.getRegionNameAsString());
+    boolean dropTableRecorded = request.getDropTableRecorded();
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abortTransaction - txId " + transactionId +
+             ", dropTableRecoded " + dropTableRecorded + ", regionName " + regionInfo.getRegionNameAsString());
 
     IOException ioe = null;
     UnknownTransactionException ute = null;
@@ -440,7 +441,7 @@ CoprocessorService, Coprocessor {
 
     // First test if this region matches our region name
     if (!name.equals(regionInfo.getRegionNameAsString())) {
-       wre = new WrongRegionException("Request Region Name, " +
+        wre = new WrongRegionException("Request Region Name, " +
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:abortTransaction threw WrongRegionException" +
@@ -452,7 +453,7 @@ CoprocessorService, Coprocessor {
     {
       // Process in local memory
       try {
-        abortTransaction(transactionId);
+        abortTransaction(transactionId, dropTableRecorded);
       } catch (UnknownTransactionException u) {
         if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " 
 					    + transactionId 
@@ -848,9 +849,11 @@ CoprocessorService, Coprocessor {
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
     int participantNum = request.getParticipantNum();
+    boolean dropTableRecorded = request.getDropTableRecorded();
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId "
-         + transactionId + ", participantNum " + participantNum + ", regionName " + regionInfo.getRegionNameAsString());
+         + transactionId + ", participantNum " + participantNum + ", dropTableRecorded " + dropTableRecorded + 
+         ", regionName " + regionInfo.getRegionNameAsString());
 
     /*  commenting out for the time being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
@@ -868,7 +871,7 @@ CoprocessorService, Coprocessor {
     {
       // Process local memory
       try {
-        status = commitRequest(transactionId, participantNum);
+        status = commitRequest(transactionId, participantNum, dropTableRecorded);
       } catch (UnknownTransactionException u) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
         ute = u;
@@ -5086,11 +5089,17 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
   public int commitRequest(final long transactionId, final int participantNum) throws IOException, UnknownTransactionException {
-     return commitRequest(transactionId, participantNum, true);
+     return commitRequest(transactionId, participantNum, true, false);
   }
 
-  public int commitRequest(final long transactionId, final int participantNum, boolean flushHLOG) throws IOException,
-                                                                               UnknownTransactionException {
+  public int commitRequest(final long transactionId, final int participantNum, final boolean dropTableRecorded)
+                                                    throws IOException, UnknownTransactionException {
+      return commitRequest(transactionId, participantNum, true, dropTableRecorded);
+  }
+  
+  public int commitRequest(final long transactionId, final int participantNum, boolean flushHLOG,
+                                                               boolean dropTableRecorded) throws IOException,
+                                                                                UnknownTransactionException {
     long txid = 0;
     String lv_regionName = new String(m_Region.getRegionInfo().getRegionNameAsString());
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: "
@@ -5170,6 +5179,7 @@ CoprocessorService, Coprocessor {
             putBySequenceOperations.getAndIncrement();
          }
          // Order is important
+         state.setDropTableRecorded(dropTableRecorded);
          state.setStatus(Status.COMMIT_PENDING);
          state.setCPEpoch(controlPointEpoch.get());
          commitPendingTransactions.add(state);
@@ -5368,6 +5378,10 @@ CoprocessorService, Coprocessor {
     return state.hasConflict();
   }
 
+  public void abortTransaction(final long transactionId) throws IOException, UnknownTransactionException {
+      abortTransaction(transactionId, false);
+  }
+
   /**
    * Abort the transaction.
    * 
@@ -5375,8 +5389,7 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    * @throws UnknownTransactionException
    */
-
-  public void abortTransaction(final long transactionId) throws IOException, UnknownTransactionException {
+  public void abortTransaction(final long transactionId, final boolean dropTableRecorded) throws IOException, UnknownTransactionException {
     long txid = 0;
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abort transactionId: " + transactionId + " " + m_Region.getRegionInfo().getRegionNameAsString());
@@ -5403,6 +5416,9 @@ CoprocessorService, Coprocessor {
         }
     state.setStatus(Status.ABORTED);
     }
+
+    if(dropTableRecorded)
+        state.resetDropTableRecorded();
 
     if (state.hasWrite()) {
     // TODO log

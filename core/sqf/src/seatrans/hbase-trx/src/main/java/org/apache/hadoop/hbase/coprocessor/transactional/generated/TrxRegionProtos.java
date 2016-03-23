@@ -61,6 +61,16 @@ public final class TrxRegionProtos {
      * <code>required int32 participantNum = 3;</code>
      */
     int getParticipantNum();
+
+    // required bool dropTableRecorded = 4;
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    boolean hasDropTableRecorded();
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    boolean getDropTableRecorded();
   }
   /**
    * Protobuf type {@code AbortTransactionRequest}
@@ -126,6 +136,11 @@ public final class TrxRegionProtos {
             case 24: {
               bitField0_ |= 0x00000004;
               participantNum_ = input.readInt32();
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              dropTableRecorded_ = input.readBool();
               break;
             }
           }
@@ -216,10 +231,27 @@ public final class TrxRegionProtos {
       return participantNum_;
     }
 
+    // required bool dropTableRecorded = 4;
+    public static final int DROPTABLERECORDED_FIELD_NUMBER = 4;
+    private boolean dropTableRecorded_;
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    public boolean hasDropTableRecorded() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    public boolean getDropTableRecorded() {
+      return dropTableRecorded_;
+    }
+
     private void initFields() {
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       transactionId_ = 0L;
       participantNum_ = 0;
+      dropTableRecorded_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -238,6 +270,10 @@ public final class TrxRegionProtos {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasDropTableRecorded()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -253,6 +289,9 @@ public final class TrxRegionProtos {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeInt32(3, participantNum_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(4, dropTableRecorded_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -274,6 +313,10 @@ public final class TrxRegionProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(3, participantNum_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, dropTableRecorded_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -397,6 +440,8 @@ public final class TrxRegionProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         participantNum_ = 0;
         bitField0_ = (bitField0_ & ~0x00000004);
+        dropTableRecorded_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -437,6 +482,10 @@ public final class TrxRegionProtos {
           to_bitField0_ |= 0x00000004;
         }
         result.participantNum_ = participantNum_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.dropTableRecorded_ = dropTableRecorded_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -462,6 +511,9 @@ public final class TrxRegionProtos {
         if (other.hasParticipantNum()) {
           setParticipantNum(other.getParticipantNum());
         }
+        if (other.hasDropTableRecorded()) {
+          setDropTableRecorded(other.getDropTableRecorded());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -476,6 +528,10 @@ public final class TrxRegionProtos {
           return false;
         }
         if (!hasParticipantNum()) {
+          
+          return false;
+        }
+        if (!hasDropTableRecorded()) {
           
           return false;
         }
@@ -599,6 +655,39 @@ public final class TrxRegionProtos {
       public Builder clearParticipantNum() {
         bitField0_ = (bitField0_ & ~0x00000004);
         participantNum_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required bool dropTableRecorded = 4;
+      private boolean dropTableRecorded_ ;
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public boolean hasDropTableRecorded() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public boolean getDropTableRecorded() {
+        return dropTableRecorded_;
+      }
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public Builder setDropTableRecorded(boolean value) {
+        bitField0_ |= 0x00000008;
+        dropTableRecorded_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public Builder clearDropTableRecorded() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        dropTableRecorded_ = false;
         onChanged();
         return this;
       }
@@ -5993,6 +6082,16 @@ public final class TrxRegionProtos {
      * <code>required int32 participantNum = 3;</code>
      */
     int getParticipantNum();
+
+    // required bool dropTableRecorded = 4;
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    boolean hasDropTableRecorded();
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    boolean getDropTableRecorded();
   }
   /**
    * Protobuf type {@code CommitRequestRequest}
@@ -6058,6 +6157,11 @@ public final class TrxRegionProtos {
             case 24: {
               bitField0_ |= 0x00000004;
               participantNum_ = input.readInt32();
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              dropTableRecorded_ = input.readBool();
               break;
             }
           }
@@ -6148,10 +6252,27 @@ public final class TrxRegionProtos {
       return participantNum_;
     }
 
+    // required bool dropTableRecorded = 4;
+    public static final int DROPTABLERECORDED_FIELD_NUMBER = 4;
+    private boolean dropTableRecorded_;
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    public boolean hasDropTableRecorded() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required bool dropTableRecorded = 4;</code>
+     */
+    public boolean getDropTableRecorded() {
+      return dropTableRecorded_;
+    }
+
     private void initFields() {
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       transactionId_ = 0L;
       participantNum_ = 0;
+      dropTableRecorded_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -6170,6 +6291,10 @@ public final class TrxRegionProtos {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasDropTableRecorded()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -6185,6 +6310,9 @@ public final class TrxRegionProtos {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeInt32(3, participantNum_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(4, dropTableRecorded_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -6206,6 +6334,10 @@ public final class TrxRegionProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(3, participantNum_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, dropTableRecorded_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -6329,6 +6461,8 @@ public final class TrxRegionProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         participantNum_ = 0;
         bitField0_ = (bitField0_ & ~0x00000004);
+        dropTableRecorded_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -6369,6 +6503,10 @@ public final class TrxRegionProtos {
           to_bitField0_ |= 0x00000004;
         }
         result.participantNum_ = participantNum_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.dropTableRecorded_ = dropTableRecorded_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -6394,6 +6532,9 @@ public final class TrxRegionProtos {
         if (other.hasParticipantNum()) {
           setParticipantNum(other.getParticipantNum());
         }
+        if (other.hasDropTableRecorded()) {
+          setDropTableRecorded(other.getDropTableRecorded());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -6408,6 +6549,10 @@ public final class TrxRegionProtos {
           return false;
         }
         if (!hasParticipantNum()) {
+          
+          return false;
+        }
+        if (!hasDropTableRecorded()) {
           
           return false;
         }
@@ -6531,6 +6676,39 @@ public final class TrxRegionProtos {
       public Builder clearParticipantNum() {
         bitField0_ = (bitField0_ & ~0x00000004);
         participantNum_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required bool dropTableRecorded = 4;
+      private boolean dropTableRecorded_ ;
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public boolean hasDropTableRecorded() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public boolean getDropTableRecorded() {
+        return dropTableRecorded_;
+      }
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public Builder setDropTableRecorded(boolean value) {
+        bitField0_ |= 0x00000008;
+        dropTableRecorded_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool dropTableRecorded = 4;</code>
+       */
+      public Builder clearDropTableRecorded() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        dropTableRecorded_ = false;
         onChanged();
         return this;
       }
@@ -39583,190 +39761,191 @@ public final class TrxRegionProtos {
   static {
     java.lang.String[] descriptorData = {
       "\n\017TrxRegion.proto\032\013HBase.proto\032\023ClusterS" +
-      "tatus.proto\032\014Client.proto\"\\\n\027AbortTransa" +
+      "tatus.proto\032\014Client.proto\"w\n\027AbortTransa" +
       "ctionRequest\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtran" +
-      "sactionId\030\002 \002(\003\022\026\n\016participantNum\030\003 \002(\005\"" +
-      "C\n\030AbortTransactionResponse\022\021\n\texception" +
-      "\030\001 \001(\t\022\024\n\014hasException\030\002 \001(\010\"d\n\037AbortTra" +
-      "nsactionMultipleRequest\022\022\n\nregionName\030\001 " +
-      "\003(\014\022\025\n\rtransactionId\030\002 \002(\003\022\026\n\016participan" +
-      "tNum\030\003 \002(\005\"K\n AbortTransactionMultipleRe" +
-      "sponse\022\021\n\texception\030\001 \003(\t\022\024\n\014hasExceptio",
-      "n\030\002 \001(\010\"D\n\027BeginTransactionRequest\022\025\n\rtr" +
-      "ansactionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\"C\n" +
-      "\030BeginTransactionResponse\022\021\n\texception\030\001" +
-      " \001(\t\022\024\n\014hasException\030\002 \001(\010\"}\n\rCommitRequ" +
-      "est\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtransactionId" +
-      "\030\002 \002(\003\022\026\n\016participantNum\030\003 \002(\005\022)\n!ignore" +
-      "UnknownTransactionException\030\004 \001(\010\"9\n\016Com" +
-      "mitResponse\022\021\n\texception\030\001 \001(\t\022\024\n\014hasExc" +
-      "eption\030\002 \001(\010\"\205\001\n\025CommitMultipleRequest\022\022" +
-      "\n\nregionName\030\001 \003(\014\022\025\n\rtransactionId\030\002 \002(",
-      "\003\022\026\n\016participantNum\030\003 \002(\005\022)\n!ignoreUnkno" +
-      "wnTransactionException\030\004 \001(\010\"A\n\026CommitMu" +
-      "ltipleResponse\022\021\n\texception\030\001 \003(\t\022\024\n\014has" +
-      "Exception\030\002 \001(\010\"Y\n\024CommitRequestRequest\022" +
-      "\022\n\nregionName\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002" +
-      "(\003\022\026\n\016participantNum\030\003 \002(\005\"P\n\025CommitRequ" +
-      "estResponse\022\016\n\006result\030\001 \002(\005\022\021\n\texception" +
-      "\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"a\n\034CommitRe" +
-      "questMultipleRequest\022\022\n\nregionName\030\001 \003(\014" +
-      "\022\025\n\rtransactionId\030\002 \002(\003\022\026\n\016participantNu",
-      "m\030\003 \002(\005\"X\n\035CommitRequestMultipleResponse" +
-      "\022\016\n\006result\030\001 \003(\005\022\021\n\texception\030\002 \003(\t\022\024\n\014h" +
-      "asException\030\003 \001(\010\"\\\n\027CommitIfPossibleReq" +
+      "sactionId\030\002 \002(\003\022\026\n\016participantNum\030\003 \002(\005\022" +
+      "\031\n\021dropTableRecorded\030\004 \002(\010\"C\n\030AbortTrans" +
+      "actionResponse\022\021\n\texception\030\001 \001(\t\022\024\n\014has" +
+      "Exception\030\002 \001(\010\"d\n\037AbortTransactionMulti" +
+      "pleRequest\022\022\n\nregionName\030\001 \003(\014\022\025\n\rtransa" +
+      "ctionId\030\002 \002(\003\022\026\n\016participantNum\030\003 \002(\005\"K\n" +
+      " AbortTransactionMultipleResponse\022\021\n\texc",
+      "eption\030\001 \003(\t\022\024\n\014hasException\030\002 \001(\010\"D\n\027Be" +
+      "ginTransactionRequest\022\025\n\rtransactionId\030\001" +
+      " \002(\003\022\022\n\nregionName\030\002 \002(\014\"C\n\030BeginTransac" +
+      "tionResponse\022\021\n\texception\030\001 \001(\t\022\024\n\014hasEx" +
+      "ception\030\002 \001(\010\"}\n\rCommitRequest\022\022\n\nregion" +
+      "Name\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\026\n\016par" +
+      "ticipantNum\030\003 \002(\005\022)\n!ignoreUnknownTransa" +
+      "ctionException\030\004 \001(\010\"9\n\016CommitResponse\022\021" +
+      "\n\texception\030\001 \001(\t\022\024\n\014hasException\030\002 \001(\010\"" +
+      "\205\001\n\025CommitMultipleRequest\022\022\n\nregionName\030",
+      "\001 \003(\014\022\025\n\rtransactionId\030\002 \002(\003\022\026\n\016particip" +
+      "antNum\030\003 \002(\005\022)\n!ignoreUnknownTransaction" +
+      "Exception\030\004 \001(\010\"A\n\026CommitMultipleRespons" +
+      "e\022\021\n\texception\030\001 \003(\t\022\024\n\014hasException\030\002 \001" +
+      "(\010\"t\n\024CommitRequestRequest\022\022\n\nregionName" +
+      "\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\026\n\016partici" +
+      "pantNum\030\003 \002(\005\022\031\n\021dropTableRecorded\030\004 \002(\010" +
+      "\"P\n\025CommitRequestResponse\022\016\n\006result\030\001 \002(" +
+      "\005\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001" +
+      "(\010\"a\n\034CommitRequestMultipleRequest\022\022\n\nre",
+      "gionName\030\001 \003(\014\022\025\n\rtransactionId\030\002 \002(\003\022\026\n" +
+      "\016participantNum\030\003 \002(\005\"X\n\035CommitRequestMu" +
+      "ltipleResponse\022\016\n\006result\030\001 \003(\005\022\021\n\texcept" +
+      "ion\030\002 \003(\t\022\024\n\014hasException\030\003 \001(\010\"\\\n\027Commi" +
+      "tIfPossibleRequest\022\022\n\nregionName\030\001 \002(\014\022\025" +
+      "\n\rtransactionId\030\002 \002(\003\022\026\n\016participantNum\030" +
+      "\003 \002(\005\"C\n\030CommitIfPossibleResponse\022\021\n\texc" +
+      "eption\030\001 \001(\t\022\024\n\014hasException\030\002 \001(\010\"\241\001\n\025C" +
+      "heckAndDeleteRequest\022\025\n\rtransactionId\030\001 " +
+      "\002(\003\022\022\n\nregionName\030\002 \002(\014\022\013\n\003row\030\003 \002(\014\022\016\n\006",
+      "family\030\004 \002(\014\022\021\n\tqualifier\030\005 \002(\014\022\r\n\005value" +
+      "\030\006 \002(\014\022\036\n\006delete\030\007 \002(\0132\016.MutationProto\"Q" +
+      "\n\026CheckAndDeleteResponse\022\016\n\006result\030\001 \002(\010" +
+      "\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(" +
+      "\010\"\233\001\n\022CheckAndPutRequest\022\025\n\rtransactionI" +
+      "d\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\013\n\003row\030\003 \002(\014" +
+      "\022\016\n\006family\030\004 \002(\014\022\021\n\tqualifier\030\005 \002(\014\022\r\n\005v" +
+      "alue\030\006 \002(\014\022\033\n\003put\030\007 \002(\0132\016.MutationProto\"" +
+      "N\n\023CheckAndPutResponse\022\016\n\006result\030\001 \002(\010\022\021" +
+      "\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"",
+      "S\n\023CloseScannerRequest\022\025\n\rtransactionId\030" +
+      "\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\tscannerId\030\003" +
+      " \002(\003\"?\n\024CloseScannerResponse\022\021\n\texceptio" +
+      "n\030\001 \001(\t\022\024\n\014hasException\030\002 \001(\010\"o\n\"DeleteM" +
+      "ultipleTransactionalRequest\022\025\n\rtransacti" +
+      "onId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\036\n\006delete" +
+      "\030\003 \003(\0132\016.MutationProto\"g\n#DeleteMultiple" +
+      "TransactionalResponse\022\027\n\006result\030\001 \001(\0132\007." +
+      "Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExceptio" +
+      "n\030\003 \001(\010\"g\n\032DeleteTransactionalRequest\022\025\n",
+      "\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014" +
+      "\022\036\n\006delete\030\003 \002(\0132\016.MutationProto\"_\n\033Dele" +
+      "teTransactionalResponse\022\027\n\006result\030\001 \001(\0132" +
+      "\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcept" +
+      "ion\030\003 \001(\010\"W\n\027GetTransactionalRequest\022\025\n\r" +
+      "transactionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022" +
+      "\021\n\003get\030\003 \002(\0132\004.Get\"\\\n\030GetTransactionalRe" +
+      "sponse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\texcep" +
+      "tion\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"T\n\022Open" +
+      "ScannerRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n",
+      "\nregionName\030\002 \002(\014\022\023\n\004scan\030\003 \002(\0132\005.Scan\"Q" +
+      "\n\023OpenScannerResponse\022\021\n\tscannerId\030\001 \002(\003" +
+      "\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(" +
+      "\010\"\223\001\n\022PerformScanRequest\022\025\n\rtransactionI" +
+      "d\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\tscannerId" +
+      "\030\003 \002(\003\022\024\n\014numberOfRows\030\004 \002(\005\022\024\n\014closeSca" +
+      "nner\030\005 \002(\010\022\023\n\013nextCallSeq\030\006 \002(\003\"\214\001\n\023Perf" +
+      "ormScanResponse\022\027\n\006result\030\001 \003(\0132\007.Result" +
+      "\022\r\n\005count\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(\003\022\017\n\007" +
+      "hasMore\030\004 \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n\014hasE",
+      "xception\030\006 \001(\010\"a\n\027PutTransactionalReques" +
+      "t\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030\002" +
+      " \002(\014\022\033\n\003put\030\003 \002(\0132\016.MutationProto\"\\\n\030Put" +
+      "TransactionalResponse\022\027\n\006result\030\001 \001(\0132\007." +
+      "Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExceptio" +
+      "n\030\003 \001(\010\"i\n\037PutMultipleTransactionalReque" +
+      "st\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030" +
+      "\002 \002(\014\022\033\n\003put\030\003 \003(\0132\016.MutationProto\"d\n Pu" +
+      "tMultipleTransactionalResponse\022\027\n\006result" +
+      "\030\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014ha",
+      "sException\030\003 \001(\010\"Q\n\026RecoveryRequestReque" +
+      "st\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030" +
+      "\002 \002(\014\022\014\n\004tmId\030\003 \002(\005\"R\n\027RecoveryRequestRe" +
+      "sponse\022\016\n\006result\030\001 \003(\003\022\021\n\texception\030\002 \001(" +
+      "\t\022\024\n\014hasException\030\003 \001(\010\"~\n\021TlogDeleteReq" +
       "uest\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtransactionI" +
-      "d\030\002 \002(\003\022\026\n\016participantNum\030\003 \002(\005\"C\n\030Commi" +
-      "tIfPossibleResponse\022\021\n\texception\030\001 \001(\t\022\024" +
-      "\n\014hasException\030\002 \001(\010\"\241\001\n\025CheckAndDeleteR" +
-      "equest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionN" +
-      "ame\030\002 \002(\014\022\013\n\003row\030\003 \002(\014\022\016\n\006family\030\004 \002(\014\022\021" +
-      "\n\tqualifier\030\005 \002(\014\022\r\n\005value\030\006 \002(\014\022\036\n\006dele",
-      "te\030\007 \002(\0132\016.MutationProto\"Q\n\026CheckAndDele" +
-      "teResponse\022\016\n\006result\030\001 \002(\010\022\021\n\texception\030" +
-      "\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\233\001\n\022CheckAnd" +
-      "PutRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nreg" +
-      "ionName\030\002 \002(\014\022\013\n\003row\030\003 \002(\014\022\016\n\006family\030\004 \002" +
-      "(\014\022\021\n\tqualifier\030\005 \002(\014\022\r\n\005value\030\006 \002(\014\022\033\n\003" +
-      "put\030\007 \002(\0132\016.MutationProto\"N\n\023CheckAndPut" +
-      "Response\022\016\n\006result\030\001 \002(\010\022\021\n\texception\030\002 " +
-      "\001(\t\022\024\n\014hasException\030\003 \001(\010\"S\n\023CloseScanne" +
-      "rRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregio",
-      "nName\030\002 \002(\014\022\021\n\tscannerId\030\003 \002(\003\"?\n\024CloseS" +
-      "cannerResponse\022\021\n\texception\030\001 \001(\t\022\024\n\014has" +
-      "Exception\030\002 \001(\010\"o\n\"DeleteMultipleTransac" +
-      "tionalRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\n" +
-      "regionName\030\002 \002(\014\022\036\n\006delete\030\003 \003(\0132\016.Mutat" +
-      "ionProto\"g\n#DeleteMultipleTransactionalR" +
-      "esponse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\texce" +
-      "ption\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"g\n\032Del" +
-      "eteTransactionalRequest\022\025\n\rtransactionId" +
-      "\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\036\n\006delete\030\003 \002",
-      "(\0132\016.MutationProto\"_\n\033DeleteTransactiona" +
-      "lResponse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\tex" +
-      "ception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"W\n\027G" +
-      "etTransactionalRequest\022\025\n\rtransactionId\030" +
-      "\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\003get\030\003 \002(\0132\004" +
-      ".Get\"\\\n\030GetTransactionalResponse\022\027\n\006resu" +
-      "lt\030\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014" +
-      "hasException\030\003 \001(\010\"T\n\022OpenScannerRequest" +
-      "\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030\002 " +
-      "\002(\014\022\023\n\004scan\030\003 \002(\0132\005.Scan\"Q\n\023OpenScannerR",
-      "esponse\022\021\n\tscannerId\030\001 \002(\003\022\021\n\texception\030" +
-      "\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\223\001\n\022PerformS" +
-      "canRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nreg" +
-      "ionName\030\002 \002(\014\022\021\n\tscannerId\030\003 \002(\003\022\024\n\014numb" +
-      "erOfRows\030\004 \002(\005\022\024\n\014closeScanner\030\005 \002(\010\022\023\n\013" +
-      "nextCallSeq\030\006 \002(\003\"\214\001\n\023PerformScanRespons" +
-      "e\022\027\n\006result\030\001 \003(\0132\007.Result\022\r\n\005count\030\002 \002(" +
-      "\003\022\023\n\013nextCallSeq\030\003 \002(\003\022\017\n\007hasMore\030\004 \002(\010\022" +
-      "\021\n\texception\030\005 \001(\t\022\024\n\014hasException\030\006 \001(\010" +
-      "\"a\n\027PutTransactionalRequest\022\025\n\rtransacti",
-      "onId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\033\n\003put\030\003 " +
-      "\002(\0132\016.MutationProto\"\\\n\030PutTransactionalR" +
-      "esponse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021\n\texce" +
-      "ption\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"i\n\037Put" +
-      "MultipleTransactionalRequest\022\025\n\rtransact" +
-      "ionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\033\n\003put\030\003" +
-      " \003(\0132\016.MutationProto\"d\n PutMultipleTrans" +
-      "actionalResponse\022\027\n\006result\030\001 \001(\0132\007.Resul" +
-      "t\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001" +
-      "(\010\"Q\n\026RecoveryRequestRequest\022\025\n\rtransact",
-      "ionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\014\n\004tmId\030" +
-      "\003 \002(\005\"R\n\027RecoveryRequestResponse\022\016\n\006resu" +
-      "lt\030\001 \003(\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcept" +
-      "ion\030\003 \001(\010\"~\n\021TlogDeleteRequest\022\022\n\nregion" +
-      "Name\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\023\n\004sca" +
-      "n\030\003 \002(\0132\005.Scan\022\023\n\013auditSeqNum\030\004 \002(\003\022\024\n\014a" +
-      "geCommitted\030\005 \002(\010\"e\n\022TlogDeleteResponse\022" +
-      "\027\n\006result\030\001 \003(\0132\007.Result\022\r\n\005count\030\002 \002(\003\022" +
-      "\021\n\texception\030\003 \001(\t\022\024\n\014hasException\030\004 \001(\010" +
-      "\"\273\001\n\020TlogWriteRequest\022\022\n\nregionName\030\001 \002(",
-      "\014\022\025\n\rtransactionId\030\002 \002(\003\022\033\n\003put\030\003 \002(\0132\016." +
-      "MutationProto\022\013\n\003row\030\004 \002(\014\022\016\n\006family\030\005 \002" +
-      "(\014\022\021\n\tqualifier\030\006 \002(\014\022\r\n\005value\030\007 \002(\014\022\020\n\010" +
-      "commitId\030\010 \002(\003\022\016\n\006forced\030\t \001(\010\"L\n\021TlogWr" +
-      "iteResponse\022\016\n\006result\030\001 \003(\003\022\021\n\texception" +
-      "\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\321\001\n(TlogTra" +
-      "nsactionStatesFromIntervalRequest\022\022\n\nreg" +
-      "ionName\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\021\n\t" +
-      "clusterId\030\003 \002(\003\022\023\n\013auditSeqNum\030\004 \002(\003\022\021\n\t" +
-      "scannerId\030\005 \002(\003\022\024\n\014numberOfRows\030\006 \002(\005\022\023\n",
-      "\013nextCallSeq\030\007 \002(\003\022\024\n\014closeScanner\030\010 \002(\010" +
-      "\"\242\001\n)TlogTransactionStatesFromIntervalRe" +
-      "sponse\022\027\n\006result\030\001 \003(\0132\007.Result\022\r\n\005count" +
-      "\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(\003\022\017\n\007hasMore\030\004" +
-      " \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n\014hasException\030" +
-      "\006 \001(\010\"\243\001\n\035TransactionalAggregateRequest\022" +
-      "\022\n\nregionName\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002" +
-      "(\003\022\036\n\026interpreter_class_name\030\003 \002(\t\022\023\n\004sc" +
-      "an\030\004 \002(\0132\005.Scan\022\"\n\032interpreter_specific_" +
-      "bytes\030\005 \001(\014\"I\n\036TransactionalAggregateRes",
-      "ponse\022\022\n\nfirst_part\030\003 \003(\014\022\023\n\013second_part" +
-      "\030\004 \001(\014\"c\n\022TransactionPersist\022\016\n\006txById\030\001" +
-      " \003(\003\022\024\n\014seqNoListSeq\030\002 \003(\003\022\024\n\014seqNoListT" +
-      "xn\030\003 \003(\003\022\021\n\tnextSeqId\030\004 \002(\003\"\372\001\n\023Transact" +
-      "ionStateMsg\022\014\n\004txId\030\001 \002(\003\022\033\n\003put\030\002 \003(\0132\016" +
-      ".MutationProto\022\036\n\006delete\030\003 \003(\0132\016.Mutatio" +
-      "nProto\022\020\n\010putOrDel\030\004 \003(\010\022\023\n\013txnsToCheck\030" +
-      "\005 \003(\003\022\023\n\013startSeqNum\030\006 \002(\003\022\016\n\006seqNum\030\007 \002" +
-      "(\003\022\020\n\010logSeqId\030\010 \002(\003\022\022\n\nreinstated\030\t \002(\010" +
-      "\022\016\n\006status\030\n \002(\005\022\026\n\016commitProgress\030\013 \002(\005",
-      "2\262\020\n\020TrxRegionService\022G\n\020abortTransactio" +
-      "n\022\030.AbortTransactionRequest\032\031.AbortTrans" +
-      "actionResponse\022_\n\030abortTransactionMultip" +
-      "le\022 .AbortTransactionMultipleRequest\032!.A" +
-      "bortTransactionMultipleResponse\022G\n\020begin" +
-      "Transaction\022\030.BeginTransactionRequest\032\031." +
-      "BeginTransactionResponse\022A\n\016checkAndDele" +
-      "te\022\026.CheckAndDeleteRequest\032\027.CheckAndDel" +
-      "eteResponse\0228\n\013checkAndPut\022\023.CheckAndPut" +
-      "Request\032\024.CheckAndPutResponse\022;\n\014closeSc",
-      "anner\022\024.CloseScannerRequest\032\025.CloseScann" +
-      "erResponse\022)\n\006commit\022\016.CommitRequest\032\017.C" +
-      "ommitResponse\022G\n\020commitIfPossible\022\030.Comm" +
-      "itIfPossibleRequest\032\031.CommitIfPossibleRe" +
-      "sponse\022V\n\025commitRequestMultiple\022\035.Commit" +
-      "RequestMultipleRequest\032\036.CommitRequestMu" +
-      "ltipleResponse\022A\n\016commitMultiple\022\026.Commi" +
-      "tMultipleRequest\032\027.CommitMultipleRespons" +
-      "e\022>\n\rcommitRequest\022\025.CommitRequestReques" +
-      "t\032\026.CommitRequestResponse\022C\n\006delete\022\033.De",
-      "leteTransactionalRequest\032\034.DeleteTransac" +
-      "tionalResponse\022[\n\016deleteMultiple\022#.Delet" +
-      "eMultipleTransactionalRequest\032$.DeleteMu" +
-      "ltipleTransactionalResponse\022:\n\003get\022\030.Get" +
-      "TransactionalRequest\032\031.GetTransactionalR" +
-      "esponse\0228\n\013performScan\022\023.PerformScanRequ" +
-      "est\032\024.PerformScanResponse\0228\n\013openScanner" +
-      "\022\023.OpenScannerRequest\032\024.OpenScannerRespo" +
-      "nse\022:\n\003put\022\030.PutTransactionalRequest\032\031.P" +
-      "utTransactionalResponse\022R\n\013putMultiple\022 ",
-      ".PutMultipleTransactionalRequest\032!.PutMu" +
-      "ltipleTransactionalResponse\022D\n\017recoveryR" +
-      "equest\022\027.RecoveryRequestRequest\032\030.Recove" +
-      "ryRequestResponse\022<\n\021deleteTlogEntries\022\022" +
-      ".TlogDeleteRequest\032\023.TlogDeleteResponse\022" +
-      "0\n\007putTlog\022\021.TlogWriteRequest\032\022.TlogWrit" +
-      "eResponse\022w\n\036getTransactionStatesPriorTo" +
-      "Asn\022).TlogTransactionStatesFromIntervalR" +
-      "equest\032*.TlogTransactionStatesFromInterv" +
-      "alResponse\022I\n\006GetMax\022\036.TransactionalAggr",
-      "egateRequest\032\037.TransactionalAggregateRes" +
-      "ponse\022I\n\006GetMin\022\036.TransactionalAggregate" +
-      "Request\032\037.TransactionalAggregateResponse" +
-      "\022I\n\006GetSum\022\036.TransactionalAggregateReque" +
-      "st\032\037.TransactionalAggregateResponse\022L\n\tG" +
-      "etRowNum\022\036.TransactionalAggregateRequest" +
-      "\032\037.TransactionalAggregateResponse\022I\n\006Get" +
-      "Avg\022\036.TransactionalAggregateRequest\032\037.Tr" +
-      "ansactionalAggregateResponse\022I\n\006GetStd\022\036" +
-      ".TransactionalAggregateRequest\032\037.Transac",
-      "tionalAggregateResponse\022L\n\tGetMedian\022\036.T" +
-      "ransactionalAggregateRequest\032\037.Transacti" +
-      "onalAggregateResponseBS\n;org.apache.hado" +
-      "op.hbase.coprocessor.transactional.gener" +
-      "atedB\017TrxRegionProtosH\001\210\001\001"
+      "d\030\002 \002(\003\022\023\n\004scan\030\003 \002(\0132\005.Scan\022\023\n\013auditSeq" +
+      "Num\030\004 \002(\003\022\024\n\014ageCommitted\030\005 \002(\010\"e\n\022TlogD" +
+      "eleteResponse\022\027\n\006result\030\001 \003(\0132\007.Result\022\r" +
+      "\n\005count\030\002 \002(\003\022\021\n\texception\030\003 \001(\t\022\024\n\014hasE",
+      "xception\030\004 \001(\010\"\273\001\n\020TlogWriteRequest\022\022\n\nr" +
+      "egionName\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022\033" +
+      "\n\003put\030\003 \002(\0132\016.MutationProto\022\013\n\003row\030\004 \002(\014" +
+      "\022\016\n\006family\030\005 \002(\014\022\021\n\tqualifier\030\006 \002(\014\022\r\n\005v" +
+      "alue\030\007 \002(\014\022\020\n\010commitId\030\010 \002(\003\022\016\n\006forced\030\t" +
+      " \001(\010\"L\n\021TlogWriteResponse\022\016\n\006result\030\001 \003(" +
+      "\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001" +
+      "(\010\"\321\001\n(TlogTransactionStatesFromInterval" +
+      "Request\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtransacti" +
+      "onId\030\002 \002(\003\022\021\n\tclusterId\030\003 \002(\003\022\023\n\013auditSe",
+      "qNum\030\004 \002(\003\022\021\n\tscannerId\030\005 \002(\003\022\024\n\014numberO" +
+      "fRows\030\006 \002(\005\022\023\n\013nextCallSeq\030\007 \002(\003\022\024\n\014clos" +
+      "eScanner\030\010 \002(\010\"\242\001\n)TlogTransactionStates" +
+      "FromIntervalResponse\022\027\n\006result\030\001 \003(\0132\007.R" +
+      "esult\022\r\n\005count\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(" +
+      "\003\022\017\n\007hasMore\030\004 \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n" +
+      "\014hasException\030\006 \001(\010\"\243\001\n\035TransactionalAgg" +
+      "regateRequest\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtra" +
+      "nsactionId\030\002 \002(\003\022\036\n\026interpreter_class_na" +
+      "me\030\003 \002(\t\022\023\n\004scan\030\004 \002(\0132\005.Scan\022\"\n\032interpr",
+      "eter_specific_bytes\030\005 \001(\014\"I\n\036Transaction" +
+      "alAggregateResponse\022\022\n\nfirst_part\030\003 \003(\014\022" +
+      "\023\n\013second_part\030\004 \001(\014\"c\n\022TransactionPersi" +
+      "st\022\016\n\006txById\030\001 \003(\003\022\024\n\014seqNoListSeq\030\002 \003(\003" +
+      "\022\024\n\014seqNoListTxn\030\003 \003(\003\022\021\n\tnextSeqId\030\004 \002(" +
+      "\003\"\372\001\n\023TransactionStateMsg\022\014\n\004txId\030\001 \002(\003\022" +
+      "\033\n\003put\030\002 \003(\0132\016.MutationProto\022\036\n\006delete\030\003" +
+      " \003(\0132\016.MutationProto\022\020\n\010putOrDel\030\004 \003(\010\022\023" +
+      "\n\013txnsToCheck\030\005 \003(\003\022\023\n\013startSeqNum\030\006 \002(\003" +
+      "\022\016\n\006seqNum\030\007 \002(\003\022\020\n\010logSeqId\030\010 \002(\003\022\022\n\nre",
+      "instated\030\t \002(\010\022\016\n\006status\030\n \002(\005\022\026\n\016commit" +
+      "Progress\030\013 \002(\0052\262\020\n\020TrxRegionService\022G\n\020a" +
+      "bortTransaction\022\030.AbortTransactionReques" +
+      "t\032\031.AbortTransactionResponse\022_\n\030abortTra" +
+      "nsactionMultiple\022 .AbortTransactionMulti" +
+      "pleRequest\032!.AbortTransactionMultipleRes" +
+      "ponse\022G\n\020beginTransaction\022\030.BeginTransac" +
+      "tionRequest\032\031.BeginTransactionResponse\022A" +
+      "\n\016checkAndDelete\022\026.CheckAndDeleteRequest" +
+      "\032\027.CheckAndDeleteResponse\0228\n\013checkAndPut",
+      "\022\023.CheckAndPutRequest\032\024.CheckAndPutRespo" +
+      "nse\022;\n\014closeScanner\022\024.CloseScannerReques" +
+      "t\032\025.CloseScannerResponse\022)\n\006commit\022\016.Com" +
+      "mitRequest\032\017.CommitResponse\022G\n\020commitIfP" +
+      "ossible\022\030.CommitIfPossibleRequest\032\031.Comm" +
+      "itIfPossibleResponse\022V\n\025commitRequestMul" +
+      "tiple\022\035.CommitRequestMultipleRequest\032\036.C" +
+      "ommitRequestMultipleResponse\022A\n\016commitMu" +
+      "ltiple\022\026.CommitMultipleRequest\032\027.CommitM" +
+      "ultipleResponse\022>\n\rcommitRequest\022\025.Commi",
+      "tRequestRequest\032\026.CommitRequestResponse\022" +
+      "C\n\006delete\022\033.DeleteTransactionalRequest\032\034" +
+      ".DeleteTransactionalResponse\022[\n\016deleteMu" +
+      "ltiple\022#.DeleteMultipleTransactionalRequ" +
+      "est\032$.DeleteMultipleTransactionalRespons" +
+      "e\022:\n\003get\022\030.GetTransactionalRequest\032\031.Get" +
+      "TransactionalResponse\0228\n\013performScan\022\023.P" +
+      "erformScanRequest\032\024.PerformScanResponse\022" +
+      "8\n\013openScanner\022\023.OpenScannerRequest\032\024.Op" +
+      "enScannerResponse\022:\n\003put\022\030.PutTransactio",
+      "nalRequest\032\031.PutTransactionalResponse\022R\n" +
+      "\013putMultiple\022 .PutMultipleTransactionalR" +
+      "equest\032!.PutMultipleTransactionalRespons" +
+      "e\022D\n\017recoveryRequest\022\027.RecoveryRequestRe" +
+      "quest\032\030.RecoveryRequestResponse\022<\n\021delet" +
+      "eTlogEntries\022\022.TlogDeleteRequest\032\023.TlogD" +
+      "eleteResponse\0220\n\007putTlog\022\021.TlogWriteRequ" +
+      "est\032\022.TlogWriteResponse\022w\n\036getTransactio" +
+      "nStatesPriorToAsn\022).TlogTransactionState" +
+      "sFromIntervalRequest\032*.TlogTransactionSt",
+      "atesFromIntervalResponse\022I\n\006GetMax\022\036.Tra" +
+      "nsactionalAggregateRequest\032\037.Transaction" +
+      "alAggregateResponse\022I\n\006GetMin\022\036.Transact" +
+      "ionalAggregateRequest\032\037.TransactionalAgg" +
+      "regateResponse\022I\n\006GetSum\022\036.Transactional" +
+      "AggregateRequest\032\037.TransactionalAggregat" +
+      "eResponse\022L\n\tGetRowNum\022\036.TransactionalAg" +
+      "gregateRequest\032\037.TransactionalAggregateR" +
+      "esponse\022I\n\006GetAvg\022\036.TransactionalAggrega" +
+      "teRequest\032\037.TransactionalAggregateRespon",
+      "se\022I\n\006GetStd\022\036.TransactionalAggregateReq" +
+      "uest\032\037.TransactionalAggregateResponse\022L\n" +
+      "\tGetMedian\022\036.TransactionalAggregateReque" +
+      "st\032\037.TransactionalAggregateResponseBS\n;o" +
+      "rg.apache.hadoop.hbase.coprocessor.trans" +
+      "actional.generatedB\017TrxRegionProtosH\001\210\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -39778,7 +39957,7 @@ public final class TrxRegionProtos {
           internal_static_AbortTransactionRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_AbortTransactionRequest_descriptor,
-              new java.lang.String[] { "RegionName", "TransactionId", "ParticipantNum", });
+              new java.lang.String[] { "RegionName", "TransactionId", "ParticipantNum", "DropTableRecorded", });
           internal_static_AbortTransactionResponse_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_AbortTransactionResponse_fieldAccessorTable = new
@@ -39838,7 +40017,7 @@ public final class TrxRegionProtos {
           internal_static_CommitRequestRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_CommitRequestRequest_descriptor,
-              new java.lang.String[] { "RegionName", "TransactionId", "ParticipantNum", });
+              new java.lang.String[] { "RegionName", "TransactionId", "ParticipantNum", "DropTableRecorded", });
           internal_static_CommitRequestResponse_descriptor =
             getDescriptor().getMessageTypes().get(11);
           internal_static_CommitRequestResponse_fieldAccessorTable = new
