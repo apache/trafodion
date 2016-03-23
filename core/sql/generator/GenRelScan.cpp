@@ -232,7 +232,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   // HIVE_FILE_CHARSET can only be empty or GBK
   else if (  needTranslate == TRUE )
   {
-      asciiType =  new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+      asciiType =  new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
                                       FALSE, FALSE, CharInfo::GBK);
   }
   else
