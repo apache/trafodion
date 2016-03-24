@@ -10165,8 +10165,8 @@ base table then the old version of the row will have to be deleted from
 indexes, and a new version inserted. Upsert is being transformed to merge
 so that we can delete the old version of an updated row from the index.
 
-Upsert is also converted into merge when there are omitted cols with default values and 
-TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS is set to  OFF in case of aligned format table or 
+Upsert is also converted into merge when TRAF_UPSERT_MODE is set to MERGE and 
+there are omitted cols with default values in case of aligned format table or 
 omitted current timestamp cols in case of non-aligned row format
 */
 NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
@@ -10179,12 +10179,19 @@ NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean
       (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
         // table has secondary indexes or
         (getTableDesc()->hasSecondaryIndexes() ||
-         // CQD is set off and  
-         ((CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF) &&
+          // CQD is set to MERGE  
+          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
             // omitted current default columns with non-aligned row format tables
             // or omitted default columns with aligned row format tables 
-          (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
-          (isAlignedRowFormat && omittedDefaultCols)))
+            (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+            (isAlignedRowFormat && omittedDefaultCols))) ||
+          // CQD is set to Optimal, for non-aligned row format with omitted 
+          // current columns, it is converted into merge though it is not
+          // optimal for performance - This is done to ensure that when the 
+          // CQD is set to optimal, non-aligned format would behave like 
+          // merge when any column is  omitted 
+          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
+            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols))
         ) 
      )
      return TRUE;
@@ -10280,12 +10287,14 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       {
          // We need to bind in the new = old values
          // in GenericUpdate::bindNode. So skip the columns that are not user
-         // specified
+         // specified and 
          //
          if (assignExpr->isUserSpecified())
              copySetAssign = TRUE;
-         // copy the default value if the below CQD is set to ON
-         else if (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_ON)
+         // If copy the Default values in case of replace mode or optiomal mode with
+         // aligned row tables
+         else if ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_REPLACE) ||
+                (isAlignedRowFormat && CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL))
              copySetAssign = TRUE;
          if (copySetAssign)
          { 
