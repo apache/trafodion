@@ -21,6 +21,11 @@
 #
 # @@@ END COPYRIGHT @@@
 #
+# Script to check the trafodion-status of the nodes
+# of a trafodion cluster.
+#
+# Switch "-j" prints the output in JSON format.
+#
 
 function traf_echo {
     if [[ ${lv_jason_output} == "1" ]]; then
