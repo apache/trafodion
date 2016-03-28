@@ -1,0 +1,121 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[get-started]]
+= Get Started
+
+Before you can start using SPJs on the Trafodion platform, verify that
+you have the required software installed on the client workstation. The
+Trafodion platform is delivered to you ready to use and preconfigured
+with the software required to support SPJs.
+
+[[required-client-software]]
+== Required Client Software
+
+[[java-development-kit]]
+=== Java Development Kit
+
+To develop Java methods to be used as SPJs, you must have a Java
+Development Kit (JDK) installed on the client workstation. To download a
+JDK, go to
+http://www.oracle.com/technetwork/java/index.html
+
+The version of the JDK that you download and use on the client
+workstation should be the same as or lower than the Java version running
+on the Trafodion database. To check the Java version that is running in
+the Trafodion database, use one of these approaches:
+
+* Run `sqvers` in the `RUN_SCRIPT` stored procedure from `trafci`:
++
+```
+SQL> CALL demo.hp_sp.run_script( 'sqvers', '', '', ? ) ;
+
+OUTRESULT
+------------------------------------------------------------
+Requesting user: DB ROOT
+Current time: 2013-05-22 04:44:16.00
+Location of script: /opt/hp/sqtest4/M9V29713/export/bin64
+Results are stored in table: "sqvers@2013-05-22@04:44:16.00"
+Command executed: sqvers
+
+RESULTS
+----------------------------------
+
+MY_SQROOT=/opt/hp/sqtest4/M9V29713
+who@host=sqtest4@n013
+JAVA_HOME=/usr/java/jdk1.7.0_09
+
+--- 3 row(s) selected.
+
+--- SQL operation complete.
+
+SQL>
+```
++
+In this example, the returned `JAVA_HOME` indicates that the Trafodion
+database supports Java SE 7 or JDK 7 (1.7.0), or earlier versions of the
+JDK.
+
+* Launch `trafci` on the Trafodion platform, and run the `LOCALHOST` or `LH java -version` command.
+(To use the on-platform trafci client, see the
+http://trafodion.apache.org/docs/command_interface/index.html[Trafodion Command Interface Guide.)
+For example:
++
+```
+SQL> lh java -version
+
+java version "1.6.0_06"
+Java(TM) SE Runtime Environment (build 1.6.0_06-b02)
+Java HotSpot(TM) Client VM (build 10.0-b22, mixed mode)
+
+SQL>
+```
++
+In this example, the returned Java version indicates that the Trafodion
+instance supports Java SE 6 or JDK 6 (1.6.0), or earlier versions of the
+JDK.
+
+NOTE: If you plan to install the Trafodion JDBC Type-4 Driver on the client
+workstation, you must have JDK 6 (1.6.0) or higher installed on the
+client workstation.
+
+[[recommended-client-software]]
+== Recommended Client Software
+
+[[trafodion-command-interface-trafci]]
+=== Trafodion Command Interface (trafci)
+
+`trafci` is a command-line interface in which you can run SQL statements,
+such as GRANT PROCEDURE and CALL statements, interactively or from
+script files. To install `trafci` on a client workstation, see the
+http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
+
+[[hp-jdbc-type-4-driver]]
+=== HP JDBC Type 4 Driver
+
+If you plan to use `trafci`, you must have a compatible version of the Trafodion
+JDBC Type-4 Driver installed on the client workstation.
+
+To install the JDBC Type-4 driver on the client workstation, see the 
+http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
+
+

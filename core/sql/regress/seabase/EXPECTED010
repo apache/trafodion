@@ -10383,7 +10383,7 @@ _SALT_      A            B           C            D
 >>drop table if exists minotaur.events_load75;
 
 --- SQL operation complete.
->>create schema minotaur;
+>>create schema if not exists minotaur;
 
 --- SQL operation complete.
 >>CREATE TABLE if not exists TRAFODION.MINOTAUR.EVENTS_LOAD75

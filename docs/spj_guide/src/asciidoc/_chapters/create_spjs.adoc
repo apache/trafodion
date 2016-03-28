@@ -1,0 +1,508 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[create-spjs]]
+= Create SPJs
+
+After creating libraries for the SPJ JAR files on the Trafodion platform,
+you can create the procedures in the Trafodion database. To create or
+drop a procedure from the Trafodion database, use the HP Database Manager
+(HPDM).
+
+Follow these procedures:
+
+* link:#_bookmark116["Create a Procedure" (page 37)]
+* link:#_bookmark128["Drop a Procedure" (page 42)]
+* link:#bookmark130["Display Procedures and Their Properties" (page 42)]
+This chapter also covers:
+* link:#_bookmark114["Required Privileges for Creating or Dropping an
+SPJ" (page 37)]
+* link:#_bookmark136["Altering an SPJ and Its Java Bytecode" (page 44)]
+
+== Required Privileges for Creating or Dropping an SPJ
+
+To create an SPJ in a schema, you must be the schema owner, or you must
+have the CREATE_PROCEDURE privilege for that schema, and you must have
+the CREATE_PROCEDURE privilege for the SQL_OPERATIONS component. You
+must also have the USAGE privilege for the library that will be used in
+the creation of the stored procedure. For more information, see the
+requirements in link:#_bookmark116["Create a Procedure" (page 37)].
+
+To drop an SPJ from a schema, you must be the schema owner, or you must
+have the DROP_PROCEDURE privilege for that schema. For more information,
+see the requirements in link:#_bookmark128["Drop] link:#_bookmark128[a
+Procedure" (page 42)].
+
+To display the current ownership and privileges, see
+link:#bookmark130["Display Procedures and Their Properties"]
+link:#bookmark130[(page 42)].
+
+== Create a Procedure
+
+The Create Procedure tool registers an existing Java method as a stored
+procedure in Java (SPJ) within SQL.
+
+NOTE: HPDM creates procedures with default privileges only. For more
+information about privileges for SPJs, see the Grant/Revoke Privileges
+Tool in HPDM or the GRANT PROCEDURE statement in the __Trafodion SQL
+Reference Manual__.
+
+Requirements:
+
+* You must have the CREATE_PROCEDURE privilege for the SQL_OPERATIONS
+component. For more information, see the component privileges in the _HP
+Database Manager (HPDM) User Guide_ or the online help in HPDM.
+* You must have been granted the USAGE privilege for the library that
+will be used in the creation of the stored procedure. This privilege
+provides you with read access to the library's underlying JAR file,
+which contains the SPJ Java method. For more information, see the
+Grant/Revoke Privileges Tool in HPDM or the GRANT LIBRARY statement in
+the __Trafodion SQL Reference Manual__.
+* You must either be the owner of the schema or have the
+CREATE_PROCEDURE privilege for the schema to create the procedure. The
+schema owner can grant such a schema-level privilege to other users or
+roles. For more information, see the Grant/Revoke Privileges Tool in
+HPDM or the GRANT SCHEMA statement in the _Trafodion SQL Reference
+Manual_
+
+To create a procedure:
+
+1.  In HPDM, select the Database area.
+2.  Expand the navigation tree pane so that you can see the name of the
+schema in which you want to create the procedure and the Procedures
+folder under the schema.
+3.  Right-click the Procedures folder, and select Create Procedure. The
+Create Procedure dialog box appears.
+4.  In the Procedure Name field, enter a name for the stored procedure.
+For detailed information about the Procedure Name field, see
+link:#_bookmark120["Use the Create Procedure Dialog Box" (page 39)].
+5.  In the Code group box, click [ Browse ] to find a Java method.
+
+The [ Browse ] button opens Library Browser. Use the browser to select a
+method from a JAR file within a library. See link:#_bookmark109["Use the
+Library Browser" (page 35)]. If a library containing the JAR file does
+not exist on the Trafodion platform, you can create one by clicking the [
+Create ] button in the Library Browser. See link:#_bookmark98["Use the
+Create Library Dialog Box" (page 31)].
+
+1.  In the Parameters group box, verify that the SQL parameters are
+mapped correctly to the Java parameters of the SPJ method.
+
+NOTE: The result set parameters (java.sql.ResultSet[]) in the Java
+signature do not have corresponding SQL parameters.
+
+a.  To change an SQL parameter, such as the name of the parameter, the
+SQL data type,
+or the parameter mode or direction (IN, INOUT, or OUT), select the
+parameter and click
+
+[ Edit ]. The Edit Parameter dialog box appears.
+
+a.  In the Edit Parameter dialog box, enter a new name for the
+parameter, select a different SQL data type, if permitted, or select a
+different parameter mode (direction), if permitted.
+
+When changing the parameter name, note that the parameter name:
+
+* Is not case-sensitive
+* Must not be a reserved word
+* Must not contain spaces
+* Must begin with a letter, digit, or underscore
+
+When changing the SQL data type, select a data type that is appropriate
+for the parameter of the underlying Java method. For information about
+SQL data types, see the __Trafodion SQL Reference Manual__.
+
+For character string parameters, select either ISO88591 or UCS2
+depending on the column definition in the database. For guidelines, see
+the __Trafodion Character Sets Guide__.
+
+a.  Click [ OK ] to accept the changes, or click [ Cancel ] to quit the
+Edit Parameter dialog box.
+b.  Repeat steps a to c for each parameter that you want to change.
+
+1.  In the Attributes group box, if your SPJ method returns result sets,
+enter the maximum number of result sets to be returned for Number of
+dynamic result sets. The valid range is 1 to 255 inclusive. The actual
+number of result sets returned by the SPJ method can be less than or
+equal to this number.
+
+NOTE: The Number of dynamic result sets control is enabled only if the
+method signature contains a java.sql.ResultSet[] object.
+
+1.  If your SPJ method performs any SQL operations, select the Accesses
+Database option.
+
+NOTE: If you do not select the Accesses Database option and your SPJ
+method performs SQL operations, SQL returns an error when trying to
+execute the procedure.
+
+1.  Select either Invoker or Definer for the external security of the
+stored procedure.
+
+* The Invoker setting determines that users can execute, or invoke, the
+stored procedure using the privileges of the user who invokes the stored
+procedure. This behavior is referred to as __invoker rights__.
+* The Definer setting determines that users can execute, or invoke, the
+stored procedure using the privileges of the user who created the stored
+procedure. This behavior is referred to as __definer rights__. The
+advantage of definer rights is that users are allowed to manipulate data
+by invoking the stored procedure without having to be granted privileges
+to the underlying database objects.
+
+For more information, see link:#_bookmark124["Understand External
+Security" (page 41)].
+
+1.  For the Transaction Required attribute, select either Yes to require
+the procedure to run in a transaction inherited from the calling
+application (the default behavior) or No to allow the procedure to run
+without an inherited transaction. For more information, see
+link:#_bookmark157["Transaction] link:#_bookmark157[Behavior" (page
+49)].
+2.  Click [ Create ] to create the procedure.
+
+Related Topics
+
+link:#_bookmark120["Use the Create Procedure Dialog Box" (page 39)]
+
+== Use the Create Procedure Dialog Box
+
+This table shows reference information for the Create Procedure dialog
+box:
+
+[cols=",,",options="header",]
+|===
+Group Box
+Control or Field
+Action
+Name
+____
+
+Catalog
+Name of the catalog where the procedure will be created. This is a
+read-only field.
+Schema
+Name of the schema where the procedure will be created. This is a
+read-only field.
+Procedure Name
+Enter a name for the procedure. The name must be unique and must not
+exist for any procedure, table, or view in the same schema. The
+procedure name is not case-sensitive. The database engine automatically
+qualifies the procedure name with the name of the catalog and schema in
+which you are creating the procedure. For example, if you enter
+*monthlyorders* as the procedure name, the database engine stores the
+procedure as
+
+__catalog-name__.__schema-name__.MONTHLYORDERS.
+Code
+Library
+Click [ Browse ] to navigate to a library or JAR file.
+Class Name
+Select a class.
+Method Name
+When you select a class, the method names and parameter types for that
+class appear in the right pane.
+NOTE: Only methods that can be used in a procedure are visible. For
+details, see link:#_bookmark123["Use a Method in a Procedure" (page
+40)].
+Parameters
+Name
+____
+
+Is the name for this SQL parameter.
+Direction
+IN passes data to a procedure
+INOUT passes data to and accepts data from a procedure. The parameter
+|===
+
+must be an array.
+
+
+* OUT accepts data from a procedure. The parameter must be an array.
+
+SQL Data Type
+
+Displays the SQL data type that is the best match for the Java signature
+in the
+
+Java Data Type column.
+
+Java Data Type Displays the signature for the Java method that you
+selected.
+
+[ Edit ] Click to edit the selected parameter.
+
+Group Box
+
+Control or Field
+
+Action
+
+Attributes
+
+Number of dynamic result sets
+
+Accesses Database
+
+Controls the maximum number of result sets the procedure can return.
+This control is enabled only if the method signature contains a
+java.sql.ResultSet[] object. If the method contains a result set object,
+the valid range is 1 to 255. This value is automatically set to zero if
+the selected Java method does not have a java.sql.ResultSet[] object.
+
+If selected, the procedure performs SQL operations. If cleared, the
+procedure does not perform SQL operations.
+
+NOTE: SQL returns an error when trying to execute the procedure if this
+attribute is cleared and the procedure performs SQL operations.
+
+External Security
+
+Transaction Required
+
+Select either Invoker or Definer for the external security of the stored
+procedure.
+
+* The Invoker setting determines that users can execute, or invoke, the
+stored procedure using the privileges of the user who invokes the stored
+procedure. This behavior is referred to as __invoker rights__.
+* The Definer setting determines that users can execute, or invoke, the
+stored procedure using the privileges of the user who created the stored
+procedure. This behavior is referred to as __definer rights__. The
+advantage of definer rights is that users are allowed to manipulate data
+by invoking the stored procedure without having to be granted privileges
+to the underlying database objects.
+
+For more information, see link:#_bookmark124["Understand External
+Security" (page 41)].
+
+Select either Yes to require the procedure to run in a transaction
+inherited from the calling application (the default behavior) or No to
+allow the procedure to run without an inherited transaction. For more
+information, see link:#_bookmark157["Transaction]
+link:#_bookmark157[Behavior" (page 49)].
+
+Related Topics
+
+link:#_bookmark116["Create a Procedure" (page 37)]
+
+== Use a Method in a Procedure
+
+To be used in a procedure, a Java method must:
+
+* Be qualified as public static void.
+* Have a java.sql.ResultSet[] parameter at the end of the method
+signature if the method uses result sets.
+
+NOTE: There can be more than one java.sql.ResultSet[] parameter, but
+they must all be at the end of the method signature.
+
+* Have these parameter types:
+
+Parameter Type or Class
+
+Type
+
+character java.lang.String
+
+java.lang.String[]
+
+numeric java.lang.Integer
+
+java.lang.Integer[] java.lang.Long java.lang.Long[] java.lang.Float
+java.lang.Float[]
+
+Parameter Type or Class
+
+Type
+
+java.lang.Double java.lang.Double[] java.math.BigDecimal
+java.math.BigDecimal[]
+
+date/timestamp java.sql.Date
+
+java.sql.Date[] java.sql.Time java.sql.Time[] java.sql.Timestamp
+java.sql.Timestamp[]
+
+primitive short
+
+short[] int int[] long long[] float float[] double double[]
+
+result sets java.sql.ResultSet[]
+
+== Understand External Security
+
+The external security of an SPJ determines the privileges, or rights,
+that users have when executing (or calling) the SPJ. An SPJ can be
+created with one of these types of external security: invoker or
+definer.
+
+If an SPJ is created with the invoker type of external security, the SPJ
+is executed with __invoker rights__. Invoker rights allow a user who has
+the execute privilege on the SPJ to call the SPJ using his or her
+existing privileges. In this case, the user must be granted privileges
+to access the underlying database objects on which the SPJ operates. If
+a user tries to call an SPJ that has invoker external security and that
+operates on database objects to which the user does not have privileges,
+the CALL statement fails with an error message indicating that the user
+does not have the appropriate permissions. Note: Granting a user
+privileges to the underlying database objects gives the user direct
+access to those database objects, which could pose a risk to more
+sensitive or critical data to which users should not have access. For
+example, an SPJ might operate on a subset of the data in an underlying
+database object, but that database object might contain other more
+sensitive or critical data to which users should not have access.
+
+If an SPJ is created with the definer type of external security, the SPJ
+is executed with __definer rights__. Definer rights allow a user who has
+the execute privilege on an SPJ to call the SPJ using the privileges of
+the user who created the SPJ. In this case, the user does not require
+privileges to access the underlying database objects on which the SPJ
+operates. Instead, the user is allowed to access or manipulate data in
+the underlying database objects by invoking the SPJ. That way, users are
+restricted from directly accessing or manipulating more sensitive or
+critical data in the database. However, be careful about the users to
+whom you grant execute privilege on an SPJ with definer external
+security because those users will be able to execute the SPJ without
+requiring privileges to the underlying database objects.
+
+To set the external security of an SPJ, see link:#_bookmark116["Create a
+Procedure" (page 37)].
+
+== Drop a Procedure
+
+To drop a procedure, you must own the procedure or have the
+DROP_PROCEDURE privilege for the schema. The schema owner can grant such
+a schema-level privilege to other users or roles. For example, if the
+schema owner granted you privileges to drop all objects in the schema,
+you could drop procedures. For more information, see the Grant/Revoke
+Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
+SQL Reference Manual__.
+
+To drop a procedure:
+
+1.  Under the navigation tree pane, click the Database area.
+2.  Under My Systems, expand the tree for the Trafodion platform
+containing the procedure until you can see the schema folder and the
+Procedures folder underneath it.
+3.  Expand the Procedures folder.
+4.  Right-click the name of the procedure that you want to drop, and
+select Drop Procedure. HPDM asks you to confirm the operation.
+5.  Click [ Yes ] to continue or [ No ] to quit the operation.
+
+== Display Procedures and Their Properties
+
+To display the SPJs in a schema, use either HPDM or trafci:
+
+* link:#_bookmark131["Using HPDM to Display a Procedure in a Schema"
+(page 42)]
+* link:#_bookmark133["Using trafci to Display Procedures in a Schema"
+(page 43)]
+
+=== Using HPDM to Display a Procedure in a Schema
+
+To display one of the procedures in a schema:
+
+1.  Start the HP Database Manager and log on using any user name.
+2.  Click the Database area.
+3.  In the navigation tree pane, select a Schema, and expand the schema
+so that you can see the object folders underneath it.
+4.  Expand the Procedures tab in the right pane and select a procedure
+name, or open the Procedures folder and select a procedure name in the
+tree. HPDM displays the properties of the selected procedure in the
+right pane.
+
+image:media/image7.jpeg[image]
+
+For more information about the procedure properties displayed in HPDM,
+see the _HP Database_ __Manager (HPDM) User Guide__ or the online help
+in HPDM.
+
+==== Using trafci to Display Procedures in a Schema
+
+In the trafci command-line interface, use the SHOW PROCEDURES command to
+display the procedures in a schema. For example, this SHOW PROCEDURES
+command displays a list of the procedures in the SALES schema:
+
+```
+SQL>**set schema demo.sales;**
+
+--- SQL operation complete. SQL>**show procedures** PROCEDURE NAMES
+
+--------------------------------------------------------------------------------
+DAILYORDERS LOWERPRICE MONTHLYORDERS ORDERSUMMARY PARTDATA TOTAL PRICE
+
+SQL>
+```
+
+You can also use a wild-card pattern to search for a particular
+procedure. For example, this SHOW PROCEDURES command displays all the
+procedures in the SALES schema that have price in their names:
+
+```
+SQL>**show procedures %price**
+
+PROCEDURE NAMES
+
+--------------------------------------------------------------------------------
+LOWERPRICE TOTALPRICE
+
+SQL>
+```
+
+For more information about trafci, see the __HP Database Command
+Interface (trafci) Guide__.
+
+==== Altering an SPJ and Its Java Bytecode
+
+Occasionally, you might need to update an SPJ or its Java bytecode. The
+Java bytecode includes the SPJ's class file and any associated class
+files that are packaged in the SPJ JAR file. Suppose that you want to
+update the Java bytecode of an SPJ without changing the class name,
+method name, or Java signature of the SPJ method. In this case, you
+would alter the library by selecting the updated JAR file to upload to
+the Trafodion platform, replacing the previous JAR file for the library.
+For more information, see link:#_bookmark100["Alter a Library" (page
+32)].
+
+NOTE: You are prevented from uploading a JAR file that is already in use
+by another library in the catalog. This restriction prevents you from
+accidentally overwriting a JAR file that has the same name.
+
+If you plan to use a JAR file that contains an SPJ method that has a
+different class name, method name, or signature than the original SPJ
+method, you must drop the SPJ from the database before altering the
+library. After altering the library, re-create the SPJ in the database.
+You must also drop and re-create an SPJ to rename the procedure or
+change the SQL parameter definitions even if the Java bytecode remains
+the same. For more information, see link:#_bookmark116["Create a
+Procedure" (page 37)] and link:#_bookmark128["Drop a Procedure" (page
+42)].
+
+When you update an SPJ or its Java bytecode, try to avoid making those
+changes when client applications are actively calling the SPJ. If you
+update an SPJ or its Java bytecode when a client application is calling
+the SPJ, the CALL statement might return wrong or inconsistent data to
+the calling application. Therefore, schedule a time to update the SPJ or
+its Java bytecode when client applications are not actively calling the
+SPJ.
+

@@ -3147,9 +3147,15 @@ void Generator::setHBaseSmallScanner(Int32 hbaseRowSize, double estRowsAccessed,
 {
   if (CmpCommon::getDefault(HBASE_SMALL_SCANNER) == DF_SYSTEM)
   {
-    if((hbaseRowSize*estRowsAccessed)<hbaseBlockSize)
+    if(((hbaseRowSize*estRowsAccessed)<hbaseBlockSize) && (estRowsAccessed>0))//added estRowsAccessed > 0 because MDAM costing is not populating this field correctly
         hbpa->setUseSmallScanner(TRUE);
+    hbpa->setUseSmallScannerForProbes(TRUE);
   }else if (CmpCommon::getDefault(HBASE_SMALL_SCANNER) == DF_ON)
+  {
       hbpa->setUseSmallScanner(TRUE);
+      hbpa->setUseSmallScannerForProbes(TRUE);
+  }
+  hbpa->setMaxNumRowsPerHbaseBlock(hbaseBlockSize/hbaseRowSize);
 }
+
 

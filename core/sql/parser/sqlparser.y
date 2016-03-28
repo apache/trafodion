@@ -2553,7 +2553,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		column_attributes
 %type <pElemDDL>  		column_attribute
 %type <tokval>    		constraints_keyword
-%type <pElemDDL>  		optional_col_def_default_clause
 %type <pElemDDL>  		col_def_default_clause
 %type <pElemDDL>  		col_def_default_clause_argument
 %type <pElemDDL>                alter_col_default_clause_arg
@@ -24930,8 +24929,7 @@ reset_in_column_defn :
                   }
 
 /* type pElemDDL */
-column_definition : qualified_name data_type optional_col_def_default_clause
-                                optional_column_attributes
+column_definition : qualified_name data_type optional_column_attributes
                                 {
                                   NAType * type = $2;
 
@@ -24995,8 +24993,7 @@ column_definition : qualified_name data_type optional_col_def_default_clause
                                          colFam /* column family */,
                                          colNam /*column_name*/,
                                          type /*data_type*/,
-                                         $3 /*optional_col_def_default_clause*/,
-                                         $4 /*optional_column_attributes*/);
+                                         $3 /*optional_column_attributes*/);
                                   delete $1 /*column_name*/;
                                 }
 
@@ -25030,7 +25027,6 @@ column_definition : qualified_name
 				    ElemDDLColDef(
                                          colFam /* column family */,
                                          colNam /*column_name*/,
-                                          NULL,
                                          NULL,
                                          NULL);
                                   delete $1 /*column_name*/;
@@ -25038,14 +25034,6 @@ column_definition : qualified_name
 
 /* type stringval */
 column_name : identifier
-
-/* type pElemDDL */
-optional_col_def_default_clause : empty
-                                {
-                                  $$ = NULL;
-                                }
-
-                      | col_def_default_clause
 
 /* type pElemDDL */
 col_def_default_clause : TOK_DEFAULT enableCharsetInferenceInColDefaultVal col_def_default_clause_argument
@@ -25164,6 +25152,7 @@ column_attribute : column_constraint_definition
                     | optional_lobattrs
                     | heading
                     | serialized
+                    | col_def_default_clause
 
 /* type pElemDDL */
 column_constraint_definition :  constraint_name_definition

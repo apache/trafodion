@@ -234,7 +234,6 @@ short CmpSeabaseDDL::buildViewColInfo(StmtDDLCreateView * createViewParseNode,
       colDefArray->insert(new (STMTHEAP) ElemDDLColDef
 			  ( NULL, &viewColDefArray[i]->getColumnName()
 			    , (NAType *)&valIdList[i].getType()
-			    , NULL    // default value (n/a for view def)
 			    , NULL    // col attr list (not needed)
 
 			    , STMTHEAP));

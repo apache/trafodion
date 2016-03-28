@@ -5727,7 +5727,7 @@ short CmpSeabaseDDL::buildColInfoArray(
       ElemDDLParamDef *paramNode = (*paramArray)[index];
       ElemDDLColDef colNode(NULL, &paramNode->getParamName(), 
                             paramNode->getParamDataType(),
-                            NULL, NULL, STMTHEAP);
+                            NULL, STMTHEAP);
 
       NAString colFamily;
       NAString colName;
@@ -7725,6 +7725,15 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
      GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
      for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
        GetCliGlobals()->currContext()->getArkcmp(i)->endConnection();
+
+     // Adjust hive external table ownership - if someone creates external 
+     // tables before initializing authorization, the external schemas are 
+     // owned by DB__ROOT -> change to DB__HIVEROLE.  
+     // Also if you have initialized authorization and created external tables 
+     // before the fix for JIRA 1895, rerunning initialize authorization will 
+     // fix the metadata inconsistencies
+     if (adjustHiveExternalSchemas(cliInterface) != 0)
+       return -1;
 
      // If someone initializes trafodion with library management but does not 
      // initialize authorization, then the role DB__LIBMGRROLE has not been 

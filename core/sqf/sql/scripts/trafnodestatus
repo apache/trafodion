@@ -1,0 +1,105 @@
+ #!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# Script to check the trafodion-status of the nodes
+# of a trafodion cluster.
+#
+# Switch "-j" prints the output in JSON format.
+#
+
+function traf_echo {
+    if [[ ${lv_jason_output} == "1" ]]; then
+	if [[ ${lv_first} == "1" ]]; then
+	    lv_first=0
+	    echo -n "["
+	else
+	    echo -n ","
+	fi
+	echo -n "{\"ERROR\":\"$*\"}"
+    else
+	echo $*
+    fi
+	
+}
+
+function traf_exit {
+    if [[ ${lv_jason_output} == "1" ]]; then
+	if [[ ${lv_first} == "0" ]]; then
+	    echo "]"
+	fi
+    fi
+    exit $1
+}
+
+lv_first=1
+lv_jason_output=0
+if [[ ! -z $1 ]]; then
+    if [[ $1 == "-j" ]]; then
+	lv_jason_output=1
+    fi
+fi
+
+if [[ -z $MY_SQROOT ]]; then
+    traf_echo "Looks like the Trafodion environment has not been configured. Exitting..."
+    traf_exit 5;
+fi
+
+if [[ -z $SQSCRIPTS_DIR ]]; then
+    SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
+fi
+SQCONFIGDB_FILE="$SQSCRIPTS_DIR/sqconfig.db"
+if [[ ! -e ${SQCONFIGDB_FILE} ]]; then
+    traf_echo "Cannot find the Trafodion configuration DB file ${SQCONFIGDB_FILE}"
+    traf_echo "Please execute sqgen to generate this file."
+    traf_exit 5;
+fi
+
+grep_out=`pstat | grep "monitor COLD" | grep -v mpirun`
+if [[ $? == '0' ]]; then
+   sqshell -c node info | awk -v jason_output=${lv_jason_output} -f $MY_SQROOT/sql/scripts/trafnodestatus.awk
+   traf_exit $?
+else
+   traf_echo "Trafodion is not running on the current node: `hostname`"
+   lv_monitor_not_running_on_curr_node=1
+fi
+
+if [[ ! -z ${SQ_VIRTUAL_NODES} ]]; then
+    # Running in a single node environment
+    traf_echo "Trafodion has been configured to run on a single virtual node environment."
+    traf_exit 1
+fi
+
+grep_out_mon=`$SQ_ROOT/sql/scripts/cstat | grep "monitor COLD" `
+lv_ret=$?
+if [[ $lv_ret == 0 ]]; then
+    grep_out=`cstat | grep "monitor COLD" | grep -v mpirun | sort | cut -d: -f1`
+    for lv_node in $grep_out; do
+	ssh $lv_node sqshell -c node info | awk -v jason_output=${lv_jason_output} -f $MY_SQROOT/sql/scripts/trafnodestatus.awk
+        lv_sqcheck_retcode=$?
+        traf_exit ${lv_exit_code}
+    done
+else
+    traf_echo "None of the Trafodion nodes have a Trafodion monitor running on them."
+    traf_echo "Trafodion is currently down."
+    traf_exit 255;
+fi
