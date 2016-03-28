@@ -446,7 +446,7 @@ done
 seabase="$SEABASE_REGRESS"
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  TESTFILES="TEST001 TEST002 TEST100 TEST101 TEST102 TEST107 TEST108 TEST163"
+  TESTFILES="TEST001 TEST002 TEST100 TEST101 TEST102 TEST103 TEST107 TEST108 TEST163"
   SBPFILES=
   for i in $PFILES; do
     for j in $TESTFILES; do
