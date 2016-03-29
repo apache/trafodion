@@ -266,6 +266,58 @@ function ndbm {
     eval '$SQPDSHA "df -h | grep database" 2>/dev/null | wc -l'
 }
 
+function chkReturnCodeExit {
+    if [[ $1 != 0 ]]; then
+	echo "$2 returned error $1, exitting..."
+	exit $1;
+    else
+	echo "$2 executed successfully."
+    fi
+}
+
+function chkReturnCode {
+    if [[ $1 != 0 ]]; then
+	echo "$2 returned error $1..."
+	return $1;
+    else
+	echo "$2 executed successfully."
+	return 0
+    fi
+}
+
+# $1: program/utility/script to run
+# $2: (optional): retry count (default 0)
+# $3: (optional): sleep for this many seconds
+# 
+function run_util {
+    echo "--------------------------------------"
+    lv_cmd=$*
+    echo "executing: $1"
+    $1
+    lv_stat=$?
+    if [ ! -z $3 ]; then
+	declare -i lv_retries=0
+	while [ $lv_retries -lt $2 ]; do
+	    let lv_retries=($lv_retries+1)
+	    chkReturnCode ${lv_stat} $1
+	    if [ $? != 0 ]; then
+		if [ $lv_retries -lt $2 ]; then
+		    echo "retrying in $3 seconds"
+		    sleep $3
+		    $1
+		    lv_stat=$?
+		else
+		    exit ${lv_stat}
+		fi
+	    else
+		return 0
+	    fi
+	done
+    else 
+	chkReturnCodeExit ${lv_stat} $1
+    fi
+    echo "--------------------------------------"
+}
 # check the startup log and sort the interesting even chronologically
 function sqchksl {
     setup_sqpdsh
@@ -905,6 +957,10 @@ export -f sqgetsem
 export -f sqpostsem
 export -f sqgdb_doit
 export -f sq_gdb_main
+
+export -f chkReturnCodeExit
+export -f chkReturnCode
+export -f run_util
 
 # A front end to sq_gdb_main (as sq_gdb_main is a function, this function executes sq_gdb_main in a fresh 
 # bash context and that allows background tasks spawned by sq_gdb_main to be managed).
