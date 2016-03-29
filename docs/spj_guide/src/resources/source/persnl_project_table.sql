@@ -1,14 +1,14 @@
-CREATE TABLE demo.persnl.project
+CREATE TABLE trafodion.persnl.project
 ( projcode       NUMERIC (4)  UNSIGNED NO DEFAULT                                     NOT NULL
 , empnum         NUMERIC (4)  UNSIGNED NO DEFAULT                                     NOT NULL
 , projdesc       VARCHAR (18)          DEFAULT ' '                                    NOT NULL
 , start_date     DATE                  DEFAULT DATE '2011-07-01'                      NOT NULL
 , ship_timestamp TIMESTAMP             DEFAULT TIMESTAMP '2011-08-01:12:00:00.000000' NOT NULL
 , est_complete   INTERVAL DAY          DEFAULT INTERVAL '30' DAY                      NOT NULL
-, PRIMARY KEY (projcode, empnum)
+, PRIMARY KEY ( projcode, empnum )
 ) ;
 
-INSERT INTO demo.persnl.project
+INSERT INTO trafodion.persnl.project
 VALUES
   ( 1000, 213, 'SALT LAKE CITY',    DATE '2011-04-10', TIMESTAMP '2011-04-21:08:15:00.00',   INTERVAL '15' DAY )
 , ( 1000, 211, 'SALT LAKE CITY',    DATE '2011-04-10', TIMESTAMP '2011-04-21:08:15:00.00',   INTERVAL '15' DAY )
@@ -42,4 +42,4 @@ VALUES
 , ( 5000, 218, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.persnl.project ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.persnl.project ON EVERY COLUMN ;

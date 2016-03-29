@@ -13,7 +13,7 @@ public static void projectTeam( int projectCode
 
    PreparedStatement getMembers = 
       conn.prepareStatement( "SELECT E.empnum, E.first_name, E.last_name, D.location " 
-			   + "FROM demo.persnl.employee E, demo.persnl.dept D, demo.persnl.project P "
+			   + "FROM trafodion.persnl.employee E, trafodion.persnl.dept D, trafodion.persnl.project P "
 			   + "WHERE P.projcode = ? " 
 			   + "  AND P.empnum = E.empnum " 
 			   + "  AND E.deptnum = D.deptnum "

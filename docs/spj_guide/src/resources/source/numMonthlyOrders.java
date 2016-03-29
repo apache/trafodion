@@ -23,7 +23,7 @@ public static void numMonthlyOrders( int month
 
    PreparedStatement getNumOrders =
       conn.prepareStatement( "SELECT COUNT( month( order_date ) ) " 
-			   + "FROM demo.sales.orders " 
+			   + "FROM trafodion.sales.orders " 
 			   + "WHERE month( order_date ) = ?"
 			   ) ;
 

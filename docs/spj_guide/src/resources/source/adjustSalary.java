@@ -14,14 +14,14 @@ public static void adjustSalary( BigDecimal empNum
       DriverManager.getConnection( "jdbc:default:connection" ) ;
 
    PreparedStatement setSalary = 
-      conn.prepareStatement( "UPDATE demo.persnl.employee " 
+      conn.prepareStatement( "UPDATE trafodion.persnl.employee " 
 			   + "SET salary = salary * (1 + (? / 100)) " 
 			   + "WHERE empnum = ?"
 			   ) ;
 
    PreparedStatement getSalary = 
       conn.prepareStatement( "SELECT salary " 
-			   + "FROM demo.persnl.employee " 
+			   + "FROM trafodion.persnl.employee " 
 			   + "WHERE empnum = ?"
 			   ) ;
 

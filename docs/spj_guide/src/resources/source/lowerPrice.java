@@ -12,14 +12,14 @@ public static void lowerPrice() throws SQLException
       PreparedStatement getParts = 
          conn.prepareStatement( "SELECT p.partnum, "
                               + "SUM(qty_ordered) AS qtyOrdered " 
-                              + "FROM demo.sales.parts p " 
-                              + "LEFT JOIN demo.sales.odetail o " 
+                              + "FROM trafodion.sales.parts p " 
+                              + "LEFT JOIN trafodion.sales.odetail o " 
                               + "ON p.partnum = o.partnum " 
                               + "GROUP BY p.partnum"
                               ) ;
 
       PreparedStatement updateParts = 
-         conn.prepareStatement( "UPDATE demo.sales.parts " 
+         conn.prepareStatement( "UPDATE trafodion.sales.parts " 
                               + "SET price = price * 0.9 " 
                               + "WHERE partnum = ?"
                               ) ;

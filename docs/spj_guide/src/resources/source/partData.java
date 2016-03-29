@@ -27,7 +27,7 @@ public static void partData( int partNum
    // Retrieve detail about this part into the output parameters
    PreparedStatement getPartInfo = 
      conn.prepareStatement( "SELECT P.partdesc, P.price, P.qty_available " 
-			  + "FROM demo.sales.parts P " 
+			  + "FROM trafodion.sales.parts P " 
 			  + "WHERE partnum = ? "
 			  ) ; 
 
@@ -47,9 +47,9 @@ public static void partData( int partNum
    // quantity of this part that was ordered. 
    PreparedStatement getOrders =
       conn.prepareStatement( "SELECT O.*, QTY.QTY_ORDERED " 
-			   + "FROM   demo.sales.orders O " 
+			   + "FROM   trafodion.sales.orders O " 
 			   + "     , ( select ordernum, sum(qty_ordered) as QTY_ORDERED " 
-			   + "         from demo.sales.odetail " 
+			   + "         from trafodion.sales.odetail " 
 			   + "         where partnum = ? " 
 			   + "         group by ordernum ) QTY " 
 			   + "WHERE O.ordernum = QTY.ordernum " 
@@ -65,7 +65,7 @@ public static void partData( int partNum
     // have on hand.
     PreparedStatement getLocations = 
        conn.prepareStatement( "SELECT * " 
-			    + "FROM demo.invent.partloc " 
+			    + "FROM trafodion.invent.partloc " 
 			    + " WHERE partnum = ? "
 			    ) ;
 
@@ -76,7 +76,7 @@ public static void partData( int partNum
     // suppliers who supply this part.
     PreparedStatement getSuppliers = 
        conn.prepareStatement( "SELECT * " 
-			    + "FROM demo.invent.partsupp " 
+			    + "FROM trafodion.invent.partsupp " 
 			    + "WHERE partnum = ? "
 			    ) ;
 
@@ -87,10 +87,10 @@ public static void partData( int partNum
     // sales reps that have sold this part. 
     PreparedStatement getReps =
        conn.prepareStatement( "SELECT * " 
-			    + "FROM demo.persnl.employee " 
+			    + "FROM trafodion.persnl.employee " 
 			    + "WHERE empnum in ( SELECT O.salesrep " 
-			    + "                  FROM demo.sales.orders O, " 
-			    + "                  demo.sales.odetail D " 
+			    + "                  FROM trafodion.sales.orders O, " 
+			    + "                  trafodion.sales.odetail D " 
 			    + "                  D.partnum = ? " 
 			    + "                  O.ordernum = D.ordernum ) " 
 			    + "ORDER BY empnum "

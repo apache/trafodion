@@ -1,2 +1,2 @@
-CREATE SCHEMA DEMO.PERSNL ;
-SET SCHEMA DEMO.PERSNL ;
+CREATE SCHEMA trafodion.persnl ;
+SET SCHEMA trafodion.persnl ;

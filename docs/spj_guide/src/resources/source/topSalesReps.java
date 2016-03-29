@@ -26,10 +26,10 @@ public static void topSalesReps( int whichQuarter
    PreparedStatement getTopReps = 
      conn.prepareStatement( "SELECT [first 5] e.empnum, e.first_name, " 
 			  + "e.last_name, totals.total " 
-			  + "FROM demo.persnl.employee e, " 
+			  + "FROM trafodion.persnl.employee e, " 
 			  + "   ( SELECT o.salesrep, " 
 			  + "     SUM( od.unit_price * od.qty_ordered ) as total " 
-			  + "     FROM demo.sales.orders o, demo.sales.odetail od " 
+			  + "     FROM trafodion.sales.orders o, trafodion.sales.odetail od " 
 			  + "     WHERE o.ordernum = od.ordernum " 
 			  + "       AND QUARTER( o.order_date ) = ? " 
 			  + "     GROUP BY o.salesrep " 

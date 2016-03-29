@@ -85,7 +85,7 @@ WITH GRANT OPTION privileges on ADJUSTSALARY to the Payroll directors.
 [source, sql]
 ----
 GRANT EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary
+ON PROCEDURE trafodion.persnl.adjustsalary
 TO "payrolldir1", "payrolldir2" WITH GRANT OPTION ;
 ----
 
@@ -95,7 +95,7 @@ ADJUSTSALARY to the regional department managers:
 [source, sql]
 ----
 GRANT EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary TO "rgn1mgr", "rgn2mgr", "rgn3mgr"
+ON PROCEDURE trafodion.persnl.adjustsalary TO "rgn1mgr", "rgn2mgr", "rgn3mgr"
 WITH GRANT OPTION ;
 ----
 
@@ -113,7 +113,7 @@ TOTALPRICE to PUBLIC, meaning all present and future database users and roles:
 [source, sql]
 ----
 GRANT EXECUTE
-ON PROCEDURE demo.sales.totalprice TO PUBLIC ;
+ON PROCEDURE trafodion.sales.totalprice TO PUBLIC ;
 ----
 
 After granting the EXECUTE privilege to PUBLIC, you cannot revoke the
@@ -148,7 +148,7 @@ grants these access privileges to the Payroll directors:
 [source, sql]
 ----
 GRANT SELECT, UPDATE (salary)
-ON TABLE demo.persnl.employee
+ON TABLE trafodion.persnl.employee
 TO "payrolldir1", "payrolldir2" WITH GRANT OPTION ;
 ----
 
@@ -158,7 +158,7 @@ regional department managers:
 [source, sql]
 ----
 GRANT SELECT, UPDATE (salary)
-ON TABLE demo.persnl.employee
+ON TABLE trafodion.persnl.employee
 TO "rgn1mgr", "rgn2mgr", "rgn3mgr" ;
 ----
 
@@ -207,7 +207,7 @@ Region 2 department manager:
 [source, sql]
 ----
 REVOKE EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary FROM "rgn2mgr" ;
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "rgn2mgr" ;
 ----
 
 The `payrolldir1` user cannot revoke the EXECUTE or WITH GRANT OPTION
@@ -223,7 +223,7 @@ privilege from the `payrolldir1` user:
 [source, sql]
 ----
 REVOKE GRANT OPTION FOR EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary FROM "payrolldir1" ;
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "payrolldir1" ;
 ----
 
 A user can also revoke the EXECUTE privilege from any user or role to
@@ -237,7 +237,7 @@ whom the `payrolldir1` user granted privileges:
 [source, sql]
 ----
 REVOKE GRANT OPTION FOR EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary FROM "payrolldir1"
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "payrolldir1"
 CASCADE ;
 ----
 
@@ -251,7 +251,7 @@ SPJ named TOTALPRICE from all users and roles (that is, PUBLIC):
 [source, sql]
 ----
 REVOKE EXECUTE
-ON PROCEDURE demo.sales.totalprice FROM PUBLIC;
+ON PROCEDURE trafodion.sales.totalprice FROM PUBLIC;
 ----
 
 == Using Script Files to Grant and Revoke Privileges
@@ -273,20 +273,20 @@ GRANT PROCEDURE and GRANT statements:
 ?SECTION GrantSalesProcs
 
 GRANT EXECUTE
-ON demo.sales.monthlyorders
+ON trafodion.sales.monthlyorders
 TO PUBLIC ;
 
 GRANT SELECT
-ON TABLE demo.sales.orders TO PUBLIC ;
+ON TABLE trafodion.sales.orders TO PUBLIC ;
 
 ?SECTION GrantPersnlProcs
 
 GRANT EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary TO "payrolldir1", "payrolldir2"
+ON PROCEDURE trafodion.persnl.adjustsalary TO "payrolldir1", "payrolldir2"
 WITH GRANT OPTION ;
 
 GRANT SELECT, UPDATE(salary)
-ON TABLE demo.persnl.employee
+ON TABLE trafodion.persnl.employee
 TO "payrolldir1", "payrolldir2" WITH GRANT OPTION ;
 ----
 
@@ -310,19 +310,19 @@ a series of REVOKE PROCEDURE and REVOKE statements:
 ?SECTION RevokeSalesProcs
 
 REVOKE EXECUTE
-ON PROCEDURE demo.sales.monthlyorders FROM PUBLIC ;
+ON PROCEDURE trafodion.sales.monthlyorders FROM PUBLIC ;
 
 REVOKE SELECT
-ON TABLE demo.sales.orders FROM PUBLIC ;
+ON TABLE trafodion.sales.orders FROM PUBLIC ;
 
 ?SECTION RevokePersnlProcs
 
 REVOKE EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary FROM "payrolldir1", "payrolldir2"
+ON PROCEDURE trafodion.persnl.adjustsalary FROM "payrolldir1", "payrolldir2"
 CASCADE ;
 
 REVOKE SELECT, UPDATE(salary)
-ON TABLE demo.persnl.employee
+ON TABLE trafodion.persnl.employee
 FROM "payrolldir1", "payrolldir2" CASCADE ;
 ----
 

@@ -12,7 +12,7 @@ public static void employeeJob( int empNum
 
    PreparedStatement getJobcode = 
       conn.prepareStatement( "SELECT jobcode " 
-			   + "FROM demo.persnl.employee " 
+			   + "FROM trafodion.persnl.employee " 
 			   + "WHERE empnum = ?"
 			   ) ;
 

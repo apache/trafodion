@@ -1,2 +1,2 @@
-CREATE SCHEMA DEMO.INVENT ;
-SET SCHEMA DEMO.INVENT ;
+CREATE SCHEMA trafodion.invent ;
+SET SCHEMA trafodion.invent ;

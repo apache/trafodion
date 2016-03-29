@@ -1,10 +1,10 @@
-CREATE TABLE demo.persnl.job
+CREATE TABLE trafodion.persnl.job
 ( jobcode NUMERIC (4)  UNSIGNED NO DEFAULT  NOT NULL
 , jobdesc VARCHAR (18)          DEFAULT ' ' NOT NULL
-, PRIMARY KEY (jobcode)
+, PRIMARY KEY ( jobcode )
 ) ;
 
-INSERT INTO demo.persnl.job VALUES
+INSERT INTO trafodion.persnl.job VALUES
   ( 100, 'MANAGER' )
 , ( 200, 'PRODUCTION SUPV' )
 , ( 250, 'ASSEMBLER' )
@@ -17,4 +17,4 @@ INSERT INTO demo.persnl.job VALUES
 , ( 900, 'SECRETARY' )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.persnl.job ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.persnl.job ON EVERY COLUMN ;

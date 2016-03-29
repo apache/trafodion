@@ -19,14 +19,14 @@ public class Payroll
          DriverManager.getConnection( "jdbc:default:connection" ) ;
 
       PreparedStatement setSalary = 
-         conn.prepareStatement( "UPDATE demo.persnl.employee " 
+         conn.prepareStatement( "UPDATE trafodion.persnl.employee " 
                               + "SET salary = salary * (1 + (? / 100)) " 
                               + "WHERE empnum = ?"
                               ) ;
 
       PreparedStatement getSalary = 
          conn.prepareStatement( "SELECT salary " 
-                              + "FROM demo.persnl.employee " 
+                              + "FROM trafodion.persnl.employee " 
                               + "WHERE empnum = ?"
                               ) ;
 
@@ -59,7 +59,7 @@ public class Payroll
 
       PreparedStatement getJobcode = 
          conn.prepareStatement( "SELECT jobcode " 
-                              + "FROM demo.persnl.employee " 
+                              + "FROM trafodion.persnl.employee " 
                               + "WHERE empnum = ?"
                               ) ;
 
@@ -93,7 +93,7 @@ public class Payroll
 
       PreparedStatement getMembers = 
          conn.prepareStatement( "SELECT E.empnum, E.first_name, E.last_name, D.location " 
-                              + "FROM demo.persnl.employee E, demo.persnl.dept D, demo.persnl.project P "
+                              + "FROM trafodion.persnl.employee E, trafodion.persnl.dept D, trafodion.persnl.project P "
                               + "WHERE P.projcode = ? " 
                               + "  AND P.empnum = E.empnum " 
                               + "  AND E.deptnum = D.deptnum "
@@ -132,10 +132,10 @@ public class Payroll
       PreparedStatement getTopReps = 
         conn.prepareStatement( "SELECT [first 5] e.empnum, e.first_name, " 
                              + "e.last_name, totals.total " 
-                             + "FROM demo.persnl.employee e, " 
+                             + "FROM trafodion.persnl.employee e, " 
                              + "   ( SELECT o.salesrep, " 
                              + "     SUM( od.unit_price * od.qty_ordered ) as total " 
-                             + "     FROM demo.sales.orders o, demo.sales.odetail od " 
+                             + "     FROM trafodion.sales.orders o, trafodion.sales.odetail od " 
                              + "     WHERE o.ordernum = od.ordernum " 
                              + "       AND QUARTER( o.order_date ) = ? " 
                              + "     GROUP BY o.salesrep " 

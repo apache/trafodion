@@ -1,14 +1,14 @@
-CREATE TABLE demo.sales.orders
+CREATE TABLE trafodion.sales.orders
 ( ordernum   NUMERIC (6) UNSIGNED NO DEFAULT                NOT NULL
 , order_date DATE                 DEFAULT DATE '2011-07-01' NOT NULL
 , deliv_date DATE                 DEFAULT DATE '2011-08-01' NOT NULL
 , salesrep   NUMERIC (4) UNSIGNED DEFAULT 0                 NOT NULL
 , custnum    NUMERIC (4) UNSIGNED NO DEFAULT                NOT NULL
-, PRIMARY KEY (ordernum)
+, PRIMARY KEY ( ordernum )
 ) ;
 
-ALTER TABLE demo.sales.orders
-   ADD CONSTRAINT demo.sales.date_constrnt CHECK (deliv_date >= order_date)
+ALTER TABLE trafodion.sales.orders
+   ADD CONSTRAINT trafodion.sales.date_constrnt CHECK ( deliv_date >= order_date )
    ;
 
 CREATE INDEX xordrep ON orders
@@ -19,15 +19,15 @@ CREATE INDEX xordcus ON orders
 ( custnum
 ) ;
 
-CREATE VIEW demo.sales.ordrep AS SELECT
+CREATE VIEW trafodion.sales.ordrep AS SELECT
   empnum
 , last_name
 , ordernum
 , o.custnum
 FROM
-  demo.persnl.employee e
-, demo.sales.orders o
-, demo.sales.customer c
+  trafodion.persnl.employee e
+, trafodion.sales.orders o
+, trafodion.sales.customer c
 WHERE e.empnum = o.salesrep
   AND o.custnum = C.custnum
 ;
@@ -37,17 +37,17 @@ CREATE INDEX xcustnam ON customer
 custname
 ) ;
 
-CREATE VIEW demo.sales.custlist AS SELECT
+CREATE VIEW trafodion.sales.custlist AS SELECT
   custnum
 , custname
 , street
 , city
 , state
 , postcode
-FROM demo.sales.customer
+FROM trafodion.sales.customer
 ;
 
-INSERT INTO demo.sales.orders VALUES
+INSERT INTO trafodion.sales.orders VALUES
   ( 100210, DATE '2011-04-10', DATE '2011-04-10', 220, 1234 )
 , ( 100250, DATE '2011-01-23', DATE '2011-06-15', 220, 7777 )
 , ( 101220, DATE '2011-07-21', DATE '2011-12-15', 221, 5635 )
@@ -63,4 +63,4 @@ INSERT INTO demo.sales.orders VALUES
 , ( 800660, DATE '2011-10-09', DATE '2011-11-01', 568, 3210 )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.sales.orders ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.sales.orders ON EVERY COLUMN ;

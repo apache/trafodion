@@ -1,18 +1,18 @@
-CREATE TABLE demo.invent.supplier
+CREATE TABLE trafodion.invent.supplier
 ( suppnum  NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
 , suppname CHARACTER (18)       NO DEFAULT NOT NULL
 , street   CHARACTER (22)       NO DEFAULT NOT NULL
 , city     CHARACTER (14)       NO DEFAULT NOT NULL
 , state    CHARACTER (12)       NO DEFAULT NOT NULL
 , postcode CHARACTER (10)       NO DEFAULT NOT NULL
-, PRIMARY KEY (suppnum)
+, PRIMARY KEY ( suppnum )
 ) ;
 
 CREATE INDEX xsuppnam ON supplier
 ( suppname
 ) ;
 
-INSERT INTO demo.invent.supplier VALUES
+INSERT INTO trafodion.invent.supplier VALUES
   (   1, 'NEW COMPUTERS INC',    '1800 KING ST.',         'SAN FRANCISCO', 'CALIFORNIA',   '94112' )
 , (   2, 'DATA TERMINAL INC',    '2000 BAKER STREET',     'LAS VEGAS',     'NEVADA',       '66134' )
 , (   3, 'HIGH DENSITY INC',     '7600 EMERSON',          'NEW YORK',      'NEW YORK',     '10230' )
@@ -32,4 +32,4 @@ INSERT INTO demo.invent.supplier VALUES
 , ( 186, '186 Disk Makers',      '186 Dis Way',           'Dat Way',       'Wisconsin',    '00186' )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.invent.supplier ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.invent.supplier ON EVERY COLUMN ;

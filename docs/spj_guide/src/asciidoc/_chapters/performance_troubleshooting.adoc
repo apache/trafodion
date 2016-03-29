@@ -60,25 +60,6 @@ in the Java method are specified as arrays. See
 that contains a different class name, method name, or method signature
 than the original JAR file, without dropping and re-creating the SPJ.
 
-In HPDM, compare the library's class name, method name, and method
-signature with the procedure's external file (class name), external name
-(method name), and signature.
-
-To see the library's class name, method name, and method signature, launch
-the Library Browser dialog box in HPDM by right-clicking the name of the library,
-and selecting Browse Library.
-
-For more information, see <<use-the-library-browser, Use the Library Browser>>.
-To see the procedure's external file (class name),external name (method name),
-and signature in HPDM, see
-<<using-hpdm-to-display-a-procedure-in-a-schema, Using HPDM to Display a Procedure in a Schema>>.
-If you notice a discrepancy, then see
-<<altering-an-spj-and-its-java-bytecode, Altering an SPJ and Its Java Bytecode>>.
-
-* Check the characteristics of the stored procedure in HPDM and compare
-them with the SPJ method that resides on the Trafodion platform. Fix any
-discrepancies.
-
 * Check the syntax of the CALL statement in the application. See
 <<execute-spjs, Execute SPJs>>. Fix any problems.
 
@@ -129,14 +110,14 @@ Suppose that you want to display the execution plan for this CALL
 statement:
 
 ```
-CALL demo.persnl.adjustsalary( 202, 5.5, ? ) ;
+CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 ```
 
 Enter this EXPLAIN statement in an trafci session:
 
 [source, sql]
 ----
-SQL> PREPARE spj1 FROM CALL demo.persnl.adjustsalary( 202, 5.5, ? ) ;
+SQL> PREPARE spj1 FROM CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 
 --- SQL command prepared.
 
@@ -148,7 +129,7 @@ STATEMENT_NAME ........... SPJ1
 PLAN_ID .................. 212206487012085509
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0
-STATEMENT ................ CALL demo.persnl.adjustsalary( 202, 5.5, ? )
+STATEMENT ................ CALL trafodion.persnl.adjustsalary( 202, 5.5, ? )
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ====================================== SEQ_NO 2         ONLY CHILD 1
@@ -169,8 +150,8 @@ DESCRIPTION
   LDAP_USERNAME ..........   sqluser_admin
   NVCI_PROCESS ........... ON
   SHOWCONTROL_UNEXTERNALI  OFF
-  SCHEMA ................. DEMO.INVENT
-  CATALOG ................ NEO
+  SCHEMA ................. TRAFODION.INVENT
+  CATALOG ................ TRAFODION
   PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS)
   PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.DATASOURCES)
   PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.ENVIRONMENTVALUES)
@@ -180,7 +161,7 @@ DESCRIPTION
   input_variables ........ ?
 
 CALL ====================================== SEQ_NO 1         NO CHILDREN
-TABLE_NAME ............... DEMO.PERSNL.ADJUSTSALARY
+TABLE_NAME ............... TRAFODION.PERSNL.ADJUSTSALARY
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
@@ -190,11 +171,11 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  routine_name ........... DEMO.PERSNL.ADJUSTSALARY
+  routine_name ........... TRAFODION.PERSNL.ADJUSTSALARY
   parameter_modes ........ I I O
   sql_access_mode ........ MODIFIES SQL DATA
   external_name .......... adjustSalary
-  library ................ DEMO.PERSNL.PAYROLL
+  library ................ TRAFODION.PERSNL.PAYROLL
   external_file .......... Payroll
   signature .............. (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
   language ............... JAVA
@@ -221,7 +202,7 @@ the result table of the EXPLAIN function, as shown below:
 
 [source, sql]
 ----
-SQL> PREPARE spj1 FROM CALL demo.persnl.adjustsalary( 202, 5.5, ? ) ;
+SQL> PREPARE spj1 FROM CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 
 --- SQL command prepared.
 
@@ -232,14 +213,14 @@ SQL> SELECT SUBSTRING( operator, 1, 8 ) AS "OPERATOR", operator_cost,
 OPERATOR OPERATOR_COST  DESCRIPTION
 -------- -------------- --------------------------------------------------------------------------------------
 CALL                0.0 max_card_est: -1 fragment_id: 0 parent_frag: (none) fragment_type: master routine_name:
-DEMO.PERSNL.ADJUSTSALARY parameter_modes: I I O sql_access_mode: MODIFIES SQL DATA external_name: adjustSalary
-library: DEMO.PERSNL.PAYROLL external_file: Payroll signature: (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
+TRAFODION.PERSNL.ADJUSTSALARY parameter_modes: I I O sql_access_mode: MODIFIES SQL DATA external_name: adjustSalary
+library: TRAFODION.PERSNL.PAYROLL external_file: Payroll signature: (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
 language: JAVA parameter_style: JAVA external_security: INVOKER max_result_sets: 0 parameters: cast(202),
 cast(cast((cast(5.5) / cast(10)))), NUMERIC(8,2) SIGNED
 ROOT                0.0 max_card_est: 1 fragment_id: 0 parent_frag: (none) fragment_type: master statement_index:
   0 affinity_value: 3466211324 max_max_cardinality: 1 total_overflow_size: 0.00 KB statement: call
-demo.persnl.adjustsalary( 202, 5.5 ,? ) xn_autoabort_interval: -1 plan_version: 2500 LDAP_USERNAME: sqluser_admin
-NVCI_PROCESS: ON SHOWCONTROL_UNEXTERNALIZED_ATTRS: OFF SCHEMA: DEMO.INVENT CATALOG: NEO PRIORITY: 9 (for table
+trafodion.persnl.adjustsalary( 202, 5.5 ,? ) xn_autoabort_interval: -1 plan_version: 2500 LDAP_USERNAME: sqluser_admin
+NVCI_PROCESS: ON SHOWCONTROL_UNEXTERNALIZED_ATTRS: OFF SCHEMA: TRAFODION.INVENT CATALOG: TRAFODION PRIORITY: 9 (for table
 SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS) PRIORITY: 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.D
 
 --- 2 row(s) selected. SQL>

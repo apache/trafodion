@@ -17,14 +17,14 @@ public class Sales
          PreparedStatement getParts = 
             conn.prepareStatement( "SELECT p.partnum, "
                                  + "SUM(qty_ordered) AS qtyOrdered " 
-                                 + "FROM demo.sales.parts p " 
-                                 + "LEFT JOIN demo.sales.odetail o " 
+                                 + "FROM trafodion.sales.parts p " 
+                                 + "LEFT JOIN trafodion.sales.odetail o " 
                                  + "ON p.partnum = o.partnum " 
                                  + "GROUP BY p.partnum"
                                  ) ;
 
          PreparedStatement updateParts = 
-            conn.prepareStatement( "UPDATE demo.sales.parts " 
+            conn.prepareStatement( "UPDATE trafodion.sales.parts " 
                                  + "SET price = price * 0.9 " 
                                  + "WHERE partnum = ?"
                                  ) ;
@@ -61,7 +61,7 @@ public class Sales
 
       PreparedStatement getNumOrders = 
          conn.prepareStatement( "SELECT COUNT(order_date) " 
-                              + "FROM demo.sales.orders " 
+                              + "FROM trafodion.sales.orders " 
                               + "WHERE order_date = ?"
                               ) ;
 
@@ -102,7 +102,7 @@ public class Sales
 
       PreparedStatement getNumOrders =
          conn.prepareStatement( "SELECT COUNT( month( order_date ) ) " 
-                              + "FROM demo.sales.orders " 
+                              + "FROM trafodion.sales.orders " 
                               + "WHERE month( order_date ) = ?"
                               ) ;
 
@@ -194,7 +194,7 @@ public class Sales
       // Retrieve detail about this part into the output parameters
       PreparedStatement getPartInfo = 
         conn.prepareStatement( "SELECT P.partdesc, P.price, P.qty_available " 
-                             + "FROM demo.sales.parts P " 
+                             + "FROM trafodion.sales.parts P " 
                              + "WHERE partnum = ? "
                              ) ; 
 
@@ -214,9 +214,9 @@ public class Sales
       // quantity of this part that was ordered. 
       PreparedStatement getOrders =
          conn.prepareStatement( "SELECT O.*, QTY.QTY_ORDERED " 
-                              + "FROM   demo.sales.orders O " 
+                              + "FROM   trafodion.sales.orders O " 
                               + "     , ( select ordernum, sum(qty_ordered) as QTY_ORDERED " 
-                              + "         from demo.sales.odetail " 
+                              + "         from trafodion.sales.odetail " 
                               + "         where partnum = ? " 
                               + "         group by ordernum ) QTY " 
                               + "WHERE O.ordernum = QTY.ordernum " 
@@ -232,7 +232,7 @@ public class Sales
        // have on hand.
        PreparedStatement getLocations = 
           conn.prepareStatement( "SELECT * " 
-                               + "FROM demo.invent.partloc " 
+                               + "FROM trafodion.invent.partloc " 
                                + " WHERE partnum = ? "
                                ) ;
 
@@ -243,7 +243,7 @@ public class Sales
        // suppliers who supply this part.
        PreparedStatement getSuppliers = 
           conn.prepareStatement( "SELECT * " 
-                               + "FROM demo.invent.partsupp " 
+                               + "FROM trafodion.invent.partsupp " 
                                + "WHERE partnum = ? "
                                ) ;
 
@@ -254,10 +254,10 @@ public class Sales
        // sales reps that have sold this part. 
        PreparedStatement getReps =
           conn.prepareStatement( "SELECT * " 
-                               + "FROM demo.persnl.employee " 
+                               + "FROM trafodion.persnl.employee " 
                                + "WHERE empnum in ( SELECT O.salesrep " 
-                               + "                  FROM demo.sales.orders O, " 
-                               + "                  demo.sales.odetail D " 
+                               + "                  FROM trafodion.sales.orders O, " 
+                               + "                  trafodion.sales.odetail D " 
                                + "                  D.partnum = ? " 
                                + "                  O.ordernum = D.ordernum ) " 
                                + "ORDER BY empnum "
@@ -295,7 +295,7 @@ public class Sales
          DriverManager.getConnection( "jdbc:default:connection" ) ;
 
       // Get the number of orders on or after this date
-      s =   "SELECT COUNT(ordernum) FROM demo.sales.orders " 
+      s =   "SELECT COUNT(ordernum) FROM trafodion.sales.orders " 
           + "WHERE order_date >= CAST(? AS DATE) "
           ;
 
@@ -314,13 +314,13 @@ public class Sales
           + "         o.ordernum "
           + "       , COUNT(d.partnum) AS num_parts " 
           + "       , SUM(d.unit_price * d.qty_ordered) AS amount " 
-          + "       FROM demo.sales.orders o, demo.sales.odetail d " 
+          + "       FROM trafodion.sales.orders o, trafodion.sales.odetail d " 
           + "       WHERE o.ordernum = d.ordernum " 
           + "          AND o.order_date >= CAST(? AS DATE) " 
           + "       GROUP BY o.ordernum "
           + "      ) amounts " 
-          + "      , demo.sales.orders orders "
-          + "      , demo.persnl.employee emps " 
+          + "      , trafodion.sales.orders orders "
+          + "      , trafodion.persnl.employee emps " 
           + "WHERE amounts.ordernum = orders.ordernum " 
           + "   AND orders.salesrep = emps.empnum " 
           + "ORDER BY orders.ordernum "
@@ -332,7 +332,7 @@ public class Sales
 
        // Open a result set for order detail rows
        s =   "SELECT d.*, p.partdesc " 
-           + "FROM demo.sales.odetail d, demo.sales.parts p, demo.sales.orders O " 
+           + "FROM trafodion.sales.odetail d, trafodion.sales.parts p, trafodion.sales.orders O " 
            + "WHERE d.partnum = p.partnum AND d.ordernum = o.ordernum " 
            + "   AND o.order_date >= CAST(? AS DATE) " 
            + "ORDER BY d.ordernum "

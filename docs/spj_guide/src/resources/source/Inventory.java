@@ -23,7 +23,7 @@ public class Inventory
       PreparedStatement getSupplier =
          conn.prepareStatement( "SELECT suppname, street, city, "
 	                      + "       state, postcode "
-			      + "FROM demo.invent.supplier "
+			      + "FROM trafodion.invent.supplier "
 			      + "WHERE suppnum = ?"  
 			      ) ;
 
@@ -60,7 +60,7 @@ public class Inventory
          conn.prepareStatement( "SELECT AVG(qty_on_hand), "
 	                      + "       MIN(qty_on_hand), "
 			      + "       MAX(qty_on_hand) "
-			      + "FROM demo.invent.partloc"
+			      + "FROM trafodion.invent.partloc"
 			      ) ;
 
       ResultSet rs = getQty.executeQuery() ;
@@ -93,7 +93,7 @@ public class Inventory
 
       PreparedStatement getLocationsExact =
          conn.prepareStatement( "SELECT L.loc_code, L.partnum, L.qty_on_hand "
-	                      + "FROM demo.invent.partloc L "
+	                      + "FROM trafodion.invent.partloc L "
 			      + "WHERE L.partnum = ? "
 			      + "  AND L.qty_on_hand = ? "
 			      + " ORDER BY L.partnum "
@@ -104,7 +104,7 @@ public class Inventory
 
       PreparedStatement getLocationsMoreThan =
          conn.prepareStatement( "SELECT L.loc_code, L.partnum, L.qty_on_hand "
-	                      + "FROM demo.invent.partloc L "
+	                      + "FROM trafodion.invent.partloc L "
 			      + "WHERE L.partnum = ? "
 			      + "  AND L.qty_on_hand > ? "
 			      + "ORDER BY L.partnum "

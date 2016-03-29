@@ -16,7 +16,7 @@ public static void supplyQuantities( int[] avgQty
       conn.prepareStatement( "SELECT AVG(qty_on_hand), "
 			   + "       MIN(qty_on_hand), "
 			   + "       MAX(qty_on_hand) "
-			   + "FROM demo.invent.partloc"
+			   + "FROM trafodion.invent.partloc"
 			   ) ;
 
    ResultSet rs = getQty.executeQuery() ;

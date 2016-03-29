@@ -85,35 +85,49 @@ include::{sourcedir}/lowerPrice.java[lowerPrice procedure source code]
 [[creating-the-procedure-lowerprice]]
 ==== Creating the Procedure: LOWERPRICE
 
-Before creating the procedure, use HPDM to create a library named `SALES`
-in the `DEMO.SALES` schema and select the `Sales.jar` file to upload to the
+Before creating the procedure, create a library named `SALES`
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
 Trafodion platform for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the SALES schema, 
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-3]] 
-.HPDM Create Procedure Settings: LOWERPRICE Procedure
+.Create Procedure Settings: LOWERPRICE Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box    | Field or Option                | Value or Setting
-| *Name*       | Procedure Name                 | `lowerprice`
-| *Code*       | Library                        | `DEMO.SALES.SALES` 
-|              | Class Name                     | `Sales`
-|              | Method Name                    | `lowerPrice`
-| *Parameters* |                                | None
-| *Attributes* | Number of dynamic results sets | `0`
-|              | Access Database                | `selected`
-|              | External Security              | `Invoker` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.sales.lowerprice`
+| *sql-parameter*        | Not applicable.
+| *external name*        | `EXTERNAL NAME sales.lowerPrice`
+| *library*              | `LIBRARY trafodion.sales.sales`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE*: Depending on your security requirements, you can select Definer
-instead. For more information, see 
-<<understand-external-security, Understand External Security>>.
-|              | Transaction Required           | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `MODIFIES SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.lowerprice( )
+   EXTERNAL NAME 'sales.lowerPrice'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   MODIFIES SQL DATA
+   ;
+----
 
 [[calling-the-procedure-lowerprice]]
 ==== Calling the Procedure: LOWERPRICE
@@ -126,7 +140,7 @@ To invoke the LOWERPRICE procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.sales.lowerprice() ;
+SQL> CALL trafodion.sales.lowerprice() ;
 
 --- SQL operation complete.
 ----
@@ -142,8 +156,8 @@ FROM
    ( SELECT p.partnum
    , SUM(qty_ordered) AS qtyOrdered
    , p.price 
-     FROM demo.sales.parts p
-     LEFT OUTER JOIN demo.sales.odetail o ON p.partnum = o.partnum
+     FROM trafodion.sales.parts p
+     LEFT OUTER JOIN trafodion.sales.odetail o ON p.partnum = o.partnum
      GROUP BY p.partnum, p.price
    ) AS allparts 
 WHERE qtyOrdered < 51 ;
@@ -206,42 +220,52 @@ include::{sourcedir}/numDailyOrders.java[numDailyOrders procedure source code]
 [[creating-the-procedure-dailyorders]]
 ==== Creating the Procedure: DAILYORDERS
 
-Before creating the procedure, use HPDM to create a library named `SALES`
-in the `DEMO.SALES` schema and select the `Sales.jar` file to upload to the
+Before creating the procedure, create a library named `SALES`
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
 Trafodion platform for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the SALES schema, launch
-the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-4]]
-.HPDM Create Procedure Settings: DAILYORDERS Procedure
+.Create Procedure Settings: DAILYORDERS Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box    | Field or Option               | Value or Setting
-| *Name*       | Procedure Name                | dailyorders
-| *Code*       | Library                       | DEMO.SALES.SALES
-|              | Class Name                    | Sales
-|              | Method Name                   | numDailyOrders
-3+<| *Parameters* 
-| _First_      | Parameter Name                | date1
-|              | SQL Data Type                 | DATE
-|              | Direction                     | IN
-|              | Java Data Type                | Displays the signature of the Java method that you selected: `java.sql.Date`
-| _Second_     | Parameter Name                | number
-|              | SQL Data Type                 | SIGNED INTEGER
-|              | Direction                     | OUT
-|              | Java Data Type                | Displays the signature of the Java method that you selected: `int[]`
-| *Attributes* | Number of dynamic result sets | 0
-|              | Accesses Database             | selected
-|              | External security             | Invoker +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.sales.dailyorders`
+| *sql-parameter-1*      | `IN date1 DATE`
+| *sql-parameter-2*      | `OUT number SIGNED INTEGER`
+| *external name*        | `EXTERNAL NAME sales.numDailyOrders`
+| *library*              | `LIBRARY trafodion.sales.sales`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE:* Depending on your security requirements, you can select Definer
-instead. For more information, see <<understand-external-security, Understand External Security>>.
-|            | Transaction required          | Yes
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.dailyorders( IN date1 DATE
+                                            , OUT number SIGNED INTEGER
+                                            )
+   EXTERNAL NAME 'sales.numDailyOrders'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-dailyorders]]
 ==== Calling the Procedure: DAILYORDERS
@@ -254,7 +278,7 @@ To invoke the DAILYORDERS procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.sales.dailyorders( DATE '2011-03-19', ? ) ;
+SQL> CALL trafodion.sales.dailyorders( DATE '2011-03-19', ? ) ;
 ----
 
 The DAILYORDERS procedure determines the total number of orders on a
@@ -291,42 +315,52 @@ include::{sourcedir}/numMonthlyOrders.java[numMonthlyOrders procedure source cod
 [[creating-the-procedure-monthlyorders]]
 ==== Creating the Procedure: MONTHLYORDERS
 
-Before creating the procedure, use HPDM to create a library named SALES
-in the `DEMO.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `SALES`
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the SALES schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-5]]
-.HPDM Create Procedure Settings: MONTHLYORDERS Procedure
+.Create Procedure Settings: MONTHLYORDERS Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `monthlyorders`
-| *Code*               | Library                       | `DEMO.SALES.SALES`
-|                      | Class Name                    | `Sales`
-|                      | Method Name                   | `numMonthlyOrders`
-3+<| *Parameters* 
-| _First_              | Parameter Name                | `monthnum`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| _Second_             | Parameter Name                | `ordernum`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int[]`
-| *Attributes*         | Number of dynamic result sets | `0`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.sales.monthlyorders`
+| *sql-parameter-1*      | `IN monthnum SIGNED INTEGER`
+| *sql-parameter-2*      | `OUT ordernum SIGNED INTEGER`
+| *external name*        | `EXTERNAL NAME sales.numMonthlyOrders`
+| *library*              | `LIBRARY trafodion.sales.sales`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.monthlyorders( IN monthnum SIGNED INTEGER
+                                              , OUT ordernum SIGNED INTEGER
+                                              )
+   EXTERNAL NAME 'sales.numMonthlyOrders'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-monthlyorders]]
 ==== Calling the Procedure: MONTHLYORDERS
@@ -339,7 +373,7 @@ To invoke the MONTHLYORDERS procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.sales.monthlyorders( 3,? ) ;
+SQL> CALL trafodion.sales.monthlyorders( 3,? ) ;
 ----
 
 The MONTHLYORDERS procedure determines the total number of orders during
@@ -376,55 +410,54 @@ include::{sourcedir}/totalPrice.java[totalPrice procedure source code]
 [[creating-the-procedure-totalprice]]
 ==== Creating the Procedure: TOTALPRICE
 
-Before creating the procedure, use HPDM to create a library named SALES
-in the `DEMO.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `SALES`
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the SALES schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-6]]
-.HPDM Create Procedure Settings: TOTALPRICE Procedure
+.Create Procedure Settings: TOTALPRICE Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                |  `totalprice`
-| *Code*               | Library                       | `DEMO.SALES.SALES`
-|                      | Class Name                    | `Sales`
-|                      | Method Name                   | `totalPrice`
-3+<| *Parameters* 
-| _First_              | Parameter Name                | `qty`
-|                      | SQL Data Type                 | `SIGNED NUMERIC` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.sales.totalprice`
+| *sql-parameter-1*      | `IN gty NUMERIC(18)`
+| *sql-parameter-2*      | `IN speed VARCHAR(10)`
+| *sql-parameter-3*      | `INOUT price NUMERIC(18,2)`
+| *external name*        | `EXTERNAL NAME sales.totalPrice`
+| *library*              | `LIBRARY trafodion.sales.sales`
+| *external security*    | `invoker`^1^ +
  +
-- Precision: `18` +
-- Scale: `0`
-|                      | Direction                      | `IN`
-|                      | Java Data Type                 | Displays the signature of the Java method that you selected: `java.math.BigDecimal`
-| _Second_             | Parameter Name                 | `rate`
-|                      | SQL Data Type                  | `VARCHAR` +
- +
-- Length: `10` +
-- Upshift: `not selected` +
-- Character set: `ISO88591`
-|                      | Direction                      | `IN`
-|                      | Java Data Type                 |  Displays the signature of the Java method that you selected: `java.lang.String`
-| _Third_              | Parameter Name                 | `price`
-|                      | SQL Data Type                  | `SIGNED NUMERIC` +
- +
-- Precision: `18` +
-- Scale: `2`
-|                      | Direction                      | `INOUT`
-|                      | Java Data Type                 | Displays the signature of the Java method that you selected: `java.math.BigDecimal[]`
-| *Attributes*         | Number of dynamic result sets  | `0`
-|                      | Accesses Database              | `not selected`
-|                      | External Security              | `Invoker` +
- +
-*NOTE:* External security is disabled because the stored procedure does not access the database.
-|                      | Transaction Required           | No
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `NO SQL`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.totalprice( IN gty NUMERIC(18)
+                                            , IN speed VARCHAR(10)
+					    , INOUT price NUMERIC(18,2)
+                                            )
+   EXTERNAL NAME 'sales.totalPrice'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   NO SQL
+   ;
+----
 
 [[calling-the-procedure-totalprice]]
 ==== Calling the Procedure: TOTALPRICE
@@ -438,7 +471,7 @@ To invoke the TOTALPRICE procedure in trafci:
 [source, sql]
 ----
 SQL> SET PARAM ?p 10 ;
-SQL> CALL demo.sales.totalprice( 23, 'standard', ?p ) ;
+SQL> CALL trafodion.sales.totalprice( 23, 'standard', ?p ) ;
 ----
 
 The TOTALPRICE procedure calculates the total price of a purchase and
@@ -481,58 +514,57 @@ include::{sourcedir}/partData.java[partData procedure source code]
 [[creating-the-procedure-partdata]]
 ==== Creating the Procedure: PARTDATA
 
-Before creating the procedure, use HPDM to create a library named SALES
-in the `DEMO.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `SALES`
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the SALES schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-7]]
-.HPDM Create Procedure Settings: PARTDATA Procedure
+.Create Procedure Settings: PARTDATA Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `partdata`
-| *Code*               | Library                       | `DEMO.SALES.SALES`
-|                      | Class Name                    | `Sales`
-|                      | Method Name                   | `partData`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `partnum`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| _Second_             | Parameter Name                | `partdesc`
-|                      | SQL Data Type                 | `CHARACTER` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.sales.partdata`
+| *sql-parameter-1*      | `IN partnum SIGNED INTEGER`
+| *sql-parameter-2*      | `OUT partdesc CHARACTER(18)`
+| *sql-parameter-3*      | `INOUT price NUMERIC(18,2)`
+| *sql-parameter-4*      | `OUT qty_available SIGNED INTEGER`
+| *external name*        | `EXTERNAL NAME sales.partData`
+| *library*              | `LIBRARY trafodion.sales.sales`
+| *external security*    | `invoker`^1^ +
  +
-- Length: `18` +
-- Varying: `not selected` +
-- Upshift: `not selected` +
-- Character set: `ISO88591` 
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String[]`
-| _Third_              | Parameter Name                | `price`
-|                      | SQL Data Type                 | `SIGNED NUMERIC` +
- +
-- Precision: `8` +
-- Scale: `2`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.math.BigDecimal[]`
-| _Fourth_             | Parameter Name                | `qty_available`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int[]`
-| *Attributes*         | Number of dynamic result sets | `4`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
- +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 4`
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.partdata( IN partnum SIGNED INTEGER
+                                         , OUT partdesc CHARACTER(18)
+					 , INOUT price NUMERIC(18,2)
+					 , OUT qty_available SIGNED INTEGER
+                                         )
+   EXTERNAL NAME 'sales.partData'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   DYNAMIC RESULT SETS 4
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-partdata]]
 ==== Calling the Procedure: PARTDATA
@@ -545,7 +577,7 @@ To invoke the PARTDATA procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.sales.partdata(212,?,?,?) ;
+SQL> CALL trafodion.sales.partdata(212,?,?,?) ;
 ----
 
 The PARTDATA procedure returns this information about part 212:
@@ -616,46 +648,53 @@ include::{sourcedir}/orderSummary.java[orderSummary procedure source code]
 [[creating-the-procedure-ordersummary]]
 ==== Creating the Procedure: ORDERSUMMARY
 
-Before creating the procedure, use HPDM to create a library named SALES
-in the `DEMO.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `SALES`
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the SALES schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-8]]
-.HPDM Create Procedure Settings: ORDERSUMMARY Procedure
+.Create Procedure Settings: ORDERSUMMARY Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `ordersummary`
-| *Code*               | Library                       | `DEMO.SALES.SALES`
-|                      | Class Name                    | `Sales`
-|                      | Method Name                   | `orderSummary`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `on_or_after_date`
-|                      | SQL Data Type                 | `VARCHAR` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.sales.ordersummary`
+| *sql-parameter-1*      | `IN on_or_after_date VARCHAR(20)`
+| *sql-parameter-2*      | `OUT num_orders LARGEINT`
+| *external name*        | `EXTERNAL NAME sales.orderSummary`
+| *library*              | `LIBRARY trafodion.sales.sales`
+| *external security*    | `invoker`^1^ +
  +
-- Length: `20`
-- Upshift: `not selected`
-- Character set: `ISO88591`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String`
-| _Second_             | Parameter Name                | `num_orders`
-|                      | SQL Data Type                 | `SIGNED LARGEINT`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `long[]`
-| *Attributes*         | Number of dynamic result sets | `2`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
- +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 2`
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.ordersummary( IN on_or_after_date VARCHAR(20)
+                                             , OUT num_orders LARGEINT
+                                             )
+   EXTERNAL NAME 'sales.orderSummary'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   DYNAMIC RESULT SETS 2
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-ordersummary]]
 ==== Calling the Procedure: ORDERSUMMARY
@@ -668,7 +707,7 @@ To invoke the ORDERSUMMARY procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.sales.ordersummary('01-01-2011', ?);
+SQL> CALL trafodion.sales.ordersummary('01-01-2011', ?);
 ----
 
 The ORDERSUMMARY procedure returns this information about the orders on
@@ -729,7 +768,7 @@ See the following sections for more information about each SPJ method.
 === ADJUSTSALARY Procedure
 
 The ADJUSTSALARY procedure accepts an employee number and a percentage
-vvalue and updates the employee's salary in the database based on that
+value and updates the employee's salary in the database based on that
 percentage. This method also returns the updated salary to an output
 parameter.
 
@@ -746,52 +785,54 @@ include::{sourcedir}/adjustSalary.java[adjustSalary procedure source code]
 [[creating-the-procedure-adjustsalary]]
 ==== Creating the Procedure: ADJUSTSALARY
 
-Before creating the procedure, use HPDM to create a library named
-`PAYROLL` in the `DEMO.PERSNL` schema and select the `Payroll.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `PAYROLL`
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the `Procedures` folder in the `PERSNL` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-9]]
-.HPDM Create Procedure Settings: ADJUSTSALARY Procedure
+.Create Procedure Settings: ADJUSTSALARY Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `adjustsalary`
-| *Code*               | Library                       | `DEMO.PERSNL.PAYROLL`
-|                      | Class Name                    | `Payroll`
-|                      | Method Name                   | `adjustSalary`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `empnum`
-|                      | SQL Data Type                 | `SIGNED NUMERIC` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.persnl.adjustsalary`
+| *sql-parameter-1*      | `IN empnum NUMERIC(4)`
+| *sql-parameter-2*      | `IN percent FLOAT`
+| *sql-parameter-3*      | `OUT newsalary NUMERIC(8,2)`
+| *external name*        | `EXTERNAL NAME persnl.adjustSalary`
+| *library*              | `LIBRARY trafodion.persnl.payroll`
+| *external security*    | `invoker`^1^ +
  +
-- Precision: `4` +
-- Scale: `0`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.math.BigDecimal`
-| _Second_             | Parameter Name                | `percent`
-|                      | SQL Data Type                 | `FLOAT`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `double`
-| _Third_              | Parameter Name                | `newsalary`
-|                      | SQL Data Type                 | `SIGNED NUMERIC` +
- +
-- Precision: `8` +
-- Scale: `2`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.math.BigDecimal[]`
-| *Attributes*         | Number of dynamic result sets | `0`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
- +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `MODIFIES SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.persnl.adjustsalary( IN empnum NUMERIC(4)
+                                              , IN percent FLOAT
+					      , OUT newsalary NUMERIC(8,2)
+                                              ) 
+   EXTERNAL NAME 'persnl.adjustSalary'
+   LIBRARY trafodion.persnl.payroll
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   MODIFIES SQL DATA
+   ;
+----
 
 [[calling-the-procedure-adjustsalary]]
 ==== Calling the Procedure: ADJUSTSALARY
@@ -804,7 +845,7 @@ To invoke the ADJUSTSALARY procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.persnl.adjustsalary(29, 2.5, ?) ;
+SQL> CALL trafodion.persnl.adjustsalary(29, 2.5, ?) ;
 ----
 
 The ADJUSTSALARY procedure updates the salary of employee number 29 by
@@ -841,45 +882,52 @@ include::{sourcedir}/employeeJob.java[employeeJob procedure source code]
 [[creating-the-procedure-employeejob]]
 ==== Creating the Procedure: EMPLOYEEJOB
 
-Before creating the procedure, use HPDM to create a library named
-`PAYROLL` in the `DEMO.PERSNL` schema and select the `Payroll.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `PAYROLL`
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the `Procedures` folder in the `PERSNL` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use these values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-10]]
-.HPDM Create Procedure Settings: EMPLOYEEJOB Procedure
+.Create Procedure Settings: EMPLOYEEJOB Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `employeejob`
-| *Code*               | Library                       | `DEMO.PERSNL.PAYROLL`
-|                      | Class Name                    | `Payroll`
-|                      | Method Name                   | `employeeJob`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `empnum`
-|                      | SQL Data Type                 | `SIGNED NUMERIC` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.persnl.employeejob`
+| *sql-parameter-1*      | `IN empnum NUMERIC(4)`
+| *sql-parameter-2*      | `OUT jobcode INT`
+| *external name*        | `EXTERNAL NAME persnl.employeeJob (int, java.lang.Integer[])`
+| *library*              | `LIBRARY trafodion.persnl.payroll`
+| *external security*    | `invoker`^1^ +
  +
-- Precision: `4` +
-- Scale: `0`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.math.BigDecimal`
-| _Second_             | Parameter Name                | `jobcode`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.Integer[]`
-| *Attributes*         | Number of dynamic result sets | `0`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
- +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.persnl.adjustsalary( IN empnum NUMERIC(4)
+					      , OUT jobcode INT
+                                              ) 
+   EXTERNAL NAME 'persnl.employeeJob (int, java.lang.Integer[])'
+   LIBRARY trafodion.persnl.payroll
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-employeejob]]
 ==== Calling the Procedure: EMPLOYEEJOB
@@ -892,7 +940,7 @@ To invoke the EMPLOYEEJOB procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.persnl.employeejob(337, ?) ;
+SQL> CALL trafodion.persnl.employeejob(337, ?) ;
 ----
 
 The EMPLOYEEJOB procedure accepts the employee number 337 and returns
@@ -929,38 +977,52 @@ include::{sourcedir}/projectTeam.java[projectTeam procedure source code]
 [[creating-the-procedure-projectteam]]
 ==== Creating the Procedure: PROJECTTEAM
 
-Before creating the procedure, use HPDM to create a library named
-`PAYROLL` in the `DEMO.PERSNL` schema and select the `Payroll.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `PAYROLL`
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the `Procedures` folder in the `PERSNL` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-11]]
-.HPDM Create Procedure Settings: PROJECTTEAM Procedure
+.Create Procedure Settings: PROJECTTEAM Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `projectteam`
-| *Code*               | Library                       | `DEMO.PERSNL.PAYROLL`
-|                      | Class Name                    | `Payroll`
-|                      | Method Name                   | `projectTeam`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `projectcode`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| *Attributes*         | Number of dynamic result sets | `1`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.persnl.projectteam`
+| *sql-parameter-1*      | `IN projectcode INTEGER`
+| *external name*        | `EXTERNAL NAME persnl.projectTeam`
+| *library*              | `LIBRARY trafodion.persnl.payroll`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 1`
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.persnl.projectteam( IN projectcode INTEGER
+					      , OUT jobcode INT
+                                              ) 
+   EXTERNAL NAME 'persnl.projectTeam'
+   LIBRARY trafodion.persnl.payroll
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   DYNAMIC RESULT SETS 1
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-projectteam]]
 ==== Calling the Procedure: PROJECTTEAM
@@ -973,7 +1035,7 @@ To invoke the PROJECTTEAM procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.persnl.projectteam( 5000 ) ;
+SQL> CALL trafodion.persnl.projectteam( 5000 ) ;
 ----
 
 The PROJECTTEAM procedure returns this information about the employees
@@ -1014,38 +1076,51 @@ include::{sourcedir}/topSalesReps.java[topSalesReps procedure source code]
 [[creating-the-procedure-topsalesreps]]
 ==== Creating the Procedure: TOPSALESREPS
 
-Before creating the procedure, use HPDM to create a library named
-`PAYROLL` in the `DEMO.PERSNL` schema and select the `Payroll.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `PAYROLL`
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the `Procedures` folder in the `PERSNL` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-12]]
-.HPDM Create Procedure Settings: TOPSALESREPS Procedure
+.Create Procedure Settings: TOPSALESREPS Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `topsalesreps`
-| *Code*               | Library                       | `DEMO.PERSNL.PAYROLL`
-|                      | Class Name                    | `Payroll`
-|                      | Method Name                   | `topSalesReps`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `whichquarter`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| *Attributes*         | Number of dynamic result sets | `1`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.persnl.topsalesreps`
+| *sql-parameter-1*      | `IN whichquarter INTEGER`
+| *external name*        | `EXTERNAL NAME persnl.topSalesReps`
+| *library*              | `LIBRARY trafodion.persnl.payroll`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 1`
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.persnl.topsalesreps( IN whichquarter INTEGER
+                                              ) 
+   EXTERNAL NAME 'persnl.topSalesReps'
+   LIBRARY trafodion.persnl.payroll
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   DYNAMIC RESULT SETS 1
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-topsalesreps]]
 ==== Calling the Procedure: TOPSALESREPS
@@ -1058,7 +1133,7 @@ To invoke the TOPSALESREPS procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.persnl.topsalesreps( 1 ) ;
+SQL> CALL trafodion.persnl.topsalesreps( 1 ) ;
 ----
 
 The TOPSALESREPS procedure returns this information about the top five
@@ -1123,86 +1198,60 @@ include::{sourcedir}/supplierInfo.java[supplierInfo procedure source code]
 [[creating-the-procedure-supplierinfo]]
 ==== Creating the Procedure: SUPPLIERINFO
 
-Before creating the procedure, use HPDM to create a library named
-`INVENTORY` in the `DEMO.INVENT` schema and select the `Inventory.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `INVENTORY`
+in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the `INVENT` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-13]]
-.HPDM Create Procedure Settings: SUPPLIERINFO Procedure
+.Create Procedure Settings: SUPPLIERINFO Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `supplierinfo`
-| *Code*               | Library                       | `DEMO.INVENT.INVENTORY`
-|                      | Class Name                    | `Inventory`
-|                      | Method Name                   | `supplierInfo`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `empnum`
-|                      | SQL Data Type                 | `SIGNED NUMERIC` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.invent.supplierinfo`
+| *sql-parameter-1*      | `IN empnum NUMERIC(4)`
+| *sql-parameter-2*      | `IN suppnum CHARACTER(18)`
+| *sql-parameter-3*      | `OUT address CHARACTER(22)`
+| *sql-parameter-4*      | `OUT city CHARACTER(14)`
+| *sql-parameter-5*      | `OUT state CHARACTER(12)`
+| *sql-parameter-6*      | `OUT zipcode CHARACTER(10)`
+| *external name*        | `EXTERNAL NAME persnl.supplierInfo`
+| *library*              | `LIBRARY trafodion.invent.inventory`
+| *external security*    | `invoker`^1^ +
  +
-- Precision: `4` +
-- Scale: `0`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.math.BigDecimal`
-| _Second_             | Parameter Name                | `suppname`
-|                      | SQL Data Type                 | `CHARACTER` +
- +
-- Length: `18` +
-- Varying: `not selected` +
-- Upshift: `not selected` +
-- Character set: `ISO88591`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String[]`
-| _Third_              | Parameter Name                | `address`
-|                      | SQL Data Type                 | `CHARACTER` +
- +
-- Length: `22` +
-- Varying: `not selected` +
-- Upshift: `not selected` +
-- Character set: `ISO88591`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String[]`
-| _Fourth_             | Parameter Name                | `city`
-|                      | SQL Data Type                 | `CHARACTER` +
- +
-- Length: `14` +
-- Varying: `not selected` +
-- Upshift: `not selected` +
-- Character set: `ISO88591`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String[]`
-| _Fifth_              | Parameter Name                | `state`
-|                      | SQL Data Type                 | `CHARACTER` +
- +
-- Length: `12` +
-- Varying: `not selected` +
-- Upshift: `not selected` +
-- Character set: `ISO88591`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String[]`
-| _Sixth_              | Parameter Name                | `zipcode`
-|                      | SQL Data Type                 | `CHARACTER` +
- +
-- Length: `10` +
-- Varying: `not selected` +
-- Upshift: `not selected` +
-- Character set: `ISO88591`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `java.lang.String[]`
-| *Attributes*         | Number of dynamic result sets | `0`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
- +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.invent.supplierinfo( IN  empnum NUMERIC(4)
+                                              , IN  suppnum CHARACTER(18)
+					      , OUT address CHARACTER(22)
+					      , OUT city CHARACTER(14)
+					      , OUT state CHARACTER(12)
+					      , OUT zipcode CHARACTER(10)
+                                              ) 
+   EXTERNAL NAME 'persnl.supplierInfo'
+   LIBRARY trafodion.invent.inventory
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-supplierinfo]]
 ==== Calling the Procedure: SUPPLIERINFO
@@ -1215,7 +1264,7 @@ To invoke the SUPPLIERINFO procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.invent.supplierinfo( 25,?,?,?,?,? ) ;
+SQL> CALL trafodion.invent.supplierinfo( 25,?,?,?,?,? ) ;
 ----
 
 The SUPPLIERINFO procedure accepts the supplier number 25 and returns
@@ -1251,46 +1300,54 @@ include::{sourcedir}/supplyQuantities.java[supplyQuantities procedure source cod
 [[creating-the-procedure-supplyquantities]]
 ==== Creating the Procedure: SUPPLYQUANTITIES
 
-Before creating the procedure, use HPDM to create a library named
-`INVENTORY` in the `DEMO.INVENT` schema and select the `Inventory.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `INVENTORY`
+in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the `INVENT` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-14]]
-.HPDM Create Procedure Settings: SUPPLYQUANTITIES Procedure
+.Create Procedure Settings: SUPPLYQUANTITIES Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `supplyquantities`
-| *Code*               | Library                       | `DEMO.INVENT.INVENTORY`
-|                      | Class Name                    | `Inventory`
-|                      | Method Name                   | `supplyQuantities`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `avrg`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| _Second_             | Parameter Name                | `minm`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| _Third_              | Parameter Name                | `maxm`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `OUT`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| *Attributes*         | Number of dynamic result sets | `0`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.invent.supplyquantities`
+| *sql-parameter-1*      | `OUT avrg INT`
+| *sql-parameter-2*      | `OUT minm INT`
+| *sql-parameter-3*      | `OUT maxm INT`
+| *external name*        | `EXTERNAL NAME persnl.supplyQuantities`
+| *library*              | `LIBRARY trafodion.invent.inventory`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.invent.supplyquantities( OUT avrg INT
+					          , OUT minm INT
+					          , OUT maxm INT
+                                                  ) 
+   EXTERNAL NAME 'persnl.supplyQuantities'
+   LIBRARY trafodion.invent.inventory
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-supplyquantities]]
 ==== Calling the Procedure: SUPPLYQUANTITIES
@@ -1303,7 +1360,7 @@ To invoke the SUPPLYQUANTITIES procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.invent.supplynumbers( ?,?,? ) ;
+SQL> CALL trafodion.invent.supplynumbers( ?,?,? ) ;
 ----
 
 The SUPPLYQUANTITIES procedure returns this output in trafci:
@@ -1341,41 +1398,54 @@ include::{sourcedir}/partLocations.java[partLocations procedure source code]
 [[creating-the-procedure-partlocs]]
 ==== Creating the Procedure: PARTLOCS
 
-Before creating the procedure, use HPDM to create a library named
-`INVENTORY` in the `DEMO.INVENT` schema and select the `Inventory.jar` file to
-upload to the Trafodion platform for that library.
-For more information, see <<create-a-library, Create a Library>>.
+Before creating the procedure, create a library named `INVENTORY`
+in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to the
+Trafodion platform for that library. For more information, see
+<<create-a-library, Create a Library>>. 
 
-After creating the library, navigate to the Procedures folder in the `INVENT` schema,
-launch the Create Procedure dialog box, and then enter or select these values.
-For more information, see <<create-a-procedure, Create a Procedure>>.
+After creating the library, use the values listed in the table below to define and execute the
+CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create a Procedure>>.
 
 [[table-15]]
-.HPDM Create Procedure Settings: PARTLOCS Procedure
+.Create Procedure Settings: PARTLOCS Procedure
 
-[cols="15%,30%,55%", options="header"]
+[cols="20%,85%",options="header"]
 |===
-| Group Box            | Field or Option               | Value or Setting
-| *Name*               | Procedure Name                | `partlocs`
-| *Code*               | Library                       | `DEMO.INVENT.INVENTORY`
-|                      | Class Name                    | `Inventory`
-|                      | Method Name                   | `partLocs`
-3+<| *Parameters*
-| _First_              | Parameter Name                | `partnum`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `IN`
-|                      | Java Data Type                | Displays the signature of the Java method that you selected: `int`
-| _Second_             | Parameter Name                | `qty`
-|                      | SQL Data Type                 | `SIGNED INTEGER`
-|                      | Direction                     | `IN`
-| *Attributes*         | Number of dynamic result sets | `2`
-|                      | Acceses Database              | `selected`
-|                      | External Security             | `Invoker` +
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.invent.partlocs`
+| *sql-parameter-1*      | `IN partnum INT`
+| *sql-parameter-2*      | `IN qty INT`
+| *external name*        | `EXTERNAL NAME persnl.partLocations`
+| *library*              | `LIBRARY trafodion.invent.inventory`
+| *external security*    | `invoker`^1^ +
  +
-*NOTE:* Depending on your security requirements, you can select `Definer` instead.
-For more information, see <<understand-external-security, Understand External Security>>.
-|                      | Transaction Required          | `Yes`
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 2`
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
 |===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.invent.partlocs( IN partnum INT
+					  , IN qty INT
+					  , OUT maxm INT
+                                          ) 
+   EXTERNAL NAME 'persnl.partLocations'
+   LIBRARY trafodion.invent.inventory
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   DYNAMIC RESULT SETS 2
+   READS SQL DATA
+   ;
+----
 
 [[calling-the-procedure-partlocs]]
 ==== Calling the Procedure: PARTLOCS
@@ -1388,7 +1458,7 @@ To invoke the PARTLOCS procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL demo.invent.partlocs( 212, 18 ) ;
+SQL> CALL trafodion.invent.partlocs( 212, 18 ) ;
 ----
 
 The PARTLOCS procedure accepts the part number 212 and returns a set of

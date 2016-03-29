@@ -1,16 +1,16 @@
-CREATE TABLE demo.sales.parts
+CREATE TABLE trafodion.sales.parts
 ( partnum       NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
 , partdesc      CHARACTER (18)       NO DEFAULT NOT NULL
 , price         NUMERIC (8, 2)       NO DEFAULT NOT NULL
 , qty_available NUMERIC (5)          DEFAULT 0  NOT NULL
-, PRIMARY KEY (partnum)
+, PRIMARY KEY ( partnum )
 ) ;
 
 CREATE INDEX xpartdes ON parts
 ( partdesc
 ) ;
 
-INSERT INTO demo.sales.parts VALUES
+INSERT INTO trafodion.sales.parts VALUES
   (  186, '186 MegaByte Disk',  186186.86, 186  )
 , (  212, 'PC SILVER, 20 MB',     2500.00, 3525 )
 , (  244, 'PC GOLD, 30 MB',       3000.00, 4426 )
@@ -37,9 +37,9 @@ INSERT INTO demo.sales.parts VALUES
 , ( 6400, 'STREAMING TAPE,M20',    550.00, 1268 )
 , ( 6401, 'STREAMING TAPE,M60',    725.00, 1308 )
 , ( 6500, 'DISK CONTROLLER',        95.00, 2532 )
-, ( 6603, 'PRINTER CONTROLLER',     45.00, 430  )
+, ( 6603, 'PRINTER CONTROLLER',     45.00,  430 )
 , ( 7102, 'SMART MODEM, 1200',     275.00, 2200 )
 , ( 7301, 'SMART MODEM, 2400',     425.00, 2332 )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.sales.parts ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.sales.parts ON EVERY COLUMN ;

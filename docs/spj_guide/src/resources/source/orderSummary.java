@@ -25,7 +25,7 @@ public static void orderSummary( java.lang.String onOrAfter
       DriverManager.getConnection( "jdbc:default:connection" ) ;
 
    // Get the number of orders on or after this date
-   s =   "SELECT COUNT(ordernum) FROM demo.sales.orders " 
+   s =   "SELECT COUNT(ordernum) FROM trafodion.sales.orders " 
        + "WHERE order_date >= CAST(? AS DATE) "
        ;
 
@@ -44,13 +44,13 @@ public static void orderSummary( java.lang.String onOrAfter
        + "         o.ordernum "
        + "       , COUNT(d.partnum) AS num_parts " 
        + "       , SUM(d.unit_price * d.qty_ordered) AS amount " 
-       + "       FROM demo.sales.orders o, demo.sales.odetail d " 
+       + "       FROM trafodion.sales.orders o, trafodion.sales.odetail d " 
        + "       WHERE o.ordernum = d.ordernum " 
        + "          AND o.order_date >= CAST(? AS DATE) " 
        + "       GROUP BY o.ordernum "
        + "      ) amounts " 
-       + "      , demo.sales.orders orders "
-       + "      , demo.persnl.employee emps " 
+       + "      , trafodion.sales.orders orders "
+       + "      , trafodion.persnl.employee emps " 
        + "WHERE amounts.ordernum = orders.ordernum " 
        + "   AND orders.salesrep = emps.empnum " 
        + "ORDER BY orders.ordernum "
@@ -62,7 +62,7 @@ public static void orderSummary( java.lang.String onOrAfter
 
     // Open a result set for order detail rows
     s =   "SELECT d.*, p.partdesc " 
-	+ "FROM demo.sales.odetail d, demo.sales.parts p, demo.sales.orders O " 
+	+ "FROM trafodion.sales.odetail d, trafodion.sales.parts p, trafodion.sales.orders O " 
 	+ "WHERE d.partnum = p.partnum AND d.ordernum = o.ordernum " 
 	+ "   AND o.order_date >= CAST(? AS DATE) " 
 	+ "ORDER BY d.ordernum "

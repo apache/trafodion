@@ -1,16 +1,16 @@
-CREATE TABLE demo.invent.partsupp
+CREATE TABLE trafodion.invent.partsupp
 ( partnum      NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
 , suppnum      NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
 , partcost     NUMERIC (8, 2)       NO DEFAULT NOT NULL
 , qty_received NUMERIC (5) UNSIGNED DEFAULT 0  NOT NULL
-, PRIMARY KEY (partnum,suppnum)
+, PRIMARY KEY ( partnum, suppnum )
 ) ;
 
 CREATE INDEX XSUPORD ON partsupp
 ( suppnum
 ) ;
 
-CREATE VIEW demo.invent.view207
+CREATE VIEW trafodion.invent.view207
 ( partnumber
 , partdescrpt
 , suppnumber
@@ -26,14 +26,14 @@ AS SELECT
 , partcost
 , qty_received
 FROM
-  demo.invent.partsupp x
-, demo.sales.parts p
-, demo.invent.supplier s
+  trafodion.invent.partsupp x
+, trafodion.sales.parts p
+, trafodion.invent.supplier s
 WHERE x.partnum = p.partnum
   AND x.suppnum = s.suppnum
 ;
 
-CREATE VIEW demo.invent.view207n
+CREATE VIEW trafodion.invent.view207n
 ( partnumber
 , partdescrpt
 , suppnumber
@@ -48,12 +48,12 @@ AS SELECT
 , s.suppname
 , x.partcost
 , x.qty_received
-FROM demo.invent.supplier s
-LEFT JOIN demo.invent.partsupp x ON s.suppnum = x.suppnum
-LEFT JOIN demo.sales.parts p     ON x.partnum = p.partnum
+FROM trafodion.invent.supplier s
+LEFT JOIN trafodion.invent.partsupp x ON s.suppnum = x.suppnum
+LEFT JOIN trafodion.sales.parts p     ON x.partnum = p.partnum
 ;
 
-CREATE VIEW demo.invent.viewcust
+CREATE VIEW trafodion.invent.viewcust
 ( custnumber
 , cusname
 , ordernum
@@ -62,18 +62,18 @@ AS SELECT
   c.custnum
 , c.custname
 , o.ordernum
-FROM demo.sales.customer c
-LEFT JOIN demo.sales.orders o ON c.custnum = o.custnum
+FROM trafodion.sales.customer c
+LEFT JOIN trafodion.sales.orders o ON c.custnum = o.custnum
 ;
 
-CREATE VIEW demo.invent.viewcs AS SELECT
+CREATE VIEW trafodion.invent.viewcs AS SELECT
   custname
-FROM demo.sales.customer
+FROM trafodion.sales.customer
 UNION SELECT
   suppname
-FROM demo.invent.supplier ;
+FROM trafodion.invent.supplier ;
 
-INSERT INTO demo.invent.partsupp VALUES
+INSERT INTO trafodion.invent.partsupp VALUES
   (  212,  1, 2000.00,  20 )
 , (  212,  3, 1900.00,  35 )
 , (  244,  1, 2400.00,  50 )
@@ -125,4 +125,4 @@ INSERT INTO demo.invent.partsupp VALUES
 , ( 7301,  1,  300.00,  32 )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.invent.partsupp ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.invent.partsupp ON EVERY COLUMN ;

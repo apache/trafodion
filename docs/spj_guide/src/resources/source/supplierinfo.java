@@ -18,7 +18,7 @@ public static void supplierInfo( BigDecimal suppNum
    PreparedStatement getSupplier =
       conn.prepareStatement( "SELECT suppname, street, city, "
 			   + "       state, postcode "
-			   + "FROM demo.invent.supplier "
+			   + "FROM trafodion.invent.supplier "
 			   + "WHERE suppnum = ?"  
 			   ) ;
 

@@ -16,7 +16,7 @@ public static void partLocations( int partNum
 
    PreparedStatement getLocationsExact =
       conn.prepareStatement( "SELECT L.loc_code, L.partnum, L.qty_on_hand "
-			   + "FROM demo.invent.partloc L "
+			   + "FROM trafodion.invent.partloc L "
 			   + "WHERE L.partnum = ? "
 			   + "  AND L.qty_on_hand = ? "
 			   + " ORDER BY L.partnum "
@@ -27,7 +27,7 @@ public static void partLocations( int partNum
 
    PreparedStatement getLocationsMoreThan =
       conn.prepareStatement( "SELECT L.loc_code, L.partnum, L.qty_on_hand "
-			   + "FROM demo.invent.partloc L "
+			   + "FROM trafodion.invent.partloc L "
 			   + "WHERE L.partnum = ? "
 			   + "  AND L.qty_on_hand > ? "
 			   + "ORDER BY L.partnum "

@@ -1,10 +1,10 @@
-CREATE TABLE demo.persnl.dept
+CREATE TABLE trafodion.persnl.dept
 ( deptnum  NUMERIC (4) UNSIGNED NO DEFAULT  NOT NULL
 , deptname CHARACTER (12)       NO DEFAULT  NOT NULL
 , manager  NUMERIC (4) UNSIGNED NO DEFAULT  NOT NULL
 , rptdept  NUMERIC (4) UNSIGNED DEFAULT 0   NOT NULL
 , location VARCHAR (18)         DEFAULT ' ' NOT NULL
-, PRIMARY KEY (deptnum)
+, PRIMARY KEY ( deptnum )
 ) ;
 
 CREATE INDEX xdeptmgr ON dept
@@ -15,12 +15,12 @@ CREATE INDEX xdeptrpt ON dept
 ( rptdept
 ) ;
 
-ALTER TABLE demo.persnl.dept
+ALTER TABLE trafodion.persnl.dept
    ADD CONSTRAINT mgrnum_constrnt
    CHECK (manager BETWEEN 0000 AND 9999)
    ;
 
-ALTER TABLE demo.persnl.dept
+ALTER TABLE trafodion.persnl.dept
    ADD CONSTRAINT deptnum_constrnt
       CHECK ( deptnum IN
               ( 1000
@@ -39,7 +39,7 @@ ALTER TABLE demo.persnl.dept
            ) 
            ;
 3
-CREATE VIEW demo.persnl.mgrlist
+CREATE VIEW trafodion.persnl.mgrlist
 ( first_name
 , last_name
 , department
@@ -52,7 +52,7 @@ FROM dept, employee
 WHERE dept.manager = employee.empnum
 ;
 
-INSERT INTO demo.persnl.dept VALUES
+INSERT INTO trafodion.persnl.dept VALUES
   ( 1000, 'FINANCE',       23, 9000, 'CHICAGO'     )
 , ( 1500, 'PERSONNEL',    213, 1000, 'CHICAGO'     )
 , ( 2000, 'INVENTORY',     32, 9000, 'LOS ANGELES' )
@@ -67,4 +67,4 @@ INSERT INTO demo.persnl.dept VALUES
 , ( 9000, 'xxCORPORATE',    1, 9000, 'CHICAGO'     )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.persnl.dept ON EVERY COLUMN ;
+UPDATE STATISTICS FOR TABLE trafodion.persnl.dept ON EVERY COLUMN ;

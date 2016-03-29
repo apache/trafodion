@@ -23,37 +23,12 @@
 [[create-spjs]]
 = Create SPJs
 
-After creating libraries for the SPJ JAR files on the Trafodion platform,
-you can create the procedures in the Trafodion database. To create or
-drop a procedure from the Trafodion database, use the HP Database Manager
-(HPDM).
+You can create the procedures in the Trafodion database after you've deployed the libraries for the SPJ JAR files.
+See <<deploy-spj-jar-files, Deploy SPJ JAR Files>>.
 
-Follow these procedures:
-
-* <<create-a-procedure, Create a Procedure>>
-* <<drop-a-procedure, Drop a Procedure>>
-* <<display-procedures-and-their-properties, Display Procedures and Their Properties>>
-
-This chapter also covers:
-
-* <<required-privileges-for-creating-or-dropping-an-spj, Required Privileges for Creating or Dropping an SPJ>>
-* <<altering-an-spj-and-its-java-bytecode, Altering an SPJ and Its Java Bytecode>>
-
-== Required Privileges for Creating or Dropping an SPJ
-
-To create an SPJ in a schema, you must be the schema owner, or you must
-have the CREATE_PROCEDURE privilege for that schema, and you must have
-the CREATE_PROCEDURE privilege for the SQL_OPERATIONS component. You
-must also have the USAGE privilege for the library that will be used in
-the creation of the stored procedure. For more information, see the
-requirements in <<create-a-procedure, Create a Procedure>>.
-
-To drop an SPJ from a schema, you must be the schema owner, or you must
-have the DROP_PROCEDURE privilege for that schema. For more information,
-see the requirements in <<drop-a-procedure, Drop a Procedure>>.
-
-To display the current ownership and privileges, see
-<<display-procedures-and-their-properties, Display Procedures and Their Properties>>.
+The examples in this chapter are based on the sample database documented
+in <<b-sample-database, Appendix B: Sample Database>>. Also, the `Sales.java` class are assumed to have been
+added as a library object using the `CREATE LIBRARY` statement. See <<deploy-spj-jar-files, Deploy SPJ JAR Files>>.
 
 [[create-a-procedure]]
 == Create a Procedure
@@ -61,250 +36,163 @@ To display the current ownership and privileges, see
 The Create Procedure tool registers an existing Java method as a stored
 procedure in Java (SPJ) within SQL.
 
-NOTE: HPDM creates procedures with default privileges only. For more
-information about privileges for SPJs, see the Grant/Revoke Privileges
-Tool in HPDM or the GRANT PROCEDURE statement in the
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+Refer to the
+http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+for full documentation of the
+http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_statement[CREATE PROCEDURE]
+statement including considerations and required privileges.
 
-Requirements:
+[[create-procedure-settings]]
+=== Create Procedure Settings
 
-* You must have the CREATE_PROCEDURE privilege for the SQL_OPERATIONS
-component. For more information, see the component privileges in the _HP
-Database Manager (HPDM) User Guide_ or the online help in HPDM.
+Reference: 
+http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_syntax[Syntax Description of CREATE PROCEDURE].
 
-* You must have been granted the USAGE privilege for the library that
-will be used in the creation of the stored procedure. This privilege
-provides you with read access to the library's underlying JAR file,
-which contains the SPJ Java method. For more information, see the
-Grant/Revoke Privileges Tool in HPDM or the GRANT LIBRARY statement in the
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+You need to determine the following settings for the CREATE PROCEDURE statement:
 
-* You must either be the owner of the schema or have the
-CREATE_PROCEDURE privilege for the schema to create the procedure. The
-schema owner can grant such a schema-level privilege to other users or
-roles. For more information, see the Grant/Revoke Privileges Tool in
-HPDM or the GRANT SCHEMA statement in the
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
-
-To create a procedure:
-
-1.  In HPDM, select the Database area.
-
-2.  Expand the navigation tree pane so that you can see the name of the
-schema in which you want to create the procedure and the Procedures
-folder under the schema.
-
-3.  Right-click the Procedures folder, and select Create Procedure. The
-Create Procedure dialog box appears.
-
-4.  In the Procedure Name field, enter a name for the stored procedure.
-For detailed information about the Procedure Name field, see
-<<use-the-create-procedure-dialog-box, Use the Create Procedure Dialog Box>>.
-
-5.  In the Code group box, click [ Browse ] to find a Java method.
-+
-The [ Browse ] button opens Library Browser. Use the browser to select a
-method from a JAR file within a library. See
-<<use-the-library-browser, Use the Library Browser>>. If a library containing the JAR file does
-not exist on the Trafodion platform, you can create one by clicking the
-[ Create ] button in the Library Browser. See
-<<use-the-create-library-dialog-box, Use the Create Library Dialog Box>>.
-
-6.  In the Parameters group box, verify that the SQL parameters are
-mapped correctly to the Java parameters of the SPJ method.
-+
-NOTE: The result set parameters (`java.sql.ResultSet[]`) in the Java
-signature do not have corresponding SQL parameters.
-+
-a.  To change an SQL parameter, such as the name of the parameter, the
-SQL data type, or the parameter mode or direction (IN, INOUT, or OUT), select the
-parameter and click [ Edit ]. The Edit Parameter dialog box appears.
-+
-b.  In the Edit Parameter dialog box, enter a new name for the
-parameter, select a different SQL data type, if permitted, or select a
-different parameter mode (direction), if permitted.
-+
-When changing the parameter name, note that the parameter name:
-+
-* Is not case-sensitive
-* Must not be a reserved word
-* Must not contain spaces
-* Must begin with a letter, digit, or underscore
-+
-When changing the SQL data type, select a data type that is appropriate
-for the parameter of the underlying Java method. For information about
-SQL data types, see the
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
-+
-////
-For character string parameters, select either ISO88591 or UCS2
-depending on the column definition in the database. For guidelines, see
-the __Trafodion Character Sets Guide__.
-////
-+
-c.  Click [ OK ] to accept the changes, or click [ Cancel ] to quit the Edit Parameter dialog box.
-+
-d.  Repeat steps a to c for each parameter that you want to change.
-
-7.  In the Attributes group box, if your SPJ method returns result sets,
-enter the maximum number of result sets to be returned for Number of
-dynamic result sets. The valid range is 1 to 255 inclusive. The actual
-number of result sets returned by the SPJ method can be less than or
-equal to this number.
-+
-NOTE: The Number of dynamic result sets control is enabled only if the
-method signature contains a java.sql.ResultSet[] object.
-
-8.  If your SPJ method performs any SQL operations, select the Accesses
-Database option.
-+
-NOTE: If you do not select the Accesses Database option and your SPJ
-method performs SQL operations, SQL returns an error when trying to
-execute the procedure.
-
-9.  Select either Invoker or Definer for the external security of the
-stored procedure.
-+
-* The Invoker setting determines that users can execute, or invoke, the
-stored procedure using the privileges of the user who invokes the stored
-procedure. This behavior is referred to as _invoker rights_.
-+
-* The Definer setting determines that users can execute, or invoke, the
-stored procedure using the privileges of the user who created the stored
-procedure. This behavior is referred to as _definer rights_. The
-advantage of definer rights is that users are allowed to manipulate data
-by invoking the stored procedure without having to be granted privileges
-to the underlying database objects.
-+
-For more information, see <<understand-external-security, Understand External Security>>.
-
-10.  For the Transaction Required attribute, select either Yes to require
-the procedure to run in a transaction inherited from the calling
-application (the default behavior) or No to allow the procedure to run
-without an inherited transaction. For more information, see
-<<transaction-behavior, Transaction Behavior>>.
-
-11.  Click [ Create ] to create the procedure.
-
-== Use the Create Procedure Dialog Box
-
-This table shows reference information for the Create Procedure dialog
-box:
-
-[cols="20%,30%,50%",options="header",]
+[cols="15%,40%,45%",options="header",]
 |===
-| Group Box   | Control or Field | Action
-| *Name*      | Catalog          | Name of the catalog where the procedure is created. This is a read-only field.
-|             | Schema           | Name of the schema where the procedure is created. This is a read-only field.
-|             | Procedure Name   | Enter a name for the procedure. The name must be unique and must not
-exist for any procedure, table, or view in the same schema. The
-procedure name is not case-sensitive. The database engine automatically
-qualifies the procedure name with the name of the catalog and schema in
-which you are creating the procedure. +
+| Attribute              | Syntax                                             | Guidance
+| *procedure-ref*        | `[[catalog-name.]schema-name.]procedure-name`     |
+- *catalog*: must be `trafodion`. +
+- *schema-name*: the schema the procedure is associated with. +
+- *procedure-name*: a name that is unique and does not exist for any procedure or function in the same schema. It's a good habit to use the lowercase version of the procedure name.
+| *sql-parameter*        | `[parameter-mode] [sql-identifier] sql-datatype`   |
+- *parameter-mode*: IN (pass data to SPJ), OUT (accept data from SPJ), or INOUT (passed data to and accepts data from SPJ). +
+- *sql-identifier*: The name of the parameter passed to the SPJ. +
+- *sql-datatype*: SQL data type mapped to Java data type. See <<java-parameters, Java Parameters>> for mapping,  
+http://trafodion.incubator.apache.org/docs/sql_reference/index.html#data_types[Data Types] for SQL data types. +
  +
-For example, if you enter *monthlyorders* as the procedure name, the database engine stores the
-procedure as `_catalog-name_._schema-name_.MONTHLYORDERS`.
-| *Code*      | Library          | Click [ Browse ] to navigate to a library or JAR file.
-|             | Class Name       | Select a class.
-|             | Method Name      | When you select a class, the method names and parameter types for that
-class appear in the right pane. +
+Repeat for each parameter in the SPJ.
+| *external name*        | `external name java-method-name [java-signature]`                 |
+- *java-method-name*: case-sensitive name of the SPJ method of the form `[package-name.]class-name.method-name`. The Java method must exist in a
+Java class file, `_class-name_.class`, within a library registered in the database. If the class file that contains the SPJ method is part of a
+package, then you must also specify the package name. +
+- *java-signature*: specifies the signature of the SPJ method and consists of `([java-datatype[, java-datatype]&#8230;])`
+Necessary only if you want to specify a Java wrapper class (for example, `java.lang.integer`) instead of a java
+primitive data type (for example, `int`). See 
+http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_syntax[Syntax Description of CREATE PROCEDURE].
+for more information.
+| *library*              | `library [[catalog-name.]schema-name.]library-name`   |
+- *catalog*: must be `trafodion`. +
+- *schema-name*: the schema the library is associated with. +
+- *library-name*: name of library containing the SPJ method.
++
+See <<create-a-library, Create a Library>> for more information about creating libraries.
+| *external security*    | `external security [ invoker` (default) \| `definer ]` |
+- *invoker*: determines that users can execute, or invoke, the stored procedure using the privileges of the user who invokes
+the stored procedure. +
+- *definer*: determines that users can execute, or invoke, the stored procedure using the privileges of the user who created
+the stored procedure. +
  +
-NOTE: Only methods that can be used in a procedure are visible. For
-details, see <<use-a-method-in-a-procedure, Use a Method in a Procedure>>.
-| *Parameters* | Name            | Is the name for this SQL parameter.
-|              | Direction       | 
-- IN passes data to a procedure +
-- INOUT passes data to and accepts data from a procedure. The parameter must be an array. +
-- OUT accepts data from a procedure. The parameter must be an array.
-|              | SQL Data Type   | Displays the SQL data type that is the best match for the Java signature in the Java Data Type column.
-|              | Java Data Type  | Displays the signature for the Java method that you selected.
-|              | [ Edit ]        | Click to edit the selected parameter.
-| *Attributes* | Number of dynamic result sets | Controls the maximum number of resulat sets the procedure can return. +
+See <<understand-external-security, Understand External Security>> for more information.
+| *language java*        | `language java`                  | Must be set specified the procedure is an SPJ rather than a UDF.
+Compare: http://trafodion.incubator.apache.org/docs/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
+| *parameter style java* | `parameter style java`           | Must be set specified the procedure is an SPJ rather than a UDF.
+Compare: http://trafodion.incubator.apache.org/docs/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
+| *_sql access_*         |
+`no sql` \| +
+`contains sql` (default) \| +
+`modifies sql data` \| +
+`reads sql data` |
+- *no sql*: the SPJ cannot perform SQL operations. +
+- *contains sql*: the SPJ can read and modify SQL data. +
+- *modifies sql data*: the SPJ can read and modify SQL data. +
+- *reads sql data*: the SPJ can read and modify SQL data. +
  +
-This control is enabled only if the method signature contains a `java.sql.ResultSet[]` object. +
- +
-If the method contains a result set object, then the valid range is 1 to 255. +
- +
- This value is automatically set to zero if the selected Java method does not have a `java.sql.ResultSet[]` object.
-|              | Accesses Database | If selected, then the procedure performs SQL operations.
-If cleared, then the procedure does not perform SQL operations. +
- +
-NOTE: SQL returns an error when trying to execute the procedure if this
-attribute is cleared and the procedure performs SQL operations.
-|              | External Security |  Select either Invoker or Definer for the external security of the stored procedure. +
- +
-- The Invoker setting determines that users can execute, or invoke, the
-stored procedure using the privileges of the user who invokes the stored
-procedure. This behavior is referred to as _invoker rights_. +
- +
-* The Definer setting determines that users can execute, or invoke, the
-stored procedure using the privileges of the user who created the stored
-procedure. This behavior is referred to as _definer rights_. The
-advantage of definer rights is that users are allowed to manipulate data
-by invoking the stored procedure without having to be granted privileges
-to the underlying database objects. +
- +
-For more information, see <<understand-external-security, Understand External Security>>.
-|               | Transaction Required |
-Select either Yes to require the procedure to run in a transaction
-inherited from the calling application (the default behavior) or No to
-allow the procedure to run without an inherited transaction. For more
-information, see <<transaction-behavior, Transaction Behavior>>.
+It's a good practice to specify `modifies sql data` and `reads sql data` over `contains sql` as it helps
+users of the procedure to better understand its impact.
+| *dynamic result sets*  | `dynamic result sets 0` (default) to `_n_`  |
+The maximum number of result sets that the SPJ can return. This option is applicable only if the method signature contains a `java.sql.resultset[]` object.
+| *_transaction_*        |
+`transaction required` (default) \| +
+`no transaction required` |
+Determines whether the SPJ must run in a transaction inherited from the calling application (`transaction required` or
+whether the SPJ runs without inheriting the calling application's transaction (`no transaction required`). Typically,
+you want the stored procedure to inherit the transaction from the calling application.
+| *_determinism_*        |
+`deterministic` \| +
+`not deterministic` (default) |
+Whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
+(`deterministic`) or does not return the same values (`not deterministic`). `deterministic` means that Trafodion
+can cache the result to improve performance.
+| *_isolation_*          |
+`isolate` (default) \| +
+`no isolate` |
+The SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
+(`isolate`, the default option). Trafodion allows both options but always executes the SPJ in the UDR server process (`isolate`).
 |===
 
-*Related Topics*
+Consider the following method in the `Sales.java` class:
 
-* <<create-a-procedure, Create a Procedure>>
+[source, java]
+----
+include::{sourcedir}/totalPrice.java[totalPrice procedure source code]
+----
 
-[[use-a-method-in-a-procedure]]
-== Use a Method in a Procedure
+The CREATE PROCEDURE attributes for `totalPrice` are defined as follows:
 
-To be used in a procedure, a Java method must:
-
-* Be qualified as public static void.
-* Have a `java.sql.ResultSet[]` parameter at the end of the method signature if the method uses result sets.
-+
-NOTE: There can be more than one java.sql.ResultSet[] parameter, but they must all be at the end of the method signature.
-
-* Have these parameter types:
-+
-[cols="40%,60%", options="header"]
+[cols="15%,40%,45%",options="header",]
 |===
-| Parameter Type or Class | Type
-| 
-| *character*             |
-`java.lang.String` +
-`java.lang.String[]`
-| *numeric*               |
-`java.lang.Integer` +
-`java.lang.Integer[]` +
-`java.lang.Long` +
-`java.lang.Long[]` +
-`java.lang.Float` +
-`java.lang.Float[]` +
-`java.lang.Double` +
-`java.lang.Double[]` +
-`java.math.BigDecimal` +
-`java.math.BigDecimal[]`
-| *date/timestamp*        |
-`java.sql.Date` +
-`java.sql.Date[]` +
-`java.sql.Time` +
-`java.sql.Time[]` +
-`java.sql.Timestamp` +
-`java.sql.Timestamp[]`
-| *primitive short*       | 
-`short[]` +
-`int` +
-`int[]` +
-`long` +
-`long[]` +
-`float` +
-`float[]`+
-`double` +
-`double[]`
-| *result sets* | `java.sql.ResultSet[]`
+| Attribute              | Definition                         | Discussion
+| *procedure-ref*        | `trafodion.sales.totalprice`       | Used lowercase version of totalPrice for _procedure-name_.
+| *sql-parameter-1*      | `IN _qty_ NUMERIC(18)`             | The first argument to the SPJ is defined as: `BigDecimal qtyOrdered`, which maps to `NUMERIC`.
+The size is chosen to allow for large numbers.
+| *sql-parameter-2*      | `IN _speed_ VARCHAR(10)`           | The second argument to the SPJ is defined as: `String shippingSpeed`.
+Possible values are: `economy`, `standard`, or `nextday`. `VARCHAR(10)` is a good choice.
+| *sql-parameter-3*      | `INOUT _price_ NUMERIC(18,2)`      | The third argument to the SPJ is defines as: `BigDecimal[] price`.
+The SPJ uses an input price to calculate to total price including taxes and shipping cost. 
+Therefore, `INOUT` is the appropriate choice. Given that the `_qty_` argument is NUMERIC(18), then this argument should be too. The precision choice fits the the
+type of calculation being peformed.
+| *external name*        | `EXTERNAL NAME Sales.totalPrice`   | The class name is `Sales`. The procedure name is `totalPrice`. 
+| *library*              | `library trafodion.sales.sales`    | The library name was defined using the CREATE LIBRARY statement.
+See the example in <<create-a-library, Create a Library>>.
+| *external security*    | `invoker`^1^                       | Use the privileges of the SPJ invoker.
+| *language java*        | `LANGUAGE JAVA`                    | Required for SPJs.
+| *parameter style java* | `PARAMETER STYLE JAVA`             | Required for SPJs.
+| *_sql access_*         | `NO SQL`                           | This SPJ performs no SQL operations, just calculations.
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`            | The method does not contain a `java.sql.resultset[]` object.
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^          | The method should inherit the calling application's transaction, if any.
+| *_determinism_*        | `NOT DETERMINISTIC`^1^             | The results must be recalculated each time; that is, cannot be cached. 
+| *_isolation_*          | `ISOLATE`^1^                       | Execute the SPJ in an isolated environment; that is, the UDR server process.
 |===
+
+^1^ Definition represents default value.
+
+Using the information above, you create the new procedure as follows:
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.totalprice( IN qty NUMERIC (18),
+                                             IN speed VARCHAR (10),
+                                             INOUT price NUMERIC (18,2)
+					   )
+   EXTERNAL NAME 'Sales.totalPrice'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   NO SQL
+   DYNAMIC RESULT SETS 0
+   TRANSACTION REQUIRED
+   ISOLATE
+   ;
+----
+
+Removing the default values to simplify the statement, you get:
+
+[source, sql]
+----
+CREATE PROCEDURE trafodion.sales.totalprice( IN qty NUMERIC (18),
+                                             IN speed VARCHAR (10),
+                                             INOUT price NUMERIC (18,2)
+					   )
+   EXTERNAL NAME 'Sales.totalPrice'
+   LIBRARY trafodion.sales.sales
+   LANGUAGE JAVA
+   PARAMETER STYLE JAVA
+   NO SQL
+   ;
+----
 
 [[understand-external-security]]
 == Understand External Security
@@ -351,6 +239,7 @@ execute the SPJ without requiring privileges to the underlying database objects.
 
 To set the external security of an SPJ, see <<create-a-procedure, Create a Procedure>>.
 
+
 [[drop-a-procedure]]
 == Drop a Procedure
 
@@ -362,20 +251,40 @@ For example, if the schema owner granted you privileges to drop all objects in t
 you could drop procedures. For more information, see the GRANT SCHEMA statement in the
 http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual]
 
-To drop a procedure:
+Refer to the
+http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+for full documentation of the
+http://trafodion.apache.org/docs/sql_reference/index.html#drop_procedure_statement[DROP PROCEDURE]
+statement including considerations and required privileges.
 
-1.  Under the navigation tree pane, click the Database area.
+*Example*
 
-2.  Under My Systems, expand the tree for the Trafodion platform
-containing the procedure until you can see the schema folder and the
-Procedures folder underneath it.
+Your task is to remove Sales class jar file from the `SALES` schema.
 
-3.  Expand the Procedures folder.
+Do the following using trafci:
 
-4.  Right-click the name of the procedure that you want to drop, and
-select Drop Procedure. HPDM asks you to confirm the operation.
+```
+$ trafci
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
 
-5.  Click [ Yes ] to continue or [ No ] to quit the operation.
+Host Name/IP Address: localhost:23400
+User Name: zz
+
+Connected to Trafodion
+
+SQL> get procedures for library trafodion.sales.saleslib ;
+
+TOTALPRICE
+
+--- SQL operation complete.
+
+SQL> DROP PROCEDURE trafodion.sales.totalprice ;
+
+--- SQL operation complete.
+
+SQL>
+```
 
 [[display-procedures-and-their-properties}}
 == Display Procedures and Their Properties
@@ -386,7 +295,7 @@ command displays a list of the procedures in the SALES schema:
 
 [source, sql]
 ----
-SQL> SET SCHEMA demo.sales ;
+SQL> SET SCHEMA trafodion.sales ;
 
 --- SQL operation complete.
 
@@ -417,6 +326,8 @@ SQL>
 For more information about trafci, see the
 http://trafodion.apache.org/docs/command_interface/index.html[Trafodion Command Interface Guide].
 
+////
+20160323: Trafodion does not yet support the ALTER LIBRARY command.
 [[altering-an-spj-and-its-java-bytecode]]
 === Altering an SPJ and Its Java Bytecode
 
@@ -452,3 +363,4 @@ the calling application. Therefore, schedule a time to update the SPJ or
 its Java bytecode when client applications are not actively calling the
 SPJ.
 
+////

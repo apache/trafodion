@@ -27,27 +27,13 @@ Before creating, or registering, an SPJ in the database, you must write
 and compile the Java method to be used as the body of the SPJ. The
 manual refers to those Java methods as _SPJ methods_.
 
-This chapter requires a familiarity with writing and compiling Java
-programs and covers these topics:
-
-* <<guidelines-for-writing-spj-methods, Guidelines for Writing SPJ Methods>>
-* <<accessing-a-trafodion-database, Accessing a Trafodion Database>>
-* <<handling-java-exceptions,Handling Java Exceptions>>
-* <<compiling-and-packaging-java-classes,Compiling and Packaging Java Classes>>
+This chapter requires a familiarity with writing and compiling Java programs.
 
 [[guidelines-for-writing-spj-methods]]
 == Guidelines for Writing SPJ Methods
 
 Follow the guidelines for these topics when you write SPJ methods to be
 used as SPJs in the database:
-
-* <<signature of the java method, Signature of the Java Method>>
-* <<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>
-* <<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>
-* <<using-the-main-method, Using the main() Method>>
-* <<null-input-and-output, Null Input and Output>>
-* <<static-java-variables, Static Java Variables>>
-* <<nested-java-method-invocations, Nested Java Method Invocations>>
 
 [[signature-of-the-java-method]]
 === Signature of the Java Method
@@ -62,10 +48,10 @@ public static void myMethodName ( java-parameter-list )
 [[public-access-and-static-modifiers]]
 ==== Public Access and Static Modifiers
 
-The Java method must be defined as public and static. If a method is
-private or protected, the database engine is unable to find the Java
+The Java method must be defined as `public` and `static`. If a method is
+`private` or `protected`, then Trafodion is unable to find the Java
 method when you try to register the SPJ and returns an error. The Java
-method must be defined as static so that the method can be invoked
+method must be defined as `static` so that the method can be invoked
 without having to instantiate its class.
 
 [[void-return-type]]
@@ -86,44 +72,36 @@ type mappings, see the table below.
 [[table-1]]
 .Mapping of Java Data Types to SQL Data Types
 
-[cols="40%,60%",options="header",]
+[cols="60%,40%",options="header"]
 |===
-| Java Data Type | Maps to SQL Data Type. . .
-| `java.lang.String`             |
-CHAR[ACTER] +
+| SQL Data Type | Maps to Java Data Type&#8230;
+| CHAR[ACTER] +
 CHAR[ACTER] VARYING +
 VARCHAR +
 PIC[TURE] X^1^ +
 NCHAR +
 NCHAR VARYING +
 NATIONAL CHAR[ACTER] +
-NATIONAL CHAR[ACTER] VARYING 
-| `java.sql.Date`               | DATE
-| `java.sql.Time`               | TIME
-| `java.sql.Timestamp`          | TIMESTAMP
-| `java.math.BigDecimal`        |
-NUMERIC (including NUMERIC with a precision greater than eighteen)^2^ +
-DEC[IMAL]^2^ +
-PIC[TURE] S9^3^
-| `short`                         | SMALLINT^2^
-| `int or java.lang.Integer`^4^   | INT[EGER]^2^
-| `long or java.lang.Long`^4^     | LARGEINT2
-| `double or java.lang.Double`^4^ | FLOAT
-| `float or java.lang.Float`^4^   | REAL
-| `double or java.lang.Double`^4^ | DOUBLE PRECISION
-| `java.sql.ResultSet[]`          | None
+NATIONAL CHAR[ACTER] VARYING | java.lang.string
+| DATE | java.sql.date
+| TIME | java.sql.time
+| TIMESTAMP | java.sql.timestamp
+| DEC[IMAL]^2^ +
+PIC[TURE] S9^3^ +
+NUMERIC (including numeric with a precision greater than eighteen)^2^ | java.math.bigdecimal
+| SMALLINT^2^ | short
+| INT[EGER]^2^ | int or java.lang.integer^4^
+| LARGEINT^2^ | long or java.lang.long^4^
+| FLOAT | double or java.lang.double^4^
+| REAL | float or java.lang.float^4^
+| DOUBLE PRECISION | double or java.lang.double^4^
 |===
 
-1. The Trafodion database stores `PIC X` as a `CHAR` data type.
-
-2. Numeric data types of SQL parameters must be `SIGNED`, which is the
-default in the Trafodion database.
-
-3. The Trafodion database stores `PIC S9` as a `DECIMAL` or `NUMERIC` data type.
-
-4. Choose a Java wrapper class if you plan to pass null values as
-arguments to or from the method. See
-<<null-input-and-output, Null Input and Output>>
+1. Trafodion stores PIC X as a CHAR data type.
+2. Numeric data types of SQL parameters must be signed, which is the default in Trafodion.
+3. Trafodion stores PIC S9 as a DECIMAL or NUMERIC data type.
+4. By default, the SQL data type maps to a Java primitive type. The SQL data type maps to a Java wrapper class
+only if you specify the wrapper class in the Java signature of the external name clause.
 
 Output parameters in the Java signature must be arrays (for example,
 `int[]` or `String[]`) that accept only one value in the first element of
@@ -259,11 +237,11 @@ java.lang.String s =
      "SELECT amounts.*, orders.order_date, emps.last_name "
    + "FROM ( SELECT o.ordernum, COUNT( d.partnum ) AS num_parts, "
    + "       SUM( d.unit_price * d.qty_ordered ) AS amount "
-   + "       FROM demo.sales.orders o, demo.sales.odetail d "
+   + "       FROM trafodion.sales.orders o, trafodion.sales.odetail d "
    + "       WHERE o.ordernum = d.ordernum "
    + "         AND o.order_date >= CAST(? AS DATE) "
    + "       GROUP BY o.ordernum ) amounts, "
-   + "   demo.sales.orders orders, demo.persnl.employee emps "
+   + "   trafodion.sales.orders orders, trafodion.persnl.employee emps "
    + "WHERE amounts.ordernum = orders.ordernum "
    + "  AND orders.salesrep = emps.empnum "
    + "ORDER BY orders.ordernum "
@@ -408,12 +386,6 @@ SPJ methods that access a Trafodion database must be from a Java class
 that uses JDBC method calls. Follow these guidelines when writing an SPJ
 method that accesses a Trafodion database:
 
-* <<use-of-java.sql.connection-objects, Use of java.sql.Connection Objects>>
-* <<using-jdbc-method-calls, Using JDBC Method Calls>>
-* <<referring-to-database-objects-in-an-spj-method, Referring to Database Objects in an SPJ Method>>
-* <<using-the-session_user-or-current_user-function-in-an-spj-method, Using the SESSION_USER or CURRENT_USER Function in an SPJ Method>>
-* <<exception-handling, Exception Handling>>
-
 [[use-of-java.sql.connection-objects]]
 === Use of java.sql.Connection Objects
 
@@ -541,14 +513,14 @@ public class Payroll
          DriverManager.getConnection( "jdbc:default:connection" ) ;
 
       PreparedStatement setSalary =
-         conn.prepareStatement( "UPDATE demo.persnl.employee "
+         conn.prepareStatement( "UPDATE trafodion.persnl.employee "
                               + "SET salary = salary * (1 + (? / 100)) "
                               + "WHERE empnum = ?"
                               ) ;
  
       PreparedStatement getSalary =
          conn.prepareStatement( "SELECT salary "
-                              + "FROM demo.persnl.employee "
+                              + "FROM trafodion.persnl.employee "
                               + "WHERE empnum = ?"
                               ) ;
 
@@ -584,7 +556,7 @@ connections created in the SPJ method are associated with that catalog
 and schema, meaning that unqualified database objects with one-part or
 two-part names in the SPJ method are qualified with the same catalog
 and/or schema name as the SPJ. For example, this SPJ method, which is
-registered as an SPJ in the DEMO.SALES schema, refers to the unqualified
+registered as an SPJ in the TRAFODION.SALES schema, refers to the unqualified
 database object, ORDERS:
 
 [source, java]
@@ -616,7 +588,7 @@ public static void numDailyOrders( Date date
 ----
 
 In the SPJ environment, the ORDERS table is qualified by default with
-the same catalog and schema as the SPJ, DEMO.SALES.
+the same catalog and schema as the SPJ, TRAFODION.SALES.
 
 The default behavior takes effect only when `getConnection()` does not
 contain catalog and schema properties. Catalog and schema property
@@ -670,7 +642,7 @@ function, and CURRENT_USER (or USER) is an SQL function that returns the
 name of the database user who is authorized to invoke the function. If
 you plan to use the SESSION_USER or CURRENT_USER (or USER) function in
 an SPJ method, you should be aware of differences in their behavior
-depending on how extenal security is defined for the stored procedure.
+depending on how external security is defined for the stored procedure.
 
 Suppose that you write this Java method, which uses the CURRENT_USER
 function to return the name of the database user who is authorized to
@@ -698,7 +670,7 @@ and called the stored procedure.
 
 For example, suppose that DB USERADMINUSER creates a stored procedure
 named GETINVOKER using the `getUser()` method and sets the external
-security to invoker. If a database user named PAULLOW1, who has the
+security to invoker. If a database user named GTAPPER, who has the
 EXECUTE privilege on the stored procedure, calls GETINVOKER, the procedure
 returns his name:
 
@@ -706,15 +678,15 @@ returns his name:
 Welcome to Apache Trafodion Command Interface
 Copyright (c) 2015 Apache Software Foundation
 
-User Name:PAULLOW1 Password:
+User Name:GTAPPER Password:
 
 Connected to Data Source: TDM_Default_DataSource
 
-SQL> CALL demo.persnl.getinvoker() ;
+SQL> CALL trafodion.persnl.getinvoker() ;
 
 (EXPR)
 --------------------------------------------------------------------------------
-PAULLOW1
+GTAPPER
 
 --- 1 row(s) selected.
 
@@ -732,17 +704,17 @@ user who created the stored procedure.
 
 For example, suppose that DB USERADMINUSER creates a stored procedure
 named GETDEFINER using the `getUser(`) method and sets the external
-security to definer. If the database user named PAULLOW1, who has the
+security to definer. If the database user named GTAPPER, who has the
 EXECUTE privilege on the stored procedure, calls GETDEFINER, the procedure
 returns the name of the stored procedures's creator, DB USERADMINUSER,
-whose privileges PAULLOW1 is using to call the procedure:
+whose privileges GTAPPER is using to call the procedure:
 
 ```
 SQL> SHOW USER
 
-USER PAULLOW1 (NONE)
+USER GTAPPER (NONE)
 
-SQL> CALL demo.persnl.getdefiner() ;
+SQL> CALL trafodion.persnl.getdefiner() ;
 
 (EXPR)
 --------------------------------------------------------------------------------
@@ -776,7 +748,7 @@ external security setting of the stored procedure.
 
 For example, suppose that DB USERADMINUSER creates a stored procedure named
 GETSESSIONUSER using the `getSessionUser()` method and sets the external
-security to definer. If the database user named PAULLOW1, who has the EXECUTE
+security to definer. If the database user named GTAPPER, who has the EXECUTE
 privilege on the stored procedure, calls GETSESSIONUSER, the procedure
 returns his name because he is the authenticated user who started the
 session and invoked the function:
@@ -784,13 +756,13 @@ session and invoked the function:
 ```
 SQL> SHOW USER
 
-USER PAULLOW1 (NONE)
+USER GTAPPER (NONE)
 
-SQL> CALL demo.persnl.getsessionuser() ;
+SQL> CALL trafodion.persnl.getsessionuser() ;
 
 (EXPR)
 --------------------------------------------------------------------------------
-PAULLOW1
+GTAPPER
 
 --- 1 row(s) selected.
 

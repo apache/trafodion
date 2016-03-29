@@ -12,7 +12,7 @@ public static void numDailyOrders( Date date
 
    PreparedStatement getNumOrders = 
       conn.prepareStatement( "SELECT COUNT(order_date) " 
-			   + "FROM demo.sales.orders " 
+			   + "FROM trafodion.sales.orders " 
 			   + "WHERE order_date = ?"
 			   ) ;
 

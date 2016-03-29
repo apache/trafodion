@@ -1,2 +1,2 @@
-CREATE SCHEMA DEMO.SALES ;
-SET SCHEMA DEMO.SALES ;
+CREATE SCHEMA trafodion.sales ;
+SET SCHEMA trafodion.sales ;

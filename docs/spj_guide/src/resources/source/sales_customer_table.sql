@@ -1,4 +1,4 @@
-CREATE TABLE demo.sales.customer
+CREATE TABLE trafodion.sales.customer
 ( custnum  NUMERIC (4) UNSIGNED NO DEFAULT   NOT NULL
 , custname CHARACTER (18)       NO DEFAULT   NOT NULL
 , street   CHARACTER (22)       NO DEFAULT   NOT NULL
@@ -6,10 +6,10 @@ CREATE TABLE demo.sales.customer
 , state    CHARACTER (12)       DEFAULT ' '  NOT NULL
 , postcode CHARACTER (10)       NO DEFAULT   NOT NULL
 , credit   CHARACTER (2)        DEFAULT 'C1' NOT NULL
-, PRIMARY KEY (custnum)
+, PRIMARY KEY ( custnum )
 ) ;
 
-INSERT INTO demo.sales.customer VALUES
+INSERT INTO trafodion.sales.customer VALUES
   (   21, 'CENTRAL UNIVERSITY', 'UNIVERSITY WAY',        'PHILADELPHIA',  'PENNSYLVANIA', '19104',    'A1' )
 , (  123, 'BROWN MEDICAL CO',   '100 CALIFORNIA STREET', 'SAN FRANCISCO', 'CALIFORNIA',   '94944',    'C2' )
 , (  143, 'STEVENS SUPPLY',     '2020 HARRIS STREET',    'DENVER',        'COLORADO',     '80734',    'A2' )
@@ -27,4 +27,4 @@ INSERT INTO demo.sales.customer VALUES
 , ( 9033, 'ART SUPPLIES, INC.', '22 SWEET ST.',          'PITTSBURGH',    'PENNA.',       '08333',    'C3' )
 ;
 
-UPDATE STATISTICS FOR TABLE demo.sales.customer ON EVERY COLUMN;
+UPDATE STATISTICS FOR TABLE trafodion.sales.customer ON EVERY COLUMN;

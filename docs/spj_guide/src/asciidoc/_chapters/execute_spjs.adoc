@@ -182,9 +182,9 @@ work where needed.
 
 The Trafodion database engine manages a single thread of execution within
 an SPJ environment, even if the application that issues a CALL statement
-is a multithreaded Java application.
+is a multi-threaded Java application.
 
-The CALL statements in a multithreaded application can execute in a nonblocking manner,
+The CALL statements in a multi-threaded application can execute in a nonblocking manner,
 but the SPJ methods underlying those CALL statements execute serially within a
 given SPJ environment.
 
@@ -210,14 +210,14 @@ example:
 
 [source, sql]
 ----
-CALL demo.persnl.adjustsalary( 202, 5.5, ? ) ;
+CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 ----
 
 Or, for example:
 
 [source, sql]
 ----
-SET SCHEMA demo.persnl ;
+SET SCHEMA trafodion.persnl ;
 
 CALL adjustsalary( 202, 5.5, ? ) ;
 ----
@@ -241,7 +241,7 @@ CALL statement:
 
 [source, sql]
 ----
-CALL demo.persnl.adjustsalary( 202, 5, ? ) ;
+CALL trafodion.persnl.adjustsalary( 202, 5, ? ) ;
 ----
 
 If the SPJ does not accept arguments, you must specify empty
@@ -249,7 +249,7 @@ parentheses, as shown below:
 
 [source, sql]
 ----
-CALL demo.sales.lowerprice() ;
+CALL trafodion.sales.lowerprice() ;
 ----
 
 If the SPJ has one IN parameter, one OUT parameter, and two result sets,
@@ -257,7 +257,7 @@ you must list the IN and OUT parameters but not the result sets in the
 argument list:
 
 ```
-CALL demo.sales.ordersummary('01-01-2011', ?);
+CALL trafodion.sales.ordersummary('01-01-2011', ?);
 ```
 
 [[data-conversion-of-parameter-arguments]]
@@ -388,7 +388,7 @@ command before calling the SPJ:
 ----
 SQL> SET PARAM ?p 10 ;
 
-SQL> CALL demo.sales.totalprice( 23, 'standard', ?p ) ;
+SQL> CALL trafodion.sales.totalprice( 23, 'standard', ?p ) ;
 ----
 
 The CALL statement returns the total price of the item:
@@ -421,7 +421,7 @@ price:
 
 [source, sql]
 ----
-SQL> PREPARE stmt1 FROM CALL demo.sales.totalprice( 50, 'nextday', ? ) ;
+SQL> PREPARE stmt1 FROM CALL trafodion.sales.totalprice( 50, 'nextday', ? ) ;
 
 --- SQL command prepared.
 
@@ -445,7 +445,7 @@ INOUT parameter returns the total price:
 
 [source, sql]
 ----
-SQL> PREPARE stmt2 FROM CALL demo.sales.totalprice( ?, ?, ? ) ;
+SQL> PREPARE stmt2 FROM CALL trafodion.sales.totalprice( ?, ?, ? ) ;
 
 --- SQL command prepared.
 
@@ -475,7 +475,7 @@ for the number of orders and two result sets in the trafci session:
 
 [source, sql]
 ----
-SQL> CALL demo.sales.ordersummary( '01-01-2011', ? ) ;
+SQL> CALL trafodion.sales.ordersummary( '01-01-2011', ? ) ;
 
 NUM_ORDERS
 --------------------
@@ -541,7 +541,7 @@ SQLBindParameter( hstmt, 2, SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT, 0, 0, 5.5, 
 SQLBindParameter( hstmt, 3, SQL_PARAM_OUTPUT, SQL_C_NUMERIC, SQL_NUMERIC, 8, 2, &salary, 0, &cbParam ) ;
 
 /* Execute the CALL statement. */
-SQLExecDirect( hstmt, "{ CALL demo.persnl.adjustsalary( ?, ?, ? ) }", SQL_NTS ) ;
+SQLExecDirect( hstmt, "{ CALL trafodion.persnl.adjustsalary( ?, ?, ? ) }", SQL_NTS ) ;
 ----
 
 ////
@@ -574,7 +574,7 @@ SQLHSTMT s ;
 RETCODE rc = SQLAllocHandle( SQL_HANDLE_STMT, myConnection, &s ) ;
 
 /* Prepare a CALL */
-char *stmtText = "{ CALL demo.sales.ordersummary( '01-01-2011', ? ) } ";
+char *stmtText = "{ CALL trafodion.sales.ordersummary( '01-01-2011', ? ) } ";
 rc = SQLPrepare( s, (SQLCHAR *) stmtText, strlen( stmtText ) ) ;
 
 /* Bind the output parameter */
@@ -635,7 +635,7 @@ In this example, a CALL statement is executed from a JDBC client application:
 [source, java]
 ----
 CallableStatement stmt =
-   con.prepareCall( "{ CALL demo.persnl.adjustsalary( ?, ?, ? ) }" ) ;
+   con.prepareCall( "{ CALL trafodion.persnl.adjustsalary( ?, ?, ? ) }" ) ;
 
 stmt.setBigDecimal( 1, 202 ) ; // x = 202
 stmt.setDouble( 2, 5.5 ) ;     // y = 5.5
@@ -668,7 +668,7 @@ and moves processing to the next available result set.
 ----
 // Prepare a CALL statement
 java.sql.CallableStatement s =
-   myConnection.prepareCall( "{ CALL demo.sales.ordersummary( '01-01-2011', ? ) }" ) ;
+   myConnection.prepareCall( "{ CALL trafodion.sales.ordersummary( '01-01-2011', ? ) }" ) ;
 
 // Register an output parameter
 s.registerOutParameter( 1, java.sql.Types.BIGINT ) ;
@@ -702,7 +702,7 @@ available.
 ----
 // Prepare a CALL statement
 java.sql.CallableStatement s =
-   myConnection.prepareCall ( "{ CALL demo.sales.ordersummary( '01-01-2011', ? ) }" ) ;
+   myConnection.prepareCall ( "{ CALL trafodion.sales.ordersummary( '01-01-2011', ? ) }" ) ;
 
 // Register an output parameter
 s.registerOutParameter( 1, java.sql.Types.BIGINT ) ;
@@ -757,11 +757,11 @@ when the QTY_ON_HAND column of the PARTLOC table is updated and exceeds
 
 [source, sql]
 ----
-CREATE TRIGGER demo.sales.setsalesprice AFTER UPDATE OF qty_on_hand
-ON demo.invent.partloc
+CREATE TRIGGER trafodion.sales.setsalesprice AFTER UPDATE OF qty_on_hand
+ON trafodion.invent.partloc
 FOR EACH STATEMENT REFERENCING NEW as newqty
     WHEN ( SUM( newqty.qty_on_hand ) > 500 )
-    CALL demo.sales.lowerprice() ;
+    CALL trafodion.sales.lowerprice() ;
 ----
 
 For information about the CREATE TRIGGER syntax, see the
