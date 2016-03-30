@@ -227,8 +227,8 @@ short CmpSeabaseDDL::getUsingRoutines(ExeCliInterface *cliInterface,
   Lng32 cliRC = 0;
 
   char buf[4000];
-  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), object_type "
-                   "from %s.\"%s\".%s T, %s.\"%s\".%s LU "
+  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), "
+                   "object_type, object_uid from %s.\"%s\".%s T, %s.\"%s\".%s LU "
                    "where LU.using_library_uid = %Ld and "
                    "T.object_uid = LU.used_udr_uid  and T.valid_def = 'Y' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -429,6 +429,8 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NARoutineDB *pRoutineDBCache  = ActiveSchemaDB()->getNARoutineDB();
   const NAString &objName = dropLibraryNode->getLibraryName();
 
   ComObjectName libraryName(objName);
@@ -512,9 +514,9 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
       return;
     }
     
+  usingRoutinesQueue->position();
   for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i++)
   { 
-     usingRoutinesQueue->position();
      OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext(); 
      
      char * routineName = rou->get(0);
@@ -529,6 +531,21 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
        processReturn();
        return;
      }
+
+     // Remove routine from DBRoutinCache
+     ComObjectName objectName(routineName);
+     QualifiedName qualRoutineName(objectName, STMTHEAP);
+     NARoutineDBKey key(qualRoutineName, STMTHEAP);
+     NARoutine *cachedNARoutine = pRoutineDBCache->get(&bindWA, &key);
+
+     if (cachedNARoutine)
+     {
+       Int64 routineUID = *(Int64*)rou->get(2);
+       pRoutineDBCache->removeNARoutine(qualRoutineName,
+                                        ComQiScope::REMOVE_FROM_ALL_USERS,
+                                        routineUID);
+    }
+
    }
  
   // can get a slight perf. gain if we pass in objUID

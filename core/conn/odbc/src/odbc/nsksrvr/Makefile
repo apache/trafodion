@@ -130,6 +130,8 @@ LOC_JSIG=$(JAVA_HOME)/jre/lib/i386/server
 endif
 
 
+#gcc 4.8 need explicit enable this flag, otherwise ld must explicitly link with all so using '-l'
+GCCMODE        += -Xlinker --copy-dt-needed-entries
 # Produce mxosrvr
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
 	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 -L$(LOC_JSIG) $(EARLY_LIBS) $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz

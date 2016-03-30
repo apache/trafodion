@@ -4106,7 +4106,7 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
             bindWA->setErrStatus();
           }
           break;
-      
+
         case 7:
           {
             *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("TO_DATE");

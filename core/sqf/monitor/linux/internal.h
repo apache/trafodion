@@ -39,6 +39,7 @@ enum InternalType
     InternalType_Exit,              // Delete process for monitor
     InternalType_IoData,            // Stdin/Stdout data for a process
     InternalType_Kill,              // Kill monitored process
+    InternalType_NodeName,          // Node Name Change 
     InternalType_Notify,            // Register for monitoring of process death
     InternalType_Process,           // Add process to monitor
     InternalType_ProcessInit,       // Process fork completed
@@ -139,6 +140,13 @@ struct down_def
 {
     int pnid;                       // Physical node id
 };
+
+struct nodename_def
+{
+    char current_name[MAX_PROCESS_NAME];
+    char new_name[MAX_PROCESS_NAME];
+};
+
 
 struct shutdown_def
 {
@@ -362,6 +370,7 @@ struct internal_msg_def
         struct event_def   event;
         ioData_t           iodata;
         struct kill_def    kill;
+	struct nodename_def  nodename;
         struct notify_def  notify;
         struct process_def process;
         struct process_init_def processInit;

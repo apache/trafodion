@@ -3801,7 +3801,13 @@ enum DefaultConstants
   // If this cqd is on, then other alters (name, datatype) are also supported.
   TRAF_ALTER_COL_ATTRS,
 
+  // Controls the behavior of upsert - MERGE, REPLACE, OPTIMAL
   TRAF_UPSERT_MODE,
+  // if set, let users create system reserved names. Default is OFF.
+  // This cqd should only be used to debug or if system column names are
+  // REALLY needed by users.
+  // Currently syskey, _salt_, _division_.
+  TRAF_ALLOW_RESERVED_COLNAMES,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

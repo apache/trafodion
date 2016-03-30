@@ -30,7 +30,7 @@ This manual describes how to install and configure client applications that enab
 This manual is intended for users who want to connect to and use a Trafodion database.
 
 == New and Changed Information
-This manual shows updated versions for Trafodion Release 1.3.0. It also provides instructions on how to download and install <<odb,Trafodion odb>>, a
+This manual shows updated versions for Trafodion Release {project-version}. It also provides instructions on how to download and install <<odb,Trafodion odb>>, a
 new multi-threaded, ODBC-based command-line tool for parallel data loading and extracting.
 
 == Notation Conventions
@@ -133,6 +133,7 @@ For example:
 "{" module-name [, module-name] ... "}"
 ```
 
+<<<
 * Item Spacing
 +
 Spaces shown between items are required unless one of the items is a punctuation symbol such as a parenthesis or a comma.
@@ -147,7 +148,6 @@ If there is no space between two items, spaces are not permitted. In this exampl
 myfile.sh
 ```
 
-<<<
 * Line Spacing
 +
 If the syntax of a command is too long to fit on a single line, each continuation line is indented three spaces and is separated from the preceding line by a blank line.
@@ -158,13 +158,6 @@ This spacing distinguishes items in a continuation line from items in a vertical
 match-value [NOT] LIKE _pattern
    [ESCAPE esc-char-expression] 
 ```
-
-== Publishing History
-[cols="2*",options="header"]
-|===
-| Product Version | Publication Date
-| Trafodion Release 1.3.0 | To be announced.
-|===
 
 == Comments Encouraged
 The Trafodion community encourages your comments concerning this document. We are committed to providing documentation that meets your

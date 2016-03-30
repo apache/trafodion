@@ -2828,8 +2828,20 @@ const NAType *DateFormat::synthesizeType()
 
   if (vid.getType().getTypeQualifier() == NA_DATETIME_TYPE)
     {
+      const DatetimeType& operand = (DatetimeType &)vid.getType();
       Lng32 frmt = ExpDatetime::getDatetimeFormat(formatStr_.data());
-      length = ExpDatetime::getDatetimeFormatMaxLen(frmt);
+
+      if (wasDateformat_)
+        {
+	  length = operand.getDisplayLength();
+	  if(operand.containsField(REC_DATE_HOUR) && 
+             (frmt == ExpDatetime::DATETIME_FORMAT_USA))
+	    length += 3; // add 3 for a blank and "am" or "pm"
+        }
+      else
+        {
+          length = ExpDatetime::getDatetimeFormatMaxLen(frmt);
+        }
     }
   else if (vid.getType().getTypeQualifier() == NA_CHARACTER_TYPE)
     {

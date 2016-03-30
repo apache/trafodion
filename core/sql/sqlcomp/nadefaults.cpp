@@ -3312,8 +3312,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
  
-  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+  DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
  
+  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  

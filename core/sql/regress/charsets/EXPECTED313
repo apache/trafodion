@@ -628,28 +628,28 @@ u1u1                       8
 --- 4 row(s) selected.
 >>select * from cs313t3 union (select * from cs313t4) order by 1;
 
-A1              
-----------------
+A1                                                              
+----------------------------------------------------------------
 
-a1a1            
-u1u1            
-צקר             
-???             
+a1a1                                                            
+u1u1                                                            
+צקר                                                             
+???                                                             
 
 --- 4 row(s) selected.
 >>select * from cs313t3 union all (select * from cs313t4) order by 1;
 
-A1              
-----------------
+A1                                                              
+----------------------------------------------------------------
 
-a1a1            
-a1a1            
-u1u1            
-u1u1            
-צקר             
-צקר             
-???             
-???             
+a1a1                                                            
+a1a1                                                            
+u1u1                                                            
+u1u1                                                            
+צקר                                                             
+צקר                                                             
+???                                                             
+???                                                             
 
 --- 8 row(s) selected.
 >>--
@@ -5092,28 +5092,28 @@ def               def
 --- 4 row(s) selected.
 >>select * from cs313t70 union (select * from cs313t71) order by 1,2;
 
-A1                U1              
-----------------  ----------------
+A1                                                                U1
+----------------------------------------------------------------  ----------------------------------------------------------------
 
-abc               abc             
-def               def             
-צתû               צתû             
-???               ???             
+abc                                                               abc                                                             
+def                                                               def                                                             
+צתû                                                               צתû                                                             
+???                                                               ???                                                             
 
 --- 4 row(s) selected.
 >>select * from cs313t70 union all (select * from cs313t71) order by 1,2;
 
-A1                U1              
-----------------  ----------------
+A1                                                                U1
+----------------------------------------------------------------  ----------------------------------------------------------------
 
-abc               abc             
-abc               abc             
-def               def             
-def               def             
-צתû               צתû             
-צתû               צתû             
-???               ???             
-???               ???             
+abc                                                               abc                                                             
+abc                                                               abc                                                             
+def                                                               def                                                             
+def                                                               def                                                             
+צתû                                                               צתû                                                             
+צתû                                                               צתû                                                             
+???                                                               ???                                                             
+???                                                               ???                                                             
 
 --- 8 row(s) selected.
 >>--
@@ -5188,24 +5188,24 @@ def                               def               def               def
 >>--
 >>select * from cs313t70 union (select * from cs313t70 union (select * from cs313t71)) order by 1,2;
 
-A1                U1              
-----------------  ----------------
+A1                                                                U1
+----------------------------------------------------------------  ----------------------------------------------------------------
 
-abc               abc             
-def               def             
-צתû               צתû             
-???               ???             
+abc                                                               abc                                                             
+def                                                               def                                                             
+צתû                                                               צתû                                                             
+???                                                               ???                                                             
 
 --- 4 row(s) selected.
 >>select * from cs313t70 union (select * from cs313t71 union (select * from cs313t70)) order by 1,2;
 
-A1                U1              
-----------------  ----------------
+A1                                                                U1
+----------------------------------------------------------------  ----------------------------------------------------------------
 
-abc               abc             
-def               def             
-צתû               צתû             
-???               ???             
+abc                                                               abc                                                             
+def                                                               def                                                             
+צתû                                                               צתû                                                             
+???                                                               ???                                                             
 
 --- 4 row(s) selected.
 >>--
@@ -5724,7 +5724,10 @@ u1u1                              u1u1
 >>create TRIGGER TRG1_cs313t90   before UPDATE on cs313t90   REFERENCING NEW as TRG  FOR EACH ROW
 +>       set TRG.UCS2_col2 = _UTF8'abc' ;
 
---- SQL operation complete.
+*** ERROR[3131] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>--
 >>insert into cs313t90 values('Test1','Test1','Test1','Test1'), ('test111','test1111','test111','test1111');
 
@@ -5737,7 +5740,7 @@ u1u1                              u1u1
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
 test111                                                                   test1111                                                                  test111                               test1111                            
 
 --- 2 row(s) selected.
@@ -5750,7 +5753,7 @@ test111                                                                   test11
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
 test111                                                                   test1111                                                                  test111                               test1111                            
 
 --- 2 row(s) selected.
@@ -5766,8 +5769,8 @@ test111                                                                   test11
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 
@@ -5781,8 +5784,8 @@ test222                                                                   test22
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 
@@ -5799,9 +5802,9 @@ test222                                                                   test22
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5816,9 +5819,9 @@ test333                                                                   test33
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5827,11 +5830,17 @@ test333                                                                   test33
 >>--
 >>DROP TRIGGER TRG1_cs313t90;
 
---- SQL operation complete.
+*** ERROR[3131] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>create TRIGGER TRG1_cs313t90   before UPDATE on cs313t90   REFERENCING NEW as TRG  FOR EACH ROW
 +>       set TRG.ISO_col2 = _ucs2'abc' ;
 
---- SQL operation complete.
+*** ERROR[3131] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>--
 >>insert into cs313t90 values('Test4','Test4','Test4','Test4'), ('test444','test4444','test444','test4444');
 
@@ -5844,10 +5853,10 @@ test333                                                                   test33
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
-Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
+Test4                                                                     Test4                                                                     Iso4                                  Test4                               
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5863,10 +5872,10 @@ test444                                                                   test44
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
-Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
+Test4                                                                     Test4                                                                     Iso4                                  Test4                               
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5885,11 +5894,11 @@ test444                                                                   test44
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
-Test4                                                                     Test4                                                                     Iso4                                  abc                                 
-Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
+Test4                                                                     Test4                                                                     Iso4                                  Test4                               
+Test5                                                                     Test5                                                                     UCS5                                  Test5                               
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5906,11 +5915,11 @@ test555                                                                   test55
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
-Test4                                                                     Test4                                                                     Iso4                                  abc                                 
-Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
+Test4                                                                     Test4                                                                     Iso4                                  Test4                               
+Test5                                                                     Test5                                                                     UCS5                                  Test5                               
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5930,12 +5939,12 @@ test555                                                                   test55
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Iso6                                                                      Test6                                                                     Test6                                 abc                                 
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
-Test4                                                                     Test4                                                                     Iso4                                  abc                                 
-Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Iso6                                                                      Test6                                                                     Test6                                 Test6                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
+Test4                                                                     Test4                                                                     Iso4                                  Test4                               
+Test5                                                                     Test5                                                                     UCS5                                  Test5                               
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5953,12 +5962,12 @@ test666                                                                   test66
 UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-Iso3                                                                      abc                                                                       Test3                                 Test3                               
-Iso6                                                                      Test6                                                                     Test6                                 abc                                 
-Test1                                                                     abc                                                                       Test1                                 Iso1                                
-Test2                                                                     abc                                                                       Test2                                 UCS2                                
-Test4                                                                     Test4                                                                     Iso4                                  abc                                 
-Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+Iso3                                                                      Test3                                                                     Test3                                 Test3                               
+Iso6                                                                      Test6                                                                     Test6                                 Test6                               
+Test1                                                                     Test1                                                                     Test1                                 Iso1                                
+Test2                                                                     Test2                                                                     Test2                                 UCS2                                
+Test4                                                                     Test4                                                                     Iso4                                  Test4                               
+Test5                                                                     Test5                                                                     UCS5                                  Test5                               
 test111                                                                   test1111                                                                  test111                               test1111                            
 test222                                                                   test2222                                                                  test222                               test2222                            
 test333                                                                   test3333                                                                  test333                               test3333                            
@@ -5984,7 +5993,10 @@ test666                                                                   test66
 >>create TRIGGER TRG1_cs313t91   before UPDATE on cs313t91   REFERENCING NEW as TRG  FOR EACH ROW
 +>       set TRG.UCS2_col2 = _UTF8'abc' ;
 
---- SQL operation complete.
+*** ERROR[3131] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>--
 >>insert into cs313t91 values(1,'Test1','Test1','Test1','Test1'), (2,'test111','test1111','test111','test1111');
 
@@ -5997,7 +6009,7 @@ test666                                                                   test66
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
 
 --- 2 row(s) selected.
@@ -6010,7 +6022,7 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
 
 --- 2 row(s) selected.
@@ -6026,9 +6038,9 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
 
 --- 4 row(s) selected.
@@ -6041,9 +6053,9 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
 
 --- 4 row(s) selected.
@@ -6059,11 +6071,11 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
 
 --- 6 row(s) selected.
@@ -6076,22 +6088,28 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
 
 --- 6 row(s) selected.
 >>--
 >>DROP TRIGGER TRG1_cs313t91;
 
---- SQL operation complete.
+*** ERROR[3131] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>create TRIGGER TRG1_cs313t91   before UPDATE on cs313t91   REFERENCING NEW as TRG  FOR EACH ROW
 +>       set TRG.ISO_col2 = _ucs2'abc' ;
 
---- SQL operation complete.
+*** ERROR[3131] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>--
 >>insert into cs313t91 values(7,'Test4','Test4','Test4','Test4'), (8,'test444','test4444','test444','test4444');
 
@@ -6104,13 +6122,13 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
-          7  Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+          7  Test4                                                                     Test4                                                                     Iso4                                  Test4                               
           8  test444                                                                   test4444                                                                  test444                               test4444                            
 
 --- 8 row(s) selected.
@@ -6123,13 +6141,13 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
-          7  Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+          7  Test4                                                                     Test4                                                                     Iso4                                  Test4                               
           8  test444                                                                   test4444                                                                  test444                               test4444                            
 
 --- 8 row(s) selected.
@@ -6145,15 +6163,15 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
-          7  Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+          7  Test4                                                                     Test4                                                                     Iso4                                  Test4                               
           8  test444                                                                   test4444                                                                  test444                               test4444                            
-          9  Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+          9  Test5                                                                     Test5                                                                     UCS5                                  Test5                               
          10  test555                                                                   test5555                                                                  test555                               test5555                            
 
 --- 10 row(s) selected.
@@ -6166,15 +6184,15 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
-          7  Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+          7  Test4                                                                     Test4                                                                     Iso4                                  Test4                               
           8  test444                                                                   test4444                                                                  test444                               test4444                            
-          9  Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+          9  Test5                                                                     Test5                                                                     UCS5                                  Test5                               
          10  test555                                                                   test5555                                                                  test555                               test5555                            
 
 --- 10 row(s) selected.
@@ -6190,17 +6208,17 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
-          7  Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+          7  Test4                                                                     Test4                                                                     Iso4                                  Test4                               
           8  test444                                                                   test4444                                                                  test444                               test4444                            
-          9  Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+          9  Test5                                                                     Test5                                                                     UCS5                                  Test5                               
          10  test555                                                                   test5555                                                                  test555                               test5555                            
-         11  Iso6                                                                      Test6                                                                     Test6                                 abc                                 
+         11  Iso6                                                                      Test6                                                                     Test6                                 Test6                               
          12  test666                                                                   test6666                                                                  test666                               test6666                            
 
 --- 12 row(s) selected.
@@ -6213,17 +6231,17 @@ PRKY         UCS2_COL1                                                          
 PRKY         UCS2_COL1                                                                 UCS2_COL2                                                                 ISO_COL1                              ISO_COL2
 -----------  ------------------------------------------------------------------------  ------------------------------------------------------------------------  ------------------------------------  ------------------------------------
 
-          1  Test1                                                                     abc                                                                       Test1                                 Iso1                                
+          1  Test1                                                                     Test1                                                                     Test1                                 Iso1                                
           2  test111                                                                   test1111                                                                  test111                               test1111                            
-          3  Test2                                                                     abc                                                                       Test2                                 UCS2                                
+          3  Test2                                                                     Test2                                                                     Test2                                 UCS2                                
           4  test222                                                                   test2222                                                                  test222                               test2222                            
-          5  Iso3                                                                      abc                                                                       Test3                                 Test3                               
+          5  Iso3                                                                      Test3                                                                     Test3                                 Test3                               
           6  test333                                                                   test3333                                                                  test333                               test3333                            
-          7  Test4                                                                     Test4                                                                     Iso4                                  abc                                 
+          7  Test4                                                                     Test4                                                                     Iso4                                  Test4                               
           8  test444                                                                   test4444                                                                  test444                               test4444                            
-          9  Test5                                                                     Test5                                                                     UCS5                                  abc                                 
+          9  Test5                                                                     Test5                                                                     UCS5                                  Test5                               
          10  test555                                                                   test5555                                                                  test555                               test5555                            
-         11  Iso6                                                                      Test6                                                                     Test6                                 abc                                 
+         11  Iso6                                                                      Test6                                                                     Test6                                 Test6                               
          12  test666                                                                   test6666                                                                  test666                               test6666                            
 
 --- 12 row(s) selected.
