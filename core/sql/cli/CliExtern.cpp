@@ -6316,7 +6316,8 @@ Lng32 SQL_EXEC_DeleteHbaseJNI()
       threadContext->incrNumOfCliCalls();
 
       HBaseClient_JNI::deleteInstance();
-      HiveClient_JNI::deleteInstance();
+      // The Hive client persists across connections
+      // HiveClient_JNI::deleteInstance();
    }
    catch(...)
    {
