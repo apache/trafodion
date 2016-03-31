@@ -74,10 +74,22 @@ http://maven.apache.org/plugins/maven-assembly-plugin/faq.html#required-classifi
       <outputDirectory>/lib</outputDirectory>
       <unpack>false</unpack>
       <scope>runtime</scope>
-      <excludes>
-        <exclude>tomcat:jasper-runtime</exclude>
-        <exclude>org.trafodion:rest</exclude>
-      </excludes>
+      <includes>
+        <include>org.python:jython-standalone</include>
+        <include>org.apache.httpcomponents:httpcore</include>
+        <include>org.codehaus.jettison:jettison</include>
+        <include>org.eclipse.jetty:jetty-servlet</include>
+        <include>org.eclipse.jetty:jetty-util</include>
+        <include>org.eclipse.jetty:jetty-http</include>
+        <include>org.eclipse.jetty:jetty-io</include>
+        <include>org.eclipse.jetty:jetty-server</include>
+        <include>javax.servlet:javax.servlet-api</include>
+        <include>com.sun.jersey:jersey-server</include>
+        <include>com.sun.jersey:jersey-json</include>
+        <include>org.slf4j:slf4j-api</include>
+        <include>org.slf4j:slf4j-log4j12</include>
+        <include>org.apache.zookeeper:zookeeper</include>
+	 </includes>
       <fileMode>0644</fileMode>
       <directoryMode>0644</directoryMode>
     </dependencySet>
