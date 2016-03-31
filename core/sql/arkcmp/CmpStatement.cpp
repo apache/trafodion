@@ -1311,8 +1311,6 @@ CmpStatement::process (const CmpMessageEndSession& es)
       CURRENTQCACHE->makeEmpty();
     }
 
-  SQL_EXEC_DeleteHbaseJNI();
-
   return CmpStatement_SUCCESS;
 }
 
