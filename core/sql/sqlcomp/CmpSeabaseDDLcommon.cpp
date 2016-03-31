@@ -7742,7 +7742,6 @@ short CmpSeabaseDDL::initSeabaseAuthorization(
                                     COM_LIBRARY_OBJECT, TRUE, FALSE);
      if (cliRC == 1) // library exists
        cliRC = grantLibmgrPrivs(cliInterface);
-
   }
   else
   {

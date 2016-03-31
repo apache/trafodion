@@ -840,6 +840,8 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // view not found
   AQREntry(   8598,      0,      1,     0,      1,   0, "",    0,     0), 
 
+  AQREntry(   8606,     73,      3,    60,      0,   0, "",    0,     0), 
+
   AQREntry(   8606,     97,      1,     0,      5,   0, "",    0,     0),
 
   // privileges may have been revoked

@@ -69,11 +69,10 @@ export MALLOC_ARENA_MAX=1
 export SQ_USE_INTC=0
 
 if [[ "$SQ_BUILD_TYPE" = "release" ]]; then
-  SQ_BTYPE=
+  export SQ_BTYPE=
 else
-  SQ_BTYPE=d
+  export SQ_BTYPE=d
 fi
-export SQ_BTYPE
 export SQ_MBTYPE=$SQ_MTYPE$SQ_BTYPE
 
 # To enable code coverage, set this to 1
@@ -140,16 +139,16 @@ fi
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
-# general Hadoop & TRX dependencies - not distro specific, choose one to build against
-export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_ID=hbase-trx-cdh5_3
-export HBASE_DEP_VER=0.98.6-cdh5.3.0
-export HBASE_TRX_JAR=${HBASE_TRX_ID}-${TRAFODION_VER}.jar
-export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
-fi
 # set common version to be consistent between shared lib and maven dependencies
+export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
+export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
+export HBASE_DEP_VER_HDP=1.1.2.2.3.2.0-2950
+export HIVE_DEP_VER_HDP=1.2.1.2.3.2.0-2950
+export HBASE_DEP_VER_APACHE=1.0.2
+export HIVE_DEP_VER_APACHE=1.1.0
+export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
+export HBASE_TRX_ID_APACHE=hbase-trx-apache1_0_2
+export HBASE_TRX_ID_HDP=hbase-trx-hdp2_3
 export THRIFT_DEP_VER=0.9.0
 export HIVE_DEP_VER=0.13.1
 export HADOOP_DEP_VER=2.6.0
@@ -157,6 +156,27 @@ export HADOOP_DEP_VER=2.6.0
 # staged build-time dependencies
 export HADOOP_BLD_LIB=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/lib/native
 export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
+
+# general Hadoop & TRX dependencies - not distro specific, choose one to build against
+export HBASE_TRXDIR=$MY_SQROOT/export/lib
+export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
+export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
+export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
+export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
+
+HBVER=""
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
+    HBVER="hdp2_3"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
+    HBVER="apache1_0_2"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+fi
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
@@ -169,6 +189,9 @@ if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
 fi
 
 export SQ_IDTMSRV=1
+
+# Turn on/off generation of Service Monitor
+export SQ_SRVMON=1
 
 export MY_MPI_ROOT="$MY_SQROOT"
 export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
@@ -261,6 +284,8 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
     HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
   done
 
+  lv_hbase_cp=
+
   export HIVE_JAR_DIRS="$HIVE_HOME/lib"
   export HIVE_JAR_FILES="$HIVE_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-*.jar"
 
@@ -285,23 +310,13 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
+  lv_hbase_cp=`hbase classpath`
+
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hadoop
                           /opt/cloudera/parcels/CDH/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hbase/hbase-*-security.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-client.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-common.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-server.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-examples.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-protocol.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/zookeeper.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/$protobuf-*.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/snappy-java-*.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/lib/high-scale-lib-*.jar
-                          /opt/cloudera/parcels/CDH/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/opt/cloudera/parcels/CDH/lib/hive/lib"
   export HIVE_JAR_FILES="/opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
                          /opt/cloudera/parcels/CDH/lib/hadoop-mapreduce/hadoop-mapreduce-client-common.jar"
@@ -327,23 +342,13 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
+  lv_hbase_cp=`hbase classpath`
+
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
                           /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
-                          /usr/lib/hbase/hbase-client.jar
-                          /usr/lib/hbase/hbase-common.jar
-                          /usr/lib/hbase/hbase-server.jar
-                          /usr/lib/hbase/hbase-examples.jar
-                          /usr/lib/hbase/hbase-protocol.jar
-                          /usr/lib/hbase/lib/htrace-core.jar
-                          /usr/lib/hbase/lib/zookeeper.jar
-                          /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar
-                         /usr/lib/hbase/lib/high-scale-lib-*.jar
-                         /usr/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
 
@@ -369,27 +374,20 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
+  lv_hbase_cp=`hbase classpath`
+
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
                           /usr/hdp/current/hadoop-client/lib"
   export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/hdp/current/hbase-client/hbase-*-security.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-common.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-client.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-server.jar
-                          /usr/hdp/current/hbase-client/lib/hbase-protocol.jar
-                          /usr/hdp/current/hbase-client/lib/htrace-core*.jar
-                          /usr/hdp/current/hbase-client/lib/zookeeper.jar
-                          /usr/hdp/current/hbase-client/lib/protobuf-*.jar
-                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar
-                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar
-                         /usr/hdp/current/hbase-client/lib/hbase-hadoop-compat-*-hadoop2.jar "
-
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
-  export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
-
+  export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
+  HBVER="hdp2_3"
+  export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+  export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+  
   # Configuration directories
 
   export HADOOP_CNF_DIR=/etc/hadoop/conf
@@ -573,25 +571,18 @@ EOF
                             $APACHE_HADOOP_HOME/share/hadoop/mapreduce
                             $APACHE_HADOOP_HOME/share/hadoop/hdfs"
     export HADOOP_JAR_FILES=
-
-
-    export HBASE_JAR_FILES="$APACHE_HBASE_HOME/lib/hbase-common-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-client-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-server-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-protocol-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-examples-*.jar
-                            $APACHE_HBASE_HOME/lib/htrace-core-*.jar
-                            $APACHE_HBASE_HOME/lib/zookeeper-*.jar
-                            $APACHE_HBASE_HOME/lib/protobuf-*.jar
-                            $APACHE_HBASE_HOME/lib/snappy-java-*.jar
-                            $APACHE_HBASE_HOME/lib/high-scale-lib-*.jar
-                            $APACHE_HBASE_HOME/lib/hbase-hadoop-compat-*-hadoop2.jar "
-
     export HIVE_JAR_DIRS="$APACHE_HIVE_HOME/lib"
 
-    export HBASE_TRX_JAR=hbase-trx-hbase_98_4-${TRAFODION_VER}.jar
+    #hbase classpath captures all the right set of jars hbase is using.
+    #this also includes the trx jar that gets installed as part of install.
+    #Additional testing needed.Including it here for future validation.
+    lv_hbase_cp=`hbase classpath`
 
     # end of code for Apache Hadoop/HBase installation w/o distro
+    export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
+    HBVER="apache1_0_2"
+    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
   else
     # print usage information, not enough information about Hadoop/HBase
     vanilla_apache_usage
@@ -678,6 +669,14 @@ export SQ_MON_ALTLOG=0
 # Monitor sync thread responsiveness timeout
 # default 15 mins
 export SQ_MON_SYNC_TIMEOUT=900
+export SQ_MON_KEEPALIVE=1
+export SQ_MON_KEEPIDLE=60
+export SQ_MON_KEEPINTVL=6
+export SQ_MON_KEEPCNT=5
+
+# The wait timeout is in seconds
+export SQ_MON_EPOLL_WAIT_TIMEOUT=12
+export SQ_MON_EPOLL_RETRY_COUNT=15
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
@@ -824,6 +823,8 @@ for d in $HIVE_JAR_DIRS; do
   HIVE_JAR_FILES="$HIVE_JAR_FILES $d/*.jar"
 done
 
+SQ_CLASSPATH=$lv_hbase_cp;
+
 # assemble all of them into a classpath
 for j in $HBASE_JAR_FILES $HADOOP_JAR_FILES $HIVE_JAR_FILES; do
   if [[ -f $j ]]; then
@@ -854,13 +855,14 @@ if [[ -n "$HADOOP_CNF_DIR" ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HADOOP_CNF_DIR"
 if [[ -n "$HBASE_CNF_DIR"  ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
-SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
+SQ_CLASSPATH=${SQ_CLASSPATH}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
-$MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
-$MY_SQROOT/export/lib/trafodion-utility-${TRAFODION_VER}.jar:\
-$MY_SQROOT/export/lib/trafodion-dtm-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\
+$MY_SQROOT/export/lib/${SQL_JAR}:\
+$MY_SQROOT/export/lib/${UTIL_JAR}:\
 $MY_SQROOT/export/lib/jdbcT4.jar:\
 $MY_SQROOT/export/lib/jdbcT2.jar
+
 
 # Check whether the current shell environment changed from a previous execution of this
 # script.

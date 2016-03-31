@@ -21,18 +21,17 @@
 -->
   <repositories>
     <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      <id>Apache</id>
+      <url>http://mvnrepository.com/artifact/</url>
     </repository>
   </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop.version>2.6.0-cdh5.4.4</hadoop.version>
-    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
-    <hbase-trx.id>${env.HBASE_TRX_ID_CDH}</hbase-trx.id>
-    <hive.version>${env.HIVE_DEP_VER_CDH}</hive.version>
-    <thrift.version>${env.THRIFT_DEP_VER}</thrift.version>
+    <hadoop.version>2.6.0</hadoop.version>
+    <hbase.version>${env.HBASE_DEP_VER_APACHE}</hbase.version>
+    <hbase-flavor-id>apache1_0_2</hbase-flavor-id>
+    <hbase-trx.id>${env.HBASE_TRX_ID_APACHE}</hbase-trx.id>
     <java.version>1.7</java.version>
   </properties>
 
@@ -52,48 +51,53 @@
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.HBASE_TRXDIR}/${env.HBASE_TRX_JAR}</systemPath>
+      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-jdbc</artifactId>
-      <version>${hive.version}</version>
+      <groupId>org.apache.hadoop.hbase.coprocessor.transactional.generated</groupId>
+      <artifactId>${hbase-trx.id}</artifactId>
+      <version>${env.TRAFODION_VER}</version>
+      <scope>system</scope>
+      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-metastore</artifactId>
-      <version>${hive.version}</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.7</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
-      <version>${hive.version}</version>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.3</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
-      <version>${thrift.version}</version>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>2.5.1</version>
     </dependency>
     <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>1.6</version>
-    </dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-common</artifactId>
+        <version>${hbase.version}</version>
+    </dependency> 
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>2.5.0</version>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-protocol</artifactId>
+        <version>1.0.0</version>
     </dependency>
   </dependencies>
 
-  <groupId>org.trafodion.sql</groupId>
+  <groupId>org.trafodion.dtm</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-sql</artifactId>
+  <artifactId>trafodion-dtm-apache1_0_2</artifactId>
   <version>${env.TRAFODION_VER}</version>
-  <name>trafodion-sql</name>
-  <description>Java code for SQL engine in Trafodion</description>
+  <name>trafodion-dtm</name>
+  <description>Java code for the Trafodion DTM (Distributed Transaction Manager)</description>
 
   <build>
+    <defaultGoal>package</defaultGoal>
+    <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -101,7 +105,7 @@
         <configuration>
           <archive>
             <manifestFile>
-              src/main/resources/trafodion-sql.jar.mf
+              src/main/resources/trafodion-dtm.jar.mf
             </manifestFile>
           </archive>
         </configuration>

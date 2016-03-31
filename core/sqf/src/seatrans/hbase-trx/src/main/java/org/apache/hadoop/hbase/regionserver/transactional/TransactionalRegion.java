@@ -39,9 +39,8 @@ import org.apache.hadoop.hbase.regionserver.HRegionFileSystem;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.RegionScanner;
 import org.apache.hadoop.hbase.regionserver.RegionServerServices;
-import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.util.CancelableProgressable;
-
+import org.apache.hadoop.hbase.wal.WAL;
 /**
  * HRegion extension providing access to the HRegion protected method,
  *  public RegionScanner getScanner(final Scan scan, 
@@ -62,7 +61,7 @@ public class TransactionalRegion extends HRegion {
 	 */
   
 	public TransactionalRegion(final Path basedir,
-                                   final HLog log,
+                                   final WAL log,
 			           final FileSystem fs,
                                    final Configuration conf,
 		                   final HRegionInfo regionInfo,
@@ -81,7 +80,7 @@ public class TransactionalRegion extends HRegion {
 	 */
 
 	public TransactionalRegion(final HRegionFileSystem fs,
-                               final HLog log,
+                               final WAL log,
                                final Configuration conf,
                                final HTableDescriptor htd,
                                final RegionServerServices rsServices) {
