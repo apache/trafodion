@@ -433,6 +433,12 @@ short ExControlTcb::work()
 			  currContext->getSessionDefaults()->setCallEmbeddedArkcmp(FALSE);
                         }
 		      }
+                   else if (strcmp(value[1], "ESP_IDLE_TIMEOUT") == 0)
+                   {
+                      int lvl = (int) strtoul(value[2], NULL, 10);
+                      currContext->getSessionDefaults()->
+                        setEspIdleTimeout(lvl);
+                   }
 		  }
 	      }
   }

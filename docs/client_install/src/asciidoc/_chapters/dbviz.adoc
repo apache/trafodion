@@ -21,19 +21,16 @@
 ////
 
 = Configure DbVisualizer
-These configuration instructions apply to Trafodion Release 1.3.*_n_* and subsequent updates of Trafodion until otherwise indicated.
 
 == Prerequisite Software
 
 Make sure that you have this software installed on your workstation:
 
-* Java Runtime Environment (JRE) 1.7 or higher.
-+
-See <<jdbct4_JRE, Install Java Runtime Environment (JRE)>>.
+* Java Runtime Environment (JRE) 1.7 or higher. See <<jdbct4-java-environment, Java Environment>> in the <<jdbct4, Install JDBC Type-4 Driver>> chapter above.
 +
 In addition, see DbVisualizer’s FAQ “How to” page:
 http://confluence.dbvis.com/pages/viewpage.action?pageId=3146120[_How do I change the Java version that DbVisualizer uses?_]
-* Trafodion JDBC Type-4 Driver. See <<jdbct4_install, JDBC Type-4 Installation>>.
+* Trafodion JDBC Type-4 Driver. See <<jdbct4,Install JDBC Type-4 Driver>> above.
 * DbVisualizer 9.x.x. See the http://www.dbvis.com/[_DbVisualizer website_].
 
 == Configuration Instructions
@@ -51,9 +48,9 @@ dbvis.generic.-ConnectionValidationSelect=disabled
 ==== DbVisualizer 9.2 (or a later version)
 Set the *Physical Connection* property to keep your connections alive. Follow these steps:
 
-1.  For the database connection, select the *Properties* tab.
+1.  Double-click the database connection, select the *Properties* tab.
 2.  In the left navigation tree, expand the *Generic* connection properties, and select *Physical Connection*.
-3.  Under *Validation SQL*, enter `values(current_timestamp)`.
+3.  Under *Validation SQL*, enter `values(current_timestamp)` and click *Apply*.
 +
 <<<
 image:{images}/Physical_Connection.jpg[width=600,height=600,alt="DbVisualizer Physical Connection"]
@@ -69,14 +66,16 @@ image:{images}/DbVisualizer_Driver_Manager.jpg[image]
 * Use the JDBC URL format:
 +
 ```
-jdbc:t4jdbc://<host-name or ip-address>:37800/:
+jdbc:t4jdbc://<host-name or ip-address>:23400/:
 ```
++
+*NOTE*: This example uses a modified port number (*37800*) rather than the default port number (*23400*).
 
 <<<
 === Connect to Trafodion
 
 Create a new connection by selecting the Trafodion JDBC Type-4 Driver and filling in the connection parameters. Edit the database URL to match
-your Trafodion system’s host name and port number: `jdbc:t4jdbc://<host-name or ip-address>:37800/:`
+your Trafodion system’s host name and port number; for example: `jdbc:t4jdbc://<host-name or ip-address>:37800/:` (default is: *23400*).
 
 image:{images}/Database_Connection_in_DbVisualizer.jpg[image]
 

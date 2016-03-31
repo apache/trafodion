@@ -8736,8 +8736,8 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
   {
     NATable * currTable = cachedTableList_[currIndx];
 
-    // Only need to remove seabase tables
-    if (!currTable->isSeabaseTable())
+    // Only need to remove seabase tables and external Hive/hbase tables
+    if (!currTable->isSeabaseTable() && !currTable->hasExternalTable())
     {
       currIndx++;
       continue;

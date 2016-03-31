@@ -51,6 +51,18 @@
 
 --- SQL operation complete.
 >>
+>>-- setup for test_native
+>>grant role DB__HIVEROLE to SQL_USER4;
+
+--- SQL operation complete.
+>>showddl role DB__HIVEROLE;
+
+CREATE ROLE "DB__HIVEROLE";
+
+--- SQL operation complete.
+>>create external table item for hive.hive.item;
+
+--- SQL operation complete.
 >>
 >>log;
 >>
@@ -308,9 +320,9 @@ SQL_USER7
 >>
 >>-- expect error 8031 since the query is not running.
 >>obey cancel_cmd;
->>control query cancel qid MXID11000006223212317056413926129000000000206U3334000_52_S1;
+>>control query cancel qid MXID11000007219212324915937583329000000000206U3335600_52_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000006223212317056413926129000000000206U3334000_52_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000007219212324915937583329000000000206U3335600_52_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -450,6 +462,65 @@ End of MXCI Session
 
 End of MXCI Session
 
+>>sh sqlci -i"TEST131(test_native)" -u sql_user3;
+>>values(user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>-- user3 has no privs
+>>select count(*) from hive.hive.item;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HIVE.HIVE.ITEM.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- grant privs to user3, now user3 can execute dml
+>>sh sqlci -i"TEST131(grant_hive_privs)" -u"SQL_User4"  ;
+>>grant select on hive.hive.item to sql_user3;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>select count(*) from hive.hive.item;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>
+>>-- revoke privs from user3, user3 can no longer perform dml
+>>-- verify that query invalidate works as designed
+>>sh sqlci -i"TEST131(revoke_hive_privs)" -u"SQL_User4"  ;
+>>revoke select on hive.hive.item from sql_user3;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>select count(*) from hive.hive.item;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view HIVE.HIVE.ITEM.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>exit;
+
+End of MXCI Session
+
 >>
 >>obey TEST131(clnup);
 >>
@@ -486,6 +557,20 @@ End of MXCI Session
 *** ERROR[1338] Role ROLE131 is not defined in the database.
 
 --- SQL operation failed with errors.
+>>
+>>-- cleanup for test_native
+>>drop external table item for hive.hive.item;
+
+--- SQL operation complete.
+>>revoke role DB__HIVEROLE from SQL_USER4;
+
+--- SQL operation complete.
+>>showddl role DB__HIVEROLE;
+
+CREATE ROLE "DB__HIVEROLE";
+  -- GRANT ROLE "DB__HIVEROLE" TO "DB__ROOT" WITH ADMIN OPTION;
+
+--- SQL operation complete.
 >>
 >>
 >>log;

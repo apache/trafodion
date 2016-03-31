@@ -485,7 +485,7 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
 
   if (isAuthorizationEnabled())
     {
-      if (srcTableName.isExternalHive())
+      if (tgtTableName.isExternalHive())
         {
           tableInfo->objOwnerID = HIVE_ROLE_ID;
           tableInfo->schemaOwnerID = HIVE_ROLE_ID;
@@ -1548,7 +1548,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
 
   NAString syskeyColName("SYSKEY");
   SQLLargeInt * syskeyType = new(STMTHEAP) SQLLargeInt(TRUE, FALSE, STMTHEAP);
-  ElemDDLColDef syskeyColDef(NULL, &syskeyColName, syskeyType, NULL, NULL,
+  ElemDDLColDef syskeyColDef(NULL, &syskeyColName, syskeyType, NULL,
                              STMTHEAP);
   ElemDDLColRef edcr("SYSKEY", COM_ASCENDING_ORDER);
   CollIndex numSysCols = 0;
@@ -1688,7 +1688,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
              ElemDDLColDefault::COL_COMPUTED_DEFAULT);
       saltDef->setComputedDefaultExpr(saltExprText);
       ElemDDLColDef * saltColDef =
-        new(STMTHEAP) ElemDDLColDef(NULL, &saltColName, saltType, saltDef, NULL,
+        new(STMTHEAP) ElemDDLColDef(NULL, &saltColName, saltType, saltDef,
                                     STMTHEAP);
 
       ElemDDLColRef * edcrs = 
@@ -1866,7 +1866,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
               boundDivExpr->unparse(divExprText, PARSER_PHASE, COMPUTED_COLUMN_FORMAT);
               divColDefault->setComputedDefaultExpr(divExprText);
               ElemDDLColDef * divColDef =
-                new(STMTHEAP) ElemDDLColDef(NULL, &divColName, divColType, divColDefault, NULL,
+                new(STMTHEAP) ElemDDLColDef(NULL, &divColName, divColType, divColDefault,
                                             STMTHEAP);
 
               ElemDDLColRef * edcrs = 
