@@ -520,9 +520,6 @@
       <artifactId>jetty-util</artifactId>
       <version>${jetty.version}</version>
     </dependency>
-    <!-- While jackson is also a dependency of both jersey and avro, these
-         can bring in jars from different, incompatible versions. We force
-         the same version with these dependencies -->
 
      <!-- REST dependencies -->
     <dependency>
