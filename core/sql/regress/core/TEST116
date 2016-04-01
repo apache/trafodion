@@ -197,6 +197,24 @@ select count(*) from "_MD_".objects where schema_name = 'T116SCH1'
 rollback work;
 get tables in schema t116sch1;
 
+-- ddl with autocommit off
+set transaction autocommit off;
+drop table if exists t116t2;
+commit work;
+invoke t116t2;
+create table t116t2 (a int);
+invoke t116t2;
+rollback work;
+invoke t116t2;
+create table t116t2 (a int);
+commit work;
+invoke t116t2;
+-- ddl not allowed with autocommit off
+purgedata t116t2;
+alter table t116t2 alter column a largeint;
+cleanup table t116t2;
+rollback work;
+
 log;
 exit;
 

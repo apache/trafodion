@@ -2084,7 +2084,7 @@ short CmpSeabaseDDL::ddlInvalidateNATables()
       NAString &ddlObjName = ddlObj.ddlObjName;
       ComQiScope &qiScope = ddlObj.qiScope;
       ComObjectType &ot = ddlObj.ot;
-
+      Int64 objUID = ddlObj.objUID;
       ComObjectName tableName(ddlObjName);
       
       const NAString catalogNamePart = 
@@ -2095,8 +2095,13 @@ short CmpSeabaseDDL::ddlInvalidateNATables()
         tableName.getObjectNamePartAsAnsiString(TRUE);
       
       CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-      
-      ActiveSchemaDB()->getNATableDB()->removeNATable(cn, qiScope, ot, TRUE, TRUE);
+
+      if (ot == COM_USER_DEFINED_ROUTINE_OBJECT)
+        ActiveSchemaDB()->getNARoutineDB()->removeNARoutine(
+             cn.getQualifiedNameObj(), 
+             qiScope, objUID, TRUE, TRUE);
+      else
+        ActiveSchemaDB()->getNATableDB()->removeNATable(cn, qiScope, ot, TRUE, TRUE);
     }
 
   return 0;
@@ -8424,80 +8429,10 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
          }
     }
 
-  NABoolean startXn = TRUE;
-  // no DDL transactions.
-  if ((NOT ddlExpr->ddlXns()) &&
-      ((ddlExpr->dropHbase()) ||
-       (ddlExpr->purgedataHbase()) ||
-       (ddlExpr->initHbase()) ||
-       (ddlExpr->createMDViews()) ||
-       (ddlExpr->dropMDViews()) ||
-       (ddlExpr->initAuthorization()) ||
-       (ddlExpr->dropAuthorization()) ||
-       (ddlExpr->addSeqTable()) ||
-       (ddlExpr->createRepos()) ||
-       (ddlExpr->dropRepos()) ||
-       (ddlExpr->upgradeRepos()) ||
-       (ddlExpr->addSchemaObjects()) ||
-       (ddlExpr->updateVersion())))
-    {
-      // transaction will be started and commited in called methods.
-      startXn = FALSE;
-    }
-  
-  // no DDL transactions
-  if (((ddlNode) && (ddlNode->castToStmtDDLNode()) &&
-       (NOT ddlNode->castToStmtDDLNode()->ddlXns())) &&
-      ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
-       (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION) ||
-       (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
-       (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
-       (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
-       //       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_RENAME) ||
-       (ddlNode->getOperatorType() == DDL_DROP_TABLE)))
-    {
-      // transaction will be started and commited in called methods.
-      startXn = FALSE;
-    }
-
+  NABoolean startXn = FALSE;
   NABoolean ddlXns = FALSE;
-  if ((ddlExpr->ddlXns()) || 
-      ((ddlNode && ddlNode->castToStmtDDLNode() &&
-        ddlNode->castToStmtDDLNode()->ddlXns())))
-    ddlXns = TRUE;
-
-  // ddl transactions are on.
-  // Following commands currently require transactions be started and
-  // committed in the called methods.
-  if ((ddlExpr->ddlXns()) &&
-      (
-           (ddlExpr->purgedataHbase()) ||
-           (ddlExpr->initAuthorization()) ||
-           (ddlExpr->dropAuthorization()) ||
-           (ddlExpr->upgradeRepos())
-       )
-      )
-    {
-      // transaction will be started and commited in called methods.
-      startXn = FALSE;
-    }
-
-  // ddl transactions are on.
-  // Cleanup and alter commands requires transactions to be started and commited
-  // in the called method.
-  if ((ddlNode && ddlNode->castToStmtDDLNode() &&
-       ddlNode->castToStmtDDLNode()->ddlXns()) &&
-      ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
-       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
-    {
-      // transaction will be started and commited in called methods.
-      startXn = FALSE;
-    }
+  if (ddlExpr->ddlXnsInfo(ddlXns, startXn))
+    return -1;
   
   if (startXn)
     {

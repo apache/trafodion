@@ -792,9 +792,6 @@ void NARoutineDB::resetAfterStatement()
   // to save compile-time performance.
   if (routinesToDeleteAfterStatement_.entries())
   {
-    for(CollIndex i=0; i < routinesToDeleteAfterStatement_.entries(); i++)
-      delete routinesToDeleteAfterStatement_[i];
-
     // Clear the list of tables to delete after statement
     routinesToDeleteAfterStatement_.clear();
   }
@@ -856,9 +853,9 @@ void NARoutineDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
 // propagate to all the other processes that could have the routine stored 
 // in cache.
 // ----------------------------------------------------------------------------
-void NARoutineDB::removeNARoutine(QualifiedName &routineName, 
-                                  ComQiScope qiScope, 
-                                  Int64 objUID)
+void NARoutineDB::removeNARoutine2(QualifiedName &routineName, 
+                                   ComQiScope qiScope, 
+                                   Int64 objUID)
 {
 
   NAHashDictionaryIterator<NARoutineDBKey,NARoutine> iter (*this); 
@@ -906,6 +903,44 @@ void NARoutineDB::removeNARoutine(QualifiedName &routineName,
     }
     long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
   }
+}
+
+// This method follows the same semantics as NATableDB::removeNATable
+void NARoutineDB::removeNARoutine(QualifiedName &routineName, 
+                                  ComQiScope qiScope, 
+                                  Int64 objUID,
+                                  NABoolean ddlXns, NABoolean atCommit)
+
+{
+  if ((ddlXns) &&
+      (NOT atCommit))
+    {
+      CmpContext::DDLObjInfo ddlObj;
+      ddlObj.ddlObjName = routineName.getQualifiedNameAsString();
+      ddlObj.qiScope = qiScope;
+      ddlObj.ot = COM_USER_DEFINED_ROUTINE_OBJECT;
+      ddlObj.objUID = objUID;
+
+      NABoolean found = FALSE;
+      for (Lng32 i = 0;
+           ((NOT found) && (i <  CmpCommon::context()->ddlObjsList().entries()));
+           i++)
+        {
+          CmpContext::DDLObjInfo &ddlObjInList = 
+            CmpCommon::context()->ddlObjsList()[i];
+          if (ddlObj.ddlObjName == ddlObjInList.ddlObjName)
+            found = TRUE;
+        }
+
+      removeNARoutine2(routineName, qiScope, objUID);
+
+      if (NOT found)
+        CmpCommon::context()->ddlObjsList().insert(ddlObj);
+ 
+      return;
+    }
+
+  removeNARoutine2(routineName, qiScope, objUID);
 }
 
 // Find the NARoutine entry in the cache for 'key' or create it if not found.

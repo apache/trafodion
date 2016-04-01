@@ -4746,6 +4746,22 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
      ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
      alterAddColNode->ddlXns(), FALSE);
 
+  if (alterAddColNode->getAddConstraintPK())
+    {
+      // if table already has a primary key, return error.
+      if ((naTable->getClusteringIndex()) && 
+          (NOT naTable->getClusteringIndex()->hasOnlySyskey()))
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-1256)
+            << DgString0(extTableName);
+          
+          processReturn();
+          
+          return;
+        }
+    }
+  
   if ((alterAddColNode->getAddConstraintPK()) OR
       (alterAddColNode->getAddConstraintCheckArray().entries() NEQ 0) OR
       (alterAddColNode->getAddConstraintUniqueArray().entries() NEQ 0) OR
@@ -5346,8 +5362,8 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   // this operation cannot be done if a xn is already in progress.
   if (xnInProgress(&cliInterface))
     {
-      *CmpCommon::diags() << DgSqlCode(-20123)
-                          << DgString0("ALTER");
+      *CmpCommon::diags() << DgSqlCode(-20125)
+                          << DgString0("This ALTER");
       
       processReturn();
       return;
@@ -6433,8 +6449,8 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
   // this operation cannot be done if a xn is already in progress.
   if ((NOT mdAlterOnly) && (xnInProgress(&cliInterface)))
     {
-      *CmpCommon::diags() << DgSqlCode(-20123)
-                          << DgString0("ALTER");
+      *CmpCommon::diags() << DgSqlCode(-20125)
+                          << DgString0("This ALTER");
 
       processReturn();
       return;

@@ -211,4 +211,28 @@ ID           TIME1     TIME2     TYPE1     TYPE2  DIFF
 
 --- 1 row(s) selected.
 >>
+>>-- varchar default values were not being handled correctly
+>>drop table if exists t031t1;
+
+--- SQL operation complete.
+>>create  table t031t1 (a varchar(6) not null default 'ABC',
++>                      b varchar(6) default 'ABC');
+
+--- SQL operation complete.
+>>insert into t031t1 default values;
+
+--- 1 row(s) inserted.
+>>upsert into t031t1 default values;
+
+--- 1 row(s) inserted.
+>>select * from t031t1;
+
+A       B     
+------  ------
+
+ABC     ABC   
+ABC     ABC   
+
+--- 2 row(s) selected.
+>>
 >>log;
