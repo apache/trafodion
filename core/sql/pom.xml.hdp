@@ -21,21 +21,41 @@
 -->
   <repositories>
     <repository>
-      <id>cloudera</id>
-      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      <id>Horton Works</id>
+      <url>http://repo.hortonworks.com/content/groups/public/</url>
     </repository>
   </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop.version>2.6.0-cdh5.4.4</hadoop.version>
-    <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
-    <hbase-trx.id>${env.HBASE_TRX_ID_CDH}</hbase-trx.id>
-    <hive.version>${env.HIVE_DEP_VER_CDH}</hive.version>
-    <thrift.version>${env.THRIFT_DEP_VER}</thrift.version>
+    <hadoop.version>2.7.1.2.3.2.0-2950</hadoop.version>
+    <hbase.version>${env.HBASE_DEP_VER_HDP}</hbase.version>
+    <hbase-trx.id>${env.HBASE_TRX_ID_HDP}</hbase-trx.id>
+    <hive.version>${env.HIVE_DEP_VER_HDP}</hive.version>
+    <hbase-flavor-id>hdp2_3</hbase-flavor-id>
+    <thrift.version>0.9.0</thrift.version>
     <java.version>1.7</java.version>
   </properties>
-
+  
+  <build>
+    <defaultGoal>package</defaultGoal>
+    <outputDirectory>${project.build.directory}/classes_${hbase-flavor-id}</outputDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestFile>
+              src/main/resources/trafodion-sql.jar.mf
+            </manifestFile>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+ 
   <dependencies>
     <dependency>
       <groupId>org.apache.hbase</groupId>
@@ -52,7 +72,12 @@
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.HBASE_TRXDIR}/${env.HBASE_TRX_JAR}</systemPath>
+      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-exec</artifactId>
+      <version>${hive.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -65,19 +90,9 @@
       <version>${hive.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
-      <version>${hive.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${thrift.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -88,24 +103,9 @@
 
   <groupId>org.trafodion.sql</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-sql</artifactId>
+  <artifactId>trafodion-sql-${hbase-flavor-id}</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <name>trafodion-sql</name>
   <description>Java code for SQL engine in Trafodion</description>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>
-              src/main/resources/trafodion-sql.jar.mf
-            </manifestFile>
-          </archive>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>

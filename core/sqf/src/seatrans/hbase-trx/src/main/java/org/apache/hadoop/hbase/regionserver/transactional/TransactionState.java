@@ -53,7 +53,6 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.regionserver.InternalScanner;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.ScanQueryMatcher;
@@ -62,6 +61,7 @@ import org.apache.hadoop.hbase.regionserver.ScanInfo;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.hbase.wal.WAL;
 import org.apache.hadoop.io.DataInputBuffer;
 
 /**
@@ -110,7 +110,7 @@ public class TransactionState {
     protected boolean splitRetry = false;
     protected boolean earlyLogging = false;
     protected boolean commit_TS_CC = false;
-    protected HLog tHLog = null;
+    protected WAL tHLog = null;
     protected Object xaOperation = new Object();;
     protected CommitProgress commitProgress = CommitProgress.NONE; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
     protected List<Tag> tagList = Collections.synchronizedList(new ArrayList<Tag>());
@@ -120,7 +120,7 @@ public class TransactionState {
     public static byte TS_TRAFODION_TXN_TAG_TYPE = 41;
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
-                                                 HTableDescriptor htd, HLog hLog, boolean logging) {
+                                                 HTableDescriptor htd, WAL hLog, boolean logging) {
         Tag transactionalTag = null;
         if (LOG.isTraceEnabled()) LOG.trace("Create TS object for " + transactionId + " early logging " + logging);
         this.transactionId = transactionId;
@@ -189,6 +189,35 @@ public class TransactionState {
             }
         }
     }
+    /**
+     * Get the originating node of the transaction.
+     *
+     * @return Return the nodeId.
+     */
+    public long getNodeId() {
+
+        return ((transactionId >> 32) & 0xFFL);
+    }
+
+    /**
+     * Get the originating node of the passed in transaction.
+     *
+     * @return Return the nodeId.
+     */
+    public static long getNodeId(long transId) {
+
+        return ((transId >> 32) & 0xFFL);
+    }
+    /**
+     * Get the originating cluster of the passed in transaction.
+     *
+     * @return Return the clusterId.
+     */
+    public static long getClusterId(long transId) {
+
+        return ((transId >> 48) & 0xFFL);
+    }
+
 
     /**
      * Get the status.

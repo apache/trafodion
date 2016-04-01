@@ -122,9 +122,7 @@ public interface  TransactionalTableClient  {
         
     void setAutoFlush(boolean autoFlush, boolean b);
     org.apache.hadoop.conf.Configuration getConfiguration();
-    void flushCommits()
-                  throws InterruptedIOException,
-                RetriesExhaustedWithDetailsException ;
+    void flushCommits() throws IOException;
     HConnection getConnection();
 
     byte[][] getEndKeys()
@@ -150,7 +148,7 @@ public interface  TransactionalTableClient  {
 
     boolean checkAndPut(byte[] row, byte[] family, byte[] qualifier, byte[] value, Put put) throws IOException;
 
-    void put(Put p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException;
-    public void put(List<Put> p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException;
+    void put(Put p) throws IOException;
+    public void put(List<Put> p) throws IOException;
     public boolean checkAndDelete(byte[] row, byte[] family, byte[] qualifier, byte[] value,  Delete delete) throws IOException;
 }
