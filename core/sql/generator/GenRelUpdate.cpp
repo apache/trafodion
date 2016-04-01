@@ -2001,7 +2001,9 @@ short HbaseUpdate::codeGen(Generator * generator)
               col = tgtValueId.getNAColumn( TRUE );
 
               if ((NOT isAlignedFormat) &&
-                 (((Assign*)assignExpr)->canBeSkipped()) &&
+                  ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) ||
+                   (CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL)) && 
+                  (((Assign*)assignExpr)->canBeSkipped()) &&
                  (NOT col->isSystemColumn()) &&
                  (NOT col->isClusteringKey()) &&
                  (NOT col->isIdentityColumn()))
@@ -2317,6 +2319,8 @@ short HbaseInsert::codeGen(Generator *generator)
 
       col = tgtValueId.getNAColumn( TRUE );
       if ((NOT isAlignedFormat) &&
+         ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) ||
+          (CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL)) && 
          (((Assign*)assignExpr)->canBeSkipped()) && 
          (NOT col->isSystemColumn()) &&
          (NOT col->isClusteringKey()) &&

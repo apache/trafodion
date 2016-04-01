@@ -37,6 +37,7 @@ public class TransactionRegionLocation extends HRegionLocation {
 
   static final Log LOG = LogFactory.getLog(TransactionRegionLocation.class);
 
+  public boolean tableRecordedDropped;
   /*
    public TransactionRegionLocation(HRegionInfo regionInfo, final String hostname, final int port) {
      //ServerName
@@ -47,6 +48,17 @@ public class TransactionRegionLocation extends HRegionLocation {
 
   public TransactionRegionLocation(HRegionInfo regionInfo, ServerName servName) {
     super(regionInfo, servName);
+    tableRecordedDropped = false;
+  }
+
+  public void setTableRecordedDropped()
+  {
+    tableRecordedDropped = true;
+    if (LOG.isTraceEnabled()) LOG.trace("Table recorded dropped for region:" + super.getRegionInfo());
+  }
+  public boolean isTableRecodedDropped()
+  {
+    return tableRecordedDropped;
   }
 
    @Override

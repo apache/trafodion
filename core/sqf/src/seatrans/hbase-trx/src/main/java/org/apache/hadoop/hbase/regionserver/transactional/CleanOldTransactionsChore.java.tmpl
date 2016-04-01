@@ -27,8 +27,11 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+#ifdef HDP2.3
+import org.apache.hadoop.hbase.ScheduledChore;
+#else
 import org.apache.hadoop.hbase.Chore;
+#endif
 import org.apache.hadoop.hbase.Stoppable;
 
 import org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint;
@@ -37,8 +40,11 @@ import org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint;
  * Cleans up committed transactions when they are no longer needed to verify
  * pending transactions.
  */
+#ifdef HDP2.3
+public class CleanOldTransactionsChore extends ScheduledChore {
+#else
 public class CleanOldTransactionsChore extends Chore {
-
+#endif
   private final TrxRegionEndpoint trx_Region;
 
   static final Log LOG = LogFactory.getLog(CleanOldTransactionsChore.class);
@@ -51,7 +57,11 @@ public class CleanOldTransactionsChore extends Chore {
   public CleanOldTransactionsChore(final TrxRegionEndpoint trx_Region,
                                    final int timer,  
                                    final Stoppable stoppable) {
+#ifdef HDP2.3
+    super("CleanOldTransactionsChore", stoppable, timer);
+#else
     super("CleanOldTransactionsChore", timer, stoppable);
+#endif
     this.trx_Region = trx_Region;
   }
 

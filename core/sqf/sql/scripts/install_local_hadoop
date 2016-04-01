@@ -579,17 +579,15 @@ fi
 #####################################################
 
 # See JIRA TRAFODION-1512 that will eliminate this check
-if [ -d $MY_LOCAL_SW_DIST ]; then
   
-  HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-  HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
-else
-  HADOOP_MIRROR_URL=http://download.nextag.com/apache/hadoop/common/hadoop-2.5.2
-  HADOOP_TAR=hadoop-2.5.2.tar.gz
-fi
+HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HADOOP_TAR=hadoop-2.6.0-cdh5.4.4.tar.gz
 
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    HADOOP_TAR=hadoop-2.6.0.2.2.0.0-2041.tar.gz
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HADOOP_TAR=hadoop-2.7.1.2.3.2.0-2950.tar.gz
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HADOOP_TAR=hadoop-2.5.2.tar.gz
 fi
 
 # Alternative: Use MariaDB (not validated)
@@ -602,15 +600,25 @@ MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
-HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER}
-HIVE_PREFIX=apache-hive-${HIVE_DEP_VER}-bin
+HIVE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HIVE_PREFIX=hive-${HIVE_DEP_VER_CDH}
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HIVE_MIRROR_URL=https://archive.apache.org/dist/hive/hive-${HIVE_DEP_VER_APACHE}
+    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_APACHE}-bin
+fi
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HIVE_PREFIX=apache-hive-${HIVE_DEP_VER_HDP}-bin
+fi
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-
-HBASE_TAR=hbase-${HBASE_DEP_VER}.tar.gz
-if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
-    HBASE_TAR=hbase-0.98.4.2.2.0.0-2041-hadoop2.tar.gz
+HBASE_TAR=hbase-${HBASE_DEP_VER_CDH}.tar.gz
+if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+    HBASE_TAR=hbase-${HBASE_DEP_VER_HDP}.tar.gz
+fi
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    HBASE_MIRROR_URL=https://archive.apache.org/dist/hbase/hbase-${HBASE_DEP_VER_APACHE}
+    HBASE_TAR=hbase-${HBASE_DEP_VER_APACHE}-bin.tar.gz
 fi
 
 echo "Checking for existing Hadoop processes..."
@@ -823,16 +831,16 @@ EOF
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthbase
 #!/bin/sh
 echo "Starting HBase..."
-cd ${MY_SW_ROOT}
+cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-./hbase/bin/start-hbase.sh
+bin/start-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophbase
 #!/bin/sh
-cd ${MY_SW_ROOT}
+cd ${MY_SW_ROOT}/hbase
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
-./hbase/bin/stop-hbase.sh
+bin/stop-hbase.sh
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
@@ -903,6 +911,12 @@ EOF
 # Pick up MySQL JDBC driver
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 export HADOOP_HOME=${MY_SW_ROOT}/hadoop
+
+if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+  cd ${MY_SW_ROOT}/hadoop/share/hadoop/yarn/lib
+  rm jline*.jar
+fi
+
 ${MY_SW_ROOT}/hive/bin/hive "\$@"
 EOF
 
@@ -1006,7 +1020,7 @@ if [ -d hadoop/bin ]; then
 else
   echo "Setting up Hadoop..."
   #####################################################
-
+echo "$MY_LOCAL_SW_DIST/${HADOOP_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HADOOP_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HADOOP_TAR} .
     echo "Copied Hadoop tar file from: $MY_LOCAL_SW_DIST/${HADOOP_TAR}" 
@@ -1226,7 +1240,7 @@ if [ -d mysql/bin ]; then
 else
   #####################################################
   echo "Setting up MySQL..."
-
+echo "$MY_LOCAL_SW_DIST/${MYSQL_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
     echo "Copied MySql tar file from: $MY_LOCAL_SW_DIST/${MYSQL_TAR}"
@@ -1305,7 +1319,7 @@ if [ -f mysql-connector-java-*/mysql-connector-java-*.jar ]; then
 else
   #####################################################
   echo "Setting up MySQL JDBC driver..."
-
+echo "$MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} .
     echo "Copied MySql JDBC tar file from: $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
@@ -1331,7 +1345,7 @@ if [ -d hive/bin ]; then
 else
   #####################################################
   echo "Setting up Hive..."
-
+echo "$MY_LOCAL_SW_DIST/${HIVE_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HIVE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HIVE_TAR} .
     echo "Copied Hive tar file from: $MY_LOCAL_SW_DIST/${HIVE_TAR}"
@@ -1459,7 +1473,7 @@ if [ -d hbase/bin ]; then
 else
   #####################################################
   echo "Setting up HBase..."
-
+echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   if [ -f $MY_LOCAL_SW_DIST/${HBASE_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${HBASE_TAR} .
     echo "Copied HBase tar file from: $MY_LOCAL_SW_DIST/${HBASE_TAR}"
@@ -1499,6 +1513,18 @@ else
   if [ -r $HBASE_CONFIG_FILE ]; then
     mv -f $HBASE_CONFIG_FILE $HBASE_CONFIG_FILE.orig
   fi
+
+  if [[ "$HBASE_DISTRO" = "APACHE" ]]; then
+    MASTER_VISBILITY_COPROC="<property>
+    <name>hbase.coprocessor.master.classes</name>
+    <value>org.apache.hadoop.hbase.security.access.AccessController,
+           org.apache.hadoop.hbase.security.visibility.VisibilityController
+    </value>
+    </property>"
+    VISIBILITY_COPROC=", 
+      org.apache.hadoop.hbase.security.visibility.VisibilityController"
+  fi
+
   cat <<EOF >$HBASE_CONFIG_FILE
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -1570,6 +1596,7 @@ else
      <name>hbase.hregion.impl</name>
      <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
    </property>
+   ${MASTER_VISBILITY_COPROC}
    <property>
     <name>hbase.coprocessor.region.classes</name>
       <value>

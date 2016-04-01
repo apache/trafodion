@@ -737,6 +737,7 @@ SB_Export short BFILE_CLOSE_(short pv_filenum, short pv_tapedisposition) {
     FS_Fd_Type *lp_fd;
     short       lv_fserr;
     int         lv_status;
+    int         lv_refcount;
     SB_API_CTR (lv_zctr, BFILE_CLOSE_);
 
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_FS_CLOSE, pv_filenum);
@@ -756,7 +757,7 @@ SB_Export short BFILE_CLOSE_(short pv_filenum, short pv_tapedisposition) {
     if (pv_filenum == gv_fs_receive_fn)
         gv_fs_receive_fn = -1;
     else {
-        if (msg_mon_get_ref_count(&lp_fd->iv_phandle) > 1) {
+        if ((lv_refcount = msg_mon_get_ref_count(&lp_fd->iv_phandle)) > 1  || (lv_refcount == 0)) {
             // send close message to remote
             fs_int_fs_file_close(lp_fd);
         }

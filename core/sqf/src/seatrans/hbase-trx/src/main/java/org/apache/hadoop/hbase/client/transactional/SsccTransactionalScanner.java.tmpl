@@ -21,7 +21,6 @@
 * @@@ END COPYRIGHT @@@
 **/
 
-
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -285,5 +284,14 @@ public class SsccTransactionalScanner extends AbstractClientScanner {
             if(LOG.isTraceEnabled()) LOG.trace("next() returning null");
             return null;
         }
+    }
+    
+    // Note that this method should be on ResultScanner, but that is marked stable.
+    // Callers have to cast their instance of ResultScanner to AbstractClientScanner to use this.
+#ifdef HDP2.3
+    @Override
+#endif
+    public boolean renewLease() {
+        return true;
     }
 }
