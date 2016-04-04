@@ -49,7 +49,7 @@
   </repositories>
 
   <properties>
-    <hadoop.version>2.7.1.2.3.2.0-2950</hadoop.version>
+    <hadoop.version>2.7.1</hadoop.version>
     <hbase.version>${env.HBASE_DEP_VER_HDP}</hbase.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
