@@ -1485,9 +1485,6 @@ static bool checkAccessPrivileges(
   // a side effect is to return an error if basic privileges are not granted
    for (CollIndex i = 0; i < vtul.entries(); i++)
    {
-      if (vtul[i].getSpecialType() == ExtendedQualName::SG_TABLE)
-         continue;
-         
       ComObjectName usedObjName(vtul[i].getQualifiedNameObj().getQualifiedNameAsAnsiString(),
                                 vtul[i].getAnsiNameSpace());
       
@@ -1497,19 +1494,28 @@ static bool checkAccessPrivileges(
       NAString extUsedObjName = usedObjName.getExternalName(TRUE);
       CorrName cn(objectNamePart,STMTHEAP, schemaNamePart,catalogNamePart);
  
+      // If a sequence, set correct type to get a valid NATable entry
+      bool isSeq = (vtul[i].getSpecialType() == ExtendedQualName::SG_TABLE)? true : false;
+      if (isSeq)
+        cn.setSpecialType(ExtendedQualName::SG_TABLE);
+
       NATable *naTable = bindWA.getNATable(cn);
       if (naTable == NULL)
       {
           SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");
          return false; 
       }
+
       PrivMgrUserPrivs privs;
       PrivMgrUserPrivs *pPrivInfo = NULL;
 
       // If gathering privileges for the view creator, the NATable structure
       // contains the privileges we want to use to create bitmaps
       if (viewCreator)
+      {
         pPrivInfo = naTable->getPrivInfo();
+        CMPASSERT(pPrivInfo != NULL);
+      }
       
       // If the view owner is not the view creator, then we need to get schema
       // owner privileges from PrivMgr.
@@ -1529,8 +1535,11 @@ static bool checkAccessPrivileges(
       }
 
       // Requester must have at least select privilege
-      if ( !pPrivInfo->hasSelectPriv() )
-         missingPrivilege = true;
+      // For sequence generators USAGE is needed instead of SELECT
+      if  (isSeq)
+        missingPrivilege = !pPrivInfo->hasUsagePriv() ? true : false;
+      else  
+        missingPrivilege = !pPrivInfo->hasSelectPriv() ? true : false; 
 
       // Summarize privileges
       privilegesBitmap &= pPrivInfo->getObjectBitmap();
@@ -1625,7 +1634,7 @@ static bool checkAccessPrivileges(
       colGrantableBitmap &= pPrivInfo->getColumnGrantableBitmap(usedColNumber);
    }
   
-   if ((noObjPriv && missingPrivilege) || vctcul.entries() == 0)
+   if (noObjPriv && missingPrivilege)
      {
         *CmpCommon::diags() << DgSqlCode(-4481)
                             << DgString0("SELECT")

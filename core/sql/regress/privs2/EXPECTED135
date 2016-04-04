@@ -210,6 +210,12 @@ TRAFODION.T135SCH.T135_T2                                                       
 >>create table t135_t2 (c1 int not null primary key, c2 int);
 
 --- SQL operation complete.
+>>create table t135_t3 (a int, b int);
+
+--- SQL operation complete.
+>>create sequence t135seq;
+
+--- SQL operation complete.
 >>
 >>-- create a view referencing a single table where view creator has all privs
 >>create view t135_v1_t1 as select * from t135_t1;
@@ -634,13 +640,224 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
+>>-- test views that reference sequence generators
+>>GRANT COMPONENT privilege create_view on sql_operations to sql_user5;
+
+--- SQL operation complete.
+>>insert into t135_t3 values (1,1);
+
+--- 1 row(s) inserted.
+>>select * from t135_t3;
+
+A            B          
+-----------  -----------
+
+          1            1
+
+--- 1 row(s) selected.
+>>grant select on t135_t3 to sql_user5;
+
+--- SQL operation complete.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T3
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+;
+
+-- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T3 TO DB__ROOT WITH GRANT OPTION;
+  GRANT SELECT ON TRAFODION.T135SCH.T135_T3 TO SQL_USER5;
+
+--- SQL operation complete.
+>>create schema if not exists t135sch_user5 authorization sql_user5;
+
+--- SQL operation complete.
+>>
+>>-- unable to create view, lacking USAGE privilege
+>>sh sqlci -i "TEST135(user5_views)" -u sql_user5;
+>>create view t135_v1_user5 as select seqnum(t135sch.t135seq) as a from t135sch.t135_t3;
+
+*** ERROR[4491] The user does not have USAGE privilege on sequence TRAFODION.T135SCH.T135SEQ.
+
+--- SQL operation failed with errors.
+>>showddl t135_v1_user5;
+
+*** ERROR[4082] Object TRAFODION.T135SCH_USER5.T135_V1_USER5 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>select * from t135_v1_user5;
+
+*** ERROR[4082] Object TRAFODION.T135SCH_USER5.T135_V1_USER5 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>set schema t135sch;
+
+--- SQL operation complete.
+>>create view t135_v1_user5 as select seqnum(t135seq) as a from t135_t3;
+
+*** ERROR[4491] The user does not have USAGE privilege on sequence TRAFODION.T135SCH.T135SEQ.
+
+--- SQL operation failed with errors.
+>>showddl t135_v1_user5;
+
+*** ERROR[4082] Object TRAFODION.T135SCH.T135_V1_USER5 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>select * from t135_v1_user5;
+
+*** ERROR[4082] Object TRAFODION.T135SCH.T135_V1_USER5 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- grant privilege and try again
+>>grant usage on sequence t135seq to sql_user5;
+
+--- SQL operation complete.
+>>showddl sequence t135seq;
+
+CREATE SEQUENCE TRAFODION.T135SCH.T135SEQ
+  START WITH 1 /* NEXT AVAILABLE VALUE 1 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+-- GRANT USAGE ON SEQUENCE TRAFODION.T135SCH.T135SEQ TO DB__ROOT WITH GRANT OPTION;
+  GRANT USAGE ON SEQUENCE TRAFODION.T135SCH.T135SEQ TO SQL_USER5;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST135(user5_views)" -u sql_user5;
+>>create view t135_v1_user5 as select seqnum(t135sch.t135seq) as a from t135sch.t135_t3;
+
+--- SQL operation complete.
+>>showddl t135_v1_user5;
+
+CREATE VIEW TRAFODION.T135SCH_USER5.T135_V1_USER5 AS
+  SELECT SEQNUM (TRAFODION.T135SCH.T135SEQ) AS A FROM
+    TRAFODION.T135SCH.T135_T3 ;
+
+-- GRANT SELECT, REFERENCES ON TRAFODION.T135SCH_USER5.T135_V1_USER5 TO SQL_USER5 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>select * from t135_v1_user5;
+
+A                   
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>set schema t135sch;
+
+--- SQL operation complete.
+>>create view t135_v1_user5 as select seqnum(t135seq) as a from t135_t3;
+
+--- SQL operation complete.
+>>showddl t135_v1_user5;
+
+CREATE VIEW TRAFODION.T135SCH.T135_V1_USER5 AS
+  SELECT SEQNUM (TRAFODION.T135SCH.T135SEQ) AS A FROM
+    TRAFODION.T135SCH.T135_T3 ;
+
+-- GRANT SELECT, REFERENCES ON TRAFODION.T135SCH.T135_V1_USER5 TO SQL_USER5 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>select * from t135_v1_user5;
+
+A                   
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- try revoking privilege
+>>-- fails because of sql_user5's view
+>>revoke usage on sequence t135seq from sql_user5;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION.T135SCH_USER5.T135_V1_USER5 exists.
+
+--- SQL operation failed with errors.
+>>
+>>-- drop views and try again
+>>drop view t135sch_user5.t135_v1_user5;
+
+--- SQL operation complete.
+>>revoke usage on sequence t135seq from sql_user5;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION.T135SCH.T135_V1_USER5 exists.
+
+--- SQL operation failed with errors.
+>>drop view t135sch.t135_v1_user5;
+
+--- SQL operation complete.
+>>revoke usage on sequence t135seq from sql_user5;
+
+--- SQL operation complete.
+>>showddl sequence t135seq;
+
+CREATE SEQUENCE TRAFODION.T135SCH.T135SEQ
+  START WITH 1 /* NEXT AVAILABLE VALUE 26 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+-- GRANT USAGE ON SEQUENCE TRAFODION.T135SCH.T135SEQ TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>-- redo but this time grant SELECT, should fail
+>>grant select on sequence t135seq to sql_user5;
+
+*** ERROR[1267] SELECT privilege is incompatible with this object type.
+
+--- SQL operation failed with errors.
+>>showddl sequence t135seq;
+
+CREATE SEQUENCE TRAFODION.T135SCH.T135SEQ
+  START WITH 1 /* NEXT AVAILABLE VALUE 26 */
+  INCREMENT BY 1
+  MAXVALUE 9223372036854775806
+  MINVALUE 1
+  CACHE 25
+  NO CYCLE
+  LARGEINT
+;
+
+-- GRANT USAGE ON SEQUENCE TRAFODION.T135SCH.T135SEQ TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>REVOKE COMPONENT privilege create_view on sql_operations from sql_user5;
+
+--- SQL operation complete.
+>>
 >>drop table t135_t1 cascade;
 
 --- SQL operation complete.
 >>drop table t135_t2 cascade;
 
 --- SQL operation complete.
->>
 >>drop role t135_role1;
 
 --- SQL operation complete.
