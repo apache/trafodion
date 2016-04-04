@@ -6614,35 +6614,46 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   // ==> Check privs on any sequence generators used in the query.
   for (Int32 i=0; i<(Int32)bindWA->getSeqValList().entries(); i++)
   {
+    RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
     SequenceValue *seqVal = (bindWA->getSeqValList())[i];
     NATable* tab = const_cast<NATable*>(seqVal->getNATable());
+    CMPASSERT(tab);
 
-    // No need to save priv info in NATable object representing a sequence;
-    // these NATables are not cached.
+    // get privilege information from the NATable structure
+    PrivMgrUserPrivs *pPrivInfo = tab->getPrivInfo();
     PrivMgrUserPrivs privInfo;
-    CmpSeabaseDDL cmpSBD(STMTHEAP);
-    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    if (!pPrivInfo)
     {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-        *CmpCommon::diags() << DgSqlCode( -4400 );
-      return FALSE;
-    }
-    retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
-                                          COM_SEQUENCE_GENERATOR_OBJECT, 
-                                          thisUserID, privInfo);
-    cmpSBD.switchBackCompiler();
-    if (retcode != STATUS_GOOD)
-    {
-      bindWA->setFailedForPrivileges(TRUE);
-      RemoveNATableEntryFromCache = TRUE;
-      *CmpCommon::diags() << DgSqlCode( -1034 );
-      return FALSE;
+      CmpSeabaseDDL cmpSBD(STMTHEAP);
+      if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+      {
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+          *CmpCommon::diags() << DgSqlCode( -4400 );
+        return FALSE;
+      }
+      retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
+                                            COM_SEQUENCE_GENERATOR_OBJECT, 
+                                            thisUserID, privInfo);
+      cmpSBD.switchBackCompiler();
+      if (retcode != STATUS_GOOD)
+      {
+        bindWA->setFailedForPrivileges(TRUE);
+        RemoveNATableEntryFromCache = TRUE;
+        *CmpCommon::diags() << DgSqlCode( -1034 );
+        return FALSE;
+      }
+      pPrivInfo = &privInfo;
     }
 
     // Verify that the user has usage priv
-    if (privInfo.hasPriv(USAGE_PRIV))
+    NABoolean insertQIKeys = FALSE; 
+    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
+      insertQIKeys = TRUE;
+    if (pPrivInfo->hasPriv(USAGE_PRIV))
     {
-      // Do we need to add any QI keys to the plan?
+      // do this only if QI is enabled and object has security keys defined
+      if ( insertQIKeys )
+        findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, USAGE_PRIV );
     }
 
     // plan requires privilege but user has none, report an error
