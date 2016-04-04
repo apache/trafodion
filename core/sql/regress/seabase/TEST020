@@ -770,6 +770,7 @@ select * from table(index_table test020t40i1);
 ?section trafodion_1700_and_1847
 set parserflags 1;
 --test for timestamp column default value
+cqd traf_upsert_mode 'merge';
 cqd traf_aligned_row_format 'off' ;
 create table test020t41(a largeint not null primary key, b char(10),
 c timestamp(6) default current , d int , e int default 3);
@@ -779,7 +780,7 @@ select a,b,d,e from test020t41 where current_timestamp-c < cast(10 as interval s
 -- check to ensure the timestamp column is not updated with upsert
 upsert into test020t41 (a,b,e) values (1, 'c', 5);
 select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
--- check to ensure the value for column d is retained
+-- check to ensure the value for column e is retained
 upsert into test020t41 (a,b) values (1, 'd');
 select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
 -- upsert with non-matching rows  
@@ -791,12 +792,60 @@ create index test020t41ix on test020t41(e);
 select * from table(index_table test020t41ix) ;
 upsert into test020t41 (a,b,e) values (5,'h',6);
 select * from table(index_table test020t41ix) ;
--- check if the updated d column is reflected in the index
+-- check if the updated e column is reflected in the index
+upsert into test020t41 (a,b,e) values (1, 'c', 4);
+select * from table(index_table test020t41ix) ;
+
+--  With index it will be merge anyway, but default values needs to be 
+--  populated
+cqd traf_upsert_mode 'replace';
+delete from test020t41 ;
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+upsert into test020t41 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+select * from table(index_table test020t41ix) ;
+drop index test020t41ix ;
+-- Without index 
+delete from test020t41 ;
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+upsert into test020t41 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t41 where c > (select c from test020t41 where a = 2);
+
+cqd traf_upsert_mode 'optimal' ;
+-- check if the timestamp is inserted with the recent timestamp
+delete from test020t41 ;
+insert into test020t41 (a,b) values (1,'a'), (2,'b');
+select a,b,d,e from test020t41 where current_timestamp-c < cast(10 as interval second);
+-- check to ensure the timestamp column is not updated with upsert
+upsert into test020t41 (a,b,e) values (1, 'c', 5);
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- check to ensure the value for column e is retained
+upsert into test020t41 (a,b) values (1, 'd');
+select a,b,d,e from test020t41 where a = 1 and c = (select c from test020t41 where a = 2);
+-- upsert with non-matching rows  
+upsert into test020t41 (a,b) values (3, 'e'), (4, 'f');
+select a,b,d,e from test020t41 ;
+upsert into test020t41 (a,b) values (3, 'g');
+select a,b,d,e from test020t41 where a = 3 and c = (select c from test020t41 where a = 4);
+create index test020t41ix on test020t41(e);
+select * from table(index_table test020t41ix) ;
+upsert into test020t41 (a,b,e) values (5,'h',6);
+select * from table(index_table test020t41ix) ;
+-- check if the updated e column is reflected in the index
 upsert into test020t41 (a,b,e) values (1, 'c', 4);
 select * from table(index_table test020t41ix) ;
 
 create table test020t42(a largeint not null primary key, b char(10),
 c timestamp(6) default current , d int , e int default 3) attribute aligned format;
+cqd traf_upsert_mode 'merge';
 -- check if the timestamp is inserted with the recent timestamp
 insert into test020t42 (a,b) values (1,'a'), (2,'b');
 select a,b,d,e from test020t42 where current_timestamp-c < cast(10 as interval second);
@@ -819,7 +868,53 @@ select * from table(index_table test020t42ix) ;
 upsert into test020t42 (a,b,e) values (1, 'c', 4);
 select * from table(index_table test020t42ix) ;
 
+--  With index it will be merge anyway, but default values needs to be 
+--  populated
+cqd traf_upsert_mode 'replace';
+delete from test020t42 ;
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+select * from table(index_table test020t42ix) ;
+drop index test020t42ix ;
+-- Without index 
+delete from test020t42 ;
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
+cqd traf_upsert_mode 'optimal';
+delete from test020t42 ;
+create index test020t42ix on test020t42(e);
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+select * from table(index_table test020t42ix) ;
+drop index test020t42ix ;
+-- Without index 
+delete from test020t42 ;
+insert into test020t42 (a,b) values (1,'a'), (2,'b');
+upsert into test020t42 (a,b,e) values (1, 'c', 5);
+-- Should display a row with = 1
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+upsert into test020t42 (a,b) values (1, 'd');
+-- Should display a row with = 1 and e should be 3
+select a,b,d,e from test020t42 where c > (select c from test020t42 where a = 2);
+
 create table test020t43(c1 int, c2 int ) attribute aligned format ;
+cqd traf_upsert_mode 'merge';
 upsert into test020t43 values (1,1);
 upsert into test020t43 (c1) values(1);
 select * from test020t43 ; 

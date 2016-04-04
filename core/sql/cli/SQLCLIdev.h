@@ -83,8 +83,6 @@ Lng32 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(
 Lng32 SQL_EXEC_GetParserFlagsForExSqlComp_Internal(
 						      /*IN*/ ULng32 &flagbits);
 
-Lng32 SQL_EXEC_DeleteHbaseJNI();
-
 // For internal use only -- do not document!
 SQLCLI_LIB_FUNC short SQL_EXEC_GetDefaultVolume_Internal(
                 /*OUT*/ char  outBuf[],
