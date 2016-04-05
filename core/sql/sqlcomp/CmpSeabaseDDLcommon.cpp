@@ -7625,8 +7625,6 @@ void CmpSeabaseDDL::dropSeabaseMD(NABoolean ddlXns)
   // drop all objects that match the pattern "TRAFODION.*"
   dropSeabaseObjectsFromHbase("TRAFODION\\..*", ddlXns);
 
-  SQL_EXEC_DeleteHbaseJNI();
-  
   //drop all lob data and descriptor files
   dropLOBHdfsFiles();
 
