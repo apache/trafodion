@@ -894,7 +894,6 @@ public class HBaseClient {
        } else {
             if (logger.isDebugEnabled()) logger.debug("  ==> Returning existing object, removing from container.");
             hTableClientsInUse.put(htable.getTableName(), htable);
-            htable.resetAutoFlush();
            htable.setJniObject(jniObject);
             return htable;
        }
@@ -921,17 +920,6 @@ public class HBaseClient {
            else
               if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
         }
-    }
-
-    public boolean flushAllTables() throws IOException {
-        if (logger.isDebugEnabled()) logger.debug("HBaseClient.flushAllTables() called.");
-       if (hTableClientsInUse.isEmpty()) {
-          return true;
-        }
-        for (HTableClient htable : hTableClientsInUse.values()) {
-		  htable.flush();
-        }
-	return true; 
     }
 
     public boolean grant(byte[] user, byte[] tblName,
@@ -1679,10 +1667,9 @@ public class HBaseClient {
                          Object rowIDs,
                          Object rows,
                          long timestamp,
-                         boolean autoFlush,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.putRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush, asyncOperation);
+      boolean ret = htc.putRows(transID, rowIDLen, rowIDs, rows, timestamp, asyncOperation);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
