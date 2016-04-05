@@ -942,7 +942,8 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		lastHandledStep_ = step_;
                 step_ = COMPLETE_ASYNC_INSERT;
             }
-	    step_ = INSERT_CLOSE;
+            else
+	       step_ = INSERT_CLOSE;
 	  }
 	  break;
         case COMPLETE_ASYNC_INSERT:
