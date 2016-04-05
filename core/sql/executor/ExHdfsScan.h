@@ -37,6 +37,9 @@
 #include <time.h>
 #include "ExHbaseAccess.h"
 #include "ExpHbaseInterface.h"
+
+#define HIVE_MODE_DOSFORMAT    1
+
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -200,7 +203,7 @@ protected:
   // hdfsRead. Or it could be the eof (in which case there is a good
   // row still waiting to be processed).
   char * extractAndTransformAsciiSourceToSqlRow(int &err,
-						ComDiagsArea * &diagsArea);
+						ComDiagsArea * &diagsArea, int mode);
 
   short moveRowToUpQueue(const char * row, Lng32 len, 
                          short * rc, NABoolean isVarchar);
@@ -429,27 +432,44 @@ protected:
 
 #define RANGE_DELIMITER '\002'
 
-inline char *hdfs_strchr(const char *s, int c, const char *end, NABoolean checkRangeDelimiter)
+inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDelimiter, int mode = 0)
 {
   char *curr = (char *)s;
-
+  int count=0;
   while (curr < end) {
     if (*curr == c)
+    {
+       if((mode & HIVE_MODE_DOSFORMAT) > 0 ) // The line terminator and we want to remove the \r before it
+       {
+         if(count>0 && c == '\n')
+         {
+           if(s[count-1] == '\r') s[count-1] = ' '; 
+         }
+       }
        return curr;
+    }
     if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
        return NULL;
     curr++;
+    count++;
   }
   return NULL;
 }
 
 
-inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen)
+inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen, int mode = 0)
 {
   char *curr = (char *)s;
-
+  int count = 0;
   while (curr < end) {
     if (*curr == rd) {
+       if( (mode & HIVE_MODE_DOSFORMAT)>0 ) //convert DOS format by replace the \r with space if it is \r\n here
+       {
+         if(count>0 && rd == '\n')
+         {
+           if(s[count-1] == '\r') s[count-1] = ' ';
+         }
+       }
        *rdSeen = TRUE;
        return curr;
     }
@@ -464,6 +484,7 @@ inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoole
        return NULL;
     }
     curr++;
+    count++;
   }
   *rdSeen = FALSE;
   return NULL;

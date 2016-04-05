@@ -367,6 +367,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   char cursorId[8];
   HdfsFileInfo *hdfo = NULL;
   Lng32 openType = 0;
+  int hiveScanMode = 0;
+
+  hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
   
   while (!qparent_.down->isEmpty())
     {
@@ -720,7 +723,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		// Position in the hdfsScanBuffer_ to the
 		// first record delimiter.  
 		hdfsBufNextRow_ = hdfs_strchr(hdfsScanBuffer_,
-                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_);
+                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_, hiveScanMode);
 		// May be that the record is too long? Or data isn't ascii?
 		// Or delimiter is incorrect.
 		if (! hdfsBufNextRow_)
@@ -768,7 +771,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  ComDiagsArea *transformDiags = NULL;
 	  int err = 0;
 	  char *startOfNextRow =
-	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags);
+	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags, hiveScanMode);
 
 	  bool rowWillBeSelected = true;
 	  lastErrorCnd_ = NULL;
@@ -1378,7 +1381,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 }
 
 char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
-							     ComDiagsArea* &diagsArea)
+							     ComDiagsArea* &diagsArea, int mode)
 {
   err = 0;
   char *sourceData = hdfsBufNextRow_;
@@ -1395,7 +1398,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   hdfsLoggingRow_ = hdfsBufNextRow_;
   if (asciiSourceTD->numAttrs() == 0)
   {
-     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd, checkRangeDelimiter_);
+     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd, checkRangeDelimiter_, mode);
      hdfsLoggingRowEnd_  = sourceRowEnd;
 
      if (!sourceRowEnd)
@@ -1430,7 +1433,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
         attr = NULL;
  
       if (!isTrailingMissingColumn) {
-         sourceColEnd = hdfs_strchr(sourceData, rd, cd, sourceDataEnd, checkRangeDelimiter_, &rdSeen);
+         sourceColEnd = hdfs_strchr(sourceData, rd, cd, sourceDataEnd, checkRangeDelimiter_, &rdSeen,mode);
          if (sourceColEnd == NULL) {
             if (rdSeen || (sourceRowEnd == NULL))
                return NULL;
@@ -1493,7 +1496,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   // rowDelimiter is encountered
   // So try to find the record delimiter
   if (sourceRowEnd == NULL) {
-     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd, checkRangeDelimiter_);
+     sourceRowEnd = hdfs_strchr(sourceData, rd, sourceDataEnd, checkRangeDelimiter_,mode);
      if (sourceRowEnd) {
         hdfsLoggingRowEnd_  = sourceRowEnd;
         if ((endOfRequestedRange_) &&

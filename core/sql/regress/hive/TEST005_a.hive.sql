@@ -163,3 +163,13 @@ create external table tbl_gbk
 )
 row format delimited fields terminated by '\t'
 location '/user/hive/exttables/tbl_gbk';
+
+drop table tbl_dos;
+CREATE  external TABLE  tbl_dos(
+   c1  int,
+   c2  int,
+   c3  int,
+   c4  string)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tbl_dos'
+;
