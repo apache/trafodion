@@ -473,30 +473,51 @@ inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean che
 {
   char *curr = (char *)s;
   int count = 0;
-  while (curr < end) {
-    if (*curr == rd) {
-       if( (mode & HIVE_MODE_DOSFORMAT)>0 ) //convert DOS format by replace the \r with space if it is \r\n here
-       {
+  if( (mode & HIVE_MODE_DOSFORMAT)>0 )  //check outside the while loop to make it faster
+  {
+    while (curr < end) {
+      if (*curr == rd) {
          if(count>0 && rd == '\n')
          {
-           if(s[count-1] == '\r') s[count-1] = ' ';
+             if(s[count-1] == '\r') s[count-1] = ' ';
          }
-       }
-       *rdSeen = TRUE;
-       return curr;
+         *rdSeen = TRUE;
+         return curr;
+      }
+      else
+      if (*curr == cd) {
+         *rdSeen = FALSE;
+         return curr;
+      }
+      else
+      if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
+         *rdSeen = TRUE;
+         return NULL;
+      }
+      curr++;
+      count++;
     }
-    else
-    if (*curr == cd) {
-       *rdSeen = FALSE;
-       return curr;
+  }
+  else
+  {
+    while (curr < end) {
+      if (*curr == rd) {
+         *rdSeen = TRUE;
+         return curr;
+      }
+      else
+      if (*curr == cd) {
+         *rdSeen = FALSE;
+         return curr;
+      }
+      else
+      if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
+         *rdSeen = TRUE;
+         return NULL;
+      }
+      curr++;
+      count++;
     }
-    else
-    if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
-       *rdSeen = TRUE;
-       return NULL;
-    }
-    curr++;
-    count++;
   }
   *rdSeen = FALSE;
   return NULL;
