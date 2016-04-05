@@ -436,22 +436,34 @@ inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDe
 {
   char *curr = (char *)s;
   int count=0;
-  while (curr < end) {
+  if( (mode & HIVE_MODE_DOSFORMAT ) == 0)
+  {
+   while (curr < end) {
     if (*curr == c)
     {
-       if((mode & HIVE_MODE_DOSFORMAT) > 0 ) // The line terminator and we want to remove the \r before it
-       {
-         if(count>0 && c == '\n')
-         {
-           if(s[count-1] == '\r') s[count-1] = ' '; 
-         }
-       }
        return curr;
     }
     if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
        return NULL;
     curr++;
+   }
+  }
+  else
+  {
+   while (curr < end) {
+     if (*curr == c)
+     {
+         if(count>0 && c == '\n')
+         {
+           if(s[count-1] == '\r') s[count-1] = ' '; 
+         }
+         return curr;
+      }
+      if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
+         return NULL;
+    curr++;
     count++;
+   }
   }
   return NULL;
 }
