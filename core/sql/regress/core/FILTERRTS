@@ -78,6 +78,8 @@ s/SSCP Request Message Bytes[ ]*[0-9,]*/SSCP Request Message Bytes @sscpRequestM
 s/SSCP Reply Message Count[ ]*[0-9,]*/SSCP Reply Message Count @sscpReplytMessageCount@/
 s/SSCP Reply Message Bytes[ ]*[0-9,]*/SSCP Reply Message Bytes @sscpReplyMessageBytes@/
 s/No. Query Invalidation Keys[ ]*[0-9]*/No. Query Invalidation Keys/
+s/EXE Memory[ ]*[A-z]*[0-9]*/@exeMemory@/
+s/IPC Memory[ ]*[A-z]*[0-9]*/@exeMemory@/
 s/RMS Stats Reset Timestamp[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/RMS Stats Reset Timestamp @rmsStatsResetTimestamp@/
 /8 EX_HASH_GRBY[A-Z ]*/{N
 s/8 EX_HASH_GRBY[A-Z ]*\n[0-9, -]*/8 #ex_hash_grby bmoStats/
