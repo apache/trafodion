@@ -131,6 +131,41 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    done
 fi
 
+if [[ $HADOOP_TYPE == "vanilla" ]]; then
+   HDFS_NODES=""
+   MY_HDFS_NODES=""
+   HBASE_NODES=""
+   MY_HBASE_NODES=""
+
+   HADOOP_NODES=""
+   MY_HADOOP_NODES=""
+
+   HADOOP_PATH=$HADOOP_PREFIX
+   HADOOP_BIN_PATH=$HADOOP_PREFIX/bin
+
+   for node in $NODE_LIST;
+   do
+      hasHadoop=$(ssh -q -n $node $HADOOP_PREFIX/bin/hadoop | grep "No such file or directory" | wc -l)
+      if [[ "$hasHadoop" -eq "0" ]]; then
+         HADOOP_NODES="$HADOOP_NODES $node"
+         MY_HADOOP_NODES="$MY_HADOOP_NODES -w $node"
+      fi
+
+      result=$(ssh -q -n $node $HADOOP_PREFIX/bin/hdfs | grep "No such file or directory" | wc -l)
+      if [[ result -eq "0" ]]; then
+         HDFS_NODES="$HDFS_NODES $node"
+         MY_HDFS_NODES="$MY_HDFS_NODES -w $node"
+      fi
+
+      firesult=$(ssh -q -n $node $HBASE_HOME/bin/hbase | grep "No such file or directory" | wc -l)
+      if [[ result -eq "0" ]]; then
+         HBASE_NODES="$HBASE_NODES $node"
+         MY_HBASE_NODES="$MY_HBASE_NODES -w $node"
+      fi
+
+   done
+fi
+
 if [ $curlRC != 0 ]; then
    echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
    echo "***ERROR: curl command failed."
