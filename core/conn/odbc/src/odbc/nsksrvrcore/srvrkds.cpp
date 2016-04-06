@@ -342,6 +342,8 @@ long SRVR::kdsCopyToSMDSQLValueSeq(SQLValueList_def *SQLValueList,
 				break;
 			case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 			case SQLTYPECODE_INTERVAL:
+			case SQLTYPECODE_BLOB:
+			case SQLTYPECODE_CLOB:
 			// case SQLTYPECODE_VARCHAR_UP: //             = -1201 // need to comment it out since sqlci.h doesn't support anymore.
 				length = strlen(dataValue);
 				if (length > allocLength-(1+2)) // 2 Bytes for Length

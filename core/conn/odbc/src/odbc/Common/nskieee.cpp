@@ -381,6 +381,8 @@ short ODBC::Datatype_Dependent_Swap(BYTE *source, long dataType, SQLINTEGER char
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR:
 		case SQLTYPECODE_VARCHAR_LONG:
+                case SQLTYPECODE_BLOB:
+                case SQLTYPECODE_CLOB:
 			if ((charSet == SQLCHARSETCODE_UCS2) && (CDataType != SQL_C_BINARY))
 				*(short*)source = 2 * (*(short *)source);
 //SQL_C_BINARY is specified, swap the data
@@ -458,6 +460,8 @@ void ODBC::SQLDatatype_Dependent_Swap(BYTE *source, long dataType, SQLINTEGER ch
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR:
 		case SQLTYPECODE_VARCHAR_LONG:
+                case SQLTYPECODE_BLOB:
+                case SQLTYPECODE_CLOB:
 			byte_swap_2(source);
 			if (charSet == SQLCHARSETCODE_UCS2)
 				byte_swap_string(source+2,*(short *)source);
@@ -543,6 +547,8 @@ long ODBC::dataLength(SQLSMALLINT SQLDataType, SQLINTEGER SQLOctetLength, SQLINT
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
+        case SQLTYPECODE_BLOB:
+        case SQLTYPECODE_CLOB:
 		allocLength = *(USHORT *)buffer + 3;
 		break;
 	case SQLTYPECODE_SMALLINT:
@@ -579,6 +585,8 @@ long ODBC::dataLength(SQLSMALLINT SQLDataType, SQLINTEGER SQLOctetLength, SQLINT
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
+        case SQLTYPECODE_BLOB:
+        case SQLTYPECODE_CLOB:
 		if (out == FALSE)
 			allocLength = *(USHORT *)buffer + 3;
 		else
@@ -621,6 +629,8 @@ long ODBC::dataLengthFetchRowset(SQLSMALLINT SQLDataType, SQLINTEGER SQLOctetLen
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
+        case SQLTYPECODE_BLOB:
+        case SQLTYPECODE_CLOB:
 		allocLength = *(USHORT *)buffer + 2;
 		break;
 	case SQLTYPECODE_CHAR:
@@ -650,6 +660,8 @@ long ODBC::dataLengthFetchPerf(SQLSMALLINT SQLDataType, SQLINTEGER SQLOctetLengt
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
+        case SQLTYPECODE_BLOB:
+        case SQLTYPECODE_CLOB:
 		allocLength = *(USHORT *)buffer + 3;
 		break;
 	case SQLTYPECODE_CHAR:
@@ -673,6 +685,8 @@ long ODBC::adjustIndexForBulkFetch(SQLSMALLINT SQLDataType, long index)
 	{
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
+        case SQLTYPECODE_BLOB:
+        case SQLTYPECODE_CLOB:
 		totalLength = ((totalLength + 2 - 1) >> 1) << 1; 
 		break;
 	case SQLTYPECODE_SMALLINT:
@@ -741,6 +755,8 @@ short ODBC::convertFromUCS2(BYTE *source, long dataType, SQLINTEGER charSet, lon
 
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
+                case SQLTYPECODE_BLOB:
+                case SQLTYPECODE_CLOB:
 			srcSz = (*(short *)source) / 2;
 			rc = WideCharToMultiByte(CP_ACP,0,
 									(LPCWSTR)(source+2),srcSz, 
@@ -804,6 +820,8 @@ short ODBC::convertToUCS2(BYTE *source, long dataType, SQLINTEGER charSet, short
 
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
+		case SQLTYPECODE_BLOB:
+		case SQLTYPECODE_CLOB:
 			rc = MultiByteToWideChar(CP_ACP,0,
 								(const char*)source, srcLength, 
 								(LPWSTR)Dest, MAXCHARLEN);
