@@ -90,6 +90,8 @@ class InterfaceResultSet {
 	/* SQL/MP stype VARCHAR with length prefix:
 	 * */
 	static final int SQLTYPECODE_VARCHAR_WITH_LENGTH = -601;
+	static final int SQLTYPECODE_BLOB = -602;
+	static final int SQLTYPECODE_CLOB = -603;
 
 	/* LONG VARCHAR/ODBC CHARACTER VARYING */
 	static final int SQLTYPECODE_VARCHAR_LONG = -1; /* ## NEGATIVE??? */
@@ -144,6 +146,8 @@ class InterfaceResultSet {
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_VARCHAR_DBLBYTE:
 		case SQLTYPECODE_BITVAR:
+                case SQLTYPECODE_BLOB:
+                case SQLTYPECODE_CLOB:
 			allocLength = bufferLen + 2;
 			break;
 		case SQLTYPECODE_CHAR:
@@ -226,6 +230,8 @@ class InterfaceResultSet {
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
+		case SQLTYPECODE_BLOB:
+		case SQLTYPECODE_CLOB:
 			tbuffer = new byte[byteLen - 2];
 			System.arraycopy(ibuffer, byteIndex + 2, tbuffer, 0, byteLen - 2);
 
@@ -374,6 +380,8 @@ class InterfaceResultSet {
 		case SQLTYPECODE_VARCHAR:
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
+		case SQLTYPECODE_BLOB:
+		case SQLTYPECODE_CLOB:
 			boolean shortLength = desc.precision_ < Math.pow(2, 15);
 			int dataOffset = noNullValue + ((shortLength) ? 2 : 4);
 
@@ -646,6 +654,8 @@ class InterfaceResultSet {
 					case SQLTYPECODE_CHAR:
 					case SQLTYPECODE_CHAR_DBLBYTE:
 					case SQLTYPECODE_VARCHAR:
+					case SQLTYPECODE_BLOB:
+					case SQLTYPECODE_CLOB:
 						byteIndex++;
 						break;
 					}

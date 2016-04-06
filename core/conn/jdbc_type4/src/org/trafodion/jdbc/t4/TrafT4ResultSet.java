@@ -460,6 +460,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.BINARY:
 		case Types.VARBINARY:
 		case Types.LONGVARBINARY:
+		case Types.BLOB:
+		case Types.CLOB:
 			data = getLocalString(columnIndex);
 			if (data != null) {
 				try {
@@ -640,6 +642,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.BINARY:
 		case Types.VARBINARY:
 		case Types.LONGVARBINARY:
+		case Types.BLOB:
+		case Types.CLOB:
 			data = getBytes(columnIndex);
 			if (data != null) {
 				return new java.io.ByteArrayInputStream(data);
@@ -838,6 +842,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.CHAR:
 		case Types.VARCHAR: // Extension allows varchar and
 		case Types.LONGVARCHAR: // longvarchar data types
+		case Types.BLOB:
+		case Types.CLOB:
 
 			Object x = getCurrentRow().getColumnObject(columnIndex);
 			if (x == null) {
@@ -911,6 +917,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.BINARY:
 		case Types.VARBINARY:
 		case Types.LONGVARBINARY:
+		case Types.BLOB:
+		case Types.CLOB:
 			data = getString(columnIndex);
 			if (data != null) {
 				return new java.io.StringReader(data);
@@ -1598,6 +1606,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+		case Types.BLOB:
+		case Types.CLOB:
 			return getString(columnIndex);
 		case Types.BINARY:
 		case Types.VARBINARY:
@@ -1890,6 +1900,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+		case Types.BLOB:
+		case Types.CLOB:
 			data = getLocalString(columnIndex);
 			if (stmt_ != null && stmt_.maxFieldSize_ != 0) {
 				if (data.length() > stmt_.maxFieldSize_) {
@@ -2033,7 +2045,6 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.ARRAY:
 		case Types.BIT:
 		case Types.REF:
-		case Types.BLOB:
 		case Types.DATALINK:
 		case Types.DISTINCT:
 		case Types.JAVA_OBJECT:
@@ -2106,6 +2117,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
+		        case Types.BLOB:
+		        case Types.CLOB:
 				data = data.trim(); // Fall Thru
 			case Types.TIME:
 				try {
@@ -2242,6 +2255,8 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
+		        case Types.BLOB:
+		        case Types.CLOB:
 				data = data.trim();
 			case Types.TIMESTAMP:
 			case Types.TIME:
@@ -2494,7 +2509,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		} else {
                        boolean shortLength = desc.maxLen_ < Math.pow(2, 15);
                        int dataOffset = ((shortLength) ? 2 : 4);
-		       int maxLen = desc.sqlDataType_ != InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH ? desc.maxLen_ : desc.maxLen_ + dataOffset;
+		       int maxLen = (desc.sqlDataType_ != InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH && desc.sqlDataType_ != InterfaceResultSet.SQLTYPECODE_BLOB && desc.sqlDataType_ != InterfaceResultSet.SQLTYPECODE_CLOB) ? desc.maxLen_ : desc.maxLen_ + dataOffset;
 	               ret = new byte[maxLen];
 	               System.arraycopy(rawBuffer_, desc.noNullValue_ + rowOffset, ret, 0, maxLen);
 		}

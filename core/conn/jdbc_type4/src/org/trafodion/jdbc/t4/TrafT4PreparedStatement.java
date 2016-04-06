@@ -1196,6 +1196,8 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
+                        case Types.BLOB:
+                        case Types.CLOB:
 				setString(parameterIndex, x.toString());
 				break;
 			case Types.VARBINARY:
@@ -1293,36 +1295,6 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.REAL:
 				tmpbd = Utility.getBigDecimalValue(locale, x);
 				setFloat(parameterIndex, tmpbd.floatValue());
-				break;
-			case Types.CLOB:
-				if (x instanceof Clob) {
-					setClob(parameterIndex, (Clob) x);
-				}
-				/*
-				 * else if (dataObj instanceof DataWrapper) {
-				 * addParamValue(parameterIndex, (DataWrapper) dataObj); }
-				 */
-				else if (x instanceof Long) {
-					addParamValue(parameterIndex, (Long) x);
-				} else {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"conversion_not_allowed", null);
-				}
-				break;
-			case Types.BLOB:
-				if (x instanceof Blob) {
-					setBlob(parameterIndex, (Blob) x);
-				}
-				/*
-				 * else if (dataObj instanceof DataWrapper) {
-				 * addParamValue(parameterIndex, (DataWrapper) dataObj); }
-				 */
-				else if (x instanceof Long) {
-					addParamValue(parameterIndex, (Long) x);
-				} else {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"conversion_not_allowed", null);
-				}
 				break;
 			case Types.OTHER:
 				if (inputDesc_[parameterIndex].fsDataType_ == InterfaceResultSet.SQLTYPECODE_INTERVAL) {

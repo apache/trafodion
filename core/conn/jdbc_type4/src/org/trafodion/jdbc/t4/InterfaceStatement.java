@@ -122,7 +122,9 @@ class InterfaceStatement {
                 boolean shortLength = precision < Math.pow(2, 15);
                 int dataOffset = ((shortLength) ? 2 : 4);
 
-		if (dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH) {
+		if ((dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH)
+		 || (dataType == InterfaceResultSet.SQLTYPECODE_BLOB)
+		 || (dataType == InterfaceResultSet.SQLTYPECODE_CLOB)) {
 			dataLength += dataOffset;
 
 			if (dataLength % 2 != 0)
@@ -424,6 +426,8 @@ class InterfaceStatement {
 			break;
 		case InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case InterfaceResultSet.SQLTYPECODE_VARCHAR_LONG:
+		case InterfaceResultSet.SQLTYPECODE_BLOB:
+		case InterfaceResultSet.SQLTYPECODE_CLOB:
 			if (paramValue instanceof byte[]) {
 				tmpBarray = (byte[]) paramValue;
 			} else if (paramValue instanceof String) {
@@ -759,6 +763,8 @@ class InterfaceStatement {
 					colLength = stmt.inputDesc_[i].maxLen_;
 					dataType = stmt.inputDesc_[i].dataType_;
 					if (dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH
+							|| dataType == InterfaceResultSet.SQLTYPECODE_BLOB
+							|| dataType == InterfaceResultSet.SQLTYPECODE_CLOB
 							|| dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_LONG
 							|| dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR) {
                                                 boolean shortLength = colLength < Math.pow(2, 15);
