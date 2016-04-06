@@ -367,10 +367,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   char cursorId[8];
   HdfsFileInfo *hdfo = NULL;
   Lng32 openType = 0;
-  int hiveScanMode = 0;
 
-  hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
-  
   while (!qparent_.down->isEmpty())
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
@@ -723,7 +720,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		// Position in the hdfsScanBuffer_ to the
 		// first record delimiter.  
 		hdfsBufNextRow_ = hdfs_strchr(hdfsScanBuffer_,
-                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_, hiveScanMode);
+                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_, hdfsScanTdb().getHiveScanMode());
 		// May be that the record is too long? Or data isn't ascii?
 		// Or delimiter is incorrect.
 		if (! hdfsBufNextRow_)
@@ -771,7 +768,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  ComDiagsArea *transformDiags = NULL;
 	  int err = 0;
 	  char *startOfNextRow =
-	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags, hiveScanMode);
+	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags, hdfsScanTdb().getHiveScanMode());
 
 	  bool rowWillBeSelected = true;
 	  lastErrorCnd_ = NULL;

@@ -516,7 +516,6 @@ inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean che
          return NULL;
       }
       curr++;
-      count++;
     }
   }
   *rdSeen = FALSE;

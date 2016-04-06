@@ -474,9 +474,6 @@ C1           (EXPR)
 
 --- SQL operation complete.
 >>
->>cqd CALL_EMBEDDED_ARKCMP 'ON';
-
---- SQL operation complete.
 >>cqd HIVE_SCAN_SPECIAL_MODE '1';
 
 --- SQL operation complete.
