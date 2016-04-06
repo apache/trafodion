@@ -76,7 +76,6 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-source 
 echo "***INFO: Start of REST Server install"
 source $TRAF_CONFIG
 
