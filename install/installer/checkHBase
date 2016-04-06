@@ -23,7 +23,7 @@
 echo "**INFO: Checking HBase status" 
 
 
-echo 'status' | hbase shell -n | grep "0 dead"
+echo 'status' | hbase shell | grep "0 dead"
 
 status=$?
 

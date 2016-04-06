@@ -144,7 +144,15 @@ do
                exit -1
             fi
          fi
-
+      fi
+      if [[ $HADOOP_TYPE == "vanilla" ]]; then
+         if [[ $VANILLA_1_0_x == "Y" ]]; then
+            supportedHBase=$(echo $version | grep "1.0" | wc -l)
+            if [[ $supportedHBase -eq "0" ]]; then
+               echo "***ERROR: HBase installed must be 1.0.x"
+               exit -1
+            fi
+         fi
       fi
       hbaseVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
       break
@@ -152,16 +160,18 @@ do
 
 done
 
-HBASE=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
 echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
-sed -i '/HBASE\=/d' $TRAF_CONFIG
-echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
-sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
-echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
+if [[ $HADOOP_TYPE != "vanilla" ]]; then
+   HBASE=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+   sed -i '/HBASE\=/d' $TRAF_CONFIG
+   echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
+   sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
+   echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
+fi
 sudo chmod 777 $TRAF_CONFIG
 sudo rm -rf hbaseVersion.txt
 
