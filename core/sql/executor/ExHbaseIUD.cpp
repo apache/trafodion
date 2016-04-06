@@ -762,7 +762,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
      else if (pentry_down->downState.request == ex_queue::GET_EOD)
           if (currRowNum_ > rowsInserted_)
 	{
-	  step_ = PROCESS_INSERT_FLUSH_AND_CLOSE;
+	  step_ = PROCESS_INSERT_AND_CLOSE;
 	}
         else
         {
@@ -918,7 +918,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	  break;
 
 	case PROCESS_INSERT_AND_CLOSE:
-	case PROCESS_INSERT_FLUSH_AND_CLOSE:
 	  {
             numRowsInVsbbBuffer_ = patchDirectRowBuffers();
 	    
@@ -928,7 +927,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
                                        rows_,
 				       hbaseAccessTdb().useHbaseXn(),
                                        insColTSval_,
-                                       hbaseAccessTdb().getIsTrafLoadAutoFlush(), 
 				       asyncOperation_);
 
 	    if (setupError(retcode, "ExpHbaseInterface::insertRows")) {
@@ -944,10 +942,8 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		lastHandledStep_ = step_;
                 step_ = COMPLETE_ASYNC_INSERT;
             }
-            else if (step_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
-	      step_ = FLUSH_BUFFERS;
-	    else if (step_ == PROCESS_INSERT_AND_CLOSE)
-	      step_ = INSERT_CLOSE;
+            else
+	       step_ = INSERT_CLOSE;
 	  }
 	  break;
         case COMPLETE_ASYNC_INSERT:
@@ -983,9 +979,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
             }
             if (step_ == HANDLE_ERROR)
                break;
-            if (lastHandledStep_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
-              step_ = FLUSH_BUFFERS;
-            else if (lastHandledStep_ == PROCESS_INSERT_AND_CLOSE)
+            if (lastHandledStep_ == PROCESS_INSERT_AND_CLOSE)
               step_ = INSERT_CLOSE;
             else
               step_ = ALL_DONE;
@@ -1009,20 +1003,6 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    if (handleError(rc))
 	      return rc;
 	    step_ = CLOSE_AND_DONE;
-	  }
-	  break;
-
-	case FLUSH_BUFFERS:
-	  {
-	    // add call to flushBuffers for this table. TBD.
-	    retcode = ehi_->flushTable();
-	    if (setupError(retcode, "ExpHbaseInterface::flushTable"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    step_ = INSERT_CLOSE;
 	  }
 	  break;
 

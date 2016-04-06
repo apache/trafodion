@@ -142,8 +142,8 @@ export SQ_HOME=$PWD
 # set common version to be consistent between shared lib and maven dependencies
 export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
 export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
-export HBASE_DEP_VER_HDP=1.1.2.2.3.2.0-2950
-export HIVE_DEP_VER_HDP=1.2.1.2.3.2.0-2950
+export HBASE_DEP_VER_HDP=1.1.2
+export HIVE_DEP_VER_HDP=1.2.1
 export HBASE_DEP_VER_APACHE=1.0.2
 export HIVE_DEP_VER_APACHE=1.1.0
 export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4

@@ -856,12 +856,6 @@ short ExSetSessionDefaultTcb::work()
 	{
 	  currContext->dropSession();
 	} // DROP
-      else if (strcmp(defaultValue, "FLUSH_TABLES") == 0)
-	{
-	  // add call to flushAllTables to flush all tables populated in this session.
-	  ExpHbaseInterface::flushAllTables();
-	} // FLUSH_BUFFERS
-
     } // USER_SESSION
   else if (strcmp(defaultName, "SQL_USER") == 0)
     {
