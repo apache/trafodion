@@ -89,6 +89,7 @@
           <sections>
             <carousel />
             <body />
+            <carousel />
             <body />
             <columns>2</columns>
             <body />
