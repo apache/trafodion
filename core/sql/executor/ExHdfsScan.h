@@ -432,10 +432,12 @@ protected:
 
 #define RANGE_DELIMITER '\002'
 
-inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDelimiter, int mode = 0)
+inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDelimiter, int mode , int *changedLen)
 {
   char *curr = (char *)s;
   int count=0;
+  //changedLen is lenght of \r which removed by this function
+  *changedLen = 0;
   if( (mode & HIVE_MODE_DOSFORMAT ) == 0)
   {
    while (curr < end) {
@@ -455,9 +457,10 @@ inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDe
      {
          if(count>0 && c == '\n')
          {
-           if(s[count-1] == '\r') s[count-1] = ' '; 
+           if(s[count-1] == '\r') 
+             *changedLen = 1;
          }
-         return curr;
+         return curr - *changedLen;
       }
       if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
          return NULL;
@@ -469,20 +472,23 @@ inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDe
 }
 
 
-inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen, int mode = 0)
+inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen, int mode, int* changedLen)
 {
   char *curr = (char *)s;
   int count = 0;
+  //changedLen is lenght of \r which removed by this function
+  *changedLen = 0;
   if( (mode & HIVE_MODE_DOSFORMAT)>0 )  //check outside the while loop to make it faster
   {
     while (curr < end) {
       if (*curr == rd) {
          if(count>0 && rd == '\n')
          {
-             if(s[count-1] == '\r') s[count-1] = ' ';
+             if(s[count-1] == '\r') 
+               *changedLen = 1;
          }
          *rdSeen = TRUE;
-         return curr;
+         return curr - *changedLen;
       }
       else
       if (*curr == cd) {
