@@ -269,28 +269,6 @@ Lng32 ExpHbaseInterface::coProcAggr(
   return -HBASE_OPEN_ERROR;
 }
 
-Lng32 ExpHbaseInterface_JNI::flushTable()
-{
-  HTC_RetCode retCode = HTC_OK;
-  if (htc_ != NULL)
-     retCode = htc_->flushTable();
-
-  if (retCode != HTC_OK)
-    return HBASE_ACCESS_ERROR;
-  
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface::flushAllTables()
-{
-  HBC_RetCode retCode = HBaseClient_JNI::flushAllTablesStatic();
-
-  if (retCode != HBC_OK)
-    return HBASE_ACCESS_ERROR;
-  
-  return HBASE_ACCESS_SUCCESS;
-}
-
 char * getHbaseErrStr(Lng32 errEnum)
 {
   return (char*)hbaseErrorEnumStr[errEnum - (Lng32)HBASE_MIN_ERROR_NUM];
@@ -864,7 +842,6 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
           HbaseStr rows,
 	  NABoolean noXn,
 	  const int64_t timestamp,
-	  NABoolean autoFlush,
           NABoolean asyncOperation)
 {
   HTableClient_JNI *htc;
@@ -875,7 +852,7 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
   else
     transID = getTransactionIDFromContext();
   retCode_ = client_->insertRows((NAHeap *)heap_, tblName.val, hbs_,
-                      useTRex_, transID, rowIDLen, rowIDs, rows, timestamp, autoFlush, asyncOperation, &htc);
+                      useTRex_, transID, rowIDLen, rowIDs, rows, timestamp, asyncOperation, &htc);
   if (retCode_ != HBC_OK) {
     return -HBASE_ACCESS_ERROR;
   }

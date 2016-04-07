@@ -89,7 +89,6 @@ CLISemaphore globalSemaphore ;
 #include "SqlStats.h"
 #include "ComExeTrace.h"
 #include "Context.h"
-#include "HBaseClient_JNI.h"
 
 
 #ifndef CLI_PRIV_SRL
@@ -6298,41 +6297,6 @@ Lng32 SQL_EXEC_ResetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 
    threadContext->decrNumOfCliCalls();
    tmpSemaphore->release();
-   return retcode;
-}
-
-Lng32 SQL_EXEC_DeleteHbaseJNI()
-{
-   Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-
-   CLI_NONPRIV_PROLOGUE(retcode);
-
-   try
-   {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-
-      HBaseClient_JNI::deleteInstance();
-      HiveClient_JNI::deleteInstance();
-   }
-   catch(...)
-   {
-     retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-     if (cliWillThrow())
-     {
-         threadContext->decrNumOfCliCalls();
-         tmpSemaphore->release();
-         throw;
-     }
-#endif
-   }
-   threadContext->decrNumOfCliCalls();
-   tmpSemaphore->release();
-
    return retcode;
 }
 

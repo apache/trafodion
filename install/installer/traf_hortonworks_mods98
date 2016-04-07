@@ -206,7 +206,7 @@ ssh -q -n $HDFS_NODE 'rm -rf $HOME/traf_temp_output'
 AMBARI_DIR=/var/lib/ambari-server/resources/scripts
 cd $LOCAL_WORKDIR
 
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.master.distributed.log.splitting false'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD"  '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.master.distributed.log.splitting false'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.master.distributed.log.splitting through Ambari's configs.sh script."
     echo "***ERROR: Check if Ambari URL is correct, may need to enter external IP address."
@@ -216,61 +216,61 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.coprocessor.region.classes "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.coprocessor.region.classes "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.coprocessor.region.classes through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.hregion.impl org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.hregion.impl org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.hregion.impl through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.regionserver.region.split.policy org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.regionserver.region.split.policy org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.regionserver.region.split.policy through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2 
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.enabled true'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh  -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.enabled true'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.enabled through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.bulkload.staging.dir /hbase-staging'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.bulkload.staging.dir /hbase-staging'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.bulkload.staging.dir through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.regionserver.region.transactional.tlog true'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.regionserver.region.transactional.tlog true'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.regionserver.region.transactional.tlog through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.master.timeoutMillis 600000'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.master.timeoutMillis 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.master.timeoutMillis through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.region.timeout 600000'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.snapshot.region.timeout 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.region.timeout through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hdfs-site dfs.namenode.acls.enabled true'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hdfs-site dfs.namenode.acls.enabled true'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify dfs.namenode.acls.enabled through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.client.scanner.timeout.period 600000'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.client.scanner.timeout.period 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.client.scanner.timeout.period through Ambari's configs.sh script."
     exit -1
@@ -280,7 +280,7 @@ echo
 
 #Change Zookeeeper settings
 
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'zoo.cfg maxClientCnxns 0'
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'zoo.cfg maxClientCnxns 0'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify maxClientCnxns through Ambari's configs.sh script."
     exit -1

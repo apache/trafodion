@@ -242,4 +242,3 @@ the Trafodion ODBC Driver from your Windows workstation).
 After this dialog box disappears, Trafodion ODBC _version_ is no longer on your workstation.
 
 NOTE: Uninstalling the ODBC driver does not remove pre-existing data source definitions from the Windows registry.
-

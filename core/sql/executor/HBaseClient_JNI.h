@@ -175,7 +175,6 @@ typedef enum {
  ,HTC_ERROR_REVOKE_EXCEPTION
  ,HTC_GETENDKEYS
  ,HTC_ERROR_GETHTABLENAME_EXCEPTION
- ,HTC_ERROR_FLUSHTABLE_EXCEPTION
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
@@ -312,7 +311,6 @@ public:
   ByteArrayList* getBeginKeys();
   ByteArrayList* getEndKeys();
 
-  HTC_RetCode flushTable(); 
   void setTableName(const char *tableName)
   {
     Int32 len = strlen(tableName);
@@ -354,7 +352,6 @@ private:
    ,JM_GET_NAME
    ,JM_GET_HTNAME
    ,JM_GETENDKEYS
-   ,JM_FLUSHT
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
    ,JM_FETCH_ROWS
@@ -431,8 +428,6 @@ typedef enum {
  ,HBC_ERROR_LIST_EXCEPTION
  ,HBC_ERROR_EXISTS_PARAM
  ,HBC_ERROR_EXISTS_EXCEPTION
- ,HBC_ERROR_FLUSHALL_PARAM
- ,HBC_ERROR_FLUSHALL_EXCEPTION
  ,HBC_ERROR_GRANT_PARAM
  ,HBC_ERROR_GRANT_EXCEPTION
  ,HBC_ERROR_REVOKE_PARAM
@@ -515,8 +510,6 @@ public:
                    NABoolean force);
   ByteArrayList* listAll(const char* pattern);
   ByteArrayList* getRegionStats(const char* tblName);
-  static HBC_RetCode flushAllTablesStatic();
-  HBC_RetCode flushAllTables();
   HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
@@ -559,7 +552,7 @@ public:
       HTableClient_JNI **outHtc);
   HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
-      HbaseStr rows, Int64 timestamp, bool autoFlush, bool asyncOperation,
+      HbaseStr rows, Int64 timestamp,  bool asyncOperation,
       HTableClient_JNI **outHtc);
   HBC_RetCode checkAndUpdateRow(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
@@ -602,7 +595,6 @@ private:
    ,JM_GET_REGION_STATS
    ,JM_COPY
    ,JM_EXISTS
-   ,JM_FLUSHALL
    ,JM_GRANT
    ,JM_REVOKE
    ,JM_GET_HBLC

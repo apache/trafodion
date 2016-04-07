@@ -426,10 +426,15 @@ else
          fi
        done
     fi
-    export PATH=$PATH:$JAVA_HOME/bin
+    hadoopPath="$HADOOP_PATH"
+    hadoopBinPath="$HADOOP_BIN_PATH"
+
+    export PATH="$PATH:$JAVA_HOME/bin"
     sudo chmod 777 $TRAF_CONFIG
     sed -i '/PATH\=/d' $TRAF_CONFIG
     echo "export PATH=\"$PATH\"" >>$TRAF_CONFIG
+    echo "export HADOOP_BIN_PATH=\"$hadoopBinPath\"" >>$TRAF_CONFIG
+    echo "export HADOOP_PATH=\"$hadoopPath\"" >>$TRAF_CONFIG
     sudo chmod 777 $TRAF_CONFIG
     source $TRAF_CONFIG
 fi

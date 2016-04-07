@@ -22,14 +22,6 @@ under the License.
  */
 package org.trafodion.rest;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang.ArrayUtils;
-import org.trafodion.rest.util.Bytes;
 
 /**
  * Constants holds a bunch of rest-related constants
