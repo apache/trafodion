@@ -28,7 +28,7 @@ granting privileges to specified database users and roles.
 
 The schema in which an SPJ is registered is the unit of ownership. The
 database user who creates the schema is the owner of that schema and all
-objects associated with it. In a Trafodion database, the schema owner
+objects associated with it. In {project-name}, the schema owner
 automatically has these privileges:
 
 * Ability to create and drop SPJs in the schema. You can create SPJs in
@@ -54,6 +54,7 @@ OPTION privileges to other users and roles. For more information, see:
 To display the current ownership and privileges, see
 <<display-procedures-and-their-properties, Display Procedures and Their Properties>>.
 
+<<<
 [[granting-execute-privileges-on-an-spj]]
 == Granting Execute Privileges on an SPJ
 
@@ -62,7 +63,7 @@ WITH GRANT OPTION privileges on an SPJ to specific database users and
 roles. In a GRANT statement, specify ALL PRIVILEGES to grant the EXECUTE
 privilege on an SPJ. For the syntax of the GRANT PROCEDURE and GRANT
 statements, see the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
 
 If you own the SPJ, then you can grant the EXECUTE and WITH GRANT OPTION
 privileges on the SPJ to any database user or role. If you are not the
@@ -171,7 +172,7 @@ SELECT, UPDATE, DELETE, and INSERT, indicate which types of privileges
 are required for the referenced database objects.
 
 For the syntax of the GRANT statement, see the
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html#grant_statement[{project-name} SQL Reference Manual].
 
 [[revoking-execute-privileges-on-an-spj]]
 == Revoking Execute Privileges on an SPJ
@@ -181,7 +182,7 @@ WITH GRANT OPTION privilege on an SPJ from specific database users or
 roles. In a REVOKE statement, specify ALL PRIVILEGES to revoke the
 EXECUTE privilege on an SPJ. For the syntax of the REVOKE PROCEDURE and
 REVOKE statements, see the
-http://trafodion.apache.org/docs/sql_reference/index.html#revoke_statement[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html#revoke_statement[{project-name} SQL Reference Manual].
 
 If you own the SPJ, then you can revoke the EXECUTE and WITH GRANT OPTION
 privileges on the SPJ from any database user or role to whom you granted

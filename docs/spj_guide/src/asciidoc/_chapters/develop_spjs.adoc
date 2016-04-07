@@ -49,7 +49,7 @@ public static void myMethodName ( java-parameter-list )
 ==== Public Access and Static Modifiers
 
 The Java method must be defined as `public` and `static`. If a method is
-`private` or `protected`, then Trafodion is unable to find the Java
+`private` or `protected`, then {project-name} is unable to find the Java
 method when you try to register the SPJ and returns an error. The Java
 method must be defined as `static` so that the method can be invoked
 without having to instantiate its class.
@@ -69,6 +69,7 @@ the parameter types in the Java signature must correspond to the SQL
 parameters of the stored procedure that you are planning to create. For
 type mappings, see the table below.
 
+<<<
 [[table-1]]
 .Mapping of Java Data Types to SQL Data Types
 
@@ -97,9 +98,9 @@ NUMERIC (including numeric with a precision greater than eighteen)^2^ | java.mat
 | DOUBLE PRECISION | double or java.lang.double^4^
 |===
 
-1. Trafodion stores PIC X as a CHAR data type.
-2. Numeric data types of SQL parameters must be signed, which is the default in Trafodion.
-3. Trafodion stores PIC S9 as a DECIMAL or NUMERIC data type.
+1. {project-name} stores PIC X as a CHAR data type.
+2. Numeric data types of SQL parameters must be signed, which is the default in {project-name}.
+3. {project-name} stores PIC S9 as a DECIMAL or NUMERIC data type.
 4. By default, the SQL data type maps to a Java primitive type. The SQL data type maps to a Java wrapper class
 only if you specify the wrapper class in the Java signature of the external name clause.
 
@@ -108,6 +109,7 @@ Output parameters in the Java signature must be arrays (for example,
 the array at index 0. For more information, see
 <<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>.
 
+<<<
 [[returning-output-values-from-the-java-method]]
 === Returning Output Values From the Java Method
 
@@ -158,6 +160,7 @@ for each returned value. For example, the `supplierInfo()` method returns
 a supplier's name, address, city, state, and post code, each as a single
 string in an output parameter:
 
+<<<
 The `supplyQuantities()` method returns an average quantity, a minimum
 quantity, and a maximum quantity to separate output parameters of the
 integer type:
@@ -167,12 +170,13 @@ integer type:
 public static void supplyQuantities( int[] avgQty
                                    , int[] minQty
                                    , int[] maxQty
-                                   )
+                                   ) throws SQLException
 {
 
 ...
 
-throws SQLException
+}
+
 ----
 
 For more information about the SPJ examples, see
@@ -189,13 +193,13 @@ type of the SPJ method must map to an SQL data type. See
 The SQL data type must then map to a compatible data type in the calling
 application. For the client application programming interfaces (APIs) that
 support SPJs and for cross-references to the appropriate manuals for type
-mappings between Trafodion SQL and each API, see
+mappings between {project-name} SQL and each API, see
 <<execute-spjs, Execute SPJs>> below.
 
 [[returning-stored-procedure-result-sets]]
 === Returning Stored Procedure Result Sets
 
-The Trafodion database engine supports SPJs that return stored procedure
+{project-name} supports SPJs that return stored procedure
 result sets. A stored procedure result set is a cursor that is left open
 after the SPJ method executes (that is, after the CALL statement
 executes successfully). After the CALL statement executes successfully,
@@ -267,13 +271,14 @@ to process them.
 
 An SPJ method can return result sets that contain any data types, except
 large object (LOB) data. An SPJ method can return a holdable or
-updatable cursor as a result set. However, Trafodion SQL does not expose
+updatable cursor as a result set. However, {project-name} SQL does not expose
 those attributes in the calling application. An SPJ method can return a
 ResultSet object that is a stored procedure result set acquired from a
 nested CALL statement executed by the SPJ method. However, you are
 discouraged from nesting CALL statements in SPJ methods. For more
 information, see <<nested-java-method-invocations, Nested Java Method Invocations>>.
 
+<<<
 If an SPJ method returns multiple ResultSet objects, the database engine
 sorts the collection of valid result sets in chronological order
 according to when the underlying SQL statements were executed. If the
@@ -283,7 +288,7 @@ database engine discards the other result sets and returns a warning to
 the calling application.
 
 When an SPJ method returns a ResultSet object through a
-`java.sql.ResultSet[]` parameter, Trafodion SQL exposes the underlying rows
+`java.sql.ResultSet[]` parameter, {project-name} SQL exposes the underlying rows
 of data as an SQL cursor in the calling application.
 
 If a returned result set is a scrollable cursor, all underlying rows are
@@ -379,17 +384,18 @@ method should be packaged in the same JAR file as the SPJ method. For
 more information, see
 <<compiling-and-packaging-java-classes, Compiling and Packaging Java Classes>>.
 
+<<<
 [[accessing-a-trafodion-database]]
-== Accessing a Trafodion Database
+== Accessing {project-name}
 
-SPJ methods that access a Trafodion database must be from a Java class
+SPJ methods that access {project-name} must be from a Java class
 that uses JDBC method calls. Follow these guidelines when writing an SPJ
-method that accesses a Trafodion database:
+method that accesses {project-name}:
 
 [[use-of-java.sql.connection-objects]]
 === Use of java.sql.Connection Objects
 
-The Trafodion database engine supports a default connection in an SPJ
+{project-name} supports a default connection in an SPJ
 execution environment, which has a data source URL of
 `"jdbc:default:connection"`. For example:
 
@@ -400,13 +406,13 @@ Connection conn =
 ----
 
 `java.sql.Connection` objects that use the `"jdbc:default:connection"` URL
-are portable to the Trafodion platform from other database management
+are portable to {project-name} from other database management
 systems (DBMSs).
 
 [[closing-default-connections]]
 ==== Closing Default Connections
 
-The Trafodion database engine controls default connections in the SPJ
+{project-name} controls default connections in the SPJ
 environment and closes default connections when they are no longer
 needed. Therefore, you do not need to use the `close()` method in an SPJ
 method to explicitly close a default connection when the connection is
@@ -481,20 +487,21 @@ Connection conn =
    DriverManager.getConnection( "jdbc:default:connection", props ) ;
 ----
 
+<<<
 [[using-jdbc-method-calls]]
 === Using JDBC Method Calls
 
-The Trafodion platform uses a JDBC Type-4 driver internally to execute
+{project-name} uses a JDBC Type-4 driver internally to execute
 the SQL statements inside an SPJ method. To enable an SPJ to perform SQL
-operations on a Trafodion database, use JDBC method calls in the SPJ
+operations on a {project-name} database, use JDBC method calls in the SPJ
 method. The JDBC method calls must be supported by the JDBC Type-4
-driver on the Trafodion platform.
+driver on {project-name}.
 
-For example, if you want the SPJ method to operate on a Trafodion database,
-use the JDBC API that is supported by Trafodion.
+For example, if you want the SPJ method to operate on a {project-name} database,
+use the JDBC API that is supported by {project-name}.
 
 NOTE: You do not have to explicitly load the JDBC driver before
-establishing a connection to the Trafodion database. The database engine
+establishing a connection to {project-name}. The database engine
 automatically loads the JDBC driver when the SPJ is called.
 
 Here is an example of an SPJ method, `adjustSalary()`, that uses JDBC
@@ -548,7 +555,7 @@ For other examples of SPJ methods, see <<sample-spjs, Appendix A: Sample SPJs>>.
 In an SPJ method, you can refer to SQL database objects by specifying
 three-part ANSI names that include the catalog, schema, and object name.
 For more information about database object names, see the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.hmtl[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.hmtl[{project-name} SQL Reference Manual].
 
 The database engine propagates the names of the catalog and schema where
 the SPJ is registered to the SPJ environment. By default, database
@@ -702,6 +709,7 @@ security is set to definer, any user who has the execute privilege on
 the stored procedure can call the procedure using the privileges of the
 user who created the stored procedure.
 
+<<<
 For example, suppose that DB USERADMINUSER creates a stored procedure
 named GETDEFINER using the `getUser(`) method and sets the external
 security to definer. If the database user named GTAPPER, who has the
@@ -746,6 +754,7 @@ The SESSION_USER function returns the name of the authenticated database
 user who started the session and invoked the function, regardless of the
 external security setting of the stored procedure.
 
+<<<
 For example, suppose that DB USERADMINUSER creates a stored procedure named
 GETSESSIONUSER using the `getSessionUser()` method and sets the external
 security to definer. If the database user named GTAPPER, who has the EXECUTE
@@ -775,11 +784,12 @@ For more information about external security, see
 [[exception-handling]]
 === Exception Handling
 
-For SPJ methods that access a Trafodion database, no special code is
+For SPJ methods that access {project-name}, no special code is
 necessary for handling exceptions. If an SQL operation fails inside an
 SPJ, the error message associated with the failure is returned to the
 application that issues the CALL statement.
 
+<<<
 [[handling-java-exceptions]]
 == Handling Java Exceptions
 
@@ -833,13 +843,14 @@ For more information about the numMonthlyOrders() method, see the
 <<monthlyorders-procedure, MONTHLYORDERS Procedure>>.
 
 For information about specific SQL errors, see the
-http://trafodion.incubator.apache.org/docs/messages_guide/index.html[Trafodion Messages Manual], which lists
+{docs-url}/messages_guide/index.html[{project-name} Messages Manual], which lists
 the SQLCODE, SQLSTATE, message text, and cause-effect-recovery information for all SQL errors.
 
+<<<
 [[compiling-and-packaging-java-classes]]
 == Compiling and Packaging Java Classes
 
-On the Trafodion database, the class files of SPJ methods must be
+On {project-name}, the class files of SPJ methods must be
 packaged in Java archive (JAR) files. After writing an SPJ method,
 compile the Java source file of the SPJ method into Java bytecode and
 package the Java bytecode in a JAR file. A Java method that you register

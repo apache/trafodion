@@ -24,7 +24,7 @@
 = Deploy SPJ JAR Files
 
 After developing and packaging the SPJ code into JAR files, you must
-move the JAR files from the client workstation to the Trafodion database.
+move the JAR files from the client workstation to {project-name}.
 
 You can upload a SPJ JAR file and create a library by using
 the CREATE LIBRARY command in the Trafodion Command Interface (trafci).
@@ -32,20 +32,21 @@ the CREATE LIBRARY command in the Trafodion Command Interface (trafci).
 Libraries provide greater security for JAR files because libraries are
 database objects whose access is controlled using standard SQL security.
 
-Deploying a JAR file to a Trafodion instance requires creating a library,
+Deploying a JAR file to a {project-name} instance requires creating a library,
 and users must have the required privileges for creating libraries in order
 to deploy JAR files.
 
 The examples in this chapter are based on the sample database
 documented in <<b-sample-database, Appendix B: Sample Database>>.
 
+<<<
 [[create-a-library]]
 == Create a Library
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
+{docs-url}/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
 statement including considerations and required privileges.
 
 NOTE: You must copy the jar file to the same directory on all the nodes in the cluster before running the CREATE LIBRARY statement.
@@ -89,7 +90,8 @@ $
 ```
 $ pdsh $MY_NODES -x $HOSTNAME mkdir $HOME/trafodion-spjs
 ```
-
++
+<<<
 3. Multi-node cluster only: Copy the jar file to all nodes in the cluster.
 +
 *Example*
@@ -135,9 +137,9 @@ SQL>
 When you alter a library, you can change the underlying JAR file of the library.
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#alter_library_statement[ALTER LIBRARY]
+{docs-url}/sql_reference/index.html#alter_library_statement[ALTER LIBRARY]
 statement including considerations and required privileges.
 
 *Example*
@@ -184,17 +186,17 @@ SQL>
 ```
 ////
 
+<<<
 [[drop-a-library]]
 == Drop a Library
 
 Dropping a library removes the library from the schema in the database
-and removes the library's underlying JAR file from the Trafodion
-database.
+and removes the library's underlying JAR file from {project-name}.
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#drop_library_statement[DROP LIBRARY]
+{docs-url}/sql_reference/index.html#drop_library_statement[DROP LIBRARY]
 statement including considerations and required privileges.
 
 *Example*
@@ -226,13 +228,14 @@ SQL> DROP LIBRARY trafodion.sales.saleslib ;
 SQL>
 ```
 
+<<<
 [[display-libraries]]
 == Display Libraries
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#get_statement[GET]
+{docs-url}/sql_reference/index.html#get_statement[GET]
 statement.
 
 Use the `GET libraries [ in schema [ catalog-name.] schema-name ] statement in trafci to

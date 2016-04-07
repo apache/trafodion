@@ -113,7 +113,7 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
       </center>
       <ul>
         <li><a href="download.html">Download</a></li>
-        <li><a href="quick-start.html">Quick Start</a></li>
+        <li><a href="quickstart.html">Quick Start</a></li>
         <li><a href="features.html">Features</a></li>
         <li><a href="release-notes.html">Release Notes</a></li>
       </ul>

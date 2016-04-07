@@ -23,7 +23,7 @@
 [[create-spjs]]
 = Create SPJs
 
-You can create the procedures in the Trafodion database after you've deployed the libraries for the SPJ JAR files.
+You can create the procedures in {project-name} after you've deployed the libraries for the SPJ JAR files.
 See <<deploy-spj-jar-files, Deploy SPJ JAR Files>>.
 
 The examples in this chapter are based on the sample database documented
@@ -37,16 +37,16 @@ The Create Procedure tool registers an existing Java method as a stored
 procedure in Java (SPJ) within SQL.
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_statement[CREATE PROCEDURE]
+{docs-url}/sql_reference/index.html#create_procedure_statement[CREATE PROCEDURE]
 statement including considerations and required privileges.
 
 [[create-procedure-settings]]
 === Create Procedure Settings
 
 Reference: 
-http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_syntax[Syntax Description of CREATE PROCEDURE].
+{docs-url}/sql_reference/index.html#create_procedure_syntax[Syntax Description of CREATE PROCEDURE].
 
 You need to determine the following settings for the CREATE PROCEDURE statement:
 
@@ -61,18 +61,17 @@ You need to determine the following settings for the CREATE PROCEDURE statement:
 - *parameter-mode*: IN (pass data to SPJ), OUT (accept data from SPJ), or INOUT (passed data to and accepts data from SPJ). +
 - *sql-identifier*: The name of the parameter passed to the SPJ. +
 - *sql-datatype*: SQL data type mapped to Java data type. See <<java-parameters, Java Parameters>> for mapping,  
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html#data_types[Data Types] for SQL data types. +
+{docs-url}/sql_reference/index.html#data_types[Data Types] for SQL data types. +
  +
 Repeat for each parameter in the SPJ.
-| *external name*        | `external name java-method-name [java-signature]`                 |
+| *external name*        | `external name 'java-method-name [( java-signature )]'`                 |
 - *java-method-name*: case-sensitive name of the SPJ method of the form `[package-name.]class-name.method-name`. The Java method must exist in a
 Java class file, `_class-name_.class`, within a library registered in the database. If the class file that contains the SPJ method is part of a
 package, then you must also specify the package name. +
 - *java-signature*: specifies the signature of the SPJ method and consists of `([java-datatype[, java-datatype]&#8230;])`
 Necessary only if you want to specify a Java wrapper class (for example, `java.lang.integer`) instead of a java
-primitive data type (for example, `int`). See 
-http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_syntax[Syntax Description of CREATE PROCEDURE].
-for more information.
+primitive data type (for example, `int`). Use the `javap` utility to determine the correct values for
+java-signature.
 | *library*              | `library [[catalog-name.]schema-name.]library-name`   |
 - *catalog*: must be `trafodion`. +
 - *schema-name*: the schema the library is associated with. +
@@ -87,9 +86,9 @@ the stored procedure. +
  +
 See <<understand-external-security, Understand External Security>> for more information.
 | *language java*        | `language java`                  | Must be set specified the procedure is an SPJ rather than a UDF.
-Compare: http://trafodion.incubator.apache.org/docs/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
+Compare: {docs-url}/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
 | *parameter style java* | `parameter style java`           | Must be set specified the procedure is an SPJ rather than a UDF.
-Compare: http://trafodion.incubator.apache.org/docs/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
+Compare: {docs-url}/sql_reference/index.html#create_function_statement[CREATE FUNCTION]. 
 | *_sql access_*         |
 `no sql` \| +
 `contains sql` (default) \| +
@@ -114,15 +113,16 @@ you want the stored procedure to inherit the transaction from the calling applic
 `deterministic` \| +
 `not deterministic` (default) |
 Whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
-(`deterministic`) or does not return the same values (`not deterministic`). `deterministic` means that Trafodion
+(`deterministic`) or does not return the same values (`not deterministic`). `deterministic` means that {project-name}
 can cache the result to improve performance.
 | *_isolation_*          |
 `isolate` (default) \| +
 `no isolate` |
 The SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
-(`isolate`, the default option). Trafodion allows both options but always executes the SPJ in the UDR server process (`isolate`).
+(`isolate`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`isolate`).
 |===
 
+<<<
 Consider the following method in the `Sales.java` class:
 
 [source, java]
@@ -130,6 +130,7 @@ Consider the following method in the `Sales.java` class:
 include::{sourcedir}/totalPrice.java[totalPrice procedure source code]
 ----
 
+<<<
 The CREATE PROCEDURE attributes for `totalPrice` are defined as follows:
 
 [cols="15%,40%,45%",options="header",]
@@ -144,7 +145,7 @@ Possible values are: `economy`, `standard`, or `nextday`. `VARCHAR(10)` is a goo
 The SPJ uses an input price to calculate to total price including taxes and shipping cost. 
 Therefore, `INOUT` is the appropriate choice. Given that the `_qty_` argument is NUMERIC(18), then this argument should be too. The precision choice fits the the
 type of calculation being peformed.
-| *external name*        | `EXTERNAL NAME Sales.totalPrice`   | The class name is `Sales`. The procedure name is `totalPrice`. 
+| *external name*        | `EXTERNAL NAME 'Sales.totalPrice'` | The class name is `Sales`. The procedure name is `totalPrice`. 
 | *library*              | `library trafodion.sales.sales`    | The library name was defined using the CREATE LIBRARY statement.
 See the example in <<create-a-library, Create a Library>>.
 | *external security*    | `invoker`^1^                       | Use the privileges of the SPJ invoker.
@@ -159,6 +160,7 @@ See the example in <<create-a-library, Create a Library>>.
 
 ^1^ Definition represents default value.
 
+<<<
 Using the information above, you create the new procedure as follows:
 
 [source, sql]
@@ -194,6 +196,98 @@ CREATE PROCEDURE trafodion.sales.totalprice( IN qty NUMERIC (18),
    ;
 ----
 
+<<<
+To understand how to define `java-signature`, consider the following method in the
+`Inventory.java` class.
+
+[source,java]
+----
+public static void supplierInfo( BigDecimal suppNum
+                               , String[] suppName
+                               , String[] streetAddr
+                               , String[] cityName
+                               , String[] stateName
+                               , String[] postCode
+                               ) throws SQLException
+{
+   Connection conn =
+      DriverManager.getConnection( "jdbc:default:connection" ) ;
+
+   PreparedStatement getSupplier =
+      conn.prepareStatement( "SELECT suppname, street, city, "
+                           + "       state, postcode "
+                           + "FROM trafodion.invent.supplier "
+                           + "WHERE suppnum = ?"  
+                           ) ;
+
+   getSupplier.setBigDecimal( 1, suppNum ) ;
+   ResultSet rs = getSupplier.executeQuery() ;
+   rs.next() ;
+
+   suppName[0]   = rs.getString( 1 ) ;
+   streetAddr[0] = rs.getString( 2 ) ;
+   cityName[0]   = rs.getString( 3 ) ;
+   stateName[0]  = rs.getString( 4 ) ;
+   postCode[0]   = rs.getString( 5 ) ;
+
+   rs.close() ;
+   conn.close() ;
+} 
+----
+
+<<<
+The CREATE PROCEDURE attributes for `supplierInfo` are defined as follows:
+
+[cols="20%,85%",options="header"]
+|===
+| Attribute              | Definition
+| *procedure-ref*        | `trafodion.invent.supplierinfo`
+| *sql-parameter-1*      | `IN suppnum NUMERIC(4)`
+| *sql-parameter-2*      | `OUT suppname CHARACTER(18)`
+| *sql-parameter-3*      | `OUT address CHARACTER(22)`
+| *sql-parameter-4*      | `OUT city CHARACTER(14)`
+| *sql-parameter-5*      | `OUT state CHARACTER(12)`
+| *sql-parameter-6*      | `OUT zipcode CHARACTER(10)`
+| *external name*        |
+`EXTERNAL NAME 'Inventory.supplierInfo ( java.math.BigDecimal, java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[] )'`
+| *library*              | `LIBRARY trafodion.invent.inventory`
+| *external security*    | `invoker`^1^ +
+ +
+Choice depends on your security requirements, you can select `definer` instead.
+For more information, see  <<understand-external-security, Understand External Security>>.
+| *language java*        | `LANGUAGE JAVA`
+| *parameter style java* | `PARAMETER STYLE JAVA`
+| *_sql access_*         | `READS SQL DATA`            
+| *dynamic result sets*  | `DYNAMIC RESULT SETS 0`^1^
+| *_transaction_*        | `TRANSACTION REQUIRED`^1^
+| *_determinism_*        | `NOT DETERMINISTIC`^1^   
+| *_isolation_*          | `ISOLATE`^1^             
+|===
+
+^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
+
+<<<
+You can use the `javap` utility to inspect the attributes of the method.
+
+*Example*
+
+```
+$ javap Inventory.class
+Compiled from "Inventory.java"
+public class Inventory {
+  public Inventory();
+  public static void supplierInfo(java.math.BigDecimal, java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[]) throws java.sql.SQLException;
+  public static void supplyQuantities(int[], int[], int[]) throws java.sql.SQLException;
+  public static void partLocations(int, int, java.sql.ResultSet[], java.sql.ResultSet[]) throws java.sql.SQLException;
+}
+```
+
+The entry for `supplierInfo` method shows the attributes that should be used for `java-signature`.
+
+You don't specify for `java.sql.ResultSet[]` attributes; these are handled via the `DYNAMIC RESULTS SET` attribute
+in the `CREATE PROCEDURE` statement.
+
+<<<
 [[understand-external-security]]
 == Understand External Security
 
@@ -239,7 +333,7 @@ execute the SPJ without requiring privileges to the underlying database objects.
 
 To set the external security of an SPJ, see <<create-a-procedure, Create a Procedure>>.
 
-
+<<<
 [[drop-a-procedure]]
 == Drop a Procedure
 
@@ -249,12 +343,12 @@ a schema-level privilege to other users or roles.
 
 For example, if the schema owner granted you privileges to drop all objects in the schema,
 you could drop procedures. For more information, see the GRANT SCHEMA statement in the
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html#grant_statement[{project-name} SQL Reference Manual]
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#drop_procedure_statement[DROP PROCEDURE]
+{docs-url}/sql_reference/index.html#drop_procedure_statement[DROP PROCEDURE]
 statement including considerations and required privileges.
 
 *Example*
@@ -286,7 +380,8 @@ SQL> DROP PROCEDURE trafodion.sales.totalprice ;
 SQL>
 ```
 
-[[display-procedures-and-their-properties}}
+<<<
+[[display-procedures-and-their-properties]]
 == Display Procedures and Their Properties
 
 In the trafci command-line interface, use the SHOW PROCEDURES command to
@@ -324,10 +419,10 @@ SQL>
 ----
 
 For more information about trafci, see the
-http://trafodion.apache.org/docs/command_interface/index.html[Trafodion Command Interface Guide].
+{docs-url}/command_interface/index.html[{project-name} Command Interface Guide].
 
 ////
-20160323: Trafodion does not yet support the ALTER LIBRARY command.
+20160323: {project-name} does not yet support the ALTER LIBRARY command.
 [[altering-an-spj-and-its-java-bytecode]]
 === Altering an SPJ and Its Java Bytecode
 
@@ -338,7 +433,7 @@ files that are packaged in the SPJ JAR file.
 Suppose that you want to update the Java bytecode of an SPJ without
 changing the class name, method name, or Java signature of the SPJ method.
 In this case, you would alter the library by selecting the updated JAR file
-to upload to the Trafodion database, replacing the previous JAR file for the
+to upload to {project-name}, replacing the previous JAR file for the
 library. For more information, see <<alter-a-library, Alter a Library>>.
 
 NOTE: You are prevented from uploading a JAR file that is already in use

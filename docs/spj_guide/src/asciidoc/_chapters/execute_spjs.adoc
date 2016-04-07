@@ -24,8 +24,8 @@
 = Execute SPJs
 
 This chapter describes how to execute SPJs by using the CALL statement
-and assumes that you have already registered the SPJs in the Trafodion
-database and that you have granted privileges to execute the SPJs to the
+and assumes that you have already registered the SPJs in {project-name}
+and that you have granted privileges to execute the SPJs to the
 appropriate database users. For information, see
 <<deploy-spj-jar-files, Deploy SPJ JAR Files>>
 and <<create-spjs, Create SPJs>>.
@@ -46,8 +46,7 @@ GTA 20160321: Triggers aren't supported yet. Uncommented as needed.
 ////
 
 The CALL statement invokes an SPJ in the database. You can issue a CALL
-statement from any of these applications or interfaces supported by the
-Trafodion platform:
+statement from any of these applications or interfaces supported by {project-name}:
 
 * trafci command-line interface or script file
 * JDBC Type-4 client applications
@@ -59,6 +58,7 @@ use a CALL statement in a trigger but not inside a compound statement or
 with rowsets. The SPJ that you use in a trigger must not have any OUT or
 INOUT parameters or return any result sets.
 
+<<<
 [[required-privileges-for-calling-an-spj]]
 == Required Privileges for Calling an SPJ
 
@@ -98,7 +98,7 @@ automatically initiates a transaction if there is no active transaction.
 [[using-transaction-control-statements-or-methods]]
 ==== Using Transaction Control Statements or Methods
 
-If you select Yes for the Transaction Required attribute when creating a
+If you select `Yes` for the Transaction Required attribute when creating a
 stored procedure, then you should not use transaction control statements (or
 equivalent JDBC transaction methods) in the SPJ method. Transaction
 control statements include COMMIT WORK and ROLLBACK WORK, and the
@@ -133,7 +133,7 @@ WORK statement in the calling application to commit the transaction when
 the CALL statement succeeds, and use the ROLLBACK WORK statement to roll
 back the transaction when the CALL statement fails. For more information
 about transaction management, see the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
 
 [[no-transaction-required]]
 === No Transaction Required
@@ -169,7 +169,8 @@ attribute to NO TRANSACTION REQUIRED when creating the stored procedure.
 For more information, see the Transaction Required attribute in
 <<create-a-procedure, Create a Procedure>>.
 
-If you select No for the Transaction Required attribute when creating a
+<<<
+If you select `No` for the Transaction Required attribute when creating a
 stored procedure and if the SPJ method creates a JDBC default
 connection, then that connection has autocommit enabled by default. You
 can either use the autocommit transactions or disable autocommit
@@ -180,7 +181,7 @@ work where needed.
 [[multithreading]]
 == Multithreading
 
-The Trafodion database engine manages a single thread of execution within
+{project-name} manages a single thread of execution within
 an SPJ environment, even if the application that issues a CALL statement
 is a multi-threaded Java application.
 
@@ -198,8 +199,9 @@ and its arguments in a CALL statement, as shown in the figure below.
 image:{images}/call-statement-elements.jpg[CALL Statement Elements]
 
 For the syntax of the CALL statement, see the
-http://trafodion.apache.org/docs/sql_reference/index.html#call_statement[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html#call_statement[{project-name} SQL Reference Manual].
 
+<<<
 [[specifying-the-name-of-the-spj]]
 === Specifying the Name of the SPJ
 
@@ -309,12 +311,13 @@ that table below:
 |===
 
 For more information about SQL value expressions, see the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
 
 Because an INOUT parameter passes a single value to and accepts a single
 value from an SPJ, you can specify only dynamic parameters for INOUT
 parameter arguments in a CALL statement.
 
+<<<
 [[output-parameter-arguments]]
 ==== Output Parameter Arguments
 
@@ -351,6 +354,7 @@ result sets in different applications, see:
 * <<returning-result-sets-in-an-odbc-client, Returning Result Sets in an ODBC Client>>
 * <<returning-result-sets-in-a-jdbc-client, Returning Result Sets in a JDBC Client>>
 
+<<<
 [[calling-spjs-in-trafci]]
 == Calling SPJs in trafci
 
@@ -368,7 +372,7 @@ CALL statement. The procedure call changes the value of a named
 parameter that you use as an OUT or INOUT parameter.
 
 For more information about named and unnamed parameters, see the
-http://trafodion.incubator.apache.org/docs/command_interface/index.html[Trafodion Command Interface Guide].
+{docs-url}/command_interface/index.html[{project-name} Command Interface Guide].
 
 [[using-named-parameters]]
 === Using Named Parameters
@@ -411,6 +415,7 @@ SQL> SHOW PARAM
 p 253.97
 ----
 
+<<<
 [[using-unnamed-parameters]]
 === Using Unnamed Parameters
 
@@ -464,6 +469,7 @@ PRICE
 --- SQL operation complete.
 ----
 
+<<<
 [[returning-result-sets-in-trafci]]
 === Returning Result Sets in trafci
 
@@ -504,6 +510,7 @@ ORDERNUM PARTNUM UNIT_PRICE QTY_ORDERED PARTDESC
 
 For other result set examples, see <<sample-spjs, Appendix A: Sample SPJs>>.
 
+<<<
 [[calling-spjs-from-an-odbc-client-application]]
 == Calling SPJs From an ODBC Client Application
 
@@ -550,10 +557,11 @@ once written.
 
 For more information about the ODBC client applications,
 see the
-http://trafodion.incubator.apache.org/docs/odbc_reference/index.html[Trafodion ODBC Driver Programmer's Reference].
+{docs-url}/odbc_reference/index.html[{project-name} ODBC Driver Programmer's Reference].
 
 ////
 
+<<<
 [[returning-result-sets-in-an-odbc-client-application]]
 === Returning Result Sets in an ODBC Client Application
 
@@ -562,7 +570,7 @@ sets returned by a CALL statement. The `SQLMoreResults()` function closes
 the current result set and moves processing to the next available result
 set.
 
-NOTE: The Trafodion ODBC API does not currently support interleaved result set
+NOTE: The {project-name} ODBC API does not currently support interleaved result set
 processing, where more than one returned result set can be open at a
 time.
 
@@ -608,6 +616,7 @@ while ( ( rc = SQLMoreResults( s ) ) != SQL_NO_DATA )
 }
 ----
 
+<<<
 [[calling-spjs-from-a-jdbc-client-application]]
 == Calling SPJs From a JDBC Client Application
 
@@ -649,12 +658,13 @@ BigDecimal z = stmt.getBigDecimal( 3 ) ; // Retrieve the value of the OUT parame
 GTA 20160321: The JDBC T4 manual does not exist yet. Enable this line
 once written.
 
-For more information about the Trafodion JDBC Type 4 driver and mappings of SQL to JDBC data types,
+For more information about the {project-name} JDBC Type 4 driver and mappings of SQL to JDBC data types,
 see the
-http://trafodion.incubator.apache.org/docs/jdbct4_reference/index.html[Trafodion JDBC Type 4 Driver Programmer's Reference].
+{docs-url}/jdbct4_reference/index.html[{project-name} JDBC Type 4 Driver Programmer's Reference].
 
 ////
 
+<<<
 [[returning-result-sets-in-a-jdbc-client-application]]
 === Returning Result Sets in a JDBC Client Application
 
@@ -744,7 +754,7 @@ are useful as triggered actions because they can help you encapsulate
 and enforce rules in the database. For more information about the
 benefits of using SPJs, see <<benefits-of-spjs, Benefits of SPJs>>
 
-Trafodion SQL supports a CALL statement in a trigger provided that the
+{project-name} SQL supports a CALL statement in a trigger provided that the
 SPJ in the CALL statement does not have any OUT or INOUT parameters or
 return any result sets. For more information, see
 <<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>,
@@ -765,5 +775,5 @@ FOR EACH STATEMENT REFERENCING NEW as newqty
 ----
 
 For information about the CREATE TRIGGER syntax, see the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
 ////

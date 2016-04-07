@@ -66,7 +66,7 @@ public static void partData( int partNum
     PreparedStatement getLocations = 
        conn.prepareStatement( "SELECT * " 
 			    + "FROM trafodion.invent.partloc " 
-			    + " WHERE partnum = ? "
+			    + "WHERE partnum = ? "
 			    ) ;
 
     getLocations.setInt( 1, partNum ) ; 
@@ -90,9 +90,9 @@ public static void partData( int partNum
 			    + "FROM trafodion.persnl.employee " 
 			    + "WHERE empnum in ( SELECT O.salesrep " 
 			    + "                  FROM trafodion.sales.orders O, " 
-			    + "                  trafodion.sales.odetail D " 
-			    + "                  D.partnum = ? " 
-			    + "                  O.ordernum = D.ordernum ) " 
+			    + "                       trafodion.sales.odetail D " 
+			    + "                  WHERE D.partnum = ? " 
+			    + "                    AND O.ordernum = D.ordernum ) " 
 			    + "ORDER BY empnum "
 			    ) ;
 

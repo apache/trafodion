@@ -24,7 +24,7 @@
 = Performance and Troubleshooting
 
 This chapter describes how to improve and monitor the performance of
-SPJs on the Trafodion platform and provides guidelines for
+SPJs on {project-name} and provides guidelines for
 troubleshooting common problems:
 
 * <<troubleshooting-common-problems, Troubleshooting Common Problems>>
@@ -39,7 +39,7 @@ follow these guidelines:
 
 * Note the SQLCODE or SQLSTATE value of the error messages and locate
 the information in the
-http://trafodion.apache.org/docs/messages_guide/index.html[[Trafodion Messages Manual]],
+{docs-url}/messages_guide/index.html[[{project-name} Messages Manual]],
 which provides cause, effect, and recovery information for all SQL errors.
 
 * Check that the user has the appropriate permissions to create or call
@@ -73,16 +73,15 @@ SPJ method is not trying to insert more than one array element into a
 `java.sql.ResultSets[]` array. For more information, see
 <<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>.
 
-* To identify Java-related errors, execute the SPJ method outside the
-Trafodion database by invoking the Java method directly in a Java
-application that you run on a client workstation, using the Trafodion
-JDBC Type-4 driver to connect to the Trafodion platform.
+* To identify Java-related errors, execute the SPJ method outside {project-name}
+by invoking the Java method directly in a Java application that you run on a
+client workstation, using the {project-name} JDBC Type-4 driver to connect to {project-name}.
 
 * If you are using JDBC tracing and logging, then follow these guidelines:
 
 ** Execute the SPJ method outside the database by invoking the Java
 method directly from a Java application that you run on a client
-workstation, using the Trafodion JDBC Type-4 driver to connect to the Trafodion
+workstation, using the {project-name} JDBC Type-4 driver to connect to the {project-name}
 platform.
 
 ** Verify that the file directory specified in the `T4LogFile` property
@@ -91,7 +90,7 @@ exists on the client workstation and that you have write access to it.
 [[performance-tip]]
 == Performance Tip
 
-To ensure the optimal performance of SPJs on the Trafodion platform,
+To ensure the optimal performance of SPJs on {project-name},
 avoid nesting CALL statements in an SPJ method, which wastes resources
 and might diminish performance. For more information, see
 <<nested-java-method-invocations, Nested Java Method Invocations>>.
@@ -192,7 +191,7 @@ SQL>
 The EXPLAIN statement generates and displays all the columns of the
 result table of the EXPLAIN function. For the syntax of the EXPLAIN
 statement, see the
-http://trafodion.apache.org/docs/sql_reference/index.html#explain_statement[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html#explain_statement[{project-name} SQL Reference Manual].
 
 [[using-the-explain-function]]
 === Using the EXPLAIN Function
@@ -230,6 +229,7 @@ For a CALL statement, the OPERATOR column of the result table contains a
 row named CALL. The DESCRIPTION column contains special token pairs for
 the CALL operator. For descriptions of the token pairs, see this table:
 
+<<<
 .Token Pairs Description
 [cols="30%,60%,10%", options="header"]
 |===
@@ -261,5 +261,5 @@ DEFINER. For more information, see <<understand-external-security, Understand Ex
 |===
 
 For the syntax of the EXPLAIN function, see the
-http://trafodion.apache.org/docs/sql_reference/index.html#explain_statement[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html#explain_statement[{project-name} SQL Reference Manual].
 

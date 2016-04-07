@@ -37,6 +37,7 @@ sample name. For example, click on
 link:/resources/source/Sales.java[Sales.java]
 to download the sample sales class source file.
 
+<<<
 [[procedures-in-the-sales-schema]]
 == Procedures in the SALES Schema
 
@@ -72,6 +73,7 @@ The LOWERPRICE procedure determines which items are selling poorly (that
 is, have less than 50 orders) and lowers the price of these items in the
 database by 10 percent.
 
+<<<
 [[java-method-lowerprice]]
 ==== Java Method: lowerPrice()
 
@@ -82,12 +84,13 @@ database by 10 percent.
 include::{sourcedir}/lowerPrice.java[lowerPrice procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-lowerprice]]
 ==== Creating the Procedure: LOWERPRICE
 
 Before creating the procedure, create a library named `SALES`
-in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -101,7 +104,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.sales.lowerprice`
 | *sql-parameter*        | Not applicable.
-| *external name*        | `EXTERNAL NAME sales.lowerPrice`
+| *external name*        | `EXTERNAL NAME 'Sales.lowerPrice'`
 | *library*              | `LIBRARY trafodion.sales.sales`
 | *external security*    | `invoker`^1^ +
  +
@@ -121,7 +124,7 @@ For more information, see  <<understand-external-security, Understand External S
 [source, sql]
 ----
 CREATE PROCEDURE trafodion.sales.lowerprice( )
-   EXTERNAL NAME 'sales.lowerPrice'
+   EXTERNAL NAME 'Sales.lowerPrice'
    LIBRARY trafodion.sales.sales
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -129,6 +132,7 @@ CREATE PROCEDURE trafodion.sales.lowerprice( )
    ;
 ----
 
+<<<
 [[calling-the-procedure-lowerprice]]
 ==== Calling the Procedure: LOWERPRICE
 
@@ -160,47 +164,50 @@ FROM
      LEFT OUTER JOIN trafodion.sales.odetail o ON p.partnum = o.partnum
      GROUP BY p.partnum, p.price
    ) AS allparts 
-WHERE qtyOrdered < 51 ;
+WHERE qtyOrdered < 51 
+ORDER BY partnum ASC
+;
 ----
 
 The LOWERPRICE procedure lowers the price of items with 50 or fewer
 orders by 10 percent in the database. For example, part number 3103, the
-LASER PRINTER, X1, has 40 orders and a price of 4200.00:
+LASER PRINTER, X1, has 40 orders and a price of 3402.00:
 
 [source, sql]
 ----
 PARTNUM QTYORDERED           PRICE
 ------- -------------------- ----------
-    212                   20    2500.00
-   3201                    6     525.00
-    255                   38    4000.00
-   5101                    6     200.00
-   2002                   46    1500.00
-   7102                   18     275.00
-   3103                   40    4200.00
+    212                   20    2025.00
+    244                   47    2430.00
+    255                   38    3240.00
+   2002                   46    1215.00
+   2405                   18     643.95
+   3103                   40    3402.00
     ...                  ...        ...
 
 --- 17 row(s) selected.
 ----
 
-The invocation of LOWERPRICE lowers the price of this item from 4200.00
-to 3780.00:
+<<<
+The invocation of LOWERPRICE lowers the price of this item from 3402.00
+to 3061.80:
 
 [source, sql]
 ----
 PARTNUM QTYORDERED           PRICE
 ------- -------------------- ----------
-   6500                   40      85.50
-   5504                   23     148.50
-   2002                   46    1350.00
-   3201                    6     472.50
-   7102                   18     247.50
-   3103                   40    3780.00
+    212                   20    1822.50
+    244                   47    2187.00
+    255                   38    2916.00
+   2002                   46    1093.50
+   2405                   18     579.55
+   3103                   40    3061.80
 ... ... ...
 
 --- 17 row(s) selected.
 ----
 
+<<<
 [[dailyorders-procedure]]
 === DAILYORDERS Procedure
 
@@ -217,12 +224,13 @@ orders on that date to an output parameter.
 include::{sourcedir}/numDailyOrders.java[numDailyOrders procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-dailyorders]]
 ==== Creating the Procedure: DAILYORDERS
 
 Before creating the procedure, create a library named `SALES`
-in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -236,8 +244,8 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.sales.dailyorders`
 | *sql-parameter-1*      | `IN date1 DATE`
-| *sql-parameter-2*      | `OUT number SIGNED INTEGER`
-| *external name*        | `EXTERNAL NAME sales.numDailyOrders`
+| *sql-parameter-2*      | `OUT number INTEGER`
+| *external name*        | `EXTERNAL NAME 'Sales.numDailyOrders'`
 | *library*              | `LIBRARY trafodion.sales.sales`
 | *external security*    | `invoker`^1^ +
  +
@@ -257,9 +265,9 @@ For more information, see  <<understand-external-security, Understand External S
 [source, sql]
 ----
 CREATE PROCEDURE trafodion.sales.dailyorders( IN date1 DATE
-                                            , OUT number SIGNED INTEGER
+                                            , OUT number INTEGER
                                             )
-   EXTERNAL NAME 'sales.numDailyOrders'
+   EXTERNAL NAME 'Sales.numDailyOrders'
    LIBRARY trafodion.sales.sales
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -267,6 +275,7 @@ CREATE PROCEDURE trafodion.sales.dailyorders( IN date1 DATE
    ;
 ----
 
+<<<
 [[calling-the-procedure-dailyorders]]
 ==== Calling the Procedure: DAILYORDERS
 
@@ -288,13 +297,14 @@ specified date and returns this output in trafci:
 ----
 NUMBER
 -----------
-2
+          2
 
 --- SQL operation complete.
 ----
 
 On March 19, 2011, there were two orders.
 
+<<<
 [[monthlyorders-procedure]]
 === MONTHLYORDERS Procedure
 
@@ -316,8 +326,8 @@ include::{sourcedir}/numMonthlyOrders.java[numMonthlyOrders procedure source cod
 ==== Creating the Procedure: MONTHLYORDERS
 
 Before creating the procedure, create a library named `SALES`
-in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -330,9 +340,9 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 |===
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.sales.monthlyorders`
-| *sql-parameter-1*      | `IN monthnum SIGNED INTEGER`
-| *sql-parameter-2*      | `OUT ordernum SIGNED INTEGER`
-| *external name*        | `EXTERNAL NAME sales.numMonthlyOrders`
+| *sql-parameter-1*      | `IN monthnum INTEGER`
+| *sql-parameter-2*      | `OUT ordernum INTEGER`
+| *external name*        | `EXTERNAL NAME 'Sales.numMonthlyOrders'`
 | *library*              | `LIBRARY trafodion.sales.sales`
 | *external security*    | `invoker`^1^ +
  +
@@ -351,10 +361,10 @@ For more information, see  <<understand-external-security, Understand External S
 
 [source, sql]
 ----
-CREATE PROCEDURE trafodion.sales.monthlyorders( IN monthnum SIGNED INTEGER
-                                              , OUT ordernum SIGNED INTEGER
+CREATE PROCEDURE trafodion.sales.monthlyorders( IN monthnum INTEGER
+                                              , OUT ordernum INTEGER
                                               )
-   EXTERNAL NAME 'sales.numMonthlyOrders'
+   EXTERNAL NAME 'Sales.numMonthlyOrders'
    LIBRARY trafodion.sales.sales
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -362,6 +372,7 @@ CREATE PROCEDURE trafodion.sales.monthlyorders( IN monthnum SIGNED INTEGER
    ;
 ----
 
+<<<
 [[calling-the-procedure-monthlyorders]]
 ==== Calling the Procedure: MONTHLYORDERS
 
@@ -373,7 +384,7 @@ To invoke the MONTHLYORDERS procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL trafodion.sales.monthlyorders( 3,? ) ;
+SQL> CALL trafodion.sales.monthlyorders( 3, ? ) ;
 ----
 
 The MONTHLYORDERS procedure determines the total number of orders during
@@ -383,13 +394,14 @@ a specified month and returns this output in trafci:
 ----
 ORDERNUM
 -----------
-4
+          4
 
 --- SQL operation complete.
 ----
 
 In March, there were four orders.
 
+<<<
 [[totalprice-procedure]]
 === TOTALPRICE Procedure
 
@@ -397,6 +409,7 @@ The TOTALPRICE procedure accepts the quantity, shipping speed, and price
 of an item, calculates the total price, including tax and shipping
 charges, and returns the total price to an input/output parameter.
 
+<<<
 [[java-method-totalprice]]
 ==== Java Method: totalPrice()
 
@@ -411,8 +424,8 @@ include::{sourcedir}/totalPrice.java[totalPrice procedure source code]
 ==== Creating the Procedure: TOTALPRICE
 
 Before creating the procedure, create a library named `SALES`
-in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -428,7 +441,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | *sql-parameter-1*      | `IN gty NUMERIC(18)`
 | *sql-parameter-2*      | `IN speed VARCHAR(10)`
 | *sql-parameter-3*      | `INOUT price NUMERIC(18,2)`
-| *external name*        | `EXTERNAL NAME sales.totalPrice`
+| *external name*        | `EXTERNAL NAME 'Sales.totalPrice ( java.math.BigDecimal, java.lang.String, java.math.BigDecimal[] )'`
 | *library*              | `LIBRARY trafodion.sales.sales`
 | *external security*    | `invoker`^1^ +
  +
@@ -448,10 +461,10 @@ For more information, see  <<understand-external-security, Understand External S
 [source, sql]
 ----
 CREATE PROCEDURE trafodion.sales.totalprice( IN gty NUMERIC(18)
-                                            , IN speed VARCHAR(10)
-					    , INOUT price NUMERIC(18,2)
-                                            )
-   EXTERNAL NAME 'sales.totalPrice'
+                                           , IN speed VARCHAR(10)
+                                           , INOUT price NUMERIC(18,2)
+                                           )
+   EXTERNAL NAME 'Sales.totalPrice ( java.math.BigDecimal, java.lang.String, java.math.BigDecimal[] )'
    LIBRARY trafodion.sales.sales
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -481,7 +494,7 @@ returns this output in trafci:
 ----
 p
 --------------------
-253.97
+              253.97
 
 --- SQL operation complete.
 ----
@@ -489,6 +502,7 @@ p
 The total price of 23 items, which cost $10 each and which are shipped
 at the standard rate, is $253.97, including sales tax.
 
+<<<
 [[partdata-procedure]]
 === PARTDATA Procedure
 
@@ -511,12 +525,13 @@ information about the part:
 include::{sourcedir}/partData.java[partData procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-partdata]]
 ==== Creating the Procedure: PARTDATA
 
 Before creating the procedure, create a library named `SALES`
-in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -529,11 +544,11 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 |===
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.sales.partdata`
-| *sql-parameter-1*      | `IN partnum SIGNED INTEGER`
+| *sql-parameter-1*      | `IN partnum INTEGER`
 | *sql-parameter-2*      | `OUT partdesc CHARACTER(18)`
-| *sql-parameter-3*      | `INOUT price NUMERIC(18,2)`
-| *sql-parameter-4*      | `OUT qty_available SIGNED INTEGER`
-| *external name*        | `EXTERNAL NAME sales.partData`
+| *sql-parameter-3*      | `OUT price NUMERIC(18,2)`
+| *sql-parameter-4*      | `OUT qty_available INTEGER`
+| *external name*        | `EXTERNAL NAME 'Sales.partData'`
 | *library*              | `LIBRARY trafodion.sales.sales`
 | *external security*    | `invoker`^1^ +
  +
@@ -552,12 +567,12 @@ For more information, see  <<understand-external-security, Understand External S
 
 [source, sql]
 ----
-CREATE PROCEDURE trafodion.sales.partdata( IN partnum SIGNED INTEGER
+CREATE PROCEDURE trafodion.sales.partdata( IN partnum INTEGER
                                          , OUT partdesc CHARACTER(18)
-					 , INOUT price NUMERIC(18,2)
-					 , OUT qty_available SIGNED INTEGER
+                                         , OUT price NUMERIC(18,2)
+                                         , OUT qty_available INTEGER
                                          )
-   EXTERNAL NAME 'sales.partData'
+   EXTERNAL NAME 'Sales.partData( int, java.lang.String[], java.math.BigDecimal[], int[] )'
    LIBRARY trafodion.sales.sales
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -566,6 +581,7 @@ CREATE PROCEDURE trafodion.sales.partdata( IN partnum SIGNED INTEGER
    ;
 ----
 
+<<<
 [[calling-the-procedure-partdata]]
 ==== Calling the Procedure: PARTDATA
 
@@ -577,16 +593,16 @@ To invoke the PARTDATA procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL trafodion.sales.partdata(212,?,?,?) ;
+SQL> CALL trafodion.sales.partdata( 212, ?, ?, ?) ;
 ----
 
 The PARTDATA procedure returns this information about part 212:
 
 [source, sql]
 ----
-PARTDESC           PRICE      QTY_AVAILABLE
------------------- ---------- ------------- 
-PC SILVER, 20 MB      2500.00          3525
+PARTDESC           PRICE                QTY_AVAILABLE
+------------------ -------------------- -------------
+PC SILVER, 20 MB                1822.50          3525
 
 ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM QTY_ORDERED
 -------- ---------- ---------- -------- ------- --------------------
@@ -596,29 +612,30 @@ ORDERNUM ORDER_DATE DELIV_DATE SALESREP CUSTNUM QTY_ORDERED
 --- 2 row(s) selected.
 
 LOC_CODE PARTNUM QTY_ON_HAND
--------- ------- ----------- 
-G87          212          20
+-------- ------- -----------
 A87          212          18
+G87          212          20
 
 --- 2 row(s) selected.
 
 PARTNUM SUPPNUM PARTCOST   QTY_RECEIVED
-------- ------- ---------- ------------ 
-    212       3    1900.00           35
+------- ------- ---------- ------------
     212       1    2000.00           20
+    212       3    1900.00           35
 
 --- 2 row(s) selected.
 
 EMPNUM FIRST_NAME      LAST_NAME            DEPTNUM JOBCODE SALARY
 ------ --------------- -------------------- ------- ------- ----------
-220    JOHN            HUGHES                  3200     300   33000.10
-227    XAVIER          SEDLEMEYER              3300     300   30000.00
+   220 JOHN            HUGHES                  3200     300   33000.10
+   227 XAVIER          SEDLEMEYER              3300     300   30000.00
 
 --- 2 row(s) selected.
 
 --- SQL operation complete.
 ----
 
+<<<
 [[ordersummary-procedure]]
 === ORDERSUMMARY Procedure
 
@@ -645,12 +662,13 @@ ordered, and part description.
 include::{sourcedir}/orderSummary.java[orderSummary procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-ordersummary]]
 ==== Creating the Procedure: ORDERSUMMARY
 
 Before creating the procedure, create a library named `SALES`
-in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.SALES` schema and select the `Sales.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -665,7 +683,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | *procedure-ref*        | `trafodion.sales.ordersummary`
 | *sql-parameter-1*      | `IN on_or_after_date VARCHAR(20)`
 | *sql-parameter-2*      | `OUT num_orders LARGEINT`
-| *external name*        | `EXTERNAL NAME sales.orderSummary`
+| *external name*        | `EXTERNAL NAME 'Sales.orderSummary'`
 | *library*              | `LIBRARY trafodion.sales.sales`
 | *external security*    | `invoker`^1^ +
  +
@@ -687,7 +705,7 @@ For more information, see  <<understand-external-security, Understand External S
 CREATE PROCEDURE trafodion.sales.ordersummary( IN on_or_after_date VARCHAR(20)
                                              , OUT num_orders LARGEINT
                                              )
-   EXTERNAL NAME 'sales.orderSummary'
+   EXTERNAL NAME 'Sales.orderSummary ( java.lang.String, long[] )'
    LIBRARY trafodion.sales.sales
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -696,6 +714,7 @@ CREATE PROCEDURE trafodion.sales.ordersummary( IN on_or_after_date VARCHAR(20)
    ;
 ----
 
+<<<
 [[calling-the-procedure-ordersummary]]
 ==== Calling the Procedure: ORDERSUMMARY
 
@@ -707,7 +726,7 @@ To invoke the ORDERSUMMARY procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL trafodion.sales.ordersummary('01-01-2011', ?);
+SQL> CALL trafodion.sales.ordersummary( '2011-01-01', ? ) ;
 ----
 
 The ORDERSUMMARY procedure returns this information about the orders on
@@ -717,27 +736,34 @@ or after the specified date, 01-01-2011:
 ----
 NUM_ORDERS
 --------------------
-13
+                  13
 
 ORDERNUM NUM_PARTS            AMOUNT               ORDER_DATE LAST_NAME
 -------- -------------------- -------------------- ---------- --------------------
-HUGHES HUGHES SCHNABL
-...
-
+  100210                    4             19020.00 2011-04-10 HUGHES
+  100250                    4             22625.00 2011-01-23 HUGHES
+  101220                    4             45525.00 2011-07-21 SCHNABL
+     ...                  ...                  ...        ... ...
 --- 13 row(s) selected.
 
 ORDERNUM PARTNUM UNIT_PRICE QTY_ORDERED PARTDESC
--------- ------- ---------- ----------- ------------------ 
+-------- ------- ---------- ----------- ------------------
   100210     244    3500.00           3 PC GOLD, 30 MB
+  100210    5100     150.00          10 MONITOR BW, TYPE 1
+  100210    2403     620.00           6 DAISY PRINTER,T2
   100210    2001    1100.00           3 GRAPHIC PRINTER,M1
-   100210   2403     620.00           6 DAISY PRINTER,T2
-... ... ... ... ...
+  100250    6500      95.00          10 DISK CONTROLLER
+  100250    6301     245.00          15 GRAPHIC CARD, HR
+  100250     244    3500.00           4 PC GOLD, 30 MB
+  100250    5103     400.00          10 MONITOR COLOR, M1
+     ...     ...        ...         ... ...
 
 --- 70 row(s) selected.
 
 --- SQL operation complete.
 ----
 
+<<<
 [[procedures-in-the-persnl-schema]]
 == Procedures in the PERSNL Schema
 
@@ -764,6 +790,7 @@ include::{sourcedir}/Payroll.java[Sales Class source]
 
 See the following sections for more information about each SPJ method.
 
+<<<
 [[adjustsalary-procedure]]
 === ADJUSTSALARY Procedure
 
@@ -772,6 +799,7 @@ value and updates the employee's salary in the database based on that
 percentage. This method also returns the updated salary to an output
 parameter.
 
+<<<
 [[java-method-adjustsalary]]
 ==== Java Method: adjustSalary()
 
@@ -782,12 +810,13 @@ parameter.
 include::{sourcedir}/adjustSalary.java[adjustSalary procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-adjustsalary]]
 ==== Creating the Procedure: ADJUSTSALARY
 
 Before creating the procedure, create a library named `PAYROLL`
-in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -803,7 +832,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | *sql-parameter-1*      | `IN empnum NUMERIC(4)`
 | *sql-parameter-2*      | `IN percent FLOAT`
 | *sql-parameter-3*      | `OUT newsalary NUMERIC(8,2)`
-| *external name*        | `EXTERNAL NAME persnl.adjustSalary`
+| *external name*        | `EXTERNAL NAME 'Payroll.adjustSalary'`
 | *library*              | `LIBRARY trafodion.persnl.payroll`
 | *external security*    | `invoker`^1^ +
  +
@@ -824,9 +853,9 @@ For more information, see  <<understand-external-security, Understand External S
 ----
 CREATE PROCEDURE trafodion.persnl.adjustsalary( IN empnum NUMERIC(4)
                                               , IN percent FLOAT
-					      , OUT newsalary NUMERIC(8,2)
+                                              , OUT newsalary NUMERIC(8,2)
                                               ) 
-   EXTERNAL NAME 'persnl.adjustSalary'
+   EXTERNAL NAME 'Payroll.adjustSalary'
    LIBRARY trafodion.persnl.payroll
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -834,6 +863,7 @@ CREATE PROCEDURE trafodion.persnl.adjustsalary( IN empnum NUMERIC(4)
    ;
 ----
 
+<<<
 [[calling-the-procedure-adjustsalary]]
 ==== Calling the Procedure: ADJUSTSALARY
 
@@ -863,6 +893,7 @@ NEWSALARY
 The salary of employee number 29 was originally $136,000.00 and became
 $139,400.00 after the invocation of ADJUSTSALARY.
 
+<<<
 [[employeejob-procedure]]
 === EMPLOYEEJOB Procedure
 
@@ -879,12 +910,13 @@ code or null value to an output parameter.
 include::{sourcedir}/employeeJob.java[employeeJob procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-employeejob]]
 ==== Creating the Procedure: EMPLOYEEJOB
 
 Before creating the procedure, create a library named `PAYROLL`
-in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use these values listed in the table below to define and execute the
@@ -897,13 +929,13 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 |===
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.persnl.employeejob`
-| *sql-parameter-1*      | `IN empnum NUMERIC(4)`
+| *sql-parameter-1*      | `IN empnum`
 | *sql-parameter-2*      | `OUT jobcode INT`
-| *external name*        | `EXTERNAL NAME persnl.employeeJob (int, java.lang.Integer[])`
+| *external name*        | `EXTERNAL NAME 'Payroll.employeeJob ( int, java.lang.Integer[] )'`
 | *library*              | `LIBRARY trafodion.persnl.payroll`
 | *external security*    | `invoker`^1^ +
  +
-Choice depends on your security requirements, you can select `definer` instead.
+ Choice depends on your security requirements, you can select `definer` instead.
 For more information, see  <<understand-external-security, Understand External Security>>.
 | *language java*        | `LANGUAGE JAVA`
 | *parameter style java* | `PARAMETER STYLE JAVA`
@@ -918,10 +950,10 @@ For more information, see  <<understand-external-security, Understand External S
 
 [source, sql]
 ----
-CREATE PROCEDURE trafodion.persnl.adjustsalary( IN empnum NUMERIC(4)
-					      , OUT jobcode INT
+CREATE PROCEDURE trafodion.persnl.employeejob( IN empnum INT
+                                              , OUT jobcode INT
                                               ) 
-   EXTERNAL NAME 'persnl.employeeJob (int, java.lang.Integer[])'
+   EXTERNAL NAME 'Payroll.employeeJob ( int, java.lang.Integer[] )'
    LIBRARY trafodion.persnl.payroll
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -929,6 +961,7 @@ CREATE PROCEDURE trafodion.persnl.adjustsalary( IN empnum NUMERIC(4)
    ;
 ----
 
+<<<
 [[calling-the-procedure-employeejob]]
 ==== Calling the Procedure: EMPLOYEEJOB
 
@@ -950,13 +983,14 @@ this output in trafci:
 ----
 JOBCODE
 -----------
-900
+        900
 
 --- SQL operation complete.
 ----
 
 The job code for employee number 337 is 900.
 
+<<<
 [[projectteam-procedure]]
 === PROJECTTEAM Procedure
 
@@ -974,12 +1008,13 @@ assigned to that project.
 include::{sourcedir}/projectTeam.java[projectTeam procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-projectteam]]
 ==== Creating the Procedure: PROJECTTEAM
 
 Before creating the procedure, create a library named `PAYROLL`
-in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -993,7 +1028,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.persnl.projectteam`
 | *sql-parameter-1*      | `IN projectcode INTEGER`
-| *external name*        | `EXTERNAL NAME persnl.projectTeam`
+| *external name*        | `EXTERNAL NAME 'Payroll.projectTeam'`
 | *library*              | `LIBRARY trafodion.persnl.payroll`
 | *external security*    | `invoker`^1^ +
  +
@@ -1013,9 +1048,8 @@ For more information, see  <<understand-external-security, Understand External S
 [source, sql]
 ----
 CREATE PROCEDURE trafodion.persnl.projectteam( IN projectcode INTEGER
-					      , OUT jobcode INT
-                                              ) 
-   EXTERNAL NAME 'persnl.projectTeam'
+                                             ) 
+   EXTERNAL NAME 'Payroll.projectTeam'
    LIBRARY trafodion.persnl.payroll
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -1024,6 +1058,7 @@ CREATE PROCEDURE trafodion.persnl.projectteam( IN projectcode INTEGER
    ;
 ----
 
+<<<
 [[calling-the-procedure-projectteam]]
 ==== Calling the Procedure: PROJECTTEAM
 
@@ -1054,6 +1089,7 @@ EMPNUM FIRST_NAME      LAST_NAME             LOCATION
 --- SQL operation complete.
 ----
 
+<<<
 [[topsalesreps-procedure]]
 === TOPSALESREPS Procedure
 
@@ -1063,6 +1099,7 @@ months) and returns the employee number, first name, last name, and sale
 figures of the top five sales representatives who had the highest sales
 (unit_price * qty_ordered) that quarter.
 
+<<<
 [[java-method-topsalesreps]]
 ==== Java Method: topSalesReps()
 
@@ -1073,12 +1110,13 @@ figures of the top five sales representatives who had the highest sales
 include::{sourcedir}/topSalesReps.java[topSalesReps procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-topsalesreps]]
 ==== Creating the Procedure: TOPSALESREPS
 
 Before creating the procedure, create a library named `PAYROLL`
-in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.PERSNL` schema and select the `Payroll.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -1092,7 +1130,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.persnl.topsalesreps`
 | *sql-parameter-1*      | `IN whichquarter INTEGER`
-| *external name*        | `EXTERNAL NAME persnl.topSalesReps`
+| *external name*        | `EXTERNAL NAME 'Payroll.topSalesReps'`
 | *library*              | `LIBRARY trafodion.persnl.payroll`
 | *external security*    | `invoker`^1^ +
  +
@@ -1113,7 +1151,7 @@ For more information, see  <<understand-external-security, Understand External S
 ----
 CREATE PROCEDURE trafodion.persnl.topsalesreps( IN whichquarter INTEGER
                                               ) 
-   EXTERNAL NAME 'persnl.topSalesReps'
+   EXTERNAL NAME 'Payroll.topSalesReps'
    LIBRARY trafodion.persnl.payroll
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -1122,6 +1160,7 @@ CREATE PROCEDURE trafodion.persnl.topsalesreps( IN whichquarter INTEGER
    ;
 ----
 
+<<<
 [[calling-the-procedure-topsalesreps]]
 ==== Calling the Procedure: TOPSALESREPS
 
@@ -1141,19 +1180,20 @@ sales representatives during the first fiscal quarter:
 
 [source, sql]
 ----
-FIRST_NAME      LAST_NAME            TOTAL
---------------- -------------------- --------------------
-XAVIER          SEDLEMEYER                      172460.00
-HERB            ALBERT                           67025.00
-MARTIN          SCHAEFFER                        52000.00
-HEIDI           WEIGL                            28985.00
-JOHN            HUGHES                           22625.00
+EMPNUM FIRST_NAME      LAST_NAME            TOTAL
+------ --------------- -------------------- --------------------
+   227 XAVIER          SEDLEMEYER                      172460.00
+   231 HERB            ALBERT                           67025.00
+   222 MARTIN          SCHAEFFER                        52000.00
+   226 HEIDI           WEIGL                            28985.00
+   220 JOHN            HUGHES                           22625.00
 
 --- 5 row(s) selected.
 
 --- SQL operation complete.
 ----
 
+<<<
 [[procedures-in-the-invent-schema]]
 == Procedures in the INVENT Schema
 
@@ -1178,6 +1218,7 @@ include::{sourcedir}/Inventory.java[Inventory Class source]
 
 See the following sections for more information about each SPJ method.
 
+<<<
 [[supplierinfo-procedure]]
 === SUPPLIERINFO Procedure
 
@@ -1195,12 +1236,13 @@ parameters.
 include::{sourcedir}/supplierInfo.java[supplierInfo procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-supplierinfo]]
 ==== Creating the Procedure: SUPPLIERINFO
 
 Before creating the procedure, create a library named `INVENTORY`
-in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -1213,13 +1255,14 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 |===
 | Attribute              | Definition
 | *procedure-ref*        | `trafodion.invent.supplierinfo`
-| *sql-parameter-1*      | `IN empnum NUMERIC(4)`
-| *sql-parameter-2*      | `IN suppnum CHARACTER(18)`
+| *sql-parameter-1*      | `IN suppnum NUMERIC(4)`
+| *sql-parameter-2*      | `OUT suppname CHARACTER(18)`
 | *sql-parameter-3*      | `OUT address CHARACTER(22)`
 | *sql-parameter-4*      | `OUT city CHARACTER(14)`
 | *sql-parameter-5*      | `OUT state CHARACTER(12)`
 | *sql-parameter-6*      | `OUT zipcode CHARACTER(10)`
-| *external name*        | `EXTERNAL NAME persnl.supplierInfo`
+| *external name*        |
+`EXTERNAL NAME 'Inventory.supplierInfo ( java.math.BigDecimal, java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[], java.lang.String[] )''
 | *library*              | `LIBRARY trafodion.invent.inventory`
 | *external security*    | `invoker`^1^ +
  +
@@ -1235,17 +1278,23 @@ For more information, see  <<understand-external-security, Understand External S
 |===
 
 ^1^ Definition represents default value. Not included in the CREATE PROCEDURE example.
-
+    
 [source, sql]
 ----
-CREATE PROCEDURE trafodion.invent.supplierinfo( IN  empnum NUMERIC(4)
-                                              , IN  suppnum CHARACTER(18)
-					      , OUT address CHARACTER(22)
-					      , OUT city CHARACTER(14)
-					      , OUT state CHARACTER(12)
-					      , OUT zipcode CHARACTER(10)
+CREATE PROCEDURE trafodion.invent.supplierinfo( IN  suppnum NUMERIC(4)
+                                              , OUT suppname CHARACTER(18)
+                                              , OUT address CHARACTER(22)
+                                              , OUT city CHARACTER(14)
+                                              , OUT state CHARACTER(12)
+                                              , OUT zipcode CHARACTER(10)
                                               ) 
-   EXTERNAL NAME 'persnl.supplierInfo'
+   EXTERNAL NAME 'Inventory.supplierInfo ( java.math.BigDecimal
+                                         , java.lang.String[]
+                                         , java.lang.String[]
+                                         , java.lang.String[]
+                                         , java.lang.String[]
+                                         , java.lang.String[]
+                                         )'
    LIBRARY trafodion.invent.inventory
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -1253,6 +1302,7 @@ CREATE PROCEDURE trafodion.invent.supplierinfo( IN  empnum NUMERIC(4)
    ;
 ----
 
+<<<
 [[calling-the-procedure-supplierinfo]]
 ==== Calling the Procedure: SUPPLIERINFO
 
@@ -1273,13 +1323,14 @@ this output in trafci:
 ```
 SUPPNAME           ADDRESS                CITY           STATE        ZIPCODE
 ------------------ ---------------------- -------------- ------------ ---------
-Schroeder's Ltd    212 Strasse Blvd West  Hamburg        Rhode Island     22222
+Schroeder's Ltd    212 Strasse Blvd West  Hamburg        Rhode Island 22222
 
 --- SQL operation complete.
 ```
 
 Supplier number 25 is Schroeder's Ltd. and is located in Hamburg, Rhode Island.
 
+<<<
 [[supplyquantities-procedure]]
 === SUPPLYQUANTITIES Procedure
 
@@ -1297,12 +1348,13 @@ parameters.
 include::{sourcedir}/supplyQuantities.java[supplyQuantities procedure source code]
 ----
 
+<<<
 [[creating-the-procedure-supplyquantities]]
 ==== Creating the Procedure: SUPPLYQUANTITIES
 
 Before creating the procedure, create a library named `INVENTORY`
-in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -1318,7 +1370,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | *sql-parameter-1*      | `OUT avrg INT`
 | *sql-parameter-2*      | `OUT minm INT`
 | *sql-parameter-3*      | `OUT maxm INT`
-| *external name*        | `EXTERNAL NAME persnl.supplyQuantities`
+| *external name*        | `EXTERNAL NAME 'Inventory.supplyQuantities'`
 | *library*              | `LIBRARY trafodion.invent.inventory`
 | *external security*    | `invoker`^1^ +
  +
@@ -1338,10 +1390,10 @@ For more information, see  <<understand-external-security, Understand External S
 [source, sql]
 ----
 CREATE PROCEDURE trafodion.invent.supplyquantities( OUT avrg INT
-					          , OUT minm INT
-					          , OUT maxm INT
+                                                  , OUT minm INT
+                                                  , OUT maxm INT
                                                   ) 
-   EXTERNAL NAME 'persnl.supplyQuantities'
+   EXTERNAL NAME 'Inventory.supplyQuantities'
    LIBRARY trafodion.invent.inventory
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -1349,6 +1401,7 @@ CREATE PROCEDURE trafodion.invent.supplyquantities( OUT avrg INT
    ;
 ----
 
+<<<
 [[calling-the-procedure-supplyquantities]]
 ==== Calling the Procedure: SUPPLYQUANTITIES
 
@@ -1360,7 +1413,7 @@ To invoke the SUPPLYQUANTITIES procedure in trafci:
 
 [source, sql]
 ----
-SQL> CALL trafodion.invent.supplynumbers( ?,?,? ) ;
+SQL> CALL trafodion.invent.supplyquantities( ?,?,? ) ;
 ----
 
 The SUPPLYQUANTITIES procedure returns this output in trafci:
@@ -1377,6 +1430,7 @@ AVRG        MINM        MAXM
 The average number of items in inventory is 167, the minimum number is
 0, and the maximum number is 1132.
 
+<<<
 [[partlocations-procedure]]
 === PARTLOCATIONS Procedure
 
@@ -1384,6 +1438,7 @@ The PARTLOCATIONS procedure accepts a part number and quantity and returns a
 set of location codes that have the exact quantity and a set of location
 codes that have more than that quantity.
 
+<<<
 [[java-method-partlocations]]
 ==== Java Method: partLocations()
 
@@ -1395,12 +1450,13 @@ include::{sourcedir}/partLocations.java[partLocations procedure source code]
 ----
 
 
+<<<
 [[creating-the-procedure-partlocs]]
 ==== Creating the Procedure: PARTLOCS
 
 Before creating the procedure, create a library named `INVENTORY`
-in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to the
-Trafodion platform for that library. For more information, see
+in the `TRAFODION.INVENT` schema and select the `Inventory.jar` file to upload to 
+{project-name} for that library. For more information, see
 <<create-a-library, Create a Library>>. 
 
 After creating the library, use the values listed in the table below to define and execute the
@@ -1415,7 +1471,7 @@ CREATE PROCEDURE command. For more information, see <<create-a-procedure, Create
 | *procedure-ref*        | `trafodion.invent.partlocs`
 | *sql-parameter-1*      | `IN partnum INT`
 | *sql-parameter-2*      | `IN qty INT`
-| *external name*        | `EXTERNAL NAME persnl.partLocations`
+| *external name*        | `EXTERNAL NAME 'Inventory.partLocations'`
 | *library*              | `LIBRARY trafodion.invent.inventory`
 | *external security*    | `invoker`^1^ +
  +
@@ -1435,10 +1491,9 @@ For more information, see  <<understand-external-security, Understand External S
 [source, sql]
 ----
 CREATE PROCEDURE trafodion.invent.partlocs( IN partnum INT
-					  , IN qty INT
-					  , OUT maxm INT
+                                          , IN qty INT
                                           ) 
-   EXTERNAL NAME 'persnl.partLocations'
+   EXTERNAL NAME 'Inventory.partLocations'
    LIBRARY trafodion.invent.inventory
    LANGUAGE JAVA
    PARAMETER STYLE JAVA
@@ -1447,6 +1502,7 @@ CREATE PROCEDURE trafodion.invent.partlocs( IN partnum INT
    ;
 ----
 
+<<<
 [[calling-the-procedure-partlocs]]
 ==== Calling the Procedure: PARTLOCS
 
@@ -1469,7 +1525,7 @@ more than 18 of those parts:
 ----
 LOC_CODE PARTNUM QTY_ON_HAND
 -------- ------- -----------
-A87          212          18
+G87          212          20
 
 --- 1 row(s) selected.
 
