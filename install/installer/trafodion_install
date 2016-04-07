@@ -146,7 +146,7 @@ do
          fi
       fi
       if [[ $HADOOP_TYPE == "vanilla" ]]; then
-         if [[ $VANILLA_1_0_x == "Y" ]]; then
+         if [[ $VANILLA_1_0_X_SUPPORT == "Y" ]]; then
             supportedHBase=$(echo $version | grep "1.0" | wc -l)
             if [[ $supportedHBase -eq "0" ]]; then
                echo "***ERROR: HBase installed must be 1.0.x"

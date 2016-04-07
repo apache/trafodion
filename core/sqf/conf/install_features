@@ -64,4 +64,4 @@
 export CDH_5_3_HDP_2_2_SUPPORT="N"
 export HDP_2_3_SUPPORT="Y"
 export CDH_5_4_SUPPORT="Y"
-export VANILLA_1_0_x="Y"
+export VANILLA_1_0_X_SUPPORT="Y"
