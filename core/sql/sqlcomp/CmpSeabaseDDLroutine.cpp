@@ -1157,6 +1157,14 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       return;
     }
 
+  // Remove cached entries in other processes
+  NARoutineDB *pRoutineDBCache  = ActiveSchemaDB()->getNARoutineDB();
+  QualifiedName qualRoutineName(routineName, STMTHEAP);
+  pRoutineDBCache->removeNARoutine(qualRoutineName, 
+                                   ComQiScope::REMOVE_FROM_ALL_USERS,
+                                   objUID,
+                                   createRoutineNode->ddlXns(), FALSE);
+
   processReturn();
   return;
 }

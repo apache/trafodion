@@ -6276,7 +6276,7 @@ short Statement::beginTransaction(ComDiagsArea &diagsArea)
   updateTModeValues();
 
   // implicit xns for ddl stmts will be started and committed/aborted
-  // in arkcmp
+  // in arkcmp if auto commit is on. Otherwise, it will be started here.
   if ((root_tdb->transactionReqd()) &&
       ((NOT root_tdb->ddlQuery()) ||
        (NOT context_->getTransaction()->autoCommit())))

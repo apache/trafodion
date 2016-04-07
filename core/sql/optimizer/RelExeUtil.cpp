@@ -4211,7 +4211,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
     }
 
-    if (isCleanup_) // || isRoutine_ || isLibrary_)
+    if (isCleanup_)
       {
         if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
           hbaseDDLNoUserXn_ = TRUE;

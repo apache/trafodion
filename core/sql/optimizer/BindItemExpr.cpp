@@ -4185,10 +4185,6 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
               else
                 frmt_ = ExpDatetime::DATETIME_FORMAT_TS2;// DD.MM.YYYY:HH24:MI:SS
             }
-#ifdef __ignore
-          else  if (operand->getPrecision() == SQLDTCODE_TIME)
-            frmt_ = ExpDatetime::DATETIME_FORMAT_TS4;// HH24:MI:SS
-#endif
         }
 
        if (ExpDatetime::isTimestampFormat(frmt_))
