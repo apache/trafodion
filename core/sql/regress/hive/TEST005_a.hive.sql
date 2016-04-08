@@ -173,3 +173,11 @@ CREATE  external TABLE  tbl_dos(
 row format delimited fields terminated by '|' 
 location '/user/hive/exttables/tbl_dos'
 ;
+
+drop table tbl_dos_num;
+CREATE  external TABLE  tbl_dos_num(
+   c1  int,
+   c2  int)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tbl_dos_num'
+;
