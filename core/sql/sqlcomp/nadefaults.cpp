@@ -1171,7 +1171,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
  DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
-  DDkwd__(DDL_TRANSACTIONS,         "OFF"),
+  DDkwd__(DDL_TRANSACTIONS,         "ON"),
 
     // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
   DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
@@ -3181,7 +3181,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SHOW_MEMO_STATS,		"OFF"),
 
   DDkwd__(SIMILARITY_CHECK,			"ON "),
-  DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
+ DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
 
  XDDkwd__(SKEW_EXPLAIN,                         "ON"),
  XDDflt__(SKEW_ROWCOUNT_THRESHOLD,              "1000000"), // Column row count
@@ -3568,7 +3568,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDflt0_(USTAT_MIN_CHAR_UEC_FOR_IS,            "0.2"),  // minimum UEC for char type to use internal sort
   DDflt0_(USTAT_MIN_DEC_BIN_UEC_FOR_IS,         "0.0"),  // minimum UEC for binary types to use internal sort
 
-  DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
+ DDflt0_(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT,      "10000000"),
   DDui1__(USTAT_MIN_ROWCOUNT_FOR_CTS_SAMPLE,    "10000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_LOW_SAMPLE,    "1000000"),
  XDDui1__(USTAT_MIN_ROWCOUNT_FOR_SAMPLE,        "10000"),
@@ -3753,12 +3753,15 @@ const char *NADefaults::getCurrentDefaultsAttrNameAndValue(
 // -----------------------------------------------------------------------
 void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 {
+  deleteMe();
+
   const size_t numAttrs = numDefaultAttributes();
+  if (numAttrs != sizeof(defaultDefaults) / sizeof(DefaultDefault))
+    return;
+
   CMPASSERT_STRING
     (numAttrs == sizeof(defaultDefaults) / sizeof(DefaultDefault),
      "Check sqlcomp/DefaultConstants.h for a gap in enum DefaultConstants or sqlcomp/nadefaults.cpp for duplicate entries in array defaultDefaults[].");
-
-  deleteMe();
 
   SqlParser_NADefaults_Glob =
   SqlParser_NADefaults_ = new NADHEAP SqlParser_NADefaults();
@@ -3798,6 +3801,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   // for each entry of the (alphabetically sorted) default defaults
   // table, enter the default default into the current default table
   // which is sorted by enum values
+  NAString prevAttrName;
   for (i = 0; i < numAttrs; i++)
     {
       // the enum must be less than the max (if this assert fails
@@ -3830,6 +3834,15 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 
       // set up our backlink which maps [enum] to its defaultDefaults entry
       defDefIx_[defaultDefaults[i].attrEnum] = i;
+
+      // attrs must be in ascending sorted order. If not, error out.
+      if (prevAttrName > defaultDefaults[i].attrName)
+        {
+          SqlParser_NADefaults_ = NULL;
+
+          return;
+        }
+      prevAttrName = defaultDefaults[i].attrName;
 
       // LCOV_EXCL_START
       // for debugging only

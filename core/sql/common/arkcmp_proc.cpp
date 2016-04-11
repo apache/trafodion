@@ -129,10 +129,9 @@ void deinitializeArkcmp()
 }
 
 
-
-//extern void bloom_filter_test();
-//extern void  hdfs_list_test(int argc, char **argv);
-
+// RETURN:  0, no error.  
+//          2, error during NADefaults creation. 
+//          1, other errors during CmpContext creation.
 Int32 arkcmp_main_entry()
 {
 
@@ -143,17 +142,10 @@ Int32 arkcmp_main_entry()
   // same order on NSK and Windows.
   cout.sync_with_stdio();
 
-
   initializeArkcmp();
-
-
   try
   {
-
-
     { // a local ctor scope, within a try block
-
-
       // Set up the context info for the connection, it contains the variables
       // persistent through each statement loops.
 
@@ -171,6 +163,16 @@ Int32 arkcmp_main_entry()
         context= new (cmpContextHeap)CmpContext(CmpContext::IS_DYNAMIC_SQL,
 			 cmpContextHeap);
         cliSemaphore->release();
+
+        if (! context->getSchemaDB()->getDefaults().getSqlParser_NADefaults_Ptr())
+          {
+            // error during nadefault creation.
+            // Cannot proceed.
+            ArkcmpErrorMessageBox
+              (ARKCMP_ERROR_PREFIX "- Cannot initialize NADefaults data.",
+               ERROR_SEV, FALSE, FALSE, TRUE);
+            return(2);
+          }
 
       }
       catch (...)
