@@ -350,7 +350,8 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
                           /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
-  export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
+  export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
+                         /usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-common.jar"
 
   # suffixes to suppress in the classpath (set this to ---none--- to add all files)
   export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"
