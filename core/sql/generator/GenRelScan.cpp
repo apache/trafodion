@@ -1131,7 +1131,7 @@ if (hTabStats->isOrcFile())
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
-
+  UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(
@@ -1170,7 +1170,7 @@ if (hTabStats->isOrcFile())
 		   buffersize,
 		   errCountTab,
 		   logLocation,
-		   errCountRowId 
+		   errCountRowId
 		   );
 
   generator->initTdbFields(hdfsscan_tdb);
@@ -1178,6 +1178,8 @@ if (hTabStats->isOrcFile())
   hdfsscan_tdb->setUseCursorMulti(useCursorMulti);
 
   hdfsscan_tdb->setDoSplitFileOpt(doSplitFileOpt);
+
+  hdfsscan_tdb->setHiveScanMode(hiveScanMode);
 
   NABoolean hdfsPrefetch = FALSE;
   if (CmpCommon::getDefault(HDFS_PREFETCH) == DF_ON)

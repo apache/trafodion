@@ -61,7 +61,7 @@ transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run the
 [cols="2*", options="headhttp://trafodion.apache.org/docs/sql_reference/index.html#limitser"]
 |===
 | Statement                                                  | What It Does
-| <<alter_library_statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a Trafodion database.
+// | <<alter_library_statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a Trafodion database.
 | <<alter_table_statement,ALTER TABLE Statement>>            | Changes attributes for a table.
 | <<alter_user_statement,ALTER USER Statement>>              | Changes attributes for a user.
 | <<create_function_statement,CREATE FUNCTION Statement>>    | Registers a user-defined function (UDF) written in C as a function within a Trafodion database.
@@ -155,7 +155,7 @@ authorization to access libraries or to execute SPJs or UDFs:
 [cols="2*",options="header"]
 |===
 | Statement                                                 | What It Does
-| <<alter_library_statement,ALTER LIBRARY Statement>>       | Updates the physical filename for a library object in a Trafodion database.
+// | <<alter_library_statement,ALTER LIBRARY Statement>>       | Updates the physical filename for a library object in a Trafodion database.
 | <<call_statement,CALL Statement>>                         | Initiates the execution of a stored procedure in Java (SPJ) in a Trafodion database.
 | <<create_function_statement,CREATE FUNCTION Statement>>   | Registers a user-defined function (UDF) written in C as a function within a Trafodion database.
 | <<create_library_statement,CREATE LIBRARY Statement>>     | Registers a library object in a Trafodion database.
@@ -235,6 +235,7 @@ within a table. These statistics are used to devise optimized access plans.
 
 |===
 
+////
 <<<
 [[alter_library_statement]]
 == ALTER LIBRARY Statement
@@ -258,7 +259,7 @@ ALTER LIBRARY [[catalog-name.]schema-name.]library-name
 [[alter_library_syntax]]
 === Syntax Description of ALTER LIBRARY
 
-* `[[_catalog-name_.]_schema-name_.]_library-name_`
+* `\[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a maximum of 128 characters.
 specify the name of a library object that has already been registered in the schema. if you do not fully qualify the library name, trafodion sql
@@ -305,7 +306,7 @@ ALTER LIBRARY sales.saleslib FILE Sales2.jar;`
 ```
 ALTER LIBRARY myudfs FILE $TMUDFLIB;
 ```
-
+////
 
 <<<
 [[alter_table_statement]]
@@ -757,7 +758,7 @@ argument-list is:
 +
 specifies an ANSI logical name of the form:
 +
-`[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1184,7 +1185,7 @@ specifies the name of the function and any SQL parameters that correspond to the
 +
 specifies an ANSI logical name of the form:
 +
-`[[_catalog-name_.]_schema-name_.]_function-name_`
+`\[[_catalog-name_.]_schema-name_.]_function-name_`
 +
 where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information, see
 <<identifiers,identifiers>> and <<database_object_names,database object names>>.
@@ -1241,7 +1242,7 @@ trafodion. see <<data_types,data types>>.
 +
 specifies the case-sensitive name of the external function’s method.
 
-* `library [[_catalog-name_.]_schema-name_.]_library-name_`
+* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 specifies the ANSI logical name of a library containing the external function. if you do not fully qualify the
 library name, trafodion sql qualifies it according to the schema of the current session.
@@ -1519,7 +1520,7 @@ CREATE LIBRARY [[catalog-name.]schema-name.]library-name
 [[create_library_syntax]]
 === Syntax Description of CREATE LIBRARY
 
-* `[[_catalog-name_.]_schema-name_.]_library-name_`
+* `\[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify a name that is unique and does not exist for
@@ -1649,26 +1650,26 @@ the SPJ method.
 +
 specifies an ANSI logical name of the form:
 +
-`[[_catalog-name_.]_schema-name_.]_procedure-name_`
+`\[[_catalog-name_.]_schema-name_.]_procedure-name_`
 +
-where each part of the name is a valid sql identifier with a maximum of 128 characters. for more information,
+where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information,
 see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
 +
-specify a name that is unique and does not exist for any procedure or function in the same schema. trafodion sql
-does not support the overloading of procedure names. that is, you cannot register the same procedure name more than
+specify a name that is unique and does not exist for any procedure or function in the same schema. Trafodion
+does not support the overloading of procedure names. That is, you cannot register the same procedure name more than
 once with different underlying SPJ methods.
 +
-if you do not fully qualify the procedure name, trafodion sql qualifies it according to the schema of the current session.
+If you do not fully qualify the procedure name, then Trafodion qualifies it according to the schema of the current session.
 
-** _sql-parameter_
+** `_sql-parameter_`
 +
-specifies an sql parameter that corresponds to the signature of the SPJ method:
+specifies an SQL parameter that corresponds to the signature of the SPJ method:
 +
 `[_parameter-mode_] [_sql-identifier_] _sql-datatype_`
 
 *** `_parameter-mode_`
 +
-specifies the mode in, out, or inout of a parameter. the default is in.
+specifies the mode `in`, `out`, or `inout` of a parameter. The default is `in`.
 
 **** `in`
 +
@@ -1676,19 +1677,19 @@ specifies a parameter that passes data to an SPJ.
 
 **** `out`
 +
-specifies a parameter that accepts data from an SPJ. the parameter must be an array.
+specifies a parameter that accepts data from an SPJ. The parameter must be an array.
 
 **** `inout`
 +
-specifies a parameter that passes data to and accepts data from an SPJ. the parameter must be an array.
+specifies a parameter that passes data to and accepts data from an SPJ. The parameter must be an array.
 
 *** `_sql-identifier_`
 +
-specifies an sql identifier for the parameter. for more information, see <<identifiers,identifiers>>.
+specifies an SQL identifier for the parameter. For more information, see <<identifiers,identifiers>>.
 
 *** `_sql-datatype_`
 +
-specifies an sql data type that corresponds to the java parameter of the SPJ method.
+specifies an SQL data type that corresponds to the Java parameter of the SPJ method.
 +
 _sql-datatype_ can be:
 +
@@ -1733,11 +1734,11 @@ specifies the case-sensitive name of the SPJ method of the form:
 +
 `[_package-name_.]_class-name_._method-name_`
 +
-the java method must exist in a java class file, _class-name_.class, within a library registered in the database.
-the java method must be defined as public and static and have a return type of void.
+The Java method must exist in a Java class file, _class-name_.class, within a library registered in the database.
+The Java method must be defined as `public` and `static` and have a return type of `void`.
 +
-if the class file that contains the SPJ method is part of a package, you must also specify the package name.
-if you do not specify the package name, the create procedure statement fails to register the SPJ.
+If the class file that contains the SPJ method is part of a package, then you must also specify the package name.
+If you do not specify the package name, the create procedure statement fails to register the SPJ.
 
 ** `_java-signature_`
 +
@@ -1745,44 +1746,44 @@ specifies the signature of the SPJ method and consists of:
 +
 `([_java-datatype_[, _java-datatype_]&#8230;])`
 +
-the java signature is necessary only if you want to specify a java wrapper class (for example, java.lang.integer) instead of a java
-primitive data type (for example, int). an sql data type maps to a java primitive data type by default.
+The Java signature is necessary only if you want to specify a Java wrapper class (for example, `java.lang.integer`) instead of a java
+primitive data type (for example, `int`). An SQL data type maps to a Java primitive data type by default.
 +
-the java signature is case-sensitive and must be placed within parentheses, such as (java.lang.integer, java.lang.integer).
-the signature must specify each of the parameter data types in the order they appear in the java method definition within
-the class file. each java data type that corresponds to an out or inout parameter must be followed by empty square
-brackets ([ ]), such as java.lang.integer[].
-
+The Java signature is case-sensitive and must be placed within parentheses, such as `(java.lang.integer, java.lang.integer`).
+The signature must specify each of the parameter data types in the order they appear in the Java method definition within
+the class file. Each Java data type that corresponds to an out or inout parameter must be followed by empty square
+brackets (`[ ]`), such as `java.lang.integer[]`.
++
 <<<
 *** `_java-datatype_`
 +
-specifies a mappable java data type. for the mapping of the java data types to sql data types, see _sql-datatype_.
+Specifies a mappable Java data type. For the mapping of the Java data types to SQL data types, see _sql-datatype_.
 
-* `library [[_catalog-name_.]_schema-name_.]_library-name_`
+* `library \[[_catalog-name_.]_schema-name_.]_library-name_`
 +
-specifies the ANSI logical name of a library containing the SPJ method. if you do not fully qualify the library name,
-trafodion sql qualifies it according to the schema of the current session.
+specifies the ANSI logical name of a library containing the SPJ method. If you do not fully qualify the library name,
+then Trafodion qualifies it according to the schema of the current session.
 
 * `external security _external-security-type_`
 +
 determines the privileges, or rights, that users have when executing (or calling) the SPJ. An SPJ can have one of these
 types of external security:
 
-** invoker determines that users can execute, or invoke, the stored procedure using the privileges of the user who invokes
-the stored procedure. this behavior is referred to as _invoker rights_ and is the default behavior if external security is
-not specified. invoker rights allow a user who has the execute privilege on the SPJ to call the SPJ using his or her existing
-privileges. in this case, the user must be granted privileges to access the underlying database objects on which the SPJ operates.
+** `invoker` determines that users can execute, or invoke, the stored procedure using the privileges of the user who invokes
+the stored procedure. This behavior is referred to as _invoker rights_ and is the default behavior if external security is
+not specified. Invoker rights allow a user who has the execute privilege on the SPJ to call the SPJ using his or her existing
+privileges. In this case, the user must be granted privileges to access the underlying database objects on which the SPJ operates.
 +
-note: granting a user privileges to the underlying database objects gives the user direct access to those database objects,
-which could pose a risk to more sensitive or critical data to which users should not have access. for example, an SPJ
-might operate on a subset of the data in an underlying database object, but that database object might contain other
+NOTE: Granting a user privileges to the underlying database objects gives the user direct access to those database objects,
+which could pose a risk to more sensitive or critical data to which users should not have access. For example, an SPJ
+might operate on a subset of the data in an underlying database object but that database object might contain other
 more sensitive or critical data to which users should not have access.
 
-** definer determines that users can execute, or invoke, the stored procedure using the privileges of the user who created
-the stored procedure. this behavior is referred to as _definer rights_. the advantage of definer rights is that users are
+** `definer` determines that users can execute, or invoke, the stored procedure using the privileges of the user who created
+the stored procedure. This behavior is referred to as _definer rights_. The advantage of definer rights is that users are
 allowed to manipulate data by invoking the stored procedure without having to be granted privileges to the underlying
-database objects. that way, users are restricted from directly accessing or manipulating more sensitive or critical data in
-the database. however, be careful about the users to whom you grant execute privilege on an SPJ with definer external security
+database objects. That way, users are restricted from directly accessing or manipulating more sensitive or critical data in
+the database. However, be careful about the users to whom you grant execute privilege on an SPJ with definer external security
 because those users will be able to execute the SPJ without requiring privileges to the underlying database objects.
 
 <<<
@@ -1792,46 +1793,46 @@ specifies that the external user-defined routine is written in the java language
 
 * `parameter style java`
 +
-specifies that the run-time conventions for arguments passed to the external user-defined routine are those of the java language.
+specifies that the run-time conventions for arguments passed to the external user-defined routine are those of the Java language.
 
 * `no sql`
 +
-specifies that the SPJ cannot perform sql operations.
+specifies that the SPJ cannot perform SQL operations.
 
 * `contains sql | modifies sql data | reads sql data`
 +
-specifies that the SPJ can perform sql operations. all these options behave the same as contains sql, meaning that the SPJ
-can read and modify sql data. use one of these options to register a method that contains sql statements. if you do not specify
-an sql access mode, the default is contains sql.
+specifies that the SPJ can perform SQL operations. All these options behave the same as `contains sql`, meaning that the SPJ
+can read and modify SQL data. Use one of these options to register a method that contains SQL statements. Ff you do not specify
+an SQL access mode, then the default is `contains sql`.
 
 * `dynamic result sets _integer_`
 +
-specifies the maximum number of result sets that the SPJ can return. this option is applicable only if the method signature
-contains a java.sql.resultset[] object. if the method contains a result set object, the valid range is 1 to 255 inclusive.
-the actual number of result sets returned by the SPJ method can be less than or equal to this number. if you do not specify
-this option, the default value is 0 (zero), meaning that the SPJ does not return result sets.
+specifies the maximum number of result sets that the SPJ can return. This option is applicable only if the method signature
+contains a `java.sql.resultset[]` object. If the method contains a result set object, then the valid range is 1 to 255 inclusive.
+The actual number of result sets returned by the SPJ method can be fewer than or equal to this number. If you do not specify
+this option, then the default value is 0 (zero), meaning that the SPJ does not return result sets.
 
 * `transaction required | no transaction required`
 +
-determines whether the SPJ must run in a transaction inherited from the calling application (transaction required, the default
-option) or whether the SPJ runs without inheriting the calling application’s transaction (no transaction required). typically,
-you will want the stored procedure to inherit the transaction from the calling application. however, if the SPJ method does
-not access the database or if you want the stored procedure to manage its own transactions, you should set the stored
-procedure’s transaction attribute to no transaction required. for more information, see
+determines whether the SPJ must run in a transaction inherited from the calling application (`transaction required`, the default
+option) or whether the SPJ runs without inheriting the calling application’s transaction (`no transaction required`). Typically,
+you want the stored procedure to inherit the transaction from the calling application. However, if the SPJ method does
+not access the database or if you want the stored procedure to manage its own transactions, then you should set the stored
+procedure’s transaction attribute to no transaction required. For more information, see
 <<effects_of_the_transaction_attribute_on_spjs,effects of the transaction attribute on SPJs>>.
 
 <<<
 * `deterministic | not deterministic`
 +
 specifies whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
-(deterministic) or does not return the same values (not deterministic, the default option). if you specify deterministic,
-trafodion sql is not required to call the SPJ each time to produce results; instead, trafodion sql caches the results and
-reuses them during subsequent calls, thus optimizing the call statement.
+(`deterministic`) or does not return the same values (`not deterministic`, the default option). If you specify `deterministic`,
+Trafodion is not required to call the SPJ each time to produce results; instead, Trafodion caches the results and
+reuses them during subsequent calls, thus optimizing the CALL statement.
 
 * `no isolate | isolate`
 +
-specifies that the SPJ executes either in the environment of the database server (no isolate) or in an isolated environment
-(isolate, the default option). trafodion sql allows both options but always executes the SPJ in the udr server process (isolate).
+specifies that the SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
+(`isolate`, the default option). Trafodion allows both options but always executes the SPJ in the UDR server process (`isolate`).
 
 [[create_procedure_considerations]]
 === Considerations for CREATE PROCEDURE
@@ -1865,15 +1866,15 @@ _Using Transaction Control Statements or Methods_
 If you specify TRANSACTION REQUIRED (the default option), a CALL statement automatically initiates a transaction if there is
 no active transaction. In this case, you should not use transaction control statements (or equivalent JDBC transaction methods)
 in the SPJ method. Transaction control statements include COMMIT WORK and ROLLBACK WORK, and the equivalent JDBC transaction
-methods are Connection.commit() and Connection.rollback(). If you try to use transaction control statements or methods in an
-SPJ method when the stored procedure’s transaction attribute is set to TRANSACTION REQUIRED, the transaction control statements
+methods are `Connection.commit()` and `Connection.rollback()`. If you try to use transaction control statements or methods in an
+SPJ method when the stored procedure’s transaction attribute is set to TRANSACTION REQUIRED, then the transaction control statements
 or methods in the SPJ method are ignored, and the Java virtual machine (JVM) does not report any errors or warnings. When the
-stored procedure’s transaction attribute is set to TRANSACTION REQUIRED, you should rely on the transaction control statements
+stored procedure’s transaction attribute is set to TRANSACTION REQUIRED, then you should rely on the transaction control statements
 or methods in the application that calls the stored procedure and allow the calling application to manage the transactions.
 
 _Committing or Rolling Back a Transaction_
 
-If you do not use transaction control statements in the calling application, the transaction initiated by the CALL statement
+If you do not use transaction control statements in the calling application, then the transaction initiated by the CALL statement
 might not automatically commit or roll back changes to the database. When AUTOCOMMIT is ON (the default setting), the database
 engine automatically commits or rolls back any changes made to the database at the end of the CALL statement execution. However,
 when AUTOCOMMIT is OFF, the current transaction remains active until the end of the client session or until you explicitly commit
@@ -1904,7 +1905,7 @@ procedure.
 
 If you specify NO TRANSACTION REQUIRED and if the SPJ method creates a JDBC default connection, that connection will have autocommit
 enabled by default. You can either use the autocommit transactions or disable autocommit (conn.setAutoCommit(false);) and use the
-JDBC transaction methods, Connection.commit() and Connection.rollback(), to commit or roll back work where needed.
+JDBC transaction methods, `Connection.commit()` and `Connection.rollback()`, to commit or roll back work where needed.
 
 <<<
 [[create_procedure_examples]]
@@ -1923,7 +1924,7 @@ CREATE PROCEDURE lowerprice()
    MODIFIES SQL DATA;
 ```
 +
-Because the procedure name is not qualified by a catalog and schema, Trafodion SQL qualifies it according to the current
+Because the procedure name is not qualified by a catalog and schema, Trafodion qualifies it according to the current
 session settings, where the catalog is TRAFODION (by default) and the schema is set to SALES. Since the procedure needs
 to be able to read and modify SQL data, MODIFIES SQL DATA is specified in the CREATE PROCEDURE statement.
 +
@@ -2010,7 +2011,7 @@ CREATE PROCEDURE sales.ordersummary(IN on_or_after_date VARCHAR (20),
 To invoke this SPJ, use this CALL statement:
 +
 ```
-CALL neo.sales.ordersummary('01-01-2014', ?);
+CALL trafodion.sales.ordersummary('01-01-2014', ?);
 ```
 +
 The ORDERSUMMARY procedure returns this information about the orders on or after the specified date, 01-01-2014:
@@ -3417,7 +3418,7 @@ DROP FUNCTION [[catalog-name.]schema-name.]function-name
 [[drop_function_syntax]]
 === Syntax Description of DROP FUNCTION
 
-* `[[_catalog-name_.]_schema-name_.]_function-name_`
+* `\[[_catalog-name_.]_schema-name_.]_function-name_`
 +
 specifies the ANSI logical name of the function, where each part of the name is a valid sql identifier with a maximum of
 128 characters. specify the name of a function that has already been registered in the schema. if you do not fully qualify
@@ -3530,7 +3531,7 @@ DROP LIBRARY [[catalog-name.]schema-name.]library-name [restrict | cascade]
 [[drop_library_syntax]]
 === Syntax Description of DROP LIBRARY
 
-* `[[_catalog-name_.]_schema-name_.]_library-name_`
+* `\[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 specifies the ANSI logical name of the library object, where each part of the name is a valid sql identifier with a
 maximum of 128 characters. specify the name of a library object that has already been registered in the schema. if
@@ -3600,7 +3601,7 @@ DROP PROCEDURE [[catalog-name.]schema-name.]procedure-name
 [[drop_procedure_syntax]]
 === Syntax Description of DROP PROCEDURE
 
-* `[[_catalog-name_.]_schema-name_.]_procedure-name_`
+* `\[[_catalog-name_.]_schema-name_.]_procedure-name_`
 +
 specifies the ANSI logical name of the stored procedure in java (SPJ), where each part of the name is a valid sql
 identifier with a maximum of 128 characters. specify the name of a procedure that has already been registered in the
@@ -4236,7 +4237,7 @@ displays a list of all the existing components.
 displays the names of all the user-defined functions (UDFs) in the catalog and schema of the current session. By default,
 the catalog is TRAFODION, and the schema is SEABASE.
 
-* `FUNCTIONS FOR LIBRARY [[_catalog-name_.]_schema-name_.]_library-name_`
+* `FUNCTIONS FOR LIBRARY \[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 displays the UDFs that reference the specified library.
 
@@ -4258,7 +4259,7 @@ displays the libraries in the specified schema.
 displays the names of all the procedures in the catalog and schema of the current session. by default, the catalog is trafodion,
 and the schema is seabase.
 
-* `procedures for library [[_catalog-name_.]_schema-name_.]_library-name_`
+* `procedures for library \[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 displays the procedures that reference the specified library.
 
@@ -4319,7 +4320,7 @@ and the schema is seabase.
 +
 displays the names of all the views in the specified schema. for the _catalog-name_, you can specify only trafodion.
 
-* `views on table [[_catalog-name_.]_schema-name_.]_table-name_`
+* `views on table \[[_catalog-name_.]_schema-name_.]_table-name_`
 +
 displays the names of all the views that were created for the specified table. if you do not qualify the table name with
 catalog and schema names, get uses the catalog and schema of the current session. for the _catalog-name_, you can specify
@@ -4903,7 +4904,7 @@ specifies one or more component privileges to grant. The comma-separated list ca
 |===
 | Component      | Component Privilege    | Description
 | SQL_OPERATIONS | ALTER                  | Privilege to alter database objects
-|                | ALTER_LIBRARY          | Privilege to alter libraries
+// |                | ALTER_LIBRARY          | Privilege to alter libraries
 |                | ALTER_TABLE            | Privilege to alter tables
 |                | ALTER_VIEW             | Privilege to alter views
 |                | CREATE                 | Privilege to create database objects
@@ -5614,7 +5615,7 @@ SQL>prepare empsal from
 +>select salary from employee
 +>where jobcode = 100;
 
-*** ERROR[4082] Table, view or stored procedure NEO.INVENT.EMPLOYEE does not exist or is inaccessible.
+*** ERROR[4082] Table, view or stored procedure TRAFODION.INVENT.EMPLOYEE does not exist or is inaccessible.
 *** ERROR[8822] The statement was not prepared. 
 SQL>
 ```
@@ -6399,7 +6400,7 @@ specifies the row from the old table exposed by the embedded delete. the old tab
 operation. new is not allowed. an implicit old.* return list is assumed for a delete operation that does not specify a return list.
 
 <<<
-**** `_col-expr_ [[as] _name_]`
+**** `_col-expr_ [[AS] _name_]`
 +
 specifies a derived column determined by the evaluation of an sql value expression in the list. any column referred to in a value
 expression is from the row in the old table exposed by the delete. the old table refers to column values before the delete operation.

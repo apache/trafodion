@@ -57,7 +57,7 @@ Trafodion database.
 A driver that enables applications, which were developed for the Microsoft Open Database Connectivity (ODBC) application programming
 interface (API) and which run on a Windows workstation, to connect to a Trafodion database.
 | *Trafodion odb tool* | A multi-threaded, ODBC-based command-line tool for parallel data loading and extracting. For more information, see the
-http://trafodion.incubator.apache.org/docs/odb_user/index.html[Trafodion odb User Guide].
+http://trafodion.incubator.apache.org/docs/odb/index.html[Trafodion odb User Guide].
 |===
 
 ^1^ License issues prevent us from including the ODBC Driver for Windows in this release. Contact the
