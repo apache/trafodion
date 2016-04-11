@@ -24,15 +24,15 @@
 ////
 
 = About This Document
-This guide describes how to develop, deploy, and manage Stored Procedures in Java (SPJs) on the Trafodion database.
+This guide describes how to develop, deploy, and manage Stored Procedures in Java (SPJs) on {project-name}.
 
 == Intended Audience
 This manual is intended for application programmers who are writing and compiling Java code for stored procedures
-and for database administrators who are deploying and managing Stored Procedures in Java (SPJs) on the Trafodion
-database. The reader should know:
+and for database administrators who are deploying and managing Stored Procedures in Java (SPJs) on {project-name}.
+The reader should know:
 
 * The Java programming language.
-* JDBC and the Trafodion JDBC Type-4 Driver.
+* JDBC and the {project-name} JDBC Type-4 Driver.
 * Structured Query Language (SQL) and database terms and concepts.
 
 Although not required, it helps to be familiar with the part of the ANSI SQL/Foundation standard called
@@ -46,18 +46,18 @@ This document is organized as follows:
 |===
 | Chapter                                              | Description
 | *<<introduction, Introduction>>*                     | Defines what an SPJ is, describes the benefits of using SPJs on the database,
-and lists steps for developing and deploying SPJs on Trafodion.
-| *<<get-started, Get Started>>*                       | Describes the software requirements for using SPJs on the Trafodion database.
+and lists steps for developing and deploying SPJs on {project-name}.
+| *<<get-started, Get Started>>*                       | Describes the software requirements for using SPJs on {project-name}.
 | *<<develop-spj-methods, Develop SPJ Methods>>*       | Provides guidelines for writing and compiling a Java method to be used as the
 body of a stored procedure.
-| *<<xeploy-spj-jar-files, Deploy SPJ JAR Files>>*     | Explains how to deploy SPJ JAR files on the Trafodion database.
-| *<<create-spjs, Create SPJs>>*                       | Explains how to create, drop, and alter an SPJ on the Trafodion database.            
+| *<<deploy-spj-jar-files, Deploy SPJ JAR Files>>*     | Explains how to deploy SPJ JAR files on {project-name}.
+| *<<create-spjs, Create SPJs>>*                       | Explains how to create, drop, and alter an SPJ on {project-name}.            
 | *<<grant-privileges, Grant Privileges>>*             | Explains how to grant and revoke privileges for executing SPJs on the
-Trafodion database.
-| *<<execute-spjs, Execute SPJs>>*                     | Explains how to execute an SPJ on the Trafodion database by using the CALL statement.
+{project-name} database.
+| *<<execute-spjs, Execute SPJs>>*                     | Explains how to execute an SPJ on {project-name} by using the CALL statement.
 | *<<performance-and-troubleshooting, Performance and Troubleshooting>>* | 
 Describes how to improve and monitor the performance of SPJs and provides guidelines for troubleshooting common problems.
-| *<<sample-spjs, Appendix A: Sample SPJs>>*           | Provides examples of SPJ methods that demonstrate business logic on the Trafodion database.
+| *<<sample-spjs, Appendix A: Sample SPJs>>*           | Provides examples of SPJ methods that demonstrate business logic on {project-name}.
 | *<<sample-database, Appendix B: Sample Database>>*   | Describes the sample database on which the Sample SPJs operate.
 |===
 
@@ -190,11 +190,8 @@ match-value [NOT] LIKE _pattern
 
 <<<
 == Comments Encouraged
-The Trafodion community encourages your comments concerning this document. We are committed to providing documentation that meets your
-needs. Send any errors found, suggestions for improvement, or compliments to:
-
-issues@trafodion.incubator.apache.org
+We encourage your comments concerning this document. We are committed to providing documentation that meets your
+needs. Send any errors found, suggestions for improvement, or compliments to {project-support}.
 
 Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
-Or, even better, join our community and help us improve our documentation. Please refer to 
-http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for details.
+

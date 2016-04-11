@@ -24,13 +24,12 @@
 = Performance and Troubleshooting
 
 This chapter describes how to improve and monitor the performance of
-SPJs on the Trafodion platform and provides guidelines for
+SPJs on {project-name} and provides guidelines for
 troubleshooting common problems:
 
-* link:#_bookmark209["Troubleshooting Common Problems"]
-* link:#_bookmark212["Performance Tip"]
-* link:#_bookmark214["Displaying an Execution Plan of a CALL Statement"
-(page 59)]
+* <<troubleshooting-common-problems, Troubleshooting Common Problems>>
+* <<performance-tip, Performance Tip>>
+* <<displaying-an-execution-plan-of-a-call-statement, Displaying an Execution Plan of a CALL Statement>>
 
 [[troubleshooting-common-problems]]
 == Troubleshooting Common Problems
@@ -39,74 +38,62 @@ To resolve problems that occur when you register or execute an SPJ,
 follow these guidelines:
 
 * Note the SQLCODE or SQLSTATE value of the error messages and locate
-the information in the __Neoview Messages Manual__, which provides
-cause, effect, and recovery information for all SQL errors.
+the information in the
+{docs-url}/messages_guide/index.html[[{project-name} Messages Manual]],
+which provides cause, effect, and recovery information for all SQL errors.
+
 * Check that the user has the appropriate permissions to create or call
 the SPJ. See these sections:
-** link:#_bookmark114["Required Privileges for Creating or Dropping an
-SPJ" (page 37)]
-** link:#_bookmark156["Required Privileges for Calling an SPJ" (page
-49)]
-* Check the code of the SPJ method. See link:#bookmark36[Chapter 3 (page
-18)]. Fix any problems.
+** <<required-privileges-for-creating-or-dropping-an-spj, Required Privileges for Creating or Dropping an SPJ>>.
+** <<required-privileges-for-calling-an-spj, Required Privileges for Calling an SPJ>>.
+
+* Check the code of the SPJ method. See <<develop-spj-methods, Develop SPJ Methods>>.
+Fix any problems.
+
 * If you successfully compiled, deployed, and registered the SPJ but are
 receiving errors when calling the SPJ, check that the output parameters
 in the Java method are specified as arrays. See
-link:#_bookmark48["Returning Output Values From the Java Method" (page
-19)].
+<<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>.
+
+
 * Verify that someone did not alter the library by selecting a JAR file
 that contains a different class name, method name, or method signature
 than the original JAR file, without dropping and re-creating the SPJ.
 
-In HPDM, compare the library's class name, method name, and method
-signature with the procedure's external file (class name), external name
-(method name), and signature. To see the library's class name, method
-name, and method signature, launch the Library Browser dialog box in
-HPDM by right-clicking the name of the library, and selecting Browse
-Library. For more information, see link:#_bookmark109["Use the Library
-Browser" (page 35)]. To see the procedure's external file (class name),
-external name (method name), and signature in HPDM, see
-link:#_bookmark131["Using HPDM] link:#_bookmark131[to Display a
-Procedure in a Schema" (page 42)]. If you notice a discrepancy, see
-link:#_bookmark136["Altering] link:#_bookmark136[an SPJ and Its Java
-Bytecode" (page 44)].
-
-* Check the characteristics of the stored procedure in HPDM and compare
-them with the SPJ method that resides on the Trafodion platform. Fix any
-discrepancies.
 * Check the syntax of the CALL statement in the application. See
-link:#bookmark151[Chapter 7 (page 49)]. Fix any problems.
+<<execute-spjs, Execute SPJs>>. Fix any problems.
+
 * If the SPJ is supposed to return result sets, but the result sets are
-not being returned to the calling application, check that the SPJ method
-does not explicitly close a java.sql.Connection object. See
-link:#_bookmark66["Use of java.sql.Connection Objects" (page 23)].
-* If a java.lang.ArrayIndexOutOfBoundsException occurs, check that the
+not being returned to the calling application, then check that the SPJ method
+does not explicitly close a `java.sql.Connection` object. See
+<<Use-of-java-sql-Connection-Objects, Use of java.sql.Connection Objects>>.
+
+* If a `java.lang.ArrayIndexOutOfBoundsException` occurs, then check that the
 SPJ method is not trying to insert more than one array element into a
-java.sql.ResultSets[] array. For more information, see
-link:#_bookmark54["Returning Stored Procedure Result Sets" (page 20)].
-* To identify Java-related errors, execute the SPJ method outside the
-Trafodion database by invoking the Java method directly in a Java
-application that you run on a client workstation, using the HP JDBC Type
-4 driver to connect to the Trafodion platform.
-* If you are using JDBC tracing and logging, follow these guidelines:
+`java.sql.ResultSets[]` array. For more information, see
+<<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>.
+
+* To identify Java-related errors, execute the SPJ method outside {project-name}
+by invoking the Java method directly in a Java application that you run on a
+client workstation, using the {project-name} JDBC Type-4 driver to connect to {project-name}.
+
+* If you are using JDBC tracing and logging, then follow these guidelines:
+
 ** Execute the SPJ method outside the database by invoking the Java
 method directly from a Java application that you run on a client
-workstation, using the HP JDBC Type 4 driver to connect to the Trafodion
+workstation, using the {project-name} JDBC Type-4 driver to connect to the {project-name}
 platform.
-** Verify that the file directory specified in the T4LogFile property
+
+** Verify that the file directory specified in the `T4LogFile` property
 exists on the client workstation and that you have write access to it.
-
-For more information about JDBC tracing and logging, see the __Neoview
-JDBC Type 4 Driver Programmer's Reference__.
-
 
 [[performance-tip]]
 == Performance Tip
 
-To ensure the optimal performance of SPJs on the Trafodion platform,
+To ensure the optimal performance of SPJs on {project-name},
 avoid nesting CALL statements in an SPJ method, which wastes resources
 and might diminish performance. For more information, see
-link:#_bookmark62["Nested Java Method Invocations" (page 22)].
+<<nested-java-method-invocations, Nested Java Method Invocations>>.
 
 [[displaying-an-execution-plan-of-a-call-statement]]
 == Displaying an Execution Plan of a CALL Statement
@@ -122,133 +109,89 @@ Suppose that you want to display the execution plan for this CALL
 statement:
 
 ```
-CALL demo.persnl.adjustsalary(202,5.5,?);
+CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 ```
 
 Enter this EXPLAIN statement in an trafci session:
 
-```
-SQL>**prepare spj1 from call demo.persnl.adjustsalary(202,5.5,?);**
+[source, sql]
+----
+SQL> PREPARE spj1 FROM CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 
---- SQL command prepared. SQL>**explain spj1;**
+--- SQL command prepared.
 
------------------------------------------------------------------- PLAN
-SUMMARY MODULE_NAME .............. DYNAMICALLY COMPILED
+SQL> EXPLAIN spj1 ;
 
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... SPJ1
-
 PLAN_ID .................. 212206487012085509
+ROWS_OUT ................. 1
+EST_TOTAL_COST ........... 0
+STATEMENT ................ CALL trafodion.persnl.adjustsalary( 202, 5.5, ? )
 
-ROWS_OUT 1
-
-EST_TOTAL_COST 0
-
-STATEMENT ................ call demo.persnl.adjustsalary(202,5.5,?)
-
------------------------------------------------------------------- NODE
-LISTING ROOT ====================================== SEQ_NO 2 ONLY CHILD
-1 REQUESTS_IN 1
-
-ROWS_OUT 1
-
-EST_OPER_COST 0
-
-EST_TOTAL_COST 0
-
+------------------------------------------------------------------ NODE LISTING
+ROOT ====================================== SEQ_NO 2         ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
 DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 3,466,211,324
+  max_max_cardinality .... 1
+  total_overflow_size .... 0.00 KB xn_autoabort_interval -1
+  plan_version ........... 2,500
+  LDAP_USERNAME ..........   sqluser_admin
+  NVCI_PROCESS ........... ON
+  SHOWCONTROL_UNEXTERNALI  OFF
+  SCHEMA ................. TRAFODION.INVENT
+  CATALOG ................ TRAFODION
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.DATASOURCES)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.ENVIRONMENTVALUES)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.NAME2ID)
+  PRIORITY ............... 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.RESOURCEPOLICIES)
+  select_list ............ NUMERIC(8,2) SIGNED
+  input_variables ........ ?
 
-max_card_est 1
-
-fragment_id 0
-
-parent_frag ............ (none)
-
-fragment_type .......... master
-
-statement_index 0
-
-affinity_value 3,466,211,324
-
-max_max_cardinality 1
-
-total_overflow_size .... 0.00 KB xn_autoabort_interval -1
-
-plan_version ....... 2,500
-
-LDAP_USERNAME .......... sqluser_admin NVCI_PROCESS ........... ON
-SHOWCONTROL_UNEXTERNALI OFF
-
-SCHEMA ................. DEMO.INVENT
-
-CATALOG ................ NEO
-
-PRIORITY ............... 9 (for table
-HP_SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS) PRIORITY ............... 9 (for
-table HP_SYSTEM_CATALOG.MXCS_SCHEMA.DATASOURC
-
-ES)
-
-PRIORITY ............... 9 (for table
-HP_SYSTEM_CATALOG.MXCS_SCHEMA.ENVIRONME
-
-NTVALUES)
-
-PRIORITY ............... 9 (for table
-HP_SYSTEM_CATALOG.MXCS_SCHEMA.NAME2ID) PRIORITY ............... 9 (for
-table HP_SYSTEM_CATALOG.MXCS_SCHEMA.RESOURCEP
-
-OLICIES) select_list ............ NUMERIC(8,2) SIGNED
-
-input_variables ........ ?
-
-CALL ====================================== SEQ_NO 1 NO CHILDREN
-TABLE_NAME ............... DEMO.PERSNL.ADJUSTSALARY
-
-REQUESTS_IN 1
-
-ROWS_OUT 1
-
-EST_OPER_COST 0
-
-EST_TOTAL_COST 0
-
+CALL ====================================== SEQ_NO 1         NO CHILDREN
+TABLE_NAME ............... TRAFODION.PERSNL.ADJUSTSALARY
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ........... 0
 DESCRIPTION
+  max_card_est ........... -1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  routine_name ........... TRAFODION.PERSNL.ADJUSTSALARY
+  parameter_modes ........ I I O
+  sql_access_mode ........ MODIFIES SQL DATA
+  external_name .......... adjustSalary
+  library ................ TRAFODION.PERSNL.PAYROLL
+  external_file .......... Payroll
+  signature .............. (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
+  language ............... JAVA
+  parameter_style ........ JAVA
+  external_security ...... INVOKER
+  max_result_sets ........ 0
+  parameters ............. cast(202), cast(cast((cast(5.5) / cast(10)))), NUMERIC(8,2) SIGNED
 
-max_card_est ........... -1
+--- SQL operation complete.
 
-fragment_id 0
-
-parent_frag ............ (none)
-
-fragment_type .......... master
-
-routine_name ........... DEMO.PERSNL.ADJUSTSALARY
-
-parameter_modes ........ I I O sql_access_mode ........ MODIFIES SQL
-DATA external_name .......... adjustSalary library ................
-DEMO.PERSNL.PAYROLL
-
-external_file .......... Payroll
-
-signature ..............
-(Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V language
-............... JAVA
-
-parameter_style ........ JAVA external_security ...... INVOKER
-max_result_sets 0
-
-parameters ............. cast(202), cast(cast((cast(5.5) / cast(10)))),
-
-NUMERIC(8,2) SIGNED
-
---- SQL operation complete. SQL>
-```
+SQL>
+----
 
 The EXPLAIN statement generates and displays all the columns of the
 result table of the EXPLAIN function. For the syntax of the EXPLAIN
-statement, see the __Trafodion SQL Reference Manual__. For more
-information about optimizing query execution plans, see the __Trafodion
-Query Guide__.
+statement, see the
+{docs-url}/sql_reference/index.html#explain_statement[{project-name} SQL Reference Manual].
 
 [[using-the-explain-function]]
 === Using the EXPLAIN Function
@@ -256,161 +199,67 @@ Query Guide__.
 You can also prepare the CALL statement and select specific columns from
 the result table of the EXPLAIN function, as shown below:
 
-```
-SQL>**prepare spj1 from call demo.persnl.adjustsalary(202,5.5,?);**
+[source, sql]
+----
+SQL> PREPARE spj1 FROM CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
 
 --- SQL command prepared.
 
-SQL>**select substring(operator,1,8) as "OPERATOR", operator_cost,**
-
-+>**substring(description,1,500) as "DESCRIPTION"**
-
-+>**from table (explain(null, 'SPJ1'));**
+SQL> SELECT SUBSTRING( operator, 1, 8 ) AS "OPERATOR", operator_cost,
++> SUBSTRING( description, 1, 500 ) AS "DESCRIPTION"
++> FROM TABLE ( EXPLAIN( NULL, 'SPJ1' ) ) ;
 
 OPERATOR OPERATOR_COST  DESCRIPTION
 -------- -------------- --------------------------------------------------------------------------------------
-
-CALL 0.0 max_card_est: -1 fragment_id: 0 parent_frag: (none)
-fragment_type: master routine_name: DEMO.PERSNL.ADJUSTSALARY
-parameter_modes: I I O sql_access_mode: MODIFIES SQL DATA external_name:
-adjustSalary library: DEMO.PERSNL.PAYROLL external_file: Payroll
-signature: (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V language:
-JAVA parameter_style: JAVA external_security: INVOKER max_result_sets: 0
-parameters: cast(202), cast(cast((cast(5.5) / cast(10)))), NUMERIC(8,2)
-SIGNED
-
-ROOT 0.0 max_card_est: 1 fragment_id: 0 parent_frag: (none)
-fragment_type: master statement_index:
-
-0 affinity_value: 3466211324 max_max_cardinality: 1 total_overflow_size:
-0.00 KB statement: call demo.persnl.adjustsalary(202,5.5,?)
-xn_autoabort_interval: -1 plan_version: 2500 LDAP_USERNAME:
-sqluser_admin NVCI_PROCESS: ON SHOWCONTROL_UNEXTERNALIZED_ATTRS: OFF
-SCHEMA: DEMO.INVENT CATALOG: NEO PRIORITY: 9 (for table
-HP_SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS) PRIORITY: 9 (for table
-HP_SYSTEM_CATALOG.MXCS_SCHEMA.D
+CALL                0.0 max_card_est: -1 fragment_id: 0 parent_frag: (none) fragment_type: master routine_name:
+TRAFODION.PERSNL.ADJUSTSALARY parameter_modes: I I O sql_access_mode: MODIFIES SQL DATA external_name: adjustSalary
+library: TRAFODION.PERSNL.PAYROLL external_file: Payroll signature: (Ljava/math/BigDecimal;D[Ljava/math/BigDecimal;)V
+language: JAVA parameter_style: JAVA external_security: INVOKER max_result_sets: 0 parameters: cast(202),
+cast(cast((cast(5.5) / cast(10)))), NUMERIC(8,2) SIGNED
+ROOT                0.0 max_card_est: 1 fragment_id: 0 parent_frag: (none) fragment_type: master statement_index:
+  0 affinity_value: 3466211324 max_max_cardinality: 1 total_overflow_size: 0.00 KB statement: call
+trafodion.persnl.adjustsalary( 202, 5.5 ,? ) xn_autoabort_interval: -1 plan_version: 2500 LDAP_USERNAME: sqluser_admin
+NVCI_PROCESS: ON SHOWCONTROL_UNEXTERNALIZED_ATTRS: OFF SCHEMA: TRAFODION.INVENT CATALOG: TRAFODION PRIORITY: 9 (for table
+SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS) PRIORITY: 9 (for table SYSTEM_CATALOG.MXCS_SCHEMA.D
 
 --- 2 row(s) selected. SQL>
-```
+----
 
 For a CALL statement, the OPERATOR column of the result table contains a
 row named CALL. The DESCRIPTION column contains special token pairs for
 the CALL operator. For descriptions of the token pairs, see this table:
 
-Token
-
-Token Description
-
-Data Type
-
-max_card_est
-
-The upper limit for the operator cardinality in the query tree.
-
-integer
-
-fragment_id
-
-A sequential number assigned to the fragment. 0 is always the master
-executor, and 1 is reserved for the Explain plan. Numbers 2 to _n_ will
-be ESP or TSE fragments.
-
-integer
-
-parent_frag
-
-The fragment_id for the parent fragment of the current fragment. The
-value is (none) for the master executor.
-
-integer
-
-fragment_type
-
-Type of fragment, which can be either master, ESP, or TSE.
-
-text
-
-routine_name
-
-ANSI name of the procedure.
-
-text
-
-parameter_modes
-
-A sequence of characters that specifies SQL parameter modes for the
+<<<
+.Token Pairs Description
+[cols="30%,60%,10%", options="header"]
+|===
+| Token             | Token Description                                                              | Data Type
+| `max_card_est`    | The upper limit for the operator cardinality in the query tree.                | integer
+| `fragment_id`     | A sequential number assigned to the fragment. 0 is always the master
+executor, and 1 is reserved for the Explain plan. Numbers 2 to _n_ are ESP or storage-engine fragments. | integer
+| `parent_frag`     | The fragment_id for the parent fragment of the current fragment. The
+value is (none) for the master executor.                                                             | integer
+| `fragment_type`   | Type of fragment, which can be either master, ESP, or storage engine.          | text
+| `routine_name`    | ANSI name of the procedure.                                                    | text
+| `parameter_modes` | A sequence of characters that specifies SQL parameter modes for the
 procedure. I is used for an IN parameter, O for an OUT parameter, and N
 for an INOUT parameter. Characters are separated by a single space. The
-value none is returned if the procedure has no SQL parameters.
+value none is returned if the procedure has no SQL parameters.                                       | text
+| `sql_access_mode` | SQL access mode of the procedure.                  `                           | text
+| `external_name`   | Java method name.                                                              | text
+| `library`         | ANSI name of the library object that maps to the procedure's JAR file.         | text
+| `external_file`   | Java class name, possibly prefixed by a package name, that contains the SPJ method. | text
+| `signature`       | Java signature of the SPJ method in internal Java Virtual Machine (JVM) format. | text
+| `language`        | Language in which the SPJ method is written, which is always Java.             | text
+| `parameter_style` | Convention of passing parameter arguments to the stored procedure, which
+conforms to the Java language for SPJs.                                                              | text
+| `external_security` | External security of the stored procedure, indicating the privileges or
+rights that users have when executing (or calling) the procedure. The value is either INVOKER or
+DEFINER. For more information, see <<understand-external-security, Understand External Security>>.   | text
+| `max_result_sets` | The maximum number of result sets that this procedure can return.              | integer
+| `parameters`      | The parameter arguments that are passed to or from the procedure.              | text
+|===
 
-text
-
-sql_access_mode
-
-SQL access mode of the procedure.
-
-text
-
-external_name
-
-Java method name.
-
-text
-
-library
-
-ANSI name of the library object that maps to the procedure's JAR file.
-
-text
-
-external_file
-
-Java class name, possibly prefixed by a package name, that contains the
-SPJ method.
-
-text
-
-signature
-
-Java signature of the SPJ method in internal Java Virtual Machine (JVM)
-format.
-
-text
-
-language
-
-Language in which the SPJ method is written, which is always Java.
-
-text
-
-parameter_style
-
-Convention of passing parameter arguments to the stored procedure, which
-conforms to the Java language for SPJs.
-
-text
-
-external_security
-
-External security of the stored procedure, indicating the privileges or
-rights that users have when executing (or calling) the procedure. The
-value is either INVOKER or DEFINER. For more information, see
-link:#_bookmark124["Understand External Security" (page 41)].
-
-text
-
-max_result_sets
-
-The maximum number of result sets that this procedure can return.
-
-integer
-
-parameters
-
-The parameter arguments that are passed to or from the procedure.
-
-text
-
-For the syntax of the EXPLAIN function, see the __Trafodion SQL Reference
-Manual__.
+For the syntax of the EXPLAIN function, see the
+{docs-url}/sql_reference/index.html#explain_statement[{project-name} SQL Reference Manual].
 
