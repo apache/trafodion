@@ -756,9 +756,17 @@ void ExpGenerator::copyDefaultValues(
           Lng32 srcDefLen = srcAttr->getDefaultValueStorageLength();
           char* srcDefVal = srcAttr->getDefaultValue();
 	  char * tgtDefVal = new(generator->getSpace()) char[tgtDefLen];
+
           // if source and target def storage lengths dont match, then
           // need to move each part (null, vclen, data) separately.
-          if (tgtDefLen != srcDefLen) 
+          if ((tgtDefLen == srcDefLen) &&
+              (tgtAttr->getNullFlag() == srcAttr->getNullFlag()) &&
+              (tgtAttr->getVCIndicatorLength() == srcAttr->getVCIndicatorLength()) &&
+              (tgtAttr->getLength() == srcAttr->getLength()))
+            {
+              str_cpy_all(tgtDefVal, srcDefVal, srcDefLen);
+            }
+          else
             {
               char * tgtDefValCurr = tgtDefVal;
 
@@ -783,10 +791,6 @@ void ExpGenerator::copyDefaultValues(
               srcDefVal += srcAttr->getVCIndicatorLength();
 
               str_cpy_all(tgtDefValCurr, srcDefVal, srcDefLen);
-            }
-          else
-            {
-              str_cpy_all(tgtDefVal, srcDefVal, srcDefLen);
             }
 	  
 	  tgtAttr->setDefaultValue(srcAttr->getDefaultClass(), tgtDefVal);
