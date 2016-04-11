@@ -488,9 +488,9 @@ EOF
 
   # Hadoop/HBase/Hive install directories, as determined by this script,
   # when using an Apache installation without one of the distros
-  APACHE_HADOOP_HOME=
-  APACHE_HBASE_HOME=
-  APACHE_HIVE_HOME=
+  APACHE_HADOOP_HOME=None
+  APACHE_HBASE_HOME=None
+  APACHE_HIVE_HOME=None
 
   if [ -f $HADOOP_PREFIX/etc/hadoop/core-site.xml ]; then
     APACHE_HADOOP_HOME=$HADOOP_PREFIX
@@ -532,14 +532,6 @@ EOF
   fi
   if [ ! -d $APACHE_HIVE_HOME/lib -a -d /usr/lib/hive ]; then
     APACHE_HIVE_HOME=/usr/lib/hive
-  fi
-
-  if [ ! -d $APACHE_HADOOP_HOME/lib ]; then
-    echo "**** ERROR: Unable to determine location of Hadoop lib directory"
-  fi
-
-  if [ ! -d $APACHE_HBASE_HOME/lib ]; then
-    echo "**** ERROR: Unable to determine location of HBase lib directory"
   fi
 
   if [ -n "$HBASE_CNF_DIR" -a -n "$HADOOP_CNF_DIR" -a \
