@@ -20,538 +20,243 @@
  */
 ////
 
-[[Deploy-spj-jar-files]]
+[[deploy-spj-jar-files]]
 = Deploy SPJ JAR Files
 
 After developing and packaging the SPJ code into JAR files, you must
-move the JAR files from the client workstation to the Trafodion database.
+move the JAR files from the client workstation to {project-name}.
 
 You can upload a SPJ JAR file and create a library by using
-the ADD LIBRARY command in the Trafodion Command Interface (trafci).
-You use the CREATE LIBRARY, ALTER LIBRARY, and DROP LIBRARY commands.
+the CREATE LIBRARY command in the Trafodion Command Interface (trafci).
 
 Libraries provide greater security for JAR files because libraries are
 database objects whose access is controlled using standard SQL security.
 
-Deploying a JAR file to a Trafodion instance requires creating a library,
+Deploying a JAR file to a {project-name} instance requires creating a library,
 and users must have the required privileges for creating libraries in order
 to deploy JAR files.
 
-See these instructions:
+The examples in this chapter are based on the sample database
+documented in <<b-sample-database, Appendix B: Sample Database>>.
 
-* <<create-a-library, Create a Library>>
-* <alter-a-library, Alter a Library>>
-* <<drop-a-library, Drop a Library>>
-* <<download-a-jar-file-from-a-library, Download a JAR File From a Library>>
-* <<display-libraries-and-their-properties, Display Libraries and Their Properties>>
-
-Before you start, see
-<<required-privileges-for-creating-altering-or-dropping-a-library, "Required Privileges for Creating, Altering, or Dropping a Library">>.
-
-
-== Required Privileges for Creating, Altering, or Dropping a Library
-
-Deploying a JAR file to the Trafodion database requires creating a
-library, and you must have the required privileges for creating
-libraries in order to deploy a JAR file. To create a library in a
-schema, you must have both the CREATE_LIBRARY component privilege and
-the CREATE_LIBRARY schema-level privilege for the schema. For more
-information, see the requirements in <create-a-library, Create a Library>>.
-
-To alter a library in a schema, you must have both the UPDATE privilege
-for the library and the ALTER_LIBRARY privilege for the schema. For more
-information, see the requirements in
-<<alter-a-library, Alter a Library>>.
-
-To drop a library from a schema, you must have the DROP_LIBRARY
-privilege for the schema. For more information, see the requirements in
-<<drop-a-library, Drop a Library>>.
-
-To download a JAR file from a library, you must have the CREATE_LIBRARY
-component privilege. For more information, see the requirements in
-<<download-a-jar-file-from-a-library, Download a JAR File From a Library>>.
-
+<<<
 [[create-a-library]]
 == Create a Library
 
 Refer to the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
 for full documentation of the
-http://trafodion.apache.org/docs/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
-statement.
+{docs-url}/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
+statement including considerations and required privileges.
 
-When you create a library, HPDM simultaneously uploads an SPJ JAR file
-from the client workstation to the Trafodion database and creates a
-library for the JAR file in a schema of the database.
+NOTE: You must copy the jar file to the same directory on all the nodes in the cluster before running the CREATE LIBRARY statement.
+Otherwise, you will see an error message indicating that the jar file is not found.
 
-Requirements:
+*Example*
 
-* You must have the CREATE_LIBRARY privilege for the SQL_OPERATIONS
-component. For more information, see the component privileges in the _HP
-Database Manager (HPDM) User Guide_ or the online help in HPDM.
-* You must either be the owner of the schema where you will create the
-library or have the CREATE_LIBRARY privilege for the schema to create
-the library. The schema owner can grant such a schema-level privilege to
-other users or roles. For more information, see the
+This example uses the sample <<procedures-in-the-sales-schema, Sales Class>> documented in
+<<a-sample-spjs, Appendix A: Sample SPJs>>.
 
-Grant/Revoke Privileges Tool in HPDM or the GRANT SCHEMA statement in
-the __Trafodion SQL Reference Manual__.
+Your task is to add the Sales class jar file as a library object in the `SALES` schema.
+Do the following:
 
-* The JAR file that you select for the library must contain valid Java
-bytecode and must not be used by another library in the catalog.
-* The JAR file that you select for the library must not exceed a size
-threshold if one has been set for HPDM's internal WMS service, the data
-source, or the system defaults.
+1. Compile the `Sales.java` source file.
++
+*Example*
++
+```
+$ # Set up the environmental variables.
+$ cd $HOME/trafodion-incubator
+$ source env.sh
+$ # Prepare the class jar file
+$ cd $HOME/trafodion-spjs
+$ ls
+Inventory.java  Payroll.java  Sales.java
+$ # Compile source
+$ javac Sales.java
+$ ls Sales.*
+Sales.class  Sales.java
+$ # Package jar file
+$ jar cvf Sales.jar Sales.class
+$ ls Sales.*
+Sales.class  Sales.jar  Sales.java
+$
+```
 
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
+2. Multi-node cluster only: Create the target directory, if necessary.
++
+*Example*
++
+```
+$ pdsh $MY_NODES -x $HOSTNAME mkdir $HOME/trafodion-spjs
+```
++
+<<<
+3. Multi-node cluster only: Copy the jar file to all nodes in the cluster.
++
+*Example*
++
+```
+$ pdcp $MY_NODES Sales.jar $PWD/.
+```
 
-has been set for the HPS_MANAGEABILITY service, it will limit the size
-of JAR files that can be uploaded by HPDM. If the JAR file's size
-exceeds the threshold, a warning message is displayed, and the file is
-not uploaded. By default, this CQD is not set for HPDM's internal WMS
-service, the data source, or the system defaults, and HPDM allows you to
-upload JAR files of any size.
+4. Create the library object using trafci.
++
+```
+$ pwd
+/home/trafodion/trafodion-jars
+$ trafci
 
-To upload a JAR file and create a library for the JAR file in a schema:
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
 
-1.  In HPDM, select the Database area.
-2.  In the navigation tree pane, expand the tree to display the folders
-of the schema where you want to create the library.
-3.  Right-click the Libraries folder, and select Create Library. The
-Create Library dialog box appears. For more information, see
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)].
-4.  In the Create Library dialog box, enter a name for the library.
+Host Name/IP Address: localhost:23400
+User Name: zz
 
-The name must be unique among the libraries in the schema and must not
-exceed 128 characters. The library name is not case-sensitive. For
-example, if you enter Payroll as the library name, the database engine
-stores the library as
+Connected to Trafodion
 
-__catalog-name__.__schema-name__.PAYROLL. The database engine
-automatically qualifies the library name with the name of the catalog
-and schema in which you are creating the library.
+SQL> CREATE LIBRARY trafodion.sales.sales FILE '/home/trafodion/trafodion-spjs/Sales.jar' ;
 
-1.  Click the [ Browse ] button to locate and select a JAR file on the
-client workstation. The "Select a code file" dialog box appears.
-2.  In the "Select a code file" dialog box, locate and select the JAR
-file on the client workstation, and click [ Open ] to return to the
-Create Library dialog box. The Create Library dialog box displays the
-full path of the JAR file in the Code File field.
-3.  Click [ Create ] to create the library, or click [ Close ] to quit
-the dialog box without creating the library.
+--- SQL operation complete.
 
-If you click [ Create ], HPDM validates the JAR file, uploads the JAR
-file, and creates a library for the JAR file in the schema.
+SQL> get libraries in schema trafodion.sales ;
 
-1.  When notified that the library was created successfully, click [ OK
-].
-2.  To upload another JAR file and create a library, repeat steps 4
-through 8.
-3.  When you are done uploading JAR files and creating libraries, click
-the [ Close ] button image:media/image4.png[image]) to quit the Create
-Library dialog box and return to the HPDM main window.
+SALES
 
-Related Topics
+--- SQL operation complete.
 
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)]
-link:#_bookmark100["Alter a Library" (page 32)]
+SQL>
+```
 
-link:#_bookmark105["Drop a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
-
-[[use-the-create-library-dialog-box]]
-== Use the Create Library Dialog Box
-
-The Create Library dialog box allows you to upload an SPJ JAR file from
-the client workstation to the Trafodion database and create a library for
-the JAR file in a schema of the database.
-
-Requirements:
-
-* You must have the CREATE_LIBRARY privilege for the SQL_OPERATIONS
-component. For more information, see the component privileges in the _HP
-Database Manager (HPDM) User Guide_ or the online help in HPDM.
-* You must either be the owner of the schema where you will create the
-library or have the CREATE_LIBRARY privilege for the schema to create
-the library. The schema owner can grant such a schema-level privilege to
-other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
-* The JAR file that you select for the library must contain valid Java
-bytecode and must not be used by another library in the catalog.
-* The JAR file that you select for the library must not exceed a size
-threshold if one has been set for HPDM's internal WMS service, the data
-source, or the system defaults.
-
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
-
-has been set for the HPS_MANAGEABILITY service, it will limit the size
-of JAR files that can be uploaded by HPDM. If the JAR file's size
-exceeds the threshold, a warning message is displayed, and the file is
-not uploaded. By default, this CQD is not set for HPDM's internal WMS
-service, the data source, or the system defaults, and HPDM allows you to
-upload JAR files of any size.
-
-[cols=",,",options="header",]
-|===
-[[group-box]]
-Group Box
-Control or Field
-Description or Action
-Library
-Catalog
-Name of the catalog where the library will be created. This is a
-read-only field.
-Schema
-Name of the schema where the library will be created. This is a
-read-only field.
-Library Name
-Enter a name for the library. The name must be unique among the
-libraries in the schema and must not exceed 128 characters. The library
-name is not case-sensitive. For example, if you enter Payroll as the
-library name, the database engine stores the library as
-
-__catalog-name__.__schema-name__.PAYROLL. The database engine
-automatically qualifies the library name with the name of the catalog
-and schema in which you are creating the library.
-Code File
-Code File
-Click [ Browse ] to launch the "Select a code file" dialog box and
-navigate to a JAR file on the client workstation.
-[ Create ]
-Creates the library.
-[ Close ]
-Closes the dialog box without creating a library.
-[ Help ]
-Displays context-sensitive help for this dialog box.
-|===
-
-[[related-topics]]
-Related Topics
-
-link:#_bookmark95["Create a Library" (page 29)]
-link:#_bookmark100["Alter a Library" (page 32)] link:#_bookmark105["Drop
-a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
+////
+20160323 GTA: This feature isn't implemented yet. Uncomment this section once implemented.
 
 [[alter-a-library]]
 == Alter a Library
 
-When you alter a library, you can change the underlying JAR file of the
-library.
+When you alter a library, you can change the underlying JAR file of the library.
 
-Requirements:
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#alter_library_statement[ALTER LIBRARY]
+statement including considerations and required privileges.
 
-* You must have been granted the UPDATE privilege for the library. For
-more information, see the Grant/Revoke Privileges Tool in HPDM or the
-GRANT LIBRARY statement in the __Trafodion SQL Reference Manual__.
-* You must either be the owner of the schema where you will alter the
-library or have the ALTER_LIBRARY privilege for the schema to alter the
-library. The schema owner can grant such a schema-level privilege to
-other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
-* The JAR file that you select for the library must contain valid Java
-bytecode and must not be used by another library in the catalog.
-* The JAR file that you select for the library must not exceed a size
-threshold if one has been set for HPDM's internal WMS service, the data
-source, or the system defaults.
+*Example*
 
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
+Your task is to modify the Sales class jar file as a library object in the `SALES` schema
+with a new jar file (`Sales2.jar`).
 
-has been set for the HPS_MANAGEABILITY service, it will limit the size
-of JAR files that can be uploaded by HPDM. If the JAR file's size
-exceeds the threshold, a warning message is displayed, and the file is
-not uploaded. By default, this CQD is not set for HPDM's internal WMS
-service, the data source, or the system defaults, and HPDM allows you to
-upload JAR files of any size.
+Do the following:
 
-To alter a library and change its underlying JAR file:
+1. Multi-node cluster only: Copy the jar file to all nodes in the cluster.
++
+*Example*
++
+```
+$ pdcp $MY_NODES Sales2.jar $PWD/.
+```
 
-1.  In HPDM, select the Database area.
-2.  In the navigation tree pane, expand the tree to display the folders
-of the schema that contains the library, and expand the Libraries folder
-to display the libraries within it.
-3.  Right-click the name of the library, and select Alter Library. If
-you selected a system library, a dialog box appears warning you that you
-cannot alter a system library. If you selected a user library, the Alter
-Library dialog box appears. For more information, see
-link:#_bookmark103["Use the Alter] link:#_bookmark103[Library Dialog
-Box" (page 33)].
-4.  In the Alter Library dialog box, click the [ Browse ] button to
-locate and select a new JAR file on the client workstation. The "Select
-a code file" dialog box appears.
-5.  In the "Select a code file" dialog box, locate and select the JAR
-file on the client workstation, and click [ Open ] to return to the
-Alter Library dialog box. The Alter Library dialog box displays the full
-path of the new JAR file in the Code File field.
-6.  Click [ Alter ] to alter the library, or click [ Close ] to quit the
-dialog box without altering the library.
+2. Create the library object using trafci.
++
+```
+$ pwd
+/home/trafodion/trafodion-jars
+$ trafci
 
-If you click [ Alter ], a dialog box appears warning you that altering a
-library might affect stored procedures that use the library and asking
-if you wish to continue the alter operation. Click [ Yes ] to proceed,
-or click [ No ] to cancel the operation. If you click [ Yes ], HPDM
-validates the JAR file, uploads the JAR file, and alters the library in
-the schema.
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
 
-1.  When notified that the library was altered successfully, click [ OK
-] to close the Alter Library dialog box and return to the HPDM main
-window.
+Host Name/IP Address: localhost:23400
+User Name: zz
 
-Related Topics
+Connected to Trafodion
 
-link:#_bookmark103["Use the Alter Library Dialog Box" (page 33)]
-link:#_bookmark95["Create a Library" (page 29)]
+SQL> ALTER LIBRARY trafodion.sales.saleslib FILE '/home/trafodion/trafodion-spjs/Sales2.jar' ;
 
-link:#_bookmark105["Drop a Library" (page 33)]
+--- SQL operation complete.
 
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+SQL> get libraries in schema trafodion.sales ;
 
-[[use-the-alter-library-dialog-box]]
-== Use the Alter Library Dialog Box
+SALES
 
-The Alter Library dialog box allows you to alter a library and change
-its underlying JAR file.
+--- SQL operation complete.
 
-Requirements:
+SQL>
+```
+////
 
-* You must have been granted the UPDATE privilege for the library. For
-more information, see the Grant/Revoke Privileges Tool in HPDM or the
-GRANT LIBRARY statement in the __Trafodion SQL Reference Manual__.
-* You must either be the owner of the schema where you will alter the
-library or have the ALTER_LIBRARY privilege for the schema to alter the
-library. The schema owner can grant such a schema-level privilege to
-other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
-* The JAR file that you select for the library must contain valid Java
-bytecode and must not be used by another library in the catalog.
-* The JAR file that you select for the library must not exceed a size
-threshold if one has been set for HPDM's internal WMS service, the data
-source, or the system defaults.
-
-For example, if the CONTROL QUERY DEFAULT (CQD),
-POS_ABSOLUTE_MAX_TABLE_SIZE,
-
-has been set for the HPS_MANAGEABILITY service, it will limit the size
-of JAR files that can be uploaded by HPDM. If the JAR file's size
-exceeds the threshold, a warning message is displayed, and the file is
-not uploaded. By default, this CQD is not set for HPDM's internal WMS
-service, the data source, or the system defaults, and HPDM allows you to
-upload JAR files of any size.
-
-
-[cols=",,",options="header",]
-|===
-[[group-box]]
-Group Box
-Control or Field
-Description or Action
-Library
-Catalog
-Name of the catalog where the library will be created. This is a
-read-only field.
-Schema
-Name of the schema where the library will be created. This is a
-read-only field.
-Library Name
-Name of the library. This is a read-only field.
-Code File
-Code File
-Click [ Browse ] to launch the "Select a code file" dialog box and
-navigate to a new JAR file on the client workstation.
-[ Alter ]
-Alters the library.
-[ Close ]
-Closes the dialog box without altering the library.
-[ Help ]
-Displays context-sensitive help for this dialog box.
-|===
-
-[[related-topics]]
-Related Topics
-
-link:#_bookmark100["Alter a Library" (page 32)]
-link:#_bookmark95["Create a Library" (page 29)] link:#_bookmark105["Drop
-a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-
+<<<
 [[drop-a-library]]
 == Drop a Library
 
 Dropping a library removes the library from the schema in the database
-and removes the library's underlying JAR file from the Trafodion
-database.
+and removes the library's underlying JAR file from {project-name}.
 
-Requirements:
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#drop_library_statement[DROP LIBRARY]
+statement including considerations and required privileges.
 
-* You must either be the owner of the schema where you will drop the
-library or have the DROP_LIBRARY privilege for the schema to drop the
-library. The schema owner can grant such a schema-level privilege to
-other users or roles. For more information, see the Grant/Revoke
-Privileges Tool in HPDM or the GRANT SCHEMA statement in the __Trafodion
-SQL Reference Manual__.
+*Example*
 
-To drop a library from the database:
+Your task is to remove Sales class jar file from the `SALES` schema.
 
-1.  In HPDM, select the Database area.
-2.  In the navigation tree pane, expand the tree to display the folders
-of the schema that contains the library, and expand the Libraries folder
-to display the libraries within it.
-3.  Right-click the name of the library, and select Drop Library. The
-Drop Library dialog box appears.
-4.  In the Drop Library dialog box appears, select the Dropping all
-procedures and routines using this library check box to drop all stored
-procedures that are using the library. If you do not select this option
-when stored procedures are using the library, the drop operation will
-fail with an error message.
-5.  Click [ Yes ] to drop the library, or click [ No ] to quit the
-dialog box without dropping the library.
+Do the following using trafci:
 
-Related Topics
+```
+$ trafci
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
 
-link:#_bookmark95["Create a Library" (page 29)]
-link:#_bookmark100["Alter a Library" (page 32)]
+Host Name/IP Address: localhost:23400
+User Name: zz
 
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+Connected to Trafodion
 
-[[download-a-jar-file-from-a-library]]
-== Download a JAR File From a Library
+SQL> get libraries in schema trafodion.sales ;
 
-Requirements:
+SALES
 
-* You must have the CREATE_LIBRARY privilege for the SQL_OPERATIONS
-component. For more information, see the component privileges in the _HP
-Database Manager (HPDM) User Guide_ or the online help in HPDM.
+--- SQL operation complete.
 
-To download a JAR file from a library:
+SQL> DROP LIBRARY trafodion.sales.saleslib ;
 
-1.  In HPDM, select the Database area.
-2.  In the navigation tree pane, expand the tree to display the folders
-of the schema that contains the library, and expand the Libraries folder
-to display the libraries within it.
-3.  Right-click the name of the library, and select Browse Library. The
-Browse Library dialog box appears with the name of the library selected
-in the tree pane and displayed in the right pane. For more information,
-see link:#_bookmark109["Use the Library Browser" (page 35)].
-4.  Click the [ Download ] button. The Browse For Folder dialog box
-appears.
-5.  In the Browse For Folder dialog box, select a target folder on the
-client workstation for downloading the JAR file.
-6.  Click [ OK ] to start downloading the library's underlying JAR file
-to the client workstation, or click [ Cancel ] to quit the Browse For
-Folder dialog box and return to the Browse Library dialog box.
-7.  When notified that the download completed successfully, click [ OK ]
-to return to the Browse Library dialog box.
+--- SQL operation complete.
 
-Related Topics
+SQL>
+```
 
-link:#_bookmark109["Use the Library Browser" (page 35)]
-link:#_bookmark95["Create a Library" (page 29)]
+<<<
+[[display-libraries]]
+== Display Libraries
 
-link:#_bookmark100["Alter a Library" (page 32)] link:#_bookmark105["Drop
-a Library" (page 33)]
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#get_statement[GET]
+statement.
 
-link:#_bookmark110["Display Libraries and Their Properties" (page 36)]
+Use the `GET libraries [ in schema [ catalog-name.] schema-name ] statement in trafci to
+display the libraries in a schema.
 
-[[use-the-library-browser]]
-== Use the Library Browser
+*Example*
 
-Depending on the context in which the Library Browser is launched, you
-can use it to view, create, or drop libraries in the database; to
-download a JAR file from a library in the database to the client
-workstation; or to select a Java method in a library when creating a
-stored procedure. The Library Browser consists of these main parts:
+```
+$ trafci
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
 
-image:media/image5.jpeg[image]
+Host Name/IP Address: localhost:23400
+User Name: zz
 
-Use these buttons to perform various library management tasks:
+Connected to Trafodion
 
-Button Function
+SQL> get libraries in schema trafodion.sales ;
 
-[ Create ]
+SALES
 
-Launches the Create Library dialog box so that you can create a library
-in the database. In the navigation tree pane, select a schema name or
-the Libraries folder to activate this button. For more information, see
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)].
-
-[ Drop ]
-
-Launches the Drop Library dialog box so that you can delete a library
-from the database. In the navigation tree pane, select the name of a
-library to activate this button. For more information, see
-link:#_bookmark105["Drop a Library" (page 33)].
-
-[ Download ]
-
-[ Refresh ]
-
-Launches the Browse For Folder dialog box so that you can select a
-folder on the client workstation for downloading a library's underlying
-JAR file. In the navigation tree pane, select the name of a library to
-activate this button. For more information, see
-link:#_bookmark107["Download] link:#_bookmark107[a JAR File From a
-Library" (page 34)].
-
-Refreshes the data grid with the latest metadata.
-
-[ OK ]
-
-[ Close ]
-
-Accepts your selected Java method for the stored procedure that you are
-creating, closes the Library Browser, and returns to the Create
-Procedure dialog box. This button appears only if you launched the
-Library Browser from the Create Procedure tool. It is activated after
-you select a Java class name in the navigation tree pane and then select
-a Java method name in the data grid. For more information, see
-link:#_bookmark116["Create a Procedure" (page 37)] or
-link:#_bookmark120["Use] link:#_bookmark120[the Create Procedure Dialog
-Box" (page 39)].
-
-Closes the Library Browser.
-
-[ Help ] Displays context-sensitive help for the Library Browser.
-
-Related Topics
-
-link:#_bookmark95["Create a Library" (page 29)]
-
-link:#_bookmark98["Use the Create Library Dialog Box" (page 31)]
-link:#_bookmark105["Drop a Library" (page 33)]
-
-link:#_bookmark107["Download a JAR File From a Library" (page 34)]
-link:#_bookmark116["Create a Procedure" (page 37)]
-
-link:#_bookmark120["Use the Create Procedure Dialog Box" (page 39)]
-
-[[display-libraries-and-their-properties]]
-== Display Libraries and Their Properties
-
-To display the libraries in a schema:
-
-1.  Start the HP Database Manager and log on using any user name.
-2.  Click the Database area.
-3.  In the navigation tree pane, select a Schema, and expand the schema
-so that you can see the object folders underneath it.
-4.  Expand the Libraries tab in the right pane and select a library
-name, or open the Libraries
-folder and select a library name in the tree. HPDM displays the
-libraries for this schema.
-
-image:media/image6.jpeg[image]
-
-For more information about the library properties displayed in HPDM, see
-the _HP Database Manager (HPDM) User Guide_ or the online help in HPDM.
-
+--- SQL operation complete.
+SQL>
+```

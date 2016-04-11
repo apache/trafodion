@@ -89,6 +89,7 @@
           <sections>
             <carousel />
             <body />
+            <carousel />
             <body />
             <columns>2</columns>
             <body />
@@ -227,26 +228,23 @@
       <item href="https://blueprints.launchpad.net/trafodion/+spec/security-ansi-schemas" name="ANSI Schema Support"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/ustat-automation" name="Automated Update Statistics"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/bulkunload" name="Bulk Unload"/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability#Logging_Events" name="Event Handling"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Manageability#TrafodionManageability-LoggingEvents" name="Event Handling"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/hybrid-query-cache" name="Hybrid Query Cache"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/identity-column" name="Identity Column"/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Creating_Statistics_During_Bulk_Load" name="Immediate Update Statistics"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/lob-support" name="Large Object (LOB)"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/ddl-query-invalidation" name="Metadata Query Invalidation"/>
       <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Cmp-divisioning" name="Multi-Temperature Data"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/access-external-hbase-tables" name="Native HBase Tables"/>
-      <item href="docs/odb_user/index.html" name="ODB"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Tutorial:+The+object-oriented+UDF+interface" name="Object-Oriented UDF Tutorial"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/sql-query-cancel" name="Query Cancel"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/security-privilege-updates" name="Privilege Checking"/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Trafodion_Manageability" name="Repository"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Manageability" name="Repository"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/enable-get-statistics-thru-rms" name="Runtime Management System"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/sequence-numbers" name="Sequence Numbers"/>
       <item href="https://blueprints.launchpad.net/trafodion/+spec/skew-buster" name="Skew Buster"/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface" name="Table-Oriented UDF"/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Data_Loading#Trickle_Loading_Data_Into_Trafodion_Tables" name="Trickle Load"/>
       <item href="http:divider" name=""/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Backup_and_Restore" name="Backup/Restore Utility"/>
-      <item href="https://wiki.trafodion.org/wiki/index.php/Metadata_Cleanup" name="Metadata Cleanup Utility"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Backup+and+Restore" name="Backup/Restore Utility"/>
+      <item href="https://cwiki.apache.org/confluence/display/TRAFODION/Metadata+Cleanup" name="Metadata Cleanup Utility"/>
     </menu>
     <menu name="Apache">
       <item href="http://incubator.apache.org/projects/trafodion.html" name="Project Status" target="_blank"/>
