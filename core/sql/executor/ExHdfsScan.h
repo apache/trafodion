@@ -37,6 +37,9 @@
 #include <time.h>
 #include "ExHbaseAccess.h"
 #include "ExpHbaseInterface.h"
+
+#define HIVE_MODE_DOSFORMAT    1
+
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -200,7 +203,7 @@ protected:
   // hdfsRead. Or it could be the eof (in which case there is a good
   // row still waiting to be processed).
   char * extractAndTransformAsciiSourceToSqlRow(int &err,
-						ComDiagsArea * &diagsArea);
+						ComDiagsArea * &diagsArea, int mode);
 
   short moveRowToUpQueue(const char * row, Lng32 len, 
                          short * rc, NABoolean isVarchar);
@@ -429,41 +432,97 @@ protected:
 
 #define RANGE_DELIMITER '\002'
 
-inline char *hdfs_strchr(const char *s, int c, const char *end, NABoolean checkRangeDelimiter)
+inline char *hdfs_strchr(char *s, int c, const char *end, NABoolean checkRangeDelimiter, int mode , int *changedLen)
 {
   char *curr = (char *)s;
-
-  while (curr < end) {
+  int count=0;
+  //changedLen is lenght of \r which removed by this function
+  *changedLen = 0;
+  if( (mode & HIVE_MODE_DOSFORMAT ) == 0)
+  {
+   while (curr < end) {
     if (*curr == c)
+    {
        return curr;
+    }
     if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
        return NULL;
     curr++;
+   }
+  }
+  else
+  {
+   while (curr < end) {
+     if (*curr == c)
+     {
+         if(count>0 && c == '\n')
+         {
+           if(s[count-1] == '\r') 
+             *changedLen = 1;
+         }
+         return curr - *changedLen;
+      }
+      if (checkRangeDelimiter &&*curr == RANGE_DELIMITER)
+         return NULL;
+    curr++;
+    count++;
+   }
   }
   return NULL;
 }
 
 
-inline char *hdfs_strchr(const char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen)
+inline char *hdfs_strchr(char *s, int rd, int cd, const char *end, NABoolean checkRangeDelimiter, NABoolean *rdSeen, int mode, int* changedLen)
 {
   char *curr = (char *)s;
-
-  while (curr < end) {
-    if (*curr == rd) {
-       *rdSeen = TRUE;
-       return curr;
+  int count = 0;
+  //changedLen is lenght of \r which removed by this function
+  *changedLen = 0;
+  if( (mode & HIVE_MODE_DOSFORMAT)>0 )  //check outside the while loop to make it faster
+  {
+    while (curr < end) {
+      if (*curr == rd) {
+         if(count>0 && rd == '\n')
+         {
+             if(s[count-1] == '\r') 
+               *changedLen = 1;
+         }
+         *rdSeen = TRUE;
+         return curr - *changedLen;
+      }
+      else
+      if (*curr == cd) {
+         *rdSeen = FALSE;
+         return curr;
+      }
+      else
+      if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
+         *rdSeen = TRUE;
+         return NULL;
+      }
+      curr++;
+      count++;
     }
-    else
-    if (*curr == cd) {
-       *rdSeen = FALSE;
-       return curr;
+  }
+  else
+  {
+    while (curr < end) {
+      if (*curr == rd) {
+         *rdSeen = TRUE;
+         return curr;
+      }
+      else
+      if (*curr == cd) {
+         *rdSeen = FALSE;
+         return curr;
+      }
+      else
+      if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
+         *rdSeen = TRUE;
+         return NULL;
+      }
+      curr++;
     }
-    else
-    if (checkRangeDelimiter && *curr == RANGE_DELIMITER) {
-       *rdSeen = TRUE;
-       return NULL;
-    }
-    curr++;
   }
   *rdSeen = FALSE;
   return NULL;
