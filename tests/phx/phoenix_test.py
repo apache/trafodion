@@ -603,6 +603,12 @@ def prog_parse_args():
     ArgList._hadoop_distro = distro
     ArgList._maven_local_repo = options.mvnlocalrepo
     ArgList._no_maven = options.nomaven
+
+    # Turn off usage of maven for T2 tests
+    # Remove once TRAFODION-1929 is fixed
+    if options.jdbctype == 'T2':
+        ArgList._no_maven = True
+
     ArgList._export_str1 = options.exportstr1
     ArgList._export_str2 = options.exportstr2
     ArgList._export_str3 = options.exportstr3
