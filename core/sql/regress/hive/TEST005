@@ -236,7 +236,7 @@ cqd HIVE_FILE_CHARSET reset;
 cqd HIVE_SCAN_SPECIAL_MODE '1';
 select * from tbl_dos;
 cqd HIVE_SCAN_SPECIAL_MODE reset;
-drop table trafodion.seabase.tbl_dos_num; 
+drop table if exists trafodion.seabase.tbl_dos_num;
 create table trafodion.seabase.tbl_dos_num (c1 int, c2 int);
 load with NO OUTPUT into trafodion.seabase.tbl_dos_num select * from tbl_dos_num;
 cqd HIVE_SCAN_SPECIAL_MODE '1';
