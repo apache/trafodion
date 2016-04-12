@@ -2834,8 +2834,9 @@ const NAType *DateFormat::synthesizeType()
       if (wasDateformat_)
         {
 	  length = operand.getDisplayLength();
-	  if(operand.containsField(REC_DATE_HOUR) && 
-             (frmt == ExpDatetime::DATETIME_FORMAT_USA))
+          if(operand.containsField(REC_DATE_HOUR) && 
+             ((frmt == ExpDatetime::DATETIME_FORMAT_USA) ||
+              (frmt == ExpDatetime::DATETIME_FORMAT_TS7)))
 	    length += 3; // add 3 for a blank and "am" or "pm"
         }
       else

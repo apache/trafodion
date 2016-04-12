@@ -105,4 +105,12 @@ from t031t1
 where id = 1;
 select * from t031t1;
 
+-- varchar default values were not being handled correctly
+drop table if exists t031t1;
+create  table t031t1 (a varchar(6) not null default 'ABC',
+                      b varchar(6) default 'ABC');
+insert into t031t1 default values;
+upsert into t031t1 default values;
+select * from t031t1;
+
 log;

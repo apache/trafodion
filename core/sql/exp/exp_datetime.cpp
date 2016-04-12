@@ -3445,7 +3445,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 
   // If the format is USA and there is an HOUR field, add AM or PM.
   //
-  if (format == DATETIME_FORMAT_USA &&
+  if (((format == DATETIME_FORMAT_USA) ||
+       (format == DATETIME_FORMAT_TS7)) &&
       startField <= REC_DATE_HOUR &&
       endField >= REC_DATE_HOUR) {
     if (militaryHour < 12) {

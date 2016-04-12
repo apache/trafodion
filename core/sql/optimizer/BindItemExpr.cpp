@@ -4169,14 +4169,32 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
 
   if (ExpDatetime::isDateTimeFormat(frmt_))
     {
-      if (ExpDatetime::isTimestampFormat(frmt_))
+      // if DATEFORMAT function was specified, then time portion of the
+      // format depends on the operand. Date portion remains the same as
+      // what was specified (DEFAULT, USA, EUROPEAN).
+      if ((wasDateformat_) &&
+          (naType0->getTypeQualifier() == NA_DATETIME_TYPE))
+        {
+          const DatetimeType* operand = (DatetimeType *)naType0;
+          if (operand->getPrecision() == SQLDTCODE_TIMESTAMP)
+            {
+              if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS3;// YYYY-MM-DD HH24:MI:SS
+              else if (frmt_ == ExpDatetime::DATETIME_FORMAT_USA)
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS7;// MM/DD/YYYY HH24:MI:SS
+              else
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS2;// DD.MM.YYYY:HH24:MI:SS
+            }
+        }
+
+       if (ExpDatetime::isTimestampFormat(frmt_))
         dateFormat_ = DateFormat::TIMESTAMP_FORMAT_STR;
       else if (ExpDatetime::isTimeFormat(frmt_))
         dateFormat_ = DateFormat::TIME_FORMAT_STR;
       else
         dateFormat_ = DateFormat::DATE_FORMAT_STR;
 
-      if (naType0->getTypeQualifier() == NA_NUMERIC_TYPE)
+     if (naType0->getTypeQualifier() == NA_NUMERIC_TYPE)
         {
           // convert number to char before formatting.
           // Length of target char is equal to formatStr_.

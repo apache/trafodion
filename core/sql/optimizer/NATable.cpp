@@ -8411,6 +8411,7 @@ void NATableDB::removeNATable(CorrName &corrName, ComQiScope qiScope,
       ddlObj.ddlObjName = corrName.getQualifiedNameAsString();
       ddlObj.qiScope = qiScope;
       ddlObj.ot = ot;
+      ddlObj.objUID = -1;
 
       NABoolean found = FALSE;
       for (Lng32 i = 0;

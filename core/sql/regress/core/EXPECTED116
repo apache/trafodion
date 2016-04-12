@@ -341,7 +341,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:13:59 2016
+-- Definition current  Tue Mar 22 18:13:32 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -359,7 +359,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:13:59 2016
+-- Definition current  Tue Mar 22 18:13:32 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -374,7 +374,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Sun Mar 13 00:14:00 2016
+-- Definition current  Tue Mar 22 18:13:33 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -391,7 +391,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:14:10 2016
+-- Definition current  Tue Mar 22 18:13:40 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -406,7 +406,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Sun Mar 13 00:14:10 2016
+-- Definition current  Tue Mar 22 18:13:41 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -423,7 +423,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:14:14 2016
+-- Definition current  Tue Mar 22 18:13:44 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -438,7 +438,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Sun Mar 13 00:14:15 2016
+-- Definition current  Tue Mar 22 18:13:45 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -456,7 +456,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:14:15 2016
+-- Definition current  Tue Mar 22 18:13:45 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -471,7 +471,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Sun Mar 13 00:14:15 2016
+-- Definition current  Tue Mar 22 18:13:45 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -488,7 +488,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:14:25 2016
+-- Definition current  Tue Mar 22 18:13:52 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -503,7 +503,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Sun Mar 13 00:14:25 2016
+-- Definition current  Tue Mar 22 18:13:52 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -521,7 +521,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:14:30 2016
+-- Definition current  Tue Mar 22 18:13:57 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -536,7 +536,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Sun Mar 13 00:14:30 2016
+-- Definition current  Tue Mar 22 18:13:58 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -594,7 +594,7 @@ End of MXCI Session
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Sun Mar 13 00:14:46 2016
+-- Definition current  Tue Mar 22 18:14:15 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -685,6 +685,80 @@ Tables in Schema TRAFODION.T116SCH1
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 T116T1
+
+--- SQL operation complete.
+>>
+>>-- ddl with autocommit off
+>>set transaction autocommit off;
+
+--- SQL operation complete.
+>>drop table if exists t116t2;
+
+--- SQL operation complete.
+>>commit work;
+
+--- SQL operation complete.
+>>invoke t116t2;
+
+*** ERROR[4082] Object TRAFODION.T116SCH1.T116T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>create table t116t2 (a int);
+
+--- SQL operation complete.
+>>invoke t116t2;
+
+-- Definition of Trafodion table TRAFODION.T116SCH1.T116T2
+-- Definition current  Tue Mar 22 18:15:37 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>rollback work;
+
+--- SQL operation complete.
+>>invoke t116t2;
+
+*** ERROR[4082] Object TRAFODION.T116SCH1.T116T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>create table t116t2 (a int);
+
+--- SQL operation complete.
+>>commit work;
+
+--- SQL operation complete.
+>>invoke t116t2;
+
+-- Definition of Trafodion table TRAFODION.T116SCH1.T116T2
+-- Definition current  Tue Mar 22 18:15:41 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>-- ddl not allowed with autocommit off
+>>purgedata t116t2;
+
+*** ERROR[20124] This DDL operation cannot be performed if AUTOCOMMIT is OFF.
+
+--- SQL operation failed with errors.
+>>alter table t116t2 alter column a largeint;
+
+*** ERROR[20125] This ALTER operation cannot be performed if a user-defined transaction has been started or AUTOCOMMIT is OFF.
+
+--- SQL operation failed with errors.
+>>cleanup table t116t2;
+
+*** ERROR[20123] A user-defined transaction has been started. This DDL operation cannot be performed.
+
+--- SQL operation failed with errors.
+>>rollback work;
 
 --- SQL operation complete.
 >>

@@ -81,9 +81,11 @@ select to_char(TIMESTAMP '2016-03-01 10:11:12', 'HH:MI:SS') from (values(1)) x(a
 select dateformat(time '10:11:12.1', default) from (values(1)) x(a);
 select dateformat(time '10:11:12.123', usa) from (values(1)) x(a);
 select dateformat(time '10:11:12', european) from (values(1)) x(a);
+select dateformat(time '10:11:12.12', usa) from (values(1)) x(a);
 select dateformat(timestamp '2016-03-01 10:11:12.1', default) from (values(1)) x(a);
 select dateformat(timestamp '2016-03-01 10:11:12', usa) from (values(1)) x(a);
 select dateformat(timestamp '2016-03-01 10:11:12.123', european) from (values(1)) x(a);
+select dateformat(timestamp '2016-03-01 10:11:12.12', usa) from (values(1)) x(a);
 
 drop table if exists t030t1;
 create table t030t1 (a date, b char(30), c varchar(30));

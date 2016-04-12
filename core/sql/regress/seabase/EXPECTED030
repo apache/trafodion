@@ -434,28 +434,44 @@ March 01, 2016, 10:11:12
 10.11.12
 
 --- 1 row(s) selected.
+>>select dateformat(time '10:11:12.12', usa) from (values(1)) x(a);
+
+(EXPR)        
+--------------
+
+10:11:12.12 AM
+
+--- 1 row(s) selected.
 >>select dateformat(timestamp '2016-03-01 10:11:12.1', default) from (values(1)) x(a);
 
-(EXPR)    
-----------
+(EXPR)               
+---------------------
 
-2016-03-01
+2016-03-01 10:11:12.1
 
 --- 1 row(s) selected.
 >>select dateformat(timestamp '2016-03-01 10:11:12', usa) from (values(1)) x(a);
 
-(EXPR)    
-----------
+(EXPR)             
+-------------------
 
-03/01/2016
+03/01/2016 10:11:12
 
 --- 1 row(s) selected.
 >>select dateformat(timestamp '2016-03-01 10:11:12.123', european) from (values(1)) x(a);
 
-(EXPR)    
-----------
+(EXPR)                 
+-----------------------
 
-01.03.2016
+01.03.2016:10:11:12.123
+
+--- 1 row(s) selected.
+>>select dateformat(timestamp '2016-03-01 10:11:12.12', usa) from (values(1)) x(a);
+
+(EXPR)                   
+-------------------------
+
+03/01/2016 10:11:12.12 AM
 
 --- 1 row(s) selected.
 >>
