@@ -497,7 +497,7 @@ C1           C2           C3           C4
 >>cqd HIVE_SCAN_SPECIAL_MODE reset;
 
 --- SQL operation complete.
->>drop table trafodion.seabase.tbl_dos_num;
+>>drop table if exists trafodion.seabase.tbl_dos_num;
 
 --- SQL operation complete.
 >>create table trafodion.seabase.tbl_dos_num (c1 int, c2 int);
