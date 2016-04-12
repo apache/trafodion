@@ -2984,7 +2984,7 @@ $3~String1.
 20122 ZZZZZ 99999 BEGINNER MINOR LOGONLY Table has indexes. Cannot purge data from partition.
 20123 ZZZZZ 99999 BEGINNER MINOR LOGONLY A user-defined transaction has been started. $0~string0 cannot be performed.
 20124 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 operation cannot be performed if AUTOCOMMIT is OFF.
-20125 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 is a metadata table. PURGEDATA cannot be performed on metadata tables.
+20125 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 operation cannot be performed if a user-defined transaction has been started or AUTOCOMMIT is OFF.
 20126 ZZZZZ 99999 ADVANCED INFRM LOGONLY Vertical partitions exist for the source table. Cannot perform DUP.
 20127 ZZZZZ 99999 BEGINNER MINOR LOGONLY Target option was specified as NEW but $0~string0 exists. DUP operation failed.
 20128 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 is a metadata table. DUP cannot be performed on metadata tables.

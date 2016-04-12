@@ -1080,30 +1080,6 @@ short HbaseDelete::codeGen(Generator * generator)
                                ex_expr::exp_ARITH_EXPR, &lobDelExpr);
     }
 
-#ifdef __ignore
-  ex_expr * lobDelExpr = NULL;
-  if (getTableDesc()->getNATable()->hasLobColumn())
-    {
-      // generate code to delete rows from LOB desc table
-
-      ValueIdList lobDelVIDlist;
-      for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
-        {
-	  const ValueId vid = getIndexDesc()->getIndexColumns()[i];
-          if (vid.getType().isLob())
-            {
-              ItemExpr * ld = new(generator->wHeap())
-                LOBdelete(vid.getItemExpr());
-              ld->bindNode(generator->getBindWA());
-              lobDelVIDlist.insert(ld->getValueId());
-            }
-        }
-
-      expGen->generateListExpr(lobDelVIDlist, 
-                               ex_expr::exp_ARITH_EXPR, &lobDelExpr);
-    }
-#endif
-
   ULng32 rowIdAsciiRowLen = 0; 
   ExpTupleDesc * rowIdAsciiTupleDesc = 0;
   ex_expr * rowIdExpr = NULL;

@@ -1748,7 +1748,8 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
   if ((xnInProgress(&cliInterface)) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
      {
-      *CmpCommon::diags() << DgSqlCode(-20123);
+       *CmpCommon::diags() << DgSqlCode(-20125)
+                           << DgString0("This CLEANUP");
       return;
     }
 

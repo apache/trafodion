@@ -57,7 +57,9 @@ public:
   NABoolean  cachingMetaData();
   void       moveRoutineToDeleteList(NARoutine *cachedNARoutine, const NARoutineDBKey *key);
   void       free_entries_with_QI_key(Int32 numSiKeys, SQL_QIKEY* qiKeyArray);
-  void       removeNARoutine(QualifiedName &routineName, ComQiScope qiScope, Int64 objUID);
+  void       removeNARoutine2(QualifiedName &routineName, ComQiScope qiScope, Int64 objUID);
+  void       removeNARoutine(QualifiedName &routineName, ComQiScope qiScope, Int64 objUID,
+                             NABoolean ddlXns, NABoolean atCommit);
 
 
   // Defined member functions.

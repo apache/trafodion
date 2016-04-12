@@ -28,13 +28,13 @@
 
 The odb tool runs on 64-bit Linux. On a Linux workstation, odb requires `pthread` libraries, which are usually installed by default. It also
 requires the unixODBC Driver Manager to be installed and configured on the client workstation. For more information, see the
-http://trafodion.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+http://trafodion.apache.org/docs/odb/index.html[_Trafodion odb User Guide_].
 
 [[installation-instructions]]
 == Installation Instructions
 
 NOTE: Before following these installation instructions, please make sure to install and configure unixODBC on the client workstation. For more
-information, see the http://trafodion.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+information, see the http://trafodion.apache.org/docs/odb/index.html[_Trafodion odb User Guide_].
 
 You download and extract the Trafodion client package using the instructions in <<introduction-download, Download Installation Package>> above.
 
@@ -54,7 +54,7 @@ The command extracts these files:
 * `README`
 * `/bin/odb64luo` (the odb executable)
 
-3.  You are now ready to run the odb executable. For more information, see the http://trafodion.apache.org/docs/odb_user/index.html[_Trafodion odb User Guide_].
+3.  You are now ready to run the odb executable. For more information, see the http://trafodion.apache.org/docs/odb/index.html[_Trafodion odb User Guide_].
 
 [[odb-uninstall]]
 == Uninstall odb

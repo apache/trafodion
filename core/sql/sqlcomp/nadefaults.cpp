@@ -1971,6 +1971,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
+  DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
@@ -6677,6 +6678,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  tok == DF_WARN         || tok == DF_ON)
 	isValid = TRUE;
       break;
+
+    case HIVE_SCAN_SPECIAL_MODE:
+	isValid = TRUE;
+	break;
 
     case IS_SQLCI:
       // for primary mxcmp that is invoked for user queries, the only valid

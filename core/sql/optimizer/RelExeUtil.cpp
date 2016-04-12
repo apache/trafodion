@@ -4206,12 +4206,16 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects())
     {
       isCleanup_ = TRUE;
-      if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
-        hbaseDDLNoUserXn_ = TRUE;
 
       returnStatus_ = 
         getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
     }
+
+    if (isCleanup_)
+      {
+        if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+          hbaseDDLNoUserXn_ = TRUE;
+      }
 
     if ((isCreateSchema || isDropSchema) ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&

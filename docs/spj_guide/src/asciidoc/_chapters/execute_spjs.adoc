@@ -24,8 +24,8 @@
 = Execute SPJs
 
 This chapter describes how to execute SPJs by using the CALL statement
-and assumes that you have already registered the SPJs in the Trafodion
-database and that you have granted privileges to execute the SPJs to the
+and assumes that you have already registered the SPJs in {project-name}
+and that you have granted privileges to execute the SPJs to the
 appropriate database users. For information, see
 <<deploy-spj-jar-files, Deploy SPJ JAR Files>>
 and <<create-spjs, Create SPJs>>.
@@ -39,11 +39,14 @@ This chapter covers these topics:
 * <<calling-spjs-in-trafci, Calling SPJs in trafci>>
 * <<calling-spjs-from-an-odbc-client-application, Calling SPJs From an ODBC Client Application>>
 * <<calling-spjs-from-a-jdbc-client-application, Calling SPJs From a JDBC Client Application>>
+////
+GTA 20160321: Triggers aren't supported yet. Uncommented as needed.
+
 * <<calling-an-spj-in-a-trigger, Calling an SPJ in a Trigger>>
+////
 
 The CALL statement invokes an SPJ in the database. You can issue a CALL
-statement from any of these applications or interfaces supported by the
-Trafodion platform:
+statement from any of these applications or interfaces supported by {project-name}:
 
 * trafci command-line interface or script file
 * JDBC Type-4 client applications
@@ -55,12 +58,15 @@ use a CALL statement in a trigger but not inside a compound statement or
 with rowsets. The SPJ that you use in a trigger must not have any OUT or
 INOUT parameters or return any result sets.
 
+<<<
+[[required-privileges-for-calling-an-spj]]
 == Required Privileges for Calling an SPJ
 
 To execute the CALL statement, you must have the EXECUTE privilege on
 the procedure. For more information, see
 <<grant-privileges, Grant Privileges>>.
 
+[[transaction-behavior]]
 == Transaction Behavior
 
 The stored procedure's transaction attribute determines whether it
@@ -78,40 +84,45 @@ stored procedure to manage its own transactions, you should set the stored
 procedure's transaction attribute to NO TRANSACTION REQUIRED.
 See <<no-transaction-required>>.
 
+[[transaction-required]]
 === Transaction Required
 
 If you want the SPJ method to inherit the transaction from the calling
 application, set the stored procedure's transaction attribute to
 TRANSACTION REQUIRED (the default setting) when creating the stored
 procedure. For more information, see the Transaction Required attribute
-in link:#_bookmark116["Create a]
-link:#_bookmark116[Procedure" (page 37)]. When a stored procedure's
+in <<create-a-procedure, Create a Procedure>>. When a stored procedure's
 transaction attribute is TRANSACTION REQUIRED, a CALL statement
 automatically initiates a transaction if there is no active transaction.
 
+[[using-transaction-control-statements-or-methods]]
 ==== Using Transaction Control Statements or Methods
 
-If you select Yes for the Transaction Required attribute when creating a
-stored procedure, you should not use transaction control statements (or
+If you select `Yes` for the Transaction Required attribute when creating a
+stored procedure, then you should not use transaction control statements (or
 equivalent JDBC transaction methods) in the SPJ method. Transaction
 control statements include COMMIT WORK and ROLLBACK WORK, and the
-equivalent JDBC transaction methods are Connection.commit() and
-Connection.rollback(). If you try to use transaction control statements
-or methods in an SPJ method when the stored procedure's transaction
-attribute is set to TRANSACTION REQUIRED, the transaction control
-statements or methods in the SPJ method are ignored, and the Java
-virtual machine (JVM) does not report any errors or warnings. When the
-stored procedure's transaction attribute is set to TRANSACTION REQUIRED,
-you should rely on the transaction control statements or methods in the
+equivalent JDBC transaction methods are `Connection.commit()` and
+`Connection.rollback()`.
+
+If you try to use transaction control statements or methods in an SPJ method
+when the stored procedure's transaction attribute is set to TRANSACTION REQUIRED,
+then the transaction control statements or methods in the SPJ method are ignored
+and the Java virtual machine (JVM) does not report any errors or warnings.
+
+When the stored procedure's transaction attribute is set to TRANSACTION REQUIRED,
+then you should rely on the transaction control statements or methods in the
 application that calls the stored procedure and allow the calling
 application to manage the transactions.
 
+[[committing-or-rolling-back-a-transaction]]
 ===== Committing or Rolling Back a Transaction
 
 If you do not use transaction control statements in the calling
-application, the transaction initiated by the CALL statement might not
-automatically commit or roll back changes to the database. When
-AUTOCOMMIT is ON (the default setting), the database engine
+application, then the transaction initiated by the CALL statement might not
+automatically commit or roll back changes to the database.
+
+When AUTOCOMMIT is ON (the default setting), then the database engine
 automatically commits or rolls back any changes made to the database at
 the end of the CALL statement execution. However, when AUTOCOMMIT is
 OFF, the current transaction remains active until the end of the client
@@ -121,8 +132,10 @@ To ensure an atomic unit of work when calling an SPJ, use the COMMIT
 WORK statement in the calling application to commit the transaction when
 the CALL statement succeeds, and use the ROLLBACK WORK statement to roll
 back the transaction when the CALL statement fails. For more information
-about transaction management, see the __Trafodion SQL Reference Manual__.
+about transaction management, see the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
 
+[[no-transaction-required]]
 === No Transaction Required
 
 In some cases, you might not want the SPJ method to inherit the
@@ -135,53 +148,61 @@ useful in these cases:
 multiple DDL or table maintenance operations, on the database. In this
 case, you might want to commit those operations periodically from within
 the SPJ method to avoid locking tables for a long time.
+
 * The stored procedure performs certain SQL operations that must run
 without an active transaction. For example, INSERT, UPDATE, and DELETE
 statements with the WITH NO ROLLBACK option are rejected when a
 transaction is already active, as is the case when a stored procedure
 inherits a transaction from the calling application. The PURGEDATA
 utility is also rejected when a transaction is already active.
+
 * The stored procedure does not access the database. (For an example,
-see the link:#_bookmark250["TOTALPRICE] link:#_bookmark250[Procedure"
-(page 73)].) In this case, the stored procedure does not need to inherit
-the transaction from the calling application. By setting the stored
-procedure's transaction attribute to NO TRANSACTION REQUIRED, you can
-avoid the overhead of the calling application's transaction being
-propagated to the stored procedure.
+see the <<totalprice-procedure, TOTALPRICE Procedure>>.) In this case,
+the stored procedure does not need to inherit the transaction from the
+calling application. By setting the stored procedure's transaction
+attribute to NO TRANSACTION REQUIRED, you can avoid the overhead of
+the calling application's transaction being propagated to the stored
+procedure.
 
 In these cases, you should set the stored procedure's transaction
 attribute to NO TRANSACTION REQUIRED when creating the stored procedure.
 For more information, see the Transaction Required attribute in
-link:#_bookmark116["Create a Procedure" (page 37)].
+<<create-a-procedure, Create a Procedure>>.
 
-If you select No for the Transaction Required attribute when creating a
+<<<
+If you select `No` for the Transaction Required attribute when creating a
 stored procedure and if the SPJ method creates a JDBC default
-connection, that connection will have autocommit enabled by default. You
+connection, then that connection has autocommit enabled by default. You
 can either use the autocommit transactions or disable autocommit
-(conn.setAutoCommit(false);) and use the JDBC transaction methods,
-Connection.commit() and Connection.rollback(), to commit or roll back
+(`conn.setAutoCommit(false);`) and use the JDBC transaction methods,
+`Connection.commit()` and `Connection.rollback()`, to commit or roll back
 work where needed.
 
+[[multithreading]]
 == Multithreading
 
-The Trafodion database engine manages a single thread of execution within
+{project-name} manages a single thread of execution within
 an SPJ environment, even if the application that issues a CALL statement
-is a multithreaded Java application. The CALL statements in a
-multithreaded application can execute in a nonblocking manner, but the
-SPJ methods underlying those CALL statements execute serially within a
+is a multi-threaded Java application.
+
+The CALL statements in a multi-threaded application can execute in a nonblocking manner,
+but the SPJ methods underlying those CALL statements execute serially within a
 given SPJ environment.
 
+[[using-the-call-statement]]
 == Using the CALL Statement
 
 To invoke a stored procedure, specify the name of the stored procedure
-and its arguments in a CALL statement, as shown in
-link:#_bookmark167[Figure 2]:
+and its arguments in a CALL statement, as shown in the figure below.
 
-image:media/image8.png[image]Figure 2 CALL Statement Elements
+.CALL Statement Elements
+image:{images}/call-statement-elements.jpg[CALL Statement Elements]
 
-For the syntax of the CALL statement, see the __Trafodion SQL Reference
-Manual__.
+For the syntax of the CALL statement, see the
+{docs-url}/sql_reference/index.html#call_statement[{project-name} SQL Reference Manual].
 
+<<<
+[[specifying-the-name-of-the-spj]]
 === Specifying the Name of the SPJ
 
 In the CALL statement, specify the name of an SPJ that you have already
@@ -189,22 +210,25 @@ created in the database. Qualify the procedure name with the same
 catalog and schema that you specified when you registered the SPJ. For
 example:
 
-```
-CALL demo.persnl.adjustsalary(202, 5.5, ?);
-```
+[source, sql]
+----
+CALL trafodion.persnl.adjustsalary( 202, 5.5, ? ) ;
+----
 
 Or, for example:
 
-```
-SET SCHEMA demo.persnl;
+[source, sql]
+----
+SET SCHEMA trafodion.persnl ;
 
-CALL adjustsalary(202, 5.5, ?);
-```
+CALL adjustsalary( 202, 5.5, ? ) ;
+----
 
-If you do not fully qualify the procedure name, the database engine
+If you do not fully qualify the procedure name, then the database engine
 qualifies the procedure according to the catalog and schema of the
 current session.
 
+[[listing-the-parameter-arguments-of-the-spj]]
 === Listing the Parameter Arguments of the SPJ
 
 Each argument that you list in the CALL statement must correspond to an
@@ -213,134 +237,125 @@ method does not correspond to an SQL parameter. Do not specify result
 sets in the argument list.
 
 For example, if you registered the stored procedure with three SQL
-parameters (two IN parameters and one OUT parameter), you must list
-three formal parameter arguments, separated by commas, in the CALL
-statement:
+parameters (two IN parameters and one OUT parameter), then you must
+list three formal parameter arguments, separated by commas, in the
+CALL statement:
 
-```
-CALL demo.persnl.adjustsalary(202, 5, ?);
-```
+[source, sql]
+----
+CALL trafodion.persnl.adjustsalary( 202, 5, ? ) ;
+----
 
 If the SPJ does not accept arguments, you must specify empty
 parentheses, as shown below:
 
-```
-CALL demo.sales.lowerprice();
-```
+[source, sql]
+----
+CALL trafodion.sales.lowerprice() ;
+----
 
 If the SPJ has one IN parameter, one OUT parameter, and two result sets,
 you must list the IN and OUT parameters but not the result sets in the
 argument list:
 
 ```
-CALL demo.sales.ordersummary('01-01-2011', ?);
+CALL trafodion.sales.ordersummary('01-01-2011', ?);
 ```
 
+[[data-conversion-of-parameter-arguments]]
 ==== Data Conversion of Parameter Arguments
 
 The database engine performs an implicit data conversion when the data
 type of a parameter argument is compatible with but does not match the
-formal data type of the stored procedure. For stored procedure input
-values, the conversion is from the actual argument value to the formal
-parameter type. For stored procedure output values, the conversion is
-from the actual output value, which has the data type of the formal
-parameter, to the declared type of the dynamic parameter.
+formal data type of the stored procedure.
 
+For stored procedure input values, the conversion is from the actual
+argument value to the formal parameter type.
+
+For stored procedure output values, the conversion is from the actual
+output value, which has the data type of the formal parameter, to the
+declared type of the dynamic parameter.
+
+[[input-parameter-arguments]]
 ==== Input Parameter Arguments
 
 To pass data to an IN or INOUT parameter of an SPJ, specify an SQL value
 expression that evaluates to a character, date-time, or numeric value.
 The SQL value expression can evaluate to NULL provided that the
 underlying Java parameter supports null values. For more information,
-see link:#_bookmark58["Null Input and Output" (page 22)].
+see <<null-input-and-output, Null Input and Output>>.
 
 For an IN parameter argument, use one of these SQL value expressions in
-link:#_bookmark175[Table 2]:
+that table below:
 
-Table 2 Input Parameter Argument Types
+[[table-2]]
+.Input Parameter Argument Types
+[cols="30%,70%", options="header"]
+|===
+| Type of Argument         | Examples
+| Literal                  |
+`CALL adjustsalary( *202*, 5.5, ? ) ;` +
+`CALL dailyorders( *DATE '2011-03-19'*, ? )` ; +
+`CALL totalprice(23, *'nextday'* , ?param ) ;`
+| SQL function (including CASE and CAST expressions) |
+`CALL dailyorders( *CURRENT_DATE*, ? ) ;`
+| Arithmetic expression |
+`CALL adjustsalary( 202, *?percent \* 0.25*, :OUT newsalary ) ;`
+| Concatenation operation |
+`CALL totalprice( 23, *'next' \|\| 'day'*, ?param ) ;`
+| Scalar subquery | 
+`CALL totalprice ( ( SELECT qty_ordered FROM odetail WHERE ordernum = 100210 AND partnum = 5100 ) , 'nextday', ?param ) ;` 
+| Dynamic parameter |
+`CALL adjustsalary( *?*, ?, ?) ;` +
+`CALL adjustsalary( *?param1*, ?param2, ?param3 ) ;`
+|===
 
-Type of Argument Examples
-
-Literal
-
-CALL adjustsalary(**202**, 5.5, ?);
-
-CALL dailyorders(**DATE '2011-03-19**', ?); CALL totalprice(23,
-*'nextday'* , ?param);
-
-SQL function (including CASE and CAST expressions)
-
-CALL dailyorders(**CURRENT_DATE**, ?);
-
-Arithmetic expression CALL adjustsalary(202, **?percent * 0.25**, :OUT
-newsalary);
-
-Concatenation operation
-
-CALL totalprice(23, **'next' || 'day'**, ?param);
-
-Scalar subquery
-
-Dynamic parameter
-
-CALL totalprice(**(SELECT qty_ordered**
-
-*FROM odetail*
-
-**WHERE ordernum = 100210 AND partnum = 5100)**,
-
-'nextday', ?param);
-
-CALL adjustsalary(**?**, ?, ?);
-
-CALL adjustsalary(**?param1**, ?param2, ?param3);
-
-For more information about SQL value expressions, see the __Trafodion SQL
-Reference Manual__.
+For more information about SQL value expressions, see the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
 
 Because an INOUT parameter passes a single value to and accepts a single
 value from an SPJ, you can specify only dynamic parameters for INOUT
 parameter arguments in a CALL statement.
 
+<<<
+[[output-parameter-arguments]]
 ==== Output Parameter Arguments
 
 Except for result sets, an SPJ returns values in OUT and INOUT
 parameters. Each OUT or INOUT parameter accepts only one value from an
 SPJ. Any attempt to return more than one value to an output parameter
-results in a Java exception. See link:#_bookmark48["Returning Output
-Values From the Java Method"] link:#_bookmark48[(page 19)].
+results in a Java exception. See
+<<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>.
 
 OUT and INOUT parameter arguments must be dynamic parameters in a client
-application (for example, ?) or named or unnamed parameters in trafci
-(for example, ?param or ?).
+application (for example, `?`) or named or unnamed parameters in trafci
+(for example, `?param` or `?`).
 
 For information about how to call SPJs in different applications, see:
 
-* link:#_bookmark188["Calling SPJs in trafci" (page 53)]
-* link:#_bookmark196["Calling SPJs From an ODBC Client Application"
-(page 54)]
-* link:#_bookmark200["Calling SPJs From a JDBC Client Application" (page
-56)]
+* <<calling-spjs-in-trafci, Calling SPJs in trafci>>
+* <<calling-spjs-from-an-odbc-client-application, Calling SPJs From an ODBC Client Application>>
+* <<calling-spjs-from-a-jdbc-client-application, Calling SPJs From a JDBC Client Application>>
 
+[[result-sets]]
 ==== Result Sets
 
 Result sets are an ordered set of open cursors that the SPJ method
-returns to the calling application in java.sql.ResultSet[] parameter
-arrays. The java.sql.ResultSet[] parameters do not correspond to SQL
+returns to the calling application in `java.sql.ResultSet[]` parameter
+arrays. The `java.sql.ResultSet[]` parameters do not correspond to SQL
 parameters, so you must not include them in the parameter argument list
 of a CALL statement.
 
 The calling application can retrieve multiple rows of data from the
-java.sql.ResultSet[]
-parameters. For information about how to process result sets in
-different applications, see:
+`java.sql.ResultSet[]` parameters. For information about how to process
+result sets in different applications, see:
 
-* link:#_bookmark194["Returning Result Sets in trafci" (page 54)]
-* link:#_bookmark198["Returning Result Sets in an ODBC Client
-Application" (page 55)]
-* link:#_bookmark204["Returning Result Sets in a JDBC Client
-Application" (page 56)]
+* <<returning-result-sets-in-trafci, Returning Result Sets in trafci>>
+* <<returning-result-sets-in-an-odbc-client, Returning Result Sets in an ODBC Client>>
+* <<returning-result-sets-in-a-jdbc-client, Returning Result Sets in a JDBC Client>>
 
+<<<
+[[calling-spjs-in-trafci]]
 == Calling SPJs in trafci
 
 In trafci, you can invoke an SPJ by issuing a CALL statement directly or
@@ -356,26 +371,29 @@ displays all output parameter values and result sets after you issue the
 CALL statement. The procedure call changes the value of a named
 parameter that you use as an OUT or INOUT parameter.
 
-For more information about named and unnamed parameters, see the _HP
-Database Command_ __Interface (trafci) Guide__.
+For more information about named and unnamed parameters, see the
+{docs-url}/command_interface/index.html[{project-name} Command Interface Guide].
 
+[[using-named-parameters]]
 === Using Named Parameters
 
 In an trafci session, invoke the SPJ named TOTALPRICE, which has two IN
-parameters and one INOUT parameter. This SPJ accepts the quantity,
-shipping speed, and price of an item, calculates the total price,
-including tax and shipping charges, and returns the total price. For
-more information, see the link:#_bookmark250["TOTALPRICE Procedure"
-(page 73)].
+parameters and one INOUT parameter.
+
+This SPJ accepts the quantity, shipping speed, and price of an item,
+calculates the total price, including tax and shipping charges, and
+returns the total price. For more information, see the
+<<totalprice-procedure, TOTALPRICE Procedure>>.
 
 Set the input value for the INOUT parameter by entering a SET PARAM
 command before calling the SPJ:
 
-```
-SQL>**set param ?p 10;**
+[source, sql]
+----
+SQL> SET PARAM ?p 10 ;
 
-SQL>**call demo.sales.totalprice(23, 'standard', ?p);**
-```
+SQL> CALL trafodion.sales.totalprice( 23, 'standard', ?p ) ;
+----
 
 The CALL statement returns the total price of the item:
 
@@ -390,12 +408,15 @@ p
 The value of the named parameter, ?p, changes from 10 to the returned
 value, 253.97:
 
-```
-SQL>**show param**
+[source, sql]
+----
+SQL> SHOW PARAM
 
 p 253.97
-```
+----
 
+<<<
+[[using-unnamed-parameters]]
 === Using Unnamed Parameters
 
 In an trafci session, invoke the SPJ named TOTALPRICE by preparing and
@@ -403,13 +424,14 @@ executing a CALL statement. The INOUT parameter accepts a value that is
 set by the USING clause of the EXECUTE statement and returns the total
 price:
 
-```
-SQL>**prepare stmt1 from call demo.sales.totalprice(50, 'nextday',?);**
+[source, sql]
+----
+SQL> PREPARE stmt1 FROM CALL trafodion.sales.totalprice( 50, 'nextday', ? ) ;
 
 --- SQL command prepared.
 
-SQL>**execute stmt1 using 2.25;**
-```
+SQL> EXECUTE stmt1 USING 2.25 ; 
+----
 
 The output of the prepared CALL statement is:
 
@@ -426,25 +448,29 @@ and executing a CALL statement in which all three parameters accept
 values that are set by the USING clause of the EXECUTE statement. The
 INOUT parameter returns the total price:
 
-```
-SQL>**prepare stmt2 from call demo.sales.totalprice(?,?,?);**
+[source, sql]
+----
+SQL> PREPARE stmt2 FROM CALL trafodion.sales.totalprice( ?, ?, ? ) ;
 
 --- SQL command prepared.
 
-SQL>**execute stmt2 using 3, 'economy', 16.99;**
-```
+SQL> EXECUTE stmt2 USING 3, 'economy', 16.99 ;
+----
 
 The output of the prepared CALL statement is:
 
-```
+[source, sql]
+----
 PRICE
 --------------------
 
 57.13
 
 --- SQL operation complete.
-```
+----
 
+<<<
+[[returning-result-sets-in-trafci]]
 === Returning Result Sets in trafci
 
 If a CALL statement returns result sets, trafci displays column headings
@@ -452,8 +478,10 @@ and data for each returned result set in the same format as SELECT
 statements. For example, this CALL statement returns an output parameter
 for the number of orders and two result sets in the trafci session:
 
-```
-SQL>**call demo.sales.ordersummary('01-01-2011', ?);**
+
+[source, sql]
+----
+SQL> CALL trafodion.sales.ordersummary( '01-01-2011', ? ) ;
 
 NUM_ORDERS
 --------------------
@@ -461,195 +489,217 @@ NUM_ORDERS
 
 ORDERNUM NUM_PARTS            AMOUNT               ORDER_DATE LAST_NAME 
 -------- -------------------- -------------------- ---------- --------------------
-HUGHES HUGHES SCHNABL
-
-...
+  100210                    4             19020.00 2011-04-10 HUGHES
+  100250                    4             22625.00 2011-01-23 HUGHES
+  101220                    4             45525.00 2011-07-21 SCHNABL
+     ...                  ...                  ...        ... ...
 
 --- 13 row(s) selected.
 
 ORDERNUM PARTNUM UNIT_PRICE QTY_ORDERED PARTDESC
-
--------- ------- ---------- ----------- ------------------ 100210 244
-3500.00 3 PC GOLD, 30 MB
-
-100210 2001 1100.00 3 GRAPHIC PRINTER,M1
-
-100210 2403 620.00 6 DAISY PRINTER,T2
-
-... ... ... ... ...
+-------- ------- ---------- ----------- ------------------ 
+  100210     244    3500.00           3 PC GOLD, 30 MB
+  100210    2001    1100.00           3 GRAPHIC PRINTER,M1
+  100210    2403     620.00           6 DAISY PRINTER,T2
+     ...     ...        ...         ... ...
 
 --- 70 row(s) selected.
 
 --- SQL operation complete.
-```
+----
 
-For other result set examples, see link:#_bookmark221[Appendix A (page
-62)].
+For other result set examples, see <<sample-spjs, Appendix A: Sample SPJs>>.
 
+<<<
+[[calling-spjs-from-an-odbc-client-application]]
 == Calling SPJs From an ODBC Client Application
 
 You can execute a CALL statement in an ODBC client application.
 Microsoft ODBC requires that you put the CALL statement in an escape
 clause:
 
-```
-{call _procedure-name_ ([__parameter__][,[__parameter__]]...)}
-```
+[source, sql]
+----
+{ CALL procedure-name ( [ parameter ] [ , [ parameter ] ] ... ) }
+----
 
 For IN or INOUT parameters, use a literal or a parameter marker (?). You
 cannot use an empty string as an IN or INOUT parameter in the argument
 list. If you specify a literal for an INOUT parameter, the driver
 discards the output value.
 
-For OUT parameters, you can use only a parameter marker (?). You must
-bind all parameter markers with the SQLBindParameter function before you
+For OUT parameters, you can use only a parameter marker (`?`). You must
+bind all parameter markers with the `SQLBindParameter` function before you
 can execute the CALL statement.
 
 In this example, a CALL statement is executed from an ODBC client
 application:
 
-```
+[source, cplusplus]
+----
 /* Declare variables. */
-SQLHSTMT hstmt; SQL_NUMERIC_STRUCT salary; SDWORD cbParam = SQL_NTS;
+SQLHSTMT hstmt ;
+SQL_NUMERIC_STRUCT salary ;
+SDWORD cbParam = SQL_NTS ;
 
 /* Bind the parameter markers. */
-
-SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_NUMERIC, SQL_NUMERIC, 4, 0, 202, 0, &cbParam);
-
-SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT, 0, 0, 5.5, 0, &cbParam);
-
-SQLBindParameter(hstmt, 3, SQL_PARAM_OUTPUT, SQL_C_NUMERIC, SQL_NUMERIC, 8, 2, &salary, 0, &cbParam);
+SQLBindParameter( hstmt, 1, SQL_PARAM_INPUT, SQL_C_NUMERIC, SQL_NUMERIC, 4, 0, 202, 0, &cbParam ) ;
+SQLBindParameter( hstmt, 2, SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT, 0, 0, 5.5, 0, &cbParam ) ;
+SQLBindParameter( hstmt, 3, SQL_PARAM_OUTPUT, SQL_C_NUMERIC, SQL_NUMERIC, 8, 2, &salary, 0, &cbParam ) ;
 
 /* Execute the CALL statement. */
+SQLExecDirect( hstmt, "{ CALL trafodion.persnl.adjustsalary( ?, ?, ? ) }", SQL_NTS ) ;
+----
 
-SQLExecDirect(hstmt, "{call demo.persnl.adjustsalary(?,?,?)}", SQL_NTS);
-```
+////
+GTA 20160321: The JDBC T4 manual does not exist yet. Enable this line
+once written.
 
-For more information about ODBC client applications, see the __Neoview
-ODBC Drivers Manual__.
+For more information about the ODBC client applications,
+see the
+{docs-url}/odbc_reference/index.html[{project-name} ODBC Driver Programmer's Reference].
 
+////
+
+<<<
+[[returning-result-sets-in-an-odbc-client-application]]
 === Returning Result Sets in an ODBC Client Application
 
 This example shows how an ODBC client application processes the result
-sets returned by a CALL statement. The SQLMoreResults() function closes
+sets returned by a CALL statement. The `SQLMoreResults()` function closes
 the current result set and moves processing to the next available result
 set.
 
-NOTE: The HP ODBC API does not currently support interleaved result set
+NOTE: The {project-name} ODBC API does not currently support interleaved result set
 processing, where more than one returned result set can be open at a
 time.
 
-```
+[source, cplusplus]
+----
 /* Allocate a statement handle */
-SQLHSTMT s;
+SQLHSTMT s ;
 
-RETCODE rc = SQLAllocHandle(SQL_HANDLE_STMT, myConnection, &s);
+RETCODE rc = SQLAllocHandle( SQL_HANDLE_STMT, myConnection, &s ) ;
 
 /* Prepare a CALL */
-char *stmtText = "{call demo.sales.ordersummary('01-01-2011', ?)}";
-rc = SQLPrepare(s, (SQLCHAR *) stmtText, strlen(stmtText));
+char *stmtText = "{ CALL trafodion.sales.ordersummary( '01-01-2011', ? ) } ";
+rc = SQLPrepare( s, (SQLCHAR *) stmtText, strlen( stmtText ) ) ;
 
 /* Bind the output parameter */
-_int64 num_orders = 0; SQLINTEGER indicator;
+_int64 num_orders = 0 ;
+SQLINTEGER indicator ;
 
-rc = SQLBindParameter(s, 2, SQL_PARAM_OUTPUT, SQL_C_SBIGINT, SQL_BIGINT, 0, 0, &num_orders, 0, &indicator);
+rc = SQLBindParameter( s
+                     , 2
+		     , SQL_PARAM_OUTPUT
+		     , SQL_C_SBIGINT
+		     , SQL_BIGINT
+		     , 0
+		     , 0
+		     , &num_orders
+		     , 0
+		     , &indicator
+		     ) ;
 
 /* Execute the CALL */
-rc = SQLExecute(s);
+rc = SQLExecute( s ) ;
 
 /* Process all returned result sets. The outer while loop repeats */
-
 /* until there are no more result sets. */
-while ((rc = SQLMoreResults(s)) != SQL_NO_DATA)
+while ( ( rc = SQLMoreResults( s ) ) != SQL_NO_DATA )
 {
   /* The inner while loop processes each row of the current result set */
-  while (SQL_SUCCEEDED(rc = SQLFetch(hStmt)))
+  while ( SQL_SUCCEEDED( rc = SQLFetch( hStmt ) ) )
   {
     /* Process the row */
   }
 }
+----
 
+<<<
+[[calling-spjs-from-a-jdbc-client-application]]
 == Calling SPJs From a JDBC Client Application
 
 You can execute a CALL statement in a JDBC client application by using
 the JDBC CallableStatement interface. The HP JDBC Type 4 driver requires
 that you put the CALL statement in an escape clause:
 
-```
-{call _procedure-name_ ([__parameter__[{, __parameter__}...]])}
-```
+[source, sql]
+----
+{ CALL procedure-name ( [ parameter [ { , parameter } ... ] ] ) }
+----
 
-Set input values for IN and INOUT parameters by using the set__type__()
-methods of the CallableStatement interface.
+Set input values for IN and INOUT parameters by using the `set_type()`
+methods of the `CallableStatement` interface.
 
 Retrieve output values from OUT and INOUT parameters by using the
-get__type__() methods of the CallableStatement interface.
+`get_type()` methods of the `CallableStatement` interface.
 
-If the parameter mode is OUT or INOUT, you must register the parameter
-as an output parameter by using the registerOutParameter() method of the
-CallableStatement interface before executing the CALL statement.
+If the parameter mode is OUT or INOUT, then you must register the parameter
+as an output parameter by using the `registerOutParameter()` method of the
+`CallableStatement` interface before executing the CALL statement.
 
 In this example, a CALL statement is executed from a JDBC client application:
 
-```
+[source, java]
+----
 CallableStatement stmt =
+   con.prepareCall( "{ CALL trafodion.persnl.adjustsalary( ?, ?, ? ) }" ) ;
 
-con.prepareCall("{call demo.persnl.adjustsalary(?,?,?)}");
+stmt.setBigDecimal( 1, 202 ) ; // x = 202
+stmt.setDouble( 2, 5.5 ) ;     // y = 5.5
+stmt.registerOutParameter( 3, java.sql.Types.NUMERIC ) ;
+stmt.execute() ;
 
-stmt.setBigDecimal(1,202); // x = 202 stmt.setDouble(2,5.5); // y = 5.5
-stmt.registerOutParameter(3, java.sql.Types.NUMERIC);
+BigDecimal z = stmt.getBigDecimal( 3 ) ; // Retrieve the value of the OUT parameter
+----
 
-stmt.execute();
+////
+GTA 20160321: The JDBC T4 manual does not exist yet. Enable this line
+once written.
 
-BigDecimal z = stmt.getBigDecimal(3); // Retrieve the value of the
-// OUT parameter
-```
-For more information about the HP JDBC Type 4 driver and mappings of SQL
-to JDBC data types, see the __Neoview JDBC Type 4 Driver Programmer's
-Reference__.
+For more information about the {project-name} JDBC Type 4 driver and mappings of SQL to JDBC data types,
+see the
+{docs-url}/jdbct4_reference/index.html[{project-name} JDBC Type 4 Driver Programmer's Reference].
 
+////
+
+<<<
+[[returning-result-sets-in-a-jdbc-client-application]]
 === Returning Result Sets in a JDBC Client Application
 
 This example shows serial result set processing in a JDBC client
 application where the result sets are processed in order and one at a
 time after the CALL statement executes. The
-java.sql.Statement.getMoreResults() method closes the current result set
+`java.sql.Statement.getMoreResults()` method closes the current result set
 and moves processing to the next available result set.
 
-```
+[source, java]
+----
 // Prepare a CALL statement
+java.sql.CallableStatement s =
+   myConnection.prepareCall( "{ CALL trafodion.sales.ordersummary( '01-01-2011', ? ) }" ) ;
 
-java.sql.CallableStatement s = myConnection.prepareCall ( "{call
-demo.sales.ordersummary('01-01-2011', ?)}" );
-
-// Register an output parameter s.registerOutParameter(1,
-java.sql.Types.BIGINT);
+// Register an output parameter
+s.registerOutParameter( 1, java.sql.Types.BIGINT ) ;
 
 // Execute the CALL
-
-boolean rsAvailable = s.execute();
+boolean rsAvailable = s.execute() ;
 
 // Process all returned result sets. The outer while loop continues
-
-// until there are no more result sets. while (rsAvailable)
-
+// until there are no more result sets.
+while ( rsAvailable )
 {
+   // The inner while loop processes each row of the current result set
+   java.sql.ResultSet rs = s.getResultSet() ;
+   while ( rs.next() )
+   {
+      // Process the row
+   }
 
-// The inner while loop processes each row of the current result set
-java.sql.ResultSet rs = s.getResultSet();
-
-while (rs.next())
-
-{
-
-// Process the row
-
+   rsAvailable = s.getMoreResults() ;
 }
-
-rsAvailable = s.getMoreResults();
-
-}
-```
+----
 
 This example shows how a JDBC client application can have more than one
 stored procedure result set open at a given time. The
@@ -658,73 +708,72 @@ uses its input argument to decide whether currently open result sets
 should remain open or be closed before the next result set is made
 available.
 
-```
+[source, java]
+----
 // Prepare a CALL statement
+java.sql.CallableStatement s =
+   myConnection.prepareCall ( "{ CALL trafodion.sales.ordersummary( '01-01-2011', ? ) }" ) ;
 
-java.sql.CallableStatement s = myConnection.prepareCall ( "{call
-demo.sales.ordersummary('01-01-2011', ?)}" );
+// Register an output parameter
+s.registerOutParameter( 1, java.sql.Types.BIGINT ) ;
 
-// Register an output parameter s.registerOutParameter(1,
-java.sql.Types.BIGINT);
+// Execute the CALL
+s.execute() ;
 
-// Execute the CALL s.execute();
-
-// Open the FIRST result set java.sql.ResultSet firstRS =
-s.getResultSet();
+// Open the FIRST result set
+java.sql.ResultSet firstRS = s.getResultSet() ;
 
 // Open the SECOND result set but do not close the FIRST
-s.getMoreResults(java.sql.Statement.KEEP_CURRENT_RESULT);
-java.sql.ResultSet secondRS = s.getResultSet();
+s.getMoreResults( java.sql.Statement.KEEP_CURRENT_RESULT ) ;
+java.sql.ResultSet secondRS = s.getResultSet() ;
 
 // The outer loop processes each row of the FIRST result set while
-(firstRS.next())
-
+( firstRS.next())
 {
-
-// Process a row from the FIRST result set
-// The inner loop processes some number of rows from the SECOND
-// result set. The number depends on data extracted from the
-// current row of the FIRST result set.
-
-for (int i = 0; i < NUM_ROWS_TO_PROCESS; i++)
-
-{
-
-// Process a row from the SECOND result set secondRS.next();
-
+   // Process a row from the FIRST result set
+   // The inner loop processes some number of rows from the SECOND
+   // result set. The number depends on data extracted from the
+   // current row of the FIRST result set.
+   for ( int i = 0 ; i < NUM_ROWS_TO_PROCESS ; i++ )
+   {
+      // Process a row from the SECOND result set
+      secondRS.next() ;
+   }
 }
+----
 
-}
-```
+////
+GTA 20160321: Triggers aren't supported yet. Uncommented as needed.
 
+[[calling-an-spj-in-a-trigger]]
 == Calling an SPJ in a Trigger
 
 A trigger is a mechanism in the database that enables the database
 engine to perform certain actions when a specified event occurs. SPJs
 are useful as triggered actions because they can help you encapsulate
 and enforce rules in the database. For more information about the
-benefits of using SPJs, see link:#_bookmark11["Benefits of SPJs" (page
-11)].
+benefits of using SPJs, see <<benefits-of-spjs, Benefits of SPJs>>
 
-Trafodion SQL supports a CALL statement in a trigger provided that the
+{project-name} SQL supports a CALL statement in a trigger provided that the
 SPJ in the CALL statement does not have any OUT or INOUT parameters or
 return any result sets. For more information, see
-link:#_bookmark48["Returning Output Values From the Java Method" (page
-19)], link:#_bookmark183["Output Parameter Arguments"]
-link:#_bookmark183[(page 52)], or link:#_bookmark54["Returning Stored
-Procedure Result Sets" (page 20)].
+<<returning-output-values-from-the-java-method, Returning Output Values From the Java Method>>,
+<<output-parameter-arguments, Output Parameter Arguments>>, or
+<<returning-stored-procedure-result-sets, Returning Stored Procedure Result Sets>>.
 
 This example creates a trigger that executes an SPJ named LOWERPRICE
 when the QTY_ON_HAND column of the PARTLOC table is updated and exceeds
 500 parts:
 
-```
-CREATE TRIGGER demo.sales.setsalesprice AFTER UPDATE OF qty_on_hand
-ON demo.invent.partloc FOR EACH STATEMENT
-REFERENCING NEW as newqty
-WHEN ( SUM(newqty.qty_on_hand) > 500 ) CALL demo.sales.lowerprice();
-```
+[source, sql]
+----
+CREATE TRIGGER trafodion.sales.setsalesprice AFTER UPDATE OF qty_on_hand
+ON trafodion.invent.partloc
+FOR EACH STATEMENT REFERENCING NEW as newqty
+    WHEN ( SUM( newqty.qty_on_hand ) > 500 )
+    CALL trafodion.sales.lowerprice() ;
+----
 
-For information about the CREATE TRIGGER syntax, see the __Trafodion SQL
-Reference Manual__.
-
+For information about the CREATE TRIGGER syntax, see the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
+////
