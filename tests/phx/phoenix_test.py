@@ -293,7 +293,7 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
         hadoop_dict = {
             'HDP': {'MY_HADOOP_DISTRO': 'HDPReleases',
                     'MY_HADOOP_VERSION': get_hadoop_component_ver(hadoop_distro, "hadoop"),
-                    'MY_MVN_URL': 'http://repo.hortonworks.com/content/repositories/releases/',
+                    'MY_MVN_URL': 'http://repo.hortonworks.com/content/groups/public/',
                     'MY_HBASE_VERSION': get_hadoop_component_ver(hadoop_distro, "hbase"),
                     'MY_HIVE_VERSION': get_hadoop_component_ver(hadoop_distro, "hive"),
                     'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
