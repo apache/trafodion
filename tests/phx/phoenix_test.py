@@ -746,6 +746,8 @@ gvars.my_MVN_ERROR_FILE = None
 
 prog_parse_args()
 
+os.chdir(gvars.my_ROOT)
+
 # check to make sure executables mvn and javac are in the PATH
 if spawn.find_executable("mvn") is None:
     print "ERROR: Could not find the Maven executable \'mvn\' in the PATH! \n"
