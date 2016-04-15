@@ -3552,7 +3552,6 @@ enum DefaultConstants
   
   TRAF_UPSERT_ADJUST_PARAMS,
   TRAF_UPSERT_WB_SIZE,
-  TRAF_UPSERT_AUTO_FLUSH,
   TRAF_UPSERT_WRITE_TO_WAL,
   TRAF_LOAD_PREP_ADJUST_PART_FUNC,
   TRAF_LOAD_PREP_TMP_LOCATION,
@@ -3801,10 +3800,18 @@ enum DefaultConstants
   // If this cqd is on, then other alters (name, datatype) are also supported.
   TRAF_ALTER_COL_ATTRS,
 
-  // if ON, upsert into the table will use the default value for the omitted columns
-  // with default value 
-  TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS,
+  // Controls the behavior of upsert - MERGE, REPLACE, OPTIMAL
+  TRAF_UPSERT_MODE,
+  // if set, let users create system reserved names. Default is OFF.
+  // This cqd should only be used to debug or if system column names are
+  // REALLY needed by users.
+  // Currently syskey, _salt_, _division_.
+  TRAF_ALLOW_RESERVED_COLNAMES,
 
+  // bitmap to control various special behavior of HIVE_SCAN
+  //   // 1 : DOS FORMAT conversion on
+  //     // 2 : todo
+  HIVE_SCAN_SPECIAL_MODE,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
@@ -3895,6 +3902,7 @@ enum DefaultToken {
  DF_MEASURE,
  DF_MEDIUM,
  DF_MEDIUM_LOW,
+ DF_MERGE,
  DF_MINIMUM,
  DF_MMAP,
  DF_MULTI_NODE,
@@ -3905,6 +3913,7 @@ enum DefaultToken {
  DF_ON,
  DF_OPENS_FOR_WRITE,
  DF_OPERATOR,
+ DF_OPTIMAL,
  DF_ORDERED,
  DF_PERTABLE,
  DF_PRINT,
@@ -3916,6 +3925,7 @@ enum DefaultToken {
  DF_RELEASE,
  DF_REMOTE,
  DF_REPEATABLE_READ,
+ DF_REPLACE,
  DF_REPSEL,
  DF_RESOURCES,
  DF_RETURN,

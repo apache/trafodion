@@ -2553,7 +2553,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		column_attributes
 %type <pElemDDL>  		column_attribute
 %type <tokval>    		constraints_keyword
-%type <pElemDDL>  		optional_col_def_default_clause
 %type <pElemDDL>  		col_def_default_clause
 %type <pElemDDL>  		col_def_default_clause_argument
 %type <pElemDDL>                alter_col_default_clause_arg
@@ -24951,8 +24950,7 @@ reset_in_column_defn :
                   }
 
 /* type pElemDDL */
-column_definition : qualified_name data_type optional_col_def_default_clause
-                                optional_column_attributes
+column_definition : qualified_name data_type optional_column_attributes
                                 {
                                   NAType * type = $2;
 
@@ -25016,8 +25014,7 @@ column_definition : qualified_name data_type optional_col_def_default_clause
                                          colFam /* column family */,
                                          colNam /*column_name*/,
                                          type /*data_type*/,
-                                         $3 /*optional_col_def_default_clause*/,
-                                         $4 /*optional_column_attributes*/);
+                                         $3 /*optional_column_attributes*/);
                                   delete $1 /*column_name*/;
                                 }
 
@@ -25051,7 +25048,6 @@ column_definition : qualified_name
 				    ElemDDLColDef(
                                          colFam /* column family */,
                                          colNam /*column_name*/,
-                                          NULL,
                                          NULL,
                                          NULL);
                                   delete $1 /*column_name*/;
@@ -25059,14 +25055,6 @@ column_definition : qualified_name
 
 /* type stringval */
 column_name : identifier
-
-/* type pElemDDL */
-optional_col_def_default_clause : empty
-                                {
-                                  $$ = NULL;
-                                }
-
-                      | col_def_default_clause
 
 /* type pElemDDL */
 col_def_default_clause : TOK_DEFAULT enableCharsetInferenceInColDefaultVal col_def_default_clause_argument
@@ -25185,6 +25173,7 @@ column_attribute : column_constraint_definition
                     | optional_lobattrs
                     | heading
                     | serialized
+                    | col_def_default_clause
 
 /* type pElemDDL */
 column_constraint_definition :  constraint_name_definition
@@ -28765,6 +28754,8 @@ before_trigger_prefix: create_trigger_keywords ddl_qualified_name
              TOK_BEFORE iud_event optional_update_column_list TOK_ON
              ddl_qualified_name referencing_clause before_action_orientation
              {
+               *SqlParser_Diags << DgSqlCode(-3131);
+               YYERROR;
 
 		InsideTriggerDefinition = TRUE;
 
@@ -28839,6 +28830,9 @@ after_trigger_prefix: create_trigger_keywords ddl_qualified_name
              TOK_AFTER iud_event optional_update_column_list TOK_ON
              ddl_qualified_name referencing_clause after_action_orientation
              {
+               *SqlParser_Diags << DgSqlCode(-3131);
+               YYERROR;
+
 		InsideTriggerDefinition = TRUE;
 
 	     //  if (NonISO88591LiteralEncountered) {
@@ -29119,6 +29113,9 @@ mv_definition: create_mv_keywords ddl_qualified_name
                 optional_in_memory_clause
                 as_token query_expression
     {
+      *SqlParser_Diags << DgSqlCode(-3131);
+      YYERROR;
+
       RelRoot *top = finalize($11);
       ForUpdateSpec spec(FALSE);
       spec.finalizeUpdatability(top);
@@ -29248,6 +29245,9 @@ create_mv_keywords: TOK_CREATE optional_ghost mv_token
 // type pStmtDDL 
 create_mvrgroup_statement : TOK_CREATE TOK_MVGROUP ddl_qualified_name
 {
+  *SqlParser_Diags << DgSqlCode(-3131);
+  YYERROR;
+
   $$ = new (PARSERHEAP())StmtDDLCreateMvRGroup(*$3);
   delete $3;
 }
@@ -30662,10 +30662,13 @@ alter_view_statement : TOK_ALTER TOK_VIEW ddl_qualified_name
 // type pStmtDDL
 alter_mv_statement : TOK_ALTER optional_ghost mv_token alter_mv_body
 					 {
-						 $4->castToStmtDDLAlterMV()->synthesize();
-						 $$ = $4 /*alter_mv_body*/;
-                                                 if ($2) /*optional_ghost*/
-                                                   $$->setIsGhostObject(TRUE);
+                                           *SqlParser_Diags << DgSqlCode(-3131);
+                                           YYERROR;
+                                           
+                                           $4->castToStmtDDLAlterMV()->synthesize();
+                                           $$ = $4 /*alter_mv_body*/;
+                                           if ($2) /*optional_ghost*/
+                                             $$->setIsGhostObject(TRUE);
 					 }
 
 
@@ -31881,6 +31884,9 @@ drop_table_start_tokens : TOK_DROP TOK_TABLE
 // MV - RG
 drop_mvrgroup_statement : TOK_DROP TOK_MVGROUP ddl_qualified_name
 {
+  *SqlParser_Diags << DgSqlCode(-3131);
+  YYERROR;
+
   $$ = new (PARSERHEAP())StmtDDLDropMvRGroup(*$3);
   delete $3;
 }
@@ -31889,6 +31895,9 @@ drop_mvrgroup_statement : TOK_DROP TOK_MVGROUP ddl_qualified_name
 drop_trigger_statement : TOK_DROP TOK_TRIGGER ddl_qualified_name 
                          optional_cleanup optional_validate optional_logfile
                 {
+                  *SqlParser_Diags << DgSqlCode(-3131);
+                  YYERROR;
+
                   /* If VALIDATE, or LOG option specified, */
                   /* ALLOW_SPECIALTABLETYPE must also be specified  */
                   if (($5 || $6) &&
@@ -31917,6 +31926,9 @@ drop_trigger_statement : TOK_DROP TOK_TRIGGER ddl_qualified_name
 drop_mv_statement : TOK_DROP optional_ghost mv_token ddl_qualified_name optional_cleanup
                     optional_drop_behavior optional_validate optional_logfile
                 {
+                  *SqlParser_Diags << DgSqlCode(-3131);
+                  YYERROR;
+
                   /* If VALIDATE, or LOG option specified, */
                   /* ALLOW_SPECIALTABLETYPE must also be specified  */
                   if (($7 || $8) &&

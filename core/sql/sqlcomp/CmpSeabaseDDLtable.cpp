@@ -485,7 +485,7 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
 
   if (isAuthorizationEnabled())
     {
-      if (srcTableName.isExternalHive())
+      if (tgtTableName.isExternalHive())
         {
           tableInfo->objOwnerID = HIVE_ROLE_ID;
           tableInfo->schemaOwnerID = HIVE_ROLE_ID;
@@ -1530,18 +1530,25 @@ short CmpSeabaseDDL::createSeabaseTable2(
     objectOwnerID = schemaOwnerID;
 
   // check if SYSKEY is specified as a column name.
-  NABoolean explicitSyskeySpecified = FALSE;
   for (Lng32 i = 0; i < colArray.entries(); i++)
     {
-      if (colArray[i]->getColumnName() == "SYSKEY")
-        explicitSyskeySpecified = TRUE;
+      if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+          (ComTrafReservedColName(colArray[i]->getColumnName())))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1269)
+                              << DgString0(colArray[i]->getColumnName());
+          
+          deallocEHI(ehi);
+          processReturn();
+          return -1;
+        }
     }
 
   NABoolean implicitPK = FALSE;
 
   NAString syskeyColName("SYSKEY");
   SQLLargeInt * syskeyType = new(STMTHEAP) SQLLargeInt(TRUE, FALSE, STMTHEAP);
-  ElemDDLColDef syskeyColDef(NULL, &syskeyColName, syskeyType, NULL, NULL,
+  ElemDDLColDef syskeyColDef(NULL, &syskeyColName, syskeyType, NULL,
                              STMTHEAP);
   ElemDDLColRef edcr("SYSKEY", COM_ASCENDING_ORDER);
   CollIndex numSysCols = 0;
@@ -1562,18 +1569,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
       numSysCols++;
     }
 
-  if ((implicitPK) && (explicitSyskeySpecified))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1080)
-                                << DgColumnName("SYSKEY");
-
-      deallocEHI(ehi); 
-
-      processReturn();
-
-      return -1;
-    }
-
   int numSaltPartns = 0; // # of "_SALT_" values
   int numSplits = 0;     // # of initial region splits
 
@@ -1582,7 +1577,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   
   if ((createTableNode->getSaltOptions()) ||
       ((numSaltPartnsFromCQD > 0) &&
-       (NOT (implicitPK || explicitSyskeySpecified))))
+       (NOT implicitPK)))
     {
       // add a system column SALT INTEGER NOT NULL with a computed
       // default value HASH2PARTFUNC(<salting cols> FOR <num salt partitions>)
@@ -1615,7 +1610,17 @@ short CmpSeabaseDDL::createSeabaseTable2(
         {
           const NAString &colName = (*saltArray)[i]->getColumnName();
           ComAnsiNamePart cnp(colName, ComAnsiNamePart::INTERNAL_FORMAT);
-          CollIndex      colIx    = colArray.getColumnIndex(colName);
+          Lng32      colIx    = colArray.getColumnIndex(colName);
+          if (colIx < 0)
+            {
+              *CmpCommon::diags() << DgSqlCode(-1009)
+                                  << DgColumnName(colName);
+              
+              deallocEHI(ehi); 
+              processReturn();
+              return -1;
+            }
+
           NAType         *colType = colArray[colIx]->getColumnDataType();
           NAString       typeText;
           short          rc       = colType->getMyTypeAsText(&typeText, FALSE);
@@ -1683,7 +1688,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
              ElemDDLColDefault::COL_COMPUTED_DEFAULT);
       saltDef->setComputedDefaultExpr(saltExprText);
       ElemDDLColDef * saltColDef =
-        new(STMTHEAP) ElemDDLColDef(NULL, &saltColName, saltType, saltDef, NULL,
+        new(STMTHEAP) ElemDDLColDef(NULL, &saltColName, saltType, saltDef,
                                     STMTHEAP);
 
       ElemDDLColRef * edcrs = 
@@ -1861,7 +1866,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
               boundDivExpr->unparse(divExprText, PARSER_PHASE, COMPUTED_COLUMN_FORMAT);
               divColDefault->setComputedDefaultExpr(divExprText);
               ElemDDLColDef * divColDef =
-                new(STMTHEAP) ElemDDLColDef(NULL, &divColName, divColType, divColDefault, NULL,
+                new(STMTHEAP) ElemDDLColDef(NULL, &divColName, divColType, divColDefault,
                                             STMTHEAP);
 
               ElemDDLColRef * edcrs = 
@@ -3909,7 +3914,29 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
-  Int64 objUID = getObjectUID(&cliInterface,
+  // cascade option not supported
+  if (renameTableNode->isCascade())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1427)
+                          << DgString0("Reason: Cascade option not supported.");
+      
+      processReturn();
+      return;
+    }
+
+  const CheckConstraintList &checkList = naTable->getCheckConstraints();
+  if (checkList.entries() > 0)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1427)
+        << DgString0("Reason: Operation not allowed if check constraints are present. Drop the constraints and recreate them after rename.");
+      
+      processReturn();
+      
+      return;
+    }
+    
+   Int64 objUID = getObjectUID(&cliInterface,
                               catalogNamePart.data(), schemaNamePart.data(), 
                               objectNamePart.data(),
                               COM_BASE_TABLE_OBJECT_LIT);
@@ -3934,7 +3961,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
   if (usingViewsQueue->numEntries() > 0)
     {
       *CmpCommon::diags() << DgSqlCode(-1427)
-                          << DgString0("Reason: Dependent views exist.");
+                          << DgString0("Reason: Operation not allowed if dependent views exist. Drop the views and recreate them after rename.");
       
       processReturn();
       return;
@@ -4465,6 +4492,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       return;
     }
 
+  if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
+      (ComTrafReservedColName(colName)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1269)
+                          << DgString0(colName);
+      
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
   if (colFamily.isNull())
     {
       colFamily = naTable->defaultColFam();
@@ -4716,6 +4754,22 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
      ComQiScope::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT,
      alterAddColNode->ddlXns(), FALSE);
 
+  if (alterAddColNode->getAddConstraintPK())
+    {
+      // if table already has a primary key, return error.
+      if ((naTable->getClusteringIndex()) && 
+          (NOT naTable->getClusteringIndex()->hasOnlySyskey()))
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-1256)
+            << DgString0(extTableName);
+          
+          processReturn();
+          
+          return;
+        }
+    }
+  
   if ((alterAddColNode->getAddConstraintPK()) OR
       (alterAddColNode->getAddConstraintCheckArray().entries() NEQ 0) OR
       (alterAddColNode->getAddConstraintUniqueArray().entries() NEQ 0) OR
@@ -5316,8 +5370,8 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   // this operation cannot be done if a xn is already in progress.
   if (xnInProgress(&cliInterface))
     {
-      *CmpCommon::diags() << DgSqlCode(-20123)
-                          << DgString0("ALTER");
+      *CmpCommon::diags() << DgSqlCode(-20125)
+                          << DgString0("This ALTER");
       
       processReturn();
       return;
@@ -6403,8 +6457,8 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnDatatype(
   // this operation cannot be done if a xn is already in progress.
   if ((NOT mdAlterOnly) && (xnInProgress(&cliInterface)))
     {
-      *CmpCommon::diags() << DgSqlCode(-20123)
-                          << DgString0("ALTER");
+      *CmpCommon::diags() << DgSqlCode(-20125)
+                          << DgString0("This ALTER");
 
       processReturn();
       return;
@@ -6630,12 +6684,10 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
       return;
     }
 
-  /*  Temporarily commenting out this code. It will be enabled after
-      support for reserved colnames check is delivered.
   if ((CmpCommon::getDefault(TRAF_ALLOW_RESERVED_COLNAMES) == DF_OFF) &&
       (ComTrafReservedColName(renamedColName)))
     {
-      NAString reason = "Renamed column is a reserved name.";
+      NAString reason = "Renamed column " + renamedColName + " is reserved for internal system usage.";
       *CmpCommon::diags() << DgSqlCode(-1404)
                           << DgColumnName(colName)
                           << DgString0(reason);
@@ -6644,7 +6696,6 @@ void CmpSeabaseDDL::alterSeabaseTableAlterColumnRename(
 
       return;
     }
-  */
 
   if (nacol->isComputedColumn() || nacol->isSystemColumn())
     {
@@ -6896,7 +6947,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
-
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
@@ -6952,6 +7002,19 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
                             COM_UNIQUE_CONSTRAINT, //TRUE, 
                             keyColList))
     {
+      return;
+    }
+
+  // if table already has a primary key, return error.
+  if ((naTable->getClusteringIndex()) && 
+      (NOT naTable->getClusteringIndex()->hasOnlySyskey()))
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1256)
+        << DgString0(extTableName);
+      
+      processReturn();
+      
       return;
     }
 
@@ -8476,6 +8539,17 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       if (NOT constrFound)
         {
           *CmpCommon::diags() << DgSqlCode(-1052);
+          
+          processReturn();
+          
+          return;
+        }
+
+      if (isPkeyConstr)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1255)
+                              << DgString0(dropConstrName)
+                              << DgString1(extTableName);
           
           processReturn();
           

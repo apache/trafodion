@@ -1623,6 +1623,48 @@ void CIntShutdownReq::performRequest()
     TRACE_EXIT;
 }
 
+CIntNodeNameReq::CIntNodeNameReq( const char *current_name, const char *new_name  ) 
+    : CInternalReq()
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQIZ", 4);
+    new_name_ = new_name;
+    current_name_=current_name;
+}
+
+CIntNodeNameReq::~CIntNodeNameReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqiz", 4);
+}
+
+void CIntNodeNameReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld"
+                   , CReqQueue::intReqType[InternalType_NodeName]
+                   , getId() );
+    requestString_.assign( strBuf );
+}
+
+void CIntNodeNameReq::performRequest()
+{
+    const char method_name[] = "CIntNodeNameReq::performRequest";
+    TRACE_ENTRY;
+    char current_n[MAX_PROCESS_NAME];
+    char new_n[MAX_PROCESS_NAME];
+    
+    strcpy (current_n, current_name_.c_str());
+    strcpy (new_n, new_name_.c_str());
+
+    CNode    *node = Nodes->GetNode(current_n); 
+    if (node)
+        node->SetName(new_n);
+
+    TRACE_EXIT;
+}
+
+
 CIntDownReq::CIntDownReq( int pnid ) 
     : CInternalReq(),
       pnid_ ( pnid )
@@ -2591,6 +2633,11 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_NodeName:
+            request = new CExtNodeNameReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+   
         case ReqType_ProcessInfo:
             request = new CExtProcInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -2912,6 +2959,15 @@ void CReqQueue::enqueueDownReq( int pnid )
     request = new CIntDownReq ( pnid );
 
     request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
+
+void CReqQueue::enqueueNodeNameReq( char *current_name, char *new_name)
+{
+    CInternalReq * request;
+
+    request = new CIntNodeNameReq ( current_name, new_name );
 
     enqueueReq ( request );
 }
@@ -3565,7 +3621,8 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
    true,     // ReqType_MonStats
-   true      // ReqType_ZoneInfo
+   true,     // ReqType_ZoneInfo
+   false     // ReqType_NodeName
 };
 #endif
 
@@ -3602,6 +3659,7 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_TransInfo
    false,    // ReqType_MonStats
    false,    // ReqType_ZoneInfo
+   false,    // ReqType_NodeName 
    false     // ReqType_Invalid
 };
 

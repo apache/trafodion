@@ -35,18 +35,7 @@
   <packaging>jar</packaging>
   <version>${env.TRAFODION_VER}</version>
   <name>Trafodion REST</name>
-  <url>http://wiki.trafodion.org</url>
-  
-  <developers>
-    <developer>
-      <id>matbrown</id>
-      <name>Matt Brown</name>
-      <email>mattbrown@hp.com</email>
-      <timezone>-8</timezone>
-      <organization>HP</organization>
-      <organizationUrl>http://www.hp.com</organizationUrl>
-    </developer>
-  </developers>
+  <url>http://trafodion.apache.org</url>
   
   <build>
    <resources>
@@ -419,27 +408,17 @@
   	<!-- Dependencies -->
     <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
   	<commons-cli.version>1.2</commons-cli.version>
-  	<commons-codec.version>1.4</commons-codec.version>
   	<commons-io.version>2.1</commons-io.version>
-  	<commons-lang.version>2.5</commons-lang.version>
   	<commons-logging.version>1.1.1</commons-logging.version>
- 	<commons-math.version>2.1</commons-math.version>
-  	<commons-configuration.version>1.6</commons-configuration.version>
-  	<metrics-core.version>2.1.2</metrics-core.version>
-  	<guava.version>11.0.2</guava.version>
-  	<jackson.version>1.8.8</jackson.version>
-  	<jasper.version>5.5.23</jasper.version>
   	<jaxb-api.version>2.1</jaxb-api.version>
-    <jetty.version>9.2.10.v20150310</jetty.version>  
-  	<jetty.jspapi.version>6.1.14</jetty.jspapi.version>
+        <jetty.version>9.2.10.v20150310</jetty.version>  
   	<jersey.version>1.8</jersey.version>
   	<junit.version>4.10</junit.version>
-    <slf4j.version>1.6.6</slf4j.version>
+        <slf4j.version>1.6.6</slf4j.version>
   	<log4j.version>1.2.16</log4j.version>
   	<zookeeper.version>3.4.5</zookeeper.version>
   	<jython-standalone.version>2.5.3</jython-standalone.version>
   	<jettison.version>1.3.5</jettison.version>
-  	<displaytag.version>1.1.1</displaytag.version>
   	<jdbct4.version>${project.version}</jdbct4.version>
    	
     <!-- Plugin Dependencies -->
@@ -481,55 +460,20 @@
     </dependency>
 
       <!-- General dependencies -->
-  	<dependency>
-      <groupId>com.yammer.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-      <version>${metrics-core.version}</version>
-  	</dependency>
-  	<dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-  	</dependency>
-    <dependency>
-	  <groupId>org.python</groupId>
-	  <artifactId>jython-standalone</artifactId>
-	  <version>${jython-standalone.version}</version>
-    </dependency>
  	<dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
       <version>${commons-cli.version}</version>
   	</dependency>
     <dependency>
-      <groupId>commons-configuration</groupId>
-      <artifactId>commons-configuration</artifactId>
-      <version>${commons-configuration.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>${commons-codec.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>${commons-lang.version}</version>
-    </dependency>
-    <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>${commons-logging.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>${log4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -563,26 +507,6 @@
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-continuation</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-http</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-io</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-security</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
       <version>${jetty.version}</version>
     </dependency>
@@ -595,76 +519,6 @@
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-util</artifactId>
       <version>${jetty.version}</version>
-    </dependency>
-    <!-- While jackson is also a dependency of both jersey and avro, these
-         can bring in jars from different, incompatible versions. We force
-         the same version with these dependencies -->
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-core-asl</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-jaxrs</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-xc</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
-      <!--If this is not in the runtime lib, we get odd
-      "2009-02-27 11:38:39.504::WARN:  failed jsp
-       java.lang.NoSuchFieldError: IS_SECURITY_ENABLED"
-       exceptions out of jetty deploying webapps.
-       St.Ack Thu May 20 01:04:41 PDT 2010
-      -->
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-compiler</artifactId>
-      <version>${jasper.version}</version>
-      <scope>runtime</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>jsp-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>ant</groupId>
-          <artifactId>ant</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-runtime</artifactId>
-      <version>${jasper.version}</version>
-      <scope>runtime</scope>
-      <exclusions>
-       <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>jsp-api</artifactId>
-        </exclusion>          
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
      <!-- REST dependencies -->
@@ -699,7 +553,12 @@
       <artifactId>jettison</artifactId>
       <version>${jettison.version}</version>
     </dependency>
- 
+
+    <dependency>
+    	<groupId>org.python</groupId>
+    	<artifactId>jython-standalone</artifactId>
+    	<version>${jython-standalone.version}</version>
+    </dependency>
   </dependencies>
   
   <profiles>

@@ -247,8 +247,8 @@
 1252 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The existing index $0~TableName to be used by a unique or primary constraint has not been populated.  Please populate the index and then try to add the constraint again.
 1253 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in.  ------   
 1254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Duplicate unique constraints are not allowed with same set of columns.
-1255 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
-1256 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
+1255 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~String0 is the clustering key constraint for table $1~String1 and cannot be dropped.
+1256 ZZZZZ 99999 BEGINNER MINOR DBADMIN PRIMARY KEY constraint cannot be added since table $0~String0 already has a user specified clustering key. 
 1257 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1258 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
 1259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- Msg text will be merged in ------  
@@ -261,6 +261,7 @@
 1266 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only EXECUTE privilege is supported for a procedure or routine.
 1267 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~string0 privilege is incompatible with this object type.
 1268 ZZZZZ 99999 BEGINNER MINOR DBADMIN Duplicate columns are not allowed in a GRANT or REVOKE statement.
+1269 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column name $0~String0 is reserved for internal system usage. It cannot be specified as a user column.
 1270 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ALLOCATE or DEALLOCATE failed for object $0~TableName due to file error $1~Int0 on $2~String0.
 1271 ZZZZZ 99999 BEGINNER MAJOR DBADMIN ALLOCATE failed for object $0~TableName because the number of extents to be allocated ($1~Int0) is greater than the MAXEXTENTS for a partition of the object.
 1272 ZZZZZ 99999 BEGINNER CRTCL DIALOUT The system is not licensed for use of SQL format tables.
@@ -800,7 +801,7 @@ $1~String1 --------------------------------
 3049 42000 99999 BEGINNER MAJOR DBADMIN Host variables, such as $0~string0, are not allowed in a dynamic compilation.
 3050 42000 99999 BEGINNER MAJOR DBADMIN The constraint must have the same catalog and schema as the specified table.
 3051 42000 99999 BEGINNER MAJOR DBADMIN Duplicate HEADING clauses were specified in column definition $0~ColumnName.
-3052 42000 99999 BEGINNER MAJOR DBADMIN Duplicate NOT NULL clauses were specified in column definition $0~ColumnName.
+3052 42000 99999 BEGINNER MAJOR DBADMIN Duplicate $0~String0 clauses were specified in column definition $0~ColumnName.
 3053 42000 99999 BEGINNER MAJOR DBADMIN Duplicate PRIMARY KEY clauses were specified in column definition $0~ColumnName.
 3054 42000 99999 BEGINNER MAJOR DBADMIN The NOT DROPPABLE clause is allowed only in PRIMARY KEY and NOT NULL constraint definitions.
 3055 42000 99999 BEGINNER MAJOR DBADMIN Duplicate DELETE rules were specified.
@@ -2982,7 +2983,7 @@ $3~String1.
 20122 ZZZZZ 99999 BEGINNER MINOR LOGONLY Table has indexes. Cannot purge data from partition.
 20123 ZZZZZ 99999 BEGINNER MINOR LOGONLY A user-defined transaction has been started. $0~string0 cannot be performed.
 20124 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 operation cannot be performed if AUTOCOMMIT is OFF.
-20125 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 is a metadata table. PURGEDATA cannot be performed on metadata tables.
+20125 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 operation cannot be performed if a user-defined transaction has been started or AUTOCOMMIT is OFF.
 20126 ZZZZZ 99999 ADVANCED INFRM LOGONLY Vertical partitions exist for the source table. Cannot perform DUP.
 20127 ZZZZZ 99999 BEGINNER MINOR LOGONLY Target option was specified as NEW but $0~string0 exists. DUP operation failed.
 20128 ZZZZZ 99999 BEGINNER MINOR LOGONLY $0~string0 is a metadata table. DUP cannot be performed on metadata tables.

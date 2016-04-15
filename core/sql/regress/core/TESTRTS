@@ -26,10 +26,18 @@
 -- @@@ END COPYRIGHT @@@
 --
 
+obey TESTRTS(clean_up);
+obey TESTRTS(create_insert);
+obey TESTRTS(test_rts);
+obey TESTRTS(esp_idle_timeout);
+obey TESTRTS(clean_up);
+log ;
+exit;
+
 ?section create_insert
 cqd hist_on_demand_stats_size '10000';
 
-obey TESTRTS(clean_up);
+?section test_rts
 sh chmod 777 $scriptsdir/tools/run_rts.ksh ;
 log LOGRTS clear ;
 
@@ -250,9 +258,6 @@ get statistics for pid a;
 
 -- Test to determine if invalid token is taken as stmt name
 select * from table (statistics(null, 'AAA='));
-obey TESTRTS(clean_up);
-log;
-exit;
 
 ?section compare_current_qid
 prepare s1 from select count(*) from
@@ -275,4 +280,15 @@ log LOGRTS;
 
 ?section clean_up
 drop table tstat;
+
+?section esp_idle_timeout
+get process statistics for current ;
+set session default esp_idle_timeout '60' ;
+cqd esp_idle_timeout '60' ;
+control query shape esp_exchange(hash_groupby(esp_exchange(scan)));
+select distinct d from tstat ;
+get process statistics for current ;
+sh sleep 70;
+select distinct d from tstat ;
+get process statistics for current ;
 

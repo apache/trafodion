@@ -1001,9 +1001,10 @@ DNO                   DNAME                 ENO          DNO
 +>        select A.dno,B.eno
 +>        from t005t02 A full outer join t005t01 B on A.dno = B.dno;
 
-*** ERROR[12001] Creation failed. The materialized view cannot be maintained incrementally.
+*** ERROR[3131] The statement just entered is currently not supported.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>create materialized view T_MV1
 +>        Refresh on statement
@@ -1012,9 +1013,10 @@ DNO                   DNAME                 ENO          DNO
 +>        select A.dno,B.eno
 +>        from t005t02 A full outer join t005t01 B on A.dno = B.dno;
 
-*** ERROR[12001] Creation failed. The materialized view cannot be maintained incrementally.
+*** ERROR[3131] The statement just entered is currently not supported.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>
 >>?section cleanup

@@ -473,6 +473,7 @@ public :
   struct DDLObjInfo
   {
     NAString ddlObjName;
+    Int64 objUID;
     ComQiScope qiScope;
     ComObjectType ot;
   };

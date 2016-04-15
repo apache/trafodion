@@ -141,6 +141,7 @@
     <module>docs/provisioning_guide</module>
     <module>docs/messages_guide</module>
     <module>docs/odb_user</module>
+    <module>docs/spj_guide</module>
     <module>docs/sql_reference</module>
   </modules>
 

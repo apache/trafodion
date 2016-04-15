@@ -35,9 +35,9 @@
 --   authorized - runs authorization tests
 -- ============================================================================
 
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 obey TEST133(clean_up);
 log LOG133 clear;
-obey TEST133(create_db);
 obey TEST133(tests);
 sh sqlci -i "TEST133(authorized)" -u sql_user4;
 log;
@@ -46,10 +46,13 @@ initialize authorization;
 exit;
 
 ?section clean_up
-set schema "_PRIVMGR_MD_";
 drop sequence t133sch.team_number_sequence;
 -- drop database
 drop schema t133sch cascade;
+
+set parserflags 131072;
+drop schema "_HV_HIVE_" cascade;
+reset parserflags 131072;
 
 ?section create_db
 create schema t133sch;
@@ -64,13 +67,6 @@ create table teams
 
 alter table teams add constraint valid_team_no check (team_number > 0);
 
-insert into teams values
-   (1, 'White Socks', 'Sam','4082282222'),
-   (2, 'Giants', 'Joe', '5102839483'),
-   (3, 'Cardinals', 'Stella', '9513849384'),
-   (4, 'Indians', 'Matt', '5128383748'),
-   (5, 'Tigers', 'Ronit', '6198273827');
-
 create table team_statistics
   (team_number int not null primary key,
    num_players int not null)
@@ -83,7 +79,6 @@ create table games
      game_time timestamp not null,
      game_location varchar(50) not null)
   ;
---create index home_games on games (home_team_number);
 
 alter table games add constraint valid_game_number check (game_number > 0);
 
@@ -93,18 +88,6 @@ create table standings
      loses int default 0,
      last_updated timestamp default current_timestamp)
 ;
-insert into standings (team_number)
-  select team_number from teams;
-
-insert into games values
-   (1, 2, 1, timestamp '2009-04-23 19:30:00', 'California'),
-   (1, 3, 2, timestamp '2009-04-24 19:30:00', 'California'),
-   (1, 4, 3, timestamp '2009-04-25 10:00:00', 'Oklahoma'),
-   (2, 3, 4, timestamp '2009-04-25 13:30:00', 'Michigan'),
-   (1, 5, 5, timestamp '2009-04-25 15:00:00', 'Oklahoma'),
-   (2, 5, 6, timestamp '2009-04-27 17:00:00', 'New York'),
-   (3, 4, 7, timestamp '2009-04-28 17:00:00', 'Florida'),
-   (4, 2, 8, current_timestamp, 'Missouri');
 
 create view home_teams_games as
   select t.team_number, g.game_number, g.game_time
@@ -122,20 +105,6 @@ create table players
    primary key (player_number, player_team_number))
   no partition;
 
-insert into players values
-   (1, 'Tom', 1, '4083948394', null),
-   (2, 'Bob', 1, '4089483948', null),
-   (3, 'Toby',1, '4082938493', 'pitcher'),
-   (3, 'Toby',2, '4082938493', null),
-   (4, 'Julie', 2, '5108394839', 'catcher'),
-   (5, 'Joanne', 2, '5103849384', null),
-   (6, 'Pete', 2, '5102839483', null),
-   (6, 'Pete', 3, '5102839483', 'third base'),
-   (7, 'Jared',4, '9518293849', 'short stop'),
-   (8, 'Zachary', 4, '9518293840', null),
-   (9, 'Lynne', 5, '9518293892', 'pitcher'),
-   (10, 'Omar', 5, '5128394893', null);
-
 alter table players add constraint valid_player_number check(player_number > 0);
 
 create view players_on_team as
@@ -143,7 +112,6 @@ create view players_on_team as
   from teams t, players p
   where p.player_team_number = t.team_number
   order by t.team_name;
-select * from players_on_team;
 
 create view games_by_player as
   select player_name, game_time
@@ -155,12 +123,6 @@ create view games_by_player as
 alter table players add constraint players_teams
    foreign key (player_team_number) references teams (team_number);
 
-insert into team_statistics
-  select team_number, count (player_number)
-   from teams t, players p
-   where t.team_number = p.player_team_number
-   group by team_number;
-
 create volatile table home_games as
   select home_team_number, visitor_team_number, game_number,  game_location
   from games
@@ -171,22 +133,34 @@ create volatile table home_games as
 
 create sequence team_number_sequence;
 
+-- create function to display bitmaps as a bitmap rather than longs
+sh rm -f ./etest141.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
+  2>&1 | tee LOG133-SECONDARY;
+set pattern $$DLL$$ etest141.dll;
+set pattern $$QUOTE$$ '''';
+
+create library t133_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
+language c parameter style sql external name 'translateBitmap'
+library t133_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
 ?section set_up
 set schema "_PRIVMGR_MD_";
 prepare get_owner_privs from
 select distinct
    substring (object_name,1,40) as object_name,
    object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
    substring(authname(grantee_id),1,10) as grantee,
-   privileges_bitmap,
-   grantable_bitmap
-from object_privileges 
-where grantor_id = -2
-    and object_uid in 
+   t133sch.translateBitmap(privileges_bitmap) as granted_privs,
+   t133sch.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
      (select object_uid
       from "_MD_".objects
-      where object_type in ('VI','BT','LB','UR')
-        and schema_name in ('_PRIVMGR_MD_', 'T133SCH'))
+      where schema_name in ('_PRIVMGR_MD_', 'T133SCH', '_HV_HIVE_'))
   order by 1, 2, 3, 4, 5
 ;
 
@@ -195,26 +169,40 @@ where grantor_id = -2
 -- this set of tests run basic initialize authorization tests
 -- =================================================================
 
+obey TEST133(create_db);
 set schema "_PRIVMGR_MD_";
 get tables;
 
+-- verify can't create an object in "_PRIVMGR_MD_" schema
 create table t133_t1 (c1 int not null primary key, c2 int);
-create view t133_v1 as select * from t133_t1;
-create index t133_i1 on t133_t1(c2);
-create table t133_t2 like t133_t1;
 
 obey TEST133(set_up);
-get tables;
 execute get_owner_privs;
 
 initialize authorization, drop;
 get tables;
+
+-- owner s/b db__root
+create external table customer for hive.hive.customer;
+create external table item for hive.hive.item;
+create external table promotion for hive.hive.promotion;
+select schema_owner, object_owner, substring (object_name,1,20) as object_name 
+from "_MD_".objects where schema_name = '_HV_HIVE_';
+
 initialize authorization;
 get tables;
 select count (*) from components;
 select count (*) from component_operations;
 select count (*) from component_privileges;
+
+-- external Hive schema now owned by DB__HIVEROLE
+select schema_owner, object_owner, substring (object_name,1,20) as object_name 
+from "_MD_".objects where schema_name = '_HV_HIVE_';
+
+-- External hive table show owner as DB__HIVEROLE
 execute get_owner_privs;
+
+-- drop role_usage and make sure initialize authorization recreates
 set parserflags 131072;
 drop table role_usage;
 get tables;
@@ -223,6 +211,7 @@ initialize authorization;
 get tables;
 execute get_owner_privs;
 
+-- drop components and make sure initialize authorization recreates
 drop table components;
 get tables;
 initialize authorization, drop;

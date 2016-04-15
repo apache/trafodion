@@ -32,7 +32,7 @@
 
 // Startup in real cluster with down node simulation
 #define TP001_NODE_DOWN  "MON_TP_NODE_DOWN"     // down node name at startup
-
+#define TRAF_EXCLUDE_LIST  "TRAF_EXCLUDE_LIST"     // exclude node
 // Node re-integration failure testpoints
 //   Roles:
 //     new      - new monitor created by shell 

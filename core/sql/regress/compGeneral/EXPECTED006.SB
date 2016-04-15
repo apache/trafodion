@@ -60,9 +60,10 @@
 >>create mv mvx refresh on request initialize on create as select a,sum(b) s_b
 +>from x1 group by a;
 
-*** ERROR[1002] Catalog SEABASE does not exist or has not been registered on node \NSK.
+*** ERROR[3131] The statement just entered is currently not supported.
 
---- SQL operation failed with errors.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>update statistics for table x1 on every column;
 
@@ -138,7 +139,7 @@
 --- SQL operation complete.
 >>prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
 
-*** ERROR[4026] Reading from and inserting into, or updating in, or deleting from the same table, SEABASE.SCH.T006T3, is not currently supported.
+*** ERROR[4026] Reading from and inserting into, or updating in, or deleting from the same table, TRAFODION.SCH.T006T3, is not currently supported.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -280,7 +281,10 @@
 --- SQL operation complete.
 >>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
 
---- SQL command prepared.
+*** ERROR[4045] The operand of function TO_DATE must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>control query default MODE_SPECIAL_4 reset;
 
 --- SQL operation complete.
@@ -612,7 +616,7 @@
 >>-- Error 4073
 >>prepare xx from select * from t006t1 where a = (select a from t006t3) collate default;
 
-*** ERROR[4034] The operation (SCALAR_AGGR(SCAN SEABASE.SCH.T006T3) COLLATE DEFAULT)  is not allowed.
+*** ERROR[4034] The operation (SCALAR_AGGR(SCAN TRAFODION.SCH.T006T3) COLLATE DEFAULT)  is not allowed.
 
 *** ERROR[4073] The COLLATE clause may appear only after an expression of character data type, not INTEGER.
 
@@ -638,7 +642,7 @@
 >>-- Error 4122
 >>prepare xx from insert into t006t3 values (NULL);
 
-*** ERROR[4122] NULL cannot be assigned to NOT NULL column SEABASE.SCH.T006T3.A.
+*** ERROR[4122] NULL cannot be assigned to NOT NULL column TRAFODION.SCH.T006T3.A.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -670,7 +674,7 @@
 
 *** ERROR[4310] USER(x) is currently supported only in the outermost SELECT list. For example, it cannot be a part of the subquery.
 
-*** ERROR[4062] The preceding error actually occurred in function USER(SEABASE.SCH.T006T1.A).
+*** ERROR[4062] The preceding error actually occurred in function USER(TRAFODION.SCH.T006T1.A).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -678,7 +682,7 @@
 
 *** ERROR[4310] USER(x) is currently supported only in the outermost SELECT list. For example, it cannot be a part of the subquery.
 
-*** ERROR[4062] The preceding error actually occurred in function USER(SEABASE.SCH.T006T2.A).
+*** ERROR[4062] The preceding error actually occurred in function USER(TRAFODION.SCH.T006T2.A).
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -686,7 +690,7 @@
 >>-- Error 4312
 >>prepare xx from update HP_SYSTEM_CATALOG.mxcs_schema.ASSOC2DS set assoc_id = 100;
 
-*** ERROR[4312] HP_SYSTEM_CATALOG.MXCS_SCHEMA.ASSOC2DS is an MXCS metadata table and cannot be directly updated.
+*** ERROR[1002] Catalog HP_SYSTEM_CATALOG does not exist or has not been registered on node .
 
 *** ERROR[8822] The statement was not prepared.
 

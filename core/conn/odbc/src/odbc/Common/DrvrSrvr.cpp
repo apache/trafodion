@@ -56,6 +56,8 @@ int SRVR::getAllocLength(int DataType, int Length)
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		//case SQLTYPECODE_VARCHAR_UP: // sqlcli doesn't support anymore
 		case SQLTYPECODE_VARCHAR_LONG:
+		case SQLTYPECODE_BLOB:
+		case SQLTYPECODE_CLOB:
 			AllocLength = Length+3;
 			break;
 		default:

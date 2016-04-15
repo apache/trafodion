@@ -391,6 +391,8 @@ public:
   NABoolean addSeqTable() { return addSeqTable_; }
   NABoolean addSchemaObjects() { return addSchemaObjects_; }
 
+  short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
+
   NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
 
   void setCreateMDViews(NABoolean v)

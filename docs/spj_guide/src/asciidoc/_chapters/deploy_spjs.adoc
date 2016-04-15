@@ -1,0 +1,262 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[deploy-spj-jar-files]]
+= Deploy SPJ JAR Files
+
+After developing and packaging the SPJ code into JAR files, you must
+move the JAR files from the client workstation to {project-name}.
+
+You can upload a SPJ JAR file and create a library by using
+the CREATE LIBRARY command in the Trafodion Command Interface (trafci).
+
+Libraries provide greater security for JAR files because libraries are
+database objects whose access is controlled using standard SQL security.
+
+Deploying a JAR file to a {project-name} instance requires creating a library,
+and users must have the required privileges for creating libraries in order
+to deploy JAR files.
+
+The examples in this chapter are based on the sample database
+documented in <<b-sample-database, Appendix B: Sample Database>>.
+
+<<<
+[[create-a-library]]
+== Create a Library
+
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
+statement including considerations and required privileges.
+
+NOTE: You must copy the jar file to the same directory on all the nodes in the cluster before running the CREATE LIBRARY statement.
+Otherwise, you will see an error message indicating that the jar file is not found.
+
+*Example*
+
+This example uses the sample <<procedures-in-the-sales-schema, Sales Class>> documented in
+<<a-sample-spjs, Appendix A: Sample SPJs>>.
+
+Your task is to add the Sales class jar file as a library object in the `SALES` schema.
+Do the following:
+
+1. Compile the `Sales.java` source file.
++
+*Example*
++
+```
+$ # Set up the environmental variables.
+$ cd $HOME/trafodion-incubator
+$ source env.sh
+$ # Prepare the class jar file
+$ cd $HOME/trafodion-spjs
+$ ls
+Inventory.java  Payroll.java  Sales.java
+$ # Compile source
+$ javac Sales.java
+$ ls Sales.*
+Sales.class  Sales.java
+$ # Package jar file
+$ jar cvf Sales.jar Sales.class
+$ ls Sales.*
+Sales.class  Sales.jar  Sales.java
+$
+```
+
+2. Multi-node cluster only: Create the target directory, if necessary.
++
+*Example*
++
+```
+$ pdsh $MY_NODES -x $HOSTNAME mkdir $HOME/trafodion-spjs
+```
++
+<<<
+3. Multi-node cluster only: Copy the jar file to all nodes in the cluster.
++
+*Example*
++
+```
+$ pdcp $MY_NODES Sales.jar $PWD/.
+```
+
+4. Create the library object using trafci.
++
+```
+$ pwd
+/home/trafodion/trafodion-jars
+$ trafci
+
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
+
+Host Name/IP Address: localhost:23400
+User Name: zz
+
+Connected to Trafodion
+
+SQL> CREATE LIBRARY trafodion.sales.sales FILE '/home/trafodion/trafodion-spjs/Sales.jar' ;
+
+--- SQL operation complete.
+
+SQL> get libraries in schema trafodion.sales ;
+
+SALES
+
+--- SQL operation complete.
+
+SQL>
+```
+
+////
+20160323 GTA: This feature isn't implemented yet. Uncomment this section once implemented.
+
+[[alter-a-library]]
+== Alter a Library
+
+When you alter a library, you can change the underlying JAR file of the library.
+
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#alter_library_statement[ALTER LIBRARY]
+statement including considerations and required privileges.
+
+*Example*
+
+Your task is to modify the Sales class jar file as a library object in the `SALES` schema
+with a new jar file (`Sales2.jar`).
+
+Do the following:
+
+1. Multi-node cluster only: Copy the jar file to all nodes in the cluster.
++
+*Example*
++
+```
+$ pdcp $MY_NODES Sales2.jar $PWD/.
+```
+
+2. Create the library object using trafci.
++
+```
+$ pwd
+/home/trafodion/trafodion-jars
+$ trafci
+
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
+
+Host Name/IP Address: localhost:23400
+User Name: zz
+
+Connected to Trafodion
+
+SQL> ALTER LIBRARY trafodion.sales.saleslib FILE '/home/trafodion/trafodion-spjs/Sales2.jar' ;
+
+--- SQL operation complete.
+
+SQL> get libraries in schema trafodion.sales ;
+
+SALES
+
+--- SQL operation complete.
+
+SQL>
+```
+////
+
+<<<
+[[drop-a-library]]
+== Drop a Library
+
+Dropping a library removes the library from the schema in the database
+and removes the library's underlying JAR file from {project-name}.
+
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#drop_library_statement[DROP LIBRARY]
+statement including considerations and required privileges.
+
+*Example*
+
+Your task is to remove Sales class jar file from the `SALES` schema.
+
+Do the following using trafci:
+
+```
+$ trafci
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
+
+Host Name/IP Address: localhost:23400
+User Name: zz
+
+Connected to Trafodion
+
+SQL> get libraries in schema trafodion.sales ;
+
+SALES
+
+--- SQL operation complete.
+
+SQL> DROP LIBRARY trafodion.sales.saleslib ;
+
+--- SQL operation complete.
+
+SQL>
+```
+
+<<<
+[[display-libraries]]
+== Display Libraries
+
+Refer to the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]
+for full documentation of the
+{docs-url}/sql_reference/index.html#get_statement[GET]
+statement.
+
+Use the `GET libraries [ in schema [ catalog-name.] schema-name ] statement in trafci to
+display the libraries in a schema.
+
+*Example*
+
+```
+$ trafci
+Welcome to Apache Trafodion Command Interface
+Copyright (c) 2015 Apache Software Foundation
+
+Host Name/IP Address: localhost:23400
+User Name: zz
+
+Connected to Trafodion
+
+SQL> get libraries in schema trafodion.sales ;
+
+SALES
+
+--- SQL operation complete.
+SQL>
+```

@@ -343,6 +343,8 @@ class HPT4Desc {
 			break;
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+		case Types.BLOB:
+		case Types.CLOB:
                         boolean shortLength = maxLen < Math.pow(2, 15);
                         int dataOffset = ((shortLength) ? 2 : 4);
 			if (sqlDataType_ == SQLTYPECODE_VARCHAR) {
@@ -352,9 +354,6 @@ class HPT4Desc {
 			}
 			displaySize_ = maxLen;
 			precision_ = maxLen; // ODBC2.0
-			break;
-		case Types.BLOB:
-		case Types.CLOB:
 			break;
 		default:
 			if (sqlDataType_ == SQLTYPECODE_INTERVAL) {
@@ -375,6 +374,7 @@ class HPT4Desc {
 			break;
 		}
 		if (sqlDataType_ == SQLTYPECODE_CHAR || sqlDataType_ == SQLTYPECODE_VARCHAR
+				|| sqlDataType_ == SQLTYPECODE_BLOB || sqlDataType_ == SQLTYPECODE_CLOB
 				|| sqlDataType_ == SQLTYPECODE_VARCHAR_LONG || sqlDataType_ == SQLTYPECODE_VARCHAR_WITH_LENGTH) {
 			isCaseSensitive_ = true;
 		}
@@ -453,6 +453,8 @@ class HPT4Desc {
 	public static final int SQLTYPECODE_VARCHAR_LONG = -1;
 	public static final int SQLTYPECODE_INTERVAL = 10;
 	public static final int SQLTYPECODE_VARCHAR_WITH_LENGTH = -601;
+	public static final int SQLTYPECODE_BLOB = -602;
+	public static final int SQLTYPECODE_CLOB = -603;
 	public static final int SQLTYPECODE_SMALLINT = 5;
 	public static final int SQLTYPECODE_INTEGER = 4;
 

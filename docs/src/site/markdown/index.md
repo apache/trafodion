@@ -56,6 +56,25 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
    <p><h5>The Trafodion team thanks all our contributors and mentors who made the release possible!</h5></p>
 
 </td></tr></table>
+
+<center><h1>Contributing Companies</h1></center>
+
+---
+
+<!-- Carousel with logos -->
+
+#### Join Our Community
+
+![Slide 1](images/logo-carousel/slide-1.png)
+
+Code, test, present, document, web sites, and many other ways to contribute.
+
+#### Add Your Logo Here
+
+![Slide 2](images/logo-carousel/slide-2.png)
+
+Already a contributor? We need permission to add your company's logo here. 
+
 ---
 
 ## About
@@ -85,7 +104,6 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
 * Hadoop and Linux distribution neutral
 * Easy to add to your existing Hadoop infrastructure
 
-
 ---
 
 <table>
@@ -101,7 +119,6 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
         <li><a href="architecture-overview.html">Architecture</a></li>
         <li><a href="documentation.html">Documentation</a></li>
         <li><a href="faq.html">FAQ</a></li>
-        <li><a href="roadmap.html">Roadmap</a></li>
       </ul>
     </td>
     <td width="33%" valign="top">
@@ -113,8 +130,7 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
       </center>
       <ul>
         <li><a href="download.html">Download</a></li>
-        <li><a href="quick-start.html">Quick Start</a></li>
-        <li><a href="features.html">Features</a></li>
+        <li><a href="quickstart.html">Quick Start</a></li>
         <li><a href="release-notes.html">Release Notes</a></li>
       </ul>
     </td>
@@ -129,7 +145,6 @@ Trafodion builds on the scalability, elasticity, and flexibility of Hadoop. Traf
         <li><a href="contributing-redirect.html">Contribute</a></li>
         <li><a href="mail-lists.html">Discuss</a></li>
         <li><a href="https://cwiki.apache.org/confluence/display/TRAFODION/Apache+Trafodion+Home">Wiki</a></li>
-        <li><a href="presentations.html">Presentations</a></li>
       </ul>
     </td>
   </tr>

@@ -148,6 +148,49 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 				totalMemLen += 1;
 			ODBCCharset = SQLCharset;
 			break;
+
+		case SQLTYPECODE_BLOB:
+			ODBCPrecision = Length;
+			ODBCDataType = TYPE_BLOB;
+			SignType = FALSE;
+			// Varchar indicator length can 2 or 4 bytes depending on length of the column
+			if (Length > SHRT_MAX)	// 32767
+			{
+				totalMemLen = ((totalMemLen + 4 - 1) >> 2) << 2;
+				totalMemLen += Length + 4;
+			}
+			else
+			{
+				totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1;
+				totalMemLen += Length + 2;
+			}
+
+			if (!bRWRS)
+				totalMemLen += 1;
+			ODBCCharset = SQLCharset;
+			break;
+
+		case SQLTYPECODE_CLOB:
+			ODBCPrecision = Length;
+			ODBCDataType = TYPE_CLOB;
+			SignType = FALSE;
+			// Varchar indicator length can 2 or 4 bytes depending on length of the column
+			if (Length > SHRT_MAX)	// 32767
+			{
+				totalMemLen = ((totalMemLen + 4 - 1) >> 2) << 2;
+				totalMemLen += Length + 4;
+			}
+			else
+			{
+				totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1;
+				totalMemLen += Length + 2;
+			}
+
+			if (!bRWRS)
+				totalMemLen += 1;
+			ODBCCharset = SQLCharset;
+			break;
+
 		case SQLTYPECODE_SMALLINT:
 			if (Precision == 0)
 			{
@@ -265,13 +308,6 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 			{
 				ODBCPrecision = Precision;
 				ODBCDataType = SQL_NUMERIC;
-			}
-			if (ColHeading[0] != '\0' && srvrGlobal->drvrVersion.componentId == JDBC_DRVR_COMPONENT )
-			{
-				if (strstr(ColHeading, CLOB_HEADING) != NULL)
-					ODBCDataType = TYPE_CLOB;
-				else if (strstr(ColHeading, BLOB_HEADING) != NULL)
-					ODBCDataType = TYPE_BLOB;
 			}
 			SignType = TRUE;
 			totalMemLen = ((totalMemLen + 8 - 1) >> 3) << 3; 
@@ -620,6 +656,8 @@ SQLRETURN SRVR::SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int3
 			memOffSet += SQLItemDesc->maxLen + 1;
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+                case SQLTYPECODE_BLOB:
+                case SQLTYPECODE_CLOB:
 			if( SQLItemDesc->maxLen > SHRT_MAX )
 			{
 				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
@@ -735,7 +773,9 @@ SQLRETURN SRVR::SetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc, Int3
 		if (SQLItemDesc->dataType == SQLTYPECODE_CHAR ||
 			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR ||
 			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR_LONG ||
-			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH)
+			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH ||
+                        SQLItemDesc->dataType == SQLTYPECODE_BLOB ||
+                        SQLItemDesc->dataType == SQLTYPECODE_CLOB)
 		{
 			retcode = WSQL_EXEC_SetDescItem(pDesc,          
                                i+1,                   
@@ -833,7 +873,9 @@ SQLRETURN SRVR::SetRowsetDataPtr(SQLDESC_ID *pDesc, SQLItemDescList_def *SQLDesc
 		if (SQLItemDesc->dataType == SQLTYPECODE_CHAR ||
 			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR ||
 			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR_LONG ||
-			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH)
+			SQLItemDesc->dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH ||
+                        SQLItemDesc->dataType == SQLTYPECODE_BLOB ||
+                        SQLItemDesc->dataType == SQLTYPECODE_CLOB)
 		{
 			retcode = WSQL_EXEC_SetDescItem(pDesc,          
 							   i+1+ delta,                   
@@ -934,6 +976,8 @@ SQLRETURN SRVR::AllocAssignValueBuffer(
 				AllocLength = SQLItemDesc->maxLen + 1;
 				break;
 			case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+			case SQLTYPECODE_BLOB:
+			case SQLTYPECODE_CLOB:
 				if( SQLItemDesc->maxLen > SHRT_MAX )
 				{
 					memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
@@ -1666,6 +1710,8 @@ Int32 SRVR::sqlMaxDataLength(SQLSMALLINT SQLDataType, SQLINTEGER SQLMaxLength)
 	Int32 sqlMaxLength = 0;
 	switch (SQLDataType)
 	{
+	case SQLTYPECODE_BLOB:
+	case SQLTYPECODE_CLOB:
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
@@ -1689,6 +1735,8 @@ Int32 SRVR::dataLength(SQLSMALLINT SQLDataType, SQLINTEGER SQLOctetLength, void*
 	Int32 allocLength = 0;
 	switch (SQLDataType)
 	{
+	case SQLTYPECODE_BLOB:
+	case SQLTYPECODE_CLOB:
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
@@ -2202,6 +2250,8 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 					case SQLTYPECODE_VARCHAR_LONG:
 					case SQLTYPECODE_DATETIME:
 					case SQLTYPECODE_INTERVAL:
+					case SQLTYPECODE_BLOB:
+					case SQLTYPECODE_CLOB:
 						sqlBulkFetchPossible = false;
 						break;
 				}
@@ -2374,6 +2424,8 @@ SQLRETURN SRVR::BuildSQLDesc2withRowsets( SQLDESC_ID          *pDesc
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case SQLTYPECODE_VARCHAR_LONG:
+		case SQLTYPECODE_BLOB:
+		case SQLTYPECODE_CLOB:
 			if( SqlDescInfo[i].Length > SHRT_MAX )
 			{
 				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2;
@@ -2617,6 +2669,8 @@ SQLRETURN SRVR::RECOVERY_FROM_ROWSET_ERROR2( SRVR_STMT_HDL *pSrvrStmt
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
+	case SQLTYPECODE_BLOB:
+	case SQLTYPECODE_CLOB:
              sqlMaxLength = DataLen + 2;
 	     sqlMaxLength = ((sqlMaxLength + 2 - 1)>>1)<<1;
 	     break;
@@ -3538,6 +3592,8 @@ SQLRETURN SRVR::FETCH(SRVR_STMT_HDL *pSrvrStmt)
 					case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 					case SQLTYPECODE_VARCHAR_LONG:
 					case SQLTYPECODE_BITVAR:
+					case SQLTYPECODE_BLOB:
+					case SQLTYPECODE_CLOB:
 						allocLength = (allocLength>(UInt32)maxRowLen+3)?(UInt32)maxRowLen+3:allocLength;
 						srcDataLength = *(USHORT *)pBytes;
 						srcDataLength = (srcDataLength>(UInt32)maxRowLen)?(UInt32)maxRowLen:srcDataLength;
@@ -3663,6 +3719,8 @@ SQLRETURN SRVR::FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 					case SQLTYPECODE_VARCHAR_LONG:
 					case SQLTYPECODE_BITVAR:
+					case SQLTYPECODE_BLOB:
+					case SQLTYPECODE_CLOB:
 						dataLength = *(USHORT *)pBytes;
 						allocLength = dataLength+3;
 						if (maxRowLen != 0)
@@ -3700,6 +3758,8 @@ SQLRETURN SRVR::FETCHPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 					case SQLTYPECODE_VARCHAR_LONG:
 					case SQLTYPECODE_BITVAR:
+					case SQLTYPECODE_BLOB:
+					case SQLTYPECODE_CLOB:
 						*(outputDataValue->_buffer+lsize + 1 + allocLength - 1) = 0;
 						break;
 				}
@@ -3864,7 +3924,7 @@ SQLRETURN SRVR::FETCH2( SRVR_STMT_HDL   *pSrvrStmt
       for (int i = 0; i < columnCount; i++)
         {
         pSrvrStmt->outputQuadList[i].var_layout = IRD[i].length;
-        if (  (IRD[i].dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH || IRD[i].dataType == SQLTYPECODE_VARCHAR_LONG)
+        if (  (IRD[i].dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH || IRD[i].dataType == SQLTYPECODE_VARCHAR_LONG || IRD[i].dataType == SQLTYPECODE_BLOB || IRD[i].dataType == SQLTYPECODE_CLOB)
 	    && IRD[i].length % 2 == 1
            )
           // Need to adjust varchars to even number 
@@ -6427,6 +6487,8 @@ SQLRETURN SRVR::FETCHCATALOGPERF(SRVR_STMT_HDL *pSrvrStmt,
 					case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 					case SQLTYPECODE_VARCHAR_LONG:
 					case SQLTYPECODE_BITVAR:
+					case SQLTYPECODE_BLOB:
+					case SQLTYPECODE_CLOB:
 						dataLength = *(USHORT *)pBytes;
 
 						allocLength = dataLength + 3;
@@ -6813,6 +6875,8 @@ SQLRETURN SRVR::RECOVERY_FOR_SURROGATE_ERROR2(SRVR_STMT_HDL* pSrvrStmt,
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 	case SQLTYPECODE_VARCHAR_LONG:
 	case SQLTYPECODE_BITVAR:
+	case SQLTYPECODE_BLOB:
+	case SQLTYPECODE_CLOB:
              sqlMaxLength = DataLen + 2;
 	     sqlMaxLength = ((sqlMaxLength + 2 - 1)>>1)<<1;
 	     break;
@@ -6910,6 +6974,8 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 				memOffSet += 1;
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+		case SQLTYPECODE_BLOB:
+		case SQLTYPECODE_CLOB:
 			if( SqlDescInfo[i].Length > SHRT_MAX )
 			{
 				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2; 

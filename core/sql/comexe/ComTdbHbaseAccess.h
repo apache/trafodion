@@ -269,19 +269,38 @@ public:
     {(v ? flags_ |= USE_SMALL_SCANNER :
       flags_ &= ~USE_SMALL_SCANNER); };
     NABoolean useSmallScanner()
-    { return (flags_ & USE_SMALL_SCANNER) != 0; };
+    { return (flags_ & (USE_SMALL_SCANNER | USE_SMALL_SCANNER_FOR_MDAM)) != 0; };
+    void setUseSmallScannerForProbes(NABoolean v)
+    {(v ? flags_ |= USE_SMALL_SCANNER_FOR_PROBES :
+      flags_ &= ~USE_SMALL_SCANNER_FOR_PROBES); };
+    NABoolean useSmallScannerForProbes()
+    { return (flags_ & USE_SMALL_SCANNER_FOR_PROBES) != 0; };
 
+    void setUseSmallScannerForMDAMifNeeded(UInt32 numRowRetrieved){
+        //if last scan of mdam fitted in one block, and small scanner CQD is either ON or SYSTEM (this is summarized in USE_SMALL_SCANNER_FOR_PROBES)
+        //then next MDAM scan can use small scanner. Most likely it is about same size as previous one.
+        if ((numRowRetrieved < maxNumRowsPerHBaseBlock_) && ((flags_ & USE_SMALL_SCANNER_FOR_PROBES) != 0))
+            flags_ |= USE_SMALL_SCANNER_FOR_MDAM;
+        else
+            flags_ &= ~USE_SMALL_SCANNER_FOR_MDAM;
+    }
+
+    void setMaxNumRowsPerHbaseBlock(UInt32 n) { maxNumRowsPerHBaseBlock_ = n;}
+    UInt32 maxNumRowsPerHbaseBlock() { return maxNumRowsPerHBaseBlock_; }
 
   private:
     enum
     {
-      CACHE_BLOCKS               = 0x0001,
-      USE_MIN_MDAM_PROBE_SIZE    = 0x0002,
-      USE_SMALL_SCANNER          = 0x0004
+      CACHE_BLOCKS                 = 0x0001,
+      USE_MIN_MDAM_PROBE_SIZE      = 0x0002,
+      USE_SMALL_SCANNER            = 0x0004,
+      USE_SMALL_SCANNER_FOR_PROBES = 0x0008,
+      USE_SMALL_SCANNER_FOR_MDAM   = 0x0010
     };
     
     UInt32 flags_;
     UInt32 numCacheRows_;
+    UInt32 maxNumRowsPerHBaseBlock_;
   };
 
   // ---------------------------------------------------------------------
@@ -729,13 +748,9 @@ public:
     {wbSize_ = v; };
     UInt32 getWBSize() { return wbSize_; };
 
-    void setIsTrafAutoFlush(NABoolean v)
-     {(v ? flags2_ |= TRAF_UPSERT_AUTO_FLUSH : flags2_ &= ~TRAF_UPSERT_AUTO_FLUSH); };
-     NABoolean getIsTrafLoadAutoFlush() { return (flags2_ & TRAF_UPSERT_AUTO_FLUSH) != 0; };
-
-     void setTrafWriteToWAL(NABoolean v)
-      {(v ? flags2_ |= TRAF_UPSERT_WRITE_TO_WAL : flags2_ &= ~TRAF_UPSERT_WRITE_TO_WAL); };
-      NABoolean getTrafWriteToWAL() { return (flags2_ & TRAF_UPSERT_WRITE_TO_WAL) != 0; };
+   void setTrafWriteToWAL(NABoolean v)
+     {(v ? flags2_ |= TRAF_UPSERT_WRITE_TO_WAL : flags2_ &= ~TRAF_UPSERT_WRITE_TO_WAL); };
+   NABoolean getTrafWriteToWAL() { return (flags2_ & TRAF_UPSERT_WRITE_TO_WAL) != 0; };
 
   const char * getLoadPrepLocation() const { return LoadPrepLocation_; }
   void setLoadPrepLocation(char * loadPrepLocation) { LoadPrepLocation_ = loadPrepLocation;  }
@@ -891,7 +906,7 @@ public:
   enum
   {
     TRAF_UPSERT_ADJUST_PARAMS        = 0x0001,
-    TRAF_UPSERT_AUTO_FLUSH           = 0x0002,
+    TRAF_UPSERT_UNUSED               = 0x0002,
     TRAF_UPSERT_WRITE_TO_WAL         = 0x0004,
     TRAF_LOAD_PREP                   = 0x0008,
     TRAF_LOAD_COMPLETION             = 0x0010,

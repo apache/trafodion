@@ -6614,35 +6614,46 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   // ==> Check privs on any sequence generators used in the query.
   for (Int32 i=0; i<(Int32)bindWA->getSeqValList().entries(); i++)
   {
+    RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
     SequenceValue *seqVal = (bindWA->getSeqValList())[i];
     NATable* tab = const_cast<NATable*>(seqVal->getNATable());
+    CMPASSERT(tab);
 
-    // No need to save priv info in NATable object representing a sequence;
-    // these NATables are not cached.
+    // get privilege information from the NATable structure
+    PrivMgrUserPrivs *pPrivInfo = tab->getPrivInfo();
     PrivMgrUserPrivs privInfo;
-    CmpSeabaseDDL cmpSBD(STMTHEAP);
-    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    if (!pPrivInfo)
     {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-        *CmpCommon::diags() << DgSqlCode( -4400 );
-      return FALSE;
-    }
-    retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
-                                          COM_SEQUENCE_GENERATOR_OBJECT, 
-                                          thisUserID, privInfo);
-    cmpSBD.switchBackCompiler();
-    if (retcode != STATUS_GOOD)
-    {
-      bindWA->setFailedForPrivileges(TRUE);
-      RemoveNATableEntryFromCache = TRUE;
-      *CmpCommon::diags() << DgSqlCode( -1034 );
-      return FALSE;
+      CmpSeabaseDDL cmpSBD(STMTHEAP);
+      if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+      {
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+          *CmpCommon::diags() << DgSqlCode( -4400 );
+        return FALSE;
+      }
+      retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
+                                            COM_SEQUENCE_GENERATOR_OBJECT, 
+                                            thisUserID, privInfo);
+      cmpSBD.switchBackCompiler();
+      if (retcode != STATUS_GOOD)
+      {
+        bindWA->setFailedForPrivileges(TRUE);
+        RemoveNATableEntryFromCache = TRUE;
+        *CmpCommon::diags() << DgSqlCode( -1034 );
+        return FALSE;
+      }
+      pPrivInfo = &privInfo;
     }
 
     // Verify that the user has usage priv
-    if (privInfo.hasPriv(USAGE_PRIV))
+    NABoolean insertQIKeys = FALSE; 
+    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
+      insertQIKeys = TRUE;
+    if (pPrivInfo->hasPriv(USAGE_PRIV))
     {
-      // Do we need to add any QI keys to the plan?
+      // do this only if QI is enabled and object has security keys defined
+      if ( insertQIKeys )
+        findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, USAGE_PRIV );
     }
 
     // plan requires privilege but user has none, report an error
@@ -10157,7 +10168,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 } // Insert::bindNode()
 
 /* Upsert into a table with an index is converted into a Merge to avoid
-the problem described in LP 1460771. An upsert may overwrite an existing row
+the problem described in Trafodion-14. An upsert may overwrite an existing row
 in the base table (identical to the update when matched clause of Merge) or
 it may insert a new row into the base table (identical to insert when not
 matched clause of merge). If the upsert caused a row to be updated in the 
@@ -10165,22 +10176,35 @@ base table then the old version of the row will have to be deleted from
 indexes, and a new version inserted. Upsert is being transformed to merge
 so that we can delete the old version of an updated row from the index.
 
-Upsert is also converted into merge when there are omitted cols with default values and 
-TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS is set to  OFF in case of aligned format table or 
+Upsert is also converted into merge when TRAF_UPSERT_MODE is set to MERGE and 
+there are omitted cols with default values in case of aligned format table or 
 omitted current timestamp cols in case of non-aligned row format
 */
 NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
                                    NABoolean omittedCurrentDefaultClassCols) const
 {
+  // The necessary conditions to convert upsert to merge and
   if (isUpsert() && 
       (NOT getIsTrafLoadPrep()) && 
       (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
       (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
-       ((getTableDesc()->hasSecondaryIndexes()) ||
-         (( NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
-             ((isAlignedRowFormat && omittedDefaultCols
-              && (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_OFF)))
-       ))
+        // table has secondary indexes or
+        (getTableDesc()->hasSecondaryIndexes() ||
+          // CQD is set to MERGE  
+          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
+            // omitted current default columns with non-aligned row format tables
+            // or omitted default columns with aligned row format tables 
+            (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+            (isAlignedRowFormat && omittedDefaultCols))) ||
+          // CQD is set to Optimal, for non-aligned row format with omitted 
+          // current columns, it is converted into merge though it is not
+          // optimal for performance - This is done to ensure that when the 
+          // CQD is set to optimal, non-aligned format would behave like 
+          // merge when any column is  omitted 
+          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
+            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols))
+        ) 
+     )
      return TRUE;
   else
      return FALSE;
@@ -10272,19 +10296,16 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
       else
       if (! col->isClusteringKey()) 
       {
-         // In case of aligned format we need to bind in the new = old values
+         // We need to bind in the new = old values
          // in GenericUpdate::bindNode. So skip the columns that are not user
-         // specified
-         if (isAlignedRowFormat) 
-         {
-            if (assignExpr->isUserSpecified())
-               copySetAssign = TRUE;
-            // copy the default value if the below CQD is set to ON
-            else if (CmpCommon::getDefault(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS) == DF_ON)
-               copySetAssign = TRUE;
-         }
-         else
+         // specified and 
+         //
          if (assignExpr->isUserSpecified())
+             copySetAssign = TRUE;
+         // If copy the Default values in case of replace mode or optiomal mode with
+         // aligned row tables
+         else if ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_REPLACE) ||
+                (isAlignedRowFormat && CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL))
              copySetAssign = TRUE;
          if (copySetAssign)
          { 

@@ -89,6 +89,7 @@ copyDatetimeFields(rec_datetime_field startField,
                    short dstFractPrec,
                    char *srcData,
                    char *dstData,
+                   Lng32 dstLen,
                    NABoolean *roundedDownFlag);
 
 //////////////////////////////////////////////
@@ -955,6 +956,7 @@ ExpDatetime::arithDatetimeInterval(arithOps operation,
                          datetimeOpType->getScale(),
                          datetimeOpData,
                          dateTimeValue,
+                         MAX_DATETIME_SIZE,
                          NULL) != 0) {
     ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
     return -1;
@@ -1370,6 +1372,7 @@ copyDatetimeFields(rec_datetime_field startField,
                    short dstFractPrec,
                    char *srcData,
                    char *dstData,
+                   Lng32 dstLen,
                    NABoolean *roundedDownFlag)
 {
 
@@ -1404,7 +1407,9 @@ copyDatetimeFields(rec_datetime_field startField,
                                dstFractPrec,
                                roundedDownFlag);
     }
-    str_cpy_all(dstData, (char *) &fraction, sizeof(fraction));
+    // if destination has space for fraction, copy it.
+    if ((dstLen > 0) && (dstLen >= (size + sizeof(fraction))))
+      str_cpy_all(dstData, (char *) &fraction, sizeof(fraction));
   }
   return 0;
 }
@@ -1483,6 +1488,7 @@ ExpDatetime::convDatetimeDatetime(char *srcData,
                                   rec_datetime_field dstEndField,
                                   short dstFractPrec,
                                   char *dstData,
+                                  Lng32 dstLen,
                                   short validateFlag,
                                   NABoolean *roundedDownFlag)
 {
@@ -1531,6 +1537,7 @@ ExpDatetime::convDatetimeDatetime(char *srcData,
                          dstFractPrec,
                          srcData,
                          dstData,
+                         dstLen,
                          roundedDownFlag) != 0) {
     return -1;
   }
@@ -1596,13 +1603,13 @@ ExpDatetime::extractDatetime(rec_datetime_field srcStartField,
                                   (rec_datetime_field)(dstStartField - 1),
                                   srcFractPrec);
   
-
   if (copyDatetimeFields(dstStartField,
                          dstEndField,
                          srcFractPrec,
                          getScale(),
                          srcData,
                          dstData,
+                         getLength(),
                          NULL) != 0) {
     return -1;
   }
@@ -3438,7 +3445,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 
   // If the format is USA and there is an HOUR field, add AM or PM.
   //
-  if (format == DATETIME_FORMAT_USA &&
+  if (((format == DATETIME_FORMAT_USA) ||
+       (format == DATETIME_FORMAT_TS7)) &&
       startField <= REC_DATE_HOUR &&
       endField >= REC_DATE_HOUR) {
     if (militaryHour < 12) {

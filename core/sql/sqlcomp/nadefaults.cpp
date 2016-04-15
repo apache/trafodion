@@ -1293,7 +1293,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_ASSIGN_DEPTH,                    "0"),
 
   DDSint__(ESP_FIXUP_PRIORITY_DELTA,            "0"),
-  DDSint__(ESP_IDLE_TIMEOUT,                    "0"),
+  DDint__(ESP_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
   DDkwd__(ESP_MULTI_FRAGMENTS,			"ON"),
   DDkwd__(ESP_MULTI_FRAGMENT_QUOTAS,		"ON"),
   DDui1500_4000(ESP_MULTI_FRAGMENT_QUOTA_VM,	"4000"),
@@ -1971,6 +1971,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
+  DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
   DDkwd__(HIVE_SORT_HDFS_HOSTS,                 "ON"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
@@ -3312,8 +3313,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
  
-  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+  DDkwd__(TRAF_ALLOW_RESERVED_COLNAMES,          "OFF"),   
  
+  DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
@@ -3404,9 +3407,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                   "0"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
-  DDkwd__(TRAF_UPSERT_AUTO_FLUSH,                      "OFF"),
+  DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
-  DDkwd__(TRAF_UPSERT_WITH_INSERT_DEFAULT_SEMANTICS,   "OFF"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
@@ -6317,6 +6319,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "MEASURE",
   "MEDIUM",
   "MEDIUM_LOW",
+  "MERGE",
   "MINIMUM",
   "MMAP",
   "MULTI_NODE",
@@ -6327,6 +6330,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "ON",
   "OPENS_FOR_WRITE",
   "OPERATOR",
+  "OPTIMAL",
   "ORDERED",
   "PERTABLE",
   "PRINT",
@@ -6338,6 +6342,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "RELEASE",
   "REMOTE",
   "REPEATABLE_READ",
+  "REPLACE",
   "REPSEL",
   "RESOURCES",
   "RETURN",
@@ -6660,6 +6665,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	  tok == DF_WARN         || tok == DF_ON)
 	isValid = TRUE;
       break;
+
+    case HIVE_SCAN_SPECIAL_MODE:
+	isValid = TRUE;
+	break;
 
     case IS_SQLCI:
       // for primary mxcmp that is invoked for user queries, the only valid
@@ -7000,6 +7009,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok == DF_OFF || tok == DF_MINIMUM ||
           tok == DF_MEDIUM || tok == DF_MAXIMUM || tok == DF_ON)
         isValid = TRUE;
+      break;
+    case TRAF_UPSERT_MODE:
+      if (tok == DF_MERGE || tok == DF_REPLACE || tok == DF_OPTIMAL)
+	isValid = TRUE;
+      break;
 
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.
