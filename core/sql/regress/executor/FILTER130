@@ -27,4 +27,5 @@ fi
 
 sed    "
 s/LOBH[0-9]*/@LOBHANDLE@/
+s/LOBP_[0-9]*/@LOBP@/
 " $fil

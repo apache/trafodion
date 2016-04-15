@@ -2803,3 +2803,77 @@ ComTdbExeUtilRegionStats::ComTdbExeUtilRegionStats
 {
   setNodeType(ComTdb::ex_REGION_STATS);
 }
+
+ComTdbExeUtilLobInfo::ComTdbExeUtilLobInfo
+(
+     char * tableName,
+      Int64 objectUID,
+     Lng32 numLOBs,
+     char *lobColArray,
+     char * lobNumArray,
+     char * lobLocArray,
+     Int32 hdfsPort,
+     char *hdfsServer,
+     NABoolean tableFormat,
+     ex_cri_desc * work_cri_desc,
+     const unsigned short work_atp_index,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size)
+     : ComTdbExeUtil(ComTdbExeUtil::LOB_INFO_,
+		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+		     tableName, strlen(tableName),
+		     NULL, 0,
+		     NULL, 0,
+		     NULL,
+		     work_cri_desc, work_atp_index,
+		     given_cri_desc, returned_cri_desc,
+		     down, up, 
+		     num_buffers, buffer_size),
+       flags_(0),
+       objectUID_(objectUID),
+       numLOBs_(numLOBs),
+       lobColArray_(lobColArray),
+       lobNumArray_(lobNumArray),
+       lobLocArray_(lobLocArray),
+       hdfsPort_(0),
+       hdfsServer_(hdfsServer),
+       tableFormat_(tableFormat)
+{
+  setNodeType(ComTdb::ex_LOB_INFO);
+}
+
+Long ComTdbExeUtilLobInfo::pack(void * space)
+{
+  if (lobColArray_) 
+    lobColArray_.pack(space);
+
+ if (lobNumArray_) 
+    lobNumArray_.pack(space);
+
+ if (lobLocArray_) 
+    lobLocArray_.pack(space);
+
+ if (hdfsServer_) 
+    hdfsServer_.pack(space);
+  return ComTdbExeUtil::pack(space);
+}
+
+Lng32 ComTdbExeUtilLobInfo::unpack(void * base, void * reallocator)
+{
+  if (lobColArray_.unpack(base))
+    return -1;
+
+  if(lobNumArray_.unpack(base)) 
+    return -1;
+
+  if(lobLocArray_.unpack(base)) 
+    return -1;
+
+  if(hdfsServer_.unpack(base)) 
+    return -1;
+  return ComTdbExeUtil::unpack(base, reallocator);
+}

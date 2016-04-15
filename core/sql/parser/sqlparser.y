@@ -2798,6 +2798,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_get_statistics
 %type <relx>                    exe_util_get_uid
 %type <relx>                    exe_util_get_qid
+%type <relx>                    exe_util_get_lob_info
 %type <relx>                    exe_util_populate_in_memory_statistics
 %type <relx>                    exe_util_lob_extract
 %type <relx>                    unload_statement
@@ -6028,6 +6029,16 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
     $7->setSpecialType(ExtendedQualName::INDEX_TABLE);
     $$ = new (PARSERHEAP()) 
       ExeUtilRegionStats(*$7, FALSE, TRUE, FALSE, NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_LOB stats_or_statistics '(' ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilLobInfo(CorrName(""), TRUE,  NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_LOB stats_or_statistics '(' table_name ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilLobInfo(*$6, TRUE,  NULL, PARSERHEAP());
   }
 | TOK_TABLE '(' TOK_REGION stats_or_statistics '(' TOK_USING rel_subquery ')' ')'
   {
@@ -13384,7 +13395,11 @@ query_specification : exe_util_get_qid
 				    RelRoot($1, REL_ROOT);
                                 }
 
-
+query_specification : exe_util_get_lob_info
+                                {
+				  RelRoot *root = new (PARSERHEAP())
+				    RelRoot($1, REL_ROOT);
+                                }
 /* type relx */
 query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
 	{
@@ -16340,6 +16355,12 @@ stats_or_statistics : TOK_STATS
                         $$ = TRUE;
                       }
  
+exe_util_get_lob_info : TOK_GET TOK_LOB stats_or_statistics TOK_FOR TOK_TABLE table_name
+               {
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilLobInfo(*$6, FALSE,NULL,  PARSERHEAP());
+	       } 
+     
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look
  * one token ahead.  This may be necessary in cases where the parser

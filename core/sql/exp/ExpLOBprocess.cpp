@@ -376,7 +376,7 @@ Ex_Lob_Error ExLob::getDesc(ExLobRequest *request)
                                      &offset, &size,
                                      &dummyParam, &dummyParam, 
 				     0,
-				     request->getTransId());
+				     request->getTransId(), FALSE);
 
    request->setHandleOutLen(handleOutLen);
    request->setBlackBoxLen(blackBoxLen);
@@ -418,7 +418,7 @@ void processRequest(ExLobRequest *request)
 					    0, 0,
 					    0, 0,
 					    0,
-					    0);
+                                                 0,FALSE);
 	 if (clierr < 0)
 	   {
 	     request->setError(LOB_INIT_ERROR);	   

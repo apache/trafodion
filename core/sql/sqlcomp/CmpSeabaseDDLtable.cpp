@@ -2252,6 +2252,9 @@ short CmpSeabaseDDL::createSeabaseTable2(
       newSchName.append("\".\"");
       newSchName.append(schemaNamePart);
       newSchName += "\"";
+      NABoolean lobTrace=FALSE;
+      if (getenv("TRACE_LOB_ACTIONS"))
+        lobTrace=TRUE;
        rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
                                           newSchName.length(),
                                           objUID,
@@ -2262,7 +2265,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                           lobLocList,
                                           (char *)lobHdfsServer,
                                           lobHdfsPort,
-                                          lobMaxSize);
+                                          lobMaxSize,
+                                          lobTrace);
        
       if (rc < 0)
         {
@@ -3605,6 +3609,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       newSchName.append("\".\"");
       newSchName.append(schemaNamePart);
       newSchName += "\"";
+      NABoolean lobTrace = FALSE;
+      if (getenv("TRACE_LOB_ACTIONS"))
+        lobTrace=TRUE;
+                 
       rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
 					  newSchName.length(),
 					  objUID,
@@ -3612,7 +3620,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 					  LOB_CLI_DROP,
 					  lobNumList,
 					  lobTypList,
-					  lobLocList,(char *)lobHdfsServer, lobHdfsPort,0);
+                                    lobLocList,(char *)lobHdfsServer, lobHdfsPort,0,lobTrace);
       if (rc < 0)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)

@@ -435,6 +435,24 @@ insert into tlob130gc values(9,stringtolob('aaaa'), stringtolob('bbbbb'));
 select c1,lobtostring(c2,10),lobtostring(c3,10) from tlob130gc;
 cqd LOB_GC_LIMIT_SIZE reset;
 
+obey TEST130(lob_get_cleanup);
+?section lob_get_cleanup
+log;
+drop table tlob130gt;
+obey TEST130(lob_get_test);
+?section lob_get_test
+log LOG130;
+create table tlob130gt (c1 int not null, c2 blob, c3 clob, c4 blob, primary key (c1));
+insert into tlob130gt values (1, stringtolob('xxxx'), stringtolob('yyyy'), stringtolob('zzzzzzzzzzzzzz'));
+insert into tlob130gt values (2, stringtolob('xxxxx'), stringtolob('yyyyy'), stringtolob('zzzzzzzzzzzzzzz'));
+insert into tlob130gt values (3, stringtolob('xxxxxx'), stringtolob('yyyyyy'), stringtolob('zzzzzzzzzzzzzzzz'));
+get lob stats for table tlob130gt;
+select * from table(lob stats(tlob130gt));
+delete from tlob130gt where c1=2;
+insert into tlob130gt values (2, stringtolob('xxxxxxxxxxxxxxx'), stringtolob('yyyyyyyyyyyyyyyy'), stringtolob('zzzzzzzzzzzzzzzzzzzzzzzzzz'));
+get lob stats for table tlob130gt;
+select * from table(lob stats(tlob130gt));
+
 obey TEST130(lob_general_cleanup);
 -- cleanup
 ?section lob_general_cleanup
@@ -461,6 +479,7 @@ sh rm tlob130txt2;
 sh rm lobc2out.jpg;
 sh rm TEST130_argfile;
 drop table tlob130gc;
+drop table tlob130gt;
 drop schema trafodion.lob130 cascade;
 
 
