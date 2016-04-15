@@ -1,0 +1,325 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.hadoop.hbase.client;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HRegionLocation;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.util.Threads;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+//import org.apache.hadoop.hbase.client.ClusterConnection;//for HBase 1.x
+import org.apache.hadoop.hbase.client.RpcRetryingCallerFactory;
+import org.apache.hadoop.hbase.ipc.RpcControllerFactory;
+
+/**
+ * Implements the scanner interface for the HBase client.
+ * If there are multiple regions in a table, this scanner will iterate
+ * through them all in parallel.
+ */
+public class TrafParallelClientScanner extends AbstractClientScanner implements Closeable {
+  private final Log LOG = LogFactory.getLog(this.getClass());
+
+  static private Configuration       config = HBaseConfiguration.create();
+  
+  // special marker to indicate when a scanning task has finished
+  protected static final DoneMarker MARKER = new DoneMarker();
+
+  // the single reader object to use
+  protected ResultReader reader;
+
+  // the thread pool to be used
+  protected ExecutorService pool;
+  
+  // should store hbase.client.replicaCallTimeout.scan (HBase 1.x)
+  //static private int replicaCallTimeoutMicroSecondScan;
+  
+ // static {
+ //   replicaCallTimeoutMicroSecondScan = config.getInt("hbase.client.replicaCallTimeout.scan", 1000000); // duplicated from TableConfiguration since it cannot be instanciated by lack of public constructor
+ // }
+  
+  /**
+   * If a caller has predetermined split points this constructor can be used.
+   * One thread per split will be used to execute the scan.
+   * @param connection The cluster connection to use
+   * @param scans The {@link Scan} objects defining the split points
+   * @param tableName The table to use
+   * @param bufferSize How many results to buffer
+   * (should be larger than the individual scans' caching setting)
+   * @throws IOException
+   */
+  public TrafParallelClientScanner(final HConnection connection, final Collection<Scan> scans,
+      final TableName tableName, final int bufferSize) throws IOException {
+    createDefaultPool(scans.size());
+    SingleReaderMultiWriterQueue rw = new SingleReaderMultiWriterQueue(bufferSize, scans.size());
+    this.reader = rw;
+    for (Scan s : scans) {
+      pool.submit(new ScanTask(s, connection, tableName, rw,0));
+    }
+  }
+
+  /**
+   * Execute a single scan across multiple threads. Results are returned when they are available,
+   * NOT in rowkey order.
+   * @param connection The cluster connection to use
+   * @param scan The scan to execute
+   * @param tableName The table to use
+   * @param parallelScaling The scaling factor to use. if between 0 and 1, percent of regions run in parallel, if > 1 fixed number of thread run in parallel
+   * @throws IOException
+   */
+  public TrafParallelClientScanner(final HConnection connection, final Scan scan,
+      final TableName tableName, final float parallelScaling) throws IOException {
+    if (parallelScaling <= 0)
+      throw new IllegalArgumentException("scalingFactor must > 0");
+
+    // get the region boundaries. null ES is fine, we're just using the table to lookup the region cache
+    HTable t = new HTable(tableName, connection, null);
+    List<HRegionLocation> locs;
+    try {
+       locs = t.getRegionsInRange(scan.getStartRow(), scan.getStopRow());
+    } finally {
+      t.close();
+    }
+    LOG.debug("Found "+locs.size()+" region(s).");
+    if (locs.size() == 0) return;
+
+    Map<HRegionLocation, Queue<Scan>> tasks = new HashMap<HRegionLocation, Queue<Scan>>(locs.size());
+    int i=0;
+    // organize region locations by region server
+    for (HRegionLocation loc : locs) {
+      Scan s = new Scan(scan);
+      s.setStartRow(i==0?scan.getStartRow() : loc.getRegionInfo().getStartKey());
+      i++;
+      s.setStopRow(i==locs.size()?scan.getStopRow() : loc.getRegionInfo().getEndKey());
+      addToMapOfQueues(tasks, loc, s);
+    }
+
+    int threads = parallelScaling>1.0 ?(int)Math.ceil(parallelScaling) : (int)Math.ceil(locs.size() * parallelScaling);
+    
+    createDefaultPool(threads);
+    SingleReaderMultiWriterQueue rw = new SingleReaderMultiWriterQueue(Math.max(scan.getCaching() * threads, threads), locs.size());
+    this.reader = rw;
+
+    LOG.debug("Scheduling "+threads+" thread(s).");
+    // round robin among region servers
+    int taskNb=1;
+    while(!tasks.isEmpty()) {
+      for (Iterator<Map.Entry<HRegionLocation, Queue<Scan>>> it = tasks.entrySet().iterator(); it.hasNext();) {
+        Scan next = it.next().getValue().poll();
+        if (next == null) {
+          it.remove();
+        } else {
+          pool.submit(new ScanTask(next, connection, tableName, rw, taskNb));
+          taskNb++;
+        }
+      }
+    }
+  }
+
+  private <K, V> Queue<V> addToMapOfQueues(Map<K, Queue<V>> map, K key, V value) {
+    Queue<V> values = map.get(key);
+    if (values == null) {
+      values = new ArrayDeque<V>();
+      map.put(key, values);
+    }
+    values.add(value);
+    return values;
+  }
+
+  protected void createDefaultPool(int threads) {
+    pool = new ThreadPoolExecutor(threads, threads,
+        60, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<Runnable>(),
+        Threads.newDaemonThreadFactory("traf-parallel-scan"));
+    ((ThreadPoolExecutor)pool).prestartAllCoreThreads();
+  }
+
+  /* actual scanner methods */
+  @Override
+  public Result next() throws IOException {
+    try {
+      return reader.take();
+    } catch (IOException iox) {
+      // kill other threads
+      close();
+      // rethrow
+      throw iox;
+    }
+  }
+
+  /**
+   * close the parallel scanner, callers are strongly encouraged to call this method
+   * doesn't wait until the threadpool actually closes
+   */
+  @Override
+  public void close() {
+    // interrupt all running threads, don't wait for completion
+    pool.shutdownNow();
+  }
+#ifndef CDH1.0
+  @Override
+  public boolean renewLease() {return false;}//fake, never needed.
+#endif
+  ///// Helper classes and interfaces /////
+
+  // reader interface
+  private static interface ResultReader {
+    Result take() throws IOException;
+  }
+  // writer interface
+  private static interface ResultWriter {
+    // write a new result
+    void put(Result e) throws InterruptedException;
+    // the writer encountered an exception pass on to reader
+    void exception(Exception x);
+    // a writer thread is done, must be called by each thread
+    // that is writing to this ResultWriter
+    void done();
+  }
+
+  // a single reader, single writer queue, that reads Results as soon as they become available
+  private static class SingleReaderMultiWriterQueue implements ResultReader, ResultWriter {
+    private BlockingDeque<Result> queue;
+    private int taskCount;
+    public SingleReaderMultiWriterQueue(int capacity, int taskCount) {
+      queue = new LinkedBlockingDeque<Result>(capacity);
+      this.taskCount = taskCount;
+    }
+
+    // writer --
+    @Override
+    public void put(Result e) throws InterruptedException {
+      queue.put(e);
+    }
+
+    @Override
+    public void exception(Exception x) {
+      try {
+        queue.put(new DoneMarker(x));
+      } catch (InterruptedException ix) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    @Override
+    public void done() {
+      try {
+        queue.put(MARKER);
+      } catch (InterruptedException ix) {
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    // reader --
+    // pop the next Result as it becomes available
+    @Override
+    public Result take() throws IOException {
+      while(true) {
+        Result r;
+        if (taskCount > 0) {
+          try {
+            // block if there are still tasks running
+            r = queue.take();
+          } catch (InterruptedException x) {
+            throw new IOException(x);
+          }
+          if (r instanceof DoneMarker) {
+            ((DoneMarker)r).rethrow();
+            taskCount--;
+            continue;
+          }
+        } else {
+          r = queue.poll();
+        }
+        return r;
+      }
+    }
+  }
+
+  /* marker class, also used to pass Exception along */
+  protected static class DoneMarker extends Result {
+    private Exception x = null;
+    public DoneMarker() {}
+
+    public DoneMarker(Exception x) {
+      this.x = x;
+    }
+    public void rethrow() throws IOException {
+      if (x != null)
+        throw x instanceof IOException ? (IOException)x : new IOException(x);
+    }
+  }
+
+  /* Task executing a scan request */
+  protected class ScanTask implements Runnable {
+    private Scan s;
+    private ResultWriter writer;
+    private HConnection connection;
+    private TableName tableName;
+    private int taskNb;
+    public ScanTask(Scan s, HConnection connection, TableName tableName, ResultWriter writer, int taskNb) {
+      this.s = s;
+      this.connection = connection;
+      this.tableName = tableName;
+      this.writer = writer;
+      this.taskNb = taskNb;
+    }
+
+    @Override
+    public void run() {
+      Thread current = Thread.currentThread();
+      try {
+        // for HBase 1.x  
+        //ClientScanner98 scanner = new ClientScanner98(connection.getConfiguration(), s, tableName, (ClusterConnection)connection,
+        //       ((ClusterConnection)connection).getNewRpcRetryingCallerFactory(config),
+        //         RpcControllerFactory.instantiate(config));
+//        ClientScanner scanner = new ClientScanner(connection.getConfiguration(), s, tableName, connection);
+        ClientScanner98 scanner = new ClientScanner98(config,  s, tableName, connection);
+  
+        Result s;
+        while((s = scanner.next()) != null && !current.isInterrupted()) {
+          writer.put(s);
+        }
+        scanner.close();
+        writer.done();
+      } catch (Exception x) {
+        // record any exceptions encountered
+        writer.exception(x);
+
+      }
+    }
+  }
+}
