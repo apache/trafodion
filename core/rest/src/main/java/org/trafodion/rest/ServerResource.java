@@ -333,7 +333,7 @@ public class ServerResource extends ResourceBase {
     private String nodes() throws IOException {
         ScriptContext scriptContext = new ScriptContext();
         scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-        scriptContext.setCommand("sqnodestatus json");
+        scriptContext.setCommand("trafnodestatus -j");
 
         try {
             ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
