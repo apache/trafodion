@@ -2288,7 +2288,7 @@ public class Installer
              {
                 System.out.print("\n"+ NEW_JDBC +
                    "\n--------------------------------------"+
-                   "\nEnter the location and file name: " + defaultInstallJDBC);
+                   "\nEnter the location and file name [" + defaultInstallJDBC +"]:");
                 line=bufReader.readLine();
                 Thread.sleep(100);
              } catch (IOException ioe)

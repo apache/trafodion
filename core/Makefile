@@ -68,10 +68,7 @@ foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
-	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
-	$(MAVEN) install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
-	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
-	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	cd conn/jdbcT4 && $(MAKE) 2>&1 && $(MAVEN) install | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 dcs: jdbc_jar jdbc_type2_jar
 	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
@@ -109,7 +106,7 @@ clean: sqroot
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
@@ -123,7 +120,7 @@ cleanall: sqroot eclipseclean cleantests
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
