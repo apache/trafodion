@@ -447,6 +447,7 @@ TINT    SM      I            BIG                   STR                        F 
 
 --- 1 row(s) selected.
 >>
+>>
 >>cqd HIVE_FILE_CHARSET 'GBK';
 
 --- SQL operation complete.
@@ -473,4 +474,64 @@ C1           (EXPR)
 
 --- SQL operation complete.
 >>
+>>cqd HIVE_SCAN_SPECIAL_MODE '1';
+
+--- SQL operation complete.
+>>select * from tbl_dos;
+
+C1           C2           C3           C4                       
+-----------  -----------  -----------  -------------------------
+
+          0        39478         8147  2008-07-17               
+          1        21944         8327  2005-05-12               
+          2        32730         9999  2000-11-05               
+          3        19653         5727  2005-06-24               
+          4        67794         6012  2008-07-01               
+          5        93265         5823  2012-06-26               
+          6        28219          909  2009-04-26               
+          7        23967         8290  2006-02-21               
+          8        24265         8663  2006-10-06               
+          9        70273         3363  2001-03-17               
+
+--- 10 row(s) selected.
+>>cqd HIVE_SCAN_SPECIAL_MODE reset;
+
+--- SQL operation complete.
+>>drop table if exists trafodion.seabase.tbl_dos_num;
+
+--- SQL operation complete.
+>>create table trafodion.seabase.tbl_dos_num (c1 int, c2 int);
+
+--- SQL operation complete.
+>>load with NO OUTPUT into trafodion.seabase.tbl_dos_num select * from tbl_dos_num;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted.
+
+--- 0 row(s) loaded.
+>>cqd HIVE_SCAN_SPECIAL_MODE '1';
+
+--- SQL operation complete.
+>>load with no output into trafodion.seabase.tbl_dos_num select * from tbl_dos_num;
+
+--- 10 row(s) loaded.
+>>select * from trafodion.seabase.tbl_dos_num;
+
+C1           C2
+-----------  -----------
+
+          0        39478
+          1        21944
+          2        32730
+          3        19653
+          4        67794
+          5        93265
+          6            ?
+          7            ?
+          8            ?
+          9           17
+
+--- 10 row(s) selected.
+>>cqd HIVE_SCAN_SPECIAL_MODE reset;
+
+--- SQL operation complete.
 >>log;

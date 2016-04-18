@@ -543,8 +543,9 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
        Int64 routineUID = *(Int64*)rou->get(2);
        pRoutineDBCache->removeNARoutine(qualRoutineName,
                                         ComQiScope::REMOVE_FROM_ALL_USERS,
-                                        routineUID);
-    }
+                                        routineUID,
+                                        dropLibraryNode->ddlXns(), FALSE);
+     }
 
    }
  
@@ -1156,6 +1157,14 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       return;
     }
 
+  // Remove cached entries in other processes
+  NARoutineDB *pRoutineDBCache  = ActiveSchemaDB()->getNARoutineDB();
+  QualifiedName qualRoutineName(routineName, STMTHEAP);
+  pRoutineDBCache->removeNARoutine(qualRoutineName, 
+                                   ComQiScope::REMOVE_FROM_ALL_USERS,
+                                   objUID,
+                                   createRoutineNode->ddlXns(), FALSE);
+
   processReturn();
   return;
 }
@@ -1326,7 +1335,8 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   // Remove cached entries in other processes
   pRoutineDBCache->removeNARoutine(qualRoutineName, 
                                    ComQiScope::REMOVE_FROM_ALL_USERS,
-                                   objUID);
+                                   objUID,
+                                   dropRoutineNode->ddlXns(), FALSE);
 
   deallocEHI(ehi);      
   processReturn();

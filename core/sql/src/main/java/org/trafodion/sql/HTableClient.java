@@ -778,6 +778,7 @@ public class HTableClient {
                                  Object[] colNamesToFilter, 
                                  Object[] compareOpList, 
                                  Object[] colValuesToCompare,
+                                 float dopParallelScanner,
                                  float samplePercent,
                                  boolean inPreFetch,
                                  boolean useSnapshotScan,
@@ -979,9 +980,9 @@ public class HTableClient {
 	    if (useTRexScanner && (transID != 0)) {
 	      scanner = table.getScanner(transID, scan);
 	    } else {
-	      scanner = table.getScanner(scan);
-	    }
-	    if (logger.isTraceEnabled()) logger.trace("startScan(). After getScanner. Scanner: " + scanner);
+          scanner = table.getScanner(scan,dopParallelScanner);
+        }
+        if (logger.isTraceEnabled()) logger.trace("startScan(). After getScanner. Scanner: " + scanner+" dop:"+dopParallelScanner);
 	  }
 	  else
 	  {

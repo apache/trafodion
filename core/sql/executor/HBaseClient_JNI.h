@@ -249,6 +249,7 @@ public:
 			const LIST(NAString) *inColNamesToFilter, 
 			const LIST(NAString) *inCompareOpList,
 			const LIST(NAString) *inColValuesToCompare,
+            Float32 dopParallelScanner = 0.0f,
 			Float32 samplePercent = -1.0f,
 			NABoolean useSnapshotScan = FALSE,
 			Lng32 snapTimeout = 0,

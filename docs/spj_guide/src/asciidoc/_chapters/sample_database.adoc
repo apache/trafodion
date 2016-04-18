@@ -26,791 +26,159 @@
 This appendix presents the Sample Database schemas and tables on which
 the SPJs in this manual operate:
 
-* link:#_bookmark338["PERSNL Schema" (page 103)]
-** link:#_bookmark340["JOB Table" (page 103)]
-** link:#_bookmark342["EMPLOYEE Table" (page 104)]
-** link:#_bookmark344["DEPT Table" (page 106)]
-** link:#_bookmark346["PROJECT Table" (page 107)]
-* link:#_bookmark348["SALES Schema" (page 110)]
-** link:#_bookmark350["CUSTOMER Table" (page 110)]
-** link:#_bookmark352["ORDERS Table" (page 111)]
-** link:#_bookmark354["ODETAIL Table" (page 112)]
-** link:#_bookmark356["PARTS Table" (page 114)]
-* link:#_bookmark358["INVENT Schema" (page 115)]
-** link:#_bookmark360["SUPPLIER Table" (page 115)]
-** link:#_bookmark362["PARTSUPP Table" (page 116)]
-** link:#_bookmark364["PARTLOC Table" (page 119)]
+* <<persnl-schema, PERSNL Schema>>
+** <<job-table, JOB Table>>
+** <<employee-table, EMPLOYEE Table>>
+** <<dept-table, DEPT Table>>
+** <<project-table, PROJECT Table>>
+* <<sales-schema, SALES Schema>>
+** <<customer-table, CUSTOMER Table>>
+** <<orders-table, ORDERS Table>>
+** <<odetail-table, ODETAIL Table>>
+** <<parts-table, PARTS Table>>
+* <<invent-schema, INVENT Schema>>
+** <<supplier-table, SUPPLIER Table>>
+** <<partsupp-table, PARTSUPP Table>>
+** <<partloc-table, PARTLOC Table>>
+
+Click on the link for the schema or table name to download the definition file.
 
 [[persnl-schema]]
 == PERSNL Schema
 
-The PERSNL schema stores employee data.
+The link:resources/source/persnl_schema.sql[`PERSNL` schema] stores employee data.
 
-```
-CREATE SCHEMA DEMO.PERSNL ;
-SET SCHEMA DEMO.PERSNL ;
-```
+[source, sql]
+----
+include::{sourcedir}/persnl_schema.sql[PERSNL Schema Definition File]
+----
 
 [[job-table]]
 === JOB Table
 
-```
-CREATE TABLE demo.persnl.job
-( jobcode NUMERIC (4)  UNSIGNED NO DEFAULT  NOT NULL
-, jobdesc VARCHAR (18)          DEFAULT ' ' NOT NULL
-, PRIMARY KEY (jobcode)
-) ;
+The link:resources/source/persnl_job_table.sql[`JOB` table] maps job codes to job descriptions.
 
-INSERT INTO demo.persnl.job VALUES
-  ( 100, 'MANAGER' )
-, ( 200, 'PRODUCTION SUPV' )
-, ( 250, 'ASSEMBLER' )
-, ( 300, 'SALESREP' )
-, ( 400, 'SYSTEM ANALYST' )
-, ( 420, 'ENGINEER' )
-, ( 450, 'PROGRAMMER' )
-, ( 500, 'ACCOUNTANT' )
-, ( 600, 'ADMINISTRATOR' )
-, ( 900, 'SECRETARY' )
-;
-
-UPDATE STATISTICS FOR TABLE demo.persnl.job ON EVERY COLUMN;
-```
+[source, sql]
+----
+include::{sourcedir}/persnl_job_table.sql[PERSNL JOB Table Definition File]
+----
 
 [[employee-table]]
 === EMPLOYEE Table
 
-```
-CREATE TABLE demo.persnl.employee
-( empnum     NUMERIC (4)    UNSIGNED NO DEFAULT  NOT NULL
-, first_name CHARACTER (15)          DEFAULT ' ' NOT NULL
-, last_name  CHARACTER (20)          DEFAULT ' ' NOT NULL
-, deptnum    NUMERIC (4)    UNSIGNED NO DEFAULT  NOT NULL
-, jobcode    NUMERIC (4)    UNSIGNED DEFAULT     NULL
-, salary     NUMERIC (8, 2) UNSIGNED DEFAULT     NULL
-, PRIMARY KEY (empnum)
-);
+The link:resources/source/persnl_employee_table.sql[`EMPLOYEE` table] maps records employee information.
 
-ALTER TABLE demo.persnl.employee
-   ADD CONSTRAINT empnum_constrnt CHECK (empnum BETWEEN 0001 AND 9999)
-   ;
-
-CREATE INDEX xempname ON employee
-( last_name
-, first_name
-) ;
-
-CREATE INDEX xempdept ON employee
-( deptnum
-) ;
-
-CREATE VIEW demo.persnl.emplist AS
-SELECT
-  empnum
-, first_name
-, last_name
-, deptnum
-, jobcode
-FROM employee
-;
-
-INSERT INTO demo.persnl.employee VALUES
-  (  1,  'ROGER',    'GREEN',      9000, 100,  175500.00 )
-, ( 23,  'JERRY',    'HOWARD',     1000, 100,  137000.10 )
-, ( 29,  'JANE',     'RAYMOND',    3000, 100,  136000.00 )
-, ( 32,  'THOMAS',   'RUDLOFF',    2000, 100,  138000.40 )
-, ( 39,  'KLAUS ',   'SAFFERT',    3200, 100,  75000.00  )
-, ( 43,  'PAUL',     'WINTER',     3100, 100,  90000.00  )
-, ( 65,  'RACHEL',   'MCKAY',      4000, 100,  118000.00 )
-, ( 72,  'GLENN',    'THOMAS',     3300, 100,  80000.00  )
-, ( 75,  'TIM',      'WALKER',     3000, 300,  32000.00  )
-, ( 87,  'ERIC',     'BROWN',      4000, 400,  89000.00  )
-, ( 89,  'PETER',    'SMITH',      3300, 300,  37000.40  )
-, ( 93,  'DONALD',   'TAYLOR',     3100, 300,  33000.00  )
-, ( 104, 'DAVID',    'STRAND',     4000, 400,  69000.00  )
-, ( 109, 'STEVE',    'COOK',       4000, 400,  68000.00  )
-, ( 111, 'SHERRIE',  'WONG',       3500, 100,  70000.00  )
-, ( 178, 'JOHN',     'CHOU',       3500, 900,  28000.00  )
-, ( 180, 'MANFRED',  'CONRAD',     4000, 450,  32000.00  )
-, ( 201, 'JIM',      'HERMAN',     3000, 300,  19000.00  )
-, ( 202, 'LARRY',    'CLARK',      1000, 500,  25000.75  )
-, ( 203, 'KATHRYN',  'HALL',       4000, 400,  96000.00  )
-, ( 205, 'GINNY',    'FOSTER',     3300, 900,  30000.00  )
-, ( 206, 'DAVE',     'FISHER',     3200, 900,  25000.00  )
-, ( 207, 'MARK',     'FOLEY',      4000, 420,  33000.00  )
-, ( 208, 'SUE',      'CRAMER',     1000, 900,  19000.00  )
-, ( 209, 'SUSAN',    'CHAPMAN',    1500, 900,  17000.00  )
-, ( 210, 'RICHARD',  'BARTON',     1000, 500,  29000.00  )
-, ( 211, 'JIMMY',    'SCHNEIDER',  1500, 600,  26000.00  )
-, ( 212, 'JONATHAN', 'MITCHELL',   1500, 600,  32000.00  )
-, ( 213, 'ROBERT',   'WHITE',      1500, 100,  90000.00  )
-, ( 214, 'JULIA',    'KELLY',      1000, 500,  50000.00  )
-, ( 215, 'WALTER',   'LANCASTER',  4000, 450,  33000.50  )
-, ( 216, 'JOHN',     'JONES',      4000, 450,  40000.00  )
-, ( 217, 'MARLENE',  'BONNY',      4000, 900,  24000.90  )
-, ( 218, 'GEORGE',   'FRENCHMAN',  4000, 420,  36000.00  )
-, ( 219, 'DAVID',    'TERRY',      2000, 250,  27000.12  )
-, ( 220, 'JOHN',     'HUGHES',     3200, 300,  33000.10  )
-, ( 221, 'OTTO',     'SCHNABL',    3200, 300,  33000.00  )
-, ( 222, 'MARTIN',   'SCHAEFFER',  3200, 300,  31000.00  )
-, ( 223, 'HERBERT',  'KARAJAN',    3200, 300,  29000.00  )
-, ( 224, 'MARIA',    'JOSEF',      4000, 420,  18000.10  )
-, ( 225, 'KARL',     'HELMSTED',   4000, 450,  32000.00  )
-, ( 226, 'HEIDI',    'WEIGL',      3200, 300,  22000.00  )
-, ( 227, 'XAVIER',   'SEDLEMEYER', 3300, 300,  30000.00  )
-, ( 228, 'PETE',     'WELLINGTON', 3100, 300,  32000.20  )
-, ( 229, 'GEORGE',   'STRICKER',   3100, 300,  32222.00  )
-, ( 230, 'ROCKY',    'LEWIS',      2000, 200,  24000.00  )
-, ( 231, 'HERB',     'ALBERT',     3300, 300,  33000.00  )
-, ( 232, 'THOMAS',   'SPINNER',    4000, 450,  45000.00  )
-, ( 233, 'TED',      'MCDONALD',   2000, 250,  29000.00  )
-, ( 234, 'MARY',     'MILLER',     2500, 100,  56000.00  )
-, ( 235, 'MIRIAM',   'KING',       2500, 900,  18000.00  )
-, ( 321, 'BILL',     'WINN',       2000, 900,  32000.00  )
-, ( 337, 'DINAH',    'CLARK',      9000, 900,  37000.00  )
-, ( 343, 'ALAN',     'TERRY',      3000, 900,  39500.00  )
-, ( 557, 'BEN',      'HENDERSON',  4000, 400,  65000.00  )
-, ( 568, 'JESSICA',  'CRINER',     3500, 300,  39500.00  )
-, ( 990, 'THOMAS',   'STIBBS',     3500, NULL, NULL      )
-, ( 991, 'WAYNE',    'O''NEIL',    3500, NULL, NULL      )
-, ( 992, 'BARRY',    'KINNEY',     3500, NULL, NULL      )
-, ( 993, 'PAUL',     'BUSKETT',    3100, NULL, NULL      )
-, ( 994, 'EMMY',     'BUSKETT',    3100, NULL, NULL      )
-, ( 995, 'WALT',     'FARLEY',     3100, NULL, NULL      )
-;
-
-UPDATE STATISTICS FOR TABLE demo.persnl.employee ON EVERY COLUMN ;
-```
+[source, sql]
+----
+include::{sourcedir}/persnl_employee_table.sql[PERSNL EMPLOYEE Table Definition File]
+----
 
 [[dept-table]]
 === DEPT Table
 
-```
-CREATE TABLE demo.persnl.dept
-( deptnum  NUMERIC (4) UNSIGNED NO DEFAULT  NOT NULL
-, deptname CHARACTER (12)       NO DEFAULT  NOT NULL
-, manager  NUMERIC (4) UNSIGNED NO DEFAULT  NOT NULL
-, rptdept  NUMERIC (4) UNSIGNED DEFAULT 0   NOT NULL
-, location VARCHAR (18)         DEFAULT ' ' NOT NULL
-, PRIMARY KEY (deptnum)
-) ;
+The link:resources/source/persnl_dept_table.sql[`DEPT` table] maps records department information.
 
-CREATE INDEX xdeptmgr ON dept
-( manager
-) ;
-
-CREATE INDEX xdeptrpt ON dept
-( rptdept
-) ;
-
-ALTER TABLE demo.persnl.dept
-   ADD CONSTRAINT mgrnum_constrnt
-   CHECK (manager BETWEEN 0000 AND 9999)
-   ;
-
-ALTER TABLE demo.persnl.dept
-
-ADD CONSTRAINT deptnum_constrnt
-   CHECK ( deptnum IN
-           ( 1000
-           , 1500
-           , 2000
-           , 2500
-           , 3000
-           , 3100
-           , 3200
-           , 3300
-           , 3500
-           , 4000
-           , 4100
-           , 9000
-           )
-        ) ;
-
-CREATE VIEW demo.persnl.mgrlist
-( first_name
-, last_name
-, department
-)
-AS SELECT
-  first_name
-, last_name
-, deptname
-FROM dept, employee
-WHERE dept.manager = employee.empnum
-;
-
-INSERT INTO demo.persnl.dept VALUES
-  ( 1000, 'FINANCE',       23, 9000, 'CHICAGO'     )
-, ( 1500, 'PERSONNEL',    213, 1000, 'CHICAGO'     )
-, ( 2000, 'INVENTORY',     32, 9000, 'LOS ANGELES' )
-, ( 2500, 'SHIPPING',     234, 2000, 'PHOENIX'     )
-, ( 3000, 'MARKETING',     29, 9000, 'NEW YORK'    )
-, ( 3100, 'CANADA SALES',  43, 3000, 'TORONTO'     ) 
-, ( 3200, 'GERMNY SALES',  39, 3000, 'FRANKFURT'   )
-, ( 3300, 'ENGLND SALES',  72, 3000, 'LONDON'      )
-, ( 3500, 'ASIA SALES',   111, 3000, 'HONG KONG'   )
-, ( 4000, 'RESEARCH',      65, 9000, 'NEW YORK'    )
-, ( 4100, 'PLANNING',      87, 4000, 'NEW YORK'    )
-, ( 9000, 'xxCORPORATE',    1, 9000, 'CHICAGO'     )
-;
-
-UPDATE STATISTICS FOR TABLE demo.persnl.dept ON EVERY COLUMN ;
-```
+[source, sql]
+----
+include::{sourcedir}/persnl_dept_table.sql[PERSNL DEPT Table Definition File]
+----
 
 [[project-table]]
 === PROJECT Table
 
-```
-CREATE TABLE demo.persnl.project
-( projcode       NUMERIC (4)  UNSIGNED NO DEFAULT                                     NOT NULL
-, empnum         NUMERIC (4)  UNSIGNED NO DEFAULT                                     NOT NULL
-, projdesc       VARCHAR (18)          DEFAULT ' '                                    NOT NULL
-, start_date     DATE                  DEFAULT DATE '2011-07-01'                      NOT NULL
-, ship_timestamp TIMESTAMP             DEFAULT TIMESTAMP '2011-08-01:12:00:00.000000' NOT NULL
-, est_complete   INTERVAL DAY          DEFAULT INTERVAL '30' DAY                      NOT NULL
-, PRIMARY KEY (projcode, empnum)
-) ;
+The link:resources/source/persnl_project_table.sql[`PROJECT` table] maps records information about projects.
 
-INSERT INTO demo.persnl.project
-VALUES
-  ( 1000, 213, 'SALT LAKE CITY',    DATE '2011-04-10', TIMESTAMP '2011-04-21:08:15:00.00',   INTERVAL '15' DAY )
-, ( 1000, 211, 'SALT LAKE CITY',    DATE '2011-04-10', TIMESTAMP '2011-04-21:08:15:00.00',   INTERVAL '15' DAY )
-, ( 1000,  23, 'SALT LAKE CITY',    DATE '2011-04-10', TIMESTAMP '2011-04-21:08:15:00.00',   INTERVAL '15' DAY )
-, ( 1000,   1, 'SALT LAKE CITY',    DATE '2011-04-10', TIMESTAMP '2011-04-21:08:15:00.00',   INTERVAL '15' DAY )
-, ( 2000, 227, 'ROSS PRODUCTS',     DATE '2011-06-10', TIMESTAMP '2011-07-21:08:30:00.0000', INTERVAL '30' DAY )
-, ( 2000, 109, 'ROSS PRODUCTS',     DATE '2011-06-10', TIMESTAMP '2011-07-21:08:30:00.0000', INTERVAL '30' DAY )
-, ( 2000, 215, 'ROSS PRODUCTS',     DATE '2011-06-10', TIMESTAMP '2011-07-21:08:30:00.0000', INTERVAL '30' DAY )
-, ( 2000,  65, 'ROSS PRODUCTS',     DATE '2011-06-10', TIMESTAMP '2011-07-21:08:30:00.0000', INTERVAL '30' DAY )
-, ( 2500,  65, 'MONTANA TOOLS',     DATE '2011-10-10', TIMESTAMP '2011-12-21:09:00:00.0000', INTERVAL '60' DAY )
-, ( 2500, 207, 'MONTANA TOOLS',     DATE '2011-10-10', TIMESTAMP '2011-12-21:09:00:00.0000', INTERVAL '60' DAY )
-, ( 2500, 232, 'MONTANA TOOLS',     DATE '2011-10-10', TIMESTAMP '2011-12-21:09:00:00.0000', INTERVAL '60' DAY )
-, ( 2500, 180, 'MONTANA TOOLS',     DATE '2011-10-10', TIMESTAMP '2011-12-21:09:00:00.0000', INTERVAL '60' DAY )
-, ( 2500,  93, 'MONTANA TOOLS',     DATE '2011-10-10', TIMESTAMP '2011-12-21:09:00:00.0000', INTERVAL '60' DAY )
-, ( 3000,  65, 'AHAUS TOOL/SUPPLY', DATE '2011-08-21', TIMESTAMP '2011-10-21:08:10:00.0000', INTERVAL '60' DAY )
-, ( 3000, 221, 'AHAUS TOOL/SUPPLY', DATE '2011-08-21', TIMESTAMP '2011-10-21:08:10:00.0000', INTERVAL '60' DAY )
-, ( 3000, 226, 'AHAUS TOOL/SUPPLY', DATE '2011-08-21', TIMESTAMP '2011-10-21:08:10:00.0000', INTERVAL '60' DAY )
-, ( 3000, 224, 'AHAUS TOOL/SUPPLY', DATE '2011-08-21', TIMESTAMP '2011-10-21:08:10:00.0000', INTERVAL '60' DAY )
-, ( 3000, 225, 'AHAUS TOOL/SUPPLY', DATE '2011-08-21', TIMESTAMP '2011-10-21:08:10:00.0000', INTERVAL '60' DAY )
-, ( 4000,  75, 'THE WORKS',         DATE '2011-09-21', TIMESTAMP '2011-10-21:10:15:00.0000', INTERVAL '30' DAY )
-, ( 4000,  29, 'THE WORKS',         DATE '2011-09-21', TIMESTAMP '2011-10-21:10:15:00.0000', INTERVAL '30' DAY )
-, ( 4000, 231, 'THE WORKS',         DATE '2011-09-21', TIMESTAMP '2011-10-21:10:15:00.0000', INTERVAL '30' DAY )
-, ( 4000, 228, 'THE WORKS',         DATE '2011-09-21', TIMESTAMP '2011-10-21:10:15:00.0000', INTERVAL '30' DAY )
-, ( 4000, 223, 'THE WORKS',         DATE '2011-09-21', TIMESTAMP '2011-10-21:10:15:00.0000', INTERVAL '30' DAY )
-, ( 4000, 568, 'THE WORKS',         DATE '2011-09-21', TIMESTAMP '2011-10-21:10:15:00.0000', INTERVAL '30' DAY )
-, ( 5000,  65, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
-, ( 5000, 568, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
-, ( 5000, 557, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
-, ( 5000, 216, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
-, ( 5000, 203, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
-, ( 5000, 218, 'ASIA PROJECT',      DATE '2011-09-28', TIMESTAMP '2011-10-28:09:25:01.1111', INTERVAL '30' DAY )
-;
-
-UPDATE STATISTICS FOR TABLE demo.persnl.project ON EVERY COLUMN ;
-```
+[source, sql]
+----
+include::{sourcedir}/persnl_project_table.sql[PERSNL DEPT Table Definition File]
+----
 
 [[sales-schema]]
 == SALES Schema
 
-The SALES schema stores customer and sales data.
+The link:resources/source/sales_schema.sql[`SALES` schema] stores customer and sales data.
 
-```
-CREATE SCHEMA DEMO.SALES ;
-SET SCHEMA DEMO.SALES ;
-```
+[source, sql]
+----
+include::{sourcedir}/sales_schema.sql[SALES Schema Definition File]
+----
 
 [[customer-table]]
 === CUSTOMER Table
 
-```
-CREATE TABLE demo.sales.customer
-( custnum  NUMERIC (4) UNSIGNED NO DEFAULT   NOT NULL
-, custname CHARACTER (18)       NO DEFAULT   NOT NULL
-, street   CHARACTER (22)       NO DEFAULT   NOT NULL
-, city     CHARACTER (14)       NO DEFAULT   NOT NULL
-, state    CHARACTER (12)       DEFAULT ' '  NOT NULL
-, postcode CHARACTER (10)       NO DEFAULT   NOT NULL
-, credit   CHARACTER (2)        DEFAULT 'C1' NOT NULL
-, PRIMARY KEY (custnum)
-) ;
+The link:resources/source/sales_customer_table.sql[`CUSTOMER` table] maps records information about customers.
 
-INSERT INTO demo.sales.customer VALUES
-  (   21, 'CENTRAL UNIVERSITY', 'UNIVERSITY WAY',        'PHILADELPHIA',  'PENNSYLVANIA', '19104',    'A1' )
-, (  123, 'BROWN MEDICAL CO',   '100 CALIFORNIA STREET', 'SAN FRANCISCO', 'CALIFORNIA',   '94944',    'C2' )
-, (  143, 'STEVENS SUPPLY',     '2020 HARRIS STREET',    'DENVER',        'COLORADO',     '80734',    'A2' )
-, (  324, 'PREMIER INSURANCE',  '3300 WARBASH',          'LUBBOCK',       'TEXAS',        '76308',    'A1' )
-, (  543, 'FRESNO STATE BANK',  '2300 BROWN BLVD',       'FRESNO',        'CALIFORNIA',   '93921',    'B3' )
-, (  926, 'METALL-AG.',         '12 WAGNERRING',         'FRANKFURT',     'WEST GERMANY', '34',       'D4' )
-, ( 1234, 'DATASPEED',          '300 SAN GABRIEL WAY',   'NEW YORK',      'NEW YORK',     '10014',    'C1' )
-, ( 3210, 'BESTFOOD MARKETS',   '3333 PHELPS STREET',    'LINCOLN',       'NEBRASKA',     '68134',    'A4' )
-, ( 3333, 'NATIONAL UTILITIES', '6500 TRANS-CANADIENNE', 'QUEBEC',        'CANADA',       'H4T 1X4',  'A1' )
-, ( 5635, 'ROYAL CHEMICALS',    '45 NEW BROAD STREET',   'LONDON',        'ENGLAND',      'EC2M 1NH', 'B2' )
-, ( 7654, 'MOTOR DISTRIBUTING', '2345 FIRST STREET',     'CHICAGO',       'ILLINOIS',     '60610',    'E4' )
-, ( 7777, 'SLEEPWELL HOTELS',   '9000 PETERS AVENUE',    'DALLAS',        'TEXAS',        '75244',    'B1' )
-, ( 9000, 'BUNKNOUGHT INN',     '4738 RALPH STREET',     'BAYONNE',       'NEW JERSEY',   '09520',    'C1' )
-, ( 9010, 'HOTEL OREGON',       '333 PORTLAND AVE.',     'MEDFORD',       'OREGON',       '97444',    'C2' )
-, ( 9033, 'ART SUPPLIES, INC.', '22 SWEET ST.',          'PITTSBURGH',    'PENNA.',       '08333',    'C3' )
-;
-
-UPDATE STATISTICS FOR TABLE demo.sales.customer ON EVERY COLUMN;
-```
+[source, sql]
+----
+include::{sourcedir}/sales_customer_table.sql[SALES CUSTOMER Table Definition File]
+----
 
 [[orders-table]]
 === ORDERS Table
 
-```
-CREATE TABLE demo.sales.orders
-( ordernum   NUMERIC (6) UNSIGNED NO DEFAULT                NOT NULL
-, order_date DATE                 DEFAULT DATE '2011-07-01' NOT NULL
-, deliv_date DATE                 DEFAULT DATE '2011-08-01' NOT NULL
-, salesrep   NUMERIC (4) UNSIGNED DEFAULT 0                 NOT NULL
-, custnum    NUMERIC (4) UNSIGNED NO DEFAULT                NOT NULL
-, PRIMARY KEY (ordernum)
-) ;
+The link:resources/source/sales_orders_table.sql[`ORDERS` table] maps records information about sales orders.
 
-ALTER TABLE demo.sales.orders
-   ADD CONSTRAINT demo.sales.date_constrnt CHECK (deliv_date >= order_date)
-   ;
-
-CREATE INDEX xordrep ON orders
-( salesrep
-) ;
-
-CREATE INDEX xordcus ON orders
-( custnum
-) ;
-
-CREATE VIEW demo.sales.ordrep AS SELECT
-  empnum
-, last_name
-, ordernum
-, o.custnum
-FROM
-  demo.persnl.employee e
-, demo.sales.orders o
-, demo.sales.customer c
-WHERE e.empnum = o.salesrep
-  AND o.custnum = C.custnum
-;
-
-CREATE INDEX xcustnam ON customer
-(
-custname
-) ;
-
-CREATE VIEW demo.sales.custlist AS SELECT
-  custnum
-, custname
-, street
-, city
-, state
-, postcode
-FROM demo.sales.customer
-;
-
-INSERT INTO demo.sales.orders VALUES
-  ( 100210, DATE '2011-04-10', DATE '2011-04-10', 220, 1234 )
-, ( 100250, DATE '2011-01-23', DATE '2011-06-15', 220, 7777 )
-, ( 101220, DATE '2011-07-21', DATE '2011-12-15', 221, 5635 )
-, ( 200300, DATE '2011-02-06', DATE '2011-07-01', 222,  926 )
-, ( 200320, DATE '2011-02-17', DATE '2011-07-20', 223,   21 )
-, ( 200490, DATE '2011-03-19', DATE '2011-11-01', 226,  123 )
-, ( 300350, DATE '2011-03-03', DATE '2011-08-10', 231,  543 )
-, ( 300380, DATE '2011-03-19', DATE '2011-08-20', 226,  123 )
-, ( 400410, DATE '2011-03-27', DATE '2011-09-01', 227, 7654 )
-, ( 500450, DATE '2011-04-20', DATE '2011-09-15', 220,  324 )
-, ( 600480, DATE '2011-05-12', DATE '2011-10-10', 226, 3333 )
-, ( 700510, DATE '2011-06-01', DATE '2011-10-20', 229,  143 )
-, ( 800660, DATE '2011-10-09', DATE '2011-11-01', 568, 3210 )
-;
-
-UPDATE STATISTICS FOR TABLE demo.sales.orders ON EVERY COLUMN;
-```
+[source, sql]
+----
+include::{sourcedir}/sales_orders_table.sql[SALES ORDERS Table Definition File]
+----
 
 [[odetail-table]]
 === ODETAIL Table
 
-```
-CREATE TABLE demo.sales.odetail
-( ordernum    NUMERIC (6) UNSIGNED NO DEFAULT NOT NULL
-, partnum     NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
-, unit_price  NUMERIC (8, 2)       NO DEFAULT NOT NULL
-, qty_ordered NUMERIC (5) UNSIGNED NO DEFAULT NOT NULL
-, PRIMARY KEY (ordernum,partnum)
-) ;
+The link:resources/source/sales_odetail_table.sql[`ODETAIL` table] maps records detailed information about sales orders.
 
-INSERT INTO demo.sales.odetail VALUES
-  ( 100210, 244,  3500.00,  3 )
-, ( 100210,2001,  1100.00,  3 )
-, ( 100210,2403,  620.00,   6 )
-, ( 100210,5100,  150.00,  10 )
-, ( 100250, 244,  3500.00,  4 )
-, ( 100250,5103,  400.00,  10 )
-, ( 100250,6301,  245.00,  15 )
-, ( 100250,6500,  95.00,   10 )
-, ( 101220, 255,  3900.00, 10 )
-, ( 101220,5103,  400.00,   3 )
-, ( 101220,7102,  275.00,   7 )
-, ( 101220,7301,  425.00,   8 )
-, ( 200300, 244,  3500.00,  8 )
-, ( 200300,2001,  1000.00, 10 )
-, ( 200300,2002,  1400.00, 10 )
-, ( 200320,5504,  165.00,   5 )
-, ( 200320,6201,  195.00,  16 )
-, ( 200320,6301,  245.00,   6 )
-, ( 200320,6400,  540.00,   7 )
-, ( 200490,3210,  715.00,   1 )
-, ( 200490,5505,  350.00,   1 )
-, ( 300350, 244,  2800.00, 20 )
-, ( 300350,5100,  150.00,   5 )
-, ( 300350,5110,  525.00,  12 )
-, ( 300350,6301,  245.00,   5 )
-, ( 300350,6400,  550.00,   5 )
-, ( 300380, 244,  3000.00,  6 )
-, ( 300380,2402,  320.00,  12 )
-, ( 300380,2405,  760.00,   8 )
-, ( 400410, 212,  2450.00, 12 )
-, ( 400410, 255,  3800.00, 12 )
-, ( 400410,2001,  1000.00, 36 )
-, ( 400410,6301,  240.00,  48 )
-, ( 400410,6400,  500.00,  70 )
-, ( 400410,7301,  415.00,  36 )
-, ( 500450, 212,  2500.00,  8 )
-, ( 500450, 255,  3900.00, 12 )
-, ( 500450,2001,  1100.00, 16 )
-, ( 500450,2002,  1500.00, 16 )
-, ( 500450,2402,  330.00,  48 )
-, ( 600480,2001,  1000.00, 60 )
-, ( 600480,2002,  1450.00, 20 )
-, ( 600480,2003,  1900.00, 40 )
-, ( 600480,3103,  4000.00, 40 )
-, ( 600480,3205,  625.00,  20 )
-, ( 600480,5100,  135.00,  60 )
-, ( 600480,5103,  390.00,  20 )
-, ( 600480,7301,  425.00,  40 )
-, ( 700410,2003,  1900.00, 65 )
-, ( 700410,2403,  650.00,  10 )
-, ( 700510, 255,  4000.00,  4 )
-, ( 700510,6500,  95.00,    8 )
-, ( 700510,7102,  275.00,   5 )
-, ( 800660, 244,  3000.00,  6 )
-, ( 800660,2001,  1000.00, 30 )
-, ( 800660,2403,  600.00,  48 )
-, ( 800660,2405,  795.00,  10 )
-, ( 800660,3201,  525.00,   6 )
-, ( 800660,3205,  600.00,  18 )
-, ( 800660,3210,  715.00,   6 )
-, ( 800660,4102,  26.00,  130 )
-, ( 800660,5100,  150.00,  12 )
-, ( 800660,5101,  200.00,   6 )
-, ( 800660,5110,  490.00,  48 )
-, ( 800660,5504,  165.00,  18 )
-, ( 800660,6201,  195.00,   6 )
-, ( 800660,6301,  235.00,  24 )
-, ( 800660,6400,  525.00,  30 )
-, ( 800660,6401,  700.00,  36 )
-, ( 800660,6500,  95.00,   22 )
-, ( 800660,7102,  275.00,   6 )
-, ( 800660,7301,  425.00,  12 )
-;
-
-UPDATE STATISTICS FOR TABLE demo.sales.odetail ON EVERY COLUMN;
-```
+[source, sql]
+----
+include::{sourcedir}/sales_odetail_table.sql[SALES ODETAIL Table Definition File]
+----
 
 [[parts-table]]
 === PARTS Table
 
-```
-CREATE TABLE demo.sales.parts
-( partnum       NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
-, partdesc      CHARACTER (18)       NO DEFAULT NOT NULL
-, price         NUMERIC (8, 2)       NO DEFAULT NOT NULL
-, qty_available NUMERIC (5)          DEFAULT 0  NOT NULL
-, PRIMARY KEY (partnum)
-) ;
+The link:resources/source/sales_parts_table.sql[`PARTS` table] maps records information about parts.
 
-CREATE INDEX xpartdes ON parts
-( partdesc
-) ;
-
-INSERT INTO demo.sales.parts VALUES
-  (  186, '186 MegaByte Disk',  186186.86, 186  )
-, (  212, 'PC SILVER, 20 MB',     2500.00, 3525 )
-, (  244, 'PC GOLD, 30 MB',       3000.00, 4426 )
-, (  255, 'PC DIAMOND, 60 MB',    4000.00, 3321 )
-, ( 2001, 'GRAPHIC PRINTER,M1',   1100.00, 2100 )
-, ( 2002, 'GRAPHIC PRINTER,M2',   1500.00, 3220 )
-, ( 2003, 'GRAPHIC PRINTER,M3',   2000.00, 2200 )
-, ( 2402, 'DAISY PRINTER,T1',      350.00, 4425 )
-, ( 2403, 'DAISY PRINTER,T2',      650.00, 3312 )
-, ( 2405, 'DAISY PRINTER, T3',     795.00, 2712 )
-, ( 3103, 'LASER PRINTER, X1',    4200.00, 3300 )
-, ( 3201, 'HARD DISK 20 MB',       525.00, 4436 )
-, ( 3205, 'HARD DISK 30 MB',       625.00, 2209 )
-, ( 3210, 'HARD DISK 40 MB',       715.00, 3314 )
-, ( 4102, 'DISKETTE HD, BOX',       28.00, 6540 )
-, ( 5100, 'MONITOR BW, TYPE 1',    150.00, 3237 )
-, ( 5101, 'MONITOR BW, TYPE 2',    200.00, 2400 )
-, ( 5103, 'MONITOR COLOR, M1',     400.00, 3328 )
-, ( 5110, 'MONITOR COLOR, M2',     525.00, 3236 )
-, ( 5504, 'MEMORY CARD, 512KB',    165.00, 2630 )
-, ( 5505, 'MEMORY CARD, 1 MB',     315.00, 3830 )
-, ( 6201, 'GRAPHIC CARD, LR',      195.00, 2306 )
-, ( 6301, 'GRAPHIC CARD, HR',      245.00, 2331 )
-, ( 6400, 'STREAMING TAPE,M20',    550.00, 1268 )
-, ( 6401, 'STREAMING TAPE,M60',    725.00, 1308 )
-, ( 6500, 'DISK CONTROLLER',        95.00, 2532 )
-, ( 6603, 'PRINTER CONTROLLER',     45.00, 430  )
-, ( 7102, 'SMART MODEM, 1200',     275.00, 2200 )
-, ( 7301, 'SMART MODEM, 2400',     425.00, 2332 )
-;
-
-UPDATE STATISTICS FOR TABLE demo.sales.parts ON EVERY COLUMN ;
-```
+[source, sql]
+----
+include::{sourcedir}/sales_parts_table.sql[SALES PARTS Table Definition File]
+----
 
 [[invent-schema]]
 === INVENT Schema
 
-The INVENT schema stored inventory data.
+The link:resources/source/invent_schema.sql[`INVENT` schema] stores inventory data.
 
-```
-CREATE SCHEMA DEMO.INVENT ;
-SET SCHEMA DEMO.INVENT ;
-```
+[source, sql]
+----
+include::{sourcedir}/invent_schema.sql[INVENT Schema Definition File]
+----
 
 [[supplier-table]]
 === SUPPLIER Table
 
-```
-CREATE TABLE demo.invent.supplier
-( suppnum  NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
-, suppname CHARACTER (18)       NO DEFAULT NOT NULL
-, street   CHARACTER (22)       NO DEFAULT NOT NULL
-, city     CHARACTER (14)       NO DEFAULT NOT NULL
-, state    CHARACTER (12)       NO DEFAULT NOT NULL
-, postcode CHARACTER (10)       NO DEFAULT NOT NULL
-, PRIMARY KEY (suppnum)
-) ;
+The link:resources/source/invent_supplier_table.sql[`SUPPLIER` table] maps records information about suppliers.
 
-CREATE INDEX xsuppnam ON supplier
-( suppname
-) ;
-
-INSERT INTO demo.invent.supplier VALUES
-  (   1, 'NEW COMPUTERS INC',    '1800 KING ST.',         'SAN FRANCISCO', 'CALIFORNIA',   '94112' )
-, (   2, 'DATA TERMINAL INC',    '2000 BAKER STREET',     'LAS VEGAS',     'NEVADA',       '66134' )
-, (   3, 'HIGH DENSITY INC',     '7600 EMERSON',          'NEW YORK',      'NEW YORK',     '10230' )
-, (   6, 'MAGNETICS INC',        '1000 INDUSTRY DRIVE',   'LEXINGTON',     'MASS',         '02159' )
-, (   8, 'ATTRACTIVE CORP',      '7777 FOUNTAIN WAY',     'CHICAGO',       'ILLINOIS',     '60610' )
-, (  10, 'LEVERAGE INC',         '6000 LINCOLN LANE',     'DENVER',        'COLORADO',     '80712' )
-, (  15, 'DATADRIVE CORP',       '100 MAC ARTHUR',        'DALLAS',        'TEXAS',        '75244' )
-, (  20, 'Macadam''S PC''s',     '106 River Road',        'New Orleans',   'Louisiana',    '67890' )
-, (  25, 'Schroeder''s Ltd',     '212 Strasse Blvd West', 'Hamburg',       'Rhode Island', '22222' )
-, (  30, 'O''Donnell''s Drives', '729 West Palm Beach ',  'San Antonio',   'Texas',        '78344' )
-, (  35, 'Mac''Murphys PC''s',   '93323 Alemeda',         'Menlo Park',    'California',   '94025' )
-, (  36, 'MAC''MURPHYS PCB''s',  '93323 Alemeda Suite B', 'Menlo Park',    'California',   '94025' )
-, (  90, 'laser jets inc',       '284 blue ridge way',    'levittown',     'penna.',       '09520' )
-, (  92, 'watercolors',          '84 north grand avenue', 'menlo park',    'california',   '94025' )
-, (  95, 'application do''ers',  '2846 yellowwood drive', 'wayland',       'mass',         '02158' )
-, (  99, 'terminals, inc.',      '2 longfellow way',      'heightstown',   'nj',           '08520' )
-, ( 186, '186 Disk Makers',      '186 Dis Way',           'Dat Way',       'Wisconsin',    '00186' )
-;
-
-UPDATE STATISTICS FOR TABLE demo.invent.supplier ON EVERY COLUMN;
-```
+[source, sql]
+----
+include::{sourcedir}/invent_supplier_table.sql[INVENT SUPPLIER Table Definition File]
+----
 
 [[partsupp-table]]
 === PARTSUPP Table
 
-```
-CREATE TABLE demo.invent.partsupp
-( partnum      NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
-, suppnum      NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
-, partcost     NUMERIC (8, 2)       NO DEFAULT NOT NULL
-, qty_received NUMERIC (5) UNSIGNED DEFAULT 0  NOT NULL
-, PRIMARY KEY (partnum,suppnum)
-) ;
+The link:resources/source/invent_partsupp_table.sql[`PARTSUPP` table] maps parts to suppliers.
 
-CREATE INDEX XSUPORD ON partsupp
-( suppnum
-) ;
-
-CREATE VIEW demo.invent.view207
-( partnumber
-, partdescrpt
-, suppnumber
-, supplrname
-, partprice
-, qtyreceived
-)
-AS SELECT
-  x.partnum
-, partdesc
-, x.suppnum
-, suppname
-, partcost
-, qty_received
-FROM
-  demo.invent.partsupp x
-, demo.sales.parts p
-, demo.invent.supplier s
-WHERE x.partnum = p.partnum
-  AND x.suppnum = s.suppnum
-;
-
-CREATE VIEW demo.invent.view207n
-( partnumber
-, partdescrpt
-, suppnumber
-, supplrname
-, partprice
-, qtyreceived
-)
-AS SELECT
-  x.partnum
-, p.partdesc
-, s.suppnum
-, s.suppname
-, x.partcost
-, x.qty_received
-FROM demo.invent.supplier s
-LEFT JOIN demo.invent.partsupp x ON s.suppnum = x.suppnum
-LEFT JOIN demo.sales.parts p     ON x.partnum = p.partnum
-;
-
-CREATE VIEW demo.invent.viewcust
-( custnumber
-, cusname
-, ordernum
-)
-AS SELECT
-  c.custnum
-, c.custname
-, o.ordernum
-FROM demo.sales.customer c
-LEFT JOIN demo.sales.orders o ON c.custnum = o.custnum
-;
-
-CREATE VIEW demo.invent.viewcs AS SELECT
-  custname
-FROM demo.sales.customer
-UNION SELECT
-  suppname
-FROM demo.invent.supplier ;
-
-INSERT INTO demo.invent.partsupp VALUES
-  (  212,  1, 2000.00,  20 )
-, (  212,  3, 1900.00,  35 )
-, (  244,  1, 2400.00,  50 )
-, (  244,  2, 2200.00,  66 )
-, (  255,  1, 3300.00,  35 )
-, (  255,  3, 3000.00,  46 )
-, ( 2001,  1,  700.00, 100 )
-, ( 2001,  2,  750.00,  55 )
-, ( 2002,  1, 1000.00, 120 )
-, ( 2002,  6, 1100.00,  20 )
-, ( 2003,  1, 1300.00, 100 )
-, ( 2003,  2, 1400.00,  50 )
-, ( 2003, 10, 1450.00,  50 )
-, ( 2402,  1,  200.00,  35 )
-, ( 2403,  1,  300.00, 200 )
-, ( 2405,  1,  500.00,  40 )
-, ( 2405,  6,  450.00,  50 )
-, ( 3103,  1, 3200.00, 200 )
-, ( 3103, 15, 3300.00, 100 )
-, ( 3201,  1,  380.00,  36 )
-, ( 3205,  1,  425.00, 150 )
-, ( 3210,  6,  470.00,  10 )
-, ( 3210, 15,  450.00,  25 )
-, ( 4102,  6,   20.00, 115 )
-, ( 4102,  8,   19.00, 140 )
-, ( 4102, 15,   21.00,  30 )
-, ( 5100,  6,  100.00,  50 )
-, ( 5100,  8,  105.00,  40 )
-, ( 5100, 15,   95.00,  60 )
-, ( 5101,  8,  135.00,  33 )
-, ( 5101, 15,  125.00,  43 )
-, ( 5103,  8,  265.00,  20 )
-, ( 5103, 15,  250.00,  58 )
-, ( 5110,  1,  335.00, 100 )
-, ( 5110,  2,  350.00,  36 )
-, ( 5504,  2,   85.00,  10 )
-, ( 5504,  6,   75.00,  10 )
-, ( 5504, 15,   78.00,  10 )
-, ( 5505, 15,  200.00, 100 )
-, ( 6201,  1,  100.00, 110 )
-, ( 6301,  1,  150.00, 230 )
-, ( 6400,  1,  390.00,  50 )
-, ( 6401,  2,  500.00,  20 )
-, ( 6401,  3,  480.00,  38 )
-, ( 6500,  2,   60.00, 140 )
-, ( 6500,  3,   65.00,  32 )
-, ( 6603,  2,   25.00, 150 )
-, ( 7102, 10,  165.00, 100 )
-, ( 7301,  1,  300.00,  32 )
-;
-
-UPDATE STATISTICS FOR TABLE demo.invent.partsupp ON EVERY COLUMN;
-```
+[source, sql]
+----
+include::{sourcedir}/invent_partsupp_table.sql[INVENT PARTSUPP Table Definition File]
+----
 
 [[partloc-table]]
 === PARTLOC Table
 
-```
-CREATE TABLE demo.invent.partloc
-( loc_code    CHARACTER (3)        NO DEFAULT NOT NULL
-, partnum     NUMERIC (4) UNSIGNED NO DEFAULT NOT NULL
-, qty_on_hand NUMERIC (7)          DEFAULT 0  NOT NULL
-, PRIMARY KEY (loc_code,partnum)
-) ;
+The link:resources/source/invent_partloc_table.sql[`PARTLOC` table] records number of parts to on hand.
 
-INSERT INTO demo.invent.partloc VALUES
-  ('A10', 2001,  800 )
-, ('A21',  255,   21 )
-, ('A34', 6201,    0 )
-, ('A35', 6301,    0 )
-, ('A36', 6400,   34 )
-, ('A66', 6603,  300 )
-, ('A67', 6401,  454 )
-, ('A78',  244,   43 )
-, ('A78', 5505,  100 )
-, ('A87',  212,   18 )
-, ('A88', 2403,  735 )
-, ('A88', 5504,   30 )
-, ('A94', 3205,  200 )
-, ('A98', 5110,  510 )
-, ('G11', 2002,   20 )
-, ('G34', 6201,  106 )
-, ('G35', 6301,  331 )
-, ('G36', 6400, 1034 )
-, ('G43', 5100,   77 )
-, ('G45', 4102,   69 )
-, ('G65', 3201,   36 )
-, ('G68', 6500, 1132 )
-, ('G76', 2405,   42 )
-, ('G76', 7301,   32 )
-, ('G78', 5505,    0 )
-, ('G87',  212,   20 )
-, ('G87', 3103,    0 )
-, ('G87', 3210,   44 )
-, ('G87', 2402,    0 )
-, ('G88', 2403,   32 )
-, ('G88', 5504,    0 )
-, ('G89', 5101,   86 )
-, ('G94', 3205,   59 )
-, ('G98', 5103,   28 )
-, ('G98', 5110,  136 )
-, ('P10', 2001,    0 )
-, ('P12', 2002,  200 )
-, ('P12', 2003,    0 )
-, ('P15', 2003,  200 )
-, ('P66', 6603,   40 )
-, ('P67', 6401,   54 )
-, ('P68', 6500,    0 )
-, ('P76', 7102,  200 )
-, ('P78',  244,   23 )
-, ('P87', 3103,  300 )
-;
-
-UPDATE STATISTICS FOR TABLE demo.invent.partloc ON EVERY COLUMN ;
-```
+[source, sql]
+----
+include::{sourcedir}/invent_partloc_table.sql[INVENT PARTLOC Table Definition File]
+----

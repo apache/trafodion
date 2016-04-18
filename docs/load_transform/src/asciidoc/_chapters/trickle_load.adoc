@@ -114,7 +114,7 @@ The following odb commands/features are discussed in this guide:
 * <<trickle-load-odb-extract, odb Extract>>
 * <<trickle-load-odb-transform, odb Transform>>
 
-See the http://trafodion.incubator.apache.org/docs/odb_user/index.html[Trafodion odb User Guide]
+See the http://trafodion.incubator.apache.org/docs/odb/index.html[Trafodion odb User Guide]
 for installation instructions and usage syntax for the odb tool.
 
 The following subsections assume that you've installed odb.

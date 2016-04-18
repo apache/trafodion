@@ -23,8 +23,8 @@
 [[introduction]]
 = Introduction
 
-This chapter introduces stored procedures in Java (SPJs) in a Trafodion
-database and covers these topics:
+This chapter introduces stored procedures in Java (SPJs) in {project-name}
+and covers these topics:
 
 [[what-is-an-spj]]
 == What Is an SPJ?
@@ -38,27 +38,26 @@ function, which returns a value directly to the calling application, a
 stored procedure returns each output value to a dynamic parameter in its
 parameter list or returns a set of values to a result set array.
 
-The Trafodion database supports stored procedures written in the Java
-programming language. The Trafodion implementation of stored procedures
+{project-name} supports stored procedures written in the Java
+programming language. The {project-name} implementation of stored procedures
 complies mostly, unless otherwise specified, with SQL/JRT (Java Routines
 and Types), which extends the ANSI SQL/Foundation standard. A stored
 procedure in Java (SPJ) is a Java method contained in a Java archive
-(JAR) file on the Trafodion platform, registered in the database, and
+(JAR) file on {project-name}, registered in the database, and
 executed by the database engine when a client application issues a CALL
 statement.
 
 The body of a stored procedure consists of a public, static Java method
 that returns void. These Java methods, called _SPJ methods_, are
-contained in classes within JAR files on the cluster hosting the
-Trafodion database.
+contained in classes within JAR files on the cluster hosting {project-name}.
 
 An SPJ method must be registered as a stored procedure in the database before a
 client application can execute it with a CALL statement. You upload the SPJ to
-the cluster where the Trafodion datbase is running
+the cluster where {project-name} is running
 and then you register the SPJ as a library object using the
-http://trafodion.apache.org/docs/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
+{docs-url}/sql_reference/index.html#create_library_statement[CREATE LIBRARY]
 statement. Next, you register the library object using the
-http://trafodion.apache.org/docs/sql_reference/index.html#create_procedure_statement[CREATE PROCEDURE]
+{docs-url}/sql_reference/index.html#create_procedure_statement[CREATE PROCEDURE]
 statement.
 
 [[benefits-of-spjs]]
@@ -77,7 +76,7 @@ the database. SPJs offer these advantages:
 === Java Methods Callable From SQL
 
 With support for SPJs, Java methods are callable from any client
-application that connects to the Trafodion platform. For example, you can
+application that connects to {project-name}. For example, you can
 invoke the same SPJ method from JDBC client applications and ODBC client
 applications. By using the database engine to invoke Java methods, you
 can extend the functionality of the database and share business logic
@@ -131,16 +130,16 @@ Java class files for SPJs once and deploy them anywhere.
 Because SPJ methods are written in Java, and SPJs conform to the ANSI
 SQL standard, SPJs are portable across different database servers. With
 minimal changes to SPJ methods, you can port existing SPJ JAR files from
-another database server to a Trafodion platform and register the methods
-as stored procedures in a Trafodion database. You can also port client
-applications that call SPJs in other databases to Trafodion SQL with
+another database server to {project-name} and register the methods
+as stored procedures in a {project-name} database. You can also port client
+applications that call SPJs in other databases to {project-name} SQL with
 minimal changes to the CALL statements in the application.
 
 <<<
 [[use-spjs]]
 == Use SPJs
 
-To use SPJs in a Trafodion database:
+To use SPJs in {project-name}:
 
 1.  Verify that you have the required software installed on the client
 workstation. See <<get-started, Get Started>>.
@@ -148,8 +147,13 @@ workstation. See <<get-started, Get Started>>.
 2.  Develop a Java method to be used as an SPJ:
 .. Write a static Java method:
 +
+Create a file named `Payroll.java` with the following content:
++
 [source, java]
 ----
+import java.sql.* ;
+import java.math.* ;
+
 public class Payroll
 {
    public static void adjustSalary( BigDecimal empNum
@@ -160,14 +164,14 @@ public class Payroll
          DriverManager.getConnection( "jdbc:default:connection" ) ;
 
       PreparedStatement setSalary =
-         conn.prepareStatement( "UPDATE demo.persnl.employee "
+         conn.prepareStatement( "UPDATE trafodion.persnl.employee "
 	                      + "SET salary = salary * (1 + (? / 100)) "
 			      + "WHERE empnum = ?"
 			      ) ;
 
       PreparedStatement getSalary =
          conn.prepareStatement( "SELECT salary "
-	                      + "FROM demo.persnl.employee "
+	                      + "FROM trafodion.persnl.employee "
 			      + "WHERE empnum = ?"
 			      ) ;
 
@@ -190,7 +194,8 @@ public class Payroll
 .. Compile the Java source file to produce a class file:
 +
 ```
-javac Payroll.java
+$ javac Payroll.java
+$
 ```
 
 .. Package the SPJ class file in a JAR file:
@@ -203,12 +208,15 @@ If the SPJ class refers to other classes, package the other classes in
 the same JAR file as the SPJ class:
 +
 ```
-jar cvf Payroll.jar Payroll.class other.class
+$ jar cvf Payroll.jar Payroll.class other.class
+added manifest
+adding: Payroll.class(in = 1213) (out= 711)(deflated 41%)
+$
 ```
 +
 For details, see <<develop-spj-methods, Develop SPJ Methods>>.
 
-3. Deploy the SPJ JAR file on the Trafodion platform by creating a
+3. Deploy the SPJ JAR file on {project-name} by creating a
 library object for the JAR file in one of the database schemas. For
 details, see <<Deploy-spj-jar-files, Deploy SPJ JAR Files>>.
 
@@ -222,24 +230,25 @@ GRANT statements in an trafci session, as shown below:
 [source,sql]
 ----
 GRANT EXECUTE
-ON PROCEDURE demo.persnl.adjustsalary
+ON PROCEDURE trafodion.persnl.adjustsalary
 TO "payrolldir1", "payrolldir2"
 WITH GRANT OPTION ;
 
 GRANT SELECT, UPDATE (salary)
-ON TABLE demo.persnl.employee
+ON TABLE trafodion.persnl.employee
 TO "payrolldir1", "payrolldir2"
 WITH GRANT OPTION ;
 ----
 +
 For details, see <<grant-privileges, Grant Privileges>>.
-
++
+<<<
 6. Execute an SPJ by using a CALL statement in a client application.
 For example, you can issue a CALL statement in an trafci session, as
 shown below, or in a JDBC or ODBC client application:
 +
 ```
-SQL> CALL demo.persnl.adjustsalary( 29, 2.5, ? ) ;
+SQL> CALL trafodion.persnl.adjustsalary( 29, 2.5, ? ) ;
 
 NEWSALARY
 ------------

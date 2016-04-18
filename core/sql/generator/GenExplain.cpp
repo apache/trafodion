@@ -956,6 +956,13 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   }
 
   char buf[20];
+
+  if ((((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner())>0.0) {
+     description += "parallel_scanner: " ;
+     sprintf(buf, "%g ", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner());
+     description += buf;
+  }
+
   if ( getProbes().getValue() > 0.0 ) {
     description += "probes: "; // total number of probes
     sprintf(buf, "%g ", getProbes().getValue());

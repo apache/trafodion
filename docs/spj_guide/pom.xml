@@ -122,7 +122,7 @@
         <artifactId>gem-maven-plugin</artifactId>
         <version>1.0.10</version>
         <configuration>
-          <!-- align JRuby version with AsciidoctorJ to avoid redundant downloading -->
+          <!-- align JRuby version with AsciidoctorJ to avoid redundant downloading  -->
           <jrubyVersion>${jruby.version}</jrubyVersion>
           <gemHome>${project.build.directory}/gems</gemHome>
           <gemPath>${project.build.directory}/gems</gemPath>
@@ -184,6 +184,10 @@
                 <!-- Location of centralized stylesheet -->
                 <stylesheet>${basedir}/../shared/trafodion-manuals.css</stylesheet>
                 <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>Trafodion</project-name>
+                <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
+                <project-support>user@trafodion.incubator.apache.org</project-support>
+                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
@@ -209,6 +213,10 @@
                 <idprefix/>
                 <idseparator>-</idseparator>
                 <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>Trafodion</project-name>
+                <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
+                <project-support>user@trafodion.incubator.apache.org</project-support>
+                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
               </attributes>
             </configuration>

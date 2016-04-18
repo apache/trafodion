@@ -3585,7 +3585,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
     JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
-    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FZZILjava/lang/String;Ljava/lang/String;II)Z";
+    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FFZZILjava/lang/String;Ljava/lang/String;II)Z";
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
     JavaMethods_[JM_DELETE     ].jm_signature = "(J[B[Ljava/lang/Object;JZ)Z";
     JavaMethods_[JM_COPROC_AGGR     ].jm_name      = "coProcAggr";
@@ -3631,6 +3631,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 					const LIST(NAString) *inColNamesToFilter, 
 					const LIST(NAString) *inCompareOpList,
 					const LIST(NAString) *inColValuesToCompare,
+                    Float32 dopParallelScanner,
 					Float32 samplePercent,
 					NABoolean useSnapshotScan,
 					Lng32 snapTimeout,
@@ -3754,6 +3755,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
         return HTC_ERROR_SCANOPEN_PARAM;
      }
   }
+  jfloat j_dopParallelScanner = dopParallelScanner;
   jfloat j_smplPct = samplePercent;
   jboolean j_useSnapshotScan = useSnapshotScan;
   jint j_snapTimeout = snapTimeout;
@@ -3786,6 +3788,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
                                               JavaMethods_[JM_SCAN_OPEN].methodID, 
                                               j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_smallScanner, j_ncr,
                                               j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
+                                              j_dopParallelScanner,
                                               j_smplPct, j_preFetch, j_useSnapshotScan,
                                               j_snapTimeout, js_snapName, js_tmp_loc, j_espNum,
                                               j_versions);
