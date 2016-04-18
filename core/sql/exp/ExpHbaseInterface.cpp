@@ -629,13 +629,14 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      const LIST(NAString) *inColNamesToFilter,
 				      const LIST(NAString) *inCompareOpList,
 				      const LIST(NAString) *inColValuesToCompare,
+	                  Float32 dopParallelScanner,
 				      Float32 samplePercent,
 				      NABoolean useSnapshotScan,
 				      Lng32 snapTimeout,
 				      char * snapName,
 				      char * tmpLoc,
 				      Lng32 espNum,
-                                      Lng32 versions)
+                      Lng32 versions)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
   if (htc_ == NULL)
@@ -659,6 +660,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
                              inColNamesToFilter,
                              inCompareOpList,
                              inColValuesToCompare,
+                             dopParallelScanner,
                              samplePercent,
                              useSnapshotScan,
                              snapTimeout,

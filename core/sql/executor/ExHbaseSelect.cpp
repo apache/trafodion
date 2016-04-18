@@ -90,6 +90,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
+                       tcb_->hbaseAccessTdb().getHbasePerfAttributes()->dopParallelScanner(),
 					   tcb_->getSamplePercentage(),
                                            FALSE, 0, NULL, NULL, 0,
                                            (tcb_->hbaseAccessTdb().getHbaseAccessOptions() 
@@ -275,6 +276,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
+                       tcb_->hbaseAccessTdb().getHbasePerfAttributes()->dopParallelScanner(),
 					   tcb_->getSamplePercentage(),
                                            FALSE, 0, NULL, NULL, 0,
                                            (tcb_->hbaseAccessTdb().getHbaseAccessOptions() 
@@ -492,6 +494,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
+                       tcb_->hbaseAccessTdb().getHbasePerfAttributes()->dopParallelScanner(),
                                            tcb_->getSamplePercentage(),
                                            tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getUseSnapshotScan(),
                                            tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotScanTimeout(),

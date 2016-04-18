@@ -288,6 +288,9 @@ public:
     void setMaxNumRowsPerHbaseBlock(UInt32 n) { maxNumRowsPerHBaseBlock_ = n;}
     UInt32 maxNumRowsPerHbaseBlock() { return maxNumRowsPerHBaseBlock_; }
 
+    void setDopParallelScanner(Float32 f) { dopParallelScanner_ = f;}
+    Float32 dopParallelScanner() { return dopParallelScanner_; }
+
   private:
     enum
     {
@@ -301,6 +304,7 @@ public:
     UInt32 flags_;
     UInt32 numCacheRows_;
     UInt32 maxNumRowsPerHBaseBlock_;
+    Float32 dopParallelScanner_;
   };
 
   // ---------------------------------------------------------------------

@@ -88,6 +88,8 @@ if [[ ${lv_clean_hb_data} -gt 0 ]]; then
     lv_zk_dir="${MY_SW_ROOT}/hdfs:"
     echo "Deleting the zookeeper directory: ${lv_zk_dir}"
     rm -rf ${lv_zk_dir}
+    echo "Deleting the zookeeper directory: ${MY_ZOOKEEPER_DATA_DIR}"
+    rm -rf ${MY_ZOOKEEPER_DATA_DIR}
 fi
 
 #delete the logs
@@ -101,6 +103,6 @@ fi
 
 if [[ ${lv_clean_hb_data} -gt 1 ]]; then
 # delete the HBase table data from HDFS
-    echo "Deleting the HBase data directory (hdfs) /hbase"
+    echo  "Deleting the HBase data directory (hdfs) /hbase"
     swhdfs dfs -rm -f -r -skipTrash /hbase
 fi
