@@ -111,6 +111,7 @@ char *odbauth = "Trafodion Dev <trafodion-development@lists.launchpad.net>";
         return (0);
     }
     #undef UNICODE
+    #define strcasecmp _stricmp
     #define snprintf sprintf_s
     #define chdir _chdir
     #define getcwd _getcwd
