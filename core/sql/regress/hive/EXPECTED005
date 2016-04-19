@@ -534,4 +534,28 @@ C1           C2
 >>cqd HIVE_SCAN_SPECIAL_MODE reset;
 
 --- SQL operation complete.
+>>select * from tbl_bad;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted.
+
+--- 0 row(s) selected.
+>>cqd HIVE_SCAN_SPECIAL_MODE '2';
+
+--- SQL operation complete.
+>>select * from tbl_bad;
+
+C1           C2                    C3                         C4               C5
+-----------  --------------------  -------------------------  ---------------  ------
+
+          ?                     ?  c                                        ?       ?
+          ?                     ?  c                                        ?       ?
+          ?                     ?                                           ?       ?
+          1                     1  averylongstring            -1.0000000E+000       0
+          2                     2  good                        1.0099999E+000       2
+          3                     3  good                        1.0000000E+000       2
+
+--- 6 row(s) selected.
+>>cqd HIVE_SCAN_SPECIAL_MODE reset;
+
+--- SQL operation complete.
 >>log;

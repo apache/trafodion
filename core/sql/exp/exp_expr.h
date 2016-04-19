@@ -220,6 +220,7 @@ public:
       pCodeOptFlags_      (0),   //
       pCodeMode_          (0),   //
       length_             (0),   //
+      extraErrorInfo_     (-1),   //
       flags_(0)
   {
     // Initialize eyeCatcher_ here in this form instead of 
@@ -333,6 +334,9 @@ public:
   NA_EIDPROC Lng32 getLength(){
     return length_;
   };
+
+  NA_EIDPROC void setExtraInfo(Int32 v) {extraErrorInfo_ = v;}
+  NA_EIDPROC Int32 getExtraInfo() { return extraErrorInfo_ ; }
   
   // Packing, unpacking and fixup
   //
@@ -887,13 +891,13 @@ protected:
 
   UInt32                  pCodeMaxOptBrCnt_;                     // 120-123
   UInt32                  pCodeMaxOptInCnt_;                     // 124-127
-
+  Int32                   extraErrorInfo_;                       // 128-131
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char                   fillers_[8];                           // 128-135
+  char                   fillers_[4];                           // 132-135
 
   NA_EIDPROC void fixupNextClause();
 
@@ -1060,7 +1064,6 @@ public:
   SQLEXP_LIB_FUNC InputOutputExpr(Generator * generator);
   NA_EIDPROC
   SQLEXP_LIB_FUNC ~InputOutputExpr() {}
-
   ex_expr::exp_return_type describeInput(void*, void*, UInt32);
   ex_expr::exp_return_type describeOutput(void*, UInt32);
 

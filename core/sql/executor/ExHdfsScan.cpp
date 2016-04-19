@@ -769,8 +769,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  int formattedRowLength = 0;
 	  ComDiagsArea *transformDiags = NULL;
 	  int err = 0;
+          int colNumber = 0;
 	  char *startOfNextRow =
-	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags, hdfsScanTdb().getHiveScanMode());
+	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags, hdfsScanTdb().getHiveScanMode(),&colNumber);
 
 	  bool rowWillBeSelected = true;
 	  lastErrorCnd_ = NULL;
@@ -862,37 +863,81 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	  if (rowWillBeSelected)
 	  {
-	    if (moveColsConvertExpr())
-	    {
-	      ex_expr::exp_return_type evalRetCode =
-	          moveColsConvertExpr()->eval(workAtp_, workAtp_);
-	      if (evalRetCode == ex_expr::EXPR_ERROR)
-	      {
-	        if (hdfsScanTdb().continueOnError())
+	      step_ = RETURN_ROW;
+              int retryCounter = 0;
+              int coloffset = 0; //offset of the column that convert error
+                                 //set it to null if mode is in HIVE_MODE_CONV_ERROR_TO_NULL
+	      do{ 
+                //in a loop, once convert error, set the offending column to null and retry
+                //this is because the moveColsConvertExpr() will convert all columns, 
+                //or in other words, the convert is row by row
+                //The logic here is to get the offset of the column which cause the convert error and set it to NULL in R2 (source of convert)
+                //the offset is set by the pCode/normal eval() of the expression
+                //the reason we use offset : in current pCode, only offset of the column data is avaible, there is no column index
+                //so pCode or normal clause eval() function will get the offset of the offending data in the source (R2)
+                //and a special setR2ColumnNull() function will find out the column in R2 and set it to NULL
+                //then retry the convert
+                //retry up to the number of all columns
+                //This is for : JIRA 1912
+                //So Trafodion will automatically convert invalid Hive data into null, instead of error out during bulkload for example
+	        if(retryCounter > 0)
+		{
+                  if(coloffset > 0)	
+	    	    setR2ColumnNull(coloffset);
+		}
+	        if (moveColsConvertExpr())
 	        {
-                  if ( workAtp_->getDiagsArea())
+	          ex_expr::exp_return_type evalRetCode =
+	            moveColsConvertExpr()->eval(workAtp_, workAtp_);
+	          if (evalRetCode == ex_expr::EXPR_ERROR)
+	          {
+                    coloffset= moveColsConvertExpr()->getExtraInfo();
+		    if(retryCounter == colNumber-1 || (hdfsScanTdb().getHiveScanMode() & HIVE_MODE_CONV_ERROR_TO_NULL) == 0 ) //last try, or normal mode, still error
+                    {
+		      step_ = HANDLE_ERROR_WITH_CLOSE;
+	              if (hdfsScanTdb().continueOnError())
+	              {
+                        if ( workAtp_->getDiagsArea())
+                        {
+                          Lng32 errorCount = 0;
+                          errorCount = workAtp_->getDiagsArea()->getNumber(DgSqlCode::ERROR_);
+                          if (errorCount > 0)
+                            lastErrorCnd_ = workAtp_->getDiagsArea()->getErrorEntry(errorCount);
+                        }
+                        exception_ = TRUE;
+                        nextStep_ = step_;
+                        step_ = HANDLE_EXCEPTION;
+	                break;
+	              }
+	              break;
+                    }
+	          }
+                  else // conv success 
                   {
-                    Lng32 errorCount = 0;
-                    errorCount = workAtp_->getDiagsArea()->getNumber(DgSqlCode::ERROR_);
-                    if (errorCount > 0)
-                      lastErrorCnd_ = workAtp_->getDiagsArea()->getErrorEntry(errorCount);
+	            if (hdfsStats_)
+	              hdfsStats_->incUsedRows();
+	            if (hdfsScanTdb().continueOnError() && retryCounter > 0 )
+	            {
+                      if ( workAtp_->getDiagsArea())
+                      {
+                        Lng32 errorCount = 0;
+                        errorCount = workAtp_->getDiagsArea()->getNumber(DgSqlCode::ERROR_);
+                        if (errorCount > 0)
+                          lastErrorCnd_ = workAtp_->getDiagsArea()->getErrorEntry(errorCount);
+                      }
+                      exception_ = TRUE;
+                      nextStep_ = step_;
+                      step_ = HANDLE_EXCEPTION;
+	              break;
+	            }
+                    break; //break the while
                   }
-                   exception_ = TRUE;
-                   nextStep_ = step_;
-                   step_ = HANDLE_EXCEPTION;
-	          break;
 	        }
-	        step_ = HANDLE_ERROR_WITH_CLOSE;
-	        break;
-	      }
-	    }
-	    if (hdfsStats_)
-	      hdfsStats_->incUsedRows();
-
-	    step_ = RETURN_ROW;
-	    break;
+		else
+		   break;
+                retryCounter++;
+            }while(retryCounter < colNumber);
 	  }
-
 	  break;
 	}
 	case RETURN_ROW:
@@ -1378,9 +1423,27 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   
   return WORK_OK;
 }
+void ExHdfsScanTcb::setR2ColumnNull(Int32 colidx)
+{
+  Lng32 neededColIndex = 0;
+  Attributes * attr = NULL;
+  ExpTupleDesc * asciiSourceTD = hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().asciiTuppIndex_);
+  for (Lng32 i = 0; i <  hdfsScanTdb().convertSkipListSize_; i++)
+  {
+    if (hdfsScanTdb().convertSkipList_[i] > 0)
+    {
+      attr = asciiSourceTD->getAttr(neededColIndex);
+      neededColIndex++;
+	  if(attr->getOffset() == colidx)
+	{
+		*(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+	}
+    }
+  }
+}
 
 char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
-							     ComDiagsArea* &diagsArea, int mode)
+							     ComDiagsArea* &diagsArea, int mode, int * colnum)
 {
   err = 0;
   char *sourceData = hdfsBufNextRow_;
@@ -1390,6 +1453,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   NABoolean isTrailingMissingColumn = FALSE;
   ExpTupleDesc * asciiSourceTD =
      hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().asciiTuppIndex_);
+  *colnum = 0;
 
   const char cd = hdfsScanTdb().columnDelimiter_;
   const char rd = hdfsScanTdb().recordDelimiter_;
@@ -1456,6 +1520,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
          if (attr) // this is a needed column. We need to convert
          {
+            *colnum=*colnum+1;
             *(short*)&hdfsAsciiSourceData_[attr->getVCLenIndOffset()] = len;
             if (attr->getNullFlag())
             {

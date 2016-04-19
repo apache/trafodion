@@ -39,6 +39,7 @@
 #include "ExpHbaseInterface.h"
 
 #define HIVE_MODE_DOSFORMAT    1
+#define HIVE_MODE_CONV_ERROR_TO_NULL 2
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -197,13 +198,15 @@ protected:
   inline bool isSequenceFile() const
   {return hdfsScanTdb().isSequenceFile(); }
 
+  void setR2ColumnNull(Int32 colidx);
+
   // returns ptr to start of next row, if any. Returning NULL 
   // indicates that no complete row was found. Beware of boundary 
   // conditions. Could be an incomplete row in a buffer returned by
   // hdfsRead. Or it could be the eof (in which case there is a good
   // row still waiting to be processed).
   char * extractAndTransformAsciiSourceToSqlRow(int &err,
-						ComDiagsArea * &diagsArea, int mode);
+						ComDiagsArea * &diagsArea, int mode, int *colnum);
 
   short moveRowToUpQueue(const char * row, Lng32 len, 
                          short * rc, NABoolean isVarchar);
