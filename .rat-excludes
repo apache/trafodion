@@ -110,7 +110,6 @@ TCPIPV6_os.*
 resource.h*
 resource.hm*
 odb.sln
-odb.vcxporj*
 odb.vcxproj.*
 # BSD licensed files
 swscanf.cpp
