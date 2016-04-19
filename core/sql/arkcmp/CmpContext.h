@@ -148,6 +148,7 @@ public :
   {
     return !(strncmp(name_, name, CMPCONTEXT_CLASS_NAME_LEN));
   }
+  const char *getName() const { return name_; }
 
 private :
   char name_[CMPCONTEXT_CLASS_NAME_LEN]; // care upto CMPCONTEXT_CLASS_NAME_LEN
