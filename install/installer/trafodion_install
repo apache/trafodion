@@ -153,13 +153,18 @@ do
 done
 
 HBASE=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-
+HDFS=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hdfs | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+ZOOKEEPER=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep zookeeper | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/hbaseVersion\=/d' $TRAF_CONFIG
 echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
 sed -i '/HBASE\=/d' $TRAF_CONFIG
 echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
+sed -i '/HDFS\=/d' $TRAF_CONFIG
+echo "export HDFS=\"$HDFS\"" >> $TRAF_CONFIG
+sed -i '/ZOOKEEPER\=/d' $TRAF_CONFIG
+echo "export ZOOKEEPER=\"$ZOOKEEPER\"" >> $TRAF_CONFIG
 sed -i '/CDH_VERSION\=/d' $TRAF_CONFIG
 echo "export CDH_VERSION=\"$CDH_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
@@ -380,7 +385,6 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
    echo "***ERROR: Exiting..."
    exit -1 
 fi
-
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/INSTALL_LOG\=/d' $TRAF_CONFIG
 echo "export INSTALL_LOG=\"$INSTALL_LOG_CP\"" >> $TRAF_CONFIG
@@ -539,7 +543,9 @@ source $TRAF_CONFIG
 #============================================
 #Check to make sure HBase Version is the correct version
 
-checkHBaseVersion
+if [[ $HADOOP_TYPE != "apache" ]]; then
+   checkHBaseVersion
+fi
 #==============================================
 # Determine Trafodion version by parsing it
 # from the trafodion_server tar file.
@@ -744,6 +750,17 @@ if [[ $MODS_COMPLETE != "Y" ]]; then
       $LOCAL_WORKDIR/traf_hortonworks_mods98 2>&1 | tee -a $INSTALL_LOG
       if [ ${PIPESTATUS[0]}  != "0" ]; then
          echo "***ERROR: traf_hortonworks_mods98 exited with error." | tee -a $INSTALL_LOG
+         echo "***ERROR: Please check log files." | tee -a $INSTALL_LOG
+         echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
+         exit -1
+      fi
+   fi
+   
+    if [[ $HADOOP_TYPE == "apache" ]]; then
+      echo "***INFO: Will run traf_apache_mods" 2>&1 | tee -a $INSTALL_LOG
+      $LOCAL_WORKDIR/traf_apache_mods 2>&1 | tee -a $INSTALL_LOG
+      if [ ${PIPESTATUS[0]}  != "0" ]; then
+         echo "***ERROR: traf_apache_mods exited with error." | tee -a $INSTALL_LOG
          echo "***ERROR: Please check log files." | tee -a $INSTALL_LOG
          echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
          exit -1

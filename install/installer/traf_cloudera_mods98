@@ -165,7 +165,7 @@ if [ $? != 0 ]; then
       exit -1
    fi
 fi
-ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chown -R' "$TRAF_USER"':trafodion /bulkload"'
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chown -R '"$TRAF_USER"':trafodion /bulkload"'
 
 # Create lobs directory
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output'
@@ -221,7 +221,7 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
              "value":"true"
              } ]
 }' \
-$URL/api/v1/clusters/$CLUSTER_NAME/services/hdfs/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
+$URL/api/v1/clusters/$CLUSTER_NAME/services/$HDFS/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
 
 if [ $? != 0 ]; then
     echo "***ERROR: Unable to modify HDFS configuration through Cloudera's REST API."
@@ -310,7 +310,7 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
         } ]
 
 }' \
-$URL/api/v1/clusters/$CLUSTER_NAME/services/zookeeper/config > $LOCAL_WORKDIR/traf_zookeeper_config_temp
+$URL/api/v1/clusters/$CLUSTER_NAME/services/$ZOOKEEPER/config > $LOCAL_WORKDIR/traf_zookeeper_config_temp
 
 # in most cases curl does not return an error
 # so curl's actual output needs to be checked, too
