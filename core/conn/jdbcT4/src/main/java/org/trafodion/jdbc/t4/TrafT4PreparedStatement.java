@@ -1924,7 +1924,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	 * rowsAffected) throws SQLException { batchRowCount_ = new int[1];
 	 * batchRowCount_[0] = rowsAffected; if (outputDesc_ != null) { resultSet_ =
 	 * new TrafT4ResultSet(this, outputDesc_); } else { resultSet_ = null; } if
-	 * (rowsAffected == 0) { resultSet_.setFetchOutputs(new Row[0], 0, true, 0); }
+	 * (rowsAffected == 0) { resultSet_.setFetchOutputs(new ObjectRow[0], 0, true, 0); }
 	 * else { resultSet_.irs_.setSingletonFetchOutputs(resultSet_, rowsAffected,
 	 * true, 0, sqlValue_def_array); } }
 	 */

@@ -1272,7 +1272,7 @@ public class TrafT4Statement extends HPT4Handle implements java.sql.Statement {
 
 			if (rowsAffected == 0) {
 				if (endOfData == true) {
-					resultSet_[result_set_offset].setFetchOutputs(new Row[0], 0, true);
+					resultSet_[result_set_offset].setFetchOutputs(new ObjectArray[0], 0, true);
 				}
 			} else {
 				 if(resultSet_[result_set_offset].keepRawBuffer_ == true)
