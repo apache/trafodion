@@ -246,14 +246,10 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 		SQLItemDesc->signType      = TRUE;
 		break;
 	case SQLTYPECODE_DATETIME:
-		// Calculate the length based on YYYY/MM/DD HH:MM:SS.ffffff
-        SQLItemDesc->maxLen = 20 + 6;
 		switch (SQLItemDesc->datetimeCode)
 		{
 		case SQLDTCODE_DATE:
 			SQLItemDesc->ODBCDataType = SQL_TYPE_DATE;
-            // For DATE, update the maxLen since it only have YYYY/MM/DD
-            SQLItemDesc->maxLen = 10;
 			break;
 		case SQLDTCODE_TIME:
 			SQLItemDesc->ODBCDataType = SQL_TYPE_TIME;
