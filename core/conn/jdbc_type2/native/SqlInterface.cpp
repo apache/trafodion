@@ -263,8 +263,6 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 		}
 		SQLItemDesc->signType      = FALSE;
 		SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
-		// Calculate the length based on YYYY/MM/DD HH:MM:SS.ffffff
-		SQLItemDesc->maxLen =  20 + 6;
 		getMemoryAllocInfo(	SQLItemDesc->dataType,
 			SQLItemDesc->SQLCharset,
 			SQLItemDesc->maxLen,
