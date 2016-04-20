@@ -636,7 +636,7 @@ control query shape cut;
 ?section clnup
 control query shape cut;
 
-select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+select context, num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
 
 obey TEST005(ddl);
 

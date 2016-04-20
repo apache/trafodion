@@ -170,7 +170,7 @@ sh sqlci -i "TEST009(select_stmts)";
 select catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 1,2,3;
 drop external table t009t1 for hive.sch_t009.t009t1;
 get tables in schema "_HV_SCH_T009_";
-select * from table(natablecacheentries('user','local')) order by 2,3,4;
+select row_id, catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 2,3,4;
 create external table t009t1 for hive.sch_t009.t009t1;
 
 -- select should now succeed
