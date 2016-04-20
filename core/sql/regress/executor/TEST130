@@ -453,6 +453,25 @@ insert into tlob130gt values (2, stringtolob('xxxxxxxxxxxxxxx'), stringtolob('yy
 get lob stats for table tlob130gt;
 select * from table(lob stats(tlob130gt));
 
+-- test to snsure all lob delpendent tables and schemas containing lob tables
+-- get dropped cleanly.
+obey TEST130(lob_drop_table_schema);
+?section lob_drop_table_schema
+log;
+cleanup schema trafodion.lobsch;
+log LOG130;
+create schema trafodion.lobsch;
+set schema trafodion.lobsch;
+create table tlob130ts1 (c1 int not null, c2 blob, primary key (c1));
+create table tlob130ts2 (c1 int not null, c2 blob, primary key (c1));
+drop table tlob130ts1;
+get tables;
+drop schema trafodion.lobsch cascade;
+select OBJECT_NAME,OBJECT_TYPE from TRAFODION."_MD_".OBJECTS where catalog_name='TRAFODION' AND schema_name='LOBSCH';
+--go back to the schema used for the rest of the tests.
+set schema trafodion.lob130;
+
+
 obey TEST130(lob_general_cleanup);
 -- cleanup
 ?section lob_general_cleanup

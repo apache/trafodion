@@ -61,7 +61,7 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile,
-//   bool ifExists,
+   bool ifExists,
    bool ddlXns);
    
 static bool transferObjectPrivs(
@@ -553,7 +553,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        dirtiedMetadata = TRUE;
        if (dropOneTable(cliInterface,(char*)catName.data(),
                         (char*)schName.data(),(char*)objName.data(),
-                        isVolatile ,dropSchemaNode->ddlXns()))
+                        isVolatile , FALSE,dropSchemaNode->ddlXns()))
           someObjectsCouldNotBeDropped = true;
      }
    }
@@ -679,7 +679,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 	       dirtiedMetadata = TRUE;
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
 				(char*)schName.data(),(char*)objName.data(),
-				isVolatile, dropSchemaNode->ddlXns()))
+				isVolatile, FALSE,dropSchemaNode->ddlXns()))
 		 someObjectsCouldNotBeDropped = true;
 	     }
 	 } 
@@ -709,7 +709,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 	       // happen to have the same name patterns.
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
 				(char*)schName.data(),(char*)objName.data(),
-				isVolatile, dropSchemaNode->ddlXns()))
+				isVolatile,TRUE, dropSchemaNode->ddlXns()))
 		 someObjectsCouldNotBeDropped = true;
 	     }
 	 } 
@@ -806,7 +806,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        dirtiedMetadata = TRUE;
        if (dropOneTable(cliInterface,(char*)catName.data(),
                         (char*)schName.data(),(char*)objName.data(),
-                        isVolatile, dropSchemaNode->ddlXns()))
+                        isVolatile, FALSE, dropSchemaNode->ddlXns()))
           someObjectsCouldNotBeDropped = true;
      }
    }
@@ -1314,7 +1314,7 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile,
-//   bool ifExists,
+   bool ifExists,
    bool ddlXns)
    
 {
@@ -1332,8 +1332,8 @@ Lng32 cliRC = 0;
    if (isVolatile)
       strcpy(volatileString,"VOLATILE");
 
-//   if (ifExists)
-//     strcpy(ifExistsString,"IF EXISTS");
+   if (ifExists)
+    strcpy(ifExistsString,"IF EXISTS");
 
    if (ComIsTrafodionExternalSchemaName(schemaName))
      str_sprintf(buf,"DROP EXTERNAL TABLE \"%s\" FOR \"%s\".\"%s\".\"%s\" CASCADE",

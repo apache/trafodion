@@ -6183,7 +6183,7 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
   char lobDataFilePath[LOBINFO_MAX_FILE_LEN]={'\0'};
   Int64 lobEOD=0;
 
-  char buf[1000];
+  char buf[LOBINFO_MAX_FILE_LEN+500];
   short rc = 0;
   if (isUpQueueFull(5))
     {
@@ -6197,7 +6197,7 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
     {
       return -1;
     }
-  str_pad(buf,1000,' ');
+  str_pad(buf,sizeof(buf),' ');
   //column name
   offset = (currLobNum-1)*LOBINFO_MAX_FILE_LEN; 
   strcpy(columnName, &((getLItdb().getLobColList())[offset]));
@@ -6214,11 +6214,11 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
     return rc;      
                  
   // lobDataFile
-  char tgtLobNameBuf[256];
+  char tgtLobNameBuf[LOBINFO_MAX_FILE_LEN];
   char *lobDataFile = 
     ExpLOBoper::ExpGetLOBname
     (getLItdb().objectUID_, currLobNum, 
-     tgtLobNameBuf, 256);
+     tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
  
   removeTrailingBlanks(lobDataFile, LOBINFO_MAX_FILE_LEN);
   str_sprintf(buf, "  LOB Data File:  %s", lobDataFile);
@@ -6249,12 +6249,12 @@ short ExExeUtilLobInfoTcb::collectAndReturnLobInfo(char * tableName,Int32 currLo
 
   // Sum of all the lobDescChunks for used space
 
-  char lobDescChunkFileBuf[512];
+  char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
   //Get the descriptor chunks table name
   char *lobDescChunksFile =
     ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
                                         getLItdb().objectUID_, currLobNum, 
-                                        lobDescChunkFileBuf, 512);
+                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
  
   char *query = new(getGlobals()->getDefaultHeap()) char[4096];
   str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
@@ -6502,11 +6502,11 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
   str_cpy_all(lobInfo_->lobLocation, lobLocation, strlen(lobLocation));
                           
   // lobDataFile
-  char tgtLobNameBuf[256];
+  char tgtLobNameBuf[LOBINFO_MAX_FILE_LEN];
   char *lobDataFile = 
 	      ExpLOBoper::ExpGetLOBname
 	      (getLItdb().objectUID_, currLobNum, 
-	       tgtLobNameBuf, 256);
+	       tgtLobNameBuf, LOBINFO_MAX_FILE_LEN);
   str_cpy_all(lobInfo_->lobDataFile,  lobDataFile,strlen(lobDataFile));             
   //EOD of LOB data file
   hdfsFS fs = hdfsConnect(getLItdb().getHdfsServer(),getLItdb().getHdfsPort());
@@ -6527,12 +6527,12 @@ short ExExeUtilLobInfoTableTcb::collectLobInfo(char * tableName,Int32 currLobNum
        lobInfo_->lobDataFileSizeEod=lobEOD;
   // Sum of all the lobDescChunks for used space
 
-       char lobDescChunkFileBuf[52];
+       char lobDescChunkFileBuf[LOBINFO_MAX_FILE_LEN*2];
   //Get the descriptor chunks table name
        char *lobDescChunksFile =
        ExpLOBoper::ExpGetLOBDescChunksName(strlen(schName),schName,
                                         getLItdb().objectUID_, currLobNum, 
-                                        lobDescChunkFileBuf, 512);
+                                        lobDescChunkFileBuf, LOBINFO_MAX_FILE_LEN*2);
        char query[4096];
       	str_sprintf (query,  "select sum(chunklen) from  %s ", lobDescChunksFile);
 
