@@ -813,7 +813,9 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
 
   if (! lobMDName_)
     return 0;
-
+  NABoolean lobTrace=FALSE;
+  if (getenv("TRACE_LOB_ACTIONS"))
+    lobTrace=TRUE;
   NAString newSchName = "\"" + catName_ + "\"" + "." + "\"" + schName_ + "\"";
   const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
@@ -826,7 +828,7 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
                                    lobTypList_,
                                    lobLocList_,
                                    (char *)lobHdfsServer,
-                                   lobHdfsPort,0);
+                                   lobHdfsPort,0,lobTrace);
 
   return 0;
 }

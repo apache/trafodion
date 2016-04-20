@@ -489,6 +489,14 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 
       break;
     }
+case ex_LOB_INFO:
+    {
+#pragma nowarn(1506)   // warning elimination 
+      GetVTblPtr(vtblptr,ExExeUtilLobInfoTdb);
+#pragma warn(1506)  // warning elimination 
+
+      break;
+    }
   case ex_GET_METADATA_INFO:
     {
 #pragma nowarn(1506)   // warning elimination 
