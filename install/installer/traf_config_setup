@@ -476,16 +476,16 @@ if [[ "$HADOOP_TYPE" == "apache" ]]; then
    
    #Zookeeper path
    echo -n "Enter Zookeeper installed full path (example: '/opt/zoo'), default is [$ZOO_HOME]: "
-   read answer0
+   read answer
 
-   if [ -z  $answer0 ]; then
+   if [ -z  $answer ]; then
       if [[ -z $ZOO_HOME ]]; then
          echo "***ERROR: Must enter HBase installed path"
          exit -1
       fi
    else
-      if [[ -e $answer0 ]]; then
-         ZOO_HOME=$answer0
+      if [[ -e $answer ]]; then
+         ZOO_HOME=$answer
       else
          echo "***ERROR: HBase installed path doesn't exist"
          exit -1

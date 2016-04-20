@@ -735,10 +735,10 @@ echo
 
 if [[ $MODS_COMPLETE != "Y" ]]; then
    if [[ $HADOOP_TYPE == "cloudera" ]]; then
-      echo "***INFO: Cloudera installed will run traf_cloudera_mods98" 2>&1 | tee -a $INSTALL_LOG
-      $LOCAL_WORKDIR/traf_cloudera_mods98 2>&1 | tee -a $INSTALL_LOG
+      echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $INSTALL_LOG
+      $LOCAL_WORKDIR/traf_cloudera_mods 2>&1 | tee -a $INSTALL_LOG
       if [ ${PIPESTATUS[0]} != "0" ]; then
-         echo "***ERROR: traf_cloudera_mods98 exited with error." | tee -a $INSTALL_LOG
+         echo "***ERROR: traf_cloudera_mods exited with error." | tee -a $INSTALL_LOG
          echo "***ERROR: Please check log files." | tee -a $INSTALL_LOG
          echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
          exit -1
@@ -746,10 +746,10 @@ if [[ $MODS_COMPLETE != "Y" ]]; then
    fi
 
    if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-      echo "***INFO: Hortonworks installed will run traf_hortonworks_mods98" 2>&1 | tee -a $INSTALL_LOG
-      $LOCAL_WORKDIR/traf_hortonworks_mods98 2>&1 | tee -a $INSTALL_LOG
+      echo "***INFO: Hortonworks installed will run traf_hortonworks_mods" 2>&1 | tee -a $INSTALL_LOG
+      $LOCAL_WORKDIR/traf_hortonworks_mods 2>&1 | tee -a $INSTALL_LOG
       if [ ${PIPESTATUS[0]}  != "0" ]; then
-         echo "***ERROR: traf_hortonworks_mods98 exited with error." | tee -a $INSTALL_LOG
+         echo "***ERROR: traf_hortonworks_mods exited with error." | tee -a $INSTALL_LOG
          echo "***ERROR: Please check log files." | tee -a $INSTALL_LOG
          echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
          exit -1

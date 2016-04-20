@@ -40,7 +40,6 @@ export HBASE_NODE=$(echo $HBASE_NODES | head -n1 | awk '{print $1;}')
 
 cd $UNTAR_DIR
 
-# determine java version for hbase 0.98 only java 1.7 is allowed
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
       if [[ $CDH_VERSION == "5.4" ]]; then
@@ -143,54 +142,34 @@ fi
 sudo cp $HOME/hbase-site.xml $TRAF_WORKDIR
 sudo chown trafodion.trafodion $TRAF_WORKDIR/hbase-site.xml
 
-ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir /hbase-staging" 2> $HOME/traf_temp_output'
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /hbase-staging"'
 if [ $? != 0 ]; then
-   # ok if directory already exists
-   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
-   if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /hbase-staging' command failed"
-      echo "***ERROR: $(cat $HOME/traf_temp_output)"
-      exit -1
-   fi
+   echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /hbase-staging' command failed"
+   exit -1
 fi
 
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chown -R '"$HBASE_USER"':'"$HBASE_GROUP"' /hbase-staging"'
-ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir /bulkload" 2> $HOME/traf_temp_output'
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /bulkload"'
 if [ $? != 0 ]; then
-   # ok if directory already exists
-   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
-   if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /bulkload' command failed"
-      echo "***ERROR: $(cat $HOME/traf_temp_output)"
-      exit -1
-   fi
+   echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /bulkload' command failed"
+   exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -chown -R '"$TRAF_USER"':trafodion /bulkload"'
 
 # Create lobs directory
-ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -mkdir /lobs" 2> $HOME/traf_temp_output'
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /lobs"'
 if [ $? != 0 ]; then
-   # ok if directory already exists
-   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
-   if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /lobs' command failed"
-      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
-      exit -1
-   fi
+   echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /lobs' command failed"
+   exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -chown -R '"$TRAF_USER"':trafodion /lobs"'
 
 
 #Create Backup directory 
-ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir /trafodion_backups" 2> $HOME/traf_temp_output'
+ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "' "$HADOOP_BIN_PATH"'/hadoop fs -mkdir -p /trafodion_backups"'
 if [ $? != 0 ]; then
-   # ok if directory already exists
-   dir_exists=$(grep "File exists" $HOME/traf_temp_output | wc -l)
-   if [ $dir_exists -eq 0 ]; then
-      echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir /trafodion_backups' command failed"
-      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
-      exit -1
-   fi
+   echo "***ERROR: '$HADOOP_BIN_PATH/hadoop fs -mkdir -p /trafodion_backups' command failed"
+   exit -1
 fi
 ssh -q -n $HDFS_NODE 'sudo su' "$HDFS_USER" '--command "'"$HADOOP_BIN_PATH"'/hadoop fs -chown -R '"$TRAF_USER"':trafodion /trafodion_backups"'
 
