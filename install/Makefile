@@ -27,7 +27,7 @@ RELEASE_VER ?= 1.0.0_v002
 all: pkg-installer 
 
 pkg-installer: installer/LICENSE installer/NOTICE
-	tar czf installer-$(RELEASE_VER).tar.gz installer
+	tar czf installer-$(RELEASE_VER).tar.gz installer --exclude=tools
 
 installer/LICENSE: ../licenses/LICENSE-install
 	cp -f $? $@

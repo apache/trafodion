@@ -42,6 +42,8 @@
 	<property name="src.install" value="${src.root}/install" />
 	<property name="src.samples" value="${src.root}/samples"/>
 	<property name="src.lib" value="${src.root}/lib"/>
+	<property name="src.lic" value="${src.root}/../../../licenses"/>
+	<property name="src.notice" value="${src.root}/../../.."/>
 	<property name="client.dir" value="${src.root}/../clients"/>
 	<property name="temp.dir" value="${src.root}/temp"/>
 	<property name="deploy.dir" value="${temp.dir}/deploy" />
@@ -89,7 +91,11 @@
 			<fileset dir="${src.src}">
 				<include name="**/*.properties" />
 			</fileset>
+			<fileset dir="${src.notice}">
+				<include name="NOTICE" />
+			</fileset>
 		</copy>
+		<copy file="${src.lic}/Apache" tofile="${temp.classes}/LICENSE" />
 
 		<replace file="${temp.src}/${vproc.java}" token="@@@@" value="${vproc.str}" />
 		<javac destdir="${temp.classes}" srcdir="${temp.src}" debug="on" includes="**/*.java" classpath="${java.home}/lib/tools.jar;${temp.classes}" includeAntRuntime="false" />
@@ -99,6 +105,8 @@
 	<target name="lib" depends="compile">
 		<property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
 		<jar destfile="${jdbcT4.jar}" basedir="${temp.classes}">
+			<include name="LICENSE" />
+			<include name="NOTICE" />
 			<include name="**/*.class" />
 			<include name="**/*.properties" />
 

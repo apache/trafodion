@@ -1641,7 +1641,7 @@ public:
                            ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
   void setHBaseSmallScanner(Int32 hbaseRowSize, double rowsAccessed,
                           Int32 hbaseBlockSize, ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
-
+  void setHBaseParallelScanner(ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
 
   NASet<Int64> &objectUids() { return objectUids_; }
 

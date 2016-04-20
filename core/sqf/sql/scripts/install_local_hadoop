@@ -305,6 +305,7 @@ MY_DERBY_DATA_DIR=${MY_DATA_DIR}/derby
 MY_HADOOP_DATA_DIR=${MY_DATA_DIR}/hadoop
 MY_HIVE_DATA_DIR=${MY_DATA_DIR}/hive
 MY_HBASE_DATA_DIR=${MY_DATA_DIR}/hbase
+MY_ZOOKEEPER_DATA_DIR=${MY_DATA_DIR}/zookeeper
 
 # Administrator and Hive user name for MySQL installation
 MY_SQL_ADMIN=root
@@ -758,6 +759,7 @@ export MY_HADOOP_HDFS_PORT_NUM=${MY_HADOOP_HDFS_PORT_NUM}
 export MY_HBASE_ZOOKEEPER_PEERPORT_NUM=${MY_HBASE_ZOOKEEPER_PEERPORT_NUM}
 export MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=${MY_HBASE_ZOOKEEPER_LEADERPORT_NUM}
 export MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=${MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM}
+export MY_ZOOKEEPER_DATA_DIR=${MY_ZOOKEEPER_DATA_DIR}
 export MY_DCS_MASTER_PORT=${MY_DCS_MASTER_PORT}
 export MY_DCS_MASTER_INFO_PORT=${MY_DCS_MASTER_INFO_PORT}
 export MY_DCS_SERVER_INFO_PORT=${MY_DCS_SERVER_INFO_PORT}
@@ -1537,8 +1539,12 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
     <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/hbase</value>
   </property>
   <property>
+   <name>hbase.zookeeper.quorum</name>
+   <value>${HOSTNAME}</value>
+ </property>
+ <property>
     <name>hbase.zookeeper.property.dataDir</name>
-    <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/zookeeper</value>
+    <value>${MY_ZOOKEEPER_DATA_DIR}</value>
   </property>
   <property>
     <name>hbase.master.port</name>

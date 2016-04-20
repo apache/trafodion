@@ -136,9 +136,8 @@ public interface  TransactionalTableClient  {
 
     byte[] getTableName();
 
-    ResultScanner getScanner(Scan scan) throws IOException;
+    ResultScanner getScanner(Scan scan, float DOPparallelScanner) throws IOException;
     Result get(Get g) throws IOException; 
-
     
     Result[] get( List<Get> g) throws IOException;
 

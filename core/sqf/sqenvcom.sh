@@ -38,7 +38,7 @@ export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
 # Product copyright header
-export PRODUCT_COPYRIGHT_HEADER="2015 Apache Software Foundation"
+export PRODUCT_COPYRIGHT_HEADER="2015-2016 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -489,9 +489,9 @@ EOF
 
   # Hadoop/HBase/Hive install directories, as determined by this script,
   # when using an Apache installation without one of the distros
-  APACHE_HADOOP_HOME=
-  APACHE_HBASE_HOME=
-  APACHE_HIVE_HOME=
+  APACHE_HADOOP_HOME=None
+  APACHE_HBASE_HOME=None
+  APACHE_HIVE_HOME=None
 
   if [ -f $HADOOP_PREFIX/etc/hadoop/core-site.xml ]; then
     APACHE_HADOOP_HOME=$HADOOP_PREFIX
@@ -533,14 +533,6 @@ EOF
   fi
   if [ ! -d $APACHE_HIVE_HOME/lib -a -d /usr/lib/hive ]; then
     APACHE_HIVE_HOME=/usr/lib/hive
-  fi
-
-  if [ ! -d $APACHE_HADOOP_HOME/lib ]; then
-    echo "**** ERROR: Unable to determine location of Hadoop lib directory"
-  fi
-
-  if [ ! -d $APACHE_HBASE_HOME/lib ]; then
-    echo "**** ERROR: Unable to determine location of HBase lib directory"
   fi
 
   if [ -n "$HBASE_CNF_DIR" -a -n "$HADOOP_CNF_DIR" -a \
