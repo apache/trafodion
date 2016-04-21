@@ -843,7 +843,6 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   AQREntry(   8606,     73,      3,    60,      0,   0, "",    0,     0), 
 
   AQREntry(   8606,     97,      1,     0,      5,   0, "",    0,     0),
-
   // privileges may have been revoked
   AQREntry(   8734,      0,      1,     0,      1,   0, "",    0,     0),
 

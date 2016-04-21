@@ -786,14 +786,7 @@ SELECT OBJECT OBJECT from (values(0)) OBJECT(OBJECT);
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OID OID from (values(0)) OID(OID);
 
-*** ERROR[3128] OID is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
-
-*** ERROR[15001] A syntax error occurred at or before: 
-SELECT OID OID from (values(0)) OID(OID);
-             ^ (14 characters from start of SQL statement)
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Expect error [3128]
 >>prepare s1 from SELECT OLD OLD from (values(0)) OLD(OLD);
