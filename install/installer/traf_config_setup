@@ -44,11 +44,16 @@ TRAF_PACKAGE=""
 TRAF_BUILD=""
 DCS_BUILD=""
 REST_BUILD=""
-HADOOP_TYPE=""
+HADOOP_TYPE="cloudera"
 ADMIN="admin"
 PASSWORD="admin"
 URL=""
 HADOOP_NODES=""
+
+HADOOP_PREFIX=""
+HBASE_HOME=""
+HIVE_HOME=""
+
 HDFS_USER="hdfs"
 HBASE_USER="hbase"
 HBASE_GROUP="hbase"
@@ -407,57 +412,131 @@ else
 fi
 
 #==============================================
-#Hadoop user name
-
-echo -n "Enter Hadoop admin username, default is [$ADMIN]: "
+#HADOOP_TYPE
+echo -n "Enter installed hadoop type: cloudera, hortonworks, vanilla, default is [$HADOOP_TYPE]: "
 read answer
 
 if [ -z $answer ]; then
-   echo "export ADMIN=\"$ADMIN\"" >> $LOCAL_TRAF_CONFIG
-   username=$ADMIN
+   echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+   HADOOP_TYPE=$HADOOP_TYPE
 else
-   echo "export ADMIN=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   username=$answer
+   echo "export HADOOP_TYPE=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+   HADOOP_TYPE=$answer
 fi
+
+#==============================================
+#Hadoop user name
+if [[ $HADOOP_TYPE != "vanilla" ]]; then
+   echo -n "Enter Hadoop admin username, default is [$ADMIN]: "
+   read answer
+
+   if [ -z $answer ]; then
+      echo "export ADMIN=\"$ADMIN\"" >> $LOCAL_TRAF_CONFIG
+      username=$ADMIN
+   else
+      echo "export ADMIN=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+      username=$answer
+   fi
+
 #==============================================
 #Hadoop Password
 
-echo -n "Enter Hadoop admin password, default is [$PASSWORD]: "
-read answer
+   echo -n "Enter Hadoop admin password, default is [$PASSWORD]: "
+   read answer
 
-if [ -z $answer ]; then
-   echo "export PASSWORD=\"$PASSWORD\"" >> $LOCAL_TRAF_CONFIG
-   password=$PASSWORD
-else
-   echo "export PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   password=$answer
-fi
+   if [ -z $answer ]; then
+      echo "export PASSWORD=\"$PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+      password=$PASSWORD
+   else
+      echo "export PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+      password=$answer
+   fi
 
 #==============================================
 #Hadoop URL
 
-echo -n "Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is [$URL]: "
-read answer
+   echo -n "Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is [$URL]: "
+   read answer
 
-if [ -z  $answer ]; then
-   if [[ -z $URL ]]; then
-      echo "***ERROR: Must enter $HADOOP_TYPE external network URL"
+   if [ -z  $answer ]; then
+      if [[ -z $URL ]]; then
+         echo "***ERROR: Must enter $HADOOP_TYPE external network URL"
+         exit -1
+      fi
+   else
+      URL=$answer
+   fi
+
+   validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
+
+   if [[ $validURL -eq "1" ]]; then
+      echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
+   else
+      echo "***ERROR: Could not access $URL"
+      echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
       exit -1
    fi
-else
-   URL=$answer
 fi
 
-validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
+#==============================================
+#Hadoop path 
+if [[ $HADOOP_TYPE == "vanilla" ]]; then
+   echo -n "Enter Hadoop installed full path, default is [$HADOOP_PREFIX]: "
+   read answer
 
-if [[ $validURL -eq "1" ]]; then
-   echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
-else
-   echo "***ERROR: Could not access $URL"
-   echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
-   exit -1
+   if [ -z  $answer ]; then
+      if [[ -z $HADOOP_PREFIX ]]; then
+         echo "***ERROR: Must enter apache Hadoop installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         HADOOP_PREFIX=$answer
+      else
+         echo "***ERROR: apache Hadoop installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export HADOOP_PREFIX=\"$HADOOP_PREFIX\"" >> $LOCAL_TRAF_CONFIG
+#==============================================
+#Hbase path 
+   echo -n "Enter Hbase installed full path, default is [$HBASE_HOME]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $HBASE_HOME ]]; then
+         echo "***ERROR: Must enter apache Hbase installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         HBASE_HOME=$answer
+      else
+         echo "***ERROR: apache Hbase installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export HBASE_HOME=\"$HBASE_HOME\"" >> $LOCAL_TRAF_CONFIG
+#==============================================
+#Hive path 
+   echo -n "Enter Hive installed full path, default is [$HIVE_HOME]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $HIVE_HOME ]]; then
+         echo "***ERROR: Must enter apache Hive installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         HIVE_HOME=$answer
+      else
+         echo "***ERROR: apache Hive installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export HIVE_HOME=\"$HIVE_HOME\"" >> $LOCAL_TRAF_CONFIG
 fi
-
 #==============================================
 #HDFS Username
 

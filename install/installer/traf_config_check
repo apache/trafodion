@@ -946,9 +946,11 @@ checkHadoopSupport
 
 checkBackupUser
 
-checkHadoopUserPass
+if [[ $HADOOP_TYPE != "vanilla" ]]; then
+   checkHadoopUserPass
 
-checkHadoopURL
+   checkHadoopURL
+fi
 
 getHadoopNodes
 
