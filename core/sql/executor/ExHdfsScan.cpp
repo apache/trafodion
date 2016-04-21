@@ -863,9 +863,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	  if (rowWillBeSelected)
 	  {
-	      step_ = RETURN_ROW;
-              int retryCounter = 0;
-              int coloffset = 0; //offset of the column that convert error
+	      step_ = RETURN_ROW;  //set the next step to normal: RETURN_ROW, if error below, change step_ explicitly before call break
+	      int retryCounter = 0;
+	      int coloffset = 0; //offset of the column that convert error
                                  //set it to null if mode is in HIVE_MODE_CONV_ERROR_TO_NULL
 	      do{ 
                 //in a loop, once convert error, set the offending column to null and retry
@@ -892,9 +892,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	          if (evalRetCode == ex_expr::EXPR_ERROR)
 	          {
                     coloffset= moveColsConvertExpr()->getExtraInfo();
-		    if(retryCounter == colNumber-1 || (hdfsScanTdb().getHiveScanMode() & HIVE_MODE_CONV_ERROR_TO_NULL) == 0 ) //last try, or normal mode, still error
+		    if(retryCounter == colNumber - 1 || (hdfsScanTdb().getHiveScanMode() & HIVE_MODE_CONV_ERROR_TO_NULL) == 0 ) //last try, or normal mode, still error
                     {
-		      step_ = HANDLE_ERROR_WITH_CLOSE;
 	              if (hdfsScanTdb().continueOnError())
 	              {
                         if ( workAtp_->getDiagsArea())
@@ -909,6 +908,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                         step_ = HANDLE_EXCEPTION;
 	                break;
 	              }
+		      step_ = HANDLE_ERROR_WITH_CLOSE;
 	              break;
                     }
 	          }
@@ -916,7 +916,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                   {
 	            if (hdfsStats_)
 	              hdfsStats_->incUsedRows();
-	            if (hdfsScanTdb().continueOnError() && retryCounter > 0 )
+	            if (hdfsScanTdb().continueOnError() && retryCounter > 0 ) //retryCounter > 0 , means there are errors to log
 	            {
                       if ( workAtp_->getDiagsArea())
                       {
@@ -930,10 +930,10 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                       step_ = HANDLE_EXCEPTION;
 	              break;
 	            }
-                    break; //break the while
+                    break; //break the while , we are good, no error evaluate the expression
                   }
 	        }
-		else
+		else  //no expression to evaluate, break directly , go to next step : RETURN_ROW
 		   break;
                 retryCounter++;
             }while(retryCounter < colNumber);
@@ -1423,6 +1423,9 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   
   return WORK_OK;
 }
+
+//set the field indexed by colidx to null in R2
+//R2 is source to do converting in hive_scan moveColExpr
 void ExHdfsScanTcb::setR2ColumnNull(Int32 colidx)
 {
   Lng32 neededColIndex = 0;
