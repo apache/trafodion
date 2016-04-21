@@ -1434,10 +1434,10 @@ void ExHdfsScanTcb::setR2ColumnNull(Int32 colidx)
     {
       attr = asciiSourceTD->getAttr(neededColIndex);
       neededColIndex++;
-	  if(attr->getOffset() == colidx)
-	{
-		*(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-	}
+      if(attr->getOffset() == colidx)
+      {
+        *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+      }
     }
   }
 }
@@ -1579,12 +1579,34 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
   if (convertExpr())
   {
-    ex_expr::exp_return_type evalRetCode =
-      convertExpr()->eval(workAtp_, workAtp_);
-    if (evalRetCode == ex_expr::EXPR_ERROR)
-      err = -1;
-    else
-      err = 0;
+    //retry if error for colnum times
+    int retryCounter = 0;
+    int coloffset = 0;
+    do{
+      if(retryCounter > 0)
+      {
+	printf("set to null [%d]\n",coloffset);
+        if(coloffset > 0)  
+          setR2ColumnNull(coloffset);
+      }
+      ex_expr::exp_return_type evalRetCode =
+        convertExpr()->eval(workAtp_, workAtp_);
+      if (evalRetCode == ex_expr::EXPR_ERROR)
+      {
+        coloffset= convertExpr()->getExtraInfo();  
+        if(retryCounter == *colnum - 1 || (hdfsScanTdb().getHiveScanMode() & HIVE_MODE_CONV_ERROR_TO_NULL) == 0 ) // error
+        {
+          err = -1;
+          break;
+        }
+      }
+      else
+      {
+        err = 0;
+        break;
+      }
+      retryCounter++;
+    }while(retryCounter < *colnum);
   }
   if (sourceRowEnd)
      return sourceRowEnd+1;
