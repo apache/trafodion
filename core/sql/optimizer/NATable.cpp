@@ -5563,7 +5563,7 @@ NATable::NATable(BindWA *bindWA,
 	 LOB_CLI_SELECT_CURSOR,
 	 lobNumList,
 	 lobTypList,
-	 lobLocList,(char *)lobHdfsServer,lobHdfsPort,0);
+	 lobLocList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
       
       if (cliRC == 0)
 	{

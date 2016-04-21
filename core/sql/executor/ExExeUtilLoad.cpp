@@ -2925,7 +2925,7 @@ short ExExeUtilLobExtractTcb::work()
 	   
 		//Retrieve the total length of this lob using the handle info and return to the caller
 		Int64 dummy = 0;
-		cliRC = SQL_EXEC_LOBcliInterface(lobHandle_, lobHandleLen_,NULL,NULL,NULL,NULL,LOB_CLI_SELECT_LOBLENGTH,LOB_CLI_ExecImmed, 0,&lobDataLen_, &dummy, &dummy,0,0);
+		cliRC = SQL_EXEC_LOBcliInterface(lobHandle_, lobHandleLen_,NULL,NULL,NULL,NULL,LOB_CLI_SELECT_LOBLENGTH,LOB_CLI_ExecImmed, 0,&lobDataLen_, &dummy, &dummy,0,0,FALSE);
 		if (cliRC < 0)
 		   {
 		     getDiagsArea()->mergeAfter(diags);
@@ -2981,7 +2981,7 @@ short ExExeUtilLobExtractTcb::work()
 	       lobNumList,
 	       lobTypList,
 	       lobLocList,lobTdb().getLobHdfsServer(),
-               lobTdb().getLobHdfsPort(),0);
+               lobTdb().getLobHdfsPort(),0,FALSE);
 	    if (cliRC < 0)
 	      {
 		getDiagsArea()->mergeAfter(diags);

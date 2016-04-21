@@ -1405,7 +1405,7 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
 
 	    // log a message (with the process ID) every three minutes
 	    if ( loopCount == 60 )
-	      SQLMXLoggingArea::logSQLMXDebugEvent("Loop on error", reqError);
+	      SQLMXLoggingArea::logSQLMXDebugEvent("Loop on error", reqError,__LINE__);
 
 	    // Suspend the process for 'timeDelay'
 	    sleep( timeDelay );
@@ -1423,7 +1423,7 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
 	releaseRTSSemaphore();
 
 	// log a message
-	SQLMXLoggingArea::logSQLMXDebugEvent("Abort on error", reqError);
+	SQLMXLoggingArea::logSQLMXDebugEvent("Abort on error", reqError,__LINE__);
 
 	abort();  // dump core
       }
@@ -1497,7 +1497,7 @@ void ComCondition::setNskCode(  Lng32 newNskCode)
        {
          // log a message (with the process ID) every three minutes
          if ( loopCount == 60 )
-           SQLMXLoggingArea::logSQLMXDebugEvent("Loop on error", reqError);
+           SQLMXLoggingArea::logSQLMXDebugEvent("Loop on error", reqError,__LINE__);
 
          // Suspend the process for 'timeDelay'
          sleep( timeDelay );
@@ -1516,7 +1516,7 @@ void ComCondition::setNskCode(  Lng32 newNskCode)
        releaseRTSSemaphore();
 
        // log a message
-       SQLMXLoggingArea::logSQLMXDebugEvent("Abort on NSK error", reqError);
+       SQLMXLoggingArea::logSQLMXDebugEvent("Abort on NSK error", reqError,__LINE__);
 
        abort();  // dump core
      }
