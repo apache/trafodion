@@ -278,17 +278,17 @@ mavenbuild:
 	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >../src/main/resources/trafodion-sql.jar.mf
 	# run maven
 	set -o pipefail && cd ..; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/trafodion-sql-*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-[0-9]*.jar $(MY_SQROOT)/export/lib
 
 # Java files get built through Maven
 mavenbuild_apache:
 	set -o pipefail && cd ..; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-apache*.jar $(MY_SQROOT)/export/lib
 
 # Java files get built through Maven
 mavenbuild_hdp:
 	set -o pipefail && cd ..; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-hdp*.jar $(MY_SQROOT)/export/lib
 
 # This is where the top-level is declared to build everything.
 buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES) mavenbuild mavenbuild_hdp mavenbuild_apache 
