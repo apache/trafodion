@@ -417,7 +417,7 @@ fi
 #==============================================
 #Enter Hadoop Type
 
-echo -n "Specify the version of Hadoop installed (1: Cloudera, 2: Hortonworks, 3: Other): "
+echo -n "Specify the Hadoop distribution installed (1: Cloudera, 2: Hortonworks, 3: Other): "
 read answer1
   if [[ -z "$answer1" ]]; then
      echo "***ERROR: User must specify the version of Hadoop being used."
