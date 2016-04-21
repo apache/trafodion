@@ -194,9 +194,10 @@ short FileScan::codeGen(Generator * generator)
 }
 
 int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
-						  const NAType &givenType,
-						  ItemExpr *&asciiValue,
-						  ItemExpr *&castValue)
+                                           const NAType &givenType,
+                                           ItemExpr *&asciiValue,
+                                           ItemExpr *&castValue,
+                                           NABoolean srcIsInt32Varchar)
 {
   int result = 0;
   asciiValue = NULL;
@@ -216,40 +217,55 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
     }
 
   if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
-      (CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" || CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "gbk") && CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) == "UTF8" )
-        needTranslate = TRUE;
-
+      (CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "GBK" || 
+       CmpCommon::getDefaultString(HIVE_FILE_CHARSET) == "gbk") 
+      && CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET) == "UTF8" )
+    needTranslate = TRUE;
+  
   // source ascii row is a varchar where the data is a pointer to the source data
   // in the hdfs buffer.
   NAType *asciiType = NULL;
   
   if (DFS2REC::isDoubleCharacter(newGivenType->getFSDatatype()))
-  {
-      asciiType =  new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
-				    FALSE, FALSE, newGivenType->getCharSet());
-  }
+    {
+      asciiType =  
+        new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+                           FALSE, FALSE, newGivenType->getCharSet(),
+                           CharInfo::DefaultCollation,
+                           CharInfo::COERCIBLE,
+                           CharInfo::UnknownCharSet,
+                           (srcIsInt32Varchar ? sizeof(Int32) : 0));
+    }
   // set the source charset to GBK if HIVE_FILE_CHARSET is set
   // HIVE_FILE_CHARSET can only be empty or GBK
   else if (  needTranslate == TRUE )
-  {
-      asciiType =  new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
-                                      FALSE, FALSE, CharInfo::GBK);
-  }
-  else
-    asciiType = new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull());
-  if (asciiType)
     {
-      asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
-      castValue = new(h) Cast(asciiValue, newGivenType);
-      if (castValue)
-	{
-	  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
-
-	  if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
-	    ((Cast*)castValue)->setAllowSignInInterval(TRUE);
-	}
-
+      asciiType =  
+        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+                           FALSE, FALSE, CharInfo::GBK,
+                           CharInfo::DefaultCollation,
+                           CharInfo::COERCIBLE,
+                           CharInfo::UnknownCharSet,
+                           (srcIsInt32Varchar ? sizeof(Int32) : 0));
     }
+  else
+    {
+      asciiType = 
+        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+                           FALSE, FALSE,
+                           CharInfo::DefaultCharSet,
+                           CharInfo::DefaultCollation,
+                           CharInfo::COERCIBLE,
+                           CharInfo::UnknownCharSet,
+                           (srcIsInt32Varchar ? sizeof(Int32) : 0));
+    }
+
+  asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
+  castValue = new(h) Cast(asciiValue, newGivenType);
+  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
+  
+  if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
+    ((Cast*)castValue)->setAllowSignInInterval(TRUE);
 
   if (castValue && asciiValue)
     result = 1;
@@ -839,9 +855,10 @@ short FileScan::codeGenForHive(Generator * generator)
 
     res = HbaseAccess::createAsciiColAndCastExpr(
 				    generator,        // for heap
-				    givenType,         // [IN] Actual type of HDFS column
-				    asciiValue,         // [OUT] Returned expression for ascii rep.
-				    castValue        // [OUT] Returned expression for binary rep.
+				    givenType,        // [IN] Actual type of HDFS column
+				    asciiValue,       // [OUT] Returned expression for ascii rep.
+				    castValue,        // [OUT] Returned expression for binary rep.
+                                    TRUE // max src data len is sizeof(Int32)
                                     );
      
     GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,

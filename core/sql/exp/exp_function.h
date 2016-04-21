@@ -2377,6 +2377,8 @@ public:
 				    Space * space, Int32 dateformat);
   NA_EIDPROC ex_function_dateformat();
 
+ void displayContents(Space * space, const char * displayStr, 
+                      Int32 clauseNum, char * constsArea);
 
   NA_EIDPROC inline Int32 getDateFormat() const { return dateformat_; }
   NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 

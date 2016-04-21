@@ -130,6 +130,7 @@ const ExpDatetime::DatetimeFormatInfo ExpDatetime::datetimeFormat[] =
     {ExpDatetime::DATETIME_FORMAT_TS7,       "MM/DD/YYYY HH24:MI:SS", 19, 19},
     {ExpDatetime::DATETIME_FORMAT_TS8,       "DD-MON-YYYY HH:MI:SS",  20, 20},
     {ExpDatetime::DATETIME_FORMAT_TS9,       "MONTH DD, YYYY, HH:MI", 19, 25},
+    {ExpDatetime::DATETIME_FORMAT_TS10,      "DD.MM.YYYY HH24:MI:SS", 19, 19},
 
     {ExpDatetime::DATETIME_FORMAT_NUM1,      "99:99:99:99",           11, 11},
     {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12}
@@ -2835,7 +2836,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
     };  
     break;
 
-  case DATETIME_FORMAT_TS2: // DD.MM.YYYY:HH24:MI:SS
+  case DATETIME_FORMAT_TS2:  // DD.MM.YYYY:HH24:MI:SS
+  case DATETIME_FORMAT_TS10: // DD.MM.YYYY:HH24:MI:SS
     {
       // the day
       if (convSrcDataToDst(2, srcData, 1, &dstData[3], ".", heap, diagsArea))
@@ -2846,9 +2848,17 @@ ExpDatetime::convAsciiToDate(char *srcData,
         return -1;
       
       // the year
-      if (convSrcDataToDst(4, srcData, 2, dstData, ":", heap, diagsArea))
-        return -1;
-
+      if (srcFormat == DATETIME_FORMAT_TS2)
+        {
+          if (convSrcDataToDst(4, srcData, 2, dstData, ":", heap, diagsArea))
+            return -1;
+        }
+      else
+        {
+          if (convSrcDataToDst(4, srcData, 2, dstData, " ", heap, diagsArea))
+            return -1;
+        }
+        
       // the hour
       if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
         return -1;
@@ -3278,11 +3288,13 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
   case DATETIME_FORMAT_EUROPEAN4:
   case DATETIME_FORMAT_TS2:
   case DATETIME_FORMAT_TS8:
+  case DATETIME_FORMAT_TS10:
     if (day) {
       convertToAscii(day, dstDataPtr, 2);
       if (startField < REC_DATE_DAY) {
 	if ((format == DATETIME_FORMAT_EUROPEAN) ||
-	    (format == DATETIME_FORMAT_TS2))
+	    (format == DATETIME_FORMAT_TS2) ||
+	    (format == DATETIME_FORMAT_TS10))
 	  *dstDataPtr++ = '.';
 	else if (format != DATETIME_FORMAT_EUROPEAN4)
 	  *dstDataPtr++ = '-';
@@ -3297,7 +3309,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 	convertToAscii(month, dstDataPtr, 2);
       if (startField < REC_DATE_MONTH) {
 	if ((format == DATETIME_FORMAT_EUROPEAN) ||
-	    (format == DATETIME_FORMAT_TS2))
+	    (format == DATETIME_FORMAT_TS2) ||
+	    (format == DATETIME_FORMAT_TS10))
 	  *dstDataPtr++ = '.';
 	else if (format != DATETIME_FORMAT_EUROPEAN4)
 	  *dstDataPtr++ = '-';
@@ -3366,7 +3379,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 
       // USA format uses AM|PM format.
       //
-      if (format == DATETIME_FORMAT_USA) {
+      if ((format == DATETIME_FORMAT_USA) ||
+          (format == DATETIME_FORMAT_TS7)) {
         if (hour < 1)
           hour += 12;
         else if (hour > 12)

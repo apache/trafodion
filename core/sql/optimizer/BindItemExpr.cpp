@@ -4181,9 +4181,9 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
               if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)
                 frmt_ = ExpDatetime::DATETIME_FORMAT_TS3;// YYYY-MM-DD HH24:MI:SS
               else if (frmt_ == ExpDatetime::DATETIME_FORMAT_USA)
-                frmt_ = ExpDatetime::DATETIME_FORMAT_TS7;// MM/DD/YYYY HH24:MI:SS
-              else
-                frmt_ = ExpDatetime::DATETIME_FORMAT_TS2;// DD.MM.YYYY:HH24:MI:SS
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS7;// MM/DD/YYYY HH24:MI:SS AM|PM
+              else if (frmt_ == ExpDatetime::DATETIME_FORMAT_EUROPEAN)
+                frmt_ = ExpDatetime::DATETIME_FORMAT_TS10;// DD.MM.YYYY HH24:MI:SS
             }
         }
 
