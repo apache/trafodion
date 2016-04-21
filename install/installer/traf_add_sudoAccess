@@ -40,8 +40,8 @@ function backupRestore {
 
 source $TRAF_CONFIG
 
-echo "## Allow $BACKUP_USER id to run commands needed for backup and restore" > $BACKUP_USER
-echo "%$BACKUP_USER ALL =(hbase) NOPASSWD: /usr/bin/hbase" >> $BACKUP_USER
+sudo echo "## Allow $BACKUP_USER id to run commands needed for backup and restore" > $BACKUP_USER
+sudo echo "%$BACKUP_USER ALL =(hbase) NOPASSWD: /usr/bin/hbase" >> $BACKUP_USER
 
 }
 
@@ -61,9 +61,9 @@ fi
 function copyFile {
 
 if [[ $all_node_count -gt "1" ]]; then
-   $TRAF_PDCP $BACKUP_USER $HOME
-   $TRAF_PDSH sudo cp $HOME/$BACKUP_USER /etc/sudoers.d/
-   $TRAF_PDSH sudo rm -f $HOME/$BACKUP_USER
+   $TRAF_PDCP $BACKUP_USER $HOME/temp_traf
+   $TRAF_PDSH sudo cp $HOME/temp_traf /etc/sudoers.d/$BACKUP_USER
+   $TRAF_PDSH sudo rm -f $HOME/temp_traf
 else
    sudo cp $BACKUP_USER /etc/sudoers.d
 fi
