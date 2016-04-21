@@ -4612,7 +4612,7 @@ Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
 }
 
 SQLCLI_LIB_FUNC
-Int32 SQL_EXEC_GetAuthState_Internal(
+Int32 SQL_EXEC_GetAuthState(
    /*OUT*/  bool & authenticationEnabled,
    /*OUT*/  bool & authorizationEnabled,
    /*OUT*/  bool & authorizationReady,
