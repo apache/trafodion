@@ -30,4 +30,5 @@ sed "
 s/0 row(s) in [0-9]\.[0-9][0-9][0-9][0-9] seconds//g
 /HBase Shell/d
 /Version/d
+s/^[A-Za-z ]* Conversational Interface [0-9][0-9.]*/Conversational Interface @version@/
 " $fil
