@@ -29,7 +29,6 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.trafodion.jdbc.t4</groupId>
   <artifactId>jdbcT4</artifactId>
-  <packaging>jar</packaging>
   <version>${env.TRAFODION_VER}</version> 
   <name>Trafodion JDBC Type4 Driver</name>
   <url>http://wiki.trafodion.org</url>

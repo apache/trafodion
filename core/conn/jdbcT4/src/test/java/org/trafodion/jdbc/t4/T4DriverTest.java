@@ -38,9 +38,9 @@ public class T4DriverTest extends BaseTest {
 
 	@Test
 	public void acceptsURL() throws SQLException {
-		String url = "jdbc:t4jdbc://192.168.1.103:37800/:";
+		String url = "jdbc:t4jdbc://localhost:23400/:";
 		Assert.assertTrue(driver.acceptsURL(url));
-		url = "jdbc:abc://192.168.1.103:37800/:";
+		url = "jdbc:abc://localhost:23400/:";
 		Assert.assertFalse(driver.acceptsURL(url));
 	}
 
