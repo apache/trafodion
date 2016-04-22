@@ -507,23 +507,6 @@ EOF
   APACHE_HIVE_HOME=$HIVE_HOME
   export HIVE_CNF_DIR=$HIVE_HOME/conf
 
-  for cp in `echo $CLASSPATH | sed 's/:/ /g'`
-  do
-    if [ -f $cp/core-site.xml ]; then
-      export HADOOP_CNF_DIR=$cp
-      APACHE_HADOOP_HOME=$(dirname $(dirname $cp))
-    fi
-    if [ -f $cp/hbase-site.xml ]; then
-      [[ $SQ_VERBOSE == 1 ]] && echo "Found $cp/hbase-site.xml in CLASSPATH, this is vanilla Apache"
-      export HBASE_CNF_DIR=$cp
-      APACHE_HBASE_HOME=`dirname $cp`
-    fi
-    if [ -f $cp/hive-site.xml ]; then
-      export HIVE_CNF_DIR=$cp
-      APACHE_HIVE_HOME=`dirname $cp`
-    fi
-  done
-
   # sometimes, conf file and lib files don't have the same parent,
   # try to handle some common cases, where the libs are under /usr/lib
   if [ ! -d $APACHE_HADOOP_HOME/lib/ -a -d /usr/lib/hadoop ]; then
@@ -579,8 +562,10 @@ EOF
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
   else
     # print usage information, not enough information about Hadoop/HBase
-    vanilla_apache_usage
-    NEEDS_HADOOP_INSTALL=1
+    if [[ -z $HADOOP_TYPE ]]; then
+       vanilla_apache_usage
+       NEEDS_HADOOP_INSTALL=1
+    fi
   fi
 
 fi

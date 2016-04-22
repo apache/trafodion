@@ -27,7 +27,9 @@
 
 extern void *__wrap_memcpy(void *dest, const void *src, size_t n);
 
+#ifndef _WIN32
 __asm__ (".symver memcpy, memcpy@GLIBC_2.2.5");
+#endif
 
 void *__wrap_memcpy(void *dest, const void *src, size_t n)
 {

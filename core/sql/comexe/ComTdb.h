@@ -288,6 +288,7 @@ public:
     ex_LONG_RUNNING = 116,
     ex_GET_METADATA_INFO = 117,
     ex_GET_VERSION_INFO  = 118,
+    ex_LOB_INFO =119,
     ex_SUSPEND_ACTIVATE  = 121,
     ex_DISK_LABEL_STATISTICS = 122,
     ex_REGION_STATS = 123,
