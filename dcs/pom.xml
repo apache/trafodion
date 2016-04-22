@@ -325,7 +325,7 @@
           </dependencies>
           <configuration>
             <additionalClasspathElements>
-               <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4.jar</additionalClasspathElement>
+               <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4-${TRAFODION_VER}.jar</additionalClasspathElement>
             </additionalClasspathElements>
             <includes>
               <include>${integrationtest.include}</include>
