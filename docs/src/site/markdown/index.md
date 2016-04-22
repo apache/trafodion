@@ -79,7 +79,7 @@ Already a contributor? We need permission to add your company's logo here.
 
 ## About
 
-Apache Trafodion is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Hadoop. 
+Apache Trafodion (incubating) is a webscale SQL-on-Hadoop solution enabling transactional or operational workloads on Apache Hadoop. 
 
 The name &quot;Trafodion&quot; (the Welsh word for transactions, pronounced &quot;Tra-vod-eee-on&quot;) was chosen specifically to emphasize the differentiation that Trafodion provides in closing a critical gap in the Hadoop ecosystem. 
 

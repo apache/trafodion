@@ -34,7 +34,9 @@
   <bannerLeft>
     <!-- Apache Trafodion, but with "Trafodion" highlighted -->
     <name>
-       <![CDATA[<img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo" width="383">]]>
+       <![CDATA[
+       <img src="images/logos/trafodion-logo.jpg" alt="Trafodion Logo" width="383"><span class="logo-right"><img id="incubator-logo" alt="Apache Incubator" src="images/logos/egg-logo.png" /></span>
+       ]]>
     </name>
     <href>index.html</href>
   </bannerLeft>
@@ -55,7 +57,7 @@
       <brand>
         <!-- Brand text in top-left part of the site -->
         <name>
-          <![CDATA[<span class="brand-apache">Apache</span> <span class="brand-trafodion">Trafodion</span>]]>
+          <![CDATA[<span class="brand-apache">Apache</span> <span class="brand-trafodion">Trafodion</span> <span class="brand-apache">(incubating)</span> ]]>
         </name>
         <href>index.html</href>
       </brand>
