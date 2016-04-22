@@ -32,9 +32,10 @@
     </exec>
     <property file="buildId"/>
 
+    <property environment="my_env"/>
     <property name="source.version" value="1.7" />
     <property id="base.dir" name="base.dir" value="."/>
-    <property name="jdbcT4" value="${base.dir}/../../sqf/export/lib/jdbcT4.jar"/>
+    <property name="jdbcT4" value="${base.dir}/../../sqf/export/lib/jdbcT4-${my_env.TRAFODION_VER}.jar"/>
     <property name="platform-install.dir" value="${base.dir}/../../sqf/trafci"/>
     <property name="temp.dir" value="${base.dir}/temp"/>
     <property name="tempsrc.dir" value="${temp.dir}/src"/>
@@ -64,7 +65,6 @@
     <property name="tar.file" value="trafci.tar" />
     <property name="installer.zipfile" value="trafci.zip" />
     <property name="vproc.version" value="TrafCI_Build_${bldId}"/>
-    <property environment="my_env"/>
 
     <target name="ProductVersion">
        <echo>

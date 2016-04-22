@@ -141,7 +141,7 @@ pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package sql regress)/";exit $${PIPESTATUS[0]}
 
 # Package Phoenix test
-pkg-phx-tests: all
+pkg-phx-tests: 
 	cd sqf && $(MAKE) package-phx 2>&1 | sed -e "s/$$/	##(Package phoenix)/";exit $${PIPESTATUS[0]}
 
 # Package dcs tests
