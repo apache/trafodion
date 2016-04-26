@@ -703,8 +703,11 @@ short ExTransaction::commitTransaction(NABoolean waited)
 	  rollbackTransactionWaited();
 	}
 
-      createDiagsArea (EXE_COMMIT_ERROR_FROM_TRANS_SUBSYS, rc,
-		       "TMF");
+      if (rc == FEHASCONFLICT)
+        createDiagsArea (EXE_COMMIT_CONFLICT_FROM_TRANS_SUBSYS, rc, "DTM");
+      else
+        createDiagsArea (EXE_COMMIT_ERROR_FROM_TRANS_SUBSYS, rc,
+                         "DTM");
     }
   
   if (waited)
