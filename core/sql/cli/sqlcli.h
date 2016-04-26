@@ -1956,6 +1956,12 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_SETAUTHID(
 		/* OUT OPTIONAL  role len*/ short *primaryRoleLen,
                 /* OUT OPTIONAL userRedefTime*/ Int64 *redefTime); // NA_64BIT
 
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetAuthState(
+   /*OUT*/  bool & authenticationEnabled,
+   /*OUT*/  bool & authorizationEnabled,
+   /*OUT*/  bool & authorizationReady,
+   /*OUT*/  bool & auditingEnabled);
+
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_DecodeAndFormatKey(
                /*IN*/void    * RCB_Pointer_Addr,    
 	       /*IN*/void    * KeyAddr,             

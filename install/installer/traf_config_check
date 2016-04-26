@@ -545,7 +545,7 @@ else
 
    hadoopVersion=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters | grep version | grep -c CDH)
 
-   if [[ $hadoopVersion -ne "1" ]]; then
+   if [[ $hadoopVersion -lt "1" ]]; then
       hadoopVersion=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters | grep version | grep -c HDP)
       if [[ $hadoopVersion -ne "1" ]]; then
          errorFound=1
@@ -562,11 +562,14 @@ else
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/HADOOP_TYPE\=/d' $TRAF_CONFIG
    echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $TRAF_CONFIG
+   echo "export MULTI_CLUSTER=\"N\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
    source $TRAF_CONFIG
 
-   temp=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
-   CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
+    if [[ $MULTI_CLUSTER == "N" ]]; then
+      temp=$(curl -k -su $ADMIN:$PASSWORD $URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
+      CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
+   fi
    CLUSTER_NAME=${CLUSTER_NAME// /%20}
 
    if [ -z $CLUSTER_NAME ]; then
@@ -595,10 +598,40 @@ else
 fi
 }
 
+function setPath {
+
+export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/PATH\=/d' $TRAF_CONFIG
+echo "export PATH=\"$PATH\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
+}
+
+function setHBaseDistro {
+
+export HBASE_DISTRO="APACHE" 
+
+sudo chmod 777 $TRAF_CONFIG
+sed -i '/HBASE_DISTRO\=/d' $TRAF_CONFIG
+echo "export HBASE_DISTRO=\"$HBASE_DISTRO\"" >> $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG
+source $TRAF_CONFIG
+
+}
+
 function getHadoopNodes {
 
 echo "***INFO: Getting list of all $HADOOP_TYPE nodes"
-$LOCAL_WORKDIR/traf_getHadoopNodes
+
+if [[ $MULTI_CLUSTER == "N" ]] && [[ $HADOOP_TYPE != "apache" ]]; then
+   $LOCAL_WORKDIR/traf_getHadoopNodes
+else
+   $LOCAL_WORKDIR/traf_getMultiHadoopNodes
+fi
+
 
 if [ $? -ne "0" ]; then
    errorFound=1
@@ -652,15 +685,16 @@ function checkRoleGroups {
 
 }
 
+
 function checkClouderaVersion {
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
    if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-5].*)
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-6].*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
-         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[6-9].[0-9].* | wc -l)
+         versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-9].[7-9].* | wc -l)
          if [[ $versionInstalled -gt "0" ]]; then
             errorFound=1
             echo "HADOOP VERSION" >> $ERROR_LOG
@@ -830,6 +864,25 @@ else
    fi
 fi
 
+
+if [[ -z "$DCS_MASTER_PORT" ]]; then
+   sudo chmod 777 $TRAF_CONFIG
+   echo "export DCS_MASTER_PORT=\"23400\"" >> $TRAF_CONFIG
+   sudo chmod 777 $TRAF_CONFIG
+fi
+
+if [[ -z "$DCS_MASTER_HOST" ]]; then
+   if [[ "$ENABLE_HA" == "true" ]]; then
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export DCS_MASTER_HOST=\"$FLOATING_IP\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   else
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export DCS_MASTER_HOST=\"$DCS_PRIMARY_MASTER_NODE\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   fi
+fi
+
 }
 
 function checkLDAP {
@@ -895,16 +948,27 @@ if [[ ! -z $install_features_path ]]; then
       echo "export HDP_2_3_SUPPORT=\"$HDP_2_3_SUPPORT\"" >> $TRAF_CONFIG
       sudo chmod 777 $TRAF_CONFIG
    fi
+   if [[ -z $APACHE_1.0_X_SUPPORT ]]; then
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export APACHE_1_0_X_SUPPORT=\"N\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG
+   else
+      sudo chmod 777 $TRAF_CONFIG
+      echo "export APACHE_1_0_X_SUPPORT=\"Y\"" >> $TRAF_CONFIG
+      sudo chmod 777 $TRAF_CONFIG      
+   fi
 else
    CDH_5_3_HDP_2_2_SUPPORT="N"
    CDH_5_4_SUPPORT="N"
    CDH_5_5_SUPPORT="N"
    HDP_2_3_SUPPORT="N"
+   APACHE_1_0_X_SUPPORT="N"
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    echo "export CDH_5_4_SUPPORT=\"$CDH_5_4_SUPPORT\"" >> $TRAF_CONFIG
    echo "export CDH_5_5_SUPPORT=\"$CDH_5_5_SUPPORT\"" >> $TRAF_CONFIG
    echo "export HDP_2_3_SUPPORT=\"$HDP_2_3_SUPPORT\"" >> $TRAF_CONFIG
+   echo "export APACHE_1_0_X_SUPPORT=\"$APACHE_1_0_X_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
 fi
 
@@ -914,7 +978,7 @@ fi
 #===========================================
 #Main 
 
-echo " ***INFO: Trafodion Configuration File Check"
+echo "***INFO: Trafodion Configuration File Check"
 
 setUpErrorLog
 
@@ -944,11 +1008,19 @@ checkEPEL
 
 checkHadoopSupport
 
-checkBackupUser
+if [[ "$HADOOP_TYPE" != "apache" ]]; then
+   checkBackupUser
 
-checkHadoopUserPass
+   checkHadoopUserPass
 
-checkHadoopURL
+   checkHadoopURL
+
+fi
+
+if [[ "$HADOOP_TYPE" == "apache" ]]; then
+   setPath
+   setHBaseDistro
+fi
 
 getHadoopNodes
 

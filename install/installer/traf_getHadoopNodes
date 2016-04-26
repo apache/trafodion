@@ -81,7 +81,6 @@ if [ $HADOOP_TYPE == "cloudera" ]; then
       HADOOP_NODES="$HADOOP_NODES $hostName"
       MY_HADOOP_NODES="$MY_HADOOP_NODES -w $hostName"
    done < tempFile2
-   rm tempFile
    rm tempFile2
 fi
 
