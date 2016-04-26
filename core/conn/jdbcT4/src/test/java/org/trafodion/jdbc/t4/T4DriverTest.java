@@ -18,7 +18,9 @@
 * specific language governing permissions and limitations
 * under the License.
 *
-* @@@ END COPYRIGHT @@@                                                          */
+* @@@ END COPYRIGHT @@@
+*/
+
 package org.trafodion.jdbc.t4;
 
 import java.sql.SQLException;
@@ -27,7 +29,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class T4DriverTest extends BaseTest {
+public class T4DriverTest {
 	private static T4Driver driver;
 
 	@BeforeClass
