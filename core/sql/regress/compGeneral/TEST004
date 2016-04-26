@@ -857,8 +857,5 @@ explain options 'f' st1;
 log;
 
 obey test004(clean_up);
---set parserflags 131072;
---select object_name from "_MD_".objects where schema_name like 'VOLATILE_SCHEMA%';
---drop implicit volatile schema cleanup cascade;
 
 

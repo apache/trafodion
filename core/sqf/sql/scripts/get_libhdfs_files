@@ -42,14 +42,11 @@ fi
 LOGFILE=${LIBHDFS_TEMP_DIR}/build.log
 
 # Hadoop source tar file to build libhdfs from
-#  Narendra
-#HADOOP_DEP_VER=2.6.0-cdh5.4.4
 HADOOP_ID=hadoop-${HADOOP_DEP_VER}
 if [ -z $HADOOP_MIRROR_BASE ]; then
-   HADOOP_MIRROR_BASE=archive.apache.org
+   HADOOP_MIRROR_BASE=archive.apache.org/dist
 fi
-echo "Here 1"
-HADOOP_MIRROR_URL=http://${HADOOP_MIRROR_BASE}/apache/hadoop/common/${HADOOP_ID}
+HADOOP_MIRROR_URL=http://${HADOOP_MIRROR_BASE}/hadoop/common/${HADOOP_ID}
 HADOOP_SRC_ID=${HADOOP_ID}-src
 HADOOP_SRC_TAR=${HADOOP_SRC_ID}.tar.gz
 HADOOP_BIN_TAR=${HADOOP_ID}.tar.gz

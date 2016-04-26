@@ -554,7 +554,12 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 		retcode = 0;
 
                 if ((strlen(errorSchemas_) + strlen(schemaName)) < 1000)
-                  strcat(errorSchemas_, schemaName);
+                  {
+                    strcat(errorSchemas_, schemaName);
+                    strcat(errorSchemas_, " ");
+                  }
+                else
+                  strcat(errorSchemas_, "..."); // could not fit
 
 		someSchemasCouldNotBeDropped_ = TRUE;
 	      }

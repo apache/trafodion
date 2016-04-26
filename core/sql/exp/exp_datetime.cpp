@@ -2837,7 +2837,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
     break;
 
   case DATETIME_FORMAT_TS2:  // DD.MM.YYYY:HH24:MI:SS
-  case DATETIME_FORMAT_TS10: // DD.MM.YYYY:HH24:MI:SS
+  case DATETIME_FORMAT_TS10: // DD.MM.YYYY HH24:MI:SS
     {
       // the day
       if (convSrcDataToDst(2, srcData, 1, &dstData[3], ".", heap, diagsArea))

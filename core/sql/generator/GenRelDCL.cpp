@@ -259,6 +259,7 @@ short RelTransaction::codeGen(Generator * generator)
     generator->setExplainTuple(
        addExplainInfo(trans_tdb, 0, 0, generator));
   }
+
   return 0;
 }
 
