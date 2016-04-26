@@ -558,7 +558,7 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
                     strcat(errorSchemas_, schemaName);
                     strcat(errorSchemas_, " ");
                   }
-                else
+                else if (strlen(errorSchemas_) < 1005) // maxlen = 1010
                   strcat(errorSchemas_, "..."); // could not fit
 
 		someSchemasCouldNotBeDropped_ = TRUE;

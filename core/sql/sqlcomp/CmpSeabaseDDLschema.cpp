@@ -409,6 +409,21 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
 //******************* End of CmpSeabaseDDL::describeSchema *********************
 
 
+static NABoolean appendErrorObjName(char * errorObjs, const char * objName)
+{
+  if ((strlen(errorObjs) + strlen(objName)) < 1000)
+    {
+      strcat(errorObjs, objName);
+      strcat(errorObjs, " ");
+    }
+  else if (strlen(errorObjs) < 1005) // errorObjs maxlen = 1010
+    {
+      strcat(errorObjs, "...");
+    }
+  
+  return TRUE;
+}
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: CmpSeabaseDDL::dropSeabaseSchema                                *
@@ -444,7 +459,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    int32_t length = 0;
    int32_t rowCount = 0;
    bool someObjectsCouldNotBeDropped = false;
-   char errorObjs[1000];
+   char errorObjs[1010];
    Queue * objectsQueue = NULL;
    Queue * otherObjectsQueue = NULL;
 
@@ -617,8 +632,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        cliRC = cliInterface.executeImmediate(buf);
        if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
          {
-           strcat(errorObjs, objectTypeString.data());
-           strcat(errorObjs, " ");
+           appendErrorObjName(errorObjs, objName);
            someObjectsCouldNotBeDropped = true;
          }
    } 
@@ -643,9 +657,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 
          if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
            {
-             strcat(errorObjs, objName);
-             strcat(errorObjs, " ");
-
+             appendErrorObjName(errorObjs, objName);
              someObjectsCouldNotBeDropped = true;
            }
       }
@@ -674,9 +686,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 				(char*)schName.data(),(char*)objName.data(),
 				isVolatile, FALSE,dropSchemaNode->ddlXns()))
                  {
-                   strcat(errorObjs, objName.data());
-                   strcat(errorObjs, " ");
-
+                   appendErrorObjName(errorObjs, objName.data());
                    someObjectsCouldNotBeDropped = true;
                  }
 	     }
@@ -709,9 +719,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 				(char*)schName.data(),(char*)objName.data(),
 				isVolatile,TRUE, dropSchemaNode->ddlXns()))
                  {
-                   strcat(errorObjs, objName.data());
-                   strcat(errorObjs, " ");
-
+                   appendErrorObjName(errorObjs, objName.data());
                    someObjectsCouldNotBeDropped = true;
                  }
 	     }
@@ -754,9 +762,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 
          if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
            {
-             strcat(errorObjs, objName);
-             strcat(errorObjs, " ");
-
+             appendErrorObjName(errorObjs, objName);
              someObjectsCouldNotBeDropped = true;
            }
       }  
@@ -799,9 +805,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 
          if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
            {
-             strcat(errorObjs, objName);
-             strcat(errorObjs, " ");
-
+             appendErrorObjName(errorObjs, objName);
              someObjectsCouldNotBeDropped = true;
            }
       }  
@@ -821,9 +825,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
                         (char*)schName.data(),(char*)objName.data(),
                         isVolatile, FALSE, dropSchemaNode->ddlXns()))
          {
-           strcat(errorObjs, objName.data());
-           strcat(errorObjs, " ");
-
+           appendErrorObjName(errorObjs, objName.data());
            someObjectsCouldNotBeDropped = true;
          }
      }
@@ -887,9 +889,8 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
          {
            OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
            NAString objName = vi->get(0);
-           
-           strcat(errorObjs, objName.data());
-           strcat(errorObjs, " ");
+
+           appendErrorObjName(errorObjs, objName.data());
          }
 
        NAString reason;
