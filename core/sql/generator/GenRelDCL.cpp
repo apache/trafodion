@@ -259,6 +259,10 @@ short RelTransaction::codeGen(Generator * generator)
     generator->setExplainTuple(
        addExplainInfo(trans_tdb, 0, 0, generator));
   }
+
+  // no aqr for trasaction control stmts (begin/commit/rollback/set)
+  generator->setAqrEnabled(FALSE);
+
   return 0;
 }
 
