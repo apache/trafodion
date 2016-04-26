@@ -2838,6 +2838,8 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
   // committed in the called methods.
   if ((ddlXns()) &&
       (
+           (initHbase()) ||
+           (dropHbase()) ||
            (purgedataHbase()) ||
            (initAuthorization()) ||
            (dropAuthorization()) ||
@@ -2855,6 +2857,7 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
   if ((ddlNode && ddlNode->castToStmtDDLNode() &&
        ddlNode->castToStmtDDLNode()->ddlXns()) &&
       ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
+       (ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
     {

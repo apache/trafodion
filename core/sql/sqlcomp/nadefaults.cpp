@@ -1171,7 +1171,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
  DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
-  DDkwd__(DDL_TRANSACTIONS,         "OFF"),
+  DDkwd__(DDL_TRANSACTIONS,         "ON"),
 
     // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
   DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
