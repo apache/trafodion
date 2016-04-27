@@ -5664,10 +5664,14 @@ Int32 ContextCli::switchToCmpContext(Int32 cmpCntxtType)
     {
       // find none to use, create new CmpContext instance
       CmpContext *savedCntxt = cmpCurrentContext;
-      if (arkcmp_main_entry())
+      Int32 rc = 0;
+      if (rc = arkcmp_main_entry())
         {
           cmpCurrentContext = savedCntxt;
-          return -1;  // failed to create new CmpContext instance
+          if (rc == 2)
+            return -2; // error during NADefaults creation
+          else
+            return -1;  // failed to create new CmpContext instance
         }
       
       cmpCntxt = CmpCommon::context();

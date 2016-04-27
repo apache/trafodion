@@ -68,7 +68,7 @@
 1066 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating index $0~TableName in metadata schema is not allowed.
 1067 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating module $0~String0 in metadata schema is not allowed.
 1068 ZZZZZ 99999 ADVANCED MAJOR DIALOUT An internal error was encountered: cannot create lock $0~TableName in metadata schema.
-1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped.
+1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped. $0~String0
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
 1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be accessed. 
 1072 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unique constraint $0~String0 is disabled, so foreign key constraint $1~ConstraintName could not be created.
@@ -592,6 +592,7 @@
 2076 21000 99999 BEGINNER MAJOR DBADMIN HIST_NO_STATS_UEC should always be less than or equal to CQD HIST_NO_STATS_ROWCOUNT. Present Value of HIST_NO_STATS_ROWCOUNT is $0~string0.
 2077 ZZZZZ 99999 BEGINNER MINOR DBADMIN The max size $0~int0 must be greater than the initial size $1~int1.
 2078 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Assertion failure during semantic query optimization ($0~string0) in file $1~string1 at line $2~int0. Attempting to recover and produce a plan.
+2079 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error occurred during initialization of NADefaults structure. Make sure that default constants specified in enum DefaultConstants are set up correctly in defaultDefaults[] array.
 2080 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $3~int2 while reading file: $2~int1 bytes were read from $0~string0 when $1~int0 were expected in module $4~string1.
 2081 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $1~int0 while opening file $0~string0 for read.
 2082 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error $1~int0 while opening file $0~string0 for write.

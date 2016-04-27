@@ -1350,9 +1350,10 @@ public:
   static int createAsciiColAndCastExpr(Generator * generator,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,
-				       ItemExpr *&castValue);
+				       ItemExpr *&castValue,
+                                       NABoolean srcIsInt32Varchar = FALSE);
 
- static int createAsciiColAndCastExpr2(Generator * generator,
+  static int createAsciiColAndCastExpr2(Generator * generator,
 				       ItemExpr * colNode,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,

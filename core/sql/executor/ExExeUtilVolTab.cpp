@@ -437,6 +437,8 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	case INITIAL_:
 	  {
 	    step_ = FETCH_SCHEMA_NAMES_;
+            errorSchemas_[0] = 0;
+
 	  }
 	break;
 
@@ -537,14 +539,27 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	    char * schemaName = vi->get(0);
 	    retcode =
 	      dropVolatileSchema(masterGlob->getStatement()->getContext(),
-				 schemaName, getHeap(), getGlobals());
+				 schemaName, getHeap(), getGlobals(),
+                                 getDiagsArea());
 	    if (retcode < 0)
 	      {
+                // changes errors to warnings and move on to next schema.
+                if (getDiagsArea())
+                  getDiagsArea()->negateAllErrors();
+
 		// clear diags and move on to next schema.
 		// Remember that an error was returned, we will
 		// return a warning at the end.
 		SQL_EXEC_ClearDiagnostics(NULL);
 		retcode = 0;
+
+                if ((strlen(errorSchemas_) + strlen(schemaName)) < 1000)
+                  {
+                    strcat(errorSchemas_, schemaName);
+                    strcat(errorSchemas_, " ");
+                  }
+                else if (strlen(errorSchemas_) < 1005) // maxlen = 1010
+                  strcat(errorSchemas_, "..."); // could not fit
 
 		someSchemasCouldNotBeDropped_ = TRUE;
 	      }
@@ -561,7 +576,8 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 		// add a warning to indicate that some schemas were not
 		// dropped.
                 ComDiagsArea * diags = getDiagsArea();
-                *diags << DgSqlCode(1069);
+                *diags << DgSqlCode(1069)
+                       << DgSchemaName(errorSchemas_);
 	      }
 	    step_ = DONE_;
 	  }
@@ -600,7 +616,8 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
 (ContextCli * currContext,
  char * schemaName,
  CollHeap * heap,
- ex_globals *glob)
+ ex_globals *glob,
+ ComDiagsArea *diagsArea)
 {
   const char *parentQid = NULL;
   if (glob)
@@ -643,7 +660,8 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
 
   // issue the drop schema command 
   Lng32 cliRC = cliInterface.executeImmediate(dropSchema);
-
+  cliInterface.retrieveSQLDiagnostics(diagsArea);
+                
   // reset volatile schema bit
   //  currContext->resetSqlParserFlags(0x8000); // ALLOW_VOLATILE_SCHEMA_CREATION
 

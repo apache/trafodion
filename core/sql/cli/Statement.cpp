@@ -1511,7 +1511,12 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
           if (embeddedArkcmpSetup == 0)           
             {
 	      context_->setEmbeddedArkcmpIsInitialized(TRUE);
-	  //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
+              //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
+            }
+          else if (embeddedArkcmpSetup == -2)
+            {
+              diagsArea << DgSqlCode(-2079);
+              return ERROR;
             }
           else
             {

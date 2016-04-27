@@ -43,7 +43,10 @@ LOGFILE=${LIBHDFS_TEMP_DIR}/build.log
 
 # Hadoop source tar file to build libhdfs from
 HADOOP_ID=hadoop-${HADOOP_DEP_VER}
-HADOOP_MIRROR_URL=https://archive.apache.org/dist/hadoop/common/${HADOOP_ID}
+if [ -z $HADOOP_MIRROR_BASE ]; then
+   HADOOP_MIRROR_BASE=archive.apache.org/dist
+fi
+HADOOP_MIRROR_URL=http://${HADOOP_MIRROR_BASE}/hadoop/common/${HADOOP_ID}
 HADOOP_SRC_ID=${HADOOP_ID}-src
 HADOOP_SRC_TAR=${HADOOP_SRC_ID}.tar.gz
 HADOOP_BIN_TAR=${HADOOP_ID}.tar.gz
@@ -127,6 +130,7 @@ if [[ $FORCE_BUILD == true ||
 
   if [[ $SOURCE_BUILD != true ]]; then
     echo "Downloading Hadoop-common binary distro..." | tee -a ${LOGFILE}
+    echo "wget ${HADOOP_MIRROR_URL}/${HADOOP_BIN_TAR}"
     wget ${HADOOP_MIRROR_URL}/${HADOOP_BIN_TAR} 2>&1 >>${LOGFILE}
     tar -xzf $HADOOP_BIN_TAR  \
        $HADOOP_ID/lib/native/libhadoop\*so\* \

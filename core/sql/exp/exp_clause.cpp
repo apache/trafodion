@@ -2005,6 +2005,18 @@ void ExFunctionHbaseVersion::displayContents(Space * space, const char * /*displ
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
 }
 
+void ex_function_dateformat::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ex_function_dateformat", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    dateformat_ = %d", dateformat_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
+}
+
 // Function to compare two strings. 
 NA_EIDPROC Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
                                           char* in_s2, Int32 length2, 
