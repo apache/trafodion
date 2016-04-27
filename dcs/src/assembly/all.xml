@@ -84,6 +84,7 @@
          <include>org.slf4j:slf4j-log4j12</include>
          <include>org.slf4j:slf4j-api</include>
          <include>org.mortbay.jetty</include>
+         <include>org.apache.zookeeper:zookeeper</include>
       </includes>
       <fileMode>0644</fileMode>
       <directoryMode>0644</directoryMode>
