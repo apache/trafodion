@@ -381,7 +381,7 @@ public class TransactionManager {
                   // size is 1
                   for (CommitResponse cresponse : result.values()){
                     if(cresponse.getHasException()) {
-                      String exceptionString = new String (cresponse.getException().toString());
+                      String exceptionString = new String (cresponse.getException());
                       LOG.error("doCommitX - exceptionString: " + exceptionString);
                       if (exceptionString.contains("UnknownTransactionException")) {
                         if (ignoreUnknownTransaction == true) {
@@ -403,7 +403,7 @@ public class TransactionManager {
              else {
                   for (CommitResponse cresponse : result.values()){
                     if(cresponse.getHasException()) {
-                      String exceptionString = new String (cresponse.getException().toString());
+                      String exceptionString = new String (cresponse.getException());
                       LOG.error("doCommitX - exceptionString: " + exceptionString);
                       if (exceptionString.contains("UnknownTransactionException")) {
                         if (ignoreUnknownTransaction == true) {
@@ -530,7 +530,7 @@ public class TransactionManager {
                   // size is 1
                   for (SsccCommitResponse cresponse : result.values()){
                     if(cresponse.getHasException()) {
-                      String exceptionString = new String (cresponse.getException().toString());
+                      String exceptionString = new String (cresponse.getException());
                       if (exceptionString.contains("UnknownTransactionException")) {
                         if (ignoreUnknownTransaction == true) {
                           if (LOG.isTraceEnabled()) LOG.trace("doCommitX, ignoring UnknownTransactionException in cresponse");
@@ -549,13 +549,15 @@ public class TransactionManager {
                retry = false;
              }
           }
-          catch (UnknownTransactionException ute) {
-              LOG.error("Got unknown exception in doCommitX by participant " + participantNum
-            		  + " for transaction: " + transactionId + " " + ute);
-              transactionState.requestPendingCountDec(true);
-              throw new UnknownTransactionException();
-          }
           catch (Exception e) {
+             if(e instanceof UnknownTransactionException) {
+                String errMsg = new String("Got unknown exception in doCommitX by participant " + participantNum
+              		  + " for transaction: " + transactionId + " " + e);
+                LOG.error(errMsg);
+                transactionState.requestPendingCountDec(true);
+                throw new UnknownTransactionException(errMsg);
+             }
+
              LOG.error("doCommitX participant " + participantNum + " retrying transaction "
                       + transactionId + " due to Exception: " + e);
              refresh = true;
@@ -743,12 +745,15 @@ public class TransactionManager {
                retry = false;
              }
           }
-          catch(UnknownTransactionException ute) {
-             LOG.warn("doPrepareX participant " + participantNum + " transaction "
-                     + transactionId + " unknown transaction : " + ute);
-             throw new UnknownTransactionException();
-          }
           catch(Exception e) {
+             String exceptionString = e.toString();
+             if(e instanceof UnknownTransactionException) {
+            	String errMsg = new String("doPrepareX participant " + participantNum + " transaction "
+                        + transactionId + " unknown transaction : " + e);
+                LOG.warn(errMsg);
+                transactionState.requestPendingCountDec(true);
+                throw new UnknownTransactionException(errMsg);
+             }
              LOG.error("doPrepareX participant " + participantNum + " retrying transaction "
                           + transactionId + " due to Exception: " + e);
              refresh = true;
@@ -844,12 +849,15 @@ public class TransactionManager {
                 retry = false;
              }
           }
-          catch(UnknownTransactionException ute) {
-             LOG.warn("doPrepareX participant " + participantNum + " transaction "
-                      + transactionId + " unknown transaction: " + ute);
-             throw new UnknownTransactionException();
-          }
           catch(Exception e) {
+             String exceptionString = e.toString();
+             if(e instanceof UnknownTransactionException) {
+            	String errMsg = new String("doPrepareX participant " + participantNum + " transaction "
+                         + transactionId + " unknown transaction : " + e);
+                LOG.warn(errMsg);
+                transactionState.requestPendingCountDec(true);
+                throw new UnknownTransactionException(errMsg);
+             }
              LOG.error("doPrepareX participant " + participantNum + " retrying transaction "
                       + transactionId + " due to Exception: " + e);
              refresh = true;
@@ -1000,10 +1008,10 @@ public class TransactionManager {
               else {
                  for (AbortTransactionResponse cresponse : result.values()) {
                    if(cresponse.getHasException()) {
-                     String exceptionString = cresponse.getException().toString();
+                     String exceptionString = new String (cresponse.getException());
                      LOG.error("Abort of transaction: " + transactionId
-                    		 + " participantNum: " + participantNum + " region: " + Bytes.toString(regionName)
-                    		 + " threw Exception: " + exceptionString);
+                          + " participantNum: " + participantNum + " region: " + Bytes.toString(regionName)
+                          + " threw Exception: " + exceptionString);
                      if(exceptionString.contains("UnknownTransactionException")) {
                        throw new UnknownTransactionException();
                      }
@@ -1107,7 +1115,7 @@ public class TransactionManager {
                   else {
                      for (SsccAbortTransactionResponse cresponse : result.values()) {
                 if(cresponse.getHasException()) {
-                  String exceptionString = cresponse.getException().toString();
+                  String exceptionString = cresponse.getException();
                   LOG.error("Abort of transaction: " + transactionId + " threw Exception: " + exceptionString);
                   if(exceptionString.contains("UnknownTransactionException")) {
                          throw new UnknownTransactionException();
@@ -1217,14 +1225,16 @@ public class TransactionManager {
               }
            }
         }
-        catch (UnknownTransactionException ute) {
-            String errMsg = "Got unknown exception in doCommitX for transaction: " + transactionId + " " + ute;
-            LOG.error(errMsg);
-            transactionState.requestPendingCountDec(true);
-            throw new UnknownTransactionException(errMsg);
-        }
         catch (Exception e) {
-           LOG.error("doCommitX retrying transaction " + transactionId + " due to Exception: " + e);
+           if(e instanceof UnknownTransactionException) {
+              String errMsg = new String("Got unknown exception in doCommitX for transaction: " + transactionId
+              		+ " participant " + participantNum + " " + e);
+              LOG.error(errMsg);
+              transactionState.requestPendingCountDec(true);
+              throw new UnknownTransactionException(errMsg);
+           }
+           LOG.error("doCommitX retrying transaction " + transactionId
+        		   + " participant " + participantNum + " due to Exception: " + e);
            refresh = true;
            retry = true;
         }
@@ -1300,13 +1310,14 @@ public class TransactionManager {
 
           }
        }
-       catch(UnknownTransactionException ute) {
-          String warnMsg = new String("UnknownTransaction in doPrepareX - Batch - by participant "
-                    + participantNum + " for transaction " + transactionId + " " + ute);
-          LOG.warn(warnMsg);
-          throw new UnknownTransactionException(warnMsg);
-       }
        catch(Exception e) {
+          if(e instanceof UnknownTransactionException) {
+             String errMsg = new String("UnknownTransaction in doPrepareX - Batch - by participant "
+                     + participantNum + " for transaction " + transactionId + " " + e);
+             LOG.error(errMsg);
+             transactionState.requestPendingCountDec(true);
+             throw new UnknownTransactionException(errMsg);
+          }
           LOG.error("doPrepareX - Batch - retrying for participant "
                    + participantNum + " transaction " + transactionId + " due to Exception: " + e);
           refresh = true;
@@ -2663,7 +2674,7 @@ public class TransactionManager {
             else {
             hbadmin.createTable(desc);
             }
-            hbadmin.close();
+            // hbadmin.close();
 
             // Set transaction state object as participating in ddl transaction
             transactionState.setDDLTx(true);
