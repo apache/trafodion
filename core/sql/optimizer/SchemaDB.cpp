@@ -100,6 +100,10 @@ SchemaDB::SchemaDB(ReadTableDef *rtd)
     currentDiskPool_(-1),
     hbaseBlockCacheFrac_(-1.0)
 {
+  // error during nadefault creation. Cannot proceed. Return.
+  if (! defaults_.getSqlParser_NADefaults_Ptr())
+    return;
+
   initPerStatement();
   routineDB_.setMetadata("NEO.UDF.ROUTINES");
   actionRoutineDB_.setMetadata("NEO.UDF.UUDR_ROUTINES");

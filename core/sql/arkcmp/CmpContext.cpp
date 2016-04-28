@@ -203,6 +203,10 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     // globals for Optimizer -- also causes NADefaults table to be read in
     schemaDB_ = new(heap_) SchemaDB(readTableDef_);
 
+    // error during nadefault creation. Cannot proceed. Return.
+    if (! schemaDB_->getDefaults().getSqlParser_NADefaults_Ptr())
+      return;
+
     size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_NATABLECACHE_UPPER_KB);
     schemaDB_->getNATableDB()->getHeap()->setUpperLimit(memLimit);
 
