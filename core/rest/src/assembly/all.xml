@@ -83,6 +83,7 @@ http://maven.apache.org/plugins/maven-assembly-plugin/faq.html#required-classifi
         <include>org.eclipse.jetty:jetty-http</include>
         <include>org.eclipse.jetty:jetty-io</include>
         <include>org.eclipse.jetty:jetty-server</include>
+        <include>org.eclipse.jetty:jetty-security</include>
         <include>javax.servlet:javax.servlet-api</include>
         <include>com.sun.jersey:jersey-server</include>
         <include>com.sun.jersey:jersey-json</include>
