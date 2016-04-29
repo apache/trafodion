@@ -112,6 +112,7 @@ clean: sqroot
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean 
+	cd sql/lib_mgmt &&		$(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 cleanall: sqroot eclipseclean cleantests
@@ -126,6 +127,7 @@ cleanall: sqroot eclipseclean cleantests
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean
+	cd sql/lib_mgmt &&		$(MAKE) cleanall
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests

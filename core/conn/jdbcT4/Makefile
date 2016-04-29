@@ -35,4 +35,4 @@ build_all:
 
 clean:
 	-$(MAVEN) clean | grep ERROR
-	$(RM) build_jdbct4.log ${MY_SQROOT}/export/lib/jdbcT4.jar
+	$(RM) build_jdbct4.log ${MY_SQROOT}/export/lib/jdbcT4*.jar
