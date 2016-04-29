@@ -552,7 +552,7 @@ Lng32 ExpHbaseInterface_JNI::dropAll(const char * pattern, NABoolean async,
 }
 
 //----------------------------------------------------------------------------
-ByteArrayList* ExpHbaseInterface_JNI::listAll(const char * pattern)
+NAArray<HbaseStr>* ExpHbaseInterface_JNI::listAll(const char * pattern)
 {
   if (client_ == NULL)
   {
@@ -560,11 +560,8 @@ ByteArrayList* ExpHbaseInterface_JNI::listAll(const char * pattern)
       return NULL;
   }
     
-  ByteArrayList* bal = client_->listAll(pattern);
-  if (bal == NULL)
-    return NULL;
-
-  return bal;
+  NAArray<HbaseStr> *listArray = client_->listAll((NAHeap *)heap_, pattern);
+  return listArray;
 }
 
 //----------------------------------------------------------------------------
@@ -1306,30 +1303,16 @@ Lng32 ExpHbaseInterface_JNI::revoke(
     return HBASE_ACCESS_SUCCESS;
 }
 
-ByteArrayList* ExpHbaseInterface_JNI::getRegionBeginKeys(const char* tblName)
+NAArray<HbaseStr> *ExpHbaseInterface_JNI::getRegionBeginKeys(const char* tblName)
 { 
-  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName, useTRex_, hbs_);
-  if (htc_ == NULL)
-  {
-    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
-    return NULL;
-  }
-
-   ByteArrayList* bal = htc_->getBeginKeys();
-   return bal;
+  NAArray<HbaseStr> *retValue = client_->getStartKeys((NAHeap *)heap_, tblName);
+  return retValue;
 }
 
-ByteArrayList* ExpHbaseInterface_JNI::getRegionEndKeys(const char* tblName)
+NAArray<HbaseStr> *ExpHbaseInterface_JNI::getRegionEndKeys(const char* tblName)
 { 
-  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName, useTRex_, hbs_);
-  if (htc_ == NULL)
-  {
-    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
-    return NULL;
-  }
-
-   ByteArrayList* bal = htc_->getEndKeys();
-   return bal;
+  NAArray<HbaseStr> *retValue = client_->getEndKeys((NAHeap *)heap_, tblName);
+  return retValue;
 }
 
 Lng32 ExpHbaseInterface_JNI::getColVal(int colNo, BYTE *colVal,
@@ -1565,7 +1548,7 @@ Lng32 ExpHbaseInterface_JNI::getBlockCacheFraction(float& frac)
   return retCode_;
 }
 
-ByteArrayList * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblName)
+NAArray<HbaseStr> * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblName)
 {
   if (client_ == NULL)
     {
@@ -1573,7 +1556,7 @@ ByteArrayList * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblName)
         return NULL;
     }
   
-  ByteArrayList* regionStats = client_->getRegionStats(tblName.val);
+  NAArray<HbaseStr>* regionStats = client_->getRegionStats((NAHeap *)heap_, tblName.val);
   if (regionStats == NULL)
     return NULL;
   

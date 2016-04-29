@@ -737,21 +737,21 @@ public class HBaseClient {
             return true;
     }
 
-    public ByteArrayList listAll(String pattern) 
+    public byte[][] listAll(String pattern) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.listAll(" + pattern + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
 
-            ByteArrayList hbaseTables = new ByteArrayList();
 
 	    HTableDescriptor[] htdl = 
                 (pattern.isEmpty() ? admin.listTables() : admin.listTables(pattern));
-
+            byte[][] hbaseTables = new byte[htdl.length][];
+            int i=0;
 	    for (HTableDescriptor htd : htdl) {
 		String tblName = htd.getNameAsString();
 
                 byte[] b = tblName.getBytes();
-                hbaseTables.add(b);
+                hbaseTables[i++] = b;
 	    }
  	    
             admin.close();
@@ -761,20 +761,21 @@ public class HBaseClient {
     }
 
 
-    public ByteArrayList getRegionStats(String tableName) 
+    public byte[][]  getRegionStats(String tableName) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.getRegionStats(" + tableName + ") called.");
 
             HBaseAdmin admin = new HBaseAdmin(config);
             HTable htbl = new HTable(config, tableName);
-            ByteArrayList regionInfo = new ByteArrayList();
             HRegionInfo hregInfo = null;
-
+            byte[][] regionInfo = null;
             try {
                 TrafRegionStats rsc = new TrafRegionStats(htbl, admin);
                 
                 NavigableMap<HRegionInfo, ServerName> locations
                     = htbl.getRegionLocations();
+                regionInfo = new byte[locations.size()][]; 
+                int i = 0; 
  
                 for (Map.Entry<HRegionInfo, ServerName> entry: 
                          locations.entrySet()) {
@@ -803,7 +804,7 @@ public class HBaseClient {
                     oneRegion += String.valueOf(readRequestsCount) + "|";
                     oneRegion += String.valueOf(writeRequestsCount) + "|";
                     
-                    regionInfo.add(oneRegion.getBytes());
+                    regionInfo[i++] = oneRegion.getBytes();
 
                 }
 
@@ -1745,6 +1746,24 @@ public class HBaseClient {
     long count = myHTable.incrementColumnValue(Bytes.toBytes(rowId), Bytes.toBytes(famName), Bytes.toBytes(qualName), incrVal);
     myHTable.close();
     return count;
+  }
+ 
+  public byte[][] getStartKeys(String tblName) throws IOException 
+  {
+    byte[][] startKeys;
+    HTableClient htc = getHTableClient(0, tblName, false);
+    startKeys = htc.getStartKeys();
+    releaseHTableClient(htc);
+    return startKeys;
+  }
+
+  public byte[][] getEndKeys(String tblName) throws IOException 
+  {
+    byte[][] endKeys;
+    HTableClient htc = getHTableClient(0, tblName, false);
+    endKeys = htc.getEndKeys();
+    releaseHTableClient(htc);
+    return endKeys;
   }
 
 }

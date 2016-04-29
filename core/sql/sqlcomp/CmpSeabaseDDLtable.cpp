@@ -10811,12 +10811,12 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
        // request the default
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
-      ByteArrayList* bal = ehi->getRegionEndKeys(extNameForHbase);
+      NAArray<HbaseStr>* endKeyArray  = ehi->getRegionEndKeys(extNameForHbase);
 
       // create a list of region descriptors
       ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-        assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
-      delete bal;
+        assembleDescs(endKeyArray , populateRegionDescAsRANGE, STMTHEAP);
+      deleteNAArray(heap_, endKeyArray);
 
       // if this is base table or index and hbase object doesn't exist, then this object
       // is corrupted.
@@ -10966,32 +10966,20 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
 // Generator::createVirtualTableDesc() call make before this one that
 // uses STMTPHEAP througout.
 //
-desc_struct* assembleDescs(ByteArrayList* bal, populateFuncT func, NAMemory* heap)
+desc_struct* assembleDescs(NAArray<HbaseStr >* keyArray, populateFuncT func, NAMemory* heap)
 {
-   if ( !bal )
-     return NULL;
+   if (keyArray == NULL)
+      return NULL;
 
    desc_struct *result = NULL;
-
-   Int32 entries = bal->getSize();
-
+   Int32 entries = keyArray->entries();
    Int32 len = 0;
    char* buf = NULL;
 
    for (Int32 i=entries-1; i>=0; i-- ) {
-
-      // call JNI interface
-      len = bal->getEntrySize(i);
-   
-   
-      if ( len > 0 ) {
-   
-         buf = new (heap) char[len];
-         Int32 datalen;
-  
-         if ( !bal->getEntry(i, buf, len, datalen) || datalen != len ) {
-            return NULL;
-         }
+      len = keyArray->at(i).len;
+      if ( len > 0 ) { 
+         buf = keyArray->at(i).val; 
       } else
          buf = NULL;
 

@@ -44,6 +44,7 @@
 #include "hiveHook.h"
 #include "ExpLOBexternal.h"
 #include "ComSecurityKey.h"
+#include "ExpHbaseDefs.h"
 
 //forward declaration(s)
 // -----------------------------------------------------------------------
@@ -63,7 +64,6 @@ struct desc_struct;
 class HbaseCreateOption;
 class PrivMgrUserPrivs;
 class ExpHbaseInterface;
-class ByteArrayList;
 
 typedef QualifiedName* QualifiedNamePtr;
 typedef ULng32 (*HashFunctionPtr)(const QualifiedName&);
@@ -863,7 +863,7 @@ public:
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
-  static ByteArrayList* getRegionsBeginKey(const char* extHBaseName);
+  static NAArray<HbaseStr>* getRegionsBeginKey(const char* extHBaseName);
 
   NAString &defaultColFam() { return defaultColFam_; }
   NAList<NAString> &allColFams() { return allColFams_; }

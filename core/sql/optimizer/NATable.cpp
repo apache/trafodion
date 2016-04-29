@@ -7712,20 +7712,20 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
   return ehi;
 }
 
-ByteArrayList* NATable::getRegionsBeginKey(const char* hbaseName) 
+NAArray<HbaseStr> *NATable::getRegionsBeginKey(const char* hbaseName) 
 {
   ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
-  ByteArrayList* bal = NULL;
+  NAArray<HbaseStr> *keyArray = NULL;
 
   if (!ehi)
     return NULL;
   else
   {
-    bal = ehi->getRegionBeginKeys(hbaseName);
+    keyArray = ehi->getRegionBeginKeys(hbaseName);
 
     delete ehi;
   }
-  return bal;
+  return keyArray;
 }
 
 
@@ -8002,14 +8002,13 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	      return NULL;
 	    }
 
-          ByteArrayList* bal = NATable::getRegionsBeginKey(extHBaseName);
+          NAArray<HbaseStr> *keyArray = NATable::getRegionsBeginKey(extHBaseName);
 
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell, bal);
-
-          delete bal;
+	     isHbaseRow, isHbaseCell, keyArray);
+          deleteNAArray(STMTHEAP, keyArray);
 
 	  isSeabase = FALSE;
 
