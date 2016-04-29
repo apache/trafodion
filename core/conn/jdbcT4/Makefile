@@ -25,14 +25,22 @@ include ../../macros.gmk #top level
 
 all: build_all
 
-build_all: 
+build_all: LICENSE NOTICE 
 	echo "$(MAVEN) package -DskipTests"
 	set -o pipefail && $(MAVEN) package -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${MY_SQROOT}/export/lib
 	mkdir -p ../clients
 	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
 
-
 clean:
 	-$(MAVEN) clean | grep ERROR
 	$(RM) build_jdbct4.log ${MY_SQROOT}/export/lib/jdbcT4*.jar
+
+LICENSE: ../../../licenses/LICENSE-clients
+	cp -f $? $@
+
+../../../licenses/LICENSE-clients:
+	cd $(@D) && $(MAKE) $(@F)
+
+NOTICE: ../../../NOTICE
+	cp -f $? $@

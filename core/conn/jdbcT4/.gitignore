@@ -1,2 +1,4 @@
 /target/
-build_jdbct4.log
+*.log
+/LICENSE
+/NOTICE
