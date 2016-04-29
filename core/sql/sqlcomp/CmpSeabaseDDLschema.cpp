@@ -503,7 +503,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    // they always get removed when the parent table is dropped.
    // Filter out the LOB depenedent tables too - they will get dropped when 
    //the main LOB table is dropped. 
-   str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
+   str_sprintf(query,"SELECT distinct TRIM(object_name), TRIM(object_type) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
                      "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
