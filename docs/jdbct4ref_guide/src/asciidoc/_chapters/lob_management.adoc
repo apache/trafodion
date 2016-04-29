@@ -1,0 +1,288 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[managing-the-sql-tables-for-blob-and-clob-data]]
+= Managing the SQL Tables for BLOB and CLOB Data
+
+This chapter describes for database administrators the creation and
+management of the tables required to support LOB data.
+
+NOTE: BLOB and CLOB are not native data types in a {project-name}
+database. But database administrators can create SQL base tables that
+have BLOB and CLOB columns by using either the Type 4 driver or special
+SQL syntax in as described in this chapter.
+
+For management purposes, CLOB and BLOB data is referred to as large
+object (LOB) data, which can represent either data type.
+
+[[before-you-begin-managing-lob-data]]
+== Before You Begin Managing LOB Data
+
+Before reading this chapter, also read
+<<Architecture for LOB Support, Architecture for LOB Support>>,
+which describes the files for the tables that contain LOB data.
+
+[creating-base-tables-that-have-lob-columns]]
+== Creating Base Tables that Have LOB Columns
+
+You can use trafci or write JDBC programs to create base tables that have LOB columns.
+
+[[data-types-for-lob-columns]]
+=== Data Types for LOB Columns
+
+The data types for the LOB columns are:
+
+* `CLOB`: Character large object data
+* `BLOB`: Binary large object data
+
+NOTE: The CLOB and BLOB data type specification is special syntax that
+is allowed for use in base tables accessed by the Type 4 driver as
+described in this manual.
+
+[[using-trafci-to-create-base-tables-that-have-lob-columns]]
+=== Using trafci To Create Base Tables that Have LOB Columns
+
+To create a base table that has LOB columns using trafci:
+
+1.  Type this special commands in to enable creating tables that have LOB columns:
++
+```
+CONTROL QUERY DEFAULT TRAF_BLOB_AS_VARCHAR 'OFF' ; 
+CONTROL QUERY DEFAULT TRAF_CLOB_AS_VARCHAR 'OFF' ; 
+```
+
+2.  Type the CREATE TABLE statement; for example, you might use the
+following simple form of the statement:
++
+```
+CREATE TABLE table1
+( c1 INTEGER NOT NULL
+, c2 CLOB
+, c3 BLOB
+, PRIMARY KEY( c1 )
+)
+;
+```
++
+* `table1`: The name of the base table.
++
+NOTE: If different LOB tables are used for storing BLOB or CLOB data,
+the base table name for a table with BLOB or CLOB columns must be unique
+across all catalogs and schemas. Otherwise, the driver will give
+incorrect data to the application in cases where the LOB tables used get
+erroneously switched or changed.
+* `c1 Column 1`: Defined as the INTEGER data type with the NOT NULL constraint.
+* `c2 Column 2`: Defined as the CLOB data type.
+* `c3 Column 3`: Defined as the BLOB data type.
+* `PRIMARY KEY`: Specifies `c1` as the primary key.
+
+Use this example as the archetype for creating base tables. For
+information about valid names for tables (`table1`) and
+columns (`c1`, `c2`, and `c3`) and for information about the CREATE TABLE statement, see the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
+
+[[using-jdbc-programs-to-create-base-tables-that-have-lob-columns]]
+=== Using JDBC Programs To Create Base Tables that Have LOB Columns
+
+When using a JDBC Program to create base tables that have LOB columns,
+put the CREATE TABLE statements in the program as you would any other
+SQL statement. For an example of the CREATE TABLE statement, see the discussion
+<<using-trafci-to-create-base-tables-that-have-lob-columns, Using trafci To Create Base Tables that Have LOB Columns>> .
+
+[[managing-lob-data-by-using-the-lob-admin-utility]]
+== Managing LOB Data by Using the Lob Admin Utility
+
+Use the Lob Admin Utility (T4LobAdmin) for the following tasks:
+
+* Creating the LOB table (a table that holds LOB data).
+* Creating the SQL triggers for the LOB columns in the base tables to ensure that orphan LOB data does not occur in a LOB table.
+
+NOTE: If you are creating triggers, ensure that the base table that
+contains the CLOB column or BLOB column has already been created.
+
+Information about using the Lob Admin Utility is described under these topics.
+
+[[running-the-lob-admin-utility]]
+=== Running the Lob Admin Utility
+
+Run the T4LobAdmin utility from the workstation. The format of the
+command is:
+
+```
+java [java_options] org.trafodion.t4jdbc.T4LobAdmin [prog_options] [table_name]
+```
+
+[[java-options]]
+==== java_options
+
+The `java_options` should specify the Type 4 driver properties in a
+properties file on the java command line in the `-D` option.
+
+```
+-Dhpt4jdbc.properties=<properties file name>
+```
+
+where the properties file should include the following Type 4 driver properties, as applicable:
+
+[cols="25%,75%",options="header" ]
+|===
+| Property        | Description
+| `blobtablename` | Specifies LOB table for BLOB columns. Required if BLOB columns are involved. See <<lob-table-name-properties, LOB Table Name Properties>>.
+| `clobTableName` | Specifies the LOB table for CLOB columns. Required if CLOB columns are involved. See <<lob-table-name-properties, LOB Table Name Properties>>.
+| `url`           | URL for the Type 4 driver connection. See <<url,url Property>>.
+| `usr`           | User name for the Type 4 driver connection. See <<user, user Property>>.
+| `password`      | Password associated with the user. See <<password, password Property>>.
+|===
+
+[[program-options]]
+==== program_options
+
+[cols="25%,75%",options="header" ]
+|===
+| prog_option        | Description
+| `-help`            | Displays help information
+| `-exec`            | Runs the SQL statements that are generated.
+| `-create`          | Generates SQL statements to create LOB tables. These statements describe the architecture of the tables and, therefore, provide a description of the LOB tables.
+|===
+
+[[table-name]]
+==== table_name
+
+The *table_name* represents a base table that contains LOB columns. The
+*table_name* is of the form:
+
+```
+[catalogName.][schemaName.]baseTableName
+```
+
+For information about catalog, schema, and table names, see the
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual].
+
+[[help-listing-from-the-type-4-lob-admin-utility]]
+=== Help Listing From the Type 4 Lob Admin Utility
+
+To display help for the Type 4 Lob Admin Utility, type:
+
+```
+java org.trafodion.t4jdbc.T4LobAdmin -help
+```
+
+*Example*
+
+```
+Apache Trafodion T4 Lob Admin Utility 1.0 (c) Copyright 2015-2016
+org.trafodion.t4jdbc.T4LobAdmin [<prog_options>] [<table_name>]
+
+<java_options> is:
+     [-Dhpt4jdbc.properties=<properties file>]
+where <properties file> has values for the following:
+     clobTableName - CLOB table name
+     blobTableName - BLOB table name
+     url - URL used for the Type 4 connection
+     user - User name for the Type 4 connection
+     password - Password for associated with the user
+
+<prog_options> is:
+    [-exec] [-create] [-trigger] [-help] [-drop] [-out <filename>]
+where -help    - Display this information.
+      -exec    - Execute the SQL statements that are generated.
+      -create  - Generate SQL statements to create LOB tables.
+      -trigger - Generate SQL statements to create triggers for <table_name>.
+      -drop    - Generate SQL statements to drop triggers for <table_name>.
+      -out     - Write the SQL statements to <filename>.
+
+<clobTableName> | <blobTableName> is:
+    <catalogName>.<schemaName>.<lobTableName>
+
+<table_name> is:
+    [<catalogName>.][<schemaName>.]<baseTableName>
+
+<baseTableName> is the table that contains LOB column(s). TableName> is the
+table that contains the LOB data.
+```
+
+[[creating-lob-tables]]
+=== Creating LOB Tables
+
+Except as noted below, use the `-create` and `-execute` options of the Lob
+Admin Utility to create LOB tables.
+
+NOTE: Partitioned LOB tables must be manually created. You cannot use
+the Lob Admin Utility if your site needs partitioned LOB tables. Do not
+use the -execute option of the Lob Admin Utility. Follow these steps to
+manually create partitioned LOB tables:
+
+1.  Use the `-create` and `-out` options of the Lob Admin Utility to have SQL statements written to a file.
+2.  Modify the generated SQL statements as needed for your partitioning requirements.
+3.  Add the modified SQL statements to a trafci obey file.
+4.  Run the script file from trafci by using obey command.
+
+[[using-sql-triggers-to-delete-lob-data]]
+=== Using SQL Triggers to Delete LOB Data
+
+Use the Type 4 Lob Admin Utility to generate triggers on SQL tables that
+delete LOB data from the LOB table when the base row is deleted. These
+triggers ensure that orphan LOB data does not occur in the LOB table. To
+manage the triggers, use these Type 4 Lob Admin Utility options:
+
+* `-trigger`: Generates SQL statements to create triggers.
+* `-drop`: Generates SQL statements to drop triggers.
+* `-exec`: Executes the SQL statements that are generated.
+
+For example, the following command generates the SQL statements to
+create the triggers for the base table `sales.paris.pictures`, which
+contains a BLOB column, and executes those statements.
+
+```
+java -Dhpt4jdbc.blobTableName=sales.paris.lobTable4pictures /
+org.trafodion.t4jdbc.T4LobAdmin -trigger -exec sales.paris.pictures
+```
+
+[[limitations-of-lob-data-clob-and-blob-data-types]]
+=== Limitations of LOB Data (CLOB and BLOB Data Types)
+
+Limitations of the CLOB and BLOB data types, collectively referred to as LOB data, are:
+
+* LOB columns can only be in the target column list of these SQL statements:
+
+** INSERT statement.
+
+** Select list of a SELECT statement.
+
+** Column name in the SET clause of an UPDATE statement.
+
+* LOB columns cannot be referenced in the SQL functions and expressions.
+
+* LOB data is not deleted from the LOB table when the base row is deleted unless a trigger is established. For information about triggers,
+see <<using-sql-triggers-to-delete-lob-data, Using SQL Triggers to Delete LOB Data>>
+
+* LOB data is not accessible if the base table name is changed.
+
+* The name of a base table that has CLOB or BLOB columns must be unique across all catalogs and schemas when more than one of these base tables
+share a single LOB table.
++
+NOTE: Adding a trigger can affect up to three schemas. For each schema, you must either own the schema or be the super ID. +
+ +
+* The schema where the trigger is created.
+* The schema where the subject table (LOB table) exists.
+* The schema where the referenced table (base table) exists.
+

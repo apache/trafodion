@@ -1,0 +1,910 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[accessing-project-name-sql-databases]]
+= Accessing {project-name} SQL Databases
+
+[[data-sources]]
+== Data Sources
+
+The term *data source* logically refers to a database or other data
+storage entity. A JDBC (client) data source is physically a Java object that
+contains properties such as the URL of the physical database, the
+catalog to use when connecting to this database, and the schema to use
+when connecting to this database. The JDBC data source also contains
+methods for obtaining a JDBC connection to the underlying database.
+
+[[jdbc-data-source-client-side]]
+=== JDBC Data Source (client-side)
+
+All JDBC data source classes implement either the `javax.sql.DataSource`
+interface or the `javax.sql.ConnectionPoolDataSource` interface. The Type
+4 driver data source classes are `org.trafodion.t4jdbc.HPT4DataSource` and
+`org.trafodion.t4jdbc.HPT4ConnectionPoolDataSource`. (These classes are
+defined by the JDBC 3.0 specification.)
+
+Typically, a user or system administrator uses a tool to create a data
+source, and then registers the data source by using a JNDI service
+provider. At run time, a user application typically retrieves the data
+source through JNDI, and uses the data source's methods to establish a
+connection to the underlying database.
+
+A DataSource object maps to an instance of a database. In the Type 4
+driver product, the DataSource object acts as an interface between the
+application code and the database and enables connection with an DCS
+data source.
+
+[[security]]
+== Security
+
+Clients connect to the {project-name} platform with a valid user name
+and ID, using standard JDBC 3.0 APIs. An application can make multiple
+connections using different user IDs, and creating different Connection
+objects.
+
+The Type 4 driver provides for user name and password authentication.
+The password is encrypted with a proprietary algorithm provided by DCS.
+
+NOTE: There is no secure wire communication such as SSL provided for the
+communication between Type 4 driver and the {project-name} platform.
+
+<<<
+[[connection-by-using-the-datasource-interface]]
+== Connection by Using the DataSource Interface
+
+The `javax.sql.DataSource` interface is the preferred way to establish a
+connection to the database because this interface enhances the application
+portability. Portability is achieved by allowing the application to use a
+logical name for a data source instead of providing driver-specific information
+in the application. A logical name is mapped to a `javax.sql.DataSource`
+object through a naming service that uses the Java Naming and Directory
+Interface (JNDI). Using this DataSource method is particularly recommended
+for application servers.
+
+When an application requests a connection by using the `getConnection` method
+in the `DataSource`, then the method returns a `Connection` object.
+
+A `DataSource` object is a factory for `Connection` objects. An object that
+implements the `DataSource` interface is typically registered with a JNDI
+service provider.
+
+[[overview-of-tasks-to-deploy-datasource-objects]]
+=== Overview of Tasks to Deploy DataSource Objects
+
+Before an application can connect to a `DataSource` object, typically
+the system administrator deploys the `DataSource` object so that
+the application programmers can start using it.
+
+Data source properties are usually set by a system administrator using
+a GUI tool as part of the installation of the data source. Users to
+the data source do not get or set properties. Management tools can get
+at properties by using introspection.
+
+Tasks involved in creating and registering a database object are:
+
+1. Creating an instance of the `DataSource` class.
+2. Setting the properties of the `DataSource` object.
+3. Registering the `DataSource` object with a naming service that uses
+the Java Naming and Directory Interface (JNDI) API.
+ 
+An instance of the `DataSource` class and the `DataSource` object
+properties are usually set by an application developer or system
+administrator using a GUI tool as part of the installation of the
+data source. If you are using an installed data source, then see
+<<programmatically-creating-an-instance-of-the-datasource-class, Programmatically Creating an Instance of the DataSource Class>>.
+
+The subsequent topics show an example of performing these tasks programmatically.
+
+For more information about using data sources, see https://docs.oracle.com/javase/tutorial/jdbc/basics/sqldatasources.html[Connecting with DataSource Objects]
+in the https://docs.oracle.com/javase/tutorial/jdbc/TOC.html[JDBC(TM) Database Access: Table of Contents] documentation
+or other information available in the field.
+
+<<<
+[[datasource-object-properties]]
+=== DataSource Object Properties
+
+A `DataSource` object has properties that identify and describe the actual
+data source that the object represents. These properties include such
+information as the URL (the primary IP address or host name of the database),
+the database schema and catalog names, the location of the database server,
+the name of the database, and so forth.
+
+For details about Type 4 driver properties that you can use with the `DataSource` object, see <<type-4-driver-properties,Type 4 Driver Properties>>.
+
+[[programmatically-creating-an-instance-of-the-datasource-class]]
+=== Programmatically Creating an Instance of the DataSource Class
+
+A JDBC application can set `DataSource` properties programmatically and
+register with a DataSource object. To get or set `DataSource` object properties programmatically, use the
+appropriate getter or setter methods on the `HPT4DataSource` object or
+the `HPT4ConnectionPoolDataSource` object.
+
+*Example*
+
+[source, java]
+----
+HPT4DataSource temp = new HPT4DataSource() ;
+temp.setCatalog( "Seabase" ) ;
+----
+
+In the following example, the code fragment illustrates the methods that a
+`DataSource` object `ds` needs to include if the object supports the
+`serverDataSource` property `ds.setServerDataSource( "my_server_datasource" )`.
+In this example, the code shows setting properties for the `HPT4DataSource` object
+to use the Type 4 driver to access a {project-name} database:
+
+[source, java]
+----
+HPT4DataSource ds = new HPT4DataSource() ;
+
+ds.setUrl( "jdbc:hpt4jdbc://<primary IP addr or host name>:18650/" );
+ds.setCatalog( "Seabase" ) ;
+ds.setSchema( "myschema" ) ;
+ds.setUser( "gunnar" ) ;
+ds.setPassword( "my_userpassword" ) ;
+
+// Properties relevant for Type 4 connection pooling.
+// Set ds.setMaxPoolSize(-1) for turning OFF connection pooling
+ds.setMaxPoolSize( "10000" ) ;
+ds.setMinPoolSize( "1000" ) ;
+
+// Properties relevant for Type 4 statement pooling.
+// Set ds.setMaxStatement(0) for turning statement pooling OFF
+// Statement pooling is enabled only when connection pooling is
+// enabled.
+ds.setMaxStatements( "7000" ) ;
+----
+
+This technique essentially builds a properties file. For more information,
+see <<creating-and-using-a-properties-file, Creating and Using a Properties File>>.
+
+[[programmatically-registering-the-datasource-object]]
+=== Programmatically Registering the DataSource Object
+
+In the following example, the code shows how to register, programmatically,
+the `HPT4DataSource` object `ds` that was created using the preceding code with JNDI.
+
+[source, java]
+----
+java.util.Hashtable env = new java.util.Hashtable() ;
+env.put( Context.INITIAL_CONTEXT_FACTORY, "Factory class name here" ) ;
+
+javax.naming.Context ctx = new javax.naming.InitialContext( env ) ;
+ctx.rebind( "myDataSource", ds ) ;
+----
+
+[[retrieving-a-datasource-instance-by-using-jndi-and-connecting-to-the-data-source]]
+=== Retrieving a DataSource Instance by Using JNDI and Connecting to the Data Source
+Typically, the JDBC application looks up the data source JNDI name from a
+context object. Once the application has the `DataSource` object, then the application
+does a `getConnection()` call on the data source and gets a connection.
+
+The steps that JDBC application does to connect to and use the data source associated
+with the database are listed below together with the application code to perform the
+operation.
+
+1. Import the packages.
++
+[source, java]
+----
+import javax.naming.* ;
+import java.sql.* ;
+import javax.sql.DataSource ;
+----
+
+2. Create the initial context.
++
+[source, java]
+----
+Hashtable env = new Hashtable() ;
+env.put( Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory" ) ;
+try
+{
+   Context ctx = new InitialContext( env ) ; 
+}
+catch( ... )
+{
+...
+}
+----
++
+<<<
+3. Look up the JNDI name associated with the data source `myDataSource`, where `myDataSource`
+is the logical name that will be associated with the real-world data source - server.
++
+[source, java]
+----
+DataSource ds = (DataSource)ctx.lookup( "myDataSource" ) ;
+----
+
+4. Create the connection using the data source.
++
+[source, java]
+----
+con = ds.getConnection() ;
+----
+
+5. Do work with the connection. The following statements are just a simple example.
++
+[source, java]
+----
+stmt = con.createStatement() ;
+try
+{
+   stmt.executeUpdate( "drop table tdata" ) ;
+}
+catch ( SQLException e ) {}
+----
+
+[[specifying-the-properties-file-that-configures-the-data-source]]
+=== Specifying the Properties File that Configures the Data Source
+
+To use the properties file method to configure a `DataSource` object, the properties
+file must exist on disk and contain the `property_name=property_value` pairs that
+configure the data source.
+See <<creating-and-using-a-properties-file, Creating and Using a Properties File>>
+for more information about creating this file.
+
+When the JDBC application makes the connection, then the application should
+pass the properties file as a command-line parameter:
+
+```
+java -Dhpt4jdbc.properties=<path of properties file on disk>
+```
+
+[[connection-by-using-the-drivermanager-class]]
+== Connection by Using the DriverManager Class
+
+The `java.sql.DriverManager` class is widely used to get a connection, but
+is less portable than the `DataSource` class. The `DriverManager` class
+works with the Driver interface to manage the set of drivers loaded.
+When an application issues a request for a connection using the
+`DriverManager.getConnection` method and provides a URL, the `DriverManager`
+finds a suitable driver that recognizes this URL and obtains a database
+connection using that driver.
+
+`org.trafodion.t4jdbc.HPT4Driver` is the Type 4 driver class that
+implements the `java.sql.Driver` interface.
+
+<<<
+[[loading-and-registering-the-driver]]
+=== Loading and Registering the Driver
+
+Before connecting to the database, the application loads the Driver
+class and registers the Type 4 driver with the DriverManager class in
+one of the following ways:
+
+* Specifies the Type 4 driver class in the `-Djdbc.drivers` option in the
+command line of the Java program:
++
+```
+-Djdbc.drivers=org.trafodion.t4jdbc.HPT4Driver
+```
+
+* Uses the `Class.forName` method programmatically within the application:
++
+[source, java]
+----
+Class.forName("org.trafodion.t4jdbc.HPT4Driver")
+----
+
+* Adds the Type 4 driver class to the `java.lang.System` property
+`jdbc.drivers` property within the application:
++
+```
+jdbc.drivers=org.trafodion.t4jdbc.HPT4Driver
+```
+
+<<<
+[[establishing-the-connection]]
+=== Establishing the Connection
+
+The `DriverManager.getConnection` method accepts a string containing a
+Type 4 driver URL. The JDBC URL for the Type 4 driver is
+
+```
+jdbc:hpt4jdbc://<ip addr or host name>:3700/[:][property=value[;property2=value2]...]
+```
+
+[cols="40%,60%", options="header"]
+|===
+| Parameter                | Usage
+| `<ip addr or host name>` | The primary IP address or host name for the {project-name} database.
+| `37800`                  | The port number for the {project-name} SQL database.
+| `property = value` and `property2=value2` | Specifies a Type 4 driver property name-property value pair. The pairs must be separated by a
+semicolon (`;`). For example, `T4LogLevel=ALL;T4LogFile=temp1.log`.
+|===
+
+For information about the properties file, see  <<type-4-driver-properties,Type 4 Driver Properties>>.
+
+To establish a connection, the JDBC application can use this code:
+
+[source, java]
+----
+Class.forName( "org.trafodion.t4jdbc.HPT4Driver" ) ; //loads the driver
+
+String url = "jdbc:hpt4jdbc://<database primary IP address>:37800/"
+
+Connection con = DriverManager.getConnection( url, "userID", "Passwd" ) ;
+----
+
+The variable con represents a connection to the data source that can be
+used to create and execute SQL statements.
+
+[[guidelines-for-connections-using-the-driver-manager]]
+=== Guidelines for Connections Using the Driver Manager
+
+* The Type 4 driver defines a set of properties that you can use to
+configure the driver. For detailed information about these properties,
+see  <<type-4-driver-properties,Type 4 Driver Properties>>.
+* Java applications can specify the properties in these ways (listed in
+the order of precedence):
++
+1.  Using the `java.util.Properties` parameter in the `getConnection` method of DriverManager class.
+
+2.  Using the database URL in the `DriverManager.getconnection` method, where the URL is:
++
+```
+jdbc:hpt4jdbc://<ip addr or host name>:37800/:property=value
+```
++
+`<ip addr or host name>` is the primary IP address or host name for the {project-name} database.
++
+<<<
+3.  Using a properties file for the JDBC driver. The properties file is
+passed as a command-line parameter. The format to enter the properties
+file in the command line is:
++
+```
+-Dhpt4jdbc.properties=<path of properties file on disk>
+```
++
+For example, `-Dhpt4jdbc.properties=C:\temp\t4props`
++
+For information about the properties file, see <<creating-and-using-a-properties-file, Creating and Using a Properties File>>.
+4.  Using JDBC properties with the `-D` option in the command line. If
+used, this option applies to all JDBC connections using the
+`DriverManager` within the Java application. The format in the command
+line is:
++
+```
+-Dhpt4jdbc.property_name=<property value>
+```
++
+For example, `-Dhpt4jdbc.maxStatements=1024`
+
+<<<
+[[connection-pooling]]
+== Connection Pooling
+
+The Type 4 driver provides an implementation of connection pooling,
+where a cache of physical database connections are assigned to a client
+session and reused for the database activity. If connection pooling is
+active, connections are not physically closed. The connection is
+returned to its connection pool when the `Connection.close()` method is
+called. The next time a connection is requested by the client, the
+driver will return the pooled connection, and not a new physical
+connection.
+
+* The connection pooling feature is available when the JDBC application
+uses either the `DriverManager` class or `DataSource` interface to obtain a
+JDBC connection. The connection pool size is determined by the
+`maxPoolSize` property value and `minPoolSize` property value.
+
+* By default, connection pooling is disabled. To enable connection
+pooling, set the maxPoolSize property to an integer value greater than 0
+(zero).
+
+* Manage connection pooling by using these Type 4 driver properties:
+
+** `maxPoolSize` under <<maxpoolsize-property, maxpoolsize Property>>
+** `minPoolSize` under <<minpoolsize-property, minPoolSize Property>>
+** `initialPoolSize` under <<initialpoolsize-property, initialPoolSize Property>>
+** `maxStatements` under <<maxstatements-property, maxStatements Property>>
+
+* When used with the DriverManager class, the Type 4 driver has a
+connection-pool manager that determines which connections are pooled
+together by a unique value for these combination of properties:
++
+```
+url
+catalog
+schema
+username
+password
+serverDataSource
+```
++
+Therefore, connections that have the same values for the combination of
+a set of properties are pooled together.
++
+NOTE: The connection-pooling property values used at the first
+connection of a given combination are effective throughout the life of
+the process. An application cannot change any of these property values
+after the first connection for a given combination.
+
+<<<
+[[statement-pooling]]
+== Statement Pooling
+
+The statement pooling feature allows applications to reuse the
+PreparedStatement object in the same way that they can reuse a
+connection in the connection pooling environment. Statement pooling is
+completely transparent to the application.
+
+[[guidelines-for-statement-pooling]]
+=== Guidelines for Statement Pooling
+
+* To enable statement pooling, set the `maxStatements` property to an
+integer value greater than 0 and enable connection pooling. For more
+information, see <<initialpoolsize-property, initialPoolSize Property>> and
+<<connection-pooling, Connection Pooling>>.
+
+* Enabling statement pooling for your JDBC applications might
+dramatically improve the performance.
+
+* Explicitly close a prepared statement by using the `Statement.close`
+method because `PreparedStatement` objects that are not in scope are also
+not reused unless the application explicitly closes them.
+
+* To ensure that your application reuses a `PreparedStatement`, call
+either of these methods:
+
+** `Statement.close method`: called by the application.
+** `Connection.close method`: called by the application. All the
+`PreparedStatement` objects that were in use are ready to be reused when
+the connection is reused.
+
+[[troubleshooting-statement-pooling]]
+=== Troubleshooting Statement Pooling
+
+Note the following Type 4 driver implementation details if you are
+troubleshooting statement pooling:
+
+* The Type 4 driver looks for a matching `PreparedStatement` object in the
+statement pool and reuses the `PreparedStatement`. The matching criteria
+include the SQL string, catalog, current schema, current transaction
+isolation, and result set holdability.
++
+If the Type 4 driver finds the matching `PreparedStatement` object, then the
+driver returns the same `PreparedStatement` object to the application for reuse
+and marks the `PreparedStatement` object as in use.
+
+* The algorithm, _earlier used are the first to go_, is used to make
+room for caching subsequently generated `PreparedStatement` objects when
+the number of statements reaches the `maxStatements` limit.
+
+* The Type 4 driver assumes that any SQL CONTROL statements in effect at
+the time of execution or reuse are the same as those in effect at the time
+of SQL compilation.
++
+If this condition is not true, then reuse of a `PreparedStatement` object might
+result in unexpected behavior.
+
+* Avoid recompiling to yield performance improvements from statement
+pooling. The SQL executor automatically recompiles queries when certain conditions are met.
+Some of these conditions are:
+
+** A run-time version of a table has a different redefinition timestamp
+than the compile-time version of the same table.
+
+** An existing open operation on a table was eliminated by a DDL or SQL
+utility operation.
+
+** The transaction isolation level and access mode at execution time is
+different from that at the compile time.
+
+* When a query is recompiled, then the SQL executor stores the recompiled query;
+therefore, the query is recompiled only once until any of the previous conditions
+are met again.
+
+* The Type 4 driver does not cache `Statement` objects.
+
+[[thread-safe-database-access]]
+== Thread-Safe Database Access
+
+In the Type 4 driver, API layer classes are implemented as
+instance-specific objects to ensure thread safety:
+
+* `HPT4DataSource.getConnection()` is implemented as a synchronized method
+to ensure thread safety in getting a connection.
+
+* Once a connection is made, the `Connection` object is instance-specific.
+
+* If multiple statements are run on different threads in a single
+connection, then statement objects are serialized to prevent data corruption.
+
+[[update-where-current-of-operations]]
+== "Update  .  .  .  Where Current of" Operations
+
+The fetch size on a `ResultSet` must be 1 when performing an
+`update . . . where current of` _cursor_ SQL statement.
+
+If the value of the fetch size is greater than 1, the result of the
+`update . . . where current` of operation might be one of the following:
+
+* An incorrect row might be updated based on the actual cursor position.
+
+* An SQLException might occur because the cursor being updated might
+have already been closed.
+
+The following is an example of setting a result set's fetch size to 1
+and executing an `update . . . where current` of _cursor_ SQL statement.
+
+[source, java]
+----
+ResultSet rs ;
+  ...
+
+  rs.setFetchSize( 1 ) ;
+  String st1 = rs.getCursorName() ;
+
+  Statement stmt2 =
+    connection.createStatement( ResultSet.TYPE_FORWARD_ONLY
+                              , ResultSet.CONCUR_UPDATABLE
+                              ) ;
+  stmt2.executeUpdate( "UPDATE cat2.sch2.table1
+                        SET j = 'update row' WHERE CURRENT OF "
+                     + st1
+                     ) ;
+----
+
+[[infostats-command-for-obtaining-query-costs]]
+== INFOSTATS Command for Obtaining Query Costs
+
+The INFOSTATS command reports the roll-up costs of a particular query.
+INFOSTATS is a pass-through command that collects statistics for a
+prepared statement. Statistics are returned to the JDBC application as a
+result set as soon as the prepare is finished. The result set has these
+columns:
+
+[cols="30%,70%",options="header" ]
+|===
+| Column                     | Description
+| `Query ID (SQL_CHAR)`      | The unique identifier for the query.
+| `CPUTime (SQL_DOUBLE)`     | An estimate of the number of seconds of processor time it might take to execute the instructions for this query. A value of 1.0 is 1 second.
+| `IOTime (SQL_DOUBLE)`      | An estimate of the number of seconds of I/O time (seeks plus data transfer) to perform the I/O for this query.
+| `MsgTime (SQL_DOUBLE)`     | An estimate of the number of seconds it takes for the messaging for this query. The estimate includes the time for the number of local and remote
+messages and the amount of data sent.
+| `IdleTime (SQL_DOUBLE)`    | An estimate of the maximum number of seconds to wait for an event to happen for this query. The estimate includes the amount of time to open
+a table or start an ESP process.
+| `TotalTime (SQL_DOUBLE)`   | Estimated cost associated to execute the query.
+| `Cardinality (SQL_DOUBLE)` | Estimated number of rows that will be returned.
+|===
+
+<<<
+[[use-of-the-infostats-command]]
+=== Use of the INFOSTATS Command
+
+The INFOSTATS command can only be used with PreparedStatement objects.
+The syntax is:
+
+```
+INFOSTATS cursor_name
+```
+
+where `cursor_name` is the name of the prepared statement. If the cursor name is case-sensitive,
+then enclose it in single quotes.
+
+To get the cursor name, use the `getStatementLabel()` method that is
+defined for the {project-name} JDBC Type 4 driver with class:
+
+[source, java]
+----
+org.trafodion.t4jdbc.HPT4PreparedStatement: public String
+getStatementLabel() ;
+----
+
+*Considerations*
+
+* You can use INFOSTATS in these methods only:
++
+[source, java]
+----
+java.sql.Statement.executeQuery(String sql)
+java.sql.Statement.execute(String sql)
+----
+
+* `setCursorName` is not supported with INFOSTATS.
+
+* If you invoke INFOSTATS incorrectly, the Type 4 driver issues this error:
++
+```
+Message: INFOSTATS command can only be executed
+         by calling execute(String sql) method.
+         Sqlstate HY000
+         Sqlcode 29180
+```
+
+<<<
+*Example of INFOSTATS*
+
+[source, java]
+----
+Statement s = conn.createStatement( ) ;
+
+HPT4PreparedStatement p =
+   (HPT4PreparedStatement)conn.prepareStatement(
+      "SELECT * FROM t WHERE i = ?" ) ;
+
+boolean results = s.execute( "INFOSTATS " + p.getStatementLabel() ) ;
+
+if ( results )
+{
+   ResultSet rs = s.getResultSet( ) ;
+
+   while ( rs.next( ) )
+   {
+      //process data
+   }
+}
+----
+
+*Sample Output*
+
+```
+QueryID: MXID001001128212016369912348191_16_SQL_CUR_9829657
+CPUTime: 0.09975778464794362
+IOTime: 0.10584000146627659
+MsgTime: 0.09800000134418951
+IdleTime: 0.09800000134418951
+TotalTime: 0.10584000146627659
+Cardinality: 100.0
+```
+
+<<<
+[[internationalization-support]]
+== Internationalization Support
+
+[[when-string-literals-are-used-in-applications]]
+=== When String Literals Are Used in Applications
+
+Internationalization support in the driver affects the handling of
+string literals. The Type 4 driver handles string literals in two
+situations.
+
+1. When the driver processes an SQL statement. For example,
++
+[source, java]
+----
+Statement stmt = connection.getStatement() ;
+
+stmt.execute( "SELECT * FROM table1 WHERE col1 = 'abcd'" ) ;
+----
+
+2. When the driver processes JDBC parameters. For example,
++
+[source, java]
+----
+PreparedStatement pStmt = connection.prepareStatement(
+   "SELECT * FROM table1 WHERE col1 = ?" ) ;
+pStmt.setString( 1, "abcd" ) ;
+----
+
+To convert a string literal from the Java to an array of bytes for
+processing by the {project-name}, the Type 4 driver uses
+the column type in the database.
+
+[[controlling-string-literal-conversion-by-using-the-character-set-properties]]
+=== Controlling String Literal Conversion by Using the Character-Set Properties
+
+The Type 4 driver provides character-set mapping properties. These
+properties allow you to explicitly define the translation of internal
+SQL character-set formats to and from the Java string Unicode (`UnicodeBigUnmarked`)
+encoding.
+
+The Type 4 driver provides character-set mapping properties through key
+values as shown in the following table.
+
+[cols="50%,50%",options="header" ]
+|===
+| Key        | Default Value
+| `ISO88591` | `ISO88591_1`
+| `KANJI`    | `SJIS`
+| `KSC5601`  | `EUC_KR`
+|===
+
+<<<
+A description of these character sets appears in table below, which
+summarizes the character sets supported by {project-name}.
+
+[cols="25%,35%,40%",options="header" ]
+|===
+| {project-name} Character Set | Corresponding Java Encoding Set^1^ | Description
+| ISO88591                     | ISO88591_1 | Single-character, 8-bit character-data type ISO88591 supports English and other Western European languages.
+|===
+
+^1^ Canonical Name for `java.io` and `java.lang` API.
+
+For detailed information, see <<iso88591-property, ISO88591 Property>>.
+
+[[using-the-character-set-properties]]
+==== Using the Character-Set Properties
+
+The `java.sql.PreparedStatement` class contains the methods `setString()`
+and `setCharacterStream()`. These methods take a String and Reader
+parameter, respectively.
+
+The `java.sql.ResultSet` class contains the methods `getString()` and
+`getCharacterStream()`. These methods return a String and Reader, respectively.
+
+[[retrieving-a-column]]
+===== Retrieving a Column
+
+When you retrieve a column as a string (for example, call the
+`getString()` or `getCharacterStream` methods), the Type 4 driver uses the
+character-set mapping property key to instantiate a String object (where
+that key corresponds to the character set of the column).
+
+*Example*
+
+The following `SQL CREATE TABLE` statement creates a table that has an
+`ISO88591` column.
+
+[source, sql]
+----
+CREATE TABLE t1 ( c1 CHAR(20) CHARACTER SET ISO88591 ) ;
+----
+
+The JDBC program uses the following java command to set the ISO88591
+property and issues the `getString()` method.
+
+[source, java]
+----
+java -Dhpt4jdbc.ISO88591=SJIS test1.java
+
+// The following method invocation returns a String object, which
+// was created using the "SJIS" Java canonical name as the charset
+// parameter to the String constructor.
+String s1 = rs.getString( 1 ) ; // get column 1 as a String
+----
+
+[[setting-a-parameter]]
+===== Setting a Parameter
+
+When you set a parameter by using a String (for example, call the
+`setString()` method), the Type 4 driver uses the key's value when
+generating the internal representation of the String (where that
+key corresponds to the character set of the column). The
+character-set parameter to the String `getBytes` method is the Java
+Canonical name that corresponds to the column's character set.
+
+*Example*
+
+The following `SQL CREATE TABLE` statement creates a table
+that has an ISO88591 column:
+
+```
+CREATE TABLE t1 ( c1 CHAR(20) CHARACTER SET ISO88591) ;
+> java -DISO88591=SJIS test1.java
+```
+
+The following method invocation sets column one of `stmt` to the String
+"abcd" where "abcd" is encoded as SJIS. The charset parameter to the
+String `getBytes` method is SJIS `stmt.setString( 1, "abcd" ) ;`.
+
+[[controlling-what-happens-on-an-exception]]
+==== Controlling What Happens on an Exception
+
+You can use the `translationVerification` property to explicitly define
+the behavior of the driver if the driver cannot translate all or part of
+an SQL parameter. The value portion of the property can be `TRUE` or
+`FALSE`. (The default value is `FALSE`).
+
+If the `translationVerification` property's value is `FALSE` and the driver
+cannot translate all or part of an SQL statement, then the translation is
+unspecified. In most cases, the characters that are untranslatable are
+encoded as ISO88591 single-byte question marks (`'?'` or `0x3F`). No
+exception or warning is thrown.
+
+If the `translationVerification` property's value is TRUE and the driver
+cannot translate all or part of an SQL statement, then the driver throws an
+`SQLException` with the following text:
+
+```
+Translation of parameter to {0} failed. Cause: {1}
+```
+
+where `{0}` is replaced with the target character set and `{1}` is
+replaced with the cause of the translation failure.
+
+For more information, see
+<<translationverification-property, translationVerification Property>>.
+
+<<<
+[[localizing-error-messages-and-status-messages]]
+=== Localizing Error Messages and Status Messages
+
+The Type 4 driver supports Internationalization through resource bundles
+for localized error messages and status messages. The driver uses a set
+of static strings from a property file to map error messages and status
+messages to their textual representation.
+
+[[file-name-format-for-the-localized-messages-file]]
+==== File-Name Format for the Localized-Messages File
+
+The property file that has the messages must have a file name in the
+form:
+
+```
+HPT4Messages_xx.properties
+```
+
+where `xx` is the locale name. The locale name is defined by the current
+default locale or by the language property.
+
+The Type 4 driver is shipped with an error messages and status messages
+property file that contains the textual representation of errors and
+status messages for the English locale. The file is named
+`HPT4Messages_en.properties`.
+
+[[localized-message-string-format]]
+==== Localized-Message String Format
+
+A localized message file contains strings in the form:
+
+```
+message=message_text
+```
+
+*Example*
+
+```
+driver_err_error_from_server_msg=An error was returned from the server.
+Error: {0} Error detail: {1}
+```
+
+where the `message` is `driver_err_error_from_server_msg`. The
+`message_text` is: `An error was returned from the server. Error: {0} Error detail: {1}`
+
+The pattern `{n}` in `message_text`, where `n` equals 1, 2, 3, and
+so forth, is a placeholder that is filled in at run time by the Type 4
+driver. Any translation must include these placeholders.
+
+<<<
+[[procedure-to-create-a-localized-message-file]]
+==== Procedure to Create a Localized-Message File
+
+1.  Extract the `HPT4Messages_en.properties file`, which is in the
+`hpt4jdbc.jar file`.
++
+*Example*
++
+From a UNIX prompt, use the jar Java tool: `jar -x HPT4Messages_en.properties < hpt4jdbc.jar`
+
+2.  Copy the file.
+
+3.  Edit the file and replace the English text with the text for your locale.
+
+4.  Save the file, giving it a file name that meets the naming
+requirements described under
+<<file-name-format-for-the-localized-messages-file, File-Name Format for the Localized-Messages File>>.
+
+5.  Put the file in a directory anywhere in the class path for running the JDBC application.
+
+The new messages file can be anywhere in the class path for running the
+user application.
+
+At run time, if driver cannot read the messages property file, the
+driver uses the `message` portion of the property as the text of the
+message. For a description of the message portion, see the
+<<localized-message-string-format, Localized-Message String Format>>.

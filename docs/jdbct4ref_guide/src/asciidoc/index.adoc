@@ -21,7 +21,7 @@
 * @@@ END COPYRIGHT @@@ 
 ////
 
-= Stored Procedures in Java (SPJs) Guide
+= JDBC Type 4 Programmer's Reference Guide
 :doctype: book
 :numbered:
 :toc: left
@@ -33,6 +33,7 @@
 :source-language: text
 :revnumber: {project-version}
 :title-logo-image: {project-logo}
+:project-name: {project-name}
 
 :images: ../images
 :sourcedir: ../../resources/source
@@ -59,15 +60,15 @@ include::resources/acknowledgements.txt[]
 
 include::asciidoc/_chapters/about.adoc[]
 include::asciidoc/_chapters/introduction.adoc[]
-include::asciidoc/_chapters/get_started.adoc[]
-include::asciidoc/_chapters/develop_spjs.adoc[]
-include::asciidoc/_chapters/deploy_spjs.adoc[]
-include::asciidoc/_chapters/create_spjs.adoc[]
-include::asciidoc/_chapters/grant_privileges.adoc[]
-include::asciidoc/_chapters/execute_spjs.adoc[]
-include::asciidoc/_chapters/performance_troubleshooting.adoc[]
-include::asciidoc/_chapters/sample_spjs.adoc[]
-include::asciidoc/_chapters/sample_database.adoc[]
-
+include::asciidoc/_chapters/accessing.adoc[]
+include::asciidoc/_chapters/properties_overview.adoc[]
+include::asciidoc/_chapters/properties_detail.adoc[]
+// include::asciidoc/_chapters/lob_data.adoc[]
+// include::asciidoc/_chapters/lob_management.adoc[]
+include::asciidoc/_chapters/compliance.adoc[]
+include::asciidoc/_chapters/tracing_logging.adoc[]
+include::asciidoc/_chapters/messages.adoc[]
+// include::asciidoc/_chapters/code_examples.adoc[]
+include::asciidoc/_chapters/avoiding_mismatch.adoc[]
 
 

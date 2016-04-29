@@ -1,0 +1,959 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[type-4-driver-property-descriptions]]
+= Type 4 Driver Property Descriptions
+
+The properties are listed in alphabetic order with their descriptions.
+For the properties summarized in categories, see
+<<summary-of-type-4-driver-properties, Summary of Type 4 Driver Properties>>.
+
+////
+[[blobtablename]]
+== blobTableName Property
+
+See <<lob-table-name, LOB Table Name Properties>>.
+////
+
+[[catalog]]
+== catalog Property
+
+The `catalog` property sets the default catalog used to access SQL objects
+referenced in SQL statements if the SQL objects are not fully qualified.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object. For information about how to set
+properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: none
+```
+
+*Example*
+
+Specifying the catalog Seabase:
+
+```
+catalog=Seabase
+```
+
+////
+[[clobtablename]]
+== clobTableName Property
+
+See <<lob-table-name, LOB Table Name Properties>>.
+////
+
+<<<
+[[connectiontimeout]]
+== connectionTimeout Property
+
+The `connectionTimeout` property sets the number of seconds a connection
+can be idle before the connection is physically closed by DCS.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object. For information about how to set
+properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Units: seconds
+
+Default: -1 (Use the ConnTimeout value set on the server-side data source.)
+
+Range: -1, 0 to 2147483647
+```
+
+* Zero (0) specifies infinity as the timeout value.
+* A non-zero positive value overrides the value set on the
+{project-name}  data source, if allowed by the connectivity settings.
+* A negative value is treated as -1.
+
+*Example*
+
+Consider the following scenario.
+
+Even if a connection is not being used, it takes up resources. The application
+abandons connections; that is, the application does not physically close a
+connection after the application finishes using the connection.
+
+However, you can configure the connection to close itself after 300 seconds by setting
+the `connectionTimeout` property. Then, when a connection is not referenced for 300 seconds,
+the connection automatically closes itself.
+
+In this example, the specification to set the `connectionTimeout` property is:
+
+```
+connectionTimeout=300
+```
+
+<<<
+[[fetchbuffersize]]
+== fetchBufferSize Property
+
+The `fetchBufferSize` property provides the benefits of bulk fetch.
+
+This property sets the value in kilobytes (KB) of the size of the fetch
+buffer that is used when rows are fetched from a `ResultSet` object after
+a successful `executeQuery()` operation on a statement.
+
+Set this property on a `DriverManager` object. For information about how to set
+properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: short
+
+Default size: 4
+
+Range: 4 through 32767
+```
+
+* Zero and negative values are treated as default values.
+* The Type 4 driver guarantees that the number of rows internally
+fetched will be no less than the minimum of the row size (set using
+the `setFetchSize` method) and the number of rows that will fit in the
+memory specified by the `setFetchSize` (set using the property).
+
+*Example*
+
+```
+fetchBufferSize=32
+```
+
+<<<
+[[initialpoolsize]]
+== initialPoolSize Property
+
+The `initialPoolSize` property sets the initial connection pool size when
+connection pooling is used with the Type 4 driver.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object. For information about how to set
+properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+The driver creates _n_ connections (where _n_ is `initialPoolSize`) for
+each connection pool when the first connection is requested. For
+example, if `initialPoolSize` is set to `5` for a data source, then the driver
+attempts to create and pool five connections the first time the
+application calls the data source's `getConnection()` method.
+
+```
+Data type: int
+
+Units: number of physical connections
+
+Default: -1 (Do not create an initial connection pool.)
+
+Range: -1 to maxPoolSize
+```
+
+* Any negative value is treated as -1.
+* Values can be less than `minPoolSize`, but must not exceed `maxPoolSize`.
+If the specified value is greater than `maxPoolSize`, the `maxPoolSize`
+property value is used.
+
+*Example*
+
+```
+initialPoolSize=10
+```
+
+<<<
+[[iso88591]]
+== ISO88591 Property
+
+The `ISO88591` character-set mapping property corresponds to the
+SQL ISO88591 character set, which is a single-byte
+8-bit character set for character data types. This property supports
+English and other Western European languages. For more information, see
+<<internationalization-support, Internationalization Support>>.
+
+Set this property on a `DataSource` object or `DriverManager` object. This
+property is ignored for connections made through the
+`ConnectionPoolDataSource` object. 
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+```
+Data type: String
+
+Default: ISO88591_1
+```
+
+The value can be any valid Java Canonical Name as listed in the
+"Canonical Name for java.io and java.lang API" column of the
+http://docs.oracle.com/javase/6/docs/technotes/guides/intl/encoding.doc.html[Java documentation].
+
+For more information, see
+<<internationalization-support, Internationalization Support>>.
+
+<<<
+[[kanji]]
+== KANJI Property
+
+The `KANJI` character-set mapping property corresponds to the
+SQL KANJI character set, which is a double-byte character set widely used on Japanese mainframes.
+This property is a subset of Shift JIS: the double character portion. The encoding for
+this property is big endian.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: SJIS (which is shift-JIS, Japanese)
+```
+
+*Example*
+
+```
+java -Dhpt4jdbc.KANJI=SJIS
+```
+
+For more information, see
+<<internationalization-support, Internationalization Support>>.
+
+<<<
+[[ksc5601]]
+== KSC5601 Property
+
+The `KSC5601` character-set mapping property corresponds to the
+SQL KSC5601 character set, which is a double-byte
+character set.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: ECU_KR (which is KS C 5601, ECU encoding, Korean)
+```
+
+The value can be any valid Java Canonical Name as listed in the
+"Canonical Name for java.io and java.lang API" column of the
+http://docs.oracle.com/javase/6/docs/technotes/guides/intl/encoding.doc.html[Java documentation].
+
+*Example*
+
+```
+java -Dhpt4jdbc.KSC5601=ECU_KR
+```
+
+For more information, see
+<<internationalization-support, Internationalization Support>>.
+
+<<<
+[[language]]
+== language Property
+
+The `language` property sets the language used for the error messages. For
+more information about using this property, see
+<<localizing-error-messages-and-status-messages, Localizing Error Messages and Status Messages>>
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: none
+```
+
+The value can be any valid Java Canonical Name as listed in the
+"Canonical Name for java.io and java.lang API" column of the
+http://docs.oracle.com/javase/6/docs/technotes/guides/intl/encoding.doc.html[Java documentation].
+
+*Example*
+
+To set the language to shift-JIS, Japanese:
+
+```
+language=SJIS
+```
+
+////
+[[lob-table-name]]
+== LOB Table Name Properties
+
+LOB tables store data for BLOB columns and CLOB columns. The properties
+that specify the LOB table for using BLOB columns or CLOB columns are:
+
+* For the binary data for BLOB columns `blobTableName`.
+* For the character data for CLOB columns `clobTableName`.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+The property value is of the form:
+
+```
+catalog_name.schema_name.lob_table_name
+```
+
+```
+Data type: String
+
+Default: none
+```
+
+*Example*
+
+```
+blobTableName=samdbcat.sales.lobvideo
+```
+////
+
+<<<
+[[logintimeout]]
+== loginTimeout Property
+
+The `loginTimeout` property sets the time limit that a connection can be
+attempted before the connection disconnects. When a connection is
+attempted for a period longer than the set value, in seconds, the
+connection disconnects.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Units: seconds
+
+Default: 60
+
+Range: 0 to 2147483647
+```
+
+If set to 0 (zero), no login timeout is specified.
+
+<<<
+[[maxidletime]]
+== maxIdleTime Property
+
+The `maxIdleTime` property determines the number of seconds that a
+physical connection should remain unused in the pool before the
+connection is closed. 0 (zero) indicates no limit.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Units: seconds
+
+Default: 0 (No timeout)
+
+Range: 0 through 2147483647
+```
+
+Any negative value is treated as 0, which indicates that no time limit
+applies.
+
+*Example*
+
+To set the maximum idle time to 5 minutes (300 seconds):
+
+```
+java -Dhpt4jdbc.maxIdleTime=300
+```
+
+<<<
+[[maxpoolsize]]
+== maxPoolSize Property
+
+The `maxPoolSize` property sets the maximum number of physical connections
+that the pool can contain. These connections include both free
+connections and connections in use. When the maximum number of physical
+connections is reached, the Type 4 driver throws an SQLException and
+sends the message, Maximum pool size is reached.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Units: number of physical connections
+
+Default: -1 (Disables connection pooling.)
+
+Range: -1, 0 through 2147483647, but greater than minPoolSize
+```
+
+The value determines connection-pool use as follows:
+
+* Any negative value is treated like -1.
+
+* 0 means no maximum pool size.
+
+* A value of -1 disables connection pooling.
+
+Any positive value less than `minPoolSize` is changed to the `minPoolSize` value.
+
+<<<
+[[maxstatements]]
+== maxStatements Property
+
+The `maxStatements` property sets the total number of `PreparedStatement`
+objects that the connection pool should cache. This total includes both
+free objects and objects in use.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Units: number of objects
+
+Default: 0 (Disables statement pooling.)
+
+Range: 0 through 2147483647
+```
+
+The value 0 disables statement pooling. Any negative value is treated
+like 0 (zero).
+
+TIP: To improve performance, we recommend that you enable statement pooling for
+your JDBC applications because this pooling can dramatically help the
+performance of many applications.
+
+NOTE: Statement pooling can be in effect only if connection pooling is
+enabled.
+
+*Example*
+
+To specify statement pooling, type:
+
+```
+maxStatements=10
+```
+
+<<<
+[[minpoolsize]]
+== minPoolSize Property
+
+The `minPoolSize` property limits the number of physical connections that
+can be in the free connection pool.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Default: -1 (The minPoolSize value is ignored.)
+
+Range: -1, 0 through n, but less than maxPoolSize
+```
+
+* Any negative value is treated like -1.
+
+* Any value greater than `maxPoolSize` is changed to the `maxPoolSize` value.
+
+* The value of `minPoolSize` is set to -1 when `maxPoolSize` is -1. The value determines
+connection pool use as follows:
+
+** When the number of physical connections in the free pool reaches the
+`minPoolSize` value, the Type 4 driver closes subsequent connections by
+physically closing them and not adding them to the free pool.
+
+** 0 (zero) means that the connections are not physically closed; the
+connections are always added to the free pool when the connection is
+closed.
+
+*Example*
+
+Use the following specification to set the `minPoolSize`
+value to 1, which ensures that one connection is always retained:
+
+```
+minPoolSize=1
+```
+
+<<<
+[[networktimeout]]
+== networkTimeout Property
+
+The `networkTimeout` property sets a time limit that the driver waits for
+a reply from the database server. When an operation is attempted for a
+period longer than the set value, in seconds, the driver stops waiting
+for a reply and returns an SQLException to the user application.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+CAUTION: Be careful when using this property. A network timeout causes
+the socket connection between the Type 4 driver and the connectivity
+server to timeout. If the server is engaged in a transaction or an SQL
+operation, then the server continues to perform that transaction or
+operation until the transaction or operation fails, the transaction
+manager times out, or the server realizes that the Type 4 driver client
+has gone away. A network timeout can result in an open transaction or
+operation that continues for a significant time before failing or
+rolling back. As a result of a network timeout, the connection becomes
+unavailable.
+
+```
+Data type: int
+
+Units: seconds
+
+Default: 0 (No network timeout is specified.)
+
+0 through to 2147483647
+```
+
+<<<
+[[password]]
+== password Property
+
+The `password` property sets the password value for passing to the DCS
+server. By using this property, you can also change the password. The
+password is encrypted when it is passed to the server.
+
+The format for specifying the password is:
+
+```
+password=old [, new, new ]
+```
+
+* `old` is the current password
+
+* `new` is the new password. Passwords must be 6 to 8 characters long and
+cannot contain double quotes (").
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: empty string
+```
+
+*Example*
+
+```
+password=eye0weU$
+```
+
+[[properties]]
+== properties Property
+
+The `properties` property specifies the location of the properties file
+that contains keyword-value pairs that specify property values for
+configuring the Type 4 driver. For more information, see
+<<creating-and-using-a-properties-file, Creating and Using a Properties File>>.
+
+<<<
+[[reservedatalocators]]
+== reserveDataLocators Property
+
+The `reserveDataLocators` property sets the number of data locators to be
+reserved for a process that stores data in a LOB table.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: int
+
+Units: number of data locators to be reserved
+
+Default: 100
+
+Range: 1 to 9,223,372,036,854,775,807 (2**63 -1)
+```
+
+Do not set a value much greater than the number of data locators
+actually needed. If the specified value is 0 (zero) or less, the default
+value (100) is used.
+
+Base the setting of the value of the `reserveDataLocators` property on the
+application profile being executed. If the application inserts a large
+number of LOB items, then a higher value of the `reserveDataLocators` property
+can prevent frequent updating of the `ZZ_DATA_LOCATOR` value in the LOB
+table. However, if the application inserts only a small number of LOB
+items, then a smaller value is better. If a large value is used, then holes
+(unused data-locator numbers) could occur in the LOB table. These holes
+represent unused space.
+
+Also, the administrator should avoid setting high values for the
+`reserveDataLocators` (for example, in the range of trillions or so).
+Setting high values prevents other Type 4 applications that use LOB
+table from reserving data locators.
+
+For additional information about data locator use, see
+<<reserving-data-locators, Reserving Data Locators>>.
+
+To change this value for a JDBC application, specify this property from
+the command line.
+
+*Example*
+
+The following command reserves 150 data
+locators for program class `myProgramClass`.
+
+```
+java -Dhpt4jdbc.reserveDataLocators=150 myProgramClass
+```
+
+<<<
+[[roundingmode]]
+== roundingMode Property
+
+The `roundingMode` property specifies the rounding behavior of the Type 4
+driver. For example, if the data is 1234.127 and column definition is
+`NUMERIC(6, 2)` and the application does `setDouble()` and `getDouble()`,
+then the value returned is 1234.12, which is truncated as specified by the
+default rounding mode, `ROUND_DOWN`.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: ROUND_DOWN
+```
+
+Values for roundingMode are:
+
+```
+ROUND_CEILING
+
+ROUND_DOWN
+
+ROUND_FLOOR
+
+ROUND_HALF_DOWN
+
+ROUND_HALF_EVEN
+
+ROUND_HALF_UP
+
+ROUND_UNNECESSARY
+
+ROUND_UP
+```
+
+* For the definition of rounding mode values, see the
+https://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html[java.math.BigDecimal] documentation.
+
+* If the application sets erroneous values for the `roundingMode` property, no error is thrown by the Type 4 driver.
+The driver uses `ROUND_DOWN` value instead.
+
+* To have the application get the `DataTruncation` exception when data is
+truncated, set the `roundingMode` property to `ROUND_UNNECESSARY`.
+
+<<<
+[[schema]]
+== schema Property
+
+The `schema` property sets the database schema that accesses SQL objects
+referenced in SQL statements if the SQL objects are not fully qualified.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: none
+```
+
+*Example*
+
+```
+schema=sales
+```
+
+<<<
+[[t4logfile]]
+== T4LogFile Property
+
+The `T4LogFile` property sets the name of the logging file for the Type 4 driver.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+```
+
+Default file name is defined by the following pattern:
+
+```
+%h/hpt4jdbc%u.log
+```
+
+where
+
+* `/` represents the local pathname separator.
+
+* `%h` represents the value of the user.home system property. _%u_
+represents a unique number to resolve conflicts.
+
+Any valid file name for your system is allowed.
+
+If you explicitly specify a log file, then that file is overwritten each time
+a `FileHandler` is established using that file name.
+
+To retain previously created log files, use the standard
+`java.util.logging `file syntax to append a unique number onto each log
+file.
+
+*Example*
+
+You can have the following property in a data source:
+
+```
+T4LogFile = C:/temp/MyLogFile%u.log
+```
+
+That name causes the Type 4 driver to create a new log file using a
+unique name for each connection made through that data source.
+
+<<<
+*Example*
+
+```
+C:/temp/MyLogFile43289.log
+
+C:/temp/MyLogFile87634.log
+
+C:/temp/MyLogFile27794.log
+```
+
+If you explicitly specify a log file that is not fully qualified, the
+Type 4 driver creates the file in the current working directory, for
+example, in the directory from which the JVM was invoked.
+
+For detailed information about java.util.logging, see the
+https://docs.oracle.com/javase/7/docs/api/java/util/logging/package-summary.html[logging summary] documentation. 
+
+<<<
+[[t4loglevel]]
+== T4LogLevel Property
+
+The `T4LogLevel` property sets the logging levels that control logging
+output for the Type 4 driver. The Java package java.util.logging logs
+error messages and traces messages in the driver.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: OFF
+```
+
+*Logging Levels*
+[cols="20%,80%",options="header" ]
+|===
+| Level     | Description
+| `OFF`     | A special level that turns off logging; the default setting.
+| `SEVERE`  | Indicates a serious failure; usually applies to SQL exceptions generated by the Type 4 driver.
+| `WARNING` | Indicates a potential problem, which usually applies to SQL warnings generated by the Type 4 driver.
+| `INFO`    | Provides informational messages, typically about connection pooling, statement pooling, and resource usage. This information can
+help in tuning application performance.
+| `CONFIG`  | Provides static configuration messages that can include property values and other Type 4 driver configuration information.
+| `FINE`    | Provides tracing information from the Type 4 driver methods described in the Type 4 driver API. The level of tracing is equivalent
+to the level of tracing provided when calling the `setLogWriter()` method of the `DriverManager` class or the DataSource class.
+| `FINER`   | Indicates a detailed tracing message for which internal Type 4 driver methods provide messages. These messages can be useful in debugging the Type 4 driver.
+| `FINEST`  | Indicates a highly detailed tracing message. The driver provides detailed internal data messages that can be useful in debugging the Type 4 driver.
+| `ALL`     |Logs all messages.
+|===
+
+*Example*
+
+To enable tracing, use the `hpt4jdbc.T4LogLevel` property specified in the command line:
+
+```
+-Dhpt4jdbc.T4LogLevel=FINE
+```
+
+<<<
+[[t4loglevel-considerations]]
+=== T4LogLevel Considerations
+
+* If a security manager is defined by your application using an AppServer,
+then `LoggingPermission` must be must be granted in the `java.policy` file as
+follows:
++
+```
+permission java.util.logging.LoggingPermission "control", "" ;
+```
+
+* The Type 4 driver is not designed to inherit the `java.util.logging.FileHandler.level` settings at program startup.
+
+<<<
+[[translationverification]]
+== translationVerification Property
+
+The `translationVerification` property defines the behavior of the driver
+if the driver cannot translate all or part of an SQL statement or SQL
+parameter.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+The value can be TRUE or FALSE.
+
+```
+Data type: String
+
+Default: FALSE
+```
+
+
+[cols="10%,45%,45%", options="header"]
+|===
+| Value   | Scenario | What Happens
+| `FALSE` | The driver is unable to translate all or part of an SQL statement, then the translation is unspecified. |
+In most cases, the characters that are untranslatable are encoded as ISO88591 single-byte question marks (`?` or `0x3F`). No
+exception or warning is thrown.
+| `TRUE`  | The driver cannot translation all or part of an SQL statement or parameter. | The driver throws an SQLException with this text. +
+ +
+`Translation of parameter to {0} failed. Cause: {1}` +
+ +
+where `{0}` is replaced with the target character set and `{1}` is
+replaced with the cause of the translation failure.
+|===
+
+NOTE: If the `translationVerification` property is set to TRUE, then the process can
+use significantly more system resources. For better performance, set this property to FALSE.
+
+For more information, see <<internationalization-support, Internationalization Support>>.
+
+<<<
+[[url]]
+== url Property
+
+The `url` property sets the URL value for the database.
+This property is used in the `DriverManager` object. The format
+to specify the URL is:
+
+```
+jdbc:hpt4jdbc//<primary IP addr or hostname of database>:37800/[:]
+[ property=value [ ; property2=value ] ... ]
+```
+
+where `<primary IP_addr or hostname of database>:37800>` specifies the location of the database.
+
+```
+Data type: String
+
+Default: none
+```
+
+*Example*
+
+```
+url=jdbc:hpt4jdbc://mynode.mycompanynetwork.net:37800/
+```
+
+[[url-property-considerations]]
+=== url Property Considerations
+
+* If the url parameter is not specified and `DriverManager.getConnection()` is called, then the Type 4 driver throws an SQLException.
+
+* If you use a literal IPV4 or IPV6 address in a URL, note these guidelines:
+
+** *For IPV6 only*: enclose the address in brackets (`[` and `]`).
+
+** The port number is optional according to both the IPV4 and IPV6 standard.
+
+** The default port number for the database is `37800`.
+
+<<<
+[[user]]
+== user Property
+
+The `user` property sets the role value for the connectivity service. The
+role name passed must have adequate access permissions for SQL data
+accessed through the connectivity service.
+
+Set this property on a `DataSource` object, `ConnectionPoolDataSource`
+object, or `DriverManager` object.
+For information about how to set properties, see
+<<how-to-specify-jdbc-type-4-properties, How to Specify JDBC Type 4 Properties>>.
+
+```
+Data type: String
+
+Default: empty string
+
+```
+
+*Example*
+
+```
+user=System_rolename
+```
+

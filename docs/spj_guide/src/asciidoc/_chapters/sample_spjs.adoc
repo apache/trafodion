@@ -32,10 +32,12 @@ sample database, see <<b-sample-database, Sample Database>> below.
 * <<procedures-in-the-persnl-schema, Procedures in the PERSNL Schema>>
 * <<procedures-in-the-invent-schema, Procedures in the INVENT Schema>>
 
-You can download each source sample by clicking the link provided with the
+NOTE: You can download each source sample by clicking the link provided with the
 sample name. For example, click on
-link:/resources/source/Sales.java[Sales.java]
+link:{sourcedir}/Sales.java[Sales.java]
 to download the sample sales class source file.
++
+You can access the complete source directory at: http://trafodion.apache.org/docs/spj_guide/resources/source/
 
 <<<
 [[procedures-in-the-sales-schema]]

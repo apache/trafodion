@@ -1,0 +1,38 @@
+*Acknowledgements*
+
+Microsoft®, Windows®, Windows NT®, Windows® XP, and Windows Vista® are
+U.S. registered trademarks of Microsoft Corporation. Intel® and Intel®
+Itanium® are trademarks of Intel Corporation in the U.S. and other
+countries. Java® is a registered trademark of Oracle and/or its
+affiliates. Motif, OSF/1, UNIX®, X/Open®, and the X device is a
+trademark of X/Open Company Ltd. in the UK and other countries.
+
+OSF, OSF/1, OSF/Motif, Motif, and Open Software Foundation are trademarks of
+the Open Software Foundation in the U.S. and other countries.
+© 1990, 1991, 1992, 1993 Open Software Foundation, Inc.
+
+The OSF documentation and the OSF software to which it relates are derived in
+part from materials supplied by the following: © 1987, 1988, 1989
+Carnegie-Mellon University. © 1989, 1990, 1991 Digital Equipment
+Corporation. © 1985, 1988, 1989, 1990 Encore Computer Corporation. © 1988 Free
+Software Foundation, Inc. © 1987, 1988, 1989, 1990, 1991 Hewlett-Packard
+Company. © 1985, 1987, 1988, 1989, 1990, 1991, 1992 International
+Business Machines Corporation. © 1988, 1989 Massachusetts Institute of
+Technology. © 1988, 1989, 1990 Mentat Inc. © 1988 Microsoft Corporation.
+© 1987, 1988, 1989, 1990, 1991,
+1992 SecureWare, Inc. © 1990, 1991 Siemens Nixdorf Informations systeme
+AG. © 1986, 1989, 1996, 1997 Sun Microsystems, Inc. © 1989, 1990, 1991
+Transarc Corporation.
+
+OSF software and documentation are based in part
+on the Fourth Berkeley Software Distribution under license from The
+Regents of the University of California. OSF acknowledges the following
+individuals and institutions for their role in its development: Kenneth
+C.R.C. Arnold, Gregory S. Couch, Conrad C. Huang, Ed James, Symmetric
+Computer Systems, Robert Elz. © 1980, 1981, 1982, 1983, 1985, 1986,
+1987, 1988, 1989 Regents of the University of California. OSF MAKES NO
+WARRANTY OF ANY KIND WITH REGARD TO THE OSF MATERIAL PROVIDED HEREIN,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS FOR A PARTICULAR PURPOSE. OSF shall not be liable for errors
+contained herein or for incidental consequential damages in connection
+with the furnishing, performance, or use of this material.
