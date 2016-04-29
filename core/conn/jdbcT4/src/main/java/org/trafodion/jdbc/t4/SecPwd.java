@@ -100,15 +100,6 @@ public class SecPwd {
 	 */
 	private SecPwd(String directory, String fileName, 
 			String serverName, boolean spjMode, byte[] procInfo) throws SecurityException {
-		String hostName = null;
-
-		try {
-			hostName = java.net.InetAddress.getLocalHost().getHostName();
-		} catch (java.net.UnknownHostException ex) {
-			throw new SecurityException(
-					SecClientMsgKeys.GET_LOCAL_HOST_NAME_FAILED, null);
-		}
-
 		// check USERID env variable for MXCI testing of SPJs.  If set use normal password
 		// encryption
 		if ((spjMode == true)  &&
