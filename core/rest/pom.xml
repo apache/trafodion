@@ -520,7 +520,11 @@
       <artifactId>jetty-util</artifactId>
       <version>${jetty.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-security</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
      <!-- REST dependencies -->
     <dependency>
       <groupId>com.sun.jersey</groupId>
