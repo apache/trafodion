@@ -53,6 +53,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.TrafParallelClientScanner;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
 import org.apache.hadoop.hbase.ipc.ServerRpcController;
@@ -732,9 +733,12 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
     {
         return super.getTableName();
     }
-    public ResultScanner getScanner(Scan scan) throws IOException
+    public ResultScanner getScanner(Scan scan, float DOPparallelScanner) throws IOException
     {
-        return super.getScanner(scan);
+        if (scan.isSmall() || DOPparallelScanner == 0)
+            return super.getScanner(scan);
+        else
+            return new TrafParallelClientScanner(this.connection, scan, getName(), DOPparallelScanner);       
     }
     public Result get(Get g) throws IOException
     {

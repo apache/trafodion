@@ -82,7 +82,7 @@ BEGIN
             VALUE "FileDescription", "TRAF ODBC Client Adminstration DLL"
             VALUE "FileVersion", "1.3.0.0"
             VALUE "InternalName", "TRAF ODBC Client Adminstration DLL"
-            VALUE "LegalCopyright", "?Copyright 2015 Apache Trafodion"
+            VALUE "LegalCopyright", "?Copyright 2015-2016 Apache Software Foundation"
             VALUE "OriginalFilename", "trfoadm1.dll"
             VALUE "ProductName", "TRAF ODBC"
             VALUE "ProductVersion", "1.3.0.0"

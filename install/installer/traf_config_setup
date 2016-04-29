@@ -49,9 +49,15 @@ ADMIN="admin"
 PASSWORD="admin"
 URL=""
 HADOOP_NODES=""
+
+HADOOP_PREFIX=""
+HBASE_HOME=""
+HIVE_HOME=""
+
 HDFS_USER="hdfs"
 HBASE_USER="hbase"
 HBASE_GROUP="hbase"
+ZOO_USER="zookeeper"
 
 SQ_ROOT=""
 INIT_TRAFODION="N"
@@ -64,6 +70,8 @@ BACKUP_DCS_NODES=""
 LDAP_SECURITY="N"
 SCANNER_MODE="N"
 DCS_PRIMARY_MASTER_NODE=`hostname -f`
+DCS_MASTER_PORT="23400"
+DCS_MASTER_HOST="$DCS_PRIMARY_MASTER_NODE"
 CLOUD_CONFIG="N"
 CLOUD_TYPE=""
 AWS_CLOUD=""
@@ -407,61 +415,270 @@ else
 fi
 
 #==============================================
+#Enter Hadoop Type
+
+echo -n "Specify the Hadoop distribution installed (1: Cloudera, 2: Hortonworks, 3: Other): "
+read answer1
+  if [[ -z "$answer1" ]]; then
+     echo "***ERROR: User must specify the version of Hadoop being used."
+     exit -1
+  fi
+  case "$answer1" in
+    1) HADOOP_TYPE="cloudera"
+       echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    2) HADOOP_TYPE="hortonworks"
+       echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+       ;;
+    3) HADOOP_TYPE="apache"
+       echo "export HADOOP_TYPE=\"$HADOOP_TYPE\"" >> $LOCAL_TRAF_CONFIG
+  esac
+
+export $HADOOP_TYPE
+#==============================================
+if [[ "$HADOOP_TYPE" == "apache" ]]; then
+   echo -n "Enter Hadoop installed full path (example: '/opt/hadoop-2.6.0'), default is [$HADOOP_PREFIX]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $HADOOP_PREFIX ]]; then
+         echo "***ERROR: Must enter Hadoop installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         HADOOP_PREFIX=$answer
+      else
+         echo "***ERROR: Hadoop installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export HADOOP_PREFIX=\"$HADOOP_PREFIX\"" >> $LOCAL_TRAF_CONFIG
+
+   #Hbase path 
+   echo -n "Enter HBase installed full path (example: '/opt/hbase-1.2.0'), default is [$HBASE_HOME]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $HBASE_HOME ]]; then
+         echo "***ERROR: Must enter HBase installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         HBASE_HOME=$answer
+      else
+         echo "***ERROR: HBase installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export HBASE_HOME=\"$HBASE_HOME\"" >> $LOCAL_TRAF_CONFIG
+   
+   #Zookeeper path
+   echo -n "Enter Zookeeper installed full path (example: '/opt/zoo'), default is [$ZOO_HOME]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $ZOO_HOME ]]; then
+         echo "***ERROR: Must enter HBase installed path"
+         exit -1
+      fi
+   else
+      if [[ -e $answer ]]; then
+         ZOO_HOME=$answer
+      else
+         echo "***ERROR: HBase installed path doesn't exist"
+         exit -1
+      fi
+   fi
+   echo "export ZOO_HOME=\"$ZOO_HOME\"" >> $LOCAL_TRAF_CONFIG
+
+   #Hive path 
+
+   echo -n "Is Hive Installed (Y/N), default is N: "
+   read answer
+
+   if [[ "${answer}" =~ ^[Yy]$ ]]; then
+
+      echo -n "Enter Hive installed full path, default is [$HIVE_HOME]: "
+      read answer1
+
+      if [ -z  $answer1 ]; then
+         if [[ -z $HIVE_HOME ]]; then
+            echo "***ERROR: Must enter apache Hive installed path"
+            exit -1
+         fi
+      else
+         if [[ -e $answer1 ]]; then
+            HIVE_HOME=$answer
+         else
+            echo "***ERROR: apache Hive installed path doesn't exist"
+            exit -1
+         fi
+      fi
+   fi
+   echo "export HIVE_HOME=\"$HIVE_HOME\"" >> $LOCAL_TRAF_CONFIG
+
+   echo -n "Enter list of all nodes in this cluster (blank separated), default [$HADOOP_NODES]: "
+   read answer2
+   if [[ -z "$answer2" ]]; then
+      if [ -z "$HADOOP_NODES" ]; then
+         echo "***ERROR: All nodes in this cluster must be specified."
+         exit -1
+      fi
+   else
+      HADOOP_NODES="$answer2"
+      echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+
+   echo -n "Enter list of all HBase nodes in this cluster (blank separated), default [$HBASE_NODES]: "
+   read answer3
+   if [[ -z "$answer3" ]]; then
+      if [ -z "$HBASE_NODES" ]; then
+         echo "***ERROR: All nodes in this cluster must be specified."
+         exit -1
+      fi
+   else
+      HBASE_NODES="$answer3"
+      echo "export HBASE_NODES=\"$HBASE_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+
+   echo -n "Enter list of all HDFS nodes in this cluster (blank separated), default [$HDFS_NODES]: "
+   read answer4
+   if [[ -z "$answer4" ]]; then
+      if [ -z "$HDFS_NODES" ]; then
+         echo "***ERROR: All nodes in this cluster must be specified."
+         exit -1
+      fi
+   else
+      HDFS_NODES="$answer4"
+      echo "export HDFS_NODES=\"$HDFS_NODES\"" >> $LOCAL_TRAF_CONFIG
+   fi
+
+fi
+
+#==============================================
 #Hadoop user name
 
-echo -n "Enter Hadoop admin username, default is [$ADMIN]: "
-read answer
+if [[ "$HADOOP_TYPE" != "apache" ]]; then
 
-if [ -z $answer ]; then
-   echo "export ADMIN=\"$ADMIN\"" >> $LOCAL_TRAF_CONFIG
-   username=$ADMIN
-else
-   echo "export ADMIN=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   username=$answer
-fi
-#==============================================
-#Hadoop Password
+   echo -n "Enter Hadoop admin username, default is [$ADMIN]: "
+   read answer
 
-echo -n "Enter Hadoop admin password, default is [$PASSWORD]: "
-read answer
+   if [ -z $answer ]; then
+      echo "export ADMIN=\"$ADMIN\"" >> $LOCAL_TRAF_CONFIG
+      username=$ADMIN
+   else
+      echo "export ADMIN=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+      username=$answer
+   fi
+   #==============================================
+   #Hadoop Password
 
-if [ -z $answer ]; then
-   echo "export PASSWORD=\"$PASSWORD\"" >> $LOCAL_TRAF_CONFIG
-   password=$PASSWORD
-else
-   echo "export PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
-   password=$answer
-fi
+   echo -n "Enter Hadoop admin password, default is [$PASSWORD]: "
+   read answer
 
-#==============================================
-#Hadoop URL
+   if [ -z $answer ]; then
+      echo "export PASSWORD=\"$PASSWORD\"" >> $LOCAL_TRAF_CONFIG
+      password=$PASSWORD
+   else
+      echo "export PASSWORD=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+      password=$answer
+   fi
 
-echo -n "Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is [$URL]: "
-read answer
+   #==============================================
+   #Hadoop URL
 
-if [ -z  $answer ]; then
-   if [[ -z $URL ]]; then
-      echo "***ERROR: Must enter $HADOOP_TYPE external network URL"
+   echo -n "Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is [$URL]: "
+   read answer
+
+   if [ -z  $answer ]; then
+      if [[ -z $URL ]]; then
+         echo "***ERROR: Must enter $HADOOP_TYPE external network URL"
+         exit -1
+      fi
+   else
+      URL=$answer
+   fi
+
+   validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
+
+   if [[ $validURL -eq "1" ]]; then
+      echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
+   else
+      echo "***ERROR: Could not access $URL"
+      echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
       exit -1
    fi
-else
-   URL=$answer
 fi
+#==============================================
 
-validURL=$(curl -k -s --head $URL | head -n 1 | grep "OK" | wc -l)
+#echo -n "Is this a multi-cluster setup (Y/N), default is N: "
+#read answer
 
-if [[ $validURL -eq "1" ]]; then
-   echo "export URL=\"$URL\"" >> $LOCAL_TRAF_CONFIG
-else
-   echo "***ERROR: Could not access $URL"
-   echo "***ERROR: Check that URL and port are correct or if $HADOOP_TYPE is up"
-   exit -1
-fi
+#if [[ "${answer}" =~ ^[Yy]$ ]]; then
+#   echo "export MULTI_CLUSTER=\"Y\"" >> $LOCAL_TRAF_CONFIG
+   
+#   echo -n "Enter full Hadoop Cluster name, default is [$CLUSTER_NAME]: "
+#   read answer
+
+#   answer=${answer// /%20}
+
+#   if [ -z $answer ]; then
+#      if [[ -z $CLUSTER_NAME ]]; then
+#         echo "***ERROR: Must enter full Hadoop Cluster name"
+#         exit -1
+#      fi
+#   else
+#      CLUSTER_NAME=$answer
+#      echo "export CLUSTER_NAME=\"$CLUSTER_NAME\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+ 
+#   echo -n "Enter list of all nodes in this cluster (blank separated), default [$HADOOP_NODES]: "
+#   read answer
+#   if [[ -z "$answer" ]]; then
+#      if [ -z "$HADOOP_NODES" ]; then
+#         echo "***ERROR: All nodes in this cluster must be specified."
+#         exit -1
+#      fi
+#   else
+#      HADOOP_NODES="$answer"
+#      echo "export HADOOP_NODES=\"$HADOOP_NODES\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+   
+#   echo -n "Enter list of all HBase nodes in this cluster (blank separated), default [$HBASE_NODES]: "
+#   read answer
+#   if [[ -z "$answer" ]]; then
+#      if [ -z "$HBASE_NODES" ]; then
+#         echo "***ERROR: All nodes in this cluster must be specified."
+#         exit -1
+#      fi
+#   else
+#      HBASE_NODES="$answer"
+#      echo "export HBASE_NODES=\"$HBASE_NODES\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+   
+#   echo -n "Enter list of all HDFS nodes in this cluster (blank separated), default [$HDFS_NODES]: "
+#   read answer
+#   if [[ -z "$answer" ]]; then
+#      if [ -z "$HDFS_NODES" ]; then
+#         echo "***ERROR: All nodes in this cluster must be specified."
+#         exit -1
+#      fi
+#   else
+#      HDFS_NODES="$answer"
+#      echo "export HDFS_NODES=\"$HDFS_NODES\"" >> $LOCAL_TRAF_CONFIG
+#   fi
+ 
+#else
+   echo "export MULTI_CLUSTER=\"N\"" >> $LOCAL_TRAF_CONFIG
+#fi
+
 
 #==============================================
 #HDFS Username
 
-echo -n "Enter HDFS username, default is [$HDFS_USER]: "
+echo -n "Enter HDFS username or username running HDFS, default is [$HDFS_USER]: "
 read answer
 
 if [ -z $answer ]; then
@@ -473,7 +690,7 @@ fi
 #==============================================
 #HBase user
 
-echo -n "Enter HBase username, default is [$HBASE_USER]: "
+echo -n "Enter HBase username or username running HBase, default is [$HBASE_USER]: "
 read answer
 
 if [ -z $answer ]; then
@@ -492,6 +709,18 @@ if [ -z $answer ]; then
    echo "export HBASE_GROUP=\"$HBASE_GROUP\"" >> $LOCAL_TRAF_CONFIG
 else
    echo "export HBASE_GROUP=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+fi
+
+#==============================================
+#HBase group
+
+echo -n "Enter Zookeeper username or username running Zookeeper, default is [$ZOO_USER]: "
+read answer
+
+if [ -z $answer ]; then
+   echo "export ZOO_USER=\"$ZOO_USER\"" >> $LOCAL_TRAF_CONFIG
+else
+   echo "export ZOO_USER=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
 #==============================================
@@ -564,6 +793,8 @@ if [ ! -z $answer ]; then
 fi
 
 echo "export DCS_PRIMARY_MASTER_NODE=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRAF_CONFIG
+echo "export DCS_MASTER_HOST=\"$DCS_PRIMARY_MASTER_NODE\"" >> $LOCAL_TRAF_CONFIG
+echo "export DCS_MASTER_PORT=\"$DCS_MASTER_PORT\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 #Enable HA
@@ -598,6 +829,8 @@ if [[ "$ENABLE_HA" == "true" ]]; then
       FLOATING_IP="$answer1"
    fi
    echo "export FLOATING_IP=\"$FLOATING_IP\"" >> $LOCAL_TRAF_CONFIG
+   sed -i '/DCS_MASTER_HOST\=/d' $LOCAL_TRAF_CONFIG
+   echo "export DCS_MASTER_HOST=\"$FLOATING_IP\"" >> $LOCAL_TRAF_CONFIG
 
    ######Get the interface used by the floating IP address
    echo -n "Enter interface used for floating IP address: "

@@ -423,9 +423,9 @@ public class RMInterface {
     {
         return ttable.getTableName();
     }
-    public ResultScanner getScanner(Scan scan) throws IOException
+    public ResultScanner getScanner(Scan scan, float dopParallelScanner) throws IOException
     {
-        return ttable.getScanner(scan);
+        return ttable.getScanner(scan, dopParallelScanner);
     }
     public Result get(Get g) throws IOException
     {

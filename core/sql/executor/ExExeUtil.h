@@ -1008,7 +1008,8 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
                                   CollHeap * heap,
-                                  ex_globals *globals = NULL);
+                                  ex_globals *globals = NULL,
+                                  ComDiagsArea * diagsArea = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
 
  private:
@@ -1031,6 +1032,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   Queue * schemaNamesList_;
 
   NABoolean someSchemasCouldNotBeDropped_;
+  char errorSchemas_[1010];
 
   char * schemaQuery_;
 };

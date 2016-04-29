@@ -21,7 +21,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 --
--- Functionality: Advanced predicate pushdown (V2)
+-- Functionality: Advanced predicate pushdown (V2) and parallelScanner
 -- Expected files: EXPECTED140
 -- Table created: t140 t140b t140helper
 -- Limitations:
@@ -63,6 +63,13 @@ insert into t140 values(14,14,42,402,4002,43,403,4003,NULL);
 insert into t140 values(15,15,52,502,5002,53,503,5003,'asd');
 update t140 set d = null where uniq = 15;
 
+upsert using load 
+into t140b
+  select  x1,x1,10*x1,100*x1,1000*x1,10*x1+1,100*x1+1, 1000*x1+1, 'aaa'||cast(x1 as varchar(10)) 
+         
+  from t140helper
+transpose 0,1,2,3,4,5,6,7,8,9 as x1;
+
 ?section run
 -- test returned rows with or without adding key column and test of all pushdown functions with null or non null column
 -- only one column retrieved
@@ -93,4 +100,23 @@ select a from t140 where a between 20 and 40;
 explain select an from t140 where an between 20 and 40;
 select an from t140 where an between 20 and 40;
 select an from t140 where an in (21,41,51,61,10);
+
+-- test parallel scanner
+-- turn off small scanner as it will force single scanner
+cqd hbase_small_scanner 'OFF';
+cqd parallel_num_esps '1';
+-- force 2 threads
+cqd hbase_dop_parallel_scanner '2.0';
+explain select avg(a) from t140b;
+select avg(a) from t140b;
+-- force 100% of threads (with 2 partition this is 2 threads)
+cqd hbase_dop_parallel_scanner '1.0';
+explain select avg(a) from t140b;
+select avg(a) from t140b;
+-- reset to regular scanner
+cqd hbase_dop_parallel_scanner reset;
+cqd hbase_small_scanner reset;
+cqd parallel_num_esps reset;
+explain select avg(a) from t140b;
+select avg(a) from t140b;
 

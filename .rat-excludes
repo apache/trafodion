@@ -109,6 +109,8 @@ TCPIPV6_os.*
 .ism*
 resource.h*
 resource.hm*
+odb.sln
+odb.vcxproj.*
 # BSD licensed files
 swscanf.cpp
 swsprintf.cpp

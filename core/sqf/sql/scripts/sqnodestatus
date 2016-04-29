@@ -31,7 +31,7 @@
 #   export SQ_MON_SSH_OPTIONS=' -o "ConnectTimeout 1" -o "ConnectionAttempts 3" '
 #
 
-my $node_context=readpipe("echo \$MY_NODES");
+my $node_context=readpipe("echo \$NODE_LIST");
 my %node_hash=();
 my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
 my $json=$ARGV[0];
@@ -40,7 +40,7 @@ my $json=$ARGV[0];
 
 sub main()
 {
-  $node_context=~s/-w//ig;
+  #$node_context=~s/-w//ig;
   #print "node_context=${node_context}";
   chomp($node_context);
   my @nodes=split(' ',$node_context);
