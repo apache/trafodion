@@ -95,12 +95,3 @@ the server event log on node <logfile_location> for details.
 * <errortext> is the error text from the server.
 * <logfile_location> is the location of the log file.
 
-Additional error text returned only by a Release 2.2 server, but displayed by any version driver:
-
-```
-Version Mismatch: Client Version is: Pre R2.2.0 Server Version is:
-R2.2.0 Server vproc is:
-
-T7969N25_10AUG07_N25_AS_0613 ERROR
-```
-

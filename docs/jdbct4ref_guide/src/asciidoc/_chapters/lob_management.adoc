@@ -128,7 +128,7 @@ Run the T4LobAdmin utility from the workstation. The format of the
 command is:
 
 ```
-java [java_options] org.trafodion.t4jdbc.T4LobAdmin [prog_options] [table_name]
+java [java_options] org.trafodion.jdbc.t4.T4LobAdmin [prog_options] [table_name]
 ```
 
 [[java-options]]
@@ -183,14 +183,14 @@ For information about catalog, schema, and table names, see the
 To display help for the Type 4 Lob Admin Utility, type:
 
 ```
-java org.trafodion.t4jdbc.T4LobAdmin -help
+java org.trafodion.jdbc.t4.T4LobAdmin -help
 ```
 
 *Example*
 
 ```
 Apache Trafodion T4 Lob Admin Utility 1.0 (c) Copyright 2015-2016
-org.trafodion.t4jdbc.T4LobAdmin [<prog_options>] [<table_name>]
+org.trafodion.jdbc.t4.T4LobAdmin [<prog_options>] [<table_name>]
 
 <java_options> is:
      [-Dhpt4jdbc.properties=<properties file>]
@@ -254,7 +254,7 @@ contains a BLOB column, and executes those statements.
 
 ```
 java -Dhpt4jdbc.blobTableName=sales.paris.lobTable4pictures /
-org.trafodion.t4jdbc.T4LobAdmin -trigger -exec sales.paris.pictures
+org.trafodion.jdbc.t4.T4LobAdmin -trigger -exec sales.paris.pictures
 ```
 
 [[limitations-of-lob-data-clob-and-blob-data-types]]

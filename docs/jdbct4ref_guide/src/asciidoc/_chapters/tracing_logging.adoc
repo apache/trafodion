@@ -86,7 +86,7 @@ following additional information:
 
 The Type 4 Driver Logging facility is based on the `java.util.logging`
 package. The Type 4 driver instantiates a `java.util.logging.Logger` class
-and names the logger `org.trafodion.t4jdbc.logger`.
+and names the logger `org.trafodion.jdbc.t4.logger`.
 
 Your JDBC program can access the Type 4 driver logger directly by
 calling the `java.util.logging.Logger` static method `getLogger(String)`.
@@ -96,7 +96,7 @@ calling the `java.util.logging.Logger` static method `getLogger(String)`.
 [source, java]
 ----
 String t4Logger =
-   java.util.logging.Logger.getLogger( "org.trafodion.t4jdbc.logger" ) ;
+   java.util.logging.Logger.getLogger( "org.trafodion.jdbc.t4.logger" ) ;
 ----
 
 <<<

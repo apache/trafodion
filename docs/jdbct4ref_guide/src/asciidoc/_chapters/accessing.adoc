@@ -38,8 +38,8 @@ methods for obtaining a JDBC connection to the underlying database.
 
 All JDBC data source classes implement either the `javax.sql.DataSource`
 interface or the `javax.sql.ConnectionPoolDataSource` interface. The Type
-4 driver data source classes are `org.trafodion.t4jdbc.HPT4DataSource` and
-`org.trafodion.t4jdbc.HPT4ConnectionPoolDataSource`. (These classes are
+4 driver data source classes are `org.trafodion.jdbc.t4.HPT4DataSource` and
+`org.trafodion.jdbc.t4.HPT4ConnectionPoolDataSource`. (These classes are
 defined by the JDBC 3.0 specification.)
 
 Typically, a user or system administrator uses a tool to create a data
@@ -50,22 +50,19 @@ connection to the underlying database.
 
 A DataSource object maps to an instance of a database. In the Type 4
 driver product, the DataSource object acts as an interface between the
-application code and the database and enables connection with an DCS
-data source.
+application code and the database and enables connection with a DCS
+(Data Connectivity Services) data source.
 
 [[security]]
 == Security
 
 Clients connect to the {project-name} platform with a valid user name
-and ID, using standard JDBC 3.0 APIs. An application can make multiple
+and password, using standard JDBC 3.0 APIs. An application can make multiple
 connections using different user IDs, and creating different Connection
 objects.
 
 The Type 4 driver provides for user name and password authentication.
-The password is encrypted with a proprietary algorithm provided by DCS.
-
-NOTE: There is no secure wire communication such as SSL provided for the
-communication between Type 4 driver and the {project-name} platform.
+The password is encrypted.
 
 <<<
 [[connection-by-using-the-datasource-interface]]
@@ -143,7 +140,7 @@ the `HPT4ConnectionPoolDataSource` object.
 [source, java]
 ----
 HPT4DataSource temp = new HPT4DataSource() ;
-temp.setCatalog( "Seabase" ) ;
+temp.setCatalog( "TRAFODION" ) ;
 ----
 
 In the following example, the code fragment illustrates the methods that a
@@ -156,8 +153,8 @@ to use the Type 4 driver to access a {project-name} database:
 ----
 HPT4DataSource ds = new HPT4DataSource() ;
 
-ds.setUrl( "jdbc:hpt4jdbc://<primary IP addr or host name>:18650/" );
-ds.setCatalog( "Seabase" ) ;
+ds.setUrl( "jdbc:t4jdbc://<primary IP addr or host name>:2300/" );
+ds.setCatalog( "TRAFODION" ) ;
 ds.setSchema( "myschema" ) ;
 ds.setUser( "gunnar" ) ;
 ds.setPassword( "my_userpassword" ) ;
@@ -282,7 +279,7 @@ When an application issues a request for a connection using the
 finds a suitable driver that recognizes this URL and obtains a database
 connection using that driver.
 
-`org.trafodion.t4jdbc.HPT4Driver` is the Type 4 driver class that
+`org.trafodion.jdbc.t4.T4Driver` is the Type 4 driver class that
 implements the `java.sql.Driver` interface.
 
 <<<
@@ -297,21 +294,21 @@ one of the following ways:
 command line of the Java program:
 +
 ```
--Djdbc.drivers=org.trafodion.t4jdbc.HPT4Driver
+-Djdbc.drivers=org.trafodion.jdbc.t4.T4Driver
 ```
 
 * Uses the `Class.forName` method programmatically within the application:
 +
 [source, java]
 ----
-Class.forName("org.trafodion.t4jdbc.HPT4Driver")
+Class.forName("org.trafodion.jdbc.t4.T4Driver")
 ----
 
 * Adds the Type 4 driver class to the `java.lang.System` property
 `jdbc.drivers` property within the application:
 +
 ```
-jdbc.drivers=org.trafodion.t4jdbc.HPT4Driver
+jdbc.drivers=org.trafodion.jdbc.t4.T4Driver
 ```
 
 <<<
@@ -322,14 +319,14 @@ The `DriverManager.getConnection` method accepts a string containing a
 Type 4 driver URL. The JDBC URL for the Type 4 driver is
 
 ```
-jdbc:hpt4jdbc://<ip addr or host name>:3700/[:][property=value[;property2=value2]...]
+jdbc:t4jdbc://<ip addr or host name>:23400/[:][property=value[;property2=value2]...]
 ```
 
 [cols="40%,60%", options="header"]
 |===
 | Parameter                | Usage
 | `<ip addr or host name>` | The primary IP address or host name for the {project-name} database.
-| `37800`                  | The port number for the {project-name} SQL database.
+| `23400`                  | The port number for the {project-name} SQL database.
 | `property = value` and `property2=value2` | Specifies a Type 4 driver property name-property value pair. The pairs must be separated by a
 semicolon (`;`). For example, `T4LogLevel=ALL;T4LogFile=temp1.log`.
 |===
@@ -340,9 +337,9 @@ To establish a connection, the JDBC application can use this code:
 
 [source, java]
 ----
-Class.forName( "org.trafodion.t4jdbc.HPT4Driver" ) ; //loads the driver
+Class.forName( "org.trafodion.jdbc.t4.T4Driver" ) ; //loads the driver
 
-String url = "jdbc:hpt4jdbc://<database primary IP address>:37800/"
+String url = "jdbc:hpt4jdbc://<database primary IP address>:23400/"
 
 Connection con = DriverManager.getConnection( url, "userID", "Passwd" ) ;
 ----
@@ -364,7 +361,7 @@ the order of precedence):
 2.  Using the database URL in the `DriverManager.getconnection` method, where the URL is:
 +
 ```
-jdbc:hpt4jdbc://<ip addr or host name>:37800/:property=value
+jdbc:t4jdbc://<ip addr or host name>:23400/:property=value
 ```
 +
 `<ip addr or host name>` is the primary IP address or host name for the {project-name} database.
@@ -375,10 +372,10 @@ passed as a command-line parameter. The format to enter the properties
 file in the command line is:
 +
 ```
--Dhpt4jdbc.properties=<path of properties file on disk>
+-Dt4jdbc.properties=<path of properties file on disk>
 ```
 +
-For example, `-Dhpt4jdbc.properties=C:\temp\t4props`
+For example, `-Dt4jdbc.properties=C:\temp\t4props`
 +
 For information about the properties file, see <<creating-and-using-a-properties-file, Creating and Using a Properties File>>.
 4.  Using JDBC properties with the `-D` option in the command line. If
@@ -387,10 +384,10 @@ used, this option applies to all JDBC connections using the
 line is:
 +
 ```
--Dhpt4jdbc.property_name=<property value>
+-Dt4jdbc.property_name=<property value>
 ```
 +
-For example, `-Dhpt4jdbc.maxStatements=1024`
+For example, `-Dt4jdbc.maxStatements=1024`
 
 <<<
 [[connection-pooling]]
@@ -431,7 +428,6 @@ catalog
 schema
 username
 password
-serverDataSource
 ```
 +
 Therefore, connections that have the same values for the combination of
@@ -610,7 +606,7 @@ defined for the {project-name} JDBC Type 4 driver with class:
 
 [source, java]
 ----
-org.trafodion.t4jdbc.HPT4PreparedStatement: public String
+org.trafodion.jdbc.t4.T4PreparedStatement: public String
 getStatementLabel() ;
 ----
 
@@ -846,7 +842,7 @@ The property file that has the messages must have a file name in the
 form:
 
 ```
-HPT4Messages_xx.properties
+T4Messages_xx.properties
 ```
 
 where `xx` is the locale name. The locale name is defined by the current
@@ -855,7 +851,7 @@ default locale or by the language property.
 The Type 4 driver is shipped with an error messages and status messages
 property file that contains the textual representation of errors and
 status messages for the English locale. The file is named
-`HPT4Messages_en.properties`.
+`T4Messages_en.properties`.
 
 [[localized-message-string-format]]
 ==== Localized-Message String Format
@@ -884,12 +880,12 @@ driver. Any translation must include these placeholders.
 [[procedure-to-create-a-localized-message-file]]
 ==== Procedure to Create a Localized-Message File
 
-1.  Extract the `HPT4Messages_en.properties file`, which is in the
-`hpt4jdbc.jar file`.
+1.  Extract the `T4Messages_en.properties file`, which is in the
+`jdbcT4-*.jar file`.
 +
 *Example*
 +
-From a UNIX prompt, use the jar Java tool: `jar -x HPT4Messages_en.properties < hpt4jdbc.jar`
+From a UNIX prompt, use the jar Java tool: `jar -x T4Messages_en.properties < jdbcT4-*.jar`
 
 2.  Copy the file.
 

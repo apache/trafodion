@@ -35,7 +35,7 @@ platforms that support JDK 1.4.1 or higher.
 [[type-4-driver-api-package]]
 == Type 4 Driver API Package
 
-The Type 4 driver package, `org.trafodion.t4jdbc`, is shipped with the
+The Type 4 driver package, `org.trafodion.jdbc.t4`, is shipped with the
 driver software. For class and method descriptions, see the
 _{project-name} JDBC Type 4 Driver API Reference_.
 

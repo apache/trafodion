@@ -53,10 +53,10 @@ Default: none
 
 *Example*
 
-Specifying the catalog Seabase:
+Specifying the catalog TRAFODION:
 
 ```
-catalog=Seabase
+catalog=TRAFODION
 ```
 
 ////
@@ -235,7 +235,7 @@ Default: SJIS (which is shift-JIS, Japanese)
 *Example*
 
 ```
-java -Dhpt4jdbc.KANJI=SJIS
+java -Dt4jdbc.KANJI=SJIS
 ```
 
 For more information, see
@@ -267,7 +267,7 @@ http://docs.oracle.com/javase/6/docs/technotes/guides/intl/encoding.doc.html[Jav
 *Example*
 
 ```
-java -Dhpt4jdbc.KSC5601=ECU_KR
+java -Dt4jdbc.KSC5601=ECU_KR
 ```
 
 For more information, see
@@ -744,7 +744,7 @@ Data type: String
 Default file name is defined by the following pattern:
 
 ```
-%h/hpt4jdbc%u.log
+%h/t4jdbc%u.log
 ```
 
 where
@@ -833,7 +833,7 @@ to the level of tracing provided when calling the `setLogWriter()` method of the
 To enable tracing, use the `hpt4jdbc.T4LogLevel` property specified in the command line:
 
 ```
--Dhpt4jdbc.T4LogLevel=FINE
+-Dt4jdbc.T4LogLevel=FINE
 ```
 
 <<<
@@ -900,11 +900,11 @@ This property is used in the `DriverManager` object. The format
 to specify the URL is:
 
 ```
-jdbc:hpt4jdbc//<primary IP addr or hostname of database>:37800/[:]
+jdbc:t4jdbc//<primary IP addr or hostname of database>:23400/[:]
 [ property=value [ ; property2=value ] ... ]
 ```
 
-where `<primary IP_addr or hostname of database>:37800>` specifies the location of the database.
+where `<primary IP_addr or hostname of database>:23400>` specifies the location of the database.
 
 ```
 Data type: String
@@ -915,7 +915,7 @@ Default: none
 *Example*
 
 ```
-url=jdbc:hpt4jdbc://mynode.mycompanynetwork.net:37800/
+url=jdbc:t4jdbc://mynode.mycompanynetwork.net:23400/
 ```
 
 [[url-property-considerations]]
@@ -929,7 +929,7 @@ url=jdbc:hpt4jdbc://mynode.mycompanynetwork.net:37800/
 
 ** The port number is optional according to both the IPV4 and IPV6 standard.
 
-** The default port number for the database is `37800`.
+** The default port number for the database is `23400`.
 
 <<<
 [[user]]

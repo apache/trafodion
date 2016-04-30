@@ -207,7 +207,7 @@ For details, see <<localizing-error-messages-and-status-messages, Localizing Err
 [[additional-databasemetadata-apis]]
 === Additional DatabaseMetaData APIs
 
-APIs added to the `HPT4DatabaseMetaData` class provide these capabilities:
+APIs added to the `T4DatabaseMetaData` class provide these capabilities:
 
 * Get a description of a table's synonyms.
 +
@@ -224,25 +224,6 @@ public java.sql.ResultSet getSynonymInfo(String catalog, String schema, String t
 public java.sql.ResultSet getMaterializedViewInfo(String catalog, String schema, String table) throws SQLException
 ----
 ////
-
-[[additional-connection-apis]]
-=== Additional Connection APIs
-
-APIs added to the `HPT4Connection` class provide these capabilities:
-
-* Sets the current service name for this Connection object.
-+
-[source, java]
-----
-public void setServiceName(String serviceName) throws SQLException
-----
-
-* Gets (retrieves) the current service name of this Connection object. Default return value: HP_DEFAULT_SERVICE.
-+
-[source, java]
-----
-public String getServiceName() throws SQLException
-----
 
 [[conformance-of-databasemetadata-methods-handling-of-null-parameters]]
 == Conformance of DatabaseMetaData Methods' Handling of Null Parameters
@@ -304,9 +285,9 @@ The following table shows the JDBC data types that are supported by Type
 | `Types.BIGINT`        | Yes                                                                                            | `LARGEINT`
 | `Types.BINARY`        | Data type is mapped by {project-name} SQL. Data type varies from that used for table creation. | `CHAR(n)`^1^
 | `Types.BIT`           | Data type is mapped by {project-name} SQL. Data type varies from that used for table creation. | `CHAR(1)`
-| `Types.BLOB`          | Yes                                                                                            | `LARGEINT`
+// | `Types.BLOB`          | Yes                                                                                            | `LARGEINT`
 | `Types.CHAR`          | Yes                                                                                            | `CHAR(n)`
-| `Types.CLOB`          | Yes                                                                                            | `LARGEINT`
+// | `Types.CLOB`          | Yes                                                                                            | `LARGEINT`
 | `Types.DATE`          | Yes                                                                                            | `DATE`
 | `Types.DECIMAL`       | Yes                                                                                            | `DECIMAL(p,s)`
 | `Types.DISTINCT`      | No                                                                                             | Not applicable.
@@ -383,4 +364,4 @@ These features are not required for JDBC 3.0 compliance, and they are not suppor
 * The Type 4 driver supports only database features that are supported by {project-name} SQL and SPJ.
 Therefore, the Type 4 driver is not fully compliant with JDBC 3.0 specifications.
 
-* The Type 4 driver depends on the HP connectivity service for all server side manageability related features.
+* The Type 4 driver depends on DCS (Data Connectivity Service) for all server side manageability related features.
