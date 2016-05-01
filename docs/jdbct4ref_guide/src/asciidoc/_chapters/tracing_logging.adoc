@@ -81,25 +81,6 @@ following additional information:
 * Finer control over the amount and type of logging information
 * Error and warning messages
 
-[[accessing-the-type-4-driver-logging-facility]]
-=== Accessing the Type 4 Driver Logging Facility
-
-The Type 4 Driver Logging facility is based on the `java.util.logging`
-package. The Type 4 driver instantiates a `java.util.logging.Logger` class
-and names the logger `org.trafodion.jdbc.t4.logger`.
-
-Your JDBC program can access the Type 4 driver logger directly by
-calling the `java.util.logging.Logger` static method `getLogger(String)`.
-
-*example*
-
-[source, java]
-----
-String t4Logger =
-   java.util.logging.Logger.getLogger( "org.trafodion.jdbc.t4.logger" ) ;
-----
-
-<<<
 [[controlling-type-4-driver-logging-output]]
 === Controlling Type 4 Driver Logging Output
 
@@ -143,7 +124,7 @@ sequence-number ~ time-stamp ~ thread-id
 | `connection-id`   | If applicable, a unique ID for the connection associated with the message.
 | `server-id`       | If applicable, information about the connectivity server associated with the message. The _server-id_ is of the form: +
  +
-`TCP:node-name.server-name/port-number:HPODBC` +
+`TCP:node-name.server-name/port-number:ODBC` +
  +
 where +
  +
@@ -153,7 +134,7 @@ where +
  +
 *Example* +
  +
-`TCP:\banshee-tcp.$Z0133/46003:HPODBC`
+`TCP:\banshee-tcp.$Z0133/46003:ODBC`
 | `dialogue-id`     | If applicable, the `dialogue-id` used for the DCS connection.
 | `class`           | If applicable, the name of the class that issued the logging request.
 | `method`          | If applicable, the name of the method that issued the logging request.
@@ -177,7 +158,7 @@ zeros (0) to allow for readable formatting.
 +
 ```
 00000036 ~ Dec 8, 2006 10:05:55 AM PST ~ 10 ~ 4508606 ~ null
-    ~ null ~ HPT4Messages.createSQLException("en_US",
+    ~ null ~ T4Messages.createSQLException("en_US",
     "socket_write_error", "null") ~
 ```
 

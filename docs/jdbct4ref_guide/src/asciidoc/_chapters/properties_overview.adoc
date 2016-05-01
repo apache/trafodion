@@ -85,7 +85,7 @@ connections made through the ConnectionPoolDataSource object.) | -1 (Do not crea
 [cols="25%,55%,30%",options="header" ]
 |===
 | Property Name                          | Description | Default Value
-| `<<T4LogFile, T4LogFile>>`             | Sets the name of the logging file for the Type 4 driver. | The name is defined by the following pattern: `%h/hpt4jdbc%u.log`
+| `<<T4LogFile, T4LogFile>>`             | Sets the name of the logging file for the Type 4 driver. | The name is defined by the following pattern: `%h/t4jdbc%u.log`
 | `<<T4LogLevel, T4LogLevel>>`           | Sets the logging levels that control logging output for the Type 4 driver. | OFF
 |===
 
@@ -114,7 +114,7 @@ description, the particular property applies to the DataSource object,
 |===
 | Property Name                          | Description                                                                | Default Value
 | `<<catalog, catalog>>`                 | Sets the default catalog used to access SQL objects referenced in SQL
-statements if the SQL objects are not fully qualified. | None. Must be "Seabase" in the current release.
+statements if the SQL objects are not fully qualified. | None. Must be "TRAFODION" in the current release.
 | `<<connectionTimeout, connectionTimeout>>` | Sets the number of seconds a connection can be idle before the connection is physically closed by DCS. |
 -1 (Use the ConnTimeout value set on the server data source.)
 | `<<password, password>>`               | Sets the password value for passing to the database. Can also change the password. | Empty string.
@@ -162,13 +162,13 @@ property file is passed as a java command-line parameter. The format to
 enter the properties file in the command line is:
 
 ```
--Dhpt4jdbc.properties=<path of the properties file on disk>`
+-Dt4jdbc.properties=<path of the properties file on disk>`
 ```
 
 *Example*
 
 ```
--Dhpt4jdbc.properties=C:\temp\t4props\myprops.properties
+-Dt4jdbc.properties=C:\temp\t4props\myprops.properties
 ```
 
 To create the file, use the editor of your choice on your workstation to
@@ -189,11 +189,11 @@ To configure a `DataSource` connection, the properties file might contain
 property names and values as indicated in the following list:
 
 ```
-url=jdbc:hpt4jdbc://<primary IP addr or host name of database>:37800/
+url=jdbc:t4jdbc://<primary IP addr or host name of database>:23400/
 user=database_username
 password=mypassword
 description=<a string>
-catalog=Seabase
+catalog=TRAFODION
 schema=myschema
 maxPoolSize=20
 minPoolSize=5
@@ -201,7 +201,6 @@ maxStatements=20
 loginTimeout=15
 initialPoolSize=10
 connectionTimeout=10
-serverDataSource=server_data_source
 T4LogLevel=OFF
 T4LogFile=/mylogdirectory/mylogfile
 ```
@@ -210,7 +209,7 @@ T4LogFile=/mylogdirectory/mylogfile
 === Setting Properties in the Command Line
 
 When a Type 4 driver property is specified on the command line through
-the java `-D` option, the property must include the prefix: `hpt4jdbc`.
+the java `-D` option, the property must include the prefix: `t4jdbc`.
 
 This notation, which includes the period (.), ensures that all the Type
 4 driver property names are unique for a Java application.
@@ -220,7 +219,7 @@ This notation, which includes the period (.), ensures that all the Type
 The maxStatements property becomes:
 
 ```
--Dhpt4jdbc.maxStatements=10
+-Dt4jdbc.maxStatements=10
 ```
 
 [[precedence-of-property-specifications]]
@@ -237,9 +236,9 @@ order of precedence:
 method of `DriverManager` class.
 
 3.  Set the property in a properties file specified by the
-`hpt4jdbc.properties` property.
+`t4jdbc.properties` property.
 
-4.  Set the `-Dhpt4jdbc.property_name=<property value>` in the java command line.
+4.  Set the `-Dt4jdbc.property_name=<property value>` in the java command line.
 
 For more information, see order of precedence for properties specified
 in various ways for use with the Driver Manager.
