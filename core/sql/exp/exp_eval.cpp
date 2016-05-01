@@ -2429,6 +2429,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
       do {
 	PTR_DEF_ASSIGN(char,src,0);
+
         if (pCodeOpc == PCIT::OPDATA_MPTR32_IBIN32S_IBIN32S)
         {
           // If the operand is NULL, leave 0 on the stack, otherwise a non-zero.
@@ -2520,9 +2521,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	atp1->setDiagsArea(diagsArea);
 
       if(retCode == ex_expr::EXPR_ERROR) 
-      {
 	  return retCode;
-      }
 
       pCode += 1 + PCODEBINARIES_PER_PTR;
       break;
@@ -2985,7 +2984,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	// ptr to source value is stored at src as an Int64.
 	Int64 ptrVal = *(Int64*)(src + srcVCIndLen);
 	char * ptrSrc = (char*)ptrVal;
-	
+
 	// convert source to target (Int32)
 	// First try simple conversion. If that returns an error, try complex conversion.
 	NABoolean neg = FALSE;
@@ -3011,12 +3010,11 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       heap_, &diagsArea,
 		       CONV_ASCII_BIN64S,
 		       NULL, 0);
+
             if (diagsArea != atp1->getDiagsArea())
                    atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
-            {
 		return ex_expr::EXPR_ERROR;
-            }
 	  }
 
 	if (pCodeOpc == PCIT::CONVVCPTR_MBIN64S_MATTR5_IBIN32S)
@@ -3090,9 +3088,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
             if (diagsArea != atp1->getDiagsArea())
                    atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
-            {
 	      return ex_expr::EXPR_ERROR;
-            }
 	  }
 
 	if (neg)
@@ -3169,9 +3165,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
             if (diagsArea != atp1->getDiagsArea())
                atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
-            {
 	        return ex_expr::EXPR_ERROR;
-            }
 	  }
 	else
 	  {

@@ -864,6 +864,9 @@ short FileScan::codeGenForHive(Generator * generator)
     
 
   UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
+
+  //enhance pCode to handle this mode in the future
+  //this is for JIRA 1920
   if((hiveScanMode & 2 ) > 0)   //if HIVE_SCAN_SPECIAL_MODE is 2, disable pCode
   {
     exp_gen->setPCodeMode(ex_expr::PCODE_NONE);
@@ -1137,7 +1140,7 @@ if (hTabStats->isOrcFile())
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
-  if((hiveScanMode & 2 ) > 0) 
+  if((hiveScanMode & 2 ) > 0)  //if HIVE_SCAN_SPECIAL_MODE is 2, set expression mode to ERROR_CONTUNE
   {
     project_convert_expr->setPCodeMode(ex_expr::ERROR_CONTINUE);
   }

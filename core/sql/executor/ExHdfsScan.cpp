@@ -892,6 +892,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    step_ = RETURN_ROW;
 	    break;
 	  }
+
 	  break;
 	}
 	case RETURN_ROW:
@@ -1379,7 +1380,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 }
 
 char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
-							     ComDiagsArea* &diagsArea, int mode )
+							     ComDiagsArea* &diagsArea, int mode)
 {
   err = 0;
   char *sourceData = hdfsBufNextRow_;
@@ -1516,13 +1517,9 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
       ex_expr::exp_return_type evalRetCode =
         convertExpr()->eval(workAtp_, workAtp_);
       if (evalRetCode == ex_expr::EXPR_ERROR)
-      {
          err = -1;
-      }
       else
-      {
         err = 0;
-      }
   }
   if (sourceRowEnd)
      return sourceRowEnd+1;

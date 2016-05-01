@@ -889,6 +889,7 @@ protected:
 
   UInt32                  pCodeMaxOptBrCnt_;                     // 120-123
   UInt32                  pCodeMaxOptInCnt_;                     // 124-127
+
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
@@ -1061,6 +1062,7 @@ public:
   SQLEXP_LIB_FUNC InputOutputExpr(Generator * generator);
   NA_EIDPROC
   SQLEXP_LIB_FUNC ~InputOutputExpr() {}
+
   ex_expr::exp_return_type describeInput(void*, void*, UInt32);
   ex_expr::exp_return_type describeOutput(void*, UInt32);
 
