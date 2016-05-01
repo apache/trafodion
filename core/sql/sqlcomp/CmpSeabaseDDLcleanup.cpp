@@ -1186,12 +1186,11 @@ short CmpSeabaseMDcleanup::cleanupOrphanHbaseEntries(ExeCliInterface *cliInterfa
     {
       char cBuf[1000];
       
-      Int32 len = listArray->at(i).len;
-      char *val = listArray->at(i).val;
-      if (len >= sizeof(cBuf))
-         len = sizeof(cBuf)-1;
-      strncpy(cBuf, val, len);
-      cBuf[len] = '\0';
+      HbaseStr *hbaseStr = &listArray->at(i);
+      if (hbaseStr->len >= sizeof(cBuf))
+         hbaseStr->len = sizeof(cBuf)-1;
+      strncpy(cBuf, hbaseStr->val, hbaseStr->len);
+      cBuf[hbaseStr->len] = '\0';
       char *c = cBuf;
       Lng32 numParts = 0;
       char *parts[4];

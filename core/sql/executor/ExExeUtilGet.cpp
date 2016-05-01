@@ -3080,13 +3080,11 @@ short ExExeUtilGetHbaseObjectsTcb::work()
                 break;
               }
 
-            Int32 len = hbaseTables_->at(currIndex_).len;
-            char *tmp  = hbaseTables_->at(currIndex_).val;
-            len = hbaseTables_->at(currIndex_).len;
-            if (len > ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6)
-                len = ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6; 
-            strncpy(hbaseNameBuf_, tmp, len);
-            hbaseNameBuf_[len] = 0;
+            HbaseStr *hbaseName = &hbaseTables_->at(currIndex_);
+            if (hbaseName->len > ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6)
+                hbaseName->len = ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6; 
+            strncpy(hbaseNameBuf_, hbaseName->val, hbaseName->len);
+            hbaseNameBuf_[hbaseName->len] = 0;
             hbaseName_ = hbaseNameBuf_;
 
             Lng32 numParts = 0;

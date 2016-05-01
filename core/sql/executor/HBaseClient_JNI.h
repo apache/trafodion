@@ -71,6 +71,70 @@ public :
   NAHeap *heap_;
 };
 
+// ===========================================================================
+// ===== The ByteArrayList class implements access to the Java 
+// ===== ByteArrayList class.
+// ===========================================================================
+
+typedef enum {
+  BAL_OK     = JOI_OK
+ ,BAL_FIRST  = JOI_LAST
+ ,BAL_ERROR_ADD_PARAM = BAL_FIRST
+ ,BAL_ERROR_ADD_EXCEPTION
+ ,BAL_ERROR_GET_EXCEPTION
+ ,BAL_LAST
+} BAL_RetCode;
+
+class ByteArrayList : public JavaObjectInterface
+{
+public:
+  ByteArrayList(NAHeap *heap, jobject jObj = NULL)
+    :  JavaObjectInterface(heap, jObj)
+  {}
+
+  // Destructor
+  virtual ~ByteArrayList();
+
+  // Initialize JVM and all the JNI configuration.
+  // Must be called.
+  BAL_RetCode    init();
+
+  BAL_RetCode add(const Text& str);
+
+  // Add a Text vector.
+  BAL_RetCode add(const TextVec& vec);
+
+  BAL_RetCode addElement(const char * data, int keyLength);
+
+  // Get a Text element
+  Text* get(Int32 i);
+
+  // Get the error description.
+  virtual char* getErrorText(BAL_RetCode errEnum);
+
+  Int32 getSize();
+  Int32 getEntrySize(Int32 i);
+  char* getEntry(Int32 i, char* buf, Int32 bufLen, Int32& dataLen);
+
+
+private:
+  enum JAVA_METHODS {
+    JM_CTOR = 0,
+    JM_ADD,
+    JM_GET,
+    JM_GETSIZE,
+    JM_GETENTRY,
+    JM_GETENTRYSIZE,
+    JM_LAST
+  };
+
+  static jclass          javaClass_;
+  static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
+};
+
 
 // ===========================================================================
 // ===== The HTableClient class implements access to the Java 
@@ -79,7 +143,7 @@ public :
 
 typedef enum {
   HTC_OK     = JOI_OK
- ,HTC_FIRST  = JOI_LAST
+ ,HTC_FIRST  = BAL_LAST
  ,HTC_DONE   = HTC_FIRST
  ,HTC_DONE_RESULT = 1000
  ,HTC_DONE_DATA
@@ -502,13 +566,13 @@ public:
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
       HbaseStr columnToCheck, HbaseStr columnValToCheck,
       Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
-  NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName);
-  NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName);
+  NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
+  NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
 
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
-  NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName);
+  NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
   NAString  getLastJavaError();

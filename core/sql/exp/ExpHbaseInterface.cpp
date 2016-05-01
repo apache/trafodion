@@ -1305,13 +1305,13 @@ Lng32 ExpHbaseInterface_JNI::revoke(
 
 NAArray<HbaseStr> *ExpHbaseInterface_JNI::getRegionBeginKeys(const char* tblName)
 { 
-  NAArray<HbaseStr> *retValue = client_->getStartKeys((NAHeap *)heap_, tblName);
+  NAArray<HbaseStr> *retValue = client_->getStartKeys((NAHeap *)heap_, tblName, useTRex_);
   return retValue;
 }
 
 NAArray<HbaseStr> *ExpHbaseInterface_JNI::getRegionEndKeys(const char* tblName)
 { 
-  NAArray<HbaseStr> *retValue = client_->getEndKeys((NAHeap *)heap_, tblName);
+  NAArray<HbaseStr> *retValue = client_->getEndKeys((NAHeap *)heap_, tblName, useTRex_);
   return retValue;
 }
 
