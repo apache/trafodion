@@ -191,6 +191,7 @@ public:
   // PCODE_EVAL - simple PCODE_EVAL for every clause
   // PCODE_OPTIMIZE - PCODE optimization
   // PCODE_SPECIAL_FIELD - generate PCode for special fields
+  // ERROR_CONTINUE - continue processing when encounter error, and save error info
   // INJECT_ERROR - for testing error handling.
   // INJECT_WARNING - for testing error handling.
 
@@ -200,6 +201,7 @@ public:
     PCODE_SPECIAL_FIELDS=0x0008,
     PCODE_NO_LEANER_EXPR=0x0010,
     PCODE_LLO=0x0020,
+    ERROR_CONTINUE=0x0040,
 
     // add new flags here
     INJECT_ERROR=0x2000,
@@ -220,7 +222,6 @@ public:
       pCodeOptFlags_      (0),   //
       pCodeMode_          (0),   //
       length_             (0),   //
-      extraErrorInfo_     (-1),   //
       flags_(0)
   {
     // Initialize eyeCatcher_ here in this form instead of 
@@ -335,9 +336,6 @@ public:
     return length_;
   };
 
-  NA_EIDPROC void setExtraInfo(Int32 v) {extraErrorInfo_ = v;}
-  NA_EIDPROC Int32 getExtraInfo() { return extraErrorInfo_ ; }
-  
   // Packing, unpacking and fixup
   //
   // computeSpaceOnly: if TRUE, then compute space requirement only.
@@ -891,13 +889,12 @@ protected:
 
   UInt32                  pCodeMaxOptBrCnt_;                     // 120-123
   UInt32                  pCodeMaxOptInCnt_;                     // 124-127
-  Int32                   extraErrorInfo_;                       // 128-131
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char                   fillers_[4];                           // 132-135
+  char                   fillers_[8];                           // 128-135
 
   NA_EIDPROC void fixupNextClause();
 

@@ -863,6 +863,12 @@ short FileScan::codeGenForHive(Generator * generator)
   } // for (ii = 0; ii < hdfsVals; ii++)
     
 
+  UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
+  if((hiveScanMode & 2 ) > 0)   //if HIVE_SCAN_SPECIAL_MODE is 2, disable pCode
+  {
+    exp_gen->setPCodeMode(ex_expr::PCODE_NONE);
+  }
+
   // Add ascii columns to the MapTable. After this call the MapTable
   // has ascii values in the work ATP at index asciiTuppIndex.
   exp_gen->processValIdList(
@@ -1131,7 +1137,10 @@ if (hTabStats->isOrcFile())
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
-  UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
+  if((hiveScanMode & 2 ) > 0) 
+  {
+    project_convert_expr->setPCodeMode(ex_expr::ERROR_CONTINUE);
+  }
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(

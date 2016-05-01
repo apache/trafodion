@@ -863,9 +863,15 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 
       if (retcode == ex_expr::EXPR_ERROR)
       {
-        if(clause->getNumOperands()> 1) 
-          setExtraInfo(clause->getOperand(1)->getOffset());  //save the offset of srouce data
-	return retcode;
+        if((getPCodeMode() & ex_expr::ERROR_CONTINUE) > 0)
+        {
+          ExpTupleDesc::setNullValue( op_data[0],
+                                      clause->getOperand(0)->getNullBitIndex(),
+                                      clause->getOperand(0)->getTupleFormat() );
+          retcode = ex_expr::EXPR_OK;
+        }
+        else
+	  return retcode;
       }
 
       // copy result data into result buffer, if generated in an aligned buffer
@@ -2506,8 +2512,6 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       // pCode[0] alone stores the clause ptr. Use PCODEBINARIES_PER_PTR to
       // handle these differences.
       clause = (ex_clause*)*(Long*)&(pCode[0]);
-      if(clause->getNumOperands()> 1)
-        setExtraInfo(clause->getOperand(1)->getOffset()); //save the offset of srouce data
       diagsArea = atp1->getDiagsArea();
       if(!(pCode[PCODEBINARIES_PER_PTR] && clause->processNulls(opData)))
 	retCode = alignAndEval(clause, opDataData, getHeap(), &diagsArea);
@@ -2516,7 +2520,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	atp1->setDiagsArea(diagsArea);
 
       if(retCode == ex_expr::EXPR_ERROR) 
-	return retCode;
+      {
+	  return retCode;
+      }
 
       pCode += 1 + PCODEBINARIES_PER_PTR;
       break;
@@ -3009,7 +3015,6 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                    atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
             {
-		setExtraInfo(srcOffset); //save the offset of srouce data
 		return ex_expr::EXPR_ERROR;
             }
 	  }
@@ -3086,7 +3091,6 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                    atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
             {
-              setExtraInfo(srcOffset);  //save the offset of srouce data
 	      return ex_expr::EXPR_ERROR;
             }
 	  }
@@ -3166,8 +3170,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
             {
-              setExtraInfo(srcOffset); //save the offset of srouce data
-	      return ex_expr::EXPR_ERROR;
+	        return ex_expr::EXPR_ERROR;
             }
 	  }
 	else
