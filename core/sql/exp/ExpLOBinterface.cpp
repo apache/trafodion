@@ -746,7 +746,7 @@ Lng32 ExpLOBInterfaceSelect(void * lobGlob,
   Ex_Lob_Error status;
   Int64 dummyParam=0;
   Int32 dummyParam2 = 0;
-  Int64 cliError;
+  Int64 cliError=0;
   
   LobsOper lo;
   
@@ -828,7 +828,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
   Int64 dummyParam = 0;
   Int32 dummyParam2 = 0;
   Ex_Lob_Error status;
-  Int64 cliError;
+  Int64 cliError=0;
   
   LobsOper lo;
 

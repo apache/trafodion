@@ -239,7 +239,7 @@ sh cp $$MY_SQROOT$$/export/lib/jdbcT2.jar $$MY_SQROOT$$/udr/external_libs;
 -- 'jdbc:t4jdbc://localhost:23400/:'
 prepare s_traf from
 select *
-from udf(jdbc('jdbcT4.jar',
+from udf(jdbc('jdbcT4-${TRAFODION_VER}.jar',
               'org.trafodion.jdbc.t4.T4Driver',
               $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$,
               'any', -- no user id

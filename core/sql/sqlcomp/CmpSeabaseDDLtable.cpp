@@ -2200,11 +2200,13 @@ short CmpSeabaseDDL::createSeabaseTable2(
   short *lobTypList = new (STMTHEAP) short[numCols];
   char  **lobLocList = new (STMTHEAP) char*[numCols];
   Lng32 j = 0;
+  Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
   for (Int32 i = 0; i < colArray.entries(); i++)
     {
       ElemDDLColDef *column = colArray[i];
       
       Lng32 datatype = column->getColumnDataType()->getFSDatatype();
+      
       if ((datatype == REC_BLOB) ||
           (datatype == REC_CLOB))
         {
@@ -2228,7 +2230,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
     }
   
-  Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
 
   const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);

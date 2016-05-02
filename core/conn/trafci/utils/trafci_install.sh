@@ -39,7 +39,7 @@ EXPORTLIBDIR=$MY_SQROOT/export/lib
 CP=/bin/cp
 TEMPSRC=../temp
 
-sed 's/\#\#TRAFCI_CLASSPATH\#\#/\${MY_SQROOT}\/export\/lib\/jdbcT4.jar:\${MY_SQROOT}\/trafci\/lib\/trafci.jar/g' trafci.sh > lnxplatform.sh
+sed 's/\#\#TRAFCI_CLASSPATH\#\#/\${MY_SQROOT}\/export\/lib\/jdbcT4-${TRAFODION_VER}.jar:\${MY_SQROOT}\/trafci\/lib\/trafci.jar/g' trafci.sh > lnxplatform.sh
 mv -f lnxplatform.sh $TEMPSRC/trafci.sh
 	
 echo "Creating trafci install folder in $MY_SQROOT "

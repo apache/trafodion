@@ -11441,28 +11441,26 @@ blob_type : TOK_BLOB blob_optional_left_len_right
 		}
             }
 
-blob_optional_left_len_right: '(' TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE optional_blob_unit ')'
+blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_blob_unit ')'
         {
 	 
-	  Int64 longIntVal = atoInt64($3->data());
+	  Int64 longIntVal = atoInt64($2->data());
 	  if (longIntVal < 0)
 	  {
 	    // Error: Expected an unsigned integer
 	    *SqlParser_Diags << DgSqlCode(-3017) 
-			     << DgString0(*$3);
+			     << DgString0(*$2);
 	  }
 	  
-	  longIntVal = longIntVal * $4;
+	  longIntVal = longIntVal * $3;
 
 	  $$ = (Lng32)longIntVal;
-	  delete $3;
+	  delete $2;
 	 
 	}
 
 	| empty
 	{ 
-
-
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
@@ -11471,15 +11469,15 @@ blob_optional_left_len_right: '(' TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE opti
 	  else
 	    {
 	 
-	      $$ = (Lng32)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE);
-
+	      $$ = (Lng32)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
 
 	    }
         }
 
 /* type int64 */
-optional_blob_unit :   TOK_M {$$ = 1;}
-                     | TOK_G {$$ = 1024;}
+optional_blob_unit :   TOK_K {$$ = 1024;}
+                     | TOK_M {$$ = 1024*1024;}
+                     | TOK_G {$$ = 1024*1024*1024;}
                      | empty {$$ = 1;}
 
 /* type pCharLenSpec */
