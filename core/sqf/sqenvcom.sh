@@ -163,6 +163,7 @@ export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
 export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
+export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
 
 HBVER=""
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
@@ -838,7 +839,7 @@ ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
 $MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\
 $MY_SQROOT/export/lib/${SQL_JAR}:\
 $MY_SQROOT/export/lib/${UTIL_JAR}:\
-$MY_SQROOT/export/lib/jdbcT4.jar:\
+$MY_SQROOT/export/lib/${JDBCT4_JAR}:\
 $MY_SQROOT/export/lib/jdbcT2.jar
 
 

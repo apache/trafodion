@@ -110,7 +110,7 @@ else
   elif [[ -d $DCS_SRC ]]; then
       echo "DCS tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
       echo "Building DCS tar file" | tee -a ${MY_LOG_FILE}
-      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build DCS from $DCS_SRC" | tee -a ${MY_LOG_FILE}
          cd $DCS_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
@@ -193,7 +193,7 @@ else
   elif [[ -d $REST_SRC ]]; then
       echo "REST tar file was not found in $TRAF_TARS" | tee -a ${MY_LOG_FILE}
       echo "Building REST tar file" | tee -a ${MY_LOG_FILE}
-      if [[ -f $MY_SQROOT/export/lib/jdbcT4.jar ]]; then
+      if [[ -f $MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build REST from $REST_SRC" | tee -a ${MY_LOG_FILE}
          cd $REST_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
@@ -329,7 +329,7 @@ cd $PHXDIR
 if [[ \$1 == "t4" ]]
 then
   ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar
 elif [[ \$1 == "t2" ]]
 then
   export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
@@ -494,7 +494,7 @@ else
 cd $JDBCTEST_DIR
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
   --target=localhost:$MY_DCS_MASTER_PORT --dbmaj=\$TRAFODION_VER_MAJOR --dbmin=\$TRAFODION_VER_MINOR \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
+  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar "\$@"
 EOF
     chmod +x $MY_SQROOT/sql/scripts/swjdbc
 

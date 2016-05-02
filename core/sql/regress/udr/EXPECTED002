@@ -6749,7 +6749,7 @@ P            SLICE_TIME                  VAL1_FCI     VAL1_LCI     VAL2_FCI     
 >>-- 'jdbc:t4jdbc://localhost:23400/:'
 >>prepare s_traf from
 +>select *
-+>from udf(jdbc('jdbcT4.jar',
++>from udf(jdbc('jdbcT4-${TRAFODION_VER}.jar',
 +>              'org.trafodion.jdbc.t4.T4Driver',
 +>              $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$,
 +>              'any', -- no user id

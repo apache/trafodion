@@ -18,7 +18,9 @@
 * specific language governing permissions and limitations
 * under the License.
 *
-* @@@ END COPYRIGHT @@@                                                          */
+* @@@ END COPYRIGHT @@@
+*/
+
 package org.trafodion.jdbc.t4;
 
 import java.sql.SQLException;
@@ -27,7 +29,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class T4DriverTest extends BaseTest {
+public class T4DriverTest {
 	private static T4Driver driver;
 
 	@BeforeClass
@@ -38,9 +40,9 @@ public class T4DriverTest extends BaseTest {
 
 	@Test
 	public void acceptsURL() throws SQLException {
-		String url = "jdbc:t4jdbc://192.168.1.103:37800/:";
+		String url = "jdbc:t4jdbc://localhost:23400/:";
 		Assert.assertTrue(driver.acceptsURL(url));
-		url = "jdbc:abc://192.168.1.103:37800/:";
+		url = "jdbc:abc://localhost:23400/:";
 		Assert.assertFalse(driver.acceptsURL(url));
 	}
 
