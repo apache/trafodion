@@ -302,6 +302,8 @@ public:
   virtual Lng32 initClause();
   void setLobMaxSize(Int64 maxsize) { lobMaxSize_ = maxsize;}
   Int64 getLobMaxSize() { return lobMaxSize_;}
+  void setLobSize(Int64 lobsize) { lobSize_ = lobsize;}
+  Int64 getLobSize() { return lobSize_;}
   void setLobMaxChunkMemSize(Int64 maxsize) { lobMaxChunkMemSize_ = maxsize;}
   Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_;}
   void setLobGCLimit(Int64 gclimit) { lobGCLimit_ = gclimit;}
@@ -391,7 +393,7 @@ protected:
 
   short descSchNameLen_;
   char  descSchName_[510];
-  
+  Int64 lobSize_;
   Int64 lobMaxSize_;
   Int64 lobMaxChunkMemSize_;
   Int64 lobGCLimit_;
