@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Launch trafci
@@ -58,7 +58,7 @@ image:{images}/shortct1.jpg[width=400,height=400,alt="Select trafci.cmd file"]
 image:{images}/shortct2.jpg[width=400,height=400,alt="Select shortcut from menu"]
 +
 For the locations of the installed trafci software files,
-see the http://trafodion.incubator.apache.org/docs/client_install/latest/index.html[_Trafodion Client Installation Guide_].
+see the {docs-url}/client_install/index.html[_{project-name} Client Installation Guide_].
 
 3.  Type a name for the shortcut and click *Finish*:
 +
@@ -97,7 +97,7 @@ In the terminal window, enter:
 
 _<trafci-installation-directory>_ is the directory where you installed the trafci software files.
 For more information,
-see the http://trafodion.incubator.apache.org/docs/latest/client_install/index.html[_Trafodion Client Installation Guide_].
+see the {docs-url}/client_install/index.html[_{project-name} Client Installation Guide_].
 
 === Set `trafci.sh` PATH
 
@@ -119,7 +119,7 @@ export PATH=/<trafci-installation-directory>/trafci/bin/: ...
 +
 _trafci-installation-directory_ is the directory where you installed the trafci software files.
 For more information, 
-see the http://trafodion.incubator.apache.org/docs/latest/client_install/index.html[_Trafodion Client Installation Guide_].
+see the {docs-url}/client_install/index.html[_{project-name} Client Installation Guide_].
 Check that no space is after the colon (`:`) in the path.
 +
 NOTE: In the C shell, use the `setenv` command instead of `export`.
@@ -335,7 +335,7 @@ Connected to Trafodion SQL>
 ** For a session started using redirected or piped input.
 
 In these cases, trafci returns an error message and closes the session. You must re-launch the trafci session
-to connect to the Trafodion database.
+to connect to the {project-name} database.
 
 <<<
 [[trafci_option_params]]
@@ -391,7 +391,7 @@ For more information, see <<trafci_run_script, Run Script When Launching trafci>
  +
 For more information, see <<trafci_noconnect, Launch trafci Without Connecting to the Database>>.
 
-| `-version`                                       | Displays the build version of trafci and the Trafodion JDBC Type 4
+| `-version`                                       | Displays the build version of trafci and the {project-name} JDBC Type 4
 Driver. Upon completion of the display, the client exits. +
  +
 If any other parameters are included with the `-version` parameter, they are ignored. +
@@ -543,7 +543,7 @@ SQL>SET SQLPROMPT *
 [[trafci_noconnect]]
 == Launch trafci Without Connecting to the Database
 
-To start trafci without connecting to a Trafodion database, use the `-noconnect option`.
+To start trafci without connecting to a {project-name} database, use the `-noconnect option`.
 See <<cmd_disconnect, `DISCONNECT` command>> for a list of interface commands that can
 be run without a connection.
 
@@ -566,7 +566,7 @@ cd <trafci-installation-directory>/trafci/bin
 <<<
 [[trafci_with_version]]
 == Run trafci With `-version`
-To display the build version of trafci and the Trafodion JDBC Type 4 Driver, use the `-version`
+To display the build version of trafci and the {project-name} JDBC Type 4 Driver, use the `-version`
 option. If other parameters are included with the `-version` parameter, they are ignored.
 
 *Example*

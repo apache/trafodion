@@ -20,14 +20,14 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[introduction]]
 = Introduction
 
 Refer to the 
-http://trafodion.apache.org/docs/sql_reference/index.html#control_query_cancel_statement[Trafodion SQL Reference Manual]
+http://trafodion.apache.org/docs/sql_reference/index.html#control_query_cancel_statement[{project-name} SQL Reference Manual]
 full documentation of the CQD (CONTROL QUERY DEFAULT) statement.
 
 The CONTROL QUERY DEFAULT statement changes the default settings for the current process. You can execute
@@ -83,7 +83,7 @@ The following information is provided for each CQD:
  +
 &#8226; Values, in the form of a character string, that specify the applicable attribute values for the CQD. +
 &#8226; The default attribute value. +
-&#8226; If applicable, the Trafodion release in which the attribute values or default changed.
+&#8226; If applicable, the {project-name} release in which the attribute values or default changed.
 | *Usage*                     | Describes the conditions when the CQD is helpful, and how to detect the conditions.
 | *Production Usage*          | Identifies when the CQD is not safe to be used as a permanent setting in production. 
 | *Impact*                    | Describes any positive and negative implications of using the CQD.
@@ -97,6 +97,6 @@ The following information is provided for each CQD:
 NOTE: This level indicates that the CQD can be used at the Query, Session or Service level as long as you fully understands the scope of the impact of the CQD.
 | *Conflicts/Synergies*       | Describes CQDs that are in conflict with or can be used in conjunction with the CQD.
 | *Real Problem Addressed*    | Describes any design or solution that the CQD may be a workaround for and how you can directly address the real problem.
-| *Introduced In Release*     | Indicates the Trafodion release when the CQD was introduced.
+| *Introduced In Release*     | Indicates the {project-name} release when the CQD was introduced.
 | *Deprecated In Release*     | Indicates in what release the CQD was deprecated.
 |===

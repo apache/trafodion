@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[optimizer-messages]]
@@ -51,7 +51,7 @@ The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid values. If
 *Cause:* You have manually modified the metadata table, and now it
 contains invalid values.
 
-*Effect:* Trafodion is unable to complete
+*Effect:* {project-name} is unable to complete
 compilation.
 
 *Recovery:* Undo your changes using the CLEAR option in UPDATE
@@ -68,7 +68,7 @@ The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid boundary v
 *Cause:* You have manually modified the metadata table, and now it
 contains an invalid boundary value.
 
-*Effect:* The Trafodion database uses default histograms to compile the
+*Effect:* The {project-name} database uses default histograms to compile the
 query. This is a warning message.
 
 *Recovery:* Undo your changes using the CLEAR option in UPDATE

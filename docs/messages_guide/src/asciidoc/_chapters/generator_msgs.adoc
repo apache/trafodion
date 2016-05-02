@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[generator-messages]]
@@ -51,7 +51,7 @@ A plan using cluster sampling could not be produced for this query.
 result set and only if there is no WHERE clause in the SELECT statement.
 This query does not satisfy these conditions.
 
-*Effect:* Trafodion is unable to compile the query.
+*Effect:* {project-name} is unable to compile the query.
 
 *Recovery:* Rewrite the query (for example, using nested queries) so
 that cluster sampling is performed on a base table with no WHERE-clause

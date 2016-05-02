@@ -20,19 +20,18 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
-<<<
 [[olap_functions]]
-=== OLAP Functions
+= OLAP Functions
 
 This section describes the syntax and semantics of the On Line
 Analytical Process (OLAP) window functions. The OLAP window functions
 are ANSI compliant.
 
 [[considerations_for_window_functions]]
-=== Considerations for Window Functions
+== Considerations for Window Functions
 
 These considerations apply to all window functions.
 
@@ -63,7 +62,7 @@ CURRENT ROW".
 "ROWS _preceding-row_" is equivalent to "ROWS BETWEEN _preceding-row_
 AND CURRENT ROW".
 
-==== Nulls
+=== Nulls
 
 All nulls are eliminated before the function is applied to the set of
 values. If the window contains all NULL values, the result of the window
@@ -136,7 +135,7 @@ GROUP BY num, workgroupnum, annualsalary;
 
 These limitations apply to all window functions.
 
-* The ANSI _window-clause_ is not supported by Trafodion. Only the
+* The ANSI _window-clause_ is not supported by {project-name}. Only the
 _inline-window-specification_ is supported. An attempt to use an ANSI
 _window-clause_ will result in a syntax error.
 
@@ -149,10 +148,10 @@ term, either explicitly or implicitly will result in the "4343" error
 message.
 
 * The window frame units can only be ROWS. RANGE is not supported by
-Trafodion. An attempt to use RANGE will result in a syntax error.
+{project-name}. An attempt to use RANGE will result in a syntax error.
 
 * The ANSI _window-frame-exclusion-specification_ is not supported by
-Trafodion. An attempt to use a _window-frame-exclusion-specification_
+{project-name}. An attempt to use a _window-frame-exclusion-specification_
 will result in a syntax error.
 
 * Multiple _inline-window-specifications_ in a single SELECT clause are
@@ -163,13 +162,13 @@ _inline-window-specifications_ in a single SELECT clause will result in
 the "4340" error message.
 
 * The ANSI _null-ordering-specification_ within the ORDER BY clause is
-not supported by Trafodion. Null values will always be sorted as if they
+not supported by {project-name}. Null values will always be sorted as if they
 are greater than all non-null values. This is slightly different than a
 null ordering of NULLS LAST. An attempt to use a
 _null-ordering-specification_ will result in a syntax error.
 
 * The ANSI _filter-clause_ is not supported for window functions by
-Trafodion. The _filter-clause_ applies to all aggregate functions
+{project-name}. The _filter-clause_ applies to all aggregate functions
 (grouped and windowed) and that the _filter-clause_ is not currently
 supported for grouped aggregate functions. An attempt to use a
 _filter-clause_ will result in a syntax error.

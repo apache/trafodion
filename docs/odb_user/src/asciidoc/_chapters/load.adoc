@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Load, Extract, Copy
@@ -41,7 +41,7 @@ This command:
 * using `|` (vertical bar) as a field separator (`fs=\|`)
 * using `1000 rows` as row-set buffer (`rows=1000`)
 * using `UPSERT USING LOAD` syntax to achieve better throughput as described in
-http://trafodion.incubator.apache.org/docs/load_transform/index.html[Trafodion Load and Transform Guide]
+{docs-url}/load_transform/index.html[{project-name} Load and Transform Guide]
 * truncating the target table before loading (`truncate`)
 * using `4 parallel threads` to load the target table (`parallel=4`)
 
@@ -162,7 +162,7 @@ specified, then odb loads node-attributes values.
 odb loads the first node/attribute to the first column, the second node/attribute to the second column and so on without checking node/attribute names.
 | `xmldump` | odb does not load the XML file content. Instead, XML attribute/tage names are printed to standard output so you can check
 what is going to be loaded.
-| `loadcmd` | SQL operation to be used for load. (Default: `INSERT`). `UPSERT` and `UPSERT USING LOAD` are also available for Trafodion.
+| `loadcmd` | SQL operation to be used for load. (Default: `INSERT`). `UPSERT` and `UPSERT USING LOAD` are also available for {project-name}.
 |===
 
 You can load multiple files using different `-l` options. By default odb creates as many threads (and ODBC connections) as the sum of
@@ -558,7 +558,7 @@ has generated and loaded 1M rows of _realistic_ data in about ten seconds:
 == Load Default Values
 
 The simpler way to load database generated defaults is to ignore the associated columns in the map file. For example, suppose you have a
-table like this under Trafodion:
+table like this under {project-name}:
 
 ```
 create table TRAFODION.maurizio.dtest
@@ -928,7 +928,7 @@ features *for each extraction thread*. +
  +
 *Examples* +
  +
-1. You want *Trafodion* to ignore missing stats warning. Then you can run via `mpre` a SQL script containing: +
+1. You want *{project-name}* to ignore missing stats warning. Then you can run via `mpre` a SQL script containing: +
  +
 `control query default HIST_MISSING_STATS_WARNING_LEVEL '0';` +
  +
@@ -975,7 +975,7 @@ Please note the `src=-tlist.txt`.
 <<<
 == Copy Tables From One Database to Another
 
-odb can directly copy tables from one data-source to another. For example, from Trafodion to Teradata or vice-versa).
+odb can directly copy tables from one data-source to another. For example, from {project-name} to Teradata or vice-versa).
 Data *_never lands to disk_* when using this option.
 
 The target table has to be be created in advance and should have a compatible structure.

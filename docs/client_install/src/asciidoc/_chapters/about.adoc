@@ -20,17 +20,17 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = About This Document
-This manual describes how to install and configure client applications that enable you to connect to and use a Trafodion database.
+This manual describes how to install and configure client applications that enable you to connect to and use a {project-name} database.
 
 == Intended Audience
-This manual is intended for users who want to connect to and use a Trafodion database.
+This manual is intended for users who want to connect to and use a {project-name} database.
 
 == New and Changed Information
-This manual shows updated versions for Trafodion Release {project-version}. It also provides instructions on how to download and install <<odb,Trafodion odb>>, a
+This manual shows updated versions for {project-name} Release {project-version}. It also provides instructions on how to download and install <<odb,{project-name} odb>>, a
 new multi-threaded, ODBC-based command-line tool for parallel data loading and extracting.
 
 == Notation Conventions
@@ -160,11 +160,7 @@ match-value [NOT] LIKE _pattern
 ```
 
 == Comments Encouraged
-The Trafodion community encourages your comments concerning this document. We are committed to providing documentation that meets your
-needs. Send any errors found, suggestions for improvement, or compliments to:
-
-issues@trafodion.incubator.apache.org
+We encourage your comments concerning this document. We are committed to providing documentation that meets your
+needs. Send any errors found, suggestions for improvement, or compliments to {project-support}.
 
 Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
-Or, even better, join our community and help us improve our documentation. Please refer to 
-http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for details.

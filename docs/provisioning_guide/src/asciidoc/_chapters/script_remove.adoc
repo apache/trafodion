@@ -20,19 +20,19 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[remove]]
 = Remove
-You use the Trafodion Provisioning User for these instructions.	
+You use the {project-name} Provisioning User for these instructions.	
 
-NOTE: You do not need to use the `trafodion_uninstaller` script if upgrading Trafodion. Instead, use the `trafodion_install` script,
-which automatically upgrades the version of Trafodion. Please refer to the <<install,Install>> chapter for further instructions.
+NOTE: You do not need to use the `trafodion_uninstaller` script if upgrading {project-name}. Instead, use the `trafodion_install` script,
+which automatically upgrades the version of {project-name}. Please refer to the <<install,Install>> chapter for further instructions.
 
-Run the commands from the first node of the cluster. Do not run them from a machine that is not part of the Trafodion cluster.
+Run the commands from the first node of the cluster. Do not run them from a machine that is not part of the {project-name} cluster.
 
-== Stop Trafodion
+== Stop {project-name}
 
 Do the following:
 
@@ -86,17 +86,17 @@ Mon Feb 15 07:49:26 UTC 2016
 
 == Run `trafodion_uninstaller`
 
-The `trafodion_uninstaller` completely removes Trafodion.
+The `trafodion_uninstaller` completely removes {project-name}.
 
 *Example*
 
 ```
 [admin@trafodion-1 ~]$ cd $HOME/trafodion-installer/installer
 [admin@trafodion-1 installer]$ ./trafodion_uninstaller
-Do you want to uninstall Trafodion (Everything will be removed)? (Y/N) y
+Do you want to uninstall {project-name} (Everything will be removed)? (Y/N) y
 ***INFO: testing sudo access
 ***INFO: NOTE, rpms that were installed will not be removed.
-***INFO: stopping Trafodion instance
+***INFO: stopping {project-name} instance
 SQ environment is not up.
 Going to execute ckillall
 
@@ -109,10 +109,10 @@ pdsh@trafodion-1: trafodion-1: ssh exited with exit code 1
 pdsh@trafodion-1: trafodion-2: ssh exited with exit code 1
 pdsh@trafodion-1: trafodion-1: ssh exited with exit code 1
 pdsh@trafodion-1: trafodion-2: ssh exited with exit code 1
-***INFO remove the Trafodion userid and group
+***INFO remove the {project-name} userid and group
 ***INFO: removing all files from /home/trafodion/apache-trafodion-1.3.0-incubating-bin
 ***INFO: removing all files from /usr/lib/trafodion and /var/log/trafodion
 ***INFO: removing all files from /etc/trafodion
-***INFO: Trafodion uninstall complete.
+***INFO: {project-name} uninstall complete.
 [admin@trafodion-1 installer]$
 ```

@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 == A. Troubleshooting
@@ -89,7 +89,7 @@ then you should use an *empty string* as catalog name.
 +
 NOTE: Some flawed ODBC Drivers unfortunately want NULL here &#8212; instead of *empty strings* as it should be.
 
-5.  You can have errors loading `TIME(N)` fields with` N>0` under Trafodion because the
+5.  You can have errors loading `TIME(N)` fields with` N>0` under {project-name} because the
 ODBC Driver does not manage the field display size when `N>0`.
 6.  If you have problems starting odb on Unix/Linux check:
 +

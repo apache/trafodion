@@ -28,7 +28,7 @@
 
 == Install trafci
 To install trafci on a client workstation, follow the procedures in the 
-http://trafodion.incubator.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
+{docs-url}/client_install/index.html[{project-name} Client Installation Guide].
 Ensure that you set up the Java Path per the instructions in that guide.
 
 == Test trafci Launch
@@ -45,5 +45,5 @@ image:{images}/launch02.jpg[image]
 * The Java path is set to the correct location. See <<install_verify, Verify and Set the Java Path>>.
 * You installed the trafci and JDBC software files correctly. 
 
-See the http://trafodion.incubator.apache.org/docs/latest/client_install/index.html[Trafodion Client Installation Guide].
+See the {docs-url}/client_install/index.html[{project-name} Client Installation Guide].
 

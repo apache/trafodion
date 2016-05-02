@@ -49,7 +49,7 @@ Jython open source extensions. To download them manually, see the `README` in th
 [[trafci-installation-instructions]]
 == Installation Instructions
 
-You download and extract the Trafodion client package using the instructions in <<introduction-download, Download Installation Package>> above.
+You download and extract the {project-name} client package using the instructions in <<introduction-download, Download Installation Package>> above.
 
 1.  Change the directory to the `clients` subdirectory.
 
@@ -124,7 +124,7 @@ where you will install trafci.
 image:{images}/InstallerWizardPaths.jpg[trafci select path dialog]
 
 3.  To locate the JDBC driver JAR file, click *Browse* next to the *JDBC Type 4 Driver JAR File*.
-4.  In the *Select JDBC Type 4 Driver JAR File* dialog box, navigate to and select the lib folder of the Trafodion JDBC driver, and then click *Open*.
+4.  In the *Select JDBC Type 4 Driver JAR File* dialog box, navigate to and select the lib folder of the {project-name} JDBC driver, and then click *Open*.
 5.  Select `jdbcT4.jar` so that it appears in the *File Name* box, and then click *Select*. 
 +
 The Installer Wizard now displays the path of the JDBC driver JAR file.
@@ -349,9 +349,9 @@ After downloading and running the installer file, verify that the trafci softwar
 | bin          | trafci            |
 |              | trafci.cmd        | Windows launch file.
 |              | trafci.pl         | Perl wrapper script. _trafci-perl.pl_ is renamed _trafci.pl_. To run this script, see the
-http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+{docs-url}/command_interface/index.html[_Trafodion Command Interface Guide_].
 |              | trafci.py         | Python wrapper script. trafci-python.py is renamed as trafci.py. To run this script, see the
-http://trafodion.incubator.apache.com/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+{docs-url}/command_interface/index.html[_Trafodion Command Interface Guide_].
 |              | trafci.sh         | Linux launch file.
 |              | trafci-perl.pl    | Perl wrapper script. This script has been modified to invoke trafci.pl. This script is retained for backward compatibility.
 |              | trafci-python.py  | Python wrapper script. This script has been modified to invoke trafci.py. This script is retained for backward compatibility.
@@ -384,7 +384,7 @@ momentarily in the trafci window before the trafci window disappears:
 ```
 
 For information about setting up and using trafci, such as choosing the look and feel of the interface or presetting launch parameters, see the
-http://trafodion.incubator.apache.com/docs/command_interface/index.html[Trafodion Command Interface Guide].
+{docs-url}/command_interface/index.html[Trafodion Command Interface Guide].
 
 <<<
 === Windows Example

@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Basic Concepts
@@ -107,7 +107,7 @@ Data loading options [connection required]:
       * pc: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>
       * direct: only for Vertica databases
       * bpc: default 1,bpwc: default 4
-      * loadcmd: default IN. only for Trafodion databases
+      * loadcmd: default IN. only for {project-name} databases
 Data extraction options [connection required]:
    -e {src={table|-file}|sql=<custom sql>}:tgt=[+]file[:pwhere=where_cond]
       [:fs=fieldsep][:rs=recsep][:sq=stringqualifier][:ec=escape_char][:soe]
@@ -139,7 +139,7 @@ Data copy options [connection required]:
        * ucs2toutf8: default is 'skip'
        * roe: default 3 if no arguments
        * bpc: default 1,bpwc: default 4
-       * loadcmd: default IN. only for Trafodion databases
+       * loadcmd: default IN. only for {project-name} databases
 Data pipe options [connection required]:
    -pipe sql={[sqlcmd]|@sqlscript|-file}:tgtsql={@sqlfile|[sqlcmd]}[:soe]
       [:rows=#rowset][:nomark][:max=#max_rec][:bpc=#][:bpwc=#][:errdmp=file]
@@ -314,7 +314,7 @@ Describing: TRAFODION.MAURIZIO.T11
 
 The `INDEX` column (when using type `T`) contains the following information:
 
-* `name` of the `INDEX` (in Trafodion indexes having the same name as the table are Primary Keys).
+* `name` of the `INDEX` (in {project-name} indexes having the same name as the table are Primary Keys).
 * `ordinal number` to identify the order of that field in the index.
 * `(U)nique o (M)ultiple` values allowed.
 * `(+)` means that more than one index includes that field.
@@ -806,7 +806,7 @@ If you have 16 threads and `–d MYDSN`:
 | `15`        | `MYDSN8`           | `MYDSN8`
 |===
 
-This technique has been used to maximize extraction throughput from a multi-segment Trafodion system.
+This technique has been used to maximize extraction throughput from a multi-segment {project-name} system.
 Each (local) Data Source was *linked* to a corresponding remote Data Source extracting its own data through its
 own network interface card.
 
