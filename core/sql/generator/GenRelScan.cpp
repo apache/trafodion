@@ -1313,7 +1313,7 @@ void populateRangeDescForBeginKey(char* buf, Int32 len, struct desc_struct* targ
 void populateRegionDescAsRANGE(char* buf, Int32 len, struct desc_struct* target, NAMemory*);
 
 desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
-						 NABoolean isRW, NABoolean isCW, ByteArrayList* beginKeys)
+						 NABoolean isRW, NABoolean isCW, NAArray<HbaseStr>* beginKeys)
 {
   desc_struct * table_desc = NULL;
 
