@@ -153,9 +153,6 @@ case $startStop in
     rest_rotate_log $logout
     rest_rotate_log $loggc
     echo starting $command, logging to $logout
-    # Add to the command log file vital stats on our environment.
-    echo "`date` Starting $command on `hostname`" >> $loglog
-    echo "`ulimit -a`" >> $loglog 2>&1
     nohup nice -n $REST_NICENESS "$REST_HOME"/bin/rest \
         --config "${REST_CONF_DIR}" \
         $command "$@" $startStop > "$logout" 2>&1 < /dev/null &
