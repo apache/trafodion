@@ -1632,7 +1632,8 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
 			       Space * space,
 			       short num_operands, NABoolean checkTruncErr,
                                NABoolean reverseDataErrorConversionFlag,
-                               NABoolean noStringTruncWarnings)
+                               NABoolean noStringTruncWarnings,
+                               NABoolean convertToNullWhenErrorFlag)
      : ex_clause (ex_clause::CONV_TYPE, oper_type, num_operands, attr, space),
        case_index(CONV_UNKNOWN),
        lastVOAoffset_(0),
@@ -1652,8 +1653,14 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
   if (reverseDataErrorConversionFlag)
     flags_ |= REVERSE_DATA_ERROR_CONVERSION_FLAG;
 
+  if (convertToNullWhenErrorFlag)
+    flags_ |= CONV_TO_NULL_WHEN_ERROR;
+
   if (noStringTruncWarnings)
+{
+printf("noStringTruncWarnings\n");
     setNoTruncationWarningsFlag();
+}
 
   set_case_index(); 
 }
