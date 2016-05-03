@@ -2961,7 +2961,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
 	DEF_ASSIGN(UInt32, srcOffset, 3);
 	DEF_ASSIGN(UInt32, srcVoaOffset, 4);
-	char *nullStart = src;
+
         src += ExpTupleDesc::getVarOffset(src,
                                           srcOffset, 
                                           srcVoaOffset,
