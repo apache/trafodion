@@ -10473,7 +10473,18 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
             *dataConversionErrorFlag = -(*dataConversionErrorFlag);
           }
       }
-//    return retcode;
+
+    if( retcode != ex_expr::EXPR_OK && ( flags_ & CONV_TO_NULL_WHEN_ERROR ) != 0)
+    {
+      //move null to target
+      if(tgt->getNullFlag())
+      {
+        ExpTupleDesc::setNullValue( op_data[-2*MAX_OPERANDS],
+                                    tgt->getNullBitIndex(),
+                                    tgt->getTupleFormat() );
+        retcode = ex_expr::EXPR_OK;
+      }
+    } 
   };
   }; // switch
 

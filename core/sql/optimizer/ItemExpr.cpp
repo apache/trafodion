@@ -12034,6 +12034,7 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
     }
              
   noStringTruncationWarnings_ = noStringTrunWarnings;
+  convertNullWhenError_ = FALSE;
 }
 
 Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
@@ -12047,6 +12048,7 @@ Cast::Cast(ItemExpr *val1Ptr, ItemExpr *errorOutPtr, const NAType *type,
 {
   checkForTruncation_ = checkForTrunc;
   noStringTruncationWarnings_ = noStringTrunWarnings;
+  convertNullWhenError_ = FALSE;
 }
 
 Cast::~Cast() {}
