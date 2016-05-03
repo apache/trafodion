@@ -825,11 +825,10 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
       retcode = clause->useProcessNulls()
 	      ? clause->processNulls(op_data, getHeap(), &diagsArea)
               : ex_expr::EXPR_OK;
-
       if (retcode == ex_expr::EXPR_OK)				// do the work
 	retcode = clause->eval(&op_data[2 * ex_clause::MAX_OPERANDS],
 			       getHeap(),
-			       &diagsArea);
+			       &diagsArea );
 
       if (retcode == ex_expr::EXPR_OK &&
           clause->getOperType()== ITM_CONVERT &&
@@ -862,17 +861,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 	atp1->setDiagsArea(diagsArea);
 
       if (retcode == ex_expr::EXPR_ERROR)
-      {
-        if((getPCodeMode() & ex_expr::ERROR_CONTINUE) > 0)
-        {
-          ExpTupleDesc::setNullValue( op_data[0],
-                                      clause->getOperand(0)->getNullBitIndex(),
-                                      clause->getOperand(0)->getTupleFormat() );
-          retcode = ex_expr::EXPR_OK;
-        }
-        else
-	  return retcode;
-      }
+          return retcode;
 
       // copy result data into result buffer, if generated in an aligned buffer
       if (result_data)
@@ -2521,7 +2510,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	atp1->setDiagsArea(diagsArea);
 
       if(retCode == ex_expr::EXPR_ERROR) 
-	  return retCode;
+	return retCode;
 
       pCode += 1 + PCODEBINARIES_PER_PTR;
       break;
@@ -2963,7 +2952,6 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	Int32 srcLen = 0;
 	PTR_DEF_ASSIGN(char, dst, 0);
 	BASE_PTR_DEF_ASSIGN(char, src, 2);
-	BASE_PTR_DEF_ASSIGN(char, rowstart, 0);
 
 	DEF_ASSIGN(Int32,comboLen1, 6);
         char* comboPtr1 = (char*)&comboLen1;
@@ -2981,6 +2969,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
                                          );
 
         srcLen = ExpTupleDesc::getVarLength(src, srcVCIndLen);
+
 	// ptr to source value is stored at src as an Int64.
 	Int64 ptrVal = *(Int64*)(src + srcVCIndLen);
 	char * ptrSrc = (char*)ptrVal;
@@ -3014,7 +3003,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
             if (diagsArea != atp1->getDiagsArea())
                    atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
-		return ex_expr::EXPR_ERROR;
+	      return ex_expr::EXPR_ERROR;
 	  }
 
 	if (pCodeOpc == PCIT::CONVVCPTR_MBIN64S_MATTR5_IBIN32S)
@@ -3165,7 +3154,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
             if (diagsArea != atp1->getDiagsArea())
                atp1->setDiagsArea(diagsArea);
 	    if (er == ex_expr::EXPR_ERROR) 
-	        return ex_expr::EXPR_ERROR;
+	      return ex_expr::EXPR_ERROR;
 	  }
 	else
 	  {

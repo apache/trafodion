@@ -191,7 +191,6 @@ public:
   // PCODE_EVAL - simple PCODE_EVAL for every clause
   // PCODE_OPTIMIZE - PCODE optimization
   // PCODE_SPECIAL_FIELD - generate PCode for special fields
-  // ERROR_CONTINUE - continue processing when encounter error, and save error info
   // INJECT_ERROR - for testing error handling.
   // INJECT_WARNING - for testing error handling.
 
@@ -201,7 +200,6 @@ public:
     PCODE_SPECIAL_FIELDS=0x0008,
     PCODE_NO_LEANER_EXPR=0x0010,
     PCODE_LLO=0x0020,
-    ERROR_CONTINUE=0x0040,
 
     // add new flags here
     INJECT_ERROR=0x2000,
@@ -335,7 +333,7 @@ public:
   NA_EIDPROC Lng32 getLength(){
     return length_;
   };
-
+  
   // Packing, unpacking and fixup
   //
   // computeSpaceOnly: if TRUE, then compute space requirement only.

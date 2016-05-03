@@ -10313,7 +10313,7 @@ convDoIt(char * source,
       
 ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 					      CollHeap *heap,
-					      ComDiagsArea** diagsArea) {
+					      ComDiagsArea** diagsArea ) {
   Attributes * tgt = getOperand(0);
   Attributes * src = getOperand(1);
   ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;  
@@ -10473,6 +10473,18 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
             *dataConversionErrorFlag = -(*dataConversionErrorFlag);
           }
       }
+
+    if( retcode != ex_expr::EXPR_OK && ( flags_ & CONV_TO_NULL_WHEN_ERROR ) != 0)
+    {
+      //move null to target
+      if(tgt->getNullFlag())
+      {
+        ExpTupleDesc::setNullValue( op_data[-2*MAX_OPERANDS],
+                                  tgt->getNullBitIndex(),
+                                  tgt->getTupleFormat() );
+        retcode = ex_expr::EXPR_OK;
+      }
+    }
 //    return retcode;
   };
   }; // switch

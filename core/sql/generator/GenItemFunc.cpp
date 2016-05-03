@@ -1264,13 +1264,30 @@ short Cast::codeGen(Generator * generator)
 #pragma warn(1506)  // warning elimination 
     }
 #pragma nowarn(1506)   // warning elimination 		      
-  ex_conv_clause * conv_clause =
+ 
+  ex_conv_clause * conv_clause;
+  if (attr[0]->getNullFlag()) 
+  {
+    conv_clause =
 	  new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
 						    generator->getSpace(),
 						    1 + getArity(), 
   						    checkTruncationError(),
                                                     reverseDataErrorConversionFlag_,
-                                                    noStringTruncationWarnings());
+                                                    noStringTruncationWarnings(),
+                                                    convertNullWhenError());
+  }
+  else
+    conv_clause =
+	  new(generator->getSpace()) ex_conv_clause(getOperatorType(), attr,
+						    generator->getSpace(),
+						    1 + getArity(), 
+  						    checkTruncationError(),
+                                                    reverseDataErrorConversionFlag_,
+                                                    noStringTruncationWarnings(),
+                                                    FALSE);
+
+
 #pragma warn(1506)  // warning elimination 
 
   conv_clause->setTreatAllSpacesAsZero(treatAllSpacesAsZero());

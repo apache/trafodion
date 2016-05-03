@@ -204,6 +204,8 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   CollHeap * h = generator->wHeap();
   bool needTranslate = FALSE;
 
+  UInt32 hiveScanMode = CmpCommon::getDefaultLong(HIVE_SCAN_SPECIAL_MODE);
+
   // if this is an upshifted datatype, remove the upshift attr.
   // We dont want to upshift data during retrievals or while building keys.
   // Data is only upshifted during insert or updates.
@@ -243,6 +245,9 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
       castValue = new(h) Cast(asciiValue, newGivenType);
       if (castValue)
 	{
+          if(( hiveScanMode & 2 ) >0 )
+            ((Cast*)castValue)->setConvertNullWhenError(TRUE);
+
 	  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
 
 	  if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
@@ -1140,10 +1145,7 @@ if (hTabStats->isOrcFile())
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
-  if((hiveScanMode & 2 ) > 0)  //if HIVE_SCAN_SPECIAL_MODE is 2, set expression mode to ERROR_CONTUNE
-  {
-    project_convert_expr->setPCodeMode(ex_expr::ERROR_CONTINUE);
-  }
+
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(

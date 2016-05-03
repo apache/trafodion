@@ -1565,7 +1565,9 @@ public:
                             short num_operands = 2, 
 			    NABoolean checkTruncErr = FALSE,
                             NABoolean reverseDataErrorConversionFlag = FALSE,
-                            NABoolean noStringTruncWarnings = FALSE);
+                            NABoolean noStringTruncWarnings = FALSE, 
+                            NABoolean convertToNullWhenErrorFlag = FALSE
+                            );
 
 
   // Values used for dataConvErrorFlag.
@@ -1722,7 +1724,10 @@ private:
       NO_DATETIME_VALIDATION             = 0x0008,
 
       // source is a varchar value which is a pointer to the actual data.
-      SRC_IS_VARCHAR_PTR                     = 0x0010
+      SRC_IS_VARCHAR_PTR                     = 0x0010,
+
+      // when convert into error, suppress error, move null into convert target
+      CONV_TO_NULL_WHEN_ERROR                = 0x0020
     };
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.

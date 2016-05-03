@@ -1514,12 +1514,12 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
   if (convertExpr())
   {
-      ex_expr::exp_return_type evalRetCode =
-        convertExpr()->eval(workAtp_, workAtp_);
-      if (evalRetCode == ex_expr::EXPR_ERROR)
-         err = -1;
-      else
-        err = 0;
+    ex_expr::exp_return_type evalRetCode =
+      convertExpr()->eval(workAtp_, workAtp_);
+    if (evalRetCode == ex_expr::EXPR_ERROR)
+      err = -1;
+    else
+      err = 0;
   }
   if (sourceRowEnd)
      return sourceRowEnd+1;
