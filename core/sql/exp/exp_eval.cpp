@@ -825,10 +825,11 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
       retcode = clause->useProcessNulls()
 	      ? clause->processNulls(op_data, getHeap(), &diagsArea)
               : ex_expr::EXPR_OK;
+
       if (retcode == ex_expr::EXPR_OK)				// do the work
 	retcode = clause->eval(&op_data[2 * ex_clause::MAX_OPERANDS],
 			       getHeap(),
-			       &diagsArea );
+			       &diagsArea);
 
       if (retcode == ex_expr::EXPR_OK &&
           clause->getOperType()== ITM_CONVERT &&
@@ -861,7 +862,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 	atp1->setDiagsArea(diagsArea);
 
       if (retcode == ex_expr::EXPR_ERROR)
-          return retcode;
+	return retcode;
 
       // copy result data into result buffer, if generated in an aligned buffer
       if (result_data)

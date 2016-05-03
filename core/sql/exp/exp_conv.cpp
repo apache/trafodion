@@ -10313,7 +10313,7 @@ convDoIt(char * source,
       
 ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 					      CollHeap *heap,
-					      ComDiagsArea** diagsArea ) {
+					      ComDiagsArea** diagsArea) {
   Attributes * tgt = getOperand(0);
   Attributes * src = getOperand(1);
   ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;  
