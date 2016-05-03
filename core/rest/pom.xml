@@ -191,7 +191,7 @@
         </dependencies>
         <configuration>
           <additionalClasspathElements>
-             <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4.jar</additionalClasspathElement>
+             <additionalClasspathElement>${basedir}/target/test-classes/jdbcT4-${TRAFODION_VER}.jar</additionalClasspathElement>
           </additionalClasspathElements>
           <includes>
             <include>${integrationtest.include}</include>
@@ -572,8 +572,8 @@
       <dependencies>    
         <!-- JDBCT4 dependencies -->    
         <dependency>    
-          <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
-          <artifactId>t4driver</artifactId>
+          <groupId>org.trafodion.jdbc.t4</groupId>
+          <artifactId>jdbcT4</artifactId>
           <version>${jdbct4.version}</version>
         </dependency>
       </dependencies>    

@@ -61,10 +61,18 @@ function killMyHMaster {
 
 }
 
-lv_clean_hb_data=0
-if [[ ! -z "$1" ]]; then
-    lv_clean_hb_data=$1
+if [[ $# -eq 0 || $1 == "-h" ]]; then
+  echo " "
+  echo "Usage: $0 [ 0 | 1 | 2 ]"
+  echo " "
+  echo "   0: Clean HBase log files"
+  echo "   1: Clean HBase log files + zookeeper data"
+  echo "   2: Clean HBase log files + zookeeper data + /hbase in HDFS"
+  echo " "
+  exit 1
 fi
+
+lv_clean_hb_data=$1
 
 lv_nnpid=`getMyNameNode`
 if [[ -z ${lv_nnpid} ]]; then
@@ -85,9 +93,18 @@ killMyHMaster
 
 # delete the zookeeper info
 if [[ ${lv_clean_hb_data} -gt 0 ]]; then
-    lv_zk_dir="${MY_SW_ROOT}/hdfs:"
-    echo "Deleting the zookeeper directory: ${lv_zk_dir}"
-    rm -rf ${lv_zk_dir}
+    # old value, which was actually a typo, remove this later, once
+    # everyone has switched over to the new value
+    old_lv_zk_dir="${MY_SW_ROOT}/hdfs:"
+    if [[ -d ${old_lv_zk_dir} ]]; then
+        echo "Deleting the zookeeper directory: ${old_lv_zk_dir}"
+        rm -rf ${old_lv_zk_dir}
+    elif [[ -d "${MY_ZOOKEEPER_DATA_DIR}" ]]; then
+        echo "Deleting the zookeeper directory: ${MY_ZOOKEEPER_DATA_DIR}"
+        rm -rf ${MY_ZOOKEEPER_DATA_DIR}
+    else
+        echo "Could not find zookeeper directory: ${MY_ZOOKEEPER_DATA_DIR}"
+    fi
 fi
 
 #delete the logs
@@ -101,6 +118,6 @@ fi
 
 if [[ ${lv_clean_hb_data} -gt 1 ]]; then
 # delete the HBase table data from HDFS
-    echo "Deleting the HBase data directory (hdfs) /hbase"
+    echo  "Deleting the HBase data directory (hdfs) /hbase"
     swhdfs dfs -rm -f -r -skipTrash /hbase
 fi

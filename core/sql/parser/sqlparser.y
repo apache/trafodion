@@ -2797,6 +2797,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_get_statistics
 %type <relx>                    exe_util_get_uid
 %type <relx>                    exe_util_get_qid
+%type <relx>                    exe_util_get_lob_info
 %type <relx>                    exe_util_populate_in_memory_statistics
 %type <relx>                    exe_util_lob_extract
 %type <relx>                    unload_statement
@@ -6027,6 +6028,16 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
     $7->setSpecialType(ExtendedQualName::INDEX_TABLE);
     $$ = new (PARSERHEAP()) 
       ExeUtilRegionStats(*$7, FALSE, TRUE, FALSE, NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_LOB stats_or_statistics '(' ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilLobInfo(CorrName(""), TRUE,  NULL, PARSERHEAP());
+  }
+| TOK_TABLE '(' TOK_LOB stats_or_statistics '(' table_name ')' ')'
+  {
+    $$ = new (PARSERHEAP()) 
+      ExeUtilLobInfo(*$6, TRUE,  NULL, PARSERHEAP());
   }
 | TOK_TABLE '(' TOK_REGION stats_or_statistics '(' TOK_USING rel_subquery ')' ')'
   {
@@ -11430,28 +11441,26 @@ blob_type : TOK_BLOB blob_optional_left_len_right
 		}
             }
 
-blob_optional_left_len_right: '(' TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE optional_blob_unit ')'
+blob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_blob_unit ')'
         {
 	 
-	  Int64 longIntVal = atoInt64($3->data());
+	  Int64 longIntVal = atoInt64($2->data());
 	  if (longIntVal < 0)
 	  {
 	    // Error: Expected an unsigned integer
 	    *SqlParser_Diags << DgSqlCode(-3017) 
-			     << DgString0(*$3);
+			     << DgString0(*$2);
 	  }
 	  
-	  longIntVal = longIntVal * $4;
+	  longIntVal = longIntVal * $3;
 
 	  $$ = (Lng32)longIntVal;
-	  delete $3;
+	  delete $2;
 	 
 	}
 
 	| empty
 	{ 
-
-
 
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
@@ -11460,15 +11469,15 @@ blob_optional_left_len_right: '(' TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE opti
 	  else
 	    {
 	 
-	      $$ = (Lng32)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE);
-
+	      $$ = (Lng32)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
 
 	    }
         }
 
 /* type int64 */
-optional_blob_unit :   TOK_M {$$ = 1;}
-                     | TOK_G {$$ = 1024;}
+optional_blob_unit :   TOK_K {$$ = 1024;}
+                     | TOK_M {$$ = 1024*1024;}
+                     | TOK_G {$$ = 1024*1024*1024;}
                      | empty {$$ = 1;}
 
 /* type pCharLenSpec */
@@ -13383,7 +13392,11 @@ query_specification : exe_util_get_qid
 				    RelRoot($1, REL_ROOT);
                                 }
 
-
+query_specification : exe_util_get_lob_info
+                                {
+				  RelRoot *root = new (PARSERHEAP())
+				    RelRoot($1, REL_ROOT);
+                                }
 /* type relx */
 query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
 	{
@@ -16339,6 +16352,12 @@ stats_or_statistics : TOK_STATS
                         $$ = TRUE;
                       }
  
+exe_util_get_lob_info : TOK_GET TOK_LOB stats_or_statistics TOK_FOR TOK_TABLE table_name
+               {
+                 $$ = new (PARSERHEAP()) 
+                   ExeUtilLobInfo(*$6, FALSE,NULL,  PARSERHEAP());
+	       } 
+     
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look
  * one token ahead.  This may be necessary in cases where the parser

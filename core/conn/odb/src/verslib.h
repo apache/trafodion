@@ -23,7 +23,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include "SCMVersHelp.h"
+#endif
 
 // component version for libraries
 #define VERS_CV_MAJ 1

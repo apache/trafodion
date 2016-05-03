@@ -4612,7 +4612,7 @@ Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
 }
 
 SQLCLI_LIB_FUNC
-Int32 SQL_EXEC_GetAuthState_Internal(
+Int32 SQL_EXEC_GetAuthState(
    /*OUT*/  bool & authenticationEnabled,
    /*OUT*/  bool & authorizationEnabled,
    /*OUT*/  bool & authorizationReady,
@@ -7334,7 +7334,8 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
  /*OUT*/    Int64 * outDescPartnKey,  /* returned after insert and select */
  /*OUT*/    Int64 * outDescSyskey,
  /*INOUT*/  void* *inCliInterface,
- /*IN*/     Int64 xnId          /* xn id of the parent process, if non-zero */
+ /*IN*/     Int64 xnId,          /* xn id of the parent process, if non-zero */
+ /*IN*/     NABoolean lobTrace
  )
 {
   Lng32 retcode;
@@ -7360,7 +7361,7 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_LOBcliInterface
 				       outDescPartnKey,
 				       outDescSyskey,
 				       inCliInterface,
-				       xnId);
+				       xnId,lobTrace);
     }
   catch(...)
     {
@@ -7387,7 +7388,8 @@ Lng32 SQL_EXEC_LOB_GC_Interface
  /*IN*/     char*  hdfsServer,
  /*IN*/     Lng32  hdfsPort,
  /*IN*/     char *lobLocation,
- /*IN*/    Int64 lobMaxMemChunkLen // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ /*IN*/    Int64 lobMaxMemChunkLen, // if passed in as 0, will use default value of 1G for the in memory buffer to do compaction.
+ /*IN*/    NABoolean lobTrace
  )
 {
   Lng32 retcode;
@@ -7405,7 +7407,7 @@ Lng32 SQL_EXEC_LOB_GC_Interface
                                         handleLen,
                                         hdfsServer,
                                         hdfsPort,lobLocation,
-                                        lobMaxMemChunkLen);
+                                        lobMaxMemChunkLen,lobTrace);
     }
   catch(...)
     {
@@ -7437,7 +7439,8 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     char* *lobLocList,
  /*IN*/     char *hdfsServer,
  /*IN*/     Int32 hdfsPort,
- /*IN */    Int64 lobMaxSize
+ /*IN */    Int64 lobMaxSize,
+ /*IN*/     NABoolean lobTrace
  )
 {
   Lng32 retcode;
@@ -7460,7 +7463,8 @@ Lng32 SQL_EXEC_LOBddlInterface
 				       lobLocList,
                                        hdfsServer,
                                        hdfsPort, 
-                                       lobMaxSize);
+                                       lobMaxSize,
+                                       lobTrace);
     }
   catch(...)
     {

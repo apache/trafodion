@@ -203,7 +203,7 @@ def prog_parse_args():
     info = inspect.getframeinfo(frame)
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
-    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/jdbcT4.jar'
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/jdbcT4-${TRAFODION_VER}.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
     
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -241,7 +241,7 @@ def prog_parse_args():
           help='java program (version 1.7 required) location, defaulted to \'/usr\''),
         optparse.make_option('', '--jdbccp', action='store', type='string',
           dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
-          help='jdbc classpath, defaulted to \'${project.basedir}/lib/jdbcT4.jar\', <test_root> is where this program is.'),
+          help='jdbc classpath, defaulted to \'${project.basedir}/lib/jdbcT4-${TRAFODION_VER}.jar\', <test_root> is where this program is.'),
         optparse.make_option('', '--propfile', action='store', type='string',
           dest='propfile', default=DEFAULT_PROP_FILE,
           help='property file, defaulted to automatically generated \'<test root>/jdbcprop\', <test root> is where this program is.'),

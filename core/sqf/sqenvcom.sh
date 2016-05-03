@@ -33,12 +33,12 @@
 export TRAFODION_VER_PROD="Apache Trafodion"
 # Trafodion version (also update file ../sql/common/copyright.h)
 export TRAFODION_VER_MAJOR=2
-export TRAFODION_VER_MINOR=0
+export TRAFODION_VER_MINOR=1
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
 # Product copyright header
-export PRODUCT_COPYRIGHT_HEADER="2015 Apache Software Foundation"
+export PRODUCT_COPYRIGHT_HEADER="2015-2016 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -163,6 +163,7 @@ export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
 export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
+export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
 
 HBVER=""
 if [[ "$HBASE_DISTRO" = "HDP" ]]; then
@@ -489,9 +490,9 @@ EOF
 
   # Hadoop/HBase/Hive install directories, as determined by this script,
   # when using an Apache installation without one of the distros
-  APACHE_HADOOP_HOME=
-  APACHE_HBASE_HOME=
-  APACHE_HIVE_HOME=
+  APACHE_HADOOP_HOME=None
+  APACHE_HBASE_HOME=None
+  APACHE_HIVE_HOME=None
 
   if [ -f $HADOOP_PREFIX/etc/hadoop/core-site.xml ]; then
     APACHE_HADOOP_HOME=$HADOOP_PREFIX
@@ -506,23 +507,6 @@ EOF
   APACHE_HIVE_HOME=$HIVE_HOME
   export HIVE_CNF_DIR=$HIVE_HOME/conf
 
-  for cp in `echo $CLASSPATH | sed 's/:/ /g'`
-  do
-    if [ -f $cp/core-site.xml ]; then
-      export HADOOP_CNF_DIR=$cp
-      APACHE_HADOOP_HOME=$(dirname $(dirname $cp))
-    fi
-    if [ -f $cp/hbase-site.xml ]; then
-      [[ $SQ_VERBOSE == 1 ]] && echo "Found $cp/hbase-site.xml in CLASSPATH, this is vanilla Apache"
-      export HBASE_CNF_DIR=$cp
-      APACHE_HBASE_HOME=`dirname $cp`
-    fi
-    if [ -f $cp/hive-site.xml ]; then
-      export HIVE_CNF_DIR=$cp
-      APACHE_HIVE_HOME=`dirname $cp`
-    fi
-  done
-
   # sometimes, conf file and lib files don't have the same parent,
   # try to handle some common cases, where the libs are under /usr/lib
   if [ ! -d $APACHE_HADOOP_HOME/lib/ -a -d /usr/lib/hadoop ]; then
@@ -533,14 +517,6 @@ EOF
   fi
   if [ ! -d $APACHE_HIVE_HOME/lib -a -d /usr/lib/hive ]; then
     APACHE_HIVE_HOME=/usr/lib/hive
-  fi
-
-  if [ ! -d $APACHE_HADOOP_HOME/lib ]; then
-    echo "**** ERROR: Unable to determine location of Hadoop lib directory"
-  fi
-
-  if [ ! -d $APACHE_HBASE_HOME/lib ]; then
-    echo "**** ERROR: Unable to determine location of HBase lib directory"
   fi
 
   if [ -n "$HBASE_CNF_DIR" -a -n "$HADOOP_CNF_DIR" -a \
@@ -586,8 +562,10 @@ EOF
     export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
   else
     # print usage information, not enough information about Hadoop/HBase
-    vanilla_apache_usage
-    NEEDS_HADOOP_INSTALL=1
+    if [[ -z $HADOOP_TYPE ]]; then
+       vanilla_apache_usage
+       NEEDS_HADOOP_INSTALL=1
+    fi
   fi
 
 fi
@@ -861,7 +839,7 @@ ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
 $MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\
 $MY_SQROOT/export/lib/${SQL_JAR}:\
 $MY_SQROOT/export/lib/${UTIL_JAR}:\
-$MY_SQROOT/export/lib/jdbcT4.jar:\
+$MY_SQROOT/export/lib/${JDBCT4_JAR}:\
 $MY_SQROOT/export/lib/jdbcT2.jar
 
 

@@ -1511,7 +1511,12 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
           if (embeddedArkcmpSetup == 0)           
             {
 	      context_->setEmbeddedArkcmpIsInitialized(TRUE);
-	  //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
+              //    context_->setEmbeddedArkcmpContext(CmpCommon::context());
+            }
+          else if (embeddedArkcmpSetup == -2)
+            {
+              diagsArea << DgSqlCode(-2079);
+              return ERROR;
             }
           else
             {
@@ -1546,7 +1551,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
       
       SQLMXLoggingArea::logSQLMXAbortEvent("Statement.cpp",888, "testing abort event");
       SQLMXLoggingArea::logSQLMXAssertionFailureEvent("Statement.cpp",777,"testing assertion failure");
-      SQLMXLoggingArea::logSQLMXDebugEvent("debug event" ,69);
+      SQLMXLoggingArea::logSQLMXDebugEvent("debug event" ,69,__LINE__);
       
       SQLMXLoggingArea::logMVRefreshInfoEvent("mv refresh info");
       SQLMXLoggingArea::logMVRefreshErrorEvent("mv refresh error");

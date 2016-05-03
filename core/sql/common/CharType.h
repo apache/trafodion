@@ -125,7 +125,7 @@ CharType (const NAString&	adtName,
 	  CharInfo::Collation    co = CharInfo::DefaultCollation,
 	  CharInfo::Coercibility ce = CharInfo::COERCIBLE,
 	  CharInfo::CharSet      encoding = CharInfo::UnknownCharSet,
-	  Int32 iCharLen = 0
+	  Lng32 vcIndLen = 0  // not passed in, need to be computed
          );
 CharType (const NAString&  adtName,
           const CharLenInfo & maxLenInfo,
@@ -500,7 +500,8 @@ public:
 	     CharInfo::CharSet		= CharInfo::DefaultCharSet, 
 	     CharInfo::Collation	= CharInfo::DefaultCollation,
 	     CharInfo::Coercibility	= CharInfo::COERCIBLE,
-	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet
+	     CharInfo::CharSet encoding	= CharInfo::UnknownCharSet,
+             Lng32 vcIndLen             = 0
 	    );
   SQLVarChar(const CharLenInfo & maxLenInfo,
 	     NABoolean allowSQLnull	= TRUE,

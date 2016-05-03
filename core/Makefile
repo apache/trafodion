@@ -68,10 +68,7 @@ foundation: sqroot dbsecurity $(MPI_TARGET) $(SEAMONSTER_TARGET)
 	cd sqf && $(MAKE) all
 
 jdbc_jar: verhdr
-	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
-	$(MAVEN) install:install-file -Dfile=conn/jdbc_type4/lib/jdbcT4.jar \
-	    -DgroupId=org.trafodion.jdbc.t4.T4Driver -DartifactId=t4driver -Dversion="$$TRAFODION_VER" \
-	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBCT4)/";exit $${PIPESTATUS[0]}
+	cd conn/jdbcT4 && $(MAKE) 2>&1 && $(MAVEN) install | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 dcs: jdbc_jar jdbc_type2_jar
 	cd ../dcs && $(MAKE) 2>&1 | sed -e "s/$$/  ##(DCS)/" ; exit $${PIPESTATUS[0]}
@@ -109,12 +106,13 @@ clean: sqroot
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean 
+	cd sql/lib_mgmt &&		$(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 cleanall: sqroot eclipseclean cleantests
@@ -123,12 +121,13 @@ cleanall: sqroot eclipseclean cleantests
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean
+	cd sql/lib_mgmt &&		$(MAKE) cleanall
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests
@@ -144,7 +143,7 @@ pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package sql regress)/";exit $${PIPESTATUS[0]}
 
 # Package Phoenix test
-pkg-phx-tests: all
+pkg-phx-tests: all 
 	cd sqf && $(MAKE) package-phx 2>&1 | sed -e "s/$$/	##(Package phoenix)/";exit $${PIPESTATUS[0]}
 
 # Package dcs tests

@@ -3158,4 +3158,7 @@ void Generator::setHBaseSmallScanner(Int32 hbaseRowSize, double estRowsAccessed,
   hbpa->setMaxNumRowsPerHbaseBlock(hbaseBlockSize/hbaseRowSize);
 }
 
+void Generator::setHBaseParallelScanner(ComTdbHbaseAccess::HbasePerfAttributes * hbpa){
+    hbpa->setDopParallelScanner(CmpCommon::getDefaultNumeric(HBASE_DOP_PARALLEL_SCANNER));
+}
 

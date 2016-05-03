@@ -2838,7 +2838,11 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
   // committed in the called methods.
   if ((ddlXns()) &&
       (
+           (initHbase()) ||
+           (dropHbase()) ||
            (purgedataHbase()) ||
+           (initHbase()) ||
+           (dropHbase()) ||
            (initAuthorization()) ||
            (dropAuthorization()) ||
            (upgradeRepos())
@@ -2855,6 +2859,7 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
   if ((ddlNode && ddlNode->castToStmtDDLNode() &&
        ddlNode->castToStmtDDLNode()->ddlXns()) &&
       ((ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
+       (ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
     {
@@ -5411,7 +5416,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 		append(getTableDesc()->getNATable()->
 		       getTableName().getSchemaName());
 	      lu->updatedTableSchemaName() += "\"";
-
+              lu->lobSize() = col->getType()->getPrecision();
 	      lu->lobNum() = col->lobNum();
 	      lu->lobStorageType() = col->lobStorageType();
 	      lu->lobStorageLocation() = col->lobStorageLocation();
@@ -5524,7 +5529,8 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		  li->insertedTableSchemaName() += "\"";
 		  
 		  //		  li->lobNum() = col->getPosition();
-		  li->lobSize() = srcValueId.getType().getPrecision();
+		  // li->lobSize() = srcValueId.getType().getPrecision();
+                  li->lobSize() = tgtValueId.getType().getPrecision();
 		  li->lobFsType() = tgtValueId.getType().getFSDatatype();
 
 		  li->lobNum() = col->lobNum();
@@ -5558,7 +5564,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		  li->lobStorageType() = col->lobStorageType();
 		  li->lobStorageLocation() = col->lobStorageLocation();
 		  
-		  li->lobSize() = srcValueId.getType().getPrecision();
+		  li->lobSize() = tgtValueId.getType().getPrecision();
 
 		  if (li->lobFsType() != tgtValueId.getType().getFSDatatype())
 		    {
@@ -5582,7 +5588,8 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 			       getTableName().getSchemaName());
 		      li->insertedTableSchemaName() += "\"";
 		      
-		      li->lobSize() = srcValueId.getType().getPrecision();
+		      //li->lobSize() = srcValueId.getType().getPrecision();
+                      li->lobSize() = tgtValueId.getType().getPrecision();
 		      li->lobFsType() = tgtValueId.getType().getFSDatatype();
 
 		      li->lobNum() = col->lobNum();
@@ -5596,7 +5603,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		} // lobinsert
 
 	      GenAssert(li, "must have a LobInsert node");
-
+#ifdef __ignore 
 	      LOBload * ll = new(generator->wHeap()) 
 		LOBload(li->child(0), li->getObj());
 	      ll->insertedTableObjectUID() = li->insertedTableObjectUID();
@@ -5607,6 +5614,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 	      ll->lobStorageLocation() = col->lobStorageLocation();
 	      ll->bindNode(generator->getBindWA());
 	      lobLoadExpr_.insert(ll->getValueId());
+#endif
 	    } // lob
 	}
     }

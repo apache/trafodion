@@ -2200,11 +2200,13 @@ short CmpSeabaseDDL::createSeabaseTable2(
   short *lobTypList = new (STMTHEAP) short[numCols];
   char  **lobLocList = new (STMTHEAP) char*[numCols];
   Lng32 j = 0;
+  Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
   for (Int32 i = 0; i < colArray.entries(); i++)
     {
       ElemDDLColDef *column = colArray[i];
       
       Lng32 datatype = column->getColumnDataType()->getFSDatatype();
+      
       if ((datatype == REC_BLOB) ||
           (datatype == REC_CLOB))
         {
@@ -2228,7 +2230,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
     }
   
-  Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
 
   const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
@@ -2257,6 +2258,9 @@ short CmpSeabaseDDL::createSeabaseTable2(
       newSchName.append("\".\"");
       newSchName.append(schemaNamePart);
       newSchName += "\"";
+      NABoolean lobTrace=FALSE;
+      if (getenv("TRACE_LOB_ACTIONS"))
+        lobTrace=TRUE;
        rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
                                           newSchName.length(),
                                           objUID,
@@ -2267,7 +2271,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                           lobLocList,
                                           (char *)lobHdfsServer,
                                           lobHdfsPort,
-                                          lobMaxSize);
+                                          lobMaxSize,
+                                          lobTrace);
        
       if (rc < 0)
         {
@@ -3610,6 +3615,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       newSchName.append("\".\"");
       newSchName.append(schemaNamePart);
       newSchName += "\"";
+      NABoolean lobTrace = FALSE;
+      if (getenv("TRACE_LOB_ACTIONS"))
+        lobTrace=TRUE;
+                 
       rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
 					  newSchName.length(),
 					  objUID,
@@ -3617,7 +3626,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 					  LOB_CLI_DROP,
 					  lobNumList,
 					  lobTypList,
-					  lobLocList,(char *)lobHdfsServer, lobHdfsPort,0);
+                                    lobLocList,(char *)lobHdfsServer, lobHdfsPort,0,lobTrace);
       if (rc < 0)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)
@@ -10803,12 +10812,12 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
        // request the default
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
-      ByteArrayList* bal = ehi->getRegionEndKeys(extNameForHbase);
+      NAArray<HbaseStr>* endKeyArray  = ehi->getRegionEndKeys(extNameForHbase);
 
       // create a list of region descriptors
       ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-        assembleDescs(bal, populateRegionDescAsRANGE, STMTHEAP);
-      delete bal;
+        assembleDescs(endKeyArray , populateRegionDescAsRANGE, STMTHEAP);
+      deleteNAArray(heap_, endKeyArray);
 
       // if this is base table or index and hbase object doesn't exist, then this object
       // is corrupted.
@@ -10958,32 +10967,20 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
 // Generator::createVirtualTableDesc() call make before this one that
 // uses STMTPHEAP througout.
 //
-desc_struct* assembleDescs(ByteArrayList* bal, populateFuncT func, NAMemory* heap)
+desc_struct* assembleDescs(NAArray<HbaseStr >* keyArray, populateFuncT func, NAMemory* heap)
 {
-   if ( !bal )
-     return NULL;
+   if (keyArray == NULL)
+      return NULL;
 
    desc_struct *result = NULL;
-
-   Int32 entries = bal->getSize();
-
+   Int32 entries = keyArray->entries();
    Int32 len = 0;
    char* buf = NULL;
 
    for (Int32 i=entries-1; i>=0; i-- ) {
-
-      // call JNI interface
-      len = bal->getEntrySize(i);
-   
-   
-      if ( len > 0 ) {
-   
-         buf = new (heap) char[len];
-         Int32 datalen;
-  
-         if ( !bal->getEntry(i, buf, len, datalen) || datalen != len ) {
-            return NULL;
-         }
+      len = keyArray->at(i).len;
+      if ( len > 0 ) { 
+         buf = keyArray->at(i).val; 
       } else
          buf = NULL;
 

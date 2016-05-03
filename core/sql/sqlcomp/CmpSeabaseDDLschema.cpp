@@ -61,7 +61,7 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile,
-//   bool ifExists,
+   bool ifExists,
    bool ddlXns);
    
 static bool transferObjectPrivs(
@@ -409,6 +409,21 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
 //******************* End of CmpSeabaseDDL::describeSchema *********************
 
 
+static NABoolean appendErrorObjName(char * errorObjs, const char * objName)
+{
+  if ((strlen(errorObjs) + strlen(objName)) < 1000)
+    {
+      strcat(errorObjs, objName);
+      strcat(errorObjs, " ");
+    }
+  else if (strlen(errorObjs) < 1005) // errorObjs maxlen = 1010
+    {
+      strcat(errorObjs, "...");
+    }
+  
+  return TRUE;
+}
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: CmpSeabaseDDL::dropSeabaseSchema                                *
@@ -444,10 +459,13 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    int32_t length = 0;
    int32_t rowCount = 0;
    bool someObjectsCouldNotBeDropped = false;
+   char errorObjs[1010];
    Queue * objectsQueue = NULL;
    Queue * otherObjectsQueue = NULL;
 
    NABoolean dirtiedMetadata = FALSE;
+
+   errorObjs[0] = 0;
 
    Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
                                SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID);
@@ -540,25 +558,6 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
      }
    }
 
-#ifdef __ignore
-   // Drop histogram tables first
-   objectsQueue->position();
-   for (size_t i = 0; i < objectsQueue->numEntries(); i++)
-   {
-     OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
-     NAString objName = vi->get(0);
-
-     if (isHistogramTable(objName))
-     {
-       dirtiedMetadata = TRUE;
-       if (dropOneTable(cliInterface,(char*)catName.data(),
-                        (char*)schName.data(),(char*)objName.data(),
-                        isVolatile ,dropSchemaNode->ddlXns()))
-          someObjectsCouldNotBeDropped = true;
-     }
-   }
-#endif
-
    // Drop procedures (SPJs), UDFs (functions), and views 
     objectsQueue->position();
     for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
@@ -632,7 +631,13 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
          
        cliRC = cliInterface.executeImmediate(buf);
        if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-          someObjectsCouldNotBeDropped = true;
+         {
+           appendErrorObjName(errorObjs, objName);
+           if (dropSchemaNode->ddlXns())
+             goto label_error;
+           else
+             someObjectsCouldNotBeDropped = true;
+         }
    } 
 
    // Drop libraries in the schema
@@ -654,7 +659,14 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
          cliRC = cliInterface.executeImmediate(buf);
 
          if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-            someObjectsCouldNotBeDropped = true;
+           {
+             appendErrorObjName(errorObjs, objName);
+             if (dropSchemaNode->ddlXns())
+               goto label_error;
+             else
+               someObjectsCouldNotBeDropped = true;
+
+           }
       }
    }
 
@@ -679,8 +691,14 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 	       dirtiedMetadata = TRUE;
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
 				(char*)schName.data(),(char*)objName.data(),
-				isVolatile, dropSchemaNode->ddlXns()))
-		 someObjectsCouldNotBeDropped = true;
+				isVolatile, FALSE,dropSchemaNode->ddlXns()))
+                 {
+                   appendErrorObjName(errorObjs, objName.data());
+                   if (dropSchemaNode->ddlXns())
+                     goto label_error;
+                   else
+                     someObjectsCouldNotBeDropped = true;
+                 }
 	     }
 	 } 
      } 
@@ -709,8 +727,14 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 	       // happen to have the same name patterns.
 	       if (dropOneTable(cliInterface,(char*)catName.data(), 
 				(char*)schName.data(),(char*)objName.data(),
-				isVolatile, dropSchemaNode->ddlXns()))
-		 someObjectsCouldNotBeDropped = true;
+				isVolatile,TRUE, dropSchemaNode->ddlXns()))
+                 {
+                   appendErrorObjName(errorObjs, objName.data());
+                   if (dropSchemaNode->ddlXns())
+                     goto label_error;
+                   else
+                     someObjectsCouldNotBeDropped = true;
+                 }
 	     }
 	 } 
      } 
@@ -750,7 +774,14 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
          cliRC = cliInterface.executeImmediate(buf);
 
          if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-            someObjectsCouldNotBeDropped = true;
+           { 
+             appendErrorObjName(errorObjs, objName);
+             if (dropSchemaNode->ddlXns())
+               goto label_error;
+             else
+               someObjectsCouldNotBeDropped = true;
+
+           }
       }  
    }  
 
@@ -790,7 +821,14 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
          cliRC = cliInterface.executeImmediate(buf);
 
          if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-            someObjectsCouldNotBeDropped = true;
+           {
+             appendErrorObjName(errorObjs, objName);
+             if (dropSchemaNode->ddlXns())
+               goto label_error;
+             else
+               someObjectsCouldNotBeDropped = true;
+
+           }
       }  
    }  
 
@@ -806,17 +844,36 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
        dirtiedMetadata = TRUE;
        if (dropOneTable(cliInterface,(char*)catName.data(),
                         (char*)schName.data(),(char*)objName.data(),
-                        isVolatile, dropSchemaNode->ddlXns()))
-          someObjectsCouldNotBeDropped = true;
+                        isVolatile, FALSE, dropSchemaNode->ddlXns()))
+         {
+           appendErrorObjName(errorObjs, objName.data());
+
+           if (dropSchemaNode->ddlXns())
+             goto label_error;
+           else
+             someObjectsCouldNotBeDropped = true;
+         }
      }
    }
+
+   if (someObjectsCouldNotBeDropped)
+     {
+       NAString reason;
+       reason = "Reason: Some objects could not be dropped in schema " 
+         + schName + ". ObjectsInSchema: " 
+         + errorObjs;
+       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
+                           << DgSchemaName(catName + "." + schName)
+                           << DgString0(reason);
+       goto label_error;
+     }
 
    // For volatile schemas, sometimes only the objects get dropped.    
    // If the dropObjectsOnly flag is set, just exit now, we are done.
    if (dropSchemaNode->dropObjectsOnly())
       return;
 
-  // Verify all objects in the schema have been dropped. 
+   // Verify all objects in the schema have been dropped. 
    str_sprintf(query,"SELECT COUNT(*) "
                      "FROM %s.\"%s\".%s "
                      "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
@@ -834,13 +891,42 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    }
    
    if (rowCount > 0)
-   {
-     CmpCommon::diags()->clear();
-      
-      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
-                          << DgSchemaName(catName + "." + schName);
-      goto label_error;
-   }
+     {
+       CmpCommon::diags()->clear();
+       
+       str_sprintf(query,"SELECT TRIM(object_name) "
+                   "FROM %s.\"%s\".%s "
+                   "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
+                   "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                   "object_type <> 'PK' "
+                   "FOR READ COMMITTED ACCESS",
+                   getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+                   (char*)catName.data(),(char*)schName.data());
+       
+       cliRC = cliInterface.fetchAllRows(objectsQueue, query, 0, FALSE, FALSE, TRUE);
+       if (cliRC < 0)
+         {
+           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+           goto label_error;
+         }     
+       
+       for (int i = 0; i < objectsQueue->numEntries(); i++)
+         {
+           OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+           NAString objName = vi->get(0);
+
+           appendErrorObjName(errorObjs, objName.data());
+         }
+
+       NAString reason;
+       reason = "Reason: schema " 
+         + schName + " is not empty. ObjectsInSchema: " 
+         + errorObjs;
+       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
+                           << DgSchemaName(catName + "." + schName)
+                           << DgString0(reason);
+       goto label_error;
+     }
  
    // After all objects in the schema have been dropped, drop the schema object itself.
     
@@ -855,8 +941,12 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
    cliRC = cliInterface.executeImmediate(buf);
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION) 
    {
+     NAString reason;
+     reason = "Reason: Delete of object " + 
+       NAString(SEABASE_SCHEMA_OBJECTNAME) + " failed.";
       *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
-                          << DgSchemaName(catName + "." + schName);
+                          << DgSchemaName(catName + "." + schName)
+                          << DgString0(reason);
       goto label_error;
    }
   
@@ -1314,7 +1404,7 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile,
-//   bool ifExists,
+   bool ifExists,
    bool ddlXns)
    
 {
@@ -1332,14 +1422,14 @@ Lng32 cliRC = 0;
    if (isVolatile)
       strcpy(volatileString,"VOLATILE");
 
-//   if (ifExists)
-//     strcpy(ifExistsString,"IF EXISTS");
+   if (ifExists)
+    strcpy(ifExistsString,"IF EXISTS");
 
    if (ComIsTrafodionExternalSchemaName(schemaName))
      str_sprintf(buf,"DROP EXTERNAL TABLE \"%s\" FOR \"%s\".\"%s\".\"%s\" CASCADE",
                  objectName,catalogName,schemaName,objectName);
    else
-     str_sprintf(buf,"DROP %s %s TABLE  \"%s\".\"%s\".\"%s\" CASCADE",
+     str_sprintf(buf,"DROP %s  TABLE %s \"%s\".\"%s\".\"%s\" CASCADE",
                  volatileString, ifExistsString, catalogName,schemaName,objectName);
  
 ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);

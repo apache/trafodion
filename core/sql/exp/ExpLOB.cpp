@@ -344,6 +344,7 @@ ExpLOBoper::ExpLOBoper(OperatorTypeEnum oper_type,
   strcpy(lobHdfsServer_,"");
   lobHdfsPort_ = -1;
   descSchName_[0] = 0;
+  lobSize_ = 0;
   lobMaxSize_ = 0;
   lobMaxChunkMemSize_ = 0;
   lobGCLimit_ = 0;
@@ -796,7 +797,13 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     lo = Lob_InsertDataSimple;
   else
     lo = Lob_InsertDesc;
-  
+  Int64 lobMaxSize = 0;
+  if (getLobSize() > 0)
+    {
+      lobMaxSize = MINOF(getLobSize(), getLobMaxSize());
+    }
+  else
+    lobMaxSize = getLobMaxSize();
     
   rc = ExpLOBInterfaceInsert
     (getExeGlobals()->lobGlobal(), 
@@ -815,7 +822,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
      &cliError,
      so,
      waitedOp,
-     lobData, lobLen, getLobMaxSize(), getLobMaxChunkMemSize(),getLobGCLimit());
+     lobData, lobLen, lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit());
   
   if (rc == LOB_ACCESS_PREEMPT)
     {
@@ -832,7 +839,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceInsert",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -997,7 +1004,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceInsert",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -1115,7 +1122,7 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceDelete",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceDelete",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -1278,7 +1285,13 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     so = Lob_Foreign_Lob;
   else if (fromBuffer())
     so= Lob_Buffer;
-
+  Int64 lobMaxSize = 0;
+  if (getLobSize() > 0)
+    {
+      lobMaxSize = MINOF(getLobSize(), getLobMaxSize());
+    }
+  else
+    lobMaxSize = getLobMaxSize();
   Lng32 waitedOp = 0;
 #ifdef __EID
   waitedOp = 0; // nowaited op from EID/TSE process
@@ -1323,7 +1336,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
 	 fromDescKey, fromDescTS,
-	 getLobMaxSize(), getLobMaxChunkMemSize(),getLobGCLimit());
+	 lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit());
     }
   else
     {
@@ -1346,7 +1359,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 	 data,
 	 fromLobName, fromSchNameLen, fromSchName,
 	 fromDescKey, fromDescTS,
-	 getLobMaxSize(), getLobMaxChunkMemSize(),getLobGCLimit());
+	 lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit());
     }
 
   if (rc < 0)
@@ -1355,7 +1368,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intParam1, 
 		      &cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-		      getLobErrStr(intParam1));
+		      (char*)"ExpLOBInterfaceUpdate",getLobErrStr(intParam1));
       return ex_expr::EXPR_ERROR;
     }
 
@@ -1549,7 +1562,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 	  ExRaiseSqlError(h, diagsArea, 
 			  (ExeErrorCode)(8442), NULL, &intParam1, 
 			  &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
-			  getLobErrStr(intParam1));
+			  (char*)"ExpLOBInterfaceSelect",getLobErrStr(intParam1));
 	  return ex_expr::EXPR_ERROR;
 	}
 

@@ -3308,7 +3308,6 @@ desc_struct *ExeUtilRegionStats::createVirtualTableDesc()
 	 ComTdbExeUtilRegionStats::getVirtTableKeyInfo());
   return table_desc;
 }
-
 short ExeUtilRegionStats::codeGen(Generator * generator)
 {
   ExpGenerator * expGen = generator->getExpGenerator();
@@ -3390,6 +3389,158 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
   exe_util_tdb->setDisplayFormat(displayFormat_);
 
   exe_util_tdb->setSummaryOnly(summaryOnly_);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+  
+  // users should not start a transaction.
+  generator->setTransactionFlag(0);
+  
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////
+// class ExeUtilLobInfo
+////////////////////////////////////////////////////////////////////
+const char * ExeUtilLobInfo::getVirtualTableName()
+{ return ("EXE_UTIL_LOB_INFO__"); }
+
+desc_struct *ExeUtilLobInfo::createVirtualTableDesc()
+{
+  desc_struct * table_desc = NULL;
+   if (tableFormat_)
+    table_desc = Generator::createVirtualTableDesc(
+	 getVirtualTableName(),
+	 ComTdbExeUtilLobInfo::getVirtTableNumCols(),
+	 ComTdbExeUtilLobInfo::getVirtTableColumnInfo(),
+	 ComTdbExeUtilLobInfo::getVirtTableNumKeys(),
+	 ComTdbExeUtilLobInfo::getVirtTableKeyInfo());
+   else
+     table_desc = ExeUtilExpr::createVirtualTableDesc();
+  
+  return table_desc;
+}
+
+short ExeUtilLobInfo::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const int work_atp = 1;
+  const int exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+ NAString tn = "\"";
+  tn += getTableName().getQualifiedNameObj().getCatalogName();
+  tn += "\".";
+  tn += getTableName().getQualifiedNameObj().getSchemaName();
+  tn += ".";
+  tn += getTableName().getQualifiedNameObj().getObjectName();
+  char * tablename = space->AllocateAndCopyToAlignedSpace(tn, 0);
+  
+
+  char * schemaName = 
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getSchemaName(), 0);
+  char * catalogName =
+     space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getCatalogName(), 0);
+  char * objectName =
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getObjectName(), 0);
+
+  char *lobColArray = NULL;
+  char * lobNumArray = NULL;
+  char * lobLocArray = NULL;
+
+  const NATable * naTable = getUtilTableDesc()->getNATable();
+  Lng32 numLOBs = 0;
+
+  if (naTable->hasLobColumn())
+    {
+      for (CollIndex i = 0; i < naTable->getNAColumnArray().entries(); i++)
+	{
+	  
+	  NAColumn *col = naTable->getNAColumnArray()[i];
+	  if (col->getType()->isLob())
+	    {
+	      numLOBs++;	     
+	    } // if
+	} // for
+    }
+
+  if (numLOBs > 0)
+    {
+      lobColArray = space->allocateAlignedSpace(numLOBs*LOBINFO_MAX_FILE_LEN);
+      lobNumArray = space->allocateAlignedSpace(numLOBs*2);
+      lobLocArray = space->allocateAlignedSpace(numLOBs * LOBINFO_MAX_FILE_LEN);
+
+      const NATable * naTable = getUtilTableDesc()->getNATable();
+      CollIndex j = 0;
+
+      for (CollIndex i = 0; i < naTable->getNAColumnArray().entries(); i++)
+	{
+
+	  NAColumn *col = naTable->getNAColumnArray()[i];
+	  if (col->getType()->isLob())
+	    {
+              strcpy(&lobColArray[j*LOBINFO_MAX_FILE_LEN], col->getColName());
+	      *(short*)(&lobNumArray[2*j]) = col->lobNum();
+
+	      strcpy(&lobLocArray[j*LOBINFO_MAX_FILE_LEN], col->lobStorageLocation());
+
+	      j++;
+	    }
+	}
+    }
+  Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+  const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_HDFS_SERVER);
+  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
+  strcpy(hdfsServer, f);
+  
+  ComTdbExeUtilLobInfo *exe_util_tdb = new(space) 
+    ComTdbExeUtilLobInfo(
+         tablename,
+         objectUID_,
+         numLOBs,
+         lobColArray,
+         lobNumArray,
+         lobLocArray,
+         hdfsPort,
+         hdfsServer,
+         tableFormat_,
+	 workCriDesc,
+	 exe_util_row_atp_index,
+	 givenDesc,
+	 returnedDesc,
+	 (queue_index)64,
+	 (queue_index)64,
+	 4, 
+	 64000); 
+  generator->initTdbFields(exe_util_tdb);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3939,6 +4090,14 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
   char * schemaName = 
     space->AllocateAndCopyToAlignedSpace
     (getTableName().getQualifiedNameObj().getSchemaName(), 0);
+
+  char * catname = 
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getCatalogName(), 0);
+
+  char * objectName = 
+    space->AllocateAndCopyToAlignedSpace
+    (getTableName().getQualifiedNameObj().getObjectName(), 0);
 
   char * lobNumArray = NULL;
   char * lobLocArray = NULL;

@@ -72,7 +72,7 @@ void SQLMXLoggingArea::init()
     else
     {
       sprintf(buffer, "SQLMXLoggingArea::init() pthread_mutex_init() rc=%d", rc);
-      logSQLMXDebugEvent(buffer, (short)rc);
+      logSQLMXDebugEvent(buffer, (short)rc,__LINE__);
     }
   }
 }
@@ -275,11 +275,11 @@ void SQLMXLoggingArea::logSQLMXPredefinedEvent(const char *msg, logLevel level)
     unlockMutex();
 }
 
-void SQLMXLoggingArea::logSQLMXDebugEvent(const char *msg, short errorcode, bool lock)
+void SQLMXLoggingArea::logSQLMXDebugEvent(const char *msg, short errorcode, Int32 line)
 {
-  bool lockedMutex = lock ? lockMutex() : false;
+  bool lockedMutex =  lockMutex() ;
   
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_DEBUG, "%s ", msg);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_DEBUG, "%s ERRORCODE:%d LINE:%d ", msg,errorcode,line);
 
   if (lockedMutex)
     unlockMutex();

@@ -53,6 +53,9 @@ drop table t130lob4 cascade;
 
 
 ?section setup
+log;
+drop schema trafodion.lob130 cascade;
+log LOG130;
 create schema trafodion.lob130;
 set schema trafodion.lob130;
 create table t130lob1 (c1 blob);
@@ -144,6 +147,7 @@ obey TEST130(lob_local_cleanup);
 log;
 drop table tlob130txt1; 
 drop table tlob130bin1;
+drop table tlob130_limit50;
 sh rm TMP130;
 sh rm tlob130txt1;
 sh rm tlob130_txt1.txt;
@@ -158,6 +162,9 @@ log LOG130;
 sh echo "Test for file input and extract";
 create table tlob130txt1 (c1 int not null, c2 clob, primary key (c1));
 create table tlob130bin1 (c1 int not null, c2 blob, primary key (c1));
+create table tlob130txt_limit50(c1 int not null, c2 clob(50), primary key (c1));
+create table tlob130bin_limit1K(c1 int not null, c2 blob(1 K), primary key (c1));
+
 sh cp $scriptsdir/executor/deep.jpg $rundir/executor/;
 sh cp $scriptsdir/executor/anoush.jpg $rundir/executor/;
 sh cp $scriptsdir/executor/lob_input_* $rundir/executor/;
@@ -192,6 +199,10 @@ select lobtostring(c2, 200 ) from tlob130txt1;
 delete from tlob130txt1 where c1 =2;
 delete from tlob130txt1 where c1 =3;
 
+--test limits
+
+insert into tlob130txt_limit50 values(1,filetolob('lob_input_e1.txt'));
+insert into tlob130bin_limit1K values(1,filetolob('anoush.jpg'));
 --test extract 
 
 log;
@@ -435,6 +446,43 @@ insert into tlob130gc values(9,stringtolob('aaaa'), stringtolob('bbbbb'));
 select c1,lobtostring(c2,10),lobtostring(c3,10) from tlob130gc;
 cqd LOB_GC_LIMIT_SIZE reset;
 
+obey TEST130(lob_get_cleanup);
+?section lob_get_cleanup
+log;
+drop table tlob130gt;
+obey TEST130(lob_get_test);
+?section lob_get_test
+log LOG130;
+create table tlob130gt (c1 int not null, c2 blob, c3 clob, c4 blob, primary key (c1));
+insert into tlob130gt values (1, stringtolob('xxxx'), stringtolob('yyyy'), stringtolob('zzzzzzzzzzzzzz'));
+insert into tlob130gt values (2, stringtolob('xxxxx'), stringtolob('yyyyy'), stringtolob('zzzzzzzzzzzzzzz'));
+insert into tlob130gt values (3, stringtolob('xxxxxx'), stringtolob('yyyyyy'), stringtolob('zzzzzzzzzzzzzzzz'));
+get lob stats for table tlob130gt;
+select * from table(lob stats(tlob130gt));
+delete from tlob130gt where c1=2;
+insert into tlob130gt values (2, stringtolob('xxxxxxxxxxxxxxx'), stringtolob('yyyyyyyyyyyyyyyy'), stringtolob('zzzzzzzzzzzzzzzzzzzzzzzzzz'));
+get lob stats for table tlob130gt;
+select * from table(lob stats(tlob130gt));
+
+-- test to ensure all lob dependent tables and schemas containing lob tables
+-- get dropped cleanly.
+obey TEST130(lob_drop_table_schema);
+?section lob_drop_table_schema
+log;
+cleanup schema trafodion.lobsch;
+log LOG130;
+create schema trafodion.lobsch;
+set schema trafodion.lobsch;
+create table tlob130ts1 (c1 int not null, c2 blob, primary key (c1));
+create table tlob130ts2 (c1 int not null, c2 blob, primary key (c1));
+drop table tlob130ts1;
+get tables;
+drop schema trafodion.lobsch cascade;
+select OBJECT_NAME,OBJECT_TYPE from TRAFODION."_MD_".OBJECTS where catalog_name='TRAFODION' AND schema_name='LOBSCH';
+--go back to the schema used for the rest of the tests.
+set schema trafodion.lob130;
+
+
 obey TEST130(lob_general_cleanup);
 -- cleanup
 ?section lob_general_cleanup
@@ -446,8 +494,11 @@ sh rm deep.jpg;
 sh rm anoush.jpg;
 drop table tlob130txt1; 
 drop table tlob130bin1;
+drop table tlob130txt_limit50;
+drop table tlob130bin_limit1K;
 sh rm TMP130;
 sh rm tlob130txt1;
+
 sh rm tlob130_txt*.txt;
 sh rm tlob130_deep*.jpg;
 sh rm tlob130_anoush*.jpg;
@@ -461,6 +512,7 @@ sh rm tlob130txt2;
 sh rm lobc2out.jpg;
 sh rm TEST130_argfile;
 drop table tlob130gc;
+drop table tlob130gt;
 drop schema trafodion.lob130 cascade;
 
 

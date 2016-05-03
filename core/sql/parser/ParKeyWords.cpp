@@ -722,7 +722,6 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("OFF",                TOK_OFF,         POTANS_|RESWORD_),
   ParKeyWord("OFFLINE",            TOK_OFFLINE,     NONRESTOKEN_),
   ParKeyWord("OFFSET",             TOK_OFFSET,      NONRESTOKEN_),
-  ParKeyWord("OID",                IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("OJ",                 TOK_OJ,          NONRESTOKEN_),
   ParKeyWord("OLD",                TOK_OLD,         ANS_|RESWORD_|NONRESTOKEN_|ALLOWOLDNEW_),
   ParKeyWord("ON",                 TOK_ON,          FIRST_|ANS_|RESWORD_|MPWORD_),

@@ -813,7 +813,9 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
 
   if (! lobMDName_)
     return 0;
-
+  NABoolean lobTrace=FALSE;
+  if (getenv("TRACE_LOB_ACTIONS"))
+    lobTrace=TRUE;
   NAString newSchName = "\"" + catName_ + "\"" + "." + "\"" + schName_ + "\"";
   const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
@@ -826,7 +828,7 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
                                    lobTypList_,
                                    lobLocList_,
                                    (char *)lobHdfsServer,
-                                   lobHdfsPort,0);
+                                   lobHdfsPort,0,lobTrace);
 
   return 0;
 }
@@ -1172,22 +1174,24 @@ short CmpSeabaseMDcleanup::cleanupOrphanHbaseEntries(ExeCliInterface *cliInterfa
   NABoolean errorSeen = FALSE;
 
   // list all hbase objects that start with TRAFODION.* 
-  ByteArrayList* bal = ehi->listAll("TRAFODION\\..*");
-  if (! bal)
+  NAArray<HbaseStr>* listArray = ehi->listAll("TRAFODION\\..*");
+  if (! listArray)
     return -1;
 
   returnDetailsList_ = NULL;
   addReturnDetailsEntry(cliInterface, returnDetailsList_, NULL, TRUE);
 
   numOrphanHbaseEntries_ = 0;
-  for (Int32 i = 0; i < bal->getSize(); i++)
+  for (Int32 i = 0; i < listArray->entries(); i++)
     {
       char cBuf[1000];
       
-      Int32 len = 0;
-      char * c = bal->getEntry(i, cBuf, 1000, len);
-      c[len] = 0;
-      
+      HbaseStr *hbaseStr = &listArray->at(i);
+      if (hbaseStr->len >= sizeof(cBuf))
+         hbaseStr->len = sizeof(cBuf)-1;
+      strncpy(cBuf, hbaseStr->val, hbaseStr->len);
+      cBuf[hbaseStr->len] = '\0';
+      char *c = cBuf;
       Lng32 numParts = 0;
       char *parts[4];
       LateNameInfo::extractParts(c, cBuf, numParts, parts, FALSE);
@@ -1245,7 +1249,7 @@ short CmpSeabaseMDcleanup::cleanupOrphanHbaseEntries(ExeCliInterface *cliInterfa
         }      
       
     } // for
-
+  deleteNAArray(ehi->getHeap(),listArray);
   return 0;
 }
 

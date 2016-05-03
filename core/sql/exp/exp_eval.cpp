@@ -4211,7 +4211,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
         Int16 attrVCIndLen   = (Int16)comboPtr1[1];
 
 	DEF_ASSIGN(Int16, alignment, 6);
-	DEF_ASSIGN(Int16, rowLength, 7);
+	DEF_ASSIGN(Int32, rowLength, 7);
 
         UInt32 copyLength = 0;
 

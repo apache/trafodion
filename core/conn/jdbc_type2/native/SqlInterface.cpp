@@ -263,8 +263,6 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 		}
 		SQLItemDesc->signType      = FALSE;
 		SQLItemDesc->ODBCPrecision = SQLItemDesc->precision;
-		// Calculate the length based on YYYY/MM/DD HH:MM:SS.ffffff
-		SQLItemDesc->maxLen =  20 + 6;
 		getMemoryAllocInfo(	SQLItemDesc->dataType,
 			SQLItemDesc->SQLCharset,
 			SQLItemDesc->maxLen,
@@ -2572,12 +2570,9 @@ SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, 
 	if (pModule->module_name == NULL)
 	{
 		DEBUG_OUT(DEBUG_LEVEL_STMT,("***pModule->module_name == NULL  Call AllocStmtForRs()"));
-/* Commenting out for now - will be looked at when SPJ is supported
- #ifdef NSK_PLATFORM
 		CLI_AllocStmtForRS(callpStmt,
 			pSrvrStmt->RSIndex,
 			pStmt);
-#endif */
 		if (retcode < 0)
 		{
 			CLI_ClearDiagnostics(NULL);

@@ -2725,6 +2725,7 @@ short LOBinsert::codeGen(Generator * generator)
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
   li->setLobStorageLocation((char*)lobStorageLocation().data());
+  li->setLobSize(lobSize());
   li->setLobMaxSize(getLobMaxSize());
   li->setLobMaxChunkMemSize(getLobMaxChunkMemSize());
   li->setLobGCLimit(getLobGCLimit());

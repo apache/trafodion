@@ -4924,6 +4924,8 @@ NATable::NATable(BindWA *bindWA,
     resetAfterStatement_(FALSE),
     hitCount_(0),
     replacementCounter_(2),
+    sizeInCache_(0),
+    recentlyUsed_(TRUE),
     tableConstructionHadWarnings_(FALSE),
     isAnMPTableWithAnsiName_(FALSE),
     isUMDTable_(FALSE),
@@ -5561,7 +5563,7 @@ NATable::NATable(BindWA *bindWA,
 	 LOB_CLI_SELECT_CURSOR,
 	 lobNumList,
 	 lobTypList,
-	 lobLocList,(char *)lobHdfsServer,lobHdfsPort,0);
+	 lobLocList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
       
       if (cliRC == 0)
 	{
@@ -5649,6 +5651,8 @@ NATable::NATable(BindWA *bindWA,
     resetAfterStatement_(FALSE),
     hitCount_(0),
     replacementCounter_(2),
+    sizeInCache_(0),
+    recentlyUsed_(TRUE),
     tableConstructionHadWarnings_(FALSE),
     isAnMPTableWithAnsiName_(FALSE),
     isUMDTable_(FALSE),
@@ -7708,20 +7712,20 @@ ExpHbaseInterface* NATable::getHBaseInterfaceRaw()
   return ehi;
 }
 
-ByteArrayList* NATable::getRegionsBeginKey(const char* hbaseName) 
+NAArray<HbaseStr> *NATable::getRegionsBeginKey(const char* hbaseName) 
 {
   ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
-  ByteArrayList* bal = NULL;
+  NAArray<HbaseStr> *keyArray = NULL;
 
   if (!ehi)
     return NULL;
   else
   {
-    bal = ehi->getRegionBeginKeys(hbaseName);
+    keyArray = ehi->getRegionBeginKeys(hbaseName);
 
     delete ehi;
   }
-  return bal;
+  return keyArray;
 }
 
 
@@ -7811,6 +7815,8 @@ void NATableDB::getEntryDetails(
     partLen = QNO.getObjectName().length();
     strncpy(details.object, (char *)(QNO.getObjectName().data()), partLen );
     details.object[partLen] = '\0';
+
+    details.size = object->sizeInCache_;
   }
 }
 
@@ -7944,6 +7950,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 
     //Heap used by the NATable object
     NAMemory * naTableHeap = CmpCommon::statementHeap();
+    size_t allocSizeBefore = 0;
 
     //if NATable caching is on check if this table is not already
     //in the NATable cache. If it is in the cache create this NATable
@@ -7957,6 +7964,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
     if (((NOT table) && cacheMetaData_ && useCache_) &&
         corrName.isCacheable()){
       naTableHeap = getHeap();
+      allocSizeBefore = naTableHeap->getAllocSize();
     }
 
     //if table is in cache tableInCache will be non-NULL
@@ -7968,6 +7976,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	(!isSQUtiDisplayExplain(corrName)) &&
 	(!isSQInternalStoredProcedure(corrName))
 	) {
+      // ------------------------------------------------------------------
+      // Create an NATable object for a Trafodion/HBase table
+      // ------------------------------------------------------------------
       CmpSeabaseDDL cmpSBD((NAHeap *)CmpCommon::statementHeap());
 
 
@@ -7991,14 +8002,13 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	      return NULL;
 	    }
 
-          ByteArrayList* bal = NATable::getRegionsBeginKey(extHBaseName);
+          NAArray<HbaseStr> *keyArray = NATable::getRegionsBeginKey(extHBaseName);
 
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell, bal);
-
-          delete bal;
+	     isHbaseRow, isHbaseCell, keyArray);
+          deleteNAArray(STMTHEAP, keyArray);
 
 	  isSeabase = FALSE;
 
@@ -8106,6 +8116,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	(!corrName.isSpecialTable()) &&
 	(!isSQInternalStoredProcedure(corrName))
 	) {
+      // ------------------------------------------------------------------
+      // Create an NATable object for a Hive table
+      // ------------------------------------------------------------------
       if ( hiveMetaDB_ == NULL ) {
 	if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) != DF_ON)
 	  {
@@ -8179,6 +8192,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
        }
 
     } else
+      // ------------------------------------------------------------------
+      // Neither Trafodion nor Hive (probably dead code below)
+      // ------------------------------------------------------------------
        table = new (naTableHeap)
          NATable(bindWA, corrName, naTableHeap, inTableDescStruct);
     
@@ -8235,7 +8251,10 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         //if metadata caching is ON then adjust the size of the cache
         //since we are adding an entry to the cache
         if(cacheMetaData_)
-          currentCacheSize_ = heap_->getAllocSize();
+          {
+            currentCacheSize_ = heap_->getAllocSize();
+            table->sizeInCache_ = currentCacheSize_ - allocSizeBefore;
+          }
 
 	//update the high watermark for caching statistics
 	if (currentCacheSize_ > highWatermarkCache_)        
@@ -8831,6 +8850,7 @@ NATableDB::unmark_entries_marked_for_removal()
 
 void NATableDB::getCacheStats(NATableCacheStats & stats)
 {
+  memset(stats.contextType, ' ', sizeof(stats.contextType));
   stats.numLookups = totalLookupsCount_;
   stats.numCacheHits = totalCacheHits_;
   stats.currentCacheSize = currentCacheSize_;

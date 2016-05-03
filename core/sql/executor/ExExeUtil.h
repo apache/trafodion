@@ -54,7 +54,6 @@ class ExSqlComp;
 class ExProcessStats;
 
 class ExpHbaseInterface;
-class ByteArrayList;
 
 //class FILE_STREAM;
 #include "ComAnsiNamePart.h"
@@ -64,7 +63,7 @@ class ByteArrayList;
 #include "ExExeUtilCli.h"
 #include "ExpLOBstats.h"
 #include "hiveHook.h"
-
+#include "ExpHbaseDefs.h"
 
 #include "SequenceFileReader.h"
 
@@ -1008,7 +1007,8 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
                                   CollHeap * heap,
-                                  ex_globals *globals = NULL);
+                                  ex_globals *globals = NULL,
+                                  ComDiagsArea * diagsArea = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
 
  private:
@@ -1031,6 +1031,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
   Queue * schemaNamesList_;
 
   NABoolean someSchemasCouldNotBeDropped_;
+  char errorSchemas_[1010];
 
   char * schemaQuery_;
 };
@@ -2550,7 +2551,7 @@ public:
 
  private:
   ExpHbaseInterface * ehi_;
-  ByteArrayList * bal_;
+  NAArray<HbaseStr> *hbaseTables_;
   Int32 currIndex_;
 
   NAString extTableName_;
@@ -3742,7 +3743,7 @@ protected:
   ComTdbRegionStatsVirtTableColumnStruct* stats_;  
 
   ExpHbaseInterface * ehi_;
-  ByteArrayList * regionInfoList_;
+  NAArray<HbaseStr> *regionInfoList_;
 
   Int32 currIndex_;
 
@@ -3800,6 +3801,182 @@ class ExExeUtilRegionStatsPrivateState : public ex_tcb_private_state
 public:	
   ExExeUtilRegionStatsPrivateState();
   ~ExExeUtilRegionStatsPrivateState();	// destructor
+protected:
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobInfoTdb
+// -----------------------------------------------------------------------
+class ExExeUtilLobInfoTdb : public ComTdbExeUtilLobInfo
+{
+public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExExeUtilLobInfoTdb()
+  {}
+
+  NA_EIDPROC virtual ~ExExeUtilLobInfoTdb()
+  {}
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDB's
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the ComTdbDLL instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  // 
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobInfoTcb
+// -----------------------------------------------------------------------
+class ExExeUtilLobInfoTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilLobInfoTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilLobInfoTcb(const ComTdbExeUtilLobInfo & exe_util_tdb,
+				ex_globals * glob = 0);
+
+  ~ExExeUtilLobInfoTcb();
+
+  virtual short work();
+
+
+private:
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    COLLECT_LOBINFO_,
+    POPULATE_LOBINFO_BUF_,
+    RETURN_LOBINFO_BUF_,
+    HANDLE_ERROR_,
+    DONE_
+  };
+  Step step_;
+
+protected:
+ 
+  short collectAndReturnLobInfo(char * tableName, Int32 currLobNum, ContextCli *context);
+
+  ExExeUtilLobInfoTdb & getLItdb() const
+  {
+    return (ExExeUtilLobInfoTdb &) tdb;
+  };
+  
+  char * tableName_;
+  char * inputNameBuf_;
+  Int32 currLobNum_;
+ 
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobInfoTableTcb
+// -----------------------------------------------------------------------
+class ExExeUtilLobInfoTableTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilLobInfoTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilLobInfoTableTcb(const ComTdbExeUtilLobInfo & exe_util_tdb,
+				ex_globals * glob = 0);
+
+  ~ExExeUtilLobInfoTableTcb();
+
+  virtual short work();
+
+
+private:
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    COLLECT_LOBINFO_,
+    POPULATE_LOBINFO_BUF_,
+    RETURN_LOBINFO_BUF_,
+    HANDLE_ERROR_,
+    DONE_
+  };
+  Step step_;
+
+protected:
+  Int64 getEmbeddedNumValue(char* &sep, char endChar, 
+                            NABoolean adjustLen = TRUE);
+  short collectLobInfo(char * tableName, Int32 currLobNum, ContextCli *context);
+  short populateLobInfo(Int32 currLobNum, NABoolean nullTerminate = FALSE);
+
+  ExExeUtilLobInfoTdb & getLItdb() const
+  {
+    return (ExExeUtilLobInfoTdb &) tdb;
+  };
+ 
+  char * tableName_;
+  char * inputNameBuf_;
+  
+  char * lobInfoBuf_;
+  Lng32 lobInfoBufLen_;
+  ComTdbLobInfoVirtTableColumnStruct* lobInfo_;  
+  Int32 currLobNum_;
+ 
+};
+
+
+////////////////////////////////////////////////////////////////////////////
+class ExExeUtilLobInfoPrivateState : public ex_tcb_private_state
+{
+  friend class ExExeUtilLobInfoTcb;
+  
+public:	
+  ExExeUtilLobInfoPrivateState();
+  ~ExExeUtilLobInfoPrivateState();	// destructor
+protected:
+};
+
+////////////////////////////////////////////////////////////////////////////
+class ExExeUtilLobInfoTablePrivateState : public ex_tcb_private_state
+{
+  friend class ExExeUtilLobInfoTableTcb;
+  
+public:	
+  ExExeUtilLobInfoTablePrivateState();
+  ~ExExeUtilLobInfoTablePrivateState();	// destructor
 protected:
 };
 
