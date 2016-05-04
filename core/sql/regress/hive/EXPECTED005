@@ -580,12 +580,54 @@ C1           C2                    C3                         C4               C
 *** ERROR[8413] The string argument contains characters that cannot be converted.
 
 --- 0 row(s) loaded.
+>>insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted.
+
+--- 0 row(s) inserted.
+>>upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted.
+
+--- 0 row(s) inserted.
 >>cqd HIVE_SCAN_SPECIAL_MODE '2';
 
 --- SQL operation complete.
 >>load with no output into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 
 --- 8 row(s) loaded.
+>>insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+
+--- 8 row(s) inserted.
+>>upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+
+--- 8 row(s) inserted.
+>>cqd HIVE_SCAN_SPECIAL_MODE reset;
+
+--- SQL operation complete.
+>>drop table if exists trafodion.seabase.traf_tbl_bad;
+
+--- SQL operation complete.
+>>create table trafodion.seabase.traf_tbl_bad (
++>c1 int not null,
++>c2 largeint not null,
++>c3 varchar(25),
++>c4 real,
++>c5 smallint,
++>c6 timestamp(6) not null,
++>c7 float(54) not null,
++>c8 smallint
++>);
+
+--- SQL operation complete.
+>>cqd HIVE_SCAN_SPECIAL_MODE '2';
+
+--- SQL operation complete.
+>>insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+
+*** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
+
+--- 0 row(s) inserted.
 >>cqd HIVE_SCAN_SPECIAL_MODE reset;
 
 --- SQL operation complete.

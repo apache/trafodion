@@ -262,7 +262,25 @@ c7 float(54),
 c8 smallint
 );
 load with no output into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 cqd HIVE_SCAN_SPECIAL_MODE '2';
 load with no output into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+cqd HIVE_SCAN_SPECIAL_MODE reset;
+drop table if exists trafodion.seabase.traf_tbl_bad;
+create table trafodion.seabase.traf_tbl_bad (
+c1 int not null,
+c2 largeint not null,
+c3 varchar(25),
+c4 real,
+c5 smallint,
+c6 timestamp(6) not null,
+c7 float(54) not null,
+c8 smallint
+);
+cqd HIVE_SCAN_SPECIAL_MODE '2';
+insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 cqd HIVE_SCAN_SPECIAL_MODE reset;
 log;
