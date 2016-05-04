@@ -105,7 +105,7 @@ public class TransactionalScanner extends AbstractClientScanner {
     
     @Override
     public void close() {
-        if(LOG.isTraceEnabled()) LOG.trace("close() -- ENTRY txID: " + ts.getTransactionId());
+        if(LOG.isTraceEnabled()) LOG.trace("close() -- ENTRY txID: " + ts.getTransactionId() + " " + this.ttable );
         if(closed) {
             if(LOG.isTraceEnabled()) LOG.trace("close()  already closed -- EXIT txID: " + ts.getTransactionId());
             return;
@@ -138,6 +138,10 @@ public class TransactionalScanner extends AbstractClientScanner {
             }
         }
         catch(ServiceException se) {
+            if(LOG.isErrorEnabled()) 
+                LOG.error("close() -- CloseScanner ServiceException txID: " + ts.getTransactionId() +
+                        "Exception :" , se);
+                                              
             this.interrupted = true;
             this.closed = false;
         }
