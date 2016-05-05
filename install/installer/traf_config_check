@@ -413,7 +413,13 @@ else
          #Checking if using 1.7.0_n
          if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
             if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then
-               error="true"
+               #If Java is **less** than than 1.7.0_65 the next command will fail.
+               #Install will fail anyways if less than 1.7.0_65
+               #Will not fail if Java is 1.7.0_100 or greater
+               #Temporary fix to support Java 7 upgrades greater than 100
+               if [[ "${THIS_JVM_VER:20:3}" -lt $JAVA_65 ]]; then
+                  error="true"
+               fi
             fi
          fi
 
