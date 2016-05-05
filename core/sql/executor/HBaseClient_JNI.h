@@ -57,6 +57,20 @@ typedef enum {
  ,HBC_Req_Drop
 } HBaseClientReqType;
 
+class HBaseClientRequest
+{
+public :
+  HBaseClientRequest(NAHeap *heap, HBaseClientReqType reqType); 
+  ~HBaseClientRequest(); 
+  bool isShutDown() { return reqType_ == HBC_Req_Shutdown; }
+  void setFileName(const char *fileName); 
+  NAHeap *getHeap() { return heap_; }
+public :
+  HBaseClientReqType reqType_;
+  char *fileName_;
+  NAHeap *heap_;
+};
+
 // ===========================================================================
 // ===== The ByteArrayList class implements access to the Java 
 // ===== ByteArrayList class.
@@ -80,18 +94,18 @@ public:
 
   // Destructor
   virtual ~ByteArrayList();
-  
+
   // Initialize JVM and all the JNI configuration.
   // Must be called.
   BAL_RetCode    init();
-  
+
   BAL_RetCode add(const Text& str);
-    
+
   // Add a Text vector.
   BAL_RetCode add(const TextVec& vec);
 
   BAL_RetCode addElement(const char * data, int keyLength);
-    
+
   // Get a Text element
   Text* get(Int32 i);
 
@@ -103,9 +117,9 @@ public:
   char* getEntry(Int32 i, char* buf, Int32 bufLen, Int32& dataLen);
 
 
-private:  
+private:
   enum JAVA_METHODS {
-    JM_CTOR = 0, 
+    JM_CTOR = 0,
     JM_ADD,
     JM_GET,
     JM_GETSIZE,
@@ -113,26 +127,12 @@ private:
     JM_GETENTRYSIZE,
     JM_LAST
   };
-  
-  static jclass          javaClass_;  
+
+  static jclass          javaClass_;
   static JavaMethodInit* JavaMethods_;
   static bool javaMethodsInitialized_;
   // this mutex protects both JaveMethods_ and javaClass_ initialization
   static pthread_mutex_t javaMethodsInitMutex_;
-};
-
-class HBaseClientRequest
-{
-public :
-  HBaseClientRequest(NAHeap *heap, HBaseClientReqType reqType); 
-  ~HBaseClientRequest(); 
-  bool isShutDown() { return reqType_ == HBC_Req_Shutdown; }
-  void setFileName(const char *fileName); 
-  NAHeap *getHeap() { return heap_; }
-public :
-  HBaseClientReqType reqType_;
-  char *fileName_;
-  NAHeap *heap_;
 };
 
 
@@ -173,7 +173,6 @@ typedef enum {
  ,HTC_ERROR_GRANT_EXCEPTION
  ,HTC_ERROR_REVOKE_PARAM
  ,HTC_ERROR_REVOKE_EXCEPTION
- ,HTC_GETENDKEYS
  ,HTC_ERROR_GETHTABLENAME_EXCEPTION
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
@@ -309,9 +308,6 @@ public:
   // Get the error description.
   virtual char* getErrorText(HTC_RetCode errEnum);
 
-  ByteArrayList* getBeginKeys();
-  ByteArrayList* getEndKeys();
-
   void setTableName(const char *tableName)
   {
     Int32 len = strlen(tableName);
@@ -342,7 +338,6 @@ public:
 
 private:
   NAString getLastJavaError();
-  ByteArrayList* getKeys(Int32 funcIndex);
 
   enum JAVA_METHODS {
     JM_CTOR = 0
@@ -352,12 +347,10 @@ private:
    ,JM_COPROC_AGGR
    ,JM_GET_NAME
    ,JM_GET_HTNAME
-   ,JM_GETENDKEYS
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
    ,JM_FETCH_ROWS
    ,JM_COMPLETE_PUT
-   ,JM_GETBEGINKEYS
    ,JM_LAST
   };
   char *tableName_; 
@@ -471,6 +464,8 @@ typedef enum {
  ,HBC_ERROR_CHECKANDDELETEROW_PARAM
  ,HBC_ERROR_CHECKANDDELETEROW_EXCEPTION
  ,HBC_ERROR_CHECKANDDELETEROW_NOTFOUND
+ ,HBC_ERROR_GETKEYS
+ ,HBC_ERROR_REGION_STATS
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -509,8 +504,9 @@ public:
   HBC_RetCode dropAll(const char* pattern, bool async, Int64 transID);
   HBC_RetCode copy(const char* srcTblName, const char* tgtTblName,
                    NABoolean force);
-  ByteArrayList* listAll(const char* pattern);
-  ByteArrayList* getRegionStats(const char* tblName);
+  NAArray<HbaseStr>* listAll(NAHeap *heap, const char* pattern);
+  NAArray<HbaseStr>* getRegionStats(NAHeap *heap, const char* tblName);
+
   HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
@@ -570,10 +566,13 @@ public:
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
       HbaseStr columnToCheck, HbaseStr columnValToCheck,
       Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+  NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
+  NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
 
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
+  NAArray<HbaseStr>* getKeys(Int32 funcIndex, NAHeap *heap, const char *tableName, bool useTRex);
 
 private:
   NAString  getLastJavaError();
@@ -618,6 +617,8 @@ private:
    ,JM_HBC_DELETE_ROW
    ,JM_HBC_DIRECT_DELETE_ROWS
    ,JM_HBC_CHECKANDDELETE_ROW
+   ,JM_HBC_GETSTARTKEYS
+   ,JM_HBC_GETENDKEYS
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -826,6 +827,9 @@ jobjectArray convertToStringObjectArray(const HBASE_NAMELIST& nameList);
 jobjectArray convertToStringObjectArray(const NAText *text, int arrayLen);
 int convertStringObjectArrayToList(NAHeap *heap, jarray j_objArray, 
                                          LIST(Text *)&list);
+int convertByteArrayObjectArrayToNAArray(NAHeap *heap, jarray j_objArray, 
+             NAArray<HbaseStr> **retArray);
+void deleteNAArray(CollHeap *heap, NAArray<HbaseStr> *array);
 #endif
 
 

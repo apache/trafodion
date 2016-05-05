@@ -50,6 +50,7 @@
 #include "SchemaDB.h"
 #include "HbaseSearchSpec.h"
 #include "OptHints.h"
+#include "ExpHbaseDefs.h"
 #include <vector>
 
 // -----------------------------------------------------------------------
@@ -86,7 +87,6 @@ class QRDescGenerator;
 class RangeSpecRef;
 
 class MVMatch;
-class ByteArrayList;
 
 
 /*************************
@@ -1278,7 +1278,7 @@ public:
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NABoolean isRW = FALSE,
 					     NABoolean isCW = FALSE, 
-                                             ByteArrayList* hbaseKeys = NULL);
+                                             NAArray<HbaseStr> * hbaseKeys = NULL);
 
   static desc_struct *createVirtualTableDesc(const char * name,
 					     NAList<char*> &colNameList,

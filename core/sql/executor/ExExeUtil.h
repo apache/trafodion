@@ -54,7 +54,6 @@ class ExSqlComp;
 class ExProcessStats;
 
 class ExpHbaseInterface;
-class ByteArrayList;
 
 //class FILE_STREAM;
 #include "ComAnsiNamePart.h"
@@ -64,7 +63,7 @@ class ByteArrayList;
 #include "ExExeUtilCli.h"
 #include "ExpLOBstats.h"
 #include "hiveHook.h"
-
+#include "ExpHbaseDefs.h"
 
 #include "SequenceFileReader.h"
 
@@ -2552,7 +2551,7 @@ public:
 
  private:
   ExpHbaseInterface * ehi_;
-  ByteArrayList * bal_;
+  NAArray<HbaseStr> *hbaseTables_;
   Int32 currIndex_;
 
   NAString extTableName_;
@@ -3744,7 +3743,7 @@ protected:
   ComTdbRegionStatsVirtTableColumnStruct* stats_;  
 
   ExpHbaseInterface * ehi_;
-  ByteArrayList * regionInfoList_;
+  NAArray<HbaseStr> *regionInfoList_;
 
   Int32 currIndex_;
 

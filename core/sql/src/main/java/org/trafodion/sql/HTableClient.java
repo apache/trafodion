@@ -110,7 +110,6 @@ public class HTableClient {
 	Result[] getResultSet = null;
 	String lastError;
         RMInterface table = null;
-        ByteArrayList coprocAggrResult = null;
         private boolean writeToWAL = false;
 	int numRowsCached = 1;
 	int numColsInScan = 0;
@@ -1704,8 +1703,6 @@ public class HTableClient {
                         scan);
                     }
 
-		    coprocAggrResult = new ByteArrayList();
-
 		    byte[] rcBytes = 
                       ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(rowCount).array();
                     return rcBytes; 
@@ -1768,46 +1765,14 @@ public class HTableClient {
            return true;
 	}
 
-	public ByteArrayList getEndKeys() throws IOException {
-	    if (logger.isTraceEnabled()) logger.trace("Enter getEndKeys() " + tableName);
-            ByteArrayList result = new ByteArrayList();
-            if (table == null) {
-                return null;
-            }
-            byte[][] htableResult = table.getEndKeys();
+    public byte[][] getStartKeys() throws IOException
+    {
+       return table.getStartKeys();
+    }
 
-            // transfer the HTable result to ByteArrayList
-            for (int i=0; i<htableResult.length; i++ ) {
-                if (logger.isTraceEnabled()) logger.trace("Inside getEndKeys(), result[i]: " + 
-                             htableResult[i]);
-                if (logger.isTraceEnabled()) logger.trace("Inside getEndKeys(), result[i]: " + 
-                             new String(htableResult[i]));
-                result.add(htableResult[i]);
-            }
-
-            if (logger.isTraceEnabled()) logger.trace("Exit getEndKeys(), result size: " + result.getSize());
-            return result;
-	}
-
-    public ByteArrayList getStartKeys() throws IOException {
-        if (logger.isTraceEnabled()) logger.trace("Enter getStartKeys() " + tableName);
-        ByteArrayList result = new ByteArrayList();
-        if (table == null) {
-            return null;
-        }
-        byte[][] htableResult = table.getStartKeys();
-
-        // transfer the HTable result to ByteArrayList
-        for (int i=0; i<htableResult.length; i++ ) {
-            if (logger.isTraceEnabled()) logger.trace("Inside getStartKeys(), result[i]: " + 
-                         htableResult[i]);
-            if (logger.isTraceEnabled()) logger.trace("Inside getStartKeys(), result[i]: " + 
-                         new String(htableResult[i]));
-            result.add(htableResult[i]);
-        }
-
-        if (logger.isTraceEnabled()) logger.trace("Exit getStartKeys(), result size: " + result.getSize());
-        return result;
+    public byte[][] getEndKeys() throws IOException
+    {
+       return table.getEndKeys();
     }
 
     private void cleanScan()
