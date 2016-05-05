@@ -20,13 +20,13 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[limits]]
 = Limits
 
-This section lists limits for various parts of Trafodion SQL.
+This section lists limits for various parts of {project-name} SQL.
 
 [cols="30%h,70%"]
 |===

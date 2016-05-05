@@ -26,12 +26,12 @@
 [[jdbct4-installation-requirements]]
 == Installation Requirements
 
-The Trafodion JDBC Type 4 Driver requires a Java-enabled platform that supports the Java Development Kit (JDK) 1.7 or higher.
+The {project-name} JDBC Type 4 Driver requires a Java-enabled platform that supports the Java Development Kit (JDK) 1.7 or higher.
 
 [[jdbct4-java-environment]]
 === Java Environment
 
-The Trafodion JDBC Type 4 Driver requires that a compatible Java version be installed on the client workstation and that the Java path be set to
+The {project-name} JDBC Type 4 Driver requires that a compatible Java version be installed on the client workstation and that the Java path be set to
 the correct location. The supported Java version is 1.7 or higher.
 
 NOTE: If you plan to do Java-based development, install the Java Development Kit (JDK) rather than the Java Runtime Environment (JRE).
@@ -166,7 +166,7 @@ use the setenv command instead of export.
 [[jdbct4-install-instructions]]
 == Installation Instructions
 
-You download and extract the Trafodion client package using the instructions in <<introduction-download, Download Installation Package>> above.
+You download and extract the {project-name} client package using the instructions in <<introduction-download, Download Installation Package>> above.
 
 [[jdbct4-install-driver]]
 === Install JDBC Type-4 Driver
@@ -204,7 +204,7 @@ The content of the target directory is as follows:
 
 === Java Development
 
-If you plan to write and run Java applications that use the Trafodion JDBC Type 4 Driver to connect to a Trafodion database, then set these
+If you plan to write and run Java applications that use the {project-name} JDBC Type 4 Driver to connect to a {project-name} database, then set these
 environment variables on the client workstation, replacing `_jdk-directory_` with the location of your Java Development Kit and
 replacing `_jdbc-installation-directory_` with the name of the directory where you downloaded the JDBC Type 4 driver:
 
@@ -232,13 +232,13 @@ Set these values for your environment:
 * _url_: Specify this string: _jdbc:t4jdbc://_host-name_:_port-number_/:_
 
 _host-name_ is the IP address or host name of the database platform, and _port-number_ is the location where the 
-Trafodion Database Connectivity Service (DCS) is running, which is *23400* by default. See the
-http://trafodion.incubator.apache.org/docs/dcs_reference/index.html[Trafodion Database Connectivity Services Reference Guide]
+{project-name} Database Connectivity Service (DCS) is running, which is *23400* by default. See the
+http://trafodion.incubator.apache.org/docs/dcs_reference/index.html[{project-name} Database Connectivity Services Reference Guide]
 for information about how to configure the DCS port.
 
 *Example*
 
-In this example, Trafodion authentication has not been enabled. Therefore, you can use a dummy
+In this example, {project-name} authentication has not been enabled. Therefore, you can use a dummy
 user and password. If authentication is enabled, then use your user and password information.
 
 ```
@@ -257,22 +257,22 @@ NOTE: The driver’s class name is `org.trafodion.jdbc.t4.T4Driver`.
 == Test Programs
 
 The `README` file in the `samples` folder provide information for how you build and run sample Java programs.
-You can use these programs to verify the setup of the Trafodion JDBC Type-4 driver.
+You can use these programs to verify the setup of the {project-name} JDBC Type-4 driver.
 See the <<jdbct4-install-driver, Install JDBC Type-4 Driver>> section above for information on the different
-sample programs that are included with the Trafodion JDBC Type-4 driver.
+sample programs that are included with the {project-name} JDBC Type-4 driver.
 
 *Example*
 
 Build and run the StatementSample test program to verify the JDBC Type-4 driver installation.
 
 ```
-C:\Development Tools\Trafodion JDBCT4\samples>cd StatementSample
+C:\Development Tools\{project-name} JDBCT4\samples>cd StatementSample
 
-C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
+C:\Development Tools\{project-name} JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
 Note: ..\common\sampleUtils.java uses or overrides a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 v
-C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties StatementSample
+C:\Development Tools\{project-name} JDBCT4\samples\StatementSample>%JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties StatementSample
 Mar 16, 2016 9:36:54 PM common.sampleUtils getPropertiesConnection
 INFO: DriverManager.getConnection(url, props) passed
 
@@ -341,12 +341,12 @@ Column 12 - -100.12,-100.12
 
 End of Data
 
-C:\Development Tools\Trafodion JDBCT4\samples\StatementSample>
+C:\Development Tools\{project-name} JDBCT4\samples\StatementSample>
 ```
 
 <<<
 == Uninstall JDBC Type-4 Driver
-Run one of these sets of commands to remove the Trafodion JDBC Type 4 Driver:
+Run one of these sets of commands to remove the {project-name} JDBC Type 4 Driver:
 
 * On Linux:
 +
@@ -408,7 +408,7 @@ C:\>
 == Reinstall JDBC Type-4 Driver
 
 1. Close all applications running on the workstation, except the Web browser.
-2. Download and extract the Trafodion client package using the instructions in <<introduction-download, Download Installation Package>> above.
-3. Install the new Trafodion JDBC Type-4 driver. See <<jdbct4-install-driver, Install JDBC Type-4 Driver>>.
+2. Download and extract the {project-name} client package using the instructions in <<introduction-download, Download Installation Package>> above.
+3. Install the new {project-name} JDBC Type-4 driver. See <<jdbct4-install-driver, Install JDBC Type-4 Driver>>.
 4. Set up the client environment. Please refer to: <<jdbct4-setup-env, Set Up Client Environment>>.
 

@@ -1,0 +1,553 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[working-with-blob-and-clob-data]]
+= Working with BLOB and CLOB Data
+
+This chapter describes working with BLOB and CLOB data in JDBC
+applications. You can use the standard interface described in the JDBC
+3.0 API specification to access BLOB and CLOB data in a {project-name}
+database with support provided by the Type 4 driver.
+
+BLOB and CLOB are not native data types in a {project-name} database.
+But, database administrators can create and manage {project-name}
+database tables that have BLOB and CLOB columns by using the Type 4
+driver or other tools as described in
+<<managing-the-sql-tables-for-blob-and-clob-data, Managing the SQL Tables for BLOB and CLOB Data>>.
+
+For management purposes, CLOB and BLOB data is referred to as large
+object (LOB) data, which can represent either data type.
+
+[[architecture-for-lob-support]]
+== Architecture for LOB Support
+
+The tables that support LOB data are:
+
+*LOB Architecture: Tables for LOB Data Support*
+[cols="15%,85%",options="header" ]
+|===
+| Table | Description
+| *Base table* | Referenced by JDBC applications to insert, store, read, and update BLOB and CLOB data.
+In the base table, the Type 4 driver maps the BLOB and CLOB columns into a data-locator column. The data-locator column points to
+the actual LOB data that is stored in a separate user table called the LOB table.
+| *LOB table* | Actually contains the BLOB and CLOB data in chunks. A CLOB or BLOB object is identified by a data locator. LOB tables have two
+formats: LOB table for BLOB data and a LOB table for CLOB data.
+|===
+
+image:{images}/lob_tables.jpg[LOB table layout]
+
+[[setting-properties-for-the-lob-table]]
+== Setting Properties for the LOB Table
+
+Before running the JDBC application that uses BLOB and CLOB data through
+the JDBC API, the database administrator must create the LOB tables. For
+information on creating LOB tables, see
+<<managing-lob-data-by-using-the-lob-admin-utility, Managing LOB Data by Using the Lob Admin Utility>>.
+
+The JDBC applications that access BLOB or CLOB data must specify the
+associated LOB table names and, optionally, configure the
+`reserveDataLocators` property.
+
+[[specifying-the-lob-table]]
+=== Specifying the LOB Table
+
+At run time, a user JDBC application notifies the Type 4 driver of the
+name or names of the LOB tables associated with the CLOB or BLOB columns
+of the base tables being accessed by the application. One LOB table or
+separate tables can be used for BLOB and CLOB data.
+
+The JDBC application specifies a LOB table name either through a system
+parameter or through a Java Property object by using one of the
+following properties, depending on the LOB column type:
+
+For more information about using these properties, see
+<<lob-table-name-properties, LOB Table Name Properties>>.
+
+[[reserving-data-locators]]
+=== Reserving Data Locators
+
+A data locator is the reference pointer value (SQL `LARGEINT` data type)
+that is substituted for the BLOB or CLOB column in the base table
+definition. Each object stored into the LOB table is assigned a unique
+data locator value. Because the LOB table is a shared resource among all
+accessors that use the particular LOB table, reserving data locators
+reduces contention for getting the next value. The default setting is
+100 reserved data locators; therefore, each JVM instance can insert 100
+large objects (not chunks) before needing a new allocation.
+
+Specify the number of data locators (n) to reserve for your application
+by using the Type 4 driver property `hpt4jdbc.reserveDataLocators`. For
+information about specifying this property, see
+<<reserveDataLocators, reserveDataLocators Property>>.
+
+
+[[storing-clob-data]]
+== Storing CLOB Data
+
+[[inserting-clob-columns-by-using-the-clob-interface]]
+=== Inserting CLOB Columns by Using the Clob Interface
+
+When you insert a row containing a CLOB data type, and before the column
+can be updated with real CLOB data, you can insert a row that has an
+empty CLOB value. To insert an empty CLOB value in a {project-name}
+database, specify the `EMPTY_CLOB()` function for the CLOB column in the
+insert statement.
+
+* The `EMPTY_CLOB()` function is an {project-name} database software-specific
+function and might not work on other databases.
+
+* Do not use the `EMPTY_CLOB()` function when using the `PreparedStatement` interface.
+
+The Type 4 driver scans the SQL string for the `EMPTY_CLOB()` function and
+substitutes the next-available data locator.
+
+Then, obtain the handle to the empty CLOB column by selecting the CLOB
+column for update. The following code illustrates how to obtain the
+handle to an empty CLOB column:
+
+[source, java]
+----
+Clob myClob = null ;
+
+Statement s = conn.createStatement() ;
+ResultSet rs =
+   s.executeQuery( "SELECT myclobcolumn FROM mytable WHERE ... FOR UPDATE" ) ;
+if ( rs.next() )
+   myCLOB = rs.getClob( 1 ) ;
+----
+
+You can now write data to the CLOB column. See
+<<writing-ascii-or-mbcs-data-to-a-clob-column, Writing ASCII or MBCS Data to a CLOB Column>>.
+
+NOTE: *Limitation*: Do not rename the CLOB column in the select query.
+
+[[writing-ascii-or-mbcs-data-to-a-clob-column]]
+=== Writing ASCII or MBCS Data to a CLOB Column
+
+You can write ASCII or MBCS data to a CLOB column.
+
+NOTE: Multi-byte Character Set (MBCS) data and ASCII data are handled the same way.
+
+[[ascii-data]]
+==== ASCII Data
+
+To write ASCII or MBCS data to the CLOB column, use the Clob interface.
+The following code illustrates using the `setAsciiStream` method of the
+Clob interface to write CLOB data.
+
+[source, java]
+----
+// stream begins at position: 1
+long pos = 1;
+
+// String containing the ASCII data
+String s ;
+
+// Obtain the output stream to write Clob data
+OutputStream os = myClob.setAsciiStream( pos ) ;
+
+// write Clob data using OutputStream
+byte[] myClobData = s.getBytes() ;
+os.write( myClobData ) ;
+----
+
+The Type 4 driver splits the output stream into chunks and stores the
+chunks in the LOB table.
+
+
+[[inserting-clob-data-by-using-the-preparedstatement-interface]]
+=== Inserting CLOB Data by Using the PreparedStatement Interface
+
+You can use the `PreparedStatement` interface to insert a CLOB column
+using ASCII or MBCS data.
+
+[[ascii-data]]
+==== ASCII Data
+
+To insert a CLOB column using ASCII or MBCS data from an `InputStream`,
+use the `PreparedStatement` interface to insert the CLOB column.
+
+[source, java]
+----
+InputStream inputAsciiStream ;
+
+PreparedStatement ps =
+   conn.prepareStatement( "INSERT INTO mytable (myclobcolumn) VALUES (?)" ) ;
+
+ps.setAsciiStream( 1, inputAsciiStream, length_of_data ) ;
+ps.executeUpdate() ;
+----
+
+The Type 4 driver reads the data from `InputStream` and writes the data to
+the LOB table. The Type 4 driver substitutes the next-available data
+locator for the parameter of the CLOB column in the table.
+
+[[inserting-a-clob-object-by-using-the-setclob-method]]
+=== Inserting a Clob Object by Using the setClob Method
+
+Your JDBC application cannot directly instantiate a `Clob` object. To
+perform an equivalent operation:
+
+1.  Obtain a `Clob` object by using the `getClob` method of the `ResultSet` interface.
+2.  Insert the `Clob` object into another row by using the `setClob` method
+of the `PreparedStatement` interface.
+
+In this situation, the Type 4 driver generates a new data locator and,
+when the `PreparedStatement` is executed, copies the contents of the source `Clob`
+into the new `Clob` object.
+
+[[reading-clob-data]]
+== Reading CLOB Data
+
+[[reading-ascii-data-from-a-clob-column]]
+=== Reading ASCII Data from a CLOB Column
+
+To read ASCII or MBCS data from a CLOB column, use the `Clob` interface or `InputStream`.
+
+Using the Clob interface:
+
+[source, java]
+----
+// Obtain the Clob from ResultSet
+Clob myClob = rs.getClob( "myClobColumn" ) ;
+
+// Obtain the input stream to read Clob data
+InputStream is = myClob.getAsciiStream() ;
+
+// read Clob data using the InputStream
+byte[] myClobData ;
+myClobData = new byte[ length ] ;
+
+is.read( myClobData, offset, length ) ;
+----
+
+To read ASCII or MBCS data from the CLOB column by using `InputStream`:
+
+[source, java]
+----
+// obtain the InputStream from ResultSet
+InputStream is = rs.getAsciiStream( "myClobColumn" ) ;
+
+// read Clob data using the InputStream
+byte[] myClobData ;
+myClobData = new byte[length] ;
+
+is.read( myClobData, offset, length ) ;
+----
+
+[[updating-clob-data]]
+== Updating CLOB Data
+
+To update CLOB data, use the methods in the `Clob` interface or use the
+`updateClob` method of the `ResultSet` interface. The Type 4 driver makes
+changes directly to the CLOB data. Therefore, the Type 4 driver returns
+`false` to the `locatorsUpdateCopy` method of the `DatabaseMetaData` interface.
+Applications do not need to issue a separate update statement to update the CLOB data.
+
+[[updating-clob-objects-with-the-updateclob-method]]
+=== Updating Clob Objects with the updateClob Method
+
+Unlike some LOB support implementations, the Type 4 driver updates the
+CLOB data directly in the database. So, when the `Clob` object is same in
+the `updateClob` method as the `Clob` object obtained using `getClob`, the
+`updateRow` method of the `ResultSet` interface does nothing with the `Clob`
+object.
+
+When the `Clob` objects differ, then the `Clob` object in the `updateClob` method
+behaves as if the `setClob` method was issued. See
+<<inserting-a-clob-object-by-using-the-setclob-method, Inserting a Clob Object by Using the setClob Method>>.
+
+[[replacing-clob-objects]]
+=== Replacing Clob Objects
+
+You can replace Clob objects in the following ways:
+
+* Use the `EMPTY_CLOB()` function to replace the `Clob` object with the
+empty `Clob` object, then insert new data as described under
+<<inserting-clob-columns-by-using-the-clob-interface, Inserting CLOB Columns by Using the Clob Interface>>.
+* Use the `PreparedStatement.setAsciiStream()` or `setCharacterStream()`
+method to replace the existing `Clob` object with new CLOB data.
+* Use the `setClob` or `updateClob` method to replace the existing CLOB
+objects as explained under
+<<inserting-a-clob-object-by-using-the-setclob-method, Inserting a Clob Object by Using the setClob Method>> and
+<<updating-clob-objects-with-the-updateclob-method, Updating Clob Objects with the updateClob Method>>.
+
+[[deleting-clob-data]]
+== Deleting CLOB Data
+
+To delete CLOB data, the JDBC application uses the `SQL DELETE` statement
+to delete the row in the base table.
+
+When the row containing the CLOB column is deleted by the JDBC
+application, the corresponding CLOB data is automatically deleted, too.
+
+See also
+<<null-and-empty-blob-or-empty-clob-value, NULL and Empty BLOB or Empty CLOB Value>>.
+
+[[storing-blob-data]]
+== Storing BLOB Data
+
+Perform operations on BLOB columns that are similar to those operations
+used on CLOB columns.
+
+* Use the `EMPTY_BLOB()` function in the insert statement to create an
+empty BLOB column in the database.
+* Use the `setBinaryStream` method of the `Blob` interface to obtain the
+`InputStream` to read BLOB data.
+* Use the `getBinaryStream` method of the `Blob` interface to obtain the
+`OutputStream` to write BLOB data.
+* Use the `setBinaryStream` of the `PreparedStatement` interface to write the
+data to the BLOB column.
+
+[[inserting-a-blob-column-by-using-the-blob-interface]]
+=== Inserting a BLOB Column by Using the Blob Interface
+
+When you insert a row containing a BLOB data type, you can insert the
+row using an empty BLOB value before the column can be updated with real
+BLOB data. To insert an empty BLOB value in a {project-name} database,
+specify `EMPTY_BLOB()` function for the BLOB column in the insert
+statement.
+
+The Type 4 driver scans the SQL string for the `EMPTY_BLOB()` function and
+substitutes the next-available data locator.
+
+NOTE: The `EMPTY_BLOB()` function is an {project-name} database software
+specific function and might not work on other databases. Do not use the `EMPTY_BLOB()` function when using the `PreparedStatement`
+interface.
+
+Then, obtain the handle to the empty BLOB column by selecting the BLOB
+column for update. The following code illustrates how to obtain the
+handle to an empty BLOB column:
+
+[source, java]
+----
+Blob myBlob = null ;
+
+Statement s = conn.createStatement() ;
+ResultSet rs =
+   s.executeQuery("SELECT myblobcolumn FROM mytable WHERE ... FOR UPDATE" ) ;
+
+if ( rs.next() )
+   myBlob = rs.getBlob( 1 ) ;
+----
+
+You can now write data to the BLOB column. See
+<<writing-binary-data-to-a-blob-column, Writing Binary Data to a BLOB Column>>.
+
+NOTE: *Limitation:* Do not rename the BLOB column in the select query.
+
+[[writing-binary-data-to-a-blob-column]]
+=== Writing Binary Data to a BLOB Column
+
+To write data to the BLOB column, use the `Blob` interface. The following
+code illustrates using the `setBinaryStream` method of the `Blob` interface
+to write BLOB data:
+
+[source, java]
+----
+// Stream begins at position: 1
+long pos = 1 ;
+
+// String containing the binary data
+String s ;
+
+// Obtain the output stream to write Blob data
+OutputStream os = myBlob.setBinaryStream( pos ) ;
+
+// write Blob data using OutputStream
+byte[] myBlobData = s.getBytes() ;
+os.write( myBlobData ) ;
+----
+
+The Type 4 driver splits the output stream into chunks and stores the chunks in the LOB table.
+
+[[inserting-a-blob-column-by-using-the-preparedstatement-interface]]
+=== Inserting a BLOB Column by Using the PreparedStatement Interface
+
+To insert a BLOB column that has binary data from an `InputStream`, use
+the `PreparedStatement` interface:
+
+[source, java]
+----
+InputStream inputBinary ;
+
+PreparedStatement ps =
+   conn.prepareStatement( "INSERT INTO mytable (myblobcolumn) VALUES (?)" ) ;
+
+ps.setBinaryStream( 1, inputBinary, length_of_data ) ;
+ps.executeUpdate() ;
+----
+
+The Type 4 driver reads the data from `InputStream` and writes the data to
+the LOB table. The Type 4 driver substitutes the next-available data
+locator for the parameter of the BLOB column in the table.
+
+[[inserting-a-blob-object-by-using-the-setblob-method]]
+=== Inserting a Blob Object by Using the setBlob Method
+
+Your JDBC application cannot directly instantiate a `Blob` object. To
+perform an equivalent operation:
+
+1.  Obtain a `Blob` object by using the `getBlob` method of the `ResultSet` interface.
+2.  Insert the `Blob` object into another row by using the `setBlob` method
+of the `PreparedStatement` interface.
+
+In this situation, the Type 4 driver generates a new data locator and
+copies the contents of the source `Blob` into the new `Blob` object when the
+application issues the `setBlob` method of the `PreparedStatement` interface.
+
+
+[[reading-binary-data-from-a-blob-column]]
+== Reading Binary Data from a BLOB Column
+
+To read binary data from the BLOB column, use the `Blob` interface or `InputStream`.
+
+Using the Blob interface:
+
+[source, java]
+----
+// Obtain the Blob from ResultSet
+Blob myBlob = rs.getBlob( "myBlobColumn" ) ;
+
+// Obtain the input stream to read Blob data
+InputStream is = myBlob.getBinaryStream() ;
+
+// read Blob data using the InputStream
+byte[] myBlobData ;
+myBlobData = new byte[ length ] ;
+
+is.read( myBlobData, offset, length ) ;
+----
+
+Using InputStream:
+
+[source, java]
+----
+// obtain the InputStream from ResultSet
+InputStream is = rs.getBinaryStream( "myBlobColumn" ) ;
+
+// read Blob data using the InputStream
+byte[] myBlobData ;
+myBlobData = new byte[ length ] ;
+
+is.read( myBlobData, offset, length ) ;
+----
+
+[[updating-blob-data]]
+== Updating BLOB Data
+
+To update BLOB data, use the methods in the `Blob` interface or use the
+`updateBlob` method of the `ResultSet` interface. The Type 4 driver makes
+changes to the BLOB data directly. Therefore, the Type 4 driver returns
+`false` to the `locatorsUpdateCopy` method of the
+`DatabaseMetaData` interface. Applications do not need to issue a separate
+update statement to update the BLOB data.
+
+[[updating-blob-objects-by-using-the-updateblob-method]]
+=== Updating Blob Objects by Using the updateBlob Method
+
+Unlike some LOB support implementations, the Type 4 driver updates the
+BLOB data directly in the database. So, when the Blob object is same in
+the `updateBlob` method as the object obtained using `getBlob`, the
+`updateRow` method of the `ResultSet` interface does nothing with the `Blob`
+object.
+
+When the `Blob` objects differ, the `Blob` object in the `updateBlob` method
+behaves as if the `setBlob` method was issued. See
+<<inserting-a-blob-object-by-using-the-setblob-method, Inserting a Blob Object by Using the setBlob Method>>.
+
+[[replacing-blob-objects]]
+=== Replacing Blob Objects
+
+You can replace Blob objects in the following ways:
+
+* Use the `EMPTY_BLOB()` function to replace the `Blob` object with the
+empty `Blob` object.
+* Replace an existing `Blob` object in a row by inserting the `Blob` with
+new data as described under
+<<inserting-a-blob-column-by-using-the-blob-interface, Inserting a BLOB Column by Using the Blob Interface>>.
+* Use the `setBinaryStream()` method to of the `PreparedStatement` interface
+to replace the existing `Blob` object with new BLOB data.
+* Use the `setBlob` or `updateBlob` methods to replace the existing BLOB
+objects as explained under
+<<inserting-a-blob-object-by-using-the-setblob-method, Inserting a Blob Object by Using the setBlob Method>> and
+<<updating-blob-objects-by-using-the-updateblob-method, Updating Blob Objects by Using the updateBlob Method>>.
+
+[[deleting-blob-data]]
+== Deleting BLOB Data
+
+To delete BLOB data, the JDBC application uses the `SQL DELETE` statement
+to delete the row in the base table.
+
+When the row containing the BLOB column is deleted by the application,
+the corresponding BLOB data is automatically deleted.
+
+See also
+<<null-and-empty-blob-or-empty-clob-value, NULL and Empty BLOB or Empty CLOB Value>>.
+
+[[null-and-empty-blob-or-empty-clob-value]]
+== NULL and Empty BLOB or Empty CLOB Value
+
+The data locator can have a `NULL` value if the BLOB or CLOB column is
+omitted in the insert statement. The Type 4 driver returns `NULL` when the
+application retrieves the value for such a column.
+
+When the application uses the `EMPTY_BLOB()` function or the `EMPTY_CLOB()`
+function to insert empty BLOB or CLOB data into the BLOB or CLOB column,
+the Type 4 driver returns the `Blob` or `Clob` object with no data.
+
+[[transactions-involving-blob-and-clob-access]]
+== Transactions Involving Blob and Clob Access
+
+You must ensure that your JDBC applications control the transactions
+when the BLOB columns or CLOB columns are accessed or modified. To
+control the transaction, set the connection to autocommit OFF mode.
+
+All LOB data access or modification is done under the application's
+transaction. When the autocommit mode is ON and LOB data is accessed or
+modified, the Type 4 driver throws the SQLException, Autocommit is on
+and LOB objects are involved.
+
+[[access-considerations-for-clob-and-blob-objects]]
+== Access Considerations for Clob and Blob Objects
+
+The Type 4 driver allows all the valid operations on the current `Clob`
+object or `Blob` object, called a "LOB object." LOB objects are current as
+long as the row that contains these LOB objects is the current row. The
+Type 4 driver throws an SQLException, issuing the following message,
+when the application attempts to perform operations on a LOB object that
+is not current:
+
+```
+Lob object {object-id} is not current
+```
+
+Only one `InputStream` or `Reader` and one `OutputStream` or `Writer` can be
+associated with the current LOB object.
+
+* When the application obtains the `InputStream` or `Reader` from the LOB
+object, the Type 4 driver closes the `InputStream` or `Reader` that is
+already associated with the LOB object.
+* Similarly, when the application obtains the `OutputStream` or `Writer`
+from the LOB object, the Type 4 driver closes the `OutputStream` or `Writer`
+that is already associated with the LOB object.
+

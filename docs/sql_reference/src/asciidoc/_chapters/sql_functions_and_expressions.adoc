@@ -20,14 +20,14 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[sql_functions_and_expressions]]
 = SQL Functions and Expressions
 
 This section describes the syntax and semantics of specific functions
-and expressions that you can use in Trafodion SQL statements. The
+and expressions that you can use in {project-name} SQL statements. The
 functions and expressions are categorized according to their
 functionality.
 
@@ -354,7 +354,7 @@ See the individual entry for the function.
 == ABS Function
 
 The ABS function returns the absolute value of a numeric value
-expression. ABS is a Trafodion SQL extension.
+expression. ABS is a {project-name} SQL extension.
 
 ```
 ABS (numeric-expression)
@@ -384,7 +384,7 @@ ABS (-20 + 12)
 The ACOS function returns the arccosine of a numeric value expression as
 an angle expressed in radians.
 
-ACOS is a Trafodion SQL extension. 
+ACOS is a {project-name} SQL extension. 
 
 ```
 ACOS (numeric-expression)
@@ -418,7 +418,7 @@ ACOS (COS (0.3491))
 === ADD_MONTHS Function
 
 The ADD_MONTHS function adds the integer number of months specified by
-_int_expr_ to _datetime_expr_ and normalizes the result. ADD_MONTHS is a Trafodion SQL
+_int_expr_ to _datetime_expr_ and normalizes the result. ADD_MONTHS is a {project-name} SQL
 extension.
 
 ```
@@ -484,7 +484,7 @@ The ASCII function returns the integer that is the ASCII code of the
 first character in a character string expression associated with either
 the ISO8891 character set or the UTF8 character set.
 
-ASCII is a Trafodion SQL extension.
+ASCII is a {project-name} SQL extension.
 
 ```
 ASCII (character-expression) 
@@ -499,7 +499,7 @@ characters. See <<character_value_expressions,Character Value Expressions>>.
 === Considerations For ASCII
 
 For a string expression in the UTF8 character set, if the value of the
-first byte in the string is greater than 127, Trafodion SQL returns this
+first byte in the string is greater than 127, {project-name} SQL returns this
 error message:
 
 ```
@@ -533,7 +533,7 @@ SALESREP                83
 The ASIN function returns the arcsine of a numeric value expression as
 an angle expressed in radians.
 
-ASIN is a Trafodion SQL extension.
+ASIN is a {project-name} SQL extension.
 
 ```
 ASIN (numeric-expression)
@@ -549,7 +549,7 @@ from -1 to +1. See <<numeric_value_expressions,Numeric Value Expressions>>.
 === Considerations for ASCII
 
 For a string expression in the UTF8 character set, if the value of the
-first byte in the string is greater than 127, Trafodion SQL returns this
+first byte in the string is greater than 127, {project-name} SQL returns this
 error message:
 
 ```
@@ -583,7 +583,7 @@ SALESREP                83
 The ASIN function returns the arcsine of a numeric value expression as
 an angle expressed in radians.
 
-ASIN is a Trafodion SQL extension.
+ASIN is a {project-name} SQL extension.
 
 ```
 ASIN (numeric-expression)
@@ -619,7 +619,7 @@ ASIN(SIN(0.3491))
 The ATAN function returns the arctangent of a numeric value expression
 as an angle expressed in radians.
 
-ATAN is a Trafodion SQL extension.
+ATAN is a {project-name} SQL extension.
 
 ```
 ATAN ( numeric-expression )
@@ -655,7 +655,7 @@ The ATAN2 function returns the arctangent of the x and y coordinates,
 specified by two numeric value expressions, as an angle expressed in
 radians.
 
-ATAN2 is a Trafodion SQL extension.
+ATAN2 is a {project-name} SQL extension.
 
 ```
 ATAN2 (numeric-expression-x,numeric-expression-y)
@@ -912,15 +912,15 @@ The following are BITAND restrictions:
 The CASE expression is a conditional expression with two forms: simple
 and searched.
 
-In a simple CASE expression, Trafodion SQL compares a value to a
+In a simple CASE expression, {project-name} SQL compares a value to a
 sequence of values and sets the CASE expression to the value associated
-with the first match &#8212; if a match exists. If no match exists, Trafodion
+with the first match &#8212; if a match exists. If no match exists, {project-name}
 SQL returns the value specified in the ELSE clause (which can be null).
 
-In a searched CASE expression, Trafodion SQL evaluates a sequence of
+In a searched CASE expression, {project-name} SQL evaluates a sequence of
 conditions and sets the CASE expression to the value associated with the
 first condition that is true &#8212; if a true condition exists. If no true
-condition exists, Trafodion SQL returns the value specified in the ELSE
+condition exists, {project-name} SQL returns the value specified in the ELSE
 clause (which can be null).
 
 *Simple CASE is*:
@@ -1161,8 +1161,8 @@ converting to DATE, the contents of the character string must be 10
 characters consisting of the year, a hyphen, the month, another hyphen,
 and the day.
 
-* A date value to a character string or to a TIMESTAMP (Trafodion SQL fills in the time part with 00:00:00.00).
-* A time value to a character string or to a TIMESTAMP (Trafodion SQL fills in the date part with the current date).
+* A date value to a character string or to a TIMESTAMP ({project-name} SQL fills in the time part with 00:00:00.00).
+* A time value to a character string or to a TIMESTAMP ({project-name} SQL fills in the date part with the current date).
 * A timestamp value to a character string, a DATE, a TIME, or another TIMESTAMP with different fractional seconds precision.
 * A year-month interval value to a character string, an exact numeric,
 or to another year-month INTERVAL with a different start field precision.
@@ -1201,7 +1201,7 @@ VALUES (001, 'User JBrook, executed at ' || CAST (CURRENT_TIMESTAMP AS CHAR(26))
 The CEILING function returns the smallest integer, represented as a
 FLOAT data type, greater than or equal to a numeric value expression.
 
-CEILING is a Trafodion SQL extension.
+CEILING is a {project-name} SQL extension.
 
 ```
 CEILING (numeric-expression)
@@ -1230,7 +1230,7 @@ CEILING (2.25)
 The CHAR function returns the character that has the specified code
 value, which must be of exact numeric with scale 0.
 
-CHAR is a Trafodion SQL extension.
+CHAR is a {project-name} SQL extension.
 
 ```
 CHAR(code-value, [,char-set-name])
@@ -1289,9 +1289,9 @@ CHAR[ACTER]_LENGTH (string-value-expression)
 * `_string-value-expression_`
 +
 specifies the string value expression for which to return the length in
-characters. Trafodion SQL returns the result as a two-byte signed
+characters. {project-name} SQL returns the result as a two-byte signed
 integer with a scale of zero. If _string-value-expression_ is null,
-Trafodion SQL returns a length of
+{project-name} SQL returns a length of
 null. See <<character_value_expressions,Character Value Expressions>>.
 
 [[considerations_for_char_length]]
@@ -1300,8 +1300,8 @@ null. See <<character_value_expressions,Character Value Expressions>>.
 [[char_and_varchar_operands]]
 ==== CHAR and VARCHAR Operands
 
-For a column declared as fixed CHAR, Trafodion SQL returns the maximum
-length of that column. For a VARCHAR column, Trafodion SQL returns the
+For a column declared as fixed CHAR, {project-name} SQL returns the maximum
+length of that column. For a VARCHAR column, {project-name} SQL returns the
 actual length of the string stored in that column.
 
 [[examples_of_char_length]]
@@ -1387,7 +1387,7 @@ that is the code point of the first character in a character value
 expression that can be associated with one of the supported character
 sets.
 
-CODE_VALUE is a Trafodion SQL extension.
+CODE_VALUE is a {project-name} SQL extension.
 
 ```
 CODE_VALUE(character-value-expression)
@@ -1420,7 +1420,7 @@ The CONCAT function returns the concatenation of two character value
 expressions as a character string value. You can also use the
 concatenation operator (\|\|).
 
-CONCAT is a Trafodion SQL extension.
+CONCAT is a {project-name} SQL extension.
 
 ```
 CONCAT (character-expr-1, character-expr-2)
@@ -1480,7 +1480,7 @@ a string value of '5 March':
 
 The type assignment of the parameter ?p becomes CHAR(5), the same data
 type as the character literal ' 2002'. Because you assigned a string
-value of more than five characters to ?p, Trafodion SQL returns a
+value of more than five characters to ?p, {project-name} SQL returns a
 truncation warning, and the result of the concatenation is 5 Mar 2002.
 
 To specify the type assignment of the parameter, use the CAST expression
@@ -1516,7 +1516,7 @@ VALUES (002, 'Executed at ' || CAST (CURRENT_TIMESTAMP AS CHAR(26)));
 The CONVERTTOHEX function converts the specified value expression to
 hexadecimal for display purposes.
 
-CONVERTTOHEX is a Trafodion SQL extension.
+CONVERTTOHEX is a {project-name} SQL extension.
 
 ```
 CONVERTTOHEX (expression)
@@ -1615,7 +1615,7 @@ SELECT CONVERTTOHEX(IV1), CONVERTTOHEX(IV2), CONVERTTOHEX(IV3) from IVT;
 The CONVERTTIMESTAMP function converts a Julian timestamp to a value
 with data type TIMESTAMP.
 
-CONVERTTIMESTAMP is a Trafodion SQL extension.
+CONVERTTIMESTAMP is a {project-name} SQL extension.
 
 ```
 CONVERTTIMESTAMP (julian-timestamp)
@@ -1679,7 +1679,7 @@ is the same value, 2008-04-03 21:05:36.143000.
 The COS function returns the cosine of a numeric value expression, where
 the expression is an angle expressed in radians.
 
-COS is a Trafodion SQL extension.
+COS is a {project-name} SQL extension.
 
 ```
 COS (numeric-expression)
@@ -1709,7 +1709,7 @@ COS (0.3491)
 The COSH function returns the hyperbolic cosine of a numeric value
 expression, where the expression is an angle expressed in radians.
 
-COSH is a Trafodion SQL extension.
+COSH is a {project-name} SQL extension.
 
 ```
 COSH (numeric-expression)
@@ -2051,7 +2051,7 @@ in years or months, DATE_ADD normalizes the result. See
 _datetime_expr_ is returned, unless the _interval_expression_ contains
 any time components, then a timestamp is returned.
 
-DATE_ADD is a Trafodion SQL extension.
+DATE_ADD is a {project-name} SQL extension.
 
 ```
 DATE_ADD (datetime-expr, interval-expression)
@@ -2066,7 +2066,7 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 +
 is an expression that can be combined in specific ways with addition
 operators. The _interval_expression_ accepts all interval expression
-types that the Trafodion database software considers as valid interval
+types that the {project-name} database software considers as valid interval
 expressions. See <<interval_value_expressions,Interval Value Expressions>>.
 
 <<<
@@ -2110,7 +2110,7 @@ DATE_SUB normalizes the result. See <<standard_normalization,Standard Normalizat
 The type of the _datetime_expr_ is returned, unless the _interval_expression_ contains
 any time components, then a timestamp is returned.
 
-DATE_SUB is a Trafodion SQL extension.
+DATE_SUB is a {project-name} SQL extension.
 
 ```
 DATE_SUB (datetime-expr, interval-expression)
@@ -2125,7 +2125,7 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime_Value_Expression>>.
 +
 is an expression that can be combined in specific ways with subtraction
 operators. The _interval_expression_  accepts all interval expression
-types that the Trafodion database software considers as valid interval
+types that the {project-name} database software considers as valid interval
 expressions. see <<interval_value_expressions,Interval Value Expressions>>.
 
 <<<
@@ -2168,7 +2168,7 @@ years or months, DATEADD normalizes the result. See
 _datetime-expr_ is returned, unless the interval expression contains any
 time components, then a timestamp is returned.
 
-DATEADD is a Trafodion SQL extension.
+DATEADD is a {project-name} SQL extension.
 
 ```
 DATEADD(datepart, num-expr, datetime-expr)
@@ -2243,7 +2243,7 @@ The DATEDIFF function returns the integer value for the number of
 _datepart_ units of time between _startdate_ and _enddate_. If
 _enddate_ precedes _startdate_, the return value is negative or zero.
 
-DATEDIFF is a Trafodion SQL extension.
+DATEDIFF is a {project-name} SQL extension.
 
 ```
 DATEDIFF (datepart, startdate, enddate)
@@ -2354,7 +2354,7 @@ The DATEFORMAT function returns a datetime value as a character string
 literal in the DEFAULT, USA, or EUROPEAN format. The data type of the
 result is CHAR.
 
-DATEFORMAT is a Trafodion SQL extension.
+DATEFORMAT is a {project-name} SQL extension.
 
 ```
 DATEFORMAT (datetime-expression,{DEFAULT | USA | EUROPEAN})
@@ -2404,7 +2404,7 @@ as an exact numeric value. The DATE_PART function accepts the
 specification of 'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', or 'SECOND'
 for text.
 
-DATE_PART is a Trafodion SQL extension.
+DATE_PART is a {project-name} SQL extension.
 
 ```
 DATEPART (text, interval)
@@ -2417,7 +2417,7 @@ enclosed in single quotes.
 
 * `_interval_`
 +
-_interval_ accepts all interval expression types that the Trafodion
+_interval_ accepts all interval expression types that the {project-name}
 database software considers as valid interval expressions. See
 <<interval_value_expressions,Interval Value Expressions>>.
 
@@ -2463,7 +2463,7 @@ The DATE_PART function of a timestamp can be changed to DATE_PART
 function of a datetime because the second argument can be either a
 timestamp or a date expression.
 
-DATE_PART is a Trafodion extension.
+DATE_PART is a {project-name} extension.
 
 ```
 DATEPART(text, datetime-expr)
@@ -2530,7 +2530,7 @@ The DATE_TRUNC function returns a value of type TIMESTAMP, which has all
 fields of lesser precision than _text_ set to zero (or 1 in the case of
 months or days).
 
-DATE_TRUNC is a Trafodion SQL extension.
+DATE_TRUNC is a {project-name} SQL extension.
 
 ```
 DATE_TRUNC(text, datetime-expr)
@@ -2584,7 +2584,7 @@ value in the range 1 through 31 that represents the corresponding day of
 the month. The result returned by the DAY function is equal to the
 result returned by the DAYOFMONTH function.
 
-DAY is a Trafodion SQL extension.
+DAY is a {project-name} SQL extension.
 
 ```
 DAY (datetime-expression)
@@ -2619,7 +2619,7 @@ The DAYNAME function converts a DATE or TIMESTAMP expression into a
 character literal that is the name of the day of the week (Sunday,
 Monday, and so on).
 
-DAYNAME is a Trafodion SQL extension.
+DAYNAME is a {project-name} SQL extension.
 
 ```
 DAYNAME (datetime-expression)
@@ -2660,7 +2660,7 @@ INTEGER value in the range 1 through 31 that represents the
 corresponding day of the month. The result returned by the DAYOFMONTH
 function is equal to the result returned by the DAY function.
 
-DAYOFMONTH is a Trafodion SQL extension.
+DAYOFMONTH is a {project-name} SQL extension.
 
 ```
 DAYOFMONTH (datetime-expression)
@@ -2696,7 +2696,7 @@ INTEGER value in the range 1 through 7 that represents the corresponding
 day of the week. The value 1 represents Sunday, 2 represents Monday, and
 so forth.
 
-DAYOFWEEK is a Trafodion SQL extension.
+DAYOFWEEK is a {project-name} SQL extension.
 
 ```
 DAYOFWEEK (datetime-expression)
@@ -2733,7 +2733,7 @@ The DAYOFYEAR function converts a DATE or TIMESTAMP expression into an
 INTEGER value in the range 1 through 366 that represents the
 corresponding day of the year.
 
-DAYOFYEAR is a Trafodion SQL extension.
+DAYOFYEAR is a {project-name} SQL extension.
 
 ```
 DAYOFYEAR (datetime-expression)
@@ -2770,7 +2770,7 @@ corresponding _retval_ is returned. If no match is found, _default_ is
 returned. If no match is found and _default_ is omitted, NULL is
 returned.
 
-DECODE is a Trafodion SQL extension.
+DECODE is a {project-name} SQL extension.
 
 ```
 DECODE (expr, test-expr, retval [, test-expr2, retval2 ... ] [ , default ] )
@@ -2929,9 +2929,9 @@ SELECT DECODE( (?p1 || ?p2), trim(?p1), 'Hi', ?p3, null ) from emp;
 *** ERROR[8822] The statement was not prepared.
 ```
 +
-The last _ret-val_ is an explicit NULL. When Trafodion SQL encounters
+The last _ret-val_ is an explicit NULL. When {project-name} SQL encounters
 this situation, it assumes that the return value will be NUMERIC(18,6).
-Once Trafodion SQL determines that the return values are numeric, it
+Once {project-name} SQL determines that the return values are numeric, it
 determines that all possible return values must be numeric. When 'Hi' is
 encountered in a _ret-val_ position, the error is produced because the
 CHAR(2) type argument is not comparable with a NUMERIC(18,6) type return
@@ -2950,7 +2950,7 @@ SELECT DECODE( (?p1 || ?p2), trim(?p1), 'Hi' ) from emp;
 The DEGREES function converts a numeric value expression expressed in
 radians to the number of degrees.
 
-DEGREES is a Trafodion SQL extension.
+DEGREES is a {project-name} SQL extension.
 
 ```
 DEGREES (numeric-expression)
@@ -2987,7 +2987,7 @@ change in an expression from row to row in an intermediate result table
 ordered by a sequence by clause in a select statement.
 See <<sequence_by_clause,SEQUENCE BY Clause>>. 
 
-DIFF1 is a Trafodion SQL extension.
+DIFF1 is a {project-name} SQL extension.
 
 ```
 DIFF1 (column-expression-a [,column-expression-b])
@@ -3034,9 +3034,9 @@ computation could result in a divisor of zero.
 [[datetime-arguments]]
 ==== Datetime Arguments
 
-In general, Trafodion SQL does not allow division by a value of INTERVAL
+In general, {project-name} SQL does not allow division by a value of INTERVAL
 data type. However, to permit use of the two-argument version of DIFF1
-with times and dates, Trafodion SQL relaxes this restriction and allows
+with times and dates, {project-name} SQL relaxes this restriction and allows
 division by a value of INTERVAL data type.
 
 [[examples_of_diff1]]
@@ -3120,7 +3120,7 @@ change in a DIFF1 value from row to row in an intermediate result table
 ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-DIFF2 is a Trafodion SQL extension.
+DIFF2 is a {project-name} SQL extension.
 
 ```
 DIFF2 (column-expression-a [,column-expression-b])
@@ -3169,9 +3169,9 @@ computation could result in a divisor of zero.
 [[datetime_arguments]]
 ==== Datetime Arguments
 
-In general, Trafodion SQL does not allow division by a value of INTERVAL
+In general, {project-name} SQL does not allow division by a value of INTERVAL
 data type. However, to permit use of the two-argument version of DIFF2
-with times and dates, Trafodion SQL relaxes this restriction and allows
+with times and dates, {project-name} SQL relaxes this restriction and allows
 division by a value of INTERVAL data type.
 
 [[examples_of_diff2]]
@@ -3226,7 +3226,7 @@ DIFF2_I1TS
 == EXP Function
 
 This function returns the exponential value (to the base e) of a numeric
-value expression. EXP is a Trafodion SQL extension.
+value expression. EXP is a {project-name} SQL extension.
 
 ```
 EXP (numeric-expression)
@@ -3338,9 +3338,9 @@ rows are returned as the result of the SELECT statement.
 [[obtaining_an_explain_plan_while_queries_are_running]]
 ==== Obtaining an EXPLAIN Plan While Queries Are Running
 
-Trafodion SQL provides the ability to capture an EXPLAIN plan for a
+{project-name} SQL provides the ability to capture an EXPLAIN plan for a
 query at any time while the query is running with the QID option. By
-default, this behavior is disabled for a Trafodion session.
+default, this behavior is disabled for a {project-name} session.
 
 NOTE: Enable this feature before you start preparing and executing
 queries.
@@ -3387,7 +3387,7 @@ or events in the plan.
 | Column Name | Data Type | Description
 | MODULE_NAME | CHAR(60) | Reserved for future use.
 | STATEMENT_ NAME | CHAR(60) | Statement name; truncated on the right if longer than 60 characters.
-| PLAN_ID | LARGEINT | Unique system-generated plan ID automatically assigned by Trafodion SQL;
+| PLAN_ID | LARGEINT | Unique system-generated plan ID automatically assigned by {project-name} SQL;
 generated at compile time.
 | SEQ_NUM | INT | Sequence number of the current operator in the operator tree; indicates
 the sequence in which the operator tree is generated.
@@ -3504,7 +3504,7 @@ The HOUR function converts a TIME or TIMESTAMP expression into an
 INTEGER value in the range 0 through 23 that represents the
 corresponding hour of the day.
 
-HOUR is a Trafodion SQL extension.
+HOUR is a {project-name} SQL extension.
 
 ```
 HOUR (datetime-expression)
@@ -3541,7 +3541,7 @@ a specified start position, and where another character string has been
 inserted at the start position. Every character, including multi-byte
 characters, is treated as one character.
 
-INSERT is a Trafodion SQL extension.
+INSERT is a {project-name} SQL extension.
 
 ```
 INSERT (char-expr-1, start, length, char-expr-2)
@@ -3603,7 +3603,7 @@ The ISNULL function returns the value of the first argument if it is not
 null, otherwise it returns the value of the second argument. Both
 expressions must be of comparable types.
 
-ISNULL is a Trafodion SQL extension.
+ISNULL is a {project-name} SQL extension.
 
 ```
 ISNULL(ck-expr, repl-value)
@@ -3651,7 +3651,7 @@ datetime value. JULIANTIMESTAMP returns a value of data type LARGEINT.
 The function is evaluated once when the query starts execution and is
 not reevaluated (even if it is a long running query).
 
-JULIANTIMESTAMP is a Trafodion SQL extension.
+JULIANTIMESTAMP is a {project-name} SQL extension.
 
 ```
 JULIANTIMESTAMP(datetime-expression)
@@ -3661,7 +3661,7 @@ JULIANTIMESTAMP(datetime-expression)
 +
 is an expression that evaluates to a value of type DATE, TIME, or
 TIMESTAMP. If _datetime-expression_ does not contain all the fields from YEAR through
-SECOND, Trafodion SQL extends the value before converting it to a Julian
+SECOND, {project-name} SQL extends the value before converting it to a Julian
 timestamp. Datetime fields to the left of the specified datetime value
 are set to current date fields. Datetime fields to the right of the
 specified datetime value are set to zero. See
@@ -3715,7 +3715,7 @@ The LASTNOTNULL function is a sequence function that returns the last
 non-null value of a column in an intermediate result table ordered by a
 SEQUENCE BY clause in a SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-LASTNOTNULL is a Trafodion SQL extension.
+LASTNOTNULL is a {project-name} SQL extension.
 
 ```
 LASTNOTNULL(column-expression)
@@ -3762,7 +3762,7 @@ the result returned by the <<lower_function,LOWER Function>>.
 LCASE returns a string of fixed-length or variable-length character
 data, depending on the data type of the input string.
 
-LCASE is a Trafodion SQL extension.
+LCASE is a {project-name} SQL extension.
 
 ```
 LCASE (character-expression)
@@ -3802,7 +3802,7 @@ The LEFT function returns the leftmost specified number of characters
 from a character expression. Every character, including multi-byte
 characters, is treated as one character.
 
-LEFT is a Trafodion SQL extension.
+LEFT is a {project-name} SQL extension.
 
 ```
 LEFT (character-expr, count)
@@ -3858,13 +3858,13 @@ SECRETARY COMNET
 == LOCATE Function
 
 The LOCATE function searches for a given substring in a character
-string. If the substring is found, Trafodion SQL returns the character
+string. If the substring is found, {project-name} SQL returns the character
 position of the substring within the string. Every character, including
 multi-byte characters, is treated as one character. The result returned
 by the LOCATE function is equal to the result returned by the
 <<position_function,Position Function>>.
 
-LOCATE is a Trafodion SQL extension.
+LOCATE is a {project-name} SQL extension.
 
 ```
 LOCATE(substring-expression,source-expression)
@@ -3882,8 +3882,8 @@ is an SQL character value expression that specifies the source string.
 the _source-expression_ cannot be null.
 See <<character_value_expressions,Character Value Expressions>>.
 
-Trafodion SQL returns the result as a 2-byte signed integer with a scale
-of zero. If substring-expression  is not found in  source-expression , Trafodion
+{project-name} SQL returns the result as a 2-byte signed integer with a scale
+of zero. If substring-expression  is not found in  source-expression , {project-name}
 SQL returns 0.
 
 [[considerations_for_locate]]
@@ -3893,11 +3893,11 @@ SQL returns 0.
 ==== Result of LOCATE
 
 * If the length of _source-expression_ is zero and the length of
-_substring-expression_ is greater than zero, Trafodion SQL returns 0.
-* If the length of _substring-expression_ is zero, Trafodion SQL returns 1.
+_substring-expression_ is greater than zero, {project-name} SQL returns 0.
+* If the length of _substring-expression_ is zero, {project-name} SQL returns 1.
 * If the length of _substring-expression_ is greater than the length of
-_source-expression_, Trafodion SQL returns 0.
-* If _source-expression_ is a null value, Trafodion SQL returns a null value.
+_source-expression_, {project-name} SQL returns 0.
+* If _source-expression_ is a null value, {project-name} SQL returns a null value.
 
 [[using_ucase]]
 ==== Using UCASE
@@ -3929,7 +3929,7 @@ WHERE LOCATE ('SMITH',UCASE(empname)) > 0 ;
 == LOG Function
 
 The LOG function returns the natural logarithm of a numeric value
-expression. LOG is a Trafodion SQL extension.
+expression. LOG is a {project-name} SQL extension.
 
 ```
 LOG (numeric-expression)
@@ -3958,7 +3958,7 @@ LOG (2.0)
 The LOG10 function returns the base 10 logarithm of a numeric value
 expression.
 
-LOG10 is a Trafodion SQL extension.
+LOG10 is a {project-name} SQL extension.
 
 ```
 LOG10 (numeric-expression)
@@ -4050,7 +4050,7 @@ The LPAD function pads the left side of a string with the specified
 string. Every character in the string, including multi-byte characters,
 is treated as one character.
 
-LPAD is a Trafodion SQL extension.
+LPAD is a {project-name} SQL extension.
 
 ```
 LPAD (str, len [,padstr])
@@ -4113,7 +4113,7 @@ The LTRIM function removes leading spaces from a character string. If
 you must remove any leading character other than space, use the TRIM
 function and specify the value of the character. See the <<trim_function,TRIM Function>>.
 
-LTRIM is a Trafodion SQL extension.
+LTRIM is a {project-name} SQL extension.
 
 ```
 LTRIM (character-expression)
@@ -4278,7 +4278,7 @@ The MINUTE function converts a TIME or TIMESTAMP expression into an
 INTEGER value, in the range 0 through 59, that represents the
 corresponding minute of the hour.
 
-MINUTE is a Trafodion SQL extension.
+MINUTE is a {project-name} SQL extension.
 
 ```
 MINUTE (datetime-expression)
@@ -4312,7 +4312,7 @@ Start/Date Time/Shipped               (EXPR)
 The MOD function returns the remainder (modulus) of an integer value
 expression divided by an integer value expression.
 
-MOD is a Trafodion SQL extension.
+MOD is a {project-name} SQL extension.
 
 ```
 MOD (integer-expression-1,integer-expression-2)
@@ -4348,7 +4348,7 @@ The MONTH function converts a DATE or TIMESTAMP expression into an
 INTEGER value in the range 1 through 12 that represents the
 corresponding month of the year.
 
-MONTH is a Trafodion SQL extension.
+MONTH is a {project-name} SQL extension.
 
 ```
 MONTH (datetime-expression)
@@ -4382,7 +4382,7 @@ The MONTHNAME function converts a DATE or TIMESTAMP expression into a
 character literal that is the name of the month of the year (January,
 February, and so on).
 
-MONTHNAME is a Trafodion SQL extension.
+MONTHNAME is a {project-name} SQL extension.
 
 ```
 MONTHNAME (datetime-expression)
@@ -4423,7 +4423,7 @@ of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGAVG is a Trafodion SQL extension.
+MOVINGAVG is a {project-name} SQL extension.
 
 ```
 MOVINGAVG(column-expression, integer-expression [, max-rows])
@@ -4501,7 +4501,7 @@ of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGCOUNT is a Trafodion SQL extension.
+MOVINGCOUNT is a {project-name} SQL extension.
 
 ```
 MOVINGCOUNT (column-expression, integer-expression [, max-rows])
@@ -4578,7 +4578,7 @@ of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGMAX is a Trafodion SQL extension.
+MOVINGMAX is a {project-name} SQL extension.
 
 ```
 MOVINGMAX (column-expression, integer-expression [, max-rows])
@@ -4647,7 +4647,7 @@ of non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGMIN is a Trafodion SQL extension.
+MOVINGMIN is a {project-name} SQL extension.
 
 ```
 MOVINGMIN (column-expression, integer-expression [, max-rows])
@@ -4716,7 +4716,7 @@ standard deviation of non-null values of a column in the current window
 of an intermediate result table ordered by a SEQUENCE BY clause in a
 SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGSTDDEV is a Trafodion SQL extension.
+MOVINGSTDDEV is a {project-name} SQL extension.
 
 ```
 MOVINGSTDDEV (column-expression, integer-expression [, max-rows])
@@ -4802,7 +4802,7 @@ non-null values of a column in the current window of an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGSUM is a Trafodion SQL extension.
+MOVINGSUM is a {project-name} SQL extension.
 
 ```
 MOVINGSUM (column-expression, integer-expression [, max-rows])
@@ -4871,7 +4871,7 @@ variance of non-null values of a column in the current window of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-MOVINGVARIANCE is a Trafodion SQL extension.
+MOVINGVARIANCE is a {project-name} SQL extension.
 
 ```
 MOVINGVARIANCE (column-expression, integer-expression [, max-rows])
@@ -5055,7 +5055,7 @@ If _operand_ is a null value, NVL returns _new-operand_. If _operand_
 is not a null value, NVL returns _operand_.
 
 The _operand_ and _new-operand_ can be a column name, subquery,
-Trafodion SQL string functions, math functions, or constant values.
+{project-name} SQL string functions, math functions, or constant values.
 
 [[examples_of_nvl]]
 === Examples of NVL
@@ -5123,8 +5123,8 @@ OCTET_LENGTH (string-value-expression)
 * `_string-value-expression_`
 +
 specifies the string value expression for which to return the length in
-bytes. Trafodion SQL returns the result as a 2-byte signed integer with
-a scale of zero. If _string-value-expression_ is null, Trafodion SQL returns
+bytes. {project-name} SQL returns the result as a 2-byte signed integer with
+a scale of zero. If _string-value-expression_ is null, {project-name} SQL returns
 a length of zero.
 See <<character_value_expressions,Character Value Expressions>>.
 
@@ -5134,9 +5134,9 @@ See <<character_value_expressions,Character Value Expressions>>.
 [[char_and_varchar_operands_1]]
 ==== CHAR and VARCHAR Operands
 
-For a column declared as fixed CHAR, Trafodion SQL returns the length of
+For a column declared as fixed CHAR, {project-name} SQL returns the length of
 that column as the maximum number of storage bytes. For a VARCHAR
-column, Trafodion SQL returns the length of the string stored in that
+column, {project-name} SQL returns the length of the string stored in that
 column as the actual number of storage bytes.
 
 [[similarity_to_char_length_function]]
@@ -5221,7 +5221,7 @@ current row does not fall within the result table.
 The PI function returns the constant value of pi as a floating-point
 value.
 
-PI is a Trafodion SQL extension.
+PI is a {project-name} SQL extension.
 
 ```
 PI()
@@ -5241,7 +5241,7 @@ PI()
 == POSITION Function
 
 The POSITION function searches for a given substring in a character
-string. If the substring is found, Trafodion SQL returns the character
+string. If the substring is found, {project-name} SQL returns the character
 position of the substring within the string. Every character, including
 multi-byte characters, is treated as one character. The result returned
 by the POSITION function is equal to the result returned by the
@@ -5263,9 +5263,9 @@ is an SQL character value expression that specifies the source string.
 the _source-expression_ cannot be null.
 See <<character_value_expressions,Character Value Expressions>>.
 
-Trafodion SQL returns the result as a 2-byte signed integer with a scale
+{project-name} SQL returns the result as a 2-byte signed integer with a scale
 of zero. If _substring-expression_ is not found in _source-expression_,
-Trafodion SQL returns zero.
+{project-name} SQL returns zero.
 
 [[considerations_for_position]]
 === Considerations for POSITION
@@ -5274,12 +5274,12 @@ Trafodion SQL returns zero.
 ==== Result of POSITION
 
 If the length of _source-expression_ is zero and the length of
-_substring-expression_ is greater than zero, Trafodion SQL returns 0. If
-the length of _substring-expression_ is zero, Trafodion SQL returns 1.
+_substring-expression_ is greater than zero, {project-name} SQL returns 0. If
+the length of _substring-expression_ is zero, {project-name} SQL returns 1.
 
 If the length of _substring-expression_ is greater than the length of
-_source-expression_, Trafodion SQL returns zero. If
-_source-expression_ is a null value, Trafodion SQL returns a null value.
+_source-expression_, {project-name} SQL returns zero. If
+_source-expression_ is a null value, {project-name} SQL returns a null value.
 
 [[using_the_upshift_function]]
 ==== Using the UPSHIFT Function
@@ -5315,7 +5315,7 @@ The POWER function returns the value of a numeric value expression
 raised to the power of an integer value expression. You can also use the
 exponential operator \*\*.
 
-POWER is a Trafodion SQL extension.
+POWER is a {project-name} SQL extension.
 
 ```
 POWER (numeric-expression-1, numeric-expression-2)
@@ -5357,7 +5357,7 @@ INTEGER value in the range 1 through 4 that represents the corresponding
 quarter of the year. Quarter 1 represents January 1 through March 31,
 and so on.
 
-QUARTER is a Trafodion SQL extension.
+QUARTER is a {project-name} SQL extension.
 
 ```
 QUARTER (datetime-expression)
@@ -5390,7 +5390,7 @@ Start/Date Time/Shipped               (EXPR)
 The RADIANS function converts a numeric value expression (expressed in
 degrees) to the number of radians.
 
-RADIANS is a Trafodion SQL extension.
+RADIANS is a {project-name} SQL extension.
 
 ```
 RADIANS (numeric-expression)
@@ -5427,7 +5427,7 @@ rank of the given value of an intermediate result table ordered by a
 SEQUENCE BY clause in a SELECT statement. RANK is an alternative syntax
 for RANK/RUNNINGRANK.
 
-RANK/RUNNINGRANK is a Trafodion extension.
+RANK/RUNNINGRANK is a {project-name} extension.
 
 ```
 RUNNINGRANK(expression) | RANK(expression)
@@ -5606,7 +5606,7 @@ The REPEAT function returns a character string composed of the
 evaluation of a character expression repeated a specified number of
 times.
 
-REPEAT is a Trafodion SQL extension.
+REPEAT is a {project-name} SQL extension.
 
 ```
 REPEAT (character-expr, count)
@@ -5645,7 +5645,7 @@ a specified character string in the original string are replaced with
 another character string. All three character value expressions must be
 comparable types. The return value is the VARCHAR type.
 
-REPLACE is a Trafodion SQL extension.
+REPLACE is a {project-name} SQL extension.
 
 ```
 REPLACE (char-expr-1, char-expr-2, char-expr-3)
@@ -5701,7 +5701,7 @@ The RIGHT function returns the rightmost specified number of characters
 from a character expression. Every character, including multi-byte
 characters, is treated as one character.
 
-RIGHT is a Trafodion SQL extension.
+RIGHT is a {project-name} SQL extension.
 
 ```
 RIGHT (character-expr, count)
@@ -5746,7 +5746,7 @@ SET jobdesc = RIGHT (jobdesc, 12);
 The ROUND function returns the value of _numeric_expr_ rounded to _num_
 places to the right of the decimal point.
 
-ROUND is a Trafodion SQL extension.
+ROUND is a {project-name} SQL extension.
 
 ```
 ROUND(numeric-expr [ , num ] )
@@ -5830,7 +5830,7 @@ of rows counted since the specified condition was last true in the
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-Rows since is a Trafodion SQL extension.
+Rows since is a {project-name} SQL extension.
 
 ```
 ROWS_SINCE [INCLUSIVE] (condition [, max-rows])
@@ -5872,7 +5872,7 @@ condition is evaluated starting with the previous row as row 1.
 If a row is reached where the condition is true, ROWS SINCE returns the
 number of rows counted so far. Otherwise, if the condition is never true
 within the result table being considered, ROWS SINCE returns null.
-Trafodion SQL then goes to the next row as the new current row.
+{project-name} SQL then goes to the next row as the new current row.
 
 [[examples_of_rows_since]]
 === Examples of ROWS SINCE
@@ -5920,7 +5920,7 @@ number of rows counted since the specified set of values last changed in
 the intermediate result table ordered by a SEQUENCE BY clause in a
 SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-ROWS SINCE CHANGED is a Trafodion SQL extension.
+ROWS SINCE CHANGED is a {project-name} SQL extension.
 
 ```
 ROWS SINCE CHANGED (column-expression-list)
@@ -5971,7 +5971,7 @@ The RPAD function pads the right side of a string with the specified
 string. Every character in the string, including multi-byte characters,
 is treated as one character.
 
-RPAD is a Trafodion SQL extension.
+RPAD is a {project-name} SQL extension.
 
 ```
 RPAD (str, len [, padstr])
@@ -6042,7 +6042,7 @@ you must remove any leading character other than space, use the TRIM
 function and specify the value of the character.
 See the <<trim_function,TRIM Function>>.
 
-RTRIM is a Trafodion SQL extension.
+RTRIM is a {project-name} SQL extension.
 
 ```
 RTRIM (character-expression)
@@ -6084,7 +6084,7 @@ of non-null values of a column up to and including the current row of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGAVG is a Trafodion SQL extension.
+RUNNINGAVG is a {project-name} SQL extension.
 
 ```
 RUNNINGAVG (_column-expression_)
@@ -6140,7 +6140,7 @@ of rows up to and including the current row of an intermediate result
 table ordered by a SEQUENCE BY clause in a SELECT statement. See
 <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGCOUNT is a Trafodion SQL extension.
+RUNNINGCOUNT is a {project-name} SQL extension.
 
 ```
 RUNNINGCOUNT {(*) | (column-expression)}
@@ -6202,7 +6202,7 @@ of values of a column up to and including the current row of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGMAX is a Trafodion SQL extension.
+RUNNINGMAX is a {project-name} SQL extension.
 
 ```
 RUNNINGMAX (column-expression)
@@ -6246,7 +6246,7 @@ of values of a column up to and including the current row of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGMIN is a Trafodion SQL extension.
+RUNNINGMIN is a {project-name} SQL extension.
 
 ```
 RUNNINGMIN (column-expression)
@@ -6290,7 +6290,7 @@ current row of an intermediate result table ordered by a SEQUENCE BY
 clause in a SELECT statement.
 See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGSTDDEV is a Trafodion SQL extension.
+RUNNINGSTDDEV is a {project-name} SQL extension.
 
 ```
 RUNNINGSTDDEV (_column-expression_)
@@ -6364,7 +6364,7 @@ non-null values of a column up to and including the current row of an
 intermediate result table ordered by a SEQUENCE BY clause in a SELECT
 statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGSUM is a Trafodion SQL extension.
+RUNNINGSUM is a {project-name} SQL extension.
 
 ```
 RUNNINGSUM (column-expression)
@@ -6408,7 +6408,7 @@ variance of non-null values of a column up to and including the current
 row of an intermediate result table ordered by a SEQUENCE BY clause in a
 SELECT statement. See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
-RUNNINGVARIANCE is a Trafodion SQL extension.
+RUNNINGVARIANCE is a {project-name} SQL extension.
 
 ```
 RUNNINGVARIANCE (column-expression)
@@ -6469,7 +6469,7 @@ The SECOND function converts a TIME or TIMESTAMP expression into an
 INTEGER value in the range 0 through 59 that represents the
 corresponding second of the hour.
 
-SECOND is a Trafodion SQL extension.
+SECOND is a {project-name} SQL extension.
 
 ```
 SECOND (datetime-expression)
@@ -6505,7 +6505,7 @@ expression. If the value is less than zero, the function returns -1 as
 the indicator. If the value is zero, the function returns 0. If the
 value is greater than zero, the function returns 1.
 
-SIGN is a Trafodion SQL extension.
+SIGN is a {project-name} SQL extension.
 
 ```
 SIGN (numeric-expression)
@@ -6545,7 +6545,7 @@ SIGN(-20 + 22)
 The SIN function returns the SINE of a numeric value expression, where
 the expression is an angle expressed in radians.
 
-SIN is a Trafodion SQL extension.
+SIN is a {project-name} SQL extension.
 
 ```
 SIN (numeric-expression)
@@ -6574,7 +6574,7 @@ SIN (0.3491)
 The SINH function returns the hyperbolic sine of a numeric value
 expression, where the expression is an angle expressed in radians.
 
-SINH is a Trafodion SQL extension.
+SINH is a {project-name} SQL extension.
 
 ```
 SINH (numeric-expression)
@@ -6604,7 +6604,7 @@ The SPACE function returns a character string consisting of a specified
 number of spaces, each of which is 0x20 or 0x0020, depending on the
 chosen character set.
 
-SPACE is a Trafodion SQL extension.
+SPACE is a {project-name} SQL extension.
 
 ```
 SPACE (length [, char-set-name])
@@ -6639,7 +6639,7 @@ SPACE(3)
 == SQRT Function
 
 The SQRT function returns the square root of a numeric value expression.
-SQRT is a Trafodion SQL extension.
+SQRT is a {project-name} SQL extension.
 
 ```
 SQRT (numeric-expression)
@@ -6666,7 +6666,7 @@ SQRT(27)
 == STDDEV Function
 
 STDDEV is an aggregate function that returns the standard deviation of a
-set of numbers. STDDEV is a Trafodion SQL extension.
+set of numbers. STDDEV is a {project-name} SQL extension.
 
 ```
 STDDEV ([ALL | DISTINCT] expression [, weight])
@@ -6708,7 +6708,7 @@ root of the variance of the expression.
 See <<variance_function,VARIANCE Function>>.
 
 Because the definition of variance has _N-1_ in the denominator of the
-expression (if weight is not specified), Trafodion SQL returns a
+expression (if weight is not specified), {project-name} SQL returns a
 system-defined default setting of zero (and no error) if the number of
 rows in the table, or a group of the table, is equal to 1.
 
@@ -6828,7 +6828,7 @@ and continuing until the end of the _character-expr_ are returned.
 === Alternative Forms
 
 * The SUBSTRING function treats SUBSTRING( _string_ FOR _int_ )
-equivalent to SUBSTRING( _string_ FROM 1 FOR _int_ ). The Trafodion
+equivalent to SUBSTRING( _string_ FROM 1 FOR _int_ ). The {project-name}
 database software already supports the ANSI standard form as:
 +
 ```
@@ -6836,7 +6836,7 @@ SUBSTRING(string FROM int [ FOR int ])
 ```
 
 * The SUBSTRING function treats SUBSTRING (_string_, Fromint)
-equivalent to SUBSTRING(_string_ FROM _Fromint_). The Trafodion
+equivalent to SUBSTRING(_string_ FROM _Fromint_). The {project-name}
 database software already supports SUBSTRING (_string_, _Fromint_,
 _Forint_) as equivalent to the ANSI standard form:
 +
@@ -6990,7 +6990,7 @@ SELECT SUM (price * qty_available) FROM sales.parts;
 The TAN function returns the tangent of a numeric value expression,
 where the expression is an angle expressed in radians.
 
-TAN is a Trafodion SQL extension.
+TAN is a {project-name} SQL extension.
 
 ```
 TAN (numeric-expression)
@@ -7019,7 +7019,7 @@ TAN (0.3491)
 The TANH function returns the hyperbolic tangent of a numeric value
 expression, where the expression is an angle expressed in radians.
 
-TANH is a Trafodion SQL extension.
+TANH is a {project-name} SQL extension.
 
 ```
 TANH (numeric-expression)
@@ -7051,7 +7051,7 @@ row and the value of the column in previous rows (in an intermediate
 result table ordered by a SEQUENCE BY clause in a SELECT statement).
 See <<rows_since_function,ROWS SINCE Function>>.
 
-THIS is a Trafodion SQL extension.
+THIS is a {project-name} SQL extension.
 
 ```
 THIS (column-expression)
@@ -7083,7 +7083,7 @@ rows or the size of the result table).
 If a row is reached where the condition is true, ROWS SINCE returns the
 number of rows counted so far. Otherwise, if the condition is never true
 within the result table being considered, ROWS SINCE returns null.
-Trafodion SQL then goes to the next row as the new current row and the
+{project-name} SQL then goes to the next row as the new current row and the
 THIS constant is reevaluated.
 
 <<<
@@ -7120,7 +7120,7 @@ month. The type of the _datetime_expr_ is returned except when the
 _interval-ind_ contains any time component, in which case a TIMESTAMP is
 returned.
 
-TIMESTAMPADD is a Trafodion SQL extension.
+TIMESTAMPADD is a {project-name} SQL extension.
 
 ```
 TIMESTAMPADD (interval-ind, num-expr, datetime-expr)
@@ -7308,28 +7308,28 @@ is one of these translation names:
 |===
 | Translation Name | Source Character Set | Target Character Set | Comments
 | ISO88591TOUTF8   | ISO88591             | UTF8                 | Translates ISO8859-1 characters to UTF8 characters. No data loss is possible.
-| UTF8TOISO88591   | UTF8                 | ISO88591             | Translates UTF8 characters to ISO88591 characters. Trafodion SQL will
+| UTF8TOISO88591   | UTF8                 | ISO88591             | Translates UTF8 characters to ISO88591 characters. {project-name} SQL will
 display an error if it encounters a Unicode character that cannot be converted to the target character set.
 |===
 
 _translation-name_ identifies the translation, source and target
 character set. When you translate to the UTF8 character set, no data
-loss is possible. However, when Trafodion SQL translates a
+loss is possible. However, when {project-name} SQL translates a
 _character-value-expression_ from UTF8, it may be that certain
-characters cannot be converted to the target character set. Trafodion
+characters cannot be converted to the target character set. {project-name}
 SQL reports an error in this case.
 
-Trafodion SQL returns a variable-length character string with character
+{project-name} SQL returns a variable-length character string with character
 repertoire equal to the character repertoire of the target character set
 of the translation and the maximum length equal to the fixed length or
 maximum variable length of the source _character-value-expression_.
 
-If you enter an illegal _translation-name_, Trafodion SQL returns an
+If you enter an illegal _translation-name_, {project-name} SQL returns an
 error.
 
 If the character set for _character-value-expression_ is different from
 the source character set as specified in the _translation-name_,
-Trafodion SQL returns an error.
+{project-name} SQL returns an error.
 
 <<<
 [[trim_function]]
@@ -7411,7 +7411,7 @@ or <<upshift_function,UPSHIFT Function>>.
 UCASE returns a string of fixed-length or variable-length character
 data, depending on the data type of the input string.
 
-UCASE is a Trafodion SQL extension.
+UCASE is a {project-name} SQL extension.
 
 ```
 UCASE (character-expression)
@@ -7523,7 +7523,7 @@ to the result returned by the <<upper_function,UPPER Function>> or
 UPSHIFT returns a string of fixed-length or variable-length character
 data, depending on the data type of the input string.
 
-UPSHIFT is a Trafodion SQL extension.
+UPSHIFT is a {project-name} SQL extension.
 
 ```
 UPSHIFT (character-expression)
@@ -7643,7 +7643,7 @@ DB ROOT
 == VARIANCE Function
 
 VARIANCE is an aggregate function that returns the statistical variance
-of a set of numbers. VARIANCE is a Trafodion SQL extension.
+of a set of numbers. VARIANCE is a {project-name} SQL extension.
 
 ```
 VARIANCE ([ALL | DISTINCT] expression [, weight])
@@ -7701,7 +7701,7 @@ expressed in the common data type, and N is the cardinality of the
 result table.
 
 Because the definition of variance has _N-1_ in the denominator of the
-expression (when weight is not specified), Trafodion SQL returns a
+expression (when weight is not specified), {project-name} SQL returns a
 default value of zero (and no error) if the number of rows in the table,
 or a group of the table, is equal to 1.
 
@@ -7795,7 +7795,7 @@ Sunday of the year. The value 53 is returned for datetimes that occur in
 the last full or partial week of the year except for leap years that
 start on Saturday where December 31 is in the 54th full or partial week.
 
-WEEK is a Trafodion SQL extension.
+WEEK is a {project-name} SQL extension.
 
 ```
 WEEK (datetime-expression)
@@ -7829,7 +7829,7 @@ Start/Date Time/Shipped               (EXPR)
 The YEAR function converts a DATE or TIMESTAMP expression into an
 INTEGER value that represents the year.
 
-YEAR is a Trafodion SQL extension.
+YEAR is a {project-name} SQL extension.
 
 ```
 YEAR (datetime-expression)

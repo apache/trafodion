@@ -20,19 +20,19 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = About This Document
-Trafodion is a relational database management system based on
+{project-name} is a relational database management system based on
 ANSI SQL. It uses the industry standard Structured Query Language
 (SQL) to define and manipulate data. This manual describes messages
-produced by the Trafodion SQL engine and its associated
+produced by the {project-name} SQL engine and its associated
 components.
 
 == Intended Audience
-This manual was written for Trafodion database administrators and
-programmers who use the Trafodion database software conversational or
+This manual was written for {project-name} database administrators and
+programmers who use the {project-name} database software conversational or
 programmatic interface.
 
 == New and Changed Information
@@ -166,19 +166,8 @@ match-value [NOT] LIKE _pattern
    [ESCAPE esc-char-expression] 
 ```
 
-== Publishing History
-[cols="2*",options="header"]
-|===
-| Product Version | Publication Date
-| Trafodion Release 1.3.0 | To be announced.
-|===
-
 == Comments Encouraged
-The Trafodion community encourages your comments concerning this document. We are committed to providing documentation that meets your
-needs. Send any errors found, suggestions for improvement, or compliments to:
-
-issues@trafodion.incubator.apache.org
+We encourage your comments concerning this document. We are committed to providing documentation that meets your
+needs. Send any errors found, suggestions for improvement, or compliments to {project-support}.
 
 Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
-Or, even better, join our community and help us improve our documentation. Please refer to 
-http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for details.

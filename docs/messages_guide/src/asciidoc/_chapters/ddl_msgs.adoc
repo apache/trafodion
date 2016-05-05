@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[data-definition-language-messages]]
@@ -70,7 +70,7 @@ specified a schema that does not exist.
 Table, view, or stored procedure <object-name> does not exist or object type is invalid for the current operation.
 ```
 
-Where <object-name> is the name of a Trafodion database object.
+Where <object-name> is the name of a {project-name} database object.
 
 *Cause:* You attempted an operation on an object that does not exist.
 
@@ -107,7 +107,7 @@ of the constraints that exist on a table.
 Index <index-name> does not exist.
 ```
 
-Where <index-name> is a Trafodion database object name.
+Where <index-name> is a {project-name} database object name.
 
 *Cause:* The operation you attempted requires the existence of an index
 named <index-name>.
@@ -125,11 +125,11 @@ correct qualified name.
 User name <user-name> does not exist.
 ```
 
-Where <user-name> is a Trafodion platform user name.
+Where <user-name> is a {project-name} platform user name.
 
 *Cause:* The user name specified in a GRANT or REVOKE statement, or the
 authorization ID in a CREATE SCHEMA statement, does not represent a
-valid Trafodion platform user.
+valid {project-name} platform user.
 
 *Effect:* The operation fails.
 
@@ -164,7 +164,7 @@ The statement just specified is currently not supported.
 
 *Effect:* The operation fails.
 
-*Recovery:* Do not attempt to use this Trafodion database statement.
+*Recovery:* Do not attempt to use this {project-name} database statement.
 
 <<<
 [[SQL-1012]]
@@ -191,7 +191,7 @@ Not all privileges were granted. You lack grant option on some of the specified 
 *Cause:* You attempted to grant privileges, but you do not have grant
 options for at least one of them.
 
-*Effect:* The Trafodion database granted some privileges, but not all
+*Effect:* The {project-name} database granted some privileges, but not all
 that you attempted to grant.
 
 *Recovery:* You must have grant options for privileges to grant them.
@@ -211,7 +211,7 @@ then performs a grant to a third user, you cannot revoke privileges to
 the second user until that user revokes their privileges to the third
 user.
 
-*Effect:* The Trafodion database did not revoke the privileges.
+*Effect:* The {project-name} database did not revoke the privileges.
 
 *Recovery:* Make sure that the dependent privileges from the user whose
 privileges you want to revoke are revoked first.
@@ -226,7 +226,7 @@ Some of the specified privileges could not be revoked.
 *Cause:* You attempted to revoke a privilege that does not exist or that
 was granted by another user.
 
-*Effect:* The Trafodion database did not revoke the privileges.
+*Effect:* The {project-name} database did not revoke the privileges.
 
 *Recovery:* The user who granted the privileges must revoke them.
 
@@ -275,7 +275,7 @@ Privilege settings on metadata tables cannot be changed.
 *Cause:* You attempted to change privilege settings on a metadata table.
 They cannot be changed.
 
-*Effect:* Trafodion does not change the settings.
+*Effect:* {project-name} does not change the settings.
 
 *Recovery:* None.
 
@@ -289,7 +289,7 @@ SQL is already initialized on system <node-name>.
 Where <node-name> is the name of the system on which the INITIALIZE SQL
 statement was executed.
 
-*Cause:* The Trafodion database has already been initialized on this
+*Cause:* The {project-name} database has already been initialized on this
 node.
 
 *Effect:* No operation is performed.
@@ -304,7 +304,7 @@ node.
 Schema <schema-name> already exists.
 ```
 
-Where <schema-name> is the name of a Trafodion database schema.
+Where <schema-name> is the name of a {project-name} database schema.
 
 *Cause:* You attempted to create a schema in a catalog that already
 contains a schema with that name.
@@ -362,7 +362,7 @@ Request failed. One or more dependent objects exist.
 table. These objects cannot be dropped if they have dependent objects
 and the drop-behavior is RESTRICT.
 
-*Effect:* Trafodion does not perform the
+*Effect:* {project-name} does not perform the
 operation.
 
 *Recovery:* For DROP statements that support the CASCADE drop-behavior,
@@ -414,7 +414,7 @@ its catalog.
 The schema must be empty. It contains at least one object <object-name>.
 ```
 
-Where <object-name> is the name of a Trafodion database object existing
+Where <object-name> is the name of a {project-name} database object existing
 in the schema.
 
 *Cause:* You attempted to drop a schema that contains one or more
@@ -449,7 +449,7 @@ accompanying error messages to determine the cause.
 File label <file-name> could not be accessed. File system error <error>.
 ```
 
-Where <file-name> is the name of a Trafodion database file.
+Where <file-name> is the name of a {project-name} database file.
 
 Where <error> is a file system error number.
 
@@ -470,7 +470,7 @@ Where <object-name> is the SQL object.
 
 *Cause:* See the accompanying error message for the cause.
 
-*Effect:* Trafodion does not drop the object.
+*Effect:* {project-name} does not drop the object.
 
 *Recovery:* Apply the recovery of the accompanying error message.
 
@@ -482,7 +482,7 @@ Where <object-name> is the SQL object.
 Catalog <catalog-name> already exists.
 ```
 
-Where <catalog-name> is the name of a Trafodion database catalog.
+Where <catalog-name> is the name of a {project-name} database catalog.
 
 *Cause:* You attempted to create a catalog using the name of an already
 existing catalog.
@@ -511,19 +511,19 @@ ID.
 == SQL 1037
 
 ```
-Trafodion is not installed on system <node>.
+{project-name} is not installed on system <node>.
 ```
 
 Where <node> is the name of the node referenced by the operation.
 
 *Cause:* In a replication or distribution context: An operation
 attempted to create a catalog reference or a partition on a node where
-the Trafodion database has not been installed.
+the {project-name} database has not been installed.
 
 *Effect:* The operation fails.
 
 *Recovery:* Either reissue the statement specifying a different node, or
-install the Trafodion database on <node> and resubmit.
+install the {project-name} database on <node> and resubmit.
 
 [[SQL-1038]]
 == SQL 1038
@@ -549,7 +549,7 @@ The DROP SQL statement could not be executed.
 
 *Cause:* See the accompanying error message for the cause.
 
-*Effect:* Trafodion does not drop SQL.
+*Effect:* {project-name} does not drop SQL.
 
 *Recovery:* Apply the recovery of the accompanying error message.
 
@@ -561,7 +561,7 @@ The use of ALTER on metadata tables is not permitted.
 ```
 
 *Cause:* An ALTER TABLE statement was issued naming a table that is part
-of the Trafodion database metadata. Such tables cannot be altered.
+of the {project-name} database metadata. Such tables cannot be altered.
 
 *Effect:* The operation fails.
 
@@ -649,7 +649,7 @@ that is declared as deferrable. This is an internal error.
 *Effect:* The operation fails.
 
 *Recovery:* Check that the referential constraint references a unique
-constraint that is not declared deferrable. Contact the Trafodion User
+constraint that is not declared deferrable. Contact the {project-name} User
 Distribution List
 
 [[SQL-1046]]
@@ -750,7 +750,7 @@ insufficient privileges.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for the required
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for the required
 security needed to create a view or trigger.
 
 [[SQL-1053]]
@@ -776,7 +776,7 @@ statement.
 == SQL 1057
 
 ```
-Trafodion objects cannot be created on <volume-name>: File system error <error-number>.
+{project-name} objects cannot be created on <volume-name>: File system error <error-number>.
 ```
 
 Where <volume-name> is the name of a volume.
@@ -820,7 +820,7 @@ constraint.
 *Cause:* You attempted to drop a table that has a referential constraint
 or a check constraint that refers to another table.
 
-*Effect:* Trafodion does not drop the table.
+*Effect:* {project-name} does not drop the table.
 
 *Recovery:* Either drop all constraints that refer to other tables and
 then drop the table, or reissue the DROP TABLE statement, specifying the
@@ -833,9 +833,9 @@ CASCADE option.
 Dropping metadata catalog <catalog-name> is not allowed.
 ```
 
-Where <catalog-name> is the name of a Trafodion database catalog.
+Where <catalog-name> is the name of a {project-name} database catalog.
 
-*Cause:* You attempted to drop a catalog that is part of the Trafodion
+*Cause:* You attempted to drop a catalog that is part of the {project-name}
 database metadata.
 
 *Effect:* The operation fails.
@@ -850,9 +850,9 @@ database metadata.
 Dropping metadata schema <schema-name> is not allowed.
 ```
 
-Where <schema-name> is the name of a Trafodion database metadata schema.
+Where <schema-name> is the name of a {project-name} database metadata schema.
 
-*Cause:* You attempted to drop a schema that is part of the Trafodion
+*Cause:* You attempted to drop a schema that is part of the {project-name}
 database metadata.
 
 *Effect:* The operation fails.
@@ -866,10 +866,10 @@ database metadata.
 Dropping metadata index <index-name> is not allowed.
 ```
 
-Where <index-name> is the name of a Trafodion database index.
+Where <index-name> is the name of a {project-name} database index.
 
 *Cause:* An attempt was made to drop an index that is part of the
-Trafodion database metadata.
+{project-name} database metadata.
 
 *Effect:* The operation fails.
 
@@ -883,7 +883,7 @@ Trafodion database metadata.
 Dropping metadata view <table-name> is not allowed.
 ```
 
-Where <table-name> is the name of a Trafodion database table.
+Where <table-name> is the name of a {project-name} database table.
 
 *Cause:* An attempt was made to drop a view that is a metadata object.
 Metadata views and their creation are not currently supported, so this
@@ -933,7 +933,7 @@ not allowed.
 Schema <schema-name> could not be dropped.
 ```
 
-Where <schema-name> is the name of a Trafodion database schema.
+Where <schema-name> is the name of a {project-name} database schema.
 
 *Cause:* See the accompanying error message for the cause of the
 problem.
@@ -951,7 +951,7 @@ message.
 Object <object-name> could not be created. File error: <error-number>.
 ```
 
-Where <object-name> is the name of the Trafodion database object.
+Where <object-name> is the name of the {project-name} database object.
 
 Where <error-number> is the file system error number.
 
@@ -969,9 +969,9 @@ system error <error-number>.
 Object <ANSI-name> could not be accessed.
 ```
 
-Where <ANSI-name> is the name of the Trafodion database object.
+Where <ANSI-name> is the name of the {project-name} database object.
 
-*Cause:* The statement issued required access to the Trafodion platform
+*Cause:* The statement issued required access to the {project-name} platform
 file underlying object <ANSI-name>.
 
 *Effect:* The operation fails.
@@ -1006,7 +1006,7 @@ constraint that has not been disabled.
 Only services ID can execute INITIALIZE SQL.
 ```
 
-*Cause:* You attempted to initialize the Trafodion database, but you are
+*Cause:* You attempted to initialize the {project-name} database, but you are
 not the services ID. Only the services ID can perform this function.
 
 *Effect:* The operation fails.
@@ -1029,7 +1029,7 @@ Where <schema-name> is the name of a schema in the specified catalog.
 
 *Recovery:* Drop all schemas in the catalog and resubmit.
 
-*Recovery:* None. Contact the Trafodion User Distribution List
+*Recovery:* None. Contact the {project-name} User Distribution List
 
 [[SQL-1078]]
 == SQL 1078
@@ -1044,7 +1044,7 @@ Where <location-name> is a name specified in a LOCATION clause.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for limitations on
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for limitations on
 names allowed in the LOCATION clause. Correct the name and resubmit.
 
 <<<
@@ -1052,7 +1052,7 @@ names allowed in the LOCATION clause. Correct the name and resubmit.
 == SQL 1079
 
 ```
-Trafodion was not able to prepare the statement.
+{project-name} was not able to prepare the statement.
 ```
 
 *Cause:* See the accompanying error message for the cause.
@@ -1072,7 +1072,7 @@ Where <column-name> is the name of a column of a table.
 
 *Cause:* You attempted to create a table that has two columns with the
 same name. If you name a column "SYSKEY," duplication can result from
-the implicit creation by the Trafodion database software of a column
+the implicit creation by the {project-name} database software of a column
 named SYSKEY to ensure uniqueness for the clustering key.
 
 *Effect:* The operation fails.
@@ -1437,7 +1437,7 @@ reissue the statement.
 Metadata tables for catalog <catalog-name> could not be created on <location-info>.
 ```
 
-Where <catalog-name> is the name of a Trafodion database catalog.
+Where <catalog-name> is the name of a {project-name} database catalog.
 
 Where <location-info> is the location where the tables could not be
 created.
@@ -1526,10 +1526,10 @@ Where <table-name> is the name of the object.
 Dropping metadata object <table-name> is not allowed.
 ```
 
-Where <table-name> is the name of a Trafodion database metadata table.
+Where <table-name> is the name of a {project-name} database metadata table.
 
 *Cause:* You attempted to use the DROP TABLE statement to drop a table
-that is part of the Trafodion database metadata.
+that is part of the {project-name} database metadata.
 
 *Effect:* The table is not dropped.
 
@@ -1781,7 +1781,7 @@ exceeds the maximum allowed row size.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for row size limit
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for row size limit
 calculations. Change the column definitions and reissue the statement.
 
 <<<
@@ -1792,10 +1792,10 @@ calculations. Change the column definitions and reissue the statement.
 Label <file-name> for object could not be accessed. File system error <error-number>.
 ```
 
-Where <file-name> is the Trafodion platform file name of a partition of
+Where <file-name> is the {project-name} platform file name of a partition of
 object.
 
-Where <error-number> is a Trafodion platform file system error.
+Where <error-number> is a {project-name} platform file system error.
 
 *Cause:* An ALTER TABLE or ALTER INDEX operation encountered a file
 system error.
@@ -1813,10 +1813,10 @@ Because it is not audited, this table cannot have a column added that is declare
 
 *Cause:* Internal error.
 
-*Effect:* The Trafodion database is unable to perform the requested
+*Effect:* The {project-name} database is unable to perform the requested
 operation.
 
-*Recovery:* None. Contact the Trafodion User Distribution List
+*Recovery:* None. Contact the {project-name} User Distribution List
 
 <<<
 [[SQL-1143]]
@@ -1874,17 +1874,17 @@ compatible with the type of column <column-name> and resubmit.
 == SQL 1145
 
 ```
-The catalog name <catalog-name> is reserved for Trafodion metadata.
+The catalog name <catalog-name> is reserved for {project-name} metadata.
 ```
 
-Where <catalog-name> is the name of a Trafodion database catalog.
+Where <catalog-name> is the name of a {project-name} database catalog.
 
-*Cause:* Trafodion reserves certain catalog names
+*Cause:* {project-name} reserves certain catalog names
 for its own use.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for reserved names.
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for reserved names.
 Change <catalog-name> to a name that is not reserved and resubmit.
 
 [[SQL-1146]]
@@ -1958,7 +1958,7 @@ Where <table-name> is the name of the table.
 *Cause:* When the Partition Overlay Support feature is enabled without
 setting volume names (through CQD POS_LOCATIONS) for table partitions to
 reside on, location names are generated automatically. However, the
-Trafodion database software could not generate the location names
+{project-name} database software could not generate the location names
 automatically and, because the CQD POS_RAISE_ERROR is set, the table is
 not created.
 
@@ -1987,7 +1987,7 @@ Where <table-name> is the name of the table.
 *Cause:* When the Partition Overlay Support feature is enabled without
 setting volume names (through CQD POS_LOCATIONS) for table partitions to
 reside on, location names are generated automatically. However, the
-Trafodion database software could not generate the location names
+{project-name} database software could not generate the location names
 automatically, and because the CQD POS_RAISE_ERROR is not set, the given
 table is created as a simple table without partitions as it would be if
 the Partition Overlay Support feature was not enabled.
@@ -2009,7 +2009,7 @@ CONTROL QUERY DEFAULT POS_LOCATIONS, and then retry the request.
 Cannot create object <object-name> as the table size is too big to fit on the system.
 ```
 
-*Cause:* Trafodion could not create the object
+*Cause:* {project-name} could not create the object
 because the requested table size is bigger than the total amount of disk
 space available on the system.
 
@@ -2115,7 +2115,7 @@ key, do not specify a STORE BY clause. Correct the syntax and resubmit.
 System generated column SYSKEY cannot be specified as part of the PARTITION BY clause.
 ```
 
-*Cause:* Trafodion could not create the object
+*Cause:* {project-name} could not create the object
 because system-generated column SYSKEY is not allowed as part of the
 PARTITION BY clause.
 
@@ -2137,14 +2137,14 @@ Where <schema-name> is the schema in which the object is being created.
 Where <directory-name> is the designated subvolume name for that schema.
 
 *Cause:* One or more LOCATION clauses in the CREATE or MODIFY statement
-contained a Trafodion platform location whose subvolume did not match
+contained a {project-name} platform location whose subvolume did not match
 the designated subvolume for the schema in which the object was being
 created.
 
 *Effect:* The object was not created.
 
 *Recovery:* Either correct the invalid LOCATION clauses or remove them
-and allow the system to generate the Trafodion platform locations.
+and allow the system to generate the {project-name} platform locations.
 
 [[SQL-1181]]
 == SQL 1181
@@ -2163,7 +2163,7 @@ Where <error> is the returned file system error number.
 
 *Effect:* The DDL DROP operation fails.
 
-*Recovery:* See previous messages in this Trafodion database software
+*Recovery:* See previous messages in this {project-name} database software
 operation to determine the necessary corrective actions. Also, use the
 file system error <error-number> to analyze the cause. For information
 about file system errors, see <<file_system_errors, File-System Errors>>.
@@ -2265,17 +2265,17 @@ default to be compatible types and resubmit.
 == SQL 1187
 
 ```
-The schema name <schema-name> is reserved for Trafodion metadata.
+The schema name <schema-name> is reserved for {project-name} metadata.
 ```
 
-Where <schema-name> is the name of a Trafodion database schema.
+Where <schema-name> is the name of a {project-name} database schema.
 
-*Cause:* Trafodion reserves certain schema names
+*Cause:* {project-name} reserves certain schema names
 for its own use.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for reserved schema
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for reserved schema
 names. Choose a name that is not reserved and reissue the CREATE statement.
 
 <<<
@@ -2313,7 +2313,7 @@ Where <parameter-name> is the name of the parameter.
 *Cause:* You specified a data type for this routine parameter that is
 not supported.
 
-*Effect:* Trafodion is unable to complete the operation.
+*Effect:* {project-name} is unable to complete the operation.
 
 *Recovery:* Specify a different data type.
 
@@ -2395,10 +2395,10 @@ about file system errors, see <<file_system_errors,File-System Errors>>.
 == SQL 1233
 
 ```
-Creating schema in Trafodion system catalog <catalog-name> is prohibited.
+Creating schema in {project-name} system catalog <catalog-name> is prohibited.
 ```
 
-Where <catalog-name> is the name of the Trafodion database catalog.
+Where <catalog-name> is the name of the {project-name} database catalog.
 
 *Cause:* You attempted to create a schema in the system catalog.
 
@@ -2689,16 +2689,16 @@ DDL or utility operation.
 == SQL 1263
 
 ```
-Table, view, and stored procedure names that start with <text> are reserved for Trafodion metadata.
+Table, view, and stored procedure names that start with <text> are reserved for {project-name} metadata.
 ```
 
 Where <text> is the disallowed name that was specified.
 
-*Cause:* You specified a Trafodion database reserved object name.
+*Cause:* You specified a {project-name} database reserved object name.
 
 *Effect:* The object is not created.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for the list of
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for the list of
 reserved object names. Choose a name that is not reserved and reissue
 the CREATE statement.
 
@@ -2791,7 +2791,7 @@ file error <file-system-error-number> on <file-name>.
 Where <sql-object-name> is the ANSI name of the affected SQL database
 object.
 
-Where <file-system-error-number> is a Trafodion platform file system
+Where <file-system-error-number> is a {project-name} platform file system
 error code.
 
 *Cause:* A CREATE or ALTER operation encountered a file system error
@@ -2888,12 +2888,12 @@ Unrecognized partitioning scheme for object <object-name>.
 
 <object-name> is the name of the SQL object (table or index).
 
-*Cause:* The Trafodion database does not recognize the partitioning
+*Cause:* The {project-name} database does not recognize the partitioning
 scheme stored in the metadata for the named object.
 
 *Effect:* The named object is considered corrupt and is inaccessible.
 
-*Recovery:* None. Contact the Trafodion User Distribution List Consider
+*Recovery:* None. Contact the {project-name} User Distribution List Consider
 running the VERIFY operation on the named object to check for
 inconsistencies in the metadata with respect to the partitioning scheme.
 
@@ -2966,7 +2966,7 @@ default.
 The specified schema location <directory> is already in use by schema <schema>.
 ```
 
-Where <directory> is the Trafodion platform subvolume name specified in
+Where <directory> is the {project-name} platform subvolume name specified in
 the LOCATION clause of the CREATE SCHEMA command.
 
 Where <schema> is the ANSI name of an existing schema that already uses
@@ -2995,15 +2995,15 @@ backup nodes.
 == SQL 1307
 
 ```
-The schema location <directory> is reserved for Trafodion metadata.
+The schema location <directory> is reserved for {project-name} metadata.
 ```
 
-Where <directory> is the Trafodion platform subvolume name specified in
+Where <directory> is the {project-name} platform subvolume name specified in
 the LOCATION clause of the CREATE SCHEMA command.
 
 *Cause:* In a CREATE SCHEMA command, you specified subvolume in the
 LOCATION clause, however subvolume names with the format
-ZSD<digit><anything> are reserved for Trafodion database software
+ZSD<digit><anything> are reserved for {project-name} database software
 metadata schemas.
 
 *Effect:* The operation fails.

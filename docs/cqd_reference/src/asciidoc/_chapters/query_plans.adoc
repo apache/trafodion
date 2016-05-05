@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[query-plans]]
@@ -56,7 +56,7 @@ elapsed time for some of the longer running queries that leverage adaptive segme
 parallelism only for a certain set of queries and use it at the service level.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -66,7 +66,7 @@ parallelism only for a certain set of queries and use it at the service level.
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Determines whether the Trafodion Optimizer considers Hash Join when generating an execution plan.
+| *Description*               | Determines whether the {project-name} Optimizer considers Hash Join when generating an execution plan.
 | *Values*                    |
 *'ON'* Hash Join is considered. +
 *'OFF'* Hash Join is not considered. +
@@ -79,7 +79,7 @@ It is highly recommended that you do not turn HASH_JOINS OFF; that is, this CQD 
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | If you turn all three join implementations OFF (Hash Joins, Nested Joins, and Merge Joins), then the compiler may fail to generate query plans.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -95,17 +95,17 @@ It is highly recommended that you do not turn HASH_JOINS OFF; that is, this CQD 
 *'OFF'*: Do not use HBase coprocessors. +
  +
 The default value is *'ON'*.
-| *Usage*                     | Enables Trafodion to use HBase coprocessors to do early aggregation and filtering
-at the HBase Region Server level. This CQD does not affect Transaction coprocessors used by Trafodion. +
+| *Usage*                     | Enables {project-name} to use HBase coprocessors to do early aggregation and filtering
+at the HBase Region Server level. This CQD does not affect Transaction coprocessors used by {project-name}. +
  +
 As of Release 2.0 only COUNT(*) queries will be affected by this attribute.
 | *Production Usage*          | Yes.
-| *Impact*                    | Network traffic between Region Server and Trafodion processes is reduced but
+| *Impact*                    | Network traffic between Region Server and {project-name} processes is reduced but
 the Region Server can become very busy when aggregating over large tables.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -129,7 +129,7 @@ On the other hand decreasing the attribute to 1 could help with concurrency.
 | *Conflicts/Synergies*       | The CQD <<hive-min-bytes-per-esp-partition,HIVE_MIN_BYTES_PER_ESP_PARTITION>> (default = 67108864) may need to be adjusted downward
 when this attribute is used to increase the parallelism of scanning smaller Hive tables.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -155,7 +155,7 @@ specified in the FROM clause, the plan generated may not be the optimal one.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -183,12 +183,12 @@ A value of *0* treats every multi-column value as skew values. This may increase
 side child of the hash join to all join processes. +
  +
 A value *greater than 0* selects those multi-column values as skewed values if their occurrence frequencies are high enough. 
-| *Production Usage*          | Consult the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | This CQD impacts runtime performance.
 | *Level*                     | Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -199,7 +199,7 @@ A value *greater than 0* selects those multi-column values as skewed values if t
 [cols="25%h,75%"]
 |===
 | *Description*               | This CQD effects the behavior of the query optimizer when there are no statistics available for a query
-having range predicates on key columns. The Trafodion Optimizer calculates the worst case number of seeks that the MDAM access method
+having range predicates on key columns. The {project-name} Optimizer calculates the worst case number of seeks that the MDAM access method
 would do if chosen for the query. +
  +
 If this number is greater than the value of MDAM_NO_STATS_POSITIONS_THRESHOLD, then MDAM is not considered for the query execution plan. 
@@ -210,13 +210,13 @@ Default value: *10*.
 | *Usage*                     | In certain situations, queries on tables lacking statistics may not be optimal because MDAM was not chosen.
 Increasing the value for this CQD allows MDAM to be chosen in more cases. On the other hand, if the value is made too high and the worst case
 scenario actually occurs, an MDAM plan may perform poorly.
-| *Production Usage*          | Consult the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Table scans on tables lacking statistics may improve by varying the value of this CQD.
 Results vary depending on the actual data in the table and the semantics of the query.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | If <<mdam-scan-method,MDAM_SCAN_METHOD>> is set to *'OFF'*, then this CQD has no effect.
 | *Real Problem Addressed*    | Perform UPDATE STATISTICS on the table (at the very least on key columns) to obtain statistics.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -233,7 +233,7 @@ Results vary depending on the actual data in the table and the semantics of the 
 *'OFF'* MDAM is disabled. +
  +
 The default value is *'ON'*.
-| *Usage*                     | In certain situations, the Trafodion Optimizer might choose MDAM inappropriately, causing poor performance.
+| *Usage*                     | In certain situations, the {project-name} Optimizer might choose MDAM inappropriately, causing poor performance.
 In such situations you may want to turn MDAM OFF for the query it is effecting.
 | *Production Usage*          | Yes.
 | *Impact*                    | Table scans with predicates on non-leading clustering key column(s) could benefit from MDAM access
@@ -243,7 +243,7 @@ there may be cases (usually a defect) where a larger set of queries is being neg
 to set it at the service or system level.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -272,9 +272,9 @@ time because the optimizer now has to consider many more join options.
 there may be cases (usually a defect) where a larger set of queries is being negatively impacted by Merge Joins. In those cases you may want to
 set it at the service or system level.
 | *Conflicts/Synergies*       | Avoid turning all the three join implementations OFF (Hash Joins, Nested Joins, and Merge Joins).
-This may result in the Trafodion Compiler failing to generate query plans.
+This may result in the {project-name} Compiler failing to generate query plans.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -302,7 +302,7 @@ such as light workloads and star join queries.
 This may result in the compiler failing to generate query plans.
 | *Real Problem Addressed*    | The problem of inefficient Nested Joins can be better handled using a higher degree of query plan
 robustness as set by the <<robust-query-optimization,ROBUST_QUERY_OPTIMIZATION>> CQD.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -327,7 +327,7 @@ Increasing the optimization level over the system default may result in very hig
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -352,7 +352,7 @@ query workloads, but has the potential disadvantage of increasing the elapsed ti
 | *Level*                     | Service.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -378,7 +378,7 @@ may be used to influence the optimizer to consider another join instead, such as
  +
 NESTED_JOINS OFF could turn nested joins off completely. However, there are many cases where nested joins do provide better performance than hash
 joins, and turning them off completely may negatively impact the performance of queries that can do a lot better with nested joins.
-| *Production Usage*          | Consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Specifying a risk premium insures against nested joins being chosen when they should not have been. However,
 this can also result in nested joins not being chosen where the cardinality estimation was in fact accurate and a nested join could have
 performed better. Therefore, this setting should be used with care in order to get robustness with a net gain in performance.
@@ -388,7 +388,7 @@ than other workloads. In such cases this could be used at the Service level.
 influencing the nested join risk premium as well. It is advisable that you use that setting instead to influence plans, unless they are specifically
 addressing nested join issues and need to use this setting independent of that CQD.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -411,7 +411,7 @@ allowed to win over competing parallel plans. +
  +
 If it is determined that the optimizer is using serial plans often enough where these plans are resulting in poor performance, then this CQD
 may be used to influence the optimizer to consider parallel plans instead in some of those cases. +
-| *Production Usage*          | Consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Specifying a risk premium insures against serial plans being chosen when they should not have been.
 However, this can also result in serial plans not being chosen where the cardinality estimation was in fact accurate and a serial plan
 could have performed better. Therefore, this setting should be used with care in order to get robustness with a net gain in performance.
@@ -421,7 +421,7 @@ CQD more than other workloads. In such cases this could be used at the Service l
 influencing the serial plan risk premium as well. It is advised that you use that setting instead to influence plans, unless they are specifically
 addressing serial plan issues and need to use this setting independent of that CQD.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -434,7 +434,7 @@ addressing serial plan issues and need to use this setting independent of that C
 | *Description*               | Defines the minimal estimated max cardinality or row count of any relational operators in a query above
 which the risk premium for serial plan is applied. +
  +
-A serial query plan is favored by the Trafodion Compiler when it estimates the query reads and processes small amount of data.
+A serial query plan is favored by the {project-name} Compiler when it estimates the query reads and processes small amount of data.
 The estimation error could become large when some operator is calculated to produce many rows yielding a non-optimal serial plan.
 This CQD helps prevent utilizing serial plan in such cases.
 | *Values*                    | An unsigned integer value. 
@@ -442,12 +442,12 @@ This CQD helps prevent utilizing serial plan in such cases.
  +
 Use of a value smaller than the default (10,000) to penalize more serial plans or favor more parallel plans for operators produce less number of rows. 
 Otherwise, use of a larger value.
-| *Production Usage*          | Consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | This CQD impacts plan quality.
 | *Level*                     | Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -529,7 +529,7 @@ use the individual CQDs at a finer granularity, such as at a query level, to get
 or serial plan being chosen when it shouldn't have been, may be due to not enough, or inaccurate, histogram statistics information available
 to the optimizer. So, first and foremost, histogram statistics should be kept up to date along with the multi-column statistics that the
 optimizer may warn about. However, cardinality underestimations may still happen at higher levels of an execution plan.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -551,7 +551,7 @@ The default value is *'OFF'*.
 | *Level*                     | Any.
 | *Conflicts/Synergies*       | Allows additional information to be displayed in explain plans. It has no impact on query plans.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -590,7 +590,7 @@ information about the table skew, the query, and the value that worked. Filing a
 | *Conflicts/Synergies*       | SKEW_EXPLAIN can be used as described in above. Also, <<skew-sensitivity-threshold,SKEW_SENSITIVITY_THRESHOLD>>
 is relevant if this threshold allows a skew to be detected only.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -623,7 +623,7 @@ as it effectively turns off skew buster.
 The <<skew-rowcount-threshold,SKEW_ROWCOUNT_THRESHOLD CQD>> controls the row count of the table at which the optimizer looks for a skew. 
 | *Real Problem Addressed*    | Skew is quite common in a real big-data application, and is effectively addressed by skew buster.
 However, there may be design opportunities that could help address the problem as well.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -640,13 +640,13 @@ However, there may be design opportunities that could help address the problem a
  +
 The default value is *'ON'*.
 | *Usage*                     | Turn this CQD OFF when (in rare cases) unnesting a correlated subquery causes performance to degrade.
-If this attribute has to be turned OFF, then that could indicate a bug in the Trafodion Optimizer. Consult with the Trafodion community.
+If this attribute has to be turned OFF, then that could indicate a bug in the {project-name} Optimizer. Please contact {project-support}.
 | *Production Usage*          | Yes.
 | *Impact*                    | Turn OFF with caution at a system level, as other queries which rely on un-nesting could be adversely impacted.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -664,12 +664,12 @@ network traffic between the ESP processes and the HBase Region Servers.
  +
 The default value is *'OFF'*.
 | *Usage*                     | Enable the feature when each region server serves approximately equal amount of data, and/or reducing network traffic is important.  
-| *Production Usage*          | Consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Plan quality.
 | *Level*                     | Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -697,7 +697,7 @@ which improves the performance of the UPSERT statements with omitted default val
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -722,6 +722,6 @@ you could set this CQD to OFF.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===

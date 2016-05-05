@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = odb as a SQL Interpreter (Technology Preview)
@@ -101,7 +101,7 @@ will be just prepared, not executed.
 <<<
 
 10.  Different databases use different commands to set default schema(s):
-* Trafodion: `set schema <name>;`
+* {project-name}: `set schema <name>;`
 * MySQL: `use <name>;`
 * PostgreSQL/Vertica: `set search_path to <name1,name2,…>;`
 * Teradata: `set database <name>;`

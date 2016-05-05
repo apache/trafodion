@@ -20,18 +20,18 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Introduction
 
 == Message Handling
 
-Trafodion reports exception condition messages at a Trafodion Database
+{project-name} reports exception condition messages at a {project-name} Database
 Connectivity Service conversational interface (DCS) window and in the
 Trafodion Command Interface (TrafCI).
 
-Most Trafodion  exception condition messages describe error conditions
+Most {project-name}  exception condition messages describe error conditions
 for which recovery action is required. Some messages are warnings that
 provide information for which no action is required.
 
@@ -39,19 +39,19 @@ Error messages that appear in response to SQL commands are logged to the
 DCS application's log file if you have used the LOG command to request
 them.
 
-The format of a Trafodion  error is "*** ERROR" followed by the error number
+The format of a {project-name}  error is "*** ERROR" followed by the error number
 in brackets, and the descriptive text. Use the error number shown to find
 information about a particular error in this manual. For example, information
-for Trafodion error 1125 can be found under "SQL 1125."
+for {project-name} error 1125 can be found under "SQL 1125."
 
 Messages are listed in this manual in numeric order, broken down by the component
 that produced them.
 
 [[viewing-trafodion-database-messages]]
-== Viewing Trafodion Database Messages
+== Viewing {project-name} Database Messages
 
 The message key is a sequential SQL message number that is returned
-automatically by Trafodion  when an exception condition
+automatically by {project-name}  when an exception condition
 occurs. For example, the following message might be displayed within
 your application development tool while you prepare an embedded SQL
 program:
@@ -71,7 +71,7 @@ manual, you will find the following message information for ERROR[1000]:
 
 *Cause:* You specified a statement with incorrect syntax.
 
-*Effect:* The Trafodion  statement fails.
+*Effect:* The {project-name}  statement fails.
 
 *Recovery:* Correct the syntax and resubmit.
 ====
@@ -87,30 +87,30 @@ The ANSI SQL SQLSTATE variable is a five-character string with a
 two-character class code followed by a three-character subclass code. An
 SQLSTATE value of 00000 indicates successful completion.
 
-Trafodion extends the ANSI SQL SQLSTATE values to include other situations
+{project-name} extends the ANSI SQL SQLSTATE values to include other situations
 not described by the ANSI values. If an ANSI SQL SQLSTATE value exists for
-an error condition, the Trafodion database software returns that value.
-Otherwise, Trafodion returns an SQLSTATE value that is defined by the Trafodion
+an error condition, the {project-name} database software returns that value.
+Otherwise, {project-name} returns an SQLSTATE value that is defined by the {project-name}
 database software.
 
-Trafodion also returns a numeric SQLCODE value after SQL statement execution.
+{project-name} also returns a numeric SQLCODE value after SQL statement execution.
 SQLCODE values with negative numbers signify errors.
 
 SQLCODE values with positive numbers other than 0 (successful completion) or 100
-(no data was found) signify warning messages. Trafodion  identifies all messages
+(no data was found) signify warning messages. {project-name}  identifies all messages
 by their unsigned SQLCODE value and their calculated SQLSTATE value. The SQLCODE
-is used to calculate the SQLSTATE value for all Trafodion messages other than
+is used to calculate the SQLSTATE value for all {project-name} messages other than
 those for which an ANSI SQL SQLSTATE value exists.
 
 The SQLCODE parameter is a deprecated feature that is supported to
 maintain compatibility with earlier versions of the American standard.
 
 <<sqlstate-values,_SQLSTATE Values_>> identifies the equivalent SQLSTATE and
-SQLCODE values for Trafodion  warning and error messages.
+SQLCODE values for {project-name}  warning and error messages.
 
 [[getting-help]]
 == Getting Help
 
-Some messages have no recovery and you will be instructed to contact the
-mailt:user@trafodion.incubator.apache.org[Trafodion user mailing list].
+Some messages have no recovery and you will be instructed to contact
+{project-support}.
 

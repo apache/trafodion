@@ -20,15 +20,14 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
-<<<
 [[sql_runtime_statistics]]
 = SQL Runtime Statistics
 
 The Runtime Management System (RMS) shows the status of queries while
-they are running. RMS can service on-demand requests from the Trafodion
+they are running. RMS can service on-demand requests from the {project-name}
 Command Interface (TrafCI) to get statistics for a given query ID or for
 active queries in a given process. RMS also provides information about
 itself to determine the health of the RMS infrastructure.
@@ -1089,7 +1088,7 @@ provided for each node.
 [cols="30%l,70%",options="header"]
 |===
 | Counter                      | Description
-| CPU                          | The node number of the Trafodion cluster.
+| CPU                          | The node number of the {project-name} cluster.
 | RMS Version                  | Internal version of RMS.
 | SSCP PID                     | SQL Statistics control process ID.
 | SSCP Creation Timestamp      | Actual timestamp when SQL statistics control process was created.
@@ -1102,7 +1101,7 @@ provided for each node.
 | No. of Process Regd.         | Number of processes registered in the shared segment.
 | No. of Query Fragments Regd. | Number of query fragments registered in the shared segment.
 | RMS Semaphore Owner          | Process ID that locked the semaphore at this instance of time.
-| No. of SSCPs Opened          | Number of Statistics Control Processes opened. Normally, this should be equal to the number of nodes in the Trafodion cluster.
+| No. of SSCPs Opened          | Number of Statistics Control Processes opened. Normally, this should be equal to the number of nodes in the {project-name} cluster.
 | No. of SSCPs Open Deleted    | Number of Statistics Control Processes with broken communication. Usually, this should be 0.
 | Last GC Time                 | The recent timestamp at which the shared segment was garbage collected.
 | Queries GCed in Last Run     | Number of queries that were garbage collected in the recent GC run.
@@ -1184,8 +1183,8 @@ these parts of the query ID:
 [cols="30%l,70%",options="header"]
 |===
 | Attribute Value         | Description
-| SEGMENTNUM              | Logical node ID in Trafodion cluster
-| CPUNUM or CPU           | Logical node ID in Trafodion cluster
+| SEGMENTNUM              | Logical node ID in {project-name} cluster
+| CPUNUM or CPU           | Logical node ID in {project-name} cluster
 | PIN                     | Linux process ID number
 | EXESTARTTIME            | Executor start time
 | SESSIONNUM              | Session number

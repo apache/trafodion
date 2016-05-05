@@ -187,6 +187,10 @@
                 <!-- Location of centralized stylesheet -->
                 <stylesheet>${basedir}/../shared/trafodion-manuals.css</stylesheet>
                 <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>Trafodion</project-name>
+                <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
+                <project-support>user@trafodion.incubator.apache.org</project-support>
+                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>
@@ -205,6 +209,10 @@
               <outputDirectory>${basedir}/target</outputDirectory>
               <attributes>
                 <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>Trafodion</project-name>
+                <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
+                <project-support>user@trafodion.incubator.apache.org</project-support>
+                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <pdf-stylesdir>${basedir}/../shared</pdf-stylesdir>
                 <pdf-style>trafodion</pdf-style>

@@ -20,26 +20,26 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[install]]
 = Install
 
-This chapter describes how to use the Trafodion Installer to install Trafodion. You use the Trafodion Provisioning ID
-to run the Trafodion Installer.
+This chapter describes how to use the {project-name} Installer to install {project-name}. You use the {project-name} Provisioning ID
+to run the {project-name} Installer.
 
-NOTE: You *must* install log4c&#43;&#43; on all nodes in the cluster prior to running the Trafodion Installer. Refer
+NOTE: Prior to version 2.0.0, you *must* install log4c&#43;&#43; on all nodes in the cluster prior to running the {project-name} Installer. Refer
 to <<prepare-build-and-install-log4cplusplus,Build and Install log4c++>> for instructions.
 
 [[install-unpack-installer]]
 == Unpack Installer
 
-You should already have downloaded the Trafodion Binaries per the instructions in the
-<<prepare-download-trafodion-binaries,Download Trafodion Binaries>> in the <<prepare,Prepare>>
+You should already have downloaded the {project-name} Binaries per the instructions in the
+<<prepare-download-trafodion-binaries,Download {project-name} Binaries>> in the <<prepare,Prepare>>
 chapter. If not, please do so now.
 
-The first step in the installation process is to unpack the Trafodion Installer tar file.
+The first step in the installation process is to unpack the {project-name} Installer tar file.
 
 *Example*
 
@@ -59,20 +59,20 @@ $
 [[install-automated-install]]
 == Automated Install
 
-The `--config_file` option runs the Trafodion in Automated Setup mode. Refer to <<introduction-trafodion-installer,Trafodion Installer>>
+The `--config_file` option runs the {project-name} in Automated Setup mode. Refer to <<introduction-trafodion-installer,{project-name} Installer>>
 in the <<introduction,Introduction>> chapter for instructions of how you edit your configuration file.
 
 Edit your config file using the information you collected in the <<prepare-gather-configuration-information,Gather Configuration Information>>
 step in the <<prepare,Prepare>> chapter. 
 
-The following example shows an automated install of Trafodion on a two-node Hortonworks Hadoop cluster.
+The following example shows an automated install of {project-name} on a two-node Hortonworks Hadoop cluster.
 
-NOTE: By default, the Trafodion Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
+NOTE: By default, the {project-name} Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
 This is shown in the example below.
 
 *Example*
 
-1. Run the Trafodion Installer in Automated Setup mode.
+1. Run the {project-name} Installer in Automated Setup mode.
 +
 ```
 $ cd $HOME/trafodion-installer/installer
@@ -87,7 +87,7 @@ $ ./trafodion_install --config_file my
 ***INFO: Working directory: /usr/lib/trafodion
 
 ************************************
- Trafodion Configuration File Check
+ {project-name} Configuration File Check
 ************************************
 
 
@@ -103,14 +103,14 @@ $ ./trafodion_install --config_file my
 ***INFO: Testing sudo access on trafodion-1
 ***INFO: Testing sudo access on trafodion-2
 ***DEBUG: trafodionFullName=trafodion_server-1.3.0.tgz
-***INFO: Trafodion version = 1.3.0
+***INFO: {project-name} version = 1.3.0
 ***DEBUG: HBase's java_exec=/usr/jdk64/jdk1.7.0_67/bin/java
 
 ******************************
  TRAFODION SETUP
 ******************************
 
-***INFO: Starting Trafodion environment setup (2016-02-16-21-12-31)
+***INFO: Starting {project-name} environment setup (2016-02-16-21-12-31)
 === 2016-02-16-21-12-31 ===
 # @@@ START COPYRIGHT @@@
 #
@@ -142,7 +142,7 @@ BY TYPING "ACCEPT" YOU AGREE TO THE TERMS OF THIS AGREEMENT: ***INFO: testing su
 trafodion-1
 trafodion-2
 ***INFO: Total number of nodes = 2
-***INFO: Starting Trafodion Package Setup (2016-02-16-21-12-35)
+***INFO: Starting {project-name} Package Setup (2016-02-16-21-12-35)
 ***INFO: Installing required packages
 ***INFO: Log file located in /var/log/trafodion
 ***INFO: ... EPEL rpm
@@ -155,7 +155,7 @@ trafodion-2
 .
 .
 ***INFO: trafodion user added successfully
-***INFO: Trafodion environment setup completed
+***INFO: {project-name} environment setup completed
 ***INFO: creating sqconfig file
 ***INFO: Reserving DCS ports
 
@@ -194,7 +194,7 @@ You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-1.3.0-i
 
 
 Startup time  0 hour(s) 1 minute(s) 9 second(s)
-Apache Trafodion Conversational Interface 1.3.0
+Apache {project-name} Conversational Interface 1.3.0
 Copyright (c) 2015 Apache Software Foundation
 >> initialize trafodion;
 --- SQL operation complete.
@@ -211,7 +211,7 @@ End of MXCI Session
 $ 
 ```
 
-2. Switch to the Trafodion Runtime User and check the status of Trafodion.
+2. Switch to the {project-name} Runtime User and check the status of {project-name}.
 +
 *Example*
 +
@@ -233,24 +233,24 @@ MXOSRVR         8               8
 $
 ```
 
-Trafodion is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
-basic instructions on how to verify the Trafodion management and how to perform basic management
+{project-name} is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
+basic instructions on how to verify the {project-name} management and how to perform basic management
 operations.
 
 [[install-guided-install]]
 == Guided Install
 
-The Trafodion Installer prompts you for the information you collected in the
+The {project-name} Installer prompts you for the information you collected in the
 <<prepare-gather-configuration-information, Gather Configuration Information>> step in the <<prepare,Prepare>> chapter.
 
-The following example shows a guided install of Trafodion on a two-node Cloudera Hadoop cluster.
+The following example shows a guided install of {project-name} on a two-node Cloudera Hadoop cluster.
 
-NOTE: By default, the Trafodion Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
+NOTE: By default, the {project-name} Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
 This is shown in the example below.
 
 *Example*
 
-1. Run the Trafodion Installer in guided mode.
+1. Run the {project-name} Installer in guided mode.
 +
 ```
 $ cd $HOME/trafodion-installer/installer
@@ -266,14 +266,14 @@ $ ./trafodion_install
 ***INFO: Working directory: /usr/lib/trafodion
 
 *******************************
- Trafodion Configuration Setup
+ {project-name} Configuration Setup
 *******************************
 
 ***INFO: Please press [Enter] to select defaults.
 
 Enter trafodion password, default is [traf123]: traf123
 Enter list of nodes (blank separated), default []: trafodion-1 trafodion-2
-Enter Trafodion userid's home directory prefix, default is [/home]: /home
+Enter {project-name} userid's home directory prefix, default is [/home]: /home
 Specify full path to EPEL RPM (including .rpm), default is None:
 ***INFO: Will attempt to download RPM if EPEL is not installed on all nodes.
 Specify location of Java 1.7.0_65 or higher (JDK), default is []: /usr/java/jdk1.7.0_67-cloudera
@@ -288,10 +288,10 @@ Enter directory to install trafodion to, default is [/home/trafodion/apache-traf
 Total number of client connections per node, default [16]: 8
 Enable simple LDAP security (Y/N), default is N: N
 ***INFO: Configuration file: /etc/trafodion/trafodion_config
-***INFO: Trafodion configuration setup complete
+***INFO: {project-name} configuration setup complete
 
 ************************************
- Trafodion Configuration File Check
+ {project-name} Configuration File Check
 ************************************
 
 
@@ -310,14 +310,14 @@ Are you sure you want to continue connecting (yes/no)? yes
 ***INFO: Testing sudo access on trafodion-1
 ***INFO: Testing sudo access on trafodion-2
 ***DEBUG: trafodionFullName=trafodion_server-1.3.0.tgz
-***INFO: Trafodion version = 1.3.0
+***INFO: {project-name} version = 1.3.0
 ***DEBUG: HBase's java_exec=/usr/java/jdk1.7.0_67-cloudera/bin/java
 
 ******************************
  TRAFODION SETUP
 ******************************
 
-***INFO: Starting Trafodion environment setup (2016-02-15-07-09-58)
+***INFO: Starting {project-name} environment setup (2016-02-15-07-09-58)
 === 2016-02-15-07-09-58 ===
 # @@@ START COPYRIGHT @@@
 #
@@ -344,7 +344,7 @@ BY TYPING "ACCEPT" YOU AGREE TO THE TERMS OF THIS AGREEMENT:ACCEPT
 trafodion-1
 trafodion-2
 ***INFO: Total number of nodes = 2
-***INFO: Starting Trafodion Package Setup (2016-02-15-07-11-09)
+***INFO: Starting {project-name} Package Setup (2016-02-15-07-11-09)
 ***INFO: Installing required packages
 ***INFO: Log file located in /var/log/trafodion
 ***INFO: ... pdsh on node trafodion-1
@@ -357,8 +357,8 @@ trafodion-2
 .
 .
 ***INFO: modifying limits in /usr/lib/trafodion/trafodion.conf on all nodes
-***INFO: create Trafodion userid "trafodion"
-***INFO: Trafodion userid's (trafodion) home directory: /home/trafodion
+***INFO: create {project-name} userid "trafodion"
+***INFO: {project-name} userid's (trafodion) home directory: /home/trafodion
 ***INFO: testing sudo access
 Generating public/private rsa key pair.
 Created directory '/home/trafodion/.ssh'.
@@ -384,7 +384,7 @@ The key's randomart image is:
 trafodion-1
 trafodion-2
 ***INFO: trafodion user added successfully
-***INFO: Trafodion environment setup completed
+***INFO: {project-name} environment setup completed
 ***INFO: creating sqconfig file
 ***INFO: Reserving DCS ports
 
@@ -407,7 +407,7 @@ trafodion-2
 ***INFO: waiting for HDFS to exit safemode
 Safe mode is OFF
 ***INFO: Setting HDFS ACLs for snapshot scan support
-***INFO: Trafodion Mods ran successfully.
+***INFO: {project-name} Mods ran successfully.
 
 ******************************
  TRAFODION START
@@ -442,7 +442,7 @@ Creating folders for storing certificates
 
 ***INFO: copying /home/trafodion/sqcert directory to all nodes
 ***INFO: copying install to all nodes
-***INFO: starting Trafodion instance
+***INFO: starting {project-name} instance
 Checking orphan processes.
 Removing old mpijob* files from /home/trafodion/apache-trafodion-1.3.0-incubating-bin/tmp
 
@@ -468,7 +468,7 @@ You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-1.3.0-i
 
 
 Startup time  0 hour(s) 1 minute(s) 9 second(s)
-Apache Trafodion Conversational Interface 1.3.0
+Apache {project-name} Conversational Interface 1.3.0
 Copyright (c) 2015 Apache Software Foundation
 >> initialize trafodion;
 --- SQL operation complete.
@@ -485,7 +485,7 @@ End of MXCI Session
 $
 ```
 
-2. Switch to the Trafodion Runtime User and check the status of Trafodion.
+2. Switch to the {project-name} Runtime User and check the status of {project-name}.
 +
 ```
 $ sudo su - trafodion
@@ -505,7 +505,7 @@ MXOSRVR         8               8
 $
 ```
 
-Trafodion is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
-basic instructions on how to verify the Trafodion management and how to perform basic management
+{project-name} is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
+basic instructions on how to verify the {project-name} management and how to perform basic management
 operations.
 

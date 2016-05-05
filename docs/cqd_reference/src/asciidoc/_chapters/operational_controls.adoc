@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[operational-controls]]
@@ -48,7 +48,7 @@ then a large number of queries may be impacted. Therefore, you need to assess if
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -73,7 +73,7 @@ Change this setting if you see explain plan being undesirably truncated only.
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -83,21 +83,21 @@ Change this setting if you see explain plan being undesirably truncated only.
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Enables Trafodion to use HBase block cache in an optimal manner.  Defines the maximum Java
+| *Description*               | Enables {project-name} to use HBase block cache in an optimal manner.  Defines the maximum Java
 heap size (-Xmx option) the HBase Region Server are assigned, in MB units.
 | *Values*                    |
 Positive integer. +
  +
 Default: *'1024'*.
 | *Usage*                     | If the HBase Region servers are configured with a maximum Java heap size different than 1 GB, then
-set this attribute so that Trafodion is aware of the actual maximum heap size of the Region Servers.
+set this attribute so that {project-name} is aware of the actual maximum heap size of the Region Servers.
 | *Production Usage*          | Yes.
 | *Impact*                    | When set correctly, this CQD ensures that HBase block cache are be used optimally. Small scans
 are cached and larger scans are not cached to avoid cache trashing.
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -114,19 +114,19 @@ are cached and larger scans are not cached to avoid cache trashing.
 *> 0*: The cached Hive meta-data is valid only for <value> seconds. +
  +
 Default: *'0'*.
-| *Usage*                     | Use a value of -1 when the Hive tables are read-only. This allows Trafodion to avoid repeatedly reading the
+| *Usage*                     | Use a value of -1 when the Hive tables are read-only. This allows {project-name} to avoid repeatedly reading the
 metadata when the table is referenced in multiple queries. +
  +
 Use a value of 0 when updates to the Hive tables are likely to be frequent. +
  +
-Use a positive value _n_ to cause Trafodion to re-read metadata after n seconds has elapsed.
+Use a positive value _n_ to cause {project-name} to re-read metadata after n seconds has elapsed.
 Use this option when updates to the Hive table happen at least _n_ seconds apart. 
-| *Production Usage*          | Consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Compilation time.
 | *Level*                     | Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -182,7 +182,7 @@ including case and white space. By caching text-based queries, the compiler avoi
 queries and improves performance by reducing compile times and increasing compiler throughput. The text cache is always searched first for a query.
 If the plan object is not produced due to a text cache miss, then the plan is stored in the template cache if it meets the criteria for template caching.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -207,7 +207,7 @@ Change the default to ON only when certain that new rows do not have a conflict 
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -230,7 +230,7 @@ Consider using lower values if the table has several indexes and is memory const
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 

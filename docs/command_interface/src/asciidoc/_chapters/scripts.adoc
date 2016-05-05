@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Run Scripts
@@ -45,7 +45,7 @@ that run trafci, see <<perl_or_python, Run trafci from Perl or Python>>.
 
 Script files support any of the various SQL statements that you can run in trafci. For more information about
 SQL statements, see the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+{docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_].
 
 [[script_commands]]
 == Commands

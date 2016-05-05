@@ -20,52 +20,52 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[sql_utilities]]
 = SQL Utilities
 
-A utility is a tool that runs within Trafodion SQL and performs tasks.
-This section describes the Trafodion SQL utilities:
+A utility is a tool that runs within {project-name} SQL and performs tasks.
+This section describes the {project-name} SQL utilities:
 
 [cols=","]
 |===
-| <<load_statement,LOAD Statement>>                           | Uses the Trafodion Bulk Loader to load data from a source table, either
-a Trafodion table or a Hive table, into a target Trafodion table.
+| <<load_statement,LOAD Statement>>                           | Uses the {project-name} Bulk Loader to load data from a source table, either
+a {project-name} table or a Hive table, into a target {project-name} table.
 | <<populate_index_utility,POPULATE INDEX Utility>>           | Loads indexes.
 | <<purgedata_utility,PURGEDATA Utility>>                     | Purges data from tables and indexes.
-| <<unload_statement,UNLOAD Statement>>                       | Unloads data from Trafodion tables into an HDFS location that you
+| <<unload_statement,UNLOAD Statement>>                       | Unloads data from {project-name} tables into an HDFS location that you
 specify.
 | <<update_statistics_statement,UPDATE STATISTICS Statement>> | Updates the histogram statistics for one or more groups of columns
 within a table. These statistics are used to devise optimized access plans.
 |===
 
-NOTE: Trafodion SQL utilities are entered interactively or from script
-files using a client-based tool, such as the Trafodion Command Interface
+NOTE: {project-name} SQL utilities are entered interactively or from script
+files using a client-based tool, such as the {project-name} Command Interface
 (TrafCI). To install and configure a client application that enables you
 to connect to and issue SQL utilities, see the
-http://trafodion.incubator.apache.org/docs/client_installation/index.html[_Trafodion Client Installation Guide_].
+{docs-url}/client_installation/index.html[_{project-name} Client Installation Guide_].
 
 <<<
 [[load_statement]]
 == LOAD Statement
 
-The LOAD statement uses the Trafodion Bulk Loader to load data from a
-source table, either a Trafodion table or a Hive table, into a target
-Trafodion table. The Trafodion Bulk Loader prepares and loads HFiles
+The LOAD statement uses the {project-name} Bulk Loader to load data from a
+source table, either a {project-name} table or a Hive table, into a target
+{project-name} table. The {project-name} Bulk Loader prepares and loads HFiles
 directly in the region servers and bypasses the write path and the cost
 associated with it. The write path begins at a client, moves to a region
 server, and ends when data eventually is written to an HBase data file
 called an HFile.
 
-The Trafodion bulk load process takes place in the following phases:
+The {project-name} bulk load process takes place in the following phases:
 
 * *Disable Indexes* (if incremental index build not used)
 
 * *Prepare* (takes most time, heart of the bulk load operation)
-** Read source files (Trafodion Table, Hive table, or Hive external table)
-** Data encoded in Trafodion encoding
+** Read source files ({project-name} Table, Hive table, or Hive external table)
+** Data encoded in {project-name} encoding
 ** Data repartitioned and sorted to match regions of target table
 ** Data written to HFiles
 ** Data repartitioned and written to index HFiles (if incremental index build IS used)
@@ -80,7 +80,7 @@ The Trafodion bulk load process takes place in the following phases:
 * *Cleanup*
 ** HFiles temporary space cleanup
 
-LOAD is a Trafodion SQL extension.
+LOAD is a {project-name} SQL extension.
 
 ```
 LOAD [WITH option[[,] option]...] INTO target-table SELECT ... FROM source-table
@@ -100,15 +100,15 @@ option is:
 
 * `_target-table_`
 +
-is the name of the target Trafodion table where the data will be loaded.
+is the name of the target {project-name} table where the data will be loaded.
 See <<database_object_names,Database Object Names>>.
 
 * `_source-table_`
 +
-is the name of either a Trafodion table or a Hive table that has the
-source data. Hive tables can be accessed in Trafodion using the
+is the name of either a {project-name} table or a Hive table that has the
+source data. Hive tables can be accessed in {project-name} using the
 HIVE.HIVE schema (for example, hive.hive.orders). The Hive table needs
-to already exist in Hive before Trafodion can access it. If you want to
+to already exist in Hive before {project-name} can access it. If you want to
 load data that is already in an HDFS folder, then you need to create an
 external Hive table with the right fields and pointing to the HDFS
 folder containing the data. You can also specify a WHERE clause on the
@@ -187,10 +187,10 @@ guidelines.
 ==== Staging Folder for HFiles
 
 The Bulk Loader uses an HDFS folder as a staging area for the HFiles
-before calling HBase APIs to merge them into the Trafodion table.
+before calling HBase APIs to merge them into the {project-name} table.
 
-By default, Trafodion uses /bulkload as the staging folder. This folder
-must be owned by the same user as the one under which Trafodion runs. Trafodion
+By default, {project-name} uses /bulkload as the staging folder. This folder
+must be owned by the same user as the one under which {project-name} runs. {project-name}
 also must have full permissions on this folder. The HBase user (that is,
 the user under which HBase runs) must have read/write access to this
 folder.
@@ -284,7 +284,7 @@ Direct access for Hive table data supports:
 
 Tables must be created/dropped/altered through Hive itself.
 
-Trafodion:
+{project-name}:
 
 * Reads Hive metadata to determine information about table.
 * UPDATE STATISTICS can be performed on Hive tables - improves performance! 
@@ -316,7 +316,7 @@ row format delimited fields terminated by '|' location
 '/hive/tpcds/customer_demographics';
 ```
 
-* The Trafodion table where you want to load the data is defined using
+* The {project-name} table where you want to load the data is defined using
 this DDL:
 +
 ```
@@ -520,11 +520,11 @@ PURGEDATA myschema.mytable;
 [[unload_statement]]
 == UNLOAD Statement
 
-The UNLOAD statement unloads data from Trafodion tables into an HDFS
+The UNLOAD statement unloads data from {project-name} tables into an HDFS
 location that you specify. Extracted data can be either compressed or
 uncompressed based on what you choose.
 
-UNLOAD is a Trafodion SQL extension.
+UNLOAD is a {project-name} SQL extension.
 
 ```
 UNLOAD [WITH option[ option]...] INTO 'target-location' SELECT ... FROM source-table ...
@@ -555,19 +555,19 @@ The number of files created will equal the number of ESPs.
 * `SELECT &#8230; FROM _source-table_ &#8230;`
 +
 is either a simple query or a complex one that contains GROUP BY, JOIN,
-or UNION clauses. _source-table_ is the name of a Trafodion table that
+or UNION clauses. _source-table_ is the name of a {project-name} table that
 has the source data. See <<database_object_names,Database Object Names>>.
 
 * `[WITH _option_[ _option_]&#8230;]`
 +
 is a set of options that you can specify for the unload operation. If
-you specify an option more than once, Trafodion returns an error with
+you specify an option more than once, {project-name} returns an error with
 SQLCODE -4489. You can specify one or more of these options:
 
 ** `DELIMITER { '_delimiter-string_' | _delimiter-ascii-value_ }`
 +
 specifies the delimiter as either a delimiter string or an ASCII value.
-If you do not specify this option, Trafodion uses the character "|" as
+If you do not specify this option, {project-name} uses the character "|" as
 the delimiter.
 
 *** _delimiter-string_ can be any ASCII or Unicode string. You can also
@@ -613,7 +613,7 @@ merges the unloaded files into one single file in the specified
 _merged-file-path_. If you specify compression, the unloaded data will
 be in compressed format, and the merged file will also be in compressed
 format. If you specify the optional OVERWRITE keyword, the file is
-overwritten if it already exists; otherwise, Trafodion raises an error
+overwritten if it already exists; otherwise, {project-name} raises an error
 if the file already exists.
 
 ** `NO OUTPUT`
@@ -626,7 +626,7 @@ that the Bulk Unloader is executing.
 * `{ NEW | EXISTING } SNAPSHOT HAVING SUFFIX '_string_'`
 +
 initiates an HBase snapshot scan during the unload operation. During a
-snapshot scan, the Bulk Unloader will get a list of the Trafodion tables
+snapshot scan, the Bulk Unloader will get a list of the {project-name} tables
 from the query explain plan and will create and verify snapshots for the
 tables. Specify a suffix string, '_string_', which will be appended to
 each table name.
@@ -635,7 +635,7 @@ each table name.
 === Considerations for UNLOAD
 
 * You must have write permissions on the target HDFS folder.
-* If a WITH option is specified more than once, Trafodion returns an
+* If a WITH option is specified more than once, {project-name} returns an
 error with SQLCODE -4489.
 
 [[unload_required_privileges]]
@@ -653,7 +653,7 @@ component.
 === Examples of UNLOAD
 
 * This example shows how the UNLOAD statement extracts data from a
-Trafodion table, `TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS`, into an HDFS
+{project-name} table, `TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS`, into an HDFS
 folder, `/bulkload/customer_demographics`:
 +
 ```
@@ -683,7 +683,7 @@ The UPDATE STATISTICS statement updates the histogram statistics for one
 or more groups of columns within a table. These statistics are used to
 devise optimized access plans.
 
-UPDATE STATISTICS is a Trafodion SQL extension.
+UPDATE STATISTICS is a {project-name} SQL extension.
 
 ```
 UPDATE STATISTICS FOR TABLE table [CLEAR | on-clause]
@@ -863,7 +863,7 @@ the optimizer to generate good plans.
 +
 If you do not specify the SAMPLE clause, if the table has fewer rows
 than specified, or if the sample size is greater than the system limit,
-Trafodion SQL reads all rows from _table_. See <<sample_clause,SAMPLE Clause>>.
+{project-name} SQL reads all rows from _table_. See <<sample_clause,SAMPLE Clause>>.
 
 *** `_sample-option_`
 
@@ -875,7 +875,7 @@ be an integer that is greater than zero
 <<<
 **** `RANDOM _percent_ PERCENT`
 +
-directs Trafodion SQL to choose rows randomly from the table. The value
+directs {project-name} SQL to choose rows randomly from the table. The value
 percent must be a value between zero and 100 (0 < percent &#60;= 100). In
 addition, only the first four digits to the right of the decimal point
 are significant. For example, value 0.00001 is considered to be 0.0000,
@@ -883,7 +883,7 @@ Value 1.23456 is considered to be 1.2345.
 
 **** `PERIODIC _size_ ROWS EVERY _period_ ROW`
 +
-directs Trafodion SQL to choose the first _size_ number of rows from
+directs {project-name} SQL to choose the first _size_ number of rows from
 each _period_ of rows. The value _size_ must be an integer that is
 greater than zero and less than or equal to the value _period_. (0 <
 _size_ &#60;= _period_). The size of the _period_ is defined by the number
@@ -900,7 +900,7 @@ Use UPDATE STATISTICS to collect and save statistics on columns. The SQL
 compiler uses histogram statistics to determine the selectivity of
 predicates, indexes, and tables. Because selectivity directly influences
 the cost of access plans, regular collection of statistics increases the
-likelihood that Trafodion SQL chooses efficient access plans.
+likelihood that {project-name} SQL chooses efficient access plans.
 
 While UPDATE STATISTICS is running on a table, the table is active and
 available for query access.
@@ -1022,7 +1022,7 @@ control query default USTAT_AUTOMATION_INTERVAL '1440';
 ```
 
 The value of USTAT_AUTOMATION_INTERVAL is intended to be an automation
-interval (in minutes), but, in Trafodion Release 1.0, this value does
+interval (in minutes), but, in {project-name} Release 1.0, this value does
 not act as a timing interval. Instead, any value greater than zero
 enables update statistics automation.
 
@@ -1033,7 +1033,7 @@ that you want to optimize. For example:
 prepare s from select...;
 ```
 
-The PREPARE statement causes the Trafodion SQL compiler to compile and
+The PREPARE statement causes the {project-name} SQL compiler to compile and
 optimize a query without executing it. When preparing queries with
 update statistic automation enabled, any histograms needed by the
 optimizer that are not present will cause those columns to be marked as
@@ -1064,7 +1064,7 @@ ON (jobcode),(empnum, deptnum) GENERATE 10 INTERVALS;
 
 * This example generates histogram statistics using the ON EVERY COLUMN
 option for the table DEPT. This statement performs a full scan, and
-Trafodion SQL determines the default number of intervals.
+{project-name} SQL determines the default number of intervals.
 +
 ```
 UPDATE STATISTICS FOR TABLE dept ON EVERY COLUMN;

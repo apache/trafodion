@@ -20,27 +20,27 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[enable-security]]
 = Enable Security
 
-If you do not enable security in Trafodion, then a client interface to Trafodion may request a user name and password,
-but Trafodion ignores the user name and password entered in the client interface, and the session runs as the database *root* user,
+If you do not enable security in {project-name}, then a client interface to {project-name} may request a user name and password,
+but {project-name} ignores the user name and password entered in the client interface, and the session runs as the database *root* user,
 `DB__ROOT`, without restrictions. If you want to restrict users, restrict access to certain users only, or restrict access to an
 object or operation, then you must enable security, which enforces authentication and authorization. You can enable security
-during installation by answering the Trafodion Installer's prompts or after installation by running the `traf_authentication_setup`
+during installation by answering the {project-name} Installer's prompts or after installation by running the `traf_authentication_setup`
 script, which enables both authentication and authorization. For more information, see
 <<enable-security-authentication-setup-script,Authentication Setup Script>> below.
 
-Trafodion does not manage user names and passwords internally but does support authentication via directory servers that support
-the OpenLDAP protocol, also known as LDAP servers. You can configure the LDAP servers during installation by answering the Trafodion
+{project-name} does not manage user names and passwords internally but does support authentication via directory servers that support
+the OpenLDAP protocol, also known as LDAP servers. You can configure the LDAP servers during installation by answering the {project-name}
 Installer's prompts, or you can configure the LDAP servers manually after installation. For more information, please refer to
 <<enable-security-configuring-ldap-servers,Configuring LDAP Servers>> below.
 
-Once authentication and authorization are enabled, Trafodion allows users to be registered in the database and allows privileges
-on objects to be granted to users and roles (which are granted to users). Trafodion also supports component-level (or system-level)
+Once authentication and authorization are enabled, {project-name} allows users to be registered in the database and allows privileges
+on objects to be granted to users and roles (which are granted to users). {project-name} also supports component-level (or system-level)
 privileges, such as MANAGE_USERS, which can be granted to users and roles. Refer to <<enable-security-manage-users,Manage Users>> below.
 
 [[enable-security-configuring-ldap-servers]]
@@ -68,14 +68,14 @@ If `Attribute1` has only one instance, `valueC` is used, otherwise, `valueA` and
 Attributes are grouped into sections; this is for future enhancements. Attributes are declared in the `LOCAL` section, unless otherwise specified.
 
 NOTE: Section names, attribute names, and the general layout of the authentication configuration file are subject to change in future versions
-of Trafodion and backward compatibility is not guaranteed.
+of {project-name} and backward compatibility is not guaranteed.
 
 Specification of your directory server(s) requires at a minimum:
 
 [cols="15%h,55%,30%a",options="header"]
 |===
 | Setting | Description | Example
-| LDAP Host Name(s) | One or more names of hosts that support the OpenLDAP protocol must be specified. Trafodion attempts to connect to all
+| LDAP Host Name(s) | One or more names of hosts that support the OpenLDAP protocol must be specified. {project-name} attempts to connect to all
 provided host names during the authentication process. The set of user names and passwords should be identical on all hosts to avoid unpredictable
 results. The attribute name is `LDAPHostName`. | `LDAPHostName: ldap.company.com`
 | LDAP Port Number | Port number of the LDAP server. Typically this is 389 for servers using no encryption or TLS, and 636 for servers using SSL.
@@ -88,7 +88,7 @@ identifier specifiers. | `UniqueIdentifier: uid=,ou=users,dc=com`
 &#8226; 1: SSL +
 &#8226; 2: TLS | `LDAPSSL: 2` +
  +
-If your LDAP server uses TLS you must specify a file containing the certificate used to encrypt the password. By default the Trafodion software
+If your LDAP server uses TLS you must specify a file containing the certificate used to encrypt the password. By default the {project-name} software
 looks for this file in `$MY_SQROOT/cacerts`, but you may specify a fully qualified filename, or set the environment variable `CACERTS_DIR` to another
 directory. To specify the file containing the certificate, you set the value of the attribute `TLS_CACERTFilename`, located in the Defaults section. +
  +
@@ -102,10 +102,10 @@ has that requirement, provide these "search" values. | `LDAPSearchDN: lookup@com
 `LDAPSearchPwd: Lookup123`
 |===
 
-There are additional optional attributes that can be used to customize Trafodion authentication. As mentioned earlier, they are described in
+There are additional optional attributes that can be used to customize {project-name} authentication. As mentioned earlier, they are described in
 <<enable-security-traf-authentication-config,.traf_authentication_config>> below.
 
-You can test the authentication configuration file for syntactic errors using the `ldapconfigcheck` tool. If you have loaded the Trafodion
+You can test the authentication configuration file for syntactic errors using the `ldapconfigcheck` tool. If you have loaded the {project-name}
 environment (`sqenv.sh`), then the tool automatically checks the file at `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
 If not, you can specify the file to be checked.
 
@@ -122,8 +122,8 @@ Please refer to <<enable-security-ldapconfigcheck,ldapconfigcheck>> below for mo
 NOTE: The authentication configuration file needs to be propagated to all nodes, but there is a script that does that for you described later.
 For now, you can test your changes on the local node.
 
-You can test the LDAP connection using the utility `ldapcheck`. To use this utility the Trafodion environment must be loaded (`sqenv.sh`),
-but the Trafodion instance does not need to be running. To test the connection only, you can specify any user name, and a name lookup is performed
+You can test the LDAP connection using the utility `ldapcheck`. To use this utility the {project-name} environment must be loaded (`sqenv.sh`),
+but the {project-name} instance does not need to be running. To test the connection only, you can specify any user name, and a name lookup is performed
 using the attributes in `.traf_authentication_config`.
 
 ```
@@ -146,10 +146,10 @@ Authentication successful
 
 <<<
 [[enable-security-generate-trafodion-certificate]]
-== Generate Trafodion Certificate
-Trafodion clients such as `trafci` encrypt the password before sending it to Trafodion. A self-signed certificate is used to encrypt the password.
+== Generate {project-name} Certificate
+{project-name} clients such as `trafci` encrypt the password before sending it to {project-name}. A self-signed certificate is used to encrypt the password.
 The certificate and key should be generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
-in `$HOME/sqcert`. If those files are not present and since Trafodion clients does not send unencrypted passwords, then you need to manually generate
+in `$HOME/sqcert`. If those files are not present and since {project-name} clients does not send unencrypted passwords, then you need to manually generate
 those files. To do so, run the script `sqcertgen` located in `$MY_SQROOT/sql/scripts`. The script runs `openssl` to generate the certificate and key.
 
 To run openssl manually, follow the example:
@@ -174,18 +174,18 @@ If you encrypt the private key, then you must enter the password every time the 
 |===
 
 Both the public (`server.crt`) and private (`server.key`) files should be placed in the directory `$HOME/sqcert`. If you do not want to use
-the `HOME` directory or if you want to use different names for the private and/or public key files, then Trafodion supports environment variables
+the `HOME` directory or if you want to use different names for the private and/or public key files, then {project-name} supports environment variables
 to specific the alternate locations or names.
 
-* Trafodion first checks the environment variables `SQCERT_PRIVKEY` and `SQCERT_PUBKEY`. If they are set, Trafodion uses the fully qualified filename
+* {project-name} first checks the environment variables `SQCERT_PRIVKEY` and `SQCERT_PUBKEY`. If they are set, {project-name} uses the fully qualified filename
 value of the environment variable.
 +
 You can specify either one filename environment variable or both.
 
-* If at least one filename environment variable is not set, Trafodion checks the value of the environment variable `SQCERT_DIR`. If set,
+* If at least one filename environment variable is not set, {project-name} checks the value of the environment variable `SQCERT_DIR`. If set,
 then the default filename `server.key` or `server.crt` is appended to the value of the environment variable `SQCERT_DIR`.
 * If the filename environment variable is not set and the directory environment variable is not set,
-then Trafodion uses the default location (`$HOME/sqcert`) and the default filename.
+then {project-name} uses the default location (`$HOME/sqcert`) and the default filename.
 
 [[enable-security-authentication-setup-script]]
 ==  Authentication Setup Script
@@ -220,14 +220,14 @@ and propagates `sqenvcom.sh` and `.traf_authentication_config` to all nodes in t
 The last step is to enable authorization by creating privilege-related metadata tables and set up default permissions with a call to the database.
 The list of privilege-related metadata tables, users, roles, and component privileges are logged in `$MY_SQROOT/logs/authEnable.log`. +
  +
-Specifying `--on` requires that a valid `.traf_authentication_config` file exists and the Trafodion metadata initialized.
+Specifying `--on` requires that a valid `.traf_authentication_config` file exists and the {project-name} metadata initialized.
 | --off | If specified, then `traf_authentication_setup` sets the environment variable `TRAFODION_ENABLE_AUTHENTICATION` to `NO` in
 `$MY_SQROOT/sqenvcom.sh` and propagates the file to all the nodes in the cluster. +
  +
 The last step is to disable authorization by removing any privilege-related metadata and permissions with a call to the database.
 The results of this operation is logged in `$MY_SQROOT/logs/authEnable.log`.
-| --setup | Use this option if the Trafodion metadata has not been initialized. This option enables authentication but does not call the database
-to create privilege-related metadata tables. Later, when Trafodion metadata is initialized, privilege-related metadata tables and default permissions
+| --setup | Use this option if the {project-name} metadata has not been initialized. This option enables authentication but does not call the database
+to create privilege-related metadata tables. Later, when {project-name} metadata is initialized, privilege-related metadata tables and default permissions
 are automatically created.
 | --status | Reports the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATION` in `$MY_SQROOT/sqenvcom.sh` on the current node and
 reports the status of security features in the database.
@@ -266,7 +266,7 @@ ALTER USER DB__ROOT SET EXTERNAL NAME trafodion_rootuser_in_ldap;
 ```
 
 To learn more about how to register users, grant object and component privileges, and manage users and roles, please see the
-http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual].
+{docs-url}/sql_reference/index.html[Trafodion SQL Reference Manual].
 
 
 [[enable-security-traf-authentication-config]]

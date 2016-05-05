@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[transaction-control-and-locking]]
@@ -65,7 +65,7 @@ is provided. This default attribute specifies the isolation level for update and
 SYSTEM_DEFAULTS table, the default value is the same as the ISOLATION_LEVEL default attribute. However, if specified or present in the SYSTEM_DEFAULTS table,
 then its value is used as the isolation level for updates and DDL statements. UPDATE in ISOLATION_LEVEL_FOR_UPDATES refers to INSERT, UPDATE, and DELETE statements.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -87,6 +87,6 @@ The default value is *'READ COMMITTED'* (ANSI).
 ISOLATION_LEVEL can be set to READ UNCOMMITTED. This CQD still remains READ COMMITTED. You can change it to READ UNCOMMITTED to prevent queries
 running at the service level to not perform any updates.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
