@@ -124,7 +124,7 @@ If you add a `+` sign in front of the file-name, odb  *appends* to `<file>`inste
 - `end`: Commit when all rows (assigned to a given thread) have been inserted. +
 - `#rows`: Commit every `#rows` inserted rows. +
 - `x#rs`: Commit every `#rs` rowset (see `rows`)
-| `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store inserted rows *directly* into
+| `direct` | Adds `/\*+ DIRECT */`* hint to the insert statement. To be used with Vertica databases in order to store inserted rows **directly** into
 the Read-Only Storage (ROS). See Vertica’s documentation.
 | `fieldtrunc=\{0-4}` | Defines how odb manages fields longer than the destination target column: +
  +
@@ -399,14 +399,14 @@ In addition: you need to *_convert date format_* and replace all occurrences of 
 
 The following map file accomplishes these goals:
 
-***
-$ cat test/load_map/ml1.map +
-# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat +
-ID:seq:1                  # Inserts into ID column a sequence starting from 1 +
-NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy +
-AGE:2                     # Loads field #2 (they start from zero) into AGE +
+```
+$ cat test/load_map/ml1.map
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat
+ID:seq:1                  # Inserts into ID column a sequence starting from 1
+NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy
+AGE:2                     # Loads field #2 (they start from zero) into AGE
 BDATE:6:DCONV:d.b.y       # Loads field #6 into BDATE converting date format from dd mmm yyyy
-***
+```
 
 <<<
 Load as follows:
@@ -479,7 +479,7 @@ CREATE TABLE TRAFODION.MAURIZIO."PERSON"
 , BDATE DATE NOT NULL
 , SEX CHAR(1) NOT NULL
 , EMAIL VARCHAR(40) NOT NULL
-, SALARY NUMERIC SIGNED(9,2) NOT NULL
+, SALARY NUMERIC(9,2) NOT NULL
 , EMPL VARCHAR(40) NOT NULL
 , NOTES VARCHAR(80)
 , LOADTS TIMESTAMP(0)
@@ -492,13 +492,14 @@ CREATE TABLE TRAFODION.MAURIZIO."PERSON"
 You can use a mapfile like this:
 
 ```
-~/Devel/odb $ cat person.map PID:SEQ:100
-
+~/Devel/odb $ cat person.map
+PID:SEQ:100
 FNAME:DSRAND:datasets/first_names.txt 
 LNAME:DSRAND:datasets/last_names.txt 
 COUNTRY:DSRAND:datasets/countries.txt
 CITY:DSRAND:datasets/cities.txt 
-BDATE:DRAND:1800:2012 SEX:LSTRAND:M,F,U
+BDATE:DRAND:1800:2012
+SEX:LSTRAND:M,F,U
 EMAIL:EMRAND:3:12:5:8:com,edu,org,net 
 SALARY:NRAND:9:2 
 EMPL:DSRAND:datasets/fortune500.txt 
@@ -529,8 +530,9 @@ with length between 20 and 80 characters`
 You generate and load test data with a command like this:
 
 ```
-$ ./ odb64luo -l src=nofile:tgt=traf.maurizio.person:max=1000000:
-map=person.map:rows=5000:parallel=8:loadcmd=U
+$ bin/odb64luo -u user -p password -d traf -l src=nofile:
+tgt=traf.maurizio.person:max=1000000:
+map=person.map:rows=5000:parallel=8:loadcmd=INSERT
 ```
 
 Please note `src=nofile” (it means _there is no input file_) and `max=1000000` (generate and load one million rows). The above command

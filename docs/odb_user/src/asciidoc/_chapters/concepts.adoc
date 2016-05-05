@@ -201,15 +201,16 @@ You can list available drivers with `-lsdrv`:
 
 ```
 ~/Devel/odb $ ./odb64luo -lsdrv
-Trafodion - Description=Trafodion ODBC Stand Alone Driver +
+Trafodion - Description=Trafodion ODBC Stand Alone Driver
 ...
 ```
 
 You can list locally configured data sources with `-lsdsn`:
 
 ```
-~/Devel/odb $ ./odb64luo -lsdsn traf - Trafodion
-VMFELICI – Vertica +
+~/Devel/odb $ ./odb64luo -lsdsn
+traf - Trafodion
+VMFELICI – Vertica
 ...
 ```
 
@@ -516,7 +517,7 @@ script (`-f`) will be executed, independently from the others, using a different
 Running scripts in parallel.
 
 ```
-~/Devel/odb $ ./odb64luo -x "select count(&#42;) from types" -f script1.sql
+~/Devel/odb $ ./odb64luo -x "select count(*) from types" -f script1.sql
 ```
 
 Uses two _independent_ threads executed in parallel. The first thread will run `select count(*) from types` and the other `script1.sql`.
@@ -532,7 +533,7 @@ of `script1.sql` and three instances of `script2.sql` in parallel using `3 + 5 +
 Running eleven commands and scripts in parallel
 
 ```
-~/Devel/odb $ ./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \
+~/Devel/odb $ ./odb64luo -x 3:"select count(*) from types" -f 5:script1.sql \
 -f 3:script2.sql -q
 
 [1.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
@@ -558,7 +559,7 @@ You can limit the maximum number of threads with `-T` option.
 The following command runs the same 11 commands/scripts limiting the number of threads (*and ODBC connections*) to 4:
 
 ```
-~/Devel/odb $ ./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \
+~/Devel/odb $ ./odb64luo -x 3:"select count(*) from types" -f 5:script1.sql \
 -f 3:script2.sql -q -T 4
 
 [1.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)

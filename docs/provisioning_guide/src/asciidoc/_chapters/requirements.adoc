@@ -97,6 +97,7 @@ Please verify these requirements on each node you will install {project-name} on
 | FQDN    | 
 &#8226; `/etc/hosts` is set up for fully-qualified node names (FQDN). +
 &#8226; `/etc/resolv.conf` is configured to use a name server. |  
+&#8226; `hostname --fqdn` shows the fully-qualified node name, if any. +
 &#8226; `host -T <FQDN>` (responds if using a DNS server, times out otherwise) +
 &#8226; Simply ssh among nodes using `ssh <FQDN>`. 
 | Port Availability | The Linux Kernel Firewall (`iptables`) has either been disabled or <<ip-ports,ports required by {project-name}>> have been opened. |
