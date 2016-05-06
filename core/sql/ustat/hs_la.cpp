@@ -652,6 +652,19 @@ Lng32 HSTableDef::getColNum(const char *colName, NABoolean errIfNotFound) const
         if ((&colInfo_[i] != NULL) &&
             (ansiForm == *colInfo_[i].colname))
           {
+            // raise an error when a LOB column is explicitly specified
+            if (DFS2REC::isLOB(colInfo_[i].datatype))
+              {
+                if (LM->LogNeeded())
+                  {
+                    sprintf(LM->msg, "***[ERROR]:  Column (%s) is a LOB column.", colName);
+                    LM->Log(LM->msg);
+                  }
+                HSFuncMergeDiags(-UERR_LOB_STATS_NOT_SUPPORTED, colName);
+                HSHandleError(retcode);
+                return retcode;               
+              }
+
             return i;
           }
       }
