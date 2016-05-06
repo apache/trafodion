@@ -1,3 +1,4 @@
+/*******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -18,10 +19,11 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
+ *******************************************************************************/
 
 /* -*-java-*-
- * Filename		: DataWrapper.java
- * Description	: Provides an object to pass numeric data across the JNI.
+Filename		: DataWrapper.java
+Description	: Provides an object to pass numeric data across the JNI.
  */
  /*
   * Methods Changed: convertStringToNumeric()
@@ -37,7 +39,7 @@ import java.sql.SQLException;
 import java.util.BitSet;
 import java.util.Locale;
 
-public class DataWrapper
+class DataWrapper
 {
 	// Types of data the wrapper can store
 	static final byte UNKNOWN		=  0;
@@ -72,7 +74,7 @@ public class DataWrapper
 	boolean[]				isNullValue;
 	boolean[]				numericValid;
 	boolean[]				setNeeded;
-    byte[][]                SQLbytesValue;
+	byte[][]                SQLbytesValue;
 
 	private boolean			updated;
 	private boolean			deleted;
@@ -89,7 +91,7 @@ public class DataWrapper
 
 	// Constructor
 	// Creates a Data Wrapper that can contain an entire row of data or statement parameters
-	public DataWrapper(int total_cols)
+	DataWrapper(int total_cols)
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_DataWrapper].methodEntry();
 		if (JdbcDebugCfg.traceActive) debug[methodId_DataWrapper].methodParameters(
@@ -155,15 +157,16 @@ public class DataWrapper
 			updated = false;
 			deleted = false;
 			inserted = false;
-			
-            SQLbytesValue = null; 
-            
 			for (int col_idx=0; col_idx<totalColumns; col_idx++) clearColumn(col_idx+1);
 		}
 		finally
 		{
 			if (JdbcDebugCfg.entryActive) debug[methodId_initDataWrapper].methodExit();
 		}
+	}
+
+	public int getTotalColumns() {
+		return totalColumns;
 	}
 
 	void setInsertRow()
@@ -279,20 +282,6 @@ public class DataWrapper
 						if (JdbcDebugCfg.traceActive) debug[methodId_copyRows].methodParameters(
 								"bytesValue[" + col_idx + "] is : " + bytesValue[col_idx]);
 					}
-                    if (source.SQLbytesValue==null)
-                    {
-                        if (SQLbytesValue!=null) SQLbytesValue[col_idx] = null;
-						if (JdbcDebugCfg.traceActive) debug[methodId_copyRows].methodParameters(
-								"source.SQLbytesValue is null");
-                    }
-                    else
-                    {
-                        if (SQLbytesValue==null) setupSQLBytes();
-                        SQLbytesValue[col_idx] = source.SQLbytesValue[col_idx];
-						if (JdbcDebugCfg.traceActive) debug[methodId_copyRows].methodParameters(
-								"SQLbytesValue[" + col_idx + "] is : " + SQLbytesValue[col_idx]);
-                    }
-//---------------------
 				}
 			}
 		}
@@ -650,12 +639,6 @@ public class DataWrapper
 			if (JdbcDebugCfg.entryActive) debug[methodId_setupBytes].methodExit();
 		}
 	}
-    private void setupSQLBytes()
-    {
-        // This method is implemented in the JNI also.  Any changes need to be made in both places
-        SQLbytesValue = new byte[totalColumns][];
-        for (int col_idx=0; col_idx<totalColumns; col_idx++) SQLbytesValue[col_idx] = null;
-    }
 
 	private void setupObjects()
 	{
@@ -969,11 +952,6 @@ public class DataWrapper
 			if (JdbcDebugCfg.entryActive) debug[methodId_setBytes].methodExit();
 		}
 	}
-    void setSQLBytes(int col_num, byte[] b) throws SQLException
-    {
-        if (SQLbytesValue==null) setupSQLBytes();
-        SQLbytesValue[col_num-1] = b;
-    }
 
 	byte getDataType(int col_num)
 	{
@@ -999,8 +977,6 @@ public class DataWrapper
 										  "col_num = " + col_num);
 		try
 		{
-            setSQLBytes(col_num,SQLbytesValue[col_num-1]); 
-
 			if (setNeeded[col_num-1])
 			{
 				setNeeded[col_num-1] = false;
@@ -1270,7 +1246,7 @@ public class DataWrapper
 			else if (obj instanceof Float) setFloat(col_num, ((Float)obj).floatValue());
 			else if (obj instanceof Double) setDouble(col_num, ((Double)obj).doubleValue());
 			else if (obj instanceof Boolean) setBoolean(col_num, ((Boolean)obj).booleanValue());
-			else if (obj instanceof String) setString(col_num, (String) obj);
+			else if (obj instanceof String ) setString(col_num, (String) obj);
 			else if (obj instanceof Blob) setBlob(col_num, (Blob) obj);
 			else if (obj instanceof Clob) setClob(col_num, (Clob) obj);
 			else if (obj instanceof BigDecimal) setBigDecimal(col_num, (BigDecimal) obj);
@@ -1306,15 +1282,6 @@ public class DataWrapper
 					}
 				}
 				isNullValue[col_num-1] = wrapper.isNullValue[0];
-                if (wrapper.SQLbytesValue!=null)
-                {
-                    if (wrapper.SQLbytesValue[col_num-1]!=null)
-                    {
-                        if (SQLbytesValue==null) setupSQLBytes();
-                        SQLbytesValue[col_num-1] = wrapper.SQLbytesValue[0];
-                    }
-                }
-
 			}
 			else
 			{
@@ -2394,9 +2361,10 @@ public class DataWrapper
 	public boolean isTruncated(int columnIndex) {
 		return this.dataTruncation[columnIndex - 1];
 	}
-    public byte[] getSQLBytes(int col_num) {
-        if (SQLbytesValue == null)
-            return null;
-        return(SQLbytesValue[col_num-1]);
-    }
+	public byte[] getSQLBytes(int col_num) {
+		if (SQLbytesValue == null)
+			return null;
+		return(SQLbytesValue[col_num-1]);
+	}
+
 }
