@@ -20,18 +20,18 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[sql_statements]]
 = SQL Statements
 
-This section describes the syntax and semantics of Trafodion SQL statements.
+This section describes the syntax and semantics of {project-name} SQL statements.
 
-Trafodion SQL statements are entered interactively or from script files using a client-based tool, such as the
-Trafodion Command Interface (TrafCI). To install and configure a client application that enables you to connect
-to and use a Trafodion database, see the
-http://trafodion.incubator.apache.org/docs/client_install/index.html[_Trafodion Client Installation_ _Guide_].
+{project-name} SQL statements are entered interactively or from script files using a client-based tool, such as the
+{project-name} Command Interface (TrafCI). To install and configure a client application that enables you to connect
+to and use a {project-name} database, see the
+{docs-url}/client_install/index.html[_{project-name} Client Installation_ _Guide_].
 
 [[sql_statements_categories]]
 == Categories
@@ -52,31 +52,31 @@ The statements are categorized according to their functionality:
 [[data_definition_language_statements]]
 === Data Definition Language (DDL) Statements
 
-Use these DDL statements to create, drop, or alter the definition of a Trafodion SQL schema or object.
+Use these DDL statements to create, drop, or alter the definition of a {project-name} SQL schema or object.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements inside a user-defined
 transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON
 (the default) for the session.
 
-[cols="2*", options="headhttp://trafodion.apache.org/docs/sql_reference/index.html#limitser"]
+[cols="2*", options="head{docs-url}/sql_reference/index.html#limitser"]
 |===
 | Statement                                                  | What It Does
-// | <<alter_library_statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a Trafodion database.
+// | <<alter_library_statement,ALTER LIBRARY Statement>>        | Updates the physical filename for a library object in a {project-name} database.
 | <<alter_table_statement,ALTER TABLE Statement>>            | Changes attributes for a table.
 | <<alter_user_statement,ALTER USER Statement>>              | Changes attributes for a user.
-| <<create_function_statement,CREATE FUNCTION Statement>>    | Registers a user-defined function (UDF) written in C as a function within a Trafodion database.
+| <<create_function_statement,CREATE FUNCTION Statement>>    | Registers a user-defined function (UDF) written in C as a function within a {project-name} database.
 | <<create_index_statement,CREATE INDEX Statement>>          | Creates an index on a table.
-| <<create_library_statement,CREATE LIBRARY Statement>>      | Registers a library object in a Trafodion database.
-| <<create_procedure_statement,CREATE PROCEDURE Statement>>  | Registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
+| <<create_library_statement,CREATE LIBRARY Statement>>      | Registers a library object in a {project-name} database.
+| <<create_procedure_statement,CREATE PROCEDURE Statement>>  | Registers a Java method as a stored procedure in Java (SPJ) within a {project-name} database.
 | <<create_role_statement,CREATE ROLE Statement>>            | Creates a role.
 | <<create_schema_statement,CREATE SCHEMA Statement>>        | Creates a schema in the database.
 | <<create_table_statement,CREATE TABLE Statement>>          | Creates a table.
 | <<create_view_statement,CREATE VIEW Statement>>            | Creates a view.
-| <<drop_function_statement,DROP FUNCTION Statement>>        | Removes a user-defined function (UDF) from the Trafodion database.
+| <<drop_function_statement,DROP FUNCTION Statement>>        | Removes a user-defined function (UDF) from the {project-name} database.
 | <<drop_index_statement,DROP INDEX Statement>>              | Drops an index.
-| <<drop_library_statement,DROP LIBRARY Statement>>          | Removes a library object from the Trafodion database and also removes the library file
+| <<drop_library_statement,DROP LIBRARY Statement>>          | Removes a library object from the {project-name} database and also removes the library file
 referenced by the library object.
-| <<drop_procedure_statement,DROP PROCEDURE Statement>>      | Removes a stored procedure in Java (SPJ) from the Trafodion database.
+| <<drop_procedure_statement,DROP PROCEDURE Statement>>      | Removes a stored procedure in Java (SPJ) from the {project-name} database.
 | <<drop_role_statement,DROP ROLE Statement>>                | Drops a role.
 | <<drop_schema_statement,DROP SCHEMA Statement>>            | Drops a schema from the database.
 | <<drop_table_statement,DROP TABLE Statement>>              | Drops a table.
@@ -155,15 +155,15 @@ authorization to access libraries or to execute SPJs or UDFs:
 [cols="2*",options="header"]
 |===
 | Statement                                                 | What It Does
-// | <<alter_library_statement,ALTER LIBRARY Statement>>       | Updates the physical filename for a library object in a Trafodion database.
-| <<call_statement,CALL Statement>>                         | Initiates the execution of a stored procedure in Java (SPJ) in a Trafodion database.
-| <<create_function_statement,CREATE FUNCTION Statement>>   | Registers a user-defined function (UDF) written in C as a function within a Trafodion database.
-| <<create_library_statement,CREATE LIBRARY Statement>>     | Registers a library object in a Trafodion database.
-| <<create_procedure_statement,CREATE PROCEDURE Statement>> | Registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
-| <<drop_function_statement,DROP FUNCTION Statement>>       | Removes a user-defined function (UDF) from the Trafodion database.
-| <<drop_library_statement,DROP LIBRARY Statement>>         | Removes a library object from the Trafodion database and also removes the library file
+// | <<alter_library_statement,ALTER LIBRARY Statement>>       | Updates the physical filename for a library object in a {project-name} database.
+| <<call_statement,CALL Statement>>                         | Initiates the execution of a stored procedure in Java (SPJ) in a {project-name} database.
+| <<create_function_statement,CREATE FUNCTION Statement>>   | Registers a user-defined function (UDF) written in C as a function within a {project-name} database.
+| <<create_library_statement,CREATE LIBRARY Statement>>     | Registers a library object in a {project-name} database.
+| <<create_procedure_statement,CREATE PROCEDURE Statement>> | Registers a Java method as a stored procedure in Java (SPJ) within a {project-name} database.
+| <<drop_function_statement,DROP FUNCTION Statement>>       | Removes a user-defined function (UDF) from the {project-name} database.
+| <<drop_library_statement,DROP LIBRARY Statement>>         | Removes a library object from the {project-name} database and also removes the library file
 referenced by the library object.
-| <<drop_procedure_statement,DROP PROCEDURE Statement>>     | Removes a stored procedure in Java (SPJ) from the Trafodion database.
+| <<drop_procedure_statement,DROP PROCEDURE Statement>>     | Removes a stored procedure in Java (SPJ) from the {project-name} database.
 | <<grant_statement,GRANT Statement>>                       | Grants privileges for accessing a library object or executing an SPJ or UDF to specified users.
 | <<revoke_statement,REVOKE Statement>>                     | Revokes privileges for accessing a library object or executing an SPJ or UDF from specified users.
 UDF from specified users.
@@ -217,11 +217,11 @@ Use these statements to display information about database objects or query exec
 | Statement                                                               | What It Does
 | <<explain_statement,EXPLAIN Statement>>                                 | Displays information contained in the query execution plan.
 | <<get_statement,GET Statement>>                                         | Displays the names of database objects, components, component
-privileges, roles, or users that exist in the Trafodion instance.
+privileges, roles, or users that exist in the {project-name} instance.
 | <<get_hbase_objects_statement,GET HBASE OBJECTS Statement>>             | Displays a list of HBase objects through an SQL interface
-| <<get_version_of_metadata_statement,GET VERSION OF METADATA Statement>> | Displays the version of the metadata in the Trafodion instance and
+| <<get_version_of_metadata_statement,GET VERSION OF METADATA Statement>> | Displays the version of the metadata in the {project-name} instance and
 indicates if the metadata is current.
-| <<get_version_of_software_statement,GET VERSION OF SOFTWARE Statement>> | Displays the version of the Trafodion software that is installed on the
+| <<get_version_of_software_statement,GET VERSION OF SOFTWARE Statement>> | Displays the version of the {project-name} software that is installed on the
 system and indicates if it is current.
 | <<invoke_statement,INVOKE Statement>>                                   | Generates a record description that corresponds to a row in the
 specified table or view.
@@ -240,10 +240,10 @@ within a table. These statistics are used to devise optimized access plans.
 [[alter_library_statement]]
 == ALTER LIBRARY Statement
 
-The ALTER LIBRARY statement updates the physical filename for a library object in a Trafodion database.
+The ALTER LIBRARY statement updates the physical filename for a library object in a {project-name} database.
 A library object can be an SPJ's JAR file or a UDF's library file.
 
-ALTER LIBRARY is a Trafodion SQL extension.
+ALTER LIBRARY is a {project-name} SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside 
 user-defined transaction (`BEGIN WORK&#8230;COMMIT WORK`) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT must be
@@ -312,7 +312,7 @@ ALTER LIBRARY myudfs FILE $TMUDFLIB;
 [[alter_table_statement]]
 == ALTER TABLE Statement
 
-The ALTER TABLE statement changes a Trafodion SQL table. See <<Tables,Tables>>.
+The ALTER TABLE statement changes a {project-name} SQL table. See <<Tables,Tables>>.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this
 statement inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF.
@@ -410,7 +410,7 @@ The clauses for the _column-definition_ are:
 ** `_column-name_`
 +
 specifies the name for the new column in the table. _column-name_ is an SQL identifier. _column-name_ must be
-unique among column names in the table. If the column name is a Trafodion SQL reserved word, you must
+unique among column names in the table. If the column name is a {project-name} SQL reserved word, you must
 delimit it by enclosing it in double quotes. For example: `"sql".myview`. See <<Identifiers,Identifiers>>.
 
 ** `_data-type_`
@@ -422,10 +422,10 @@ If a default is not specified, NULL is used.
 +
 specifies a default value for the column or specifies that the column does not have a default value. You can declare the default value
 explicitly by using the DEFAULT clause, or you can enable null to be used as the default by omitting both the DEFAULT and NOT NULL clauses.
-If you omit the DEFAULT clause and specify NOT NULL, Trafodion SQL returns an error. For existing rows of the table, the added column takes
+If you omit the DEFAULT clause and specify NOT NULL, {project-name} SQL returns an error. For existing rows of the table, the added column takes
 on its default value.
 +
-If you set the default to the datetime value CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP, Trafodion SQL uses January 1, 1 A.D.
+If you set the default to the datetime value CURRENT_DATE, CURRENT_TIME, or CURRENT_TIMESTAMP, {project-name} SQL uses January 1, 1 A.D.
 12:00:00.000000 as the default date and time for the existing rows.
 +
 For any row that you add after the column is added, if no value is specified for the column as part of the add row operation, the column
@@ -619,7 +619,7 @@ ALTER TABLE persnl.project
 
 The ALTER USER statement changes attributes associated with a user who is registered in the database.
 
-ALTER USER is a Trafodion SQL extension.
+ALTER USER is a {project-name} SQL extension.
 
 ```
 ALTER USER database-username alter-action[, alter-action]
@@ -695,7 +695,7 @@ The BEGIN WORK statement enables you to start a transaction explicitly—where t
 defined by the sequence of SQL statements that begins immediately after BEGIN WORK and ends with the next COMMIT or ROLLBACK
 statement. See <<Transaction_Management,Transaction Management>>. BEGIN WORK will raise an error if a transaction is currently active.
 
-BEGIN WORK is a Trafodion SQL extension.
+BEGIN WORK is a {project-name} SQL extension.
 
 ```
 BEGIN WORK
@@ -739,7 +739,7 @@ COMMIT WORK;
 [[call_statement]]
 == CALL Statement
 
-The CALL statement invokes a stored procedure in Java (SPJ) in a Trafodion SQL database.
+The CALL statement invokes a stored procedure in Java (SPJ) in a {project-name} SQL database.
 
 ```
 CALL procedure-ref ([argument-list])
@@ -805,7 +805,7 @@ To issue a CALL statement, one of the following must be true:
 * You have the EXECUTE (or ALL) privileges, either directly through your username or through a granted role.
 For more information, see the <<GRANT_Statement,GRANT Statement>>.
 
-When the stored procedure executes, it executes as the Trafodion ID.
+When the stored procedure executes, it executes as the {project-name} ID.
 
 <<<
 [[call_input_parameter_argument]]
@@ -834,7 +834,7 @@ calling application defines the semantics of the OUT and INOUT parameters in its
 [[call_data_conversion_parameter_arguments]]
 ==== Data Conversion of Parameter Arguments
 
-Trafodion SQL performs an implicit data conversion when the data type of a parameter argument is compatible with
+{project-name} SQL performs an implicit data conversion when the data type of a parameter argument is compatible with
 but does not match the formal data type of the stored procedure. For stored procedure input values,
 the conversion is from the actual argument value to the formal parameter type. For stored procedure output values,
 the conversion is from the actual output value, which has the data type of the formal parameter, to the declared
@@ -844,7 +844,7 @@ type of the dynamic parameter.
 ==== Null Input and Output
 
 You can pass a null value as input to or output from an SPJ, provided that the corresponding Java data type of the
-parameter supports nulls. If a null is input or output for a parameter that does not support nulls, Trafodion SQL
+parameter supports nulls. If a null is input or output for a parameter that does not support nulls, {project-name} SQL
 returns an error.
 
 <<<
@@ -978,7 +978,7 @@ The CONTROL QUERY CANCEL statement cancels an executing query that you identify 
 You can execute the CONTROL QUERY CANCEL statement in a client-based tool like TrafCI or through any ODBC or JDBC
 application.
 
-CONTROL QUERY CANCEL is a Trafodion SQL extension.
+CONTROL QUERY CANCEL is a {project-name} SQL extension.
 
 ```
 CONTROL QUERY CANCEL QID query-id [COMMENT 'comment-text']
@@ -1017,11 +1017,11 @@ executing query no longer affect other clients sharing the same connection.
 ==== Restrictions on CONTROL QUERY CANCEL
 
 Some executing queries may not respond to a CONTROL QUERY CANCEL statement within a 60-second interval. For those
-queries, Trafodion SQL stops their ESP processes if there are any. If this action allows the query to be canceled,
+queries, {project-name} SQL stops their ESP processes if there are any. If this action allows the query to be canceled,
 you will see all the benefits listed above.
 
 If the executing query does not terminate within 120 seconds after the CONTROL QUERY CANCEL statement is issued,
-Trafodion SQL stops the master executor process, terminating the query and generating a lost connection error.
+{project-name} SQL stops the master executor process, terminating the query and generating a lost connection error.
 In this case, you will not see any of the benefits listed above. Instead, you will lose your connection and will
 need to reconnect and re-prepare the query. This situation often occurs with the CALL, DDL, and utility statements
 and rarely with other statements.
@@ -1072,7 +1072,7 @@ error message indicating that the query has been canceled:
 The CONTROL QUERY DEFAULT statement changes the default settings for the current process. You can execute
 the CONTROL QUERY DEFAULT statement in a client-based tool like TrafCI or through any ODBC or JDBC application.
 
-CONTROL QUERY DEFAULT is a Trafodion SQL extension.
+CONTROL QUERY DEFAULT is a {project-name} SQL extension.
 
 ```
 { CONTROL QUERY DEFAULT | CQD } control-default-option
@@ -1087,7 +1087,7 @@ control-default-option is:
 * `_attribute_`
 +
 is a character string that represents an attribute name. For descriptions of these attributes,
-see the http://trafodion.incubator.apache.org/docs/cqd_reference/index.html[Trafodion Control Query Default (CQD) Reference Guide].
+see the {docs-url}/cqd_reference/index.html[{project-name} Control Query Default (CQD) Reference Guide].
 
 * `_attr-value_`
 +
@@ -1141,7 +1141,7 @@ CONTROL QUERY DEFAULT CACHE_HISTOGRAMS_REFRESH_INTERVAL RESET;
 == CREATE FUNCTION Statement
 
 The CREATE FUNCTION statement registers a user-defined function (UDF) written in C as a function within
-a Trafodion database. Currently, Trafodion supports the creation of _scalar UDFs_, which return a single
+a {project-name} database. Currently, {project-name} supports the creation of _scalar UDFs_, which return a single
 value or row when invoked. Scalar UDFs are invoked as SQL expressions in the SELECT list or WHERE clause
 of a SELECT statement.
 
@@ -1342,7 +1342,7 @@ The CREATE INDEX statement creates an SQL index based on one or more columns of 
 The CREATE VOLATILE INDEX statement creates an SQL index with a lifespan that is limited to the SQL session that
 the index is created. Volatile indexes are dropped automatically when the session ends. See <<Indexes,Indexes>>.
 
-CREATE INDEX is a Trafodion SQL extension.
+CREATE INDEX is a {project-name} SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
 inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
@@ -1501,10 +1501,10 @@ ON persnl.employee (last_name, first_name);
 [[create_library_statement]]
 == CREATE LIBRARY Statement
 
-The CREATE LIBRARY statement registers a library object in a Trafodion database. A library object
+The CREATE LIBRARY statement registers a library object in a {project-name} database. A library object
 can be an SPJ's JAR file or a UDF's library file.
 
-CREATE LIBRARY is a Trafodion SQL extension.
+CREATE LIBRARY is a {project-name} SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run
 this statement inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT
@@ -1587,7 +1587,7 @@ CREATE LIBRARY myudfs FILE $UDFLIB;
 [[create_procedure_statement]]
 == CREATE PROCEDURE Statement
 
-The CREATE PROCEDURE statement registers a Java method as a stored procedure in Java (SPJ) within a Trafodion database.
+The CREATE PROCEDURE statement registers a Java method as a stored procedure in Java (SPJ) within a {project-name} database.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
 inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
@@ -1655,11 +1655,11 @@ specifies an ANSI logical name of the form:
 where each part of the name is a valid SQL identifier with a maximum of 128 characters. For more information,
 see <<identifiers,identifiers>> and <<database_object_names,database object names>>.
 +
-specify a name that is unique and does not exist for any procedure or function in the same schema. Trafodion
+specify a name that is unique and does not exist for any procedure or function in the same schema. {project-name}
 does not support the overloading of procedure names. That is, you cannot register the same procedure name more than
 once with different underlying SPJ methods.
 +
-If you do not fully qualify the procedure name, then Trafodion qualifies it according to the schema of the current session.
+If you do not fully qualify the procedure name, then {project-name} qualifies it according to the schema of the current session.
 
 ** `_sql-parameter_`
 +
@@ -1762,7 +1762,7 @@ Specifies a mappable Java data type. For the mapping of the Java data types to S
 * `library \[[_catalog-name_.]_schema-name_.]_library-name_`
 +
 specifies the ANSI logical name of a library containing the SPJ method. If you do not fully qualify the library name,
-then Trafodion qualifies it according to the schema of the current session.
+then {project-name} qualifies it according to the schema of the current session.
 
 * `external security _external-security-type_`
 +
@@ -1826,13 +1826,13 @@ procedure’s transaction attribute to no transaction required. For more informa
 +
 specifies whether the SPJ always returns the same values for out and inout parameters for a given set of argument values
 (`deterministic`) or does not return the same values (`not deterministic`, the default option). If you specify `deterministic`,
-Trafodion is not required to call the SPJ each time to produce results; instead, Trafodion caches the results and
+{project-name} is not required to call the SPJ each time to produce results; instead, {project-name} caches the results and
 reuses them during subsequent calls, thus optimizing the CALL statement.
 
 * `no isolate | isolate`
 +
 specifies that the SPJ executes either in the environment of the database server (`no isolate`) or in an isolated environment
-(`isolate`, the default option). Trafodion allows both options but always executes the SPJ in the UDR server process (`isolate`).
+(`isolate`, the default option). {project-name} allows both options but always executes the SPJ in the UDR server process (`isolate`).
 
 [[create_procedure_considerations]]
 === Considerations for CREATE PROCEDURE
@@ -1924,7 +1924,7 @@ CREATE PROCEDURE lowerprice()
    MODIFIES SQL DATA;
 ```
 +
-Because the procedure name is not qualified by a catalog and schema, Trafodion qualifies it according to the current
+Because the procedure name is not qualified by a catalog and schema, {project-name} qualifies it according to the current
 session settings, where the catalog is TRAFODION (by default) and the schema is set to SALES. Since the procedure needs
 to be able to read and modify SQL data, MODIFIES SQL DATA is specified in the CREATE PROCEDURE statement.
 +
@@ -2137,7 +2137,7 @@ schema-clause is:
 indicates whether access to the schema is restricted to the authorization ID by default (PRIVATE) or whether
 any database user may add objects to the schema (SHARED). The default class is PRIVATE.
 +
-NOTE: Schemas created in Trafodion Release 0.9 or earlier are SHARED schemas.
+NOTE: Schemas created in {project-name} Release 0.9 or earlier are SHARED schemas.
 
 * `_schema-name_`
 +
@@ -2164,7 +2164,7 @@ Schema names that begin with a leading underscore (_) are reserved for future us
 
 The AUTHORIZATION clause is optional. If you omit this clause, the current user becomes the schema owner.
 
-NOTE: An authorization ID is assigned to a schema name even if authorization is not enabled for the Trafodion database.
+NOTE: An authorization ID is assigned to a schema name even if authorization is not enabled for the {project-name} database.
 However, no enforcement occurs unless authorization is enabled.
 
 The schema owner can perform operations on the schema and on objects within the schema. For example:
@@ -2222,8 +2222,8 @@ CREATE PRIVATE SCHEMA AUTHORIZATION JSmith;
 [[create_table_statement]]
 == CREATE TABLE Statement
 
-The CREATE TABLE statement creates a Trafodion SQL table, which is a mapping of a relational SQL table to an HBase table.
-The CREATE VOLATILE TABLE statement creates a temporary Trafodion SQL table that exists only during an SQL session. The
+The CREATE TABLE statement creates a {project-name} SQL table, which is a mapping of a relational SQL table to an HBase table.
+The CREATE VOLATILE TABLE statement creates a temporary {project-name} SQL table that exists only during an SQL session. The
 CREATE TABLE AS statement creates a table based on the data attributes of a SELECT query and populates the table using the
 data returned by the SELECT query. See <<tables,Tables>>.
 
@@ -2420,7 +2420,7 @@ specifies a select query which is used to populate the created table. A select q
 specifies the name and data type for a column in the table. At least one column definition is required in a
 CREATE TABLE statement.
 
-** _column_ is an SQL identifier. _column_ must be unique among column names in the table. If the name is a Trafodion
+** _column_ is an SQL identifier. _column_ must be unique among column names in the table. If the name is a {project-name}
 SQL reserved word, you must delimit it by enclosing it in double quotes. Such delimited parts are case-sensitive.
 For example: "join".
 
@@ -2442,7 +2442,7 @@ See <<default_clause,DEFAULT Clause>>.
 +
 specifies a name for the column or table constraint. _constraint-name_ must have the same schema as _table_ and must be
 unique among constraint names in its schema. If you omit the schema portions of the name you specify in _constraint-name_,
-Trafodion SQL expands the constraint name by using the schema for _table_. See <<constraint_names,Constraint Names>> and
+{project-name} SQL expands the constraint name by using the schema for _table_. See <<constraint_names,Constraint Names>> and
 <<database_object_names,Database Object Names>>.
 
 * `NOT NULL`
@@ -2462,7 +2462,7 @@ part of the PRIMARY KEY.
 specify on a UNIQUE constraint cannot match the set of columns on any other UNIQUE constraint for the table or on the
 PRIMARY KEY constraint for the table. All columns defined as unique must be specified as NOT NULL.
 +
-A UNIQUE constraint is enforced with a unique index. If there is already a unique index on _column-list_, Trafodion SQL
+A UNIQUE constraint is enforced with a unique index. If there is already a unique index on _column-list_, {project-name} SQL
 uses that index. If a unique index does not exist, the system creates a unique index.
 
 * `PRIMARY KEY [ASC[ENDING] | DESC[ENDING]], or, PRIMARY KEY (_key-column-list_)`
@@ -2475,10 +2475,10 @@ ASCENDING and DESCENDING specify the direction for entries in one column within 
 The PRIMARY KEY value in each row of the table must be unique within the table. A PRIMARY KEY defined for a set of columns
 implies that the column values are unique and not null. You can specify PRIMARY KEY only once on any CREATE TABLE statement.
 +
-Trafodion SQL uses the primary key as the clustering key of the table to avoid creating a separate, unique index to implement
+{project-name} SQL uses the primary key as the clustering key of the table to avoid creating a separate, unique index to implement
 the primary key constraint.
 +
-A PRIMARY KEY constraint is required in Trafodion SQL.
+A PRIMARY KEY constraint is required in {project-name} SQL.
 
 <<<
 * `CHECK (_condition_)`
@@ -2521,7 +2521,7 @@ set of columns specified in the FOREIGN KEY clause. For information about _ref-s
 <<<
 * `LIKE _source-table_ [_include-option_]&#8230;`
 +
-directs Trafodion SQL to create a table like the existing table, _source-table_, omitting constraints (with the exception of the NOT
+directs {project-name} SQL to create a table like the existing table, _source-table_, omitting constraints (with the exception of the NOT
 NULL and PRIMARY KEY constraints) and partitions unless the _include-option_ clauses are specified.
 
 ** `_source-table_`
@@ -2532,16 +2532,16 @@ is the ANSI logical name for the existing table and must be unique among names o
 
 *** `WITH CONSTRAINTS`
 +
-directs Trafodion SQL to use constraints from _source-table_. Constraint names for _table_ are randomly generated unique names.
+directs {project-name} SQL to use constraints from _source-table_. Constraint names for _table_ are randomly generated unique names.
 +
 When you perform a CREATE TABLE LIKE, whether or not you include the WITH CONSTRAINTS clause, the target table will have all
 the NOT NULL column constraints that exist for the source table with different constraint names.
 
 *** `WITH PARTITIONS`
 +
-directs Trafodion SQL to use partition definitions from _source-table_. Each new table partition resides on the same volume
+directs {project-name} SQL to use partition definitions from _source-table_. Each new table partition resides on the same volume
 as its original _source-table_ counterpart. The new table partitions do not inherit partition names from the original table.
-Instead, Trafodion SQL generates new names based on the physical file location.
+Instead, {project-name} SQL generates new names based on the physical file location.
 +
 If you specify the LIKE clause and the SALT USING _num_ PARTITIONS clause, you cannot specify WITH PARTITIONS.
 
@@ -2598,14 +2598,14 @@ UPDATE STATISTICS.
 * Volatile tables can be created and accessed using one-part, two-part, or three-part names. However, you must use the
 same name (one part, two part, or three part) for any further DDL or DML statements on the created volatile table.
 See <<create_table_examples,Examples of CREATE TABLE>>.
-* Trafodion SQL allows users to explicitly specify primary key and STORE BY clauses on columns that contain null values.
+* {project-name} SQL allows users to explicitly specify primary key and STORE BY clauses on columns that contain null values.
 
 <<<
-* Trafodion SQL does not require that the first column in a volatile table contain not null values and be the primary key.
-Instead, Trafodion SQL attempts to partition the table, if possible, using an appropriate suitable key column as the
+* {project-name} SQL does not require that the first column in a volatile table contain not null values and be the primary key.
+Instead, {project-name} SQL attempts to partition the table, if possible, using an appropriate suitable key column as the
 primary and partitioning key. For more information,
 see <<create_table_how_trafodion_sql_selects_suitable_keys_for_volatile_tables,
-How Trafodion SQL Selects Suitable Keys for Volatile Tables>>.
+How {project-name} SQL Selects Suitable Keys for Volatile Tables>>.
 
 [[create_table_restrictions_for_create_volatile_table]]
 ===== Restrictions for CREATE VOLATILE TABLE
@@ -2619,16 +2619,16 @@ These items are not supported for volatile tables:
 * CREATE TABLE LIKE operations
 
 [[create_table_how_trafodion_sql_supports_nullable_keys_for_volatile_tables]]
-===== How Trafodion SQL Supports Nullable Keys for Volatile Tables
+===== How {project-name} SQL Supports Nullable Keys for Volatile Tables
 
 * Allows nullable keys in primary key, STORE BY, and unique constraints.
 * A null value is treated as the highest value for that column.
 * A null value as equal to other null values and only one value is allowed for that column.
 
 [[create_table_how_trafodion_sql_selects_suitable_keys_for_volatile_tables]]
-===== How Trafodion SQL Selects Suitable Keys for Volatile Tables
+===== How {project-name} SQL Selects Suitable Keys for Volatile Tables
 
-Trafodion SQL searches for the first suitable column in the list of columns of the table being created. Once the column
+{project-name} SQL searches for the first suitable column in the list of columns of the table being created. Once the column
 is located, the table is partitioned on it. The searched columns in the table might be explicitly specified (as in a
 CREATE TABLE statement) or implicitly created (as in a CREATE TABLE AS SELECT statement).
 
@@ -2636,12 +2636,12 @@ The suitable key column is selected only if no primary key or STORE BY clause ha
 of these clauses have been specified, they are used to select the key columns.
 
 <<<
-Trafodion SQL follows these guidelines to search for and select suitable keys:
+{project-name} SQL follows these guidelines to search for and select suitable keys:
 
 * A suitable column can be a nullable column.
-* Certain data types in Trafodion SQL cannot be used as a partitioning key. Currently, this includes any floating point
+* Certain data types in {project-name} SQL cannot be used as a partitioning key. Currently, this includes any floating point
 columns (REAL, DOUBLE PRECISION, and FLOAT).
-* Trafodion SQL searches for a suitable column according to this predefined order:
+* {project-name} SQL searches for a suitable column according to this predefined order:
 ** Numeric columns are chosen first, followed by fixed CHAR, DATETIME, INTERVAL, and VARCHAR data types.
 ** Within numeric data types, the order is binary NUMERIC (LARGEINT, INTEGER, SMALLINT), and DECIMAL.
 ** An unsigned column is given preference over a signed column.
@@ -2651,7 +2651,7 @@ columns (REAL, DOUBLE PRECISION, and FLOAT).
 * If a suitable column is located, it becomes the partitioning key where the primary key is _suitable_column_, SYSKEY.
 This causes the table to be partitioned while preventing the duplicate key and null-to-non-null errors.
 
-The list below shows the order of precedence, from low to high, of data types when Trafodion SQL searches for a suitable
+The list below shows the order of precedence, from low to high, of data types when {project-name} SQL searches for a suitable
 key. A data type appearing later has precedence over previously-appearing data types. Data types that do not appear in
 the list below cannot be chosen as a key column.
 
@@ -2706,9 +2706,9 @@ Only one unique null value is allowed:
 [[create_table_examples_for_selecting_suitable_keys_for_volatile_tables]]
 ===== Examples for Selecting Suitable Keys for Volatile Tables
 
-These examples show the order by which Trafodion SQL selects a suitable key based on the precedence rules described in
+These examples show the order by which {project-name} SQL selects a suitable key based on the precedence rules described in
 <<create_table_how_trafodion_sql_selects_suitable_keys_for_volatile_tables,
-How Trafodion SQL Selects Suitable Keys for Volatile Tables>>:
+How {project-name} SQL Selects Suitable Keys for Volatile Tables>>:
 
 * Selects column a as the primary and partitioning key:
 +
@@ -2839,9 +2839,9 @@ CREATE TABLE ttgt NO LOAD AS (SELECT ...);
 ```
 
 [[create_table_trafodion_sql_extensions_to_create_table]]
-=== Trafodion SQL Extensions to CREATE TABLE
+=== {project-name} SQL Extensions to CREATE TABLE
 
-This statement is supported for compliance with ANSI SQL:1999 Entry Level. Trafodion SQL extensions to the CREATE TABLE
+This statement is supported for compliance with ANSI SQL:1999 Entry Level. {project-name} SQL extensions to the CREATE TABLE
 statement are ASCENDING, DESCENDING, and PARTITION clauses. CREATE TABLE LIKE is also an extension.
 
 <<<
@@ -2984,7 +2984,7 @@ CREATE TABLE t2 (c1 int, c2 char (50) UPSHIFT NOT NULL) AS SELECT * FROM t1;
 [[create_view_statement]]
 == CREATE VIEW Statement
 
-The CREATE VIEW statement creates a Trafodion SQL view. See <<views,Views>>.
+The CREATE VIEW statement creates a {project-name} SQL view. See <<views,Views>>.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
 a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
@@ -3252,13 +3252,13 @@ tables vp0, vp1 and vp2 all have a key column a. This key column is known to con
 The three tables vp0, vp1 and vp2 also contain columns b, c and d respectively. We can create a view vp that combines
 these three tables and provides the interface of columns a, b, c and d belonging to a single object.
 
-Trafodion SQL has the ability to eliminate redundant joins in a query. Redundant joins occur when:
+{project-name} SQL has the ability to eliminate redundant joins in a query. Redundant joins occur when:
 
 * Output of join contains expressions from only one of its two children
 * Every row from this child will match one and only one row from the other child
 
 Suppose tables A and B denote generic tables. To check if the rule "every row from this child will match one and only one row
-from the other child" is true, Trafodion SQL uses the fact that the join of Table A with table or subquery B preserves all the
+from the other child" is true, {project-name} SQL uses the fact that the join of Table A with table or subquery B preserves all the
 rows of A if the join predicate contains an equi-join predicate that references a key of B, and one of the following is true:
 The join is a left outer join where B is the inner table. In this example, for the join between vp0 and vp1,vp0 fills the role
 of table A and vp1 fills the role of table B. For the join between vp1 and vp2, vp1 fills the role of table A and vp2 fills
@@ -3291,7 +3291,7 @@ The DELETE statement is a DML statement that deletes a row or rows from a table 
 a view deletes the rows from the table on which the view is based. DELETE does not remove a table or view, even if you
 delete the last row in the table or view.
 
-Trafodion SQL provides searched DELETE—deletes rows whose selection depends on a search condition.
+{project-name} SQL provides searched DELETE—deletes rows whose selection depends on a search condition.
 
 For the searched DELETE form, if no WHERE clause exists, all rows are deleted from the table or view.
 
@@ -3405,7 +3405,7 @@ delete from table1 where a in (select a from table1 where b > 200)
 [[drop_function_statement]]
 == DROP FUNCTION Statement
 
-The DROP FUNCTION statement removes a user-defined function (UDF) from the Trafodion database.
+The DROP FUNCTION statement removes a user-defined function (UDF) from the {project-name} database.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
 a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
@@ -3463,8 +3463,8 @@ DROP PROCEDURE reverse;
 [[drop_index_statement]]
 == DROP INDEX Statement
 
-The DROP INDEX statement drops a Trafodion SQL index. See <<indexes,Indexes>>.
-DROP INDEX is a Trafodion SQL extension.
+The DROP INDEX statement drops a {project-name} SQL index. See <<indexes,Indexes>>.
+DROP INDEX is a {project-name} SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
 a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
@@ -3515,10 +3515,10 @@ DROP VOLATILE INDEX vindex;
 [[drop_library_statement]]
 == DROP LIBRARY Statement
 
-The DROP LIBRARY statement removes a library object from the Trafodion database and also removes the library file
+The DROP LIBRARY statement removes a library object from the {project-name} database and also removes the library file
 referenced by the library object.
 
-DROP LIBRARY is a Trafodion SQL extension.
+DROP LIBRARY is a {project-name} SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
 inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
@@ -3553,7 +3553,7 @@ the default value is restrict.
 
 * RESTRICT requires that all procedures and functions that refer to the library object be dropped before you drop the
 library object. CASCADE automatically drops any procedures or functions that are using the library.
-* If the library filename referenced by the library object does not exist, Trafodion SQL issues a warning.
+* If the library filename referenced by the library object does not exist, {project-name} SQL issues a warning.
 
 [[drop_library_required_privileges]]
 ==== Required Privileges
@@ -3588,7 +3588,7 @@ this library. If any UDFs were created based on this library, the DROP LIBRARY o
 [[drop_procedure_statement]]
 == DROP PROCEDURE Statement
 
-The DROP PROCEDURE statement removes a stored procedure in Java (SPJ) from the Trafodion database.
+The DROP PROCEDURE statement removes a stored procedure in Java (SPJ) from the {project-name} database.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
 a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
@@ -3791,7 +3791,7 @@ DROP SCHEMA sales;
 [[drop_table_statement]]
 == DROP TABLE Statement
 
-The DROP TABLE statement deletes a Trafodion SQL table and its dependent objects such as indexes and constraints.
+The DROP TABLE statement deletes a {project-name} SQL table and its dependent objects such as indexes and constraints.
 See <<tables,Tables>>.
 
 NOTE: DDL statements are not currently supported in transactions. That
@@ -3860,7 +3860,7 @@ DROP VOLATILE TABLE vtable;
 [[drop_view_statement]]
 == DROP VIEW Statement
 
-The DROP VIEW statement deletes a Trafodion SQL view. See <<views,Views>>.
+The DROP VIEW statement deletes a {project-name} SQL view. See <<views,Views>>.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement inside
 a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement, AUTOCOMMIT
@@ -3912,7 +3912,7 @@ DROP VIEW mysch.myview;
 [[execute_statement]]
 == Execute Statement
 
-The EXECUTE statement executes an SQL statement previously compiled by a PREPARE statement in a Trafodion Command Interface
+The EXECUTE statement executes an SQL statement previously compiled by a PREPARE statement in a {project-name} Command Interface
 (TrafCI) session.
 
 ```
@@ -3941,20 +3941,20 @@ the data type of the associated parameter in the prepared statement.
 +
 Parameter values (_param_) are substituted for unnamed parameters in the prepared statement by position—the i-th value
 in the USING clause is the value for the i-th parameter in the statement. If fewer parameter values exist in the USING
-clause than unnamed parameters in the PREPARE statement, Trafodion SQL returns an error. If more parameter values exist
-in the USING clause than the unnamed parameters in the PREPARE statement, Trafodion SQL issues warning 15019.
+clause than unnamed parameters in the PREPARE statement, {project-name} SQL returns an error. If more parameter values exist
+in the USING clause than the unnamed parameters in the PREPARE statement, {project-name} SQL issues warning 15019.
 +
 <<<
 +
 The USING clause does not set parameter values for named parameters (represented by ?_param-name_) in a prepared statement.
 To set parameter values for named parameters, use the SET PARAM command. For more information, see the
-http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+{docs-url}/command_interface/index.html[_{project-name} Command Interface Guide_].
 
 ** `?_param-name_`
 +
 The value for a ?_param-name_ must be previously specified with the SET PARAM command. The _param-name_ is case-sensitive.
 For information about the SET PARAM command, see the
-http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+{docs-url}/command_interface/index.html[_{project-name} Command Interface Guide_].
 
 ** `_literal-value_`
 +
@@ -3966,7 +3966,7 @@ _literal-value_ contains leading or trailing spaces, commas, or if it matches an
 set, enclose the _literal-value_ in single quotes.
 
 See the <<prepare_statement,PREPARE Statement>>. For information about the SET PARAM command, see the
-http://trafodion.incubator.apache.org/docs/command_interface/index.html[_Trafodion Command Interface Guide_].
+{docs-url}/command_interface/index.html[_{project-name} Command Interface Guide_].
 
 [[execute_considerations]]
 === Considerations for EXECUTE
@@ -4070,7 +4070,7 @@ The EXPLAIN statement helps you to review query execution plans. You can use the
 execute other SQL statements (for example, SELECT). For more information on the EXPLAIN function, see
 <<"explain_function","EXPLAIN Function">>.
 
-EXPLAIN is a Trafodion SQL extension.
+EXPLAIN is a {project-name} SQL extension.
 
 ```
 EXPLAIN [OPTIONS {'f'}] {FOR QID query-text | prepared-stmt-name}
@@ -4116,8 +4116,8 @@ to PUBLIC by default.
 [[explain_obtaining_explain_plans]]
 ==== Obtaining EXPLAIN Plans While Queries Are Running
 
-Trafodion SQL provides the ability to capture an EXPLAIN plan for a query at any time while the query is running
-with the FOR QID option. By default, this behavior is disabled for a Trafodion database session.
+{project-name} SQL provides the ability to capture an EXPLAIN plan for a query at any time while the query is running
+with the FOR QID option. By default, this behavior is disabled for a {project-name} database session.
 
 NOTE: Enable this feature before you start preparing and executing queries.
 
@@ -4190,9 +4190,9 @@ EXPLAIN options 'f' q;
 == GET Statement
 
 The GET statement displays the names of database objects, components, component privileges, roles, or users that exist
-in the Trafodion instance.
+in the {project-name} instance.
 
-GET is a Trafodion SQL extension.
+GET is a {project-name} SQL extension.
 
 ```
 GET option
@@ -4330,8 +4330,8 @@ only trafodion.
 === Considerations for GET
 
 IMPORTANT: The GET COMPONENT PRIVILEGES, GET COMPONENTS, GET ROLES FOR USER, and GET USERS FOR ROLE statements work only when
-authentication and authorization are enabled in Trafodion. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+authentication and authorization are enabled in {project-name}. For more information, see
+http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 The GET statement displays delimited object names in their internal format. For example, the GET statement returns the delimited
 name "my ""table""" as my "table".
@@ -4495,11 +4495,11 @@ get users for role db rootrole;
 [[get_hbase_objects_statement]]
 == GET HBASE OBJECTS Statement
 
-The GET HBASE OBJECTS statement displays a list of HBase objects directly from HBase, not from the Trafodion metadata,
-and it can be run in any SQL interface, such as the Trafodion Command Interface (TrafCI). This command is equivalent
+The GET HBASE OBJECTS statement displays a list of HBase objects directly from HBase, not from the {project-name} metadata,
+and it can be run in any SQL interface, such as the {project-name} Command Interface (TrafCI). This command is equivalent
 to running a list command from an HBase shell, but without having to start and connect to an HBase shell.
 
-GET HBASE OBJECTS is a Trafodion SQL extension.
+GET HBASE OBJECTS is a {project-name} SQL extension.
 
 ```
 GET [ USER | SYSTEM | EXTERNAL | ALL } HBASE OBJECTS
@@ -4510,16 +4510,16 @@ GET [ USER | SYSTEM | EXTERNAL | ALL } HBASE OBJECTS
 
 * `USER`
 +
-displays a list of the Trafodion user objects.
+displays a list of the {project-name} user objects.
 
 * `SYSTEM`
 +
-displays a list of the Trafodion system objects, such as metadata, repository, privileges, and Distributed Transaction
+displays a list of the {project-name} system objects, such as metadata, repository, privileges, and Distributed Transaction
 Manager (DTM) tables.
 
 * `EXTERNAL`
 +
-displays a list of non-Trafodion objects.
+displays a list of non-{project-name} objects.
 
 * `ALL`
 +
@@ -4529,10 +4529,10 @@ displays a list of all objects, including user, system, and external objects.
 [[get_hbase_objects_examples]]
 === Examples of GET HBASE OBJECTS
 
-* This GET HBASE OBJECTS statement displays the Trafodion user objects in HBase:
+* This GET HBASE OBJECTS statement displays the {project-name} user objects in HBase:
 +
 ```
-Trafodion Conversational Interface 1.1.0
+{project-name} Conversational Interface 1.1.0
 (c) Copyright 2014 Hewlett-Packard Development Company, LP.
 
 >>get user hbase objects;
@@ -4555,7 +4555,7 @@ TRAFODION.SCH.X3
 ```
 
 <<<
-* This GET HBASE OBJECTS statement displays the Trafodion system objects in HBase:
+* This GET HBASE OBJECTS statement displays the {project-name} system objects in HBase:
 +
 ```
 >>get system hbase objects;
@@ -4589,7 +4589,7 @@ TRAFODION._REPOS_.METRIC_TEXT_TABLE
 --- SQL operation complete.
 ```
 
-* This GET HBASE OBJECTS statement displays the external, non-Trafodion objects in HBase:
+* This GET HBASE OBJECTS statement displays the external, non-{project-name} objects in HBase:
 +
 ```
 >>get external hbase objects;
@@ -4604,10 +4604,10 @@ obj2
 [[get_version_of_metadata_statement]]
 == GET VERSION OF METADATA Statement
 
-The GET VERSION OF METADATA statement displays the version of the metadata in the Trafodion instance and indicates if
+The GET VERSION OF METADATA statement displays the version of the metadata in the {project-name} instance and indicates if
 the metadata is current.
 
-GET VERSION OF METADATA is a Trafodion SQL extension.
+GET VERSION OF METADATA is a {project-name} SQL extension.
 
 ```
 GET VERSION OF METADATA
@@ -4616,7 +4616,7 @@ GET VERSION OF METADATA
 [[get_version_of_metadata_considerations]]
 === Considerations for GET VERSION OF METADATA
 
-* If the metadata is compatible with the installed Trafodion software version, the GET VERSION OF METADATA statement
+* If the metadata is compatible with the installed {project-name} software version, the GET VERSION OF METADATA statement
 indicates that the metadata is current:
 +
 ```
@@ -4624,7 +4624,7 @@ Current Version 3.0. Expected Version 3.0.
 Metadata is current.
 ```
 
-* If the metadata is incompatible with the installed Trafodion software version, the GET VERSION OF METADATA statement
+* If the metadata is incompatible with the installed {project-name} software version, the GET VERSION OF METADATA statement
 indicates that you need to upgrade or reinitialize the metadata:
 +
 ```
@@ -4635,7 +4635,7 @@ Current Version 2.3. Expected Version 3.0.
 [[get_version_of_metadata_examples]]
 === Examples of GET VERSION OF METADATA
 
-* This GET VERSION OF METADATA statement displays the metadata version in a Trafodion Release 1.0.0 instance:
+* This GET VERSION OF METADATA statement displays the metadata version in a {project-name} Release 1.0.0 instance:
 +
 ```
 >> get version of metadata;
@@ -4646,7 +4646,7 @@ Current Version 2.3. Expected Version 3.0.
 ```
 
 <<<
-* This GET VERSION OF METADATA statement displays the metadata version in a Trafodion Release 0.9.0 instance:
+* This GET VERSION OF METADATA statement displays the metadata version in a {project-name} Release 0.9.0 instance:
 +
 ```
 >> get version of metadata;
@@ -4656,7 +4656,7 @@ Current Version 2.3. Expected Version 3.0.
 --- SQL operation complete.
 ```
 
-* If the metadata is incompatible with the installed Trafodion software version, you will see this output indicating
+* If the metadata is incompatible with the installed {project-name} software version, you will see this output indicating
 that you need to upgrade or reinitialize the metadata:
 +
 ```
@@ -4671,10 +4671,10 @@ get version of metadata;
 [[get_version_of_software_statement]]
 == GET VERSION OF SOFTWARE Statement
 
-The GET VERSION OF SOFTWARE statement displays the version of the Trafodion software that is installed on the system and 
+The GET VERSION OF SOFTWARE statement displays the version of the {project-name} software that is installed on the system and 
 indicates if it is current.
 
-GET VERSION OF SOFTWARE is a Trafodion SQL extension.
+GET VERSION OF SOFTWARE is a {project-name} SQL extension.
 
 ```
 GET VERSION OF SOFTWARE
@@ -4690,7 +4690,7 @@ System Version 1.0.0.  Expected Version 1.0.0.
   Software is current.
 ```
 
-* In rare circumstances where something went wrong with the Trafodion software installation and mismatched objects were 
+* In rare circumstances where something went wrong with the {project-name} software installation and mismatched objects were 
 installed, the GET VERSION OF SOFTWARE statement displays this output:
 +
 ```
@@ -4702,7 +4702,7 @@ System Version 0.9.1. Expected Version 1.0.0.
 [[get_version_of_software_examples]]
 === Examples of GET VERSION OF SOFTWARE
 
-* This GET VERSION OF SOFTWARE statement displays the software version for Trafodion Release 1.0.0:
+* This GET VERSION OF SOFTWARE statement displays the software version for {project-name} Release 1.0.0:
 +
 ```
 >> get version of software;
@@ -4712,7 +4712,7 @@ System Version 1.0.0. Expected Version 1.0.0.
 --- SQL operation complete.
 ```
 
-* This GET VERSION OF SOFTWARE statement displays the software version for Trafodion Release 0.9.0:
+* This GET VERSION OF SOFTWARE statement displays the software version for {project-name} Release 0.9.0:
 +
 ```
 get version of software;
@@ -4723,7 +4723,7 @@ System Version 0.9.0. Expected Version 0.9.0.
 --- SQL operation complete.
 ```
 
-* If something went wrong with the Trafodion software installation and if mismatched objects were installed, you will 
+* If something went wrong with the {project-name} software installation and if mismatched objects were installed, you will 
 see this output indicating that the software being used is incompatible with the software on the system:
 +
 ```
@@ -4743,8 +4743,8 @@ System Version 0.9.1. Expected Version 1.0.0.
 The GRANT statement grants access privileges on an SQL object to specified users or roles.
 
 IMPORTANT: This statement works only when authentication and
-authorization are enabled in Trafodion. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+authorization are enabled in {project-name}. For more information, see
+http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 ```
 GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
@@ -4876,10 +4876,10 @@ GRANT SELECT ON TABLE invent.partloc TO ajones;
 
 The GRANT COMPONENT PRIVILEGE statement grants one or more component privileges to a user or role. See <<"Privileges","Privileges">> and <<"Roles","Roles">>.
 
-GRANT COMPONENT PRIVILEGE is a Trafodion SQL extension.
+GRANT COMPONENT PRIVILEGE is a {project-name} SQL extension.
 
-IMPORTANT: This statement works only when authentication and authorization are enabled in Trafodion. For more information, see
-http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information, see
+http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 ```
 GRANT COMPONENT PRIVILEGE {privilege-name [, privilege-name]...} 
@@ -5000,8 +5000,8 @@ GRANT COMPONENT PRIVILEGE CREATE_TABLE ON SQL_OPERATIONS TO sqluser1;
 
 The GRANT ROLE statement grants one or more roles to a user. See <<roles,Roles>>.
 
-IMPORTANT: This statement works only when authentication and authorization are enabled in Trafodion. For more information, 
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information, 
+see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 ```
 GRANT ROLE {role-name [,role-name ]...}
@@ -5175,7 +5175,7 @@ year-month or both day-time intervals.
 
 ===== Inserting Date and Time Values
 
-Date, time, and timestamp are the three Trafodion SQL datetime data types. A value with a datetime data type is compatible 
+Date, time, and timestamp are the three {project-name} SQL datetime data types. A value with a datetime data type is compatible 
 with another value with a datetime data type only if the values have the same datetime fields.
 
 ===== Inserting Nulls
@@ -5317,7 +5317,7 @@ The record description includes a data item for each column in the table, view, 
 excluding the SYSKEY column. It includes the SYSKEY column of a view only if the view explicitly listed the column in its 
 definition.
 
-INVOKE is a Trafodion SQL extension.
+INVOKE is a {project-name} SQL extension.
 
 ```
 INVOKE  table-name
@@ -5351,7 +5351,7 @@ To issue an INVOKE statement, one of the following must be true:
 +
 ```
 SQL> invoke trafodion.seabase.t;
--- Definition of Trafodion table TRAFODION.SEABASE.T
+-- Definition of {project-name} table TRAFODION.SEABASE.T
 -- Definition current Wed Mar 5 10:36:06 2014
 (
    A                                       INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -5568,7 +5568,7 @@ MERGE INTO t USING
 [[prepare_statement]]
 == PREPARE Statement
 
-The PREPARE statement compiles an SQL statement for later use with the EXECUTE statement in the same Trafodion Command 
+The PREPARE statement compiles an SQL statement for later use with the EXECUTE statement in the same {project-name} Command 
 Interface (TrafCI) session.
 
 You can also use PREPARE to check the syntax of a statement without executing the statement in the same TrafCI session.
@@ -5675,7 +5675,7 @@ For more information, see the <<execute_statement,EXECUTE Statement>>.
 
 The REGISTER USER statement registers a user in the SQL database, associating the user's login name with a database username.
 
-REGISTER USER is a Trafodion SQL extension.
+REGISTER USER is a {project-name} SQL extension.
 
 NOTE: The user's login name is also the name by which the user is defined in the directory service, so the syntax description
 below refers to it as the _directory-service username_.
@@ -5690,7 +5690,7 @@ REGISTER USER directory-service-username [ AS database-username ]
 * `_directory-service-username_`
 +
 is the name that identifies the user in the directory service. This is also the name the user specifies when logging in to
-a Trafodion database. The _directory-service-username_ is a regular or delimited case-insensitive identifier.
+a {project-name} database. The _directory-service-username_ is a regular or delimited case-insensitive identifier.
 See <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
 
 * `_database-username_`
@@ -5745,13 +5745,13 @@ Database user names are limited to 128 characters.
 * To register a user and assign a database username different than the user's login name:
 +
 ```
-REGISTER USER "jsmith@hp.com" AS jsmith;
+REGISTER USER "jsmith@company.com" AS jsmith;
 ```
 
 * To register a user without specifying a database username, so the database username will be the same as the user's login name:
 +
 ```
-REGISTER USER "jsmith@hp.com";
+REGISTER USER "jsmith@company.com";
 ```
 
 <<<
@@ -5760,8 +5760,8 @@ REGISTER USER "jsmith@hp.com";
 
 The REVOKE statement revokes access privileges on an SQL object from specified users or roles.
 
-IMPORTANT: This statement works only when authentication and authorization are enabled in Trafodion. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
+see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 ```
 REVOKE [GRANT OPTION FOR]
@@ -5944,10 +5944,10 @@ REVOKE GRANT OPTION FOR SELECT ON TABLE invent.partloc FROM clerks;
 The REVOKE COMPONENT PRIVILEGE statement removes one or more component
 privileges from a user or role. See <<privileges,Privileges>> and <<roles,Roles>>.
 
-REVOKE COMPONENT PRIVILEGE is a Trafodion SQL extension.
+REVOKE COMPONENT PRIVILEGE is a {project-name} SQL extension.
 
-IMPORTANT: This statement works only when authentication and authorization are enabled in Trafodion. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
+see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 ```
 REVOKE [GRANT OPTION FOR]
@@ -6038,8 +6038,8 @@ REVOKE COMPONENT PRIVILEGE CREATE_TABLE ON SQL_OPERATIONS FROM sqluser1;
 The REVOKE ROLE statement removes one or more roles from a user. See
 <<roles,Roles>>.
 
-IMPORTANT: This statement works only when authentication and authorization are enabled in Trafodion. For more information,
-see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure Trafodion].
+IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
+see http://trafodion.apache.org/enable-secure-trafodion.html[Enable Secure {project-name}].
 
 ```
 REVOKE ROLE {role-name [,role-name]...}
@@ -6356,7 +6356,7 @@ you can associate a derived column, _col-expr_, with a _name_. _name_ is an SQL 
 * `FROM _table-ref_ [,_table-ref_]&#8230;`
 +
 specifies a list of tables, views, derived tables, or joined tables that determine the contents of an intermediate result
-table from which Trafodion SQL returns the columns you specify in _select-list_.
+table from which {project-name} SQL returns the columns you specify in _select-list_.
 +
 If you specify only one _table-ref_, the intermediate result table consists of rows derived from that table reference. If you specify more
 than one _table-ref_, the intermediate result table is the cross-product of result tables derived from the individual table
@@ -6481,7 +6481,7 @@ _table-ref_ [_join-type_] JOIN _table-ref join-spec_
 *** `_join-type_ is: INNER | LEFT [OUTER] | RIGHT [OUTER] | FULL [OUTER]`
 +
 is a joined table. You specify the _join-type_ by using the CROSS, INNER, OUTER, LEFT, RIGHT, and FULL keywords.
-If you omit the optional OUTER keyword and use LEFT, RIGHT, or FULL in a join, Trafodion SQL assumes the join is
+If you omit the optional OUTER keyword and use LEFT, RIGHT, or FULL in a join, {project-name} SQL assumes the join is
 an outer join.
 +
 If you specify a CROSS join as the _join-type_, you cannot specify a NATURAL join or a
@@ -6558,7 +6558,7 @@ value constructors, each of which is enclosed in parentheses. A _row-value-const
 or a row subquery (a subquery that returns a single row of column values). An operand of an expression cannot reference
 a column (except when the operand is a scalar subquery returning a single column value in its result table).
 +
-The use of NULL as a _row-value-const_ element is a Trafodion SQL extension.
+The use of NULL as a _row-value-const_ element is a {project-name} SQL extension.
 +
 A _simple-table_ can be specified by using the TABLE keyword followed by a table name, which is equivalent to the
 query specification SELECT * FROM _table_.
@@ -6577,7 +6577,7 @@ or, in the case of multiple table references, the cross-product of result tables
 Each column you specify in _search-condition_ is typically a column in this intermediate result table. In the case of nested
 subqueries used to provide comparison values, the column can also be an outer reference. See<<subquery,Subquery>>.
 +
-To comply with ANSI standards, Trafodion SQL does not move aggregate predicates from the WHERE clause to a HAVING clause and
+To comply with ANSI standards, {project-name} SQL does not move aggregate predicates from the WHERE clause to a HAVING clause and
 does not move non-aggregate predicates from the HAVING clause to the WHERE clause.
 
 * `SAMPLE _sampling-method_`
@@ -6587,20 +6587,20 @@ methods uses a sampling size. The three sampling methods—random, first, and pe
 
 ** `RANDOM _percent-size_`
 +
-directs Trafodion SQL to choose rows randomly (each row having an unbiased probability of being chosen) without replacement
+directs {project-name} SQL to choose rows randomly (each row having an unbiased probability of being chosen) without replacement
 from the result table. The sampling size is determined by using a percent of the result table.
 
 ** `FIRST _rows-size_ [SORT BY _colname_ [,_colname_]&#8230;]`
 +
-directs Trafodion SQL to choose the first _rows-size_ rows from the sorted result table. The sampling size is determined
+directs {project-name} SQL to choose the first _rows-size_ rows from the sorted result table. The sampling size is determined
 by using the specified number of rows.
 
 ** `PERIODIC _rows-size_ EVERY _number-rows_ ROWS [SORT BY _colname_ [,_colname_] &#8230;]`
 +
-directs Trafodion SQL to choose the first rows from each block (period) of contiguous sorted rows. The sampling size is
+directs {project-name} SQL to choose the first rows from each block (period) of contiguous sorted rows. The sampling size is
 determined by using the specified number of rows chosen from each block.
 
-** SAMPLE is a Trafodion SQL extension. See <<sample_clause,SAMPLE Clause>>.
+** SAMPLE is a {project-name} SQL extension. See <<sample_clause,SAMPLE Clause>>.
 
 * `TRANSPOSE _transpose-set_[_transpose-set_]&#8230; [KEY BY _key-colname_]`
 +
@@ -6622,12 +6622,12 @@ optionally specifies an optional key column _key-colname_. It identifies which e
 list corresponds to by its position in the _transpose-item-list_. _key-colname_ is an SQL identifier. The data type is exact
 numeric, and the value is NOT NULL.
 
-** TRANSPOSE is a Trafodion SQL extension. See <<transpose_clause,TRANSPOSE Clause>>.
+** TRANSPOSE is a {project-name} SQL extension. See <<transpose_clause,TRANSPOSE Clause>>.
 
 * `SEQUENCE BY _colname_ [ASC[ENDING] | DESC[ENDING]] [,_colname_ [ASC[ENDING] | DESC[ENDING]]] &#8230;`
 +
 specifies the order in which to sort the rows of the intermediate result table for calculating sequence functions. You must
-include a SEQUENCE BY clause if you include a sequence function in _select-list_. Otherwise, Trafodion SQL returns an error.
+include a SEQUENCE BY clause if you include a sequence function in _select-list_. Otherwise, {project-name} SQL returns an error.
 Further, you cannot include a SEQUENCE BY clause if no sequence function is in _select-list_.
 
 ** `_colname_`
@@ -6637,7 +6637,7 @@ optionally qualified by a table, view, or correlation name; for example, CUSTOME
 
 ** `ASC | DESC`
 +
-specifies the sort order. The default is ASC. When Trafodion SQL orders an intermediate result table on a column that can
+specifies the sort order. The default is ASC. When {project-name} SQL orders an intermediate result table on a column that can
 contain null, nulls are considered equal to one another but greater than all other non-null values.
 
 <<<
@@ -6667,7 +6667,7 @@ one null group. See <<considerations_for_group_by,Considerations for GROUP BY>>.
 specifies a _search-condition_ to apply to each group of the grouped table resulting from the preceding GROUP BY clause
 in the SELECT statement.
 +
-To comply with ANSI standards, Trafodion SQL does not move aggregate predicates from the WHERE clause to a HAVING clause
+To comply with ANSI standards, {project-name} SQL does not move aggregate predicates from the WHERE clause to a HAVING clause
 and does not move non-aggregate predicates from the HAVING clause to the WHERE clause.
 +
 If no GROUP BY clause exists, the _search-condition_ is applied to the entire table (which consists of one group) resulting
@@ -7353,14 +7353,14 @@ autocommit-option is:
 
 * `_autocommit-option_`
 +
-specifies whether Trafodion SQL commits or rolls back automatically at the end of statement execution. This option
+specifies whether {project-name} SQL commits or rolls back automatically at the end of statement execution. This option
 applies to any statement for which the system initiates a transaction.
 +
-If this option is set to ON, Trafodion SQL automatically commits any changes or rolls back any changes made to the
+If this option is set to ON, {project-name} SQL automatically commits any changes or rolls back any changes made to the
 database at the end of statement execution. AUTOCOMMIT is on by default at the start of a session.
 +
 If this option is set to OFF, the current transaction remains active until the end of the session unless you explicitly
-commit or rollback the transaction. AUTOCOMMIT is a Trafodion SQL extension; you cannot use in it with any other option.
+commit or rollback the transaction. AUTOCOMMIT is a {project-name} SQL extension; you cannot use in it with any other option.
 +
 Using the AUTOCOMMIT option in a SET TRANSACTION statement does not reset other transaction attributes that may have
 been specified in a previous SET TRANSACTION statement. Similarly, a SET TRANSACTION statement that does not specify
@@ -7391,8 +7391,8 @@ until you explicitly issue COMMIT or ROLLBACK.
 === Examples of SET TRANSACTION
 
 * The following SET TRANSACTION statement turns off autocommit so that the current transaction remains active until the
-end of the session unless you explicitly commit or rollback the transaction. Trafodion SQL does not automatically commit
-or roll back any changes made to the database at the end of statement execution. Instead, Trafodion SQL commits all the
+end of the session unless you explicitly commit or rollback the transaction. {project-name} SQL does not automatically commit
+or roll back any changes made to the database at the end of statement execution. Instead, {project-name} SQL commits all the
 changes when you issue the COMMIT WORK statement.
 +
 ```
@@ -7424,7 +7424,7 @@ COMMIT WORK;
 
 The SHOWCONTROL statement displays the default attributes in effect.
 
-SHOWCONTROL is a Trafodion SQL extension.
+SHOWCONTROL is a {project-name} SQL extension.
 
 ```
 SHOWCONTROL {ALL | [QUERY] DEFAULT [attribute-name[, MATCH {FULL | PARTIAL }]]}
@@ -7435,7 +7435,7 @@ SHOWCONTROL {ALL | [QUERY] DEFAULT [attribute-name[, MATCH {FULL | PARTIAL }]]}
 
 * `ALL`
 +
-displays all the hard-coded default attributes that have been set for the Trafodion instance.
+displays all the hard-coded default attributes that have been set for the {project-name} instance.
 
 * `[QUERY] DEFAULT`
 +
@@ -7446,7 +7446,7 @@ see the <<control_query default_statement,Control Query Default Statement>>.
 +
 displays only the defaults that match, either fully or partially, the _attribute_ used in CONTROL QUERY DEFAULT
 statements. The match is not case-sensitive. For descriptions of these attributes, see the
-http://trafodion.incubator.apache.org/docs/cqd_reference/index.html[Trafodion Control Query Default (CQD) Reference Guide].
+{docs-url}/cqd_reference/index.html[{project-name} Control Query Default (CQD) Reference Guide].
 +
 MATCH FULL specifies that _attribute-name_ must be the same as the attribute name used in a control query default
 statement. match partial specifies that _attribute-name_ must be included in the attribute name used in a control
@@ -7485,7 +7485,7 @@ CONTROL QUERY DEFAULT
 The SHOWDDL statement describes the DDL syntax used to create an object as it exists in the metadata, or it returns
 a description of a user, role, or component in the form of a GRANT statement.
 
-SHOWDDL is a Trafodion SQL extension.
+SHOWDDL is a {project-name} SQL extension.
 
 ```
 SHOWDDL showddl-spec
@@ -7621,7 +7621,7 @@ SHOWDDL Statement 161
 The SHOWDDL SCHEMA statement displays the DDL syntax used to create a schema as it exists in the metadata and shows
 the authorization ID that owns the schema.
 
-SHOWDDL SCHEMA is a Trafodion SQL extension.
+SHOWDDL SCHEMA is a {project-name} SQL extension.
 
 ```
 SHOWDDL SCHEMA  [catalog-name.]schema-name
@@ -7673,7 +7673,7 @@ The SHOWSTATS statement displays the histogram statistics for one or
 more groups of columns within a table. These statistics are used to
 devise optimized access plans.
 
-SHOWSTATS is a Trafodion SQL extension.
+SHOWSTATS is a {project-name} SQL extension.
 
 ```
 SHOWSTATS FOR TABLE table-name ON group-list [DETAIL]
@@ -7911,7 +7911,7 @@ Job/Code Job Description
 The UNREGISTER USER statement removes a database username from the SQL
 database. The user can no longer log on to the database.
 
-UNREGISTER USER is a Trafodion SQL extension.
+UNREGISTER USER is a {project-name} SQL extension.
 
 ```
 UNREGISTER USER database-username [RESTRICT | CASCADE]
@@ -7948,7 +7948,7 @@ DB ROOT is the only database user who has been granted the MANAGE_USERS
 component privilege.
 
 * You cannot unregister any username beginning with DB . Role names
-beginning with DB are reserved by Trafodion.
+beginning with DB are reserved by {project-name}.
 * UNREGISTER USER fails if you specify RESTRICT (or nothing) and if the
 user owns any objects or schemas or if the user has been granted any
 privileges or roles.
@@ -7959,7 +7959,7 @@ privileges or roles.
 * To unregister a user:
 +
 ```
-UNREGISTER USER "jsmith@hp.com";
+UNREGISTER USER "jsmith@company.com";
 ```
 
 <<<
@@ -8023,7 +8023,7 @@ _expression_ cannot contain an aggregate function defined on a column.
 The data type of _expression_ must be compatible with the data type of
 _column-name_.
 +
-If _expression_ refers to columns being updated, Trafodion SQL uses the
+If _expression_ refers to columns being updated, {project-name} SQL uses the
 original values to evaluate the expression and determine the new value.
 See <<expressions,Expressions>>.
 
@@ -8118,7 +8118,7 @@ encountered or an error occurs.
 [[update_isolation_levels_of_transactions_and_access_options_of_statements]]
 ==== Isolation Levels of Transactions and Access Options of Statements
 
-The isolation level of a Trafodion SQL transaction defines the degree to
+The isolation level of a {project-name} SQL transaction defines the degree to
 which the operations on data within that transaction are affected by
 operations of concurrent transactions. When you specify
 access options for the DML statements within a transaction, you override
@@ -8150,11 +8150,11 @@ CREATE VIEW statement.
 [[update_reporting_of_updates]]
 ==== Reporting of Updates
 
-When an UPDATE completes successfully, Trafodion SQL reports the number
+When an UPDATE completes successfully, {project-name} SQL reports the number
 of times rows were updated during the operation.
 
 Under certain conditions, updating a table with indexes can cause
-Trafodion SQL to update the same row more than once, causing the number
+{project-name} SQL to update the same row more than once, causing the number
 of reported updates to be higher than the actual number of changed rows.
 However, both the data in the table and the number of reported updates
 are correct. This behavior occurs when all of these conditions are true:
@@ -8166,7 +8166,7 @@ that column is stored in ascending order), or a lower value (if that
 column is stored in descending order).
 
 When these conditions occur, the order of the index entries ensures that
-Trafodion SQL will encounter the same row (satisfying the same
+{project-name} SQL will encounter the same row (satisfying the same
 _search-condition)_ at a later time during the processing of the table.
 The row is then updated again by using the same value or values.
 
@@ -8178,7 +8178,7 @@ UPDATE MYTABLE SET B = 20 WHERE A > 10;
 ```
 
 If the contents of columns A and B are 1 and 12 respectively before the
-UPDATE, after the UPDATE Trafodion SQL will encounter the same row
+UPDATE, after the UPDATE {project-name} SQL will encounter the same row
 indexed by the values 1 and 20.
 
 [[update_updating_character_values]]
@@ -8282,7 +8282,7 @@ UPDATE table3 SET b = b + 2000 WHERE a, b =
 The UPSERT statement either updates a table if the row exists or inserts
 into a table if the row does not exist.
 
-UPSERT is a Trafodion SQL extension.
+UPSERT is a {project-name} SQL extension.
 
 ```
 UPSERT [USING LOAD] INTO table [(target-col-list)] {query-expr | values-clause}
@@ -8430,7 +8430,7 @@ statement. See the <<select statement,SELECT Statement>>.
 ==== Relationship to INSERT Statement
 
 For a VALUES clause that is the direct source of an INSERT statement,
-Trafodion SQL also allows the keyword DEFAULT in a VALUES clause, just
+{project-name} SQL also allows the keyword DEFAULT in a VALUES clause, just
 like NULL is allowed. For more information, see the
 <<insert statement,INSERT Statement>>.
 

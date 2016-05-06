@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Run trafci From Perl or Python
@@ -198,7 +198,7 @@ You can launch the Perl or Python wrapper scripts as shown below:
 === Example Perl Program (`sample.pl`)
 
 You can download the `sample.pl` example from
-http://trafodion.incubator.apache.org/docs/command_interface/resources/source/sample.pl.
+{docs-url}/command_interface/resources/source/sample.pl.
 
 Alternatively, copy and paste the following code into a file named `sample.pl`:
 
@@ -211,7 +211,7 @@ include::{sourcedir}/sample.pl[]
 === Example Python Program (`sample.py`)
 
 You can download the `sample.py` example from
-http://trafodion.incubator.apache.org/docs/command_interface/resources/source/sample.py.
+{docs-url}/command_interface/resources/source/sample.py.
 
 Alternatively, copy and paste the following code into a file named `sample.py`:
 

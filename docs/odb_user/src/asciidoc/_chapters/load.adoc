@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Load, Extract, Copy
@@ -41,7 +41,7 @@ This command:
 * using `|` (vertical bar) as a field separator (`fs=\|`)
 * using `1000 rows` as row-set buffer (`rows=1000`)
 * using `UPSERT USING LOAD` syntax to achieve better throughput as described in
-http://trafodion.incubator.apache.org/docs/load_transform/index.html[Trafodion Load and Transform Guide]
+{docs-url}/load_transform/index.html[{project-name} Load and Transform Guide]
 * truncating the target table before loading (`truncate`)
 * using `4 parallel threads` to load the target table (`parallel=4`)
 
@@ -124,7 +124,7 @@ If you add a `+` sign in front of the file-name, odb  *appends* to `<file>`inste
 - `end`: Commit when all rows (assigned to a given thread) have been inserted. +
 - `#rows`: Commit every `#rows` inserted rows. +
 - `x#rs`: Commit every `#rs` rowset (see `rows`)
-| `direct` | Adds `/*+ DIRECT */` hint to the insert statement. To be used with Vertica databases in order to store inserted rows *directly* into
+| `direct` | Adds `/\*+ DIRECT */`* hint to the insert statement. To be used with Vertica databases in order to store inserted rows **directly** into
 the Read-Only Storage (ROS). See Vertica’s documentation.
 | `fieldtrunc=\{0-4}` | Defines how odb manages fields longer than the destination target column: +
  +
@@ -162,7 +162,7 @@ specified, then odb loads node-attributes values.
 odb loads the first node/attribute to the first column, the second node/attribute to the second column and so on without checking node/attribute names.
 | `xmldump` | odb does not load the XML file content. Instead, XML attribute/tage names are printed to standard output so you can check
 what is going to be loaded.
-| `loadcmd` | SQL operation to be used for load. (Default: `INSERT`). `UPSERT` and `UPSERT USING LOAD` are also available for Trafodion.
+| `loadcmd` | SQL operation to be used for load. (Default: `INSERT`). `UPSERT` and `UPSERT USING LOAD` are also available for {project-name}.
 |===
 
 You can load multiple files using different `-l` options. By default odb creates as many threads (and ODBC connections) as the sum of
@@ -399,14 +399,14 @@ In addition: you need to *_convert date format_* and replace all occurrences of 
 
 The following map file accomplishes these goals:
 
-***
-$ cat test/load_map/ml1.map +
-# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat +
-ID:seq:1                  # Inserts into ID column a sequence starting from 1 +
-NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy +
-AGE:2                     # Loads field #2 (they start from zero) into AGE +
+```
+$ cat test/load_map/ml1.map
+# Map file to load TRAFODION.MFTEST.FRIENDS from friends.dat
+ID:seq:1                  # Inserts into ID column a sequence starting from 1
+NAME:4:REPLACE:Lucia:Lucy # Loads field #4 into NAME and replace all occurrences of Lucia with Lucy
+AGE:2                     # Loads field #2 (they start from zero) into AGE
 BDATE:6:DCONV:d.b.y       # Loads field #6 into BDATE converting date format from dd mmm yyyy
-***
+```
 
 <<<
 Load as follows:
@@ -479,7 +479,7 @@ CREATE TABLE TRAFODION.MAURIZIO."PERSON"
 , BDATE DATE NOT NULL
 , SEX CHAR(1) NOT NULL
 , EMAIL VARCHAR(40) NOT NULL
-, SALARY NUMERIC SIGNED(9,2) NOT NULL
+, SALARY NUMERIC(9,2) NOT NULL
 , EMPL VARCHAR(40) NOT NULL
 , NOTES VARCHAR(80)
 , LOADTS TIMESTAMP(0)
@@ -492,13 +492,14 @@ CREATE TABLE TRAFODION.MAURIZIO."PERSON"
 You can use a mapfile like this:
 
 ```
-~/Devel/odb $ cat person.map PID:SEQ:100
-
+~/Devel/odb $ cat person.map
+PID:SEQ:100
 FNAME:DSRAND:datasets/first_names.txt 
 LNAME:DSRAND:datasets/last_names.txt 
 COUNTRY:DSRAND:datasets/countries.txt
 CITY:DSRAND:datasets/cities.txt 
-BDATE:DRAND:1800:2012 SEX:LSTRAND:M,F,U
+BDATE:DRAND:1800:2012
+SEX:LSTRAND:M,F,U
 EMAIL:EMRAND:3:12:5:8:com,edu,org,net 
 SALARY:NRAND:9:2 
 EMPL:DSRAND:datasets/fortune500.txt 
@@ -529,8 +530,9 @@ with length between 20 and 80 characters`
 You generate and load test data with a command like this:
 
 ```
-$ ./ odb64luo -l src=nofile:tgt=traf.maurizio.person:max=1000000:
-map=person.map:rows=5000:parallel=8:loadcmd=U
+$ bin/odb64luo -u user -p password -d traf -l src=nofile:
+tgt=traf.maurizio.person:max=1000000:
+map=person.map:rows=5000:parallel=8:loadcmd=INSERT
 ```
 
 Please note `src=nofile” (it means _there is no input file_) and `max=1000000` (generate and load one million rows). The above command
@@ -558,7 +560,7 @@ has generated and loaded 1M rows of _realistic_ data in about ten seconds:
 == Load Default Values
 
 The simpler way to load database generated defaults is to ignore the associated columns in the map file. For example, suppose you have a
-table like this under Trafodion:
+table like this under {project-name}:
 
 ```
 create table TRAFODION.maurizio.dtest
@@ -928,7 +930,7 @@ features *for each extraction thread*. +
  +
 *Examples* +
  +
-1. You want *Trafodion* to ignore missing stats warning. Then you can run via `mpre` a SQL script containing: +
+1. You want *{project-name}* to ignore missing stats warning. Then you can run via `mpre` a SQL script containing: +
  +
 `control query default HIST_MISSING_STATS_WARNING_LEVEL '0';` +
  +
@@ -975,7 +977,7 @@ Please note the `src=-tlist.txt`.
 <<<
 == Copy Tables From One Database to Another
 
-odb can directly copy tables from one data-source to another. For example, from Trafodion to Teradata or vice-versa).
+odb can directly copy tables from one data-source to another. For example, from {project-name} to Teradata or vice-versa).
 Data *_never lands to disk_* when using this option.
 
 The target table has to be be created in advance and should have a compatible structure.

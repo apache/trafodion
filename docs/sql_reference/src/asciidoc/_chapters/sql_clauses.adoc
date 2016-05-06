@@ -20,13 +20,13 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[sql_clauses]]
 =  SQL Clauses
 
-Clauses are used by Trafodion SQL statements to specify default values,
+Clauses are used by {project-name} SQL statements to specify default values,
 ways to sample or sort data, how to store physical data, and other
 details.
 
@@ -318,7 +318,7 @@ statement. The intermediate result table consists of the rows returned
 by a WHERE clause or, if no WHERE clause exists, the FROM clause. See
 <<select_statement,SELECT Statement>>.
 
-SAMPLE is a Trafodion SQL extension.
+SAMPLE is a {project-name} SQL extension.
 
 ```
 SAMPLE sampling-methodis:
@@ -346,7 +346,7 @@ rows-size is:
 
 * `RANDOM _percent-size_`
 +
-directs Trafodion SQL to choose rows randomly (each row having an
+directs {project-name} SQL to choose rows randomly (each row having an
 unbiased probability of being chosen) without replacement from the
 result table. The sampling size is determined by the _percent-size_,
 defined as:
@@ -366,7 +366,7 @@ Therefore, the actual size of the resulting sample is approximately _r_% of _N_.
 The number of rows picked follows a binomial distribution with
 mean equal to _r_ *c_N_/100.
 +
-If you specify a sample size greater than 100 PERCENT, Trafodion SQL
+If you specify a sample size greater than 100 PERCENT, {project-name} SQL
 returns all the rows in the result table plus duplicate rows. The
 duplicate rows are picked from the result table according to the
 specified sampling method. This technique is called oversampling.
@@ -377,7 +377,7 @@ specifies row sampling. Row sampling is the default.
 
 ** `BALANCE`
 +
-If you specify a BALANCE expression, Trafodion SQL performs stratified
+If you specify a BALANCE expression, {project-name} SQL performs stratified
 sampling. The intermediate result table is divided into disjoint strata
 based on the WHEN conditions.
 +
@@ -389,8 +389,8 @@ no true condition exists, the row belongs to the ELSE stratum.
 * `FIRST _rows-size_ [SORT BY _colname_ [ASC[ENDING] | DESC[ENDING]]
 [,_colname_ [ASC[ENDING] | DESC[ENDING]]]&#8230;]`
 +
-directs Trafodion SQL to choose the first rows from the result table.
-You can specify the order of the rows to sample. Otherwise, Trafodion
+directs {project-name} SQL to choose the first rows from the result table.
+You can specify the order of the rows to sample. Otherwise, {project-name}
 SQL chooses an arbitrary order. The sampling size is determined by the
 _rows-size_, defined as:
 
@@ -410,13 +410,13 @@ is the minimum of _s_ and _N_.
 [ASC[ENDING] | DESC[ENDING]] [,_colname_ [ASC[ENDING] |
 DESC[ENDING]]]&#8230;]`
 +
-directs Trafodion SQL to choose the first rows from each block (or
+directs {project-name} SQL to choose the first rows from each block (or
 period) of contiguous rows. This sampling method is equivalent to a
 separate FIRST sampling for each period, and the _rows-size_ is defined
 as in FIRST sampling.
 +
 The size of the period is specified as a number of rows. You can specify
-the order of the rows to sample. Otherwise, Trafodion SQL chooses an
+the order of the rows to sample. Otherwise, {project-name} SQL chooses an
 arbitrary order.
 +
 <<<
@@ -786,7 +786,7 @@ of the intermediate result table for calculating sequence functions.
 This option is used for processing time-sequenced rows in data mining
 applications. See <<select_statement>>.
 
-Sequence by is a Trafodion SQL extension.
+Sequence by is a {project-name} SQL extension.
 
 ```
 SEQUENCE BY colname[ASC[ENDING]|DESC[ENDING]]
@@ -807,7 +807,7 @@ considered equal to one another but greater than all other non-null
 values.
 +
 You must include a SEQUENCE BY clause if you include a sequence function
-in the select list of the SELECT statement. Otherwise, Trafodion SQL
+in the select list of the SELECT statement. Otherwise, {project-name} SQL
 returns an error. Further, you cannot include a SEQUENCE BY clause if no
 sequence function exists in the select list. See
 <<sequence_functions,Sequence Functions>> .
@@ -1001,7 +1001,7 @@ The result table of the TRANSPOSE clause has all the columns of the
 source table plus, for each transpose item list, a value column or
 columns and an optional key column.
 
-TRANSPOSE is a Trafodion SQL extension.
+TRANSPOSE is a {project-name} SQL extension.
 
 ```
 TRANSPOSE transpose-set [transpose-set]... 

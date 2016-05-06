@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[binder-and-compilation-messages]]
@@ -36,7 +36,7 @@
 Column <name-1> is not found. Tables in scope: <name-2>. Default schema: <name-3>.
 ```
 
-*Cause:* You referenced column <name-1>, which the Trafodion database
+*Cause:* You referenced column <name-1>, which the {project-name} database
 software could not find. The table <name-2> or tables in the scope of the
 column reference and the default schema <name-3> appear.
 
@@ -76,7 +76,7 @@ found, and resubmit.
 Column <name-1> is not found. Table <name-2> not exposed. Tables in scope: <name-3>. Default schema: <name-4>.
 ```
 
-*Cause:* You referenced column <name-1>, which the Trafodion database
+*Cause:* You referenced column <name-1>, which the {project-name} database
 software could not find. Table <name-2> is not exposed. The table <name-3>
 or tables in the scope of the column reference and the default schema
 <name-4> appear.
@@ -211,7 +211,7 @@ Reference made to column <name> via star (*) is ambiguous.
 Where <name> is the name of the column.
 
 *Cause:* You referred to column <name> using the `SELECT *` or `SELECT TBL.*`
-reference, and the Trafodion database software could not locate the column
+reference, and the {project-name} database software could not locate the column
 because the reference is ambiguous.
 
 *Effect:* The operation fails.
@@ -425,7 +425,7 @@ Error while preparing constraint <name> on table <table-name>.
 
 Where <table-name> is the name of the table.
 
-*Cause:* Trafodion received an error while
+*Cause:* {project-name} received an error while
 preparing constraint <name> on <table-name>. See accompanying error
 messages.
 
@@ -912,7 +912,7 @@ partition, which is not supported.
 The preceding error actually occurred in function <name>.
 ```
 
-*Cause:* Trafodion detected an error in function
+*Cause:* {project-name} detected an error in function
 <name>. Errors that appear before this one refer to the low level
 computations that this function uses.
 
@@ -1234,7 +1234,7 @@ which is not supported.
 The number of output dynamic parameters (<value-1>) must equal the number of selected values (<value-2>).
 ```
 
-*Cause:* Trafodion requires that the number of
+*Cause:* {project-name} requires that the number of
 output dynamic parameters, <value-1), match the number of selected
 values, <value-2>.
 
@@ -1250,7 +1250,7 @@ The number of output host variables (<value-1>) must equal the
 number of selected values (<value-2>).
 ```
 
-*Cause:* Trafodion requires that the number of
+*Cause:* {project-name} requires that the number of
 output host variables, <value-1>, match the number of selected values,
 <value-2>.
 
@@ -1352,7 +1352,7 @@ clause, the preceding join search condition must be enclosed in
 parentheses.
 ```
 
-*Cause:* A syntax error has caused the Trafodion database software to
+*Cause:* A syntax error has caused the {project-name} database software to
 treat object <name> as an ambiguous entity.
 
 *Effect:* The operation fails.
@@ -1382,7 +1382,7 @@ other than an outermost SELECT statement.
 
 ```
 If a character literal was intended, you must use the single quote
-delimiter: <literal>. The use of double quotes causes Trafodion to
+delimiter: <literal>. The use of double quotes causes {project-name} to
 interpret <column-name> as a delimited identifier column name.
 ```
 
@@ -1414,10 +1414,10 @@ single quote delimiter instead of the double: 'Lower' instead of
 Translation name is not recognized.
 ```
 
-*Cause:* Trafodion does not recognize the
+*Cause:* {project-name} does not recognize the
 translation name.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Use one of the supported translation names.
@@ -1577,7 +1577,7 @@ Absolute and relative sampling cannot occur in the same BALANCE expression.
 *Cause:* You attempted to perform absolute and relative sampling in the
 same balance expression, which is not supported.
 
-*Effect:* Trafodion is unable to prepare the
+*Effect:* {project-name} is unable to prepare the
 query.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -1592,7 +1592,7 @@ The sample size for <type> Sampling must be <size-type>.
 *Cause:* You specified an invalid combination of sample <type> and
 sample <size-type>.
 
-*Effect:* Trafodion is unable to prepare the
+*Effect:* {project-name} is unable to prepare the
 query.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -1607,7 +1607,7 @@ An absolute sample size must have a scale of zero.
 *Cause:* You specified an absolute sample size with a scale greater than
 zero, which is not supported.
 
-*Effect:* Trafodion is unable to prepare the
+*Effect:* {project-name} is unable to prepare the
 query.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -1622,7 +1622,7 @@ The sample size must be less than or equal to the sample period.
 *Cause:* You specified a sample size that is greater than the sample
 period. It must be less than or equal to the sample period.
 
-*Effect:* Trafodion is unable to prepare the
+*Effect:* {project-name} is unable to prepare the
 query.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -1690,7 +1690,7 @@ join query is not updatable.
 *Effect:* The operation fails.
 
 *Recovery:* An updatable cursor query should not specify a join or a
-nonupdatable query. A Trafodion database software statement cursor is
+nonupdatable query. A {project-name} database software statement cursor is
 updatable if all the following are true:
 
 * It is a SELECT statement.
@@ -1792,7 +1792,7 @@ More than one table will be locked: <name>.
 
 Where <name> is the name of the table.
 
-*Cause:* Trafodion is preparing to lock more than
+*Cause:* {project-name} is preparing to lock more than
 one table.
 
 *Effect:* None.
@@ -1853,7 +1853,7 @@ Default volume and subvolume information could not be retrieved from=_DEFAULTS d
 
 Where <number> is the error message.
 
-*Cause:* Trafodion was not able to retrieve
+*Cause:* {project-name} was not able to retrieve
 default volume and subvolume information using the =_DEFAULTS define.
 
 *Effect:* The operation fails.
@@ -1911,7 +1911,7 @@ CHARACTER.
 The operation (<name>) is not allowed. Try UNION ALL instead.
 ```
 
-*Cause:* You attempted to perform an operation that the Trafodion
+*Cause:* You attempted to perform an operation that the {project-name}
 database software does not allow.
 
 *Effect:* The operation fails.
@@ -1965,7 +1965,7 @@ the second expression for your join. You must use the primary key to
 prevent returning multiple rows being returned for a single deleted or
 updated row.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the WHERE clause to use the primary key of the table
@@ -1981,7 +1981,7 @@ Stream access is supported only on updatable views. View: <table-name>.
 *Cause:* You attempted to access a nonupdatable view using stream access
 mode.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -1995,7 +1995,7 @@ Table <name> cannot be both read and updated.
 
 *Cause:* You attempted to read from and update the same table.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2011,7 +2011,7 @@ Statement may not compile due to an order requirement on stream expression.
 on columns that do not define the prefix of the clustering key of the
 base table or of a secondary index.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Create a secondary index whose clustering key materializes
@@ -2029,7 +2029,7 @@ Statement may not compile due to an order requirement on embedded
 expression using an ORDER BY without using a clustering key or a
 secondary index.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Create a secondary index materializing the order and
@@ -2059,7 +2059,7 @@ Inner relation of left join cannot be stream expression. Tables in scope: <name>
 *Cause:* You attempted to perform a left join using the result set of a
 stream expression as the inner relation.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2073,7 +2073,7 @@ Join of stream expressions is not supported. Tables in scope: <name>.
 
 *Cause:* You attempted to perform a join of stream expressions.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2087,7 +2087,7 @@ Intersection of stream expressions is not supported. Tables in scope: <name>.
 
 *Cause:* You attempted to perform an intersection of stream expressions.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2103,7 +2103,7 @@ Intersection between embedded <name-1> expression and embedded
 *Cause:* You attempted to perform an intersection between two embedded
 expressions.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2119,7 +2119,7 @@ expression not supported. Tables in scope: <name-3>, <name-4>.
 *Cause:* You attempted to perform a union between two embedded
 expressions.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2134,7 +2134,7 @@ GROUP BY is not supported for stream expression. Tables in scope: <name>.
 *Cause:* You attempted to perform a GROUP BY in conjunction with a
 stream expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2150,7 +2150,7 @@ scope: <name-2>.
 *Cause:* You attempted to perform a GROUP BY in conjunction with an
 embedded expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2166,7 +2166,7 @@ Tables in scope: <name>.
 *Cause:* You attempted to perform a right join using an embedded
 expression as the outer relation.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2182,7 +2182,7 @@ scope: <name>.
 *Cause:* You attempted to perform a right join using a stream expression
 as the outer relation.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2198,7 +2198,7 @@ scope: <name-1>, <name-2>.
 *Cause:* You attempted to use an ORDER BY clause in the UNION of two
 streams.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2213,7 +2213,7 @@ Embedded <name> statements are not supported in subqueries.
 *Cause:* You attempted to perform a subquery that included an embedded
 statement.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2228,7 +2228,7 @@ Stream expressions are not supported in subqueries.
 *Cause:* You attempted to perform a subquery that included a stream
 expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2244,7 +2244,7 @@ FOR UPDATE clause.
 *Cause:* You attempted to perform a DECLARE... FOR UPDATE clause that
 included an embedded DELETE statement.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2259,7 +2259,7 @@ Stream expressions are not supported for insert statements.
 *Cause:* You attempted to perform an insert statement that includes a
 stream expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2274,7 +2274,7 @@ Embedded <name> statements are not supported in INSERT statements.
 *Cause:* You attempted to perform an INSERT that included an embedded
 statement.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2289,7 +2289,7 @@ Stream expression is not supported for top level UPDATE statements.
 *Cause:* You attempted to perform a top-level UPDATE statement that
 included a stream expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2301,10 +2301,10 @@ statement.
 JOIN_ORDER_BY_USER prevented compiler from reordering query tree.
 ```
 
-*Cause:* Trafodion compiler could not reorder the
+*Cause:* {project-name} compiler could not reorder the
 join tree because the JOIN_ORDER_BY_USER directive is in effect.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Disable the JOIN_ORDER_BY_USER directive and resubmit.
@@ -2319,7 +2319,7 @@ Join between embedded <name-1> expression and embedded <name-2> expression is no
 *Cause:* You attempted to perform a join between two embedded
 expressions.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2335,7 +2335,7 @@ not supported. Tables in scope: <name-2>.
 *Cause:* You attempted to perform a join between a stream expression and
 an embedded expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2350,7 +2350,7 @@ Update of <name-1> column <name-2> is not permitted on rollback.
 *Cause:* You attempted to update clustering key components or columns
 associated with referential integrity constraints during a rollback.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2365,7 +2365,7 @@ Update of variable length column <name> is not permitted on rollback.
 *Cause:* You attempted to perform a rollback that included an update of
 a variable length column.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2379,7 +2379,7 @@ SEQUENCE BY is not supported for stream expressions.
 
 *Cause:* You included a SEQUENCE BY statement in a stream expression.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2394,7 +2394,7 @@ Stream expression is not supported for top level DELETE statement.
 *Cause:* You attempted to use a stream expression to perform a top-level
 DELETE.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2454,7 +2454,7 @@ Stream expressions are not supported for compound statements.
 *Cause:* You attempted to use a stream expression for a compound
 statement.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2469,7 +2469,7 @@ Embedded <name> expression is not supported for compound statements.
 *Cause:* You attempted to use an embedded expression for a compound
 statement.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2484,7 +2484,7 @@ SEQUENCE BY is not supported for embedded <name> expressions.
 *Cause:* You attempted to perform an embedded expression that included
 SEQUENCE BY.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2509,7 +2509,7 @@ error, depending on how you have set this attribute value.
 on a non-audited table and IUD_NONAUDITED_INDEX_MAINT is set to OFF. This
 message is displayed as an error.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2518,7 +2518,7 @@ statement.
 on a non-audited table and IUD_NONAUDITED_INDEX_MAINT is set to WARN.
 This message appears as an warning.
 
-*Effect:* Trafodion performs the INSERT, UPDATE,
+*Effect:* {project-name} performs the INSERT, UPDATE,
 or DELETE operation. If the operation encounters an error, you will see
 other messages about that condition.
 
@@ -2534,7 +2534,7 @@ Stream access is supported for only key-sequenced tables. Table: <name>.
 *Cause:* You attempted to use stream access on a table that is not
 key-sequenced, which is required.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2549,7 +2549,7 @@ Embedded <name-1> is supported for only key-sequenced tables. Table: <name-2>.
 *Cause:* You attempted to perform an embedded action that is supported
 only for key-sequenced tables.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2564,7 +2564,7 @@ Embedded <name> is supported only for updatable views. View: <name-2>.
 *Cause:* You attempted to perform an embedded action that is supported
 only for updatable views.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2580,7 +2580,7 @@ cover all output values of stream.
 *Cause:* You attempted to use an index for stream access that does not
 cover all output columns of the base table.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Restrict the select list or add the missing columns to the
@@ -2597,7 +2597,7 @@ cover all columns referenced in WHERE clause of stream.
 *Cause:* You attempted to use an index for stream access that does not
 cover all base table columns referenced in the WHERE clause.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Add the missing columns to the index.
@@ -2612,7 +2612,7 @@ Update of nullable column <name> is not permitted on rollback.
 *Cause:* You attempted to perform a rollback that included an update of
 a nullable column.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2627,7 +2627,7 @@ Embedded update/delete statements not supported within an IF statement.
 *Cause:* You attempted to embed UPDATE/DELETE statements within an IF
 statement.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2643,7 +2643,7 @@ stream because it is partitioned.
 *Cause:* You specified <table-name>, a partitioned table, as the order
 requirement on a stream.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2658,7 +2658,7 @@ Use of row sets in a predicate with embedded update/delete is not supported.
 *Cause:* You attempted to use a row set as a predicate with an embedded
 update or embedded delete.
 
-*Effect:* Trafodion is unable to compile the
+*Effect:* {project-name} is unable to compile the
 statement.
 
 *Recovery:* Modify the statement and resubmit.
@@ -2710,12 +2710,12 @@ The FIRST/ANY n syntax cannot be used with an embedded update or embedded delete
 Procedure <procedure-name> expects <value-1> parameters but was called with <value-2> parameters.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled, a
+*Cause:* In the {project-name} database software statement being compiled, a
 stored procedure invocation contains an incorrect number of parameters.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
-*Recovery:* Correct the Trafodion database software statement and retry
+*Recovery:* Correct the {project-name} database software statement and retry
 the compilation.
 
 [[SQL-4303]]
@@ -2725,11 +2725,11 @@ the compilation.
 The supplied type for parameter <value> of routine <routine-name> was <type-name-1> which is not compatible with the expected type <type-name-2>.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled,
+*Cause:* In the {project-name} database software statement being compiled,
 you attempted to invoke a stored procedure with a type of parameter that
 is incompatible with the formal type of the parameter.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
 *Recovery:* Supply the correct parameter and type and retry the
 compilation.
@@ -2741,7 +2741,7 @@ compilation.
 Host variable or dynamic parameter <parameter-name> is used in more than one OUT or INOUT parameter for routine <routine-name>. Results may be unpredictable.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled,
+*Cause:* In the {project-name} database software statement being compiled,
 you attempted to invoke a stored procedure that contains the same host
 variable or dynamic parameter in more than one OUT or INOUT parameter.
 
@@ -2759,13 +2759,13 @@ Parameter <value> for user-defined routine <routine-name> is an OUT
 or INOUT parameter and must be a host variable or a dynamic parameter.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled,
+*Cause:* In the {project-name} database software statement being compiled,
 you attempted to invoke a stored procedure that has an OUT or INOUT
 parameter that is neither a host variable nor a dynamic parameter.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
-*Recovery:* Correct the Trafodion database software statement. Supply a
+*Recovery:* Correct the {project-name} database software statement. Supply a
 host variable or a dynamic parameter for OUT or INOUT parameters, and
 retry the compilation.
 
@@ -2776,10 +2776,10 @@ retry the compilation.
 A CALL statement is not allowed within a compound statement.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled, a
+*Cause:* In the {project-name} database software statement being compiled, a
 CALL statement was present within a BEGIN...END block.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
 *Recovery:* Remove the CALL statement from the compound statement and
 retry the compilation.
@@ -2791,11 +2791,11 @@ retry the compilation.
 Rowset parameters are not allowed in a CALL statement.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled,
+*Cause:* In the {project-name} database software statement being compiled,
 you attempted to use a row set as a parameter in a stored procedure
 invocation.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
 *Recovery:* Alter the data type of the relevant variable, or use a
 different non-row-set host variable. Retry the compilation.
@@ -2808,11 +2808,11 @@ Internal error: Unsupported SQL data type <value> specified for a
 CALL statement parameter.
 ```
 
-*Cause:* In the Trafodion database software statement being compiled, a
+*Cause:* In the {project-name} database software statement being compiled, a
 parameter in a stored procedure invocation had an unsupported SQL data
 type.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
 *Recovery:* This error should never occur. Drop the stored procedure and
 re-create it with an appropriate data type. Report this problem to HP
@@ -2828,15 +2828,15 @@ stored procedure result sets are not yet supported.
 
 Where <procedure-name> is the ANSI name of a stored procedure.
 
-*Cause:* You are running a Trafodion database software version that does
+*Cause:* You are running a {project-name} database software version that does
 not support stored procedure result sets and attempted to compile a CALL
 statement for a stored procedure that returns result sets. This message
 indicates a downgrade has been performed without removing stored
 procedures that return result sets.
 
-*Effect:* Trafodion statement is not compiled.
+*Effect:* {project-name} statement is not compiled.
 
-*Recovery:* Migrate to a Trafodion database software version that
+*Recovery:* Migrate to a {project-name} database software version that
 supports stored procedure result sets.
 
 [[SQL-4310]]

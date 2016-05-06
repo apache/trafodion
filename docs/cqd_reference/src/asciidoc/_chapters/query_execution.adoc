@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[query-execution]]
@@ -47,7 +47,7 @@ in different threads.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -66,12 +66,12 @@ The default value is *'SYSTEM'*.
 In LRU block cache configuration, the amount of block cache retained in memory is proportional to the amount of reserved maximum
 Java heap size of the region server. LRU Block Cache is the default in HBase. +
  +
-The Trafodion Optimizer determines whether a sequential scan of the HBase table in a query would cause the full eviction of the
+The {project-name} Optimizer determines whether a sequential scan of the HBase table in a query would cause the full eviction of the
 data blocks cached earlier thereby impacting the performance of the random reads. The cache blocks option is turned off for the table
 in such a case. +
  +
 Set the CQD <<hbase-region-server-max-heap-size,HBASE_REGION_SERVER_MAX_HEAP_SIZE>> value to reflect the amount of java heap size reserved for the region servers.
-This CQD is used by the Trafodion Optimizer to evaluate if the block cache should be turned off. 
+This CQD is used by the {project-name} Optimizer to evaluate if the block cache should be turned off. 
 | *Production Usage*          | Leave the setting to be 'SYSTEM' when HBase is configured to use LRU block cache. If needed,
 you can override this settings with 'ON' or 'OFF'.  +
  +
@@ -80,7 +80,7 @@ With other HBase configurations, you need to set HBASE_CACHE_BLOCKS to 'ON' or '
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -104,12 +104,12 @@ An explain plan can show whether predicates are successfully pushed down to the 
 The default value is *'OFF'*.
 | *Usage*                     | Used to improve performance by reducing the number of columns retrieved to a strict minimum
 and filter out rows as early as possible.
-| *Production Usage*          | Please consult the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Using this CQD increases the amount of work done in the HBase Region Servers.
 | *Level*                     | System or Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 2.0.0.
+| *Introduced In Release*     | {project-name} 2.0.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -119,10 +119,10 @@ and filter out rows as early as possible.
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Treat salted Trafodion tables as hash-partitioned on the salt columns.
+| *Description*               | Treat salted {project-name} tables as hash-partitioned on the salt columns.
 | *Values*                    |
-*'OFF'*: Salted Trafodion tables are not hash-partitioned on the salt columns. +
-*'ON'*: Salted Trafodion tables are hash-partitioned on the salt columns. +
+*'OFF'*: Salted {project-name} tables are not hash-partitioned on the salt columns. +
+*'ON'*: Salted {project-name} tables are hash-partitioned on the salt columns. +
  +
 The default value is *'ON'*.
 | *Usage*                     | If, for any reason, there are issues with parallel plans on salted tables (especially with data skew) then try setting this CQD to OFF.
@@ -131,7 +131,7 @@ The default value is *'ON'*.
 | *Level*                     | System or Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 2.0.0.
+| *Introduced In Release*     | {project-name} 2.0.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -151,13 +151,13 @@ a sequential scan of a table. +
  +
 You need to consider how soon the maximum number of rows are materialized on the Region Servers.  When filtering is pushed down to Region Servers,
 then it can take a longer time depending upon the query and the predicates involved. This can result in HBase scanner timeouts. 
-| *Production Usage*          | Use the default setting and reduce the value to avoid HBase scanner timeouts. Consult with the Trafodion community
+| *Production Usage*          | Use the default setting and reduce the value to avoid HBase scanner timeouts. Please contact {project-support}.
 if you think that you need to use this CQD.
 | *Impact*                    | Not applicable.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -173,16 +173,16 @@ if you think that you need to use this CQD.
 *'OFF'*: Do not perform IUD operations as an HBase batch `put` operation. +
  +
 The default value is *'ON'*.
-| *Usage*                     | When IUD operation involves multiple tuples, then the Trafodion Optimizer evaluates whether these operations
+| *Usage*                     | When IUD operation involves multiple tuples, then the {project-name} Optimizer evaluates whether these operations
 can be done in a batch manner at the HBase level thereby reducing the network interactions between the client applications and the HBase Region Servers. +
  +
-If possible, then the query plan involves VSBB operators. The Virtual Sequential Block Buffer(VSBB) name is retained in Trafodion though it is unrelated to HBase.
+If possible, then the query plan involves VSBB operators. The Virtual Sequential Block Buffer(VSBB) name is retained in {project-name} though it is unrelated to HBase.
 | *Production Usage*          | Yes.
 | *Impact*                    | IUD operations can become slower if this CQD is set to 'OFF'.
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -197,8 +197,8 @@ If possible, then the query plan involves VSBB operators. The Virtual Sequential
 Numeric value.
  +
 The default value is *'1024'*.
-| *Usage*                     | The Trafodion execution engine already adjusts the number of rows in a batch depending upon how fast
-the queue to IUD (INSERT,UPDATE,DELETE) operator is filled up in the data flow architecture of Trafodion. +
+| *Usage*                     | The {project-name} execution engine already adjusts the number of rows in a batch depending upon how fast
+the queue to IUD (INSERT,UPDATE,DELETE) operator is filled up in the data flow architecture of {project-name}. +
  +
 You can adjust the maximum size to suit your application needs and thus tune it to perform optimally.
 | *Production Usage*          | Yes. You can disable this feature by setting the HBASE_ROWSET_VSBB_OPT CQD to 'OFF'.
@@ -206,7 +206,7 @@ You can adjust the maximum size to suit your application needs and thus tune it 
 | *Level*                     | Query.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -216,24 +216,24 @@ You can adjust the maximum size to suit your application needs and thus tune it 
 
 [cols="25%h,75%"]
 |===
-| *Description*               |	Enables Trafodion to leverage the HBase small scanner optimization. This optimization reduces I/O usage up to 66% 
+| *Description*               |	Enables {project-name} to leverage the HBase small scanner optimization. This optimization reduces I/O usage up to 66% 
 and enables non-blocking reads for higher concurrency support. When a scan is known to require less than a HBASE BLOCK SIZE (default is 64K),
 then enabling the HBase small scanner optimization increases performance.
 | *Values*                    |
 *'OFF'*: Never use the HBase small scanner optimization. +
-*'SYSTEM'*: Only enable the HBase small scanner optimization when the Trafodion Compiler determines that the scan size will fit in the table's HBASE BLOCK SIZE +
+*'SYSTEM'*: Only enable the HBase small scanner optimization when the {project-name} Compiler determines that the scan size will fit in the table's HBASE BLOCK SIZE +
 *'ON'*: Enable the HBase small scanner optimization regardless of the size of scan. +
  +
 The default value is *'OFF'*.
 | *Usage*                     | Consider using this CQD to improve the performance of your queries.
-| *Production Usage*          | Consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | The performance of small scan may increase by 1.4x. This CQD can be very useful for MDAM scans.
 | *Level*                     | System or Session.
 | *Conflicts/Synergies*       | MDAM performance may be improved by 1.4x when correctly picking HBase block size so that each MDAM scan operation fit within a HBASE BLOCK SIZE boundary. +
  +
 If you enable small scanner on large size scan incorrectly, then you are likely to see a 6% performance decrease. The returned results will still be correct.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 2.0.0.
+| *Introduced In Release*     | {project-name} 2.0.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 

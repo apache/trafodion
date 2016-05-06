@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[runtime-controls]]
@@ -45,7 +45,7 @@ returning the rows to the client. It is especially useful for testing the plans 
 | *Conflicts/Synergies*       | Not to be confused with SELECT [LAST 0] which behaves the same way but does not guarantee that the plan
 is the same as when you do not use the [LAST 0] clause in the query.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -76,6 +76,6 @@ However, if the default is set too low, then even well behaved, useful queries f
 | *Level*                     | Service.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Use standard processed for creating high-quality queries, and procedures that ensure that table histograms are always current.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===

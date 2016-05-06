@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[executor-messages]]
@@ -60,7 +60,7 @@ The operation has been canceled.
 Encoding of CONTROL QUERY DEFAULTs: <encoding>.
 ```
 
-*Cause:* Trafodion displays an internal CONTROL
+*Cause:* {project-name} displays an internal CONTROL
 QUERY DEFAULT encoding.
 
 *Effect:* None.
@@ -94,7 +94,7 @@ Explain information is not available for this query.
 
 *Cause:* The explain default has been turned off for this query.
 
-*Effect:* Trafodion is not able to display explain
+*Effect:* {project-name} is not able to display explain
 information.
 
 *Recovery:* Turn the explain default on for this query.
@@ -129,7 +129,7 @@ The operation is prevented by a unique constraint.
 *Cause:* You attempted to perform an operation that is prevented by a
 unique constraint.
 
-*Effect:* Trafodion could not perform the
+*Effect:* {project-name} could not perform the
 operation.
 
 *Recovery:* Make the data you enter unique to be consistent with the
@@ -250,7 +250,7 @@ level, if appropriate.
 Statement was recompiled.
 ```
 
-*Cause:* Trafodion recompiled the statement.
+*Cause:* {project-name} recompiled the statement.
 
 *Effect:* The operation fails.
 
@@ -266,7 +266,7 @@ Table, index or view <name> was not found.
 
 Where <name> is the name of the object.
 
-*Cause:* Trafodion could not find the object
+*Cause:* {project-name} could not find the object
 <name>.
 
 *Effect:* The operation fails.
@@ -316,7 +316,7 @@ starting a transaction.
 
 *Effect:* The operation fails.
 
-*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* Contact {project-support}.
 
 <<<
 [[SQL-8605]]
@@ -350,7 +350,7 @@ committing a transaction.
 
 *Effect:* The operation fails.
 
-*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* Contact {project-support}.
 
 <<<
 [[SQL-8607]]
@@ -383,7 +383,7 @@ rolling back a transaction.
 
 *Effect:* The operation fails.
 
-*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* Contact {project-support}.
 
 <<<
 [[SQL-8609]]
@@ -415,7 +415,7 @@ Where <number> is the error number.
 *Cause:* Transaction subsystem <name> has returned error <number> while
 performing a waited rollback transaction. *Effect:* The operation fails.
 
-*Recovery:* Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* Contact {project-support}.
 
 <<<
 [[SQL-8612]]
@@ -440,13 +440,13 @@ mode.
 SQL cannot commit or rollback a transaction that was started by application.
 ```
 
-*Cause:* An application started a transaction outside of Trafodion that Trafodion could not commit
+*Cause:* An application started a transaction outside of {project-name} that {project-name} could not commit
 or rollback.
 
 *Effect:* The operation fails.
 
 *Recovery:* The application that started the transaction must perform a
-commit or rollback. Trafodion must start any transactions it will later commit or rollback.
+commit or rollback. {project-name} must start any transactions it will later commit or rollback.
 
 <<<
 [[SQL-8808]]
@@ -458,12 +458,12 @@ Module file <name> contains corrupted or invalid data.
 
 Where <name> is the name of the file.
 
-*Cause:* Trafodion has detected corrupted or
+*Cause:* {project-name} has detected corrupted or
 invalid data in the module file <name>.
 
-*Effect:* Trafodion could not execute the file.
+*Effect:* {project-name} could not execute the file.
 
-*Recovery:* Recompile the .mdf file, using the Trafodion compiler, to
+*Recovery:* Recompile the .mdf file, using the {project-name} compiler, to
 create a valid module file.
 
 [[SQL-8809]]
@@ -477,7 +477,7 @@ Where <name> is the name of the file.
 
 Where <number> is the error number returned.
 
-*Cause:* Trafodion was unable to open module file
+*Cause:* {project-name} was unable to open module file
 <name>.
 
 *Effect:* The operation fails.
@@ -497,7 +497,7 @@ Begin transaction failed while preparing the statement.
 
 *Effect:* The operation fails.
 
-*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* None. Contact {project-support}.
 
 [[SQL-8820]]
 == SQL 8820
@@ -510,7 +510,7 @@ Transaction commit failed while closing the statement.
 
 *Effect:* The operation fails.
 
-*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* None. Contact {project-support}.
 
 <<<
 [[SQL-8821]]
@@ -524,7 +524,7 @@ Rollback transaction failed during the process of fetching the statement.
 
 *Effect:* The operation fails.
 
-*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* None. Contact {project-support}.
 
 [[SQL-8824]]
 == SQL 8824
@@ -553,7 +553,7 @@ The module could not be added.
 
 *Effect:* The operation fails.
 
-*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* None. Contact {project-support}.
 
 [[SQL-8827]]
 == SQL 8827
@@ -564,7 +564,7 @@ The request <name> could not be sent.
 
 Where <name> is the name of the request.
 
-*Cause:* Trafodion was unable to send request <name>. 
+*Cause:* {project-name} was unable to send request <name>. 
 
 *Effect:* The operation fails.
 
@@ -597,7 +597,7 @@ The input parameter is an invalid SQL transaction command.
 
 *Effect:* The operation fails.
 
-*Recovery:* None. Contact the mailto:user@trafodion.incubator.apache.org[Trafodion User Distribution mailing list].
+*Recovery:* None. Contact {project-support}.
 
 <<<
 [[SQL-8834]]
@@ -609,12 +609,12 @@ The SQL installation directory could not be found. Operating system error <numbe
 
 Where <number> is the error number.
 
-*Cause:* Trafodion was unable to find the Trafodion installation directory and 
+*Cause:* {project-name} was unable to find the {project-name} installation directory and 
 received an operating system error <number>.
 
 *Effect:* The operation fails.
 
-*Recovery:* Locate the Trafodion installation directory,
+*Recovery:* Locate the {project-name} installation directory,
 correct your syntax, and resubmit.
 
 [[SQL-8836]]
@@ -667,8 +667,8 @@ Object name provided to CLI is not valid.
 User application committed or aborted a transaction started by SQL. This transaction needs to be committed or aborted by calling SQL COMMIT or ROLLBACK WORK.
 ```
 
-*Cause:* Trafodion started a transaction that was committed or aborted by an embedded program, 
-rather than by Trafodion.
+*Cause:* {project-name} started a transaction that was committed or aborted by an embedded program, 
+rather than by {project-name}.
 
 *Effect:* The operation fails.
 
@@ -842,7 +842,7 @@ An error while reading from file <name>.
 
 Where <name> is the file name.
 
-*Cause:* Trafodion encountered an error while
+*Cause:* {project-name} encountered an error while
 reading the module file <name>.
 
 *Effect:* The operation fails.
@@ -858,13 +858,13 @@ Containing SQL is not permitted.
 ```
 
 *Cause:* A stored procedure registered with the NO SQL attribute
-attempted to access Trafodion.
+attempted to access {project-name}.
 
 *Effect:* The corresponding SQL request is rejected.
 
 *Recovery:* Either change the definition of the stored procedure to
 allow SQL access, or determine why the stored procedure contains
-Trafodion  statements that might be called while the stored
+{project-name}  statements that might be called while the stored
 procedure is executing.
 
 [[SQL-8888]]
@@ -893,11 +893,11 @@ is returned.
 The SQL compiler failed to initialize properly. Query results may differ from what is expected, due to different compiler defaults.
 ```
 
-*Cause:* The Trafodion compiler failed to correctly initialize.
+*Cause:* The {project-name} compiler failed to correctly initialize.
 
 *Effect:* Query results might be affected.
 
-*Recovery:* Stop the Trafodion  and restart it.
+*Recovery:* Stop the {project-name}  and restart it.
 
 [[SQL-8901]]
 == SQL 8901
@@ -906,29 +906,29 @@ The SQL compiler failed to initialize properly. Query results may differ from wh
 The MXUDR server for this statement is no longer running. The statement will be assigned a new MXUDR server if it is executed again.
 ```
 
-*Cause:* During execution of a Trafodion statement, an
-attempt was made to contact a nonexistent Trafodion UDR server.
+*Cause:* During execution of a {project-name} statement, an
+attempt was made to contact a nonexistent {project-name} UDR server.
 
 *Effect:* The operation fails.
 
-*Recovery:* Retry the Trafodion statement.
+*Recovery:* Retry the {project-name} statement.
 
 <<<
 [[SQL-8904]]
 == SQL 8904
 
 ```
-Trafodion did not receive a reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
+{project-name} did not receive a reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
 ```
 
-*Cause:* During execution of a Trafodion statement,
-the Trafodion  did not receive an expected reply from
-the Trafodion UDR server.
+*Cause:* During execution of a {project-name} statement,
+the {project-name}  did not receive an expected reply from
+the {project-name} UDR server.
 
 *Effect:* The operation fails.
 
-*Recovery:* Verify that the Trafodion UDR server is running. If
-not, the Trafodion statement will acquire a new
-Trafodion UDR server when it is next executed.
+*Recovery:* Verify that the {project-name} UDR server is running. If
+not, the {project-name} statement will acquire a new
+{project-name} UDR server when it is next executed.
 
 

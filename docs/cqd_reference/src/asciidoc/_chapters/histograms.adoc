@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[manage-histograms]]
@@ -55,7 +55,7 @@ the histograms. More obsolete histograms may result in poor performance for quer
 | *Level*                     | System or Service.
 | *Conflicts/Synergies*       | Frequency of update statistics run using MAINTAIN.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -100,7 +100,7 @@ may not bring commensurate benefit to a large number of queries.
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -128,7 +128,7 @@ then the compiler may be working with obsolete histogram statistics, potentially
 | *Level*                     | Service.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -150,7 +150,7 @@ The default value is *'ON'*.
 | *Level*                     | System or Service.
 | *Conflicts/Synergies*       | Use this CQD with <<cache-histograms,CACHE_HISTOGRAMS>>. If CACHE_HISTOGRAMS is OFF, then this CQD has no effect.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -160,7 +160,7 @@ The default value is *'ON'*.
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Specifies the minimum row count for which the Trafodion Optimizer needs histograms, in order to compute better cardinality estimates.
+| *Description*               | Specifies the minimum row count for which the {project-name} Optimizer needs histograms, in order to compute better cardinality estimates.
 The Optimizer does not issue any missing statistics warnings for tables whose size is smaller than the value of this CQD.
 | *Values*                    | Integer. +
  +
@@ -173,7 +173,7 @@ However, there may be some exceptions where missing statistics on small tables c
 | *Conflicts/Synergies*       | Use this CQD with <<hist-missing-stats-warning-level,HIST_MISSING_STATS_WARNING_LEVEL>>. If the warning level CQD is 0,
 then this CQD does not have any effect. Also, for tables having fewer rows than set in this CQD, no warnings are displayed irrespective of the warning level.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -202,6 +202,6 @@ However, it can also increase the compile time.
 | *Level*                     | Any.
 | *Conflicts/Synergies*       | In order to use the feature in its default form, sample tables should exist in `public_access_schema`.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===

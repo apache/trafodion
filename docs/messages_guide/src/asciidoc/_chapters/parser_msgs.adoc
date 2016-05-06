@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[parser-and-compilation-messages]]
@@ -172,8 +172,8 @@ Character set <name> is not yet supported.
 Where <name> is the name of the character set.
 
 *Cause:* You specified character set <name> that is not supported for
-use in a Trafodion object, such as a table or module. Examples include
-creating a KANJI or KSC5601 column in a Trafodion table.
+use in a {project-name} object, such as a table or module. Examples include
+creating a KANJI or KSC5601 column in a {project-name} table.
 
 *Effect:* The operation fails.
 
@@ -249,7 +249,7 @@ Scale <value> cannot exceed precision <value>.
 ```
 
 *Cause:* You defined a scale value with greater precision than 
-Trafodion allows.
+{project-name} allows.
 
 *Effect:* The operation fails.
 
@@ -278,7 +278,7 @@ Precision of decimal, <value>, cannot exceed 18.
 An unsigned integer was expected, not <value>.
 ```
 
-*Cause:* You specified an unexpected value, <value>. Trafodion
+*Cause:* You specified an unexpected value, <value>. {project-name}
 requires an unsigned integer.
 
 *Effect:* The operation fails.
@@ -292,7 +292,7 @@ requires an unsigned integer.
 An unsigned smallint was expected, not <value>.
 ```
 
-*Cause:* You specified an unexpected value, <value>. Trafodion
+*Cause:* You specified an unexpected value, <value>. {project-name}
 requires an unsigned smallint.
 
 *Effect:* The operation fails.
@@ -307,7 +307,7 @@ requires an unsigned smallint.
 An unsigned number was expected within the parentheses, not <value>.
 ```
 
-*Cause:* You specified an unexpected value, <value>. Trafodion
+*Cause:* You specified an unexpected value, <value>. {project-name}
 requires an unsigned number.
 
 *Effect:* The operation fails.
@@ -321,7 +321,7 @@ requires an unsigned number.
 An unsigned number was expected as the first operand within parentheses, not <value>.
 ```
 
-*Cause:* You specified an unexpected value, <value>. Trafodion
+*Cause:* You specified an unexpected value, <value>. {project-name}
 requires an unsigned number.
 
 *Effect:* The operation fails.
@@ -336,7 +336,7 @@ requires an unsigned number.
 An unsigned number was expected as the second operand within parentheses, not <value>.
 ```
 
-*Cause:* You specified an unexpected value, <value>. Trafodion
+*Cause:* You specified an unexpected value, <value>. {project-name}
 requires an unsigned number.
 
 *Effect:* The operation fails.
@@ -367,7 +367,7 @@ The COLLATE clause in a sort specification is not yet supported.
 *Cause:* You attempted to perform a COLLATE clause in a sort
 specification, which is not supported.
 
-*Effect:* Trafodion ignores the COLLATE clause.
+*Effect:* {project-name} ignores the COLLATE clause.
 
 *Recovery:* Remove the COLLATE clause and resubmit.
 
@@ -425,7 +425,7 @@ must be separated by commas.
 *Cause:* You specified an invalid name <name>, which must have only one
 name part.
 
-*Effect:* Trafodion could not prepare the
+*Effect:* {project-name} could not prepare the
 statement.
 
 *Recovery:* Correct the name and resubmit.
@@ -855,7 +855,7 @@ The ALLOCATE value must be between 1 and <number>.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct size
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for correct size
 values, and resubmit.
 
 [[SQL-3058]]
@@ -883,7 +883,7 @@ The specified size value (in the MAXSIZE clause or EXTENT size clause) is not va
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct size
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for correct size
 values, and resubmit.
 
 [[SQL-3060]]
@@ -897,7 +897,7 @@ The specified percentage value in the DSLACK clause is not valid.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for correct
 percentage values, and resubmit.
 
 <<<
@@ -912,7 +912,7 @@ The format of the specified location name <name> is not valid.
 
 *Effect:* The operation fails.
 
-*Recovery:* See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_] for correct name
+*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for correct name
 format, and resubmit.
 
 [[SQL-3062]]
@@ -967,7 +967,7 @@ The primary key constraint cannot be droppable when the STORE BY PRIMARY KEY cla
 *Cause:* You defined a primary key as droppable in a table that includes
 STORE BY PRIMARY KEY in its definition, which is not supported.
 
-*Effect:* Trafodion is unable to process this
+*Effect:* {project-name} is unable to process this
 definition.
 
 *Recovery:* Change the definition of the primary key constraint so that
@@ -998,7 +998,7 @@ The ALLOCATE and DEALLOCATE clauses cannot coexist in the same ALTER INDEX state
 *Cause:* You specified an ALTER INDEX statement with both an ALLOCATE
 and a DEALLOCATE clause, which is not supported.
 
-*Effect:* Trafodion ignores the ALTER INDEX
+*Effect:* {project-name} ignores the ALTER INDEX
 statement.
 
 *Recovery:* Correct the ALTER INDEX statement to include either ALLOCATE
@@ -1309,7 +1309,7 @@ The [NO]AUDIT clause is not allowed in the CREATE INDEX statements.
 *Cause:* You specified a CREATE INDEX statement with the [NO]AUDIT
 clause, which is not supported.
 
-*Effect:* Trafodion ignores the CREATE INDEX
+*Effect:* {project-name} ignores the CREATE INDEX
 statement.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -1828,7 +1828,7 @@ option, which is not supported.
 The statement just entered is currently not supported.
 ```
 
-*Cause:* You specified a statement that is not supported by Trafodion.
+*Cause:* You specified a statement that is not supported by {project-name}.
 
 *Effect:* The operation fails.
 
@@ -2020,7 +2020,7 @@ Positioned UPDATE or DELETE is allowed only in embedded SQL.
 ```
 
 *Cause:* You attempted to perform a positioned UPDATE or DELETE, which
-is supported only in embedded Trafodion.
+is supported only in embedded {project-name}.
 
 *Effect:* The operation fails.
 
@@ -2050,7 +2050,7 @@ Environment variable <value> is being ignored because this version of the code i
 
 Where <value> is the environment variable value specified.
 
-*Cause:* Trafodion is ignoring the environment
+*Cause:* {project-name} is ignoring the environment
 variable you specified. Query results might not match expected results.
 
 *Effect:* None.
@@ -2218,7 +2218,7 @@ Procedure parameter <name> was not used.
 
 Where <name> is the name of the procedure parameter.
 
-*Cause:* Trafodion did not use procedure parameter <name>.
+*Cause:* {project-name} did not use procedure parameter <name>.
 
 *Effect:* None.
 
@@ -2394,7 +2394,7 @@ Dynamic SQL statements are not allowed in compound statements.
 ```
 
 *Cause:* You specified a compound statement that contains dynamic
-Trafodion statements.
+{project-name} statements.
 
 *Effect:* The operation fails.
 
@@ -2437,7 +2437,7 @@ in the length declaration of the data type.
 One or more of the following external (host-language) data types incorrectly appears within the SQL query or operation: <name>.
 ```
 
-*Cause:* You specified a Trafodion query or attempted
+*Cause:* You specified a {project-name} query or attempted
 to perform an operation with an incorrect data type.
 
 The operation fails.
@@ -2563,7 +2563,7 @@ not a quoted string.
 Where <string> is the dynamic parameter or host variable that was
 specified.
 
-*Cause:* Trafodion does not support the use of
+*Cause:* {project-name} does not support the use of
 dynamic parameters or host variables in DDL statements.
 The operation fails.
 
@@ -2621,7 +2621,7 @@ supported.
 Union operands <table-1> and <table-2> have different access/lock modes.
 ```
 
-*Cause:* Trafodion attempted to compile a UNION
+*Cause:* {project-name} attempted to compile a UNION
 query that has an access/lock mode that can be applied to both branches
 of the access/lock mode or only to the second branch of the UNION.
 
@@ -2770,7 +2770,7 @@ EXTERNAL NAME clause is badly formed.
 *Cause:* In the CREATE PROCEDURE statement, the EXTERNAL NAME clause you
 specified does not conform to the required syntax.
 
-*Effect:* Trafodion is unable to create the
+*Effect:* {project-name} is unable to create the
 procedure.
 
 *Recovery:* Correct the syntax and resubmit.
@@ -3004,12 +3004,12 @@ operation as a table reference.
 == SQL 3220
 
 ```
-SHOWDDL failed for object <object-name> because an SQL/MP display option was used on a Trafodion object.
+SHOWDDL failed for object <object-name> because an SQL/MP display option was used on a {project-name} object.
 ```
 
 Where <object-name> specifies the ANSI name of a table, view, or ALIAS.
 
-*Cause:* SHOWDDL was given the display option with a Trafodion 
+*Cause:* SHOWDDL was given the display option with a {project-name} 
 table given as an argument.
 
 *Effect:* SHOWDDL does not display output.
@@ -3022,7 +3022,7 @@ object.
 == SQL 3225
 
 ```
-SHOWLABEL failed for object <object-name>. The object does not exist in the given namespace <name-space>, the object is not accessible, or the object type is not supported. SHOWLABEL supports only Trafodion tables, views and indexes.
+SHOWLABEL failed for object <object-name>. The object does not exist in the given namespace <name-space>, the object is not accessible, or the object type is not supported. SHOWLABEL supports only {project-name} tables, views and indexes.
 ```
 
 Where <object-name> is the specified name of an object.
@@ -3043,11 +3043,11 @@ namespace of a valid, supported, and accessible object.
 == SQL 3226
 
 ```
-SHOWLABEL failed for physical location name <location-name>. Object does not exist or object type is not supported. SHOWLABEL supports only Trafodion tables, views, and indexes.
+SHOWLABEL failed for physical location name <location-name>. Object does not exist or object type is not supported. SHOWLABEL supports only {project-name} tables, views, and indexes.
 ```
 
 Where <location-name> specifies the physical location name of a
-Trafodion object.
+{project-name} object.
 
 *Cause:* SHOWLABEL was given an invalid physical location as an
 argument.
@@ -3061,14 +3061,14 @@ argument.
 == SQL 3228
 
 ```
-SHOWLABEL failed for physical location name <location-name>. SHOWLABEL supports only the data forks of Trafodion tables, views, and indexes.
+SHOWLABEL failed for physical location name <location-name>. SHOWLABEL supports only the data forks of {project-name} tables, views, and indexes.
 ```
 
 Where <location-name> specifies the physical location name of a
-Trafodion object.
+{project-name} object.
 
 *Cause:* SHOWLABEL supports only the physical names of data forks of 
-Trafodion objects (physical location names that end in "00"). SHOWLABEL
+{project-name} objects (physical location names that end in "00"). SHOWLABEL
 does not support resource forks.
 
 *Effect:* SHOWLABEL does not display output.
@@ -3126,7 +3126,7 @@ Hexadecimal representation of string literals associated with character set <nam
 ```
 
 *Cause:* You used a hexadecimal format to represent a character string
-that is not supported by Trafodion.
+that is not supported by {project-name}.
 
 *Effect:* The operation fails.
 
@@ -3203,7 +3203,7 @@ A DDL statement could not be translated into a statement consisting of single-by
 ```
 
 *Cause:* The DDL statement coded in unicode contains non-ISO88591
-characters. Trafodion does not support arbitrary
+characters. {project-name} does not support arbitrary
 unicode characters.
 
 *Effect:* The operation fails.

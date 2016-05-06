@@ -20,52 +20,52 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[introduction]]
 = Introduction
 
-Trafodion is a Hadoop add-on service that provides transactional SQL on top of HBase. Typically, you
-use Trafodion as the database for applications that require Online Transaction Processing (OLTP),
-Operational Data Store (ODS), and/or strong reporting capabilities. You access Trafodion using
+{project-name} is a Hadoop add-on service that provides transactional SQL on top of HBase. Typically, you
+use {project-name} as the database for applications that require Online Transaction Processing (OLTP),
+Operational Data Store (ODS), and/or strong reporting capabilities. You access {project-name} using
 standard JDBC and ODBC APIs.
 
-You may choose whether to add Trafodion to an existing Hadoop environment or to create a standalone
+You may choose whether to add {project-name} to an existing Hadoop environment or to create a standalone
 Hadoop environment specifically for Hadoop.
 
-This guide assumes that a Hadoop environment exists upon which your provisioning Trafodion. Refer to
+This guide assumes that a Hadoop environment exists upon which your provisioning {project-name}. Refer to
 <<requirements-hadoop-software,Hadoop Software>> for information about what Hadoop software is required
-Trafodion.
+{project-name}.
 
 [[introduction-security-considerations]]
 == Security Considerations
 
-The following users need be considered for Trafodion:
+The following users need be considered for {project-name}:
 
-* *Provisioning User*: A Linux-level user that performs the Trafodion provisioning tasks. This user ID
-requires `sudo` access and passwordless ssh among the nodes where Trafodion is installed. In addition,
+* *Provisioning User*: A Linux-level user that performs the {project-name} provisioning tasks. This user ID
+requires `sudo` access and passwordless ssh among the nodes where {project-name} is installed. In addition,
 this user ID requires access to Hadoop distribution, HDFS, and HBase administrative users to change
-respective environment's configuration settings per Trafodion requirements. Refer to
-<<requirements-trafodion-provisioning-user,Trafodion Provisioning User>> for more information
+respective environment's configuration settings per {project-name} requirements. Refer to
+<<requirements-trafodion-provisioning-user,{project-name} Provisioning User>> for more information
 about the requirements and usage associated with this user ID.
 
-* *Runtime User*: A Linux-level user under which the Trafodion software runs. This user ID must be registered
+* *Runtime User*: A Linux-level user under which the {project-name} software runs. This user ID must be registered
 as a user in the Hadoop Distributed File System (HDFS) to store and  access objects in HDFS, HBase, and Hive.
-In addition, this  user ID requires passwordless access among the nodes where Trafodion is installed.
-Refer to <<requirements-trafodion-runtime-user,Trafodion Runtime User>> for more information about this user ID.
+In addition, this  user ID requires passwordless access among the nodes where {project-name} is installed.
+Refer to <<requirements-trafodion-runtime-user,{project-name} Runtime User>> for more information about this user ID.
 
-* *Trafodion Database Users*: Trafodion users are managed by the Trafodion security features (grant, revoke, etc.),
+* *{project-name} Database Users*: {project-name} users are managed by the {project-name} security features (grant, revoke, etc.),
 which can be integrated with LDAP if so desired. These users are referred to as *database users* and
 do not have direct access to the operating system. Refer to 
-http://trafodion.apache.org/docs/sql_reference/index.html#register_user_statement[Register User],
-http://trafodion.apache.org/docs/sql_reference/index.html#grant_statement[Grant], and other SQL statements
-in the http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual] for
-more information about managing Trafodion Database Users.
+{docs-url}/sql_reference/index.html#register_user_statement[Register User],
+{docs-url}/sql_reference/index.html#grant_statement[Grant], and other SQL statements
+in the {docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual] for
+more information about managing {project-name} Database Users.
  +
  +
-Optionally, you can enable Trafodion Security. If you do not enable security in Trafodion, then a client interface
-to Trafodion may request a user name and password, but Trafodion ignores the user name and password entered in the
+Optionally, you can enable {project-name} Security. If you do not enable security in {project-name}, then a client interface
+to {project-name} may request a user name and password, but {project-name} ignores the user name and password entered in the
 client interface, and the session runs as the database *root* user, `DB__ROOT`, without restrictions. If you want
 to restrict users, restrict access to certain users only, or restrict access to an object or operation, then you must
 enable security, which enforces authentication and authorization. Refer to
@@ -74,71 +74,71 @@ enable security, which enforces authentication and authorization. Refer to
 [[introduction-provisioning-options]]
 == Provisioning Options
 
-Trafodion ships with a set of scripts (the Trafodion Installer) that takes care of many of the installation and upgrade
-tasks associated with the Trafodion software and its requirements. There is a separate set of scripts to remove Trafodion,
+{project-name} ships with a set of scripts (the {project-name} Installer) that takes care of many of the installation and upgrade
+tasks associated with the {project-name} software and its requirements. There is a separate set of scripts to remove {project-name},
 if needed.
 
-Currently, the Trafodion Installer is able to install Trafodion on select Cloudera and  Hortonworks Hadoop distributions only.
-The Trafodion Installer limitations are noted as they apply in the different chapters below. For example, the Trafodion Installer
-is less capable on SUSE than it is on RedHat/CentOS; you have to install the prerequisite software packages outside the Trafodion Installer.
+Currently, the {project-name} Installer is able to install {project-name} on select Cloudera and  Hortonworks Hadoop distributions only.
+The {project-name} Installer limitations are noted as they apply in the different chapters below. For example, the {project-name} Installer
+is less capable on SUSE than it is on RedHat/CentOS; you have to install the prerequisite software packages outside the {project-name} Installer.
 
-The Trafodion Installer automates many of the tasks required to install/upgrade Trafodion, spanning from downloading and
+The {project-name} Installer automates many of the tasks required to install/upgrade {project-name}, spanning from downloading and
 installing required software packages and making required changes to your Hadoop environment via creating
-the Trafodion runtime user ID to installing and starting Trafodion. It is, therefore,  highly recommend that
-you use the Trafodion Installer for initial installation and upgrades of Trafodion. These steps are referred to as
-"Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, Trafodion Installer>> provides
+the {project-name} runtime user ID to installing and starting {project-name}. It is, therefore,  highly recommend that
+you use the {project-name} Installer for initial installation and upgrades of {project-name}. These steps are referred to as
+"Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, {project-name} Installer>> provides
 usage information.
 
-If, for any reason, you choose not to use the Trafodion Installer, then separate chapters provide
-step-by-step recipes for the tasks required to install/upgrade Trafodion. These steps are referred to as
+If, for any reason, you choose not to use the {project-name} Installer, then separate chapters provide
+step-by-step recipes for the tasks required to install/upgrade {project-name}. These steps are referred to as
 *Recipe-Based Provisioning* in this guide. It is assumed that you are well-versed in Linux and Hadoop
 administrative tasks if using Recipe-Based Provisioning.
 
 [[introduction-provisioning-activities]]
 == Provisioning Activities
 
-Trafodion provisioning is divided into the following main activities:
+{project-name} provisioning is divided into the following main activities:
 
-* *<<requirements,Requirements>>*: Activities and documentation required to install the Trafodion software.
+* *<<requirements,Requirements>>*: Activities and documentation required to install the {project-name} software.
 These activities include tasks such as understanding hardware and operating system requirements,
 Hadoop requirements, what software packages that need to be downloaded, configuration settings that need to be changed,
 user IDs requirements, and so on.
 
 * *<<prepare,Prepare>>*: Activities to prepare the operating system and the Hadoop ecosystem to run
-Trafodion. These activities include tasks such as installing required software packages, configure
-the Trafodion Installation User, gather information about the Hadoop environment, modify configuration
+{project-name}. These activities include tasks such as installing required software packages, configure
+the {project-name} Installation User, gather information about the Hadoop environment, modify configuration
 for different Hadoop services, and so forth.
 
-* *<<install,Install>>*: Activities related to installing the Trafodion software. These activities
-include tasks such as unpacking the Trafodion tar files, creating the Trafodion Runtime User,
-creating Trafodion HDFS directories, installing the Trafodion software, and so forth.
+* *<<install,Install>>*: Activities related to installing the {project-name} software. These activities
+include tasks such as unpacking the {project-name} tar files, creating the {project-name} Runtime User,
+creating {project-name} HDFS directories, installing the {project-name} software, and so forth.
 
 <<<
-* *<<upgrade,Upgrade>>*: Activities related to the upgrading the Trafodion software. These activities
-include tasks such as shutting down Trafodion, installing a new version of the Trafodion software,
+* *<<upgrade,Upgrade>>*: Activities related to the upgrading the {project-name} software. These activities
+include tasks such as shutting down {project-name}, installing a new version of the {project-name} software,
 and so on. The upgrade tasks vary depending on the differences between the current and new release of
-Trafodion. For example, an upgrade may or may not include an upgrade of the Trafodion metadata.
+{project-name}. For example, an upgrade may or may not include an upgrade of the {project-name} metadata.
 
-* *<<activate,Activate>>*: Activities related to starting the Trafodion software. These actives
-include basic management tasks such as starting and checking the status of the Trafodion components,
+* *<<activate,Activate>>*: Activities related to starting the {project-name} software. These actives
+include basic management tasks such as starting and checking the status of the {project-name} components,
 performing basic smoke tests, and so forth.
 
-* *<<remove,Remove>>*: Activities related to removing Trafodion from your Hadoop cluster.
+* *<<remove,Remove>>*: Activities related to removing {project-name} from your Hadoop cluster.
 
 [[introduction-provisioning-master-node]]
 == Provisioning Master Node
 All provisioning tasks are performed from a single node in the cluster, which must be part
-of the Hadoop environment you're adding Trafodion to. This node is referred to as the
+of the Hadoop environment you're adding {project-name} to. This node is referred to as the
 "*Provisioning Master Node*" in this guide.
 
-The Trafodion Provisioning User must have access to all other nodes from the Provisioning
+The {project-name} Provisioning User must have access to all other nodes from the Provisioning
 Master Node in order to perform provisioning tasks on the cluster.
 
 [[introduction-trafodion-installer]]
-== Trafodion Installer
+== {project-name} Installer
 
-The Trafodion Installer is a set of scripts automates most of the tasks requires to install/upgrade Trafodion.
-You download the Trafodion Installer tar file from the Trafodion http://trafodion.apache.org/download.html[download] page.
+The {project-name} Installer is a set of scripts automates most of the tasks requires to install/upgrade {project-name}.
+You download the {project-name} Installer tar file from the {project-name} {download-url}[download] page.
 Next, you unpack the tar file.
 
 *Example*
@@ -157,11 +157,11 @@ $
 ```
 
 <<<
-The Trafodion Installer supports two different modes:
+The {project-name} Installer supports two different modes:
 
 1. *Guided Setup*: Prompts for information as it works through the installation/upgrade process. This mode is recommended for new users.
 2. *Automated Setup*: Required information is provided in a pre-formatted bash-script configuration file, which is provided
-via a command argument when running the Trafodion Installer thereby suppressing all prompts.
+via a command argument when running the {project-name} Installer thereby suppressing all prompts.
 +
 A template of the configuration file is available here within the installer directory: `trafodion_config_default`.
 Make a copy of the file in your directory and populate the needed information.
@@ -173,22 +173,22 @@ populate this file.
 [[introduction-trafodion-installer-usage]]
 === Usage
 
-The following shows help for the Trafodion Installer.
+The following shows help for the {project-name} Installer.
 
 ```
 ./trafodion_install --help
 
-This script will install Trafodion. It will create a configuration
+This script will install {project-name}. It will create a configuration
 file (if one has not been created), setup of the environment needed
-for Trafodion, configure HBase with Hbase-trx and co-processors needed,
-and install a specified Trafodion build.
+for {project-name}, configure HBase with Hbase-trx and co-processors needed,
+and install a specified {project-name} build.
 
 Options:
     --help             Print this message and exit
     --accept_license   If provided, the user agrees to accept all the
-                       provisions in the Trafodion license.  This allows
+                       provisions in the {project-name} license.  This allows
                        for automation by skipping the display and prompt of
-                       the Trafodion license.
+                       the {project-name} license.
     --config_file      If provided, all install prompts will be
                        taken from this file and not prompted for.
 ```
@@ -197,17 +197,17 @@ Options:
 [[introduction-trafodion-installer-install-vs-upgrade]]
 === Install vs. Upgrade
 
-The Trafodion Installer automatically detects whether you're performing an install
-or an upgrade by looking for the Trafodion Runtime User in the `/etc/passwd` file.
+The {project-name} Installer automatically detects whether you're performing an install
+or an upgrade by looking for the {project-name} Runtime User in the `/etc/passwd` file.
 
-* If the user ID doesn't exist, then the Trafodion Installer runs in install mode.
-* If the user ID exists, then the Trafodion Installer runs in upgrade mode.
+* If the user ID doesn't exist, then the {project-name} Installer runs in install mode.
+* If the user ID exists, then the {project-name} Installer runs in upgrade mode.
 
 
 [[introduction-trafodion-installer-guided-setup]]
 === Guided Setup
 
-By default, the Trafodion Installer runs in Guided Setup mode, which means
+By default, the {project-name} Installer runs in Guided Setup mode, which means
 that it prompts you for information during the install/upgrade process.
 
 Refer to the following sections for examples:
@@ -218,9 +218,9 @@ Refer to the following sections for examples:
 [[introduction-trafodion-installer-automated-setup]]
 === Automated Setup
 
-The `--config_file` option runs the Trafodion in Automated Setup mode.
+The `--config_file` option runs the {project-name} in Automated Setup mode.
 
-Before running the Trafodion Installer with this option, you do the following:
+Before running the {project-name} Installer with this option, you do the following:
 
 1. Copy the `trafodion_config_default` file.
 +
@@ -234,7 +234,7 @@ cp trafodion_config_default my_config
 <<prepare-gather-configuration-information,Gather Configuration Information>>
 section in the <<prepare,Prepare>> chapter.
 
-3. Run the Trafodion Installer in Automated Setup Mode
+3. Run the {project-name} Installer in Automated Setup Mode
 +
 *Example*
 +
@@ -242,11 +242,11 @@ section in the <<prepare,Prepare>> chapter.
 ./trafodion_installer --config_file my_config
 ```
 
-NOTE: Your Trafodion Configuration File contains the password for the Trafodion Runtime User
+NOTE: Your {project-name} Configuration File contains the password for the {project-name} Runtime User
 and for the Distribution Manager. Therefore, we recommend that you secure the file in a manner
 that matches the security policies of your organization. 
 
-==== Example: Creating a Trafodion Configuration File
+==== Example: Creating a {project-name} Configuration File
 
 Using the instructions in <<prepare-gather-configuration-information,Gather Configuration Information>>
 in the <<prepare,Prepare>> chapter, you record the following information.
@@ -256,8 +256,8 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 | ID                      | Information                                                                                | Setting                       
 | ADMIN                   | Administrator user name for Apache Ambari or Cloudera Manager.                             | admin                         
 | BACKUP_DCS_NODES        | List of nodes where to start the backup DCS Master components.                             | 
-| CLOUD_CONFIG            | Whether you're installing Trafodion on a cloud environment.                                | N 
-| CLOUD_TYPE              | What type of cloud environment you're installing Trafodion on.                             | 
+| CLOUD_CONFIG            | Whether you're installing {project-name} on a cloud environment.                                | N 
+| CLOUD_TYPE              | What type of cloud environment you're installing {project-name} on.                             | 
 | CLUSTER_NAME            | The name of the Hadoop Cluster.                                                            | Cluster 1
 | DCS_BUILD               | Tar file containing the DCS component.                                                     | 
 | DCS_PRIMARY_MASTER_NODE | The node where the primary DCS should run.                                                 | 
@@ -265,12 +265,12 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 | ENABLE_HA               | Whether to run DCS in high-availability (HA) mode.                                         | N
 | EPEL_RPM                | Location of EPEL RPM. Specify if you don't have access to the Internet.                    | 
 | FLOATING_IP             | IP address if running DCS in HA mode.                                                      | 
-| HADOOP_TYPE             | The type of Hadoop distribution you're installing Trafodion on.                            | cloudera
+| HADOOP_TYPE             | The type of Hadoop distribution you're installing {project-name} on.                            | cloudera
 | HBASE_GROUP             | Linux group name for the HBASE administrative user.                                         | hbase
 | HBASE_USER              | Linux user name for the HBASE administrative user.                                          | hbase
 | HDFS_USER               | Linux user name for the HDFS administrative user.                                           | hdfs 
 | HOME_DIR                | Root directory under which the `trafodion` home directory should be created.               | /home 
-| INIT_TRAFODION          | Whether to automatically initialize the Trafodion database.                                | Y
+| INIT_TRAFODION          | Whether to automatically initialize the {project-name} database.                                | Y
 | INTERFACE               | Interface type used for $FLOATING_IP.                                                      | 
 | JAVA_HOME               | Location of Java 1.7.0_65 or higher (JDK).                                                 | /usr/java/jdk1.7.0_67-cloudera
 | LDAP_CERT               | Full path to TLS certificate.                                                              | 
@@ -281,17 +281,17 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 | LDAP_PORT               | Port used to communicate with LDAP Identity Store.                                         | 
 | LDAP_SECURITY           | Whether to enable simple LDAP authentication.                                            | N   
 | LDAP_USER               | LDAP Search user name.                                                                     | 
-| LOCAL_WORKDIR           | The directory where the Trafodion Installer is located.                                    | /home/centos/trafodion-installer/installer
+| LOCAL_WORKDIR           | The directory where the {project-name} Installer is located.                                    | /home/centos/trafodion-installer/installer
 | MANAGEMENT_ENABLED      | Whether your installation uses separate management nodes.                                  | N
 | MANAGEMENT_NODES        | The FQDN names of management nodes, if any.                                                | 
-| NODE_LIST               | The FQDN names of the nodes where Trafodion will be installed.                             | trafodion-1 trafodion-2
+| NODE_LIST               | The FQDN names of the nodes where {project-name} will be installed.                             | trafodion-1 trafodion-2
 | PASSWORD                | Administrator password for Apache Ambari or Cloudera Manager.                              | admin
 | REST_BUILD              | Tar file containing the REST component.                                                    | 
-| SQ_ROOT                 | Target directory for the Trafodion software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
-| START                   | Whether to start Trafodion after install/upgrade.                                          | Y
-| SUSE_LINUX              | Whether your installing Trafodion on SUSE Linux.                                           | false
-| TRAF_PACKAGE            | The location of the Trafodion installation package tar file or core installation tar file. | /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
-| TRAF_USER               | The Trafodion runtime user ID. Must be `trafodion` in this release.                         | trafodion
+| SQ_ROOT                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
+| START                   | Whether to start {project-name} after install/upgrade.                                          | Y
+| SUSE_LINUX              | Whether your installing {project-name} on SUSE Linux.                                           | false
+| TRAF_PACKAGE            | The location of the {project-name} installation package tar file or core installation tar file. | /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
+| TRAF_USER               | The {project-name} runtime user ID. Must be `trafodion` in this release.                         | trafodion
 | TRAF_USER_PASSWORD      | The password used for the `trafodion:trafodion` user ID.                                   | traf123
 | URL                     | FQDN and port for the Distribution Manager's REST API.                                     | trafodion-1.apache.org:7180
 |===
@@ -322,13 +322,13 @@ Next, you edit `my_config` to contain the following:
 # @@@ END COPYRIGHT @@@
 
 #====================================================
-# Trafodion Configuration File
+# {project-name} Configuration File
 # This file contains default values for the installer.
 
 # Users can also edit this file and provide values for all parameters
 # and then specify this file on the run line of trafodion_install.
 # Example:
-# ./trafodion_install --config_file <Trafodion-config-file>
+# ./trafodion_install --config_file <{project-name}-config-file>
 # WARNING: This mode is for advanced users!
 #
 #=====================================================
@@ -340,7 +340,7 @@ Next, you edit `my_config` to contain the following:
 
 export SUSE_LINUX="false"
 
-# The working directory where Trafodion installer untars files, etc.
+# The working directory where {project-name} installer untars files, etc.
 # do not change this unless you really know what you are doing
 export TRAF_WORKDIR="/usr/lib/trafodion"
 
@@ -353,10 +353,10 @@ export DCS_SERVERS_PARM="8"
 # "true" if this is an upgrade
 export UPGRADE_TRAF="false"
 
-# Trafodion userid, This is the userid the Trafodion instance will run under
+# {project-name} userid, This is the userid the {project-name} instance will run under
 export TRAF_USER="trafodion"
 
-# Trafodion userid's password
+# {project-name} userid's password
 export TRAF_USER_PASSWORD="traf123"
 
 # a blank separated list of nodes in your cluster
@@ -384,7 +384,7 @@ export JAVA_HOME="/usr/java/jdk1.7.0_67-cloudera"
 # will be installed from the internet
 export EPEL_RPM=""
 
-# full path of the Trafodion package tar file
+# full path of the {project-name} package tar file
 export TRAF_PACKAGE="/home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz"
 
 # if TRAF_PACKAGE wasn't specified then these two values must be specified
@@ -397,7 +397,7 @@ export REST_BUILD=""
 # Either "cloudera" or "hortonworks" (all lowercase)
 export HADOOP_TYPE="cloudera"
 
-# The URL for Cloudera/Hortonworks REST API (i.e. node1.hp.com:8080)
+# The URL for Cloudera/Hortonworks REST API (i.e. node1.host.com:8080)
 export URL="trafodion-1.apache.org:7180"
 
 # Cloudera/Hortonworks UI admin's userid and password
@@ -417,7 +417,7 @@ export HBASE_GROUP="hbase"
 # The hadoop HBase service name
 export HBASE="hbase"
 
-# full path of where to install Trafodion to
+# full path of where to install {project-name} to
 # Example is used below. If $HOME_DIR or $TRAF_USER have been changed
 # then this will need to be changed.
 # On an upgrade, it is recommend to choose a different directory.
@@ -426,7 +426,7 @@ export HBASE="hbase"
 # By doing this the previous version will remain and allow for an easier rollback.
 export SQ_ROOT="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
 
-# Start Trafodion after install completes
+# Start {project-name} after install completes
 export START="Y"
 
 # initialize trafodion after starting
@@ -445,7 +445,7 @@ export LDAP_SECURITY="N"
 export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
 ```
 
-Once completed, run the Trafodion Installer with the `--config_file` option.
+Once completed, run the {project-name} Installer with the `--config_file` option.
 
 Refer to the following sections for examples:
 
@@ -453,9 +453,9 @@ Refer to the following sections for examples:
 * <<upgrade-automated-upgrade, Automated Upgrade>>
 
 [[introduction-trafodion-provisioning-directories]]
-== Trafodion Provisioning Directories
+== {project-name} Provisioning Directories
 
-Trafodion stores its provisioning information in the following directories on each node in the cluster:
+{project-name} stores its provisioning information in the following directories on each node in the cluster:
 
 * `/etc/trafodion`: Configurtion information.
 * `/usr/lib/trafodion`: Copies of the installer files.

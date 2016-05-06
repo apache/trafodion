@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[table_definition]]
@@ -33,20 +33,20 @@ This section describes CQDs that are used for table definition
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Allow Trafodion tables to be created with NULLABLE columns in the PRIMARY or STORE BY key.
+| *Description*               | Allow {project-name} tables to be created with NULLABLE columns in the PRIMARY or STORE BY key.
 | *Values*                    | *'ON'* or *'OFF'* +
  +
 The default value is *'OFF'*.
-| *Usage*                     | Allows NULLABLE columns to be included in the PRIMARY or STORE BY key for Trafodion tables. 
+| *Usage*                     | Allows NULLABLE columns to be included in the PRIMARY or STORE BY key for {project-name} tables. 
 This CQD must be set prior to creating the table. It is not necessary to specify this CQD during DML operations on the table. +
  +
 When performing UPDATE STATISTICS with SAMPLE option on such tables, this CQD must be set so that an appropriate sample table can be created.
-| *Production Usage*          | Please consult with the Trafodion community.
+| *Production Usage*          | Please contact {project-support}.
 | *Impact*                    | Two bytes are added to the key for each nullable column.
 | *Level*                     | Session.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -56,11 +56,11 @@ When performing UPDATE STATISTICS with SAMPLE option on such tables, this CQD mu
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Allow Trafodion tables to be created with specified HBase block size.
+| *Description*               | Allow {project-name} tables to be created with specified HBase block size.
 | *Values*                    | Positive integer. +
  +
 The default value is *'65536'*.
-| *Usage*                     | The value of this attribute is passed on to HBase when a Trafodion table is created in HBase. 
+| *Usage*                     | The value of this attribute is passed on to HBase when a {project-name} table is created in HBase. 
 See the https://hbase.apache.org/book.html[Apache HBase(TM) Reference Guide] for usage information .
 | *Production Usage*          | Yes.
 | *Impact*                    | The impact depends on the type of table access. Choose a block size that is appropriate 
@@ -68,7 +68,7 @@ for how the table is primarily accessed.
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -89,7 +89,7 @@ Default: *'UTF8'*
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -99,8 +99,8 @@ Default: *'UTF8'*
 
 [cols="25%h,75%"]
 |===
-| *Description*               | For certain character sets that are not supported in Trafodion, you can specify the character set here
-causing Trafodion to automatically convert the data to the character set specified in the HIVE_DEFAULT_CHARSET CQD. +
+| *Description*               | For certain character sets that are not supported in {project-name}, you can specify the character set here
+causing {project-name} to automatically convert the data to the character set specified in the HIVE_DEFAULT_CHARSET CQD. +
  +
 This feature is currently supported only for *'GBK'*, and only if HIVE_DEFAULT_CHARSET is set to *'UTF8'*.
 | *Values*                    | 
@@ -113,7 +113,7 @@ Default: empty
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Only applicable if HIVE_DEFAULT_CHARSET is set to *'UTF8'*.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 
@@ -123,7 +123,7 @@ Default: empty
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Hive columns of type STRING have a maximum length in Trafodion, which you can specify with this CQD. +
+| *Description*               | Hive columns of type STRING have a maximum length in {project-name}, which you can specify with this CQD. +
  +
 *NOTE* For UTF-8 data, this length is specified in bytes, not UTF-8 characters.
 | *Values*                    | 
@@ -136,7 +136,7 @@ Default: 32000.
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
-| *Introduced In Release*     | Trafodion 1.3.0.
+| *Introduced In Release*     | {project-name} 1.3.0.
 | *Deprecated In Release*     | Not applicable.
 |===
 

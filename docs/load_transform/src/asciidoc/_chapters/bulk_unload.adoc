@@ -20,22 +20,22 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[bulk-unload]]
 = Bulk Unload
 
-The http://trafodion.apache.org/docs/sql_reference/index.html#unload_statement[UNLOAD] statement is a
-Trafodion extension that exports data from Trafodion tables into an HDFS location that you specify. 
-Refer to the http://trafodion.apache.org/docs/sql_reference/index.html#unload_statement[Trafodion SQL Reference Manual]
+The {docs-url}/sql_reference/index.html#unload_statement[UNLOAD] statement is a
+{project-name} extension that exports data from {project-name} tables into an HDFS location that you specify. 
+Refer to the {docs-url}/sql_reference/index.html#unload_statement[{project-name} SQL Reference Manual]
 for complete documentation.
 
 The extracted data can be either compressed or uncompressed based on what you choose. 
 UNLOAD performs multiple steps based on the options you give; for example:
 
 * If using snapshot scan:
-** Get list of Trafodion tables from the query plan.
+** Get list of {project-name} tables from the query plan.
 ** Create/verify snapshots.
 
 * Purge target location, if specified
@@ -50,7 +50,7 @@ UNLOAD performs multiple steps based on the options you give; for example:
 *Example*
 
 This example shows how the UNLOAD statement extracts data from a
-Trafodion table, `TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS`, into an HDFS
+{project-name} table, `TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS`, into an HDFS
 folder, `/bulkload/customer_demographics`:
 
 ```

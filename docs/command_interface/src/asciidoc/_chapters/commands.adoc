@@ -32,9 +32,9 @@ TrafCI supports these commands in the command-line interface or in script files 
 | /                    | Runs the previously executed SQL statement.                                                                 | <<cmd_slash, / Command>>
 | ALIAS                | Maps a string to any interface or SQL command.                                                              | <<cmd_alias, ALIAS Command>>
 | CLEAR                | Clears the command console so that only the prompt appears at the top of the screen.                        | <<cmd_clear, CLEAR Command>>
-| CONNECT              | Creates a new connection to the Trafodion database from a current or existing TrafCI session.               | <<cmd_connect, CONNECT Command>>
+| CONNECT              | Creates a new connection to the {project-name} database from a current or existing TrafCI session.               | <<cmd_connect, CONNECT Command>>
 | DELAY                | Allows the TrafCI session to be in sleep mode for the specified interval.                                   | <<cmd_delay, DELAY Command>>
-| DISCONNECT           | Terminates the connection to the Trafodion database.                                                        | <<cmd_disconnect, DISCONNECT Command>>
+| DISCONNECT           | Terminates the connection to the {project-name} database.                                                        | <<cmd_disconnect, DISCONNECT Command>>
 | ENV                  | Displays attributes of the current TrafCI session.                                                          | <<cmd_env, ENV Command>>
 | EXIT                 | Disconnects from and exits the command-line interface.                                                      | <<cmd_exit, EXIT Command>>
 | FC                   | Edits and re-executes a previous command. This command is restricted to the command-line
@@ -50,7 +50,7 @@ interface and is disallowed in script files.                                    
 | OBEY                 | Runs the SQL statements and interface commands contained in a specified script file.                        | <<cmd_obey, OBEY Command>>
 | PRUN                 | Runs script files in parallel.                                                                              | <<cmd_prun, PRUN Command>>
 | QUIT                 | Disconnects from and exits TrafCI.                                                                          | <<cmd_quit, QUIT Command>>
-| RECONNECT            | Creates a new connection to the Trafodion database using the login credentials of the last
+| RECONNECT            | Creates a new connection to the {project-name} database using the login credentials of the last
 successful connection.                                                                                                               | <<cmd_reconnect, RECONNECT Command>>
 | REPEAT               | Re-executes a command.                                                                                       | <<cmd_repeat, REPEAT Command>>
 | RESET LASTERROR      | Resets the last error code to `0`.                                                                          | <<cmd_reset_lasterror, RESET LASTERROR Command>>
@@ -347,7 +347,7 @@ specifies the host name or IP address of the database platform to which you want
 
 === Examples
 
-* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
+* This command creates a new connection to the {project-name} database from the current or existing TrafCI session:
 +
 ```
 SQL> CONNECT
@@ -355,10 +355,10 @@ SQL> CONNECT
 User Name: user1
 Password:
 
-Connected to Trafodion
+Connected to {project-name}
 ```
 
-* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
+* This command creates a new connection to the {project-name} database from the current or existing TrafCI session:
 +
 ```
 SQL> CONNECT user1/password
@@ -366,7 +366,7 @@ SQL> CONNECT user1/password
 Connected to Trafodion
 ```
 
-* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
+* This command creates a new connection to the {project-name} database from the current or existing TrafCI session:
 +
 ``` 
 SQL> CONNECT user1/password@host0101
@@ -374,7 +374,7 @@ SQL> CONNECT user1/password@host0101
 Connected to Trafodion
 ```
 
-* This command creates a new connection to the Trafodion database from the current or existing TrafCI session:
+* This command creates a new connection to the {project-name} database from the current or existing TrafCI session:
 +
 ```
 SQL> CONNECT user2
@@ -446,7 +446,7 @@ is the same as the condition parameter defined for the <<cmd_if_then, IF&8230;TH
 === Considerations
 
 * You must enter the command on one line. The command does not require an SQL terminator.
-* After you disconnect from the Trafodion database, you can still run these interface commands:
+* After you disconnect from the {project-name} database, you can still run these interface commands:
 +
 [cols="15%,20%,28%,32%"]
 |===
@@ -464,7 +464,7 @@ is the same as the condition parameter defined for the <<cmd_if_then, IF&8230;TH
 <<<
 === Examples
 
-This command terminates the connection to the Trafodion database. You can connect to the Trafodion database by using the `CONNECT`
+This command terminates the connection to the {project-name} database. You can connect to the {project-name} database by using the `CONNECT`
 and `RECONNECT` commands:
 
 ```
@@ -1156,7 +1156,7 @@ SQL> LABEL MyNewLabel
 * This command creates a label using a quoted string:
 +
 ```
-SQL> LABEL "Trafodion Label"
+SQL> LABEL "{project-name} Label"
 ```
 
 <<<
@@ -1826,7 +1826,7 @@ SQL> QUIT IF errorcode=4082
 [[cmd_reconnect]]
 == RECONNECT Command
 
-The `RECONNECT` command creates a new connection to the Trafodion database using the login credentials of the last successful connection.
+The `RECONNECT` command creates a new connection to the {project-name} database using the login credentials of the last successful connection.
 
 === Syntax
 
@@ -1843,7 +1843,7 @@ If TrafCI was invoked with the `-noconnect` launch parameter, TrafCI prompts you
 
 === Examples
 
-* This command creates a new connection to the Trafodion database using the login credentials of the last successful connection:
+* This command creates a new connection to the {project-name} database using the login credentials of the last successful connection:
 +
 ```
 SQL> RECONNECT
@@ -2645,7 +2645,7 @@ The parameter name and value are associated with one of these parameter types:
 
 A prepared statement is one that you SQL compile by using the PREPARE statement.
 For more information about PREPARE, see the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+{docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_].
 
 After running `SET PARAM` commands in the session:
 
@@ -2655,7 +2655,7 @@ After running `SET PARAM` commands in the session:
 that contains literal values and/or a list of the named parameters set by `SET PARAM`.
 
 The `EXECUTE` statement substitutes parameter values for the parameters in the prepared statement. For more information about `EXECUTE`, see the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+{docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_].
 
 <<<
 === Syntax
@@ -3046,7 +3046,7 @@ SQL>
 ```
 
 For more information on the STATISTICS command, see the 
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[_Trafodion SQL Reference Manual_].
+{docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_].
 
 <<<
 [[cmd_set_time]]
@@ -4264,8 +4264,8 @@ For more information, see <<interactive_log_output, Log Output>>.
 [[cmd_version]]
 == VERSION Command
 
-The `VERSION` command displays the build versions of the Trafodion database, Trafodion Connectivity Service, 
-Trafodion JDBC Type 4 Driver, and TrafCI.
+The `VERSION` command displays the build versions of the {project-name} database, {project-name} Connectivity Service, 
+{project-name} JDBC Type 4 Driver, and TrafCI.
 
 === Syntax
 
@@ -4279,7 +4279,7 @@ You must enter the command on one line. The command does not require an SQL term
 
 === Example
 
-* This command shows versions of the Trafodion database, Trafodion Connectivity Service, Trafodion JDBC Type 4 Driver, and TrafCI:
+* This command shows versions of the {project-name} database, {project-name} Connectivity Service, {project-name} JDBC Type 4 Driver, and TrafCI:
 +
 ```
 SQL> VERSION
@@ -4294,7 +4294,7 @@ SQL>
 
 <<<
 * If TrafCI is started with the -noconnect parameter, the `VERSION` command displays only TrafCI and the 
-Trafodion JDBC Type 4 Driver versions.
+{project-name} JDBC Type 4 Driver versions.
 +
 ```
 C:\Program Files (x86)\Apache Software Foundation\Trafodion Command Interface\bin> TRAFCI -noconnect 

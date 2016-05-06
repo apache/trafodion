@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[udr-server-and-language-manager-messages]]
@@ -35,11 +35,11 @@ MXUDR: Unable to allocate memory for object <object-name>.
 
 Where <object-name> is the name of the object.
 
-*Cause:* The Trafodion UDR server was not able to obtain enough memory to allocate the named object.
+*Cause:* The {project-name} UDR server was not able to obtain enough memory to allocate the named object.
 
-*Effect:* The request message is rejected, and the Trafodion statement fails.
+*Effect:* The request message is rejected, and the {project-name} statement fails.
 
-*Recovery:* Stop and start the client process to restart a new Trafodion UDR server, 
+*Recovery:* Stop and start the client process to restart a new {project-name} UDR server, 
 and retry the stored procedure call.
 
 [[SQL-11201]]
@@ -57,10 +57,10 @@ method was not found.
 
 *Effect:* The operation fails.
 
-*Recovery:* Check the installation of the Trafodion platform for Java
-product and the Trafodion language manager. Verify the
+*Recovery:* Check the installation of the {project-name} platform for Java
+product and the {project-name} language manager. Verify the
 existence of the specified class. Stop and restart the session, and
-retry the Trafodion statement.
+retry the {project-name} statement.
 
 <<<
 [[SQL-11202]]
@@ -74,8 +74,8 @@ Language Manager initialization failed. Details: Unable to initialize the Java v
 
 *Effect:* The operation fails.
 
-*Recovery:* Check the installation of the Trafodion platform for Java
-product. Stop and restart the session, and retry the Trafodion statement.
+*Recovery:* Check the installation of the {project-name} platform for Java
+product. Stop and restart the session, and retry the {project-name} statement.
 
 [[SQL-11221]]
 == SQL 11221
@@ -85,11 +85,11 @@ Language Manager is out of memory <string>.
 ```
 
 *Cause:* The language manager could not acquire enough memory to
-complete its work on the Trafodion statement.
+complete its work on the {project-name} statement.
 
 *Effect:* The operation fails.
 
-*Recovery:* Stop and restart the session and retry the Trafodion
+*Recovery:* Stop and restart the session and retry the {project-name}
 statement.
 
 <<<
@@ -100,13 +100,13 @@ statement.
 The operation failed because the Java Virtual Machine ran out of memory.
 ```
 
-*Cause:* The Java Virtual Machine, hosted by a Trafodion UDR
+*Cause:* The Java Virtual Machine, hosted by a {project-name} UDR
 server, did not have enough memory to execute a Java method. This error
 condition will be accompanied by another condition that shows when the
 Java Virtual Machine encountered the error.
 
 *Effect:* The operation fails.
 
-*Recovery:* Stop and restart the session and retry the Trafodion statement.
+*Recovery:* Stop and restart the session and retry the {project-name} statement.
 
 
