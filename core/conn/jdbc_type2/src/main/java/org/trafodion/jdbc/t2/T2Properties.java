@@ -1,3 +1,4 @@
+/*******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -18,6 +19,7 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
+ *******************************************************************************/
 
 package org.trafodion.jdbc.t2;
 
@@ -52,6 +54,7 @@ public class T2Properties {
     private String blobTableName_;
     private int transactionMode_;
     private String iso88591EncodingOverride_;
+	private String replacementString_;
     private String stmtatomicity_;
     private int stmtatomicityval_;
     private String Spjrs_;
@@ -64,6 +67,8 @@ public class T2Properties {
     String url_;
     private String enableLog_;
     private String idMapFile;
+	private boolean keepRawFetchBuffer_ = false;
+	private int roundMode_;
     
     //Publishing
     private int statisticsIntervalTime_;
@@ -357,6 +362,34 @@ public class T2Properties {
             this.transactionMode_ = SQLMXConnection.TXN_MODE_MIXED;
         }
     }
+
+	public void setReplacementString(String str) {
+		if (str == null) {
+			replacementString_ = "?";
+		} else {
+			replacementString_ = str;
+		}
+	}
+
+	public String getReplacementString() {
+		return replacementString_;
+	}
+
+	public void setKeepRawFetchBuffer(String keep) {
+		if (keep == null) {
+			keepRawFetchBuffer_ = false;
+		} else {
+			keepRawFetchBuffer_ = (keep.equalsIgnoreCase("true"));
+		}
+	}
+
+	public void setKeepRawFetchBuffer(boolean keep) {
+		keepRawFetchBuffer_ = keep;
+	}
+
+	public boolean getKeepRawFetchBuffer() {
+		return keepRawFetchBuffer_;
+	}
 
     /**
      * @return the iso88591EncodingOverride_
@@ -1018,6 +1051,7 @@ public class T2Properties {
         setStmtatomicity(getProperty("stmtatomicity"));
 //		setStmtatomicityval(getProperty(""));
         setTransactionMode(getProperty("transactionMode"));
+		setReplacementString(getProperty("replacementString"));
         setIso88591EncodingOverride(getProperty("ISO88591"));
         setContBatchOnError(getProperty("contBatchOnError"));
 
@@ -1033,6 +1067,7 @@ public class T2Properties {
         setEnableMFC(getProperty("enableMFC"));
         setCompiledModuleLocation(getProperty("compiledModuleLocation"));
 
+		setRoundingMode(getProperty("roundingMode"));
 
 //		setContBatchOnErrorval(getProperty(""));
 
@@ -1080,11 +1115,13 @@ public class T2Properties {
         if (getContBatchOnError() != null)
             props.setProperty("contBatchOnError", contBatchOnError_);
 
+		props.setProperty("replacementString", String.valueOf(replacementString_));
         props.setProperty("maxIdleTime", String.valueOf(maxIdleTime_));
         props.setProperty("maxPoolSize", String.valueOf(maxPoolSize_));
         props.setProperty("maxStatements", String.valueOf(maxStatements_));
         props.setProperty("minPoolSize", String.valueOf(minPoolSize_));
         props.setProperty("initialPoolSize", String.valueOf(initialPoolSize_));
+		props.setProperty("roundingMode", String.valueOf(roundMode_));
 
         if (getBlobTableName() != null)
             props.setProperty("blobTableName", blobTableName_);
@@ -1276,6 +1313,12 @@ public class T2Properties {
         propertyInfo[i].description = "If statistics sql plan is enabled. Default is 'true'";
         propertyInfo[i++].choices = null;
 
+		String roundingMode[] = { "ROUND_CEILING", "ROUND_DOWN", "ROUND_UP", "ROUND_FLOOR", "ROUND_HALF_UP",
+				"ROUND_UNNECESSARY", "ROUND_HALF_EVEN", "ROUND_HALF_DOWN", "ROUND_DOWN" };
+		propertyInfo[i] = new java.sql.DriverPropertyInfo("roundingMode", getProperty("roundingMode"));
+		propertyInfo[i].description = "Data rounding mode";
+		propertyInfo[i++].choices = roundingMode;
+		
         for (i = 0; i < propertyInfo.length; i++) {
             propertyInfo[i].required = false;
         }
@@ -1326,6 +1369,7 @@ public class T2Properties {
 
         ref.add(new StringRefAddr("enableLog",enableLog_));
         ref.add(new StringRefAddr("idMapFile",getIdMapFile()));
+		ref.add(new StringRefAddr("roundingMode", Integer.toString(getRoundingMode())));
 
         return ref;
     }
@@ -1333,4 +1377,76 @@ public class T2Properties {
     T2Properties getT2Properties(){
         return this;
     }
+
+	/**
+	 * Returns the rounding mode set for the driver as an Integer value with one
+	 * of the following values. static int ROUND_CEILING Rounding mode to round
+	 * towards positive infinity. static int ROUND_DOWN Rounding mode to round
+	 * towards zero. static int ROUND_FLOOR Rounding mode to round towards
+	 * negative infinity. static int ROUND_HALF_DOWN Rounding mode to round
+	 * towards "nearest neighbor" unless both neighbors are equidistant, in
+	 * which case round down. static int ROUND_HALF_EVEN Rounding mode to round
+	 * towards the "nearest neighbor" unless both neighbors are equidistant, in
+	 * which case, round towards the even neighbor. static int ROUND_HALF_UP
+	 * Rounding mode to round towards "nearest neighbor" unless both neighbors
+	 * are equidistant, in which case round up. static int ROUND_UNNECESSARY
+	 * Rounding mode to assert that the requested operation has an exact result,
+	 * hence no rounding is necessary. static int ROUND_UP Rounding mode to
+	 * round away from zero.
+	 */
+	int getRoundingMode() {
+		return roundMode_;
+	}
+
+	/**
+	 * This method sets the round mode behaviour for the driver.
+	 * 
+	 * @param roundMode
+	 *            Integer value with one of the following values: static int
+	 *            ROUND_CEILING Rounding mode to round towards positive
+	 *            infinity. static int ROUND_DOWN Rounding mode to round towards
+	 *            zero. static int ROUND_FLOOR Rounding mode to round towards
+	 *            negative infinity. static int ROUND_HALF_DOWN Rounding mode to
+	 *            round towards "nearest neighbor" unless both neighbors are
+	 *            equidistant, in which case round down. static int
+	 *            ROUND_HALF_EVEN Rounding mode to round towards the "nearest
+	 *            neighbor" unless both neighbors are equidistant, in which
+	 *            case, round towards the even neighbor. static int
+	 *            ROUND_HALF_UP Rounding mode to round towards "nearest
+	 *            neighbor" unless both neighbors are equidistant, in which case
+	 *            round up. static int ROUND_UNNECESSARY Rounding mode to assert
+	 *            that the requested operation has an exact result, hence no
+	 *            rounding is necessary. static int ROUND_UP Rounding mode to
+	 *            round away from zero. The default behaviour is to do
+	 *            ROUND_HALF_EVEN.
+	 */
+	void setRoundingMode(String roundMode) {
+		roundMode_ = Utility.getRoundingMode(roundMode);
+	}
+
+	/**
+	 * This method sets the round mode behaviour for the driver.
+	 * 
+	 * @param roundMode
+	 *            Integer value with one of the following values: static int
+	 *            ROUND_CEILING Rounding mode to round towards positive
+	 *            infinity. static int ROUND_DOWN Rounding mode to round towards
+	 *            zero. static int ROUND_FLOOR Rounding mode to round towards
+	 *            negative infinity. static int ROUND_HALF_DOWN Rounding mode to
+	 *            round towards "nearest neighbor" unless both neighbors are
+	 *            equidistant, in which case round down. static int
+	 *            ROUND_HALF_EVEN Rounding mode to round towards the "nearest
+	 *            neighbor" unless both neighbors are equidistant, in which
+	 *            case, round towards the even neighbor. static int
+	 *            ROUND_HALF_UP Rounding mode to round towards "nearest
+	 *            neighbor" unless both neighbors are equidistant, in which case
+	 *            round up. static int ROUND_UNNECESSARY Rounding mode to assert
+	 *            that the requested operation has an exact result, hence no
+	 *            rounding is necessary. static int ROUND_UP Rounding mode to
+	 *            round away from zero. The default behaviour is to do
+	 *            ROUND_HALF_EVEN.
+	 */
+	void setRoundingMode(int roundMode) {
+		roundMode_ = Utility.getRoundingMode(roundMode);
+	}
 }

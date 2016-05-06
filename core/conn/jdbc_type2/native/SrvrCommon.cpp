@@ -609,6 +609,53 @@ void removeSrvrStmt(long dialogueId, long stmtId)
     pConnect->removeSrvrStmt((SRVR_STMT_HDL *)stmtId);
     FUNCTION_RETURN_VOID((NULL));
 }
+
+/*
+void removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
+{
+    FUNCTION_ENTRY("removeSrvrStmt",("pSrvrStmt=0x%08x",
+        dialogueId,
+        stmtId));
+
+	SRVR_STMT_HDL_LIST *pSrvrStmtList;
+	SRVR_STMT_HDL *lpSrvrStmt;
+	char tmpString[128];
+
+	if (pSrvrSession->pSrvrStmtListHead != NULL)
+	{
+		for (pSrvrStmtList = pSrvrSession->pSrvrStmtListHead ; pSrvrStmtList != NULL ;)
+		{
+			lpSrvrStmt = pSrvrStmtList->pSrvrStmt;
+			if (lpSrvrStmt == pSrvrStmt)
+			{
+				if (pSrvrStmtList->pre != NULL)
+					pSrvrStmtList->pre->next = pSrvrStmtList->next;
+				else // Head
+					pSrvrSession->pSrvrStmtListHead = pSrvrStmtList->next;
+
+				if (pSrvrStmtList->next != NULL)
+					pSrvrStmtList->next->pre = pSrvrStmtList->pre;
+				// If the statement being deleted is current statement, reset the current statement
+				if (pSrvrSession->pCurrentSrvrStmt == lpSrvrStmt)
+					pSrvrSession->pCurrentSrvrStmt = NULL;
+				delete lpSrvrStmt;
+				// Fix for bug 1410928. Set the global pQueryStmt to NULL so that the statistics timer thread is aware that the
+				// statement no longer exists.
+				pQueryStmt = NULL;
+				if( trace_memory ) LogDelete("delete lpSrvrStmt;",(void**)&lpSrvrStmt,lpSrvrStmt);
+				delete pSrvrStmtList;
+				if( trace_memory ) LogDelete("delete pSrvrStmtList;",(void**)&pSrvrStmtList,pSrvrStmtList);
+				pSrvrSession->count--;
+                FUNCTION_RETURN_VOID((NULL));
+			}
+			pSrvrStmtList = pSrvrStmtList->next;
+		}
+	}
+
+    FUNCTION_RETURN_VOID((NULL));
+}
+*/
+
 // Assuming outName is of sufficient size for efficiency
 void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, char *outName)
 {

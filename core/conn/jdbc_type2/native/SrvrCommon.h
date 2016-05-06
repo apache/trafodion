@@ -112,6 +112,8 @@ extern SRVR_STMT_HDL *getSrvrStmt(long dialogueId,
 extern SRVR_STMT_HDL *getInternalSrvrStmt(long dialogueId, const char* stmtLabel, long* retcode = NULL);
 
 extern void removeSrvrStmt(long dialogueId, long stmtId);
+//extern void removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt);
+
 extern SRVR_STMT_HDL *createSrvrStmt(long dialogueId,
                                      const char *stmtLabel,
                                      long *sqlcode = NULL,
