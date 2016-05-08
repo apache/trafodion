@@ -165,8 +165,8 @@ static int do_link(SB_Phandle_Type *pp_phandle,
                 }
             }
         } else {
-            if (gv_verbose)
-                printf("cli: BMSG_LINK_ ret=%d\n", lv_ferr);
+           if (gv_verbose)
+               printf("cli: BMSG_LINK_ ret=%d\n", lv_ferr);
         }
     } while (lv_relink);
     if (gv_verbose)
@@ -223,6 +223,38 @@ static int do_cli_id(SB_Phandle_Type *pp_phandle, int pv_timeout, long *pp_id) {
             printf("cli: id-reply, rep-tag=0x%lx, rep-len=%d, id=0x%lx\n",
                    lv_rep.iv_rep_tag, lv_rep.iv_rep_len, lv_rep.u.iv_id.iv_id);
         *pp_id = lv_rep.u.iv_id.iv_id;
+    }
+    return lv_ferr;
+}
+
+//
+// id_to_string operation
+//
+static int do_cli_id_to_string(SB_Phandle_Type *pp_phandle, int pv_timeout, unsigned long pv_id, char* pp_id_string) {
+    int     lv_ferr;
+    GID_Rep lv_rep;
+    GID_Req lv_req;
+
+    if (gv_verbose)
+        printf("cli: do_cli_id_to_string begin for id=0x%lx\n", pv_id);
+
+    init_req(&lv_req, GID_REQ_ID_TO_STRING, sizeof(lv_req.u.iv_id_to_string));
+    init_rep(&lv_rep);
+    lv_req.u.iv_id_to_string.iv_req_id_to_string = pv_id;
+    lv_ferr = do_link(pp_phandle,
+                      &lv_req,
+                      &lv_rep,
+                      pv_timeout,
+                      "id_to_string",
+                      GID_REP_ID_TO_STRING,
+                      lv_req.iv_req_tag,
+                      sizeof(lv_rep.u.iv_id_to_string));
+
+    if (lv_ferr == XZFIL_ERR_OK) {
+        if (gv_verbose)
+            printf("cli: id-to-string-reply, rep-tag=0x%lx, rep-len=%d, id-string=%s\n",
+                   lv_rep.iv_rep_tag, lv_rep.iv_rep_len, lv_rep.u.iv_id_to_string.iv_id_to_string);
+        strcpy(pp_id_string, lv_rep.u.iv_id_to_string.iv_id_to_string);
     }
     return lv_ferr;
 }

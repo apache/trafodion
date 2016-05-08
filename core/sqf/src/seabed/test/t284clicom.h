@@ -217,6 +217,35 @@ static int do_cli_id(SB_Phandle_Type *phandle, int timeout, long *id) {
 }
 
 //
+// id_to_string operation
+//
+static int do_cli_id_to_string(SB_Phandle_Type *phandle, int timeout, long id, char* id_string) {
+    int     ferr;
+    GID_Rep rep;
+    GID_Req req;
+
+    init_req(&req, GID_REQ_ID_TO_STRING, sizeof(req.u.id_to_string));
+    req.u.id_to_string.id_to_string = id;
+    init_rep(&rep);
+    ferr = do_link(phandle,
+                      &req,
+                      &rep,
+                      timeout,
+                      "id_to_string",
+                      GID_REP_ID_TO_STRING,
+                      req.req_tag,
+                      sizeof(rep.u.id_to_string));
+    if (ferr == XZFIL_ERR_OK) {
+        if (verbose)
+            printf("cli: id-to-string-reply, rep-tag=0x%lx, rep-len=%d, id-string=%s\n",
+                   rep.rep_tag, rep.rep_len, rep.u.id_to_string.id_to_string);
+        strcpy(id_string, rep.u.id_to_string.id_to_string);
+    }
+    return ferr;
+}
+
+
+//
 // open
 //
 static int do_cli_open(JNIEnv *j_env, SB_Phandle_Type *phandle, int *oid) {

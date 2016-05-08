@@ -185,6 +185,43 @@ jint Java_com_hp_traf_t284cli_native_1id(JNIEnv *j_env, jobject, jint j_timeout,
 }
 
 //
+// com.hp.traf.t284cli.native_id_to_string(j_timeout, j_id, j_id_string)
+//
+// initialize.
+// call do_cli_id_to_string() and set j_id_to_string to formatted date/time from from do_cli_id_to_string()
+//
+// return file error
+//
+jint  Java_com_hp_traf_t284cli_native_1id_1to_1string(JNIEnv *j_env, jobject, jint j_timeout, jlong j_id, jbyteArray j_id_string) {
+    int      ferr;
+    long     id;
+    char     la_ascii_time[MAX_DATE_TIME_BUFF_LEN * 2];
+    char *   output;
+
+    ferr = do_init(j_env);
+    id = (long)j_id;
+
+    if (ferr == XZFIL_ERR_OK) {
+      ferr = do_cli_id_to_string(&phandle, j_timeout, id, la_ascii_time);
+        if (ferr == XZFIL_ERR_OK) {
+
+           if(strlen(la_ascii_time) > MAX_DATE_TIME_BUFF_LEN) {
+              printf("cli: id_to_string() output string is too long %s\n", la_ascii_time);
+              return XZFIL_ERR_BUFTOOSMALL;
+           }
+           output = (char *) (j_env)->GetByteArrayElements(j_id_string, NULL);
+           strcpy(output, la_ascii_time);
+           (j_env)->ReleaseByteArrayElements(j_id_string, (jbyte *)output, 0);
+       }
+    }
+    if (verbose)
+        printf("cli: id_to_string() err=%d, id=0x%lx\n", ferr, id);
+
+    return ferr;
+}
+
+
+//
 // com.hp.traf.t284cli.native_ping(j_timeout)
 //
 // initialize.

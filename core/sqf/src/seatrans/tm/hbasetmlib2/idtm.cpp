@@ -101,7 +101,7 @@ static int do_init(JNIEnv *pp_j_env) {
     int   lv_perr;
 
     if (gv_verbose)
-       printf("cli: do_init start\n");
+        printf("cli: do_init start\n");
     lv_perr = pthread_mutex_lock(&gv_mutex);
     assert(lv_perr == 0);
     if (gv_inited)
@@ -187,6 +187,41 @@ jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1id(JNI
     }
     if (gv_verbose)
         printf("cli: id() err=%d, id=0x%lx\n", lv_ferr, lv_id);
+
+    return lv_ferr;
+}
+
+//
+// org.apache.hadoop.hbase.regionserver.transactional.idTm.native_id_to_string(j_timeout, j_id, j_id_string)
+//
+// initialize.
+// call do_cli_id_to_string() and set j_id_to_string to formatted date/time from from do_cli_id_to_string()
+//
+// return file error
+//
+jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1id_1to_1string(JNIEnv *pp_j_env, jobject, jint j_timeout, jlong j_id, jbyteArray j_id_string) {
+    int      lv_ferr;
+    unsigned long     lv_id;
+    char     la_ascii_time[MAX_DATE_TIME_BUFF_LEN * 2];
+    char*    output;
+
+    lv_ferr = do_init(pp_j_env);
+    lv_id = (unsigned long)j_id;
+
+    if (lv_ferr == XZFIL_ERR_OK) {
+        lv_ferr = do_cli_id_to_string(&gv_phandle, j_timeout, lv_id, la_ascii_time);
+        if (lv_ferr == XZFIL_ERR_OK) {
+           if(strlen(la_ascii_time) > MAX_DATE_TIME_BUFF_LEN) {
+              printf("cli: id_to_string() output string is too long %s\n", la_ascii_time);
+              return XZFIL_ERR_BUFTOOSMALL;
+           }
+           output = (char *) (pp_j_env)->GetByteArrayElements(j_id_string, NULL);
+           strcpy(output, la_ascii_time);
+           (pp_j_env)->ReleaseByteArrayElements(j_id_string, (jbyte *)output, 0);
+        }
+    }
+    if (gv_verbose)
+        printf("cli: id_to_string() err=%d, id=0x%lx id_string=%s\n", lv_ferr, lv_id, la_ascii_time);
 
     return lv_ferr;
 }

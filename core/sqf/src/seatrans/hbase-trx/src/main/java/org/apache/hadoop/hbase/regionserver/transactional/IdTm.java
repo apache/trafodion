@@ -26,6 +26,8 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.apache.hadoop.hbase.util.Bytes;
+
 /**
  * IdTm
  *
@@ -129,6 +131,33 @@ public class IdTm implements IdTmCb {
     }
 
     /**
+     * idToStr server id_to_string
+     *
+     * @param timeout timeout in ms
+     * @param id id to convert to string
+     * @param idString string output of id conversion
+     * @exception IdTmException exception
+     */
+    public void idToStr(int timeout, long id, byte [] idString) throws IdTmException {
+        if (LOG.isDebugEnabled()) LOG.debug("idToStr begin");
+
+        try {
+           int err = native_id_to_string(timeout, id, idString);
+           if (LOG.isDebugEnabled()) LOG.debug("idToStr returned: " + Bytes.toString(idString) + ", error: " + err);
+           if (err != 0) {
+              LOG.error("native_id_to_string returned: " + err + " Throwing IdTmException");
+              throw new IdTmException("ferr=" + err);
+           }
+        } catch (Exception e) {
+           LOG.error("idToStr threw:" + e);
+           throw new IdTmException("idToStr threw:" + e);
+        } catch (Throwable t) {
+           LOG.error("idToStr threw:" + t);
+           throw new IdTmException("idToStr threw:" + t);
+        }
+    }
+
+    /**
      * ping server
      *
      * @param timeout timeout in ms
@@ -164,6 +193,16 @@ public class IdTm implements IdTmCb {
      * @return file error
      */
     private native int native_id(int timeout, IdTmId id);
+
+    /**
+     * id server to string
+     *
+     * @param timeout timeout in ms
+     * @param id id to convert to string
+     * @param idString string output of id conversion
+     * @return file error
+     */
+    private native int native_id_to_string(int timeout, long id, byte [] idString);
 
     /**
      * ping server
