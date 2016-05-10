@@ -30,16 +30,10 @@
   -->
   <id>all</id>
   <formats>
-    <format>tar.gz</format>
+    <format>dir</format>
   </formats>
   
   <fileSets>
-    <fileSet>
-      <includes>
-        <include>${project.basedir}/NOTICE</include>
-        <include>${project.basedir}/LICENSE</include>
-      </includes>
-    </fileSet>
     <fileSet>
       <directory>conf</directory>
       <fileMode>0644</fileMode>

@@ -76,36 +76,6 @@
               <goal>run</goal>
             </goals>
           </execution>
-          <execution>
-            <id>package</id>
-            <phase>package</phase>
-            <configuration>
-              <target>
-                <!-- Complements the assembly -->
-
-                <mkdir dir="${project.build.directory}/${project.build.finalName}/${project.build.finalName}"/>
- 
-                <!-- Using Unix tar to preserve symlinks -->
-				<echo file="${project.build.directory}/maketar.sh">
-					which cygpath 2&gt; /dev/null
-					if [ $? = 1 ]; then
-						BUILD_DIR="${project.build.directory}"
-					else
-						BUILD_DIR=`cygpath --unix '${project.build.directory}'`
-					fi
-
-					cd $BUILD_DIR/${project.build.finalName}
-					tar czf $BUILD_DIR/${project.build.finalName}.tar.gz ${project.build.finalName}
-				</echo>
-                <exec executable="sh" dir="${project.build.directory}" failonerror="yes">
-                    <arg line="./maketar.sh"/>
-                </exec>
-              </target>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>          
         </executions>
     </plugin>
     <plugin>
@@ -130,15 +100,15 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <tarLongFileMode>gnu</tarLongFileMode>
           <appendAssemblyId>false</appendAssemblyId>
           <descriptors>
             <descriptor>src/assembly/all.xml</descriptor>
           </descriptors>
+          <ouputDirectory>target</ouputDirectory>
         </configuration>
         <executions>
           <execution>
-            <id>tarball</id>
+            <id>dir</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
