@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[monitor-progress]]
@@ -28,12 +28,12 @@
 
 == INSERT and UPSERT
 
-For an INSERT statement, rows are written to the HBase table that represents the Trafodion table when the transaction commits. 
+For an INSERT statement, rows are written to the HBase table that represents the {project-name} table when the transaction commits. 
 It is more difficult to see query progress here.
 
 == UPSERT USING LOAD
 
-For an UPSERT USING LOAD statement, rows added are visible in the Trafodion table after each `ListOfPut` call succeeds. 
+For an UPSERT USING LOAD statement, rows added are visible in the {project-name} table after each `ListOfPut` call succeeds. 
 You can use a `SELECT COUNT(*)` statement to monitor progress. That way, you know how many rows are already in the table when the 
 statement starts executing. 
 
@@ -58,7 +58,7 @@ lsof +L1 | grep SCR | wc -l
 This command returns a count of the number of overflow files for sort. Each file is 2GB in size.
 You need to have an approximate idea of  the volume of data being loaded to know how much more
 data needs to be sorted. On a cluster, sort is done on all nodes with a pdsh-like utility.
-Trafodion data volume can also be larger than Hive data volume by a factor of 2 or 3. 
+{project-name} data volume can also be larger than Hive data volume by a factor of 2 or 3. 
 
 In step 3, create prep HFiles, use the following command to monitor the volume of data written
 out to the staging directory:

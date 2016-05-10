@@ -3029,6 +3029,7 @@ Lng32 HSGlobalsClass::Initialize()
     Int64 youWillLikelyBeSorry = 
       ActiveSchemaDB()->getDefaults().getAsDouble(USTAT_YOULL_LIKELY_BE_SORRY);
     if ((actualRowCount >= youWillLikelyBeSorry) &&
+       !(optFlags & CLEAR_OPT) &&
        !(optFlags & SAMPLE_REQUESTED) &&
        !(optFlags & IUS_OPT))
       {

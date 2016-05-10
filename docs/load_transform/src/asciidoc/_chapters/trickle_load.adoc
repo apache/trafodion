@@ -20,19 +20,19 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[trickle-load]]
 = Trickle Load
 
-Trafodion Trickle Load allows data to be committed in batches, with sizes ranging from 1 row to a several
+{project-name} Trickle Load allows data to be committed in batches, with sizes ranging from 1 row to a several
 thousand rows in each commit. Trickle Load uses the following SQL statements (defined in the
-http://trafodion.incubator.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual]:
+{docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual]:
 
-* http://trafodion.incubator.apache.org/docs/sql_reference/index.html#insert_statement[INSERT]
-* http://trafodion.apache.org/docs/sql_reference/index.html#upsert_statement[UPSERT]
-* http://trafodion.apache.org/docs/sql_reference/index.html#upsert_statement[UPSERT USING LOAD]
+* {docs-url}/sql_reference/index.html#insert_statement[INSERT]
+* {docs-url}/sql_reference/index.html#upsert_statement[UPSERT]
+* {docs-url}/sql_reference/index.html#upsert_statement[UPSERT USING LOAD]
 
 Contrary to <<bulk-load,Bulk Load>>, committed rows are immediately visible from other transactions
 thereby leading to minimal latency in making newly ingested rows visible to applications and end users. 
@@ -44,12 +44,12 @@ application for this approach.
 
 * You want to migrate a smaller amount of data (a few millions rows). Typically, you use JDBC- or
 ODBC-based ETL tools for this approach; for example:
-** <<trickle-load-odb,Trafodion odb^1^>>
+** <<trickle-load-odb,{project-name} odb^1^>>
 ** http://squirrel-sql.sourceforge.net[SQuirrel-SQL]
 ** http://www.pentaho.com/[Pentaho]
 ** http://www.informatica.com/us/[Informatica].
 
-^1^ Trafodion obd typically achieves better load throughput than third-party ETL tools.
+^1^ {project-name} obd typically achieves better load throughput than third-party ETL tools.
 
 [[trickle-load-improving-throughput]]
 == Improving Throughput
@@ -76,7 +76,7 @@ the `hbase shell` through an `ALTER 'TRAFODION.<schema-name>.<table-name>', MEMS
 [[trickle-load-odb]]
 == odb
 
-odb is a Linux and Windows Trafodion client that is:
+odb is a Linux and Windows {project-name} client that is:
 
 * ODBC based
 * Database agnostic query driver
@@ -85,7 +85,7 @@ odb is a Linux and Windows Trafodion client that is:
 
 odb may be installed on:
 
-* The Trafodion cluster.
+* The {project-name} cluster.
 * The machine that contains source data
 * An intermediate machine that is being used for data loading.
 
@@ -96,7 +96,7 @@ odd uses threads to achieve parallelism, rowsets to improve throughput. You can 
 insert types.
 
 NOTE: odb does not use the bulk load command LOAD, and, therefore, throughput when using odb may be lower than what can be achieved
-with the bulk loader. However, when using the odb tool, source data need not be moved to the Trafodion cluster in a separate step.
+with the bulk loader. However, when using the odb tool, source data need not be moved to the {project-name} cluster in a separate step.
 
 odb allows you to access Hadoop data using one of the following methods:
 
@@ -114,7 +114,7 @@ The following odb commands/features are discussed in this guide:
 * <<trickle-load-odb-extract, odb Extract>>
 * <<trickle-load-odb-transform, odb Transform>>
 
-See the http://trafodion.incubator.apache.org/docs/odb/index.html[Trafodion odb User Guide]
+See the {docs-url}/odb/index.html[{project-name} odb User Guide]
 for installation instructions and usage syntax for the odb tool.
 
 The following subsections assume that you've installed odb.
@@ -131,7 +131,7 @@ The default insert type used by odb is INSERT; to use UPSERT USING LOAD, please 
 
 Copy the table `mytable` from `<source_catalog>.<source_schema>` on the source database to `trafodion.my
 schema.mytable`
-on Trafodion.
+on {project-name}.
 
 ```
 odb64luo -u <src_username>:<tgt_username> -p <src_pswd>:<tgt_pswd>
@@ -146,19 +146,19 @@ odb64luo -u <src_username>:<tgt_username> -p <src_pswd>:<tgt_pswd>
 | `src_username`     | User name for the source database.
 | `src_pswd`         | Password for the source database.
 | `src_dsn`          | ODBC DSN for the source database.
-| `tgt_username`     | User name for the Trafodion database.
-| `tgt_pswd`         | Password for the Trafodion database.
-| `tgt_dsn`          | ODBC DSN for the Trafodion database.
+| `tgt_username`     | User name for the {project-name} database.
+| `tgt_pswd`         | Password for the {project-name} database.
+| `tgt_dsn`          | ODBC DSN for the {project-name} database.
 | `splitby`          | Defines the column used to evenly distributed values for parallelism. Consider using a leading key column.
-| `parallel=4`       | Use four connections to extract data from the source database and another four connections to write data to the target Trafodion database.
+| `parallel=4`       | Use four connections to extract data from the source database and another four connections to write data to the target {project-name} database.
 | `loadcmd=UL`       | Use UPSERT USING LOAD syntax to write data. 
 |===
 
 [[trickle-load-odb-load]]
 === odb Load
 
-Refer to the http://trafodion.apache.org/docs/odb/index.html#_load_files[Load Files] section
-in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete
+Refer to the {docs-url}/odb/index.html#_load_files[Load Files] section
+in the {docs-url}/odb/index.html[{project-name} odb User Guide] for complete
 documentation of this option.
 
 You use the `-l` option to load into a table from:
@@ -237,10 +237,10 @@ odb64luo -u user -p xx -d dsn -T 5 \
 === odb Copy
 
 Refer to the
-http://trafodion.apache.org/docs/odb/index.html#_copy_tables_from_one_database_to_another[Copy Tables From One Database to Another]
-section in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete documentation of this option.
+{docs-url}/odb/index.html#_copy_tables_from_one_database_to_another[Copy Tables From One Database to Another]
+section in the {docs-url}/odb/index.html[{project-name} odb User Guide] for complete documentation of this option.
 
-Use the `-cp` option to copy tables *directly* from one data-source to another using ODBC (for example, from Trafodion to Teradata
+Use the `-cp` option to copy tables *directly* from one data-source to another using ODBC (for example, from {project-name} to Teradata
 or vice-versa):
 
 * Single/Multiple table(s) copy from one database to another
@@ -324,8 +324,8 @@ src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
 [[trickle-load-odb-extract]]
 === odb Extract
 
-Refer to the http://trafodion.apache.org/docs/odb/index.html#_extract_tables[Extract Tables]
-section in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete documentation of this option.
+Refer to the {docs-url}/odb/index.html#_extract_tables[Extract Tables]
+section in the {docs-url}/odb/index.html[{project-name} odb User Guide] for complete documentation of this option.
 
 Use then -e option to extract from data a table and write it to standard files or named pipes.
 
@@ -412,8 +412,8 @@ appending extraction data and time (`_%d%m`) for the target file name.
 [[trickle-load-odb-transform]]
 === odb Transform
 
-Refer to the http://trafodion.apache.org/docs/odb/index.html#load_map_fields[Map Source File Fields to Target Table Columns]
-section in the http://trafodion.apache.org/docs/odb/index.html[Trafodion odb User Guide] for complete documentation of
+Refer to the {docs-url}/odb/index.html#load_map_fields[Map Source File Fields to Target Table Columns]
+section in the {docs-url}/odb/index.html[{project-name} odb User Guide] for complete documentation of
 odb's mapping/transformation capabilities.
 
 odb provides mapping/transformation capabilities though mapfiles. By specifying `map=<mapfile>` load option you can:
@@ -491,6 +491,6 @@ $ odb64luo -u user -p xx -d dsn \
 The above example:
 
 * Reads data from `friends.dat` (`src`).
-* Writes data to the `TRAFODION.MFTEST.FRIENDS` Trafodion table (`tgt`).
+* Writes data to the `TRAFODION.MFTEST.FRIENDS` {project-name} table (`tgt`).
 * Uses `ml1.map` to define transformation specifications (`map`).
 * Uses comma as a field separator (`fs`).

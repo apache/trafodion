@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = odb as a Query Driver (Technology Preview)
@@ -112,7 +112,7 @@ SET QLABEL <label>
 ```
 ~/Devel/odb $ cat script.sql
 
--- Trafodion TPC-H Query 1 SET QLABEL Q01
+-- {project-name} TPC-H Query 1 SET QLABEL Q01
 SELECT
    L_RETURNFLAG
  , L_LINESTATUS

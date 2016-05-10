@@ -24,14 +24,14 @@
 ////
 
 = About This Document
-This guide describes how to use the Trafodion Command Interface (trafci) on a client workstation to connect to and query a Trafodion database.
+This guide describes how to use the Trafodion Command Interface (trafci) on a client workstation to connect to and query a {project-name} database.
 The trafci enables you to run SQL statements interactively or from script files.
 
 == Intended Audience
-This guide is intended for database administrators and support personnel who are maintaining and monitoring a Trafodion database.
+This guide is intended for database administrators and support personnel who are maintaining and monitoring a {project-name} database.
 
 == New and Changed Information
-This manual shows updated versions for Trafodion Release 1.3.0. 
+This manual shows updated versions for {project-name} Release {project-version}. 
 
 == Notation Conventions
 This list summarizes the notation conventions for syntax presentation in this manual.
@@ -159,20 +159,8 @@ match-value [NOT] LIKE _pattern
    [ESCAPE esc-char-expression] 
 ```
 
-== Publishing History
-[cols="2*",options="header"]
-|===
-| Product Version | Publication Date
-| Trafodion Release 1.3.0 | To be announced.
-|===
-
 == Comments Encouraged
-The Trafodion community encourages your comments concerning this document. We are committed to providing documentation that meets your
-needs. Send any errors found, suggestions for improvement, or compliments to:
-
-issues@trafodion.incubator.apache.org
+We encourage your comments concerning this document. We are committed to providing documentation that meets your
+needs. Send any errors found, suggestions for improvement, or compliments to {project-support}.
 
 Include the document title and any comment, error found, or suggestion for improvement you have concerning this document.
-Or, even better, join our community and help us improve our documentation. Please refer to 
-http://trafodion.incubator.apache.org/contributing_redirect.html[Trafodion Contributor Guide] for details.
-

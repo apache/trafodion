@@ -21,39 +21,39 @@
 ////
 
 = Configure SQuirreL Client
-These configuration instructions apply to Trafodion Release 1.3.*_n_* and subsequent updates of Trafodion until otherwise indicated.
+These configuration instructions apply to {project-name} Release 1.3.*_n_* and subsequent updates of {project-name} until otherwise indicated.
 
 == Prerequisite Software
 
 Make sure that you have this software installed on your workstation:
 
 * Java Runtime Environment (JRE) 1.7 or higher. See <<jdbct4-java-environment, Java Environment>> in the <<jdbct4, Install JDBC Type-4 Driver>> chapter above.
-* Trafodion JDBC Type-4 Driver. See <<jdbct4,Install JDBC Type-4 Driver>> above.
+* {project-name} JDBC Type-4 Driver. See <<jdbct4,Install JDBC Type-4 Driver>> above.
 * SQuirreL SQL Client 3.5.0. See the http://squirrel-sql.sourceforge.net/[_SQuirreL SQL Client website_].
 
 <<<
 == Configuration Instructions
 === Register JDBC Type-4 Driver
 
-Use the *Add Driver* function and register the Trafodion JDBC Type-4 Driver:
+Use the *Add Driver* function and register the {project-name} JDBC Type-4 Driver:
 
-1. Click on the *Add* button and locate the Trafodion JDBC Type-4 Driver.
+1. Click on the *Add* button and locate the {project-name} JDBC Type-4 Driver.
 2. Click on the *List Drivers* button to find the JDBC Driver Class Name.
 3. Set the properties as shown below:
 +
 image:{images}/Add_Driver_SQuirreL.jpg[alt="SQuirreL Add Driver Dialog Box"]
 +
-* Name: `Trafodion`
+* Name: `{project-name}`
 * Example URL: `jdbc:t4jdbc://_host-name or ip-address_:37800/:` (Default port number: *23400*)
 
 <<<
-=== Connect to Trafodion
+=== Connect to {project-name}
 
-Use the Add Alias dialog box and create an alias for your Trafodion System:
+Use the Add Alias dialog box and create an alias for your {project-name} System:
 
 image:{images}/Add_Alias_SQuirreL.jpg[alt="SQuirreL Add Alias Dialog Box"]
 
-1. Edit the connection *URL* to match your Trafodion system's host name and port number:
+1. Edit the connection *URL* to match your {project-name} system's host name and port number:
 +
 *Example*
 +

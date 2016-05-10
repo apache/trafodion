@@ -20,13 +20,13 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[sqlstate]]
 = SQLSTATE 
 
-Trafodion returns SQLSTATE values that are defined
+{project-name} returns SQLSTATE values that are defined
 in the ISO/ANSI SQL standard and implementation-defined SQLSTATE values. See
 Subclause 22, "Status Codes" in the ISO/ANSI SQL92 Standard "Database
 Language SQL."
@@ -45,11 +45,11 @@ values mapped to SQLSTATE 42000 in the table below.
 ** To deal with the problem of ambiguous SQLCODE values, we recommends retrieving the error message 
 text or the SQLCODE value in addition to the SQLSTATE.
 
-* SQLSTATE values for some Trafodion error and warning messages might be subject to change:
+* SQLSTATE values for some {project-name} error and warning messages might be subject to change:
 
-** In the future, Trafodion might return different SQLSTATE values for error conditions than it does now.
+** In the future, {project-name} might return different SQLSTATE values for error conditions than it does now.
 
-** In the future, the Trafodion error handling might use a different error path, and therefore return a 
+** In the future, the {project-name} error handling might use a different error path, and therefore return a 
 slightly different SQLCODE and implementation defined SQLSTATE value for an error.
 
 [[sqlstate-values]]
@@ -95,10 +95,10 @@ numbers) and error messages (negative SQLCODE numbers).
 | 0150T    | 1029    | Object <object-name> could not be created.
 | 0150U    | 1030    | File label <name> could not be accessed. File System error <error>.
 | 0150V    | 1031    | Object <object-name> could not be dropped.
-| 0150Y    | 1034    | Trafodion was not able to initialize.
+| 0150Y    | 1034    | {project-name} was not able to initialize.
 | 0150Z    | 1035    | Catalog <catalog-name> already exists
 | 01510    | 1036    | Only super ID can execute DROP SQL.
-| 01511    | 1037    | Trafodion is not installed on system <node>.
+| 01511    | 1037    | {project-name} is not installed on system <node>.
 | 01512    | 1038    | Not all catalogs have been dropped from the system.
 | 01513    | 1039    | The drop SQL statement could not be executed.
 | 01514    | 1040    | The use of ALTER on metadata tables is not permitted.
@@ -188,7 +188,7 @@ numbers) and error messages (negative SQLCODE numbers).
 | 0153Y    | 1142    | Attempting to add a column with a NULL, UNIQUE, CHECK, PRIMARY KEY, or FOREIGN KEY constraint defined. This is not supported for a non-audited table.
 | 0153Z    | 1143    | Validation for constraint <name> failed; incompatible data exists in referencing base table <name> and referenced base table <name>. To display the data violating the constraint, please use the following DML statement: <text>
 | 01540    | 1144    | Expected a quoted string in first key clause for column <name> on table <name>, value detected is (<num>).
-| 01541    | 1145    | The catalog name <name> is reserved for the Trafodion metadata.
+| 01541    | 1145    | The catalog name <name> is reserved for the {project-name} metadata.
 | 01542    | 1146    | Unable to alter object <name> because it is not a <name>.
 | 01543    | 1147    | System-generated column <name> of base table <name> cannot appear in a unique or primary key constraint definition.
 | 01544    | 1148    | System-generated column <name> of base table <name> cannot appear in a referential integrity constraint definition.
@@ -198,16 +198,16 @@ numbers) and error messages (negative SQLCODE numbers).
 | 01554    | 1184    | Insufficient privilege on <name>.
 | 01555    | 1185    | The location name is either invalid or missing.
 | 01556    | 1186    | Column <name> is of type <type>, incompatible with the default value's type, <type>.
-| 01557    | 1187    | The schema name <name> is reserved for the Trafodion metadata.
+| 01557    | 1187    | The schema name <name> is reserved for the {project-name} metadata.
 | 01558    | 1188    | Unable to create referential integrity constraint <name> for table <name> due to circular dependency: <name>.
 | 01566    | 1222    | Invalid file type <name>.
 | 01568    | 1224    | Invalid data type for routine param <name>.
-| 01569    | 1225    | Error on access to PROCS table. Trafodion error <integer>.
-| 0156A    | 1226    | Error on access to PARAMS table. Trafodion error <integer>.
+| 01569    | 1225    | Error on access to PROCS table. {project-name} error <integer>.
+| 0156A    | 1226    | Error on access to PARAMS table. {project-name} error <integer>.
 | 0156F    | 1231    | Unable to create user-defined routine <string>.
 | 01600    | 2000    | Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
 | 01601    | 2001    | Error or warning <num> occurred while opening or reading from DEFAULTS table <name>. Using <name> values.
-| 01602    | 2002    | Internal error: cannot create Trafodion compiler server.
+| 01602    | 2002    | Internal error: cannot create {project-name} compiler server.
 | 01603    | 2003    | Internal error: cannot establish connection with MXCMP server.
 | 01604    | 2004    | Internal error: error from MXCMP; cannot work on this query.
 | 01605    | 2005    | Internal error: from compilation, no errors in diagnostics yet for statement: <name>
@@ -764,7 +764,7 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | 01KN3    | 8831    | Either no current context or the module to which the statement belongs is not added to the current context.
 | 01KN4    | 8832    | Transaction has not been started.
 | 01KN5    | 8833    | The input parameter is an invalid SQL transaction command.
-| 01KN6    | 8834    | Unable to find Trafodion installation directory. Operating system error <num>.
+| 01KN6    | 8834    | Unable to find {project-name} installation directory. Operating system error <num>.
 | 01KN7    | 8835    | Invalid SQL descriptor information requested.
 | 01KN8    | 8836    | Invalid update column for cursor.
 | 01KN9    | 8837    | Invalid user id.
@@ -814,9 +814,9 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | 01KOY    | 8898    | Internal error in CLI.
 | 01KP1    | 8901    | The MXUDR server for this statement is no longer running. The statement will be assigned a new MXUDR server if it is executed again.
 | 01KP2    | 8902    | Internal error: MXUDR returned an invalid UDR handle.
-| 01KP3    | 8903    | An attempt was made by the Trafodion to kill the MXUDR server for this statement <process-name>. PROCESS_STOP_ returned <value>.
+| 01KP3    | 8903    | An attempt was made by the {project-name} to kill the MXUDR server for this statement <process-name>. PROCESS_STOP_ returned <value>.
 | 01KP4    | 8904    | Unable to receive reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
-| 01KP6    | 8906    | An invalid or corrupt MXUDR reply could not be processed, possibly due to memory corruption in MXUDR while executing friendly user-defined routines or an internal error in Trafodion.
+| 01KP6    | 8906    | An invalid or corrupt MXUDR reply could not be processed, possibly due to memory corruption in MXUDR while executing friendly user-defined routines or an internal error in {project-name}.
 | 01L5K    | 9200    | UPDATE STATISTICS encountered an error from statement <name>.
 | 01L5L    | 9201    | Unable to DROP object <name>.
 | 01L5M    | 9202    | UPDATE STATISTICS has located previously generate histogram that are not being regenerated. This might affect the plans that will be generated. Missing column lists are <column-list>.
@@ -984,8 +984,8 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | 01PE6    | 13510   | The SQL declare section might not contain COPY or REPLACE.
 | 01PE7    | 13511   | End of input file while processing EXEC SQL.
 | 01PE8    | 13512   | Input file error while processing EXEC SQL.
-| 01PE9    | 13513   | The BIT data type is not implemented in the Trafodion software.
-| 01PEA    | 13514   | The CHARACTER SET attribute is not implemented in Trafodion.
+| 01PE9    | 13513   | The BIT data type is not implemented in the {project-name} software.
+| 01PEA    | 13514   | The CHARACTER SET attribute is not implemented in {project-name}.
 | 01PEB    | 13515   | Picture <name> is not valid for a host variable.
 | 01PEC    | 13516   | Unexpected end of input file encountered after line <num>.
 | 01PED    | 13517   | Line <num> is too long to process and has been truncated.
@@ -1064,16 +1064,16 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | 01Y01    | 16001   | No message found for error or warning <sqlcode>.
 | 02000    | 100     | The "no data" completion condition (SQLCODE = +100).
 | 01Z01    | 25001   | Program <executable>, executing on <node>, has encountered a version error.
-| 01Z2S    | 25100   | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of <node> is <version-1>, the local node does not support versions older than <version-2>.
-| 01Z2T    | 25101   | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of <node> is <version-1>, the local node supports only version <version-2>.
-| 01Z2U    | 25102   | Remote node <node> runs a version of Trafodion which cannot interoperate with other versions. The Trafodion version (version) of <node> is <version-1>.
+| 01Z2S    | 25100   | Remote node <node> runs an incompatible version of {project-name}. The {project-name} version (version) of <node> is <version-1>, the local node does not support versions older than <version-2>.
+| 01Z2T    | 25101   | Remote node <node> runs an incompatible version of {project-name}. The {project-name} version (version) of <node> is <version-1>, the local node supports only version <version-2>.
+| 01Z2U    | 25102   | Remote node <node> runs a version of {project-name} which cannot interoperate with other versions. The {project-name} version (version) of <node> is <version-1>.
 | 01Z8C    | 25300   | Module <module> has module version <version-1>; node <node> does not support module versions lower than <version-2>.
 | 01Z8D    | 25301   | Module <module> has module version <version-1>; the local node does not support module versions higher than <version-2>.
 | 01Z8I    | 25306   | A required system module has module version <version-1>; node <node> does not support query plans from modules with module version lower than <version-2>.
-| 01Z8J    | 25307   | The query plan can be executed only by a node with Trafodion version (version) <version-1>, the version of <node> is <version-1>.
-| 01Z8K    | 25308   | The query plan has plan version <version-1>, the local Trafodion version (version) can execute only query plans with plan version <version-1>.
-| 01Z8L    | 25309   | Module <module> can be executed only by a node with Trafodion version (version) version1, the version of <node> is <version-1>.
-| 01Z8M    | 25310   | Module <module> has module version <version-1>, the local Trafodion version (version) can execute only modules with module version <version-1>.
+| 01Z8J    | 25307   | The query plan can be executed only by a node with {project-name} version (version) <version-1>, the version of <node> is <version-1>.
+| 01Z8K    | 25308   | The query plan has plan version <version-1>, the local {project-name} version (version) can execute only query plans with plan version <version-1>.
+| 01Z8L    | 25309   | Module <module> can be executed only by a node with {project-name} version (version) version1, the version of <node> is <version-1>.
+| 01Z8M    | 25310   | Module <module> has module version <version-1>, the local {project-name} version (version) can execute only modules with module version <version-1>.
 | 01Z8N    | 25311   | System module <module> has a wrong module version. The expected module version is <version-1>. the actual module version is <version-2>.
 | 02000    | 100 |T  h e "no data" completion condition (SQLCODE=+100).
 | 07001    | -15015    |PARAM <name> (value <num>) cannot be converted to type <type>.
@@ -1636,7 +1636,7 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | X013X    | -1141   | Could not obtain an up-and-audited DAM volume. Please check your system configuration.
 | X013Z    | -1143   | Validation for constraint <name> failed; incompatible data exists in referencing base table <name> and referenced base table <name>. To display the data violating the constraint, please use the following DML statement: <name>
 | X0140    | -1144   | Expected a quoted string in first key clause for column <name> on table <name>, value detected is (<name>).
-| X0141    | -1145   | The catalog name <name> is reserved for Trafodion metadata.
+| X0141    | -1145   | The catalog name <name> is reserved for {project-name} metadata.
 | X0142    | -1146   | Unable to alter object <name> because it is not a <name>.
 | X0143    | -1147   | System-generated column <name> of base table <name> cannot appear in a unique or primary key constraint definition.
 | X0144    | -1148   | System-generated column <name> of base table <name> cannot appear in a referential integrity constraint definition.
@@ -1645,12 +1645,12 @@ Suggestion: a) Inspect the CQS in effect; or b) Raise the optimization level to 
 | X0153    | -1183   | Cannot instantiate module <name>, conflicting lock exists.
 | X0154    | -1184   | Insufficient privilege on <name>.
 | X0155    | -1185   | The location name is either invalid or missing.
-| X0157    | -1187   | The schema name <name> is reserved for Trafodion metadata.
+| X0157    | -1187   | The schema name <name> is reserved for {project-name} metadata.
 | X0158    | -1188   | Unable to create referential integrity constraint <name> for table <name> due to circular dependency: <name>.
 | X0166    | -1222   | Invalid file type <type>.
 | X0168    | -1224   | Invalid data type for routine param <name>.
-| X0169    | -1225   | Error on access to PROCS table. Trafodion error <integer>.
-| X016A    | -1226   | Error on access to PARAMS table. Trafodion error <integer>.
+| X0169    | -1225   | Error on access to PROCS table. {project-name} error <integer>.
+| X016A    | -1226   | Error on access to PARAMS table. {project-name} error <integer>.
 | X016F    | -1231   | Unable to create user-defined routine <routine-name>.
 | X0200    | -2000   | Error messages for compiler main, IPC, and DEFAULTS table; assertions for optimizer.
 | X0201    | -2001   | Error or warning <num> occurred while opening or reading from DEFAULTS table <name>. Using <name> values.
@@ -1800,9 +1800,9 @@ level might result in a long compile time.
 | X080J    | -8883   | 
 | X08P1    | -8901   | The MXUDR server for this statement is no longer running. The statement will be assigned a new MXUDR server if it is executed again.
 | X08P2    | -8902   | Internal error: MXUDR returned an invalid UDR handle.
-| X08P3    | -8903   | An attempt was made by Trafodion to kill the MXUDR server for this statement <process-name>. PROCESS_STOP_ returned <value>.
+| X08P3    | -8903   | An attempt was made by {project-name} to kill the MXUDR server for this statement <process-name>. PROCESS_STOP_ returned <value>.
 | X08P4    | -8904   | Unable to receive reply from MXUDR, possibly caused by internal errors while executing user-defined routines.
-| X08P6    | -8906   | An invalid or corrupt MXUDR reply could not be processed, possibly due to memory corruption in MXUDR while executing friendly user-defined routines or an internal error in Trafodion.
+| X08P6    | -8906   | An invalid or corrupt MXUDR reply could not be processed, possibly due to memory corruption in MXUDR while executing friendly user-defined routines or an internal error in {project-name}.
 | X082S    | -8100   | Define <name> does not exist
 | X08O4    | -8868   | Unable to create context when current transaction is implicitly started by SQL.
 | X08O5    | -8869   | The specified file number is not a QFO, or the file number is not internally associated with a QFO object (CLI internal error).
@@ -2032,8 +2032,8 @@ level might result in a long compile time.
 | X0DE6    | -13510  | The SQL declare section might not contain COPY or REPLACE.
 | X0DE7    | -13511  | End of input file while processing EXEC SQL.
 | X0DE8    | -13512  | Input file error while processing EXEC SQL.
-| X0DE9    | -13513  | The BIT data type is not implemented in Trafodion.
-| X0DEA    | -13514  | The CHARACTER SET attribute is not implemented in Trafodion.
+| X0DE9    | -13513  | The BIT data type is not implemented in {project-name}.
+| X0DEA    | -13514  | The CHARACTER SET attribute is not implemented in {project-name}.
 | X0DEB    | -13515  | Picture <name> is not valid for a host variable.
 | X0DEC    | -13516  | Unexpected end of input file encountered after line <num>.
 | X0DED    | -13517  | Line <num> is too long to process and has been truncated.
@@ -2084,16 +2084,16 @@ level might result in a long compile time.
 | X0K00    | -20000  | SQL Utilities error messages.
 | X0K31    | -20109  | <text>
 | X0P01    | -25001  | Program <executable>, executing on <node>, has encountered a version error.
-| X0P2S    | -25100  | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of node is <version-1>, the local node does not support versions older than <version-2>.
-| X0P2T    | -25101  | Remote node <node> runs an incompatible version of Trafodion. The Trafodion version (version) of <node> is <version-1>, the local node supports only version <version-2>.
-| X0P2U    | -25102  | Remote node <node> runs a version of Trafodion which cannot interoperate with other versions. The Trafodion version (version) of <node> is <version-1>.
+| X0P2S    | -25100  | Remote node <node> runs an incompatible version of {project-name}. The {project-name} version (version) of node is <version-1>, the local node does not support versions older than <version-2>.
+| X0P2T    | -25101  | Remote node <node> runs an incompatible version of {project-name}. The {project-name} version (version) of <node> is <version-1>, the local node supports only version <version-2>.
+| X0P2U    | -25102  | Remote node <node> runs a version of {project-name} which cannot interoperate with other versions. The {project-name} version (version) of <node> is <version-1>.
 | X0P8C    | -25300  | Module <module> had module version <version-1>; node <node> does not support module versions lower than <version-2>.
 | X0P8D    | -25301  | Module <module> had module version <version-1>; the local node does not support module versions higher than <version-2>.
 | X0P8I    | -25306  | A required system module has module version <version-1>; node <node> does not support query plans from modules with module version lower than <version-2>.
-| X0P8J    | -25307  | The query plan can be executed only by a node with Trafodion version (version) <version-1>, the version of <node> is <version-1>.
-| X0P8K    | -25308  | The query plan has plan version <version-1>, the local Trafodion version (version) can execute only query plans with plan version <version-1>.
-| X0P8L    | -25309  | Module <module> can be executed only by a node with Trafodion version (version) version1, the version of <node> is <version-1>.
-| X0P8M    | -25310  | Module <module> has module version <version-1>, the local Trafodion version (version) can execute modules only with module version <version-1>.
+| X0P8J    | -25307  | The query plan can be executed only by a node with {project-name} version (version) <version-1>, the version of <node> is <version-1>.
+| X0P8K    | -25308  | The query plan has plan version <version-1>, the local {project-name} version (version) can execute only query plans with plan version <version-1>.
+| X0P8L    | -25309  | Module <module> can be executed only by a node with {project-name} version (version) version1, the version of <node> is <version-1>.
+| X0P8M    | -25310  | Module <module> has module version <version-1>, the local {project-name} version (version) can execute modules only with module version <version-1>.
 | X0P8N    | -25311  | System module <module> has a wrong module version. The expected module version is <version-1>. The actual module version is <version-2>.
 | X0U08    | -30008  | Internal error. Rowset index is out of range.
 | X0U09    | -30009  | Internal error. Trying to add more elements than maximum rowset size.

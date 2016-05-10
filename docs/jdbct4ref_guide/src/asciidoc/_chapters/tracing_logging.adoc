@@ -1,0 +1,176 @@
+////
+/**
+ *@@@ START COPYRIGHT @@@
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * @@@ END COPYRIGHT @@@
+ */
+////
+
+[[tracing-and-logging-facilities]]
+= Tracing and Logging Facilities
+
+The Type 4 driver provides two tracing and logging facilities:
+
+* Standard JDBC tracing and logging functionality as defined by the JDBC standard
+* Type 4 driver logging facility
+
+Server-side tracing (logging) is enabled by configuring DCS.
+
+[[standard-jdbc-tracing-and-logging-facility]]
+== Standard JDBC Tracing and Logging Facility
+
+The JDBC standard provides a logging and tracing facility, which allows
+tracing JDBC method calls by setting the log writer. To set the log
+writer, either call the `setLogWriter()` method on the `DriverManager` class
+or call the `setLogWriter()` method on the `DataSource` class
+(or `ConnectionPoolDataSource` class).
+
+* A `DriverManager` log writer is a character output stream to which all
+logging and tracing messages for all connections made through the
+`DriverManager` are printed. This stream includes messages printed by the
+methods of this connection, messages printed by methods of other objects
+manufactured by the connection, and so on. The `DriverManager` log writer
+is initially null, that is, the default is for logging to be disabled.
+
+For information about using the setLogWriter method, see the
+https://docs.oracle.com/javase/7/docs/api/java/sql/DriverManager.html[DriverManager class API].
+
+* A `DataSource` log writer is a character output stream to which all
+logging and tracing messages for this data source are printed. This
+stream includes messages printed by the methods of this object, messages
+printed by methods of other objects manufactured by this object, and so
+on. Messages printed to a data-source-specific log writer are not
+printed to the log writer associated with the `java.sql.DriverManager`
+class. When a `DataSource` object is created, the log writer is initially
+null; that is, the default is for logging to be disabled.
+
+For information about using the setLogWriter method, see the
+https://docs.oracle.com/cd/E16338_01/appdev.112/e13995/oracle/jdbc/pool/OracleDataSource.html[DriverSource interface API].
+
+<<<
+[[the-type-4-driver-logging-facility]]
+== The Type 4 Driver Logging Facility
+
+
+The Type 4 driver Logging facility allows you to retrieve internal
+tracing information, which you can use in debugging the driver. It also
+allows you to capture error and warning messages.
+
+In addition to the standard JDBC tracing and logging facility, the Type
+4 driver provides an independent logging facility (Type 4 Driver
+Logging). The Type 4 Driver Logging provides the same level of logging
+and tracing as the standard JDBC tracing and logging facility with the
+following additional information:
+
+* More detail about the internals of the Type 4 driver and internal tracing information
+* Type 4 driver performance-tuning information
+* Finer control over the amount and type of logging information
+* Error and warning messages
+
+[[controlling-type-4-driver-logging-output]]
+=== Controlling Type 4 Driver Logging Output
+
+The Type 4 driver provides two properties that you can use to control logging output.
+
+* `T4LogLevel`: Specifies the level of logging. For information about using this property, see <<t4loglevel-property, T4LogLevel Property>>.
+* `T4LogFile`: Specifies the file to which the driver is to write logging information. For information about using this property,
+see <<t4logfile-property, T4LogFile Property>>.
+
+If the application sets several property values, see
+<<precedence-of-property-specifications, Precedence of Property Specifications>> to determine which setting applies.
+
+*Example*
+
+These properties file entries set the logging level to SEVERE and specify a log file name:
+
+```
+T4LogLevel= SEVERE
+
+T4LogFile=c:/T4logfile1.log
+```
+<<<
+[[message-format]]
+=== Message Format
+
+The format of the trace output is
+
+```
+sequence-number ~ time-stamp ~ thread-id
+~ [connection-id] ~ [server-id] ~ [dialogue-id]
+~ [class].[method][(parameters)] ~ [text]
+```
+
+
+[cols="30%,70%",options="header" ]
+|===
+| Identifier | Provides
+| `sequence-number` | A unique sequence number in increasing order.
+| `time-stamp`      | The time of the message, for example 10/17/2004 12:48:23.
+| `thread-id`       | The thread identifier within the Java VM.
+| `connection-id`   | If applicable, a unique ID for the connection associated with the message.
+| `server-id`       | If applicable, information about the connectivity server associated with the message. The _server-id_ is of the form: +
+ +
+`TCP:node-name.server-name/port-number:ODBC` +
+ +
+where +
+ +
+`node-name` is the name of the {project-name} database node. +
+`server-name` is the name of the {project-name} platform. +
+`port-number` is the port to which the server is connected. +
+ +
+*Example* +
+ +
+`TCP:\banshee-tcp.$Z0133/46003:ODBC`
+| `dialogue-id`     | If applicable, the `dialogue-id` used for the DCS connection.
+| `class`           | If applicable, the name of the class that issued the logging request.
+| `method`          | If applicable, the name of the method that issued the logging request.
+| `parameters`      | An optional set of parameters associated with the method.
+| `text`            | Optional textual information for the message.
+|===
+
+NOTE: The tilde (`~`) character separates message parts. This separator
+allows you to format the message using tools, such as Excel, Word, UNIX
+sort, and so forth. For example, you can format and sort messages based
+on sequence number or thread ID. You can edit the log file and change
+the separator (the tilde) to any character you want. When possible,
+numbers (such as `thread-id` and `sequence-number`) are prepended with
+zeros (0) to allow for readable formatting.
+
+<<<
+[[examples-of-logging-output]]
+=== Examples of Logging Output
+
+* Output where `T4LogLevel` is set to `SEVERE`:
++
+```
+00000036 ~ Dec 8, 2006 10:05:55 AM PST ~ 10 ~ 4508606 ~ null
+    ~ null ~ T4Messages.createSQLException("en_US",
+    "socket_write_error", "null") ~
+```
+
+* Output where `T4LogLevel` is set to `FINER`:
++
+```
+0000006 ~ 10/22/2004 10:34:45 ~ 001234 ~ 0049934 ~ FetchRowSetMessage ~ marshal
+  ~ Entering FetchRowSetMessage.marshal( en_US
+   , 48345
+   , STMT_MX_8843
+   , 5
+   , 4192,
+   , 0
+   , 0 )
+```

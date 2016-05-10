@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[bulk-load]]
@@ -28,20 +28,20 @@
 
 The LOAD statement enables batch loading large volumes of data efficiently in a scalable manner.
 
-See the http://trafodion.apache.org/docs/sql_reference/index.html#load_statement[Trafodion SQL Reference Manual]
+See the {docs-url}/sql_reference/index.html#load_statement[{project-name} SQL Reference Manual]
 for a full description of this SQL statement.
 
 You can bulk-load data using one of the following methods:
 
-* <<bulk-load-data-from-trafodion-tables,Load Data From Trafodion Tables>>
+* <<bulk-load-data-from-trafodion-tables,Load Data From {project-name} Tables>>
 * <<bulk-load-data-from-hdfs-files, Load Data From HDFS Files>>
 * <<bulk-load-data-from-hive-tables,Load Data From Hive Tables>>
-* <<bulk-load-data-from-external-databases,Load Data From External Databases>>
+* <<bulk-load-data-from-external-databases, Load Data From External Databases>>
 
 [[bulk-load-from-trafodion-tables]]
-== Load Data From Trafodion Tables
+== Load Data From {project-name} Tables
 
-You copy data between two Trafodion tables by using the appropriate SELECT statement in the LOAD command.
+You copy data between two {project-name} tables by using the appropriate SELECT statement in the LOAD command.
 
 === Example
 
@@ -57,24 +57,24 @@ to the HDFS folder containing the data. You may also specify a WHERE clause on t
 See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-ExternalTables[External Tables]
 page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for more information.
 
-Trafodion can access columns in Hive tables having integer, string and char types.
+{project-name} can access columns in Hive tables having integer, string and char types.
 See the https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[LanguageManual Types]
 page on the https://cwiki.apache.org/confluence/display/Hive[Hive Wiki] for the data types available in Hive.
 
 Overall, you do the following:
 
 1. Export the data on the local or remote cluster.
-2. If applicable, transport files to Trafodion cluster via FTP, scp, or some other method.
+2. If applicable, transport files to {project-name} cluster via FTP, scp, or some other method.
 3. Use LOAD referencing HIVE external tables.
 
 === Example
 
-You have a customer-demographics in a text file, which you need to load into Trafodion.
+You have a customer-demographics in a text file, which you need to load into {project-name}.
 The columns are separated by `|`.
 
 Do the following:
 
-1. Using trafci, define the Trafodion table where you want to load the data.
+1. Using trafci, define the {project-name} table where you want to load the data.
 +
 ```
 CREATE TABLE customer_demographics_salt
@@ -121,7 +121,7 @@ LOCATION '/hive/tpcds/customer_demographics'
 ;
 ```
 
-4. Using trafci, load the Trafodion `customer_demographics_salt` table from the Hive table named
+4. Using trafci, load the {project-name} `customer_demographics_salt` table from the Hive table named
 `hive.hive.customer_demographics`:
 +
 ```
@@ -150,19 +150,19 @@ You can import data from Hive using the trafci or sqlci command interface. Do th
 CQD HIVE_MAX_STRING_LENGTH '1000'; -- if the widest column is 1KB
 ```
 +
-This setting is required if there are time-related column types in the target Trafodion table.
+This setting is required if there are time-related column types in the target {project-name} table.
 +
 ```
 CQD ALLOW_INCOMPATIBLE_ASSIGNMENT 'on'; 
 ```
 
-2. Issue the LOAD statement to load data into Trafodion tables from Hive. For example:
+2. Issue the LOAD statement to load data into {project-name} tables from Hive. For example:
 +
 ```
 LOAD WITH NO POPULATE INDEXES INTO trafodion.sch.demo SELECT * FROM hive.hive.demo;
 ```
 
-See the http://trafodion.incubator.apache.org/docs/sql_reference/index.html#load_statement[Trafodion SQL Reference Manual].
+See the {docs-url}/sql_reference/index.html#load_statement[{project-name} SQL Reference Manual].
 for the complete syntax of the LOAD statement.
 
 If you use multiple LOAD statements to incrementally load sets of data into a single target table, then several HFiles are created
@@ -192,7 +192,7 @@ NOTE: The `major_compact` command returns immediately since it's not waited. Typ
 
 You need to import data into Hive when loading data from external databases.
 Use http://sqoop.apache.org/[Apache Sqoop], an open-source tools to move the data from the external database
-into Hive tables on the Trafodion cluster.
+into Hive tables on the {project-name} cluster.
 
 Source data can be in the following formats:
 
@@ -221,9 +221,9 @@ introduction to Sqoop.
 
 === Install Required Software
 
-By default, Sqoop is not installed on Trafodion clusters. Do the following:
+By default, Sqoop is not installed on {project-name} clusters. Do the following:
 
-* Install and start Sqoop on the Trafodion cluster using either the Ambari or Cloudera Manager GUI.
+* Install and start Sqoop on the {project-name} cluster using either the Ambari or Cloudera Manager GUI.
 See the http://sqoop.apache.org/docs/1.99.3/Installation.html[Sqoop installation instructions].
 
 * Install http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html[JDK 1.8]

@@ -20,7 +20,7 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 = Basic Concepts
@@ -107,7 +107,7 @@ Data loading options [connection required]:
       * pc: no default. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>
       * direct: only for Vertica databases
       * bpc: default 1,bpwc: default 4
-      * loadcmd: default IN. only for Trafodion databases
+      * loadcmd: default IN. only for {project-name} databases
 Data extraction options [connection required]:
    -e {src={table|-file}|sql=<custom sql>}:tgt=[+]file[:pwhere=where_cond]
       [:fs=fieldsep][:rs=recsep][:sq=stringqualifier][:ec=escape_char][:soe]
@@ -139,7 +139,7 @@ Data copy options [connection required]:
        * ucs2toutf8: default is 'skip'
        * roe: default 3 if no arguments
        * bpc: default 1,bpwc: default 4
-       * loadcmd: default IN. only for Trafodion databases
+       * loadcmd: default IN. only for {project-name} databases
 Data pipe options [connection required]:
    -pipe sql={[sqlcmd]|@sqlscript|-file}:tgtsql={@sqlfile|[sqlcmd]}[:soe]
       [:rows=#rowset][:nomark][:max=#max_rec][:bpc=#][:bpwc=#][:errdmp=file]
@@ -201,15 +201,16 @@ You can list available drivers with `-lsdrv`:
 
 ```
 ~/Devel/odb $ ./odb64luo -lsdrv
-Trafodion - Description=Trafodion ODBC Stand Alone Driver +
+Trafodion - Description=Trafodion ODBC Stand Alone Driver
 ...
 ```
 
 You can list locally configured data sources with `-lsdsn`:
 
 ```
-~/Devel/odb $ ./odb64luo -lsdsn traf - Trafodion
-VMFELICI – Vertica +
+~/Devel/odb $ ./odb64luo -lsdsn
+traf - Trafodion
+VMFELICI – Vertica
 ...
 ```
 
@@ -314,7 +315,7 @@ Describing: TRAFODION.MAURIZIO.T11
 
 The `INDEX` column (when using type `T`) contains the following information:
 
-* `name` of the `INDEX` (in Trafodion indexes having the same name as the table are Primary Keys).
+* `name` of the `INDEX` (in {project-name} indexes having the same name as the table are Primary Keys).
 * `ordinal number` to identify the order of that field in the index.
 * `(U)nique o (M)ultiple` values allowed.
 * `(+)` means that more than one index includes that field.
@@ -516,7 +517,7 @@ script (`-f`) will be executed, independently from the others, using a different
 Running scripts in parallel.
 
 ```
-~/Devel/odb $ ./odb64luo -x "select count(&#42;) from types" -f script1.sql
+~/Devel/odb $ ./odb64luo -x "select count(*) from types" -f script1.sql
 ```
 
 Uses two _independent_ threads executed in parallel. The first thread will run `select count(*) from types` and the other `script1.sql`.
@@ -532,7 +533,7 @@ of `script1.sql` and three instances of `script2.sql` in parallel using `3 + 5 +
 Running eleven commands and scripts in parallel
 
 ```
-~/Devel/odb $ ./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \
+~/Devel/odb $ ./odb64luo -x 3:"select count(*) from types" -f 5:script1.sql \
 -f 3:script2.sql -q
 
 [1.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
@@ -558,7 +559,7 @@ You can limit the maximum number of threads with `-T` option.
 The following command runs the same 11 commands/scripts limiting the number of threads (*and ODBC connections*) to 4:
 
 ```
-~/Devel/odb $ ./odb64luo -x 3:"select count(&#42;) from types" -f 5:script1.sql \
+~/Devel/odb $ ./odb64luo -x 3:"select count(*) from types" -f 5:script1.sql \
 -f 3:script2.sql -q -T 4
 
 [1.0.0]--- 1 row(s) selected in 0.000s (prep 0.000s, exec 0.000s, fetch 0.000s/0.000s)
@@ -806,7 +807,7 @@ If you have 16 threads and `–d MYDSN`:
 | `15`        | `MYDSN8`           | `MYDSN8`
 |===
 
-This technique has been used to maximize extraction throughput from a multi-segment Trafodion system.
+This technique has been used to maximize extraction throughput from a multi-segment {project-name} system.
 Each (local) Data Source was *linked* to a corresponding remote Data Source extracting its own data through its
 own network interface card.
 

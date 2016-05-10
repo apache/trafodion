@@ -20,30 +20,30 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
-  */
+*/
 ////
 
 [[activate]]
 = Activate
 
 [[activate-manage-trafodion]]
-== Manage Trafodion
+== Manage {project-name}
 
-You use the Trafodion runtime user ID to perform Trafodion management operations.
+You use the {project-name} runtime user ID to perform {project-name} management operations.
 
-The following table provides an overview of the different Trafodion management scripts.
+The following table provides an overview of the different {project-name} management scripts.
 
 [cols="40%,20%l,20%l,20%l",options="header"]
 |===
 | Component                              | Start     | Stop     | Status
-| *All of Trafodion*                     | sqstart   | sqstop   | sqcheck
+| *All of {project-name}*                     | sqstart   | sqstop   | sqcheck
 | *RMS Server*                           | rmsstart  | rmsstop  | rmscheck
 | *REST Server*                          | reststart | reststop | -
 | *LOB Server*                           | lobstart  | lobstop  | -
 | *DCS (Database Connectivity Services)* | dcsstart  | dcsstop  | dcscheck
 |===
 
-*Example: Start Trafodion*
+*Example: Start {project-name}*
 
 ```
 cd $MY_SQROOT/sql/scripts
@@ -52,13 +52,13 @@ sqcheck
 ```
 
 [[activate-validate-trafodion-installation]]
-== Validate Trafodion Installation
+== Validate {project-name} Installation
 
 You can use sqlci (part of the base product) or trafci (requires separate install; see the
-http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide]) to validate your installation.
+{docs-url}/client_install/index.html[{project-name} Client Installation Guide]) to validate your installation.
 
 === Smoke Test
-A simple smoke test to validate that Trafodion is functioning.
+A simple smoke test to validate that {project-name} is functioning.
 
 ```
 get schemas;
@@ -126,9 +126,9 @@ $
 <<<
 Assuming no errors, your installation has been successful. Next, do the following:
 
-* Install the Trafodion client software. Refer to the http://trafodion.apache.org/docs/client_install/index.html[Trafodion Client Installation Guide].
-* Use Trafodion. Refer to the http://trafodion.apache.org/docs/sql_reference/index.html[Trafodion SQL Reference Manual.]
-* Review other Trafodion documentation. Refer to the http://trafodion.apache.org/documentation.html[Trafodion documentation].
+* Install the {project-name} client software. Refer to the {docs-url}/client_install/index.html[{project-name} Client Installation Guide].
+* Use {project-name}. Refer to the {docs-url}/sql_reference/index.html[{project-name} SQL Reference Manual.]
+* Review other {project-name} documentation. Refer to the http://trafodion.apache.org/documentation.html[{project-name} documentation].
 
 [[activate-troubleshooting-tips]]
 == Troubleshooting Tips
@@ -139,9 +139,9 @@ If you are not able to start up the environment or if there are problems running
  
 If processes are not running as expected, then:
 
-* `sqstop` to shut down Trafodion. If some Trafodion processes do not terminate cleanly, then run `ckillall`.
-* `sqstart` to restart Trafodion.
+* `sqstop` to shut down {project-name}. If some {project-name} processes do not terminate cleanly, then run `ckillall`.
+* `sqstart` to restart {project-name}.
  
 If problems persist please review logs:
 
-* `$MY_SQROOT/logs`: Trafodion logs.
+* `$MY_SQROOT/logs`: {project-name} logs.

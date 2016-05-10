@@ -2636,6 +2636,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   // For debugging...
   if(getenv("PCODE_NO_CONV")) return ex_clause::pCodeGenerate(space, f);
 #endif
+  if( ( flags_ & CONV_TO_NULL_WHEN_ERROR ) != 0 ) return ex_clause::pCodeGenerate(space, f);
 
   // If there is a third argument to the convert, it indicates that
   // a data conversion flag is present. This is used for converting keys
