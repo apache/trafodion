@@ -1310,6 +1310,18 @@ void IpcAllConnections::fillInListOfPendingPhandles(GuaProcessHandle *phandles,
 }
 
 // Methods for connection tracing
+void IpcAllConnections::print()
+{
+  char buf[10000];
+  Int32 lineno = 0;
+
+  while (printConnTrace(lineno, buf))
+    {
+      printf("%s", buf);
+      lineno++;
+    }
+}
+
 const char *ConnTraceDesc = "All IpcConnections and their states";
 
 void IpcAllConnections::registTraceInfo(IpcEnvironment *env, ExeTraceInfo *ti)

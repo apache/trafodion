@@ -27,8 +27,6 @@ CPPSRC := SqlUdrPredefLogReader.cpp \
 	  SqlUdrPredefTimeSeries.cpp \
 	  vers_libudr_predef.cpp
 
-DEFS += -DTRAF_SOFTWARE_VERS_MAJOR=$(TRAFODION_VER_MAJOR)  -DTRAF_SOFTWARE_VERS_MINOR=$(TRAFODION_VER_MINOR) -DTRAF_SOFTWARE_VERS_UPDATE=$(TRAFODION_VER_UPDATE)
-
 # Define the correct compilation and linking flags depending on whether
 # this is a debug or release build.
 
