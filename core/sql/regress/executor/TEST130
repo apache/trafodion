@@ -83,6 +83,9 @@ select lobtostring(c2,10) from t130lob2;
 select lobtostring(c2,2) from t130lob2;
 select c1,lobtostring(c2,100) from t130lob2;
 
+--test values clause
+values((select * from tlob130lob2));
+
 
 obey TEST130(dml_join);
 
@@ -99,7 +102,9 @@ select c1, lobtostring(c2,25), lobtostring(c3,25)  from t130lob3;
 
 select lobtostring(t130lob2.c2,30) from t130lob2, t130lob3 where t130lob2.c1 = t130lob3.c1;
 
-
+values(lobtostring(t130lob2.c2));
+values (filetolob('./myfile.txt'));
+values( stringtolob('xxxxxx'));
 
 obey TEST130(dml_update);
 
