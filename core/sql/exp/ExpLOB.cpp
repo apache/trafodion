@@ -714,9 +714,10 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   if (lobNum() == -1)
     {
       Int32 intparam = LOB_PTR_ERROR;
+      Int32 detailError = 0;
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8442), NULL, &intparam, 
-		      NULL, NULL, (char*)"ExpLOB",
+		      &detailError, NULL, (char*)"ExpLOB",
 		      (char*)"ExpLOB",getLobErrStr(intparam));
       return ex_expr::EXPR_ERROR;
     }
