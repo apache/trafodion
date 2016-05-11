@@ -191,69 +191,38 @@ public class SequenceFileWriter {
       {
         GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, conf);
         Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
-        try 
-        {
-          outStream = gzipCodec.createOutputStream(fsOut, gzipCompressor);
-        }
-        catch (IOException e)
-        {
-        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() --exception :" + e);
-          throw e;
-        }
+        outStream = gzipCodec.createOutputStream(fsOut, gzipCompressor);
       }
       
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() - compressed output stream created" );
       return true;
     }
     
-    boolean hdfsWrite(byte[] buff, long len) throws Exception,OutOfMemoryError
+    boolean hdfsWrite(byte[] buff, long len) throws IOException
+      //,OutOfMemoryError
     {
 
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() - started" );
-      try
-      {
-        outStream.write(buff);
-        outStream.flush();
-      }
-      catch (Exception e)
-      {
-        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() -- exception: " + e);
-        throw e;
-      }
-      catch (OutOfMemoryError e1)
-      {
-        logger.debug("SequenceFileWriter.hdfsWrite() -- OutOfMemory Error: " + e1);
-        throw e1;
-      }
+      outStream.write(buff);
+      outStream.flush();
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() - bytes written and flushed:" + len  );
-      
       return true;
     }
     
     boolean hdfsClose() throws IOException
     {
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsClose() - started" );
-      try
-      {
-        outStream.close();
-        fsOut.close();
-      }
-      catch (IOException e)
-      {
-        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsClose() - exception:" + e);
-        throw e;
-      }
+      outStream.close();
+      fsOut.close();
       return true;
     }
 
     
-    public boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws Exception
+    public boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws IOException
     {
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - start");
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - source Path: " + srcPathStr + 
                                                ", destination File:" + dstPathStr );
-      try 
-      {
         Path srcPath = new Path(srcPathStr );
         srcPath = srcPath.makeQualified(srcPath.toUri(), null);
         FileSystem srcFs = FileSystem.get(srcPath.toUri(),conf);
@@ -286,24 +255,15 @@ public class SequenceFileWriter {
         
         if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete intermediate files" );
         srcFs.delete(tmpSrcPath, true);
-      }
-      catch (IOException e)
-      {
-        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() --exception:" + e);
-        throw e;
-      }
-      
-      
       return true;
     }
+
     public boolean hdfsCleanUnloadPath(String uldPathStr
-                         /*, boolean checkExistence, String mergeFileStr*/) throws Exception
+                         /*, boolean checkExistence, String mergeFileStr*/) throws IOException
     {
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCleanUnloadPath() - start");
       logger.debug("SequenceFileWriter.hdfsCleanUnloadPath() - unload Path: " + uldPathStr );
       
-      try 
-      {
       Path uldPath = new Path(uldPathStr );
       uldPath = uldPath.makeQualified(uldPath.toUri(), null);
       FileSystem srcFs = FileSystem.get(uldPath.toUri(),conf);
@@ -320,23 +280,14 @@ public class SequenceFileWriter {
       for (Path f : files){
         srcFs.delete(f, false);
       }
-      }
-      catch (IOException e)
-      {
-        logger.debug("SequenceFileWriter.hdfsCleanUnloadPath() -exception:" + e);
-        throw e;
-      }
-      
       return true;
     }
 
-  public boolean hdfsExists(String filePathStr) throws Exception 
+  public boolean hdfsExists(String filePathStr) throws IOException 
   {
     logger.debug("SequenceFileWriter.hdfsExists() - start");
     logger.debug("SequenceFileWriter.hdfsExists() - Path: " + filePathStr);
 
-    try 
-    {
         //check existence of the merge Path
        Path filePath = new Path(filePathStr );
        filePath = filePath.makeQualified(filePath.toUri(), null);
@@ -347,72 +298,43 @@ public class SequenceFileWriter {
        + filePath + " exists" );
          return true;
        }
-
-    } catch (IOException e) {
-      logger.debug("SequenceFileWriter.hdfsExists() -exception:" + e);
-      throw e;
-    }
     return false;
   }
 
-  public boolean hdfsDeletePath(String pathStr) throws Exception
+  public boolean hdfsDeletePath(String pathStr) throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsDeletePath() - start - Path: " + pathStr);
-    try 
-    {
       Path delPath = new Path(pathStr );
       delPath = delPath.makeQualified(delPath.toUri(), null);
       FileSystem fs = FileSystem.get(delPath.toUri(),conf);
       fs.delete(delPath, true);
-    }
-    catch (IOException e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsDeletePath() --exception:" + e);
-      throw e;
-    }
-    
     return true;
   }
 
-  private boolean init(String zkServers, String zkPort) 
-      throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
+  private boolean init(String zkServers, String zkPort) throws IOException 
+      , ServiceException
   {
     logger.debug("SequenceFileWriter.init(" + zkServers + ", " + zkPort + ") called.");
     if (conf != null)		
        return true;		
     conf = HBaseConfiguration.create();		
-    if (zkServers.length() > 0)		
-      conf.set("hbase.zookeeper.quorum", zkServers);		
-    if (zkPort.length() > 0)		
-      conf.set("hbase.zookeeper.property.clientPort", zkPort);		
     HBaseAdmin.checkHBaseAvailable(conf);
     return true;
   }
   
   public boolean createSnapshot( String tableName, String snapshotName)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, 
-             InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
+      throws IOException
   {
-    try 
-    {
       if (admin == null)
         admin = new HBaseAdmin(conf);
       admin.snapshot(snapshotName, tableName);
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Snapshot created: " + snapshotName);
-    }
-    catch (Exception e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Exception: " + e);
-      throw e;
-    }
     return true;
   }
+
   public boolean verifySnapshot( String tableName, String snapshotName)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, 
-             InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
+      throws IOException
   {
-    try 
-    {
       if (admin == null)
         admin = new HBaseAdmin(conf);
       List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
@@ -426,12 +348,6 @@ public class SequenceFileWriter {
           return true;
         }
       }
-    }
-    catch (Exception e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.verifySnapshot() - Exception: " + e);
-      throw e;
-    }
     return false;
   }
  
@@ -439,20 +355,11 @@ public class SequenceFileWriter {
       throws MasterNotRunningException, IOException, SnapshotCreationException, 
              InterruptedException, ZooKeeperConnectionException, ServiceException, Exception
   {
-    try 
-    {
       if (admin == null)
         admin = new HBaseAdmin(conf);
       admin.deleteSnapshot(snapshotName);
       if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Snapshot deleted: " + snapshotName);
-    }
-    catch (Exception e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Exception: " + e);
-      throw e;
-    }
-
-    return true;
+      return true;
   }
 
   public boolean release()  throws IOException
