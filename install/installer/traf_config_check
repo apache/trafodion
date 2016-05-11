@@ -33,6 +33,7 @@ source $TRAF_CONFIG
 function majorErrorFound {
    if [[ "$errorFound" == "1" ]]; then
       cat $ERROR_LOG
+      cat /etc/trafodion/trafodion_config
       echo
       exit -1
    fi
