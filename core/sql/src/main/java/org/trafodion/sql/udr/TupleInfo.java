@@ -1326,13 +1326,85 @@ public class TupleInfo extends TMUDRSerializableObject {
         case NUMERIC_UNSIGNED:
         case DECIMAL_UNSIGNED:
             long lval;
-            try {lval = Long.parseLong(val);}
-            catch (Exception e1) {
-                throw new UDRException(
-                                       38900,
-                                       "Error in setString() \"%s\" is not a long value",
-                                       val);
-            }
+            int scale = t.getScale();
+
+            if (scale == 0)
+                {
+                    try {lval = Long.parseLong(val);}
+                    catch (Exception e1) {
+                        throw new UDRException(
+                          38900,
+                          "Error in setString() \"%s\" is not a long value",
+                          val);
+                    }
+                }
+            else
+                {
+                    // setLong wants a long value that is scaled up by "scale"
+                    // e.g. 12.34 with a column of scale 3 would become 12340.
+                    boolean negate = false;
+                    String tval = val.trim();
+                    // scale of value read
+                    int vScale = 0;
+
+                    if (tval.charAt(0) == '-')
+                        {
+                            negate = true;
+                            tval = tval.substring(1,tval.length()).trim();
+                        }
+
+                    try {
+                        // position of decimal dot or decimal digit after the dot
+                        int ddPos = tval.indexOf('.');
+                        int len = tval.length();
+
+                        if (ddPos < 0)
+                            // no dot is the same as a trailing dot
+                            ddPos = len;
+
+                        if (ddPos > 0)
+                            // read the number before the (optional) decimal point
+                            lval = Long.parseLong(tval.substring(0, ddPos));
+                        else
+                            // the number starts with a dot
+                            lval = 0;
+
+                        // read any digits after the decimal point
+                        if (++ddPos < len)
+                            {
+                                long fraction = Long.parseLong(tval.substring(ddPos, len));
+                                vScale = (len - ddPos);
+
+                                for (int s=0; s<vScale; s++)
+                                    lval *= 10;
+
+                                lval += fraction;
+                            }
+
+                        if (negate)
+                            lval = -lval;
+
+                        // Now we got the value in lval with a scale of vScale.
+                        // Scale it up to "scale"
+                        while (vScale < scale)
+                            {
+                                lval *= 10;
+                                vScale++;
+                            }
+
+                    } catch (Exception e2) {
+                        throw new UDRException(
+                          38900,
+                          "Error in setString(): \"%s\" is not an in-range numeric value",
+                          val);
+                    }
+
+                    if (vScale > scale)
+                        throw new UDRException(
+                          38900,
+                          "Error in setString(): Scale of value %s exceeds that of the column, %d",
+                          val, scale);
+                }
             setLong(colNum, lval);
             break;
         

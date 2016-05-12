@@ -6530,6 +6530,11 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
           
           ConstValue* value = NULL;
           if ( ie->doesExprEvaluateToConstant(TRUE, TRUE) ) {
+             ValueIdSet availableValues;
+             // do a simple VEG replacement with no available values
+             // and no inputs, all VEGies should have constants in
+             // them and should be replaced with those
+             ie = ie->replaceVEGExpressions(availableValues, availableValues);
              value = ie->evaluate(STMTHEAP);
              if ( !value )
                 return NULL;

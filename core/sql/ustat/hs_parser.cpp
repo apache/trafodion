@@ -1108,10 +1108,13 @@ Lng32 AddEveryColumn(const char *startColumn, const char *endColumn)
                 LM->Log(LM->msg);
               }
           }
-        else                                 // add to single-column group list
+        else if (!DFS2REC::isLOB(hs_globals->objDef->getColInfo(colNumber).datatype))
           {
+            // add to single-column group list
             retcode = AddSingleColumn(colNumber);
           }
+        // else it's a LOB column; silently exclude it (the column was only
+        // implicitly referenced)
       }
 
     if (!startColumn &&  // ON EVERY COLUMN causes key groups to be added as well

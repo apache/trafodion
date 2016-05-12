@@ -11343,19 +11343,6 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
        preds.advance(vid))
     {
       ItemExpr * ie = vid.getItemExpr();
-
-      // if it is AND operation, recurse through left and right children
-      if (ie->getOperatorType() == ITM_AND)
-        {
-          ValueIdSet leftPreds;
-          ValueIdSet rightPreds;
-          leftPreds += ie->child(0)->castToItemExpr()->getValueId();
-          rightPreds += ie->child(1)->castToItemExpr()->getValueId();
-          extractHbaseFilterPreds(generator, leftPreds, newExePreds);
-          extractHbaseFilterPreds(generator, rightPreds, newExePreds);
-          continue; 
-        }
-      
       ValueId colVID;
       ValueId valueVID;
       NABoolean removeFromOrigList = FALSE;

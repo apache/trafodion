@@ -183,33 +183,9 @@ bool init_pnode_map( void )
     pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
     {
-        // TEST_POINT and exclude list : to force state down on node name
-         NodeState_t nodeState = StateUp;
-         const char *downNodeName = getenv( TP001_NODE_DOWN );
-         const char *downNodeList = getenv( TRAF_EXCLUDE_LIST );
-	 string downNodeString = " ";
-	 if (downNodeList)
-	 {
-	   downNodeString += downNodeList;
-	   downNodeString += " ";
-	 }
-	 string downNodeToFind = " ";
-	 downNodeToFind += pnodeConfig->GetName();
-	 downNodeToFind += " ";
-         if (((downNodeList != NULL) && 
-	    (strstr(downNodeString.c_str(),downNodeToFind.c_str()))) ||
-            ( downNodeName != NULL && 
-             !strcmp( downNodeName, pnodeConfig->GetName() ) ))
-         {
-             nodeState = StateDown;
-         }
-
-        // effectively remove spare nodes on startup only
-        if ( SpareNodeColdStandby && pnodeConfig->IsSpareNode() )
-        {
-            nodeState = StateDown;
-        }
-
+        // Set initial state of all physical nodes in a real cluster to StateDown
+        // update_cluster_state() will set operational state of physical node
+        NodeState_t nodeState = StateDown;
         physicalNode = new CPhysicalNode( pnodeConfig->GetName(), nodeState );
         if ( physicalNode )
         {
