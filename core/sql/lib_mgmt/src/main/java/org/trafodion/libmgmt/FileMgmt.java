@@ -249,6 +249,7 @@ public class FileMgmt {
 			if (pdsh == null) {
 				pdsh = "/usr/bin/pdsh";
 			}
+			execShell(pdsh + " " + nodes + " mkdir -p " + userPath);
 			execShell(pdcp + " " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
 			execShell(pdsh + " " + nodes + " chmod 755 " + userPath + fileName.trim());
 		}

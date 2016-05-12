@@ -133,7 +133,7 @@ cleanall: sqroot eclipseclean cleantests
 
 package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests
 
-pkg-product: all  
+pkg-product: all dcs rest 
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
 pkg-client: ci ndcs odb
