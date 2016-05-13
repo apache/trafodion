@@ -74,13 +74,13 @@ class odbc_SQLSvc_EndTransaction_exc_ {
 			break;
 		case odbc_SQLSvc_EndTransaction_ParamError_exn_:
 			ParamError = ic.decodeBytes(buffer1.extractString(), 1);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
 		case odbc_SQLSvc_EndTransaction_InvalidConnection_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
 		case odbc_SQLSvc_EndTransaction_SQLInvalidHandle_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_transaction_error", temp1, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_transaction_error", temp1, addr);
 		default:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
 		} // end switch
 	} // end extractFromByteArray
 

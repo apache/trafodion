@@ -67,20 +67,20 @@ class odbc_SQLSvc_Fetch_exc_ {
 		case odbc_SQLSvc_Fetch_SQLNoDataFound_exn_:
 			break;
 		case odbc_SQLSvc_Fetch_SQLQueryCancelled_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_s1_008", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_s1_008", null);
 		case odbc_SQLSvc_Fetch_SQLError_exn_:
 			SQLError = new ERROR_DESC_LIST_def();
 			SQLError.extractFromByteArray(buffer1, ic);
 			break;
 		case odbc_SQLSvc_Fetch_ParamError_exn_:
 			ParamError = ic.decodeBytes(buffer1.extractString(), 1);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
 		case odbc_SQLSvc_Fetch_InvalidConnection_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
 		case odbc_SQLSvc_Fetch_TransactionError_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_transaction_error", temp1, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_transaction_error", temp1, addr);
 		default:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
 		}
 	} // end extractFromByteArray
 

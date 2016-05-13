@@ -28,7 +28,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.logging.Level;
 
-public abstract class PreparedStatementManager extends HPT4Handle {
+public abstract class PreparedStatementManager extends TrafT4Handle {
 
 	boolean isStatementCachingEnabled() {
 		if (maxStatements_ < 1) {

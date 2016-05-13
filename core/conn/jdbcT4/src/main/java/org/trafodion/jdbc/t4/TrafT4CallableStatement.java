@@ -64,7 +64,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			connection_.props_.getLogWriter().println(temp);
 		}
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getArray()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getArray()");
 		return null;
 	}
 
@@ -121,7 +121,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			try {
 				retValue = new BigDecimal(data);
 			} catch (NumberFormatException e) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_cast_specification", null);
 			}
 			return retValue;
@@ -314,11 +314,11 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		validateGetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.BINARY && dataType != Types.VARBINARY && dataType != Types.LONGVARBINARY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		// BINARY, VARBINARY, LONGVARBINARY not supported
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "datatype_not_supported",
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "datatype_not_supported",
 				null);
 	}
 
@@ -364,7 +364,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		// For LOB Support - SB
@@ -383,7 +383,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 					retValue = Date.valueOf(dateStr);
 				}
 			} catch (IllegalArgumentException e) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_cast_specification", null);
 			}
 			return retValue;
@@ -758,7 +758,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		case Types.TIMESTAMP:
 			return getTimestamp(parameterIndex);
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 	}
@@ -778,7 +778,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getObject()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getObject()");
 		return null;
 	}
 
@@ -835,7 +835,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getRef()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getRef()");
 		return null;
 	}
 
@@ -950,17 +950,17 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 
 					wasNull_ = false;
 				} catch (CharacterCodingException e) {
-					SQLException se = HPT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_
+					SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_
 							.getLocale(), "translation_of_parameter_failed", "getLocalString", e.getMessage());
 					se.initCause(e);
 					throw se;
 				} catch (UnsupportedCharsetException e) {
-					SQLException se = HPT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_
+					SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_
 							.getLocale(), "unsupported_encoding", e.getCharsetName());
 					se.initCause(e);
 					throw se;
 				} catch (UnsupportedEncodingException e) {
-					SQLException se = HPT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_
+					SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_, this.connection_
 							.getLocale(), "unsupported_encoding", e.getMessage());
 					se.initCause(e);
 					throw se;
@@ -1015,7 +1015,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 
@@ -1027,7 +1027,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 				wasNull_ = false;
 				retValue = Time.valueOf(timeStr);
 			} catch (IllegalArgumentException e) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_cast_specification", null);
 			}
 			return retValue;
@@ -1129,7 +1129,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 
@@ -1141,7 +1141,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 				wasNull_ = false;
 				retValue = Timestamp.valueOf(timestampStr);
 			} catch (IllegalArgumentException e) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_cast_specification", null);
 			}
 			return retValue;
@@ -1239,7 +1239,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 			connection_.props_.getLogWriter().println(temp);
 		}
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getURL()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getURL()");
 		return null;
 	}
 
@@ -1958,7 +1958,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		}
 
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "executeBatch()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "executeBatch()");
 		return null;
 	}
 
@@ -2032,20 +2032,20 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_statement",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_statement",
 					null);
 		}
 		if (inputDesc_ == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"not_a_output_parameter", null);
 		}
 		if (parameterIndex < 1 || parameterIndex > inputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_parameter_index", null);
 		}
 		if (inputDesc_[parameterIndex - 1].paramMode_ != DatabaseMetaData.procedureColumnInOut
 				&& inputDesc_[parameterIndex - 1].paramMode_ != DatabaseMetaData.procedureColumnOut) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"not_a_output_parameter", null);
 		}
 	}
@@ -2058,11 +2058,11 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		int i;
 
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_statement",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_statement",
 					null);
 		}
 		if (inputDesc_ == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"not_a_output_parameter", null);
 		}
 		for (i = 0; i < inputDesc_.length; i++) {
@@ -2070,7 +2070,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 				return i + 1;
 			}
 		}
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_parameter_name",
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_parameter_name",
 				null);
 	}
 
@@ -2082,10 +2082,10 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 		int i;
 
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "stmt_closed", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "stmt_closed", null);
 		}
 		if (inputDesc_ == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_parameter_index", null);
 		}
 		for (i = 0; i < inputDesc_.length; i++) {
@@ -2093,7 +2093,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 				return i + 1;
 			}
 		}
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_parameter_name",
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_parameter_name",
 				null);
 	}
 
@@ -2242,7 +2242,7 @@ public class TrafT4CallableStatement extends TrafT4PreparedStatement implements 
 					stmtName, queryTimeout, holdability);
 			connection_.props_.t4Logger_.logp(Level.FINER, "TrafT4CallableStatement", "cpqPrepareCall", "", p);
 		}
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "unsupported_feature",
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "unsupported_feature",
 				new Object[] { "cpqPrepareCall" });
 	};
 

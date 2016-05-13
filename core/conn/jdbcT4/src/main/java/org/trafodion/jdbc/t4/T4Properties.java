@@ -45,8 +45,8 @@ import javax.naming.StringRefAddr;
  * <p>
  * Description: The <code>T4Properties</code> class contains all the
  * properties associated with Type 4 connection. <code>T4Properties</code> is
- * inherited directy or indirectly by the <code>T4Driver, HPT4DataSource,
- * HPT4ConnectionPooledDataSource</code>
+ * inherited directy or indirectly by the <code>T4Driver, TrafT4DataSource,
+ * TrafT4ConnectionPooledDataSource</code>
  * classes for configuring Type 4 connection properties.
  * </p>
  * <p>
@@ -262,16 +262,16 @@ public class T4Properties {
 				t4GlobalLogFileHandler.setFormatter(ff1);
 			}
 		} catch (Exception e) {
-			// SQLException se = HPT4Messages.createSQLException(null, null,
+			// SQLException se = TrafT4Messages.createSQLException(null, null,
 			// "problem_with_logging", e.getMessage());
 			// sqlExceptionMessage_ = se.getMessage();
 
-			SQLException se = HPT4Messages.createSQLException(null, null, "problem_with_logging", e.getMessage());
+			SQLException se = TrafT4Messages.createSQLException(null, null, "problem_with_logging", e.getMessage());
 			sqlExceptionMessage_ = se.getMessage();
 			// RuntimeException rte = new RuntimeException(se.getMessage(), se);
 			// throw rte;
 			// e.printStackTrace();
-			// throw HPT4Messages.createSQLException(null, null,
+			// throw TrafT4Messages.createSQLException(null, null,
 			// "problem_with_logging", e.getMessage());
 		}
 	} // end initializeLogging
@@ -1373,7 +1373,7 @@ public class T4Properties {
 				t4LogLevel = Level.parse(level);
 			} catch (Exception ex) {
 
-				SQLException se = HPT4Messages.createSQLException(null, null, "problem_with_logging", ex.getMessage());
+				SQLException se = TrafT4Messages.createSQLException(null, null, "problem_with_logging", ex.getMessage());
 				sqlExceptionMessage_ = se.getMessage();
 				// throw se;
 				// RuntimeException rte = new RuntimeException(se.getMessage(),
@@ -1750,13 +1750,13 @@ public class T4Properties {
 				count++;
 			}
 			if (count < 2) {
-				SQLException se = HPT4Messages.createSQLException(null, null, "no_clobTableName", null);
+				SQLException se = TrafT4Messages.createSQLException(null, null, "no_clobTableName", null);
 				sqlExceptionMessage_ = se.getMessage();
 			}
 			clobTableName_ = clobTableName;
 		} else { // If the name is null, let it be null
 			clobTableName_ = null;
-			// throw HPT4Messages.createSQLException(null,
+			// throw TrafT4Messages.createSQLException(null,
 			// null,"no_clobTableName",null);
 		}
 	}
@@ -1803,7 +1803,7 @@ public class T4Properties {
 				count++;
 			}
 			if (count < 2) {
-				SQLException se = HPT4Messages.createSQLException(null, null, "no_blobTableName", null);
+				SQLException se = TrafT4Messages.createSQLException(null, null, "no_blobTableName", null);
 				sqlExceptionMessage_ = se.getMessage();
 			}
 			blobTableName_ = blobTableName;
@@ -1811,7 +1811,7 @@ public class T4Properties {
 		// If the name is null, then let it be null
 		else {
 			blobTableName_ = null;
-			// throw HPT4Messages.createSQLException(null, null,
+			// throw TrafT4Messages.createSQLException(null, null,
 			// "no_blobTableName", null);
 		}
 	}

@@ -51,13 +51,13 @@ import javax.naming.Referenceable;
  * </p>
  * 
  * <p>
- * The <code>HPT4DataSource</code> class can provide connection pooling and
+ * The <code>TrafT4DataSource</code> class can provide connection pooling and
  * statement pooling features.
  * </p>
  * 
  * <pre>
- * &lt;b&gt;Setting properties for the HPT4DataSource in the Type 4 driver&lt;/b&gt;
- *    HPT4DataSource ds = new HPT4DataSource();
+ * &lt;b&gt;Setting properties for the TrafT4DataSource in the Type 4 driver&lt;/b&gt;
+ *    TrafT4DataSource ds = new TrafT4DataSource();
  *   ds.setUrl(&quot;jdbc:t4jdbc://&lt;NDCS host&gt;:&lt;NDCS port&gt;/:&quot;);
  *   ds.setCatalog(&quot;your catalog&quot;);
  *   ds.setSchema(&quot;your schema&quot;);
@@ -82,7 +82,7 @@ import javax.naming.Referenceable;
  * </pre>
  * 
  * <pre>
- * &lt;b&gt;Programmatically registering HPT4DataSource with JDNI&lt;/b&gt;
+ * &lt;b&gt;Programmatically registering TrafT4DataSource with JDNI&lt;/b&gt;
  * 	java.util.Hashtable env = new java.util.Hashtable();
  *      env.put(Context.INITIAL_CONTEXT_FACTORY, &quot;Factory class name here&quot;);
  *      javax.naming.Context ctx = new javax.naming.InitialContext(env);
@@ -104,7 +104,7 @@ import javax.naming.Referenceable;
  * 
  * @see T4Properties
  */
-public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSource, java.io.Serializable, Referenceable
+public class TrafT4DataSource extends T4DSProperties implements javax.sql.DataSource, java.io.Serializable, Referenceable
 
 {
 	/**
@@ -117,15 +117,15 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	 */
 	synchronized public Connection getConnection() throws SQLException {
 		if (logger.isLoggable(Level.FINER)) {
-			logger.entering("HPT4DataSource", "getConnection");
+			logger.entering("TrafT4DataSource", "getConnection");
 		}
 
 		Connection conn;
 		TrafT4Connection t4Conn;
-		HPT4ConnectionPoolDataSource pds;
+		TrafT4ConnectionPoolDataSource pds;
 
 		if (getSQLException() != null) {
-			throw HPT4Messages.createSQLException(null, getLocale(), "invalid_property", getSQLException());
+			throw TrafT4Messages.createSQLException(null, getLocale(), "invalid_property", getSQLException());
 		}
 
 		if (getMaxPoolSize() == -1) {
@@ -135,8 +135,8 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 				t4Conn = (TrafT4Connection) poolManager.getConnection();
 			} else {
 
-				pds = new HPT4ConnectionPoolDataSource(getProperties());
-				poolManager = new HPT4PooledConnectionManager(pds, getT4LogLevel());
+				pds = new TrafT4ConnectionPoolDataSource(getProperties());
+				poolManager = new TrafT4PooledConnectionManager(pds, getT4LogLevel());
 				t4Conn = (TrafT4Connection) poolManager.getConnection();
 			}
 		}
@@ -145,7 +145,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 		conn = t4Conn;
 
 		if (logger.isLoggable(Level.FINER)) {
-			logger.exiting("HPT4DataSource", "getConnection", conn);
+			logger.exiting("TrafT4DataSource", "getConnection", conn);
 		}
 
 		return conn;
@@ -165,7 +165,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	 */
 	synchronized public Connection getConnection(String username, String password) throws SQLException {
 		if (logger.isLoggable(Level.FINER)) {
-			logger.entering("HPT4DataSource", "getConnection", new Object[] { this, username });
+			logger.entering("TrafT4DataSource", "getConnection", new Object[] { this, username });
 		}
 
 		Connection conn;
@@ -176,7 +176,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 		conn = getConnection();
 
 		if (logger.isLoggable(Level.FINER)) {
-			logger.exiting("HPT4DataSource", "getConnection", conn);
+			logger.exiting("TrafT4DataSource", "getConnection", conn);
 		}
 
 		return conn;
@@ -188,7 +188,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	 */
 	public Reference getReference() throws NamingException {
 
-		Reference ref = new Reference(this.getClass().getName(), "org.trafodion.jdbc.t4.HPT4DataSourceFactory", null);
+		Reference ref = new Reference(this.getClass().getName(), "org.trafodion.jdbc.t4.TrafT4DataSourceFactory", null);
 		return addReferences(ref);
 	}
 
@@ -206,14 +206,14 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 		super.setLogWriter(out);
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null, out);
-			t4Logger_.logp(Level.FINE, "HPT4DataSource", "setLogWriter",
+			t4Logger_.logp(Level.FINE, "TrafT4DataSource", "setLogWriter",
 					"Note, this constructor was called before the previous constructor", p);
 		}
 		if (getLogWriter() != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null, out);
 			lr.setParameters(p);
-			lr.setSourceClassName("HPT4DataSource");
+			lr.setSourceClassName("TrafT4DataSource");
 			lr.setSourceMethodName("setLogWriter");
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
@@ -228,14 +228,14 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	void setPoolManager(Context nameCtx, String dataSourceName) throws Exception {
 		if (t4Logger_.isLoggable(Level.FINER) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null, nameCtx, dataSourceName);
-			t4Logger_.logp(Level.FINER, "HPT4DataSource", "setPoolManager", "", p);
+			t4Logger_.logp(Level.FINER, "TrafT4DataSource", "setPoolManager", "", p);
 		}
 		Object pds;
 
 		try {
 			pds = nameCtx.lookup(dataSourceName);
-			if (pds instanceof HPT4ConnectionPoolDataSource) {
-				poolManager = new HPT4PooledConnectionManager((HPT4ConnectionPoolDataSource) pds, getT4LogLevel());
+			if (pds instanceof TrafT4ConnectionPoolDataSource) {
+				poolManager = new TrafT4PooledConnectionManager((TrafT4ConnectionPoolDataSource) pds, getT4LogLevel());
 			}
 		} catch (javax.naming.NameNotFoundException nnfe) {
 		}
@@ -266,18 +266,18 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	// --------------------------------------------------------
 
 	/**
-	 * Contructor for the <code>HPT4DataSource</code> object.
+	 * Contructor for the <code>TrafT4DataSource</code> object.
 	 * 
-	 * @see #HPT4DataSource(java.util.Properties)
+	 * @see #TrafT4DataSource(java.util.Properties)
 	 */
-	public HPT4DataSource() {
+	public TrafT4DataSource() {
 		super();
 		if (getT4LogLevel() != Level.OFF) {
 			setupLogFileHandler();
 		}
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4DataSource", "<init>",
+			t4Logger_.logp(Level.FINE, "TrafT4DataSource", "<init>",
 					"Note, this constructor was called before the previous constructor", p);
 		}
 		try {
@@ -285,7 +285,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4DataSource");
+				lr.setSourceClassName("TrafT4DataSource");
 				lr.setSourceMethodName("<init>");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -298,23 +298,23 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	}
 
 	/**
-	 * Contructor for the <code>HPT4DataSource</code> object.
+	 * Contructor for the <code>TrafT4DataSource</code> object.
 	 * 
 	 * @param info
 	 *            Contains all the Type 4 properties in a <code>name,
 	 * value</code>
 	 *            pair.
-	 * @see #HPT4DataSource()
+	 * @see #TrafT4DataSource()
 	 * @see java.util.Properties
 	 */
-	public HPT4DataSource(Properties info) {
+	public TrafT4DataSource(Properties info) {
 		super(info);
 		if (getT4LogLevel() != Level.OFF) {
 			setupLogFileHandler();
 		}
 		if (t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null);
-			t4Logger_.logp(Level.FINE, "HPT4DataSource", "<init>",
+			t4Logger_.logp(Level.FINE, "TrafT4DataSource", "<init>",
 					"Note, this constructor was called before the previous constructor", p);
 		}
 		try {
@@ -322,7 +322,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(null);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4DataSource");
+				lr.setSourceClassName("TrafT4DataSource");
 				lr.setSourceMethodName("<init>");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -347,7 +347,7 @@ public class HPT4DataSource extends T4DSProperties implements javax.sql.DataSour
 	}
 
 	// fields
-	HPT4PooledConnectionManager poolManager;
+	TrafT4PooledConnectionManager poolManager;
 
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
 		// TODO Auto-generated method stub
