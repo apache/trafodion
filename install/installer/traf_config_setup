@@ -301,7 +301,7 @@ echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $LOCAL_TRAF_CONFIG
 # TRAF_PACKAGE = the trafodion package tar file which contains trafodion core & dcs
 # TRAF_BUILD = the trafodion core tar file extracted from the trafodion package
 # DCS_BUILD = the dcs tar file extracted from the trafodion package
-
+# 05/10/2016 
 if [ -z "$TRAF_PACKAGE" ]; then
    TRAF_DEFAULT="$TRAF_BUILD"
 else
@@ -328,67 +328,20 @@ if [ ! -f $TRAF_PACKAGE ]; then
    exit -1
 fi
 
-# Determine if we have a package or just the trafodion_server tar file
-# Normally, the package file is what should be specified but because
-# we used to not support the package file and required the trafodion core
-# tar file previous users might still specify the trafodion core tar file instead
-# Also, developers might only have trafodion core tar file and not a package
-# tar file.
+# Determine if we have a package that was created before 05/10/2016. 
+# Tar files created after 05/10/2016 are no longer a tar of tar packages
+# but just one tar file.
+
 package=$(tar -tzf $TRAF_PACKAGE | grep build-version.txt | wc -l )
 if [ $package -eq 0 ]; then
    
-   # assume user specified a trafodion core tar file
-   UTT_INSTALL="Y"
-   TRAF_BUILD=$TRAF_PACKAGE
-   TRAF_PACKAGE=""
-   
-   #TODO: do a quick sanity check on the file to make sure it is a traf build tar file
-
-   echo "***INFO: tar file is not a package tar file which includes Trafodion & DCS"
-   echo "***INFO: assuming it is a Trafodion build only tar file"
-   
-   # since it is not a package tar file, we'll need to prompt for the DCS build file
-   echo -n "Enter location of DCS tar file [$DCS_BUILD]: "
-   read answer
-   if [ -z $answer ]; then
-      if [ -z $DCS_BUILD ]; then
-         echo "***ERROR: Must specify DCS tar file location."
-         exit -1
-      fi
-   else
-      DCS_BUILD=$answer
-   fi
-   
-   # make sure file exists
-   if [ ! -f $DCS_BUILD ]; then
-      echo "***ERROR: $DCS_BUILD does not exist"
-      exit -1
-   fi
-   #TODO: do a quick sanity check on the file to make sure it is a DCS build tar file
-   
-   # since it is not a package tar file, we'll need to prompt for the rest build file
-   echo -n "Enter location of REST tar file [$REST_BUILD]: "
-   read answer
-   if [ -z $answer ]; then
-      if [ -z $REST_BUILD ]; then
-         echo "***ERROR: Must specify REST tar file location."
-         exit -1
-      fi
-   else
-      REST_BUILD=$answer
-   fi
-   
-   # make sure file exists
-   if [ ! -f $REST_BUILD ]; then
-      echo "***ERROR: $REST_BUILD does not exist"
-      exit -1
-   fi
-
-   #TODO: do a quick sanity check on the file to make sure it is a rest build tar file
-   
+   ONE_TAR_INSTALL="Y"
+   TRAF_BUILD=""
+   DCS_BUILD=""
+   REST_BUILD="" 
 else
    # user specifed a package file
-   UTT_INSTALL="N"
+   ONE_TAR_INSTALL="N"
    TRAF_BUILD=""
    DCS_BUILD=""
    REST_BUILD=""
@@ -399,7 +352,7 @@ echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
-echo "export UTT_INSTALL=\"$UTT_INSTALL\"" >> $LOCAL_TRAF_CONFIG
+echo "export ONE_TAR_INSTALL=\"$ONE_TAR_INSTALL\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
 #Backup restore user
