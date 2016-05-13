@@ -95,7 +95,7 @@ cd $REST_INSTALL_PATH
 
 if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
    REST_DIR=$(sudo ls $SQ_ROOT | grep rest)
-   REST_DIR=$($SQ_ROOT/$REST_DIR)
+   REST_DIR=$SQ_ROOT/$REST_DIR
    echo "***INFO: Rest Install Directory: $REST_DIR"
 
 else
