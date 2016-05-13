@@ -1064,7 +1064,7 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
     hdfsSampleFile_(NULL),
     lastErrorCnd_(NULL)
 {
-   hFileParamsInitialized_ = false;  ////temporary-- need better mechanism later
+   hFileParamsInitialized_ = false;
    //sortedListOfColNames_ = NULL;
    posVec_.clear();
 
