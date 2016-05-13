@@ -133,6 +133,7 @@ cd $DCS_INSTALL_PATH
 if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
    DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs)
    DCS_DIR=$SQ_ROOT/$DCS_DIR
+   echo "***INFO: DCS Install Directory: $DCS_DIR"
 else
    # untar DCS build into install directory
    echo "***INFO: untarring build file $DCS_BUILD_FILE"
