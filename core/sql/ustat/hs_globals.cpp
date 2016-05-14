@@ -508,6 +508,64 @@ Int32 getMissingCols (const NABitVector &map1, const NABitVector &map2, NABitVec
   return (Int32) (missing_bits->entries() - initial);
 }
 
+// If an HBase table is very large, we risk time-outs because the
+// sample scan doesn't return rows fast enough. In this case, we
+// want to reduce the HBase row cache size to a smaller number to
+// force more frequent returns. Experience shows that a value of
+// '10' worked well with a 17.7 billion row table with 128 regions
+// on six nodes (one million row sample). We'll assume a workable
+// HBase cache size value scales linearly with the sampling ratio.
+// That is, we'll assume the model:
+//
+//   workable value = (sample row count / actual row count) * c,
+//   where c is chosen so that we get 10 when the sample row count
+//   is 1,000,000 and the actual row count is 17.7 billion.
+//
+//   Solving for c, we get c = 10 * (17.7 billion/1 million).
+//
+// Note that the Generator does a similar calculation in
+// Generator::setHBaseNumCacheRows. The calculation here is more
+// conservative because we care more about getting UPDATE STATISTICS
+// done without a timeout, trading off possible speed improvements
+// by using a smaller cache size.
+//
+// Note that when we move to HBase 1.1, with its heartbeat protocol,
+// this time-out problem goes away and we can remove these CQDs.
+//
+// Input:
+// sampleRatio -- Percentage of rows being sampled.
+//
+// Return:
+// TRUE if the CQDs were altered, FALSE otherwise. The caller should use this
+// information to reset the CQDs following execution of the sample query to
+// avoid a performance penalty for subsequent queries (notably those that
+// read the sample table).
+NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
+{
+  double calibrationFactor = 10 * (17700000000/1000000);
+  Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
+  if (workableCacheSize < 1)
+    workableCacheSize = 1;  // can't go below 1 unfortunately
+
+  Int32 max = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
+  if ((workableCacheSize < 10000) && // don't bother if 10000 works
+      (max == 10000))  // don't do it if user has already set this CQD
+    {
+      char temp1[40];  // way more space than needed, but it's safe
+      Lng32 wcs = (Lng32)workableCacheSize;
+      sprintf(temp1,"'%d'",wcs);
+      NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
+      minCQD += temp1;
+      HSFuncExecQuery(minCQD);
+      NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
+      maxCQD += temp1;
+      HSFuncExecQuery(maxCQD);
+      return TRUE;
+    }
+  else
+    return FALSE;
+}
+
 // rearrange the MCs so that the larger groups are listed first
 // and the ones that will not be processed (not enough memory) are
 // listed last, so to simplify the rest of the ordering algorithm
@@ -3798,53 +3856,11 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
             EspCQDUsed = TRUE;  // remember to reset later
           }
 
-        // If the table is very large, we risk HBase time-outs because the
-        // sample scan doesn't return rows fast enough. In this case, we
-        // want to reduce the HBase row cache size to a smaller number to
-        // force more frequent returns. Experience shows that a value of
-        // '10' worked well with a 17.7 billion row table with 128 regions
-        // on six nodes (one million row sample). We'll assume a workable
-        // HBase cache size value scales linearly with the sampling ratio.
-        // That is, we'll assume the model:
-        //
-        //   workable value = (sample row count / actual row count) * c,
-        //   where c is chosen so that we get 10 when the sample row count
-        //   is 1,000,000 and the actual row count is 17.7 billion.
-        //
-        //   Solving for c, we get c = 10 * (17.7 billion/1 million).
-        //
-        // Note that the Generator does a similar calculation in
-        // Generator::setHBaseNumCacheRows. The calculation here is more
-        // conservative because we care more about getting UPDATE STATISTICS
-        // done without a timeout, trading off possible speed improvements
-        // by using a smaller cache size.
-        //
-        // Note that when we move to HBase 1.1, with its heartbeat protocol,
-        // this time-out problem goes away and we can remove these CQDs.
+        // Set CQDs controlling HBase cache size (number of rows returned by HBase
+        // in a batch) to avoid scanner timeout. Reset these after the sample query
+        // has executed.
         if (hs_globals->isHbaseTable)
-          {
-            double sampleRatio = (double)(sampleRowCnt) / hs_globals->actualRowCount;
-            double calibrationFactor = 10 * (17700000000/1000000);
-            Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
-            if (workableCacheSize < 1)
-              workableCacheSize = 1;  // can't go below 1 unfortunately
-
-            Int32 max = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
-            if ((workableCacheSize < 10000) && // don't bother if 10000 works
-                (max == 10000))  // don't do it if user has already set this CQD
-              {
-                char temp1[40];  // way more space than needed, but it's safe
-                Lng32 wcs = (Lng32)workableCacheSize;  
-                sprintf(temp1,"'%d'",wcs);
-                NAString minCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN ";
-                minCQD += temp1;
-                HSFuncExecQuery(minCQD); 
-                NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
-                maxCQD += temp1;
-                HSFuncExecQuery(maxCQD); 
-                HBaseCQDsUsed = TRUE;  // remember to reset these later          
-              }
-          }          
+          HBaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(samplePercent);
 
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
@@ -5470,6 +5486,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         numColsToProcess = getColsToProcess(maxRowsToRead,
                                               internalSortWhenBetter,
                                               trySampleTableBypassForIS);
+        NABoolean hbaseCQDsUsed = FALSE;
 
         if (trySampleTableBypassForIS && numColsToProcess == singleGroupCount)
           {
@@ -5484,6 +5501,12 @@ Lng32 HSGlobalsClass::CollectStatistics()
               HSHandleError(retcode);
               sampleTableUsed = FALSE;
               samplingUsed    = TRUE;
+
+              // Set CQDs controlling HBase cache size (number of rows returned by HBase
+              // in a batch) to avoid scanner timeout. Reset these after the sample query
+              // has executed.
+              if (isHbaseTable)
+                hbaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(sampleTblPercent);
           }
         else
           {
@@ -5509,6 +5532,11 @@ Lng32 HSGlobalsClass::CollectStatistics()
    
             retcode = readColumnsIntoMem(&cursor, maxRowsToRead);
             HSHandleError(retcode);
+            if (hbaseCQDsUsed)
+              {
+                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+              }
             checkTime("after reading pending columns into memory for internal sort");
             columnSeconds = getTimeDiff() / numColsToProcess;  // saved for automation
 
