@@ -10980,7 +10980,8 @@ desc_struct* assembleDescs(NAArray<HbaseStr >* keyArray, populateFuncT func, NAM
    for (Int32 i=entries-1; i>=0; i-- ) {
       len = keyArray->at(i).len;
       if ( len > 0 ) { 
-         buf = keyArray->at(i).val; 
+         buf = new (heap) char[len];
+         memcpy(buf, keyArray->at(i).val, len); 
       } else
          buf = NULL;
 

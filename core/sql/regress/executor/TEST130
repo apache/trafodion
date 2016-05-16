@@ -74,6 +74,9 @@ select lobtostring(c2,10) from t130lob2;
 select lobtostring(c2,2) from t130lob2;
 select c1,lobtostring(c2,100) from t130lob2;
 
+--test values clause
+values((select * from t130lob1));
+
 
 ?section dml_join
 insert into t130lob3 values (1,stringtolob('inserted row21a'),stringtolob('inserted row21b'));
@@ -88,7 +91,8 @@ select c1, lobtostring(c2,25), lobtostring(c3,25)  from t130lob3;
 
 select lobtostring(t130lob2.c2,30) from t130lob2, t130lob3 where t130lob2.c1 = t130lob3.c1;
 
-
+values (filetolob('./myfile.txt'));
+values( stringtolob('xxxxxx'));
 
 ?section dml_update
 

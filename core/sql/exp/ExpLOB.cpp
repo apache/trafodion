@@ -711,6 +711,15 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   char * result = op_data[0];
 
   // get the lob name where data need to be inserted
+  if (lobNum() == -1)
+    {
+      Int32 intparam = LOB_PTR_ERROR;
+      Int32 detailError = 0;
+     
+      ExRaiseSqlError(h, diagsArea, 
+		      (ExeErrorCode)(8434));
+      return ex_expr::EXPR_ERROR;
+    }
   char tgtLobNameBuf[100];
   char * tgtLobName = ExpGetLOBname(objectUID_, lobNum(), tgtLobNameBuf, 100);
 
@@ -1020,6 +1029,7 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
   err = insertDesc(op_data, h, diagsArea);
   if (err == ex_expr::EXPR_ERROR)
     return err;
+    
 
   if (fromExternal())
     return err;
