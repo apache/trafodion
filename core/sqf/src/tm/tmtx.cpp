@@ -368,7 +368,7 @@ bool TM_TX_Info::state_change_prepare_helper(CTmTxMessage * pp_msg)
       switch (lv_error)
       {
       case COMMIT_CONFLICT:
-         lv_replyErr = FELOCKED;
+         lv_replyErr = FEHASCONFLICT;
          tm_log_event(TM_HBASE_COMMIT_CONFLICT, SQ_LOG_INFO, "TM_HBASE_COMMIT_CONFLICT", 
                       lv_error,-1,node(),seqnum(),-1,lv_replyErr);
          break;
@@ -411,7 +411,7 @@ bool TM_TX_Info::state_change_prepare_helper(CTmTxMessage * pp_msg)
       lv_continue = false;
       break;
    case COMMIT_CONFLICT:
-      state_change_abort_set(pp_msg, FELOCKED);
+      state_change_abort_set(pp_msg, COMMIT_CONFLICT);
       lv_continue = false;
    default:
    // All other errors
@@ -1614,7 +1614,7 @@ bool TM_TX_Info::req_end_complete(CTmTxMessage * pp_msg)
 
    if (isAborting())
    {
-      if(pp_msg->responseError() != FELOCKED)
+      if((pp_msg->responseError() != FELOCKED) && (pp_msg->responseError() != FEHASCONFLICT))
          pp_msg->responseError(FEABORTEDTRANSID);
       state_change(TX_ROLLBACK, gv_tm_info.nid(), gv_tm_info.pid(), pp_msg);
    }

@@ -101,7 +101,7 @@ short HBasetoTxnError(short pv_HBerr)
    case RET_READONLY: return FEOK; //Read-only reply is ok
    case RET_ADD_PARAM: return FEBOUNDSERR;
    case RET_EXCEPTION: return FETRANSEXCEPTION;
-   case RET_HASCONFLICT: return FELOCKED; //Change to FEHASCONFLICT?
+   case RET_HASCONFLICT: return FEHASCONFLICT;
    case RET_IOEXCEPTION: return FETRANSIOEXCEPTION;
    case RET_NOCOMMITEX: return FEABORTEDTRANSID;
    default: 
@@ -978,7 +978,8 @@ short ENDTRANSACTION()
          (lv_error == FEOK)  ||
          (lv_error == FEABORTEDTRANSID) ||
          (lv_error == FEENDEDTRANSID) ||
-         (lv_error == FELOCKED))
+         (lv_error == FELOCKED)  ||
+         (lv_error == FEHASCONFLICT))
      {
          // end removes the tx from the list and deletes the
          // enlistment object.  We simply need to delete the trans 
