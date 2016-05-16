@@ -300,7 +300,7 @@ public class UserInterface {
 					if (paObj.noConnectOption)
 						System.out.println("Not connected.");
 					else
-						System.out.println("Connected to Trafodion ");
+						System.out.println("Connected to " + sessObj.getDatabaseEdition());
 
 				}
 
