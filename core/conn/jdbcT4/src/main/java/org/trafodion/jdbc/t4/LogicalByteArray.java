@@ -261,21 +261,18 @@ class LogicalByteArray {
 	
 	long extractLong() {
 		long value;
+        
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        
+        buffer.put(array, loc, 8);
+        buffer.flip();
 
-		if (swap) {
-			value = ((array[loc]) & 0x00000000000000ffL) | ((array[loc + 1] << 8) & 0x000000000000ff00L)
-					| ((array[loc + 2] << 16) & 0x0000000000ff0000L) | ((array[loc + 3] << 24) & 0x00000000ff000000L)
-					| ((array[loc + 4] << 32) & 0x000000ff00000000L) | ((array[loc + 5] << 40) & 0x0000ff0000000000L)
-					| ((array[loc + 6] << 48) & 0x00ff000000000000L) | ((array[loc + 7] << 56) & 0xff00000000000000L);
-		} else {
-			value = ((array[loc + 7]) & 0x00000000000000ffL) | ((array[loc + 6] << 8) & 0x000000000000ff00L)
-					| ((array[loc + 5] << 16) & 0x0000000000ff0000L) | ((array[loc + 4] << 24) & 0x00000000ff000000L)
-					| ((array[loc + 3] << 32) & 0x000000ff00000000L) | ((array[loc + 2] << 40) & 0x0000ff0000000000L)
-					| ((array[loc + 1] << 48) & 0x00ff000000000000L) | ((array[loc] << 56) & 0xff00000000000000L);
-		}
+        value = buffer.getLong();
+        loc += 8;
 
-		loc += 8;
-
+        if (swap)
+            value = Long.reverseBytes(value);
+            
 		return value;
 	}
 
