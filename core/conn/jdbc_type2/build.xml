@@ -41,6 +41,15 @@
        <format property="now.timestamp" pattern="yyyy_MM_dd" locale="en" />
     </tstamp>
 
+    <property environment="my_env"/>
+
+    <target name="ProductVersion">
+       <echo>
+         ${my_env.TRAFODION_VER_PROD}
+         ${my_env.PRODUCT_COPYRIGHT_HEADER}
+       </echo>
+    </target>
+
     <target name="dist" depends="native">
        <mkdir dir="dist"/>
        <property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
@@ -52,7 +61,7 @@
               <attribute name="Main-Class" value="JdbcT2"/>
               <attribute name="VPROC" value="${vproc.str}"/>
 	      <attribute name="Implementation-Version-1" value="Version 1.0.0"/>
-              <attribute name="Implementation-Version-2" value="${Implementation-Version-2}"/>
+              <attribute name="Implementation-Version-2" value="${my_env.TRAFODION_VER_PROD} ${Implementation-Version-2}"/>
               <attribute name="Implementation-Version-3" value="${Implementation-Version-3}"/>
               <attribute name="Implementation-Version-4" value="${Implementation-Version-4}"/>
               <attribute name="Implementation-Version-5" value="${Implementation-Version-5}"/>
