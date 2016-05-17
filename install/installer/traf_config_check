@@ -701,7 +701,7 @@ function checkClouderaVersion {
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
-   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
+   if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
       nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
