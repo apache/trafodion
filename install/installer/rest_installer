@@ -94,7 +94,10 @@ mkdir -p $REST_INSTALL_PATH
 cd $REST_INSTALL_PATH
 
 if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
-   REST_DIR="$SQ_ROOT/rest*"
+   REST_DIR=$(ls $SQ_ROOT | grep rest)
+   REST_DIR=$SQ_ROOT/$REST_DIR
+   echo "***INFO: Rest Install Directory: $REST_DIR"
+
 else
    # untar REST build into install directory
    echo "***INFO: untarring build file $REST_BUILD_FILE"
