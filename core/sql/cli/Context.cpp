@@ -4944,7 +4944,7 @@ Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,
 
 void ContextCli::killIdleMxcmp() 
 {
-  Int64 currentTimestamp = -1;
+  Int64 currentTimestamp;
   Int32 compilerIdleTimeout;
   Int64 recentIpcTimestamp ;
  
@@ -4955,8 +4955,7 @@ void ContextCli::killIdleMxcmp()
   compilerIdleTimeout = getSessionDefaults()->getCompilerIdleTimeout();
   if (compilerIdleTimeout == 0)
      return;
-  if (currentTimestamp == -1)
-     currentTimestamp = NA_JulianTimestamp();
+  currentTimestamp = NA_JulianTimestamp();
   recentIpcTimestamp  = arkcmpArray_[0]->getRecentIpcTimestamp();
   if (recentIpcTimestamp != -1 && (((currentTimestamp - recentIpcTimestamp)/1000000)  >= compilerIdleTimeout))
      killAndRecreateMxcmp();
