@@ -413,6 +413,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 
   // send the message.
   Int64 transid = cliGlobals_->currContext()->getTransaction()->getExeXnId(); 
+  recentIpcTimestamp_ = NA_JulianTimestamp();
   sqlcompMessage_->send(w, transid);
 
   if (badConnection_) 
@@ -443,6 +444,7 @@ ExSqlComp::ReturnStatus ExSqlComp::sendR(CmpMessageObj* c, NABoolean w)
 void ExSqlComp::completeRequests()
 {
   sqlcompMessage_->waitOnMsgStream(IpcInfiniteTimeout);
+  recentIpcTimestamp_ = NA_JulianTimestamp();
 }
 
 // The return status of ERROR here is only useful for WAITED requests --
@@ -452,6 +454,7 @@ inline
 ExSqlComp::ReturnStatus ExSqlComp::waitForReply()
 {
   sqlcompMessage_->waitOnMsgStream(IpcImmediately);
+  recentIpcTimestamp_ = NA_JulianTimestamp();
   return (outstandingSendBuffers_.ioStatus_ == FINISHED) ? SUCCESS : ERROR;
 }
 
@@ -1007,7 +1010,7 @@ isShared_(FALSE), lastContext_(NULL), resendingControls_(FALSE)
   server_ = 0;
 
   diagArea_ = ComDiagsArea::allocate(h_);  
- 
+  recentIpcTimestamp_ = -1; 
 }
 
 ExSqlComp::~ExSqlComp()
