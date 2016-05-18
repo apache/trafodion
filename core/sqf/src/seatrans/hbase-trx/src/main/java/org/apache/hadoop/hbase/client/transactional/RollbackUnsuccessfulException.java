@@ -21,35 +21,42 @@
 * @@@ END COPYRIGHT @@@
 **/
 
-package org.apache.hadoop.hbase.regionserver.transactional;
+package org.apache.hadoop.hbase.client.transactional;
 
-/**
- * IdTmException
- *
- * exception
+import java.io.IOException;
+
+/** Thrown when a transaction cannot be committed. 
+ * 
  */
-public class IdTmException extends Exception {
-   /**
-    * constructor
-    *
-    * @param message message
-    */
-   public IdTmException(String message) {
-       super(message);
-    }
- /**
- *    * @param arg0 cause
- *       */
-  public IdTmException(Throwable arg0) {
+public class RollbackUnsuccessfulException extends IOException {
+
+  private static final long serialVersionUID = 7062921444531109202L;
+
+  /** Default Constructor */
+  public RollbackUnsuccessfulException() {
+    super();
+  }
+
+  /**
+   * @param arg0 message
+   * @param arg1 cause
+   */
+  public RollbackUnsuccessfulException(String arg0, Throwable arg1) {
+    super(arg0, arg1);
+  }
+
+  /**
+   * @param arg0 message
+   */
+  public RollbackUnsuccessfulException(String arg0) {
     super(arg0);
   }
 
- /**
- *    * @param arg0 cause
- *       */
-  public IdTmException(String message, Throwable arg0) {
-    super(message, arg0);
+  /**
+   * @param arg0 cause
+   */
+  public RollbackUnsuccessfulException(Throwable arg0) {
+    super(arg0);
   }
 
 }
-

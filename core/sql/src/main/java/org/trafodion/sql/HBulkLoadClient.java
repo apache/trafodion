@@ -183,11 +183,6 @@ public class HBulkLoadClient
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doCreateHFile() called.");
     
-    if (hFileLocation == null )
-      throw new NullPointerException(hFileLocation + " is not set");
-    if (hFileName == null )
-      throw new NullPointerException(hFileName + " is not set");
-    
     closeHFile();
     
     if (fileSys == null)
@@ -198,26 +193,18 @@ public class HBulkLoadClient
 
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.createHFile Path: " + hfilePath);
 
-    try
-    {
-      HFileContext hfileContext = new HFileContextBuilder()
+    HFileContext hfileContext = new HFileContextBuilder()
                                  .withBlockSize(blockSize)
                                  .withCompression(Compression.getCompressionAlgorithmByName(compression))
                                  .withDataBlockEncoding(dataBlockEncoding)
                                  .build();
 
-      writer =    HFile.getWriterFactory(config, new CacheConfig(config))
+    writer =    HFile.getWriterFactory(config, new CacheConfig(config))
                      .withPath(fileSys, hfilePath)
                      .withFileContext(hfileContext)
                      .withComparator(KeyValue.COMPARATOR)
                      .create();
-      if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
-    }
-    catch (IOException e)
-    {
-       if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doCreateHFile Exception" + e.getMessage());
-       throw e;
-    }
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
     return true;
   }
   
@@ -317,12 +304,6 @@ public class HBulkLoadClient
         }
       }
       admin.snapshot(snapshotName, tableName);
-   }
-    catch (Exception e)
-    {
-      //log exeception and throw the exception again to teh parent
-      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.createSnapshot() - Exception: " + e);
-      throw e;
     }
     finally
     {
@@ -334,7 +315,7 @@ public class HBulkLoadClient
   }
   
   private boolean restoreSnapshot( String snapshotName, String tableName)
-      throws IOException, RestoreSnapshotException, Exception
+      throws IOException, RestoreSnapshotException
   {
     HBaseAdmin admin = null;
     try
@@ -347,19 +328,12 @@ public class HBulkLoadClient
   
       admin.enableTable(tableName);
     }
-    catch (Exception e)
-    {
-      //log exeception and throw the exception again to the parent
-      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
-      throw e;
-    }
     finally
     {
       //close HBaseAdmin instance 
       if (admin != null) 
         admin.close();
     }
-
     return true;
   }
   private boolean deleteSnapshot( String snapshotName, String tableName)
@@ -390,12 +364,6 @@ public class HBulkLoadClient
       if (admin.isTableDisabled(tableName))
           admin.enableTable(tableName);
       admin.deleteSnapshot(snapshotName);
-    }
-    catch (Exception e)
-    {
-      //log exeception and throw the exception again to the parent
-      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
-      throw e;
     }
     finally 
     {
@@ -464,7 +432,7 @@ public class HBulkLoadClient
 
     if (quasiSecure)
     {
-      throw new Exception("HBulkLoadClient.doBulkLoad() - cannot perform load. Trafodion on secure HBase mode is not implemented yet");
+      throw new UnsupportedOperationException("HBulkLoadClient.doBulkLoad() - cannot perform load. Trafodion on secure HBase mode is not implemented yet");
     }
     else
     {
