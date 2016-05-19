@@ -64,6 +64,8 @@ if [[ $SUSE_LINUX == "false" ]]; then
       epel_rpm="epel-release-6-8.noarch.rpm"
       echo "***INFO: Downloading EPEL repo, since not installed."
       
+      sudo yum --assumeyes install wget 2>> $YUM_LOG >> $YUM_LOG
+ 
       wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
       if [ $? != 0 ]; then
          echo "***ERROR: Can't download EPEL rpm $epel_rpm"

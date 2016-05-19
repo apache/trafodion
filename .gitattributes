@@ -1,9 +1,3 @@
 # git files
 .gitignore export-ignore
 .gitattributes export-ignore
-# Remove documentation until until our generation code is available
-docs/client_install export-ignore
-docs/command_interface export-ignore
-docs/odb_manual export-ignore
-docs/sql_reference export-ignore
-docs/src/site export-ignore
