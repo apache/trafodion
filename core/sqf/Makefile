@@ -286,6 +286,7 @@ PKG_BIN_OBJS += LICENSE NOTICE
 
 PKG_BIN_DIRS ?= sql export
 PKG_BIN_DIRS += trafci
+PKG_BIN_DIRS += samples
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)
 PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y
