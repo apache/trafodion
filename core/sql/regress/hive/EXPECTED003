@@ -123,6 +123,32 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 
 --- 20 row(s) selected.
 >>
+>>-- some negative tests
+>>insert into hive.ins_promotion (p_promo_sk, p_item_sk) select * from hive.promotion;
+
+*** ERROR[4223] Target column list for insert into Hive table not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- target column list is not supported
+>>
+>>insert into hive.ins_promotion select *, p_promo_sk from hive.promotion;
+
+*** ERROR[4023] The degree of each row value constructor (20) must equal the degree of the target table column list (19).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- number of columns doesn't match
+>>
+>>prepare s from
++>insert into hive.ins_time_dim values ('a', 2, 3, 4, 5, 6, 'c', 'd', 'e', 'f');
+
+*** ERROR[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, CHAR(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- wrong data types
+>>
 >>
 >>--try new HIVE SYNTAX
 >>--------------
