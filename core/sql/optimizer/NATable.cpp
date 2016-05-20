@@ -3553,6 +3553,47 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
   if ( !strcmp(hiveType, "timestamp"))
     return new (heap) SQLTimestamp(TRUE /* allow NULL */ , 6, heap);
 
+  if ( !strcmp(hiveType, "date"))
+    return new (heap) SQLDate(TRUE /* allow NULL */ , heap);
+
+  if ( !strncmp(hiveType, "varchar", 7) )
+  {
+    char maxLen[32];
+    memset(maxLen, 0, 32);
+    int i=0,j=0;
+    int copyit = 0;
+
+    //get length
+    for(i = 0; i < strlen(hiveType) ; i++)
+    {
+      if(hiveType[i] == '(') //start
+      {
+        copyit=1;
+        continue;
+      }
+      else if(hiveType[i] == ')') //stop
+        break; 
+      if(copyit > 1)
+      {
+        maxLen[j] = hiveType[i];
+        j++;
+      }
+    }
+    Int32 len = atoi(maxLen);
+    if(len == 0) return NULL;  //cannot parse correctly
+
+    NAString hiveCharset =
+        ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
+
+    return new (heap) SQLVarChar(CharLenInfo((hiveCharset == CharInfo::UTF8 ? 0 : len),len),
+                                   TRUE, // allow NULL
+                                   FALSE, // not upshifted
+                                   FALSE, // not case-insensitive
+                                   CharInfo::getCharSetEnum(hiveCharset),
+                                   CharInfo::DefaultCollation,
+                                   CharInfo::IMPLICIT);
+  } 
+
   return NULL;
 }
 
