@@ -3573,13 +3573,14 @@ NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
       }
       else if(hiveType[i] == ')') //stop
         break; 
-      if(copyit > 1)
+      if(copyit > 0)
       {
         maxLen[j] = hiveType[i];
         j++;
       }
     }
     Int32 len = atoi(maxLen);
+
     if(len == 0) return NULL;  //cannot parse correctly
 
     NAString hiveCharset =
