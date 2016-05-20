@@ -4908,6 +4908,12 @@ Lng32 ExExeUtilHiveMDaccessTcb::getFSTypeFromHiveColType(const char* hiveType)
   if ( !strcmp(hiveType, "timestamp"))
     return REC_DATETIME;
 
+  if ( !strcmp(hiveType, "date"))
+    return REC_DATETIME;
+
+  if ( !strncmp(hiveType, "varchar",7) )
+    return REC_BYTE_V_ASCII;
+
   return -1;
 }
 
@@ -4940,6 +4946,41 @@ Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
   if ( !strcmp(hiveType, "timestamp"))
     return 26; //Is this internal or display length? REC_DATETIME;
 
+  if ( !strcmp(hiveType, "date"))
+    return 10; //Is this internal or display length? REC_DATETIME;
+  
+  if ( !strncmp(hiveType, "varchar",7) )
+  {
+    //try to get the length
+    char maxLen[32];
+    memset(maxLen, 0, 32);
+    int i=0,j=0;
+    short copyit = 0;
+
+    if(strlen(hiveType) > 39)  return -1;  
+ 
+    for(i = 0; i < strlen(hiveType) ; i++)
+    {
+      if(hiveType[i] == '(')  
+      {
+        copyit=1;
+        continue;
+      }
+      else if(hiveType[i] == ')')  
+        break;
+      if(copyit == 1 )
+      {
+        maxLen[j] = hiveType[i];
+        j++;
+      }
+    }
+
+    Int32 len = atoi(maxLen);
+
+    if (len == 0) return -1;
+    else
+      return len;
+  }
   return -1;
 }
 
@@ -5171,14 +5212,24 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    str_pad(infoCol->dtQualifier, 28, ' ');
 
 	    if (infoCol->fsDatatype == REC_DATETIME)
-	      {
+	    {
+              if(infoCol->colSize > 10) {
 		// hive currently only supports timestamp
 		infoCol->dtCode = SQLDTCODE_TIMESTAMP;
 		infoCol->colScale = 6;
 		str_cpy(infoCol->dtQualifier, "(6)", 28, ' ');
 		infoCol->dtStartField = 1;
 		infoCol->dtEndField = 6;
-	      }
+              }
+              else
+              {
+		infoCol->dtCode = SQLDTCODE_DATE;
+		infoCol->colScale = 0;
+	        str_pad(infoCol->dtQualifier, 28, ' ');
+		infoCol->dtStartField = 1;
+		infoCol->dtEndField = 6;
+              }
+	    }
 
 	    // no default value
 	    str_cpy(infoCol->defVal, " ", 240, ' ');
