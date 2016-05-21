@@ -516,7 +516,7 @@ void InitLocalIO( void )
 
     if ( MyPNID == -1 )
     {
-        CClusterConfig  ClusterConfig; // 'cluster.conf' objects
+        CClusterConfig  ClusterConfig; // 'sqconfig.db' objects
         CPNodeConfig   *pnodeConfig;
         CLNodeConfig   *lnodeConfig;
 
@@ -754,8 +754,8 @@ int main (int argc, char *argv[])
     MyPid = atoi (argv[4]);
     gv_ms_su_verif  = MyVerifier = atoi(argv[9]);
 
-    MonLog = new CMonLog( "log4cxx.monitor.wdg.config", "WDG", "alt.wdg", MyPNID, MyNid, MyPid, MyName  );
-    SnmpLog = new CMonLog( "log4cxx.monitor.wdg.snmp.config", "WDG-SNMP", "alt.wdg.snmp", MyPNID, MyNid, MyPid, MyName );
+    MonLog = new CMonLog( "log4cpp.monitor.wdg.config", "WDG", "alt.wdg", MyPNID, MyNid, MyPid, MyName  );
+    SnmpLog = new CMonLog( "log4cpp.monitor.wdg.snmp.config", "WDG-SNMP", "alt.wdg.snmp", MyPNID, MyNid, MyPid, MyName );
 
     Watchdog = new CWatchdog();
     ProcessMonitor = new CProcessMonitor();

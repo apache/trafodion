@@ -485,7 +485,7 @@ void CConfigGroup::Set(char *key, char *value, bool replicated, bool addToDb)
 CConfigContainer::CConfigContainer(void)
                 : Head (NULL)
                 , Tail (NULL)
-                , db_  (NULL)
+                , db_ (NULL)
 {
     const char method_name[] = "CConfigContainer::CConfigContainer";
     TRACE_ENTRY;
@@ -493,80 +493,8 @@ CConfigContainer::CConfigContainer(void)
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "CCTR", 4);
 
-    // Open the configuration database file
-    char dbase[MAX_PROCESS_PATH];
-    //    snprintf(dbase, sizeof(dbase), "%s/sql/scripts/sqconfig.db.%d",
-    //             getenv("MY_SQROOT"),MyPNID);
-
-    snprintf(dbase, sizeof(dbase), "%s/sql/scripts/sqconfig.db",
-             getenv("MY_SQROOT"));
-    int rc = sqlite3_open_v2(dbase, &db_,
-                             SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX,
-                             NULL);
-
-    if ( rc )
-    {
-        db_ = NULL;
-
-        // failed
-        if (trace_settings & TRACE_INIT)
-        {
-            trace_printf("%s@%d Can't open database: %s, err=%d\n", method_name,
-                         __LINE__, dbase, rc);
-        }
-
-        // See if have database in current directory
-        int rc2 = sqlite3_open_v2("sqconfig.db", &db_,
-                                  SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX,
-                                  NULL);
-
-        if ( rc2 )
-        {
-            // failed to open database
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] Can't open database %s: %d, "
-                      "or %s: %d\n", method_name,  dbase, rc ,
-                      "sqconfig.db", rc2);
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-            MPI_Abort(MPI_COMM_SELF,99);
-        }
-
-        if (trace_settings & TRACE_INIT)
-        {
-            char buf[1000];
-            getcwd(buf, sizeof(buf));
-
-            trace_printf("%s@%d Successfully opened sqconfig.db in %s\n",
-                         method_name, __LINE__, buf);
-        }
-    } 
-
-    if ( db_ != NULL )
-    {
-        rc = sqlite3_busy_timeout(db_, 1000);
-
-        if ( rc )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] Can't set busy timeout for "
-                      "database %s: %s (%d)\n",
-                      method_name,  dbase, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-
-        char *sErrMsg = NULL;
-        sqlite3_exec(db_, "PRAGMA synchronous = OFF", NULL, NULL, &sErrMsg);
-        if (sErrMsg != NULL)
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] Can't set PRAGMA synchronous for "
-                      "database %s: %s\n",
-                      method_name,  dbase, sErrMsg );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-
-    }
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    db_ = clusterConfig->GetConfigDb();
     
     cluster_ = AddGroup((char *) "CLUSTER",ConfigType_Cluster);
     if ( ! getenv("SQ_VIRTUAL_NODES") )
@@ -777,7 +705,6 @@ void CConfigContainer::Init(void)
 
 }
 
-
 CConfigGroup *CConfigContainer::AddGroup(char *groupkey, ConfigType type,
                                          bool addToDb)
 {
@@ -912,7 +839,7 @@ void CConfigContainer::addDbKeyName ( const char * key )
         sqlite3_bind_text( prepStmt, 
                            sqlite3_bind_parameter_index( prepStmt, ":key" ),
                            key, -1, SQLITE_STATIC );
-#ifndef SQLITE_IO_RETRY
+
         rc = sqlite3_step( prepStmt );
         if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
          && ( rc != SQLITE_CONSTRAINT ) )
@@ -924,44 +851,6 @@ void CConfigContainer::addDbKeyName ( const char * key )
                       method_name, key, sqlite3_errmsg(db_), rc );
             mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
-#else
-        bool logError = true;
-        int i;
-        for ( i = 0; i < sqLiteIORetry_; i++ )
-       {
-            rc = sqlite3_step( prepStmt );
-            if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-             && ( rc != SQLITE_CONSTRAINT ) )
-            {
-                if ( rc != SQLITE_BUSY )
-                {
-                    char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), 
-                              "[%s] inserting key=%s into "
-                              "monRegKeyName failed, error=%s (%d)\n",
-                              method_name, key, sqlite3_errmsg(db_), rc );
-                    mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-                    logError = false;
-                    break;
-                }
-                usleep( sqLiteIODelay_ );
-            }
-            else
-            {
-                break;
-            }
-        }
-        if ( logError && ( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] retries=%d exceeded "
-                      "inserting key=%s into "
-                      "monRegKeyName failed, error=%s (%d)\n",
-                      method_name, i, key, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-#endif
     }
         
     if ( prepStmt != NULL )
@@ -969,7 +858,6 @@ void CConfigContainer::addDbKeyName ( const char * key )
 
     TRACE_EXIT;
 }
-
 
 // insert key into monRegProcName table
 void CConfigContainer::addDbProcName ( const char * name )
@@ -1020,7 +908,6 @@ void CConfigContainer::addDbProcName ( const char * name )
                            sqlite3_bind_parameter_index( prepStmt, ":name" ),
                            name, -1, SQLITE_STATIC );
 
-#ifndef SQLITE_IO_RETRY
         rc = sqlite3_step( prepStmt );
         if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
          && ( rc != SQLITE_CONSTRAINT ) )
@@ -1032,44 +919,6 @@ void CConfigContainer::addDbProcName ( const char * name )
                       method_name,  name, sqlite3_errmsg(db_), rc );
             mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
-#else
-        bool logError = true;
-        int i;
-        for ( i = 0; i < sqLiteIORetry_; i++ )
-        {
-            rc = sqlite3_step( prepStmt );
-            if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-             && ( rc != SQLITE_CONSTRAINT ) )
-            {
-                if ( rc != SQLITE_BUSY )
-                {
-                    char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), 
-                              "[%s] inserting name=%s into "
-                              "monRegProcName failed, error=%s (%d)\n",
-                              method_name,  name, sqlite3_errmsg(db_), rc );
-                    mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-                    logError = false;
-                    break;
-                }
-                usleep( sqLiteIODelay_ );
-            }
-            else
-            {
-                break;
-            }
-        }
-        if ( logError && ( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] retries=%d exceeded "
-                      "inserting name=%s into "
-                      "monRegProcName failed, error=%s (%d)\n",
-                      method_name, i, name, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-#endif
     }
         
     if ( prepStmt != NULL )
@@ -1133,7 +982,7 @@ void CConfigContainer::addDbClusterData ( const char * key,
         sqlite3_bind_text( prepStmt,
                            sqlite3_bind_parameter_index( prepStmt, ":key" ),
                            key, -1, SQLITE_STATIC );
-#ifndef SQLITE_IO_RETRY
+
         rc = sqlite3_step( prepStmt );
         if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
          && ( rc != SQLITE_CONSTRAINT ) )
@@ -1144,43 +993,6 @@ void CConfigContainer::addDbClusterData ( const char * key,
                       method_name, key, sqlite3_errmsg(db_), rc );
             mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
-#else
-        bool logError = true;
-        int i;
-        for ( i = 0; i < sqLiteIORetry_; i++ )
-        {
-            rc = sqlite3_step( prepStmt );
-            if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-             && ( rc != SQLITE_CONSTRAINT ) )
-            {
-                if ( rc != SQLITE_BUSY )
-                {
-                    char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), "[%s] inserting key=%s into "
-                              "monRegClusterData failed, error=%s (%d) (i=%d)\n",
-                              method_name, key, sqlite3_errmsg(db_), rc, i );
-                    mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-                    logError = false;
-                    break;
-                }
-                usleep( sqLiteIODelay_ );
-            }
-            else
-            {
-                break;
-            }
-        }
-        if ( logError && ( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] retries=%d exceeded "
-                      "inserting key=%s into "
-                      "monRegClusterData failed, error=%s (%d)\n",
-                      method_name, i, key, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-#endif
     }
         
     if ( prepStmt != NULL )
@@ -1254,7 +1066,7 @@ void CConfigContainer::addDbProcData ( const char * procName,
         sqlite3_bind_text( prepStmt,
                            sqlite3_bind_parameter_index( prepStmt, ":key" ),
                            key, -1, SQLITE_STATIC );
-#ifndef SQLITE_IO_RETRY
+
         rc = sqlite3_step( prepStmt );
         if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
          && ( rc != SQLITE_CONSTRAINT ) )
@@ -1265,43 +1077,6 @@ void CConfigContainer::addDbProcData ( const char * procName,
                       method_name,  key, procName, sqlite3_errmsg(db_), rc );
             mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
-#else
-        bool logError = true;
-        int i;
-        for ( i = 0; i < sqLiteIORetry_; i++ )
-        {
-            rc = sqlite3_step( prepStmt );
-            if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-             && ( rc != SQLITE_CONSTRAINT ) )
-            {
-                if ( rc != SQLITE_BUSY )
-                {
-                    char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), "[%s] inserting key=%s into "
-                              "monRegProcData for proc=%s failed, error=%s (%d)\n",
-                              method_name,  key, procName, sqlite3_errmsg(db_), rc );
-                    mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-                    logError = false;
-                    break;
-                }
-                usleep( sqLiteIODelay_ );
-            }
-            else
-            {
-                break;
-            }
-        }
-        if ( logError && ( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] retries=%d exceeded "
-                      "inserting key=%s into "
-                      "monRegProcData for proc=%s failed, error=%s (%d)\n",
-                      method_name, i, key, procName, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-#endif
     }
 
     if ( prepStmt != NULL )
@@ -1360,7 +1135,7 @@ void CConfigContainer::addUniqueString(int nid, int id, const char * uniqStr )
         sqlite3_bind_int( prepStmt, 1, nid );
         sqlite3_bind_int( prepStmt, 2, id );
         sqlite3_bind_text( prepStmt, 3, uniqStr, -1, SQLITE_STATIC );
-#ifndef SQLITE_IO_RETRY
+
         rc = sqlite3_step( prepStmt );
         if ( rc != SQLITE_DONE )
         {
@@ -1371,44 +1146,6 @@ void CConfigContainer::addUniqueString(int nid, int id, const char * uniqStr )
                       method_name, nid, id, sqlite3_errmsg(db_), rc );
             mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
-#else
-        bool logError = true;
-        int i;
-        for ( i = 0; i < sqLiteIORetry_; i++ )
-        {
-            rc = sqlite3_step( prepStmt );
-            if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-             && ( rc != SQLITE_CONSTRAINT ) )
-            {
-                if ( rc != SQLITE_BUSY )
-                {
-                    char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), 
-                              "[%s] inserting into monRegUniqueStrings "
-                              "for nid=%d id=%d failed, error=%s (%d)\n",
-                              method_name, nid, id, sqlite3_errmsg(db_), rc );
-                    mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-                    logError = false;
-                    break;
-                }
-                usleep( sqLiteIODelay_ );
-            }
-            else
-            {
-                break;
-            }
-        }
-        if ( logError && ( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] retries=%d exceeded "
-                      "inserting into monRegUniqueStrings "
-                      "for nid=%d id=%d failed, error=%s (%d)\n",
-                      method_name, i, nid, id, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-#endif
     }
 
     if ( prepStmt != NULL )
@@ -1494,7 +1231,6 @@ bool CConfigContainer::findUniqueString(int nid, const char * uniqStr,
 
     return result;
 }
-
 
 int CConfigContainer::getMaxUniqueId( int nid )
 {

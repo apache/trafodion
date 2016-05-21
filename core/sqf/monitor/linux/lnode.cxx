@@ -154,6 +154,98 @@ void CLNode::DeLink (CLNode **head, CLNode **tail)
     TRACE_EXIT;
 }
 
+void CLNode::Added( void )
+{
+    struct  message_def *msg;
+
+    const char method_name[] = "CLNode::Added";
+    TRACE_ENTRY;
+
+    if ( MyNode->GetState() == State_Up )
+    {
+        // TODO: Record statistics (sonar counters)
+        // if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
+        //    MonStats->notice_node_down_Incr();
+
+        // send node added message to local node's processes
+        msg = new struct message_def;
+        msg->type = MsgType_NodeAdded;
+        msg->noreply = true;
+        msg->u.request.type = ReqType_Notice;
+        msg->u.request.u.node_added.nid = Nid;
+        msg->u.request.u.node_added.zid = GetNode()->GetZone();
+        const char *nodeName = GetNode()->GetName();
+        if (IsRealCluster)
+        {
+            STRCPY(msg->u.request.u.node_added.node_name, nodeName);
+        }
+        else
+        {
+            sprintf(msg->u.request.u.node_added.node_name,"%s:%d", nodeName, Nid);
+        }
+        
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Broadcasting node deleted nid=%d, zid=%d, name=(%s)\n"
+                        , method_name, __LINE__
+                        , msg->u.request.u.node_added.nid
+                        , msg->u.request.u.node_added.zid
+                        , msg->u.request.u.node_added.node_name );
+        }
+
+        MyNode->Bcast( msg );
+        delete msg;
+    }
+
+    TRACE_EXIT;
+}
+
+void CLNode::Deleted( void )
+{
+    struct  message_def *msg;
+
+    const char method_name[] = "CLNode::Deleted";
+    TRACE_ENTRY;
+
+    if ( MyNode->GetState() == State_Up )
+    {
+        // TODO: Record statistics (sonar counters)
+        // if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
+        //    MonStats->notice_node_down_Incr();
+
+        // send node added message to local node's processes
+        msg = new struct message_def;
+        msg->type = MsgType_NodeDeleted;
+        msg->noreply = true;
+        msg->u.request.type = ReqType_Notice;
+        msg->u.request.u.node_deleted.nid = Nid;
+        msg->u.request.u.node_deleted.zid = GetNode()->GetZone();
+        const char *nodeName = GetNode()->GetName();
+        if (IsRealCluster)
+        {
+            STRCPY(msg->u.request.u.node_deleted.node_name, nodeName);
+        }
+        else
+        {
+            sprintf(msg->u.request.u.node_deleted.node_name,"%s:%d", nodeName, Nid);
+        }
+        
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d - Broadcasting node deleted nid=%d, zid=%d, name=(%s)\n"
+                        , method_name, __LINE__
+                        , msg->u.request.u.node_deleted.nid
+                        , msg->u.request.u.node_deleted.zid
+                        , msg->u.request.u.node_deleted.node_name );
+        }
+
+        MyNode->Bcast( msg );
+        delete msg;
+    }
+
+    TRACE_EXIT;
+}
+
 void CLNode::Down( void )
 {
     struct  message_def *msg;

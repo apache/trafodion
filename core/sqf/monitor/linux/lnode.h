@@ -52,6 +52,8 @@ public:
     ~CLNode( void );
 
     void    DeLink( CLNode **head, CLNode **tail );
+    void    Added( void );
+    void    Deleted( void );
     void    Down( void );
     inline CLNode *GetNext( void ) { return( next_); }
 

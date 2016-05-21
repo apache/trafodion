@@ -95,6 +95,7 @@ int main(int argc, char *argv[]) {
     SB_Timer::Tics        ts3_tics;
     TAD                   zargs[] = {
       { "-client",    TA_Bool, TA_NOMAX,    &client    },
+      { "-cluster",   TA_Ign,  TA_NOMAX,    NULL       },
       { "-trace",     TA_Bool, TA_NOMAX,    &trace     },
       { "-v",         TA_Bool, TA_NOMAX,    &verbose   },
       { "-verbose",   TA_Ign,  TA_NOMAX,    NULL       },

@@ -827,6 +827,38 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
     TRACE_EXIT;
 }
 
+void CProcess::CompleteRequest( int status )
+{
+    struct message_def *msg;
+
+    const char method_name[] = "CProcess::CompleteRequest";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+       trace_printf("%s@%d - Process %s (%d,%d:%d), status %d\n",
+                    method_name, __LINE__, Name, Nid, Pid, Verifier, status);
+
+    if ( !Clone )
+    {
+        msg = parentContext();
+        if ( msg )
+        { // reply pending, so send reply
+            msg->noreply = false;
+            msg->u.reply.type = ReplyType_Generic;
+            msg->u.reply.u.generic.nid = Nid;
+            msg->u.reply.u.generic.pid = Pid;
+            msg->u.reply.u.generic.verifier = Verifier;
+            msg->u.reply.u.generic.process_name[0] = '\0';
+            msg->u.reply.u.generic.return_code = status;
+    
+            CRequest::lioreply (msg, Pid);
+            parentContext( NULL );
+        }
+    }
+
+    TRACE_EXIT;
+}
+
 bool CProcess::PickStdfile(PickStdFile_t whichStdfile,
                            char (&Destfile)[MAX_PROCESS_PATH],
                            int &ancestorNid, int &ancestorPid)

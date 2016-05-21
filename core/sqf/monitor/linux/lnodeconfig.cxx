@@ -49,11 +49,15 @@ using namespace std;
 CLNodeConfig::CLNodeConfig( CPNodeConfig *pnodeConfig
                           , int           nid
                           , cpu_set_t    &coreMask
+                          , int           firstCore
+                          , int           lastCore
                           , int           processors
                           , ZoneType      zoneType
                           )
             : nid_(nid)
             , coreMask_(coreMask)
+            , firstCore_(firstCore)
+            , lastCore_(lastCore)
             , processors_(processors)
             , zoneType_(zoneType)
             , pnodeConfig_(pnodeConfig)
@@ -80,13 +84,19 @@ CLNodeConfig::~CLNodeConfig( void )
     TRACE_EXIT;
 }
 
+const char *CLNodeConfig::GetName( void )
+{
+    return( pnodeConfig_->GetName() );
+}
+
 int  CLNodeConfig::GetPNid( void ) 
 {
-    return ( pnodeConfig_->GetPNid( ) );
+    return( pnodeConfig_->GetPNid( ) );
 }
 
 CLNodeConfigContainer::CLNodeConfigContainer( void )
                      : lnodesCount_(0)
+                     , nextNid_(-1)
                      , lnodeConfigSize_(0)
                      , lnodeConfig_(NULL)
                      , head_(NULL)
@@ -100,6 +110,7 @@ CLNodeConfigContainer::CLNodeConfigContainer( void )
 
 CLNodeConfigContainer::CLNodeConfigContainer( int lnodesSize )
                      : lnodesCount_(0)
+                     , nextNid_(-1)
                      , lnodeConfigSize_(lnodesSize)
                      , lnodeConfig_(NULL)
                      , head_(NULL)
@@ -116,6 +127,17 @@ CLNodeConfigContainer::CLNodeConfigContainer( int lnodesSize )
         char la_buf[MON_STRING_BUF_SIZE];
         sprintf(la_buf, "[%s], Error: Can't allocate logical node configuration array - errno=%d (%s)\n", method_name, err, strerror(errno));
         mon_log_write(MON_LNODECONF_CONSTR_1, SQ_LOG_CRIT, la_buf);
+    }
+    else
+    {
+        // Initialize array
+        if ( lnodeConfig_ )
+        {
+            for ( int i = 0; i < lnodeConfigSize_ ;i++ )
+            {
+                lnodeConfig_[i] = NULL;
+            }
+        }
     }
 
     TRACE_EXIT;
@@ -140,8 +162,52 @@ CLNodeConfigContainer::~CLNodeConfigContainer(void)
             lnodeConfig = head_;
         }
     
-        delete [] lnodeConfig_;
+        // Initialize array
+        if ( lnodeConfig_ )
+        {
+            for ( int i = 0; i < lnodeConfigSize_; i++ )
+            {
+                lnodeConfig_[i] = NULL;
+            }
+        }
     }
+
+    TRACE_EXIT;
+}
+
+void CLNodeConfigContainer::Clear( void )
+{
+    const char method_name[] = "CLNodeConfigContainer::Clear";
+    TRACE_ENTRY;
+
+    CLNodeConfig *lnodeConfig = head_;
+
+    // Only the main container builds the array of 
+    // logical node configuration objects. 
+    // The logical nodes container in a physical node configuration object
+    // only stores the configured logical nodes it hosts.
+    if ( lnodeConfig_ )
+    {
+        while ( head_ )
+        {
+            DeleteLNodeConfig( lnodeConfig );
+            lnodeConfig = head_;
+        }
+    
+        // Initialize array
+        if ( lnodeConfig_ )
+        {
+            for ( int i = 0; i < lnodeConfigSize_; i++ )
+            {
+                lnodeConfig_[i] = NULL;
+            }
+        }
+    }
+
+    lnodesCount_ = 0;
+    nextNid_ = -1;
+    head_ = NULL;
+    tail_ = NULL;
 
     TRACE_EXIT;
 }
@@ -177,6 +243,8 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfigP( CLNodeConfig *lnodeConfig 
 CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
                                                    , int           nid
                                                    , cpu_set_t    &coreMask 
+                                                   , int           firstCore
+                                                   , int           lastCore
                                                    , int           processors
                                                    , ZoneType      zoneType
                                                    )
@@ -196,10 +264,15 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
     CLNodeConfig *lnodeConfig = new CLNodeConfig( pnodeConfig
                                                 , nid
                                                 , coreMask 
+                                                , firstCore
+                                                , lastCore
                                                 , processors
                                                 , zoneType );
     if (lnodeConfig)
     {
+        // Set the next available nid
+        nextNid_ = nid > nextNid_ ? (nid+1) : nextNid_ ;
+
         lnodesCount_++;
         // Add it to the array
         if ( lnodeConfig_ && nid < lnodeConfigSize_ )

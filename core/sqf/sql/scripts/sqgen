@@ -263,8 +263,10 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo
     echo "Copying rest of the generated files to $PWD"
 
-    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
-    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
+#    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
+#    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
+    echo "$PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold shell.env mon.env $PWD "
+    $PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold shell.env mon.env $PWD
 
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "
     $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD

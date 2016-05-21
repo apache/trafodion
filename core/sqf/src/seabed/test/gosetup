@@ -44,11 +44,7 @@ if [ "$1" = "-keep" ]; then
 	shift
 fi
 if [ $keep = 0 ]; then
-	if [ ! -z "$MPI_TMPDIR" ]; then
-		if [ -f $MPI_TMPDIR/cluster.conf ]; then
-			rm -f $MPI_TMPDIR/cluster.conf
-		fi
-	fi
+	./gocleandb
 fi
 if [ $keep = 0 ]; then
 	rm -f $MPI_TMPDIR/monitor.port.*
@@ -57,11 +53,11 @@ if [ -z "$TEST_CLUSTER_CONF" ]; then
 	export SQ_VIRTUAL_NODES=1
 	export SQ_VIRTUAL_NID=0
 	if [ $keep = 0 ]; then
-		head -n 1 cluster.conf > $MPI_TMPDIR/cluster.conf
+		./godb 1
 	fi
 else
 	if [ $keep = 0 ]; then
-		cp cluster.conf $MPI_TMPDIR/cluster.conf
+		./godb 4
 	fi
 fi
 if [ "$cluster" = "-cluster" ]; then
@@ -70,7 +66,7 @@ if [ "$cluster" = "-cluster" ]; then
 	if [ $keep = 0 ]; then
 		host1=`gohost 1`
 		host2=`gohost 2`
-		head -n 2 cluster.conf > $MPI_TMPDIR/cluster.conf
+		./godb 2
 		gocleanport
 	fi
 fi
@@ -78,8 +74,9 @@ if [ "$clustern" = "-cluster" ]; then
 	unset SQ_VIRTUAL_NODES
 	unset SQ_VIRTUAL_NID
 	if [ $keep = 0 ]; then
-		cp clustern.conf $MPI_TMPDIR/cluster.conf
+		./godb 6
 		gocleanport
 	fi
 fi
 export SQ_SHELL_NOCWD=1
+export SQ_CONFIGDB=$PWD/sqconfig.db

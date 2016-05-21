@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
     pthread_key_t key[MAX_KEYS];
     bool          verbose = false;
     TAD           zargs[] = {
+      { "-cluster",   TA_Ign,  TA_NOMAX,    NULL       },
       { "-server",    TA_Ign,  TA_NOMAX,    NULL       },
       { "-v",         TA_Bool, TA_NOMAX,    &verbose   },
       { "-verbose",   TA_Ign,  TA_NOMAX,    NULL       },

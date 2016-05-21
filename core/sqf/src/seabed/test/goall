@@ -28,10 +28,9 @@ if [ "$1" = "-cluster" ]; then
 	host1=`gohost 1`
 	host2=`gohost 2`
 	host3=`gohost 3`
-	conf="cluster.conf"
-	ssh $host1 "echo $conf - $host1"
-	ssh $host2 "echo $conf - $host2"
-	ssh $host3 "echo $conf - $host3"
+	ssh $host1 "echo $host1"
+	ssh $host2 "echo $host2"
+	ssh $host3 "echo $host3"
 	shift
 fi
 verbose=

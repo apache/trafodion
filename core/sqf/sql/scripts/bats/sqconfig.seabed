@@ -23,3 +23,54 @@ begin node
 _virtualnodes 4
 end node
 
+begin persist
+PERSIST_PROCESS_KEYS = DTM,TSID,SSCP,SSMP,LOB
+
+DTM_PROCESS_NAME     = $TM%nid+
+DTM_PROCESS_TYPE     = DTM
+DTM_PROGRAM_NAME     = tm
+DTM_REQUIRES_DTM     = N
+DTM_STDOUT           = stdout_DTM%nid+
+DTM_PERSIST_RETRIES  = 2,30
+DTM_PERSIST_ZONES    = %zid
+
+TSID_PROCESS_NAME    = $TSID
+TSID_PROCESS_TYPE    = GENERIC
+TSID_PROGRAM_NAME    = idtmsrv
+TSID_REQUIRES_DTM    = N
+TSID_STDOUT          = stdout_TSID
+TSID_PERSIST_RETRIES = 2,30
+TSID_PERSIST_ZONES   = %zid+
+
+SSCP_PROCESS_NAME    = $ZSC%nid+
+SSCP_PROCESS_TYPE    = GENERIC
+SSCP_PROGRAM_NAME    = mxsscp
+SSCP_REQUIRES_DTM    = Y
+SSCP_STDOUT          = stdout_ZSC%nid+
+SSCP_PERSIST_RETRIES = 10,60
+SSCP_PERSIST_ZONES   = %zid
+
+SSMP_PROCESS_NAME    = $ZSM%nid+
+SSMP_PROCESS_TYPE    = SSMP
+SSMP_PROGRAM_NAME    = mxssmp
+SSMP_REQUIRES_DTM    = Y
+SSMP_STDOUT          = stdout_ZSM%nid+
+SSMP_PERSIST_RETRIES = 10,60
+SSMP_PERSIST_ZONES   = %zid
+
+LOB_PROCESS_NAME     = $ZLOBSRV%nid+
+LOB_PROCESS_TYPE     = GENERIC
+LOB_PROGRAM_NAME     = mxlobsrvr
+LOB_REQUIRES_DTM     = Y
+LOB_STDOUT           = stdout_ZLOB%nid+
+LOB_PERSIST_RETRIES  = 10,60
+LOB_PERSIST_ZONES    = %zid
+
+end persist
+
+#begin floating_ip
+#process=$MXOAS;interface=bond1;external-ip=xxx.xxx.xx.xxx
+#process=$MXOAS;interface=eth0;internal-ip=xxx.xxx.xxx.xxx
+#floating_ip_node_id 1
+#floating_ip_failover_node_id 0
+#end floating_ip

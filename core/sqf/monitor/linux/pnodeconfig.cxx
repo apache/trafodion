@@ -47,10 +47,14 @@ using namespace std;
 
 CPNodeConfig::CPNodeConfig( CPNodeConfigContainer *pnodesConfig
                           , int                    pnid
+                          , int                    excludedFirstCore
+                          , int                    excludedLastCore
                           , const char            *hostname
                           )
             : pnodesConfig_(pnodesConfig)
             , pnid_(pnid)
+            , excludedFirstCore_(excludedFirstCore)
+            , excludedLastCore_(excludedLastCore)
             , spareNode_(false)
             , sparePNids_(NULL)
             , sparePNidsCount_(0)
@@ -158,6 +162,7 @@ CPNodeConfigContainer::CPNodeConfigContainer( void )
                      : pnodeConfig_(NULL)
                      , pnodesCount_(0)
                      , snodesCount_(0)
+                     , nextPNid_(-1)
                      , head_(NULL)
                      , tail_(NULL)
 {
@@ -191,18 +196,58 @@ CPNodeConfigContainer::~CPNodeConfigContainer( void )
         pnodeConfig = head_;
     }
 
-    // Delete array
+    // Initialize array
     if ( pnodeConfig_ )
     {
-        delete [] pnodeConfig_;
+        for ( int i = 0; i < MAX_NODES ;i++ )
+        {
+            pnodeConfig_[i] = NULL;
+        }
     }
 
     TRACE_EXIT;
 }
 
-CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int pnid
+void CPNodeConfigContainer::Clear( void )
+{
+    const char method_name[] = "CPNodeConfigContainer::Clear";
+    TRACE_ENTRY;
+
+    CPNodeConfig *pnodeConfig = head_;
+
+    // Delete entries
+    while ( head_ )
+    {
+        DeletePNodeConfig( pnodeConfig );
+        pnodeConfig = head_;
+    }
+
+    if ( pnodeConfig_ )
+    {
+        // Initialize array
+        if ( pnodeConfig_ )
+        {
+            for ( int i = 0; i < MAX_NODES ;i++ )
+            {
+                pnodeConfig_[i] = NULL;
+            }
+        }
+    }
+
+    pnodesCount_ = 0;
+    snodesCount_ = 0;
+    nextPNid_ = -1;
+    head_ = NULL;
+    tail_ = NULL;
+
+    TRACE_EXIT;
+}
+
+CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
                                                    , char *name
-                                                   , bool spare
+                                                   , int   excludedFirstCore
+                                                   , int   excludedLastCore
+                                                   , bool  spare
                                                    )
 {
     const char method_name[] = "CPNodeConfigContainer::AddPNodeConfig";
@@ -219,6 +264,8 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int pnid
 
     CPNodeConfig *pnodeConfig = new CPNodeConfig( this
                                                 , pnid
+                                                , excludedFirstCore
+                                                , excludedLastCore
                                                 , name );
     if (pnodeConfig)
     {
@@ -233,6 +280,10 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int pnid
             spareNodesConfigList_.push_back( pnodeConfig );
         }
 
+        // Set the next available pnid
+        nextPNid_ = pnid > nextPNid_ ? (pnid+1) : nextPNid_ ;
+
+        // Bump the physical node count
         pnodesCount_++;
         // Add it to the array
         pnodeConfig_[pnid] = pnodeConfig;
@@ -409,3 +460,4 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
 
     TRACE_EXIT;
 }
+

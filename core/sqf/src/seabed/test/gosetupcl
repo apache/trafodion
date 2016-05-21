@@ -21,7 +21,7 @@
 
 # setup
 . ./gosetup
-head -n 2 cluster.conf > $MPI_TMPDIR/cluster.conf
+./godb 2
 if [ "$cluster" != "-cluster" ]; then
 	export SQ_VIRTUAL_NODES=2
 	export SQ_VIRTUAL_NID=0

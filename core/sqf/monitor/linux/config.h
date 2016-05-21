@@ -26,12 +26,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#include <string>
+#include <sqlite3.h>
 #include "msgdef.h"
 #include "internal.h"
-#include <string>
-
-#include <sqlite3.h>
-//#include "sqlite/sqlite3.h" 
+#include "clusterconf.h"
 
 class CConfigGroup;
 
