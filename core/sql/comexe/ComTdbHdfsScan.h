@@ -131,8 +131,17 @@ class ComTdbHdfsScan : public ComTdb
   NABasicPtr loggingLocation_;                                // 168 - 175
   NABasicPtr errCountRowId_;                                  // 176 - 183
   UInt32  hiveScanMode_;                                      // 184 - 187
-  char fillersComTdbHdfsScan1_[12];                           // 188 - 199
 
+  char fillersComTdbHdfsScan1_[4];                           // 188 - 191
+
+  // next 3 params used to check if data under hdfsFileDir
+  // was modified after query was compiled.
+  NABasicPtr hdfsFilesDir_;                                    // 192 - 199
+  Int64  modTSforDir_;                                         // 200 - 207
+  Lng32  numFilesInDir_;                                       // 208 - 211
+
+  char fillersComTdbHdfsScan2_[12];                           // 212 - 223
+    
 public:
   enum HDFSFileType
   {
@@ -178,10 +187,17 @@ public:
 		 queue_index up,
 		 Cardinality estimatedRowCount,
                  Int32  numBuffers,
-                 UInt32  bufferSize
-                 , char * errCountTable
-                 , char * loggingLocation
-                 , char * errCountId
+                 UInt32  bufferSize,
+
+                 char * errCountTable = NULL,
+                 char * loggingLocation = NULL,
+                 char * errCountId = NULL,
+
+                 // next 3 params used to check if data under hdfsFileDir
+                 // was modified after query was compiled.
+                 char * hdfsFilesDir  = NULL,
+                 Int64  modTSforDir   = -1,
+                 Lng32  numFilesInDir = -1
                  );
 
   ~ComTdbHdfsScan();

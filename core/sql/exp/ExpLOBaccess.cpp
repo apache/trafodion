@@ -131,11 +131,11 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 	  dir_ = string(dir);
 	}
 
-   
-      snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), lobFile);
+      if (lobFile)
+        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), lobFile);
       
     } 
-  else 
+  else if (lobFile)
     { 
       snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
       
@@ -153,7 +153,8 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 
   hdfsServer_ = hdfsServer;
   hdfsPort_ = hdfsPort;
-  lobLocation_ = lobLocation;
+  if (lobLocation)
+    lobLocation_ = lobLocation;
   clock_gettime(CLOCK_MONOTONIC, &startTime);
 
   if (lobGlobals->getHdfsFs() == NULL)
@@ -377,6 +378,62 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
 
     return LOB_OPER_OK;
 }
+
+Ex_Lob_Error ExLob::dataModCheck(
+       char * dirPath, 
+       Int64  inputModTS,
+       Lng32  inputNumFilesInDir,
+       Lng32  &numFilesInDir)
+{
+  // find mod time of dir
+  hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
+  if (fileInfos == NULL)
+    {
+      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+    }
+
+  Int64 currModTS = fileInfos[0].mLastMod;
+  hdfsFreeFileInfo(fileInfos, 1);
+  if ((inputModTS > 0) &&
+      (currModTS > inputModTS))
+    return LOB_DATA_MOD_CHECK_ERROR;
+
+  // find number of files in dirPath.
+  Lng32 currNumFilesInDir = 0;
+  fileInfos = hdfsListDirectory(fs_, dirPath, &currNumFilesInDir);
+  if ((currNumFilesInDir > 0) && (fileInfos == NULL))
+    {
+      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+    }
+
+  NABoolean failed = FALSE;
+  for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
+    {
+      hdfsFileInfo &fileInfo = fileInfos[i];
+      if (fileInfo.mKind == kObjectKindDirectory)
+        {
+          if (dataModCheck(fileInfo.mName, inputModTS, 
+                           inputNumFilesInDir, numFilesInDir) ==
+              LOB_DATA_MOD_CHECK_ERROR)
+            {
+              failed = TRUE;
+            }
+        }
+      else if (fileInfo.mKind == kObjectKindFile)
+        {
+          numFilesInDir++;
+          if (numFilesInDir > inputNumFilesInDir)
+            failed = TRUE;
+        }
+    }
+
+  hdfsFreeFileInfo(fileInfos, currNumFilesInDir);
+  if (failed)
+    return LOB_DATA_MOD_CHECK_ERROR;
+
+  return LOB_OPER_OK;
+}
+
 Ex_Lob_Error ExLob::emptyDirectory()
 {
     Ex_Lob_Error err;
@@ -2040,8 +2097,8 @@ Ex_Lob_Error ExLobsOper (
 			 LobsStorage storage,           // storage type
 			 char        *source,           // source (memory addr, filename, foreign lob etc)
 			 Int64       sourceLen,         // source len (memory len, foreign desc offset etc)
-			 Int64 cursorBytes,
-			 char *cursorId,
+			 Int64       cursorBytes,
+			 char        *cursorId,
 			 LobsOper    operation,         // LOB operation
 			 LobsSubOper subOperation,      // LOB sub operation
 			 Int64       waited,            // waited or nowaited
@@ -2315,7 +2372,6 @@ Ex_Lob_Error ExLobsOper (
         lobDebugInfo("purgeLob failed ",err,__LINE__,lobGlobals->lobTrace_);
       break;
 
-
     case Lob_Stats:
       err = lobPtr->readStats(source);
       lobPtr->initStats(); // because file may remain open across cursors
@@ -2323,8 +2379,26 @@ Ex_Lob_Error ExLobsOper (
 
     case Lob_Empty_Directory:
       lobPtr->initialize(fileName, EX_LOB_RW,
-			 dir, storage, hdfsServer, hdfsPort, dir,bufferSize, replication, blockSize);
+			 dir, storage, hdfsServer, hdfsPort, dir, bufferSize, replication, blockSize);
       err = lobPtr->emptyDirectory();
+      break;
+
+    case Lob_Data_Mod_Check:
+      {
+        lobPtr->initialize(NULL, EX_LOB_RW,
+                           NULL, storage, hdfsServer, hdfsPort, NULL, 
+                           bufferSize, replication, blockSize);
+
+        Int64 inputModTS = *(Int64*)blackBox;
+        Int32 inputNumFilesInDir = 
+          *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
+        Int32 numFilesInDir = 0;
+        err = lobPtr->dataModCheck(dir, inputModTS, 
+                                   inputNumFilesInDir, numFilesInDir);
+        if ((err == LOB_OPER_OK) &&
+            (numFilesInDir != inputNumFilesInDir))
+          err = LOB_DATA_MOD_CHECK_ERROR;
+      }
       break;
 
     case Lob_Cleanup:

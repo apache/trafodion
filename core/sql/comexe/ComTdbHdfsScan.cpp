@@ -65,9 +65,14 @@ ComTdbHdfsScan::ComTdbHdfsScan(
                                Cardinality estimatedRowCount,
                                Int32  numBuffers,
                                UInt32  bufferSize,
-                               char * errCountTable = NULL,
-                               char * loggingLocation = NULL,
-                               char * errCountId = NULL
+                               char * errCountTable,
+                               char * loggingLocation,
+                               char * errCountId,
+
+                               char * hdfsFilesDir,
+                               Int64  modTSforDir,
+                               Lng32  numFilesInDir
+
                                )
 : ComTdb( ComTdb::ex_HDFS_SCAN,
             eye_HDFS_SCAN,
@@ -107,7 +112,10 @@ ComTdbHdfsScan::ComTdbHdfsScan(
   flags_(0),
   errCountTable_(errCountTable),
   loggingLocation_(loggingLocation),
-  errCountRowId_(errCountId)
+  errCountRowId_(errCountId),
+  hdfsFilesDir_(hdfsFilesDir),
+  modTSforDir_(modTSforDir),
+  numFilesInDir_(numFilesInDir)
 {};
 
 ComTdbHdfsScan::~ComTdbHdfsScan()
@@ -142,6 +150,9 @@ Long ComTdbHdfsScan::pack(void * space)
   errCountTable_.pack(space);
   loggingLocation_.pack(space);
   errCountRowId_.pack(space);
+
+  hdfsFilesDir_.pack(space);
+
   return ComTdb::pack(space);
 }
 
@@ -173,6 +184,9 @@ Lng32 ComTdbHdfsScan::unpack(void * base, void * reallocator)
   if (errCountTable_.unpack(base)) return -1;
   if (loggingLocation_.unpack(base)) return -1;
   if (errCountRowId_.unpack(base)) return -1;
+
+  if (hdfsFilesDir_.unpack(base)) return -1;
+
   return ComTdb::unpack(base, reallocator);
 }
 
@@ -419,6 +433,17 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
                                                    sizeof(short));
             }
         }
+
+      if (hdfsFilesDir_)
+        {
+          str_sprintf(buf, "hdfsDir: %s", hdfsFilesDir_);
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+          str_sprintf(buf, "modTSforDir_ = %Ld, numFilesInDir_ = %d",
+                      modTSforDir_, numFilesInDir_);
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
+
     }
 
   if(flag & 0x00000001)

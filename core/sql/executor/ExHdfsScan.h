@@ -162,18 +162,21 @@ protected:
     NOT_STARTED
   , INIT_HDFS_CURSOR
   , OPEN_HDFS_CURSOR
+  , CHECK_FOR_DATA_MOD
+  , CHECK_FOR_DATA_MOD_AND_DONE
   , GET_HDFS_DATA
   , CLOSE_HDFS_CURSOR
   , PROCESS_HDFS_ROW
   , RETURN_ROW
   , REPOS_HDFS_DATA
-  ,CLOSE_FILE
-  ,ERROR_CLOSE_FILE
-  ,COLLECT_STATS
+  , CLOSE_FILE
+  , ERROR_CLOSE_FILE
+  , COLLECT_STATS
   , HANDLE_ERROR
-  ,HANDLE_EXCEPTION
+  , HANDLE_EXCEPTION
   , DONE
   , HANDLE_ERROR_WITH_CLOSE
+  , HANDLE_ERROR_AND_DONE
   } step_,nextStep_;
 
   /////////////////////////////////////////////////////
@@ -287,6 +290,8 @@ protected:
   NABoolean exception_;
   ComCondition * lastErrorCnd_;
   NABoolean checkRangeDelimiter_;
+
+  NABoolean dataModCheckDone_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb

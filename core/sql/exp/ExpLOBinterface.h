@@ -291,6 +291,19 @@ Lng32 ExpLOBinterfacePerformGC(void *& lobGlob, char *lobName,void *descChunksAr
 Lng32 ExpLOBinterfaceRestoreLobDataFile(void *& lobGlob, char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
 Lng32 ExpLOBinterfacePurgeBackupLobDataFile(void *& lobGlob,  char *hdfsServer, Int32 hdfsPort,char *lobLoc,char *lobName);
 
+// dirPath: path to needed directory (includes directory name)
+// modTS is the latest timestamp on any file/dir under dirPath.
+// numFilesInDir is the total number of files under dirPath.
+// This method validates that current modTS is not greater then input modTS
+// and current number of files in dirPath are the same as input numFilesInDir.
+// If either condition is not true, then check fails.
+// Return: 1, if check fails. 0, if passes. -1, if error.
+Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
+                                  char * dirPath,
+                                  char * lobHdfsServer,
+                                  Lng32  lobHdfsPort,
+                                  Int64  modTS,
+                                  Lng32  numFilesInDir);
 
 Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             char * lobName,

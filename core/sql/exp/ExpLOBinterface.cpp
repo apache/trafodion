@@ -220,10 +220,54 @@ Lng32 ExpLOBinterfaceCreate(
                    bufferSize ,
                    replication,
                    blockSize
-		   
 		   );
 
   if (err != LOB_OPER_OK)
+    return -(short)err;
+  else
+    return 0;
+}
+
+// Return: 1, if check fails. 
+//         0, if check passes. 
+//         -LOB_*_ERROR, if error.
+Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
+                                  char * dirPath,
+                                  char * lobHdfsServer,
+                                  Lng32  lobHdfsPort,
+                                  Int64  modTS,
+                                  Lng32  numFilesInDir)
+{
+  Ex_Lob_Error err;
+
+  Int64 dummyParam=0;
+  Int32 dummyParam2 = 0;
+  Ex_Lob_Error status;
+  Int64 cliError = -1;
+
+  char dirInfoBuf[100];
+  *(Int64*)dirInfoBuf = modTS;
+  *(Lng32*)&dirInfoBuf[sizeof(modTS)] = numFilesInDir;
+  Lng32 dirInfoBufLen = sizeof(modTS) + sizeof(numFilesInDir);
+  err = ExLobsOper((char*)"",
+                   NULL, 0,
+                   lobHdfsServer, lobHdfsPort,
+                   NULL, dummyParam2, 0, dummyParam,
+                   dummyParam, 0, dummyParam, status, cliError,
+                   dirPath, (LobsStorage)Lob_HDFS_File,
+                   NULL, 0,
+		   0,NULL,
+                   Lob_Data_Mod_Check,
+                   Lob_None,
+                   1, // waited op
+                   lobGlob,
+                   0, 
+                   dirInfoBuf, dirInfoBufLen
+                   );
+
+  if (err == LOB_DATA_MOD_CHECK_ERROR)
+    return 1;
+  else if (err != LOB_OPER_OK)
     return -(short)err;
   else
     return 0;

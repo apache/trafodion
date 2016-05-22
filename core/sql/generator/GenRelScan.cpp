@@ -360,29 +360,16 @@ short FileScan::genForTextAndSeq(Generator * generator,
   const NABoolean isSequenceFile = hTabStats->isSequenceFile();
 
   HiveFileIterator hfi;
-  NABoolean firstFile = TRUE;
   hdfsPort = 0;
   hdfsHostName = NULL;
   
-  while (firstFile && getHiveSearchKey()->getNextFile(hfi))
-    {
-      const HHDFSFileStats * hFileStats = hfi.getFileStats();
-      if (firstFile)
-        {
-          // determine connection info (host and port) from the first file
-          NAString dummy, hostName;
-          NABoolean result;
-          result = ((HHDFSTableStats*)hTabStats)->splitLocation
-            (hFileStats->getFileName().data(), hostName, hdfsPort, dummy) ;
-          
-          GenAssert(result, "Invalid Hive directory name");
-
-          hdfsHostName = 
-            space->AllocateAndCopyToAlignedSpace(hostName, 0);
-
-          firstFile = FALSE;
-        }
-    }
+  // determine host and port from dir name
+  NAString dummy, hostName;
+  NABoolean result = ((HHDFSTableStats*)hTabStats)->splitLocation
+    (hTabStats->tableDir().data(), hostName, hdfsPort, dummy) ;
+  GenAssert(result, "Invalid Hive directory name");
+  hdfsHostName = 
+        space->AllocateAndCopyToAlignedSpace(hostName, 0);
 
   hdfsFileInfoList = new(space) Queue(space);
   hdfsFileRangeBeginList = new(space) Queue(space);
@@ -1159,6 +1146,22 @@ if (hTabStats->isOrcFile())
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
 
+  // info needed to validate hdfs file structs
+  //  const HHDFSTableStats* hTabStats = 
+  //    getIndexDesc()->getNAFileSet()->getHHDFSTableStats();
+  char * hdfsDir = NULL;
+  Int64 modTS = -1;
+  Lng32 numFilesInDir = -1;
+  if (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON)
+    {
+      hdfsDir =
+        space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
+                                             hTabStats->tableDir().length(),
+                                             0);
+      modTS = hTabStats->getModificationTS();
+      numFilesInDir =  hTabStats->getNumFiles();
+    }
+
   // create hdfsscan_tdb
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(
@@ -1197,7 +1200,9 @@ if (hTabStats->isOrcFile())
 		   buffersize,
 		   errCountTab,
 		   logLocation,
-		   errCountRowId
+		   errCountRowId,
+
+                   hdfsDir, modTS, numFilesInDir
 		   );
 
   generator->initTdbFields(hdfsscan_tdb);
