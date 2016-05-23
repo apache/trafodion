@@ -75,6 +75,7 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   SDEntry(SessionDefaults::CANCEL_QUERY_ALLOWED,     CANCEL_QUERY_ALLOWED,       SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::CANCEL_UNIQUE_QUERY,      CANCEL_UNIQUE_QUERY,        SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::CATALOG,                  CATALOG,                    SessionDefaults::SDT_ASCII,          TRUE,    TRUE,  FALSE, FALSE),
+  SDEntry(SessionDefaults::COMPILER_IDLE_TIMEOUT,    COMPILER_IDLE_TIMEOUT,      SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),  
   SDEntry(SessionDefaults::DBTR_PROCESS,             DBTR_PROCESS,               SessionDefaults::SDT_BOOLEAN,        TRUE,    FALSE, FALSE, FALSE),
   SDEntry(SessionDefaults::ESP_ASSIGN_DEPTH,         ESP_ASSIGN_DEPTH,           SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_ASSIGN_TIME_WINDOW,   ESP_ASSIGN_TIME_WINDOW,     SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
@@ -193,6 +194,8 @@ SessionDefaults::SessionDefaults(CollHeap * heap)
   setEspStopIdleTimeout(60);
   // Default is 1800 (idle ESPs time out in 30 minutes)
   setEspIdleTimeout(30*60);
+  // Default is 1800 (Compiler Idle time out in 30 minutes)
+  setCompilerIdleTimeout(30*60);
   // Default is 0 (inactive ESPs never time out)
   setEspInactiveTimeout(0);
   // how long master waits for release work reply from esps (default is 15
@@ -396,6 +399,12 @@ void SessionDefaults::setSessionDefaultAttributeValue
     case ESP_IDLE_TIMEOUT:
       {
 	setEspIdleTimeout(defaultValueAsLong);
+      }
+    break;
+
+    case COMPILER_IDLE_TIMEOUT:
+      {
+	setCompilerIdleTimeout(defaultValueAsLong);
       }
     break;
 
