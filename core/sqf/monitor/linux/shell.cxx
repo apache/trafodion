@@ -8174,6 +8174,5 @@ int main (int argc, char *argv[])
     }
 
     OrderlyShutdown();
-    printf( "[%s] Exiting\n", MyName );
     return(0);
 }
