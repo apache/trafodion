@@ -4532,8 +4532,8 @@ displays a list of all objects, including user, system, and external objects.
 * This GET HBASE OBJECTS statement displays the {project-name} user objects in HBase:
 +
 ```
-{project-name} Conversational Interface 1.1.0
-(c) Copyright 2014 Hewlett-Packard Development Company, LP.
+Trafodion Conversational Interface 1.1.0
+(c) Copyright 2015 Apache Software Foundation
 
 >>get user hbase objects;
 
@@ -5351,7 +5351,7 @@ To issue an INVOKE statement, one of the following must be true:
 +
 ```
 SQL> invoke trafodion.seabase.t;
--- Definition of {project-name} table TRAFODION.SEABASE.T
+-- Definition of Trafodion table TRAFODION.SEABASE.T
 -- Definition current Wed Mar 5 10:36:06 2014
 (
    A                                       INT NO DEFAULT NOT NULL NOT DROPPABLE
