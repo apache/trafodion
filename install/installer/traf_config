@@ -72,12 +72,6 @@ if [[ "$userId" != "$TRAF_USER" ]]; then
 fi
 
 #============================================
-echo "*************************"
-echo "*************************"
-echo " Trafodion Configuration"
-echo "*************************"
-echo "*************************"
-#============================================
 # Check if an existing instance is up
 process_count=$(cstat -noheader 2>/dev/null | wc -l)
 if [ "$process_count" -ne 0 ]; then
