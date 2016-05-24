@@ -1878,6 +1878,7 @@ drop the default context
 9244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not allowed in a user transaction.
 9245 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 9246 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not supported on LOB columns. Column $0~String0 is a LOB column.
+9247 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not supported on volatile tables presently.
 9250 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
 10000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Sort Error: First Sort error
 10001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Sort Error : No error text defined. Unexpected error. $0~String0
