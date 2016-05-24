@@ -30,7 +30,7 @@ package com.hp.traf;
  */
 public class t284cli implements t284cb {
     private static final int TO = 1000;
-    private static byte      asciiTime [40];
+    private static byte      asciiTime [];
     /**
      * main
      *
@@ -56,7 +56,7 @@ public class t284cli implements t284cb {
             }
         }
 
-
+        asciiTime = new byte[40];
         t284cli cli = new t284cli(cb);
         System.out.println("t284cli(j) begin, loop=" + loop);
 
@@ -82,6 +82,16 @@ public class t284cli implements t284cb {
             catch (t284exc exc){
                 System.out.println("id_to_string threw exc=" + exc);
             }
+            try{
+                t284id id2 = new t284id();
+                cli.string_to_id(TO, id2, asciiTime);
+                System.out.println("string_to_id ret=0x" + Long.toHexString(id2.val));
+                idVal = id2.val;
+            }
+            catch (t284exc exc){
+                System.out.println("string_to_id threw exc=" + exc);
+            }
+ 
         }
         System.out.println("t284cli(j) done");
     }
@@ -127,16 +137,32 @@ public class t284cli implements t284cb {
     }
 
    /**
-    * id server
+    * id server id_to_string
     *
     * @param timeout timeout in ms
     * @param id id
+    * @param id_string output string
     * @exception t284exc exception
     */
     public void id_to_string(int timeout, long id, byte [] id_string) throws t284exc {
         int err = native_id_to_string(timeout, id, id_string);
         if (err != 0) {
             throw new t284exc("id_to_string ferr=" + err);
+        }
+    }
+
+   /**
+    * id server string_to_id
+    *
+    * @param timeout timeout in ms
+    * @param id output id from converted string
+    * @param id_string string to convert
+    * @exception t284exc exception
+    */
+    public void string_to_id(int timeout, t284id id, byte [] id_string) throws t284exc {
+        int err = native_string_to_id(timeout, id, id_string);
+        if (err != 0) {
+            throw new t284exc("string_to_id ferr=" + err);
         }
     }
 
@@ -185,6 +211,15 @@ public class t284cli implements t284cb {
      */
     private native int native_id_to_string(int timeout, long id, byte[] id_string );
 
+    /**
+     * id_to_string server
+     *
+     * @param timeout timeout in ms
+     * @param id id
+     * @param asciiTimeString
+     * @return file error
+     */
+    private native int native_string_to_id(int timeout, t284id id, byte[] id_string );
 
     /**
      * ping server

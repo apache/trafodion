@@ -126,7 +126,7 @@ struct timespec long_to_timespec(unsigned long pv_time_id) {
 int timespec_to_str(char *buf, size_t max_len, struct timespec *ppv_timespec) {
 
     if (verbose)
-        printf("srv: enter timespec_to_str\n");
+      printf("srv: enter timespec_to_str %ld\n", ppv_timespec->tv_sec);
 
     unsigned int len;
     char * ptr;
@@ -216,8 +216,88 @@ int timespec_to_str(char *buf, size_t max_len, struct timespec *ppv_timespec) {
        return XZFIL_ERR_BADCOUNT;
     }
     strcpy(buf, tmp_buffer);
+    if (verbose)
+      printf("srv: exit timespec_to_str %s\n", buf);
+
     return XZFIL_ERR_OK;
 
+}
+
+int str_to_tm_id(char *buf, unsigned long *ppv_tm_id) {
+
+    if (verbose)
+      printf("srv: enter str_to_tm_id for %s\n", buf);
+
+    char * ptr;
+    char tmp_buffer[MAX_DATE_TIME_BUFF_LEN * 2];
+    char date_buff[12];
+    char mon_buff[3];
+    char day_buff[3];
+    char year_buff[5];
+    char time_buff[20];
+    char hour_buff[3];
+    char min_buff[3];
+    char sec_usec_buff[12];
+    char sec_buff[3];
+    char usec_buff[10];
+    struct tm loc_tm;
+    struct timespec loc_ts;
+
+    // The format of the passed in date string is '2016-05-06 03:01:52.123456'
+    // Using a 'space' we separate the input string into date and time components
+    strcpy(tmp_buffer, buf);
+    ptr = strtok(tmp_buffer, " ");
+    strcpy(date_buff, ptr);
+    ptr = strtok(NULL, " ");
+    strcpy(time_buff, ptr);
+
+    // Tokenize the date using the '-' character
+    ptr = strtok(date_buff, "-");
+    strcpy(year_buff, ptr);
+    ptr = strtok(NULL, "-");
+    strcpy(mon_buff, ptr);
+    ptr = strtok(NULL, "-");
+    strcpy(day_buff, ptr);
+  
+    // Tokenize the time using the ':' character
+    ptr = strtok(time_buff, ":");
+    strcpy(hour_buff, ptr);
+    ptr = strtok(NULL, ":");
+    strcpy(min_buff, ptr);
+    ptr = strtok(NULL, ":");
+    strcpy(sec_usec_buff, ptr);
+
+    // Tokenize the sec_usec_buff using the '.' character
+    ptr = strtok(sec_usec_buff, ".");
+    strcpy(sec_buff, ptr);
+    ptr = strtok(NULL, ".");
+    strcpy(usec_buff, ptr);
+
+    memset(&loc_tm, 0, sizeof(struct tm));
+    loc_tm.tm_year = atoi(year_buff) - 1900;
+    loc_tm.tm_mon  = atoi(mon_buff) - 1;        // Months are 0 based from January
+    loc_tm.tm_mday = atoi(day_buff);
+    loc_tm.tm_hour = atoi(hour_buff);
+    loc_tm.tm_min  = atoi(min_buff);
+    loc_tm.tm_sec  = atoi(sec_buff);
+
+    // Take the tm struct we have created and translate it into the time_t (seconds)
+    // portion of a timespec.  We set the nsec portion directly.
+    loc_ts.tv_sec = mktime(&loc_tm);
+    if (loc_ts.tv_sec == -1){
+
+      // Unsuccessful conversion
+      return XZFIL_ERR_FSERR;
+    }
+    loc_ts.tv_nsec = (atol(usec_buff) * 1000L);
+
+    *ppv_tm_id = ((unsigned long) loc_ts.tv_sec << 20) |
+                 ((unsigned long) loc_ts.tv_nsec / 1000);
+
+    if (verbose)
+        printf("srv: str_to_tm_id loc_ts =0x%lx,0x%lx converted time %ld\n", loc_ts.tv_sec, loc_ts.tv_nsec, *ppv_tm_id);
+
+    return XZFIL_ERR_OK;
 }
 
 //
@@ -233,6 +313,7 @@ void do_req(BMS_SRE *sre) {
     const char     *req_type;
     struct timeval  tv;
     struct timespec orig_ts;
+    unsigned long   converted_tm_id;
 
     ec = XZFIL_ERR_OK;
     len = 0;
@@ -330,15 +411,13 @@ void do_req(BMS_SRE *sre) {
         case GID_REQ_STRING_TO_ID:
             if (req.req_len == (int) sizeof(req.u.string_to_id)) {
                 if (verbose)
-                    printf("srv: received string_to_id request\n");
+		  printf("srv: received string_to_id request for %s\n", req.u.string_to_id.string_to_id);
                 rep.rep_type = GID_REP_STRING_TO_ID;
                 rep.rep_tag = req.req_tag;
-		//                req_id = req.u.string_to_id.string_to_id;
-		//                orig_ts = long_to_timespec(req_id);
-		//                timespec_to_str(rep.u.id_to_string.id_to_string, sizeof(rep.u.id_to_string.id_to_string)
-		//                                    , &orig_ts);
-		//                rep.rep_len = (int) strlen(rep.u.id_to_string.id_to_string) + 1;
-		//                rep.u.id_to_string.com.error = GID_ERR_OK;
+                ferr = str_to_tm_id(req.u.string_to_id.string_to_id, &converted_tm_id);
+                rep.u.string_to_id.id = converted_tm_id;
+                rep.rep_len = sizeof(rep.u.string_to_id);
+                rep.u.string_to_id.com.error = GID_ERR_OK;
             } else {
                 if (verbose)
                     printf("srv: received string_to_id, req-len=%d, expecting len=%d, setting BADCOUNT\n",

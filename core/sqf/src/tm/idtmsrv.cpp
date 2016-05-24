@@ -47,7 +47,7 @@ char           ga_name[BUFSIZ];
 char          *gp_shm;
 unsigned long *gp_shml;
 bool           gv_shook   = false;
-bool           gv_verbose = false; 
+bool           gv_verbose = false;
 
 DEFINE_EXTERN_COMP_DOVERS(idtmsrv)
 
@@ -198,6 +198,142 @@ int timespec_to_str(char *buf, size_t max_len, struct timespec *ppv_timespec) {
     return XZFIL_ERR_OK;
 }
 
+int str_to_tm_id(char *buf, unsigned long *ppv_tm_id) {
+
+    if (gv_verbose)
+        printf("srv: enter str_to_tm_id for: %s\n", buf);
+
+    char * ptr;
+    char tmp_buffer[MAX_DATE_TIME_BUFF_LEN * 2];
+    char date_buff[12];
+    char mon_buff[3];
+    char day_buff[3];
+    char year_buff[5];
+    char time_buff[20];
+    char hour_buff[3];
+    char min_buff[3];
+    char sec_usec_buff[12];
+    char sec_buff[3];
+    char usec_buff[10];
+    struct tm lv_tm;
+    struct timespec lv_ts;
+
+    // Initialize the output parameter in case an error occurs to avoid confusion
+    *ppv_tm_id = 0L;
+    
+    // The format of the passed in date string is '2016-05-06 03:01:52.123456'
+    // Using a 'space' we separate the input string into date and time components
+    strcpy(tmp_buffer, buf);
+    ptr = strtok(tmp_buffer, " ");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a space between date and time: %s\n", tmp_buffer );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(date_buff, ptr);
+
+    ptr = strtok(NULL, " ");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a space between date and time: %s\n", tmp_buffer );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(time_buff, ptr);
+
+    // Tokenize the date using the '-' character
+    ptr = strtok(date_buff, "-");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a hyphen in the date: %s\n", date_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(year_buff, ptr);
+
+    ptr = strtok(NULL, "-");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a hyphen in the date: %s\n", date_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(mon_buff, ptr);
+
+    ptr = strtok(NULL, "-");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a hyphen in the date: %s\n", date_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(day_buff, ptr);
+  
+    // Tokenize the time using the ':' character
+    ptr = strtok(time_buff, ":");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a colon in the time: %s\n", time_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(hour_buff, ptr);
+
+    ptr = strtok(NULL, ":");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a colon in the time: %s\n", time_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(min_buff, ptr);
+
+    ptr = strtok(NULL, ":");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a colon in the time: %s\n", time_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(sec_usec_buff, ptr);
+
+    // Tokenize the sec_usec_buff using the '.' character
+    ptr = strtok(sec_usec_buff, ".");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a period separating seconds and usecs: %s\n", sec_usec_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(sec_buff, ptr);
+    
+    ptr = strtok(NULL, ".");
+    if (ptr == NULL){
+       if (gv_verbose)
+           printf("srv: str_to_tm_id time string requires a period separating secons and usecs: %s\n", sec_usec_buff );
+       return XZFIL_ERR_BADPARMVALUE;
+    }
+    strcpy(usec_buff, ptr);
+
+    memset(&lv_tm, 0, sizeof(struct tm));
+    lv_tm.tm_year = atoi(year_buff) - 1900;
+    lv_tm.tm_mon  = atoi(mon_buff) - 1;        // Months are 0 based from January
+    lv_tm.tm_mday = atoi(day_buff);
+    lv_tm.tm_hour = atoi(hour_buff);
+    lv_tm.tm_min  = atoi(min_buff);
+    lv_tm.tm_sec  = atoi(sec_buff);
+
+    // Take the tm struct we have created and translate it into the time_t (seconds)
+    // portion of a timespec.  We set the nsec portion directly.
+    lv_ts.tv_sec = mktime(&lv_tm);
+    if (lv_ts.tv_sec == -1){
+
+      // Unsuccessful conversion
+      return XZFIL_ERR_FSERR;
+    }
+    lv_ts.tv_nsec = (atol(usec_buff) * 1000L);
+
+    *ppv_tm_id = ((unsigned long) lv_ts.tv_sec << 20) |
+                 ((unsigned long) lv_ts.tv_nsec / 1000);
+
+    if (gv_verbose)
+        printf("srv: str_to_tm_id lv_ts =0x%lx,0x%lx converted time 0x%lx\n", lv_ts.tv_sec, lv_ts.tv_nsec, *ppv_tm_id);
+
+    return XZFIL_ERR_OK;
+}
+
 //
 // Timer callback
 //
@@ -283,6 +419,7 @@ void do_req(BMS_SRE *pp_sre) {
     long            lv_req_id;
     struct timeval  lv_tv;
     struct timespec lv_orig_ts;
+    unsigned long   lv_converted_tm_id;
 
     lv_ec = XZFIL_ERR_OK;
     lv_len = 0;
@@ -370,8 +507,10 @@ void do_req(BMS_SRE *pp_sre) {
                 lv_rep.iv_rep_len = sizeof(lv_rep.u.iv_id_to_string);
                 lv_rep.u.iv_id_to_string.iv_com.iv_error = (GID_Err_Type) lv_ferr;
                 if (gv_verbose){
-                    printf("srv: replying to id_to_string request with err=%d, size %d, and string %s\n",
-			 lv_rep.u.iv_id_to_string.iv_com.iv_error, lv_rep.iv_rep_len, lv_rep.u.iv_id_to_string.iv_id_to_string);
+                    printf("srv: replying to id_to_string request with err=%d, reply-size %d, string %s, and len%d\n",
+                                          lv_rep.u.iv_id_to_string.iv_com.iv_error,
+                                          lv_rep.iv_rep_len, lv_rep.u.iv_id_to_string.iv_id_to_string,
+                                          (int) strlen(lv_rep.u.iv_id_to_string.iv_id_to_string));
                 }
             } else {
                 if (gv_verbose)
@@ -384,15 +523,18 @@ void do_req(BMS_SRE *pp_sre) {
         case GID_REQ_STRING_TO_ID:
             if (lv_req.iv_req_len == (int) sizeof(lv_req.u.iv_string_to_id)) {
                 if (gv_verbose)
-                    printf("srv: received string_to_id request\n");
+                    printf("srv: received string_to_id request, string: %s\n", lv_req.u.iv_string_to_id.iv_string_to_id);
                 lv_rep.iv_rep_type = GID_REP_STRING_TO_ID;
                 lv_rep.iv_rep_tag = lv_req.iv_req_tag;
-		//                lv_req_id = lv_req.u.iv_id_to_string.iv_req_id_to_string;
-                //lv_orig_ts = long_to_timespec(lv_req_id);
-                //timespec_to_str(lv_rep.u.iv_id_to_string.iv_id_to_string, sizeof(lv_rep.u.iv_id_to_string.iv_id_to_string)
-                //                    , &lv_orig_ts); 
-                lv_rep.iv_rep_len = sizeof(lv_rep.u.iv_string_to_id.iv_string_to_id);
-                lv_rep.u.iv_string_to_id.iv_com.iv_error = GID_ERR_OK;
+                lv_ferr = str_to_tm_id(lv_req.u.iv_string_to_id.iv_string_to_id, &lv_converted_tm_id);
+                lv_rep.u.iv_string_to_id.iv_string_to_id = lv_converted_tm_id;
+                lv_rep.iv_rep_len = sizeof(lv_rep.u.iv_string_to_id);
+                lv_rep.u.iv_string_to_id.iv_com.iv_error = (GID_Err_Type) lv_ferr;
+                if (lv_ferr != XZFIL_ERR_OK)
+                   lv_ec = lv_ferr;
+                if (gv_verbose)
+                    printf("srv: replying to string_to_id request with err=%d, size %d, and id %ld\n",
+                                          lv_ferr, lv_rep.iv_rep_len, lv_converted_tm_id);
             } else {
                 if (gv_verbose)
                     printf("srv: received string_to_id, req-len=%d, expecting len=%d, setting BADCOUNT\n",
@@ -410,9 +552,8 @@ void do_req(BMS_SRE *pp_sre) {
         }
     }
 
-    if (lv_ec == XZFIL_ERR_OK) {
-      if (gv_verbose){
-	if(lv_rep.iv_rep_type == GID_REP_ID_TO_STRING){
+    if (gv_verbose){
+        if(lv_rep.iv_rep_type == GID_REP_ID_TO_STRING){
             printf("srv: reply, rep-type=%d, tag=%ld, id_to_string=%s, len=%d\n",
                    lv_rep.iv_rep_type, lv_rep.iv_rep_tag, lv_rep.u.iv_id_to_string.iv_id_to_string, lv_rep.iv_rep_len);
         }
@@ -420,12 +561,8 @@ void do_req(BMS_SRE *pp_sre) {
             printf("srv: reply, rep-type=%d, tag=%ld, id=%ld, len=%d\n",
                    lv_rep.iv_rep_type, lv_rep.iv_rep_tag, lv_rep.u.iv_id.iv_id, lv_rep.iv_rep_len);
         }
-      }
-        lv_len = (int) sizeof(lv_rep);
-    } else {
-        lv_len = 0;
     }
-
+    lv_len = (int) sizeof(lv_rep);
     do_reply(pp_sre, (char *) &lv_rep, lv_len, lv_ec);
 }
 
@@ -433,8 +570,19 @@ void do_req(BMS_SRE *pp_sre) {
 // do reply
 //
 void do_reply(BMS_SRE *pp_sre, char *pp_reply, int pv_len, short pv_ec) {
-    if (gv_verbose)
-        printf("srv: reply, len=%d, ec=%d\n", pv_len, pv_ec);
+	GID_Rep * lv_rep = (GID_Rep *) pp_reply;
+	int lv_error = 0;
+	
+	if (lv_rep != NULL)
+		lv_error = lv_rep->u.iv_id.iv_com.iv_error;
+
+    if (gv_verbose){
+        printf("srv: reply, len=%d, ec=%d, error=%d\n", pv_len, pv_ec, lv_error);
+    }
+
+    if (pv_ec == XZFIL_ERR_OK){
+       pv_ec = lv_error;
+    }
     BMSG_REPLY_(pp_sre->sre_msgId,   // msgid
                 NULL,                // replyctrl
                 0,                   // replyctrlsize

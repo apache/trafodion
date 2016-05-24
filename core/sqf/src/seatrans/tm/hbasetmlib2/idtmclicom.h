@@ -252,9 +252,43 @@ static int do_cli_id_to_string(SB_Phandle_Type *pp_phandle, int pv_timeout, unsi
 
     if (lv_ferr == XZFIL_ERR_OK) {
         if (gv_verbose)
-            printf("cli: id-to-string-reply, rep-tag=0x%lx, rep-len=%d, id-string=%s\n",
-                   lv_rep.iv_rep_tag, lv_rep.iv_rep_len, lv_rep.u.iv_id_to_string.iv_id_to_string);
+            printf("cli: id-to-string-reply, rep-tag=0x%lx, rep-len=%d, id-string=%s, size=%d\n",
+                   lv_rep.iv_rep_tag, lv_rep.iv_rep_len, lv_rep.u.iv_id_to_string.iv_id_to_string,
+                   (int)strlen(lv_rep.u.iv_id_to_string.iv_id_to_string));
         strcpy(pp_id_string, lv_rep.u.iv_id_to_string.iv_id_to_string);
+    }
+    return lv_ferr;
+}
+
+//
+// string_to_id operation
+//
+static int do_cli_string_to_id(SB_Phandle_Type *pp_phandle, int pv_timeout, unsigned long *pp_id, char* pp_id_string) {
+    int     lv_ferr;
+    GID_Rep lv_rep;
+    GID_Req lv_req;
+
+    if (gv_verbose)
+        printf("cli: do_cli_string_to_id begin for string=%s\n", pp_id_string);
+
+    init_req(&lv_req, GID_REQ_STRING_TO_ID, sizeof(lv_req.u.iv_string_to_id));
+    init_rep(&lv_rep);
+    strcpy(lv_req.u.iv_string_to_id.iv_string_to_id,pp_id_string);
+    lv_ferr = do_link(pp_phandle,
+                      &lv_req,
+                      &lv_rep,
+                      pv_timeout,
+                      "string_to_id",
+                      GID_REP_STRING_TO_ID,
+                      lv_req.iv_req_tag,
+                      sizeof(lv_rep.u.iv_string_to_id));
+
+    if (lv_ferr == XZFIL_ERR_OK) {
+    	lv_ferr = lv_rep.u.iv_string_to_id.iv_com.iv_error;
+        if (gv_verbose)
+            printf("cli: string-to-id-reply, error=%d, rep-tag=0x%lx, rep-len=%d, id=0x%lx\n",
+                   lv_ferr, lv_rep.iv_rep_tag, lv_rep.iv_rep_len, lv_rep.u.iv_string_to_id.iv_string_to_id);
+        *pp_id = lv_rep.u.iv_string_to_id.iv_string_to_id;
     }
     return lv_ferr;
 }

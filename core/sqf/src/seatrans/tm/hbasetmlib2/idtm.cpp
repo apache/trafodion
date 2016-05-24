@@ -212,7 +212,8 @@ jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1id_1to
         lv_ferr = do_cli_id_to_string(&gv_phandle, j_timeout, lv_id, la_ascii_time);
         if (lv_ferr == XZFIL_ERR_OK) {
            if(strlen(la_ascii_time) > MAX_DATE_TIME_BUFF_LEN) {
-              printf("cli: id_to_string() output string is too long %s\n", la_ascii_time);
+              if (gv_verbose)
+                  printf("cli: id_to_string() output string is too long %s\n", la_ascii_time);
               return XZFIL_ERR_BUFTOOSMALL;
            }
            output = (char *) (pp_j_env)->GetByteArrayElements(j_id_string, NULL);
@@ -222,6 +223,58 @@ jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1id_1to
     }
     if (gv_verbose)
         printf("cli: id_to_string() err=%d, id=0x%lx id_string=%s\n", lv_ferr, lv_id, la_ascii_time);
+
+    return lv_ferr;
+}
+
+//
+// org.apache.hadoop.hbase.regionserver.transactional.idTm.native_string_to_id(j_timeout, j_id, j_id_string)
+//
+// initialize.
+// call do_cli_string_to_id() and set j_id to value from formatted date/time supplied as j_id_to_string
+//
+// return file error
+//
+jint Java_org_apache_hadoop_hbase_regionserver_transactional_IdTm_native_1string_1to_1id(JNIEnv *pp_j_env, jobject, jint j_timeout, jobject j_id, jbyteArray j_id_string) {
+    int            lv_ferr;
+    int            len;
+    unsigned long  lv_id = 0L;
+    char           la_ascii_time[MAX_DATE_TIME_BUFF_LEN * 2];
+    char          *input;
+    jclass         lv_id_class;
+    jfieldID       lv_id_val;
+
+    lv_ferr = do_init(pp_j_env);
+
+    if(strlen(la_ascii_time) > MAX_DATE_TIME_BUFF_LEN) {
+       printf("cli: string_to_id() input string is too long %s\n", la_ascii_time);
+       return XZFIL_ERR_BUFTOOSMALL;
+    }
+
+    if (lv_ferr == XZFIL_ERR_OK) {
+       len = (int) j_len;
+       if (gv_verbose)
+           printf("cli: string_to_id() len is %d\n", len);
+       input = (pp_j_env)->GetByteArrayElements(j_id_string, NULL);
+       memcpy(la_ascii_time,(char *)input, len);
+       la_ascii_time[len] = '\0';
+       (pp_j_env)->ReleaseByteArrayElements(j_id_string, input, 0);
+       if(strlen(la_ascii_time) > MAX_DATE_TIME_BUFF_LEN) {
+          if (gv_verbose)
+              printf("cli: string_to_id() input string is too long %s\n", la_ascii_time);
+          return XZFIL_ERR_BUFTOOSMALL;
+       }
+       lv_ferr = do_cli_string_to_id(&gv_phandle, j_timeout, &lv_id, la_ascii_time);
+       if(lv_ferr == XZFIL_ERR_OK){
+          lv_id_class = pp_j_env->GetObjectClass(j_id);
+          assert(lv_id_class != 0);
+          lv_id_val = pp_j_env->GetFieldID(lv_id_class, "val", "J");
+          assert(lv_id_val != 0);
+          pp_j_env->SetLongField(j_id, lv_id_val, lv_id);
+       }
+    }
+    if (gv_verbose)
+        printf("cli: string_to_id() err=%d, id=0x%lx id_string=%s\n", lv_ferr, lv_id, la_ascii_time);
 
     return lv_ferr;
 }

@@ -146,10 +146,12 @@ int main(int argc, char *argv[]) {
         if (idt) {
             do_cli_id(&phandle, TO, &id);
             do_cli_id_to_string(&phandle, TO, id, ascii_buffer);
+            do_cli_string_to_id(&phandle, TO, &id, ascii_buffer);
         } else {
             do_cli_ping(&phandle, TO);
             do_cli_id(&phandle, TO, &id);
             do_cli_id_to_string(&phandle, TO, id, ascii_buffer);
+            do_cli_string_to_id(&phandle, TO, &id, ascii_buffer);
         }
     }
     gettimeofday(&t_stop, NULL);
