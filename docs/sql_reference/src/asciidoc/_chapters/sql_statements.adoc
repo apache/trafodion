@@ -2593,8 +2593,7 @@ any conflicts.
 * Volatile tables are partitioned by the system. The number of partitions is limited to four partitions by default.
 The partitions will be distributed across the cluster. The default value is four partitions regardless of the system
 configuration.
-* Statistics are not automatically updated for volatile tables. If you need statistics, you must explicitly run
-UPDATE STATISTICS.
+* UPDATE STATISTICS is not supported for volatile tables. If you need statistics, you must use a non-volatile table instead.
 * Volatile tables can be created and accessed using one-part, two-part, or three-part names. However, you must use the
 same name (one part, two part, or three part) for any further DDL or DML statements on the created volatile table.
 See <<create_table_examples,Examples of CREATE TABLE>>.
