@@ -136,7 +136,7 @@ class InterfaceConnection {
 		gcConnections();
 
 		if (t4props.getSQLException() != null) {
-			throw HPT4Messages.createSQLException(t4props_, t4props.getLocale(), "invalid_property", t4props
+			throw TrafT4Messages.createSQLException(t4props_, t4props.getLocale(), "invalid_property", t4props
 					.getSQLException());
 		}
 
@@ -357,7 +357,7 @@ class InterfaceConnection {
 		try {
 			authentication = pwd.getBytes("US-ASCII");
 		} catch (UnsupportedEncodingException uex) {
-			throw HPT4Messages.createSQLException(t4props_, locale, uex.getMessage(), null);
+			throw TrafT4Messages.createSQLException(t4props_, locale, uex.getMessage(), null);
 		}
 
 		if (authentication.length > 0) {
@@ -505,7 +505,7 @@ class InterfaceConnection {
 					String temp = errorText;
 					t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "cancel", temp, p);
 				}
-				throw HPT4Messages.createSQLException(t4props_, locale, "as_cancel_message_error", errorText);
+				throw TrafT4Messages.createSQLException(t4props_, locale, "as_cancel_message_error", errorText);
 			} // end switch
 	
 			currentTime = (new java.util.Date()).getTime();
@@ -538,9 +538,9 @@ class InterfaceConnection {
 				// exceptions.
 				//
 				int sc = se.getErrorCode();
-				int s1 = HPT4Messages.createSQLException(t4props_, locale, "socket_open_error", null).getErrorCode();
-				int s2 = HPT4Messages.createSQLException(t4props_, locale, "socket_write_error", null).getErrorCode();
-				int s3 = HPT4Messages.createSQLException(t4props_, locale, "socket_read_error", null).getErrorCode();
+				int s1 = TrafT4Messages.createSQLException(t4props_, locale, "socket_open_error", null).getErrorCode();
+				int s2 = TrafT4Messages.createSQLException(t4props_, locale, "socket_write_error", null).getErrorCode();
+				int s3 = TrafT4Messages.createSQLException(t4props_, locale, "socket_read_error", null).getErrorCode();
 
 				if (sc == s1 || sc == s2 || sc == s3) {
 					if (t4props_.t4Logger_.isLoggable(Level.INFO)) {
@@ -585,10 +585,10 @@ class InterfaceConnection {
 
 					if (ex_nr_d == odbc_SQLSvc_InitializeDialogue_exc_.SQL_PASSWORD_EXPIRING ||
 							ex_nr_d == odbc_SQLSvc_InitializeDialogue_exc_.SQL_PASSWORD_GRACEPERIOD) {
-						HPT4Messages.setSQLWarning(this.t4props_, this._t4Conn, idr.SQLError);
+						TrafT4Messages.setSQLWarning(this.t4props_, this._t4Conn, idr.SQLError);
 						done = true;
 					} else {
-						HPT4Messages.throwSQLException(t4props_, idr.SQLError);
+						TrafT4Messages.throwSQLException(t4props_, idr.SQLError);
 					}
 				}
 			}
@@ -606,12 +606,12 @@ class InterfaceConnection {
 			}
 
 			if (currentTime >= endTime) {
-				se1 = HPT4Messages.createSQLException(t4props_, locale, "ids_s1_t00", null);
+				se1 = TrafT4Messages.createSQLException(t4props_, locale, "ids_s1_t00", null);
 			} else if (tryNum >= retryCount) {
-				se1 = HPT4Messages.createSQLException(t4props_, locale, "as_connect_message_error",
+				se1 = TrafT4Messages.createSQLException(t4props_, locale, "as_connect_message_error",
 						"exceeded retry count");
 			} else {
-				se1 = HPT4Messages.createSQLException(t4props_, locale, "as_connect_message_error", null);
+				se1 = TrafT4Messages.createSQLException(t4props_, locale, "as_connect_message_error", null);
 			}
 			throw se1;
 		}
@@ -744,7 +744,7 @@ class InterfaceConnection {
 			initDiag(true,true);
 		}catch(SQLException e) {
 			if(outContext == null || outContext.certificate == null) {
-				SQLException he = HPT4Messages.createSQLException(t4props_, this.locale, "certificate_download_error", e.getMessage());
+				SQLException he = TrafT4Messages.createSQLException(t4props_, this.locale, "certificate_download_error", e.getMessage());
 				he.setNextException(e);
 				throw he;
 			}
@@ -801,7 +801,7 @@ class InterfaceConnection {
 				if (!cr.m_p4_dataSource.equals(t4props_.getServerDataSource())) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = cr.m_p4_dataSource;
-					sqlwarning_ = HPT4Messages.createSQLWarning(t4props_, "connected_to_Default_DS", messageArguments);
+					sqlwarning_ = TrafT4Messages.createSQLWarning(t4props_, "connected_to_Default_DS", messageArguments);
 				}
 				break;
 			case odbc_Dcs_GetObjRefHdl_exc_.odbc_Dcs_GetObjRefHdl_ASTryAgain_exn_:
@@ -856,7 +856,7 @@ class InterfaceConnection {
 					errorText = errorText + "  :" + "Error text = " + cr.m_p1_exception.ErrorText;
 
 				}
-				throw HPT4Messages.createSQLException(t4props_, locale, "as_connect_message_error", errorText);
+				throw TrafT4Messages.createSQLException(t4props_, locale, "as_connect_message_error", errorText);
 			}
 
 			if (done == false && t4props_.t4Logger_.isLoggable(Level.INFO)) {
@@ -872,11 +872,11 @@ class InterfaceConnection {
 			SQLException se2;
 
 			if (currentTime >= endTime) {
-				se1 = HPT4Messages.createSQLException(t4props_, locale, "ids_s1_t00", null);
-				se2 = HPT4Messages.createSQLException(t4props_, locale, errorMsg, errorMsg_detail);
+				se1 = TrafT4Messages.createSQLException(t4props_, locale, "ids_s1_t00", null);
+				se2 = TrafT4Messages.createSQLException(t4props_, locale, errorMsg, errorMsg_detail);
 				se1.setNextException(se2);
 			} else {
-				se1 = HPT4Messages.createSQLException(t4props_, locale, errorMsg, errorMsg_detail);
+				se1 = TrafT4Messages.createSQLException(t4props_, locale, errorMsg, errorMsg_detail);
 			}
 
 			throw se1;
@@ -912,14 +912,14 @@ class InterfaceConnection {
 	// @deprecated
 	void isConnectionClosed() throws SQLException {
 		if (isClosed_ == false) {
-			throw HPT4Messages.createSQLException(t4props_, locale, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(t4props_, locale, "invalid_connection", null);
 		}
 	}
 
 	// @deprecated
 	void isConnectionOpen() throws SQLException {
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(t4props_, locale, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(t4props_, locale, "invalid_connection", null);
 		}
 	}
 
@@ -1021,7 +1021,7 @@ class InterfaceConnection {
 
 			// do the warning processing
 			if (scr_.m_p2.length != 0) {
-				HPT4Messages.setSQLWarning(conn.props_, conn, scr_.m_p2);
+				TrafT4Messages.setSQLWarning(conn.props_, conn, scr_.m_p2);
 			}
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(conn.props_, attr, valueNum, valueString);
@@ -1035,14 +1035,14 @@ class InterfaceConnection {
 				String temp = "odbc_SQLSvc_SetConnectionOption_SQLError_exn_ occurred.";
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setConnectionAttr", temp, p);
 			}
-			HPT4Messages.throwSQLException(t4props_, scr_.m_p1.errorList);
+			TrafT4Messages.throwSQLException(t4props_, scr_.m_p1.errorList);
 		default:
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(conn.props_, attr, valueNum, valueString);
 				String temp = "UnknownException occurred.";
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setConnectionAttr", temp, p);
 			}
-			throw HPT4Messages.createSQLException(conn.props_, locale, "ids_unknown_reply_error", null);
+			throw TrafT4Messages.createSQLException(conn.props_, locale, "ids_unknown_reply_error", null);
 		}
 	};
 
@@ -1057,7 +1057,7 @@ class InterfaceConnection {
 		if (level != Connection.TRANSACTION_NONE && level != Connection.TRANSACTION_READ_COMMITTED
 				&& level != Connection.TRANSACTION_READ_UNCOMMITTED && level != Connection.TRANSACTION_REPEATABLE_READ
 				&& level != Connection.TRANSACTION_SERIALIZABLE) {
-			throw HPT4Messages.createSQLException(conn.props_, locale, "invalid_transaction_isolation", null);
+			throw TrafT4Messages.createSQLException(conn.props_, locale, "invalid_transaction_isolation", null);
 		}
 
 		txnIsolationLevel = level;
@@ -1215,7 +1215,7 @@ class InterfaceConnection {
 	void endTransaction(short commitOption) throws SQLException {
 		EndTransactionReply etr_ = null;
 		if (autoCommit && !_t4Conn.isBeginTransaction()) {
-			throw HPT4Messages.createSQLException(t4props_, locale, "invalid_commit_mode", null);
+			throw TrafT4Messages.createSQLException(t4props_, locale, "invalid_commit_mode", null);
 		}
 
 		isConnectionOpen();
@@ -1242,7 +1242,7 @@ class InterfaceConnection {
 				String temp = "odbc_SQLSvc_EndTransaction_ParamError_exn_ :";
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "endTransaction", temp, p);
 			}
-			throw HPT4Messages.createSQLException(t4props_, locale, "ParamError:" + etr_.m_p1.ParamError, null);
+			throw TrafT4Messages.createSQLException(t4props_, locale, "ParamError:" + etr_.m_p1.ParamError, null);
 		case odbc_SQLSvc_EndTransaction_exc_.odbc_SQLSvc_EndTransaction_InvalidConnection_exn_:
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(t4props_, commitOption);
@@ -1256,7 +1256,7 @@ class InterfaceConnection {
 				String temp = "odbc_SQLSvc_EndTransaction_SQLError_exn_:" + etr_.m_p1.SQLError;
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "endTransaction", temp, p);
 			}
-			HPT4Messages.throwSQLException(t4props_, etr_.m_p1.SQLError);
+			TrafT4Messages.throwSQLException(t4props_, etr_.m_p1.SQLError);
 		case odbc_SQLSvc_EndTransaction_exc_.odbc_SQLSvc_EndTransaction_SQLInvalidHandle_exn_:
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(t4props_, commitOption);

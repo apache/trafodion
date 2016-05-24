@@ -33,8 +33,8 @@ import java.util.logging.Level;
  * <p>
  * Description: The <code>T4DSProperties</code> class contains all the
  * properties associated with Type 4 data source connection.
- * <code>T4DSProperties</code> is inherited by the <code>HPT4DataSource,
- * HPT4ConnectionPooledDataSource</code>
+ * <code>T4DSProperties</code> is inherited by the <code>TrafT4DataSource,
+ * TrafT4ConnectionPooledDataSource</code>
  * classes for configuring Type 4 connection properties.
  * <p>
  * The properties passed to the Type 4 driver have this precedence order in
@@ -157,7 +157,7 @@ public class T4DSProperties extends T4Properties {
 	 * Gets the default catalog that will be used to access SQL objects
 	 * referenced in SQL statements if the SQL objects are not fully qualified.
 	 * 
-	 * @return HPT4 catalog name.
+	 * @return TrafT4 catalog name.
 	 * @see #setCatalog(String)
 	 */
 	public String getCatalog() {

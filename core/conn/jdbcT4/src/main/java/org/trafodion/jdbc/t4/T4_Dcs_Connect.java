@@ -55,8 +55,8 @@ class T4_Dcs_Connect {
 		Locale locale = ic_.getLocale();
 
 		if (inContext == null || userDesc == null) {
-			SQLException se = HPT4Messages.createSQLException(t4props, locale, "internal_error", null);
-			SQLException se2 = HPT4Messages.createSQLException(t4props, locale, "contact_hp_error", null);
+			SQLException se = TrafT4Messages.createSQLException(t4props, locale, "internal_error", null);
+			SQLException se2 = TrafT4Messages.createSQLException(t4props, locale, "contact_traf_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -103,17 +103,17 @@ class T4_Dcs_Connect {
 		} catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = HPT4Messages.createSQLException(ic_.t4props_, locale, "translation_of_parameter_failed",
+			SQLException se = TrafT4Messages.createSQLException(ic_.t4props_, locale, "translation_of_parameter_failed",
 					"ConnectMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = HPT4Messages.createSQLException(ic_.t4props_, locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(ic_.t4props_, locale, "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(t4props, locale, "as_connect_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(t4props, locale, "as_connect_message_error", e
 					.getMessage());
 
 			se.initCause(e);

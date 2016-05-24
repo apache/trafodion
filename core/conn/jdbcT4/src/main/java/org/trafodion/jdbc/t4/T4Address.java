@@ -66,7 +66,7 @@ final class T4Address extends Address {
 		super(t4props, locale, addr);
 
 		if (addr == null) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_null_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_null_error", null);
 			throw se;
 		}
 
@@ -80,8 +80,8 @@ final class T4Address extends Address {
 		// We don't recognize this address syntax
 		//
 		if (acceptsURL(addr) == false) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "unknown_prefix_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "unknown_prefix_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -157,8 +157,8 @@ final class T4Address extends Address {
 	 */
 	private String extractHostFromUrl(String url) throws SQLException {
 		if (url.length() < minT4ConnectionAddrLen) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "min_address_length_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "min_address_length_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -173,8 +173,8 @@ final class T4Address extends Address {
 
 		}
 		if (hostEndIndex < 0) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "address_format_error", url);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_format_error", url);
 
 			se.setNextException(se2);
 			throw se;
@@ -182,9 +182,9 @@ final class T4Address extends Address {
 
 		String host = url.substring(hostStartIndex, hostEndIndex);
 		if ((host == null) || (host.length() == 0)) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "address_format_error", null);
-			SQLException se3 = HPT4Messages.createSQLException(m_t4props, m_locale, "missing_ip_or_name_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_format_error", null);
+			SQLException se3 = TrafT4Messages.createSQLException(m_t4props, m_locale, "missing_ip_or_name_error", null);
 			se.setNextException(se2);
 			se2.setNextException(se3);
 			throw se;
@@ -232,8 +232,8 @@ final class T4Address extends Address {
 	 */
 	private boolean isIPV6(String url) throws SQLException {
 		if (url == null) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "address_format_2_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", url);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_format_2_error", null);
 			se.setNextException(se2);
 			throw se;
 
