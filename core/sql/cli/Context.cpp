@@ -4037,11 +4037,7 @@ void ContextCli::endSession(NABoolean cleanupEsps,
       
       sessionInUse_ = FALSE;
     }
-  // kill mxcmp, if an inMemory table definition was created in mxcmp memory.
-  if (inMemoryObjectDefn())
-    {
-      killAndRecreateMxcmp();
-    }
+    killAndRecreateMxcmp();
   if (rc < 0) 
     {
       // an error was returned during drop of tables in the volatile schema.
@@ -4943,6 +4939,26 @@ Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,
     return -1;
   }
   return 0;
+
+}
+
+void ContextCli::killIdleMxcmp() 
+{
+  Int64 currentTimestamp;
+  Int32 compilerIdleTimeout;
+  Int64 recentIpcTimestamp ;
+ 
+  if (arkcmpArray_.entries() == 0)
+     return;
+  if (arkcmpArray_[0]->getServer() == NULL)
+     return;
+  compilerIdleTimeout = getSessionDefaults()->getCompilerIdleTimeout();
+  if (compilerIdleTimeout == 0)
+     return;
+  currentTimestamp = NA_JulianTimestamp();
+  recentIpcTimestamp  = arkcmpArray_[0]->getRecentIpcTimestamp();
+  if (recentIpcTimestamp != -1 && (((currentTimestamp - recentIpcTimestamp)/1000000)  >= compilerIdleTimeout))
+     killAndRecreateMxcmp();
 }
 
 void ContextCli::killAndRecreateMxcmp()
