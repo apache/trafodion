@@ -37,7 +37,7 @@ include macros.gmk
 # Default target (all components)
 all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb lib_mgmt
 
-package: pkg-product pkg-client
+package: pkg-product pkg-client pkg-installer
 
 #############
 # Components
@@ -132,7 +132,7 @@ cleanall: sqroot eclipseclean cleantests
 	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests pkg-installer
+package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests 
 
 pkg-product: all  
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}

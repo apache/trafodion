@@ -15,8 +15,8 @@
 #
 # @@@ END COPYRIGHT @@@
 RELEASE_VER ?= $(shell echo $(TRAFODION_VER))
-RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /_/g')
-INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer_${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
+RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
+INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
 all: pkg-installer 
 
