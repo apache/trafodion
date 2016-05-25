@@ -86,13 +86,9 @@ export EPEL_RPM=""
 # full path of the Trafodion package tar file
 export TRAF_PACKAGE=""
 
-# if TRAF_PACKAGE wasn't specified then these two values must be specified
-# TRAF_BUILD is the trafodion_server tar file
-# DCS_BUILD is the DCS tar file
-# REST_BUILD is the REST tar file
-export TRAF_BUILD=""
-export DCS_BUILD=""
-export REST_BUILD=""
+#Default value set to "Y" if using a build BEFORE 05/11/2016 set this to "N"
+export ONE_TAR_INSTALL="Y"
+
 # Either "cloudera" or "hortonworks" (all lowercase)
 export HADOOP_TYPE=""
 
@@ -118,13 +114,11 @@ export HBASE_GROUP="hbase"
 export HBASE="hbase"
 
 # full path of where to install Trafodion to
-# Example is used below. If $HOME_DIR or $TRAF_USER have been changed
-# then this will need to be changed. 
 # On an upgrade, it is recommend to choose a different directory. 
 # First time install : /home/trafodion/traf
 # On Upgrade: /home/trafodion/traf_<date>
 # By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT="home/trafodion/traf"
+export SQ_ROOT=""
 
 # Start Trafodion after install completes
 export START="N"
