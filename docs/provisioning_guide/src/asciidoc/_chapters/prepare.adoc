@@ -67,6 +67,8 @@ cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
 echo localhost $(cat /etc/ssh/ssh_host_rsa_key.pub) >> $HOME/.ssh/known_hosts
 echo "NoHostAuthenticationForLocalhost=yes" >> $HOME/.ssh/config
 chmod 600 $HOME/.ssh/config
+chmod 600 $HOME/.ssh/authorized_keys
+chmod 700 $HOME/.ssh/
 ```
 
 After running these commands, do the following:
