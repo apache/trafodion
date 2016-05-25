@@ -67,7 +67,7 @@ import java.util.logging.LogRecord;
  * <p>
  * </p>
  */
-public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseMetaData {
+public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.DatabaseMetaData {
 
 	// ----------------------------------------------------------------------
 	// First, a variety of minor information about the target database.
@@ -3550,7 +3550,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			connection_.props_.getLogWriter().println(temp);
 		}
 		TrafT4ResultSet resultSet;
-		HPT4Desc[] outputDesc;
+		TrafT4Desc[] outputDesc;
 		ObjectArray[] rows;
 		String[] rowValue;
 
@@ -3558,8 +3558,8 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 
-		outputDesc = new HPT4Desc[1];
-		outputDesc[0] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc = new TrafT4Desc[1];
+		outputDesc[0] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TABLE_TYPE", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
@@ -3773,7 +3773,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_tableName",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_tableName",
 					null);
 		}
 		//
@@ -3967,7 +3967,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
 					null);
 		}
 
@@ -4062,7 +4062,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
 					null);
 		}
 		//
@@ -4147,7 +4147,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
 					null);
 		}
 		//
@@ -4262,7 +4262,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "table_cannot_be_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "table_cannot_be_null",
 					null);
 		}
 		//
@@ -4377,7 +4377,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "table_cannot_be_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "table_cannot_be_null",
 					null);
 		}
 		//
@@ -4502,7 +4502,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (primaryTable == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"primaryTable_cannot_be_null", null);
 		}
 		//
@@ -4514,7 +4514,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		// case.
 		// The same thing applies to the foreign* parameters.
 		if (foreignTable == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"foreigntable_cannot_be_null", null);
 		}
 
@@ -4698,7 +4698,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
 					null);
 		}
 		//
@@ -4806,7 +4806,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 		connection_.isConnectionOpen();
 
 		if (table == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_use_of_null",
 					null);
 		}
 		//
@@ -4918,27 +4918,27 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			connection_.props_.getLogWriter().println(temp);
 		}
 		TrafT4ResultSet resultSet;
-		HPT4Desc[] outputDesc;
+		TrafT4Desc[] outputDesc;
 		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 
-		outputDesc = new HPT4Desc[7];
-		outputDesc[0] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc = new TrafT4Desc[7];
+		outputDesc[0] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_CAT", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[1] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[1] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_SCHEM", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[2] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[2] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[3] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[3] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"CLASS_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[4] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[4] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"DATA_TYPE", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[5] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[5] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"REMARKS", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[6] = new HPT4Desc(HPT4Desc.SQLTYPECODE_SMALLINT, (short) 0, 2, (short) 0, (short) 0, false,
+		outputDesc[6] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_SMALLINT, (short) 0, 2, (short) 0, (short) 0, false,
 				"BASE_TYPE", false, Types.SMALLINT, (short) 0, (short) 0, 0, null, null, null, 130, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
@@ -5272,25 +5272,25 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			connection_.props_.getLogWriter().println(temp);
 		}
 		TrafT4ResultSet resultSet;
-		HPT4Desc[] outputDesc;
+		TrafT4Desc[] outputDesc;
 		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 
-		outputDesc = new HPT4Desc[6];
-		outputDesc[0] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc = new TrafT4Desc[6];
+		outputDesc[0] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_CAT", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[1] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[1] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_SCHEM", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[2] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[2] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[3] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[3] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SUPERTYPE_CAT", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[4] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[4] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SUPERTYPE_SCHEM", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[5] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[5] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SUPERTYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
@@ -5317,21 +5317,21 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			connection_.props_.getLogWriter().println(temp);
 		}
 		TrafT4ResultSet resultSet;
-		HPT4Desc[] outputDesc;
+		TrafT4Desc[] outputDesc;
 		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 
-		outputDesc = new HPT4Desc[4];
-		outputDesc[0] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc = new TrafT4Desc[4];
+		outputDesc[0] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_CAT", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[1] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[1] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_SCHEM", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[2] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[2] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[3] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[3] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SUPERTABLE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
@@ -5362,55 +5362,55 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			connection_.props_.getLogWriter().println(temp);
 		}
 		TrafT4ResultSet resultSet;
-		HPT4Desc[] outputDesc;
+		TrafT4Desc[] outputDesc;
 		ObjectArray[] rows;
 
 		clearWarnings();
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 
-		outputDesc = new HPT4Desc[21];
-		outputDesc[0] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc = new TrafT4Desc[21];
+		outputDesc[0] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_CAT", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[1] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[1] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_SCHEM", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[2] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[2] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"TYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[3] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[3] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"ATTR_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[4] = new HPT4Desc(HPT4Desc.SQLTYPECODE_SMALLINT, (short) 0, 2, (short) 0, (short) 0, false,
+		outputDesc[4] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_SMALLINT, (short) 0, 2, (short) 0, (short) 0, false,
 				"DATA_TYPE", false, Types.SMALLINT, (short) 0, (short) 0, 0, null, null, null, 130, 0, 0);
-		outputDesc[5] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[5] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"ATTR_TYPE_NAME", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[6] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[6] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"ATTR_SIZE", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[7] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[7] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"DECIMAL_DIGITS ", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[8] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[8] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"NUM_PREC_RADIX", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[9] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[9] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"NULLABLE ", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[10] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[10] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"REMARKS", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[11] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[11] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"ATTR_DEF", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[12] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[12] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"SQL_DATA_TYPE", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[13] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[13] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"SQL_DATETIME_SUB", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[14] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[14] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"CHAR_OCTET_LENGTH", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[15] = new HPT4Desc(HPT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
+		outputDesc[15] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_INTEGER, (short) 0, 4, (short) 0, (short) 0, false,
 				"ORDINAL_POSITION", false, Types.INTEGER, (short) 0, (short) 0, 0, null, null, null, 132, 0, 0);
-		outputDesc[16] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[16] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"IS_NULLABLE", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[17] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[17] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SCOPE_CATALOG", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[18] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[18] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SCOPE_SCHEMA", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[19] = new HPT4Desc(HPT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
+		outputDesc[19] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_VARCHAR, (short) 0, 128, (short) 0, (short) 0, false,
 				"SCOPE_TABLE", false, Types.VARCHAR, (short) 0, (short) 0, 0, null, null, null, 100, 0, 0);
-		outputDesc[20] = new HPT4Desc(HPT4Desc.SQLTYPECODE_SMALLINT, (short) 0, 2, (short) 0, (short) 0, false,
+		outputDesc[20] = new TrafT4Desc(TrafT4Desc.SQLTYPECODE_SMALLINT, (short) 0, 2, (short) 0, (short) 0, false,
 				"SOURCE_DATA_TYPE", false, Types.SMALLINT, (short) 0, (short) 0, 0, null, null, null, 130, 0, 0);
 
 		resultSet = new TrafT4ResultSet(this, outputDesc, "", true);
@@ -5747,7 +5747,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 
 			// do the warning processing
 			if (gcr_.m_p4.length != 0) {
-				HPT4Messages.setSQLWarning(connection_.props_, this, gcr_.m_p4);
+				TrafT4Messages.setSQLWarning(connection_.props_, this, gcr_.m_p4);
 
 				// If there is no description definitions data throw fits. NDCS
 				// bug.
@@ -5759,11 +5759,11 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 					connection_.props_.t4Logger_.logp(Level.FINER, "T4DatabaseMetaData", "getSQLCatalogsInfo",
 							"SQLDescList null or 0 length", p);
 				}
-				throw HPT4Messages.createSQLException(connection_.props_, ic.getLocale(), "ids_unknown_reply_error",
+				throw TrafT4Messages.createSQLException(connection_.props_, ic.getLocale(), "ids_unknown_reply_error",
 						"Empty SQL Desc List returned by NDCS");
 			}
 
-			HPT4Desc[] outputDesc = InterfaceStatement.NewDescArray(gcr_.m_p3);
+			TrafT4Desc[] outputDesc = InterfaceStatement.NewDescArray(gcr_.m_p3);
 
 			resultSet_ = new TrafT4ResultSet(this, outputDesc, gcr_.m_p2, true);
 			resultSet_.proxySyntax_ = gcr_.proxySyntax;
@@ -5779,19 +5779,19 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 								"gcr_.m_p1.exception_nr = odbc_SQLSvc_GetSQLCatalogs_exc_.odbc_SQLSvc_GetSQLCatalogs_SQLError_exn_",
 								p);
 			}
-			HPT4Messages.throwSQLException(connection_.props_, gcr_.m_p1.SQLError);
+			TrafT4Messages.throwSQLException(connection_.props_, gcr_.m_p1.SQLError);
 		default:
 			if (connection_.props_.t4Logger_.isLoggable(Level.FINER) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 				connection_.props_.t4Logger_.logp(Level.FINER, "T4DatabaseMetaData", "getSQLCatalogsInfo",
 						"case gcr_.m_p1.exception_nr default", p);
 			}
-			throw HPT4Messages.createSQLException(connection_.props_, ic.getLocale(), "ids_unknown_reply_error", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, ic.getLocale(), "ids_unknown_reply_error", null);
 
 		}
 	};
 
-	void closeErroredConnection(HPT4Exception sme) {
+	void closeErroredConnection(TrafT4Exception sme) {
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINER) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, sme);
 			connection_.props_.t4Logger_.logp(Level.FINER, "T4DatabaseMetaData", "closeErroredConneciton", "", p);

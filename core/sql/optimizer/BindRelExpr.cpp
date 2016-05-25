@@ -9150,6 +9150,14 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         bindWA->setErrStatus();
         return this;
     }
+
+    // specifying a list of column names to insert to is not yet supported
+    if (insertColTree_) {
+      *CmpCommon::diags() << DgSqlCode(-4223)
+                          << DgString0("Target column list for insert into Hive table");
+      bindWA->setErrStatus();
+      return this;
+    }
      
     //    NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
     const NABoolean isSequenceFile = hTabStats->isSequenceFile();
@@ -9160,7 +9168,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
                                  new (bindWA->wHeap()) NAString(hiveTablePath),
                                  new (bindWA->wHeap()) NAString(hostName),
                                  hdfsPort,
-                                 TRUE,
+                                 getTableDesc(),
                                  new (bindWA->wHeap()) NAString(getTableName().getQualifiedNameObj().getObjectName()),
                                  FastExtract::FILE,
                                  bindWA->wHeap());
@@ -16676,6 +16684,40 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
   // can also get from child Root compExpr
   ValueIdList vidList;
   childRETDesc->getValueIdList(vidList, USER_COLUMN);
+
+  if (isHiveInsert())
+    {
+      // validate number of columns and column types of the select list
+      ValueIdList tgtCols;
+
+      hiveTableDesc_->getUserColumnList(tgtCols);
+
+      if (vidList.entries() != tgtCols.entries())
+        {
+          // 4023 degree of row value constructor must equal that of target table
+          *CmpCommon::diags() << DgSqlCode(-4023)
+                              << DgInt0(vidList.entries())
+                              << DgInt1(tgtCols.entries());
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      // Check that the source and target types are compatible.
+      for (CollIndex j=0; j<vidList.entries(); j++)
+        {
+          Assign *tmpAssign = new(bindWA->wHeap())
+            Assign(tgtCols[j].getItemExpr(), vidList[j].getItemExpr());
+
+          if ( CmpCommon::getDefault(ALLOW_IMPLICIT_CHAR_CASTING) == DF_ON )
+            tmpAssign->tryToDoImplicitCasting(bindWA);
+          const NAType *targetType = tmpAssign->synthesizeType();
+          if (!targetType) {
+            bindWA->setErrStatus();
+            return NULL;
+          }
+        }
+    }
+
   setSelectList(vidList);
 
   if (includeHeader())

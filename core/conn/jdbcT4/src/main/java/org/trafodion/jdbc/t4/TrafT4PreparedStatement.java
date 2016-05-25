@@ -227,7 +227,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		// * If LOB is involved with autocommit enabled we throw an exception
 		// *******************************************************************
 		if (isAnyLob_ && (connection_.getAutoCommit())) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_lob_commit_state", null);
 		}
 		if (inputDesc_ != null) {
@@ -271,27 +271,27 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 		try {
 			clearWarnings();
-			HPT4Exception se;
+			TrafT4Exception se;
 			Object[] valueArray = null;
 
 			if (inputDesc_ == null) {
-				se = HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"batch_command_failed", null);
 				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 			}
 			if (sqlStmtType_ == TRANSPORT.TYPE_SELECT) {
-				se = HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"select_in_batch_not_supported", null);
 				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 			}
 			if (connection_._isClosed()) {
-				se = HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_connection",
+				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_connection",
 						null);
 				connection_.closeErroredConnection(se);
 				throw new BatchUpdateException(se.getMessage(), se.getSQLState(), new int[0]);
 			}
 			if (isAnyLob_ && (connection_.getAutoCommit())) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_lob_commit_state", null);
 			}
 
@@ -312,7 +312,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 			} catch (SQLException e) {
 				BatchUpdateException be;
-				se = HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				se = TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"batch_command_failed", null);
 				if (batchRowCount_ == null) // we failed before execute
 				{
@@ -355,7 +355,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 		validateExecuteInvocation();
 		if (sqlStmtType_ != TRANSPORT.TYPE_SELECT) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "non_select_invalid",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "non_select_invalid",
 					null);
 		}
 
@@ -401,7 +401,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateExecuteInvocation();
 		// if (sqlStmtType_ == TRANSPORT.TYPE_SELECT)
 		if (sqlStmtType_ == TRANSPORT.TYPE_SELECT && (ist_.stmtIsLock != true)) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "select_invalid", null);
 		}
 
 		if (usingRawRowset_ == false) {
@@ -422,7 +422,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		// * If LOB is involved with autocommit enabled we throw an exception
 		// *******************************************************************
 		if (isAnyLob_ && (connection_.getAutoCommit())) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_lob_commit_state", null);
 		}
 
@@ -451,7 +451,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 
 		if (outputDesc_ != null) {
-			return new HPT4ResultSetMetaData(this, outputDesc_);
+			return new TrafT4ResultSetMetaData(this, outputDesc_);
 		} else {
 			return null;
 		}
@@ -473,7 +473,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (inputDesc_ != null) {
-			return new HPT4ParameterMetaData(this, inputDesc_);
+			return new TrafT4ParameterMetaData(this, inputDesc_);
 		} else {
 			return null;
 		}
@@ -496,7 +496,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateSetInvocation(parameterIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "setArray()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "setArray()");
 	}
 
 	public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
@@ -539,7 +539,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (java.io.IOException e) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = e.getMessage();
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 						messageArguments);
 			}
 
@@ -548,12 +548,12 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (java.io.UnsupportedEncodingException e) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = e.getMessage();
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"unsupported_encoding", messageArguments);
 			}
 			break;
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_datatype_for_column", null);
 		}
 	}
@@ -620,7 +620,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.INTEGER:
 		case Types.SMALLINT:
 		case Types.TINYINT:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_datatype_for_column", null);
 		case Types.CHAR:
 		case Types.VARCHAR:
@@ -638,7 +638,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (java.io.IOException e) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = e.getMessage();
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 						messageArguments);
 			}
 			addParamValue(parameterIndex, buffer2);
@@ -651,7 +651,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (java.io.IOException e) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = e.getMessage();
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 						messageArguments);
 			}
 
@@ -695,7 +695,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		
 			
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_datatype_for_column", null);
 		}
 	}
@@ -778,7 +778,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			addParamValue(parameterIndex, tmpArray);
 			break;
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 	}
@@ -815,7 +815,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.INTEGER:
 		case Types.SMALLINT:
 		case Types.TINYINT:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_datatype_for_column", null);
 
 		default:
@@ -825,7 +825,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				if (valuePos < 1) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = "No data to read from the Reader";
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 							messageArguments);
 				}
 
@@ -838,7 +838,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			} catch (java.io.IOException e) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = e.getMessage();
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 						messageArguments);
 			}
 			addParamValue(parameterIndex, new String(value));
@@ -886,10 +886,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.DOUBLE:
 		case Types.FLOAT:
 		case Types.NUMERIC:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_datatype_for_column", null);
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 	}
@@ -916,7 +916,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		if (x != null) {
@@ -955,7 +955,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		// Ignore the cal, since SQL would expect it to store it in the local
@@ -1147,7 +1147,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		} else if (x instanceof BigInteger) {
 			setBigDecimal(parameterIndex, new BigDecimal((BigInteger) x));
 		} else {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"object_type_not_supported", null);
 		}
 	}
@@ -1237,7 +1237,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 						setDate(parameterIndex, Date.valueOf(x.toString()));
 					}
 				} catch (IllegalArgumentException iex) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_parameter_value", x.toString());
 				}
 				break;
@@ -1303,7 +1303,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 					} else if (x instanceof String) {
 						addParamValue(parameterIndex, x);
 					} else {
-						throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 								"conversion_not_allowed", null);
 					}
 					break;
@@ -1315,7 +1315,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.JAVA_OBJECT:
 			case Types.STRUCT:
 			default:
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"object_type_not_supported", null);
 			}
 		}
@@ -1338,7 +1338,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateSetInvocation(i);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "setRef()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "setRef()");
 	}
 
 	public void setShort(int parameterIndex, short x) throws SQLException {
@@ -1398,7 +1398,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.DATALINK:
 		case Types.JAVA_OBJECT:
 		case Types.REF:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"datatype_not_supported", null);
 		case Types.BIGINT:
 		case Types.INTEGER:
@@ -1423,7 +1423,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			setObject(parameterIndex, x, dataType);
 			break;
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"fetch_output_inconsistent", null);
 		}
 
@@ -1451,7 +1451,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		if (x != null) {
@@ -1490,7 +1490,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		// Ignore the cal, since SQL would expect it to store it in the local
@@ -1530,7 +1530,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		if (x != null) {
@@ -1577,7 +1577,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		// Ignore the cal, since SQL would expect it to store it in the local
@@ -1634,7 +1634,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.INTEGER:
 			case Types.BIGINT:
 			case Types.TINYINT:
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_datatype_for_column", null);
 			default:
 				try {
@@ -1642,7 +1642,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				} catch (java.io.IOException e) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = e.getMessage();
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 							messageArguments);
 				}
 				try {
@@ -1651,7 +1651,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				} catch (java.io.UnsupportedEncodingException e) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = e.getMessage();
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"unsupported_encoding", messageArguments);
 				}
 				break;
@@ -1675,7 +1675,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateSetInvocation(parameterIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "setURL()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "setURL()");
 	} // end setURL
 
 	// -------------------------------------------------------------------------------------------
@@ -1721,7 +1721,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "stmt_closed", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "stmt_closed", null);
 		}
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
@@ -1732,7 +1732,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			}
 		}
 		if (paramRowCount_ > 0 && usingRawRowset_ == false) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"function_sequence_error", null);
 		}
 
@@ -1756,7 +1756,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				Object[] messageArguments = new Object[2];
 				messageArguments[0] = new Integer(paramNumber + 1);
 				messageArguments[1] = new Integer(paramRowCount_ + 1);
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "parameter_not_set",
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "parameter_not_set",
 						messageArguments);
 			}
 		}
@@ -1768,20 +1768,20 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			connection_.props_.t4Logger_.logp(Level.FINER, "TrafT4PreparedStatement", "validateSetInvocation", "", p);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "stmt_closed", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "stmt_closed", null);
 		}
 		// connection_.getServerHandle().isConnectionOpen();
 		connection_.isConnectionOpen();
 		if (inputDesc_ == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_parameter_index", null);
 		}
 		if (parameterIndex < 1 || parameterIndex > inputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_parameter_index", null);
 		}
 		if (inputDesc_[parameterIndex - 1].paramMode_ == DatabaseMetaData.procedureColumnOut) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "is_a_output_parameter",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "is_a_output_parameter",
 					null);
 		}
 	}
@@ -1863,7 +1863,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	// ----------------------------------------------------------------------------------
 	// Method used by JNI Layer to update the results of Prepare
-	void setPrepareOutputs(HPT4Desc[] inputDesc, HPT4Desc[] outputDesc, int inputParamCount, int outputParamCount)
+	void setPrepareOutputs(TrafT4Desc[] inputDesc, TrafT4Desc[] outputDesc, int inputParamCount, int outputParamCount)
 			throws SQLException {
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINER) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, inputDesc, outputDesc, inputParamCount,
@@ -1883,7 +1883,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	} // end setPrepareOutputs
 
 	// ----------------------------------------------------------------------------------
-	void setPrepareOutputs2(HPT4Desc[] inputDesc, HPT4Desc[] outputDesc, int inputParamCount, int outputParamCount,
+	void setPrepareOutputs2(TrafT4Desc[] inputDesc, TrafT4Desc[] outputDesc, int inputParamCount, int outputParamCount,
 			int inputParamsLength, int outputParamsLength, int inputDescLength, int outputDescLength)
 			throws SQLException {
 		if (connection_.props_.t4Logger_.isLoggable(Level.FINER) == true) {
@@ -1955,7 +1955,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		if (resultSetType != ResultSet.TYPE_FORWARD_ONLY && resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE
 				&& resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_resultset_type", null);
 		}
 		if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
@@ -1965,7 +1965,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			resultSetType_ = resultSetType;
 		}
 		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY && resultSetConcurrency != ResultSet.CONCUR_UPDATABLE) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_resultset_concurrency", null);
 		}
 		resultSetConcurrency_ = resultSetConcurrency;
@@ -2093,10 +2093,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		connection_.isConnectionOpen();
 		sqlStmtType_ = ist_.getSqlStmtType(sql);
 		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"infostats_invalid_error", null);
 		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"config_cmd_invalid_error", null);
 		}
 		ist_.setTransactionStatus(connection_, sql);
@@ -2134,10 +2134,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		connection_.isConnectionOpen();
 		sqlStmtType_ = ist_.getSqlStmtType(sql);
 		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"infostats_invalid_error", null);
 		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"config_cmd_invalid_error", null);
 		}
 		ist_.setTransactionStatus(connection_, sql);
@@ -2230,7 +2230,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 
 		if (rows < 0) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_fetchSize_value", null);
 		}
 		if (rows > 0) {

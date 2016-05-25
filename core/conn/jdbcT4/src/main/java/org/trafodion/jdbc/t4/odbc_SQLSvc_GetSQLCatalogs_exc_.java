@@ -87,13 +87,13 @@ class odbc_SQLSvc_GetSQLCatalogs_exc_ {
 			break;
 		case odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_:
 			ParamError = ic.decodeBytes(buffer1.extractString(), 1);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
 		case odbc_SQLSvc_GetSQLCatalogs_SQLInvalidHandle_exn_:
 			break;
 		case odbc_SQLSvc_GetSQLCatalogs_InvalidConnection_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
 		default:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
 		}
 	} // end extractFromByteArray
 

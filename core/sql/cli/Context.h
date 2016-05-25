@@ -981,6 +981,7 @@ SQLCLI_LIB_FUNC
   void initVolTabList();
   void resetVolTabList();
 
+  void killIdleMxcmp();
   void killAndRecreateMxcmp();
 
 #ifdef NA_DEBUG_C_RUNTIME

@@ -30,16 +30,17 @@ import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 
-public class HPT4DataSourceFactory implements javax.naming.spi.ObjectFactory {
-	public HPT4DataSourceFactory() {
+public class TrafT4ConnectionPoolDataSourceFactory implements javax.naming.spi.ObjectFactory {
+	public TrafT4ConnectionPoolDataSourceFactory() {
 	}
 
 	public Object getObjectInstance(Object refobj, Name name, Context nameCtx, Hashtable env) throws Exception {
 		Reference ref = (Reference) refobj;
-		HPT4DataSource ds;
-		String dataSourceName = null;
+		TrafT4ConnectionPoolDataSource ds;
+		RefAddr refAddr;
+		String tmp;
 
-		if (ref.getClassName().equals("org.trafodion.jdbc.t4.HPT4DataSource")) {
+		if (ref.getClassName().equals("org.trafodion.jdbc.t4.TrafT4ConnectionPoolDataSource")) {
 			Properties props = new Properties();
 			for (Enumeration enum2 = ref.getAll(); enum2.hasMoreElements();) {
 				RefAddr tRefAddr = (RefAddr) enum2.nextElement();
@@ -47,13 +48,18 @@ public class HPT4DataSourceFactory implements javax.naming.spi.ObjectFactory {
 				String content = (String) tRefAddr.getContent();
 				props.setProperty(type, content);
 			}
-
-			ds = new HPT4DataSource(props);
-			dataSourceName = ds.getDataSourceName();
-
-			if (dataSourceName != null) {
-				ds.setPoolManager(nameCtx, dataSourceName);
-			}
+			ds = new TrafT4ConnectionPoolDataSource(props);
+			/*
+			 * tmp = props.getProperty("initialPoolSize"); if (tmp != null) {
+			 * try { ds.setInitialPoolSize(Integer.parseInt(tmp)); } catch
+			 * (NumberFormatException e1) { } } tmp =
+			 * props.getProperty("maxIdleTime"); if (tmp != null) { try {
+			 * ds.setMaxIdleTime(Integer.parseInt(tmp)); } catch
+			 * (NumberFormatException e4) { } } tmp =
+			 * props.getProperty("propertyCycle"); if (tmp != null) { try {
+			 * ds.setPropertyCycle(Integer.parseInt(tmp)); } catch
+			 * (NumberFormatException e5) { } }
+			 */
 			return ds;
 		} else {
 			return null;
