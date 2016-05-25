@@ -52,5 +52,5 @@ if %ERRORLEVEL% == 0 (
 	copy /Y odb\x64\Release\odb.exe %PACKDIR%
 	echo Build windows ODB success
 ) else (
-	echo Build windows ODB fialed
+	echo Build windows ODB failed
 )
