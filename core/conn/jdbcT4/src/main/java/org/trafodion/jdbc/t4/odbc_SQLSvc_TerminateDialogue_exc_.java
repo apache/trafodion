@@ -49,18 +49,18 @@ class odbc_SQLSvc_TerminateDialogue_exc_ {
 			break;
 		case odbc_SQLSvc_TerminateDialogue_SQLError_exn_:
 			if (exception_detail == 25000) {
-				throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_25_000", null);
+				throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_25_000", null);
 			}
 			SQLError = new ERROR_DESC_LIST_def();
 			SQLError.extractFromByteArray(buffer1, ic);
 			break;
 		case odbc_SQLSvc_TerminateDialogue_ParamError_exn_:
 			ParamError = ic.decodeBytes(buffer1.extractString(), 1);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
 		case odbc_SQLSvc_TerminateDialogue_InvalidConnection_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
 		default:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
 		}
 	}
 }

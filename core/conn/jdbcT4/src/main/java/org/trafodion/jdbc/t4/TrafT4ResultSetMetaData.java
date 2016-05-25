@@ -24,12 +24,12 @@ package org.trafodion.jdbc.t4;
 import java.sql.SQLException;
 import java.util.logging.Level;
 
-public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
+public class TrafT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	// begin required methods
 	public String getCatalogName(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].catalogName_;
@@ -37,7 +37,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public String getColumnClassName(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].getColumnClassName();
@@ -49,7 +49,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getColumnDisplaySize(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].displaySize_;
@@ -57,7 +57,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public String getColumnLabel(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 
@@ -67,7 +67,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public String getColumnName(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].name_;
@@ -75,7 +75,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getColumnType(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].dataType_;
@@ -83,7 +83,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public String getColumnTypeName(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].getColumnTypeName(connection_.getLocale());
@@ -91,7 +91,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getPrecision(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].precision_;
@@ -99,7 +99,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getScale(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].scale_;
@@ -107,7 +107,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public String getSchemaName(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].schemaName_;
@@ -115,7 +115,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public String getTableName(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].tableName_;
@@ -123,7 +123,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public boolean isAutoIncrement(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].isAutoIncrement_;
@@ -131,7 +131,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public boolean isCaseSensitive(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].isCaseSensitive_;
@@ -139,7 +139,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public boolean isCurrency(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].isCurrency_;
@@ -151,7 +151,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int isNullable(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].isNullable_;
@@ -163,7 +163,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public boolean isSearchable(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].isSearchable_;
@@ -171,7 +171,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public boolean isSigned(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].isSigned_;
@@ -187,7 +187,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getFSDataType(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].fsDataType_;
@@ -195,7 +195,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getMaxLength(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].maxLen_;
@@ -203,7 +203,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getOdbcCharset(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].odbcCharset_;
@@ -213,7 +213,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 		// this is the same for all params
 		// only if we have no input params will we throw an error
 		if (outputDesc_.length == 0) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.props_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.props_.getLocale(),
 					"invalid_desc_index", null);
 		}
 
@@ -222,7 +222,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getSqlCharset(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].sqlCharset_;
@@ -230,7 +230,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	public int getSqlPrecision(int column) throws SQLException {
 		if (column > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].sqlPrecision_;
@@ -250,7 +250,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 	 */
 	public String cpqGetCharacterSet(int column) throws SQLException {
 		if ((column > outputDesc_.length) || (column <= 0)) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_desc_index",
 					null);
 		}
 		return outputDesc_[column - 1].getCharacterSetName();
@@ -270,10 +270,10 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return stmt_.ist_.pr_.outputDesc[param - 1].maxLen_;
 	} // end getSqlTypeCode
 
-	HPT4ResultSetMetaData(TrafT4Statement stmt, HPT4Desc[] outputDesc) {
+	TrafT4ResultSetMetaData(TrafT4Statement stmt, TrafT4Desc[] outputDesc) {
 		if (stmt.connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(stmt.connection_.props_, stmt, outputDesc);
-			stmt.connection_.props_.t4Logger_.logp(Level.FINE, "HPT4ResultSetMetaData", "", "", p);
+			stmt.connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSetMetaData", "", "", p);
 		}
 
 		connection_ = stmt.connection_;
@@ -281,10 +281,10 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 		stmt_ = stmt;
 	}
 
-	HPT4ResultSetMetaData(TrafT4ResultSet resultSet, HPT4Desc[] outputDesc) {
+	TrafT4ResultSetMetaData(TrafT4ResultSet resultSet, TrafT4Desc[] outputDesc) {
 		if (resultSet.connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(resultSet.connection_.props_, resultSet, outputDesc);
-			resultSet.connection_.props_.t4Logger_.logp(Level.FINE, "HPT4ResultSetMetaData", "", "", p);
+			resultSet.connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSetMetaData", "", "", p);
 		}
 
 		resultSet_ = resultSet;
@@ -295,7 +295,7 @@ public class HPT4ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	TrafT4ResultSet resultSet_;
 	TrafT4Connection connection_;
-	HPT4Desc[] outputDesc_;
+	TrafT4Desc[] outputDesc_;
 	TrafT4Statement stmt_;
 	public Object unwrap(Class iface) throws SQLException {
 		// TODO Auto-generated method stub

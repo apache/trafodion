@@ -1872,7 +1872,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 	    }
 
 	} // while retry
-
+      context_->killIdleMxcmp();
       assignRootTdb((ex_root_tdb *)fetched_gen_code);
       root_tdb_size = (Lng32) fetched_gen_code_len;
     }

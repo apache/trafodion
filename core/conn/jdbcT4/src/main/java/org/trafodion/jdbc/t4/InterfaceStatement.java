@@ -138,7 +138,7 @@ class InterfaceStatement {
 
 		if (paramValue == null) {
 			if (nullValue == -1) {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale,
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale,
 						"null_parameter_for_not_null_column", new Integer(paramNumber));
 			}
 
@@ -172,12 +172,12 @@ class InterfaceStatement {
 					}
 					tmpBarray = ((String) paramValue).getBytes(charSet);
 				} catch (Exception e) {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							charSet);
 				}
 			} // end if (paramValue instanceof String)
 			else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"CHAR data should be either bytes or String for column: " + paramNumber);
 			}
 
@@ -203,7 +203,7 @@ class InterfaceStatement {
 					}
 				}
 			} else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_string_parameter",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_string_parameter",
 						"CHAR input data is longer than the length for column: " + paramNumber);
 			}
 
@@ -227,13 +227,13 @@ class InterfaceStatement {
 					}
 					tmpBarray = ((String) paramValue).getBytes(charSet);
 				} catch (Exception e) {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							charSet);
 				}
 
 			} // end if (paramValue instanceof String)
 			else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"VARCHAR data should be either bytes or String for column: " + paramNumber);
 			}
 
@@ -242,7 +242,7 @@ class InterfaceStatement {
 				Bytes.insertShort(values, noNullValue, (short) dataLen, this.ic_.getByteSwap());
 				System.arraycopy(tmpBarray, 0, values, noNullValue + 2, dataLen);
 			} else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"VARCHAR input data is longer than the length for column: " + paramNumber);
 			}
 			break;
@@ -260,7 +260,7 @@ class InterfaceStatement {
 						throw new IllegalArgumentException();
 					}
 				} catch (IllegalArgumentException iex) {
-					throw HPT4Messages
+					throw TrafT4Messages
 							.createSQLException(
 									pstmt.connection_.props_,
 									locale,
@@ -274,7 +274,7 @@ class InterfaceStatement {
 				} catch (java.io.UnsupportedEncodingException e) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = e.getMessage();
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							messageArguments);
 				}
 				break;
@@ -283,7 +283,7 @@ class InterfaceStatement {
 				try {
 					tmpts = Timestamp.valueOf((String) paramValue);
 				} catch (IllegalArgumentException iex) {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 							"Timestamp data format is incorrect for column: " + paramNumber + " = " + paramValue);
 				}
 
@@ -295,7 +295,7 @@ class InterfaceStatement {
 				} catch (java.io.UnsupportedEncodingException e) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = e.getMessage();
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							messageArguments);
 				}
 				dataLen = tmpBarray.length;
@@ -326,54 +326,54 @@ class InterfaceStatement {
 						byte[] tempb1 = tmptime.toString().getBytes("ASCII");
 						System.arraycopy(tempb1, 0, values, noNullValue, tempb1.length);
 					} catch (IllegalArgumentException iex) {
-						throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale,
+						throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale,
 								"invalid_parameter_value", "Time data format is incorrect for column: " + paramNumber
 										+ " = " + paramValue);
 					} catch (java.io.UnsupportedEncodingException e) {
 						Object[] messageArguments = new Object[1];
 						messageArguments[0] = e.getMessage();
-						throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+						throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 								messageArguments);
 					}
 					break;
 				} else {
-					// HPT4Desc.SQLDTCODE_HOUR_TO_FRACTION data type!!!
+					// TrafT4Desc.SQLDTCODE_HOUR_TO_FRACTION data type!!!
 					// let the next case structure handle it
 				}
-			case HPT4Desc.SQLDTCODE_YEAR:
-			case HPT4Desc.SQLDTCODE_YEAR_TO_MONTH:
-			case HPT4Desc.SQLDTCODE_MONTH:
-			case HPT4Desc.SQLDTCODE_MONTH_TO_DAY:
-			case HPT4Desc.SQLDTCODE_DAY:
-			case HPT4Desc.SQLDTCODE_HOUR:
-			case HPT4Desc.SQLDTCODE_HOUR_TO_MINUTE:
-			case HPT4Desc.SQLDTCODE_MINUTE:
-			case HPT4Desc.SQLDTCODE_MINUTE_TO_SECOND:
-				// case HPT4Desc.SQLDTCODE_MINUTE_TO_FRACTION:
-			case HPT4Desc.SQLDTCODE_SECOND:
-				// case HPT4Desc.SQLDTCODE_SECOND_TO_FRACTION:
-			case HPT4Desc.SQLDTCODE_YEAR_TO_HOUR:
-			case HPT4Desc.SQLDTCODE_YEAR_TO_MINUTE:
-			case HPT4Desc.SQLDTCODE_MONTH_TO_HOUR:
-			case HPT4Desc.SQLDTCODE_MONTH_TO_MINUTE:
-			case HPT4Desc.SQLDTCODE_MONTH_TO_SECOND:
-				// case HPT4Desc.SQLDTCODE_MONTH_TO_FRACTION:
-			case HPT4Desc.SQLDTCODE_DAY_TO_HOUR:
-			case HPT4Desc.SQLDTCODE_DAY_TO_MINUTE:
-			case HPT4Desc.SQLDTCODE_DAY_TO_SECOND:
-				// case HPT4Desc.SQLDTCODE_DAY_TO_FRACTION:
+			case TrafT4Desc.SQLDTCODE_YEAR:
+			case TrafT4Desc.SQLDTCODE_YEAR_TO_MONTH:
+			case TrafT4Desc.SQLDTCODE_MONTH:
+			case TrafT4Desc.SQLDTCODE_MONTH_TO_DAY:
+			case TrafT4Desc.SQLDTCODE_DAY:
+			case TrafT4Desc.SQLDTCODE_HOUR:
+			case TrafT4Desc.SQLDTCODE_HOUR_TO_MINUTE:
+			case TrafT4Desc.SQLDTCODE_MINUTE:
+			case TrafT4Desc.SQLDTCODE_MINUTE_TO_SECOND:
+				// case TrafT4Desc.SQLDTCODE_MINUTE_TO_FRACTION:
+			case TrafT4Desc.SQLDTCODE_SECOND:
+				// case TrafT4Desc.SQLDTCODE_SECOND_TO_FRACTION:
+			case TrafT4Desc.SQLDTCODE_YEAR_TO_HOUR:
+			case TrafT4Desc.SQLDTCODE_YEAR_TO_MINUTE:
+			case TrafT4Desc.SQLDTCODE_MONTH_TO_HOUR:
+			case TrafT4Desc.SQLDTCODE_MONTH_TO_MINUTE:
+			case TrafT4Desc.SQLDTCODE_MONTH_TO_SECOND:
+				// case TrafT4Desc.SQLDTCODE_MONTH_TO_FRACTION:
+			case TrafT4Desc.SQLDTCODE_DAY_TO_HOUR:
+			case TrafT4Desc.SQLDTCODE_DAY_TO_MINUTE:
+			case TrafT4Desc.SQLDTCODE_DAY_TO_SECOND:
+				// case TrafT4Desc.SQLDTCODE_DAY_TO_FRACTION:
 			default:
 				if (paramValue instanceof String) {
 					try {
 						tmpBarray = ((String) paramValue).getBytes("ASCII");
 					} catch (Exception e) {
-						throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+						throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 								"ASCII");
 					}
 				} else if (paramValue instanceof byte[]) {
 					tmpBarray = (byte[]) paramValue;
 				} else {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale,
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale,
 							"invalid_cast_specification", "DATETIME data should be either bytes or String for column: "
 									+ paramNumber);
 				}
@@ -386,7 +386,7 @@ class InterfaceStatement {
 					// Don't know when we need this. padding blanks. Legacy??
 					Arrays.fill(values, (noNullValue + dataLen), (noNullValue + maxLength), (byte) ' ');
 				} else {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 							"DATETIME data longer than column length: " + paramNumber);
 				}
 				break;
@@ -399,11 +399,11 @@ class InterfaceStatement {
 				try {
 					tmpBarray = ((String) paramValue).getBytes("ASCII");
 				} catch (Exception e) {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							"ASCII");
 				}
 			} else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_cast_specification",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_cast_specification",
 						"INTERVAL data should be either bytes or String for column: " + paramNumber);
 			}
 
@@ -419,7 +419,7 @@ class InterfaceStatement {
 					Arrays.fill(values, (noNullValue + dataLen), (noNullValue + maxLength), (byte) ' ');
 				}
 			} else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"INTERVAL data longer than column length: " + paramNumber);
 			}
 
@@ -446,12 +446,12 @@ class InterfaceStatement {
 					}
 					tmpBarray = ((String) paramValue).getBytes(charSet);
 				} catch (Exception e) {
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							charSet);
 				}
 			} // end if (paramValue instanceof String)
 			else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_cast_specification",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_cast_specification",
 						"VARCHAR data should be either bytes or String for column: " + paramNumber);
 			}
 
@@ -466,7 +466,7 @@ class InterfaceStatement {
                                 }
 				System.arraycopy(tmpBarray, 0, values, (noNullValue + dataOffset), dataLen);
 			} else {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_string_parameter",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_string_parameter",
 						"VARCHAR data longer than column length: " + paramNumber);
 			}
 			break;
@@ -580,11 +580,11 @@ class InterfaceStatement {
 				} catch (java.io.UnsupportedEncodingException e) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = e.getMessage();
-					throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+					throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
 							messageArguments);
 				}
 			} catch (NumberFormatException nex) {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_parameter_value",
 						"DECIMAL data format incorrect for column: " + paramNumber + ". Error is: " + nex.getMessage());
 			}
 
@@ -607,7 +607,7 @@ class InterfaceStatement {
 
 			// DataTruncation is happening.
 			if (numOfZeros < 0) {
-				throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "data_truncation_exceed", new int[]{dataLen, maxLength});
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "data_truncation_exceed", new int[]{dataLen, maxLength});
 			}
 
 			for (i = 0; i < numOfZeros; i++) {
@@ -661,7 +661,7 @@ class InterfaceStatement {
 				ic_.t4props_.t4Logger_.logp(Level.FINEST, "InterfaceStatement", "convertObjectToSQL2", temp, p);
 			}
 
-			throw HPT4Messages.createSQLException(pstmt.connection_.props_, locale, "restricted_data_type", null);
+			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "restricted_data_type", null);
 		}
 		if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 			Object p[] = T4LoggingUtilities
@@ -735,7 +735,7 @@ class InterfaceStatement {
 					try {
 						convertObjectToSQL2(locale, stmt, paramValues[row * paramCount + col], paramRowCount, col,
 								dataValue.buffer, row - clientErrors.size());
-					} catch (HPT4Exception e) {
+					} catch (TrafT4Exception e) {
 						if (paramRowCount == 1) // for single rows we need to
 							// throw immediately
 							throw e;
@@ -958,40 +958,40 @@ class InterfaceStatement {
 	}
 
 	// -------------------------------------------------------------
-	static HPT4Desc[] NewDescArray(SQLItemDescList_def desc) {
+	static TrafT4Desc[] NewDescArray(SQLItemDescList_def desc) {
 		int index;
-		HPT4Desc[] HPT4DescArray;
+		TrafT4Desc[] trafT4DescArray;
 		SQLItemDesc_def SQLDesc;
 
 		if (desc.list == null || desc.list.length == 0) {
 			return null;
 		}
 
-		HPT4DescArray = new HPT4Desc[desc.list.length];
+		trafT4DescArray = new TrafT4Desc[desc.list.length];
 
 		for (index = 0; index < desc.list.length; index++) {
 			SQLDesc = desc.list[index];
 			boolean nullInfo = (((new Byte(SQLDesc.nullInfo)).shortValue()) == 1) ? true : false;
 			boolean signType = (((new Byte(SQLDesc.signType)).shortValue()) == 1) ? true : false;
-			HPT4DescArray[index] = new HPT4Desc(SQLDesc.dataType, (short) SQLDesc.datetimeCode, SQLDesc.maxLen,
+			trafT4DescArray[index] = new TrafT4Desc(SQLDesc.dataType, (short) SQLDesc.datetimeCode, SQLDesc.maxLen,
 					SQLDesc.precision, SQLDesc.scale, nullInfo, SQLDesc.colHeadingNm, signType, SQLDesc.ODBCDataType,
 					SQLDesc.ODBCPrecision, SQLDesc.SQLCharset, SQLDesc.ODBCCharset, SQLDesc.CatalogName,
 					SQLDesc.SchemaName, SQLDesc.TableName, SQLDesc.dataType, SQLDesc.intLeadPrec, SQLDesc.paramMode);
 		}
-		return HPT4DescArray;
+		return trafT4DescArray;
 	}
 
 	// -------------------------------------------------------------
-	static HPT4Desc[] NewDescArray(Descriptor2[] descArray) {
+	static TrafT4Desc[] NewDescArray(Descriptor2[] descArray) {
 		int index;
-		HPT4Desc[] HPT4DescArray;
+		TrafT4Desc[] trafT4DescArray;
 		Descriptor2 desc;
 
 		if (descArray == null || descArray.length == 0) {
 			return null;
 		}
 
-		HPT4DescArray = new HPT4Desc[descArray.length];
+		trafT4DescArray = new TrafT4Desc[descArray.length];
 
 		for (index = 0; index < descArray.length; index++) {
 			desc = descArray[index];
@@ -1005,13 +1005,13 @@ class InterfaceStatement {
 				signType = true;
 
 			}
-			HPT4DescArray[index] = new HPT4Desc(desc.noNullValue_, desc.nullValue_, desc.version_, desc.dataType_,
+			trafT4DescArray[index] = new TrafT4Desc(desc.noNullValue_, desc.nullValue_, desc.version_, desc.dataType_,
 					(short) desc.datetimeCode_, desc.maxLen_, (short) desc.precision_, (short) desc.scale_, nullInfo,
 					signType, desc.odbcDataType_, desc.odbcPrecision_, desc.sqlCharset_, desc.odbcCharset_,
 					desc.colHeadingNm_, desc.tableName_, desc.catalogName_, desc.schemaName_, desc.headingName_,
 					desc.intLeadPrec_, desc.paramMode_, desc.dataType_, desc.getRowLength());
 		}
-		return HPT4DescArray;
+		return trafT4DescArray;
 	}
 
 	// -------------------------------------------------------------
@@ -1049,9 +1049,9 @@ class InterfaceStatement {
 			// ignore the SQLWarning for the static close
 			break;
 		case odbc_SQLSvc_Close_exc_.odbc_SQLSvc_Close_SQLError_exn_:
-			HPT4Messages.throwSQLException(stmt_.connection_.props_, cry_.m_p1.SQLError);
+			TrafT4Messages.throwSQLException(stmt_.connection_.props_, cry_.m_p1.SQLError);
 		default:
-			throw HPT4Messages.createSQLException(stmt_.connection_.props_, ic_.getLocale(), "ids_unknown_reply_error",
+			throw TrafT4Messages.createSQLException(stmt_.connection_.props_, ic_.getLocale(), "ids_unknown_reply_error",
 					null);
 		} // end switch
 
@@ -1091,10 +1091,10 @@ class InterfaceStatement {
 		txId = Bytes.createIntBytes(0, false);
 
 		if (sqlStmtType_ == TRANSPORT.TYPE_STATS) {
-			throw HPT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(), "infostats_invalid_error",
+			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(), "infostats_invalid_error",
 					null);
 		} else if (sqlStmtType_ == TRANSPORT.TYPE_CONFIG) {
-			throw HPT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(),
+			throw TrafT4Messages.createSQLException(pstmt.connection_.props_, ic_.getLocale(),
 					"config_cmd_invalid_error", null);
 		}
 
@@ -1108,13 +1108,13 @@ class InterfaceStatement {
 		switch (pr.returnCode) {
 		case TRANSPORT.SQL_SUCCESS:
 		case TRANSPORT.SQL_SUCCESS_WITH_INFO:
-			HPT4Desc[] OutputDesc = InterfaceStatement.NewDescArray(pr.outputDesc);
-			HPT4Desc[] InputDesc = InterfaceStatement.NewDescArray(pr.inputDesc);
+			TrafT4Desc[] OutputDesc = InterfaceStatement.NewDescArray(pr.outputDesc);
+			TrafT4Desc[] InputDesc = InterfaceStatement.NewDescArray(pr.inputDesc);
 			pstmt.setPrepareOutputs2(InputDesc, OutputDesc, pr.inputNumberParams, pr.outputNumberParams,
 					pr.inputParamLength, pr.outputParamLength, pr.inputDescLength, pr.outputDescLength);
 
 			if (pr.errorList != null && pr.errorList.length > 0) {
-				HPT4Messages.setSQLWarning(stmt_.connection_.props_, pstmt, pr.errorList);
+				TrafT4Messages.setSQLWarning(stmt_.connection_.props_, pstmt, pr.errorList);
 			}
 
 			this.stmtHandle_ = pr.stmtHandle;
@@ -1124,7 +1124,7 @@ class InterfaceStatement {
 		case odbc_SQLSvc_Prepare_exc_.odbc_SQLSvc_Prepare_SQLError_exn_:
 
 		default:
-			HPT4Messages.throwSQLException(stmt_.connection_.props_, pr.errorList);
+			TrafT4Messages.throwSQLException(stmt_.connection_.props_, pr.errorList);
 		}
 
 		if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
@@ -1325,11 +1325,11 @@ class InterfaceStatement {
 			}
 
 			// get the descriptors from the proper location
-			HPT4Desc[][] desc = null;
+			TrafT4Desc[][] desc = null;
 
 			// try from execute data first
 			if (er.outputDesc != null && er.outputDesc.length > 0) {
-				desc = new HPT4Desc[er.outputDesc.length][];
+				desc = new TrafT4Desc[er.outputDesc.length][];
 
 				for (int i = 0; i < er.outputDesc.length; i++) {
 					desc[i] = InterfaceStatement.NewDescArray(er.outputDesc[i]);
@@ -1337,7 +1337,7 @@ class InterfaceStatement {
 			}
 			// try from the prepare data
 			else if (stmt.outputDesc_ != null && stmt.outputDesc_.length > 0) {
-				desc = new HPT4Desc[1][];
+				desc = new TrafT4Desc[1][];
 				desc[0] = stmt.outputDesc_;
 			}
 
@@ -1368,15 +1368,15 @@ class InterfaceStatement {
 				}
 			}
 			if (er.errorList != null) {
-				HPT4Messages.setSQLWarning(stmt_.connection_.props_, stmt, er.errorList);
+				TrafT4Messages.setSQLWarning(stmt_.connection_.props_, stmt, er.errorList);
 			}
 		} else {
 			Arrays.fill(stmt.batchRowCount_, -3); // fill with failed
-			HPT4Messages.throwSQLException(stmt_.connection_.props_, er.errorList);
+			TrafT4Messages.throwSQLException(stmt_.connection_.props_, er.errorList);
 		}
 	    //3164
 	    if (batchException) {
-	    	HPT4Messages.throwSQLException(stmt_.connection_.props_, er.errorList);
+	    	TrafT4Messages.throwSQLException(stmt_.connection_.props_, er.errorList);
 	    }
 	}
 

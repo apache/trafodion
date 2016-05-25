@@ -39,18 +39,18 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.PooledConnection;
 
-public class HPT4PooledConnectionManager implements javax.sql.ConnectionEventListener {
+public class TrafT4PooledConnectionManager implements javax.sql.ConnectionEventListener {
 
 	public void connectionClosed(ConnectionEvent event) {
 		if (T4Properties.t4GlobalLogger.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(null, event);
-			T4Properties.t4GlobalLogger.logp(Level.FINE, "HPT4PooledConnectionManager", "connectionClosed", "", p);
+			T4Properties.t4GlobalLogger.logp(Level.FINE, "TrafT4PooledConnectionManager", "connectionClosed", "", p);
 		}
 		if (out_ != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(null, event);
 			lr.setParameters(p);
-			lr.setSourceClassName("HPT4PooledConnectionManager");
+			lr.setSourceClassName("TrafT4PooledConnectionManager");
 			lr.setSourceMethodName("connectionClosed");
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
@@ -133,7 +133,7 @@ public class HPT4PooledConnectionManager implements javax.sql.ConnectionEventLis
 						} // cleanup, ignore any errors
 					}
 				} else {
-					throw HPT4Messages.createSQLException(null, null, "max_pool_size_reached", null);
+					throw TrafT4Messages.createSQLException(null, null, "max_pool_size_reached", null);
 				}
 			} else {
 				pc = (PooledConnection) free_.get(0);
@@ -201,7 +201,7 @@ public class HPT4PooledConnectionManager implements javax.sql.ConnectionEventLis
 				created++;
 			}
 		} catch (SQLException se) {
-			SQLException head = HPT4Messages.createSQLException(null, null, "initial_pool_creation_error", "" + limit);
+			SQLException head = TrafT4Messages.createSQLException(null, null, "initial_pool_creation_error", "" + limit);
 			head.setNextException(se);
 			throw head;
 		} finally {
@@ -224,7 +224,7 @@ public class HPT4PooledConnectionManager implements javax.sql.ConnectionEventLis
 		out_ = out;
 	}
 
-	HPT4PooledConnectionManager(HPT4ConnectionPoolDataSource pds, Level traceLevel) throws SQLException {
+	TrafT4PooledConnectionManager(TrafT4ConnectionPoolDataSource pds, Level traceLevel) throws SQLException {
 		String className = getClass().getName();
 		pds_ = pds;
 		inUse_ = Collections.synchronizedList(new LinkedList());
@@ -315,7 +315,7 @@ public class HPT4PooledConnectionManager implements javax.sql.ConnectionEventLis
 					try {
 						/*
 						 * System.out.println("Closing connection : " + (
-						 * (HPT4Connection) ( (HPT4PooledConnection)
+						 * (TrafT4Connection) ( (TrafT4PooledConnection)
 						 * pc).getConnection()).getDialogueId());
 						 */
 						pc.close();
@@ -351,7 +351,7 @@ public class HPT4PooledConnectionManager implements javax.sql.ConnectionEventLis
 				while (it_.hasNext()) {
 					try {
 						PooledConnection tempPC = (PooledConnection) it_.next();
-						InterfaceConnection ic = ((HPT4PooledConnection) tempPC).getTrafT4ConnectionReference().ic_;
+						InterfaceConnection ic = ((TrafT4PooledConnection) tempPC).getTrafT4ConnectionReference().ic_;
 						if (ic != null) {
 							T4Connection tconn = ic.getT4Connection();
 							if (tconn != null) {

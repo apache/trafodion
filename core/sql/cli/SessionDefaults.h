@@ -132,6 +132,7 @@ public:
     SUSPEND_LOGGING,
     USER_EXPERIENCE_LEVEL,
     WMS_PROCESS,
+    COMPILER_IDLE_TIMEOUT,
     LAST_SESSION_DEFAULT_ATTRIBUTE  // This enum entry should be last always. Add new enums before this entry
   };
   
@@ -190,6 +191,12 @@ public:
     const Int16 DisAmbiguate = 0;
     wmsProcess_ = v;
     updateDefaultsValueString(WMS_PROCESS, DisAmbiguate, wmsProcess_);
+  }
+
+  void setCompilerIdleTimeout(Lng32 compilerIdleTimeout)
+  {
+    compilerIdleTimeout_ = compilerIdleTimeout;
+    updateDefaultsValueString(COMPILER_IDLE_TIMEOUT, compilerIdleTimeout_);
   }
   
   void setIsoMappingName(const char * attrValue, Lng32 attrValueLen);
@@ -470,6 +477,7 @@ public:
   Lng32 getEspAssignTimeWindow(){ return espAssignTimeWindow_; }
   Lng32 getEspStopIdleTimeout() { return espStopIdleTimeout_; }
   Lng32 getEspIdleTimeout() { return espIdleTimeout_; }
+  Lng32 getCompilerIdleTimeout() { return compilerIdleTimeout_; }
   Lng32 getEspInactiveTimeout() { return espInactiveTimeout_; }
   Lng32 getEspReleaseWorkTimeout() { return espReleaseWorkTimeout_; }
   Lng32 getMaxPollingInterval() { return maxPollingInterval_; }
@@ -673,7 +681,9 @@ private:
   Lng32 espStopIdleTimeout_;
   // number of seconds an esp should wait idle before it times out
   Lng32 espIdleTimeout_;
-  // number of seconds an esp should remain inactive before times out
+  // number of seconds the compiler process can remain idle before it is killed by the master 
+  Lng32 compilerIdleTimeout_;
+  // numcompilerIber of seconds an esp should remain inactive before times out
   Lng32 espInactiveTimeout_;
   // number of seconds that master waits for release work reply from esps
   Lng32 espReleaseWorkTimeout_;

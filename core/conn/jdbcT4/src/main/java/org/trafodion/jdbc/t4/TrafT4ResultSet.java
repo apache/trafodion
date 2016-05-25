@@ -60,7 +60,7 @@ import java.util.logging.LogRecord;
 // This class partially implements the result set class as defined in 
 // java.sql.ResultSet.  
 // ----------------------------------------------------------------------------
-public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
+public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet {
 
 	// java.sql.ResultSet interface methods
 	public boolean absolute(int row) throws SQLException {
@@ -83,15 +83,15 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 		if (row == 0) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_row_number",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_row_number",
 					null);
 		}
 
@@ -144,11 +144,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 		last();
@@ -174,11 +174,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 
@@ -191,7 +191,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public void cancelRowUpdates() throws SQLException {
-             throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+             throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
                   "cancelRowUpdates - not supported", null);
 	}
 
@@ -235,7 +235,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public void deleteRow() throws SQLException {
-            throw HPT4Messages.createSQLException(connection_.props_, 
+            throw TrafT4Messages.createSQLException(connection_.props_, 
                                                   connection_.getLocale(),
                                                   "deleteRow - not supported", 
                                                   null);
@@ -259,7 +259,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		int i;
 
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		for (i = 0; i < outputDesc_.length; i++) {
@@ -267,7 +267,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				return i + 1;
 			}
 		}
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_name", null);
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_name", null);
 	}
 
 	public boolean first() throws SQLException {
@@ -289,11 +289,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 
@@ -327,7 +327,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateGetInvocation(columnIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getArray()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getArray()");
 		return null;
 	}
 
@@ -390,14 +390,14 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				} catch (java.io.UnsupportedEncodingException e) {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = e.getMessage();
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"unsupported_encoding", messageArguments);
 				}
 			} else {
 				return null;
 			}
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 
@@ -457,7 +457,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				try {
 					d = new Double(data);
 				} catch (NumberFormatException e1) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 				retValue = new BigDecimal(d.doubleValue());
@@ -572,7 +572,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				return null;
 			}
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 	}
@@ -628,7 +628,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				try {
 					shortValue = getShort(columnIndex);
 				} catch (NumberFormatException e) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 				switch (shortValue) {
@@ -637,7 +637,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				case 1:
 					return true;
 				default:
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"numeric_out_of_range", null);
 				}
 			}
@@ -695,7 +695,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				try {
 					d = new Double(data);
 				} catch (NumberFormatException e1) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 				d1 = d.doubleValue();
@@ -706,7 +706,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 						setSQLWarning(null, "data_truncation", null);
 					}
 				} else {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"numeric_out_of_range", null);
 				}
 			}
@@ -777,14 +777,14 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				} else if (x instanceof String) {
 					return ((String) x).getBytes();
 				} else {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 			}
 
 
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 	}
@@ -847,7 +847,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				return null;
 			}
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 
@@ -888,7 +888,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (stmt_ != null) {
@@ -915,7 +915,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (spj_rs_ && stmtLabel_ != null) {
@@ -968,7 +968,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		dataType = outputDesc_[columnIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 
@@ -998,7 +998,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 					setSQLWarning(null, "data_truncation", null);
 
 				} catch (IllegalArgumentException ex) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 			}
@@ -1142,7 +1142,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			try {
 				return Double.parseDouble(data);
 			} catch (NumberFormatException e1) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"invalid_cast_specification", null);
 			}
 		} else {
@@ -1185,7 +1185,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		return fetchDirection_;
@@ -1207,7 +1207,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		return fetchSize_;
@@ -1238,7 +1238,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		if (data >= Float.NEGATIVE_INFINITY && data <= Float.POSITIVE_INFINITY) {
 			return (float) data;
 		} else {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "numeric_out_of_range",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "numeric_out_of_range",
 					null);
 		}
 	}
@@ -1291,7 +1291,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				try {
 					d = new Double(data).doubleValue();
 				} catch (NumberFormatException e1) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 
@@ -1301,7 +1301,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 						setSQLWarning(null, "data_truncation", null);
 					}
 				} else {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"numeric_out_of_range", null);
 				}
 			}
@@ -1370,7 +1370,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 							setSQLWarning(null, "data_truncation", null);
 						}
 					} else {
-						throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 								"numeric_out_of_range", null);
 					}
 				} catch (NumberFormatException e2) {
@@ -1378,7 +1378,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 					try {
 						d = new Double(data).doubleValue();
 					} catch (NumberFormatException e1) {
-						throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 								"invalid_cast_specification", null);
 					}
 
@@ -1389,7 +1389,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 							setSQLWarning(null, "data_truncation", null);
 						}
 					} else {
-						throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 								"numeric_out_of_range", null);
 					}
 				}
@@ -1436,10 +1436,10 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
-		return new HPT4ResultSetMetaData(this, outputDesc_);
+		return new TrafT4ResultSetMetaData(this, outputDesc_);
 	}
 
 	public Object getObject(int columnIndex) throws SQLException {
@@ -1550,7 +1550,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.OTHER:
 			return getString(columnIndex);
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 	}
@@ -1572,7 +1572,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateGetInvocation(columnIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getObject()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getObject()");
 		return null;
 	}
 
@@ -1632,7 +1632,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateGetInvocation(columnIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getRef()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getRef()");
 		return null;
 	}
 
@@ -1673,7 +1673,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (isBeforeFirst_ || isAfterLast_ || onInsertRow_) {
@@ -1717,7 +1717,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				try {
 					d = new Double(data).doubleValue();
 				} catch (NumberFormatException e1) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 
@@ -1729,7 +1729,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 						setSQLWarning(null, "data_truncation", null);
 					}
 				} else {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"numeric_out_of_range", null);
 				}
 			}
@@ -1776,7 +1776,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		return stmt_;
@@ -1899,7 +1899,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				try {
 					data = new String((byte[]) x, "ASCII");
 				} catch (Exception e) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"unsupported_encoding", "ASCII");
 				}
 			} else {
@@ -1927,38 +1927,38 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				break;
 			case InterfaceResultSet.SQLTYPECODE_DATETIME: {
 				switch (outputDesc_[columnIndex - 1].sqlDatetimeCode_) {
-				case HPT4Desc.SQLDTCODE_YEAR:
-				case HPT4Desc.SQLDTCODE_YEAR_TO_MONTH:
-				case HPT4Desc.SQLDTCODE_MONTH:
-				case HPT4Desc.SQLDTCODE_MONTH_TO_DAY:
-				case HPT4Desc.SQLDTCODE_DAY:
-				case HPT4Desc.SQLDTCODE_HOUR:
-				case HPT4Desc.SQLDTCODE_HOUR_TO_MINUTE:
-				case HPT4Desc.SQLDTCODE_MINUTE:
-				case HPT4Desc.SQLDTCODE_MINUTE_TO_SECOND:
-					// case HPT4Desc.SQLDTCODE_MINUTE_TO_FRACTION:
-				case HPT4Desc.SQLDTCODE_SECOND:
-					// case HPT4Desc.SQLDTCODE_SECOND_TO_FRACTION:
-				case HPT4Desc.SQLDTCODE_YEAR_TO_HOUR:
-				case HPT4Desc.SQLDTCODE_YEAR_TO_MINUTE:
-				case HPT4Desc.SQLDTCODE_MONTH_TO_HOUR:
-				case HPT4Desc.SQLDTCODE_MONTH_TO_MINUTE:
-				case HPT4Desc.SQLDTCODE_MONTH_TO_SECOND:
-					// case HPT4Desc.SQLDTCODE_MONTH_TO_FRACTION:
-				case HPT4Desc.SQLDTCODE_DAY_TO_HOUR:
-				case HPT4Desc.SQLDTCODE_DAY_TO_MINUTE:
-				case HPT4Desc.SQLDTCODE_DAY_TO_SECOND:
-					// case HPT4Desc.SQLDTCODE_DAY_TO_FRACTION:
-				case HPT4Desc.SQLDTCODE_HOUR_TO_FRACTION:
+				case TrafT4Desc.SQLDTCODE_YEAR:
+				case TrafT4Desc.SQLDTCODE_YEAR_TO_MONTH:
+				case TrafT4Desc.SQLDTCODE_MONTH:
+				case TrafT4Desc.SQLDTCODE_MONTH_TO_DAY:
+				case TrafT4Desc.SQLDTCODE_DAY:
+				case TrafT4Desc.SQLDTCODE_HOUR:
+				case TrafT4Desc.SQLDTCODE_HOUR_TO_MINUTE:
+				case TrafT4Desc.SQLDTCODE_MINUTE:
+				case TrafT4Desc.SQLDTCODE_MINUTE_TO_SECOND:
+					// case TrafT4Desc.SQLDTCODE_MINUTE_TO_FRACTION:
+				case TrafT4Desc.SQLDTCODE_SECOND:
+					// case TrafT4Desc.SQLDTCODE_SECOND_TO_FRACTION:
+				case TrafT4Desc.SQLDTCODE_YEAR_TO_HOUR:
+				case TrafT4Desc.SQLDTCODE_YEAR_TO_MINUTE:
+				case TrafT4Desc.SQLDTCODE_MONTH_TO_HOUR:
+				case TrafT4Desc.SQLDTCODE_MONTH_TO_MINUTE:
+				case TrafT4Desc.SQLDTCODE_MONTH_TO_SECOND:
+					// case TrafT4Desc.SQLDTCODE_MONTH_TO_FRACTION:
+				case TrafT4Desc.SQLDTCODE_DAY_TO_HOUR:
+				case TrafT4Desc.SQLDTCODE_DAY_TO_MINUTE:
+				case TrafT4Desc.SQLDTCODE_DAY_TO_SECOND:
+					// case TrafT4Desc.SQLDTCODE_DAY_TO_FRACTION:
+				case TrafT4Desc.SQLDTCODE_HOUR_TO_FRACTION:
 					break;
 				default:
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"object_type_not_supported", null);
 				}
 			}
 				break;
 			default:
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"object_type_not_supported", null);
 			}
 		}
@@ -1971,7 +1971,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		case Types.JAVA_OBJECT:
 		case Types.STRUCT:
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"object_type_not_supported", null);
 		}
 		return data;
@@ -2020,7 +2020,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		dataType = outputDesc_[columnIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		data = getLocalString(columnIndex);
@@ -2031,7 +2031,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 					timestamp = Timestamp.valueOf(data);
 					retValue = new Time(timestamp.getTime());
 				} catch (IllegalArgumentException e) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 				break;
@@ -2049,13 +2049,13 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 						timestamp = Timestamp.valueOf(data);
 						retValue = new Time(timestamp.getTime());
 					} catch (IllegalArgumentException ex) {
-						throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 								"invalid_cast_specification", null);
 					}
 				}
 				break;
 			default:
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"restricted_data_type", null);
 			}
 			return retValue;
@@ -2158,7 +2158,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		dataType = outputDesc_[columnIndex - 1].dataType_;
 		if (dataType != Types.CHAR && dataType != Types.VARCHAR && dataType != Types.LONGVARCHAR
 				&& dataType != Types.DATE && dataType != Types.TIME && dataType != Types.TIMESTAMP) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
 		}
 		data = getLocalString(columnIndex);
@@ -2169,7 +2169,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 					dateValue = Date.valueOf(data);
 					retValue = new Timestamp(dateValue.getTime());
 				} catch (IllegalArgumentException e) {
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
 				break;
@@ -2200,7 +2200,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 							retValue = new Timestamp(timeValue.getTime());
 							retValue.setNanos(nano);
 						} catch (IllegalArgumentException e2) {
-							throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+							throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 									"invalid_cast_specification", null);
 						}
 
@@ -2208,7 +2208,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				}
 				break;
 			default:
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"restricted_data_type", null);
 			}
 			return retValue;
@@ -2305,7 +2305,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (stmt_ != null) {
@@ -2342,7 +2342,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			} catch (java.io.UnsupportedEncodingException e) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = e.getMessage();
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 						"unsupported_encoding", messageArguments);
 			}
 		} else {
@@ -2386,7 +2386,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateGetInvocation(columnIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getURL()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getURL()");
 		return null;
 	}
 
@@ -2410,12 +2410,12 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 	}
 
 	public byte[] getRawBytes(int columnIndex) throws SQLException {
-		HPT4Desc desc;
+		TrafT4Desc desc;
 		byte[] ret;
 
 		if (!keepRawBuffer_) // if you dont set the property, we will not
 			// support the call
-			HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getRawBytes()");
+			TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "getRawBytes()");
 
 		validateGetInvocation(columnIndex); // verify columnIndex and that we
 		// are not closed
@@ -2471,7 +2471,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 	// ------------------------------------------------------------------
         // Method not implemented
 	public void insertRow() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "insertRow - not supported", 
                                                  null);
@@ -2493,7 +2493,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		return isAfterLast_;
@@ -2515,7 +2515,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		return isBeforeFirst_;
@@ -2537,7 +2537,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if ((getType() == ResultSet.TYPE_FORWARD_ONLY) && (getConcurrency() == ResultSet.CONCUR_UPDATABLE)) {
@@ -2571,7 +2571,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		/*
@@ -2612,11 +2612,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 
@@ -2656,7 +2656,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (!onInsertRow_) {
@@ -2673,7 +2673,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public void moveToInsertRow() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "moveToInsertRow - not supported", 
                                                  null);
@@ -2703,7 +2703,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 
@@ -2783,11 +2783,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		boolean validRow = false;
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 
@@ -2809,7 +2809,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public void refreshRow() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "refreshRow - not supported", 
                                                  null);
@@ -2836,11 +2836,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
 		clearWarnings();
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (getType() == ResultSet.TYPE_FORWARD_ONLY) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "forward_only_cursor",
 					null);
 		}
 		
@@ -2871,7 +2871,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public boolean rowDeleted() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "rowDeleted - not supported", 
                                                   null);
@@ -2879,7 +2879,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public boolean rowInserted() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "rowInserted - not supported", 
                                                   null);
@@ -2887,7 +2887,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public boolean rowUpdated() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "rowUpdated - not supported", 
                                                   null);
@@ -2909,7 +2909,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		switch (direction) {
@@ -2921,7 +2921,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			fetchDirection_ = ResultSet.FETCH_FORWARD;
 			break;
 		default:
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_fetch_direction", null);
 		}
 	}
@@ -2942,11 +2942,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (rows < 0) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_fetch_size",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_fetch_size",
 					null);
 		} else if (rows == 0) {
 			fetchSize_ = DEFAULT_FETCH_SIZE;
@@ -2971,7 +2971,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateUpdInvocation(columnIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "updateArray()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "updateArray()");
 	}
 
 	public void updateArray(String columnName, Array x) throws SQLException {
@@ -3022,7 +3022,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		} catch (java.io.IOException e) {
 			Object[] messageArguments = new Object[1];
 			messageArguments[0] = e.getMessage();
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 					messageArguments);
 		}
 		try {
@@ -3030,7 +3030,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		} catch (java.io.UnsupportedEncodingException e) {
 			Object[] messageArguments = new Object[1];
 			messageArguments[0] = e.getMessage();
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "unsupported_encoding",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "unsupported_encoding",
 					messageArguments);
 		}
 	}
@@ -3121,7 +3121,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		} catch (java.io.IOException e) {
 			Object[] messageArguments = new Object[1];
 			messageArguments[0] = e.getMessage();
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 					messageArguments);
 		}
 		getCurrentRow().updateArrayElement(columnIndex, value);
@@ -3283,7 +3283,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			if (valuePos < 1) {
 				Object[] messageArguments = new Object[1];
 				messageArguments[0] = "No data to read from the Reader";
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 						messageArguments);
 			}
 
@@ -3298,7 +3298,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		} catch (java.io.IOException e) {
 			Object[] messageArguments = new Object[1];
 			messageArguments[0] = e.getMessage();
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "io_exception",
 					messageArguments);
 		}
 		getCurrentRow().updateArrayElement(columnIndex, new String(value));
@@ -3642,7 +3642,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		validateUpdInvocation(columnIndex);
-		HPT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "updateRef()");
+		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "updateRef()");
 	}
 
 	public void updateRef(String columnName, Ref x) throws SQLException {
@@ -3666,7 +3666,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
         // Method not implemented
 	public void updateRow() throws SQLException {
-           throw HPT4Messages.createSQLException(connection_.props_, 
+           throw TrafT4Messages.createSQLException(connection_.props_, 
                                                  connection_.getLocale(),
                                                  "updateRow - not supported", null);
 	}
@@ -3839,7 +3839,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		return wasNull_;
@@ -3861,7 +3861,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (columnIndex < 1 || columnIndex > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		}
 		outputDesc_[columnIndex - 1].name_ = columnName;
@@ -3919,7 +3919,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		int i;
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		for (i = 0; i < outputDesc_.length; i++) {
@@ -3927,7 +3927,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				return i + 1;
 			}
 		}
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_name", null);
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_name", null);
 	}
 
 	private void validateGetInvocation(int columnIndex) throws SQLException {
@@ -3946,11 +3946,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_cursor_state",
 					null);
 		}
 		if (columnIndex < 1 || columnIndex > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		}
 	}
@@ -3976,7 +3976,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		}
 		int i;
 		if (getConcurrency() == ResultSet.CONCUR_READ_ONLY) {
-			throw HPT4Messages
+			throw TrafT4Messages
 					.createSQLException(connection_.props_, connection_.getLocale(), "read_only_concur", null);
 		}
 		for (i = 0; i < outputDesc_.length; i++) {
@@ -3984,7 +3984,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				return i + 1;
 			}
 		}
-		throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_name", null);
+		throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_name", null);
 	}
 
 	private void validateUpdInvocation(int columnIndex) throws SQLException {
@@ -4003,11 +4003,11 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (getConcurrency() == ResultSet.CONCUR_READ_ONLY) {
-			throw HPT4Messages
+			throw TrafT4Messages
 					.createSQLException(connection_.props_, connection_.getLocale(), "read_only_concur", null);
 		}
 		if (columnIndex < 1 || columnIndex > outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		}
 	}
@@ -4031,10 +4031,10 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			return insertRow_;
 		} else {
 			if (isBeforeFirst_) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "cursor_is_before_first_row", null);
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "cursor_is_before_first_row", null);
 			}
 			if (isAfterLast_) {
-				throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "cursor_after_last_row", null);
+				throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "cursor_after_last_row", null);
 			}
 			return (ObjectArray) cachedRows_.get(currentRow_ - 1);
 		}
@@ -4078,7 +4078,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		String columnName;
 
 		if (noKeyFound_) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "no_primary_key", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "no_primary_key", null);
 		}
 
 		try {
@@ -4111,7 +4111,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				if (rowCount == 0) {
 					noKeyFound_ = true;
 					stmt_.resultSetConcurrency_ = ResultSet.CONCUR_READ_ONLY;
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"no_primary_key", null);
 				}
 
@@ -4141,7 +4141,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				if (colNo > columnCount) {
 					noKeyFound_ = true;
 					stmt_.resultSetConcurrency_ = ResultSet.CONCUR_READ_ONLY;
-					throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
+					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"no_primary_key", null);
 				}
 			}
@@ -4376,7 +4376,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].fsDataType_;
@@ -4399,7 +4399,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].sqlDataType_;
@@ -4422,7 +4422,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].precision_;
@@ -4445,7 +4445,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].scale_;
@@ -4468,7 +4468,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].sqlDatetimeCode_;
@@ -4495,7 +4495,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].sqlOctetLength_;
@@ -4518,7 +4518,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (ColumnCount >= outputDesc_.length) {
-			throw HPT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
+			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "invalid_column_index",
 					null);
 		} else {
 			return outputDesc_[ColumnCount].isSigned_;
@@ -4560,18 +4560,18 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
 						wasNull_ = false;
 					} catch (CharacterCodingException e) {
-						SQLException se = HPT4Messages.createSQLException(this.connection_.ic_.t4props_,
+						SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_,
 								this.connection_.getLocale(), "translation_of_parameter_failed", "getLocalString", e
 										.getMessage());
 						se.initCause(e);
 						throw se;
 					} catch (UnsupportedCharsetException e) {
-						SQLException se = HPT4Messages.createSQLException(this.connection_.ic_.t4props_,
+						SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_,
 								this.connection_.getLocale(), "unsupported_encoding", e.getCharsetName());
 						se.initCause(e);
 						throw se;
 					} catch (UnsupportedEncodingException e) {
-						SQLException se = HPT4Messages.createSQLException(this.connection_.ic_.t4props_,
+						SQLException se = TrafT4Messages.createSQLException(this.connection_.ic_.t4props_,
 								this.connection_.getLocale(), "unsupported_encoding", e.getMessage());
 						se.initCause(e);
 						throw se;
@@ -4613,17 +4613,17 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 		return useOldDateFormat_;
 	}
 
-	void closeErroredConnection(HPT4Exception sme) {
+	void closeErroredConnection(TrafT4Exception sme) {
 		connection_.closeErroredConnection(sme);
 	}
 
 	// Constructors - used in TrafT4Statement
-	TrafT4ResultSet(TrafT4Statement stmt, HPT4Desc[] outputDesc) throws SQLException {
+	TrafT4ResultSet(TrafT4Statement stmt, TrafT4Desc[] outputDesc) throws SQLException {
 		this(stmt, outputDesc, stmt.stmtLabel_, false);
 	}
 
 	// Constructors - used for SPJ ResultSets
-	TrafT4ResultSet(TrafT4Statement stmt, HPT4Desc[] outputDesc, String stmt_label, boolean spj_result_set)
+	TrafT4ResultSet(TrafT4Statement stmt, TrafT4Desc[] outputDesc, String stmt_label, boolean spj_result_set)
 			throws SQLException {
 		if (stmt.connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(stmt.connection_.props_, stmt, outputDesc, stmt_label,
@@ -4672,7 +4672,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 	// Constructor - used in T4DatabaseMetaData
 	// ResultSet is not created on Java side in
 	// T4DatanaseMetaData due to threading issues
-	TrafT4ResultSet(T4DatabaseMetaData dbMetaData, HPT4Desc[] outputDesc, String stmtLabel, boolean oldDateFormat)
+	TrafT4ResultSet(T4DatabaseMetaData dbMetaData, TrafT4Desc[] outputDesc, String stmtLabel, boolean oldDateFormat)
 			throws SQLException {
 		if (dbMetaData.connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(dbMetaData.connection_.props_, dbMetaData, outputDesc, 0,
@@ -4726,7 +4726,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 
 	// Fields
 	InterfaceResultSet irs_;
-	HPT4Desc[] outputDesc_;
+	TrafT4Desc[] outputDesc_;
 	TrafT4Statement stmt_;
 	TrafT4Connection connection_;
 	boolean isClosed_;
