@@ -318,35 +318,11 @@ sub genComponentTmWait {
 
 sub genIDTMSrv {
     if ($SQ_IDTMSRV > 0) {
-        my $l_pn = "";
-        for ($i=0; $i < $gdNumNodes; $i++) {
-            $l_pn = $l_pn . $i;
-            if ($i + 1 < $gdNumNodes) {
-                $l_pn = $l_pn . ",";
-            }
-        }
         printIDTMScript(1, "#!/bin/sh\n");
-        printIDTMScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
-        printIDTMScript(1, "sqshell -a <<eof\n");
-        printIDTMScript(1, "\n! Start TSID\n");
-        if ($SQ_IDTMSRV == 1) {
-            printIDTMScript(1, "set {process \\\$TSID } PERSIST_RETRIES=2,30\n");
-            sqconfigdb::addDbProcData('$TSID', "PERSIST_RETRIES", "2,30");
-            printIDTMScript(1, "set {process \\\$TSID } PERSIST_ZONES=$l_pn\n");
-            sqconfigdb::addDbProcData('$TSID', "PERSIST_ZONES", "$l_pn");
-            printIDTMScript(1, "exec {nowait, name \\\$TSID, nid 0, out stdout_idtmsrv} idtmsrv\n");
-        } else {
-            for ($i=0; $i < $SQ_IDTMSRV; $i++) {
-                printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
-                sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
-                printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
-                sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
-                printIDTMScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
-            }
-        }
-        printIDTMScript(1, "delay 1\n");
-        printIDTMScript(1, "exit\n");
-        printIDTMScript(1, "eof\n");
+        printIDTMScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+        
+        printIDTMScript(1, "sqshell -c persist exec TSID\n");
+        printIDTMScript(1, "exit $?\n");
 
         printScript(1, "\nidtmstart\n");
     }
@@ -355,52 +331,26 @@ sub genIDTMSrv {
 sub genDTM {
 
     printTMScript(1, "#!/bin/sh\n");
-    printTMScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printTMScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+ 
     printTMScript(1, "sqshell -a <<eof\n");
     printTMScript(1, "\n! Start DTM\n");
     printTMScript(1, "set DTM_RUN_MODE=2\n");
     printTMScript(1, "set SQ_AUDITSVC_READY=1\n");
     printTMScript(1, "set DTM_TLOG_PER_TM=1\n");
-    sqconfigdb::addDbClusterData("DTM_RUN_MODE", "2");
-    sqconfigdb::addDbClusterData("SQ_AUDITSVC_READY", "1");
-    sqconfigdb::addDbClusterData("DTM_TLOG_PER_TM", "1");
+    printTMScript(1, "persist exec DTM\n");
+    printTMScript(1, "delay 5\n");
     printTMScript(1, "exit\n");
     printTMScript(1, "eof\n");
-
-    for ($i=0; $i < $gdNumNodes; $i++) {
-        printTMScript(1, "\ntmp_node_status=`mktemp -t`\n");
-        printTMScript(1, "sqshell -c zone nid $i > \$tmp_node_status\n");
-        printTMScript(1, "let node_up_value=`grep 'Up' \$tmp_node_status | wc -l`\n");
-        printTMScript(1, "if [[ \$node_up_value == 1 ]]; then\n");
-
-        printTMScript(1, "sqshell -a <<eof\n");
-        if ($SQ_DTM_PERSISTENT_PROCESS == 1) {
-            printTMScript(1, "set {process \\\$TM$i } PERSIST_RETRIES=2,30\n");
-            sqconfigdb::addDbProcData('$TM'."$i", "PERSIST_RETRIES", "2,30");
-            printTMScript(1, "set {process \\\$TM$i } PERSIST_ZONES=$i\n");
-            sqconfigdb::addDbProcData('$TM'."$i", "PERSIST_ZONES", "$i");
-        }
-        printTMScript(1, "set {process \\\$TM$i} TMASE=TLOG$i\n");
-        sqconfigdb::addDbProcData('$TM'."$i", "TMASE", "TLOG$i");
-        printTMScript(1, "exec {type dtm, nowait, name \\\$TM$i, nid $i, out stdout_dtm_$i} tm");
-        if ($i == 0 || $i == ($gdNumNodes-1)) {
-            printTMScript(1, "\ndelay 5");
-        }
-        printTMScript(1, "exit\n");
-        printTMScript(1, "eof\n");
-
-        printTMScript(1, "\nfi\n");
-        printTMScript(1, "\nrm -f \$tmp_node_status\n");
-    }
-
+    
     genComponentTmWait("dtm", 10, 60);
+ 
     printTMScript(1, "sqshell -a <<eof\n");
-
     printTMScript(1, "! Generate DTM Event 1\n");
     printTMScript(1, "event {DTM} 1\n");
-
     printTMScript(1, "exit\n");
     printTMScript(1, "eof\n");
+
     printTMScript(1, "\n");
     printTMScript(1, "echo \"Checking whether the transaction service is ready.\"\n");
     printTMScript(1, "sqr_stat=0\n");
@@ -418,100 +368,8 @@ sub genDTM {
     printScript(1, "fi\n");
 }
 
-sub genLOBConfig {
-
-    # Generate sqconfig.db config for LOB.
-    # This allows the process startup daemon (pstartd)
-    # to start it up after a node failure.
-    for ($i=0; $i < $gdNumNodes; $i++) {
-        my $l_progname="mxlobsrvr";
-        my $l_procargs="";
-        my $l_procname="\$ZLOBSRV$i";
-        my $l_procname_config = sprintf('$ZLOBSRV%d', $i);
-        my $l_stdout="stdout_\$ZLOBSRV_$i";
-        sqconfigdb::addDbProcData("$l_procname_config", "PERSIST_RETRIES", "10,60");
-        sqconfigdb::addDbProcData("$l_procname_config", "PERSIST_ZONES", $i);
-        sqconfigdb::addDbPersistProc("$l_procname_config", $i, 1);
-        sqconfigdb::addDbProcDef( $ProcessType_Generic, $l_procname_config, $i, $l_progname, $l_stdout, $l_procargs);
-    }
-
-}
-
-sub genSSMPCommand {
-
-    my $l_nid                  = @_[0];
-    my $l_process_name_prefix  = @_[1];
-    my $l_program_name         = @_[2];
-    my $l_retries              = @_[3];
-
-    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_RETRIES=$l_retries,60\n",
-                            $l_process_name_prefix,
-                            $l_nid);
-    printRMSScript(2, $l_string);
-
-    my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", $l_process_name_prefix, $l_nid);
-    printRMSStopScript(2, $l_stopString);
-
-    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_ZONES=$l_nid,$l_nid \n",
-                            $l_process_name_prefix,
-                            $l_nid);
-    printRMSScript(2, $l_string);
-
-    my $l_string =  sprintf("\texec {type ssmp, nowait, nid $l_nid, name \\\$%s%d, out stdout_%s%d } %s\n",
-                            $l_process_name_prefix,
-                            $l_nid,
-                            $l_process_name_prefix,
-                            $l_nid,
-                            $l_program_name
-                            );
-    printRMSScript(2, $l_string);
-
-    my $l_procname = sprintf('$%s%d', $l_process_name_prefix, $l_nid);
-    my $l_stdout = sprintf('stdout_%s%d', $l_process_name_prefix, $l_nid);
-    sqconfigdb::addDbPersistProc("$l_procname", $l_nid, 1);
-    sqconfigdb::addDbProcDef( $ProcessType_SSMP, $l_procname, $l_nid, $l_program_name,
-                              $l_stdout, "" );
-}
-
-sub genSSCPCommand {
-
-    my $l_nid                  = @_[0];
-    my $l_process_name_prefix  = @_[1];
-    my $l_program_name         = @_[2];
-    my $l_retries              = @_[3];
-
-    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_RETRIES=$l_retries,60\n",
-                            $l_process_name_prefix,
-                            $l_nid);
-    printRMSScript(3, $l_string);
-
-    my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", $l_process_name_prefix, $l_nid);
-    printRMSStopScript(3, $l_stopString);
-
-    my $l_string =  sprintf("\tset {process \\\$%s%d } PERSIST_ZONES=$l_nid,$l_nid \n",
-                            $l_process_name_prefix,
-                            $l_nid);
-    printRMSScript(3, $l_string);
-
-    my $l_string =  sprintf("\texec {nowait, nid $l_nid, name \\\$%s%d, out stdout_%s%d } %s\n",
-                            $l_process_name_prefix,
-                            $l_nid,
-                            $l_process_name_prefix,
-                            $l_nid,
-                            $l_program_name
-                            );
-    printRMSScript(3, $l_string);
-
-    my $l_procname = sprintf('$%s%d', $l_process_name_prefix, $l_nid);
-    my $l_stdout = sprintf('stdout_%s%d', $l_process_name_prefix, $l_nid);
-    sqconfigdb::addDbPersistProc("$l_procname", $l_nid, 1);
-    sqconfigdb::addDbProcDef( $ProcessType_Generic, $l_procname, $l_nid, $l_program_name,
-                              $l_stdout, "" );
-}
-
 sub generateRMS {
 
-    $RMS_Retries = 10;
     genSQShellExit();
 
     #Print out run RMS script
@@ -521,30 +379,34 @@ sub generateRMS {
     
     #generate rmsstart and rmsstop scripts
     printRMSScript(0, "#!/bin/sh\n");
-    printRMSScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(0, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSScript(0, "\n# Start the RMS processes\n");
     printRMSScript(0, "sscpstart\n");
     printRMSScript(0, "ssmpstart\n");
 
     printRMSStopScript(0, "#!/bin/sh\n");
-    printRMSStopScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(0, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSStopScript(0, "\n# Stop the RMS processes\n");
     printRMSStopScript(0, "ssmpstop\n");
     printRMSStopScript(0, "sscpstop\n");
 
     #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
     printRMSScript(1, "#!/bin/sh\n");
-    printRMSScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSScript(2, "\n# Start the SSMP processes\n");
+    printRMSScript(2, "sqshell -c persist exec SSMP\n");
+    printRMSScript(2, "exit $?\n");
     printRMSScript(3, "\n# Start the SSCP processes\n");
+    printRMSScript(3, "sqshell -c persist exec SSCP\n");
+    printRMSScript(3, "exit $?\n");
 
     printRMSStopScript(1, "#!/bin/sh\n");
-    printRMSStopScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSStopScript(1, "sqshell -a << eof\n"); 
     printRMSStopScript(2, "\n!Stop the SSMP processes\n");
     printRMSStopScript(3, "\n!Stop the SSCP processes\n");
 
-    printRMSCheckScript(1, "-- SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSCheckScript(1, "-- Trafodion config/utility file generated @ ",&ctime(time),"\n");
     printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
     printRMSCheckScript(1, "cast('Node' as varchar(5)), \n");
     printRMSCheckScript(1, "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node, \n");
@@ -555,24 +417,11 @@ sub generateRMS {
 
         my $l_string =  sprintf("execute rms_check using 'RMS_CHECK=%d' ;\n", $i);
         printRMSCheckScript(1, $l_string);
-        my $l_string =  sprintf("\ntmp_node_status=`mktemp -t`\n");
-        printRMSScript(1, $l_string);
-        my $l_string =  sprintf("sqshell -c zone nid %d > \$tmp_node_status\n", $i);
-        printRMSScript(1, $l_string);
-        my $l_string =  sprintf("let node_up_value=`grep 'Up' \$tmp_node_status | wc -l`\n");
-        printRMSScript(1, $l_string);
-        my $l_string =  sprintf("if [[ \$node_up_value == 1 ]]; then\n");
-        printRMSScript(1, $l_string);
 
-        printRMSScript(1, "\tsqshell -a << eof\n");
-        genSSCPCommand($i, "ZSC", "mxsscp", $RMS_Retries);
-        genSSMPCommand($i, "ZSM", "mxssmp", $RMS_Retries);
-        printRMSScript(1, "\texit\neof\n");
-
-        my $l_string =  sprintf("fi\n");
-        printRMSScript(1, $l_string);
-        my $l_string =  sprintf("rm -f \$tmp_node_status\n");
-        printRMSScript(1, $l_string);
+        my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", "ZSM", $i);
+        printRMSStopScript(2, $l_stopString);
+        my $l_stopString = sprintf("kill {abort} \\\$%s%d\n", "ZSC", $i);
+        printRMSStopScript(3, $l_stopString);
     }
 
     printRMSStopScript(1, "delay 1\n");
@@ -787,7 +636,7 @@ sub printInitLinesAuxFiles {
     my $file_ptr  = @_[0];
 
     print $file_ptr "#!/bin/sh\n";
-    print $file_ptr "# SQ config/utility file generated @ ", &ctime(time), "\n";
+    print $file_ptr "# Trafodion config/utility file generated @ ", &ctime(time), "\n";
 }
 
 sub openFiles {
@@ -843,7 +692,6 @@ sub endGame {
 
     print "\n";
     print "Generated SQ startup script file: $coldscriptFileName\n";
-    print "Generated SQ cluster config file: $clusterconfFileName\n";
     print "Generated SQ Shell          file: $sqshell\n";
     print "Generated IDTM Startup      file: $startIDTM\n";
     print "Generated TM Startup        file: $startTM\n";
@@ -894,10 +742,9 @@ sub doInit {
 
     $infile=@ARGV[0];
     $scriptFileName=@ARGV[1];
-    $clusterconfFileName=@ARGV[2];
-    $g_HostName=$ARGV[3];
-    $g_FTFlag=$ARGV[4];
-    $g_PERFFlag=$ARGV[5];
+    $g_HostName=$ARGV[2];
+    $g_FTFlag=$ARGV[3];
+    $g_PERFFlag=$ARGV[4];
 
 
     $startIDTM="idtmstart";
@@ -959,10 +806,7 @@ while (<SRC>) {
 
 #printZoneList;
 
-
 genIDTMSrv();
-
-genLOBConfig();
 
 genDTM();
 

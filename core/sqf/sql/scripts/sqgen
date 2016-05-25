@@ -166,7 +166,6 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
 fi
 
 SQSCRIPT_FILE=./gomon
-SQCLUSTERCONF_FILE=$MPI_TMPDIR/cluster.conf
 SQESPENV_FILE=$MY_SQROOT/sql/scripts/tdm_arkesp.env
 
 echo
@@ -180,8 +179,8 @@ else
     ./genms > $SQETC_DIR/ms.env
     lv_retcode=$?
     if [[ $lv_retcode != 0 ]]; then 
-	echo "Error $lv_retcode while executing genms. Exiting..."
-	exit $lv_retcode
+        echo "Error $lv_retcode while executing genms. Exiting..."
+        exit $lv_retcode
     fi
 fi
 
@@ -195,7 +194,7 @@ sqlite3 -init createConfigDb sqconfig.db <<eof
 .quit
 eof
 
-./gensq.pl $SQCONFIG_FILE $SQSCRIPT_FILE $SQCLUSTERCONF_FILE `hostname` $FT_FLAG $PERF_FLAG
+./gensq.pl $SQCONFIG_FILE $SQSCRIPT_FILE `hostname` $FT_FLAG $PERF_FLAG
 sq_stat=$?
 if [[ $sq_stat != 0 ]]; then 
     exit $sq_stat;
@@ -231,16 +230,9 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo
     echo "Copying the generated files to all the nodes in the cluster"
     echo
-    echo "Copying $SQCLUSTERCONF_FILE to $MPI_TMPDIR of all the nodes"
-    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR"
-    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR
-
-
-    echo
     echo "Copying $SQETC_DIR/ms.env to $SQETC_DIR of all the nodes"
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR "
     $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR
-
 
     echo "Copying $SQETC_DIR/traf_coprocessor.properties to $SQETC_DIR of all the nodes"
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/traf_coprocessor.properties   $SQETC_DIR "
@@ -263,10 +255,8 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo
     echo "Copying rest of the generated files to $PWD"
 
-#    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
-#    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
-    echo "$PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold shell.env mon.env $PWD "
-    $PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold shell.env mon.env $PWD
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
 
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "
     $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD

@@ -20,6 +20,5 @@
 #
 # @@@ END COPYRIGHT @@@
 
-$MY_SQROOT/sql/scripts/percomstart lob zlobsrv mxlobsrvr
-
+sqshell -c persist exec LOB
 exit $?
