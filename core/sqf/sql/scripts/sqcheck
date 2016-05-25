@@ -109,7 +109,6 @@ function fillArray {
 
 function getDcsInfo {
  dcsznode=/$USER/dcs/master
- jpscmd=$JAVA_HOME/bin/jps
 
  if [ -d $DCS_INSTALL_DIR ];then
 
@@ -128,13 +127,8 @@ function getDcsInfo {
    fi
 
 ### Check if there are any DcsMaster and DcsServer's that are started 
-   if [ -e $SQ_PDSH ]; then
-     actual_dcsmaster_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsMaster |wc -l` 
-     actual_dcsserver_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep DcsServer |wc -l` 
-   else
-     actual_dcsmaster_cnt=`$jpscmd |grep DcsMaster |wc -l`
-     actual_dcsserver_cnt=`$jpscmd |grep DcsServer |wc -l`
-   fi
+   actual_dcsmaster_cnt=`cat $tmpjps |grep DcsMaster |wc -l` 
+   actual_dcsserver_cnt=`cat $tmpjps |grep DcsServer |wc -l` 
 
    if ( [ "$cfg_dcsserver_cnt" '!=' "$actual_dcsserver_cnt" ] ); then
      let down_dcsserver_cnt=cfg_dcsserver_cnt-actual_dcsserver_cnt
@@ -151,16 +145,11 @@ function getDcsInfo {
 }
 
 function getRestInfo {
- jpscmd=$JAVA_HOME/bin/jps
 
  if [ -d $REST_INSTALL_DIR ];then
 
 ### Check if there are any DcsMaster and DcsServer's that are started
-   if [ -e $SQ_PDSH ]; then
-     actual_restserver_cnt=`$SQ_PDSH $MY_NODES $jpscmd |grep TrafodionRest |wc -l`
-   else
-     actual_restserver_cnt=`$jpscmd |grep TrafodionRest |wc -l`
-   fi
+   actual_restserver_cnt=`cat $tmpjps |grep TrafodionRest |wc -l`
    let cfg_restserver_cnt=actual_restserver_cnt
    if ( [ "$cfg_restserver_cnt" '!=' "$actual_restserver_cnt" ] ); then
      let down_restserver_cnt=cfg_restserver_cnt-actual_restserver_cnt
@@ -171,6 +160,8 @@ function getRestInfo {
 
 }
 
+jpscmd=$JAVA_HOME/bin/jps
+tmpjps=/tmp/tmpjps-$USER.log
 begin_time_seconds=$(date +%s)
 
 declare -i max_checks
@@ -370,6 +361,13 @@ fi
           fi
       done
   fi
+  
+  #Get the list of DcsMaster, DcsServer and TrafodionRest
+  if [ -e $SQ_PDSH ]; then
+     $SQ_PDSH $MY_NODES $jpscmd |egrep 'DcsMaster|DcsServer|TrafodionRest' > $tmpjps
+  else
+     $jpscmd |egrep 'DcsMaster|DcsServer|TrafodionRest' > $tmpjps
+  fi
 
   #TrafodionRestServer
   getRestInfo
@@ -382,6 +380,9 @@ fi
   else
     act_mxo_down_cnt=''
   fi 
+
+  #Cleanup the tmpjps file
+  rm -f $tmpjps
 
   #RMS
   let act_rms_cnt=`< $sq_tmp_ps egrep -a -i ' mxssmp| mxsscp' | wc -l`
