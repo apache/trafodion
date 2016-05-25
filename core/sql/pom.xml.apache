@@ -29,7 +29,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <hadoop.version>2.6.0</hadoop.version>
-    <hbase-flavor-id>apache1_0_2</hbase-flavor-id>
+    <hbase-flavor-id>${env.HBVER}</hbase-flavor-id>
     <hbase.version>${env.HBASE_DEP_VER_APACHE}</hbase.version>
     <hbase-trx.id>${env.HBASE_TRX_ID_APACHE}</hbase-trx.id>
     <hive.version>${env.HIVE_DEP_VER_APACHE}</hive.version>
@@ -123,9 +123,9 @@
 
   <groupId>org.trafodion.sql</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>trafodion-sql-apache1_0_2</artifactId>
+  <artifactId>trafodion-sql-${env.HBVER}</artifactId>
   <version>${env.TRAFODION_VER}</version>
-  <name>trafodion-sql-apache1_0_2</name>
+  <name>trafodion-sql-${env.HBVER}</name>
   <description>Java code for SQL engine in Trafodion</description>
 
 </project>

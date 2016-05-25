@@ -3484,7 +3484,7 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: start");
     RegionCoprocessorEnvironment tmp_env = 
       (RegionCoprocessorEnvironment)env;
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1
     this.m_Region = (HRegion)
        tmp_env.getRegion();
 #else
@@ -4005,7 +4005,7 @@ CoprocessorService, Coprocessor {
 
     try {
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery:  Flushing cache in startRegionAfterRecovery " + m_Region.getRegionInfo().getRegionNameAsString());
-#ifdef HDP2.3
+#ifdef HDP2.3 HBASE1.1
           m_Region.flush(true);
 #else
           m_Region.flushcache();

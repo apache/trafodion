@@ -21,7 +21,7 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
-BLD_HBASE_APACHE_TRX_JARNAME     =hbase-trx-apache1_0_2-$(TRAFODION_VER).jar
+BLD_HBASE_APACHE_TRX_JARNAME     =hbase-trx-$(HBVER)-$(TRAFODION_VER).jar
 BLD_HBASE_CDH_TRX_JARNAME        =hbase-trx-cdh5_4-$(TRAFODION_VER).jar
 BLD_HBASE_MAPR_TRX_JARNAME       =hbase-trx-mapr4_0-$(TRAFODION_VER).jar
 BLD_HBASE_HDP_TRX_JARNAME        =hbase-trx-hdp2_3-$(TRAFODION_VER).jar
@@ -62,7 +62,7 @@ jdk_1_7_hdp: build_chk_hdp
 
 jdk_1_7_apache: build_chk_apache
 	$(REINSTATE_ORIG)
-	$(UNCOMMENT_STRING) APACHE
+	$(UNCOMMENT_STRING) $(VANILLA_HBASE_VER)
 	$(MAKE) build_chk_apache
 	echo "$(MAVEN) package -DskipTests"
 	echo "### For full Maven output, see file build_trx.log"

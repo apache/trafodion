@@ -99,7 +99,7 @@ ifndefpattern = "#ifndef"
 
   if($0 ~ ifdefpattern)
    {
-     if( $2 ~ distro)
+     if( $2 ~ distro || $3 ~ distro)
      {
        printline = 0
        matchBegun = 1
@@ -112,7 +112,7 @@ ifndefpattern = "#ifndef"
    }
  if($0 ~ ifndefpattern)
   {
-    if($2 ~ distro)
+    if($2 ~ distro || $3 ~ distro)
     {
       printline = 0
       unmatchBegun = 1
