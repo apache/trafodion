@@ -210,10 +210,6 @@ let sq_up=0
 if [[ -z $SQSCRIPTS_DIR ]]; then
     SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
 fi
-SQSCRIPT_FILE="$SQSCRIPTS_DIR/gomon.cold"
-STARTTM_FILE="$SQSCRIPTS_DIR/tmstart"
-STARTSSMP_FILE="$SQSCRIPTS_DIR/ssmpstart"
-STARTSSCP_FILE="$SQSCRIPTS_DIR/sscpstart"
 
 
 ### CONFIGURED NODEs
@@ -253,17 +249,17 @@ rm -f $sq_tmp_lnode_dn
 rm -f $sq_tmp_pnode_dn
 rm -f $sq_tmp_node_info
 
-### CONFIGURED DTMs
-let cfg_dtm_cnt=`grep -i 'type dtm,' $STARTTM_FILE | wc -l`
-sq_tmp_dtms_names=`mktemp -t`
+### CONFIGURED DTMs (based on logical nodes configured)
+let cfg_dtm_cnt=cfg_lnode_cnt
 let num_dtms=0
-grep -i 'type dtm,' $STARTTM_FILE | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_dtms_names
-for dtms in `cat $sq_tmp_dtms_names`; do
-    cfg_dtms[num_dtms]=$dtms
+while [[ $num_dtms -lt $cfg_dtm_cnt ]];
+do
+    dtm_name=`echo \\$TM$num_dtms`
+    cfg_dtms[num_dtms]=$dtm_name
     let ++num_dtms
 done
+# Trace print
 #echo ${cfg_dtms[*]}
-rm -f $sq_tmp_dtms_names
 
 ### CONFIGURED MXOSRVR
 if [ -z ${DCS_INSTALL_DIR} ]; then
@@ -277,21 +273,32 @@ fi
 
 ### CONFIGURED RMSs 
 if [[ $SQ_START_RMS == "1" ]]; then
-    let cfg_sscp_cnt=`grep -i 'exec ' $STARTSSCP_FILE | egrep -i ' mxsscp' | wc -l`
-    let cfg_ssmp_cnt=`grep -i 'exec ' $STARTSSMP_FILE | egrep -i ' mxssmp' | wc -l`
+    let cfg_sscp_cnt=cfg_lnode_cnt
+    let cfg_ssmp_cnt=cfg_lnode_cnt
     let cfg_rms_cnt=$cfg_sscp_cnt+$cfg_ssmp_cnt
     sq_tmp_rms_names=`mktemp -t`
+    let num_sscp=0
+    let num_ssmp=0
     let num_rms=0
-    grep -i 'exec ' $STARTSSCP_FILE | egrep -i 'mxsscp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_rms_names
-    grep -i 'exec ' $STARTSSMP_FILE | egrep -i 'mxssmp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' >> $sq_tmp_rms_names
-    for rms in `cat $sq_tmp_rms_names`; do
-        cfg_rms[num_rms]=$rms
+    while [[ $num_sscp -lt $cfg_lnode_cnt ]];
+    do
+        rms_name=`echo \\$ZSC$num_sscp`
+        cfg_rms[num_rms]=$rms_name
+        let ++num_sscp
         let ++num_rms
     done
-    rm -f $sq_tmp_rms_names
+    while [[ $num_ssmp -lt $cfg_lnode_cnt ]];
+    do
+        rms_name=`echo \\$ZSM$num_ssmp`
+        cfg_rms[num_rms]=$rms_name
+        let ++num_ssmp
+        let ++num_rms
+    done
 else
     let cfg_rms_cnt=0
 fi
+# Trace print
+#echo ${cfg_rms[*]}
 
 sq_tmp_ps=`mktemp -t`
 if [[ $? != 0 ]]; then

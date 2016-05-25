@@ -2987,103 +2987,6 @@ void normalize_slashes (char *token)
     }
 }
 
-void changeNodeName (char *current_name, char *new_name)
-{
-  
-    if ((current_name == NULL) || (new_name == NULL))
-    {
-         printf( "[%s] Error: Invalid node name while attempting to change node name.\n", MyName );           
-         return;
-    }
-    int count;
-    MPI_Status status;
-    CPhysicalNode  *physicalNode;
-    PhysicalNodeNameMap_t::iterator it;
-    pair<PhysicalNodeNameMap_t::iterator, bool> pnmit;
-
-    // Look up name
-    it = PhysicalNodeMap.find( current_name );
-
-    if (it != PhysicalNodeMap.end())
-    {
-        physicalNode = it->second;
-        if (physicalNode)
-        {
-           CPhysicalNode  *newPhysicalNode = new CPhysicalNode( new_name, physicalNode->GetState() );
-           if (newPhysicalNode == NULL)
-          {
-               printf( "[%s] Error: Internal error with configuration while changing node name.\n", MyName );           
-              return;
-           }
-           //remove and read
-           PhysicalNodeMap.erase(current_name);
-           pnmit = PhysicalNodeMap.insert( PhysicalNodeNameMap_t::value_type 
-                                            ( newPhysicalNode->GetName(), newPhysicalNode ));
-           if (pnmit.second == false)
-           {   // Already had an entry with the given key value.  
-                printf( "[%s] Error: Internal error while changing node name. Node name exists, node name=%s\n", MyName, new_name );
-                return;
-           }
-        }
-        else
-        {
-           printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName,new_name );           
-           return;
-        }
-    }
-    else
-    {
-        printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName, new_name );           
-        return;
-    }
-    
-    // change in another local location
-    int pnid = ClusterConfig.GetPNid (current_name); 
-    CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (pnid); 
-    if (pConfig != NULL) 
-        pConfig->SetName(new_name);
-      
-     //and..... in another local location
-     for( int i=0; i<NumNodes; i++)
-     {
-        if ( strcmp (PNode[i], current_name) == 0)
-           strcpy(PNode[i],new_name);
-     }       
-    
-     // now change it in the monitors
-     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
-     {   // Could not acquire a message buffer
-         printf ("[%s] Unable to acquire message buffer.\n", MyName);
-         return;
-     }
-
-     msg->type = MsgType_Service;
-     msg->noreply = false;
-     msg->reply_tag = REPLY_TAG;
-     msg->u.request.type = ReqType_NodeName;
-     msg->u.request.u.nodename.nid = MyNid;
-     msg->u.request.u.nodename.pid = MyPid;
-     strcpy (msg->u.request.u.nodename.new_name, new_name);
-     strcpy (msg->u.request.u.nodename.current_name, current_name);
-  
-     gp_local_mon_io->send_recv( msg );
-     count = sizeof( *msg );
-     status.MPI_TAG = msg->reply_tag;
- 
-     if ((status.MPI_TAG == REPLY_TAG) &&
-            (count == sizeof (struct message_def)))
-     {
-        if ((msg->type == MsgType_Service) &&
-            (msg->u.reply.type == ReplyType_NodeName))
-            {
-                if (msg->u.reply.u.node_info.return_code != MPI_SUCCESS)
-                   printf ("[%s] Unable to change node name in monitors.\n", MyName);
-            }
-     }
-     else
-       printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
-}
-
 void node_add( char *node_name, int first_core, int last_core, int processors, int roles )
 {
     const char method_name[] = "node_add";
@@ -3199,6 +3102,108 @@ void node_add( char *node_name, int first_core, int last_core, int processors, i
 
     if (gp_local_mon_io)
         gp_local_mon_io->release_msg(msg);
+}
+
+void node_change_name(char *current_name, char *new_name)
+{
+    const char method_name[] = "node_change_name";
+  
+    if ((current_name == NULL) || (new_name == NULL))
+    {
+         printf( "[%s] Error: Invalid node name while attempting to change node name.\n", MyName );           
+         return;
+    }
+    int count;
+    MPI_Status status;
+    CPhysicalNode  *physicalNode;
+    PhysicalNodeNameMap_t::iterator it;
+    pair<PhysicalNodeNameMap_t::iterator, bool> pnmit;
+
+    // Look up name
+    it = PhysicalNodeMap.find( current_name );
+
+    if (it != PhysicalNodeMap.end())
+    {
+        physicalNode = it->second;
+        if (physicalNode)
+        {
+           CPhysicalNode  *newPhysicalNode = new CPhysicalNode( new_name, physicalNode->GetState() );
+           if (newPhysicalNode == NULL)
+          {
+               printf( "[%s] Error: Internal error with configuration while changing node name.\n", MyName );           
+              return;
+           }
+           //remove and read
+           PhysicalNodeMap.erase(current_name);
+           pnmit = PhysicalNodeMap.insert( PhysicalNodeNameMap_t::value_type 
+                                            ( newPhysicalNode->GetName(), newPhysicalNode ));
+           if (pnmit.second == false)
+           {   // Already had an entry with the given key value.  
+                printf( "[%s] Error: Internal error while changing node name. Node name exists, node name=%s\n", MyName, new_name );
+                return;
+           }
+        }
+        else
+        {
+           printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName,new_name );           
+           return;
+        }
+    }
+    else
+    {
+        printf( "[%s] Error: Internal error while changing node name.  Node name=%s\n", MyName, new_name );           
+        return;
+    }
+    
+    // change in another local location
+    int pnid = ClusterConfig.GetPNid (current_name); 
+    CPNodeConfig *pConfig = ClusterConfig.GetPNodeConfig (pnid); 
+    if (pConfig != NULL) 
+        pConfig->SetName(new_name);
+      
+     //and..... in another local location
+     for( int i=0; i<NumNodes; i++)
+     {
+        if ( strcmp (PNode[i], current_name) == 0)
+           strcpy(PNode[i],new_name);
+     }       
+    
+     // now change it in the monitors
+     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+     {   // Could not acquire a message buffer
+         printf ("[%s] Unable to acquire message buffer.\n", MyName);
+         return;
+     }
+
+     if ( trace_settings & TRACE_SHELL_CMD )
+         trace_printf ("%s@%d [%s] sending node change name message.\n",
+                       method_name, __LINE__, MyName);
+
+     msg->type = MsgType_Service;
+     msg->noreply = false;
+     msg->reply_tag = REPLY_TAG;
+     msg->u.request.type = ReqType_NodeName;
+     msg->u.request.u.nodename.nid = MyNid;
+     msg->u.request.u.nodename.pid = MyPid;
+     strcpy (msg->u.request.u.nodename.new_name, new_name);
+     strcpy (msg->u.request.u.nodename.current_name, current_name);
+  
+     gp_local_mon_io->send_recv( msg );
+     count = sizeof( *msg );
+     status.MPI_TAG = msg->reply_tag;
+ 
+     if ((status.MPI_TAG == REPLY_TAG) &&
+            (count == sizeof (struct message_def)))
+     {
+        if ((msg->type == MsgType_Service) &&
+            (msg->u.reply.type == ReplyType_NodeName))
+            {
+                if (msg->u.reply.u.node_info.return_code != MPI_SUCCESS)
+                   printf ("[%s] Unable to change node name in monitors.\n", MyName);
+            }
+     }
+     else
+       printf ("[%s] Invalid Message/Reply type for Node Name Change request.\n", MyName);
 }
 
 void node_config( int nid, char *node_name )
@@ -5750,6 +5755,7 @@ void help_cmd (void)
     printf ("[%s] -- node delete <nid>|<node-name>\n", MyName);
     printf ("[%s] -- node down <nid> [, <reason-string>]\n", MyName);
     printf ("[%s] -- node info [<nid>]\n", MyName);
+    printf ("[%s] -- node name <old-node-name> <new-node-name>\n", MyName);
     printf ("[%s] -- node up <name>\n", MyName);
     printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
     printf ("[%s] -- persist config [{keys}|<persist-process-prefix>]\n", MyName);
@@ -5999,6 +6005,7 @@ void node_cmd (char *cmd_tail)
     int nid;
     char token[MAX_TOKEN];
     char delimiter;
+    char *ptr = NULL;
     char *cmd = cmd_tail;
     char msgString[MAX_BUFFER] = { 0 };
 
@@ -6024,14 +6031,13 @@ void node_cmd (char *cmd_tail)
                 }
 
                 pnodeConfig = lnodeConfig->GetPNodeConfig();
-                if ( lnodeConfig )
+                if ( pnodeConfig )
                 {
-                    printf( "[%s] Node[%d]=%s, %s, %s\n"
+                    printf( "[%s] Node[%d]=%s, %s\n"
                           , MyName
-                          , i
+                          , i 
                           , pnodeConfig->GetName()
                           , ZoneTypeString( lnodeConfig->GetZoneType() )
-                          , (NodeState[i]?"UP":"DOWN")
                           );
                 }
             }
@@ -6073,6 +6079,18 @@ void node_cmd (char *cmd_tail)
             else
             {
                 printf( EnvNotStarted, MyName );
+            }
+        }
+        else if (strcmp (token, "name") == 0)
+        {
+            char *ptr2 = get_token (ptr, token, &delimiter);
+            if (ptr2 && *ptr2)
+            {
+                node_change_name(token, ptr2);
+            }
+            else
+            {
+                printf ("[%s] Invalid node name\n", MyName);
             }
         }
         else if (strcmp( token, "config" ) == 0)

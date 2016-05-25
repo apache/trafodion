@@ -34,7 +34,7 @@ function Usage
     echo "-n[<name>]        Displays all [or specific] node configuration values"
     echo "-p[<proc>]        Displays specific process registry values"
     echo "-q                Displays persistent processes"
-    echo "-r                Displays process defintions"
+    echo "-r                Displays process definitions"
     echo "-s[<name>]        Displays all [or specific] spare node specific configuration values"
     echo "-u                Displays unique strings"
     echo "-x[<name>]        Displays all [or specific] physical node configuration values"

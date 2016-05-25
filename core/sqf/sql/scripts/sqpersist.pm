@@ -296,6 +296,10 @@ sub parseStatement {
                         $s =~ s:$1::;
                         $s =~ s:\+::;
                     }
+                    elsif ($s =~ /(%nid)/) {
+                        $g_stdout = $g_stdout . $1;
+                        $s =~ s:$1::;
+                    }
                     $g_opts |= 0x10;
                     push(@g_dbList, $g_prefix . $k, $g_stdout);
                     parseEnd($s);
