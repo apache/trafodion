@@ -529,8 +529,19 @@ Int32 getMissingCols (const NABitVector &map1, const NABitVector &map2, NABitVec
 // done without a timeout, trading off possible speed improvements
 // by using a smaller cache size.
 //
-// Note that when we move to HBase 1.1, with its heartbeat protocol,
-// this time-out problem goes away and we can remove these CQDs.
+// Another issue is that it's been observed that time-outs also
+// depend on system load. Through experimentation we've discovered
+// that a value of 50 works well in loaded scenarios, assuming the
+// table is not too large. So, we use a maximum of the workable
+// value computed above and 50.
+//
+// Another note: If the user has already set HBASE_NUM_CACHE_ROWS_MAX,
+// then we don't do anything here. We respect the user's choices
+// instead.
+//
+// We had hoped that HBase 1.1, with its heartbeat protocol, would
+// solve this time-out problem for good. But early testing seems
+// to suggest that this is not the case.
 //
 // Input:
 // sampleRatio -- Percentage of rows being sampled.
@@ -546,10 +557,11 @@ NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
   Int64 workableCacheSize = (Int64)(sampleRatio * calibrationFactor);
   if (workableCacheSize < 1)
     workableCacheSize = 1;  // can't go below 1 unfortunately
+  else if (workableCacheSize > 50)
+    workableCacheSize = 50; 
 
-  Int32 max = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
-  if ((workableCacheSize < 10000) && // don't bother if 10000 works
-      (max == 10000))  // don't do it if user has already set this CQD
+  Int32 maxDefault = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
+  if (maxDefault == 10000) // don't do it if user has already set this CQD
     {
       char temp1[40];  // way more space than needed, but it's safe
       Lng32 wcs = (Lng32)workableCacheSize;
