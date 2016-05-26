@@ -33,6 +33,7 @@ source $TRAF_CONFIG
 function majorErrorFound {
    if [[ "$errorFound" == "1" ]]; then
       cat $ERROR_LOG
+      cat /etc/trafodion/trafodion_config
       echo
       exit -1
    fi
@@ -413,7 +414,13 @@ else
          #Checking if using 1.7.0_n
          if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
             if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then
-               error="true"
+               #If Java is **less** than than 1.7.0_65 the next command will fail.
+               #Install will fail anyways if less than 1.7.0_65
+               #Will not fail if Java is 1.7.0_100 or greater
+               #Temporary fix to support Java 7 upgrades greater than 100
+               if [[ "${THIS_JVM_VER:20:3}" -lt $JAVA_65 ]]; then
+                  error="true"
+               fi
             fi
          fi
 
@@ -429,7 +436,7 @@ else
     hadoopPath="$HADOOP_PATH"
     hadoopBinPath="$HADOOP_BIN_PATH"
 
-    export PATH="$PATH:$JAVA_HOME/bin"
+    export PATH="$JAVA_HOME/bin:$PATH"
     sudo chmod 777 $TRAF_CONFIG
     sed -i '/PATH\=/d' $TRAF_CONFIG
     echo "export PATH=\"$PATH\"" >>$TRAF_CONFIG
@@ -602,6 +609,10 @@ function setPath {
 
 export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
 
+if [ ! -z $HIVE_HOME ]; then
+   export PATH=$PATH:$HIVE_HOME/bin
+fi
+
 sudo chmod 777 $TRAF_CONFIG
 sed -i '/PATH\=/d' $TRAF_CONFIG
 echo "export PATH=\"$PATH\"" >> $TRAF_CONFIG
@@ -690,8 +701,8 @@ function checkClouderaVersion {
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
    #Check that Cloudera 5.2 or 5.3 are not installed.
-   if [[ "$CDH_5_4_SUPPORT" == "Y" ]] || [[ "$CDH_5_5_SUPPORT" == "Y" ]]; then
-      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-6].*)
+   if [[ "$CDH_5_4_SUPPORT" == "Y" ]]; then
+      nameOfVersion=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.4.*)
       #Check that Cloudera 5.[n>4].* is not installed.
       if [[ -z $nameOfVersion ]]; then
          versionInstalled=$(ssh -q -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[5-9].[7-9].* | wc -l)
@@ -905,19 +916,36 @@ fi
 
 function checkHadoopSupport {
 
-if [[ -z $TRAF_BUILD ]] || [[ ! -e $TRAF_BUILD ]] ; then
+if [[ "$ONE_TAR_INSTALL" == "N" ]] || [[ -z "$ONE_TAR_INSTALL" ]] ; then
    TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_.*server")
    tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
    TRAF_BUILD_PATH=$LOCAL_WORKDIR/$TRAF_BUILD
+   install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
+
 else
-   TRAF_BUILD_PATH=$TRAF_BUILD
+   TRAF_BUILD_PATH=$TRAF_PACKAGE
+   install_features_path=$(tar -tf $TRAF_PACKAGE | grep "install_features")
+
 fi
 
-install_features_path=$(tar -tf $TRAF_BUILD_PATH | grep "install_features")
 
 if [[ ! -z $install_features_path ]]; then
-   tar -xzf $TRAF_BUILD_PATH $install_features_path
+   if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
+      tar -xzf $TRAF_BUILD_PATH $install_features_path
+      if [[ $? -ne "0" ]]; then
+         echo "***ERROR: Error with untar of $TRAF_BUILD_PATH"
+         exit -1
+      fi
+   else
+      tar -xzf $TRAF_PACKAGE $install_features_path
+      if [[ $? -ne "0" ]]; then
+         echo "***ERROR: Error with untar of $TRAF_BUILD_PATH"
+         exit -1
+      fi           
+   fi
    source $install_features_path
+   cat $install_features_path
+
    sudo chmod 777 $TRAF_CONFIG
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG

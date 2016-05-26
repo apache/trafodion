@@ -32,20 +32,20 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.StatementEventListener;
 
-public class HPT4PooledConnection implements javax.sql.PooledConnection {
+public class TrafT4PooledConnection implements javax.sql.PooledConnection {
 
 	public void addConnectionEventListener(ConnectionEventListener listener) {
 		try {
 			if (connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, listener);
-				connection_.props_.t4Logger_.logp(Level.FINE, "HPT4PooledConnecton", "addConnectionEventListener", "",
+				connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "addConnectionEventListener", "",
 						p);
 			}
 			if (connection_ != null && connection_.props_.getLogWriter() != null) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, listener);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4PooledConnection");
+				lr.setSourceClassName("TrafT4PooledConnection");
 				lr.setSourceMethodName("addConnectionEventListener");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -63,13 +63,13 @@ public class HPT4PooledConnection implements javax.sql.PooledConnection {
 	public void close() throws SQLException {
 		if (connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "HPT4PooledConnecton", "close", "", p);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "close", "", p);
 		}
 		if (connection_ != null && connection_.props_.getLogWriter() != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
-			lr.setSourceClassName("HPT4PooledConnection");
+			lr.setSourceClassName("TrafT4PooledConnection");
 			lr.setSourceMethodName("close");
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
@@ -90,20 +90,20 @@ public class HPT4PooledConnection implements javax.sql.PooledConnection {
 	public Connection getConnection() throws SQLException {
 		if (connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
-			connection_.props_.t4Logger_.logp(Level.FINE, "HPT4PooledConnecton", "getConnection", "", p);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "getConnection", "", p);
 		}
 		if (connection_ != null && connection_.props_.getLogWriter() != null) {
 			LogRecord lr = new LogRecord(Level.FINE, "");
 			Object p[] = T4LoggingUtilities.makeParams(connection_.props_);
 			lr.setParameters(p);
-			lr.setSourceClassName("HPT4PooledConnection");
+			lr.setSourceClassName("TrafT4PooledConnection");
 			lr.setSourceMethodName("getConnection");
 			T4LogFormatter lf = new T4LogFormatter();
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
 		if (isClosed_ || connection_ == null) {
-			throw HPT4Messages.createSQLException(connection_.props_, locale_, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(connection_.props_, locale_, "invalid_connection", null);
 		}
 		if (LogicalConnectionInUse_) {
 			connection_.close(false, false);
@@ -117,14 +117,14 @@ public class HPT4PooledConnection implements javax.sql.PooledConnection {
 		try {
 			if (connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, listener);
-				connection_.props_.t4Logger_.logp(Level.FINE, "HPT4PooledConnecton", "removeConnectionEventListener",
+				connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "removeConnectionEventListener",
 						"", p);
 			}
 			if (connection_ != null && connection_.props_.getLogWriter() != null) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, listener);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4PooledConnection");
+				lr.setSourceClassName("TrafT4PooledConnection");
 				lr.setSourceMethodName("removeConnectionEventListener");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -181,7 +181,7 @@ public class HPT4PooledConnection implements javax.sql.PooledConnection {
 	}
 
 	// Constructor
-	HPT4PooledConnection(HPT4ConnectionPoolDataSource pds, T4Properties t4props) throws SQLException {
+	TrafT4PooledConnection(TrafT4ConnectionPoolDataSource pds, T4Properties t4props) throws SQLException {
 		super();
 
 		T4Properties t4LocalProps;
@@ -199,13 +199,13 @@ public class HPT4PooledConnection implements javax.sql.PooledConnection {
 		try {
 			if (connection_ != null && connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, pds, t4props);
-				connection_.props_.t4Logger_.logp(Level.FINE, "HPT4PooledConnecton", "", "", p);
+				connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PooledConnecton", "", "", p);
 			}
 			if (connection_ != null && connection_.props_.getLogWriter() != null) {
 				LogRecord lr = new LogRecord(Level.FINE, "");
 				Object p[] = T4LoggingUtilities.makeParams(connection_.props_, pds, t4props);
 				lr.setParameters(p);
-				lr.setSourceClassName("HPT4PooledConnection");
+				lr.setSourceClassName("TrafT4PooledConnection");
 				lr.setSourceMethodName("");
 				T4LogFormatter lf = new T4LogFormatter();
 				String temp = lf.format(lr);
@@ -222,7 +222,7 @@ public class HPT4PooledConnection implements javax.sql.PooledConnection {
 
 	private LinkedList listenerList_;
 	private boolean isClosed_ = false;
-	private HPT4ConnectionPoolDataSource pds_;
+	private TrafT4ConnectionPoolDataSource pds_;
 	private TrafT4Connection connection_;
 	private Locale locale_;
 	private boolean LogicalConnectionInUse_ = false;

@@ -62,7 +62,7 @@ final class NCSAddress extends Address {
 		m_locale = locale;
 
 		if (addr == null) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_null_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_null_error", null);
 			throw se;
 		}
 
@@ -75,16 +75,16 @@ final class NCSAddress extends Address {
 			//
 			m_type = OS_type;
 			if (addr.endsWith(ODBCServerSuffix) == false) {
-				SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
-				SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "odbc_server_suffix_error",
+				SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
+				SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "odbc_server_suffix_error",
 						ODBCServerSuffix);
 
 				se.setNextException(se2);
 				throw se;
 			}
 			if (addr.length() < minODBCServerAddrLen) {
-				SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
-				SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "min_address_length_error",
+				SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
+				SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "min_address_length_error",
 						null);
 
 				se.setNextException(se2);
@@ -100,8 +100,8 @@ final class NCSAddress extends Address {
 				interpretAddress(t4props, locale, addr);
 
 			if ((m_machineName == null && m_ipAddress == null) || m_processName == null || m_portNumber == null) {
-				SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
-				SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "address_format_1_error", null);
+				SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
+				SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_format_1_error", null);
 
 				se.setNextException(se2);
 				throw se;
@@ -125,8 +125,8 @@ final class NCSAddress extends Address {
 		int index2 = addr.lastIndexOf(".", index3);
 
 		if ((-1 < index1 && index1 < index2 && index2 < index3 && index3 < addr.length()) == false) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "address_format_1_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_format_1_error", null);
 
 			se.setNextException(se2);
 			throw se;
@@ -162,8 +162,8 @@ final class NCSAddress extends Address {
 		int index2 = addr.indexOf(".", 0);
 
 		if ((/*-1 < index1 && index1 < index2 &&*/ index2 < index4 && index4 < index3 && index3 < addr.length()) == false) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
-			SQLException se2 = HPT4Messages.createSQLException(m_t4props, m_locale, "address_format_1_error", null);
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_parsing_error", addr);
+			SQLException se2 = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_format_1_error", null);
 
 			se.setNextException(se2);
 			throw se;

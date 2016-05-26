@@ -206,12 +206,12 @@ Options:
     --status      Returns status of authentication enablement
 ```
 
-[cols="30%l,90%",options="header"]
+[cols="30%,90%",options="header"]
 |===
 | Option | Description
-| --file | If specified, then `filename` is copied to `$MY_SQROOT/`. Users working in their own private environment can refer to a
+| `--file` | If specified, then `filename` is copied to `$MY_SQROOT/`. Users working in their own private environment can refer to a
 site-specific configuration file from a central location.
-| --on   | `traf_authentication_setup` invokes <<enable-security-ldapconfigcheck,ldapconfigcheck>> to verify the configuration file is
+| `--on`   | `traf_authentication_setup` invokes <<enable-security-ldapconfigcheck,ldapconfigcheck>> to verify the configuration file is
 syntactically correct. It also invokes <<enable-security-ldapcheck,ldapcheck>> to verify that a connection can be made to an LDAP server. +
  +
 If both checks pass, the script sets the environment variable `TRAFODION_ENABLE_AUTHENTICATION` to `YES` in the file `$MY_SQROOT/sqenvcom.sh`,
@@ -221,15 +221,15 @@ The last step is to enable authorization by creating privilege-related metadata 
 The list of privilege-related metadata tables, users, roles, and component privileges are logged in `$MY_SQROOT/logs/authEnable.log`. +
  +
 Specifying `--on` requires that a valid `.traf_authentication_config` file exists and the {project-name} metadata initialized.
-| --off | If specified, then `traf_authentication_setup` sets the environment variable `TRAFODION_ENABLE_AUTHENTICATION` to `NO` in
+| `--off` | If specified, then `traf_authentication_setup` sets the environment variable `TRAFODION_ENABLE_AUTHENTICATION` to `NO` in
 `$MY_SQROOT/sqenvcom.sh` and propagates the file to all the nodes in the cluster. +
  +
 The last step is to disable authorization by removing any privilege-related metadata and permissions with a call to the database.
 The results of this operation is logged in `$MY_SQROOT/logs/authEnable.log`.
-| --setup | Use this option if the {project-name} metadata has not been initialized. This option enables authentication but does not call the database
+| `--setup` | Use this option if the {project-name} metadata has not been initialized. This option enables authentication but does not call the database
 to create privilege-related metadata tables. Later, when {project-name} metadata is initialized, privilege-related metadata tables and default permissions
 are automatically created.
-| --status | Reports the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATION` in `$MY_SQROOT/sqenvcom.sh` on the current node and
+| `--status` | Reports the value of the environment variable `TRAFODION_ENABLE_AUTHENTICATION` in `$MY_SQROOT/sqenvcom.sh` on the current node and
 reports the status of security features in the database.
 |===
 

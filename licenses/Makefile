@@ -19,28 +19,25 @@
 #
 # @@@ END COPYRIGHT @@@
 
-all: LICENSE-src LICENSE-dcs LICENSE-server LICENSE-install LICENSE-rest LICENSE-clients
+all: LICENSE-src LICENSE-server LICENSE-install LICENSE-clients NOTICE-server
 
 # All source code included in Trafodion source
 LICENSE-src:
-	cat Apache lic-components-src lic-dcs-src lic-server-src lic-test-src > $@
+	cat Apache lic-components-src lic-server-src lic-test-src > $@
 
 # Binary licenses for each separately packaged component
 # Must include source licenses as well as software bundled in at build time
-LICENSE-dcs:
-	cat Apache lic-dcs-src lic-dcs-bin > $@
-
 LICENSE-server:
 	cat Apache lic-server-src lic-server-bin > $@
 
+NOTICE-server:
+	cat ../NOTICE note-server-bin > $@
+
 LICENSE-install:
 	cat Apache > $@
-
-LICENSE-rest:
-	cat Apache lic-rest-bin > $@
 
 LICENSE-clients:
 	cat Apache lic-clients-bin > $@
 
 clean:
-	rm -f LICENSE*
+	rm -f LICENSE* NOTICE*

@@ -12,11 +12,13 @@
   limitations under the 
   License.
 -->
-This page describes how you download and install a Trafodion evaluation environment. Other information:
+This page describes how you download and install a Trafodion evaluation environment. 
+
+Other information:
 
 * [Trafodion Provision Guide](http://trafodion.incubator.apache.org/docs/provisioning_guide/index.html): Complete provisioning documentation.
 * [Trafodion Contributor Guide](https://cwiki.apache.org/confluence/display/TRAFODION/Trafodion+Contributor+Guide): 
-How to set up a Trafodion development environment.
+How to set up a Trafodion build and development environment. (Use if you intend to help develop the Trafodion source code.)
 
 # Download
 The Trafodion end-user environment is installed using the Trafodion Installer, which operates on Trafodion binaries only.

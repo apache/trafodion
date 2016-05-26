@@ -82,17 +82,17 @@ final class T4ResultSet extends T4Connection {
 		catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
 					"translation_of_parameter_failed", "FetchMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "fetch_perf_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "fetch_perf_message_error", e
 					.getMessage());
 
 			se.initCause(e);
@@ -128,17 +128,17 @@ final class T4ResultSet extends T4Connection {
 		catch (SQLException se) {
 			throw se;
 		} catch (CharacterCodingException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale,
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale,
 					"translation_of_parameter_failed", "CloseMessage", e.getMessage());
 			se.initCause(e);
 			throw se;
 		} catch (UnsupportedCharsetException e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "unsupported_encoding", e
 					.getCharsetName());
 			se.initCause(e);
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_ic.t4props_, m_locale, "close_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(m_ic.t4props_, m_locale, "close_message_error", e
 					.getMessage());
 
 			se.initCause(e);
