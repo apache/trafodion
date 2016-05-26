@@ -93,10 +93,10 @@ The `trafodion_uninstaller` completely removes {project-name}.
 ```
 [admin@trafodion-1 ~]$ cd $HOME/trafodion-installer/installer
 [admin@trafodion-1 installer]$ ./trafodion_uninstaller
-Do you want to uninstall {project-name} (Everything will be removed)? (Y/N) y
+Do you want to uninstall Trafodion (Everything will be removed)? (Y/N) y
 ***INFO: testing sudo access
 ***INFO: NOTE, rpms that were installed will not be removed.
-***INFO: stopping {project-name} instance
+***INFO: stopping Trafodion instance
 SQ environment is not up.
 Going to execute ckillall
 
@@ -109,10 +109,10 @@ pdsh@trafodion-1: trafodion-1: ssh exited with exit code 1
 pdsh@trafodion-1: trafodion-2: ssh exited with exit code 1
 pdsh@trafodion-1: trafodion-1: ssh exited with exit code 1
 pdsh@trafodion-1: trafodion-2: ssh exited with exit code 1
-***INFO remove the {project-name} userid and group
+***INFO remove the Trafodion userid and group
 ***INFO: removing all files from /home/trafodion/apache-trafodion-1.3.0-incubating-bin
 ***INFO: removing all files from /usr/lib/trafodion and /var/log/trafodion
 ***INFO: removing all files from /etc/trafodion
-***INFO: {project-name} uninstall complete.
+***INFO: Trafodion uninstall complete.
 [admin@trafodion-1 installer]$
 ```

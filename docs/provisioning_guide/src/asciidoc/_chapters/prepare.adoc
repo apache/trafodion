@@ -67,14 +67,16 @@ cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
 echo localhost $(cat /etc/ssh/ssh_host_rsa_key.pub) >> $HOME/.ssh/known_hosts
 echo "NoHostAuthenticationForLocalhost=yes" >> $HOME/.ssh/config
 chmod 600 $HOME/.ssh/config
+chmod 600 $HOME/.ssh/authorized_keys
+chmod 700 $HOME/.ssh/
 ```
 
 After running these commands, do the following:
 
-* Copy the content of the `$HOME/.ssh/id_rsa.pub` file (public key) and append it to the
+* If necessary, create the `$HOME/.ssh` directory on the other nodes in your cluster and secure it private to yourself (`chmod 700`).
+* If necessary, create the `$HOME/.ssh/authorized_keys` file on the other nodes in your cluster. Secure it with `chmod 600 $HOME/.ssh/authorized_keys`.
+* Copy the content of the `$HOME/.ssh/authorized_keys` file on the Provisioning Master Node and append the to the
 `$HOME/.ssh/authorized_keys` file on the other nodes in your cluster.
-* Copy the `$HOME/.ssh/id_rsa` file (private key) from the current node to the `$HOME/.ssh` directory on the other nodes in the cluster.
-* Secure `$HOME/.ssh/id_rsa` on all nodes as private to yourself (`chmod 700`).
 * `ssh` to the other nodes in the cluster. Answer `y` to the prompt asking you whether to continue the connection.
 This adds the node to the `$HOME/.ssh/known_hosts` file completing the passwordless ssh setup.
 
@@ -249,7 +251,7 @@ http://apache.cs.utah.edu/incubator/celix/celix-1.0.0.incubating/celix-1.0.0.inc
 ```
 $ mkdir $HOME/trafodion-download
 $ cd $HOME/trafodion-download
-$ Download the {project-name} Installer binaries
+$ # Download the Trafodion Installer binaries
 $ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
 Resolving http://apache.cs.utah.edu... 192.168.1.56
 Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
@@ -265,7 +267,7 @@ Saving to: "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz"
 <<<
 
 ```
-$ # Download the {project-name} Server binaries
+$ # Download the Trafodion Server binaries
 $ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-1.3.0-incubating-bin.tar.gz
 Resolving http://apache.cs.utah.edu... 192.168.1.56
 Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.

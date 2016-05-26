@@ -593,6 +593,8 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
 
   DDkwd__(COLLECT_REORG_STATS,                                  "ON"),
 
+  DDint__(COMPILER_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
+
   // tracking compilers specific defaults
   DDint__(COMPILER_TRACKING_INTERVAL, "0"),
   DD_____(COMPILER_TRACKING_LOGFILE,  "NONE"),

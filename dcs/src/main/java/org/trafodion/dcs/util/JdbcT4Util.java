@@ -22,42 +22,30 @@
 **********************************************************************/
 package org.trafodion.dcs.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.*;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.math.BigDecimal;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.HelpFormatter;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.apache.commons.cli.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.trafodion.dcs.util.DcsConfiguration;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONObject;
 import org.trafodion.dcs.Constants;
 import org.trafodion.jdbc.t4.TrafT4Connection;
+import org.trafodion.jdbc.t4.TrafT4DataSource;
 import org.trafodion.jdbc.t4.TrafT4PreparedStatement;
-import org.trafodion.jdbc.t4.HPT4DataSource;
 
 public final class JdbcT4Util
 {
     private static final Log LOG = LogFactory.getLog(JdbcT4Util.class);
     private Configuration conf;
     private DcsNetworkConfiguration netConf;
-    private HPT4DataSource cpds = null;
+    private TrafT4DataSource cpds = null;
  
     static    {
         try {
@@ -72,7 +60,7 @@ public final class JdbcT4Util
     public void init(Configuration conf,DcsNetworkConfiguration netConf) throws SQLException {
         this.conf = conf;
         this.netConf = netConf;
-           cpds = new HPT4DataSource();
+           cpds = new TrafT4DataSource();
         String url = Constants.T4_DRIVER_URL + "//" + netConf.getHostName() + ":" + conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + "/:";
         cpds.setURL(url);
         cpds.setMinPoolSize(conf.getInt(Constants.T4_DRIVER_MIN_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MIN_POOL_SIZE));

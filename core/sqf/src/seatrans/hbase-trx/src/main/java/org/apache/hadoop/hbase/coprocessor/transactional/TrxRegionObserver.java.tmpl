@@ -686,7 +686,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
         else {
             blockNonPhase2.set(true);
             closing.set(true);
-            sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, pendingDelayLen);
+            sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, transactionsById, pendingDelayLen);
 
             sbHelper.setSplit();
         }
@@ -765,7 +765,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
 	            LOG.debug("preClose -- setting close var to true on: " + region.getRegionInfo().getRegionNameAsString());
 	        }
 	        try {
-	          sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, pendingDelayLen);
+	          sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, transactionsById, pendingDelayLen);
 	        } catch(IOException ioe) {
 	          LOG.error("Encountered exception when calling pendingAndScannersWait(): " + ioe);
 	        }

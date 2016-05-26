@@ -502,12 +502,13 @@ public class HBaseTxClient {
              LOG.info("Exit default RET_EXCEPTION prepareCommit, txid: " + transactionId);
              return TransReturnCode.RET_EXCEPTION.getShort();
         }
-     } catch (IOException e) {
-       LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_IOEXCEPTION.toString() + " IOException");
-       return TransReturnCode.RET_IOEXCEPTION.getShort();
      } catch (CommitUnsuccessfulException e) {
        LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_NOCOMMITEX.toString() + " CommitUnsuccessfulException");
        return TransReturnCode.RET_NOCOMMITEX.getShort();
+     }
+     catch (IOException e) {
+       LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_IOEXCEPTION.toString() + " IOException");
+       return TransReturnCode.RET_IOEXCEPTION.getShort();
      }
      catch (Exception e) {
            LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_NOCOMMITEX.toString() + " Exception " + e);

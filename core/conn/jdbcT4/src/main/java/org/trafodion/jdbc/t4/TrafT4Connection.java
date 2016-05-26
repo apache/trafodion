@@ -79,7 +79,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		clearWarnings();
 
 		if (this.ic_ == null || this.ic_.isClosed()) {
-			throw HPT4Messages.createSQLException(this.props_, this.getLocale(), "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(this.props_, this.getLocale(), "invalid_connection", null);
 		}
 	}
 	
@@ -119,7 +119,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	public void resetServerIdleTimer() throws SQLException {
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		this.setConnectionAttr(InterfaceConnection.RESET_IDLE_TIMER, 0, "0");
@@ -480,7 +480,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		try {
@@ -500,7 +500,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 				addPreparedStatement(this, sql, stmt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						holdability_);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -526,13 +526,13 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 
 		if (stmtLabel == null || stmtLabel.length() == 0) {
-			throw HPT4Messages.createSQLException(props_, null, "null_data", null);
+			throw TrafT4Messages.createSQLException(props_, null, "null_data", null);
 		}
 
 		if (stmtLabel.startsWith(QUOTE) && stmtLabel.endsWith(QUOTE)) {
 			int len = stmtLabel.length();
 			if (len == 2) {
-				throw HPT4Messages.createSQLException(props_, null, "null_data", null);
+				throw TrafT4Messages.createSQLException(props_, null, "null_data", null);
 			} else {
 				stmtLabel = stmtLabel.substring(1, len - 1);
 			}
@@ -544,7 +544,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		try {
@@ -564,7 +564,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 				addPreparedStatement(this, sql, stmt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						holdability_);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -590,7 +590,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		try {
@@ -608,7 +608,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			if (isStatementCachingEnabled()) {
 				addPreparedStatement(this, sql, stmt, resultSetType, resultSetConcurrency, holdability_);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -636,7 +636,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			if (isStatementCachingEnabled()) {
@@ -654,7 +654,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			if (isStatementCachingEnabled()) {
 				addPreparedStatement(this, sql, stmt, resultSetType, resultSetConcurrency, resultSetHoldability);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -695,13 +695,13 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 
 		if (stmtLabel == null || stmtLabel.length() == 0) {
-			throw HPT4Messages.createSQLException(props_, null, "null_data", null);
+			throw TrafT4Messages.createSQLException(props_, null, "null_data", null);
 		}
 
 		if (stmtLabel.startsWith(QUOTE) && stmtLabel.endsWith(QUOTE)) {
 			int len = stmtLabel.length();
 			if (len == 2) {
-				throw HPT4Messages.createSQLException(props_, null, "null_data", null);
+				throw TrafT4Messages.createSQLException(props_, null, "null_data", null);
 			} else {
 				stmtLabel = stmtLabel.substring(1, len - 1);
 			}
@@ -713,7 +713,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			if (isStatementCachingEnabled()) {
@@ -732,7 +732,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 				addPreparedStatement(this, sql, stmt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						holdability_);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -759,7 +759,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			if (isStatementCachingEnabled()) {
@@ -778,7 +778,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 				addPreparedStatement(this, sql, stmt, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						holdability_);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -807,13 +807,13 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		try {
 			stmt = new TrafT4PreparedStatement(this, sql);
 			stmt.prepare(stmt.sql_, stmt.queryTimeout_, stmt.resultSetHoldability_);
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -840,7 +840,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		if (autoGeneratedKeys == TrafT4Statement.NO_GENERATED_KEYS) {
 			return prepareStatement(sql);
 		} else {
-			throw HPT4Messages.createSQLException(props_, getLocale(), "auto_generated_keys_not_supported", null);
+			throw TrafT4Messages.createSQLException(props_, getLocale(), "auto_generated_keys_not_supported", null);
 		}
 	}
 
@@ -861,7 +861,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 
 		if (columnIndexes != null && columnIndexes.length > 0) {
-			throw HPT4Messages.createSQLException(props_, getLocale(), "auto_generated_keys_not_supported", null);
+			throw TrafT4Messages.createSQLException(props_, getLocale(), "auto_generated_keys_not_supported", null);
 		} else {
 			return prepareStatement(sql);
 		}
@@ -888,7 +888,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		clearWarnings();
 
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		try {
@@ -906,7 +906,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			if (isStatementCachingEnabled()) {
 				addPreparedStatement(this, sql, stmt, resultSetType, resultSetConcurrency, holdability_);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -934,7 +934,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		try {
@@ -952,7 +952,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			if (isStatementCachingEnabled()) {
 				addPreparedStatement(this, sql, stmt, resultSetType, resultSetConcurrency, resultSetHoldability);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -975,7 +975,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		if (columnNames != null && columnNames.length > 0) {
-			throw HPT4Messages.createSQLException(props_, getLocale(), "auto_generated_keys_not_supported", null);
+			throw TrafT4Messages.createSQLException(props_, getLocale(), "auto_generated_keys_not_supported", null);
 		} else {
 			return prepareStatement(sql);
 		}
@@ -997,7 +997,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "releaseSavepoint()");
+		TrafT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "releaseSavepoint()");
 	}
 
 	public void rollback() throws SQLException {
@@ -1017,7 +1017,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		// if (ic_.getTxid() == 0) - XA
@@ -1026,7 +1026,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		// commit the Transaction
 		try {
 			ic_.rollback();
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -1049,7 +1049,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "rollback(Savepoint)");
+		TrafT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "rollback(Savepoint)");
 	}
 
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -1070,11 +1070,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			ic_.setAutoCommit(this, autoCommit);
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -1097,12 +1097,12 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		if (catalog != null) {
 			try {
 				ic_.setCatalog(this, catalog);
-			} catch (HPT4Exception se) {
+			} catch (TrafT4Exception se) {
 				performConnectionErrorChecks(se);
 				throw se;
 			}
@@ -1126,13 +1126,13 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		if (holdability != TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT)
 
 		{
-			throw HPT4Messages.createSQLException(props_, getLocale(), "invalid_holdability", null);
+			throw TrafT4Messages.createSQLException(props_, getLocale(), "invalid_holdability", null);
 		}
 		holdability_ = holdability;
 	}
@@ -1154,12 +1154,12 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			// ic_.setReadOnly(readOnly);
 			ic_.setReadOnly(this, readOnly);
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -1197,7 +1197,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "setSavepoint");
+		TrafT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "setSavepoint");
 		return null;
 	}
 
@@ -1217,7 +1217,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		clearWarnings();
-		HPT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "setSavepoint");
+		TrafT4Messages.throwUnsupportedFeatureException(props_, getLocale(), "setSavepoint");
 		return null;
 	}
 
@@ -1238,11 +1238,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		clearWarnings();
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			ic_.setTransactionIsolation(this, level);
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -1284,7 +1284,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		try {
 			ic_.beginTransaction();
@@ -1294,7 +1294,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			} else {
 				setAutoCommit(false);
 			}
-		} catch (HPT4Exception se) {
+		} catch (TrafT4Exception se) {
 			performConnectionErrorChecks(se);
 			throw se;
 		}
@@ -1316,7 +1316,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.getLogWriter().println(temp);
 		}
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 		return ic_.getTxid();
 	}
@@ -1331,7 +1331,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 			props_.t4Logger_.logp(Level.FINER, "TrafT4Connection", "setTxid", "", p);
 		}
 		if (_isClosed() == true) {
-			throw HPT4Messages.createSQLException(props_, null, "invalid_connection", null);
+			throw TrafT4Messages.createSQLException(props_, null, "invalid_connection", null);
 		}
 
 		transactionToJoin = txid;
@@ -1506,7 +1506,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		}
 		ic_.reuse();
 		/*
-		 * try { ic_.enforceT4ConnectionTimeout(this); } catch (HPT4Exception
+		 * try { ic_.enforceT4ConnectionTimeout(this); } catch (TrafT4Exception
 		 * se) { //performConnectionErrorChecks(se); //throw se; //ignore - new
 		 * property from old MXCS ABD version (now known as NCS) //ignored for
 		 * backward compatibility }
@@ -1534,11 +1534,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		if (pc_ != null) {
 			return pc_;
 		} else {
-			throw HPT4Messages.createSQLException(props_, getLocale(), "null_pooled_connection", null);
+			throw TrafT4Messages.createSQLException(props_, getLocale(), "null_pooled_connection", null);
 		}
 	}
 
-	TrafT4Connection(HPT4DataSource ds, T4Properties t4props) throws SQLException {
+	TrafT4Connection(TrafT4DataSource ds, T4Properties t4props) throws SQLException {
 		super(t4props);
 
 		t4props.setConnectionID(Integer.toString(this.hashCode()));
@@ -1565,7 +1565,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		holdability_ = TrafT4ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
-	TrafT4Connection(HPT4PooledConnection poolConn, T4Properties t4props) throws SQLException {
+	TrafT4Connection(TrafT4PooledConnection poolConn, T4Properties t4props) throws SQLException {
 		super(t4props);
 
 		t4props.setConnectionID(Integer.toString(this.hashCode()));
@@ -1769,7 +1769,7 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 
-	void closeErroredConnection(HPT4Exception se) {
+	void closeErroredConnection(TrafT4Exception se) {
 		try {
 			if (!erroredConnection) { // don't issue close repeatedly
 				erroredConnection = true;
@@ -1829,8 +1829,8 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	Hashtable refToStmt_;
 	Hashtable refToRS_;
 	int holdability_;
-	HPT4DataSource ds_;
-	HPT4PooledConnection pc_;
+	TrafT4DataSource ds_;
+	TrafT4PooledConnection pc_;
 	T4Driver driver_;
 	WeakReference pRef_;
 	T4Properties props_;

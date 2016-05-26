@@ -355,7 +355,7 @@ SQL> CONNECT
 User Name: user1
 Password:
 
-Connected to {project-name}
+Connected to Trafodion
 ```
 
 * This command creates a new connection to the {project-name} database from the current or existing TrafCI session:
@@ -1156,7 +1156,7 @@ SQL> LABEL MyNewLabel
 * This command creates a label using a quoted string:
 +
 ```
-SQL> LABEL "{project-name} Label"
+SQL> LABEL "Trafodion Label"
 ```
 
 <<<

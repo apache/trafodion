@@ -39,27 +39,10 @@ export PDCP="pdcp -R ssh"
 
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
-#============================================
-
-#Info for log file
-
-echo "***INFO: Log file location $INSTALL_LOG"
-
-echo "***INFO: ***Log File: traf_config script***" >> $INSTALL_LOG
-echo >> $INSTALL_LOG
-echo "***INFO: Working directory: $TRAF_WORKDIR" >> $INSTALL_LOG
-echo "***INFO: Build: $BUILD_FILE" >> $INSTALL_LOG
-echo "***INFO: Install Path: $SQ_ROOT" >> $INSTALL_LOG
-echo "***INFO: DCS Build: $DCS_BUILD" >> $INSTALL_LOG
-echo "***INFO: Path to SQCONFIG: $SQCONFIG" >> $INSTALL_LOG
-echo "***INFO: Number of DCS Servers: $DCS_SERVERS_PARM" >> $INSTALL_LOG
-echo "***INFO: Run init_trafodion: $INIT_TRAFODION" >> $INSTALL_LOG
-echo "***INFO: Start Trafodion: $START" >> $INSTALL_LOG
-echo "***INFO: User Id: $USER_NAME" >> $INSTALL_LOG
-echo "***INFO: Hadoop UI URL: $URL_PORT" >> $INSTALL_LOG
-echo >> $INSTALL_LOG
+export traf_filename=$(basename "$TRAF_PACKAGE")
 
 #============================================
+
 # Check if logged in as trafodion
 
 userId=$(whoami)
@@ -71,12 +54,6 @@ if [[ "$userId" != "$TRAF_USER" ]]; then
    exit -1
 fi
 
-#============================================
-echo "*************************"
-echo "*************************"
-echo " Trafodion Configuration"
-echo "*************************"
-echo "*************************"
 #============================================
 # Check if an existing instance is up
 process_count=$(cstat -noheader 2>/dev/null | wc -l)
@@ -101,10 +78,15 @@ fi
 cd $SQ_ROOT
 
 # untar Trafodion build into install directory
-echo "***INFO: untarring build file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
-tar -xzf $TRAF_BUILD 2>&1 | tee -a $INSTALL_LOG
+if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
+   echo "***INFO: untarring file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
+   tar -xzf $TRAF_BUILD 2>&1 | tee -a $INSTALL_LOG
+else
+   echo "***INFO: untarring file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
+   tar -xzf $UNTAR_DIR/$traf_filename 2>&1 | tee -a $INSTALL_LOG
+fi
 if [ "$?" != "0" ]; then
-    echo "***ERROR: There was a problem untarring the Trafodion build file.  Check install log files for details." | tee -a $INSTALL_LOG
+    echo "***ERROR: There was a problem untarring Trafodion tar file.  Check install log files for details." | tee -a $INSTALL_LOG
     exit -1;
 fi
 
@@ -197,7 +179,12 @@ fi
 #==========================================
 # install dcs
 
-$TRAF_WORKDIR/installer/dcs_installer --dcs_build $DCS_BUILD --dcs_servers $DCS_SERVERS_PARM
+if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
+   $TRAF_WORKDIR/installer/dcs_installer --dcs_build $DCS_BUILD --dcs_servers $DCS_SERVERS_PARM
+else
+   $TRAF_WORKDIR/installer/dcs_installer --dcs_servers $DCS_SERVERS_PARM
+fi
+
 if [ "$?" != "0" ]; then
     echo "***ERROR: DCS install failed.  Check install log files for details." | tee -a $INSTALL_LOG
     exit -1;
@@ -206,12 +193,21 @@ fi
 #==========================================
 # install REST Server
 
-if [ ! -z $REST_BUILD ]; then
-   $TRAF_WORKDIR/installer/rest_installer --rest_build $REST_BUILD
+if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
+   if [ ! -z $REST_BUILD ]; then
+      $TRAF_WORKDIR/installer/rest_installer --rest_build $REST_BUILD
+      if [ "$?" != "0" ]; then
+         echo "***ERROR: REST Server install failed.  Check install log files for details." | tee -a $INSTALL_LOG
+          exit -1;
+      fi
+   fi
+else
+   $TRAF_WORKDIR/installer/rest_installer
    if [ "$?" != "0" ]; then
-       echo "***ERROR: REST Server install failed.  Check install log files for details." | tee -a $INSTALL_LOG
-       exit -1;
+      echo "***ERROR: REST Server install failed.  Check install log files for details." | tee -a $INSTALL_LOG
+      exit -1;
    fi
 fi
+
 
 #==========================================
