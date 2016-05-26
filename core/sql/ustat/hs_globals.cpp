@@ -560,8 +560,10 @@ NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
   else if (workableCacheSize > 50)
     workableCacheSize = 50; 
 
-  Int32 maxDefault = getDefaultAsLong(HBASE_NUM_CACHE_ROWS_MAX);
-  if (maxDefault == 10000) // don't do it if user has already set this CQD
+  // if the user himself set the CQD, don't do anything
+  NADefaults &defs = ActiveSchemaDB()->getDefaults();
+  if (defs.getProvenance(HBASE_NUM_CACHE_ROWS_MAX) == 
+      NADefaults::INIT_DEFAULT_DEFAULTS)
     {
       char temp1[40];  // way more space than needed, but it's safe
       Lng32 wcs = (Lng32)workableCacheSize;
