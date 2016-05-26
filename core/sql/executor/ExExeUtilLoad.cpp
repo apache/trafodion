@@ -1907,7 +1907,7 @@ void ExExeUtilHBaseBulkUnLoadTcb::freeResources()
 
   if (sequenceFileWriter_)
   {
-    NADELETEBASIC(sequenceFileWriter_, getMyHeap());
+    NADELETE(sequenceFileWriter_, SequenceFileWriter, getMyHeap());
     sequenceFileWriter_ = NULL;
   }
 
