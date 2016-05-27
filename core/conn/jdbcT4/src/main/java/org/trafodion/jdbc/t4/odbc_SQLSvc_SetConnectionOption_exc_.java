@@ -52,19 +52,19 @@ class odbc_SQLSvc_SetConnectionOption_exc_ {
 		case odbc_SQLSvc_SetConnectionOption_SQLError_exn_:
 			SQLError = new ERROR_DESC_LIST_def();
 			SQLError.extractFromByteArray(buf, ic);
-			HPT4Messages.throwSQLException(ic.t4props_, SQLError);
+			TrafT4Messages.throwSQLException(ic.t4props_, SQLError);
 		case odbc_SQLSvc_SetConnectionOption_ParamError_exn_:
 			ParamError = ic.decodeBytes(buf.extractString(), 1);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
 		case odbc_SQLSvc_SetConnectionOption_InvalidConnection_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
 		case odbc_SQLSvc_SetConnectionOption_SQLInvalidHandle_exn_:
 			// SQLInvalidHandle
-			// throw HPT4Messages.createSQLException(null, locale, "ids_08_s01",
+			// throw TrafT4Messages.createSQLException(null, locale, "ids_08_s01",
 			// null);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "autocommit_txn_in_progress", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "autocommit_txn_in_progress", null);
 		default:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_unknown_reply_error", temp0, temp1);
 		}
 	}
 }

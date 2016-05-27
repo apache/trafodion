@@ -105,7 +105,7 @@ class Utility {
 		double indbl = inbd.doubleValue();
 		// double abdbl = inbd.abs().doubleValue(); Need to do MIN check as well
 		if (indbl > (double) Float.MAX_VALUE) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
 		}
 	} // end checkFloatBoundary
 
@@ -126,7 +126,7 @@ class Utility {
 		// need to check min as well
 		// BigDecimal minbd = new BigDecimal(Double.MIN_VALUE);
 		if ((inbd.compareTo(maxbd) > 0)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
 		}
 
 	} // end checkDoubleBoundary
@@ -146,7 +146,7 @@ class Utility {
 	static void checkIntegerBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		long inlong = inbd.longValue();
 		if ((inlong > Integer.MAX_VALUE) || (inlong < Integer.MIN_VALUE)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkIntegerBoundary
 
@@ -167,7 +167,7 @@ class Utility {
 		BigDecimal maxbd = new BigDecimal(Long.MAX_VALUE);
 		maxbd = maxbd.add(maxbd);
 		if ((inlong < 0) || (inbd.compareTo(maxbd) > 0)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkIntegerBoundary
 
@@ -187,7 +187,7 @@ class Utility {
 		long inlong = inbd.longValue();
 		long maxushort = (Short.MAX_VALUE * 2) + 1;
 		if ((inlong < 0) || (inlong > maxushort)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkIntegerBoundary
 
@@ -207,7 +207,7 @@ class Utility {
 		long inlong = inbd.longValue();
 		long maxuint = ((long) Integer.MAX_VALUE * 2L) + 1L;
 		if ((inlong < 0) || (inlong > maxuint)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkIntegerBoundary
 
@@ -226,7 +226,7 @@ class Utility {
 	static void checkTinyintBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		long inlong = inbd.longValue();
 		if ((inlong > Byte.MAX_VALUE) || (inlong < Byte.MIN_VALUE)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkTinyintBoundary
 
@@ -245,7 +245,7 @@ class Utility {
 	static void checkShortBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		long inlong = inbd.longValue();
 		if ((inlong > Short.MAX_VALUE) || (inlong < Short.MIN_VALUE)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
 		}
 	} // end checkShortBoundary
 
@@ -296,7 +296,7 @@ class Utility {
 			 * BigDecimal.valueOf(((DataWrapper)paramValue).longValue);
 			 */
 		} else {
-			throw HPT4Messages.createSQLException(null, locale, "object_type_not_supported", paramValue);
+			throw TrafT4Messages.createSQLException(null, locale, "object_type_not_supported", paramValue);
 		}
 		return tmpbd;
 	} // end getBigDecimalValue
@@ -319,7 +319,7 @@ class Utility {
 			BigDecimal maxbd = new BigDecimal(Math.pow(10, precision));
 			BigDecimal minbd = maxbd.negate();
 			if ((inbd.compareTo(maxbd) >= 0) || (inbd.compareTo(minbd) < 0)) {
-				throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
+				throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
 			}
 		}
 	} // end checkBigDecimalBoundary
@@ -350,7 +350,7 @@ class Utility {
 					Object[] messageArguments = new Object[1];
 					messageArguments[0] = new String("A numeric overflow occurred during an arithmetic computation " +
 							"or data conversion.");
-					throw HPT4Messages.createSQLWarning(null, "8411", messageArguments);
+					throw TrafT4Messages.createSQLWarning(null, "8411", messageArguments);
 				}
 				catch (SQLWarning e)
 				{
@@ -449,7 +449,7 @@ class Utility {
 	 */
 	static void checkLongBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		if ((inbd.compareTo(long_maxbd) > 0) || (inbd.compareTo(long_minbd) < 0)) {
-			throw HPT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", inbd.toString());
 		}
 	} // end checkBigDecimalBoundary
 

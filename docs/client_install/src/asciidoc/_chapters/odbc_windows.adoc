@@ -54,7 +54,7 @@ The ODBC client installation file, `TFODBC64-*.exe`, which installs or links to 
 | This client component&#8230; | Does this&#8230;
 | Microsoft ODBC Driver Manager | Manages access to ODBC drivers for applications. The driver manager loads and unloads drivers and passes calls for ODBC functions to the
 correct driver.
-| {project-name} ODBC driver | Implements ODBC function calls to enable an ODBC client application to access the {project-name} database.
+| Trafodion ODBC driver | Implements ODBC function calls to enable an ODBC client application to access the {project-name} database.
 | Microsoft ODBC Administrator | Adds, configures, and removes ODBC data sources on client workstations.
 |===
 
@@ -64,7 +64,7 @@ during installation:
 [cols="40%l,60%",options="header"]
 |===
 | Default Installation Directory    | Client Operating System
-| C:\Program Files\{project-name}\TRAF   | ODBC _version_ Windows 64-bit
+| C:\Program Files\Trafodion\TRAF   | ODBC _version_ Windows 64-bit
 |===
 
 === Start the InstallShield wizard
@@ -78,7 +78,7 @@ Please refer to <<win_odbc_interactive_mode,Interactive Mode Installation>> belo
 1.  Double-click the `TFODBC64-*.exe` distribution file to start the InstallShield wizard.
 2.  On the *Welcome* page, click *Next*.
 3.  Read and select the *I accept the agreement* radio button. Click *Next*. 
-4.  On the *Destination Folder* page, click *Install* to select the default location: `C:\Program Files\{project-name}\TRAF ODBC _version_\` 
+4.  On the *Destination Folder* page, click *Install* to select the default location: `C:\Program Files\Trafodion\TRAF ODBC _version_\` 
 +
 This location is the installation directory for ODBC header and help files. All other ODBC files are installed in `%SYSTEMROOT%\system32`.
 
