@@ -172,11 +172,6 @@ server|ss|selfsigned)
     echo " Certificate/Private key created in directory :"$CERTDIR
     echo "***********************************************************"
     echo
-    echo "***********************************************************"
-    echo " Updating Authentication Configuration"
-    echo "***********************************************************"
-
-    $MY_SQROOT/sql/scripts/update_auth 
     ;; 
 view_pk) 
     if [ x$2 != x ]

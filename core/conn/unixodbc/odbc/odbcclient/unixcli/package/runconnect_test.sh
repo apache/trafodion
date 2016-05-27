@@ -1,3 +1,4 @@
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,25 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-all: LICENSE-src LICENSE-server LICENSE-install LICENSE-clients NOTICE-server
+g++ -g connect_test.cpp -L${MY_SQROOT}/export/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
 
-# All source code included in Trafodion source
-LICENSE-src:
-	cat Apache lic-components-src lic-server-src lic-test-src > $@
+./connect_test -d Default_DataSource -u ss -p ss
 
-# Binary licenses for each separately packaged component
-# Must include source licenses as well as software bundled in at build time
-LICENSE-server:
-	cat Apache lic-server-src lic-server-bin > $@
-
-NOTICE-server:
-	cat ../NOTICE note-server-bin > $@
-
-LICENSE-install:
-	cat Apache > $@
-
-LICENSE-clients:
-	cat Apache lic-clients-bin > $@
-
-clean:
-	rm -f LICENSE* NOTICE*

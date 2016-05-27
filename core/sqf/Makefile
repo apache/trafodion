@@ -260,18 +260,18 @@ genverhdr: buildinfo
                                         -branch "${PV_BRANCH}" \
                                         -date "${PV_DATE}"
 
-PKG_PROD = trafodion
+PKG_PROD = apache-trafodion
 PKG_PHX = phoenix
 PKG_DCS = dcs
 
 ifeq ($(SQ_BUILD_TYPE),release)
-  PKG_TYPE="server-$(TRAFODION_VER)"
+  PKG_TYPE="server-$(TRAFODION_VER)-incubating"
 else
   PKG_TYPE="server-$(TRAFODION_VER)-debug"
 endif
 
 PKG_BIN ?= "${PKG_PROD}.bin"
-PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}_$(PKG_TYPE).tgz"
+PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}_$(PKG_TYPE).tar.gz"
 PKG_TAR_UN = "${PKG_PROD}_${SQ_BUILD_TYPE}.tar"
 SRC_PKG_BIN ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.bin"
 SRC_PKG_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_PROD}-src.tgz"
@@ -281,11 +281,14 @@ PKG_DCS_TEST_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_DCS}-tests.tgz"
 PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf hbase_utilities/backup_and_restore
 
 PKG_BIN_OBJS += trafci
+PKG_BIN_OBJS += samples
 PKG_BIN_OBJS += export/limited-support-tools
 PKG_BIN_OBJS += LICENSE NOTICE
+PKG_BIN_OBJS += rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 
 PKG_BIN_DIRS ?= sql export
 PKG_BIN_DIRS += trafci
+PKG_BIN_DIRS += samples
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)
 PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y
@@ -315,8 +318,17 @@ LICENSE: ../../licenses/LICENSE-server
 ../../licenses/LICENSE-server:
 	cd $(@D) && $(MAKE) $(@F)
 
-NOTICE: ../../NOTICE
+NOTICE: ../../licenses/NOTICE-server
 	cp -f $? $@
+
+../../licenses/NOTICE-server:
+	cd $(@D) && $(MAKE) $(@F)
+
+rest-${TRAFODION_VER}:
+	ln -s ../rest/target/$@/$@ $@
+
+dcs-${TRAFODION_VER}:
+	ln -s ../../dcs/target/$@/$@ $@
 
 tmp/sqenv.sh:
 	@if [ ! -d tmp ]; then mkdir tmp; fi
@@ -330,7 +342,7 @@ pkglist-files: pkglist-symlinks
 	find -L $(PKG_BIN_OBJS) -type d -o -type f | grep -v -xf pkglist-symlinks > $@
 
 # simple symlinks that point to filename (does not start with . or /)
-pkglist-symlinks: LICENSE NOTICE
+pkglist-symlinks: LICENSE NOTICE rest-${TRAFODION_VER} dcs-${TRAFODION_VER}
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
 
 #	Targets to tar/gzip the self installer

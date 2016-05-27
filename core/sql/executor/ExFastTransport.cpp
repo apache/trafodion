@@ -516,7 +516,9 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
     lobGlob_ = NULL;
   }
 
-  //release sequenceFileWriter_???
+  if (sequenceFileWriter_ != NULL) {
+     NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
+  }
 
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
@@ -745,8 +747,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           if ((isSequenceFile() || myTdb().getBypassLibhdfs()) &&
               !sequenceFileWriter_)
           {
-            sequenceFileWriter_ = new(getSpace())
-                                     SequenceFileWriter((NAHeap *)getSpace());
+            sequenceFileWriter_ = new(getHeap())
+                                     SequenceFileWriter((NAHeap *)getHeap());
             sfwRetCode = sequenceFileWriter_->init();
             if (sfwRetCode != SFW_OK)
             {

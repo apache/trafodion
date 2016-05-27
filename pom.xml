@@ -132,7 +132,7 @@
   </properties>
 
   <modules>
-    <!--module>docs/client_install</module>
+    <module>docs/client_install</module>
     <module>dcs</module>
     <module>core/rest</module>
     <module>docs/command_interface</module>
@@ -143,7 +143,7 @@
     <module>docs/odb_user</module>
     <module>docs/spj_guide</module>
     <module>docs/sql_reference</module>
-    <module>docs/jdbct4ref_guide</module-->
+    <module>docs/jdbct4ref_guide</module>
   </modules>
 
   <build>
