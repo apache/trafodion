@@ -486,9 +486,9 @@ bool get_pnode_state( const char *name, NodeState_t &state )
     CPhysicalNode  *physicalNode;
     PhysicalNodeNameMap_t::iterator it;
 
-    char pnodename[MAX_PROCESS_NAME];
-    strncpy(pnodename, name, MAX_PROCESS_NAME);
-    pnodename[MAX_PROCESS_NAME-1] = '\0';
+    char pnodename[MPI_MAX_PROCESSOR_NAME];
+    strncpy(pnodename, name, MPI_MAX_PROCESSOR_NAME);
+    pnodename[MPI_MAX_PROCESSOR_NAME-1] = '\0';
 
     // Look up name
     it = PhysicalNodeMap.find( pnodename );
@@ -509,9 +509,9 @@ bool set_pnode_state( const char *name, NodeState_t &state )
     CPhysicalNode  *physicalNode;
     PhysicalNodeNameMap_t::iterator it;
 
-    char pnodename[MAX_PROCESS_NAME];
-    strncpy(pnodename, name, MAX_PROCESS_NAME);
-    pnodename[MAX_PROCESS_NAME-1] = '\0';
+    char pnodename[MPI_MAX_PROCESSOR_NAME];
+    strncpy(pnodename, name, MPI_MAX_PROCESSOR_NAME);
+    pnodename[MPI_MAX_PROCESSOR_NAME-1] = '\0';
 
     // Look up name
     it = PhysicalNodeMap.find( pnodename );
@@ -6197,7 +6197,7 @@ void node_add_cmd( char *cmd, char delimiter )
 
     bool process_cmd = false;
     char *cmd_tail = cmd;
-    char name[MAX_PROCESS_NAME] = { 0 };
+    char name[MPI_MAX_PROCESSOR_NAME] = { 0 };
     char token[MAX_TOKEN] = { 0 };
     int  first_core, last_core, processor_count, roles;
     char msgString[MAX_BUFFER] = { 0 };
@@ -6227,7 +6227,7 @@ void node_add_cmd( char *cmd, char delimiter )
             normalize_case (token);
             if (strcmp( token, "node-name" ) == 0)
             {
-                cmd_tail = get_token( cmd_tail, name, &delimiter, MAX_PROCESS_NAME-1, false );
+                cmd_tail = get_token( cmd_tail, name, &delimiter, MPI_MAX_PROCESSOR_NAME-1, false );
                 //printf ("[%s] node-name=%s, delimeter=%c\n", MyName, name, delimiter);
             }
             else if (strcmp( token, "cores" ) == 0)

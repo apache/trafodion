@@ -281,7 +281,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
         }
 
         // Set the next available pnid
-        nextPNid_ = pnid > nextPNid_ ? (pnid+1) : nextPNid_ ;
+        nextPNid_ = pnid >= nextPNid_ ? (pnid+1) : nextPNid_ ;
 
         // Bump the physical node count
         pnodesCount_++;

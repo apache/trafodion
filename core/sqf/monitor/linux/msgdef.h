@@ -70,12 +70,12 @@
 
 #define MAX_FAULT_ZONES  16 
 #define MAX_FILE_NAME    256
-#define MAX_KEY_NAME     32
+#define MAX_KEY_NAME     64
 #define MAX_KEY_LIST     32
 #define MAX_NODE_LIST    64
 #define MAX_OPEN_LIST    256
 #define MAX_OPEN_CONTEXT 5
-#define MAX_PID_VALUE    0x00FFD1C9
+#define MAX_PID_VALUE    0x00FFD1C9        // 16,765,385
 #define MAX_PERSIST_KEY_STR   51
 #define MAX_PERSIST_VALUE_STR 51
 #define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
@@ -83,9 +83,8 @@
 #define MAX_PROCINFO_LIST 64
 #define MAX_PROC_CONTEXT 5
 #define MAX_PROCESS_NAME MAX_KEY_NAME
-#define MAX_PROCESS_NAME_STR 12 
+#define MAX_PROCESS_NAME_STR 12
 #define MAX_PROCESS_PATH 256
-#define MAX_PROCESSOR_NAME 128
 #define MAX_REASON_TEXT  256
 #define MAX_ROLEBUF_SIZE 84
 #define MAX_SEARCH_PATH  BUFSIZ
