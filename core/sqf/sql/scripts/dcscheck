@@ -20,6 +20,7 @@
 
 dcsznode=/$USER/dcs/master
 dcstmp=/tmp/dcstmp-$USER.log
+tmpjps=/tmp/jpstmp-$USER.log
 jpscmd=$JAVA_HOME/bin/jps
 cfg_mxo_cnt=0
 act_mxo_cnt=0
@@ -50,13 +51,15 @@ if [[ $? != 0 ]]; then
     exit 3
 fi
 
-echo
 #Check if Trafodion is up and operational
 sqcheck -f > $tmp_chk 2>&1
 sq_stat=$?
 if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
 
  if [ -d $DCS_INSTALL_DIR ];then
+
+### Get the list of DcsServer and DcsMaster
+  $L_PDSH $jpscmd |/bin/egrep 'DcsMaster|DcsServer' > $tmpjps
 
 ### Get the configured primary node for DcsMaster
   if [ -s ${DCS_INSTALL_DIR}/conf/master ]; then
@@ -79,8 +82,8 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
    fi
 
 ### Check if there are any DcsMaster and DcsServer's that are started 
-   actual_dcsmaster_cnt=`$L_PDSH $jpscmd |grep DcsMaster |wc -l` 
-   actual_dcsserver_cnt=`$L_PDSH $jpscmd |grep DcsServer |wc -l` 
+   actual_dcsmaster_cnt=`cat $tmpjps |grep DcsMaster |wc -l` 
+   actual_dcsserver_cnt=`cat $tmpjps |grep DcsServer |wc -l` 
 
 ### Get the node where the active master is running
    if [[ ! -z $CLUSTERNAME ]]; then
@@ -98,18 +101,15 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
         fi
         activeMaster=`$L_PDSH /sbin/ip addr show |grep $interface_to_use$ |cut -d':' -f1`
         if [[ ! -z $activeMaster ]]; then
-           activeDcsPid=`$L_PDSH $jpscmd |grep DcsMaster |grep $activeMaster |cut -d" " -f2 |paste -sd ' ' -`
+           activeDcsPid=`cat $tmpjps |grep DcsMaster |grep $activeMaster |cut -d" " -f2 |paste -sd ' ' -`
         fi
      else
-        activeMaster=`$L_PDSH $jpscmd |grep DcsMaster |cut -d":" -f1 |paste -sd ' ' -`
-     fi
-
-     if ( [ -z $activeMaster ] && [ "$actual_dcsmaster_cnt" '>' 0 ] && [ "$actual_dcsserver_cnt" '>' 0 ] ); then
         echo "Cluster Running      : Non-HA"
+        activeMaster=`cat $tmpjps |grep DcsMaster |cut -d":" -f1 |paste -sd ' ' -`
      fi
    else
      ### Get the pid of the active DcsMaster 
-     activeDcsPid=`$L_PDSH $jpscmd |grep DcsMaster |cut -d" " -f1`
+     activeDcsPid=`cat $tmpjps |grep DcsMaster |cut -d" " -f1`
    fi
 
 
@@ -162,7 +162,7 @@ if ( [ $sq_stat == 0 ] || [ $sq_stat == 1 ] ); then
      fi
      echo
    fi
-   rm -f $dcstmp $tmp_chk $tmp_ps
+   rm -f $dcstmp $tmp_chk $tmp_ps $tmpjps
   else
    if ( [ "$actual_dcsmaster_cnt" '>' 0 ] || [ "$actual_dcsserver_cnt" '>' 0 ] ); then
      echo "Partial DCS process is up and running. Please stop and restart DCS using 'dcsstop' and 'dcsstart' command..."
