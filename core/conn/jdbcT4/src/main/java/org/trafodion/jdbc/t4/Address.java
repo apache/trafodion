@@ -94,7 +94,7 @@ abstract class Address {
 		try {
 			m_inetAddrs = InetAddress.getAllByName(IPorName);
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(m_t4props, m_locale, "address_lookup_error", m_url, e
+			SQLException se = TrafT4Messages.createSQLException(m_t4props, m_locale, "address_lookup_error", m_url, e
 					.getMessage());
 			se.initCause(e);
 			throw se;

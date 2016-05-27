@@ -20,6 +20,14 @@
 #
 # @@@ END COPYRIGHT @@@
 
+if [[ $# -gt 0 ]]; then
+  echo
+  echo "This wrapper script(trafci) does not accept any arguments."
+  echo "Please use trafci.sh for command line arguments"
+  echo
+  exit 1
+fi
+
 HNAME=localhost:23400
 UNAME=zz
 PWORD=zz

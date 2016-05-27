@@ -103,7 +103,7 @@ class T4_Dcs_Cancel {
 		catch (SQLException se) {
 			throw se;
 		} catch (Exception e) {
-			SQLException se = HPT4Messages.createSQLException(t4props, locale, "as_cancel_message_error", e
+			SQLException se = TrafT4Messages.createSQLException(t4props, locale, "as_cancel_message_error", e
 					.getMessage());
 
 			se.initCause(e);

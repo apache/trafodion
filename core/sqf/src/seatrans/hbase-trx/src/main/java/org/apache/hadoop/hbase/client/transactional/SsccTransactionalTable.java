@@ -157,13 +157,6 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
         super( tableName,connection, threadPool);       
     }
 
-    public void resetConnection() throws IOException {
-        if (LOG.isDebugEnabled()) LOG.debug("Resetting connection for " + this.getTableDescriptor().getTableName());
-        HConnection conn = this.getConnection();
-        conn = HConnectionManager.createConnection(this.getConfiguration());
-    }
-
-
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
       if (LOG.isTraceEnabled()) LOG.trace("addLocation ENTRY");
       if (transactionState.addRegion(location)){
@@ -215,8 +208,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
           try {
             result = super.coprocessorService(SsccRegionService.class, get.getRow(), get.getRow(), callable);
           } catch (Throwable e) {
-            e.printStackTrace();
-            throw new IOException("ERROR while calling coprocessor get");
+            throw new IOException("ERROR while calling coprocessor get", e);
           }            
           Collection<SsccGetTransactionalResponse> results = result.values();
           // Should only be one result, if more than one. Can't handle.
@@ -275,12 +267,8 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
             try {
               result = super.coprocessorService(SsccRegionService.class, row, row, callable);
 
-            } catch (ServiceException e) {
-              e.printStackTrace();
-              throw new IOException();
             } catch (Throwable t) {
-              t.printStackTrace();
-              throw new IOException();
+              throw new IOException("ERROR while calling coprocessor delete ",t);
             } 
             Collection<SsccDeleteTransactionalResponse> results = result.values();
             //GetTransactionalResponse[] resultArray = (GetTransactionalResponse[]) results.toArray();
@@ -342,8 +330,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
         try {
           result = super.coprocessorService(SsccRegionService.class, put.getRow(), put.getRow(), callable);
         } catch (Throwable e) {
-          e.printStackTrace();
-          throw new IOException("ERROR while calling coprocessor put " + e);
+          throw new IOException("ERROR while calling coprocessor put ", e);
         }
         Collection<SsccPutTransactionalResponse> results = result.values();
         SsccPutTransactionalResponse[] resultArray = new SsccPutTransactionalResponse[results.size()]; 
@@ -425,8 +412,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
       try {
         result = super.coprocessorService(SsccRegionService.class, delete.getRow(), delete.getRow(), callable);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor checkAndDelete");
+        throw new IOException("ERROR while calling coprocessor checkAndDelete", e);
       }
 
       Collection<SsccCheckAndDeleteResponse> results = result.values();
@@ -504,11 +490,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
       try {
          result = super.coprocessorService(SsccRegionService.class, put.getRow(), put.getRow(), callable);
       } catch (Throwable e) {
-          StringWriter sw = new StringWriter();
-          PrintWriter pw = new PrintWriter(sw);
-          e.printStackTrace(pw);
-          //sw.toString();
-        throw new IOException("ERROR while calling coprocessor checkAndPut" + sw.toString());
+        throw new IOException("ERROR while calling coprocessor checkAndPut", e);
       }
       Collection<SsccCheckAndPutResponse> results = result.values();
       // Should only be one result, if more than one. Can't handle.
@@ -581,8 +563,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
                                                    entry.getValue().get(0).getRow(),
                                                    callable);
  	      } catch (Throwable e) {
- 	        e.printStackTrace();
-	        throw new IOException("ERROR while calling coprocessor delete");
+	        throw new IOException("ERROR while calling coprocessor delete", e);
  	      }
 	      if(result.size() > 1) {
              LOG.error("result size for multiple delete:" + result.size());
@@ -660,8 +641,7 @@ if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + tr
                                           entry.getValue().get(0).getRow(),
                                           callable);
       } catch (Throwable e) {
-        e.printStackTrace();
-        throw new IOException("ERROR while calling coprocessor put");
+        throw new IOException("ERROR while calling coprocessor put", e);
       }
       Collection<SsccPutMultipleTransactionalResponse> results = result.values();
       SsccPutMultipleTransactionalResponse[] resultArray = new SsccPutMultipleTransactionalResponse[results.size()];

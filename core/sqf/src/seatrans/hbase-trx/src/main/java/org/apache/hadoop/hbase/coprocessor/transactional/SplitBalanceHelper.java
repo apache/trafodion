@@ -25,7 +25,9 @@ package org.apache.hadoop.hbase.coprocessor.transactional;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -36,6 +38,7 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionScannerHolder;
 import org.apache.hadoop.hbase.regionserver.transactional.TrxTransactionState;
+import org.apache.hadoop.hbase.regionserver.transactional.TransactionState;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
@@ -240,8 +243,45 @@ public class SplitBalanceHelper {
         }
     }
 
-    protected boolean scannersListClear(ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners) throws IOException {
-        return scanners.isEmpty();
+    //Returning true indicates scannerList is Clear.
+    protected boolean scannersListClear(ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners,
+    									ConcurrentHashMap<String, TrxTransactionState> transactionsById) throws IOException {
+    	  if(scanners.isEmpty()) 
+    	  {
+    	  	if (LOG.isDebugEnabled()) LOG.debug("scannersListClear Scanners is empty: " + hri.getRegionNameAsString());
+    	  	return true;
+    	  }
+    	  else
+    	  {
+    	  	if (LOG.isDebugEnabled()) LOG.debug("scannersListClear Scanners is not empty: " + hri.getRegionNameAsString());
+    	  	Iterator<Map.Entry<Long, TransactionalRegionScannerHolder>> scannerIter = scanners.entrySet().iterator();
+    	  	TransactionalRegionScannerHolder rsh = null;
+          Map.Entry<Long, TransactionalRegionScannerHolder> entry;
+    	  	while(scannerIter.hasNext())
+    	  	{
+    	  		entry = scannerIter.next();
+            rsh = entry.getValue();
+            if (rsh != null)
+            {
+            	if (LOG.isDebugEnabled()) LOG.debug("scannersListClear Active Scanner is: "+ rsh.scannerId +
+            			" Txid: "+ rsh.transId + " Region: " + hri.getRegionNameAsString());
+              String key = hri.getRegionNameAsString() + rsh.transId;
+              TrxTransactionState trxState = transactionsById.get(key);
+              
+              //if trxState is present means there is activity with this region.
+              //Hence don't return true.
+              if(trxState != null)
+              {
+             		LOG.info("scannersListClear Active Scanner found, ScannerId: " + 
+              				 rsh.scannerId + " Txid: "+ rsh.transId + " Region: " + hri.getRegionNameAsString());
+              	return false;
+          			
+              }
+            }
+    	  	}
+    	  	//Reaching here means, there is no active scanner.
+    	  	return true;
+    	  }
     }
 
     protected void pendingWait(Set<TrxTransactionState> commitPendingTransactions, int pendingDelayLen) throws IOException {
@@ -258,6 +298,7 @@ public class SplitBalanceHelper {
         }
     }
 
+    /*
     protected void scannersWait(ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners, int pendingDelayLen)
             throws IOException {
         int count = 1;
@@ -272,11 +313,13 @@ public class SplitBalanceHelper {
             }
         }
     }
+    */
 
     protected void pendingAndScannersWait(Set<TrxTransactionState> commitPendingTransactions,
-            ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners, int pendingDelayLen) throws IOException {
+            ConcurrentHashMap<Long, TransactionalRegionScannerHolder> scanners,
+            ConcurrentHashMap<String, TrxTransactionState> transactionsById, int pendingDelayLen) throws IOException {
         int count = 1;
-        while (!scannersListClear(scanners) || !pendingListClear(commitPendingTransactions)) {
+        while (!scannersListClear(scanners, transactionsById) || !pendingListClear(commitPendingTransactions)) {
             try {
                 if (LOG.isDebugEnabled()) LOG.debug("pendingAndScannersWait() delay, count " + count++ + " on: " + hri.getRegionNameAsString());
                 Thread.sleep(pendingDelayLen);

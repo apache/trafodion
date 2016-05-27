@@ -520,7 +520,6 @@ public class HBaseClient {
             metaColDesc.setInMemory(true);
             desc.addFamily(metaColDesc);
             HBaseAdmin admin = new HBaseAdmin(config);
-            try {
                if (beginEndKeys != null && beginEndKeys.length > 0)
                {
                   byte[][] keys = new byte[beginEndKeys.length][];
@@ -542,12 +541,6 @@ public class HBaseClient {
                      admin.createTable(desc);
                   }
                }
-            }
-            catch (IOException e)
-            {
-               if (logger.isDebugEnabled()) logger.debug("HbaseClient.createk : createTable error" + e);
-               throw e;
-            }
             admin.close();
         return true;
     }
@@ -555,15 +548,9 @@ public class HBaseClient {
     public boolean registerTruncateOnAbort(String tblName, long transID)
         throws MasterNotRunningException, IOException {
 
-        try {
            if(transID != 0) {
               table.truncateTableOnAbort(tblName, transID);
            }
-        }
-        catch (IOException e) {
-           if (logger.isDebugEnabled()) logger.debug("HbaseClient.registerTruncateOnAbort error" + e);
-           throw e;
-        }
         return true;
     }
 
@@ -637,7 +624,6 @@ public class HBaseClient {
                 setDescriptors(tableOptions,htblDesc /*out*/,colDesc /*out*/, defaultVersionsValue);
         }
 
-        try {
             if (transID != 0) {
                 // Transactional alter support
                 table.alter(tblName, tableOptions, transID);
@@ -657,12 +643,6 @@ public class HBaseClient {
                 }
                 admin.close();
             }
-        }
-        catch (IOException e) {
-            if (logger.isDebugEnabled()) logger.debug("HbaseClient.drop  error" + e);
-            throw e;
-        }
-
         cleanupCache(tblName);
         return true;
     }
@@ -671,26 +651,20 @@ public class HBaseClient {
              throws MasterNotRunningException, IOException {
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
         HBaseAdmin admin = new HBaseAdmin(config);
-        //			admin.disableTableAsync(tblName);
-
         try {
            if(transID != 0) {
               table.dropTable(tblName, transID);
            }
            else {
-               if (! admin.isTableEnabled(tblName))
-                   admin.enableTable(tblName);
-              admin.disableTable(tblName);
+               if (admin.isTableEnabled(tblName))
+                   admin.disableTable(tblName);
               admin.deleteTable(tblName);
-              admin.close();
            }
+           cleanupCache(tblName);
+        } finally {
+           admin.close();
         }
-        catch (IOException e) {
-           if (logger.isDebugEnabled()) logger.debug("HbaseClient.drop  error" + e);
-           throw e;
-        }
-
-        return cleanupCache(tblName);
+        return true;
     }
 
     public boolean dropAll(String pattern, long transID) 
@@ -702,6 +676,7 @@ public class HBaseClient {
 	    if (htdl == null) // no tables match the given pattern.
 		return true;
 
+            IOException ioExc = null;  
 	    for (HTableDescriptor htd : htdl) {
 		String tblName = htd.getNameAsString();
 
@@ -709,7 +684,6 @@ public class HBaseClient {
                 int idx = tblName.indexOf("TRAFODION._DTM_");
                 if (idx == 0)
                     continue;
-
                 try {
                     if(transID != 0) {
                         //                        System.out.println("tblName " + tblName);
@@ -725,15 +699,20 @@ public class HBaseClient {
                 }
                 
                 catch (IOException e) {
+                    if (ioExc == null) {
+                        ioExc = new IOException("Not all tables are dropped, For details get suppressed exceptions");
+                        ioExc.addSuppressed(e);
+                     }
+                     else 
+                        ioExc.addSuppressed(e);
                     if (logger.isDebugEnabled()) logger.debug("HbaseClient.dropAll  error" + e);
-                    throw e;
                 }
-                
                 cleanupCache(tblName);
             }
 
             admin.close();
-            //            return cleanup();
+            if (ioExc != null)
+                throw ioExc;
             return true;
     }
 
@@ -741,7 +720,6 @@ public class HBaseClient {
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.listAll(" + pattern + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
-
 
 	    HTableDescriptor[] htdl = 
                 (pattern.isEmpty() ? admin.listTables() : admin.listTables(pattern));
@@ -1492,17 +1470,8 @@ public class HBaseClient {
   {
     if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHBulkLoadClient() called.");
     HBulkLoadClient hblc = null;
-    try 
-    {
-       hblc = new HBulkLoadClient( config);
-    
-    if (hblc == null)
-      throw new IOException ("hbkc is null");
-    }
-    catch (IOException e)
-    {
-      return null;
-    }
+
+    hblc = new HBulkLoadClient( config);
     
     return hblc;
     
@@ -1539,21 +1508,14 @@ public class HBaseClient {
     admin = null;
     return latestsnpName;
   }
-  public boolean cleanSnpScanTmpLocation(String pathStr) throws Exception
+  public boolean cleanSnpScanTmpLocation(String pathStr) throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HbaseClient.cleanSnpScanTmpLocation() - start - Path: " + pathStr);
-    try 
-    {
+
       Path delPath = new Path(pathStr );
       delPath = delPath.makeQualified(delPath.toUri(), null);
       FileSystem fs = FileSystem.get(delPath.toUri(),config);
       fs.delete(delPath, true);
-    }
-    catch (IOException e)
-    {
-      if (logger.isDebugEnabled()) logger.debug("HbaseClient.cleanSnpScanTmpLocation() --exception:" + e);
-      throw e;
-    }
     
     return true;
   }

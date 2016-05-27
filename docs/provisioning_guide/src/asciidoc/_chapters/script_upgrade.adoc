@@ -85,7 +85,7 @@ stopped $zlobsrv1
 Shutting down (normal) the SQ environment!
 Wed Feb 17 05:12:40 UTC 2016
 Processing cluster.conf on local host trafodion-1
-[$Z000KAE] Shell/shell Version 1.0.1 Apache_{project-name} Release 1.3.0 (Build release [1.3.0-0-g5af956f_Bld2], date 20160112_1927)
+[$Z000KAE] Shell/shell Version 1.0.1 Apache_Trafodion Release 1.3.0 (Build release [1.3.0-0-g5af956f_Bld2], date 20160112_1927)
 ps
 ```
 
@@ -191,9 +191,9 @@ $ ./trafodion_install --config_file $HOME/trafodion-configuration/my_config_2.0
 ***INFO: Testing ssh on trafodion-2
 ***INFO: Testing sudo access on trafodion-1
 ***INFO: Testing sudo access on trafodion-2
-***INFO: {project-name} scanner will not be run.
+***INFO: Trafodion scanner will not be run.
 ***DEBUG: trafodionFullName=trafodion_server-2.0.0.tgz
-***INFO: {project-name} version = 2.0.0
+***INFO: Trafodion version = 2.0.0
 ***DEBUG: HBase's java_exec=/usr/jdk64/jdk1.7.0_67/bin/java
 
 ******************************
@@ -201,7 +201,7 @@ $ ./trafodion_install --config_file $HOME/trafodion-configuration/my_config_2.0
 ******************************
 
 ***INFO: Installing required RPM packages
-***INFO: Starting {project-name} Package Setup (2016-02-17-05-33-29)
+***INFO: Starting Trafodion Package Setup (2016-02-17-05-33-29)
 ***INFO: Installing required packages
 ***INFO: Log file located in /var/log/trafodion
 ***INFO: ... pdsh on node trafodion-1
@@ -223,7 +223,7 @@ You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-2.0.0-i
 
 
 Startup time  0 hour(s) 1 minute(s) 9 second(s)
-Apache {project-name} Conversational Interface 1.3.0
+Apache Trafodion Conversational Interface 1.3.0
 Copyright (c) 2015 Apache Software Foundation
 >>Metadata Upgrade: started
 
@@ -307,7 +307,7 @@ $ ./trafodion_install
 ***INFO: Working directory: /usr/lib/trafodion
 
 *******************************
- {project-name} Configuration Setup
+ Trafodion Configuration Setup
 *******************************
 
 ***INFO: Please press [Enter] to select defaults.
@@ -323,14 +323,14 @@ Enter HDFS username, default is [hdfs]:
 Enter HBase username, default is [hbase]:
 Enter HBase group, default is [hbase]:
 Enter directory to install trafodion to, default is [/home/trafodion/apache-trafodion-1.3.0-incubating-bin]: /home/centos/apache-trafodion-2.0.0-incubating-bin
-Start {project-name} after install (Y/N), default is Y:
+Start Trafodion after install (Y/N), default is Y:
 Total number of client connections per node, default [16]: 8
 Enable simple LDAP security (Y/N), default is N:
 ***INFO: Configuration file: /etc/trafodion/trafodion_config
-***INFO: {project-name} configuration setup complete
+***INFO: Trafodion configuration setup complete
 
 ************************************
- {project-name} Configuration File Check
+ Trafodion Configuration File Check
 ************************************
 
 
@@ -348,9 +348,9 @@ Enable simple LDAP security (Y/N), default is N:
 ***INFO: Checking cloudera Version
 ***INFO: nameOfVersion=cdh5.3.0
 ***INFO: HADOOP_PATH=/usr/lib/hbase/lib
-***INFO: {project-name} scanner will not be run.
+***INFO: Trafodion scanner will not be run.
 ***DEBUG: trafodionFullName=trafodion_server-1.3.0.tgz
-***INFO: {project-name} version = 1.3.0
+***INFO: Trafodion version = 1.3.0
 ***DEBUG: HBase's java_exec=/usr/java/jdk1.7.0_67-cloudera/bin/java
 
 ******************************
@@ -358,7 +358,7 @@ Enable simple LDAP security (Y/N), default is N:
 ******************************
 
 ***INFO: Installing required RPM packages
-***INFO: Starting {project-name} Package Setup (2016-02-17-08-16-11)
+***INFO: Starting Trafodion Package Setup (2016-02-17-08-16-11)
 ***INFO: Installing required packages
 ***INFO: Log file located in /var/log/trafodion
 ***INFO: ... pdsh on node trafodion-1
@@ -400,7 +400,7 @@ You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-2.0.0-i
 
 
 Startup time  0 hour(s) 1 minute(s) 9 second(s)
-Apache {project-name} Conversational Interface 1.3.0
+Apache Trafodion Conversational Interface 1.3.0
 Copyright (c) 2015 Apache Software Foundation
 >>
 

@@ -21,35 +21,34 @@
 * @@@ END COPYRIGHT @@@
 **/
 
-package org.apache.hadoop.hbase.regionserver.transactional;
+package org.apache.hadoop.hbase.client.transactional;
 
+import java.io.IOException;
 /**
- * IdTmException
- *
- * exception
+ * Thrown if a region server is passed an unknown transaction id
  */
-public class IdTmException extends Exception {
-   /**
-    * constructor
-    *
-    * @param message message
-    */
-   public IdTmException(String message) {
-       super(message);
-    }
- /**
- *    * @param arg0 cause
- *       */
-  public IdTmException(Throwable arg0) {
-    super(arg0);
+public class RetryTransactionException extends IOException {
+
+  private static final long serialVersionUID = 698575374929591089L;
+
+  /** constructor */
+  public RetryTransactionException() {
+    super();
   }
 
- /**
- *    * @param arg0 cause
- *       */
-  public IdTmException(String message, Throwable arg0) {
-    super(message, arg0);
+  /**
+   * Constructor
+   * @param s message
+   */
+  public RetryTransactionException(String s) {
+    super(s);
   }
 
+  /**
+   * Constructor
+   * @param s message
+   */
+  public RetryTransactionException(String s, Throwable t) {
+    super(s, t);
+  }
 }
-

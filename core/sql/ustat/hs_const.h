@@ -169,6 +169,7 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_YOU_WILL_LIKELY_BE_SORRY        = 9243,
                         UERR_USER_TRANSACTION                = 9244,
                         UERR_LOB_STATS_NOT_SUPPORTED         = 9246,
+                        UERR_VOLATILE_TABLES_NOT_SUPPORTED   = 9247,
                         UERR_NO_ERROR                        = 9250,
                         UERR_LAST_ERROR                      = 9250
                        };

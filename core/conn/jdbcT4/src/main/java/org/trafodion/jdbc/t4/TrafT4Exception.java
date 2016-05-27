@@ -23,10 +23,10 @@ package org.trafodion.jdbc.t4;
 
 import java.sql.SQLException;
 
-class HPT4Exception extends SQLException {
+class TrafT4Exception extends SQLException {
 	protected String messageId;
 
-	public HPT4Exception(String reason, String SQLState, int vendorCode, String msgId) {
+	public TrafT4Exception(String reason, String SQLState, int vendorCode, String msgId) {
 		super(reason, SQLState, vendorCode);
 		if (msgId == null) {
 			messageId = "";
@@ -35,4 +35,4 @@ class HPT4Exception extends SQLException {
 		}
 	}
 
-} // end class HPT4Exception
+} // end class TrafT4Exception

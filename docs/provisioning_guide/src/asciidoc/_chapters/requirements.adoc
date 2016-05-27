@@ -98,6 +98,7 @@ Please verify these requirements on each node you will install {project-name} on
 &#8226; `/etc/hosts` is set up for fully-qualified node names (FQDN). +
 &#8226; `/etc/resolv.conf` is configured to use a name server. |  
 &#8226; `hostname --fqdn` shows the fully-qualified node name, if any. +
+&#8226; The fully-qualified node name is part of the `/etc/hosts` file. +
 &#8226; `host -T <FQDN>` (responds if using a DNS server, times out otherwise) +
 &#8226; Simply ssh among nodes using `ssh <FQDN>`. 
 | Port Availability | The Linux Kernel Firewall (`iptables`) has either been disabled or <<ip-ports,ports required by {project-name}>> have been opened. |
@@ -324,7 +325,7 @@ NOTE: These changes are performed by the {project-name} Installer, if used.
 `/etc/security/limits.d/trafodion.conf` on each node in the cluster must contain the following settings:
 
 ```
-# {project-name} settings
+# Trafodion settings
 trafodion  soft core    unlimited
 trafodion  hard core    unlimited
 trafodion  soft memlock unlimited
@@ -333,9 +334,6 @@ trafodion  soft nofile  32768
 trafodion  hard nofile  65536
 trafodion  soft nproc   100000
 trafodion  hard nproc   100000
-hbase      soft nofile  8192
-trafodion  soft nofile  8192
-trafodion  hard nofile  65535
 ```
 
 <<<

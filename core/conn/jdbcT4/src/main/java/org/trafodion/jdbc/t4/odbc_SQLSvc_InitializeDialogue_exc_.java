@@ -61,12 +61,12 @@ class odbc_SQLSvc_InitializeDialogue_exc_ {
 			SQLError.extractFromByteArray(buf, ic);
 			break;
 		case odbc_SQLSvc_InitializeDialogue_InvalidUser_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_28_000", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_28_000", null);
 		case odbc_SQLSvc_InitializeDialogue_ParamError_exn_:
 			ParamError = ic.decodeBytes(buf.extractString(), 1);
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_program_error", ParamError, addr);
 		case odbc_SQLSvc_InitializeDialogue_InvalidConnection_exn_:
-			throw HPT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
+			throw TrafT4Messages.createSQLException(null, ic.getLocale(), "ids_08_s01", null);
 
 		default:
 			clientErrorText = "unknown_initialize_dialogue_reply_error";

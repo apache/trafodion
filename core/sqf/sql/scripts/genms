@@ -202,6 +202,9 @@ echo "CACERTS_DIR=$cacertsdir"
 dcsinstalldir=$DCS_INSTALL_DIR
 echo "DCS_INSTALL_DIR=$dcsinstalldir"
 
+restinstalldir=$REST_INSTALL_DIR
+echo "REST_INSTALL_DIR=$restinstalldir"
+
 echo ""
 echo ""
 echo "# Added by gensq.pl"

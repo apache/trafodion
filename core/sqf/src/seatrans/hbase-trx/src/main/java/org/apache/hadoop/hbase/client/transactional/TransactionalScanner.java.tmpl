@@ -105,46 +105,34 @@ public class TransactionalScanner extends AbstractClientScanner {
     
     @Override
     public void close() {
-        if(LOG.isTraceEnabled()) LOG.trace("close() -- ENTRY txID: " + ts.getTransactionId());
+        if(LOG.isTraceEnabled()) LOG.trace("close() -- ENTRY txID: " + ts.getTransactionId() + " " + this.ttable );
         if(closed) {
             if(LOG.isTraceEnabled()) LOG.trace("close()  already closed -- EXIT txID: " + ts.getTransactionId());
             return;
         }
         this.closed = true;
-        if(this.interrupted) {
-            if(LOG.isDebugEnabled()) LOG.debug("close() resetting connection, txID: " + ts.getTransactionId());
-            try {
-               ttable.resetConnection();
-            } catch(IOException e) {
-               if(LOG.isErrorEnabled()) LOG.error("close() unable to reset connection, txID: " + ts.getTransactionId());
-               return;
-            }
-            this.interrupted = false;
-        }
         TrxRegionProtos.CloseScannerRequest.Builder requestBuilder = CloseScannerRequest.newBuilder();
         requestBuilder.setTransactionId(ts.getTransactionId());
         requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
         requestBuilder.setScannerId(scannerID);
         TrxRegionProtos.CloseScannerRequest closeRequest = requestBuilder.build();
+        TrxRegionProtos.CloseScannerResponse response = null;
         try {
             CoprocessorRpcChannel channel = ttable.coprocessorService(this.currentBeginKey);
             TrxRegionService.BlockingInterface trxService = TrxRegionService.newBlockingStub(channel);
-            TrxRegionProtos.CloseScannerResponse response = trxService.closeScanner(null, closeRequest);
-            String exception = response.getException();
-            if(response.getHasException()) {
-                String errMsg = "closeScanner encountered Exception txID: " +
-                        ts.getTransactionId() + " Exception: " + exception;
-                    LOG.error(errMsg);
-            }
+            response = trxService.closeScanner(null, closeRequest);
         }
-        catch(ServiceException se) {
-            this.interrupted = true;
-            this.closed = false;
-        }
-
         catch (Throwable e) {
             String errMsg = "CloseScanner error on coprocessor call, scannerID: " + this.scannerID + " " + e;
             LOG.error(errMsg);
+            //throw new IOException(errMsg, e);
+        }
+        if (response.getHasException()) {
+           String exception = response.getException();
+           String errMsg = "closeScanner encountered Exception txID: " +
+                        ts.getTransactionId() + " Exception: " + exception;
+           LOG.error(errMsg);
+           //throw new IOException(errMsg);
         }
 
         if(LOG.isTraceEnabled()) LOG.trace("close() -- EXIT txID: " + ts.getTransactionId());
@@ -152,11 +140,6 @@ public class TransactionalScanner extends AbstractClientScanner {
 
     protected boolean nextScanner(final boolean done) throws IOException{
         if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- ENTRY txID: " + ts.getTransactionId());
-        if(this.interrupted) {
-            if(LOG.isDebugEnabled()) LOG.debug("nextScanner() resetting connection, txID: " + ts.getTransactionId());
-            ttable.resetConnection();
-            this.interrupted = false;
-        }
         if(this.currentBeginKey != null) {
             if(LOG.isTraceEnabled()) LOG.trace("nextScanner() currentBeginKey != null txID: " + ts.getTransactionId());
             if (doNotCloseOnLast)
@@ -194,33 +177,28 @@ public class TransactionalScanner extends AbstractClientScanner {
       requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
       requestBuilder.setScan(ProtobufUtil.toScan(scan));
       TrxRegionProtos.OpenScannerRequest openRequest = requestBuilder.build();
+      TrxRegionProtos.OpenScannerResponse response = null;
       try {
           CoprocessorRpcChannel channel = ttable.coprocessorService(this.currentBeginKey);
           TrxRegionService.BlockingInterface trxService = TrxRegionService.newBlockingStub(channel);
-          TrxRegionProtos.OpenScannerResponse response = trxService.openScanner(null, openRequest);
-          String exception = response.getException();
-          if(response.getHasException()) {
-              String errMsg = "nextScanner encountered Exception txID: " +
-                      ts.getTransactionId() + " Exception: " + exception;
-                  LOG.error(errMsg);
-                  throw new IOException(errMsg);
-          }
+          response = trxService.openScanner(null, openRequest);
           this.scannerID = response.getScannerId();
       }
-      catch(ServiceException se) {
-          this.interrupted = true;
-          String errMsg = "OpenScanner error encountered Service Exception, scannerID: " + this.scannerID + " " + se;
-          LOG.error(errMsg);
-          throw new IOException(errMsg);
-      }
       catch (Throwable e) {
-          String errMsg = "OpenScanner error on coprocessor call, scannerID: " + this.scannerID + " " + e;
-          LOG.error(errMsg);
-          throw new IOException(errMsg);
+          String errMsg = "OpenScanner error on coprocessor call, scannerID: " + this.scannerID ;
+          LOG.error(errMsg, e);
+          throw new IOException(errMsg, e);
       }
-        this.nextCallSeq = 0;
-        if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- EXIT -- returning true txID: " + ts.getTransactionId());
-        return true;
+      if (response.getHasException()) {
+         String exception = response.getException();
+         String errMsg = "nextScanner encountered Exception txID: " +
+               ts.getTransactionId() + " Exception: " + exception;
+         LOG.error(errMsg);
+         throw new IOException(errMsg);
+      }
+      this.nextCallSeq = 0;
+      if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- EXIT -- returning true txID: " + ts.getTransactionId());
+      return true;
     }
 
     @Override
@@ -248,24 +226,19 @@ public class TransactionalScanner extends AbstractClientScanner {
                     CoprocessorRpcChannel channel = ttable.coprocessorService(this.currentBeginKey);
                     TrxRegionService.BlockingInterface trxService = TrxRegionService.newBlockingStub(channel);
                     response = trxService.performScan(null, perfScanRequest);
-                    String exception = response.getException();
-                    if(response.getHasException()) {
-                        String errMsg = "performScan encountered Exception txID: " +
-                                ts.getTransactionId() + " Exception: " + exception;
-                            LOG.error(errMsg);
-                            throw new IOException(errMsg);
-                    }
-                }
-                catch (ServiceException se) {
-                    this.interrupted = true;
-                    if(LOG.isDebugEnabled()) LOG.debug("PerformScan encountered Service Exception, scannerID: " + this.scannerID + " " + se);
-                    return null;
                 }
                 catch (Throwable e) {
-                    String errMsg = "PerformScan error on coprocessor call, scannerID: " + this.scannerID + " " + e;
-                    if(LOG.isErrorEnabled()) LOG.error(errMsg);
-                    throw new IOException(errMsg);
+                    String errMsg = "PerformScan error on coprocessor call, scannerID: " + this.scannerID;
+                    if(LOG.isErrorEnabled()) LOG.error(errMsg, e);
+                    throw new IOException(errMsg, e);
                 }
+                if (response.getHasException()) {
+                   String exception = response.getException();
+                   String errMsg = "performScan encountered Exception txID: " +
+                                ts.getTransactionId() + " Exception: " + exception;
+                   LOG.error(errMsg);
+                   throw new IOException(errMsg);
+               }
                 int count;
                 org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result result;
 
