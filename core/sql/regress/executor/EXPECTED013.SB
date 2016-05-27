@@ -21,7 +21,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Mar 12 07:39:38 2016
+-- Definition current  Tue May 24 21:30:23 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -50,7 +50,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sat Mar 12 07:39:53 2016
+-- Definition current  Tue May 24 21:30:37 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -91,9 +91,11 @@ A            B
 
 --- SQL operation complete.
 >>
->>#ifndef SEABASE_REGRESS
 >>update statistics for table t013t1 on every column;
->>#endif
+
+*** ERROR[9247] UPDATE STATISTICS is not supported on volatile tables presently.
+
+--- SQL operation failed with errors.
 >>
 >>select * from t013_sch.t013t1;
 
@@ -113,7 +115,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Mar 12 07:40:59 2016
+-- Definition current  Tue May 24 21:31:43 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -139,7 +141,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sat Mar 12 07:41:18 2016
+-- Definition current  Tue May 24 21:32:04 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -179,7 +181,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Mar 12 07:41:32 2016
+-- Definition current  Tue May 24 21:32:16 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -202,7 +204,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Sat Mar 12 07:41:38 2016
+-- Definition current  Tue May 24 21:32:22 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -291,10 +293,16 @@ A            B            C            D
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>#ifndef SEABASE_REGRESS
 >>update statistics for table volatile_schema_a.t on every column;
+
+*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
 >>update statistics for table $$TEST_CATALOG$$.volatile_schema_a.t on every column;
->>#endif
+
+*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
 >>
 >>-- cannot create volatile index on regular tables and vica-versa
 >>create volatile index tempi on $$TEST_CATALOG$$.t013_sch.t013t1(a);
@@ -454,7 +462,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Mar 12 07:42:40 2016
+-- Definition current  Tue May 24 21:33:35 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -475,7 +483,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Mar 12 07:42:49 2016
+-- Definition current  Tue May 24 21:33:43 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -567,7 +575,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sat Mar 12 07:43:35 2016
+-- Definition current  Tue May 24 21:34:35 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -585,7 +593,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Sat Mar 12 07:43:40 2016
+-- Definition current  Tue May 24 21:34:42 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -601,7 +609,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sat Mar 12 07:43:52 2016
+-- Definition current  Tue May 24 21:34:55 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -667,7 +675,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
--- Definition current  Sat Mar 12 07:44:35 2016
+-- Definition current  Tue May 24 21:35:47 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1289,7 +1297,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Sat Mar 12 07:51:06 2016
+-- Definition current  Tue May 24 21:42:50 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
