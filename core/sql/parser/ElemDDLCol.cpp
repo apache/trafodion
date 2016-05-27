@@ -85,7 +85,7 @@ ElemDDLColDef::ElemDDLColDef(
   isDivisionColumn_(FALSE),
   divisionColumnSeqNum_(-1),
   isLobAttrsSpec_(FALSE),
-  lobStorage_(Lob_Invalid_Storage),
+  lobStorage_(Lob_HDFS_File),
   isSeabaseSerializedSpec_(FALSE),
   seabaseSerialized_(FALSE),
   isColDefaultSpec_(FALSE)

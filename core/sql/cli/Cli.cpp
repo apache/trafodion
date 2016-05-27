@@ -9677,6 +9677,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// insert into lob descriptor chunks table
 	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
 	  {
+            //blackBox points to external file name
 	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
 			lobDescChunksName, descPartnKey, descSyskey,
 			(dataLen ? *dataLen : 0),
@@ -9731,6 +9732,13 @@ Lng32 SQLCLI_LOBcliInterface
 
     case LOB_CLI_INSERT_APPEND:
       {
+        if (lobType == Lob_External_HDFS_File)
+          {
+            // Not allowed. For external Lobs there shoudl be only one
+            // chunk associated with the contents of the external file.
+            cliRC = -LOB_DESC_APPEND_ERROR;       
+            goto error_return;
+          } 
 	str_sprintf(query, "update table(ghost table %s) set numChunks = numChunks + 1, lobLen = lobLen + %Ld where descPartnKey = %Ld and syskey = %Ld",
 		    lobDescHandleName, 
 		    (dataLen ? *dataLen : 0),
@@ -9860,6 +9868,13 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
+        if ((lobType != Lob_External_HDFS_File) && blackBox)
+          {
+            //Error . Cannot update an LOB column that has a non-external LOB
+            // with an external LOB. 
+            cliRC = -LOB_DESC_UPDATE_ERROR;        
+            goto error_return;
+          }
 	// insert the new chunk into lob descriptor chunks table
 	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
 	  {
@@ -9973,7 +9988,7 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
-		cliRC = cliInterface->fetch();
+        cliRC = cliInterface->fetch();
 	if (cliRC < 0)
 	  {
 	    cliInterface->retrieveSQLDiagnostics(myDiags);
@@ -9997,6 +10012,13 @@ Lng32 SQLCLI_LOBcliInterface
 	    cliInterface->fetchRowsEpilogue(0);
 	    goto error_return;
 	  }
+        else if ((numChunks > 1 ) && (lobType == Lob_External_HDFS_File))
+          {
+            // Should not happen. For external Lobs there should be only one 
+            // chunk associated with the contents of the external file.
+            cliRC = -LOB_DATA_READ_ERROR;        
+            goto error_return;
+          }
 	else
 	  {	    
 	    cliRC = cliInterface->fetchRowsEpilogue(0);
@@ -10008,9 +10030,11 @@ Lng32 SQLCLI_LOBcliInterface
 	  }
 	
 	// This lob has only one chunk. Read and return the single descriptor.
-	str_sprintf(query, "select c.chunkLen, c.dataOffset from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %Ld and h.syskey = %Ld and c.chunkNum = h.numChunks for read committed access",
+      
+	str_sprintf(query, "select c.chunkLen, c.dataOffset ,c.stringParam from table(ghost table %s) h, table(ghost table %s) c where h.descPartnKey = c.descPartnKey and h.syskey = c.descSyskey and h.descPartnKey = %Ld and h.syskey = %Ld and c.chunkNum = h.numChunks for read committed access",
 		    lobDescHandleName, lobDescChunksName, 
 		    descPartnKey, inDescSyskey);
+         
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
@@ -10041,15 +10065,20 @@ Lng32 SQLCLI_LOBcliInterface
 	    char * ptr;
 	    Lng32 len;
 
-	    cliInterface->getPtrAndLen(1, ptr, len);
-	    
+	    cliInterface->getPtrAndLen(1, ptr, len);	    
 	    if (dataLen)
 	      str_cpy_all((char*)dataLen, ptr, len);
 
-	    cliInterface->getPtrAndLen(2, ptr, len);
-	    
+	    cliInterface->getPtrAndLen(2, ptr, len);	    
 	    if (dataOffset)
 	      str_cpy_all((char*)dataOffset, ptr, len);
+ 
+           cliInterface->getPtrAndLen(3, ptr, len);	    
+	    if (blackBox)
+              {
+	      str_cpy_all((char*)blackBox, ptr, len);
+              *blackBoxLen = len;
+              }
 
 	    if (inoutDescPartnKey)
 	      *inoutDescPartnKey = descPartnKey;
@@ -10076,7 +10105,7 @@ Lng32 SQLCLI_LOBcliInterface
 
    case LOB_CLI_SELECT_CURSOR:
       {
-	str_sprintf(query, "select dataOffset, chunkLen from table(ghost table %s) where descPartnKey = %Ld and descSyskey = %Ld order by chunkNum for read committed access",
+	str_sprintf(query, "select dataOffset, chunkLen, stringParam from table(ghost table %s) where descPartnKey = %Ld and descSyskey = %Ld order by chunkNum for read committed access",
 		    lobDescChunksName, descPartnKey, inDescSyskey);
         lobDebugInfo(query,0,__LINE__,lobTrace);
 	// set parserflags to allow ghost table
@@ -10129,6 +10158,12 @@ Lng32 SQLCLI_LOBcliInterface
 	    if (dataLen)
 	      str_cpy_all((char*)dataLen, ptr, len);
 
+            cliInterface->getPtrAndLen(3, ptr, len);
+            if (blackBox)
+              {
+                str_cpy_all((char*)blackBox, ptr, len);
+                *blackBoxLen = len;
+              }
 	    cliRC = 0;
 	  }
 	else

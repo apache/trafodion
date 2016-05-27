@@ -134,7 +134,7 @@ public:
     isSaltColumn_(isSaltColumn),
     isDivisioningColumn_(isDivisioningColumn),
     lobNum_(-1),
-    lobStorageType_(Lob_Invalid_Storage),
+    lobStorageType_(Lob_HDFS_File),
     lobStorageLocation_(NULL),
     hbaseColFlags_(0)
   {

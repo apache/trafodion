@@ -3474,7 +3474,7 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
   char *lobColArray = NULL;
   char * lobNumArray = NULL;
   char * lobLocArray = NULL;
-
+  char * lobTypeArray = NULL;
   const NATable * naTable = getUtilTableDesc()->getNATable();
   Lng32 numLOBs = 0;
 
@@ -3496,6 +3496,7 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
       lobColArray = space->allocateAlignedSpace(numLOBs*LOBINFO_MAX_FILE_LEN);
       lobNumArray = space->allocateAlignedSpace(numLOBs*2);
       lobLocArray = space->allocateAlignedSpace(numLOBs * LOBINFO_MAX_FILE_LEN);
+      lobTypeArray = space->allocateAlignedSpace(numLOBs * 4);
 
       const NATable * naTable = getUtilTableDesc()->getNATable();
       CollIndex j = 0;
@@ -3510,6 +3511,7 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
 	      *(short*)(&lobNumArray[2*j]) = col->lobNum();
 
 	      strcpy(&lobLocArray[j*LOBINFO_MAX_FILE_LEN], col->lobStorageLocation());
+              *(Int32 *)(&lobTypeArray[4*j]) = col->lobStorageType();
 
 	      j++;
 	    }
@@ -3529,6 +3531,7 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
          lobColArray,
          lobNumArray,
          lobLocArray,
+         lobTypeArray,
          hdfsPort,
          hdfsServer,
          tableFormat_,
@@ -4101,6 +4104,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
 
   char * lobNumArray = NULL;
   char * lobLocArray = NULL;
+  char * lobTypeArray = NULL;
 
   const NATable * naTable = getUtilTableDesc()->getNATable();
   Lng32 numLOBs = 0;
@@ -4117,6 +4121,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
 
 	      maxLocLen = MAXOF(maxLocLen, 
 				(short)strlen(col->lobStorageLocation()) + 1);
+              
 	    } // if
 	} // for
     }
@@ -4125,7 +4130,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
     {
       lobNumArray = space->allocateAlignedSpace(numLOBs*2);
       lobLocArray = space->allocateAlignedSpace(numLOBs * maxLocLen);
-
+      lobTypeArray = space->allocateAlignedSpace(numLOBs * 4);
       const NATable * naTable = getUtilTableDesc()->getNATable();
       CollIndex j = 0;
 
@@ -4136,9 +4141,8 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
 	  if (col->getType()->isLob())
 	    {
 	      *(short*)(&lobNumArray[2*j]) = col->lobNum();
-
 	      strcpy(&lobLocArray[j*maxLocLen], col->lobStorageLocation());
-
+              *(Int32 *)(&lobTypeArray[4*j]) =  col->lobStorageType();
 	      j++;
 	    }
 	}
@@ -4154,6 +4158,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      numLOBs,
      lobNumArray,
      lobLocArray,
+     lobTypeArray,
      maxLocLen,
      (short)sdOptions_,
      givenDesc,
@@ -4164,7 +4169,7 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
      2,
      32000);
 #pragma warn(1506)  // warning elimination 
-  
+
   generator->initTdbFields(exe_util_tdb);
   
   if(!generator->explainDisabled()) {

@@ -2212,12 +2212,11 @@ short CmpSeabaseDDL::createSeabaseTable2(
         {
           
           lobNumList[j] = i; //column->getColumnNumber();
-          lobTypList[j] = 
-            (short)(column->getLobStorage() == Lob_Invalid_Storage
-	    	    ? Lob_HDFS_File : column->getLobStorage());
+          
 	  
-          //	   lobTypList[j] = (short)
-          //	     CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE); 
+          lobTypList[j] = (short)(column->getLobStorage());
+         
+        
           char * loc = new (STMTHEAP) char[1024];
 	  
           const char* f = ActiveSchemaDB()->getDefaults().

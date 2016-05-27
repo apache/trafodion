@@ -7813,7 +7813,7 @@ static RelExpr *checkTupleElementsAreAllScalar(BindWA *bindWA, RelExpr *re)
         *CmpCommon::diags() << DgSqlCode(-4125);
         bindWA->setErrStatus();
         return NULL;
-      }
+      }      
       else if (cols.entries() == 1) {  // if cols.entries() > 1 && subq->getDegree() > 1
           // we do not want to make the transformation velow. We want to keep the 
          // values clause, so that it cann be attached by a tsj to the subquery 

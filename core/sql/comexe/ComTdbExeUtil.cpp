@@ -2329,6 +2329,7 @@ ComTdbExeUtilLobShowddl::ComTdbExeUtilLobShowddl
  Lng32 numLOBs,
  char * lobNumArray,
  char * lobLocArray,
+ char * lobTypeArray,
  short maxLocLen,
  short sdOptions,
  ex_cri_desc * given_cri_desc,
@@ -2352,6 +2353,7 @@ ComTdbExeUtilLobShowddl::ComTdbExeUtilLobShowddl
     numLOBs_(numLOBs),
     lobNumArray_(lobNumArray),
     lobLocArray_(lobLocArray),
+    lobTypeArray_(lobTypeArray),
     maxLocLen_(maxLocLen),
     sdOptions_(sdOptions),
     schName_(schName),
@@ -2371,6 +2373,9 @@ Long ComTdbExeUtilLobShowddl::pack(void * space)
  if (lobLocArray_) 
     lobLocArray_.pack(space);
 
+ if (lobTypeArray_)
+   lobTypeArray_.pack(space);
+
   return ComTdbExeUtil::pack(space);
 }
 
@@ -2383,6 +2388,9 @@ Lng32 ComTdbExeUtilLobShowddl::unpack(void * base, void * reallocator)
     return -1;
 
   if(lobLocArray_.unpack(base)) 
+    return -1;
+
+  if(lobTypeArray_.unpack(base))
     return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
@@ -2417,6 +2425,15 @@ short ComTdbExeUtilLobShowddl::getLOBnum(short i)
   return lobNum;
 }
 
+NABoolean ComTdbExeUtilLobShowddl::getIsExternalLobCol(short i)
+{
+  if ((i > numLOBs_) || (i <= 0))
+    return -1;
+
+  NABoolean isExternal = (*((Int32*)&getLOBtypeArray()[4*(i-1)]) == Lob_External_HDFS_File);
+
+  return isExternal;
+}
 char * ComTdbExeUtilLobShowddl::getLOBloc(short i)
 {
   if ((i > numLOBs_) || (i <= 0))
@@ -2812,6 +2829,7 @@ ComTdbExeUtilLobInfo::ComTdbExeUtilLobInfo
      char *lobColArray,
      char * lobNumArray,
      char * lobLocArray,
+     char *lobTypeArray,
      Int32 hdfsPort,
      char *hdfsServer,
      NABoolean tableFormat,
@@ -2839,6 +2857,7 @@ ComTdbExeUtilLobInfo::ComTdbExeUtilLobInfo
        lobColArray_(lobColArray),
        lobNumArray_(lobNumArray),
        lobLocArray_(lobLocArray),
+       lobTypeArray_(lobTypeArray),
        hdfsPort_(0),
        hdfsServer_(hdfsServer),
        tableFormat_(tableFormat)
@@ -2857,6 +2876,9 @@ Long ComTdbExeUtilLobInfo::pack(void * space)
  if (lobLocArray_) 
     lobLocArray_.pack(space);
 
+ if(lobTypeArray_)
+   lobTypeArray_.pack(space);
+
  if (hdfsServer_) 
     hdfsServer_.pack(space);
   return ComTdbExeUtil::pack(space);
@@ -2871,6 +2893,9 @@ Lng32 ComTdbExeUtilLobInfo::unpack(void * base, void * reallocator)
     return -1;
 
   if(lobLocArray_.unpack(base)) 
+    return -1;
+
+  if(lobTypeArray_.unpack(base))
     return -1;
 
   if(hdfsServer_.unpack(base)) 
