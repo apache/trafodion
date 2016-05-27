@@ -64,7 +64,7 @@
 <echo file="${manifest.file}" append="true">${line.separator}Main-Class: org.trafodion.libmgmt.Vproc</echo>
 <echo file="${manifest.file}" append="true">${line.separator}Vproc: Traf_JDBC_Type4_Build_${rev_head}</echo>
 <echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-1: Version 1.0.0</echo>
-<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-2: ${Implementation-Version-2}</echo>
+<echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-2: ${TRAFODION_VER_PROD} ${Implementation-Version-2}</echo>
 <echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-3: ${Implementation-Version-3}</echo>
 <echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-4: ${Implementation-Version-4}</echo>
 <echo file="${manifest.file}" append="true">${line.separator}Implementation-Version-5: ${Implementation-Version-5}</echo>

@@ -28,7 +28,7 @@ include macros.gmk
 
 # Make Targets
 .PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr dcs rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests pkg-dcs-tests check-copyrights
+.PHONY: package package-all pkg-product pkg-sql-regress pkg-phx-tests pkg-dcs-tests check-copyrights pkg-installer
 
 ################
 ### Main targets
@@ -37,7 +37,7 @@ include macros.gmk
 # Default target (all components)
 all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar dcs rest odb lib_mgmt
 
-package: pkg-product pkg-client
+package: pkg-product pkg-client pkg-installer
 
 #############
 # Components
@@ -113,6 +113,7 @@ clean: sqroot
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean 
 	cd sql/lib_mgmt &&		$(MAKE) clean
+	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
 cleanall: sqroot eclipseclean cleantests
@@ -128,9 +129,10 @@ cleanall: sqroot eclipseclean cleantests
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean
 	cd sql/lib_mgmt &&		$(MAKE) cleanall
+	cd ../install &&                $(MAKE) clean
 	$(RM) -r ../${DISTRIBUTION_DIR}
 
-package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests
+package-all: package pkg-sql-regress pkg-phx-tests pkg-dcs-tests 
 
 pkg-product: all dcs rest 
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
@@ -149,6 +151,10 @@ pkg-phx-tests: all
 # Package dcs tests
 pkg-dcs-tests: all
 	cd sqf && $(MAKE) package-dcs 2>&1 | sed -e "s/$$/	##(Package dcs tests)/";exit $${PIPESTATUS[0]}
+
+# Package installer
+pkg-installer: 
+	cd ../install && $(MAKE) 2>&1 | sed -e "s/$$/	##(Package installer)/";exit $${PIPESTATUS[0]}
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
