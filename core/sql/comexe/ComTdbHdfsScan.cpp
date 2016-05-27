@@ -47,6 +47,7 @@ ComTdbHdfsScan::ComTdbHdfsScan(
                                Queue * hdfsFileRangeNumList,
                                char recordDelimiter,
                                char columnDelimiter,
+                               char * nullFormat,
                                Int64 hdfsBufSize,
                                UInt32 rangeTailIOSize,
                                Int64 hdfsSqlMaxRecLen,
@@ -57,6 +58,7 @@ ComTdbHdfsScan::ComTdbHdfsScan(
                                const unsigned short asciiTuppIndex,
                                const unsigned short workAtpIndex,
                                const unsigned short moveColsTuppIndex,
+                               const unsigned short origTuppIndex,
                                ex_cri_desc * work_cri_desc,
                                ex_cri_desc * given_cri_desc,
                                ex_cri_desc * returned_cri_desc,
@@ -93,12 +95,14 @@ ComTdbHdfsScan::ComTdbHdfsScan(
   hdfsFileRangeNumList_(hdfsFileRangeNumList),
   recordDelimiter_(recordDelimiter),
   columnDelimiter_(columnDelimiter),
+  nullFormat_(nullFormat),
   hdfsBufSize_(hdfsBufSize),
   rangeTailIOSize_(rangeTailIOSize),
   hdfsSqlMaxRecLen_(hdfsSqlMaxRecLen),
   outputRowLength_(outputRowLength),
   asciiRowLen_(asciiRowLen),
   moveExprColsRowLength_(moveColsRowLen),
+  origTuppIndex_(origTuppIndex),
   tuppIndex_(tuppIndex),
   asciiTuppIndex_(asciiTuppIndex),
   workAtpIndex_(workAtpIndex),
@@ -139,6 +143,9 @@ Long ComTdbHdfsScan::pack(void * space)
   hdfsFileInfoList_.pack(space);
   hdfsFileRangeBeginList_.pack(space);
   hdfsFileRangeNumList_.pack(space);
+
+  nullFormat_.pack(space);
+
   errCountTable_.pack(space);
   loggingLocation_.pack(space);
   errCountRowId_.pack(space);
@@ -169,6 +176,8 @@ Lng32 ComTdbHdfsScan::unpack(void * base, void * reallocator)
 
   if (hdfsFileRangeBeginList_.unpack(base, reallocator)) return -1;
   if (hdfsFileRangeNumList_.unpack(base, reallocator)) return -1;
+
+  if (nullFormat_.unpack(base)) return -1;
 
   if (errCountTable_.unpack(base)) return -1;
   if (loggingLocation_.unpack(base)) return -1;
@@ -474,13 +483,13 @@ ComTdbOrcFastAggr::ComTdbOrcFastAggr(
                    hdfsFileInfoList,
                    hdfsFileRangeBeginList,
                    hdfsFileRangeNumList,
-                   0, 0, 0, 0, 0,
+                   0, 0, NULL, 0, 0, 0,
                    projRowLen, 
                    0, 0,
                    returnedTuppIndex,
                    0, 
                    projTuppIndex, 
-                   0,
+                   0, 0,
                    work_cri_desc,
                    given_cri_desc,
                    returned_cri_desc,

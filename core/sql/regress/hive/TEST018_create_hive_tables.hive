@@ -148,14 +148,18 @@ create external table unload_store_sales_summary
 row format delimited fields terminated by '|' 
 location  '/user/hive/exttables/unload_store_sales_summary';
 
-drop table nulls;
-create external table nulls
-(    a string, 
-     b string
-) 
-row format delimited fields terminated by '|' 
-location  '/user/hive/exttables/nulls';
+drop table null_format_default;
+create external table null_format_default (a string, b string);
 
+drop table null_format_empty;
+create external table null_format_empty(a string, b string)
+row format delimited fields terminated by '|' 
+null defined as '';
+
+drop table null_format_colon;
+create external table null_format_colon(a string, b string)
+row format delimited fields terminated by '|' 
+null defined as ':';
 
 quit;
 
