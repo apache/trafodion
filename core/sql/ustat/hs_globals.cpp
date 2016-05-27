@@ -560,10 +560,12 @@ NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
   else if (workableCacheSize > 50)
     workableCacheSize = 50; 
 
-  // if the user himself set the CQD, don't do anything
+  // Do this only if the user didn't set the CQD in this session
+  // (So, for example, if the CQD was set in the DEFAULTS table
+  // but not in this session, we'll still override it.)
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  if (defs.getProvenance(HBASE_NUM_CACHE_ROWS_MAX) == 
-      NADefaults::INIT_DEFAULT_DEFAULTS)
+  if (defs.getProvenance(HBASE_NUM_CACHE_ROWS_MAX) < 
+      NADefaults::SET_BY_CQD)
     {
       char temp1[40];  // way more space than needed, but it's safe
       Lng32 wcs = (Lng32)workableCacheSize;
