@@ -1652,8 +1652,8 @@ void CIntNodeNameReq::performRequest()
 {
     const char method_name[] = "CIntNodeNameReq::performRequest";
     TRACE_ENTRY;
-    char current_n[MAX_PROCESS_NAME];
-    char new_n[MAX_PROCESS_NAME];
+    char current_n[MPI_MAX_PROCESSOR_NAME];
+    char new_n[MPI_MAX_PROCESSOR_NAME];
     
     strcpy (current_n, current_name_.c_str());
     strcpy (new_n, new_name_.c_str());

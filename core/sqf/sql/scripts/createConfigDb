@@ -32,7 +32,7 @@ pragma synchronous = OFF;
 create table pnode
 (
    pNid         integer  primary key,
-   nodeName     varchar(32),
+   nodeName     varchar(128),
    excFirstCore integer,
    excLastCore  integer
 );
@@ -52,7 +52,7 @@ create table lnode
 create table snode
 (
    pNid        integer,  -- currently from sqnode.pm:genConfig
-   nodeName    varchar(32),
+   nodeName    varchar(128),
    firstCore   integer,
    lastCore    integer,
    spNid       integer,  -- physical node for which the pNid can be a spare
@@ -67,7 +67,7 @@ create table snode
 create table procs
 (
    procType    integer,
-   name        varchar(32),
+   name        varchar(64),
    nid         integer,
    program     varchar(32),
    stdoutFile  varchar(256),
@@ -77,7 +77,7 @@ create table procs
 -- Persistent Process (gensq.pl pstartd)
 create table persist
 (
-   procName    varchar(32),
+   procName    varchar(64),
    zone        integer,
    reqTm       integer
 );
@@ -90,14 +90,14 @@ create table persist
 create table monRegProcName
 (
    procId      integer primary key autoincrement,
-   procName    varchar(32) unique
+   procName    varchar(64) unique
 );
 
 -- registry key name (monitor gensq.pl)
 create table monRegKeyName
 (
    keyId       integer primary key autoincrement,
-   keyname     varchar(32) unique
+   keyname     varchar(64) unique
 );
 
 -- Process Scope registry entry (monitor gensq.pl)

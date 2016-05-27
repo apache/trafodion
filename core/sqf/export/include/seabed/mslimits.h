@@ -30,12 +30,12 @@
 
 // Note the MAX's and MS_Process_Info_Type are near clones from msgdef.h
 enum { MS_MON_MAX_KEY_LIST       =    32 };
-enum { MS_MON_MAX_KEY_NAME       =    32 };
+enum { MS_MON_MAX_KEY_NAME       =    64 };
 enum { MS_MON_MAX_NODE_LIST      =    64 };
 enum { MS_MON_MAX_OPEN_LIST      =   256 };
 enum { MS_MON_MAX_PORT_NAME      =   256 };
 enum { MS_MON_MAX_PROC_LIST      =   256 };
-enum { MS_MON_MAX_PROCESS_NAME   =    32 };
+enum { MS_MON_MAX_PROCESS_NAME   =    64 };
 enum { MS_MON_MAX_PROCESS_PATH   =   256 };
 enum { MS_MON_MAX_PROCESSOR_NAME =   128 };
 enum { MS_MON_MAX_REASON_TEXT    =   256 };

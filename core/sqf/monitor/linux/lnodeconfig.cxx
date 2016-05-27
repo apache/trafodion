@@ -271,7 +271,7 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
     if (lnodeConfig)
     {
         // Set the next available nid
-        nextNid_ = nid > nextNid_ ? (nid+1) : nextNid_ ;
+        nextNid_ = nid >= nextNid_ ? (nid+1) : nextNid_ ;
 
         lnodesCount_++;
         // Add it to the array

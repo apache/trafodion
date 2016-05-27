@@ -147,8 +147,8 @@ struct down_def
 
 struct nodename_def
 {
-    char current_name[MAX_PROCESS_NAME];
-    char new_name[MAX_PROCESS_NAME];
+    char current_name[MPI_MAX_PROCESSOR_NAME];
+    char new_name[MPI_MAX_PROCESSOR_NAME];
 };
 
 
