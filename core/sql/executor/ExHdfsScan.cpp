@@ -44,7 +44,7 @@
 //#include "hdfs.h"
 
 #include "ExpORCinterface.h"
-
+#include "ComSmallDefs.h"
 
 ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 {
@@ -1391,6 +1391,9 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   ExpTupleDesc * asciiSourceTD =
      hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().asciiTuppIndex_);
 
+  ExpTupleDesc * origSourceTD = 
+    hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().origTuppIndex_);
+  
   const char cd = hdfsScanTdb().columnDelimiter_;
   const char rd = hdfsScanTdb().recordDelimiter_;
   const char *sourceDataEnd = hdfsScanBuffer_+trailingPrevRead_+ bytesRead_;
@@ -1415,6 +1418,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
   Lng32 neededColIndex = 0;
   Attributes * attr = NULL;
+  Attributes * tgtAttr = NULL;
   NABoolean rdSeen = FALSE;
 
   for (Lng32 i = 0; i <  hdfsScanTdb().convertSkipListSize_; i++)
@@ -1424,9 +1428,11 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
       if (neededColIndex == asciiSourceTD->numAttrs())
         continue;
 
+      tgtAttr = NULL;
       if (hdfsScanTdb().convertSkipList_[i] > 0)
       {
         attr = asciiSourceTD->getAttr(neededColIndex);
+        tgtAttr = origSourceTD->getAttr(neededColIndex);
         neededColIndex++;
       }
       else
@@ -1465,13 +1471,27 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
 
             if (attr->getNullFlag())
             {
-              if (len == 0)
-                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-	      else if (memcmp(sourceData, "\\N", len) == 0)
-                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-              else
-                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;
-            }
+              *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;
+              if (hdfsScanTdb().getNullFormat()) // null format specified by user
+                {
+                  if (((len == 0) && (strlen(hdfsScanTdb().getNullFormat()) == 0)) ||
+                      ((len > 0) && (memcmp(sourceData, hdfsScanTdb().getNullFormat(), len) == 0)))
+                    {
+                       *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+                    }
+                } // if
+              else // null format not specified by user
+                {
+                  // Use default null format.
+                  // for non-varchar, length of zero indicates a null value.
+                  // For all datatypes, HIVE_DEFAULT_NULL_STRING('\N') indicates a null value.
+                  if (((len == 0) && (tgtAttr && (NOT DFS2REC::isSQLVarChar(tgtAttr->getDatatype())))) ||
+                      ((len > 0) && (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, len) == 0)))
+                    {
+                      *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+                    }
+                } // else
+            } // if nullable attr
 
             if (len > 0)
             {
@@ -1697,7 +1717,7 @@ short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
             {
               if (currColLen == 0)
                 *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
-	      else if (memcmp(sourceData, "\\N", currColLen) == 0)
+	      else if (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, currColLen) == 0)
                 *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
               else
                 *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;

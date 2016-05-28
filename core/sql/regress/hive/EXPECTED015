@@ -209,9 +209,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.159
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.184
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.530
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.359
 
 --- 5 row(s) loaded.
 >>
@@ -233,9 +233,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.171
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.176
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.155
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.203
 
 --- 5 row(s) loaded.
 >>
@@ -258,9 +258,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.068
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.195
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.826
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.318
 
 --- 5 row(s) loaded.
 >>
@@ -288,9 +288,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.177
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.179
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.298
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.380
 
 --- 5 row(s) loaded.
 >>
@@ -461,9 +461,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRE
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:07.610
+Task:  PREPARATION     Status: Ended      ET: 00:00:08.673
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.603
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.402
 
 --- 5000 row(s) loaded.
 >>
@@ -487,14 +487,14 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
             4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
             5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
             6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
-            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            7  AAAAAAAAHAAAAAAA                    Hill 7th                                                      Road             Suite U          Farmington                                                                                              39145       United States                               ?                      
             8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
             9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
            10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
            11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
            12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
            13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
-           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100                                                                      Lipscomb County                 TX        77752                                               -6.00                      
            15  AAAAAAAAPAAAAAAA  314               Spring                                                        Ct.              Suite B          Oakland                                                       Washington County               OH        49843       United States                           -5.00  apartment           
            16  AAAAAAAAABAAAAAA  576               Adams Center                                                  Street           Suite J          Valley View                                                   Oldham County                   TX        75124       United States                           -6.00  condo               
            17  AAAAAAAABBAAAAAA  801               Green                                                         Dr.              Suite 0          Montpelier                                                    Richland County                 OH        48930       United States                           -5.00  single family       
@@ -543,9 +543,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRE
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:01.073
+Task:  PREPARATION     Status: Ended      ET: 00:00:01.062
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.328
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.294
 
 --- 5000 row(s) loaded.
 >>
@@ -569,14 +569,14 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
             4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
             5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
             6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
-            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            7  AAAAAAAAHAAAAAAA                    Hill 7th                                                      Road             Suite U          Farmington                                                                                              39145       United States                               ?                      
             8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
             9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
            10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
            11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
            12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
            13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
-           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100                                                                      Lipscomb County                 TX        77752                                               -6.00                      
            15  AAAAAAAAPAAAAAAA  314               Spring                                                        Ct.              Suite B          Oakland                                                       Washington County               OH        49843       United States                           -5.00  apartment           
            16  AAAAAAAAABAAAAAA  576               Adams Center                                                  Street           Suite J          Valley View                                                   Oldham County                   TX        75124       United States                           -6.00  condo               
            17  AAAAAAAABBAAAAAA  801               Green                                                         Dr.              Suite 0          Montpelier                                                    Richland County                 OH        48930       United States                           -5.00  single family       
@@ -644,9 +644,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:02.255
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.130
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.421
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.631
 
 --- 5000 row(s) loaded.
 >>
@@ -750,9 +750,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:05.628
+Task:  PREPARATION     Status: Ended      ET: 00:00:06.200
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  COMPLETION      Status: Ended      ET: 00:00:03.087
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.735
 
 --- 5000 row(s) loaded.
 >>
@@ -1262,9 +1262,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:05.160
+Task:  PREPARATION     Status: Ended      ET: 00:00:06.517
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  COMPLETION      Status: Ended      ET: 00:00:02.068
+Task:  COMPLETION      Status: Ended      ET: 00:00:02.242
 
 --- 5000 row(s) loaded.
 >>
@@ -1305,11 +1305,11 @@ Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
        Rows Processed: 1000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:04.522
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.908
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.373
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.357
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  POPULATE INDEX  Status: Ended      ET: 00:00:12.646
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:12.289
 
 --- 1000 row(s) loaded.
 >>
@@ -1354,11 +1354,11 @@ Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:06.216
+Task:  PREPARATION     Status: Ended      ET: 00:00:05.592
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  COMPLETION      Status: Ended      ET: 00:00:03.356
+Task:  COMPLETION      Status: Ended      ET: 00:00:02.018
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  POPULATE INDEX  Status: Ended      ET: 00:00:14.835
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:14.563
 
 --- 5000 row(s) loaded.
 >>
@@ -1532,9 +1532,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE."customer_addr
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE."customer_address_delim"
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE."customer_address_delim"
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:03.648
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.154
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE."customer_address_delim"
-Task:  COMPLETION      Status: Ended      ET: 00:00:02.430
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.729
 
 --- 5000 row(s) loaded.
 >>
@@ -1558,14 +1558,14 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
             4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
             5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
             6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
-            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            7  AAAAAAAAHAAAAAAA                    Hill 7th                                                      Road             Suite U          Farmington                                                                                              39145       United States                               ?                      
             8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
             9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
            10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
            11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
            12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
            13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
-           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100                                                                      Lipscomb County                 TX        77752                                               -6.00                      
            15  AAAAAAAAPAAAAAAA  314               Spring                                                        Ct.              Suite B          Oakland                                                       Washington County               OH        49843       United States                           -5.00  apartment           
            16  AAAAAAAAABAAAAAA  576               Adams Center                                                  Street           Suite J          Valley View                                                   Oldham County                   TX        75124       United States                           -6.00  condo               
            17  AAAAAAAABBAAAAAA  801               Green                                                         Dr.              Suite 0          Montpelier                                                    Richland County                 OH        48930       United States                           -5.00  single family       
