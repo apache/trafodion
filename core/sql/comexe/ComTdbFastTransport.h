@@ -427,9 +427,9 @@ protected:
   UInt16       ioTimeout_;                                   // 128 - 129
   UInt16       filler_;                                      // 130 - 131
   UInt32       childDataRowLen_;                             // 132 - 135
-  
+
   // Make sure class size is a multiple of 8
-  char fillerComTdbFastTransport_[8];                       // 136 -143
+  char fillerComTdbFastTransport_[8];                        // 136 - 143
 
 };
 

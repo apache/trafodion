@@ -45,7 +45,7 @@
 #include "ComQueue.h"
 //#include "UdfDllInteraction.h"
 #include "RelFastTransport.h"
-
+#include "HDFSHook.h"
 
 
 // Helper function to allocate a string in the plan
@@ -127,6 +127,7 @@ int CreateAllCharsExpr(const NAType &formalType,
   NAType *typ = NULL;
 
   Lng32 maxLength = GetDisplayLength(formalType);
+  maxLength = MAXOF(maxLength, 1);
 
   if (formalType.getTypeQualifier() != NA_CHARACTER_TYPE )
   {
@@ -566,8 +567,8 @@ PhysicalFastExtract::codeGen(Generator *generator)
   hiveTableName = AllocStringInSpace(*space, (char *)getHiveTableName().data());
   delimiter = AllocStringInSpace(*space,  newDelimiter);
   header = AllocStringInSpace(*space, (char *)getHeader().data());
-  nullString = AllocStringInSpace(*space, (char *)getNullString().data());
   recordSeparator = AllocStringInSpace(*space, newRecordSep);
+  nullString = AllocStringInSpace(*space, (char *)getNullString().data());
 
    result = ft_codegen(generator,
                        *this,              // RelExpr &relExpr

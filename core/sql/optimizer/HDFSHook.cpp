@@ -827,6 +827,7 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   numOfPartCols_ = htd->getNumOfPartCols();
   recordTerminator_ = hsd->getRecordTerminator();
   fieldTerminator_ = hsd->getFieldTerminator() ;
+  nullFormat_ = hsd->getNullFormat();
   NAString hdfsHost;
   Int32 hdfsPort = -1;
   NAString tableDir;

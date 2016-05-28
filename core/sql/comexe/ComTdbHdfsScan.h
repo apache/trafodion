@@ -131,17 +131,17 @@ class ComTdbHdfsScan : public ComTdb
   NABasicPtr loggingLocation_;                                // 168 - 175
   NABasicPtr errCountRowId_;                                  // 176 - 183
   UInt32  hiveScanMode_;                                      // 184 - 187
-
-  char fillersComTdbHdfsScan1_[4];                           // 188 - 191
+  UInt16 origTuppIndex_;                                      // 188 - 189
+  char fillersComTdbHdfsScan1_[2];                            // 190 - 191
+  NABasicPtr nullFormat_;                                     // 192 - 199
 
   // next 3 params used to check if data under hdfsFileDir
   // was modified after query was compiled.
-  NABasicPtr hdfsRootDir_;                                     // 192 - 199
-  Int64  modTSforDir_;                                         // 200 - 207
-  Lng32  numOfPartCols_;                                       // 208 - 211
-  QueuePtr hdfsDirsToCheck_;                                   // 212 - 219
-
+  NABasicPtr hdfsRootDir_;                                     // 200 - 207
+  Int64  modTSforDir_;                                         // 208 - 215
+  Lng32  numOfPartCols_;                                       // 216 - 219
   char fillersComTdbHdfsScan2_[4];                             // 220 - 223
+  QueuePtr hdfsDirsToCheck_;                                   // 224 - 231
     
 public:
   enum HDFSFileType
@@ -171,6 +171,7 @@ public:
 		 Queue * hdfsFileRangeNumList,
                  char recordDelimiter,
                  char columnDelimiter,
+                 char * nullFormat,
 		 Int64 hdfsBufSize,
                  UInt32 rangeTailIOSize,
 		 Int64 hdfsSqlMaxRecLen,
@@ -181,6 +182,7 @@ public:
 		 const unsigned short asciiTuppIndex,
 		 const unsigned short workAtpIndex,
                  const unsigned short moveColsTuppIndex,
+                 const unsigned short origTuppIndex,
 		 ex_cri_desc * work_cri_desc,
 		 ex_cri_desc * given_cri_desc,
 		 ex_cri_desc * returned_cri_desc,
@@ -243,6 +245,8 @@ public:
   Queue* getHdfsFileRangeBeginList() {return hdfsFileRangeBeginList_;}
   Queue* getHdfsFileRangeNumList() {return hdfsFileRangeNumList_;}
 
+  char * getNullFormat() { return nullFormat_; }
+
   const NABoolean isTextFile() const { return (type_ == TEXT_);}
   const NABoolean isSequenceFile() const { return (type_ == SEQUENCE_);}  
   const NABoolean isOrcFile() const { return (type_ == ORC_);}
@@ -260,23 +264,24 @@ public:
   NABoolean hdfsPrefetch() { return (flags_ & HDFS_PREFETCH) != 0; };
 
   void setUseCif(NABoolean v)
-   {(v ? flags_ |= USE_CIF : flags_ &= ~USE_CIF); };
-   NABoolean useCif() { return (flags_ & USE_CIF) != 0; };
+  {(v ? flags_ |= USE_CIF : flags_ &= ~USE_CIF); };
+  NABoolean useCif() { return (flags_ & USE_CIF) != 0; };
+  
+  void setUseCifDefrag(NABoolean v)
+  {(v ? flags_ |= USE_CIF_DEFRAG : flags_ &= ~USE_CIF_DEFRAG); };
+  NABoolean useCifDefrag() { return (flags_ & USE_CIF_DEFRAG) != 0; };
 
-   void setUseCifDefrag(NABoolean v)
-    {(v ? flags_ |= USE_CIF_DEFRAG : flags_ &= ~USE_CIF_DEFRAG); };
-   NABoolean useCifDefrag() { return (flags_ & USE_CIF_DEFRAG) != 0; };
-   void setContinueOnError(NABoolean v)
-    {(v ? flags_ |= CONTINUE_ON_ERROR : flags_ &= ~CONTINUE_ON_ERROR); };
-   NABoolean continueOnError() { return (flags_ & CONTINUE_ON_ERROR) != 0; };
-
-    void setLogErrorRows(NABoolean v)
-     {(v ? flags_ |= LOG_ERROR_ROWS : flags_ &= ~LOG_ERROR_ROWS); };
-    NABoolean getLogErrorRows() { return (flags_ & LOG_ERROR_ROWS) != 0; };
-
-     UInt32 getMaxErrorRows() const { return maxErrorRows_;}
-     void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
-
+  void setContinueOnError(NABoolean v)
+  {(v ? flags_ |= CONTINUE_ON_ERROR : flags_ &= ~CONTINUE_ON_ERROR); };
+  NABoolean continueOnError() { return (flags_ & CONTINUE_ON_ERROR) != 0; };
+  
+  void setLogErrorRows(NABoolean v)
+  {(v ? flags_ |= LOG_ERROR_ROWS : flags_ &= ~LOG_ERROR_ROWS); };
+  NABoolean getLogErrorRows() { return (flags_ & LOG_ERROR_ROWS) != 0; };
+  
+  UInt32 getMaxErrorRows() const { return maxErrorRows_;}
+  void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
+  
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -325,6 +330,11 @@ public:
   ExpTupleDesc *getHdfsAsciiRowDesc() const
   {
     return workCriDesc_->getTupleDescriptor(asciiTuppIndex_);
+  }
+
+  ExpTupleDesc *getHdfsOrigRowDesc() const
+  {
+    return workCriDesc_->getTupleDescriptor(origTuppIndex_);
   }
 
   ExpTupleDesc *getMoveExprColsRowDesc() const

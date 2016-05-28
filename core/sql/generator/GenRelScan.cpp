@@ -807,8 +807,11 @@ short FileScan::codeGenForHive(Generator * generator)
   ULng32 asciiRowLen; 
   ExpTupleDesc * asciiTupleDesc = 0;
 
+  const Int32 origTuppIndex = 5;
+  ExpTupleDesc * origTupleDesc = 0;
+
   ex_cri_desc * work_cri_desc = NULL;
-  work_cri_desc = new(space) ex_cri_desc(5, space);
+  work_cri_desc = new(space) ex_cri_desc(6, space);
   returned_desc = new(space) ex_cri_desc(given_desc->noTuples() + 1, space);
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
@@ -834,6 +837,7 @@ short FileScan::codeGenForHive(Generator * generator)
   //   by making sure that the output ValueIds created during
   //   binding refer to the outputs of the move expression
 
+  ValueIdList origExprVids;
   for (int ii = 0; ii < (int)hdfsVals.entries();ii++)
   {
     if (convertSkipList[ii] == 0)
@@ -865,6 +869,8 @@ short FileScan::codeGenForHive(Generator * generator)
     else
       projectExprOnlyCastVids.insert(castValue->getValueId());
 
+    origExprVids.insert(hdfsVals[ii]);
+
     orcRowLen += sizeof(Lng32);
     orcRowLen += givenType.getDisplayLength();
 
@@ -890,6 +896,19 @@ short FileScan::codeGenForHive(Generator * generator)
     
   // Add the tuple descriptor for reply values to the work ATP
   work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
+  
+  ULng32 origRowLen; 
+  exp_gen->processValIdList(
+       origExprVids,                             // [IN] ValueIdList
+       asciiRowFormat,                        // [IN] tuple data format
+       origRowLen,                           // [OUT] tuple length 
+       work_atp,                              // [IN] atp number
+       origTuppIndex,                        // [IN] index into atp
+       &origTupleDesc,                       // [optional OUT] tuple desc
+       ExpTupleDesc::LONG_FORMAT);             // [optional IN] desc format
+    
+  // Add the tuple descriptor for reply values to the work ATP
+  work_cri_desc->setTupleDescriptor(origTuppIndex, origTupleDesc);
   
   ExpTupleDesc * tuple_desc = 0;
   ExpTupleDesc * hdfs_desc = 0;
@@ -1146,6 +1165,15 @@ if (hTabStats->isOrcFile())
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
 
+  char * nullFormat = NULL;
+  if (hTabStats->getNullFormat())
+    {
+      nullFormat = 
+        space->allocateAndCopyToAlignedSpace(hTabStats->getNullFormat(),
+                                             strlen(hTabStats->getNullFormat()),
+                                             0);
+    }
+
   // info needed to validate hdfs file structs
   char * hdfsRootDir = NULL;
   Int64 modTS = -1;
@@ -1190,6 +1218,7 @@ if (hTabStats->isOrcFile())
 		   hdfsFileRangeNumList,
 		   hTabStats->getRecordTerminator(),  // recordDelimiter
 		   hTabStats->getFieldTerminator(),   // columnDelimiter,
+                   nullFormat,
 		   hdfsBufSize,
                    rangeTailIOSize,
 		   executorPredColsRecLength,
@@ -1200,6 +1229,7 @@ if (hTabStats->isOrcFile())
 		   asciiTuppIndex,
 		   executorPredTuppIndex,
                    projectOnlyTuppIndex,
+                   origTuppIndex,
 		   work_cri_desc,
 		   given_desc,
 		   returned_desc,
