@@ -136,11 +136,12 @@ class ComTdbHdfsScan : public ComTdb
 
   // next 3 params used to check if data under hdfsFileDir
   // was modified after query was compiled.
-  NABasicPtr hdfsFilesDir_;                                    // 192 - 199
+  NABasicPtr hdfsRootDir_;                                     // 192 - 199
   Int64  modTSforDir_;                                         // 200 - 207
-  Lng32  numFilesInDir_;                                       // 208 - 211
+  Lng32  numOfPartCols_;                                       // 208 - 211
+  QueuePtr hdfsDirsToCheck_;                                   // 212 - 219
 
-  char fillersComTdbHdfsScan2_[12];                           // 212 - 223
+  char fillersComTdbHdfsScan2_[4];                             // 220 - 223
     
 public:
   enum HDFSFileType
@@ -195,9 +196,10 @@ public:
 
                  // next 3 params used to check if data under hdfsFileDir
                  // was modified after query was compiled.
-                 char * hdfsFilesDir  = NULL,
+                 char * hdfsRootDir  = NULL,
                  Int64  modTSforDir   = -1,
-                 Lng32  numFilesInDir = -1
+                 Lng32  numOfPartCols = -1,
+                 Queue * hdfsDirsToCheck = NULL
                  );
 
   ~ComTdbHdfsScan();
@@ -329,7 +331,8 @@ public:
   {
     return workCriDesc_->getTupleDescriptor(moveExprColsTuppIndex_);
   }
-  
+
+  Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
 };
 
 inline ComTdb * ComTdbHdfsScan::getChildTdb()

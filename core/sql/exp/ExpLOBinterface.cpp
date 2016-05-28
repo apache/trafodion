@@ -236,7 +236,7 @@ Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
                                   char * lobHdfsServer,
                                   Lng32  lobHdfsPort,
                                   Int64  modTS,
-                                  Lng32  numFilesInDir)
+                                  Lng32  numOfPartLevels)
 {
   Ex_Lob_Error err;
 
@@ -247,8 +247,8 @@ Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
 
   char dirInfoBuf[100];
   *(Int64*)dirInfoBuf = modTS;
-  *(Lng32*)&dirInfoBuf[sizeof(modTS)] = numFilesInDir;
-  Lng32 dirInfoBufLen = sizeof(modTS) + sizeof(numFilesInDir);
+  *(Lng32*)&dirInfoBuf[sizeof(modTS)] = numOfPartLevels;
+  Lng32 dirInfoBufLen = sizeof(modTS) + sizeof(numOfPartLevels);
   err = ExLobsOper((char*)"",
                    NULL, 0,
                    lobHdfsServer, lobHdfsPort,

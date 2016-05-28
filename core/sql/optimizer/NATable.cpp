@@ -7308,6 +7308,13 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
      }
   }
 
+  if ((cachedNATable->isHiveTable()) &&
+      (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
+    {
+      removeEntry = TRUE;
+    }
+
   //Found in cache.  If that's all the caller wanted, return now.
   if ( !removeEntry && findInCacheOnly )
      return cachedNATable;
@@ -7896,7 +7903,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       table = NULL;
     }
 
-  if (table && ((table->isHbaseTable() || table->isSeabaseTable()) && !(table->isSeabaseMDTable())))
+  if (table && ((table->isHbaseTable() || table->isSeabaseTable()) && 
+                !(table->isSeabaseMDTable())))
     {
       if ((CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
 	{

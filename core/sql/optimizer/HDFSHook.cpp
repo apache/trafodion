@@ -1069,41 +1069,58 @@ void HHDFSTableStats::print(FILE *ofd)
   fprintf(ofd,"====================================================================\n");
 }
 
+extern __thread hdfsFS *globalFS;
+
 NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
 {
   NABoolean result = TRUE;
 
   // establish connection to HDFS if needed
-  if (fs_ == NULL ||
+  if (globalFS == NULL ||
+      *globalFS == NULL ||
       currHdfsHost_ != host ||
       currHdfsPort_ != port)
     {
-      if (fs_)
+      if (globalFS && *globalFS)
+        disconnectHDFS();
+
+      if (globalFS == NULL)
         {
-          hdfsDisconnect(fs_);
-          fs_ = NULL;
+          globalFS = new hdfsFS;
+          *globalFS = NULL;
         }
-      fs_ = hdfsConnect(host, port);
-      
-      if (fs_ == NULL)
+
+      if (*globalFS == NULL)
         {
-          NAString errMsg("hdfsConnect to ");
-          errMsg += host;
-          errMsg += ":";
-          errMsg += port;
-          errMsg += " failed";
-          diags_.recordError(errMsg, "HHDFSTableStats::connectHDFS");
-          result = FALSE;
+          *globalFS = hdfsConnect(host, port);
         }
+
       currHdfsHost_ = host;
       currHdfsPort_ = port;
     }
+
+  fs_ = *globalFS;
+  if (fs_ == NULL)
+    {
+      NAString errMsg("hdfsConnect to ");
+      errMsg += host;
+      errMsg += ":";
+      errMsg += port;
+      errMsg += " failed";
+      diags_.recordError(errMsg, "HHDFSTableStats::connectHDFS");
+      result = FALSE;
+    }
+  
   return result;
 }
 
 void HHDFSTableStats::disconnectHDFS()
 {
-  if (fs_)
-    hdfsDisconnect(fs_);
+  if (globalFS && *globalFS)
+    {
+      hdfsDisconnect(*globalFS);
+      *globalFS = NULL;
+    }
+
   fs_ = NULL;
 }

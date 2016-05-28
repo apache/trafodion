@@ -110,13 +110,16 @@ ExLob::~ExLob()
    
 }
 
+__thread hdfsFS *globalFS = NULL;
+ 
 Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
                                char *dir, 
 			       LobsStorage storage,
                                char *hdfsServer, Int64 hdfsPort,
                                char *lobLocation,
                                int bufferSize , short replication ,
-                               int blockSize, Int64 lobMaxSize, ExLobGlobals *lobGlobals)
+                               int blockSize, Int64 lobMaxSize, 
+                               ExLobGlobals *lobGlobals)
 {
   int openFlags;
   mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
@@ -141,33 +144,40 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
       
     }
 
-  if (storage_ != Lob_Invalid_Storage) 
+  hdfsServer_ = hdfsServer;
+  hdfsPort_ = hdfsPort;
+
+  if (globalFS == NULL)
+    {
+      globalFS = new hdfsFS;
+      *globalFS = NULL;
+    }
+  
+  if (*globalFS == NULL)
+    {
+      *globalFS = hdfsConnect(hdfsServer_, hdfsPort_);
+      if (*globalFS == NULL)
+        return LOB_HDFS_CONNECT_ERROR;
+    }
+
+  fs_ = *globalFS;
+  if (lobGlobals)
+    lobGlobals->setHdfsFs(fs_);
+  
+  if (storage_ != Lob_Invalid_Storage)
     {
       return LOB_INIT_ERROR;
-    } else 
+    } 
+  else 
     {
       storage_ = storage;
     }
 
   stats_.init(); 
 
-  hdfsServer_ = hdfsServer;
-  hdfsPort_ = hdfsPort;
   if (lobLocation)
     lobLocation_ = lobLocation;
   clock_gettime(CLOCK_MONOTONIC, &startTime);
-
-  if (lobGlobals->getHdfsFs() == NULL)
-    {
-      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL) 
-	return LOB_HDFS_CONNECT_ERROR;
-      lobGlobals->setHdfsFs(fs_);
-    } 
-  else 
-    {
-      fs_ = lobGlobals->getHdfsFs();
-    }
 
   clock_gettime(CLOCK_MONOTONIC, &endTime);
 
@@ -379,13 +389,63 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
     return LOB_OPER_OK;
 }
 
+Ex_Lob_Error ExLob::dataModCheck2(
+       char * dirPath, 
+       Int64  inputModTS,
+       Lng32  numOfPartLevels)
+{
+  if (numOfPartLevels == 0)
+    return LOB_OPER_OK;
+
+  Lng32 currNumFilesInDir = 0;
+  hdfsFileInfo * fileInfos = 
+    hdfsListDirectory(fs_, dirPath, &currNumFilesInDir);
+  if ((currNumFilesInDir > 0) && (fileInfos == NULL))
+    {
+      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+    }
+
+  NABoolean failed = FALSE;
+  for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
+    {
+      hdfsFileInfo &fileInfo = fileInfos[i];
+      if (fileInfo.mKind == kObjectKindDirectory)
+        {
+          Int64 currModTS = fileInfo.mLastMod;
+          if ((inputModTS > 0) &&
+              (currModTS > inputModTS))
+            failed = TRUE;
+        }
+    }
+
+  hdfsFreeFileInfo(fileInfos, currNumFilesInDir);
+  if (failed)
+    return LOB_DATA_MOD_CHECK_ERROR;
+
+  numOfPartLevels--;
+  Ex_Lob_Error err = LOB_OPER_OK;
+  if (numOfPartLevels > 0)
+    {
+      for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
+        {
+          hdfsFileInfo &fileInfo = fileInfos[i];
+          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels);
+          if (err != LOB_OPER_OK)
+            return err;
+        }
+    }
+
+  return LOB_OPER_OK;
+}
+
+// numOfPartLevels: 0, if not partitioned
+//                  N, number of partitioning cols
 Ex_Lob_Error ExLob::dataModCheck(
        char * dirPath, 
        Int64  inputModTS,
-       Lng32  inputNumFilesInDir,
-       Lng32  &numFilesInDir)
+       Lng32  numOfPartLevels)
 {
-  // find mod time of dir
+  // find mod time of root dir
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
     {
@@ -398,38 +458,10 @@ Ex_Lob_Error ExLob::dataModCheck(
       (currModTS > inputModTS))
     return LOB_DATA_MOD_CHECK_ERROR;
 
-  // find number of files in dirPath.
-  Lng32 currNumFilesInDir = 0;
-  fileInfos = hdfsListDirectory(fs_, dirPath, &currNumFilesInDir);
-  if ((currNumFilesInDir > 0) && (fileInfos == NULL))
+  if (numOfPartLevels > 0)
     {
-      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+      return dataModCheck2(dirPath, inputModTS, numOfPartLevels);
     }
-
-  NABoolean failed = FALSE;
-  for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
-    {
-      hdfsFileInfo &fileInfo = fileInfos[i];
-      if (fileInfo.mKind == kObjectKindDirectory)
-        {
-          if (dataModCheck(fileInfo.mName, inputModTS, 
-                           inputNumFilesInDir, numFilesInDir) ==
-              LOB_DATA_MOD_CHECK_ERROR)
-            {
-              failed = TRUE;
-            }
-        }
-      else if (fileInfo.mKind == kObjectKindFile)
-        {
-          numFilesInDir++;
-          if (numFilesInDir > inputNumFilesInDir)
-            failed = TRUE;
-        }
-    }
-
-  hdfsFreeFileInfo(fileInfos, currNumFilesInDir);
-  if (failed)
-    return LOB_DATA_MOD_CHECK_ERROR;
 
   return LOB_OPER_OK;
 }
@@ -2387,17 +2419,13 @@ Ex_Lob_Error ExLobsOper (
       {
         lobPtr->initialize(NULL, EX_LOB_RW,
                            NULL, storage, hdfsServer, hdfsPort, NULL, 
-                           bufferSize, replication, blockSize);
+                           bufferSize, replication, blockSize, lobMaxSize, 
+                           lobGlobals);
 
         Int64 inputModTS = *(Int64*)blackBox;
-        Int32 inputNumFilesInDir = 
+        Int32 inputNumOfPartLevels = 
           *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
-        Int32 numFilesInDir = 0;
-        err = lobPtr->dataModCheck(dir, inputModTS, 
-                                   inputNumFilesInDir, numFilesInDir);
-        if ((err == LOB_OPER_OK) &&
-            (numFilesInDir != inputNumFilesInDir))
-          err = LOB_DATA_MOD_CHECK_ERROR;
+        err = lobPtr->dataModCheck(dir, inputModTS, inputNumOfPartLevels);
       }
       break;
 

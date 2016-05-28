@@ -489,8 +489,11 @@ class ExLob
   Ex_Lob_Error dataModCheck(
        char * dirPath, 
        Int64  modTS,
-       Lng32  inputNumFilesInDir,
-       Lng32  &numFilesInDir);
+       Lng32  numOfPartLevels);
+  Ex_Lob_Error dataModCheck2(
+       char * dirPath, 
+       Int64  modTS,
+       Lng32  numOfPartLevels);
 
   Ex_Lob_Error emptyDirectory();
   ExLobStats *getStats() { return &stats_; }

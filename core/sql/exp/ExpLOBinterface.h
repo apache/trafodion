@@ -303,7 +303,7 @@ Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
                                   char * lobHdfsServer,
                                   Lng32  lobHdfsPort,
                                   Int64  modTS,
-                                  Lng32  numFilesInDir);
+                                  Lng32  numOfPartLevels);
 
 Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             char * lobName,

@@ -1147,19 +1147,29 @@ if (hTabStats->isOrcFile())
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
 
   // info needed to validate hdfs file structs
-  //  const HHDFSTableStats* hTabStats = 
-  //    getIndexDesc()->getNAFileSet()->getHHDFSTableStats();
-  char * hdfsDir = NULL;
+  char * hdfsRootDir = NULL;
   Int64 modTS = -1;
-  Lng32 numFilesInDir = -1;
+  Lng32 numOfPartLevels = -1;
+  Queue * hdfsDirsToCheck = NULL;
   if (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON)
     {
-      hdfsDir =
+      hdfsRootDir =
         space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
                                              hTabStats->tableDir().length(),
                                              0);
       modTS = hTabStats->getModificationTS();
-      numFilesInDir =  hTabStats->getNumFiles();
+      numOfPartLevels = hTabStats->numOfPartCols();
+
+      // if specific directories are to checked based on the query struct
+      // (for example, when certain partitions are explicitly specified), 
+      // add them to hdfsDirsToCheck.
+      // At runtime, only these dirs will be checked for data modification.
+      // ** TBD **
+
+      // Right now, timestamp info is not being generated correctly for
+      // partitioned files. Skip data mod check for them.
+      if (numOfPartLevels > 0)
+        hdfsRootDir = NULL;
     }
 
   // create hdfsscan_tdb
@@ -1202,7 +1212,7 @@ if (hTabStats->isOrcFile())
 		   logLocation,
 		   errCountRowId,
 
-                   hdfsDir, modTS, numFilesInDir
+                   hdfsRootDir, modTS, numOfPartLevels, hdfsDirsToCheck
 		   );
 
   generator->initTdbFields(hdfsscan_tdb);

@@ -423,14 +423,19 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
         case CHECK_FOR_DATA_MOD:
         case CHECK_FOR_DATA_MOD_AND_DONE:
           {
-            char * dirPath = hdfsScanTdb().hdfsFilesDir_;
+            char * dirPath = hdfsScanTdb().hdfsRootDir_;
             if (! dirPath)
               dataModCheckDone_ = TRUE;
 
             if (NOT dataModCheckDone_)
               {
                 Int64 modTS = hdfsScanTdb().modTSforDir_;
-                Lng32 numFilesInDir = hdfsScanTdb().numFilesInDir_;
+                Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
+
+                if (hdfsScanTdb().hdfsDirsToCheck())
+                  {
+                    // TBD
+                  }
 
                 retcode = ExpLOBinterfaceDataModCheck
                   (lobGlob_,
@@ -438,7 +443,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    hdfsScanTdb().hostName_,
                    hdfsScanTdb().port_,
                    modTS,
-                   numFilesInDir);
+                   numOfPartLevels);
                 
                 if (retcode < 0)
                   {
