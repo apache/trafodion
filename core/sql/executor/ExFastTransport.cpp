@@ -89,6 +89,7 @@ ExFastExtractTcb::ExFastExtractTcb(
   , sourceFieldsConvIndex_(NULL)
   , currBuffer_(NULL)
   , bufferAllocFailuresCount_(0)
+  , modTS_(-1)
 {
   
   ex_globals *stmtGlobals = getGlobals();
@@ -482,6 +483,16 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
 
 }
 
+Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck()
+{
+  return ExpLOBinterfaceDataModCheck(lobGlob_,
+                                     targetLocation_,
+                                     hdfsHost_,
+                                     hdfsPort_,
+                                     myTdb().getModTSforDir(),
+                                     0);
+}
+
 
 Lng32 ExHdfsFastExtractTcb::lobInterfaceClose()
 {
@@ -530,13 +541,13 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   ex_tcb::fixup();
 
-
   if(!myTdb().getSkipWritingToFiles() &&
      !myTdb().getBypassLibhdfs())
 
     ExpLOBinterfaceInit
       (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
 
+  modTS_ = myTdb().getModTSforDir();
 
   return 0;
 }
@@ -681,9 +692,62 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
     {
     case EXTRACT_NOT_STARTED:
     {
+      pstate.step_= EXTRACT_CHECK_MOD_TS;
+    }
+    break;
+
+    case EXTRACT_CHECK_MOD_TS:
+    {
+      if ((! myTdb().getTargetFile()) ||
+          (myTdb().getModTSforDir() == -1))
+        {
+          pstate.step_ = EXTRACT_INITIALIZE;
+          break;
+        }
+
+      numBuffers_ = 0;
+
+      memset (hdfsHost_, '\0', sizeof(hdfsHost_));
+      strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
+      hdfsPort_ = myTdb().getHdfsPortNum();
+      memset (fileName_, '\0', sizeof(fileName_));
+      memset (targetLocation_, '\0', sizeof(targetLocation_));
+      snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
+
+      retcode = lobInterfaceDataModCheck();
+      if (retcode < 0)
+      {
+        Lng32 cliError = 0;
+        
+        Lng32 intParam1 = -retcode;
+        ComDiagsArea * diagsArea = NULL;
+        ExRaiseSqlError(getHeap(), &diagsArea, 
+                        (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE),
+                        NULL, &intParam1, 
+                        &cliError, 
+                        NULL, 
+                        "HDFS",
+                        (char*)"ExpLOBInterfaceDataModCheck",
+                        getLobErrStr(intParam1));
+        pentry_down->setDiagsArea(diagsArea);
+        pstate.step_ = EXTRACT_ERROR;
+        break;
+      }
+      
+      if (retcode == 1) // check failed
+      {
+        ComDiagsArea * diagsArea = NULL;
+        ExRaiseSqlError(getHeap(), &diagsArea, 
+                        (ExeErrorCode)(8436));
+        pentry_down->setDiagsArea(diagsArea);
+        pstate.step_ = EXTRACT_ERROR;
+        break;
+      }
+      
       pstate.step_= EXTRACT_INITIALIZE;
     }
-    //  no break here
+    break;
+    
     case EXTRACT_INITIALIZE:
     {
       pstate.processingStarted_ = FALSE;
@@ -798,7 +862,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
               break;
             }
           }
-
+            
           if (feStats)
           {
             feStats->setPartitionNumber(fileNum);
@@ -1123,13 +1187,16 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         }
         else  if (myTdb().getBypassLibhdfs())
         {
-          sfwRetCode = sequenceFileWriter_->hdfsClose();
-          if (!errorOccurred_ && sfwRetCode != SFW_OK )
-          {
-            createSequenceFileError(sfwRetCode);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
-          }
+          if (sequenceFileWriter_)
+            {
+              sfwRetCode = sequenceFileWriter_->hdfsClose();
+              if (!errorOccurred_ && sfwRetCode != SFW_OK )
+                {
+                  createSequenceFileError(sfwRetCode);
+                  pstate.step_ = EXTRACT_ERROR;
+                  break;
+                }
+            }
         }
         else
         {

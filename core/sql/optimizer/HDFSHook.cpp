@@ -1070,7 +1070,8 @@ void HHDFSTableStats::print(FILE *ofd)
   fprintf(ofd,"====================================================================\n");
 }
 
-extern __thread hdfsFS *globalFS;
+//extern __thread hdfsFS *globalFS;
+hdfsFS *globalFS;
 
 NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
 {

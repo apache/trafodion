@@ -27,12 +27,10 @@ set schema trafodion.hbase;
 cqd comp_bool_226 'on';
 cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD  '0';
 cqd hive_max_string_length '60';
-cqd query_cache '0';
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 
 obey TEST018(clean_up);
-
-
 
 log LOG018 clear;
 

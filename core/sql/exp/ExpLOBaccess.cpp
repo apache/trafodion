@@ -110,8 +110,7 @@ ExLob::~ExLob()
    
 }
 
-__thread hdfsFS *globalFS = NULL;
- 
+#ifdef __ignore
 Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
                                char *dir, 
 			       LobsStorage storage,
@@ -147,20 +146,13 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
   hdfsServer_ = hdfsServer;
   hdfsPort_ = hdfsPort;
 
-  if (globalFS == NULL)
+  if (fs_ == NULL)
     {
-      globalFS = new hdfsFS;
-      *globalFS = NULL;
-    }
-  
-  if (*globalFS == NULL)
-    {
-      *globalFS = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (*globalFS == NULL)
+      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
+      if (fs_ == NULL)
         return LOB_HDFS_CONNECT_ERROR;
     }
 
-  fs_ = *globalFS;
   if (lobGlobals)
     lobGlobals->setHdfsFs(fs_);
   
@@ -178,6 +170,103 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
   if (lobLocation)
     lobLocation_ = lobLocation;
   clock_gettime(CLOCK_MONOTONIC, &startTime);
+
+  clock_gettime(CLOCK_MONOTONIC, &endTime);
+
+  secs = endTime.tv_sec - startTime.tv_sec;
+  nsecs = endTime.tv_nsec - startTime.tv_nsec;
+  if (nsecs < 0) 
+    {
+      secs--;
+      nsecs += NUM_NSECS_IN_SEC;
+    }
+  totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
+  stats_.hdfsConnectionTime += totalnsecs;
+    
+  if (mode == EX_LOB_CREATE) 
+    { 
+      // check if file is already created
+      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
+      if (fInfo != NULL) 
+	{
+	  hdfsFreeFileInfo(fInfo, 1);
+	  return LOB_DATA_FILE_CREATE_ERROR;
+	} 
+      openFlags = O_WRONLY | O_CREAT;   
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags, bufferSize, replication, blockSize);
+      if (!fdData_) 
+	{
+          return LOB_DATA_FILE_CREATE_ERROR;
+	}
+      hdfsCloseFile(fs_, fdData_);
+      fdData_ = NULL;
+     
+    }
+  lobGlobalHeap_ = lobGlobals->getHeap();    
+  return LOB_OPER_OK;
+    
+}
+#endif
+
+Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
+                               char *dir, 
+			       LobsStorage storage,
+                               char *hdfsServer, Int64 hdfsPort,
+                               char *lobLocation,
+                               int bufferSize , short replication ,
+                               int blockSize, Int64 lobMaxSize, ExLobGlobals *lobGlobals)
+{
+  int openFlags;
+  mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+  struct timespec startTime;
+  struct timespec endTime;
+  Int64 secs, nsecs, totalnsecs;
+ 
+  if (dir) 
+    {
+      if (dir_.empty()) 
+	{
+	  dir_ = string(dir);
+	}
+
+      if (lobFile)
+        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), 
+                 lobFile);
+      
+    } 
+  else 
+    { 
+      if (lobFile)
+        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
+      
+    }
+
+  if (storage_ != Lob_Invalid_Storage) 
+    {
+      return LOB_INIT_ERROR;
+    } else 
+    {
+      storage_ = storage;
+    }
+
+  stats_.init(); 
+
+  hdfsServer_ = hdfsServer;
+  hdfsPort_ = hdfsPort;
+  lobLocation_ = lobLocation;
+  clock_gettime(CLOCK_MONOTONIC, &startTime);
+
+  if (lobGlobals->getHdfsFs() == NULL)
+    {
+      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
+      if (fs_ == NULL) 
+	return LOB_HDFS_CONNECT_ERROR;
+      lobGlobals->setHdfsFs(fs_);
+    } 
+  else 
+    {
+      fs_ = lobGlobals->getHdfsFs();
+    }
 
   clock_gettime(CLOCK_MONOTONIC, &endTime);
 
@@ -443,13 +532,24 @@ Ex_Lob_Error ExLob::dataModCheck2(
 Ex_Lob_Error ExLob::dataModCheck(
        char * dirPath, 
        Int64  inputModTS,
-       Lng32  numOfPartLevels)
+       Lng32  numOfPartLevels,
+       ExLobGlobals *lobGlobals)
 {
   // find mod time of root dir
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
     {
-      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+      hdfsDisconnect(fs_);
+      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
+      if (fs_ == NULL)
+        return LOB_HDFS_CONNECT_ERROR;
+
+      fileInfos = hdfsGetPathInfo(fs_, dirPath);
+      if (fileInfos == NULL)
+        return LOB_DIR_NAME_ERROR;
+
+      if (lobGlobals)
+        lobGlobals->setHdfsFs(fs_);
     }
 
   Int64 currModTS = fileInfos[0].mLastMod;
@@ -471,12 +571,18 @@ Ex_Lob_Error ExLob::emptyDirectory()
     Ex_Lob_Error err;
 
     int numExistingFiles=0;
-    hdfsFileInfo *fileInfos = hdfsListDirectory(fs_, lobDataFile_, &numExistingFiles);
+    hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, lobDataFile_);
     if (fileInfos == NULL)
-    {
-       return LOB_DATA_FILE_NOT_FOUND_ERROR; //here a directory
-    }
+      {
+        return LOB_DATA_FILE_NOT_FOUND_ERROR; //here a directory
+      }
 
+    fileInfos = hdfsListDirectory(fs_, lobDataFile_, &numExistingFiles);
+    if (fileInfos == NULL)
+      {
+        return LOB_OPER_OK;
+      }
+    
     for (int i = 0; i < numExistingFiles; i++) 
     {
 #ifdef USE_HADOOP_1
@@ -2167,7 +2273,8 @@ Ex_Lob_Error ExLobsOper (
 
   if (globPtr == NULL)
     {
-      if (operation == Lob_Init)
+      if ((operation == Lob_Init) ||
+          (operation == Lob_Data_Mod_Check))
 	{
 	  globPtr = (void *) new ExLobGlobals();
 	  if (globPtr == NULL) 
@@ -2176,14 +2283,16 @@ Ex_Lob_Error ExLobsOper (
 	  lobGlobals = (ExLobGlobals *)globPtr;
 
 	  err = lobGlobals->initialize(); 
-	  return err;
+          if (err != LOB_OPER_OK)
+            return err;
 	}
       else
 	{
 	  return LOB_GLOB_PTR_ERROR;
 	}
     }
-  else
+
+  if ((globPtr != NULL) && (operation != Lob_Init))
     {
       lobGlobals = (ExLobGlobals *)globPtr;
 
@@ -2236,6 +2345,7 @@ Ex_Lob_Error ExLobsOper (
   */
   switch(operation)
     {
+    case Lob_Init:
     case Lob_Create:
       break;
 
@@ -2425,7 +2535,8 @@ Ex_Lob_Error ExLobsOper (
         Int64 inputModTS = *(Int64*)blackBox;
         Int32 inputNumOfPartLevels = 
           *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
-        err = lobPtr->dataModCheck(dir, inputModTS, inputNumOfPartLevels);
+        err = lobPtr->dataModCheck(dir, inputModTS, inputNumOfPartLevels,
+                                   lobGlobals);
       }
       break;
 

@@ -226,9 +226,9 @@ xyz
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
-                                          19631
+                                           1384
+N                                         19631
 Y                                         18984
-?                                          1384
 
 --- 3 row(s) selected.
 >>execute s3;
@@ -316,9 +316,9 @@ A            B
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
 
-                                          19631
+                                           1384
+N                                         19631
 Y                                         18984
-?                                          1384
 
 --- 3 row(s) selected.
 >>execute s4;
