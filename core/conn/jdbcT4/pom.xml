@@ -40,6 +40,18 @@
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+            <version>${scala.version}</version>
+            <scope>compile</scope>
+        </dependency>
   </dependencies>
 
   <build>
@@ -53,7 +65,32 @@
     </resources>
 
    <plugins>
-
+       <plugin>
+           <groupId>net.alchim31.maven</groupId>
+           <artifactId>scala-maven-plugin</artifactId>
+           <version>3.2.0</version>
+           <executions>
+               <execution>
+                   <id>compile-scala</id>
+                   <phase>generate-sources</phase>
+                   <goals>
+                       <goal>add-source</goal>
+                       <goal>compile</goal>
+                   </goals>
+               </execution>
+               <execution>
+                   <id>test-compile-scala</id>
+                   <phase>test-compile</phase>
+                   <goals>
+                       <goal>add-source</goal>
+                       <goal>testCompile</goal>
+                   </goals>
+               </execution>
+           </executions>
+           <configuration>
+               <scalaVersion>${scala.version}</scalaVersion>
+           </configuration>
+       </plugin>
     <plugin>
      <artifactId>maven-antrun-plugin</artifactId>
      <executions>
@@ -96,34 +133,49 @@
      </executions>
     </plugin>
 
-    <plugin>
-     <groupId>org.apache.maven.plugins</groupId>
-     <artifactId>maven-jar-plugin</artifactId>
-     <version>2.4</version>
-     <configuration>
-      <archive>
-        <manifest>
-          <mainClass>org.trafodion.jdbc.t4.Vproc</mainClass>
-          <classpathPrefix>dependency-jars/</classpathPrefix>
-	</manifest>
-        <manifestEntries>
-           <!-- <Implementation-Version-1>${TRAFODION_VER_PROD}</Implementation-Version-1> -->
-            <Implementation-Version-1>Version ${project.version}</Implementation-Version-1> 
-            <Implementation-Version-2>Release ${project.version}</Implementation-Version-2>
-            <Implementation-Version-3>Build release</Implementation-Version-3>
-            <Implementation-Version-4>[${user.name}]</Implementation-Version-4>
-            <Implementation-Version-5>branch ${mvngit.commit.abbrev}-${mvngit.branch}</Implementation-Version-5>
-            <Implementation-Version-6>date ${maven.build.timestamp}</Implementation-Version-6>
-            <Product-Name>${project.name}</Product-Name>
-        </manifestEntries>
-      </archive>
-     </configuration>
-    </plugin>
-    
+       <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-dependency-plugin</artifactId>
+           <version>2.5.1</version>
+           <executions>
+               <execution>
+                   <id>copy-dependencies</id>
+                   <phase>package</phase>
+                   <goals>
+                       <goal>copy-dependencies</goal>
+                   </goals>
+                   <configuration>
+                       <outputDirectory>
+                           ${project.build.directory}/dependency-jars/
+                       </outputDirectory>
+                   </configuration>
+               </execution>
+           </executions>
+       </plugin>
+
     <plugin>
       <artifactId>maven-assembly-plugin</artifactId>
       <version>2.5.3</version>
       <configuration>
+          <archive>
+              <manifest>
+                  <mainClass>org.trafodion.jdbc.t4.Vproc</mainClass>
+                  <classpathPrefix>dependency-jars/</classpathPrefix>
+              </manifest>
+              <manifestEntries>
+                  <!-- <Implementation-Version-1>${TRAFODION_VER_PROD}</Implementation-Version-1> -->
+                  <Implementation-Version-1>Version ${project.version}</Implementation-Version-1>
+                  <Implementation-Version-2>Release ${project.version}</Implementation-Version-2>
+                  <Implementation-Version-3>Build release</Implementation-Version-3>
+                  <Implementation-Version-4>[${user.name}]</Implementation-Version-4>
+                  <Implementation-Version-5>branch ${mvngit.commit.abbrev}-${mvngit.branch}</Implementation-Version-5>
+                  <Implementation-Version-6>date ${maven.build.timestamp}</Implementation-Version-6>
+                  <Product-Name>${project.name}</Product-Name>
+              </manifestEntries>
+          </archive>
+          <descriptorRefs>
+              <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
           <descriptor>src/assembly/all.xml</descriptor>
           <appendAssemblyId>false</appendAssemblyId>
       </configuration>
@@ -138,32 +190,47 @@
       </executions>
     </plugin>
 
-    <plugin>
-     <groupId>org.apache.maven.plugins</groupId>
-     <artifactId>maven-dependency-plugin</artifactId>
-     <version>2.5.1</version>
-     <executions>
-      <execution>
-        <id>copy-dependencies</id>
-        <phase>package</phase>
-	<goals>
-          <goal>copy-dependencies</goal>
-	</goals>
-	<configuration>
-	  <outputDirectory>
-            ${project.build.directory}/dependency-jars/
-          </outputDirectory>
-	</configuration>
-      </execution>
-     </executions>
-    </plugin>
+
+       <plugin>
+           <groupId>org.codehaus.mojo</groupId>
+           <artifactId>build-helper-maven-plugin</artifactId>
+           <executions>
+               <execution>
+                   <id>add-source</id>
+                   <phase>generate-sources</phase>
+                   <goals>
+                       <goal>add-source</goal>
+                   </goals>
+                   <configuration>
+                       <sources>
+                           <source>src/main/scala</source>
+                       </sources>
+                   </configuration>
+               </execution>
+               <execution>
+                   <id>add-test-source</id>
+                   <phase>generate-sources</phase>
+                   <goals>
+                       <goal>add-test-source</goal>
+                   </goals>
+                   <configuration>
+                       <sources>
+                           <source>src/test/scala</source>
+                       </sources>
+                   </configuration>
+               </execution>
+           </executions>
+       </plugin>
+
    </plugins>
   </build>
 
-  <properties>
-     <maven.build.timestamp.format>ddMMMyy</maven.build.timestamp.format>
-     <buildDate>${maven.build.timestamp}</buildDate>
-     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+	<properties>
+		<maven.build.timestamp.format>ddMMMyy</maven.build.timestamp.format>
+		<buildDate>${maven.build.timestamp}</buildDate>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<scala.version>2.11.1</scala.version>
+		<scala.maven.version>2.11.1</scala.maven.version>
+	</properties>
 
 </project>
