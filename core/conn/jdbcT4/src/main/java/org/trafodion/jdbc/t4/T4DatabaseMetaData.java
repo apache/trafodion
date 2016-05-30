@@ -3078,7 +3078,10 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 		if (schemaNm == null) {
 			schemaNm = "%";
 
+		}else{
+			schemaPattern = sqlValueFormat(schemaPattern);
 		}
+
 		if (procedureNamePattern == null) {
 
 			// "If a search
@@ -3087,6 +3090,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			// dropped from the search."
 			procedureNamePattern = "%";
 
+		}else{
+			procedureNamePattern = sqlValueFormat(procedureNamePattern);
 		}
 		MetadataHolder mdHolder = this.connection_.mdHolder_;
 		int retryCnt = 0;
@@ -3105,6 +3110,20 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			}
 		}
 		return null;
+	}
+
+	private String sqlValueFormat(String value){
+		if(value != null){
+			value = value.trim();
+		}else{
+			return value;
+		}
+		if(value.startsWith("\"")){
+			value = value.replaceFirst("^\"\\s*(.*?)\\s*\"$","$1");
+		}else{
+			value = value.toUpperCase();
+		}
+		return value.replaceAll("\\s+","%");
 	}
 
 	/*
@@ -3209,6 +3228,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 		if (schemaNm == null) {
 			schemaNm = "%";
 
+		}else{
+			schemaNm = sqlValueFormat(schemaNm);
 		}
 		if (procedureNamePattern == null) {
 
@@ -3218,6 +3239,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			// the search."
 			procedureNamePattern = "%";
 
+		}else{
+			procedureNamePattern = sqlValueFormat(procedureNamePattern);
 		}
 		if (columnNamePattern == null) {
 
@@ -3227,6 +3250,8 @@ public class T4DatabaseMetaData extends TrafT4Handle implements java.sql.Databas
 			// the search."
 			columnNamePattern = "%";
 
+		}else{
+			columnNamePattern = sqlValueFormat(columnNamePattern);
 		}
 		MetadataHolder mdHolder = this.connection_.mdHolder_;
 		int retryCnt = 0;
