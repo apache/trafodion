@@ -25,29 +25,30 @@ import java.sql._
 import org.junit.{Assert, Test}
 
 class T4DatabaseMetaDataTest {
-  val url: String = "jdbc:t4jdbc://192.168.0.34:23400/:"
+  val url: String = "jdbc:t4jdbc://localhost:23400/:"
   val driverClass: String = "org.trafodion.jdbc.t4.T4Driver"
   val userName: String = "trafodion"
   val pwd: String = "traf123"
+  Class.forName(driverClass)
 
   @Test
   @throws(classOf[SQLException])
   @throws(classOf[ClassNotFoundException])
   def procedure {
-    Class.forName(driverClass)
     val conn: Connection = DriverManager.getConnection(url, userName, pwd)
     try {
       val md: DatabaseMetaData = conn.getMetaData
       val rs: ResultSet = md.getProcedures("trafodion", "_LIBMGR_", null)
       val rsmd = rs getMetaData
-
+      var flag = false
       while(rs.next()) {
         for(i <- 1 to rsmd.getColumnCount){
           print(rs.getObject(i)+",")
         }
         println()
+        flag = true
       }
-      Assert.assertTrue(true)
+      Assert.assertTrue(flag)
     } finally {
       if (conn != null) {
         conn.close
@@ -59,20 +60,20 @@ class T4DatabaseMetaDataTest {
   @throws(classOf[SQLException])
   @throws(classOf[ClassNotFoundException])
   def procedureColumns {
-    Class.forName(driverClass)
     val conn: Connection = DriverManager.getConnection(url, userName, pwd)
     try {
       val md: DatabaseMetaData = conn.getMetaData
       val rs: ResultSet = md.getProcedureColumns("trafodion","_LIBMGR_",null,null)
       val rsmd = rs getMetaData
-
+      var flag = false
       while(rs.next()) {
         for(i <- 1 to rsmd.getColumnCount){
           print(rs.getObject(i)+",")
         }
         println()
+        flag = true
       }
-      Assert.assertTrue(true)
+      Assert.assertTrue(flag)
     } finally {
       if (conn != null) {
         conn.close

@@ -371,7 +371,8 @@ YES
 EOF
     cd .. 
     mv TRAFDSN TRAFDSN.orig 
-    sed -e "s@TCP:1.2.3.4:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN 
+    sed -e "s@TCP:localhost:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN 
+    cp -p TRAFDSN $MY_SQROOT/samples
     echo "Successfully installed linux driver in $LNXDRVR"| tee -a ${MY_LOG_FILE}
     echo "Creating odbcinst.ini file..." |tee -a ${MY_LOG_FILE}
     cat <<EOF >$LNXDRVR/odbcinst.ini

@@ -3404,7 +3404,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
-  DD_____(TRAF_UNLOAD_DEF_NULL_STRING,                 "" ),
   DD_____(TRAF_UNLOAD_DEF_RECORD_SEPARATOR,            "\n" ),
   DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                   "0"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
@@ -3777,6 +3776,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   currentTokens_	= new NADHEAP DefaultToken * [numAttrs];
   currentState_		= INIT_DEFAULT_DEFAULTS;
   heldDefaults_	        = new NADHEAP char * [numAttrs];
+  heldHeldDefaults_	= new NADHEAP char * [numAttrs];
 
   // reset all entries
   size_t i = 0;
@@ -3792,6 +3792,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   memset( currentFloats_, 0, sizeof(float *) * numAttrs );
   memset( currentTokens_, 0, sizeof(DefaultToken *) * numAttrs );
   memset( heldDefaults_, 0, sizeof(char *) * numAttrs );
+  memset( heldHeldDefaults_, 0, sizeof(char *) * numAttrs );
 
   #ifndef NDEBUG
     // This env-var turns on consistency checking of default-defaults and
@@ -4043,6 +4044,7 @@ NADefaults::NADefaults(NAMemory * h)
   , currentFloats_(NULL)
   , currentTokens_(NULL)
   , heldDefaults_(NULL)
+  , heldHeldDefaults_(NULL)
   , currentState_(UNINITIALIZED)
   , readFromSQDefaultsTable_(FALSE)
   , SqlParser_NADefaults_(NULL)
@@ -4115,6 +4117,12 @@ void NADefaults::deleteMe()
     for (size_t i = numDefaultAttributes(); i--; )
       NADELETEBASIC(heldDefaults_[i], NADHEAP);
     NADELETEBASIC(heldDefaults_, NADHEAP);
+  }
+
+  if (heldHeldDefaults_) {
+    for (size_t i = numDefaultAttributes(); i--; )
+      NADELETEBASIC(heldHeldDefaults_[i], NADHEAP);
+    NADELETEBASIC(heldHeldDefaults_, NADHEAP);
   }
 
   for (CollIndex i = tablesRead_.entries(); i--; )
@@ -6006,10 +6014,13 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
   char * value = NULL;
   if (holdOrRestoreCQD == 1) // hold cqd
     {
-      if (heldDefaults_[attrEnum])
-	{
-	  NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-	}
+      if (heldHeldDefaults_[attrEnum])
+        {
+          // Gasp! We've done three successive HOLDs... it's off to
+          // the bit bucket for the deepest value
+          NADELETEBASIC(heldHeldDefaults_[attrEnum], NADHEAP);
+        }
+      heldHeldDefaults_[attrEnum] = heldDefaults_[attrEnum];
 
       if (currentDefaults_[attrEnum])
 	{
@@ -6029,15 +6040,24 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
       if (! heldDefaults_[attrEnum])
 	return attrEnum;
 
+      // there is an odd semantic that if currentDefaults_[attrEnum]
+      // is null, we leave it as null, but pop a held value anyway;
+      // this semantic was preserved when the second level 
+      // (heldHeldDefaults_) was added.
+
       if (currentDefaults_[attrEnum])
-	{
-	  NADELETEBASIC(currentDefaults_[attrEnum], NADHEAP);
-	  value = new NADHEAP char[strlen(heldDefaults_[attrEnum]) + 1];
-	  strcpy(value, heldDefaults_[attrEnum]);
-	  currentDefaults_[attrEnum] = value;
-	}
+        {
+          // do a validateAndInsert so the caches (such as currentToken_)
+          // get updated and so appropriate semantic actions are taken
+          NAString value(heldDefaults_[attrEnum]);
+          validateAndInsert(lookupAttrName(attrEnum), // sad that we have to do a lookup again
+                            value,
+                            FALSE);
+        }
+      
       NADELETEBASIC(heldDefaults_[attrEnum], NADHEAP);
-      heldDefaults_[attrEnum] = NULL;
+      heldDefaults_[attrEnum] = heldHeldDefaults_[attrEnum];
+      heldHeldDefaults_[attrEnum] = NULL;
     }
 
   return attrEnum;

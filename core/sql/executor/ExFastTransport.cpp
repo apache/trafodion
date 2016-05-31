@@ -52,6 +52,7 @@
 #include "SequenceFileReader.h" 
 #endif
 #include  "cli_stdh.h"
+#include "ComSmallDefs.h"
 
 
 //----------------------------------------------------------------------
@@ -516,7 +517,9 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
     lobGlob_ = NULL;
   }
 
-  //release sequenceFileWriter_???
+  if (sequenceFileWriter_ != NULL) {
+     NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
+  }
 
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
@@ -585,11 +588,15 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
     if (attr->getNullFlag()
         && ExpAlignedFormat::isNullValue(childRow + attr->getNullIndOffset(),
             attr->getNullBitIndex())) {
-      if ( !getEmptyNullString()) // includes hive null which is empty string
-      {
-        memcpy(targetData, myTdb().getNullString(), nullLen);
-        targetData += nullLen;
-      }
+      // source is a null value.
+
+      nullLen = 0;
+      if (myTdb().getNullString()) {
+        nullLen = strlen(myTdb().getNullString());
+        memcpy(targetData, myTdb().getNullString(), nullLen); 
+      } 
+
+      targetData += nullLen;
       currBuffer_->bytesLeft_ -= nullLen;
     } else {
       switch ((conv_case_index) sourceFieldsConvIndex_[i]) {
@@ -647,7 +654,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
   SFW_RetCode sfwRetCode = SFW_OK;
   ULng32 recSepLen = strlen(myTdb().getRecordSeparator());
   ULng32 delimLen = strlen(myTdb().getDelimiter());
-  ULng32 nullLen = strlen(myTdb().getNullString());
+  ULng32 nullLen = 
+    (myTdb().getNullString() ? strlen(myTdb().getNullString()) : 0);
   if (myTdb().getIsHiveInsert())
   {
     recSepLen = 1;
@@ -745,8 +753,8 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           if ((isSequenceFile() || myTdb().getBypassLibhdfs()) &&
               !sequenceFileWriter_)
           {
-            sequenceFileWriter_ = new(getSpace())
-                                     SequenceFileWriter((NAHeap *)getSpace());
+            sequenceFileWriter_ = new(getHeap())
+                                     SequenceFileWriter((NAHeap *)getHeap());
             sfwRetCode = sequenceFileWriter_->init();
             if (sfwRetCode != SFW_OK)
             {

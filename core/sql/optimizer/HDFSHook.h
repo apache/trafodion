@@ -263,6 +263,7 @@ public:
                                     totalNumPartitions_(0),
                                     recordTerminator_(0),
                                     fieldTerminator_(0),
+                                    nullFormat_(NULL),
                                     validationJTimestamp_(-1),
                                     listPartitionStatsList_(heap),
                                     hiveStatsSize_(0),
@@ -297,6 +298,7 @@ public:
 
   char getRecordTerminator() const {return recordTerminator_;}
   char getFieldTerminator() const {return fieldTerminator_;}
+  char *getNullFormat() const { return nullFormat_; }
 
   Int32 getNumPartitions() const {return totalNumPartitions_;}
 
@@ -354,6 +356,8 @@ private:
 
   char recordTerminator_ ;
   char fieldTerminator_ ;
+
+  char *nullFormat_;
 
   Int64 validationJTimestamp_;
   // heap size used by the hive stats
