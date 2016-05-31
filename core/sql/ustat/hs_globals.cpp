@@ -4979,9 +4979,10 @@ Int64 HSGlobalsClass::getInternalSortMemoryRequirements(NABoolean performISForMC
 Lng32 HSGlobalsClass::validateIUSWhereClause()
 {
   Lng32 retcode = 0;
-  ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
 
-  Set_SqlParser_Flags(PARSING_IUS_WHERE_CLAUSE);
+  // set PARSING_IUS_WHERE_CLAUSE bit in Sql_ParserFlags; return it to
+  // its entry value on exit
+  PushAndSetSqlParserFlags savedParserFlags(PARSING_IUS_WHERE_CLAUSE);
 
   NAString query = "select count(*) from ";
   query.append(getTableName(strrchr(user_table->data(), '.')+1, nameSpace));
@@ -5018,9 +5019,6 @@ Lng32 HSGlobalsClass::validateIUSWhereClause()
       else
         retcode = diagsArea.mainSQLCODE();
     }
-
-  // Restore parser flags to prior settings.
-  Set_SqlParser_Flags (savedParserFlags);
 
   return retcode;
 }

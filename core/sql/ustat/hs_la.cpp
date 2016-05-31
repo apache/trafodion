@@ -129,9 +129,14 @@ void HSTableDef::setNATable()
     if (isVolatile())
       corrName.setIsVolatile(TRUE);
     Scan scan(corrName, NULL, REL_SCAN, STMTHEAP);
-    ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+    ULng32 flagToSet = 0;  // don't turn on flag unless next 'if' is true
     if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
-      Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+      flagToSet = ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME;
+
+    // set ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME bit in Sql_ParserFlags
+    // if needed, and return it to its entry value on exit
+    PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
     scan.bindNode(&bindWA);
     if (!bindWA.errStatus())
       {
@@ -139,8 +144,6 @@ void HSTableDef::setNATable()
         HS_ASSERT(naTbl_);
         objectType_ = naTbl_->getObjectType();
       }
-    // Restore parser flags to prior settings.
-    Set_SqlParser_Flags (savedParserFlags);
   }
 
 void HSSqTableDef::GetLabelInfo(labelDetail detail)
