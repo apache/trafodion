@@ -3816,6 +3816,10 @@ enum DefaultConstants
   //     // 2 : todo
   HIVE_SCAN_SPECIAL_MODE,
 
+  // if set, data modification check is done at runtime before running
+  // a query.
+  HIVE_DATA_MOD_CHECK,
+
   COMPILER_IDLE_TIMEOUT,
 
   // This enum constant must be the LAST one in the list; it's a count,

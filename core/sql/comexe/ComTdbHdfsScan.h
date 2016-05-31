@@ -134,8 +134,15 @@ class ComTdbHdfsScan : public ComTdb
   UInt16 origTuppIndex_;                                      // 188 - 189
   char fillersComTdbHdfsScan1_[2];                            // 190 - 191
   NABasicPtr nullFormat_;                                     // 192 - 199
-  char fillersComTdbHdfsScan2_[8];                           // 200 - 207
 
+  // next 4 params are used to check if data under hdfsFileDir
+  // was modified after query was compiled.
+  NABasicPtr hdfsRootDir_;                                     // 200 - 207
+  Int64  modTSforDir_;                                         // 208 - 215
+  Lng32  numOfPartCols_;                                       // 216 - 219
+  char fillersComTdbHdfsScan2_[4];                             // 220 - 223
+  QueuePtr hdfsDirsToCheck_;                                   // 224 - 231
+    
 public:
   enum HDFSFileType
   {
@@ -183,10 +190,18 @@ public:
 		 queue_index up,
 		 Cardinality estimatedRowCount,
                  Int32  numBuffers,
-                 UInt32  bufferSize
-                 , char * errCountTable
-                 , char * loggingLocation
-                 , char * errCountId
+                 UInt32  bufferSize,
+
+                 char * errCountTable = NULL,
+                 char * loggingLocation = NULL,
+                 char * errCountId = NULL,
+
+                 // next 4 params are used to check if data under hdfsFileDir
+                 // was modified after query was compiled.
+                 char * hdfsRootDir  = NULL,
+                 Int64  modTSforDir   = -1,
+                 Lng32  numOfPartCols = -1,
+                 Queue * hdfsDirsToCheck = NULL
                  );
 
   ~ComTdbHdfsScan();
@@ -326,7 +341,8 @@ public:
   {
     return workCriDesc_->getTupleDescriptor(moveExprColsTuppIndex_);
   }
-  
+
+  Queue * hdfsDirsToCheck() { return hdfsDirsToCheck_; }
 };
 
 inline ComTdb * ComTdbHdfsScan::getChildTdb()

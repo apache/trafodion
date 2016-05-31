@@ -1189,7 +1189,8 @@ ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
      NABoolean isHiveTruncate,
      char * hiveTableLocation,
      char * hiveHostName,
-     Lng32 hivePortNum)
+     Lng32 hivePortNum,
+     Int64 hiveModTS)
      : ComTdbExeUtil(ComTdbExeUtil::FAST_DELETE_,
 		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
 		     tableName, tableNameLen,
@@ -1211,7 +1212,8 @@ ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
        lobNumArray_(lobNumArray),
        hiveTableLocation_(hiveTableLocation),
        hiveHdfsHost_(hiveHostName),
-       hiveHdfsPort_(hivePortNum)
+       hiveHdfsPort_(hivePortNum),
+       hiveModTS_(hiveModTS)
 {
   setIsHiveTruncate(isHiveTruncate);
   setNodeType(ComTdb::ex_FAST_DELETE);

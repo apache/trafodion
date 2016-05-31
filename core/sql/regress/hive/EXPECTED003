@@ -2,22 +2,16 @@
 >>set schema hive.hive;
 
 --- SQL operation complete.
->>cqd attempt_esp_parallelism 'off';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY 'OFF';
-
---- SQL operation complete.
->>cqd hive_max_esps  '1';
-
---- SQL operation complete.
->>cqd PARALLEL_NUM_ESPS '1';
-
---- SQL operation complete.
+>>--cqd attempt_esp_parallelism 'off';
+>>--cqd hive_max_esps  '1';
+>>--cqd PARALLEL_NUM_ESPS '1';
 >>cqd HIVE_MAX_STRING_LENGTH '25' ;
 
 --- SQL operation complete.
 >>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>cqd auto_query_retry_warnings 'ON';
 
 --- SQL operation complete.
 >>
@@ -138,6 +132,10 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 
 *** ERROR[8822] The statement was not prepared.
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[4023] The degree of each row value constructor (20) must equal the degree of the target table column list (19).
+
 >>-- number of columns doesn't match
 >>
 >>prepare s from
@@ -147,14 +145,15 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 
 *** ERROR[8822] The statement was not prepared.
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[4039] Column T_TIME_SK is of type INTEGER, incompatible with the value's type, CHAR(1).
+
 >>-- wrong data types
 >>
 >>
 >>--try new HIVE SYNTAX
 >>--------------
->>cqd query_cache '0';
-
---- SQL operation complete.
 >>insert into TABLE hive.ins_customer_address select * from hive.customer_address;
 
 --- 50000 row(s) inserted.
@@ -178,6 +177,10 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 >>
 >>insert OVERWRITE TABLE hive.ins_customer_address select * from hive.customer_address;
 
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
 --- 50000 row(s) inserted.
 >>
 >>select count(*) from hive.customer_address;
@@ -198,6 +201,10 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 --- 1 row(s) selected.
 >>--execute  again
 >>insert OVERWRITE TABLE hive.ins_customer_address select * from hive.customer_address;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 --- 50000 row(s) inserted.
 >>
@@ -529,9 +536,6 @@ T_TIME_SK    T_TIME_ID                  T_TIME       T_HOUR       T_MINUTE     T
 >>cqd HIVE_MAX_STRING_LENGTH '25' ;
 
 --- SQL operation complete.
->>cqd query_cache '0';
-
---- SQL operation complete.
 >>control query shape esp_exchange(cut);
 
 --- SQL operation complete.
@@ -604,7 +608,7 @@ test lp bug # 1355477
 > SS_SOLD_DATE_SK  SS_STORE_SK  SS_QUANTITY
 > ---------------  -----------  -----------
 >>--execute again --overwrite should get rid og existing data from previous run
->>control query shape union(cut,esp_exchange(cut));
+>>control query shape union(cut, esp_exchange(cut));
 
 --- SQL operation complete.
 >>prepare s from insert overwrite table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk;
@@ -632,6 +636,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>execute s;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 --- 12768 row(s) inserted.
 >>control query shape cut;

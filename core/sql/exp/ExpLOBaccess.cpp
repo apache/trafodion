@@ -131,13 +131,15 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 	  dir_ = string(dir);
 	}
 
-   
-      snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), lobFile);
+      if (lobFile)
+        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), 
+                 lobFile);
       
     } 
   else 
     { 
-      snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
+      if (lobFile)
+        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
       
     }
 
@@ -377,35 +379,130 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
 
     return LOB_OPER_OK;
 }
+
+Ex_Lob_Error ExLob::dataModCheck2(
+       char * dirPath, 
+       Int64  inputModTS,
+       Lng32  numOfPartLevels)
+{
+  if (numOfPartLevels == 0)
+    return LOB_OPER_OK;
+
+  Lng32 currNumFilesInDir = 0;
+  hdfsFileInfo * fileInfos = 
+    hdfsListDirectory(fs_, dirPath, &currNumFilesInDir);
+  if ((currNumFilesInDir > 0) && (fileInfos == NULL))
+    {
+      return LOB_DATA_FILE_NOT_FOUND_ERROR;
+    }
+
+  NABoolean failed = FALSE;
+  for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
+    {
+      hdfsFileInfo &fileInfo = fileInfos[i];
+      if (fileInfo.mKind == kObjectKindDirectory)
+        {
+          Int64 currModTS = fileInfo.mLastMod;
+          if ((inputModTS > 0) &&
+              (currModTS > inputModTS))
+            failed = TRUE;
+        }
+    }
+
+  hdfsFreeFileInfo(fileInfos, currNumFilesInDir);
+  if (failed)
+    return LOB_DATA_MOD_CHECK_ERROR;
+
+  numOfPartLevels--;
+  Ex_Lob_Error err = LOB_OPER_OK;
+  if (numOfPartLevels > 0)
+    {
+      for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
+        {
+          hdfsFileInfo &fileInfo = fileInfos[i];
+          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels);
+          if (err != LOB_OPER_OK)
+            return err;
+        }
+    }
+
+  return LOB_OPER_OK;
+}
+
+// numOfPartLevels: 0, if not partitioned
+//                  N, number of partitioning cols
+Ex_Lob_Error ExLob::dataModCheck(
+       char * dirPath, 
+       Int64  inputModTS,
+       Lng32  numOfPartLevels,
+       ExLobGlobals *lobGlobals)
+{
+  // find mod time of root dir
+  hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
+  if (fileInfos == NULL)
+    {
+      hdfsDisconnect(fs_);
+      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
+      if (fs_ == NULL)
+        return LOB_HDFS_CONNECT_ERROR;
+
+      fileInfos = hdfsGetPathInfo(fs_, dirPath);
+      if (fileInfos == NULL)
+        return LOB_DIR_NAME_ERROR;
+
+      if (lobGlobals)
+        lobGlobals->setHdfsFs(fs_);
+    }
+
+  Int64 currModTS = fileInfos[0].mLastMod;
+  hdfsFreeFileInfo(fileInfos, 1);
+  if ((inputModTS > 0) &&
+      (currModTS > inputModTS))
+    return LOB_DATA_MOD_CHECK_ERROR;
+
+  if (numOfPartLevels > 0)
+    {
+      return dataModCheck2(dirPath, inputModTS, numOfPartLevels);
+    }
+
+  return LOB_OPER_OK;
+}
+
 Ex_Lob_Error ExLob::emptyDirectory()
 {
     Ex_Lob_Error err;
 
     int numExistingFiles=0;
-    hdfsFileInfo *fileInfos = hdfsListDirectory(fs_, lobDataFile_, &numExistingFiles);
+    hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, lobDataFile_);
     if (fileInfos == NULL)
     {
-       return LOB_DATA_FILE_NOT_FOUND_ERROR; //here a directory
+      return LOB_DIR_NAME_ERROR;
     }
 
-    for (int i = 0; i < numExistingFiles; i++) 
+    fileInfos = hdfsListDirectory(fs_, lobDataFile_, &numExistingFiles);
+    if (fileInfos == NULL) // empty directory
     {
-#ifdef USE_HADOOP_1
-      int retCode = hdfsDelete(fs_, fileInfos[i].mName);
-#else
-      int retCode = hdfsDelete(fs_, fileInfos[i].mName, 0);
-#endif
+      return LOB_OPER_OK;
+    }
+
+    NABoolean error = FALSE;
+    for (int i = 0; ((NOT error) && (i < numExistingFiles)); i++) 
+    {
+      // if dir, recursively delete it and everything under it
+      int retCode = hdfsDelete(fs_, fileInfos[i].mName, 1);
       if (retCode !=0)
       {
-        //ex_assert(retCode == 0, "delete returned error");
-        return LOB_DATA_FILE_DELETE_ERROR;
+        error = TRUE;
       }
     }
+
     if (fileInfos)
     {
       hdfsFreeFileInfo(fileInfos, numExistingFiles);
     }
-    
+
+    if (error)
+      return LOB_DATA_FILE_DELETE_ERROR;
 
     return LOB_OPER_OK;
 }
@@ -2040,8 +2137,8 @@ Ex_Lob_Error ExLobsOper (
 			 LobsStorage storage,           // storage type
 			 char        *source,           // source (memory addr, filename, foreign lob etc)
 			 Int64       sourceLen,         // source len (memory len, foreign desc offset etc)
-			 Int64 cursorBytes,
-			 char *cursorId,
+			 Int64       cursorBytes,
+			 char        *cursorId,
 			 LobsOper    operation,         // LOB operation
 			 LobsSubOper subOperation,      // LOB sub operation
 			 Int64       waited,            // waited or nowaited
@@ -2078,7 +2175,9 @@ Ex_Lob_Error ExLobsOper (
 
   if (globPtr == NULL)
     {
-      if (operation == Lob_Init)
+      if ((operation == Lob_Init) ||
+          (operation == Lob_Empty_Directory) ||
+          (operation == Lob_Data_Mod_Check))
 	{
 	  globPtr = (void *) new ExLobGlobals();
 	  if (globPtr == NULL) 
@@ -2087,14 +2186,16 @@ Ex_Lob_Error ExLobsOper (
 	  lobGlobals = (ExLobGlobals *)globPtr;
 
 	  err = lobGlobals->initialize(); 
-	  return err;
+          if (err != LOB_OPER_OK)
+            return err;
 	}
       else
 	{
 	  return LOB_GLOB_PTR_ERROR;
 	}
     }
-  else
+
+  if ((globPtr != NULL) && (operation != Lob_Init))
     {
       lobGlobals = (ExLobGlobals *)globPtr;
 
@@ -2147,6 +2248,7 @@ Ex_Lob_Error ExLobsOper (
   */
   switch(operation)
     {
+    case Lob_Init:
     case Lob_Create:
       break;
 
@@ -2315,7 +2417,6 @@ Ex_Lob_Error ExLobsOper (
         lobDebugInfo("purgeLob failed ",err,__LINE__,lobGlobals->lobTrace_);
       break;
 
-
     case Lob_Stats:
       err = lobPtr->readStats(source);
       lobPtr->initStats(); // because file may remain open across cursors
@@ -2323,8 +2424,23 @@ Ex_Lob_Error ExLobsOper (
 
     case Lob_Empty_Directory:
       lobPtr->initialize(fileName, EX_LOB_RW,
-			 dir, storage, hdfsServer, hdfsPort, dir,bufferSize, replication, blockSize);
+			 dir, storage, hdfsServer, hdfsPort, dir, bufferSize, replication, blockSize);
       err = lobPtr->emptyDirectory();
+      break;
+
+    case Lob_Data_Mod_Check:
+      {
+        lobPtr->initialize(NULL, EX_LOB_RW,
+                           NULL, storage, hdfsServer, hdfsPort, NULL, 
+                           bufferSize, replication, blockSize, lobMaxSize, 
+                           lobGlobals);
+
+        Int64 inputModTS = *(Int64*)blackBox;
+        Int32 inputNumOfPartLevels = 
+          *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
+        err = lobPtr->dataModCheck(dir, inputModTS, inputNumOfPartLevels,
+                                   lobGlobals);
+      }
       break;
 
     case Lob_Cleanup:

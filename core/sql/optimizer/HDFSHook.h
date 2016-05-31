@@ -223,6 +223,8 @@ public:
   Int32 getNumOfBuckets() const { return (defaultBucketIdx_ ? defaultBucketIdx_ : 1); }
   Int32 getLastValidBucketIndx() const               { return defaultBucketIdx_; }
 
+  const hdfsFileInfo * dirInfo() const {return &dirInfo_; }
+
   void populate(hdfsFS fs, const NAString &dir, Int32 numOfBuckets, 
                 HHDFSDiags &diags,
                 NABoolean doEsTimation, char recordTerminator);
@@ -246,6 +248,8 @@ private:
   NABoolean doEstimation_;
   char recordTerminator_;
   
+  hdfsFileInfo dirInfo_;
+
   NAMemory *heap_;
 };
 
@@ -327,6 +331,9 @@ public:
   const NABoolean isOrcFile() const { return (type_ == ORC_);}
 
   const NAString &tableDir() const { return tableDir_; }
+
+  const Lng32 numOfPartCols() const { return numOfPartCols_; }
+  const Lng32 totalNumPartitions() const { return totalNumPartitions_; }
 
 private:
   enum FileType

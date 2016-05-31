@@ -98,7 +98,8 @@ ComTdbFastExtract::ComTdbFastExtract(
   hdfsIOBufferSize_(hdfBuffSize),
   hdfsReplication_(replication),
   ioTimeout_(ioTimeout),
-  childDataRowLen_(childDataRowLen)
+  childDataRowLen_(childDataRowLen),
+  modTSforDir_(-1)
 {
 
 }
