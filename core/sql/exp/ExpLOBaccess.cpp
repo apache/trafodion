@@ -95,18 +95,6 @@ ExLob::~ExLob()
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
     }
-    
-    
-    
-    /*   
-    Commenting this out. It is causing cores during hive access.
-    Note :  Not calling hdfsDisconnect this will cause a leak that needs to be 
-            fixed at a different place  
-    if (fs_){
-     hdfsDisconnect(fs_);
-    fs_=NULL;
-    
-    }*/
    
 }
 
@@ -162,17 +150,7 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
       if (fs_ == NULL) 
 	return LOB_HDFS_CONNECT_ERROR;
       lobGlobals->setHdfsFs(fs_);
-    } 
-   //check validity of fs_    
-  else if (hdfsGetUsed(fs_) == -1 )
-    {
-      hdfsDisconnect(fs_); //ignore errors since fs_ may be corrupt.
-      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL) 
-        return LOB_HDFS_CONNECT_ERROR;
-      lobGlobals->setHdfsFs(fs_);
-    }
-        
+    }        
   else 
     {
       fs_ = lobGlobals->getHdfsFs();
@@ -2143,8 +2121,8 @@ Ex_Lob_Error ExLobsOper (
     {
       if (operation == Lob_Init)
 	{
-          NAHeap *passedInHeap=(NAHeap *)blackBox;
-	  globPtr = (void *) new (passedInHeap) ExLobGlobals();
+          
+          globPtr = new ExLobGlobals();
 	  if (globPtr == NULL) 
 	    return LOB_INIT_ERROR;
 
@@ -2936,8 +2914,7 @@ ExLobGlobals::~ExLobGlobals()
       fclose(threadTraceFile_);
     threadTraceFile_ = NULL;
 
-    hdfsDisconnect(fs_);
-    fs_ = NULL;
+   
 }
 
 

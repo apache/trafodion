@@ -2427,8 +2427,6 @@ short ComTdbExeUtilLobShowddl::getLOBnum(short i)
 
 NABoolean ComTdbExeUtilLobShowddl::getIsExternalLobCol(short i)
 {
-  if ((i > numLOBs_) || (i <= 0))
-    return -1;
 
   NABoolean isExternal = (*((Int32*)&getLOBtypeArray()[4*(i-1)]) == Lob_External_HDFS_File);
 
