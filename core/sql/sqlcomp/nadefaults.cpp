@@ -3601,7 +3601,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
- XDDui1__(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
+ XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
@@ -6018,6 +6018,7 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
         {
           // Gasp! We've done three successive HOLDs... it's off to
           // the bit bucket for the deepest value
+          CMPASSERT(heldHeldDefaults_[attrEnum] == NULL);  // on second thought, let's assert instead
           NADELETEBASIC(heldHeldDefaults_[attrEnum], NADHEAP);
         }
       heldHeldDefaults_[attrEnum] = heldDefaults_[attrEnum];
