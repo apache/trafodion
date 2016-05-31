@@ -98,6 +98,7 @@ RelExpr * FastExtract::copyTopNode(RelExpr *derivedNode,
   result->recordSeparator_ = recordSeparator_ ;
   result->selectList_ = selectList_;
   result->isSequenceFile_ = isSequenceFile_;
+  result->overwriteHiveTable_ = overwriteHiveTable_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }

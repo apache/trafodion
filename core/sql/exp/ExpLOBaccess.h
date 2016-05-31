@@ -481,10 +481,7 @@ class ExLob
 
   // dirPath: path to needed directory (includes directory name)
   // modTS is the latest timestamp on any file/dir under dirPath.
-  // numFilesInDir is the total number of files under dirPath.
-  // This method validates that current modTS is not greater then input modTS
-  // and current number of files in dirPath are the same as input numFilesInDir.
-  // If either condition is not true, then check fails.
+  // This method validates that current modTS is not greater then input modTS.
   // Return: LOB_OPER_OK, if passes. LOB_DATA_MOD_CHECK_ERROR, if fails.
   Ex_Lob_Error dataModCheck(
        char * dirPath, 

@@ -624,7 +624,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
   {
     newTdb->setIsHiveInsert(1);
     newTdb->setIncludeHeader(0);
-    setOverwriteHiveTable( getOverwriteHiveTable());
+    newTdb->setOverwriteHiveTable( getOverwriteHiveTable());
   }
   else
   {

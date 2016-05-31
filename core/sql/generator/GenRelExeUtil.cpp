@@ -3237,12 +3237,11 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
 			    (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
 			    (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
 			    (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination 
 			    getDefault(GEN_DDL_NUM_BUFFERS),
 			    getDefault(GEN_DDL_BUFFER_SIZE),
 			    isHiveTable(),
-			    hiveTableLocation, hiveHdfsHost, hiveHdfsPort);
-#pragma warn(1506)  // warning elimination 
+			    hiveTableLocation, hiveHdfsHost, hiveHdfsPort,
+                            hiveModTS_);
 
   if (doPurgedataCat_)
     exe_util_tdb->setDoPurgedataCat(TRUE);

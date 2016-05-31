@@ -738,7 +738,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       {
         ComDiagsArea * diagsArea = NULL;
         ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(8436));
+                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
         pentry_down->setDiagsArea(diagsArea);
         pstate.step_ = EXTRACT_ERROR;
         break;

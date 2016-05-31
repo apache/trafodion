@@ -110,104 +110,6 @@ ExLob::~ExLob()
    
 }
 
-#ifdef __ignore
-Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
-                               char *dir, 
-			       LobsStorage storage,
-                               char *hdfsServer, Int64 hdfsPort,
-                               char *lobLocation,
-                               int bufferSize , short replication ,
-                               int blockSize, Int64 lobMaxSize, 
-                               ExLobGlobals *lobGlobals)
-{
-  int openFlags;
-  mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-  struct timespec startTime;
-  struct timespec endTime;
-  Int64 secs, nsecs, totalnsecs;
- 
-  if (dir) 
-    {
-      if (dir_.empty()) 
-	{
-	  dir_ = string(dir);
-	}
-
-      if (lobFile)
-        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), lobFile);
-      
-    } 
-  else if (lobFile)
-    { 
-      snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
-      
-    }
-
-  hdfsServer_ = hdfsServer;
-  hdfsPort_ = hdfsPort;
-
-  if (fs_ == NULL)
-    {
-      fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL)
-        return LOB_HDFS_CONNECT_ERROR;
-    }
-
-  if (lobGlobals)
-    lobGlobals->setHdfsFs(fs_);
-  
-  if (storage_ != Lob_Invalid_Storage)
-    {
-      return LOB_INIT_ERROR;
-    } 
-  else 
-    {
-      storage_ = storage;
-    }
-
-  stats_.init(); 
-
-  if (lobLocation)
-    lobLocation_ = lobLocation;
-  clock_gettime(CLOCK_MONOTONIC, &startTime);
-
-  clock_gettime(CLOCK_MONOTONIC, &endTime);
-
-  secs = endTime.tv_sec - startTime.tv_sec;
-  nsecs = endTime.tv_nsec - startTime.tv_nsec;
-  if (nsecs < 0) 
-    {
-      secs--;
-      nsecs += NUM_NSECS_IN_SEC;
-    }
-  totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-  stats_.hdfsConnectionTime += totalnsecs;
-    
-  if (mode == EX_LOB_CREATE) 
-    { 
-      // check if file is already created
-      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
-      if (fInfo != NULL) 
-	{
-	  hdfsFreeFileInfo(fInfo, 1);
-	  return LOB_DATA_FILE_CREATE_ERROR;
-	} 
-      openFlags = O_WRONLY | O_CREAT;   
-      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags, bufferSize, replication, blockSize);
-      if (!fdData_) 
-	{
-          return LOB_DATA_FILE_CREATE_ERROR;
-	}
-      hdfsCloseFile(fs_, fdData_);
-      fdData_ = NULL;
-     
-    }
-  lobGlobalHeap_ = lobGlobals->getHeap();    
-  return LOB_OPER_OK;
-    
-}
-#endif
-
 Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
                                char *dir, 
 			       LobsStorage storage,
@@ -573,34 +475,34 @@ Ex_Lob_Error ExLob::emptyDirectory()
     int numExistingFiles=0;
     hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, lobDataFile_);
     if (fileInfos == NULL)
-      {
-        return LOB_DATA_FILE_NOT_FOUND_ERROR; //here a directory
-      }
+    {
+      return LOB_DIR_NAME_ERROR;
+    }
 
     fileInfos = hdfsListDirectory(fs_, lobDataFile_, &numExistingFiles);
-    if (fileInfos == NULL)
-      {
-        return LOB_OPER_OK;
-      }
-    
-    for (int i = 0; i < numExistingFiles; i++) 
+    if (fileInfos == NULL) // empty directory
     {
-#ifdef USE_HADOOP_1
-      int retCode = hdfsDelete(fs_, fileInfos[i].mName);
-#else
-      int retCode = hdfsDelete(fs_, fileInfos[i].mName, 0);
-#endif
+      return LOB_OPER_OK;
+    }
+
+    NABoolean error = FALSE;
+    for (int i = 0; ((NOT error) && (i < numExistingFiles)); i++) 
+    {
+      // if dir, recursively delete it and everything under it
+      int retCode = hdfsDelete(fs_, fileInfos[i].mName, 1);
       if (retCode !=0)
       {
-        //ex_assert(retCode == 0, "delete returned error");
-        return LOB_DATA_FILE_DELETE_ERROR;
+        error = TRUE;
       }
     }
+
     if (fileInfos)
     {
       hdfsFreeFileInfo(fileInfos, numExistingFiles);
     }
-    
+
+    if (error)
+      return LOB_DATA_FILE_DELETE_ERROR;
 
     return LOB_OPER_OK;
 }
@@ -2274,6 +2176,7 @@ Ex_Lob_Error ExLobsOper (
   if (globPtr == NULL)
     {
       if ((operation == Lob_Init) ||
+          (operation == Lob_Empty_Directory) ||
           (operation == Lob_Data_Mod_Check))
 	{
 	  globPtr = (void *) new ExLobGlobals();

@@ -468,7 +468,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                   {
                     ComDiagsArea * diagsArea = NULL;
                     ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8436));
+                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;

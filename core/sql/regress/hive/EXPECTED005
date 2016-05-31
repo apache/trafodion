@@ -161,10 +161,11 @@ Y                                          9525
 >>insert into newtable values ('abc');
 
 --- 1 row(s) inserted.
->>cqd query_cache '0';
-
---- SQL operation complete.
 >>select * from newtable;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 A                        
 -------------------------
@@ -173,9 +174,6 @@ abc
 
 --- 1 row(s) selected.
 >>-- expect to see the row, but only because query cache is off
->>cqd query_cache reset;
-
---- SQL operation complete.
 >>
 >>insert into hiveregr5.newtable2 values ('xyz');
 
@@ -289,9 +287,6 @@ A            B
 >>-- overwrite the table with auto-generated partitions
 >>sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_d.hive.sql;
 >>
->>cqd query_cache '0';
-
---- SQL operation complete.
 >>prepare s4 from 
 +>  select c_preferred_cust_flag,
 +>         count(*) 
@@ -652,14 +647,18 @@ C1           C2                    C3                         C4               C
 >>sh echo "create table thive(a int);" > TEST005_junk;
 >>sh regrhive.ksh -f TEST005_junk;
 >>
->>select * from hive.hive.thive;
+>>select a from hive.hive.thive;
 
 --- 0 row(s) selected.
 >>
 >>sh echo "insert into thive values (1);" > TEST005_junk;
 >>sh regrhive.ksh -f TEST005_junk;
 >>
->>select * from hive.hive.thive;
+>>select a from hive.hive.thive;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
 
 A          
 -----------
@@ -670,7 +669,7 @@ A
 >>insert into hive.hive.thive values (2);
 
 --- 1 row(s) inserted.
->>select * from hive.hive.thive;
+>>select a from hive.hive.thive;
 
 A          
 -----------
@@ -688,6 +687,19 @@ A
 >>
 >>sh echo "insert into thive values (1,2);" > TEST005_junk;
 >>sh regrhive.ksh -f TEST005_junk;
+>>
+>>select a from hive.hive.thive;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
+
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions.
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
 >>
 >>select * from hive.hive.thive;
 

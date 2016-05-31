@@ -135,7 +135,7 @@ class ComTdbHdfsScan : public ComTdb
   char fillersComTdbHdfsScan1_[2];                            // 190 - 191
   NABasicPtr nullFormat_;                                     // 192 - 199
 
-  // next 3 params used to check if data under hdfsFileDir
+  // next 4 params are used to check if data under hdfsFileDir
   // was modified after query was compiled.
   NABasicPtr hdfsRootDir_;                                     // 200 - 207
   Int64  modTSforDir_;                                         // 208 - 215
@@ -196,7 +196,7 @@ public:
                  char * loggingLocation = NULL,
                  char * errCountId = NULL,
 
-                 // next 3 params used to check if data under hdfsFileDir
+                 // next 4 params are used to check if data under hdfsFileDir
                  // was modified after query was compiled.
                  char * hdfsRootDir  = NULL,
                  Int64  modTSforDir   = -1,

@@ -7308,6 +7308,9 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
      }
   }
 
+  // the reload cqd will be set during aqr after compiletime and runtime
+  // timestamp mismatch is detected.
+  // If set, reload hive metadata.
   if ((cachedNATable->isHiveTable()) &&
       (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
       (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
