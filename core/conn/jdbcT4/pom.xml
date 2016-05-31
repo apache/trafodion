@@ -66,6 +66,37 @@
 
    <plugins>
        <plugin>
+           <groupId>org.codehaus.mojo</groupId>
+           <artifactId>build-helper-maven-plugin</artifactId>
+           <executions>
+               <execution>
+                   <id>add-source</id>
+                   <phase>generate-sources</phase>
+                   <goals>
+                       <goal>add-source</goal>
+                   </goals>
+                   <configuration>
+                       <sources>
+                           <source>src/main/scala</source>
+                       </sources>
+                   </configuration>
+               </execution>
+               <execution>
+                   <id>add-test-source</id>
+                   <phase>generate-sources</phase>
+                   <goals>
+                       <goal>add-test-source</goal>
+                   </goals>
+                   <configuration>
+                       <sources>
+                           <source>src/test/scala</source>
+                       </sources>
+                   </configuration>
+               </execution>
+           </executions>
+       </plugin>
+
+       <plugin>
            <groupId>net.alchim31.maven</groupId>
            <artifactId>scala-maven-plugin</artifactId>
            <version>3.2.0</version>
@@ -153,75 +184,39 @@
            </executions>
        </plugin>
 
-    <plugin>
-      <artifactId>maven-assembly-plugin</artifactId>
-      <version>2.5.3</version>
-      <configuration>
-          <archive>
-              <manifest>
-                  <mainClass>org.trafodion.jdbc.t4.Vproc</mainClass>
-                  <classpathPrefix>dependency-jars/</classpathPrefix>
-              </manifest>
-              <manifestEntries>
-                  <!-- <Implementation-Version-1>${TRAFODION_VER_PROD}</Implementation-Version-1> -->
-                  <Implementation-Version-1>Version ${project.version}</Implementation-Version-1>
-                  <Implementation-Version-2>Release ${project.version}</Implementation-Version-2>
-                  <Implementation-Version-3>Build release</Implementation-Version-3>
-                  <Implementation-Version-4>[${user.name}]</Implementation-Version-4>
-                  <Implementation-Version-5>branch ${mvngit.commit.abbrev}-${mvngit.branch}</Implementation-Version-5>
-                  <Implementation-Version-6>date ${maven.build.timestamp}</Implementation-Version-6>
-                  <Product-Name>${project.name}</Product-Name>
-              </manifestEntries>
-          </archive>
-          <descriptorRefs>
-              <descriptorRef>jar-with-dependencies</descriptorRef>
-          </descriptorRefs>
-          <descriptor>src/assembly/all.xml</descriptor>
-          <appendAssemblyId>false</appendAssemblyId>
-      </configuration>
-      <executions>
-        <execution>
-          <id>create-archive</id>
-          <phase>package</phase>
-          <goals>
-              <goal>single</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>
-
-
        <plugin>
-           <groupId>org.codehaus.mojo</groupId>
-           <artifactId>build-helper-maven-plugin</artifactId>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-shade-plugin</artifactId>
+           <version>2.4.3</version>
            <executions>
                <execution>
-                   <id>add-source</id>
-                   <phase>generate-sources</phase>
+                   <phase>package</phase>
                    <goals>
-                       <goal>add-source</goal>
+                       <goal>shade</goal>
                    </goals>
-                   <configuration>
-                       <sources>
-                           <source>src/main/scala</source>
-                       </sources>
-                   </configuration>
-               </execution>
-               <execution>
-                   <id>add-test-source</id>
-                   <phase>generate-sources</phase>
-                   <goals>
-                       <goal>add-test-source</goal>
-                   </goals>
-                   <configuration>
-                       <sources>
-                           <source>src/test/scala</source>
-                       </sources>
-                   </configuration>
                </execution>
            </executions>
        </plugin>
-
+       <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-assembly-plugin</artifactId>
+           <version>2.5.3</version>
+           <inherited>false</inherited>
+           <configuration>
+               <descriptors>
+                   <descriptor>src/assembly/all.xml</descriptor>
+               </descriptors>
+               <appendAssemblyId>false</appendAssemblyId>
+           </configuration>
+           <executions>
+               <execution>
+                   <phase>package</phase>
+                   <goals>
+                       <goal>single</goal>
+                   </goals>
+               </execution>
+           </executions>
+       </plugin>
    </plugins>
   </build>
 

@@ -29,9 +29,9 @@ build_all: LICENSE NOTICE
 	echo "$(MAVEN) install -DskipTests"
 	set -o pipefail && $(MAVEN) install -DskipTests | tee build_jdbct4.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${MY_SQROOT}/export/lib
+	ln -sf ${MY_SQROOT}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${MY_SQROOT}/export/lib/jdbcT4.jar
 	mkdir -p ../clients
 	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
-	ln -sf ${MY_SQROOT}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${MY_SQROOT}/export/lib/jdbcT4.jar
 
 clean:
 	-$(MAVEN) clean | grep ERROR
