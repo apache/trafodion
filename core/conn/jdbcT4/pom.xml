@@ -186,6 +186,34 @@
 
        <plugin>
            <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-jar-plugin</artifactId>
+           <version>3.0.0</version>
+           <configuration>
+               <archive>
+                   <manifest>
+                       <mainClass>org.trafodion.jdbc.t4.Vproc</mainClass>
+                       <classpathPrefix>dependency-jars/</classpathPrefix>
+                   </manifest>
+                   <manifestEntries>
+                       <!-- <Implementation-Version-1>${TRAFODION_VER_PROD}</Implementation-Version-1> -->
+                       <Implementation-Version-1>Version ${project.version}</Implementation-Version-1>
+                       <Implementation-Version-2>Release ${project.version}</Implementation-Version-2>
+                       <Implementation-Version-3>Build release</Implementation-Version-3>
+                       <Implementation-Version-4>[${user.name}]</Implementation-Version-4>
+                       <Implementation-Version-5>branch ${mvngit.commit.abbrev}-${mvngit.branch}</Implementation-Version-5>
+                       <Implementation-Version-6>date ${maven.build.timestamp}</Implementation-Version-6>
+                       <Product-Name>${project.name}</Product-Name>
+                   </manifestEntries>
+               </archive>
+               <descriptorRefs>
+                   <descriptorRef>jar-with-dependencies</descriptorRef>
+               </descriptorRefs>
+               <appendAssemblyId>false</appendAssemblyId>
+           </configuration>
+       </plugin>
+
+       <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
            <artifactId>maven-shade-plugin</artifactId>
            <version>2.4.3</version>
            <executions>
