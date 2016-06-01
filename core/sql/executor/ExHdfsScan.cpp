@@ -254,6 +254,7 @@ void ExHdfsScanTcb::freeResources()
 
   ExpLOBinterfaceCleanup
     (lobGlob_, getGlobals()->getDefaultHeap());
+  
 }
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {

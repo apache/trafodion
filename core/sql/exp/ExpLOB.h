@@ -191,6 +191,7 @@ public:
   virtual unsigned char getClassVersionID()
   {
     return 1;
+
   }
 
   virtual void populateImageVersionIDArray()
@@ -264,11 +265,11 @@ public:
 
   // Generates LOB handle that is stored in the SQL row.
   // LOB handle max len:  512 bytes
-  // <flags><LOBnum><objectUid><LOBlen><descKey><descTS><chunkNum><schNameLen><schName>
-  // <--4--><--4---><----8----><---8--><---8---><--8---><----2---><---2------><--vc--->
+  // <flags><LOBType><LOBnum><objectUid><LOBlen><descKey><descTS><chunkNum><schNameLen><schName>
+  // <--4--><--4----><--4---><----8----><---8--><---8---><--8---><----2---><---2------><--vc--->
   static void genLOBhandle(Int64 uid, 
 			   Lng32 lobNum,
-			   short lobType,
+			   Int32 lobType,
 			   Int64 descKey, 
 			   Int64 descTS,
 			   Lng32 flags,
@@ -278,7 +279,7 @@ public:
 			   char * ptr);
 
   static void updLOBhandle(Int64 descSyskey, 
-			   Lng32 flags,
+			   Lng32 flags,                       
 			   char * ptr);
 
   static Lng32 genLOBhandleFromHandleString(char * lobHandleString,
@@ -344,9 +345,8 @@ public:
   struct LOBHandle
   {
     
-    short flags_;
-    char  lobType_;
-    char  filler1_;
+    Int32 flags_;
+    Int32  lobType_;
     Lng32 lobNum_;
     Int64 objUID_;
     Int64 descSyskey_;

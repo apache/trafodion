@@ -57,7 +57,7 @@ Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap,NABoolean isHive, Int6
                    1, // waited op
 		   lobGlob,
 		   0,
-		   NULL, 0,
+		   lobGlob, 0,
 		   lobMaxSize);
   if (lobGlob)
     {
@@ -178,7 +178,7 @@ Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap)
                    1, // waited op
 		   lobGlob,
 		   0,
-		   NULL, 0
+		   lobHeap, 0
 		   );
   if (err != LOB_OPER_OK)
     return -1;
@@ -599,7 +599,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 srcLen = 0;
-  if(so == Lob_Memory)
+  if((so == Lob_Memory) || (so== Lob_External))
     srcLen = strlen(srcLobData);
   else if (so == Lob_Buffer)
     srcLen = tgtLobLen;
@@ -669,7 +669,7 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 sourceLen = 0;
-  if(so == Lob_Memory)
+  if((so == Lob_Memory) || (so == Lob_External))
     sourceLen = strlen(srcLobData);
   else if (so == Lob_Buffer)
     sourceLen = tgtLobLen;

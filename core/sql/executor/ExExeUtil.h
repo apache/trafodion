@@ -3079,11 +3079,11 @@ public:
   {
     return (ExExeUtilLobShowddlTdb &) tdb;
   };
-
+  
  private:
   short fetchRows(char * query, short &rc);
   short returnRows(short &rc);
-
+ 
   enum Step
   {
     INITIAL_,
@@ -3108,7 +3108,7 @@ public:
   char * lobMDName_;
   
   Lng32 currLobNum_;
-
+  
   char sdOptionStr_[100];
 };
 
